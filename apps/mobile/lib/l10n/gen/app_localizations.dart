@@ -33661,6 +33661,54 @@ abstract class AppLocalizations {
   /// **'Incidents'**
   String get mastermindFleetReleaseIncidents;
 
+  /// No description provided for @mastermindFleetAlertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SLO burn alerts'**
+  String get mastermindFleetAlertsTitle;
+
+  /// No description provided for @mastermindFleetAlertPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page'**
+  String get mastermindFleetAlertPage;
+
+  /// No description provided for @mastermindFleetAlertTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket'**
+  String get mastermindFleetAlertTicket;
+
+  /// No description provided for @mastermindFleetAlertAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get mastermindFleetAlertAvailability;
+
+  /// No description provided for @mastermindFleetAlertLatency.
+  ///
+  /// In en, this message translates to:
+  /// **'Latency'**
+  String get mastermindFleetAlertLatency;
+
+  /// No description provided for @mastermindFleetAlertBurn.
+  ///
+  /// In en, this message translates to:
+  /// **'{indicator} · burn {long}× long, {short}× short'**
+  String mastermindFleetAlertBurn(String indicator, String long, String short);
+
+  /// No description provided for @mastermindFleetHeadlinePaging.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 SLO is paging} other{{count} SLOs are paging}}'**
+  String mastermindFleetHeadlinePaging(int count);
+
+  /// No description provided for @mastermindFleetDigestAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 SLO alert is firing.} other{{count} SLO alerts are firing.}}'**
+  String mastermindFleetDigestAlerts(int count);
+
   /// No description provided for @mastermindFleetMainOpen.
   ///
   /// In en, this message translates to:

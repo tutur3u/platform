@@ -45,8 +45,9 @@ class FleetRepository implements FleetSource {
   static const statePath = '/api/v1/mastermind/fleet/state';
 
   /// Snapshot features this app renders. Without `login`, Web omits access
-  /// requests because older clients would offer answers it refuses.
-  static const featuresHeader = {'x-mastermind-fleet-features': 'login'};
+  /// requests because older clients would offer answers it refuses; without
+  /// `alerts`, it omits SLO burn alerts.
+  static const featuresHeader = {'x-mastermind-fleet-features': 'login,alerts'};
   static String answerPath(String decisionId) =>
       '/api/v1/mastermind/fleet/decisions/${Uri.encodeComponent(decisionId)}/answer';
 

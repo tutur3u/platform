@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_alerts_panel.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_digest.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
@@ -46,6 +47,10 @@ class FleetTodayPage extends StatelessWidget {
               FleetReleaseStrip(release: release),
               const SizedBox(height: AppSpacing.lg),
             ],
+            if (snapshot.alerts.isNotEmpty) ...[
+              FleetAlertsPanel(alerts: snapshot.alerts, now: now),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             _NeedsYouPanel(snapshot: snapshot, state: state, now: now),
             const SizedBox(height: AppSpacing.lg),
             FleetMachinesPanel(snapshot: snapshot, now: now),
@@ -67,7 +72,14 @@ class FleetHealthHero extends StatelessWidget {
     final l10n = context.l10n;
     final counts = snapshot.counts;
     final open = snapshot.needsYouAt(now).length;
-    final (headline, tone, icon) = open > 0
+    final paging = snapshot.pageAlerts.length;
+    final (headline, tone, icon) = paging > 0
+        ? (
+            l10n.mastermindFleetHeadlinePaging(paging),
+            AppTone.destructive,
+            LucideIcons.flame,
+          )
+        : open > 0
         ? (
             l10n.mastermindFleetHeadlineNeedsYou(open),
             AppTone.warning,
@@ -128,7 +140,8 @@ class _Kpis extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final counts = snapshot.counts;
-    final needs = snapshot.needsYouAt(now).length;
+    final needs = snapshot.needsYouCountAt(now);
+    final decisions = snapshot.needsYouAt(now).length;
     final logins = fleetOpenLogins(snapshot, now);
     AppTone alarm(int value, AppTone tone) =>
         value == 0 ? AppTone.neutral : tone;
@@ -149,8 +162,14 @@ class _Kpis extends StatelessWidget {
           label: l10n.mastermindFleetKpiNeedsYou,
           value: '$needs',
           icon: LucideIcons.inbox,
-          tone: alarm(needs, AppTone.warning),
-          onTap: () => context.go(Routes.mastermindInbox),
+          // A paging burn is urgent even before any decision is open.
+          tone: snapshot.pageAlerts.isNotEmpty
+              ? AppTone.destructive
+              : alarm(needs, AppTone.warning),
+          // Page alerts are listed on Today itself; Inbox holds decisions.
+          onTap: decisions == 0 && needs > 0
+              ? null
+              : () => context.go(Routes.mastermindInbox),
         ),
         AppStatTile(
           label: l10n.mastermindFleetKpiLogins,

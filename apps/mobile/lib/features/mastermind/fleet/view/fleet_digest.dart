@@ -3,7 +3,7 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// "What's happening now", composed only from the snapshot: running and
 /// failed lanes, the main freeze and its queue, production and incidents,
-/// and the logins blocking work.
+/// firing SLO burn alerts, and the logins blocking work.
 String fleetDigest(
   AppLocalizations l10n,
   FleetSnapshot snapshot,
@@ -39,6 +39,8 @@ String fleetDigest(
       l10n.mastermindFleetDigestProductionDegraded,
     if (release != null && release.incidents.isNotEmpty)
       l10n.mastermindFleetDigestIncidents(release.incidents.length),
+    if (snapshot.alerts.isNotEmpty)
+      l10n.mastermindFleetDigestAlerts(snapshot.alerts.length),
     if (logins.isNotEmpty)
       l10n.mastermindFleetDigestLogins(logins.length, logins.join(', ')),
   ].join(' ');

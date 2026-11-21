@@ -18073,6 +18073,46 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFleetReleaseIncidents => 'Sự cố';
 
   @override
+  String get mastermindFleetAlertsTitle => 'Cảnh báo tiêu hao SLO';
+
+  @override
+  String get mastermindFleetAlertPage => 'Khẩn';
+
+  @override
+  String get mastermindFleetAlertTicket => 'Theo dõi';
+
+  @override
+  String get mastermindFleetAlertAvailability => 'Khả dụng';
+
+  @override
+  String get mastermindFleetAlertLatency => 'Độ trễ';
+
+  @override
+  String mastermindFleetAlertBurn(String indicator, String long, String short) {
+    return '$indicator · tiêu hao $long× dài, $short× ngắn';
+  }
+
+  @override
+  String mastermindFleetHeadlinePaging(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count SLO đang báo khẩn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestAlerts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cảnh báo SLO đang kích hoạt.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mastermindFleetMainOpen => 'Đang mở';
 
   @override

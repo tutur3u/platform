@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { readFleetAlerts } from '@/lib/mastermind/fleet/alerts';
 import { notifyNewFleetDecision } from '@/lib/mastermind/fleet/decision-push';
 import {
   isFleetOwner,
@@ -47,6 +48,14 @@ export const GET = withSessionAuth(
     const store = await fleetStore();
     if (!store) return fleetError('unavailable', 503);
 
+    const features = parseFleetFeatures(
+      request.headers.get(FLEET_FEATURES_HEADER)
+    );
+    // Fails open: unavailable alerts leave the field out, never the snapshot.
+    const alertsRead = features.has('alerts')
+      ? readFleetAlerts()
+      : Promise.resolve(null);
+
     let stored: Awaited<ReturnType<typeof readFleetState>>;
     let answers: Record<string, FleetAnswerRecord>;
     try {
@@ -60,9 +69,7 @@ export const GET = withSessionAuth(
       return fleetError('unavailable', 503);
     }
 
-    const features = parseFleetFeatures(
-      request.headers.get(FLEET_FEATURES_HEADER)
-    );
+    const alerts = await alertsRead;
     const state = fleetStateView(stored.state, { features });
     const openIds = new Set(state.decisions.map((d) => d.id));
     const receipts = Object.fromEntries(
@@ -79,7 +86,7 @@ export const GET = withSessionAuth(
           .sort()
           .join(',')}|${state.decisions
           .map((d) => `${d.id}:${d.login?.state ?? ''}`)
-          .join(',')}`
+          .join(',')}|${alerts ? JSON.stringify(alerts) : '-'}`
       )
       .digest('hex')
       .slice(0, 32)}"`;
@@ -92,6 +99,7 @@ export const GET = withSessionAuth(
         state,
         receivedAt: stored.receivedAt,
         answers: receipts,
+        ...(alerts ? { alerts } : {}),
       },
       { headers }
     );

@@ -16,11 +16,6 @@ const firing = {
   state: 'firing',
 };
 
-it('drops malformed rows and rejects a non-array', () => {
-  expect(parseAlerts({})).toBeNull();
-  expect(parseAlerts([firing, { service: 'x' }, null])).toHaveLength(1);
-});
-
 it('turns firing alerts into Perf Factory records', () => {
   const alerts = parseAlerts([
     firing,

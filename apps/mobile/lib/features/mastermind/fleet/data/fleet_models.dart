@@ -4,6 +4,7 @@
 /// screen. See apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync.
 library;
 
+part 'fleet_alerts.dart';
 part 'fleet_login.dart';
 part 'fleet_release.dart';
 
@@ -314,6 +315,7 @@ class FleetSnapshot {
     this.answers = const {},
     this.resolved = const [],
     this.release,
+    this.alerts = const [],
   });
 
   /// Throws [FormatException] only when the envelope itself is unusable.
@@ -356,6 +358,7 @@ class FleetSnapshot {
         final Map<String, dynamic> release => FleetRelease.parse(release),
         _ => null,
       },
+      alerts: _list(json['alerts'], FleetAlert.parse),
     );
   }
 
@@ -373,6 +376,17 @@ class FleetSnapshot {
   /// Decisions closed in the last day, newest first, with where they went.
   final List<FleetResolvedDecision> resolved;
   final FleetRelease? release;
+
+  /// Firing SLO burn alerts, pages first; empty when Web left them out.
+  final List<FleetAlert> alerts;
+
+  /// Page-severity burns: each counts toward what needs the owner.
+  List<FleetAlert> get pageAlerts =>
+      alerts.where((a) => a.severity == FleetAlertSeverity.page).toList();
+
+  /// The "needs you" figure: open decisions plus paging burns.
+  int needsYouCountAt(DateTime now) =>
+      needsYouAt(now).length + pageAlerts.length;
 
   String? machineLabel(String? id) =>
       machines.where((m) => m.id == id).firstOrNull?.label;
@@ -409,5 +423,6 @@ class FleetSnapshot {
         answers: {...answers, decisionId: receipt},
         resolved: resolved,
         release: release,
+        alerts: alerts,
       );
 }

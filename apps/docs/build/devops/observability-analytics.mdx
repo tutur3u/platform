@@ -273,12 +273,21 @@ once, at most 20 per pass:
   and push, honoring each person's notification preferences; page burns are
   `urgent`. A delivery that creates no notification is retried on the next
   pass. Mira sees the same notification; there is no separate Mira channel.
-- **Fleet hub** through `GET /api/v1/infrastructure/observability/alerts`,
+- **Admin** through `GET /api/v1/infrastructure/observability/alerts`,
   which returns firing and recently resolved alerts to a root member with
-  `view_infrastructure` (session or bearer token). The hub turns them into
-  Mastermind `needs_you` items, since it owns Mastermind item ids, and relays
-  page burns to the owner's ask channel. The push-event contract stays
-  unchanged.
+  `view_infrastructure` (session or bearer token). The alert type and parser
+  are shared from `@tuturuuu/utils/observability/alerts`.
+- **Mastermind fleet sync** (see
+  [Fleet sync](/platform/features/mobile-mastermind#fleet-sync)): Web reads
+  firing alerts with their SLO indicator server-side with the admin client
+  (filtered, ordered and limited in the query), memoized per isolate for
+  60 seconds (15 seconds after a failure), and serves firing alerts only
+  (at most 20, pages first, then newest) to the owner's phone on
+  `GET /api/v1/mastermind/fleet/state` and to the orchestrator Mac on the
+  HMAC-signed `GET /api/v1/mastermind/fleet/alerts`. The Mac never holds an
+  infrastructure token. The orchestrator relays each new page burn to the
+  owner's ask channel once per alert id; tickets and resolved alerts raise
+  no ask. The push-event contract stays unchanged.
 - **Perf Factory** through the same route's `regressions`: firing alerts in
   the detector's record shape (`id`, `app`, `worker`, `metric`, `startTime`,
   `detectedAt`, `baseline`, `trigger`, `observed`, `windows`,

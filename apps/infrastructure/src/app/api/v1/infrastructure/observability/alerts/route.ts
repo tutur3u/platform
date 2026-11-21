@@ -5,8 +5,8 @@ import {
   perfFactoryRecords,
 } from '@/lib/observability-health/alerts';
 
-// Open and recently resolved SLO burn alerts for Admin, the Fleet hub (which
-// turns them into Mastermind needs_you items) and the Perf Factory intake.
+// Open and recently resolved SLO burn alerts for Admin and the Perf Factory
+// intake. Mastermind fleet sync reads the same RPC from apps/web.
 // Read-only; callers authenticate as a root member with view_infrastructure,
 // by session or bearer token.
 export async function GET(request: Request) {

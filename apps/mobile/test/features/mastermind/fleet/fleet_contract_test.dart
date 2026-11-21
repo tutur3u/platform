@@ -130,14 +130,14 @@ void main() {
     late _Api api;
     setUp(() => api = _Api());
 
-    test('declares the login feature on every read', () async {
+    test('declares the login and alerts features on every read', () async {
       when(
         () => api.getJsonWithHeaders(any(), any()),
       ).thenAnswer((_) async => fleetSampleJson());
       await FleetRepository(api: api).fetch();
       verify(
         () => api.getJsonWithHeaders(FleetRepository.statePath, {
-          'x-mastermind-fleet-features': 'login',
+          'x-mastermind-fleet-features': 'login,alerts',
         }),
       ).called(1);
     });

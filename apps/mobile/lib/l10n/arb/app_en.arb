@@ -8972,6 +8972,41 @@
   "mastermindFleetReleaseProduction": "Production",
   "mastermindFleetReleaseMigrations": "Migrations",
   "mastermindFleetReleaseIncidents": "Incidents",
+  "mastermindFleetAlertsTitle": "SLO burn alerts",
+  "mastermindFleetAlertPage": "Page",
+  "mastermindFleetAlertTicket": "Ticket",
+  "mastermindFleetAlertAvailability": "Availability",
+  "mastermindFleetAlertLatency": "Latency",
+  "mastermindFleetAlertBurn": "{indicator} · burn {long}× long, {short}× short",
+  "@mastermindFleetAlertBurn": {
+    "placeholders": {
+      "indicator": {
+        "type": "String"
+      },
+      "long": {
+        "type": "String"
+      },
+      "short": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetHeadlinePaging": "{count, plural, =1{1 SLO is paging} other{{count} SLOs are paging}}",
+  "@mastermindFleetHeadlinePaging": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetDigestAlerts": "{count, plural, =1{1 SLO alert is firing.} other{{count} SLO alerts are firing.}}",
+  "@mastermindFleetDigestAlerts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mastermindFleetMainOpen": "Open",
   "mastermindFleetMainFrozen": "Frozen",
   "mastermindFleetQueued": "{count} queued",

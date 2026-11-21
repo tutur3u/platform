@@ -1,23 +1,13 @@
+import type { ObservabilityAlert } from '@tuturuuu/utils/observability/alerts';
 import { appForService } from './summary';
 
-// Framework-free shaping of SLO burn alerts for the Fleet hub and the Perf
-// Factory intake. Input is the JSON returned by
-// private.list_observability_alerts; anything malformed is dropped.
+// Perf Factory shaping of SLO burn alerts; the alert type and parser live in
+// @tuturuuu/utils/observability/alerts.
 
-export interface ObservabilityAlert {
-  burn_long: number;
-  burn_short: number;
-  dedupe_key: string;
-  indicator: 'availability' | 'latency';
-  latency_threshold_ms: number | null;
-  objective: number;
-  resolved_at: string | null;
-  service: string;
-  severity: 'page' | 'ticket';
-  slo_id: string;
-  started_at: string;
-  state: 'firing' | 'resolved';
-}
+export {
+  type ObservabilityAlert,
+  parseAlerts,
+} from '@tuturuuu/utils/observability/alerts';
 
 /**
  * Perf Factory regression record in the detector's shape. `suspects`,
@@ -45,28 +35,6 @@ export interface PerfFactoryRecord {
   versionSummary: [];
   windows: [];
   worker: string;
-}
-
-function isAlert(value: unknown): value is ObservabilityAlert {
-  if (typeof value !== 'object' || value === null) return false;
-  const row = value as Record<string, unknown>;
-  return (
-    typeof row.dedupe_key === 'string' &&
-    typeof row.slo_id === 'string' &&
-    typeof row.service === 'string' &&
-    (row.severity === 'page' || row.severity === 'ticket') &&
-    (row.state === 'firing' || row.state === 'resolved') &&
-    (row.indicator === 'availability' || row.indicator === 'latency') &&
-    typeof row.started_at === 'string' &&
-    typeof row.burn_long === 'number' &&
-    typeof row.burn_short === 'number' &&
-    typeof row.objective === 'number'
-  );
-}
-
-export function parseAlerts(value: unknown): ObservabilityAlert[] | null {
-  if (!Array.isArray(value)) return null;
-  return value.filter(isAlert);
 }
 
 export function perfFactoryRecords(

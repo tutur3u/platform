@@ -18292,6 +18292,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFleetReleaseIncidents => 'Incidents';
 
   @override
+  String get mastermindFleetAlertsTitle => 'SLO burn alerts';
+
+  @override
+  String get mastermindFleetAlertPage => 'Page';
+
+  @override
+  String get mastermindFleetAlertTicket => 'Ticket';
+
+  @override
+  String get mastermindFleetAlertAvailability => 'Availability';
+
+  @override
+  String get mastermindFleetAlertLatency => 'Latency';
+
+  @override
+  String mastermindFleetAlertBurn(String indicator, String long, String short) {
+    return '$indicator · burn $long× long, $short× short';
+  }
+
+  @override
+  String mastermindFleetHeadlinePaging(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count SLOs are paging',
+      one: '1 SLO is paging',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestAlerts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count SLO alerts are firing.',
+      one: '1 SLO alert is firing.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mastermindFleetMainOpen => 'Open';
 
   @override

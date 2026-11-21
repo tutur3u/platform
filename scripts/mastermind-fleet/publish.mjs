@@ -2,7 +2,8 @@
 // Mastermind fleet sync publisher. Run once per launchd tick on the
 // orchestrator Mac: publishes the live fleet snapshot when it changes (or every
 // heartbeat), then pulls owner decision answers into the local answers folder
-// and acknowledges them. It never sends messages to fleet threads.
+// and acknowledges them, then refreshes the firing SLO alerts file when the
+// tick has time left. It never sends messages to fleet threads.
 // Runbook: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 import { createHmac, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
@@ -15,6 +16,7 @@ import {
   readRelease,
   readResolved,
 } from './decision-extras.mjs';
+import { pullAlerts } from './alerts-pull.mjs';
 import {
   buildFleetState,
   contentHash,
@@ -72,6 +74,7 @@ export function defaultPaths(home = os.homedir()) {
     answersDir: path.join(root, 'decisions/answers'),
     resolvedDir: path.join(root, 'decisions/resolved'),
     releaseFile: path.join(root, 'release.json'),
+    alertsFile: path.join(root, 'alerts.json'),
     stampFile: path.join(root, 'last-publish.json'),
   };
 }
@@ -514,6 +517,16 @@ export async function runOnce({
       JSON.stringify({ acks: written.slice(i, i + ACK_BATCH) })
     );
 
+  const alerts = paths.alertsFile
+    ? await pullAlerts({
+        get: (pathWithQuery) => call(web, 'GET', pathWithQuery),
+        write: writePrivateJson,
+        file: paths.alertsFile,
+        tickEnd,
+        now,
+      })
+    : undefined;
+
   return {
     published: due,
     degraded,
@@ -525,6 +538,7 @@ export async function runOnce({
     decisions: decisions.length,
     skippedDecisions: skipped,
     answers: written.length,
+    ...(alerts ? { alerts } : {}),
   };
 }
 

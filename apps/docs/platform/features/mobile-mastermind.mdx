@@ -14,8 +14,9 @@ product rules of the shell entry and every tab.
 
 - **Scope:** the Today, Inbox and Work tabs, `PUT`/`GET
   /api/v1/mastermind/fleet/state`, `POST
-  /api/v1/mastermind/fleet/decisions/{id}/answer` and `GET`/`POST
-  /api/v1/mastermind/fleet/answers`.
+  /api/v1/mastermind/fleet/decisions/{id}/answer`, `GET`/`POST
+  /api/v1/mastermind/fleet/answers` and `GET
+  /api/v1/mastermind/fleet/alerts`.
 - **Source:** `scripts/mastermind-fleet/publish.mjs` runs on the orchestrator
   Mac every 30 seconds. It reads the local T3 state database read-only
   (`PRAGMA query_only`) and selects run statuses, thread titles, project names,
@@ -183,6 +184,29 @@ product rules of the shell entry and every tab.
   Mastermind satellite session, which the state and answer routes admit next
   to the Web session. Its snooze is per device and never changes a deadline.
   See [Mastermind web](/build/devops/mastermind-web#command-center).
+- **SLO burn alerts:** firing rows of `private.observability_alerts` with
+  their SLO indicator (see
+  [Observability](/build/devops/observability-analytics)), read server-side
+  with the admin client (firing only, page first, newest, limited to 20 in
+  the query, so resolved history never crowds out a page) and memoized per isolate for 60 seconds (15 seconds
+  after a failure), so the 15-second phone poll does not reach the database.
+  Each alert is `id` (a slug of its dedupe key plus a digest, stable per
+  alert), `service`, `severity` (`page` or `ticket`), `indicator`,
+  `burnLong`, `burnShort` and `startedAt`; at most 20, pages first, then
+  newest. A nonempty result with no well-formed row counts as unavailable.
+  Owner reads carry them as a top-level `alerts` field only with the
+  `alerts` feature (`x-mastermind-fleet-features: login,alerts`), so older
+  clients are unaffected; the served alerts are part of the ETag.
+  Reads fail open: when alerts are unavailable the field is left out, the
+  snapshot is still served, and Web logs a warning. The publisher pulls the
+  same list from the HMAC-signed `GET /api/v1/mastermind/fleet/alerts` (503
+  when unavailable) after the answer pickup, only with at least four seconds
+  of the tick left, so it never delays the snapshot PUT. It replaces
+  `~/.local/share/fleet-sync/alerts.json` (`{ fetchedAt, alerts }`, mode
+  0600, written to a temp file and renamed); a skipped or failed pull,
+  including a nonempty list with no valid row, keeps the previous file and logs counts only. The orchestrator reads that file to
+  raise one urgent ask per new page alert id; tickets and resolved alerts
+  raise none.
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record; a retry with the same
   key returns the same record, and a new answer to the same decision becomes
@@ -223,11 +247,11 @@ product rules of the shell entry and every tab.
   `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
-  with the source commit in
+  `alerts-pull.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
   `StartInterval` 30. Update it only after Web from the same commit is deployed (an older
   Web accepts but drops the additions, so login requests would show as
-  plain asks), by copying those five files from `main` and
+  plain asks), by copying those six files from `main` and
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
@@ -242,6 +266,12 @@ product rules of the shell entry and every tab.
   the hub Needs-you asks and the decision journal are no longer routed from
   these tabs.
 - **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
+  `apps/web/src/app/api/v1/mastermind/fleet/fleet-alerts.test.ts` (alerts
+  feature gate, isolate cache, fail-open, ETag, publisher channel),
+  `apps/web/src/lib/mastermind/fleet/alerts.test.ts` (alert ids, ordering,
+  cap, memo), `packages/utils/src/observability/alerts.test.ts` (shared
+  parser), `scripts/mastermind-fleet/alerts-pull.test.mjs` (budget skip,
+  atomic 0600 file, failure keeps the previous file),
   `apps/web/src/lib/mastermind/fleet/contract.test.ts`, `apps/web/src/lib/mastermind/fleet/login.test.ts` (login URL allowlist, codes, terminal states and the publisher mirror), `scripts/mastermind-fleet/decision-extras.test.mjs`,
   `apps/web/src/lib/mastermind/fleet/store.test.ts` (revisions, retries,
   pickups and racing answers), `apps/web/src/lib/mastermind/store.test.ts`
@@ -265,20 +295,28 @@ owns Back, and every list reserves the dock clearance. Code lives in
 `apps/mobile/lib/features/mastermind/fleet/`.
 
 - **Feature header:** every snapshot read sends
-  `x-mastermind-fleet-features: login`, so Web includes access requests.
+  `x-mastermind-fleet-features: login,alerts`, so Web includes access
+  requests and firing SLO burn alerts.
   The parser stays tolerant per entry: a login request whose payload does
   not parse is dropped rather than shown as an ask, as is an open one
   without a safe https link, an expiry or (device flow) a code, and an
   unknown answer channel or release part is omitted.
-- **Today:** the hero headline keeps the most pressing fact (decisions
-  waiting, failed lanes, running lanes or a quiet fleet). Under "What's
+- **Today:** the hero headline keeps the most pressing fact (paging SLO
+  burns, decisions waiting, failed lanes, running lanes or a quiet fleet). Under "What's
   happening now" it composes a digest only from snapshot fields: running and
   failed lanes, the main freeze with its reason and queue, production down or
   degraded, open incidents, and each open login as "<service> on
   <machine>". Four figures follow: running lanes, need you, blocked on login
   and failed lanes, each opening Work or Inbox. The release strip (main,
   production, migrations, incidents) appears only when the snapshot carries
-  `release`, and shows only the parts it reports. Spend is not shown: the
+  `release`, and shows only the parts it reports. Firing SLO burn alerts
+  follow it as one row per alert (service, indicator, long and short burn,
+  page or ticket, age), and each page alert counts toward the need-you
+  figure, which turns destructive, because a page burn is urgent; tickets
+  do not count. When only page alerts make up that figure, the tile does not
+  open Inbox, which holds decisions only. The digest adds the firing alert count. Regression coverage:
+  `apps/mobile/test/features/mastermind/fleet/fleet_alerts_test.dart`.
+  Spend is not shown: the
   snapshot carries no cost data. The machines list follows.
 - **Settings:** there is no per-tier Mastermind notification setting to back
   a preferences screen, so none is shown; push follows the account push

@@ -13,9 +13,11 @@ Map<String, dynamic> fleetSampleJson({
   String receivedAt = '2026-11-20T03:00:00.000Z',
   List<Map<String, dynamic>>? resolved,
   Map<String, dynamic>? release,
+  List<Map<String, dynamic>>? alerts,
 }) => {
   'receivedAt': receivedAt,
   'answers': answers,
+  'alerts': ?alerts,
   'state': {
     'version': 1,
     'generatedAt': '2026-11-20T02:59:58.000Z',
