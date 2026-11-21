@@ -190,7 +190,7 @@
         "/[wsId]/epm/"
       ],
       "exclude": [],
-      "activated": false
+      "activated": true
     },
     {
       "id": "web-rest",
