@@ -60,9 +60,11 @@ export function parseSessionCookieValue(value: string): SessionCookie | null {
 }
 
 /**
- * Reads the session cookie from one or more `Cookie` field values. A name
- * that appears more than once, even across split headers, is ambiguous and
- * must be treated as signed out.
+ * Reads the session cookie from the raw `Cookie` field values, one string per
+ * field. A name that appears more than once, even across split fields, is
+ * ambiguous and must be treated as signed out. Pairs are separated by `;`,
+ * and also by `,` so that an adapter that joined fields with commas cannot
+ * hide a duplicate. Only spaces and tabs are trimmed.
  */
 export function readSessionCookie(
   cookieHeader: string | readonly string[] | null | undefined
@@ -75,11 +77,11 @@ export function readSessionCookie(
         : cookieHeader;
   const values: string[] = [];
   for (const field of fields) {
-    for (const pair of field.split(';')) {
+    for (const pair of field.split(/[;,]/)) {
       const separator = pair.indexOf('=');
-      const name = (separator === -1 ? pair : pair.slice(0, separator)).trim();
+      const name = trimOws(separator === -1 ? pair : pair.slice(0, separator));
       if (name === SESSION_COOKIE_NAME) {
-        values.push(separator === -1 ? '' : pair.slice(separator + 1).trim());
+        values.push(separator === -1 ? '' : trimOws(pair.slice(separator + 1)));
       }
     }
   }
@@ -89,11 +91,31 @@ export function readSessionCookie(
   return cookie ? { kind: 'present', cookie } : { kind: 'malformed' };
 }
 
+function trimOws(value: string): string {
+  return value.replace(/^[ \t]+|[ \t]+$/g, '');
+}
+
+/**
+ * The MAC scope host is the hostname from trusted routing: no port, no
+ * trailing dot and no whitespace. Letters are compared case-insensitively.
+ */
 function normalizeHost(host: string): string | null {
-  const normalized = host.trim().toLowerCase();
-  return /^[a-z0-9.-]{1,253}(?::\d{1,5})?$/.test(normalized)
+  const normalized = host.toLowerCase();
+  return /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/.test(
+    normalized
+  )
     ? normalized
     : null;
+}
+
+/** The MAC key must be HMAC with SHA-256 and allowed to sign. */
+function isMacKey(key: CryptoKey): boolean {
+  const algorithm = key.algorithm as { name: string; hash?: { name: string } };
+  return (
+    algorithm.name === 'HMAC' &&
+    algorithm.hash?.name === 'SHA-256' &&
+    key.usages.includes('sign')
+  );
 }
 
 async function macBytes(
@@ -104,7 +126,7 @@ async function macBytes(
   secret: string
 ): Promise<Uint8Array | null> {
   const host = normalizeHost(scope.host);
-  if (!host) return null;
+  if (!host || !isMacKey(key)) return null;
   const input = `${MAC_LABEL}|${scope.environment}|${host}|${device}.${generation}.${secret}`;
   const full = new Uint8Array(
     await crypto.subtle.sign('HMAC', key, utf8(input))
@@ -141,7 +163,9 @@ export async function encodeSessionCookieValue(input: {
     input.generation,
     secret
   );
-  if (!mac) throw new RangeError('Session cookie host is invalid');
+  if (!mac) {
+    throw new RangeError('Session cookie host or MAC key is invalid');
+  }
   return `v1.${device}.${input.generation}.${secret}.${encodeBase64Url(mac)}`;
 }
 
@@ -160,13 +184,18 @@ export async function verifySessionCookieMac(
   }
   let matched = false;
   for (const key of options.keys) {
-    const expected = await macBytes(
-      key,
-      options.scope,
-      cookie.device,
-      cookie.generation,
-      cookie.secret
-    );
+    let expected: Uint8Array | null;
+    try {
+      expected = await macBytes(
+        key,
+        options.scope,
+        cookie.device,
+        cookie.generation,
+        cookie.secret
+      );
+    } catch {
+      expected = null;
+    }
     if (expected && constantTimeEqual(expected, presented)) matched = true;
   }
   return matched;
@@ -181,7 +210,11 @@ export function serializeSessionCookie(
   value: string,
   maxAgeSeconds: number
 ): string {
-  if (maxAgeSeconds <= 0 || parseSessionCookieValue(value) === null) {
+  if (
+    !Number.isSafeInteger(maxAgeSeconds) ||
+    maxAgeSeconds <= 0 ||
+    parseSessionCookieValue(value) === null
+  ) {
     return clearSessionCookie();
   }
   return `${SESSION_COOKIE_NAME}=${value}; Max-Age=${maxAgeSeconds}; ${COOKIE_ATTRIBUTES}`;

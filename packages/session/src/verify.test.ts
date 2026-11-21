@@ -72,7 +72,6 @@ describe('verifyIdentityAssertion', () => {
     ['claims', { jti: 12 }],
     ['claims', { gen: -1 }],
     ['claims', { gen: 2_147_483_648 }],
-    ['claims', { gen: 1.5 }],
     ['claims', { src: 'header' }],
     ['claims', { stale: 'false' }],
     ['claims', { aal: 'aal3' }],

@@ -24,7 +24,7 @@ describe('canonical base64url', () => {
 
 describe('strict JSON', () => {
   it('parses ordinary JSON', () => {
-    expect(parseStrictJson('{"a":[1,"x",true,null,{"b":-2.5e3}]}')).toEqual({
+    expect(parseStrictJson('{"a":[1,"x",true,null,{"b":-2500}]}')).toEqual({
       a: [1, 'x', true, null, { b: -2500 }],
     });
   });
@@ -54,4 +54,14 @@ it('compares bytes in constant time and by length', () => {
   expect(constantTimeEqual(new Uint8Array([1]), new Uint8Array([1, 0]))).toBe(
     false
   );
+});
+
+it('keeps __proto__ as an own member on a prototype-free object', () => {
+  const parsed = parseStrictJson('{"__proto__":{"polluted":true}}') as Record<
+    string,
+    unknown
+  >;
+  expect(Object.getPrototypeOf(parsed)).toBeNull();
+  expect(Object.keys(parsed)).toEqual(['__proto__']);
+  expect(({} as Record<string, unknown>).polluted).toBeUndefined();
 });

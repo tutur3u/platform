@@ -19,6 +19,7 @@
     "effect": "^3.22.3"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.9",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.6.5",
     "typescript": "7.0.2",

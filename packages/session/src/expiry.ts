@@ -29,6 +29,7 @@ export type SessionClocks = {
 
 export type SessionState =
   | 'active'
+  | 'invalid'
   | 'revoked'
   | 'idle_expired'
   | 'absolute_expired'
@@ -38,6 +39,7 @@ export function sessionState(
   clocks: SessionClocks,
   nowMs: number
 ): SessionState {
+  if (!validClocks(clocks) || !Number.isFinite(nowMs)) return 'invalid';
   if (clocks.revokedAt != null) return 'revoked';
   if (nowMs >= clocks.absoluteExpiresAt) return 'absolute_expired';
   if (nowMs >= clocks.idleExpiresAt) return 'idle_expired';
@@ -45,6 +47,16 @@ export function sessionState(
     return 'parent_expired';
   }
   return 'active';
+}
+
+/** Clocks must be finite numbers; anything else is treated as expired. */
+function validClocks(clocks: SessionClocks): boolean {
+  return (
+    Number.isFinite(clocks.idleExpiresAt) &&
+    Number.isFinite(clocks.absoluteExpiresAt) &&
+    (clocks.parentDeadline == null || Number.isFinite(clocks.parentDeadline)) &&
+    (clocks.revokedAt == null || Number.isFinite(clocks.revokedAt))
+  );
 }
 
 /** The earliest deadline that ends the session. */
@@ -82,19 +94,29 @@ export function touchedIdleExpiry(
 
 /**
  * The `exp` to put on an identity assertion issued at `issuedAtSeconds`, or
- * null when no assertion may be issued. It is capped by the 60-second
- * lifetime, every session deadline and, for a stale generation, the end of the
- * rotation grace window.
+ * null when no assertion may be issued. The session must be active at issue
+ * time. The result is capped by the 60-second lifetime, every session
+ * deadline and, for a stale generation, the end of the rotation grace window,
+ * which a stale request must supply.
  */
-export function assertionExpiry(input: {
-  issuedAtSeconds: number;
-  clocks: SessionClocks;
-  graceDeadlineMs?: number | null;
-}): number | null {
-  const deadlineMs = Math.min(
-    sessionDeadline(input.clocks),
-    input.graceDeadlineMs ?? Number.POSITIVE_INFINITY
-  );
+export function assertionExpiry(
+  input: {
+    issuedAtSeconds: number;
+    clocks: SessionClocks;
+  } & ({ stale: false } | { stale: true; graceDeadlineMs: number })
+): number | null {
+  if (
+    !Number.isSafeInteger(input.issuedAtSeconds) ||
+    input.issuedAtSeconds < 0
+  ) {
+    return null;
+  }
+  if (sessionState(input.clocks, input.issuedAtSeconds * 1000) !== 'active') {
+    return null;
+  }
+  const graceDeadlineMs = input.stale ? input.graceDeadlineMs : Infinity;
+  if (input.stale && !Number.isFinite(graceDeadlineMs)) return null;
+  const deadlineMs = Math.min(sessionDeadline(input.clocks), graceDeadlineMs);
   const expiry = Math.min(
     input.issuedAtSeconds + MAX_ASSERTION_LIFETIME_SECONDS,
     Math.floor(deadlineMs / 1000)

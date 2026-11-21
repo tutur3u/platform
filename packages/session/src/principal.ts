@@ -27,8 +27,14 @@ export type AssuranceLevel = 'aal1' | 'aal2';
 
 export type Scope = string;
 
-/** The claims of an identity assertion that passed verification. */
-export type VerifiedAssertion = {
+declare const verifiedBrand: unique symbol;
+
+/**
+ * The claims of an identity assertion that passed verification. It is frozen
+ * at runtime and branded at the type level, so only the verifier produces one.
+ * It proves a signature and a time window, not liveness or authorization.
+ */
+export type VerifiedAssertion = Readonly<{
   keyId: string;
   issuer: string;
   environment: SessionEnvironment;
@@ -45,14 +51,15 @@ export type VerifiedAssertion = {
   expiresAt: number;
   jwtId: string;
   ipPrefix: string | null;
-};
+}> & { readonly [verifiedBrand]: true };
 
 /**
- * Who a request is for. It is not an authorization decision: workspace
- * membership and action permissions stay with the permission helpers, and a
- * sensitive action still needs a live session check and a step-up grant.
+ * Who one request is for. It is request-scoped and must not be cached past
+ * `expiresAt`. It is not an authorization decision: workspace membership and
+ * action permissions stay with the permission helpers, and a sensitive action
+ * still needs a live session check and a step-up grant.
  */
-export type Principal = {
+export type Principal = Readonly<{
   kind: 'user' | 'api_key' | 'service' | 'external_app';
   userId: UserId | null;
   sessionId: string | null;
@@ -64,12 +71,14 @@ export type Principal = {
   authTime: number;
   appId: string | null;
   scopes: readonly Scope[];
-};
+  /** Epoch seconds after which this principal must not be used. */
+  expiresAt: number | null;
+}>;
 
 export function principalFromAssertion(
   assertion: VerifiedAssertion
 ): Principal {
-  return {
+  return Object.freeze({
     kind: 'user',
     userId: assertion.userId,
     sessionId: assertion.sessionId,
@@ -80,6 +89,7 @@ export function principalFromAssertion(
     amr: assertion.amr,
     authTime: assertion.authTime,
     appId: assertion.audience.slice('mount:'.length),
-    scopes: [],
-  };
+    scopes: Object.freeze([]),
+    expiresAt: assertion.expiresAt,
+  });
 }

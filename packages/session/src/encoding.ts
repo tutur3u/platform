@@ -62,9 +62,10 @@ export type JsonValue =
 class StrictJsonError extends Error {}
 
 /**
- * Parses JSON like `JSON.parse`, but rejects duplicate member names at any
- * depth. `JSON.parse` keeps the last duplicate, which would let a token carry
- * two values for one claim.
+ * Parses the JSON subset used by session tokens. It rejects duplicate member
+ * names at any depth (`JSON.parse` keeps the last one, which would let a token
+ * carry two values for one claim), returns objects without a prototype, and
+ * accepts only canonical safe-integer numbers.
  */
 export function parseStrictJson(text: string): JsonValue | undefined {
   let position = 0;
@@ -102,7 +103,8 @@ export function parseStrictJson(text: string): JsonValue | undefined {
     const char = text[position];
     if (char === '{') {
       position += 1;
-      const result: { [key: string]: JsonValue } = {};
+      // A null-prototype record keeps `__proto__` an ordinary own member.
+      const result = Object.create(null) as { [key: string]: JsonValue };
       const seen = new Set<string>();
       skipWhitespace();
       if (text[position] === '}') {
@@ -153,13 +155,19 @@ export function parseStrictJson(text: string): JsonValue | undefined {
       }
     }
     if (char === '"') return readString();
-    const literal =
-      /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(
-        text.slice(position)
-      );
+    // Numbers are restricted to canonical safe integers: no fraction,
+    // exponent or `-0`, so a claim can never round into an accepted value.
+    const literal = /^(?:true|false|null|-?(?:0|[1-9]\d{0,15}))/.exec(
+      text.slice(position)
+    );
     if (!literal) return fail();
     position += literal[0].length;
-    return JSON.parse(literal[0]) as JsonValue;
+    const next = text[position];
+    if (next !== undefined && /[0-9.eE+-]/.test(next)) fail();
+    if (literal[0] === '-0') fail();
+    const parsed = JSON.parse(literal[0]) as JsonValue;
+    if (typeof parsed === 'number' && !Number.isSafeInteger(parsed)) fail();
+    return parsed;
   };
 
   try {
@@ -169,6 +177,10 @@ export function parseStrictJson(text: string): JsonValue | undefined {
   } catch {
     return undefined;
   }
+}
+
+export function hasOwn(record: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
 }
 
 export function isJsonObject(

@@ -1,5 +1,6 @@
 import {
   decodeBase64Url,
+  hasOwn,
   isJsonObject,
   type JsonValue,
   parseStrictJson,
@@ -72,11 +73,10 @@ const REQUIRED_CLAIMS = [
 const CLAIM_MEMBERS = new Set<string>([...REQUIRED_CLAIMS, 'ipp']);
 const ENVIRONMENTS = new Set<string>(['production', 'staging', 'local']);
 const KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
-const ID22_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const IPV4_PREFIX = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.0\/24$/;
-const IPV6_PREFIX = /^[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}::\/48$/;
 
 const fail = (reason: VerifyFailureReason): VerifyResult => ({
   ok: false,
@@ -112,10 +112,60 @@ function isIdentityKey(key: CryptoKey): boolean {
   );
 }
 
+/** A 16-byte identifier in canonical base64url. */
+function isId16(value: JsonValue | undefined): value is string {
+  return typeof value === 'string' && decodeBase64Url(value)?.length === 16;
+}
+
+/** Expands an IPv6 address to eight hextets, or null if it is not one. */
+function ipv6Hextets(address: string): number[] | null {
+  if (!/^[0-9a-f:]{2,39}$/.test(address)) return null;
+  const halves = address.split('::');
+  if (halves.length > 2) return null;
+  const parse = (part: string) => (part === '' ? [] : part.split(':'));
+  const head = parse(halves[0] ?? '');
+  const tail = halves.length === 2 ? parse(halves[1] ?? '') : [];
+  const missing = 8 - head.length - tail.length;
+  if (halves.length === 2 ? missing < 1 : missing !== 0) return null;
+  const groups = [
+    ...head,
+    ...Array<string>(halves.length === 2 ? missing : 0).fill('0'),
+    ...tail,
+  ];
+  if (groups.some((group) => !/^[0-9a-f]{1,4}$/.test(group))) return null;
+  return groups.map((group) => Number.parseInt(group, 16));
+}
+
+/** RFC 5952 text for eight hextets: lowercase, no leading zeros, longest zero run as `::`. */
+function canonicalIpv6(hextets: number[]): string {
+  let bestStart = -1;
+  let bestLength = 0;
+  for (let start = 0; start < 8; start += 1) {
+    let length = 0;
+    while (start + length < 8 && hextets[start + length] === 0) length += 1;
+    if (length > bestLength && length >= 2) {
+      bestStart = start;
+      bestLength = length;
+    }
+  }
+  const text = hextets.map((group) => group.toString(16));
+  if (bestStart === -1) return text.join(':');
+  return `${text.slice(0, bestStart).join(':')}::${text.slice(bestStart + bestLength).join(':')}`;
+}
+
+/**
+ * `ipp` is an IPv4 `/24` with a zero last octet, or an IPv6 `/48` whose host
+ * bits are zero, written in canonical RFC 5952 form.
+ */
 function isIpPrefix(value: string): boolean {
+  if (value.endsWith('/48')) {
+    const hextets = ipv6Hextets(value.slice(0, -3));
+    if (!hextets || hextets.slice(3).some((group) => group !== 0)) return false;
+    return `${canonicalIpv6(hextets)}/48` === value;
+  }
   const v4 = IPV4_PREFIX.exec(value);
   if (v4) return v4.slice(1).every((octet) => Number(octet) <= 255);
-  return IPV6_PREFIX.test(value);
+  return false;
 }
 
 function readAmr(value: JsonValue | undefined): AuthMethod[] | null {
@@ -175,8 +225,14 @@ export async function verifyIdentityAssertion(
   } catch {
     return fail('keys_unavailable');
   }
-  if (key === 'unavailable') return fail('keys_unavailable');
   if (key === null) return fail('unknown_key');
+  if (
+    key === 'unavailable' ||
+    typeof key !== 'object' ||
+    typeof (key as Partial<CryptoKey>).type !== 'string'
+  ) {
+    return fail('keys_unavailable');
+  }
   if (!isIdentityKey(key)) return fail('key_type');
 
   const signature = decodeBase64Url(signatureSegment);
@@ -199,7 +255,7 @@ export async function verifyIdentityAssertion(
   if (Object.keys(claims).some((member) => !CLAIM_MEMBERS.has(member))) {
     return fail('claims');
   }
-  if (REQUIRED_CLAIMS.some((member) => !(member in claims)))
+  if (REQUIRED_CLAIMS.some((member) => !hasOwn(claims, member)))
     return fail('claims');
 
   if (claims.iss !== options.issuer) return fail('issuer');
@@ -214,10 +270,8 @@ export async function verifyIdentityAssertion(
   if (
     typeof sub !== 'string' ||
     !UUID_PATTERN.test(sub) ||
-    typeof sid !== 'string' ||
-    !ID22_PATTERN.test(sid) ||
-    typeof jti !== 'string' ||
-    !ID22_PATTERN.test(jti) ||
+    !isId16(sid) ||
+    !isId16(jti) ||
     typeof gen !== 'number' ||
     !Number.isSafeInteger(gen) ||
     gen < 0 ||
@@ -249,7 +303,7 @@ export async function verifyIdentityAssertion(
 
   return {
     ok: true,
-    assertion: {
+    assertion: Object.freeze({
       keyId: kid,
       issuer: options.issuer,
       environment: options.environment,
@@ -260,12 +314,12 @@ export async function verifyIdentityAssertion(
       source: src,
       stale,
       aal,
-      amr,
+      amr: Object.freeze(amr),
       authTime,
       issuedAt: iat,
       expiresAt: exp,
       jwtId: jti,
       ipPrefix: typeof ipp === 'string' ? ipp : null,
-    },
+    }) as VerifiedAssertion,
   };
 }

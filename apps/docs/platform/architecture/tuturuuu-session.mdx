@@ -93,11 +93,15 @@ Codec invariants, in `@tuturuuu/session`:
 - **The MAC is an admission filter, not authorization.** It lets the gateway
   drop forged or random cookies before any Durable Object call. The device
   secret hash in storage still decides. `k` comes from
-  `TTR_SESSION_COOKIE_MAC_KEYS`, scoped by environment and host through the MAC
-  input. Verification accepts the current key and at most one previous key for
+  `TTR_SESSION_COOKIE_MAC_KEYS` (HMAC-SHA-256, sign-capable), scoped by
+  environment and host through the MAC input. The host is the hostname from
+  trusted routing, lowercase, with no port and no trailing dot. Verification accepts the current key and at most one previous key for
   a 24-hour rollover. Emergency retirement removes a key, and its cookies fall
   through to storage-backed checks under the abuse limits.
 - `dev` reveals nothing about the user. The cookie carries no claims.
+- Adapters pass raw `Cookie` field values. The codec also splits on commas,
+  so a comma-joined header cannot hide a duplicate, and trims only spaces and
+  tabs.
 
 Pre-authentication state (OAuth `state`, PKCE verifier, WebAuthn challenge,
 return target, QR and handoff redemption secrets) lives in a separate
@@ -300,8 +304,10 @@ permissions stay with the existing permission helpers, and step-up is a grant
 | `@tuturuuu/session/start` | Middleware for TanStack Start satellites through `@tuturuuu/start-bridge` | Start bridge |
 
 Portable entry points have no framework or Cloudflare runtime imports, no
-request globals, no implicit network fetch and no signing keys. A focused test
-enforces it. Supabase and Better Auth code live only in the session service.
+request globals, no implicit network fetch and no signing keys. A boundary test
+parses the module graph reachable from every entry point and enforces it.
+`@tuturuuu/session/testing` holds an ephemeral-key test issuer; the same test
+fails if any non-test file in the repository imports it. Supabase and Better Auth code live only in the session service.
 
 ### Trusted ingress
 
@@ -359,15 +365,15 @@ The header and claims sets are closed: any member not listed here is rejected.
 | `env` | `production`, `staging` or `local`, equal to the verifier's environment |
 | `aud` | One string `mount:<appId>`, equal to the verifier's mount. Arrays are rejected |
 | `sub` | Lowercase canonical UUID |
-| `sid`, `jti` | Strings of 22 base64url characters (16 bytes) |
+| `sid`, `jti` | 16 bytes in canonical base64url (22 characters) |
 | `gen` | Integer from 0 to 2147483647 |
 | `src` | `cookie` or `bearer` |
 | `stale` | Boolean |
 | `aal` | `aal1` or `aal2` |
 | `amr` | Array of 1 to 8 distinct values from `pwd`, `otp`, `totp`, `passkey`, `oauth`, `sso`, `device_approval`, `qr` |
 | `auth_time`, `iat`, `exp` | Non-negative safe integers in seconds. `auth_time <= iat < exp`, `exp - iat <= 60`, `iat <= now + 5`, and `now < exp` with no tolerance past `exp` |
-| `ipp` | Optional. An IPv4 `/24` or IPv6 `/48` prefix in CIDR form. Never a full address |
-| Encoding | At most 4 KiB, three canonical base64url segments, JSON objects only, duplicate member names rejected |
+| `ipp` | Optional. An IPv4 `/24` with a zero last octet, or an IPv6 `/48` with zero host bits in canonical RFC 5952 form. Never a full address |
+| Encoding | At most 4 KiB, three canonical base64url segments, JSON objects only, duplicate member names rejected (including escaped spellings), `__proto__` treated as an ordinary member. Numbers must be canonical decimal safe integers: no fraction, exponent or `-0` |
 
 The gateway caps `exp` at the earliest of the session's idle, absolute and
 parent deadlines, and for a `stale` assertion at the end of the grace window.

@@ -39,17 +39,21 @@ describe('expiry policy', () => {
   it('caps assertion expiry by lifetime, session deadline and grace deadline', () => {
     const iat = NOW / 1000;
     const clocks = { idleExpiresAt: NOW + DAY, absoluteExpiresAt: NOW + DAY };
-    expect(assertionExpiry({ issuedAtSeconds: iat, clocks })).toBe(iat + 60);
+    expect(
+      assertionExpiry({ issuedAtSeconds: iat, clocks, stale: false })
+    ).toBe(iat + 60);
     expect(
       assertionExpiry({
         issuedAtSeconds: iat,
         clocks: { ...clocks, idleExpiresAt: NOW + 12_500 },
+        stale: false,
       })
     ).toBe(iat + 12);
     expect(
       assertionExpiry({
         issuedAtSeconds: iat,
         clocks,
+        stale: true,
         graceDeadlineMs: NOW + 30_000,
       })
     ).toBe(iat + 30);
@@ -57,6 +61,7 @@ describe('expiry policy', () => {
       assertionExpiry({
         issuedAtSeconds: iat,
         clocks,
+        stale: true,
         graceDeadlineMs: NOW + 999,
       })
     ).toBeNull();
@@ -64,7 +69,38 @@ describe('expiry policy', () => {
       assertionExpiry({
         issuedAtSeconds: iat,
         clocks: { ...clocks, absoluteExpiresAt: NOW },
+        stale: false,
       })
+    ).toBeNull();
+  });
+
+  it('fails closed on invalid clocks and revoked sessions', () => {
+    const clocks = { idleExpiresAt: NOW + DAY, absoluteExpiresAt: NOW + DAY };
+    expect(sessionState({ ...clocks, idleExpiresAt: Number.NaN }, NOW)).toBe(
+      'invalid'
+    );
+    expect(sessionState(clocks, Number.NaN)).toBe('invalid');
+    expect(sessionState({ ...clocks, parentDeadline: Number.NaN }, NOW)).toBe(
+      'invalid'
+    );
+    const iat = NOW / 1000;
+    expect(
+      assertionExpiry({
+        issuedAtSeconds: iat,
+        clocks: { ...clocks, revokedAt: NOW },
+        stale: false,
+      })
+    ).toBeNull();
+    expect(
+      assertionExpiry({
+        issuedAtSeconds: iat,
+        clocks,
+        stale: true,
+        graceDeadlineMs: Number.NaN,
+      })
+    ).toBeNull();
+    expect(
+      assertionExpiry({ issuedAtSeconds: iat + 0.5, clocks, stale: false })
     ).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ export function defaultTestClaims(nowSeconds: number): TestClaims {
     auth_time: nowSeconds - 120,
     iat: nowSeconds,
     exp: nowSeconds + 60,
-    jti: 'BBBBBBBBBBBBBBBBBBBBBB',
+    jti: 'BBBBBBBBBBBBBBBBBBBBBA',
   };
 }
 
