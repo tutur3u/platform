@@ -16,6 +16,7 @@ import {
   readCappedText,
 } from '@/lib/mastermind/fleet/http';
 import {
+  FleetAnswerConflictError,
   readFleetState,
   recordFleetAnswer,
   replayFleetAnswer,
@@ -43,7 +44,9 @@ function receipt(answer: FleetAnswerRecord) {
  * orchestrator pulls; nothing here messages a fleet thread. A retry of an
  * answer this actor already recorded (same key and payload) gets its original
  * receipt even after the decision closed, so a lost response never reads as
- * closed; anything else on a closed decision is a 409.
+ * closed; anything else on a closed decision is a 409. On an open decision
+ * the same key from another actor or with another payload is a 409
+ * `idempotency_conflict`, never another actor's receipt.
  */
 export const POST = withSessionAuth<{ decisionId: string }>(
   async (request, { user }, { decisionId }) => {
@@ -112,7 +115,9 @@ export const POST = withSessionAuth<{ decisionId: string }>(
           user.id
         )
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof FleetAnswerConflictError)
+        return fleetError('idempotency_conflict', 409);
       return fleetError('unavailable', 503);
     }
   },

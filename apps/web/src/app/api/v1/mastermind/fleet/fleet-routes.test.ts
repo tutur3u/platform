@@ -571,6 +571,20 @@ describe('Mastermind fleet sync routes', () => {
       ).toBe(400);
     });
 
+    it('refuses a reused key on an open decision', async () => {
+      const key = randomUUID();
+      const hold = { action: 'hold' };
+      const first = await answer('ship-fleet-sync', hold, key);
+      expect(JSON.stringify(await first.json())).not.toContain(OWNER);
+      expect((await answer('ship-fleet-sync', hold, key)).status).toBe(202);
+      const reply = { action: 'reply', text: 'Go' };
+      const changed = await answer('ship-fleet-sync', reply, key);
+      expect(await changed.json()).toEqual({ error: 'idempotency_conflict' });
+      vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', `${OWNER},${PUSH_OWNER}`);
+      mocks.user = { id: PUSH_OWNER };
+      expect((await answer('ship-fleet-sync', hold, key)).status).toBe(409);
+    });
+
     it('replays a recorded answer after its decision closed', async () => {
       const key = randomUUID();
       const body = { action: 'reply', text: 'Wait' };
@@ -581,7 +595,10 @@ describe('Mastermind fleet sync routes', () => {
 
       const retry = await answer('ship-fleet-sync', body, key);
       expect(retry.status).toBe(202);
-      expect(await retry.json()).toMatchObject({ action: 'reply', revision });
+      const replayed = await retry.json();
+      expect(replayed).toMatchObject({ action: 'reply', revision });
+      // A receipt never carries who answered.
+      expect(JSON.stringify(replayed)).not.toContain(OWNER);
       const other = { action: 'reply', text: 'Go' };
       expect((await answer('ship-fleet-sync', other, key)).status).toBe(409);
       expect((await answer('ship-fleet-sync', body)).status).toBe(409);

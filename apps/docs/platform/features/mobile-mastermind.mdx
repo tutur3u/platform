@@ -208,8 +208,10 @@ product rules of the shell entry and every tab.
   raise one urgent ask per new page alert id; tickets and resolved alerts
   raise none.
 - **Answers:** Approve, Hold and Reply post an owner answer with an
-  `Idempotency-Key`. Web stores it as a durable record; a retry with the same
-  key returns the same record, and a new answer to the same decision becomes
+  `Idempotency-Key`. Web stores it as a durable record with the answering
+  actor; a retry by the same actor with the same key and payload returns the
+  same record, the same key from another actor or with another payload is a
+  409 `idempotency_conflict`, and a new answer to the same decision becomes
   the next revision. The publisher pulls unacknowledged answers to decisions
   that are still open, writes each to
   `~/.local/share/fleet-sync/decisions/answers/<id>.r<revision>.json` (mode

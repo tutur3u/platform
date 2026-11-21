@@ -4,6 +4,7 @@ import {
   acknowledgeFleetAnswers,
   answerableDecisionIds,
   claimFleetNonce,
+  FleetAnswerConflictError,
   pendingFleetAnswers,
   readFleetAnswers,
   readFleetState,
@@ -209,6 +210,34 @@ describe('fleet store', () => {
     expect(await claimFleetNonce(store, 'sig')).toBe(false);
   });
 
+  it('refuses a reused key from another actor or with another payload', async () => {
+    const store = createMemoryMastermindStore();
+    const at = new Date('2026-11-20T03:00:00.000Z');
+    const hold = { action: 'hold' as const };
+    await recordFleetAnswer(store, 'ship', hold, 'key-1', at, 'owner-a');
+    expect(
+      await recordFleetAnswer(store, 'ship', hold, 'key-1', at, 'owner-a')
+    ).toMatchObject({ revision: 1 });
+    await expect(
+      recordFleetAnswer(store, 'ship', hold, 'key-1', at, 'owner-b')
+    ).rejects.toBeInstanceOf(FleetAnswerConflictError);
+    await expect(
+      recordFleetAnswer(
+        store,
+        'ship',
+        { action: 'approve' },
+        'key-1',
+        at,
+        'owner-a'
+      )
+    ).rejects.toBeInstanceOf(FleetAnswerConflictError);
+    expect((await readFleetAnswers(store, ['ship'])).ship).toMatchObject({
+      revision: 1,
+      action: 'hold',
+      actorId: 'owner-a',
+    });
+  });
+
   it('replays only the same actor, key and payload', async () => {
     const store = createMemoryMastermindStore();
     const reply = { action: 'reply' as const, text: 'Wait' };
@@ -277,7 +306,7 @@ describe('fleet store', () => {
     const retry = await recordFleetAnswer(
       store,
       'ship',
-      { action: 'hold' },
+      { action: 'approve', optionId: 'yes' },
       'key-1'
     );
     expect(retry).toMatchObject({ revision: 1, action: 'approve' });

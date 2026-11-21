@@ -253,9 +253,28 @@ export async function readFleetAnswers(
   return result;
 }
 
+/** An Idempotency-Key reused by another actor or with another payload. */
+export class FleetAnswerConflictError extends Error {
+  constructor() {
+    super('idempotency key reused');
+  }
+}
+
+/** Same payload; empty values are not stored, so they compare as absent. */
+function samePayload(stored: StoredAnswer, input: FleetAnswerInput) {
+  return (
+    stored.action === input.action &&
+    (stored.optionId || null) === (input.optionId || null) &&
+    (stored.text || null) === (input.text || null)
+  );
+}
+
 /**
- * Records an owner answer. A retry with the same Idempotency-Key returns the
- * stored record unchanged; a new key becomes the next revision, which the
+ * Records an owner answer. A retry by the same actor with the same
+ * Idempotency-Key and payload returns the stored record unchanged; the same
+ * key from another actor or with another payload throws
+ * {@link FleetAnswerConflictError}. A record stored without an actor matches on
+ * key and payload alone. A new key becomes the next revision, which the
  * orchestrator picks up again. Compare-and-set keeps revisions monotonic.
  */
 export async function recordFleetAnswer(
@@ -271,7 +290,12 @@ export async function recordFleetAnswer(
     const [raw, ackRaw] = await store.mget([key, `${ACK_PREFIX}${decisionId}`]);
     const current = parseJson<StoredAnswer>(raw ?? null);
     const ack = parseJson<StoredAck>(ackRaw ?? null);
-    if (current?.idempotencyKey === idempotencyKey) return merge(current, ack);
+    if (current?.idempotencyKey === idempotencyKey) {
+      const sameActor = !current.actorId || current.actorId === actorId;
+      if (!sameActor || !samePayload(current, input))
+        throw new FleetAnswerConflictError();
+      return merge(current, ack);
+    }
     const next: StoredAnswer = {
       decisionId,
       revision: (current?.revision ?? 0) + 1,
@@ -317,10 +341,7 @@ export async function replayFleetAnswer(
     !current ||
     current.actorId !== actorId ||
     current.idempotencyKey !== idempotencyKey ||
-    current.action !== input.action ||
-    // Empty values are not stored, so they compare as absent.
-    (current.optionId || null) !== (input.optionId || null) ||
-    (current.text || null) !== (input.text || null)
+    !samePayload(current, input)
   )
     return null;
   return merge(current, parseJson<StoredAck>(ackRaw ?? null));
