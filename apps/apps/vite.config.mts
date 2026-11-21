@@ -27,6 +27,7 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   define: bridge.define,
   plugins: [
     voidPlugin(),

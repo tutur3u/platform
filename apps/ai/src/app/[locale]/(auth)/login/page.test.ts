@@ -1,3 +1,4 @@
+import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -85,5 +86,21 @@ describe('AI Studio login page', () => {
     expect(returnUrl.origin).toBe('https://ai.tuturuuu.com');
     expect(returnUrl.pathname).toBe('/verify-token');
     expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+  });
+  it('keeps the central login return under the apex mount', async () => {
+    const LoginPage = (await import('./page')).default;
+    await expect(
+      withBridgeRequest(
+        {
+          request: new Request('https://tuturuuu.com/ai/login'),
+          appBase: '/ai',
+        },
+        () => LoginPage({ searchParams: Promise.resolve({}) })
+      )
+    ).rejects.toThrow(/^redirect:https:\/\/tuturuuu\.com\/login\?/u);
+    const target = new URL(mocks.redirect.mock.calls[0]![0]);
+    const returnUrl = new URL(target.searchParams.get('returnUrl')!);
+    expect(returnUrl.origin).toBe('https://tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/ai/verify-token');
   });
 });

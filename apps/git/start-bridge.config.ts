@@ -14,6 +14,15 @@ export default defineBridgeAppConfig({
       import.meta.env?.VITE_GIT_NATIVE_PROFILE === 'production'
         ? ['tuturuuu.com']
         : [],
+    basePath: '/git',
+    isolation: {
+      ownedCookies: [
+        'NEXT_LOCALE',
+        'sidebar-collapsed',
+        'sidebar-behavior',
+        'sidebar-behavior-updated-at',
+      ],
+    },
     unknownHost: 'reject',
   },
   worker: { workersDev: false },

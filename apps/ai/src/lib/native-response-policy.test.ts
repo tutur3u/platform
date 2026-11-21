@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import config from '../../start-bridge.config';
+
+// Only the production profile admits the apex mount; the config reads it
+// once at import.
+vi.hoisted(() => {
+  process.env.VITE_AI_NATIVE_PROFILE = 'production';
+});
 
 function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
   const wrapResponse = config.wrapResponse;
@@ -11,10 +17,19 @@ function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
 }
 
 describe('native root response policy', () => {
-  it('rejects apex mounts and unknown hosts in the bridge configuration', () => {
+  it('admits isolated apex mounts and rejects unknown hosts in the bridge configuration', () => {
     expect(config.mounts).toEqual({
       rootHosts: ['ai.tuturuuu.com', 'ai.tutur3u.com'],
-      mountHosts: [],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/ai',
+      isolation: {
+        ownedCookies: [
+          'NEXT_LOCALE',
+          'sidebar-collapsed',
+          'sidebar-behavior',
+          'sidebar-behavior-updated-at',
+        ],
+      },
       unknownHost: 'reject',
     });
   });

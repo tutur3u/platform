@@ -12,6 +12,15 @@ export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['ai.tuturuuu.com', 'ai.tutur3u.com'],
     mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
+    basePath: '/ai',
+    isolation: {
+      ownedCookies: [
+        'NEXT_LOCALE',
+        'sidebar-collapsed',
+        'sidebar-behavior',
+        'sidebar-behavior-updated-at',
+      ],
+    },
     unknownHost: 'reject',
   },
   wrapResponse(response, { request, mounts }) {

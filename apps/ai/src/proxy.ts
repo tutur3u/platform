@@ -204,7 +204,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   return clearSupabaseAuthCookies(request, response);
 }
 
-export const proxy = withCanonicalLocaleCookie(
+const localeProxy = withCanonicalLocaleCookie(
   handleProxy,
   LOCALE_COOKIE_ORIGINS
 );
@@ -212,3 +212,10 @@ export const proxy = withCanonicalLocaleCookie(
 export const config = {
   matcher: ['/((?!_next|.*\\..*).*)'],
 };
+
+export async function proxy(request: NextRequest) {
+  const response = await localeProxy(request);
+  const cookie = response.cookies.get(LOCALE_COOKIE_NAME);
+  if (cookie) response.cookies.set({ ...cookie, domain: undefined });
+  return response;
+}

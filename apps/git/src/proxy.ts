@@ -196,7 +196,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   return clearSupabaseAuthCookies(request, intlMiddleware(request));
 }
 
-export const proxy = withCanonicalLocaleCookie(
+const localeProxy = withCanonicalLocaleCookie(
   handleProxy,
   LOCALE_COOKIE_ORIGINS
 );
@@ -207,3 +207,10 @@ export const config = {
   // bypass locale routing; nested repository files still need it.
   matcher: ['/((?!_next|favicon\\.svg|sitemap\\.xml$|robots\\.txt$).*)'],
 };
+
+export async function proxy(request: NextRequest) {
+  const response = await localeProxy(request);
+  const cookie = response.cookies.get(LOCALE_COOKIE_NAME);
+  if (cookie) response.cookies.set({ ...cookie, domain: undefined });
+  return response;
+}

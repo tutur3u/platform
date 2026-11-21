@@ -296,6 +296,20 @@ needs exactly the following from that lane:
 The `[...slug]`-under-`[locale]/[wsId]` prohibition still applies to the retained
 Next page modules. The proxy-ordering trap moves from `/api` to `/<app>/api`.
 
+## Git, AI and Apps mount preferences
+
+Git, AI and Apps serve both their subdomain root and their own apex prefix
+(`/git`, `/ai`, `/apps`). Locale cookies are host-only on both surfaces; mounted
+responses scope them to the app prefix. Git and AI additionally admit their
+sidebar preference cookies, while the shared root session remains read-only to
+the satellites. Each artifact resolves chunks and assets from the request base.
+
+Apps permits indexing only its catalogue root, following `seo-policy.json`;
+`TUTURUUU_NOINDEX=1` overrides that rule for staging. Other Apps paths stay
+noindex. Git and AI mount regression coverage lives in their
+`src/proxy-refresh.test.ts` and login page tests; Apps covers its Worker boundary
+in `cloudflare/apex-mount.test.ts`.
+
 ## Migrating the old subdomains
 
 ### Redirect rules

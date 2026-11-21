@@ -84,9 +84,7 @@ describe('Apps native route parity', () => {
       expect(result?.headers.get('Set-Cookie')).toContain(
         `NEXT_LOCALE=${locale};`
       );
-      expect(result?.headers.get('Set-Cookie')).toContain(
-        'Domain=.tuturuuu.com'
-      );
+      expect(result?.headers.get('Set-Cookie')).not.toContain('Domain=');
       expect(result?.headers.get('Set-Cookie')).toContain('Secure');
     }
   );
@@ -124,22 +122,22 @@ describe('locale cookie policy', () => {
   it.each([
     {
       origin: 'http://apps.tuturuuu.com',
-      domain: '.tuturuuu.com',
-      secure: true,
+      domain: null,
+      secure: false,
     },
     {
       origin: 'https://apps.tuturuuu.com',
-      domain: '.tuturuuu.com',
+      domain: null,
       secure: true,
     },
     {
       origin: 'http://apps.tuturuuu.localhost',
-      domain: '.tuturuuu.localhost',
+      domain: null,
       secure: false,
     },
     {
       origin: 'https://apps.tuturuuu.localhost',
-      domain: '.tuturuuu.localhost',
+      domain: null,
       secure: true,
     },
     { origin: 'http://localhost:3000', domain: null, secure: false },
@@ -156,23 +154,19 @@ describe('locale cookie policy', () => {
     }
   );
 
-  it('uses the canonical forwarded and Portless domain resolution', () => {
+  it('keeps forwarded and Portless cookies host-only', () => {
     const forwarded = () =>
       new Request('http://127.0.0.1:3000', {
         headers: { 'x-forwarded-host': 'apps.tuturuuu.com' },
       });
-    // An unproven client X-Forwarded-Host never picks the shared domain.
     vi.stubEnv('PORTLESS_URL', '');
     expect(localeCookie(forwarded(), 'en')).not.toContain('Domain=');
-    // The deployment's configured origin makes the forwarded host trusted.
     vi.stubEnv('APPS_APP_URL', 'https://apps.tuturuuu.com');
-    expect(localeCookie(forwarded(), 'en')).toContain(
-      '; Domain=.tuturuuu.com; Secure'
-    );
+    expect(localeCookie(forwarded(), 'en')).not.toContain('Domain=');
     vi.stubEnv('PORTLESS_URL', 'http://apps.tuturuuu.localhost');
     vi.stubEnv('PORT', '3000');
     expect(localeCookie(new Request('http://127.0.0.1:3000'), 'en')).toBe(
-      'NEXT_LOCALE=en; Path=/; Max-Age=31536000; SameSite=Lax; Domain=.tuturuuu.localhost'
+      'NEXT_LOCALE=en; Path=/; Max-Age=31536000; SameSite=Lax'
     );
   });
 
@@ -190,7 +184,7 @@ describe('locale cookie policy', () => {
       );
       expect(response?.headers.get('Cache-Control')).toBe('private, no-store');
       expect(response?.headers.get('Set-Cookie')).toBe(
-        `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax; Domain=.tuturuuu.com; Secure`
+        `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`
       );
       expect(request.headers.get('cookie')).toBe(
         'session=opaque; NEXT_LOCALE=en'
