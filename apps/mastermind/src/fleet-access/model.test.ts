@@ -4,6 +4,7 @@ import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import {
   answerFromDigest,
+  applyDraftEdit,
   draftToInput,
   fieldErrors,
   type RequestDraft,
@@ -105,6 +106,23 @@ describe('Fleet request drafts', () => {
         environment: 'production',
       },
     });
+  });
+
+  it("drops the previous kind's errors when the kind changes", () => {
+    const invalid = draft({ targetKey: 'Lane Web' });
+    const form = { draft: invalid, errors: fieldErrors(invalid) ?? {} };
+    expect(form.errors).toEqual({ quote: 'required', targetKey: 'badKey' });
+    expect(applyDraftEdit(form, { targetKey: 'lane-web' }).errors).toBe(
+      form.errors
+    );
+    const next = applyDraftEdit(form, { kind: 'lane.pause' });
+    expect(next.errors).toEqual({});
+    expect(next.draft).toMatchObject({
+      kind: 'lane.pause',
+      projectKey: 'web',
+      targetKey: '',
+    });
+    expect(applyDraftEdit(form, { kind: 'comment' }).errors).toBe(form.errors);
   });
 
   it('omits the target for status questions', () => {

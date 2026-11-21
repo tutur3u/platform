@@ -264,9 +264,6 @@
       "denied": "Your Fleet access changed. Reload to continue."
     },
     "common": {
-      "retry": "Retry",
-      "loading": "Loading",
-      "error": "Couldn't load this.",
       "loadMore": "Load more",
       "reload": "Reload",
       "refreshing": "Refreshing"
@@ -378,7 +375,6 @@
       "submit": "Send request",
       "submitting": "Sending",
       "submitted": "Request filed.",
-      "ownerApproval": "Needs Owner approval",
       "empty": "No requests yet.",
       "history": "Your requests",
       "required": "Required.",

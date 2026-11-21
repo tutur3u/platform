@@ -1,11 +1,12 @@
 import { fleetIntentInputSchema } from '@tuturuuu/internal-api/fleet';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { type FormEvent, useState } from 'react';
-import { toneBadge } from '../components/tone';
 import { ChoiceField, TextField } from './fields';
 import {
+  applyDraftEdit,
+  type DraftForm,
   draftToInput,
+  emptyDraft,
   type FieldErrors,
   type FieldName,
   fieldErrors,
@@ -35,17 +36,6 @@ const fieldIds: [FieldName, string][] = [
   ['quote', 'fleet-request-quote'],
 ];
 
-function emptyDraft(kind: IntentKind, projectKey: string): RequestDraft {
-  return {
-    kind,
-    projectKey,
-    targetKey: '',
-    choice: intentFields[kind].choice?.options[0] ?? '',
-    commitSha: '',
-    quote: '',
-  };
-}
-
 export function RequestForm({
   options,
   projects,
@@ -55,10 +45,15 @@ export function RequestForm({
 }) {
   const { t } = useFleetText();
   const first = options[0] as RequestOption;
-  const [draft, setDraft] = useState(() =>
-    emptyDraft(first.kind, projects[0] ?? '')
-  );
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [form, setForm] = useState<DraftForm>(() => ({
+    draft: emptyDraft(first.kind, projects[0] ?? ''),
+    errors: {},
+  }));
+  const { draft, errors } = form;
+  const setErrors = (next: FieldErrors) =>
+    setForm((current) => ({ ...current, errors: next }));
+  const setDraft = (next: RequestDraft) =>
+    setForm((current) => ({ ...current, draft: next }));
   const mutation = useSubmitFleetIntent();
   const spec = intentFields[draft.kind];
   const choice = spec.choice;
@@ -74,14 +69,7 @@ export function RequestForm({
 
   const edit = (patch: Partial<RequestDraft>) => {
     if (state.kind !== 'editing') mutation.reset();
-    setDraft((current) =>
-      patch.kind && patch.kind !== current.kind
-        ? {
-            ...emptyDraft(patch.kind, current.projectKey),
-            quote: current.quote,
-          }
-        : { ...current, ...patch }
-    );
+    setForm((current) => applyDraftEdit(current, patch));
   };
 
   const submit = (event: FormEvent) => {
@@ -109,16 +97,9 @@ export function RequestForm({
 
   return (
     <section className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-base tracking-tight">
-          {t.requests.new}
-        </h2>
-        {option.ownerApproval && (
-          <Badge variant="outline" className={toneBadge('yellow')}>
-            {t.requests.ownerApproval}
-          </Badge>
-        )}
-      </div>
+      <h2 className="font-semibold text-base tracking-tight">
+        {t.requests.new}
+      </h2>
       <Panel>
         <form onSubmit={submit} noValidate>
           <div className="grid gap-4 px-4 py-4 sm:grid-cols-2 md:px-5">

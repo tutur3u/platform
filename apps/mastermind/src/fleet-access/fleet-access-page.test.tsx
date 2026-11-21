@@ -134,7 +134,8 @@ describe('Fleet access page', () => {
     show(live(fixtures.observer), 'status');
     const retry = await screen.findByRole(
       'button',
-      { name: t.common.retry },
+      // The error view is the command center's BlockingState.
+      { name: en.command.state.retry },
       { timeout: 3_000 }
     );
     api.fleetDigestFn.mockResolvedValue({ kind: 'ok', data: fixtures.digest });
@@ -196,7 +197,6 @@ describe('Fleet requests', () => {
     const kind = screen.getByLabelText(t.field.kind);
     const note = screen.getByText(t.requests.ownerApprovalNote);
     expect(kind.getAttribute('aria-describedby')).toContain(note.id);
-    expect(screen.getByText(t.requests.ownerApproval)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: t.requests.submit }));
     const target = screen.getByLabelText(t.field.target);

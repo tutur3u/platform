@@ -130,6 +130,39 @@ export type RequestDraft = {
   quote: string;
 };
 
+export function emptyDraft(kind: IntentKind, projectKey: string): RequestDraft {
+  return {
+    kind,
+    projectKey,
+    targetKey: '',
+    choice: intentFields[kind].choice?.options[0] ?? '',
+    commitSha: '',
+    quote: '',
+  };
+}
+
+export type DraftForm = { draft: RequestDraft; errors: FieldErrors };
+
+/**
+ * A new kind starts from its own fields, keeping the project and note, and
+ * drops errors that belonged to the previous kind's fields.
+ */
+export function applyDraftEdit(
+  { draft, errors }: DraftForm,
+  patch: Partial<RequestDraft>
+): DraftForm {
+  if (patch.kind && patch.kind !== draft.kind) {
+    return {
+      draft: {
+        ...emptyDraft(patch.kind, draft.projectKey),
+        quote: draft.quote,
+      },
+      errors: {},
+    };
+  }
+  return { draft: { ...draft, ...patch }, errors };
+}
+
 /** Builds the wire shape; `fleetIntentInputSchema` validates it. */
 export function draftToInput(draft: RequestDraft): unknown {
   const spec = intentFields[draft.kind];

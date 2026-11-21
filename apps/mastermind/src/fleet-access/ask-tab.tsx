@@ -9,12 +9,7 @@ import {
   type DigestAnswer,
   laneTone,
 } from './model';
-import {
-  ReadMessage,
-  RefreshingMark,
-  readState,
-  UnavailableTab,
-} from './query-message';
+import { ReadMessage, readState, UnavailableTab } from './query-message';
 import { useFleetDigest } from './queries';
 import { useFleetText } from './text';
 
@@ -44,10 +39,10 @@ export function AskTab({ projects }: { projects: string[] }) {
           onChange={setTopic}
         />
       </div>
-      {state.kind === 'ready' && <RefreshingMark active={state.refreshing} />}
       {state.kind === 'ready' ? (
         <Answer
           answer={answerFromDigest(state.data.sections, projectKey, topic)}
+          refreshing={state.refreshing}
         />
       ) : (
         <ReadMessage state={state} />
@@ -56,7 +51,13 @@ export function AskTab({ projects }: { projects: string[] }) {
   );
 }
 
-function Answer({ answer }: { answer: DigestAnswer }) {
+function Answer({
+  answer,
+  refreshing,
+}: {
+  answer: DigestAnswer;
+  refreshing: boolean;
+}) {
   const { t } = useFleetText();
   switch (answer.kind) {
     case 'no-snapshot':
@@ -77,7 +78,11 @@ function Answer({ answer }: { answer: DigestAnswer }) {
               ))}
             </div>
           )}
-          <DigestSection section={answer.section} empty={t.ask.noLanes} />
+          <DigestSection
+            section={answer.section}
+            empty={t.ask.noLanes}
+            refreshing={refreshing}
+          />
         </>
       );
     case 'readiness':
@@ -86,6 +91,7 @@ function Answer({ answer }: { answer: DigestAnswer }) {
           section={answer.section}
           lanes={answer.lanes}
           empty={t.ask.noReadiness}
+          refreshing={refreshing}
         />
       );
     case 'timeline':
@@ -94,6 +100,7 @@ function Answer({ answer }: { answer: DigestAnswer }) {
           section={answer.section}
           lanes={answer.lanes}
           empty={t.ask.noTimeline}
+          refreshing={refreshing}
         />
       );
   }

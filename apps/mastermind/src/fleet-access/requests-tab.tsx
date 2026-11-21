@@ -81,7 +81,8 @@ function receiptState(
       data: pages.flatMap((page) =>
         page.kind === 'ok' ? page.data.intents : []
       ),
-      refreshing: query.isFetching,
+      // Loading another page is not a refresh of what is on screen.
+      refreshing: query.isFetching && !query.isFetchingNextPage,
     };
   }
   if (query.isError) {

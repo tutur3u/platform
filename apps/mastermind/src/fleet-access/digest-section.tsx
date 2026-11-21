@@ -4,7 +4,7 @@ import { SettingsSectionMessage } from '@tuturuuu/ui/custom/settings-section';
 import type { ReactNode } from 'react';
 import { toneBadge } from '../components/tone';
 import { laneTone } from './model';
-import { Panel } from './query-message';
+import { Panel, RefreshingMark } from './query-message';
 import { fill, formatInstant, useFleetText } from './text';
 
 type Lane = FleetDigestSection['lanes'][number];
@@ -14,10 +14,13 @@ export function DigestSection({
   section,
   lanes = section.lanes,
   empty,
+  refreshing,
 }: {
   section: FleetDigestSection;
   lanes?: Lane[];
   empty?: ReactNode;
+  /** Shows a background refetch beside the heading. */
+  refreshing?: boolean;
 }) {
   const { locale, t } = useFleetText();
   return (
@@ -26,11 +29,14 @@ export function DigestSection({
         <h2 className="font-semibold text-base tracking-tight">
           {section.projectKey}
         </h2>
-        {section.stale && (
-          <Badge variant="outline" className={toneBadge('yellow')}>
-            {t.status.stale}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {refreshing !== undefined && <RefreshingMark active={refreshing} />}
+          {section.stale && (
+            <Badge variant="outline" className={toneBadge('yellow')}>
+              {t.status.stale}
+            </Badge>
+          )}
+        </div>
       </div>
       <Panel>
         <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-muted-foreground text-sm md:px-5">

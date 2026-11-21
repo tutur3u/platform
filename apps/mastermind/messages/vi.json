@@ -264,9 +264,6 @@
       "denied": "Quyền truy cập đội máy của bạn đã thay đổi. Tải lại để tiếp tục."
     },
     "common": {
-      "retry": "Thử lại",
-      "loading": "Đang tải",
-      "error": "Không thể tải nội dung này.",
       "loadMore": "Tải thêm",
       "reload": "Tải lại",
       "refreshing": "Đang làm mới"
@@ -378,7 +375,6 @@
       "submit": "Gửi yêu cầu",
       "submitting": "Đang gửi",
       "submitted": "Đã ghi nhận yêu cầu.",
-      "ownerApproval": "Cần chủ sở hữu duyệt",
       "empty": "Chưa có yêu cầu nào.",
       "history": "Yêu cầu của bạn",
       "required": "Bắt buộc.",
@@ -398,7 +394,7 @@
       "missing_capability": "Quyền của bạn không cho phép yêu cầu này.",
       "project_outside_grant": "Mục tiêu này nằm ngoài các dự án của bạn.",
       "identity_already_linked": "Cuộc trò chuyện này đã liên kết với tài khoản khác.",
-      "invalid_confirmation": "Mã liên kết hoặc mã xác nhận không khớp.",
+      "invalid_confirmation": "ID liên kết hoặc mã xác nhận không khớp.",
       "forbidden": "Quyền của bạn không cho phép thao tác này.",
       "invalid": "Yêu cầu đã bị từ chối.",
       "conflict": "Yêu cầu xung đột với một thay đổi mới hơn. Hãy thử lại.",
