@@ -1,4 +1,4 @@
-import { Flag } from '@tuturuuu/icons';
+import { Bot, Flag, UserRound } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 import { Field, FleetBlockedRow } from './fleet-card-parts';
@@ -38,10 +38,15 @@ export interface FleetCardLabels {
   needsUser: string;
   blockedBy: string;
   titleTooLong: string;
+  /** Screen-reader words for the owner icon; the icon is hidden without them. */
+  agent?: string;
+  person?: string;
 }
 
 export interface FleetCardProps {
   title: string;
+  /** The untrimmed title, shown on hover when it differs from `title`. */
+  fullTitle?: string;
   titleTooLong?: boolean;
   status: FleetStatusValue;
   statusLabel: string;
@@ -50,6 +55,7 @@ export interface FleetCardProps {
   priority?: FleetPriorityValue | null;
   priorityLabel?: string;
   owner?: string | null;
+  ownerKind?: 'agent' | 'person' | null;
   eta: { state: FleetEtaStateValue; label?: ReactNode; title?: string };
   updated: { level: FleetStalenessValue; label?: ReactNode; title?: string };
   needsUser?: boolean;
@@ -68,9 +74,23 @@ export function FleetCard(props: FleetCardProps) {
   const { labels: L, density = 'comfortable' } = props;
   const compact = density === 'compact';
   const prio = props.priority ? PRIORITY[props.priority] : null;
+  const fullTitle = props.fullTitle?.trim() || props.title;
+  const showFullTitle = fullTitle !== props.title || props.titleTooLong;
+  const OwnerIcon =
+    props.owner && props.ownerKind
+      ? props.ownerKind === 'agent'
+        ? Bot
+        : UserRound
+      : null;
+  const ownerKindLabel =
+    props.ownerKind === 'agent'
+      ? L.agent
+      : props.ownerKind === 'person'
+        ? L.person
+        : undefined;
   return (
     <article
-      aria-label={props.title}
+      aria-label={fullTitle}
       className={cn(
         'relative grid w-full gap-2.5 rounded-xl bg-card p-3.5 text-left text-card-foreground shadow-sm transition-shadow hover:shadow-md',
         compact && 'gap-2 px-3 py-2.5',
@@ -117,6 +137,7 @@ export function FleetCard(props: FleetCardProps) {
           'm-0 break-words font-bold text-[15px] leading-[21px]',
           compact ? 'line-clamp-1 text-sm' : 'line-clamp-2'
         )}
+        title={showFullTitle ? fullTitle : undefined}
       >
         {props.onOpen ? (
           <button
@@ -136,8 +157,13 @@ export function FleetCard(props: FleetCardProps) {
 
       {props.needsUser ? (
         <NeedsUserBadge label={L.needsUser} reason={props.needsUserReason} />
-      ) : props.blockedBy ? (
-        <FleetBlockedRow label={L.blockedBy} reason={props.blockedBy} />
+      ) : null}
+      {props.blockedBy ? (
+        <FleetBlockedRow
+          compact={compact || props.needsUser}
+          label={L.blockedBy}
+          reason={props.blockedBy}
+        />
       ) : null}
 
       <div
@@ -152,11 +178,21 @@ export function FleetCard(props: FleetCardProps) {
         <Field compact={compact} label={L.owner}>
           <span
             className={cn(
-              'truncate text-[13px]',
+              'flex min-w-0 max-w-full items-center gap-1 text-[13px]',
               props.owner ? 'font-semibold' : 'text-muted-foreground'
             )}
           >
-            {props.owner ?? L.unowned}
+            {OwnerIcon ? (
+              <OwnerIcon
+                aria-hidden
+                className="size-3.5 shrink-0 text-muted-foreground"
+                data-owner-kind={props.ownerKind}
+              />
+            ) : null}
+            {OwnerIcon && ownerKindLabel ? (
+              <span className="sr-only">{ownerKindLabel}:</span>
+            ) : null}
+            <span className="truncate">{props.owner ?? L.unowned}</span>
           </span>
         </Field>
         <Field compact={compact} label={L.eta}>

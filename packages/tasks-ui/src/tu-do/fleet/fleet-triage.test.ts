@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { type FleetTaskMeta, parseFleetTaskMeta } from './fleet-task-meta';
 import {
+  FLEET_BACKLOG_LIMIT,
   type FleetItem,
+  getFleetBacklog,
   getFleetBucket,
   groupFleetItems,
   summarizeFleet,
@@ -149,5 +151,58 @@ describe('groupFleetItems', () => {
       'owner'
     );
     expect(groups[0]!.items.map((i) => i.task.id)).toEqual(['c', 'b', 'a']);
+  });
+});
+
+describe('getFleetBacklog', () => {
+  it('lists queued work and recent done work, newest first, without archived or documents cards', () => {
+    const backlog = getFleetBacklog([
+      item('q-low', { status: 'queued', priority: 'low' }, 'not_started'),
+      item('q-high', { status: 'queued', priority: 'high' }, 'not_started'),
+      item('live', { status: 'running' }),
+      item('doc', { status: 'unknown' }, 'documents'),
+      item(
+        'd-old',
+        { status: 'done', lastUpdate: '2026-11-17T10:00:00+07:00' },
+        'done'
+      ),
+      item(
+        'd-new',
+        { status: 'done', lastUpdate: '2026-11-18T10:00:00+07:00' },
+        'done'
+      ),
+      item('d-none', { status: 'done' }, 'done'),
+      item('archived', { status: 'done' }, 'closed'),
+    ]);
+    expect(backlog.queued.map((i) => i.task.id)).toEqual(['q-high', 'q-low']);
+    expect(backlog.done.map((i) => i.task.id)).toEqual([
+      'd-new',
+      'd-old',
+      'd-none',
+    ]);
+    expect(backlog.queuedOverflow).toBe(0);
+    expect(backlog.doneOverflow).toBe(0);
+  });
+
+  it('caps both lists and counts the rest', () => {
+    const many = (prefix: string, status: 'done' | 'queued', list: string) =>
+      Array.from({ length: FLEET_BACKLOG_LIMIT + 3 }, (_, n) =>
+        item(`${prefix}${n}`, { status }, list)
+      );
+    const backlog = getFleetBacklog([
+      ...many('d', 'done', 'done'),
+      ...many('q', 'queued', 'not_started'),
+    ]);
+    expect(backlog.done).toHaveLength(FLEET_BACKLOG_LIMIT);
+    expect(backlog.doneOverflow).toBe(3);
+    expect(backlog.queued).toHaveLength(FLEET_BACKLOG_LIMIT);
+    expect(backlog.queuedOverflow).toBe(3);
+  });
+
+  it('keeps unbucketed documents cards out of the summary', () => {
+    const summary = summarizeFleet([
+      item('doc', { status: 'unknown' }, 'documents'),
+    ]);
+    expect(summary).toMatchObject({ open: 0, queued: 0 });
   });
 });

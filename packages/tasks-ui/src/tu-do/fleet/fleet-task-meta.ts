@@ -49,6 +49,8 @@ export interface FleetTaskMeta {
   hasBlock: boolean;
   status: FleetStatus;
   owner: string | null;
+  /** Where the owner came from: an agent identity, a contact or a human assignee. */
+  ownerKind: 'agent' | 'person' | null;
   product: string | null;
   priority: FleetPriority | null;
   eta: string | null;
@@ -57,6 +59,8 @@ export interface FleetTaskMeta {
   needsUserReason: string | null;
   blocked: boolean;
   blockedBy: string | null;
+  /** Blocked-by task relationships, whether or not the blocker is finished. */
+  blockedByCount: number;
   links: FleetLink[];
 }
 
@@ -201,19 +205,26 @@ export function parseFleetTaskMeta(
   const agent = identities.find(
     (a) => clean(a.display_name ?? undefined) || clean(a.key ?? undefined)
   );
+  const ownerLabel = label('owner:');
+  const agentName = agent
+    ? (clean(agent.display_name ?? undefined) ?? clean(agent.key ?? undefined))
+    : null;
+  const assigneeName = assignee
+    ? (clean(assignee.display_name ?? undefined) ??
+      clean(assignee.email ?? undefined) ??
+      clean(assignee.handle ?? undefined))
+    : null;
+  const ownerKind: FleetTaskMeta['ownerKind'] = ownerLabel
+    ? null
+    : agentName
+      ? agent?.kind?.toLowerCase() === 'contact'
+        ? 'person'
+        : 'agent'
+      : assigneeName
+        ? 'person'
+        : null;
   const owner =
-    first(
-      label('owner:'),
-      agent
-        ? (clean(agent.display_name ?? undefined) ??
-            clean(agent.key ?? undefined))
-        : null,
-      assignee
-        ? (clean(assignee.display_name ?? undefined) ??
-            clean(assignee.email ?? undefined) ??
-            clean(assignee.handle ?? undefined))
-        : null
-    ) ?? fromHeader(clean(h.owner));
+    first(ownerLabel, agentName, assigneeName) ?? fromHeader(clean(h.owner));
   const product =
     first(clean(task.projects?.[0]?.name), label('product:')) ??
     fromHeader(clean(h.product));
@@ -251,11 +262,13 @@ export function parseFleetTaskMeta(
 
   const blockedBy =
     clean(task.blocked_reason ?? undefined) ?? fromHeader(clean(h.blocked_by));
+  const blockedByCount = Math.max(
+    0,
+    task.relationship_summary?.blocked_by_count ?? 0
+  );
   const blocked =
     status !== 'done' &&
-    (status === 'blocked' ||
-      (task.relationship_summary?.blocked_by_count ?? 0) > 0 ||
-      blockedBy !== null);
+    (status === 'blocked' || blockedByCount > 0 || blockedBy !== null);
 
   const resources = task.task_resources?.length
     ? task.task_resources
@@ -291,6 +304,7 @@ export function parseFleetTaskMeta(
     hasBlock: header.present,
     status,
     owner,
+    ownerKind,
     product,
     priority,
     eta,
@@ -299,6 +313,7 @@ export function parseFleetTaskMeta(
     needsUserReason,
     blocked,
     blockedBy,
+    blockedByCount,
     links,
   };
 }
@@ -337,4 +352,26 @@ export function getFleetEtaState(
 
 export function isFleetTitleTooLong(title: string): boolean {
   return title.trim().length > FLEET_TITLE_MAX;
+}
+
+const KEY_PREFIX =
+  /^\s*(?:\[([A-Za-z][A-Za-z0-9]*-\d+)\]\s*[:\-\u2013\u2014|]*|([A-Za-z][A-Za-z0-9]*-\d+)(?![-\d])\s*[:\-\u2013\u2014|]+)\s*/;
+
+/**
+ * The card title without a leading copy of the card code ("N-165: ...",
+ * "[N-165] ..."), since the code already sits in the scan row. Only the
+ * matching code is removed, and a title that would become empty is kept.
+ */
+export function getFleetDisplayTitle(
+  name: string,
+  code: string | null
+): string {
+  const title = name.trim();
+  if (!code) return title;
+  const match = title.match(KEY_PREFIX);
+  const key = match?.[1] ?? match?.[2];
+  if (!match || !key || key.toLowerCase() !== code.trim().toLowerCase())
+    return title;
+  const rest = title.slice(match[0].length).trim();
+  return rest || title;
 }

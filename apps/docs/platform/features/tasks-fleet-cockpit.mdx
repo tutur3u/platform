@@ -1,6 +1,6 @@
 ---
 title: Tasks fleet cockpit
-updatedAt: '2026-11-18'
+updatedAt: '2026-11-21'
 description: The Fleet view and fleet card face for boards that track agent work, read from first-class task fields.
 audience: users
 ---
@@ -22,9 +22,15 @@ migration and no endpoint.
   until the viewer picks another. The last choice is remembered per viewer, as for
   the other views. Boards without fleet tasks are unchanged.
 - **Default triage:** the view opens on three buckets, in this order: **Needs me**,
-  **Live today** and **Blocked**. A card that needs you is listed under Needs me
-  even if it is also blocked. Queued, done and archived (closed) cards stay out of
-  the view and are counted in the toolbar.
+  **Live** and **Blocked**. A card that needs you is listed under Needs me even if
+  it is also blocked. Live means running, in review or CI running, whatever the
+  day; it is not limited to today.
+- **Up next and Recently done:** below the triage, two collapsed sections list
+  the cards the buckets leave out. Up next holds open queued work in triage order.
+  Recently done holds done cards, newest update first. Each lists at most 20
+  cards with a count of the rest, and both start collapsed so the triage stays
+  the first thing on screen. Archived (closed list) and documents-list cards never
+  appear in these sections.
 - **Grouping:** Triage (default), Product, Priority or Owner. Groups with a
   needs-you card come first, then groups with a blocked card, then the rest by
   size. Priority groups run P0 to P3. Empty groups are hidden.
@@ -37,16 +43,26 @@ Every fleet card shows the same parts in the same places:
 
 1. A scan row: product, priority as P0 to P3, and the task number.
 2. A bounded title: a subject of at most 72 characters, clamped to two lines
-   (one in compact). Longer titles are announced to screen readers as too long,
+   (one in compact). A leading copy of the card code (`N-165: `, `[N-165] `) is
+   dropped because the code already sits in the scan row; only the card's own
+   code is removed. The full stored title stays in the hover text and the card's
+   accessible name. Longer titles are announced to screen readers as too long,
    not cut silently. Status prose, commit hashes and notes belong in fields or
    the description.
 3. A **Needs you** callout with the one-line ask when `needs_user` is true. It is
-   the only ink-filled element on a card. Otherwise a **Blocked by** line shows
-   `blocked_by` when set.
-4. Four fixed fields: status, owner, ETA and last update. A missing value is a
-   word (**Unowned**, **No ETA**, **No update**), so data gaps stay visible. Last
+   the only ink-filled element on a card.
+4. A **Blocked by** line whenever the card is blocked: the blocked reason, else
+   the number of blocked-by task relationships, else **Reason not set**. Done
+   cards never show it. Under a Needs you callout, and in compact density, it is
+   a quiet one-line row, so a card that waits on you still says what it waits
+   behind. The relationship count includes blockers that are already finished,
+   so such a card stays in Blocked until the relationship is removed.
+5. Four fixed fields: status, owner, ETA and last update. The owner carries an
+   agent or person icon when the owner came from an agent identity or an
+   assignee; an `owner:` label stays unmarked. A missing value is a word
+   (**Unowned**, **No ETA**, **No update**), so data gaps stay visible. Last
    update never falls back to the created time.
-5. Up to two links (PR, commit, thread, run, doc), then +N.
+6. Up to two links (PR, commit, thread, run, doc), then +N.
 
 Status words always travel with an icon and a colour: needs you, running, in
 review, CI running, blocked, done. Queued and unknown stay quiet. Inside the
@@ -88,7 +104,7 @@ The CLI field flags and output are documented in the [SDK reference](/reference/
 ## Surfaces
 
 - **Web (Tasks app and every app that embeds the Tasks board):** the Fleet board
-  view, with the summary strip (Needs me, Live today, Blocked, Stale 24h+). Clicking
+  view, with the summary strip (Needs me, Live, Blocked, Stale 24h+). Clicking
   a card title opens the existing task side panel.
 - **Mobile:** board tiles and list cards for fleet tasks use the same bounded
   title and structured fields. The task sheet shows the field grid, the needs-you
@@ -104,7 +120,8 @@ The CLI field flags and output are documented in the [SDK reference](/reference/
   events, and the machines and capacity panel are designed but not in Slice 1.
   They arrive with the fleet event ingestion slice. Only `manage_mastermind`
   holders will be able to approve or steer.
-- Done-card archiving after 24 hours is done by the board sync, not the view.
+- Done-card archiving after 24 hours is done by the board sync, not the view;
+  the view only hides closed lists and caps Recently done.
 - Fleet is a board view (`?view=fleet`), not a new route, so the navigation menu
   is unchanged.
 
@@ -114,11 +131,14 @@ The CLI field flags and output are documented in the [SDK reference](/reference/
   direction and retries, and CLI output.
 
 - `packages/tasks-ui/src/tu-do/fleet/fleet-task-meta.test.ts`: parsing,
-  fallbacks, unknown values, freshness and ETA rules.
+  fallbacks, unknown values, owner kind, display titles, freshness and ETA rules.
 - `packages/tasks-ui/src/tu-do/fleet/fleet-triage.test.ts`: buckets, summary
-  counts, group order and in-group order.
+  counts, group order, in-group order, Up next and Recently done lists.
 - `packages/tasks-ui/src/tu-do/fleet/fleet-board-view.test.tsx`: default triage,
-  hidden queued and done cards, opening a card, and view availability.
+  queued and done cards kept out of the buckets and listed in the collapsed
+  sections, archived cards excluded, display title and unexplained blockers,
+  opening a card, and view availability.
 - `packages/ui/src/components/ui/custom/fleet/fleet-card.test.tsx`: fixed
-  fields, words for missing values, callout precedence, link cap.
+  fields, words for missing values, callout with a quiet blocker line, owner
+  kind, full title on hover, link cap.
 - Mobile parser and tile tests under `apps/mobile/test/`.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   descriptionToText,
+  getFleetDisplayTitle,
   getFleetEtaState,
   getFleetStaleness,
   isFleetTitleTooLong,
@@ -158,6 +159,8 @@ describe('parseFleetTaskMeta', () => {
       needsUser: true,
       needsUserReason: 'Pick the classroom cap',
       blocked: true,
+      blockedByCount: 1,
+      ownerKind: 'person',
     });
     expect(meta.links).toEqual([
       {
@@ -184,6 +187,7 @@ describe('parseFleetTaskMeta', () => {
     expect(meta).toMatchObject({
       status: 'running',
       owner: 'Claude',
+      ownerKind: 'agent',
       priority: 'low',
       eta: '2026-11-20T09:00:00+07:00',
       needsUser: false,
@@ -276,5 +280,63 @@ describe('fleet time helpers', () => {
   it('returns markdown unchanged and survives malformed JSON', () => {
     expect(descriptionToText('a\nb')).toBe('a\nb');
     expect(descriptionToText('{not json')).toBe('{not json');
+  });
+});
+
+describe('fleet owner kind', () => {
+  it('marks agents, contacts, people and label owners', () => {
+    expect(
+      parseFleetTaskMeta({
+        virtual_assignees: [{ key: 'cora', kind: 'agent' }],
+      }).ownerKind
+    ).toBe('agent');
+    expect(
+      parseFleetTaskMeta({
+        virtual_assignees: [{ display_name: 'Selene', kind: 'contact' }],
+      }).ownerKind
+    ).toBe('person');
+    expect(
+      parseFleetTaskMeta({
+        labels: [{ name: 'owner:rex' }],
+        agent_assignees: [{ key: 'claude' }],
+      })
+    ).toMatchObject({ owner: 'rex', ownerKind: null });
+    expect(parseFleetTaskMeta({ description: BLOCK }).ownerKind).toBeNull();
+  });
+});
+
+describe('getFleetDisplayTitle', () => {
+  it('drops a leading copy of the card code', () => {
+    expect(getFleetDisplayTitle('N-165: Fleet board UX', 'N-165')).toBe(
+      'Fleet board UX'
+    );
+    expect(getFleetDisplayTitle('[n-165] Fleet board UX', 'N-165')).toBe(
+      'Fleet board UX'
+    );
+    expect(getFleetDisplayTitle('N-165 \u2014 Fleet board UX', 'N-165')).toBe(
+      'Fleet board UX'
+    );
+    for (const name of [
+      '[N-165]: Fleet board UX',
+      '[N-165] - Fleet board UX',
+      'N-165 -- Fleet board UX',
+    ]) {
+      expect(getFleetDisplayTitle(name, 'N-165')).toBe('Fleet board UX');
+    }
+  });
+
+  it('keeps other codes, titles without a code, and titles that would empty', () => {
+    expect(getFleetDisplayTitle('N-163: Board CLI', 'N-165')).toBe(
+      'N-163: Board CLI'
+    );
+    expect(getFleetDisplayTitle('N-165: Board CLI', null)).toBe(
+      'N-165: Board CLI'
+    );
+    expect(getFleetDisplayTitle('N-1650 board', 'N-165')).toBe('N-1650 board');
+    expect(getFleetDisplayTitle('N-165-2: Follow-up', 'N-165')).toBe(
+      'N-165-2: Follow-up'
+    );
+    expect(getFleetDisplayTitle('[N-165]', 'N-165')).toBe('[N-165]');
+    expect(getFleetDisplayTitle('  Plain title ', 'N-165')).toBe('Plain title');
   });
 });

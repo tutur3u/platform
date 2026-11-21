@@ -43,7 +43,7 @@ describe('FleetCard', () => {
     }
   });
 
-  it('puts the needs-you callout first and hides the blocker row behind it', () => {
+  it('puts the needs-you callout first and keeps a quiet blocker line under it', () => {
     render(
       <FleetCard
         blockedBy="Stripe export"
@@ -60,7 +60,12 @@ describe('FleetCard', () => {
     expect(screen.getByRole('note').textContent).toContain(
       'Production migration needs your OK'
     );
-    expect(screen.queryByText('Stripe export')).toBeNull();
+    expect(
+      screen
+        .getByText('Stripe export')
+        .closest('[data-fleet-blocked-row]')
+        ?.getAttribute('data-fleet-blocked-row')
+    ).toBe('compact');
     expect(
       screen
         .getByText('Today 15:00')
@@ -105,5 +110,29 @@ describe('FleetCard', () => {
       })
     );
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks the owner kind and keeps the full title on hover', () => {
+    render(
+      <FleetCard
+        eta={{ state: 'none' }}
+        fullTitle="N-165: Fleet board card face"
+        labels={{ ...labels, agent: 'Tác tử', person: 'Người' }}
+        owner="cora"
+        ownerKind="agent"
+        status="running"
+        statusLabel="Đang chạy"
+        title="Fleet board card face"
+        updated={{ level: 'fresh', label: '5m' }}
+      />
+    );
+    expect(
+      screen.getByRole('article', { name: 'N-165: Fleet board card face' })
+    ).toBeTruthy();
+    expect(screen.getByRole('heading').getAttribute('title')).toBe(
+      'N-165: Fleet board card face'
+    );
+    expect(screen.getByText('Tác tử:')).toBeTruthy();
+    expect(document.querySelector('[data-owner-kind="agent"]')).not.toBeNull();
   });
 });

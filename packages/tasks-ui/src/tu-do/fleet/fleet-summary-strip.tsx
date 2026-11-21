@@ -58,7 +58,7 @@ function Tile({
   );
 }
 
-/** Needs me (the one loud tile), Live today, Blocked, Stale 24h+. */
+/** Needs me (the one loud tile), Live, Blocked, Stale 24h+. */
 export function FleetSummaryStrip({
   summary,
   liveBreakdown,

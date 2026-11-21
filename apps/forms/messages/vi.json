@@ -9222,10 +9222,11 @@
     },
     "fleet": {
       "blocked_by": "Bị chặn bởi",
+      "blocked_by_tasks": "{count} việc",
       "blocked_count": "{count} bị chặn",
       "buckets": {
         "blocked": "Bị chặn",
-        "live": "Đang chạy hôm nay",
+        "live": "Đang chạy",
         "needs_me": "Cần tôi"
       },
       "density": {
@@ -9235,7 +9236,8 @@
       },
       "empty": {
         "bucket": "Hiện chưa có gì.",
-        "fleet": "Không có việc nào đang mở. Thẻ đang chờ và đã xong vẫn nằm trên bảng.",
+        "fleet": "Hiện không có việc nào đang mở.",
+        "no_blocker": "Chưa ghi lý do",
         "no_eta": "Chưa có hạn",
         "no_group": "Chưa đặt",
         "no_update": "Chưa cập nhật",
@@ -9254,15 +9256,23 @@
         "product": "Sản phẩm",
         "triage": "Phân loại"
       },
-      "hidden_counts": "Đang ẩn {queued} đang chờ · {done} đã xong",
       "needs_count": "{count} cần bạn",
       "needs_you": "Cần bạn",
       "overdue": "Quá hạn",
+      "owner_kind": {
+        "agent": "Tác tử",
+        "person": "Người"
+      },
       "priority": {
         "critical": "Khẩn cấp",
         "high": "Cao",
         "low": "Thấp",
         "normal": "Bình thường"
+      },
+      "sections": {
+        "more_on_board": "Còn {count} thẻ khác trên bảng",
+        "recently_done": "Mới xong",
+        "up_next": "Sắp tới"
       },
       "stale": "Cũ",
       "status": {

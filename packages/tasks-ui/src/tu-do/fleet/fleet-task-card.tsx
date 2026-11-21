@@ -9,6 +9,7 @@ import {
   getFleetProduct,
 } from './fleet-format';
 import {
+  getFleetDisplayTitle,
   getFleetEtaState,
   getFleetStaleness,
   isFleetTitleTooLong,
@@ -19,7 +20,6 @@ import type { FleetCopy } from './use-fleet-copy';
 interface FleetTaskCardProps {
   item: FleetItem<Task>;
   copy: FleetCopy;
-  code?: string | null;
   density: 'comfortable' | 'compact';
   now: number;
   onOpen: (task: Task) => void;
@@ -29,7 +29,6 @@ interface FleetTaskCardProps {
 export function FleetTaskCard({
   item,
   copy,
-  code,
   density,
   now,
   onOpen,
@@ -38,9 +37,18 @@ export function FleetTaskCard({
   const { task, meta } = item;
   const etaLabel = formatFleetEta(meta.eta, locale, now);
   const ageLabel = formatFleetAge(meta.lastUpdate, locale, now);
+  const code =
+    meta.code ?? (task.display_number ? `#${task.display_number}` : null);
+  const title = getFleetDisplayTitle(task.name, meta.code);
+  const blockedBy = meta.blocked
+    ? (meta.blockedBy ??
+      (meta.blockedByCount > 0
+        ? copy.view.blockedByTasks(meta.blockedByCount)
+        : copy.view.blockedNoReason))
+    : null;
   return (
     <FleetCard
-      blockedBy={meta.blockedBy}
+      blockedBy={blockedBy}
       code={code}
       density={density}
       eta={{
@@ -61,13 +69,15 @@ export function FleetTaskCard({
       needsUserReason={meta.needsUserReason}
       onOpen={() => onOpen(task)}
       owner={meta.owner}
+      ownerKind={meta.ownerKind}
       priority={meta.priority}
       priorityLabel={meta.priority ? copy.priority[meta.priority] : undefined}
       product={getFleetProduct(meta.product)}
       status={meta.status}
       statusLabel={copy.status[meta.status]}
-      title={task.name}
-      titleTooLong={isFleetTitleTooLong(task.name)}
+      fullTitle={task.name}
+      title={title}
+      titleTooLong={isFleetTitleTooLong(title)}
       updated={{
         level: ageLabel ? getFleetStaleness(meta.lastUpdate, now) : 'unknown',
         label: ageLabel ?? undefined,

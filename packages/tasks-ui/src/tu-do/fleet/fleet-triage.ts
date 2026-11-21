@@ -68,8 +68,10 @@ export function summarizeFleet(
       if (item.listStatus !== 'closed') s.done += 1;
       continue;
     }
-    s.open += 1;
     const bucket = getFleetBucket(item);
+    // Documents lists hold reference notes, not work waiting to start.
+    if (!bucket && item.listStatus === 'documents') continue;
+    s.open += 1;
     if (bucket === 'needs_me') s.needsMe += 1;
     else if (bucket === 'blocked') s.blocked += 1;
     else if (bucket === 'live') s.live += 1;
@@ -166,4 +168,47 @@ export function groupFleetItems<T>(
     if (!a.key !== !b.key) return a.key ? -1 : 1;
     return b.items.length - a.items.length;
   });
+}
+
+/** The cards each backlog section lists; the rest stay on the board. */
+export const FLEET_BACKLOG_LIMIT = 20;
+
+export interface FleetBacklog<T> {
+  /** Open cards outside the triage buckets, in triage order, capped. */
+  queued: FleetItem<T>[];
+  /** Queued cards beyond the cap. */
+  queuedOverflow: number;
+  /** Done cards, newest update first, capped at FLEET_BACKLOG_LIMIT. */
+  done: FleetItem<T>[];
+  /** Done cards beyond the cap. */
+  doneOverflow: number;
+}
+
+function updatedAt(item: FleetItem<unknown>): number {
+  const t = item.meta.lastUpdate ? Date.parse(item.meta.lastUpdate) : NaN;
+  return Number.isFinite(t) ? t : Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * The cards the triage buckets leave out: queued work and recently done work.
+ * Closed (archived) and documents lists are excluded entirely.
+ */
+export function getFleetBacklog<T>(items: FleetItem<T>[]): FleetBacklog<T> {
+  const queued: FleetItem<T>[] = [];
+  const done: FleetItem<T>[] = [];
+  for (const item of items) {
+    if (item.listStatus === 'closed' || item.listStatus === 'documents')
+      continue;
+    const terminal = item.meta.status === 'done' || item.listStatus === 'done';
+    if (terminal) done.push(item);
+    else if (!getFleetBucket(item)) queued.push(item);
+  }
+  done.sort((a, b) => updatedAt(b) - updatedAt(a));
+  queued.sort(compareFleetItems);
+  return {
+    queued: queued.slice(0, FLEET_BACKLOG_LIMIT),
+    queuedOverflow: Math.max(0, queued.length - FLEET_BACKLOG_LIMIT),
+    done: done.slice(0, FLEET_BACKLOG_LIMIT),
+    doneOverflow: Math.max(0, done.length - FLEET_BACKLOG_LIMIT),
+  };
 }

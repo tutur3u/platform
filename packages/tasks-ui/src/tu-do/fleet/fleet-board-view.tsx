@@ -5,12 +5,14 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import { FleetBacklogSection } from './fleet-backlog-section';
 import { FleetGroupSection } from './fleet-group-section';
 import { FleetSummaryStrip } from './fleet-summary-strip';
 import { parseFleetTaskMeta } from './fleet-task-meta';
 import {
   type FleetGroupBy,
   type FleetItem,
+  getFleetBacklog,
   getFleetBucket,
   groupFleetItems,
   summarizeFleet,
@@ -77,6 +79,7 @@ export function FleetBoardView({
     () => groupFleetItems(items, groupBy),
     [items, groupBy]
   );
+  const backlog = useMemo(() => getFleetBacklog(items), [items]);
   const liveBreakdown = useMemo(() => {
     const live = items.filter((item) => getFleetBucket(item) === 'live');
     return {
@@ -117,9 +120,6 @@ export function FleetBoardView({
             ))}
           </ToggleGroup>
           <span className="flex-1" />
-          <span className="text-muted-foreground text-xs">
-            {copy.view.hidden(summary.queued, summary.done)}
-          </span>
           <ToggleGroup
             aria-label={copy.view.densityLabel}
             onValueChange={(value) =>
@@ -162,6 +162,22 @@ export function FleetBoardView({
             ))}
           </div>
         )}
+        <FleetBacklogSection
+          copy={copy}
+          items={backlog.queued}
+          label={copy.view.upNext}
+          now={now}
+          onOpen={onOpen}
+          overflow={backlog.queuedOverflow}
+        />
+        <FleetBacklogSection
+          copy={copy}
+          items={backlog.done}
+          label={copy.view.recentlyDone}
+          now={now}
+          onOpen={onOpen}
+          overflow={backlog.doneOverflow}
+        />
       </div>
     </div>
   );

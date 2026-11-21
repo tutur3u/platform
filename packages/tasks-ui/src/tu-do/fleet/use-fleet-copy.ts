@@ -19,7 +19,11 @@ export interface FleetCopy {
     liveDetail: (running: number, review: number, ci: number) => string;
     blockedDetail: string;
     needsDetail: string;
-    hidden: (queued: number, done: number) => string;
+    upNext: string;
+    recentlyDone: string;
+    moreOnBoard: (count: number) => string;
+    blockedByTasks: (count: number) => string;
+    blockedNoReason: string;
     groupByLabel: string;
     densityLabel: string;
     comfortable: string;
@@ -45,8 +49,11 @@ export function useFleetCopy(): FleetCopy {
           t('summary.live_detail', { running, review, ci }),
         blockedDetail: t('summary.blocked_detail'),
         needsDetail: t('summary.needs_detail'),
-        hidden: (queued: number, done: number) =>
-          t('hidden_counts', { queued, done }),
+        upNext: t('sections.up_next'),
+        recentlyDone: t('sections.recently_done'),
+        moreOnBoard: (count: number) => t('sections.more_on_board', { count }),
+        blockedByTasks: (count: number) => t('blocked_by_tasks', { count }),
+        blockedNoReason: t('empty.no_blocker'),
         groupByLabel: t('group_by.label'),
         densityLabel: t('density.label'),
         comfortable: t('density.comfortable'),
@@ -70,6 +77,8 @@ export function useFleetCopy(): FleetCopy {
         needsUser: t('needs_you'),
         blockedBy: t('blocked_by'),
         titleTooLong: t('title_too_long'),
+        agent: t('owner_kind.agent'),
+        person: t('owner_kind.person'),
       },
       status: {
         needs_user: t('status.needs_user'),

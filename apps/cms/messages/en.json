@@ -17276,10 +17276,11 @@
     },
     "fleet": {
       "blocked_by": "Blocked by",
+      "blocked_by_tasks": "{count, plural, one {# task} other {# tasks}}",
       "blocked_count": "{count} blocked",
       "buckets": {
         "blocked": "Blocked",
-        "live": "Live today",
+        "live": "Live",
         "needs_me": "Needs me"
       },
       "density": {
@@ -17289,7 +17290,8 @@
       },
       "empty": {
         "bucket": "Nothing here right now.",
-        "fleet": "No open fleet work. Queued and finished cards stay on the board.",
+        "fleet": "No open fleet work right now.",
+        "no_blocker": "Reason not set",
         "no_eta": "No ETA",
         "no_group": "Not set",
         "no_update": "No update",
@@ -17308,15 +17310,23 @@
         "product": "Product",
         "triage": "Triage"
       },
-      "hidden_counts": "Queued {queued} · Done {done} hidden",
       "needs_count": "{count, plural, one {# needs you} other {# need you}}",
       "needs_you": "Needs you",
       "overdue": "Overdue",
+      "owner_kind": {
+        "agent": "Agent",
+        "person": "Person"
+      },
       "priority": {
         "critical": "Critical",
         "high": "High",
         "low": "Low",
         "normal": "Normal"
+      },
+      "sections": {
+        "more_on_board": "{count, plural, one {# more card} other {# more cards}} on the board",
+        "recently_done": "Recently done",
+        "up_next": "Up next"
       },
       "stale": "Stale",
       "status": {
