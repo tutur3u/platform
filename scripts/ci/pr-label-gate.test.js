@@ -132,6 +132,7 @@ const EXTRA_PROTECTED_INPUTS = {
   'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
   'contacts-cloudflare.yaml': ['scripts/ci/contacts-native-artifact.test.py'],
   'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
+  'mastermind-cloudflare.yaml': ['apps/web/src/lib/mastermind/fleet/**'],
   'gateway-cloudflare.yaml': [
     'scripts/ci/gateway-cf-traffic.mjs',
     'scripts/ci/void-cf-publisher.mjs',

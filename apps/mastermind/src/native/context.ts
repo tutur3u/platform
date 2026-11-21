@@ -5,8 +5,13 @@ import {
 import type { Owner } from './auth';
 
 const identity = createRequestLocal<Owner>('mastermind owner');
-export function withOwner<T>(request: Request, owner: Owner, run: () => T) {
-  return withBridgeRequest(request, () => {
+export function withOwner<T>(
+  request: Request,
+  owner: Owner,
+  run: () => T,
+  options: { nonce?: string; appBase?: string } = {}
+) {
+  return withBridgeRequest({ request, ...options }, () => {
     identity.set(owner);
     return run();
   });

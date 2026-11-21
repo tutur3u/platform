@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
+import {
+  isFleetOwner,
+  MASTERMIND_APP_SESSION,
+} from '@/lib/mastermind/fleet/auth';
 import { fleetAnswerInputSchema } from '@/lib/mastermind/fleet/contract';
 import { isLoginActionable } from '@/lib/mastermind/fleet/login';
 import {
@@ -89,5 +92,9 @@ export const POST = withSessionAuth<{ decisionId: string }>(
       return fleetError('unavailable', 503);
     }
   },
-  { rateLimit: { windowMs: 60_000, maxRequests: 30 }, maxPayloadSize: 8192 }
+  {
+    rateLimit: { windowMs: 60_000, maxRequests: 30 },
+    maxPayloadSize: 8192,
+    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+  }
 );

@@ -563,6 +563,7 @@
     "apps/mastermind/",
     "apps/mastermind/**",
     "apps/web/package.json",
+    "apps/web/src/lib/mastermind/fleet/**",
     "packages/ai/**",
     "packages/apis/**",
     "packages/auth/**",

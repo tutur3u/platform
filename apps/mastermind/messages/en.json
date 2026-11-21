@@ -1,5 +1,4 @@
 {
-  "owner": "Authenticated owner",
   "calendar_category_reorder_pilot": {
     "cancel": "Returned {label} to position {position} of {total}.",
     "drop": "Dropped {label} at position {position} of {total}.",
@@ -9,6 +8,239 @@
     "label": "Category order",
     "move": "{label}, position {position} of {total}."
   },
-  "org": "Organization",
-  "soon": "Coming soon"
+  "command": {
+    "title": "Command center",
+    "subtitle": "Owner view of the agent fleet",
+    "nav": {
+      "overview": "Overview",
+      "inbox": "Inbox",
+      "access": "Access requests",
+      "fleet": "Fleet",
+      "activity": "Activity",
+      "approvals": "Approvals",
+      "cost": "Cost and health",
+      "settings": "Notifications"
+    },
+    "sidebar": {
+      "open": "Open navigation",
+      "close": "Close navigation"
+    },
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "fresh": {
+      "live": "Live, updated {age} ago",
+      "stale": "Stale, last update {age} ago",
+      "loading": "Loading"
+    },
+    "age": {
+      "seconds": "{n} s",
+      "minutes": "{n} min",
+      "hours": "{n} h"
+    },
+    "state": {
+      "loading": "Loading the fleet snapshot",
+      "unpublished": "The orchestrator has not published a fleet snapshot yet.",
+      "denied": "This account cannot read fleet sync.",
+      "unavailable": "Fleet sync is unreachable right now.",
+      "invalid": "Fleet sync sent a snapshot this page cannot read.",
+      "retry": "Retry",
+      "stale": "Showing the last snapshot. The orchestrator has not published for over 10 minutes."
+    },
+    "now": {
+      "title": "What's happening now",
+      "when": "Snapshot at {time}",
+      "lanes": "{running} lanes running on {online} of {machines} machines.",
+      "frozen": "Main is frozen: {reason}.",
+      "frozenQueued": "Main is frozen: {reason}; {queued} queued.",
+      "frozenPlain": "Main is frozen.",
+      "logins": "Sign-in needed: {list}.",
+      "calm": "Nothing needs you right now."
+    },
+    "kpi": {
+      "running": "Running lanes",
+      "needYou": "Need you",
+      "logins": "Blocked on sign-in",
+      "machines": "Machines online"
+    },
+    "inbox": {
+      "open": "Open",
+      "snoozed": "Snoozed",
+      "answered": "Answered",
+      "search": "Search asks",
+      "empty": {
+        "open": "No open asks.",
+        "snoozed": "Nothing snoozed on this device.",
+        "answered": "No answers in the last 24 hours."
+      },
+      "snoozeNote": "Snooze hides an ask on this device only; its deadline still applies."
+    },
+    "tier": {
+      "urgent": "Urgent",
+      "decide": "Needs a decision",
+      "fyi": "For your information"
+    },
+    "ask": {
+      "due": "Due in {time}",
+      "overdue": "Deadline passed",
+      "why": "Why",
+      "default": "If no answer",
+      "from": "From",
+      "recommended": "Recommended",
+      "approve": "Approve",
+      "hold": "Hold",
+      "reply": "Reply",
+      "replyPlaceholder": "Write your own answer",
+      "send": "Send",
+      "cancel": "Cancel",
+      "sending": "Sending in {seconds} s",
+      "undo": "Undo",
+      "sent": "Sent",
+      "waiting": "Waiting for pickup",
+      "pickedUp": "Picked up",
+      "revision": "revision {n}",
+      "closed": "This ask closed before the answer arrived.",
+      "failed": "The answer may not have been sent.",
+      "snoozedUntil": "Snoozed until {time}",
+      "unsnooze": "Unsnooze",
+      "sendingNow": "Sending",
+      "notSent": "Not sent: the page could not reach fleet sync.",
+      "check": "Check",
+      "superseded": "Answered elsewhere first; this answer was not sent."
+    },
+    "snooze": {
+      "label": "Snooze",
+      "15m": "15 minutes",
+      "1h": "1 hour",
+      "morning": "Tomorrow 08:00",
+      "deadline": "Until 5 min before the deadline"
+    },
+    "resolved": {
+      "via": "Answered on {channel}",
+      "at": "{outcome} at {time}",
+      "plain": "Resolved at {time}"
+    },
+    "channel": {
+      "mastermind": "Mastermind",
+      "mobile": "Mobile",
+      "whatsapp": "WhatsApp",
+      "cli": "CLI"
+    },
+    "access": {
+      "note": "Open the link on any device; the agent detects completion itself.",
+      "empty": "No sign-ins waiting.",
+      "expires": "Expires in {time}",
+      "why": "Why",
+      "machine": "Machine",
+      "code": "Device code",
+      "copy": "Copy code",
+      "copied": "Copied",
+      "open": "Open {host}",
+      "localOnly": "Finish this sign-in in a browser on {machine}.",
+      "noCode": "No code needed for this provider",
+      "signedIn": "I signed in",
+      "signedInSent": "Sent. The agent is verifying the sign-in.",
+      "step": {
+        "waiting": "Waiting",
+        "approved": "Approved",
+        "verified": "Verified"
+      },
+      "state": {
+        "waiting": "Waiting for you",
+        "approved": "Checking sign-in",
+        "verified": "Verified by agent",
+        "expired": "Expired",
+        "failed": "Sign-in not detected"
+      },
+      "expiresLabel": "Expires"
+    },
+    "fleet": {
+      "main": "Main",
+      "production": "Production",
+      "migrations": "Migrations",
+      "incidents": "Incidents",
+      "unknown": "Not reported",
+      "open": "Open",
+      "frozen": "Frozen",
+      "queued": "{n} queued",
+      "prod": {
+        "healthy": "Healthy",
+        "degraded": "Degraded",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "mig": {
+        "idle": "Idle",
+        "staging": "On staging",
+        "gated": "Production gated",
+        "applying": "Applying",
+        "failed": "Failed",
+        "pending": "{n} pending"
+      },
+      "incidentsOpen": "{n} open",
+      "noIncidents": "None open",
+      "machines": "Machines",
+      "noMachines": "No machines reported.",
+      "lanes": "{n} lanes",
+      "seen": "Seen {age} ago",
+      "machine": {
+        "online": "Online",
+        "stale": "Stale",
+        "offline": "Offline"
+      },
+      "lane": {
+        "running": "Running",
+        "waiting": "Waiting",
+        "queued": "Queued",
+        "idle": "Idle",
+        "failed": "Failed"
+      },
+      "quota": "Quota by provider account",
+      "quotaEmpty": "Fleet sync does not publish provider quota yet."
+    },
+    "activity": {
+      "empty": "No recent activity.",
+      "asked": "Asked: {title}",
+      "resolved": "Resolved: {title}",
+      "resolvedVia": "Resolved on {channel}: {title}",
+      "lane": {
+        "failed": "{title} failed",
+        "waiting": "{title} is waiting"
+      },
+      "incident": "Incident opened: {title}",
+      "deployed": "Production deployed {sha}"
+    },
+    "approvals": {
+      "note": "Answers recorded in the last 24 hours, newest first.",
+      "empty": "No recorded answers.",
+      "time": "Time",
+      "decision": "Decision",
+      "answer": "Answer",
+      "via": "Via",
+      "pickup": "Picked up",
+      "yes": "Yes",
+      "no": "Not yet"
+    },
+    "cost": {
+      "empty": "Spend and error budgets are not published to Mastermind. Open the admin console for costs and health.",
+      "admin": "Open /admin"
+    },
+    "settings": {
+      "push": "Decision alerts",
+      "pushDetail": "New open decisions and sign-in requests notify the phones of fleet owners with push enabled, at most one alert per minute.",
+      "manage": "Push is managed in the Tuturuuu app's notification settings.",
+      "fyi": "Show FYI in the inbox",
+      "fyiDetail": "Saved on this device."
+    },
+    "action": {
+      "approve": "Approved",
+      "hold": "Held",
+      "reply": "Replied",
+      "signed_in": "Signed in"
+    },
+    "reload": "Refresh"
+  },
+  "owner": "Authenticated owner"
 }

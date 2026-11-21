@@ -1,5 +1,4 @@
 {
-  "owner": "Chủ sở hữu đã xác thực",
   "calendar_category_reorder_pilot": {
     "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
     "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
@@ -9,6 +8,239 @@
     "label": "Thứ tự danh mục",
     "move": "{label}, vị trí {position} trên {total}."
   },
-  "org": "Tổ chức",
-  "soon": "Sắp ra mắt"
+  "command": {
+    "title": "Trung tâm điều khiển",
+    "subtitle": "Góc nhìn của chủ sở hữu về đội agent",
+    "nav": {
+      "overview": "Tổng quan",
+      "inbox": "Hộp thư",
+      "access": "Yêu cầu đăng nhập",
+      "fleet": "Đội máy",
+      "activity": "Hoạt động",
+      "approvals": "Phê duyệt",
+      "cost": "Chi phí và sức khỏe",
+      "settings": "Thông báo"
+    },
+    "sidebar": {
+      "open": "Mở điều hướng",
+      "close": "Đóng điều hướng"
+    },
+    "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống",
+    "fresh": {
+      "live": "Trực tiếp, cập nhật {age} trước",
+      "stale": "Đã cũ, cập nhật lần cuối {age} trước",
+      "loading": "Đang tải"
+    },
+    "age": {
+      "seconds": "{n} giây",
+      "minutes": "{n} phút",
+      "hours": "{n} giờ"
+    },
+    "state": {
+      "loading": "Đang tải ảnh chụp đội máy",
+      "unpublished": "Bộ điều phối chưa công bố ảnh chụp đội máy.",
+      "denied": "Tài khoản này không thể đọc fleet sync.",
+      "unavailable": "Hiện không kết nối được fleet sync.",
+      "invalid": "Fleet sync gửi ảnh chụp mà trang này không đọc được.",
+      "retry": "Thử lại",
+      "stale": "Đang hiển thị ảnh chụp gần nhất. Bộ điều phối chưa công bố hơn 10 phút."
+    },
+    "now": {
+      "title": "Đang diễn ra",
+      "when": "Ảnh chụp lúc {time}",
+      "lanes": "{running} luồng đang chạy trên {online}/{machines} máy.",
+      "frozen": "Main đang đóng băng: {reason}.",
+      "frozenQueued": "Main đang đóng băng: {reason}; {queued} đang chờ.",
+      "frozenPlain": "Main đang đóng băng.",
+      "logins": "Cần đăng nhập: {list}.",
+      "calm": "Hiện không có việc cần bạn."
+    },
+    "kpi": {
+      "running": "Luồng đang chạy",
+      "needYou": "Cần bạn",
+      "logins": "Chờ đăng nhập",
+      "machines": "Máy trực tuyến"
+    },
+    "inbox": {
+      "open": "Đang mở",
+      "snoozed": "Tạm hoãn",
+      "answered": "Đã trả lời",
+      "search": "Tìm câu hỏi",
+      "empty": {
+        "open": "Không có câu hỏi đang mở.",
+        "snoozed": "Không có mục tạm hoãn trên thiết bị này.",
+        "answered": "Không có câu trả lời trong 24 giờ qua."
+      },
+      "snoozeNote": "Tạm hoãn chỉ ẩn câu hỏi trên thiết bị này; hạn vẫn áp dụng."
+    },
+    "tier": {
+      "urgent": "Khẩn cấp",
+      "decide": "Cần quyết định",
+      "fyi": "Để bạn biết"
+    },
+    "ask": {
+      "due": "Còn {time}",
+      "overdue": "Đã quá hạn",
+      "why": "Lý do",
+      "default": "Nếu không trả lời",
+      "from": "Từ",
+      "recommended": "Đề xuất",
+      "approve": "Duyệt",
+      "hold": "Giữ lại",
+      "reply": "Trả lời",
+      "replyPlaceholder": "Viết câu trả lời của bạn",
+      "send": "Gửi",
+      "cancel": "Hủy",
+      "sending": "Gửi sau {seconds} giây",
+      "undo": "Hoàn tác",
+      "sent": "Đã gửi",
+      "waiting": "Đang chờ nhận",
+      "pickedUp": "Đã nhận",
+      "revision": "phiên bản {n}",
+      "closed": "Câu hỏi đã đóng trước khi câu trả lời tới.",
+      "failed": "Câu trả lời có thể chưa được gửi.",
+      "snoozedUntil": "Tạm hoãn đến {time}",
+      "unsnooze": "Bỏ tạm hoãn",
+      "sendingNow": "Đang gửi",
+      "notSent": "Chưa gửi: trang không kết nối được fleet sync.",
+      "check": "Kiểm tra",
+      "superseded": "Đã được trả lời ở nơi khác trước; câu trả lời này chưa được gửi."
+    },
+    "snooze": {
+      "label": "Tạm hoãn",
+      "15m": "15 phút",
+      "1h": "1 giờ",
+      "morning": "08:00 ngày mai",
+      "deadline": "Đến 5 phút trước hạn"
+    },
+    "resolved": {
+      "via": "Đã trả lời trên {channel}",
+      "at": "{outcome} lúc {time}",
+      "plain": "Đã xử lý lúc {time}"
+    },
+    "channel": {
+      "mastermind": "Mastermind",
+      "mobile": "Di động",
+      "whatsapp": "WhatsApp",
+      "cli": "CLI"
+    },
+    "access": {
+      "note": "Mở liên kết trên thiết bị bất kỳ; agent tự phát hiện khi hoàn tất.",
+      "empty": "Không có yêu cầu đăng nhập nào đang chờ.",
+      "expires": "Hết hạn sau {time}",
+      "why": "Lý do",
+      "machine": "Máy",
+      "code": "Mã thiết bị",
+      "copy": "Sao chép mã",
+      "copied": "Đã sao chép",
+      "open": "Mở {host}",
+      "localOnly": "Hoàn tất đăng nhập này trong trình duyệt trên {machine}.",
+      "noCode": "Nhà cung cấp này không cần mã",
+      "signedIn": "Tôi đã đăng nhập",
+      "signedInSent": "Đã gửi. Agent đang xác minh đăng nhập.",
+      "step": {
+        "waiting": "Đang chờ",
+        "approved": "Đã duyệt",
+        "verified": "Đã xác minh"
+      },
+      "state": {
+        "waiting": "Đang chờ bạn",
+        "approved": "Đang kiểm tra đăng nhập",
+        "verified": "Agent đã xác minh",
+        "expired": "Đã hết hạn",
+        "failed": "Không thấy đăng nhập"
+      },
+      "expiresLabel": "Hết hạn"
+    },
+    "fleet": {
+      "main": "Main",
+      "production": "Production",
+      "migrations": "Migration",
+      "incidents": "Sự cố",
+      "unknown": "Chưa báo cáo",
+      "open": "Mở",
+      "frozen": "Đóng băng",
+      "queued": "{n} đang chờ",
+      "prod": {
+        "healthy": "Ổn định",
+        "degraded": "Suy giảm",
+        "down": "Ngừng",
+        "unknown": "Không rõ"
+      },
+      "mig": {
+        "idle": "Rảnh",
+        "staging": "Trên staging",
+        "gated": "Production đang chờ cổng",
+        "applying": "Đang áp dụng",
+        "failed": "Thất bại",
+        "pending": "{n} đang chờ"
+      },
+      "incidentsOpen": "{n} đang mở",
+      "noIncidents": "Không có",
+      "machines": "Máy",
+      "noMachines": "Chưa có máy nào báo cáo.",
+      "lanes": "{n} luồng",
+      "seen": "Thấy {age} trước",
+      "machine": {
+        "online": "Trực tuyến",
+        "stale": "Cũ",
+        "offline": "Ngoại tuyến"
+      },
+      "lane": {
+        "running": "Đang chạy",
+        "waiting": "Đang chờ",
+        "queued": "Xếp hàng",
+        "idle": "Rảnh",
+        "failed": "Thất bại"
+      },
+      "quota": "Hạn mức theo tài khoản nhà cung cấp",
+      "quotaEmpty": "Fleet sync chưa công bố hạn mức nhà cung cấp."
+    },
+    "activity": {
+      "empty": "Không có hoạt động gần đây.",
+      "asked": "Đã hỏi: {title}",
+      "resolved": "Đã xử lý: {title}",
+      "resolvedVia": "Đã xử lý trên {channel}: {title}",
+      "lane": {
+        "failed": "{title} thất bại",
+        "waiting": "{title} đang chờ"
+      },
+      "incident": "Mở sự cố: {title}",
+      "deployed": "Đã triển khai production {sha}"
+    },
+    "approvals": {
+      "note": "Câu trả lời được ghi lại trong 24 giờ qua, mới nhất trước.",
+      "empty": "Chưa có câu trả lời nào được ghi lại.",
+      "time": "Thời gian",
+      "decision": "Quyết định",
+      "answer": "Trả lời",
+      "via": "Qua",
+      "pickup": "Đã nhận",
+      "yes": "Có",
+      "no": "Chưa"
+    },
+    "cost": {
+      "empty": "Chi phí và ngân sách lỗi chưa được công bố cho Mastermind. Mở trang quản trị để xem chi phí và sức khỏe.",
+      "admin": "Mở /admin"
+    },
+    "settings": {
+      "push": "Cảnh báo quyết định",
+      "pushDetail": "Quyết định mới và yêu cầu đăng nhập được báo tới điện thoại của chủ đội máy đã bật push, tối đa một cảnh báo mỗi phút.",
+      "manage": "Push được quản lý trong phần cài đặt thông báo của ứng dụng Tuturuuu.",
+      "fyi": "Hiện mục để biết trong hộp thư",
+      "fyiDetail": "Lưu trên thiết bị này."
+    },
+    "action": {
+      "approve": "Đã duyệt",
+      "hold": "Đã giữ",
+      "reply": "Đã trả lời",
+      "signed_in": "Đã đăng nhập"
+    },
+    "reload": "Làm mới"
+  },
+  "owner": "Chủ sở hữu đã xác thực"
 }

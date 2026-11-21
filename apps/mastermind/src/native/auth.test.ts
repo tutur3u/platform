@@ -415,3 +415,53 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
     expect(render).not.toHaveBeenCalled();
   }
 );
+test('only same-origin server-function POSTs pass the method gate', async () => {
+  const base = {
+    'Cf-Access-Jwt-Assertion': await access(),
+    Authorization: `Bearer ${session()}`,
+  };
+  const attempt = async (
+    path: string,
+    method: string,
+    extra: Record<string, string> = {}
+  ) => {
+    let reads = 0;
+    const response = await mastermindRequest(
+      new Request(`https://mastermind.tuturuuu.com${path}`, {
+        method,
+        headers: { ...base, ...extra },
+      }),
+      env,
+      () => {
+        reads++;
+        return new Response('ok');
+      },
+      now,
+      'bm9uY2U='
+    );
+    return {
+      status: response.status,
+      reads,
+      csp: response.headers.get('Content-Security-Policy'),
+    };
+  };
+  const same = {
+    Origin: 'https://mastermind.tuturuuu.com',
+    'Sec-Fetch-Site': 'same-origin',
+  };
+  const admitted = await attempt('/_serverFn/answer', 'POST', same);
+  expect(admitted).toMatchObject({ status: 200, reads: 1 });
+  expect(admitted.csp).toContain("'nonce-bm9uY2U='");
+  for (const [path, method, headers] of [
+    ['/en', 'POST', same],
+    ['/_serverFn/answer', 'POST', {}],
+    ['/_serverFn/answer', 'POST', { Origin: 'https://tuturuuu.com' }],
+    ['/_serverFn/answer', 'POST', { ...same, 'Sec-Fetch-Site': 'same-site' }],
+    ['/_serverFn/answer', 'PUT', same],
+  ] as const) {
+    expect(await attempt(path, method, headers)).toMatchObject({
+      status: 405,
+      reads: 0,
+    });
+  }
+});

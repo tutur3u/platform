@@ -178,6 +178,11 @@ product rules of the shell entry and every tab.
   request goes before any ask. Login requests never trigger a decision
   push, because clients without the feature header would open an Inbox
   that hides them; they reach the owner through Iris's own channels.
+- **Mastermind web:** the owner command center on `mastermind.tuturuuu.com`
+  reads the same snapshot and posts the same answers with the owner's
+  Mastermind satellite session, which the state and answer routes admit next
+  to the Web session. Its snooze is per device and never changes a deadline.
+  See [Mastermind web](/build/devops/mastermind-web#command-center).
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record; a retry with the same
   key returns the same record, and a new answer to the same decision becomes

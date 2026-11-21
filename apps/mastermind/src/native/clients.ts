@@ -1,4 +1,24 @@
+import {
+  FLEET_FEATURES_HEADER,
+  type FleetAnswerReceipt,
+  type FleetAnswerRequest,
+  type FleetSnapshot,
+  fleetAnswerReceiptSchema,
+  fleetStateResponseSchema,
+} from '../fleet/contract';
 import type { MastermindEnvironment, Owner } from './auth';
+
+const WEB_FLEET = 'https://tuturuuu.com/api/v1/mastermind/fleet';
+
+export type FleetRead =
+  | { kind: 'ready'; snapshot: FleetSnapshot }
+  | { kind: 'unpublished' }
+  | { kind: 'error'; reason: 'denied' | 'unavailable' | 'invalid' };
+
+export type FleetWrite =
+  | { kind: 'sent'; receipt: FleetAnswerReceipt }
+  | { kind: 'closed' }
+  | { kind: 'error'; reason: 'denied' | 'unavailable' | 'invalid' };
 
 /** One instance per isolate; only call after request authentication. */
 export function createOwnerMemo<T>(now = Date.now) {
@@ -37,6 +57,85 @@ async function refuseRedirect(pending: Promise<Response>) {
     throw new Error('Upstream redirect refused');
   }
   return response;
+}
+
+function failure(status: number) {
+  if (status === 401 || status === 403) return 'denied' as const;
+  if (status === 422 || status === 400) return 'invalid' as const;
+  return 'unavailable' as const;
+}
+
+/**
+ * Web fleet API reads and answers with the owner's satellite bearer. Every
+ * body is validated against the shared contract before it reaches a render.
+ */
+export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
+  const headers = {
+    Authorization: `Bearer ${owner.token}`,
+    [FLEET_FEATURES_HEADER]: 'login',
+  };
+  return {
+    async state(): Promise<FleetRead> {
+      try {
+        const response = await refuseRedirect(
+          fetcher(
+            new Request(`${WEB_FLEET}/state`, {
+              headers,
+              redirect: 'manual',
+              cache: 'no-store',
+              signal: AbortSignal.timeout(8_000),
+            })
+          )
+        );
+        if (response.status === 404) return { kind: 'unpublished' };
+        if (!response.ok)
+          return { kind: 'error', reason: failure(response.status) };
+        const parsed = fleetStateResponseSchema.safeParse(
+          await response.json()
+        );
+        return parsed.success
+          ? { kind: 'ready', snapshot: parsed.data }
+          : { kind: 'error', reason: 'invalid' };
+      } catch {
+        return { kind: 'error', reason: 'unavailable' };
+      }
+    },
+    async answer(input: FleetAnswerRequest): Promise<FleetWrite> {
+      const { decisionId, idempotencyKey, ...body } = input;
+      try {
+        const response = await refuseRedirect(
+          fetcher(
+            new Request(
+              `${WEB_FLEET}/decisions/${encodeURIComponent(decisionId)}/answer`,
+              {
+                method: 'POST',
+                headers: {
+                  ...headers,
+                  'Content-Type': 'application/json',
+                  'Idempotency-Key': idempotencyKey,
+                },
+                body: JSON.stringify(body),
+                redirect: 'manual',
+                cache: 'no-store',
+                signal: AbortSignal.timeout(8_000),
+              }
+            )
+          )
+        );
+        if (response.status === 409) return { kind: 'closed' };
+        if (!response.ok)
+          return { kind: 'error', reason: failure(response.status) };
+        const parsed = fleetAnswerReceiptSchema.safeParse(
+          await response.json()
+        );
+        return parsed.success
+          ? { kind: 'sent', receipt: parsed.data }
+          : { kind: 'error', reason: 'invalid' };
+      } catch {
+        return { kind: 'error', reason: 'unavailable' };
+      }
+    },
+  };
 }
 
 /** W2 supplies validated response schemas; W1 never calls or renders these clients. */

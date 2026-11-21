@@ -156,6 +156,11 @@ source. `tuturuuu.com/<app>` is the app root; product marketing moves to
 path-mounted variant. The bridge supplies the asset base, server-function base,
 router basepath, Location rewriting, base-aware links and auth return URLs.
 
+An app whose authority must stay off the Web origin does not mount on the
+shared root session: Mastermind (owner-only fleet control) is served only on
+its own host, and the apex path redirects there. See
+[no apex path hosting](/build/devops/mastermind-web#no-apex-path-hosting).
+
 Under a base, every app uses the **one shared `tuturuuu.com` root session**,
 with no per-app cookie names or paths (user decisions of 2026-10-25 and
 2026-10-26: one session for every app, held server-side in an `HttpOnly`

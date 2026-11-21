@@ -14,6 +14,16 @@ import { fleetSignedPayload } from './signing';
 export const FLEET_SIGNATURE_HEADER = MASTERMIND_PUSH_SIGNATURE_HEADER;
 export const FLEET_TIMESTAMP_HEADER = MASTERMIND_PUSH_TIMESTAMP_HEADER;
 
+/**
+ * Owner reads and answers also accept the Mastermind web Worker's satellite
+ * session (target `mastermind`), the same admission as
+ * `GET /api/v1/mastermind/access`.
+ */
+export const MASTERMIND_APP_SESSION = {
+  targetApp: 'mastermind',
+  requiredScope: 'internal-app:session',
+} as const;
+
 export function fleetOwnerIds(
   env: Record<string, string | undefined> = process.env
 ) {

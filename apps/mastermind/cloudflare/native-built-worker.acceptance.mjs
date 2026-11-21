@@ -8,9 +8,26 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { fleetResponseFixture } from '../src/fleet/fleet-fixture.ts';
+
+/** Every <script> in the document must carry the response's CSP nonce. */
+function assertNonceHydration(response, html) {
+  const policy = response.headers.get('Content-Security-Policy') ?? '';
+  const nonce = /script-src 'nonce-([A-Za-z0-9+/=]+)' 'strict-dynamic'/.exec(
+    policy
+  )?.[1];
+  assert.ok(nonce, `nonce script policy expected: ${policy}`);
+  assert.ok(!policy.includes('unsafe-inline'));
+  const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+  assert.ok(scripts.length > 0, 'hydration scripts expected');
+  for (const tag of scripts) {
+    assert.ok(tag.includes(`nonce="${nonce}"`), `unstamped script: ${tag}`);
+  }
+  return nonce;
+}
 
 test(
-  'sealed emitted Worker enforces admission and renders bilingual owner shell',
+  'sealed emitted Worker enforces admission and renders the bilingual command center',
   {
     timeout: 120000,
   },
@@ -70,6 +87,7 @@ test(
     const require = createRequire(join(app, 'package.json'));
     let rootAccess = true;
     let permissionReads = 0;
+    let fleetReads = 0;
     const workerOptions = {
       config: join(scratch, relative(app, configPath)),
       envFiles: [envFile],
@@ -118,6 +136,20 @@ test(
               `Bearer ${session}`
             );
             return Response.json({ enabled: rootAccess });
+          }
+          if (
+            request.url === 'https://tuturuuu.com/api/v1/mastermind/fleet/state'
+          ) {
+            fleetReads++;
+            assert.equal(
+              request.headers.get('Authorization'),
+              `Bearer ${session}`
+            );
+            assert.equal(
+              request.headers.get('x-mastermind-fleet-features'),
+              'login'
+            );
+            return Response.json(fleetResponseFixture(Date.now()));
           }
           throw new Error('Application data reads forbidden');
         },
@@ -185,6 +217,7 @@ test(
     });
     assert.equal(root.status, 303);
     assert.equal(root.headers.get('Location'), '/en');
+    const nonces = new Set();
     for (const locale of ['en', 'vi']) {
       const response = await worker.fetch(
         `https://mastermind.tuturuuu.com/${locale}`,
@@ -193,9 +226,27 @@ test(
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
       const html = await response.text();
+      nonces.add(assertNonceHydration(response, html));
       assert.ok(html.includes(email));
-      assert.ok(html.includes(locale === 'en' ? 'Coming soon' : 'Sắp ra mắt'));
+      assert.ok(
+        html.includes(
+          locale === 'en' ? 'Command center' : 'Trung tâm điều khiển'
+        )
+      );
+      assert.ok(html.includes('Roll back the Calendar Worker deploy?'));
+      assert.ok(html.includes('ABCD-1234'));
     }
+    assert.equal(nonces.size, 2, 'each response has its own nonce');
+    assert.equal(fleetReads, 2);
+    const crossSite = await worker.fetch(
+      'https://mastermind.tuturuuu.com/_serverFn/answer',
+      {
+        method: 'POST',
+        headers: { ...headers, Origin: 'https://tuturuuu.com' },
+      }
+    );
+    assert.equal(crossSite.status, 405);
+    assert.equal(fleetReads, 2);
     const readsBeforeRevocation = permissionReads;
     rootAccess = false;
     assert.equal(

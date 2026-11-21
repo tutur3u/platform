@@ -1,29 +1,35 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import en from '../../messages/en.json';
-import vi from '../../messages/vi.json';
-import { currentOwner } from '../native/context';
+import { createFileRoute, notFound } from '@tanstack/react-router';
+import { CommandCenter } from '../components/command-center';
+import { LoadingState } from '../components/page-states';
+import { loadFleet } from '../fleet/server';
+import { I18nProvider, isLocale } from '../i18n';
 
-const ownerEmail = createServerFn({ method: 'GET' }).handler(
-  () => currentOwner().email
-);
 export const Route = createFileRoute('/$locale')({
-  loader: () => ownerEmail(),
-  component: Shell,
+  beforeLoad: ({ params }) => {
+    if (!isLocale(params.locale)) throw notFound();
+  },
+  loader: () => loadFleet(),
+  // Navigating between /en and /vi reloads the snapshot.
+  pendingComponent: Pending,
+  component: Page,
 });
-function Shell() {
+
+function Pending() {
   const { locale } = Route.useParams();
-  const messages = locale === 'vi' ? vi : en;
   return (
-    <main lang={locale === 'vi' ? 'vi' : 'en'}>
-      <h1>Mastermind</h1>
-      <p>
-        {messages.owner}: {Route.useLoaderData()}
-      </p>
-      <section aria-labelledby="org">
-        <h2 id="org">{messages.org}</h2>
-        <p>{messages.soon}</p>
-      </section>
-    </main>
+    <I18nProvider locale={isLocale(locale) ? locale : 'en'}>
+      <div className="mx-auto max-w-6xl p-4">
+        <LoadingState />
+      </div>
+    </I18nProvider>
+  );
+}
+
+function Page() {
+  const { locale } = Route.useParams();
+  return (
+    <I18nProvider locale={isLocale(locale) ? locale : 'en'}>
+      <CommandCenter initial={Route.useLoaderData()} />
+    </I18nProvider>
   );
 }

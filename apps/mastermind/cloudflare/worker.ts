@@ -1,5 +1,6 @@
 import handler from '@tanstack/react-start/server-entry';
 import { fetchAsset } from '@tuturuuu/start-bridge/assets';
+import { createNonce } from '@tuturuuu/start-bridge/csp';
 import {
   assertMastermindEnvironment,
   type MastermindEnvironment,
@@ -13,21 +14,30 @@ export default {
     } catch {
       return secure(new Response('Service unavailable', { status: 503 }));
     }
-    return mastermindRequest(request, env, (input, owner) => {
-      const path = new URL(input.url).pathname;
-      if (path === '/') {
-        return new Response(null, {
-          status: 303,
-          headers: {
-            Location: '/en',
-          },
+    // One nonce per response: the CSP header and every rendered script share it.
+    const nonce = createNonce();
+    return mastermindRequest(
+      request,
+      env,
+      (input, owner, mount) => {
+        const path = new URL(input.url).pathname;
+        if (path === `${mount.basePath}/` || path === (mount.basePath || '/')) {
+          return new Response(null, {
+            status: 303,
+            headers: { Location: `${mount.basePath}/en` },
+          });
+        }
+        if (path.startsWith(`${mount.basePath}/assets/`) && env.ASSETS) {
+          return fetchAsset(env.ASSETS, input);
+        }
+        return withOwner(input, owner, () => handler.fetch(input), {
+          nonce,
+          appBase: mount.basePath,
         });
-      }
-      if (path.startsWith('/assets/') && env.ASSETS) {
-        return fetchAsset(env.ASSETS, input);
-      }
-      return withOwner(input, owner, () => handler.fetch(input));
-    });
+      },
+      Date.now(),
+      nonce
+    );
   },
 };
 

@@ -22,16 +22,18 @@ const mocks = vi.hoisted(() => ({
   devices: vi.fn(),
   permission: vi.fn(),
   push: vi.fn(),
+  authOptions: [] as unknown[],
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
-    (
-      handler: (r: Request, a: unknown, p: unknown) => Response,
-      _options?: unknown
-    ) =>
+  withSessionAuth: (
+    handler: (r: Request, a: unknown, p: unknown) => Response,
+    options?: unknown
+  ) => (
+    mocks.authOptions.push(options),
     async (request: Request, context?: { params?: unknown }) =>
-      handler(request, { user: mocks.user }, await context?.params),
+      handler(request, { user: mocks.user }, await context?.params)
+  ),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({
@@ -108,6 +110,28 @@ async function answer(
 
 // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 describe('Mastermind fleet sync routes', () => {
+  it('owner reads and answers admit only the Mastermind satellite session', async () => {
+    await import('./state/route');
+    await import('./decisions/[decisionId]/answer/route');
+    const sessions = mocks.authOptions.map(
+      (options) =>
+        (options as { allowAppSessionAuth?: unknown }).allowAppSessionAuth
+    );
+    expect(sessions).toContainEqual({
+      targetApp: 'mastermind',
+      requiredScope: 'internal-app:session',
+    });
+    expect(sessions.filter(Boolean)).toHaveLength(2);
+    expect(
+      sessions
+        .filter(Boolean)
+        .every(
+          (session) =>
+            (session as { targetApp: string }).targetApp === 'mastermind'
+        )
+    ).toBe(true);
+  });
+
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.clearAllMocks();

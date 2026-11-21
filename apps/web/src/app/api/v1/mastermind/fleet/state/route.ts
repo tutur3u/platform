@@ -2,7 +2,10 @@ import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { notifyNewFleetDecision } from '@/lib/mastermind/fleet/decision-push';
-import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
+import {
+  isFleetOwner,
+  MASTERMIND_APP_SESSION,
+} from '@/lib/mastermind/fleet/auth';
 import {
   FLEET_MAX_BODY_BYTES,
   type FleetAnswerRecord,
@@ -95,6 +98,9 @@ export const GET = withSessionAuth(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
+    // The Mastermind web Worker reads with the owner's short-lived
+    // satellite session; the owner and permission checks still apply.
+    allowAppSessionAuth: MASTERMIND_APP_SESSION,
   }
 );
 
