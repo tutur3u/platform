@@ -385,6 +385,7 @@ it('persists an explicit English entry locale over a Vietnamese cookie or langua
 
 describe('mounted Mail app-owned redirects', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
@@ -393,7 +394,7 @@ describe('mounted Mail app-owned redirects', () => {
     );
   });
   it.each(['/login', '/vi/login'])(
-    'keeps the explicit signed-in destination under /mail from %s',
+    'leaves %s for the verified login view even when a provider cookie is present',
     async (path) => {
       mocks.authProxy.mockResolvedValue(NextResponse.next());
       mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
@@ -404,10 +405,10 @@ describe('mounted Mail app-owned redirects', () => {
         }
       );
       const response = await proxy(request);
-      expect(response.status).toBe(307);
-      expect(response.headers.get('location')).toBe(
-        'https://tuturuuu.com/mail/vi/personal/sent'
-      );
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.authProxy).not.toHaveBeenCalled();
     }
   );
 });

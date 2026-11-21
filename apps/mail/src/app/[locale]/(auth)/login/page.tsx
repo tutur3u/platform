@@ -5,6 +5,7 @@ import {
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
 import { runtimeAppBase, withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -23,9 +24,17 @@ function normalizeNextPath(
 const AUTH_STEP = /^\/(?:(?:en|vi)\/)?(?:login|verify-token)\/?$/u;
 
 /** A destination Web's login will not unwrap as an auth step. */
-function mountedDestination(nextPath: string) {
-  const { pathname } = new URL(nextPath, 'https://mail.invalid');
-  return AUTH_STEP.test(pathname) ? DEFAULT_MAIL_PATH : nextPath;
+function mountedDestination(
+  nextPath: string,
+  basePath: string,
+  origin: string
+) {
+  const { pathname } = new URL(nextPath, origin);
+  const appPath = createBasePath({ app: 'mail', basePath }).strip(pathname);
+  return withAppBase(
+    AUTH_STEP.test(appPath ?? pathname) ? DEFAULT_MAIL_PATH : nextPath,
+    basePath
+  );
 }
 
 export default async function LoginPage({
@@ -39,6 +48,10 @@ export default async function LoginPage({
     ? new URL(servingRequest.url).origin
     : BASE_URL;
   const nextPath = normalizeNextPath(params.next ?? params.nextUrl, appOrigin);
+  const appBase = runtimeAppBase();
+  const destination = appBase
+    ? mountedDestination(nextPath, appBase, appOrigin)
+    : nextPath;
   const shouldRefreshCrossAppSession = params.refresh === '1';
   const requestHeaders = await headers();
   const appSession = getAppSessionClaimsFromRequest(
@@ -54,7 +67,7 @@ export default async function LoginPage({
     (supabaseUser?.id || (appSession && hasWebAppSession)) &&
     !shouldRefreshCrossAppSession
   ) {
-    redirect(nextPath);
+    redirect(destination);
   }
 
   // The subdomain redeems a handoff token at its own `/verify-token`. On the
@@ -62,10 +75,10 @@ export default async function LoginPage({
   // the mounted destination: a `/mail/verify-token` return is flattened to
   // its bare `nextUrl` by Web's login when Mail is not an active mount there,
   // which would drop the base.
-  const returnUrl = runtimeAppBase()
-    ? new URL(withAppBase(mountedDestination(nextPath)), appOrigin)
+  const returnUrl = appBase
+    ? new URL(destination, appOrigin)
     : new URL('/verify-token', appOrigin);
-  if (!runtimeAppBase()) returnUrl.searchParams.set('nextUrl', nextPath);
+  if (!appBase) returnUrl.searchParams.set('nextUrl', destination);
 
   const loginUrl = new URL('/login', TTR_URL);
   loginUrl.searchParams.set('returnUrl', returnUrl.toString());

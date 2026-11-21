@@ -57,6 +57,7 @@ describe('native canonical Mail SSO model', () => {
     [{}, '/mail/personal'],
     [{ next: '/verify-token?nextUrl=%2Fvi%2Fpersonal' }, '/mail/vi/personal'],
     [{ next: '/vi/login' }, '/mail/personal'],
+    [{ next: '/mail/vi/login' }, '/mail/personal'],
   ])(
     'returns mounted central sign-in %j straight to the mounted destination',
     async (params, destination) => {
@@ -103,6 +104,18 @@ describe('native canonical Mail SSO model', () => {
       login({ nextUrl: '/personal/drafts?compose=1' })
     ).rejects.toMatchObject({
       options: { href: '/personal/drafts?compose=1' },
+    });
+  });
+  it('retains the mounted path for an already verified actor', async () => {
+    mocks.supabase.mockResolvedValue({ id: 'actor' });
+    await expect(
+      login(
+        { next: '/vi/personal/drafts?compose=1' },
+        'https://tuturuuu.com/mail/login',
+        '/mail'
+      )
+    ).rejects.toMatchObject({
+      options: { href: '/mail/vi/personal/drafts?compose=1' },
     });
   });
 });

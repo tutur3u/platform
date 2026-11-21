@@ -70,7 +70,7 @@ export function MailWorkspaceView({
             workspace={model.workspace}
             wsId={wsId}
           >
-            <RealtimeLogProvider wsId={wsId}>
+            <RealtimeLogProvider wsId={wsId} verifiedUserId={actorId}>
               <div data-workspace-slug={workspaceSlug}>
                 <MailWorkspace
                   workspaceId={workspaceSlug}

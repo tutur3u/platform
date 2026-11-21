@@ -256,8 +256,14 @@ describe('Mail page model under the /mail apex mount', () => {
   });
   it('sends anonymous, unavailable and unjoined callers to mounted pages', async () => {
     mocks.actor.mockResolvedValue(null);
-    await expect(loadMounted(`/mail/${tenant}/inbox`)).rejects.toMatchObject({
-      options: { href: '/mail/login' },
+    await expect(
+      loadMounted(`/mail/vi/${tenant}/sent?q=a%2Bb&tag=1&tag=2`)
+    ).rejects.toMatchObject({
+      options: {
+        href: `/mail/login?next=${encodeURIComponent(
+          `/vi/${tenant}/sent?q=a%2Bb&tag=1&tag=2`
+        )}`,
+      },
     });
     mocks.actor.mockResolvedValue({
       id: 'actor',

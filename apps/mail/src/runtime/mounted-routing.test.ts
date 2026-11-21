@@ -161,7 +161,7 @@ describe('Mail one-origin redirect gate', () => {
     ],
     [
       'https://mail.tuturuuu.com/en/a%2Fb/inbox/?tag=1&tag=2',
-      'https://tuturuuu.com/mail/en/a%2Fb/inbox?tag=1&tag=2',
+      'https://tuturuuu.com/mail/en/a%2Fb/inbox/?tag=1&tag=2',
     ],
     ['https://mail.tuturuuu.com/', 'https://tuturuuu.com/mail?'],
   ])('moves subdomain navigation %s only in on mode', async (url, target) => {

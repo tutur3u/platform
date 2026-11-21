@@ -26,31 +26,38 @@ export function useRealtimeLogContext() {
 
 interface RealtimeProviderProps {
   wsId: string;
+  verifiedUserId?: string | null;
   children: React.ReactNode;
 }
 
-export function RealtimeLogProvider({ wsId, children }: RealtimeProviderProps) {
-  const [userId, setUserId] = useState<string | null>(null);
+export function RealtimeLogProvider({
+  wsId,
+  verifiedUserId,
+  children,
+}: RealtimeProviderProps) {
+  const [browserUserId, setBrowserUserId] = useState<string | null>(null);
+  const userId = verifiedUserId === undefined ? browserUserId : verifiedUserId;
 
   useEffect(() => {
+    if (verifiedUserId !== undefined) return;
     const supabase = createClient();
 
     // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null);
+      setBrowserUserId(user?.id ?? null);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
+      setBrowserUserId(session?.user?.id ?? null);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [verifiedUserId]);
 
   // Update module-level context when values change
   useEffect(() => {

@@ -204,7 +204,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && hasSatelliteSession) {
+  if (!mounted && isLoginPath && hasSatelliteSession) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -214,9 +214,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const loginResponse = NextResponse.redirect(
       new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl.origin)
     );
-    const loginRedirect = mounted
-      ? loginResponse
-      : clearSupabaseAuthCookies(req, loginResponse);
+    const loginRedirect = clearSupabaseAuthCookies(req, loginResponse);
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
   }

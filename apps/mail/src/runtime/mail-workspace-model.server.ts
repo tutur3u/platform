@@ -13,15 +13,29 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
-import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import {
+  appBasePath,
+  withAppBase,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveNotificationWebAppUrl } from './notification-url.server';
-import { cookies, headers } from './request-context';
+import { cookies, headers, mailRequest } from './request-context';
 
 export async function loadMailWorkspace(id: string) {
   const user = await getSatelliteAppSessionUser('mail');
-  if (!user?.id) throw redirect({ href: withAppBase('/login') });
+  if (!user?.id) {
+    const appBase = appBasePath();
+    if (!appBase) throw redirect({ href: '/login' });
+    const origin = new URL(mailRequest().request.url);
+    const path = createBasePath({ app: 'mail', basePath: appBase }).strip(
+      origin.pathname
+    );
+    const login = new URL(withAppBase('/login'), origin);
+    if (path) login.searchParams.set('next', path + origin.search);
+    throw redirect({ href: login.pathname + login.search });
+  }
   const isStaff = isVerifiedTuturuuuStaffSession(
     user &&
       (await getVerifiedAuthUser(
