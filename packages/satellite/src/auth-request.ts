@@ -91,7 +91,6 @@ export async function getSatelliteCurrentUserFromRequest({
 }: SatelliteAuthRequestOptions): Promise<WorkspaceUser | null> {
   if (hasAppLogoutFence(request)) return null;
   const requestHeaders = request.headers;
-  const supabaseUser = await getSupabaseSessionUser();
   const appSession = getAppSessionClaimsFromRequest(
     {
       headers: requestHeaders,
@@ -99,14 +98,18 @@ export async function getSatelliteCurrentUserFromRequest({
     targetApp ? { targetApp } : {}
   );
 
-  if (!supabaseUser && !appSession) {
+  const supabaseUserPromise = getSupabaseSessionUser();
+  if (!appSession && !(await supabaseUserPromise)) {
     return null;
   }
 
   try {
-    const profile = await getCurrentUserProfile(
-      withForwardedInternalApiAuth(requestHeaders)
-    );
+    // A verified app session can start the centrally authorized read while
+    // Supabase revalidation resolves the existing fallback profile.
+    const [profile] = await Promise.all([
+      getCurrentUserProfile(withForwardedInternalApiAuth(requestHeaders)),
+      supabaseUserPromise,
+    ]);
 
     return {
       avatar_url: profile.avatar_url,
@@ -120,6 +123,7 @@ export async function getSatelliteCurrentUserFromRequest({
       new_email: profile.new_email,
     };
   } catch {
+    const supabaseUser = await supabaseUserPromise;
     if (supabaseUser) {
       return {
         avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,

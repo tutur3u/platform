@@ -114,6 +114,24 @@ describe('request-scoped satellite authentication', () => {
     expect(mocks.profile).not.toHaveBeenCalled();
   });
 
+  it.each([true, false])(
+    'starts the profile before Supabase resolves only with verified app claims (%s)',
+    async (hasAppSession) => {
+      const options = context();
+      if (hasAppSession) mocks.claims.mockReturnValue(claims);
+      const session = Promise.withResolvers<{ id: string }>();
+      options.getSupabaseSessionUser.mockReturnValue(session.promise);
+      mocks.profile.mockResolvedValue({ id: claims.sub });
+
+      const result = getSatelliteCurrentUserFromRequest(options);
+      expect(mocks.profile).toHaveBeenCalledTimes(hasAppSession ? 1 : 0);
+
+      session.resolve({ id: claims.sub });
+      await expect(result).resolves.toMatchObject({ id: claims.sub });
+      expect(mocks.profile).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it('retains a verified app actor when the profile service is unavailable', async () => {
     mocks.claims.mockReturnValue(claims);
     mocks.profile.mockRejectedValue(new Error('synthetic outage'));
