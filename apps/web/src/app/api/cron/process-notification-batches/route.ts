@@ -36,6 +36,7 @@ import {
 
 import { filterEmailDeliveryLogs } from '@/lib/notifications/email-delivery-filter';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
+import { getPushDigestSkipReason } from '@/lib/notifications/push-eligibility';
 
 export async function GET(req: NextRequest) {
   return withCronLogDrain(
@@ -222,12 +223,18 @@ async function handleGET(req: NextRequest) {
           }
 
           const devices = await fetchPushDevicesForUser(sbAdmin, batch.user_id);
+          const skipReason = await getPushDigestSkipReason(
+            sbAdmin,
+            devices.length,
+            deliverableLogs[0]!.notifications!,
+            NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON
+          );
 
-          if (devices.length === 0) {
+          if (skipReason) {
             await markDeliveryLogsSkipped(
               sbAdmin,
               deliverableLogs.map((log) => log.id),
-              NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON
+              skipReason
             );
             await markBatchSent(
               sbAdmin,
@@ -239,7 +246,7 @@ async function handleGET(req: NextRequest) {
               batch_id: batch.id,
               channel: 'push',
               notification_count: notifications.length + skippedCount,
-              reason: NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
+              reason: skipReason,
               status: 'skipped',
             });
             processedCount++;

@@ -38,6 +38,7 @@ import {
   readImmediateRequestBody,
 } from '@/lib/notifications/immediate-request-body';
 import { getMailPushSkipReason } from '@/lib/notifications/mail-push';
+import { getPushPreferenceSkipReason } from '@/lib/notifications/push-eligibility';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 export async function POST(req: NextRequest) {
   try {
@@ -241,7 +242,10 @@ export async function POST(req: NextRequest) {
               channel: batch.channel,
               membershipCache,
               notification: logNotification,
-            }));
+            })) ??
+            (batch.channel === 'push'
+              ? await getPushPreferenceSkipReason(sbAdmin, logNotification)
+              : null);
 
           if (skipReason) {
             const existingLogs = skippedByReason.get(skipReason) || [];
