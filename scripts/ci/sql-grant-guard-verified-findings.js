@@ -6,6 +6,7 @@ const requiredMigration = `apps/database/supabase/migrations/${HARDENING_MIGRATI
 module.exports = [
   ...require('./sql-grant-guard-verified-findings-meet'),
   ...require('./sql-grant-guard-verified-findings-qa'),
+  ...require('./sql-grant-guard-verified-findings-push'),
   {
     path: 'apps/database/supabase/migrations/20261121091000_add_task_fleet_fields.sql',
     line: 45,
