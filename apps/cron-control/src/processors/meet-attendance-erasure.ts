@@ -55,7 +55,18 @@ export interface MeetAttendanceErasureDeps {
   fence: () => Promise<boolean>;
 }
 
-type Counts = Record<string, number>;
+const INTENT_COUNTS = [
+  'advanced',
+  'finished',
+  'confirmed',
+  'cancelled',
+  'waiting',
+] as const;
+
+// Room counters start at zero; intent, stuck and readiness counters appear
+// once a run reports them.
+type Counts = Record<'claimed' | 'acked' | 'stale' | 'failed', number> &
+  Partial<Record<(typeof INTENT_COUNTS)[number] | 'stuck' | 'ready', number>>;
 
 function count(value: unknown, max: number) {
   return typeof value === 'number' &&
@@ -104,13 +115,7 @@ async function advance(deps: MeetAttendanceErasureDeps, detail: Counts) {
   const body = result.value as Record<string, unknown>;
   if (body.state === 'fenced') return 'fenced' as const;
   if (body.state !== 'open') return 'unknown' as const;
-  for (const name of [
-    'advanced',
-    'finished',
-    'confirmed',
-    'cancelled',
-    'waiting',
-  ]) {
+  for (const name of INTENT_COUNTS) {
     const value = count(body[name], MEET_ATTENDANCE_INTENT_PAGE);
     if (value === null) return 'unknown' as const;
     detail[name] = (detail[name] ?? 0) + value;
