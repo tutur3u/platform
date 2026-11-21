@@ -1,4 +1,5 @@
 // @vitest-environment node
+import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { afterEach, expect, it, vi } from 'vitest';
 import { refreshSepayAccessToken } from './sepay-api';
@@ -74,6 +75,7 @@ it.each([
 
     const { state } = await createSepayOauthState({ wsId });
     const [encoded, signature] = state.split('.');
+    assert(encoded && signature);
     expect(signature).toBe(
       createHmac('sha256', key).update(encoded).digest('base64url')
     );
@@ -86,6 +88,7 @@ it('rejects altered, mismatched, expired, and cross-workspace state', async () =
   const { state } = await createSepayOauthState({ wsId });
   const { state: expired } = await createSepayOauthState({ ttlMs: -1, wsId });
   const [payload, signature] = state.split('.');
+  assert(payload && signature);
   const forged = `${payload}.${signature[0] === 'a' ? 'b' : 'a'}${signature.slice(1)}`;
   const padded = `${state}=`;
 
