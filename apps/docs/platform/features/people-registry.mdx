@@ -611,15 +611,45 @@ need ingress evidence. That reuses the Fleet access event contract in
 Responder routes require a principal signature and ingress evidence. `fleet`
 recall requires only the signature and returns the reduced projection.
 
-- `POST /api/v1/people/recall` — body `{query?, k?, if_version?}`. The person
-  and conversation come from the evidence. The response is
-  `{person_id | null, conversation_id | null, versions, snapshot | not_modified,
-  memories}`. `snapshot` is the chat-safe projection. A non-empty `query` adds
-  semantic recall bounded by `k` (at most 20). `if_version` lets a cache
-  revalidate cheaply. A personal session gets none of this: its recall takes
-  no `query` or `if_version`, and returns only the uniform addressing
-  projection and delivery decision, with no IDs, versions, memories or
-  `not_modified`.
+- **Request signing:** every service route request carries
+  `x-people-principal`, `x-people-key-id`, `x-people-timestamp` (milliseconds),
+  `x-people-nonce` (16 to 32 random bytes, base64url) and
+  `x-people-signature`. The signature is Ed25519 over
+  `people-registry-request-v1` and a newline, followed by the JSON array
+  `["people-registry", METHOD, path and query, body SHA-256 hex, principal ID,
+  key ID, timestamp, nonce]`. A request that carries an `Authorization` header
+  is refused.
+- **Ingress evidence headers:** `x-people-event-key-id` selects a key from
+  `MIRA_INGRESS_PUBLIC_KEYS`, `x-people-event` is the base64url JSON proof
+  `{version: 1, kid, channel, account, sender, conversation,
+  conversationType, eventId, operation, inputSha256, issuedAt}`, and
+  `x-people-event-signature` is Ed25519 over `people-registry-event-v1.` and
+  the proof. The event hash is the SHA-256 of `eventId`, the same derivation
+  Fleet uses, so both consume one provider event record.
+- `POST /api/v1/people/recall` — body `{if_version?}`. The person and
+  conversation come from the evidence. The response is
+  `{person_id | null, conversation_id | null, versions, etag, snapshot |
+  not_modified, memories}`. `snapshot` is the chat-safe projection: the
+  person's label (granted consent only), consent state, facts under the
+  consent matrix and their audience, the relationship to the owner, briefs
+  built under the current consent version, the conversation kind, and every
+  rule that applies to the channel, conversation and person. Rules apply
+  whatever the consent state, so a restrictive rule is never dropped. `etag`
+  hashes the snapshot and versions; sending it as `if_version` returns
+  `not_modified` when nothing changed, rule expiry included. Each provider
+  event serves one recall. A second recall for the same event returns
+  `event_consumed`, and the responder answers with the workspace default.
+  Semantic recall (`query`, `k` up to 20) belongs to the memory service
+  namespace (slice 3). This route returns an empty `memories` array and
+  refuses unknown fields.
+  A personal session gets none of this: its recall takes no `query` or
+  `if_version`, and returns only the uniform addressing projection and
+  delivery decision, with no IDs, versions, memories or `not_modified`.
+- **Account binding before consumption:** the database checks that the
+  signed `(channel, account)` is bound to the principal's workspace and is not
+  a Fleet desk account before it consumes the provider event. A refused event
+  takes no slot, so a tenant can never spend the Fleet slot of an account it
+  does not own.
 - `POST /api/v1/people/events` — the event's write bundle. Its `observe` items
   record a `desk_observed` identity or conversation membership for a known
   person. When capture is on and capture consent allows it, an `observe` item
@@ -629,7 +659,10 @@ recall requires only the signature and returns the reduced projection.
   is refused with one reason: `consent_required`, `suppressed`, `deleting`,
   `scope_denied` or `event_consumed`. A memory edit with a stale revision is a
   manager action and returns `revision_conflict`.
-- `GET /api/v1/people/changes?after={cursor}` — drain principals only.
+- `GET /api/v1/people/changes?after={cursor}&limit={1-500}` — drain principals
+  only. The response is `{events, next}`. Events younger than five seconds are
+  held back so a slower transaction with a lower event ID usually commits
+  first; caches still revalidate every serve live.
 
 ### Manager routes
 
@@ -902,6 +935,7 @@ A slice ships only when its gates pass:
 | `PEOPLE_REGISTRY_WRAP_KEY_<kid>` | `apps/web` (api-core Worker) | one root wrap key per 8-hex kid, 64 lowercase hex; owned by the secrets vault |
 | `PEOPLE_REGISTRY_WRAP_KID`  | `apps/web` (api-core Worker) | the kid used for new wraps; rotation adds a kid and moves this |
 | `FLEET_DESKS`               | `apps/web`        | Fleet desk accounts, which can never be bound to a tenant      |
+| `MIRA_INGRESS_PUBLIC_KEYS`  | `apps/web`        | JSON object of ingress kid to base64 raw Ed25519 public key; verifies registry ingress evidence |
 
 ## Regression coverage
 
@@ -930,5 +964,17 @@ Each slice links its coverage here when it lands.
     ciphertext, and Fleet desk accounts refused as bindings.
   - The [key tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/keys.test.ts)
     cover wrapping, lookup separation, suppression tokens and display binding.
-  - The machine routes (`/api/v1/people/**`) follow in Slice 2b, after the
-    principal and ledger tables.
+- **Slice 2b, machine routes:**
+  - [people-registry-recall.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry-recall.sql)
+    covers the consent matrix in recall, fact audience in DMs and groups, rule
+    expiry and the etag, one recall per event, unbound, cross-tenant and Fleet
+    desk accounts refused without taking a slot, group recall never touching
+    the Fleet slot or Fleet identities, principal kind and tenant checks,
+    lookup keys limited to responders, and the change feed cursor.
+  - The [request signature](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/request-signature.test.ts)
+    and [ingress evidence](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/ingress-event.test.ts)
+    tests cover replay onto another body, path or method, foreign keys,
+    bearer refusal, Fleet operations and domains, and the evidence window.
+  - The [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/people/route.test.ts)
+    cover hashed lookups (raw sender IDs never reach the database),
+    `not_modified`, refusal mapping and the change feed cursor.
