@@ -174,8 +174,11 @@ inside this workspace only. It grants nothing in Fleet access.
 ### Keys
 
 Each workspace has random 256-bit key material per purpose and version, created
-when the registry is enabled. It is stored wrapped (AES-256-GCM) under
-`PEOPLE_REGISTRY_WRAP_KEY`, so it cannot be derived from anything else.
+when the registry is enabled. It is stored wrapped (AES-256-GCM) under a
+versioned root key named by a kid, so it cannot be derived from anything else.
+A wrapped key is `0x02`, the 4-byte kid, the IV, the ciphertext and the tag,
+with the kid in the associated data. Rotating the root key re-wraps rows with a
+compare-and-swap and leaves hashes and ciphertexts unchanged.
 Deleting the wrapped material makes the workspace's hashes and ciphertexts
 unrecoverable, and workspace deletion does exactly that. The purposes are
 `sender_lookup`, `conversation_lookup`, `suppression`, `display` and
@@ -896,7 +899,8 @@ A slice ships only when its gates pass:
 
 | Variable                    | Used by           | Purpose                                                        |
 | --------------------------- | ----------------- | -------------------------------------------------------------- |
-| `PEOPLE_REGISTRY_WRAP_KEY`  | `apps/web`        | 64 hex characters; wraps each workspace's random key material   |
+| `PEOPLE_REGISTRY_WRAP_KEY_<kid>` | `apps/web` (api-core Worker) | one root wrap key per 8-hex kid, 64 lowercase hex; owned by the secrets vault |
+| `PEOPLE_REGISTRY_WRAP_KID`  | `apps/web` (api-core Worker) | the kid used for new wraps; rotation adds a kid and moves this |
 | `FLEET_DESKS`               | `apps/web`        | Fleet desk accounts, which can never be bound to a tenant      |
 
 ## Regression coverage

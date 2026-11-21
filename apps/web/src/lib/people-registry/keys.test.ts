@@ -9,6 +9,8 @@ import {
   type PeopleKey,
   suppressionToken,
   unwrapWorkspaceKey,
+  wrappedKeyId,
+  wrapWorkspaceKey,
 } from './keys';
 
 const wsA = '00000000-0000-4000-8000-00000000000a';
@@ -21,10 +23,14 @@ const key = (purpose: PeopleKey['purpose'], version = 1): PeopleKey => ({
 
 describe('people registry keys', () => {
   beforeEach(() => {
-    process.env.PEOPLE_REGISTRY_WRAP_KEY = randomBytes(32).toString('hex');
+    process.env.PEOPLE_REGISTRY_WRAP_KID = '1a2b3c4d';
+    process.env.PEOPLE_REGISTRY_WRAP_KEY_1a2b3c4d =
+      randomBytes(32).toString('hex');
   });
   afterEach(() => {
-    delete process.env.PEOPLE_REGISTRY_WRAP_KEY;
+    delete process.env.PEOPLE_REGISTRY_WRAP_KID;
+    delete process.env.PEOPLE_REGISTRY_WRAP_KEY_1a2b3c4d;
+    delete process.env.PEOPLE_REGISTRY_WRAP_KEY_0a0b0c0d;
   });
 
   it('wraps one key per purpose and unwraps only for the same workspace', () => {
@@ -50,8 +56,8 @@ describe('people registry keys', () => {
   });
 
   it('refuses to wrap without a configured wrap key', () => {
-    delete process.env.PEOPLE_REGISTRY_WRAP_KEY;
-    expect(() => newWorkspaceKeys(wsA)).toThrow('PEOPLE_REGISTRY_WRAP_KEY');
+    delete process.env.PEOPLE_REGISTRY_WRAP_KID;
+    expect(() => newWorkspaceKeys(wsA)).toThrow('wrap key is not configured');
   });
 
   it('separates lookup hashes by workspace, purpose and normalised id', () => {
@@ -157,4 +163,109 @@ describe('people registry keys', () => {
       decryptDisplay([display, other], wsA, 'binding', tampered)
     ).toBeNull();
   });
+  it('wraps under the current kid and unwraps older kids after rotation', () => {
+    const material = randomBytes(32);
+    const first = wrapWorkspaceKey(wsA, 'display', 1, material);
+    expect(wrappedKeyId(first)).toBe('1a2b3c4d');
+    expect(Buffer.from(first, 'base64')).toHaveLength(65);
+
+    process.env.PEOPLE_REGISTRY_WRAP_KEY_0a0b0c0d =
+      randomBytes(32).toString('hex');
+    process.env.PEOPLE_REGISTRY_WRAP_KID = '0a0b0c0d';
+    const rotated = wrapWorkspaceKey(wsA, 'display', 1, material);
+    expect(wrappedKeyId(rotated)).toBe('0a0b0c0d');
+
+    const record = { purpose: 'display' as const, version: 1, current: true };
+    expect(
+      unwrapWorkspaceKey(wsA, { ...record, wrappedKey: first }).key.equals(
+        material
+      )
+    ).toBe(true);
+    expect(
+      unwrapWorkspaceKey(wsA, { ...record, wrappedKey: rotated }).key.equals(
+        material
+      )
+    ).toBe(true);
+
+    const tampered = Buffer.from(rotated, 'base64');
+    tampered.writeUInt8(tampered[1]! ^ 0xff, 1);
+    expect(() =>
+      unwrapWorkspaceKey(wsA, {
+        ...record,
+        wrappedKey: tampered.toString('base64'),
+      })
+    ).toThrow();
+
+    delete process.env.PEOPLE_REGISTRY_WRAP_KEY_1a2b3c4d;
+    expect(() =>
+      unwrapWorkspaceKey(wsA, { ...record, wrappedKey: first })
+    ).toThrow('Invalid wrapped key');
+    expect(wrappedKeyId(Buffer.alloc(60).toString('base64'))).toBeNull();
+  });
+  it('authenticates the wrapped body and its bound fields', () => {
+    const material = randomBytes(32);
+    const wrapped = wrapWorkspaceKey(wsA, 'display', 1, material);
+    const record = { purpose: 'display' as const, version: 1, current: true };
+    const flip = (offset: number) => {
+      const bytes = Buffer.from(wrapped, 'base64');
+      bytes.writeUInt8(bytes[offset]! ^ 0x01, offset);
+      return bytes.toString('base64');
+    };
+    expect(() =>
+      unwrapWorkspaceKey(wsA, { ...record, wrappedKey: flip(20) })
+    ).toThrow();
+    expect(() =>
+      unwrapWorkspaceKey(wsA, { ...record, wrappedKey: flip(64) })
+    ).toThrow();
+    expect(() =>
+      unwrapWorkspaceKey(wsB, { ...record, wrappedKey: wrapped })
+    ).toThrow();
+    expect(() =>
+      unwrapWorkspaceKey(wsA, {
+        ...record,
+        purpose: 'audit',
+        wrappedKey: wrapped,
+      })
+    ).toThrow();
+    expect(() =>
+      unwrapWorkspaceKey(wsA, { ...record, version: 2, wrappedKey: wrapped })
+    ).toThrow();
+  });
+
+  it('rejects malformed wrapped blobs before any key lookup', () => {
+    const bytes = Buffer.from(
+      wrapWorkspaceKey(wsA, 'display', 1, randomBytes(32)),
+      'base64'
+    );
+    const record = { purpose: 'display' as const, version: 1, current: true };
+    const variants = [
+      bytes.subarray(0, 64),
+      Buffer.concat([bytes, Buffer.from([0])]),
+      Buffer.concat([Buffer.from([0x01]), bytes.subarray(1)]),
+      Buffer.concat([Buffer.from([0x03]), bytes.subarray(1)]),
+    ].map((variant) => variant.toString('base64'));
+    for (const wrappedKey of variants) {
+      expect(wrappedKeyId(wrappedKey)).toBeNull();
+      expect(() => unwrapWorkspaceKey(wsA, { ...record, wrappedKey })).toThrow(
+        'Invalid wrapped key'
+      );
+    }
+    const canonical = bytes.toString('base64');
+    expect(
+      wrappedKeyId(`${canonical.slice(0, 10)}*${canonical.slice(10)}`)
+    ).toBeNull();
+  });
+
+  it.each(['ABCDEF12', '0a1b2c3', '0a1b2c3d '])(
+    'refuses to wrap under the invalid current kid %j',
+    (kid) => {
+      process.env.PEOPLE_REGISTRY_WRAP_KID = kid;
+      process.env[`PEOPLE_REGISTRY_WRAP_KEY_${kid}`] =
+        randomBytes(32).toString('hex');
+      expect(() =>
+        wrapWorkspaceKey(wsA, 'display', 1, randomBytes(32))
+      ).toThrow('wrap key is not configured');
+      delete process.env[`PEOPLE_REGISTRY_WRAP_KEY_${kid}`];
+    }
+  );
 });

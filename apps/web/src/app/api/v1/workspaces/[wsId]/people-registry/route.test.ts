@@ -122,7 +122,9 @@ function control() {
 
 describe('people registry manager routes', () => {
   beforeEach(() => {
-    process.env.PEOPLE_REGISTRY_WRAP_KEY = randomBytes(32).toString('hex');
+    process.env.PEOPLE_REGISTRY_WRAP_KID = '1a2b3c4d';
+    process.env.PEOPLE_REGISTRY_WRAP_KEY_1a2b3c4d =
+      randomBytes(32).toString('hex');
     actor.mockReturnValue(actorId);
     rpc.mockReset();
     claims.mockResolvedValue({
@@ -141,7 +143,8 @@ describe('people registry manager routes', () => {
     });
   });
   afterEach(() => {
-    delete process.env.PEOPLE_REGISTRY_WRAP_KEY;
+    delete process.env.PEOPLE_REGISTRY_WRAP_KID;
+    delete process.env.PEOPLE_REGISTRY_WRAP_KEY_1a2b3c4d;
     delete process.env.FLEET_DESKS;
   });
 

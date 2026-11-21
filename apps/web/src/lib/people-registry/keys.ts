@@ -32,48 +32,86 @@ export type PeopleKey = {
   key: Buffer;
 };
 
-const WRAP_VERSION = 'people-registry-wrap-v1';
+const WRAP_TAG = 'people-registry-wrap-v2';
+const WRAP_FORMAT = 0x02;
+const KID = /^[0-9a-f]{8}$/;
+const KEY_HEX = /^[0-9a-f]{64}$/;
 
-function wrapKey(): Buffer {
-  const hex = process.env.PEOPLE_REGISTRY_WRAP_KEY ?? '';
-  if (!/^[0-9a-f]{64}$/.test(hex)) {
-    throw new Error('PEOPLE_REGISTRY_WRAP_KEY is not configured');
-  }
-  return Buffer.from(hex, 'hex');
+// Root wrap keys are one secret per kid, PEOPLE_REGISTRY_WRAP_KEY_<kid>, and
+// PEOPLE_REGISTRY_WRAP_KID names the kid for new wraps. Rotation adds a new
+// kid secret and moves the current kid; old kid secrets stay for unwrapping.
+function rootKey(kid: string) {
+  if (!KID.test(kid)) return null;
+  const hex = process.env[`PEOPLE_REGISTRY_WRAP_KEY_${kid}`] ?? '';
+  return KEY_HEX.test(hex) ? Buffer.from(hex, 'hex') : null;
 }
 
-function wrapAad(wsId: string, purpose: PeopleKeyPurpose, version: number) {
-  return Buffer.from(JSON.stringify([WRAP_VERSION, wsId, purpose, version]));
+function currentWrapKey() {
+  const kid = process.env.PEOPLE_REGISTRY_WRAP_KID ?? '';
+  const key = rootKey(kid);
+  if (!key) throw new Error('People registry wrap key is not configured');
+  return { kid, key };
 }
 
+function wrapAad(
+  kid: string,
+  wsId: string,
+  purpose: PeopleKeyPurpose,
+  version: number
+) {
+  return Buffer.from(JSON.stringify([WRAP_TAG, kid, wsId, purpose, version]));
+}
+
+// Layout: 0x02, kid (4 bytes), iv (12), ciphertext (32), tag (16).
 export function wrapWorkspaceKey(
   wsId: string,
   purpose: PeopleKeyPurpose,
   version: number,
   key: Buffer
 ) {
+  const { kid, key: root } = currentWrapKey();
   const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', wrapKey(), iv);
-  cipher.setAAD(wrapAad(wsId, purpose, version));
+  const cipher = createCipheriv('aes-256-gcm', root, iv, { authTagLength: 16 });
+  cipher.setAAD(wrapAad(kid, wsId, purpose, version));
   const body = Buffer.concat([cipher.update(key), cipher.final()]);
-  return Buffer.concat([iv, body, cipher.getAuthTag()]).toString('base64');
+  return Buffer.concat([
+    Buffer.from([WRAP_FORMAT]),
+    Buffer.from(kid, 'hex'),
+    iv,
+    body,
+    cipher.getAuthTag(),
+  ]).toString('base64');
+}
+
+export function wrappedKeyId(wrappedKey: string) {
+  const bytes = Buffer.from(wrappedKey, 'base64');
+  // Node's decoder skips invalid characters, so only canonical base64 counts.
+  if (bytes.toString('base64') !== wrappedKey) return null;
+  return bytes.length === 65 && bytes[0] === WRAP_FORMAT
+    ? bytes.subarray(1, 5).toString('hex')
+    : null;
 }
 
 export function unwrapWorkspaceKey(
   wsId: string,
   wrapped: WrappedPeopleKey
 ): PeopleKey {
-  const bytes = Buffer.from(wrapped.wrappedKey, 'base64');
-  if (bytes.length !== 60) throw new Error('Invalid wrapped key');
+  const kid = wrappedKeyId(wrapped.wrappedKey);
+  const root = kid ? rootKey(kid) : null;
+  if (!kid || !root) throw new Error('Invalid wrapped key');
+  const sealed = Buffer.from(wrapped.wrappedKey, 'base64').subarray(5);
   const decipher = createDecipheriv(
     'aes-256-gcm',
-    wrapKey(),
-    bytes.subarray(0, 12)
+    root,
+    sealed.subarray(0, 12),
+    {
+      authTagLength: 16,
+    }
   );
-  decipher.setAAD(wrapAad(wsId, wrapped.purpose, wrapped.version));
-  decipher.setAuthTag(bytes.subarray(44));
+  decipher.setAAD(wrapAad(kid, wsId, wrapped.purpose, wrapped.version));
+  decipher.setAuthTag(sealed.subarray(44));
   const key = Buffer.concat([
-    decipher.update(bytes.subarray(12, 44)),
+    decipher.update(sealed.subarray(12, 44)),
     decipher.final(),
   ]);
   return { purpose: wrapped.purpose, version: wrapped.version, key };
