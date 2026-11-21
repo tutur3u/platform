@@ -18,28 +18,28 @@ const envelopeSchema = z.object({
     publishTime: z.string().datetime({ offset: true }),
   }),
 });
-const notificationSchema = z
-  .object({
-    version: z.literal('1.0'),
-    packageName: identifier,
-    eventTimeMillis: z.string().regex(/^\d{1,16}$/),
-    subscriptionNotification: z
-      .object({
-        version: z.literal('1.0'),
-        notificationType: z.number().int().positive().max(1000),
-        purchaseToken,
-      })
-      .optional(),
-    voidedPurchaseNotification: z
-      .object({
-        purchaseToken,
-        productType: z.literal(1),
-        orderId: identifier,
-      })
-      .optional(),
-    testNotification: z.object({ version: z.literal('1.0') }).optional(),
-  })
-  .strict();
+// Unknown top-level fields are dropped, not rejected: Google adds notification
+// kinds, and a 4xx makes Pub/Sub redeliver every message.
+const notificationSchema = z.object({
+  version: z.literal('1.0'),
+  packageName: identifier,
+  eventTimeMillis: z.string().regex(/^\d{1,16}$/),
+  subscriptionNotification: z
+    .object({
+      version: z.literal('1.0'),
+      notificationType: z.number().int().positive().max(1000),
+      purchaseToken,
+    })
+    .optional(),
+  voidedPurchaseNotification: z
+    .object({
+      purchaseToken,
+      productType: z.number().int(),
+      orderId: identifier,
+    })
+    .optional(),
+  testNotification: z.object({ version: z.literal('1.0') }).optional(),
+});
 const claimsSchema = z.object({
   iss: z.enum(['accounts.google.com', 'https://accounts.google.com']),
   aud: z.string(),
@@ -101,7 +101,10 @@ export interface PlayRtdnDependencies {
   now?: () => number;
 }
 export type PlayRtdnResult =
-  | { kind: 'accepted'; disposition: 'test' | 'committed' | 'duplicate' }
+  | {
+      kind: 'accepted';
+      disposition: 'test' | 'ignored' | 'committed' | 'duplicate';
+    }
   | {
       kind: 'rejected';
       status: 400 | 401 | 413 | 415 | 503;
@@ -203,7 +206,7 @@ export function createPlayRtdnProcessor(
       if (
         envelope.subscription !== policy.pushSubscription ||
         notification.packageName !== policy.packageName ||
-        variants !== 1 ||
+        variants > 1 ||
         !Number.isSafeInteger(eventTime) ||
         eventTime <= 0 ||
         eventTime > now() + 60_000
@@ -215,6 +218,14 @@ export function createPlayRtdnProcessor(
     }
     if (notification.testNotification)
       return { kind: 'accepted', disposition: 'test' };
+    // Only subscription purchases (voided productType 1) affect entitlement;
+    // other notification kinds are acknowledged so they are not redelivered.
+    if (
+      !notification.subscriptionNotification &&
+      notification.voidedPurchaseNotification?.productType !== 1
+    ) {
+      return { kind: 'accepted', disposition: 'ignored' };
+    }
     const token =
       notification.subscriptionNotification?.purchaseToken ??
       notification.voidedPurchaseNotification?.purchaseToken;

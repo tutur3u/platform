@@ -250,7 +250,7 @@ describe('Apple server adapter policy, cryptography boundary mocked', () => {
     expect(cryptoBoundary.renewal).toHaveBeenCalledWith(jws());
   });
 
-  it('rejects a mismatched renewal chain', async () => {
+  it('rejects a mismatched renewal chain on a non-withdrawal notification', async () => {
     cryptoBoundary.renewal.mockResolvedValue({
       environment: 'Production',
       originalTransactionId: 'different',
@@ -259,9 +259,127 @@ describe('Apple server adapter policy, cryptography boundary mocked', () => {
     });
     expect(
       await createAppleServerVerifier(config()).verifyNotification(jws())
-    ).toEqual({
-      kind: 'rejected',
-      category: 'identity_mismatch',
+    ).toEqual({ kind: 'rejected', category: 'identity_mismatch' });
+  });
+
+  it.each(['REFUND', 'REVOKE'])(
+    'drops a mismatched renewal chain on %s without trusting it',
+    async (notificationType) => {
+      cryptoBoundary.notification.mockResolvedValue(
+        notification({ notificationType })
+      );
+      cryptoBoundary.renewal.mockResolvedValue({
+        environment: 'Production',
+        originalTransactionId: 'different',
+        productId,
+        signedDate: now,
+      });
+      expect(
+        await createAppleServerVerifier(config()).verifyNotification(jws())
+      ).toMatchObject({
+        kind: 'verified',
+        value: {
+          kind: 'subscription',
+          renewal: null,
+          renewalMismatch: true,
+          transaction: { access: 'revoked' },
+        },
+      });
+    }
+  );
+
+  it('keeps matching renewal info on a withdrawal of a listed product', async () => {
+    cryptoBoundary.notification.mockResolvedValue(
+      notification({ notificationType: 'REVOKE' })
+    );
+    expect(
+      await createAppleServerVerifier(config()).verifyNotification(jws())
+    ).toMatchObject({
+      kind: 'verified',
+      value: {
+        renewal: { originalTransactionId: '90' },
+        renewalMismatch: false,
+        transaction: { productAllowed: true, access: 'revoked' },
+      },
+    });
+  });
+
+  it('reports revoked access for a withdrawal of an unlisted product without a revocation date', async () => {
+    cryptoBoundary.notification.mockResolvedValue(
+      notification({ notificationType: 'REFUND' })
+    );
+    cryptoBoundary.transaction.mockResolvedValue(
+      transaction({ productId: 'com.tuturuuu.app.mobile.legacy.plus' })
+    );
+    expect(
+      await createAppleServerVerifier(config()).verifyNotification(jws())
+    ).toMatchObject({
+      kind: 'verified',
+      value: { transaction: { productAllowed: false, access: 'revoked' } },
+    });
+  });
+
+  it('rejects a mismatched renewal chain on purchase verification', async () => {
+    cryptoBoundary.renewal.mockResolvedValue({
+      environment: 'Production',
+      originalTransactionId: 'different',
+      productId,
+      signedDate: now,
+    });
+    expect(
+      await createAppleServerVerifier(config()).verifyPurchase({
+        ...purchase(),
+        signedRenewal: jws(),
+      })
+    ).toEqual({ kind: 'rejected', category: 'identity_mismatch' });
+  });
+
+  it('keeps a refund of an earlier product after an upgrade', async () => {
+    const earlier = 'com.tuturuuu.app.mobile.legacy.plus';
+    cryptoBoundary.notification.mockResolvedValue(
+      notification({ notificationType: 'REFUND' })
+    );
+    cryptoBoundary.transaction.mockResolvedValue(
+      transaction({ productId: earlier, revocationDate: now })
+    );
+    expect(
+      await createAppleServerVerifier(config()).verifyNotification(jws())
+    ).toMatchObject({
+      kind: 'verified',
+      value: {
+        kind: 'subscription',
+        notificationType: 'REFUND',
+        renewalMismatch: true,
+        transaction: {
+          productId: earlier,
+          productAllowed: false,
+          access: 'revoked',
+        },
+      },
+    });
+  });
+
+  it('still rejects an unlisted product on a non-withdrawal notification', async () => {
+    cryptoBoundary.transaction.mockResolvedValue(
+      transaction({ productId: 'client-selected-product' })
+    );
+    expect(
+      await createAppleServerVerifier(config()).verifyNotification(jws())
+    ).toEqual({ kind: 'rejected', category: 'product_not_allowed' });
+  });
+
+  it.each([
+    [{}, 'active'],
+    [{ expiresDate: now }, 'expired'],
+    [{ revocationDate: now - 10 }, 'revoked'],
+    [{ isUpgraded: true }, 'expired'],
+  ] as const)('computes access for %j as %s', async (overrides, access) => {
+    cryptoBoundary.transaction.mockResolvedValue(transaction(overrides));
+    expect(
+      await createAppleServerVerifier(config()).verifyPurchase(purchase())
+    ).toMatchObject({
+      kind: 'verified',
+      value: { transaction: { access, productAllowed: true } },
     });
   });
 

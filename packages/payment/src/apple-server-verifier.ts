@@ -41,6 +41,12 @@ export type VerifiedAppleSubscription = Readonly<{
   signedDate: number;
   revocationDate: number | null;
   isUpgraded: boolean;
+  // Computed at verification time; a signed, verified transaction can still
+  // carry no entitlement.
+  access: 'active' | 'expired' | 'revoked';
+  // False only for a refund or revocation of a product outside the allowlist,
+  // which is still reported so entitlement can be withdrawn.
+  productAllowed: boolean;
 }>;
 
 export type VerifiedAppleNotification =
@@ -57,7 +63,15 @@ export type VerifiedAppleNotification =
       subtype: string | null;
       transaction: VerifiedAppleSubscription;
       renewal: JWSRenewalInfoDecodedPayload | null;
+      // Renewal info describes the current subscription state, which can
+      // differ from a withdrawn transaction (for example a refund of an
+      // earlier product). Only on REFUND or REVOKE is a mismatched renewal
+      // dropped and flagged here; it is never trusted.
+      renewalMismatch: boolean;
     };
+
+// Notifications that only withdraw entitlement must never be dropped.
+const withdrawalNotifications = new Set(['REFUND', 'REVOKE']);
 
 class PolicyFailure extends Error {
   constructor(readonly category: FailureCode) {
@@ -178,7 +192,8 @@ export function createAppleServerVerifier(config: AppleServerVerifierConfig) {
   }
 
   function subscription(
-    value: JWSTransactionDecodedPayload
+    value: JWSTransactionDecodedPayload,
+    withdrawal = false
   ): VerifiedAppleSubscription {
     if (
       value.bundleId !== config.bundleId ||
@@ -192,20 +207,35 @@ export function createAppleServerVerifier(config: AppleServerVerifierConfig) {
     const purchaseDate = timestamp(value.purchaseDate);
     const expiresDate = timestamp(value.expiresDate);
     if (expiresDate <= purchaseDate) throw new PolicyFailure('invalid_input');
+    const productAllowed =
+      value.productId !== undefined && products.has(value.productId);
+    const revocationDate =
+      value.revocationDate === undefined
+        ? null
+        : timestamp(value.revocationDate);
     return {
       environment: config.environment,
       transactionId: requiredString(value.transactionId),
       originalTransactionId: requiredString(value.originalTransactionId),
-      productId: product(value.productId),
+      productId:
+        withdrawal && !productAllowed
+          ? requiredString(value.productId)
+          : product(value.productId),
       appAccountToken: token(value.appAccountToken),
       purchaseDate,
       expiresDate,
       signedDate: signedTimestamp(value.signedDate),
-      revocationDate:
-        value.revocationDate === undefined
-          ? null
-          : timestamp(value.revocationDate),
+      revocationDate,
       isUpgraded: value.isUpgraded === true,
+      // A withdrawal, an unlisted product or an upgraded-away transaction never
+      // carries entitlement, whatever its dates say.
+      access:
+        revocationDate !== null || withdrawal || !productAllowed
+          ? 'revoked'
+          : value.isUpgraded === true || expiresDate <= Date.now()
+            ? 'expired'
+            : 'active',
+      productAllowed,
     };
   }
 
@@ -304,17 +334,31 @@ export function createAppleServerVerifier(config: AppleServerVerifierConfig) {
         const transactionJws = data.signedTransactionInfo;
         if (!transactionJws) throw new PolicyFailure('invalid_input');
         requireEs256(transactionJws);
+        const notificationType = requiredString(notification.notificationType);
+        const withdrawal = withdrawalNotifications.has(notificationType);
         const transaction = subscription(
-          await verifier.verifyAndDecodeTransaction(transactionJws)
+          await verifier.verifyAndDecodeTransaction(transactionJws),
+          withdrawal
         );
+        let renewalInfo: JWSRenewalInfoDecodedPayload | null = null;
+        let renewalMismatch = false;
+        try {
+          renewalInfo = await renewal(data.signedRenewalInfo, transaction);
+        } catch (error) {
+          // Only a withdrawal tolerates a renewal policy mismatch; every other
+          // notification, and any signature failure, still rejects.
+          if (!withdrawal || !(error instanceof PolicyFailure)) throw error;
+          renewalMismatch = true;
+        }
         return {
           kind: 'subscription',
           notificationUUID,
           signedDate,
-          notificationType: requiredString(notification.notificationType),
+          notificationType,
           subtype: notification.subtype ?? null,
           transaction,
-          renewal: await renewal(data.signedRenewalInfo, transaction),
+          renewal: renewalInfo,
+          renewalMismatch,
         };
       });
     },

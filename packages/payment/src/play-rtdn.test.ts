@@ -208,6 +208,92 @@ describe('Play RTDN policy, OIDC/network/repository boundaries mocked', () => {
     expect(f.subscriptions.acknowledgeCommitted).not.toHaveBeenCalled();
   });
 
+  it('accepts unknown top-level fields from Google', async () => {
+    const f = fixture();
+    expect(
+      await f.process(request(notification({ futureField: { a: 1 } })))
+    ).toEqual({ kind: 'accepted', disposition: 'committed' });
+  });
+
+  it.each([
+    {
+      subscriptionNotification: undefined,
+      oneTimeProductNotification: {
+        version: '1.0',
+        notificationType: 1,
+        purchaseToken: 'synthetic-token',
+        sku: 'credits',
+      },
+    },
+    {
+      subscriptionNotification: undefined,
+      voidedPurchaseNotification: {
+        purchaseToken: 'synthetic-token',
+        productType: 2,
+        orderId: 'GPA.1',
+      },
+    },
+  ])(
+    'acknowledges and ignores non-subscription kinds %#',
+    async (overrides) => {
+      const f = fixture();
+      expect(await f.process(request(notification(overrides)))).toEqual({
+        kind: 'accepted',
+        disposition: 'ignored',
+      });
+      expect(f.repository.resolveOwner).not.toHaveBeenCalled();
+      expect(f.repository.reconcile).not.toHaveBeenCalled();
+    }
+  );
+
+  it('checks authentication and package before ignoring a non-subscription kind', async () => {
+    const ignored = notification({
+      subscriptionNotification: undefined,
+      voidedPurchaseNotification: {
+        purchaseToken: 'synthetic-token',
+        productType: 2,
+        orderId: 'GPA.1',
+      },
+    });
+    const f = fixture();
+    f.oidc.verify.mockRejectedValueOnce(new Error('bad signature'));
+    expect(await f.process(request(ignored))).toMatchObject({
+      kind: 'rejected',
+      status: 401,
+    });
+    expect(
+      await f.process(request({ ...ignored, packageName: 'another.app' }))
+    ).toMatchObject({ kind: 'rejected', status: 400 });
+  });
+
+  it('reconciles a voided subscription purchase', async () => {
+    const f = fixture();
+    expect(
+      await f.process(
+        request(
+          notification({
+            subscriptionNotification: undefined,
+            voidedPurchaseNotification: {
+              purchaseToken: 'synthetic-token',
+              productType: 1,
+              orderId: 'GPA.1',
+            },
+          })
+        )
+      )
+    ).toMatchObject({ kind: 'accepted', disposition: 'committed' });
+    expect(f.repository.reconcile).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a notification carrying two kinds', async () => {
+    const f = fixture();
+    expect(
+      await f.process(
+        request(notification({ testNotification: { version: '1.0' } }))
+      )
+    ).toMatchObject({ kind: 'rejected', status: 400 });
+  });
+
   it('enforces input limits and package boundary', async () => {
     const f = fixture();
     expect(
