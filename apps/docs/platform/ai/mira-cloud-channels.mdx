@@ -639,7 +639,12 @@ compare-and-swap. Until the vault workload tier ships, the same interface is
 served by an envelope-encrypted server-custody store whose key-encryption key
 is a Worker secret (never stored in Postgres), versioned so rotation re-wraps
 tenant keys without downtime. Every lease names a workspace, and the vault
-checks it against the channel binding before releasing a value. A failing
+checks it against the channel binding before releasing a value. Rotation
+is detected by checking versions at each lease renewal and on cold start;
+rotation callbacks are only hints. A value verified within the current,
+unrevoked lease stays usable in instance memory until that lease ends (at
+most one hour) even if the vault witness is unreachable, while new fetches
+and renewals fail closed and a revoked lease drops plaintext at once. A failing
 BYOK key stops the tenant's replies with a visible error; it never falls back
 to managed keys. Values never appear in logs, metrics, Queue payloads, error
 messages or API responses; provider and AI SDK errors are redacted before
