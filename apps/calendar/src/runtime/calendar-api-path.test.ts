@@ -1,4 +1,6 @@
 import { createInternalApiClient } from '@tuturuuu/internal-api/client';
+import { createWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
+import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api/tasks-scheduling';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { registerCalendarBrowserApiPaths } from './calendar-api-client';
 import { calendarApiPath } from './calendar-api-path';
@@ -39,6 +41,30 @@ describe('Calendar client API ownership', () => {
       '/api/v1/users/me/profile',
     ]);
   });
+  it('keeps mounted Tasks writes on Calendar so the session cookie is sent', async () => {
+    vi.stubGlobal('__tuturuuuAppBase', '/calendar');
+    vi.stubGlobal('window', {
+      location: { hostname: 'tuturuuu.com', origin: 'https://tuturuuu.com' },
+    });
+    vi.stubEnv('NEXT_PUBLIC_TASKS_APP_URL', 'https://tasks.tuturuuu.com');
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({}));
+    vi.stubGlobal('fetch', fetch);
+    unregister = registerCalendarBrowserApiPaths();
+
+    await updateCurrentUserTaskSchedulingSettings('task-1', {
+      total_duration: 1,
+    });
+    await createWorkspaceTaskList('ws', 'board-1', { name: 'List' });
+
+    expect(
+      fetch.mock.calls.map(([path, init]) => [path, init?.method])
+    ).toEqual([
+      ['/calendar/api/v1/users/me/tasks/task-1/schedule', 'PATCH'],
+      ['/calendar/api/v1/workspaces/ws/task-boards/board-1/lists', 'POST'],
+    ]);
+    vi.unstubAllEnvs();
+  });
+
   it.each(['', '/calendar'])('resolves only owned paths at base %j', (base) => {
     vi.stubGlobal('__tuturuuuAppBase', base);
     expect(

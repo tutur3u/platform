@@ -48,14 +48,23 @@ import {
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   taskId: string;
   boardId: string;
+  /** The task's resolved workspace; the board config is the fallback. */
+  workspaceId?: string;
   onUpdate: () => void;
 }
 
-export function TaskActions({ taskId, boardId, onUpdate }: Props) {
+export function TaskActions({
+  taskId,
+  boardId,
+  workspaceId: knownWorkspaceId,
+  onUpdate,
+}: Props) {
+  const t = useTranslations('common');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const nameId = useId();
@@ -63,12 +72,13 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const params = useParams();
   const routeWsId = params.wsId as string | undefined;
   const { data: boardConfig } = useBoardConfig(boardId, routeWsId);
-  const workspaceId = boardConfig?.ws_id;
+  const workspaceId = knownWorkspaceId ?? boardConfig?.ws_id;
 
   // Fetch the latest task data using React Query
   const {
     data: task,
     isLoading: isTaskLoading,
+    isError: isTaskError,
     refetch: refetchTask,
   } = useQuery<Task>({
     queryKey: ['task', taskId],
@@ -261,6 +271,23 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const isOverdue = newEndDate && isBefore(newEndDate, today);
   const isStartDateAfterEndDate =
     newStartDate && newEndDate && isBefore(newEndDate, newStartDate);
+
+  if (isTaskError && !task) {
+    return (
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('error')}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end p-2">
+            <Button variant="outline" onClick={() => void refetchTask()}>
+              {t('retry')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Show loading state if task is being fetched
   if (isTaskLoading || !task) {

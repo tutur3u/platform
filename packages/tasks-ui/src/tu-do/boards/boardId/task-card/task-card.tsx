@@ -108,7 +108,6 @@ import {
 } from '../../../shared/task-due-date-visibility';
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
-import { TaskShareDialog } from '../../../shared/task-share-dialog';
 import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
 import { useCachedBoardTasks } from '../../../shared/use-cached-board-tasks';
 import { useTaskCardBulkDisplay } from './use-task-card-bulk-display';
@@ -139,7 +138,7 @@ import {
   TaskSchedulingMenu,
 } from '../menus';
 import { TaskSubmenuContent } from '../menus/task-submenu-controller';
-import { TaskActions } from '../task-actions';
+import { TaskCardFooterDialogs } from './task-card-footer-dialogs';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from '../task-dialogs/TaskNewLabelDialog';
@@ -2798,19 +2797,16 @@ function TaskCardInner({
           remove_due_date: t('remove_due_date'),
         }}
       />
-      {taskShareWsId && (
-        <TaskShareDialog
-          open={shareDialogOpen}
-          onOpenChange={setShareDialogOpen}
-          taskId={task.id}
-          taskName={task.name ?? ''}
-          wsId={taskShareWsId}
-        />
-      )}
-
-      {!isOverlay && !isPersonalExternalTask && (
-        <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
-      )}
+      <TaskCardFooterDialogs
+        taskId={task.id}
+        taskName={task.name ?? ''}
+        boardId={boardId}
+        workspaceId={taskShareWsId}
+        shareDialogOpen={shareDialogOpen}
+        onShareDialogOpenChange={setShareDialogOpen}
+        showActions={!isOverlay && !isPersonalExternalTask}
+        onUpdate={onUpdate}
+      />
     </Card>
   );
 }

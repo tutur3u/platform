@@ -320,8 +320,10 @@ export function SchedulingDialog({
       await updateCurrentUserTaskSchedulingSettings(task.id, {
         total_duration: data.total_duration,
         is_splittable: data.is_splittable,
-        min_split_duration_minutes: data.min_split_duration_minutes,
-        max_split_duration_minutes: data.max_split_duration_minutes,
+        // Stored split durations can be fractional; the API takes whole
+        // minutes.
+        min_split_duration_minutes: Math.round(data.min_split_duration_minutes),
+        max_split_duration_minutes: Math.round(data.max_split_duration_minutes),
         calendar_hours: data.calendar_hours,
         auto_schedule: data.auto_schedule,
       });

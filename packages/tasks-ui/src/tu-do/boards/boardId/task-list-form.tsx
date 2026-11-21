@@ -2,8 +2,13 @@ import { createWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { getDefaultTaskListColorForStatus } from '@tuturuuu/utils/task-list-status';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+/** Matches the task list API's name limit. */
+const TASK_LIST_NAME_MAX_LENGTH = 255;
 
 interface Props {
   wsId: string;
@@ -22,6 +27,7 @@ export function TaskListForm({
   onListCreated,
   onCancel,
 }: Props) {
+  const t = useTranslations('common');
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
 
@@ -37,6 +43,10 @@ export function TaskListForm({
       });
     } catch (error) {
       console.error('Error creating task list:', error);
+      // Keep the entered name so the user can correct it and retry.
+      toast.error(
+        error instanceof Error && error.message ? error.message : t('error')
+      );
       return;
     }
 
@@ -62,6 +72,7 @@ export function TaskListForm({
           placeholder="List name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          maxLength={TASK_LIST_NAME_MAX_LENGTH}
           autoFocus
           className="text-sm"
         />
