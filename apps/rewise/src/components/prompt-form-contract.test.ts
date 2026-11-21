@@ -66,7 +66,7 @@ describe('Rewise prompt form controls', () => {
     );
     expect(chatSource).toContain('id="main-chat-content"');
     expect(chatSource).toContain(
-      'relative flex h-[calc(100vh-5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100vh-2rem)]'
+      'relative flex h-[calc(100dvh-var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))-1.25rem-var(--mobile-dock-clearance,0px))] min-h-0 flex-col overflow-hidden md:h-[calc(100vh-2rem)]'
     );
     expect(chatSource).toContain(
       'relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card/50 p-3 pb-0 shadow-sm backdrop-blur-sm sm:p-4'
