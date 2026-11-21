@@ -123,9 +123,10 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   const config = deployConfig(base, live, activatedFamilies, env);
   assert.equal(config.routes, undefined);
   assert.equal(config.name, 'tuturuuu-gateway');
+  // Committed mounts first, then the live-only /learn/*.
   assert.equal(
     config.vars.GATEWAY_MOUNTED_PATHS,
-    '/learn,/nova,/nova/*,/admin,/admin/*,/learn/*'
+    `${base.vars.GATEWAY_MOUNTED_PATHS},/learn/*`
   );
   assert.equal(config.vars.WEB_ORIGIN, 'https://web.example.vercel.app');
   assert.equal(
@@ -135,12 +136,16 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   assert.equal(config.vars.GATEWAY_WEB_FAMILIES, 'public-docs');
   assert.equal(config.vars.GATEWAY_MODE, 'active');
   assert.equal(config.vars.GATEWAY_ACCEPTANCE_BYPASS_SECRET, undefined);
-  assert.deepEqual(config.services, [
-    { binding: 'MOUNT_ADMIN', service: 'tuturuuu-infrastructure' },
-    { binding: 'MOUNT_LEARN', service: 'tuturuuu-learn' },
-    { binding: 'MOUNT_NOVA', service: 'tuturuuu-nova' },
-    { binding: 'WEB_FAMILY_PUBLIC_DOCS', service: 'tuturuuu-web-public-docs' },
-  ]);
+  assert.deepEqual(
+    config.services,
+    [
+      ...base.services,
+      {
+        binding: 'WEB_FAMILY_PUBLIC_DOCS',
+        service: 'tuturuuu-web-public-docs',
+      },
+    ].sort((a, b) => a.binding.localeCompare(b.binding))
+  );
 });
 
 const withTools = {

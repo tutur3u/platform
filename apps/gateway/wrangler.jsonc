@@ -38,7 +38,13 @@
     // path (any query) to the service binding MOUNT_<SEGMENT>; "/learn/*" also
     // hands it nested paths. Empty: every path stays on WEB_ORIGIN. Removing an
     // app's entries (with its zone routes) is that app's one-step rollback.
-    "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*,/admin,/admin/*",
+    // This list is the committed inventory of LIVE mounts: Web's active-mount
+    // list (scripts/active-app-mounts.mjs) is derived from it, and Web returns
+    // a login to /<app>/verify-token only for listed apps. Commit a mount only
+    // after, or in the same change as, the gateway write that makes it live;
+    // `node scripts/active-app-mounts.mjs --live <version.json>` fails when a
+    // committed path is not live.
+    "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*,/roadmap,/tools,/tools/*,/teach,/teach/*,/lms,/lms/*,/admin,/admin/*,/meet,/meet/*,/mail,/mail/*,/calendar,/calendar/*",
     // Comma-separated apps/web route families (manifest `webFamilies`) served
     // by their own Worker through the binding WEB_FAMILY_<ID>. A family needs
     // both its id here and its binding; otherwise its paths stay on
@@ -58,7 +64,14 @@
   "services": [
     { "binding": "MOUNT_LEARN", "service": "tuturuuu-learn" },
     { "binding": "MOUNT_NOVA", "service": "tuturuuu-nova" },
+    { "binding": "MOUNT_ROADMAP", "service": "tuturuuu-roadmap" },
+    { "binding": "MOUNT_TOOLS", "service": "tuturuuu-tools" },
+    { "binding": "MOUNT_TEACH", "service": "tuturuuu-teach" },
+    { "binding": "MOUNT_LMS", "service": "tuturuuu-lms" },
     { "binding": "MOUNT_ADMIN", "service": "tuturuuu-infrastructure" },
+    { "binding": "MOUNT_MEET", "service": "tuturuuu-meet" },
+    { "binding": "MOUNT_MAIL", "service": "tuturuuu-mail" },
+    { "binding": "MOUNT_CALENDAR", "service": "tuturuuu-calendar" },
   ],
   // One service binding per web family, added at that family's cutover. The
   // family Worker has no routes of its own:

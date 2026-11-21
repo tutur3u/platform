@@ -353,6 +353,24 @@ while the deployment reaches the edge. Roll back on an unexpected response
 or if that interval expires. Start the post-deploy watch after both the app
 and gateway have converged.
 
+### Committed mount inventory and Web's active-mount list
+
+`GATEWAY_MOUNTED_PATHS` and the `MOUNT_*` services in `apps/gateway/wrangler.jsonc`
+are the committed inventory of live mounts. Web's active-mount list
+(`NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS`) is derived from it at build time:
+
+```bash
+node scripts/active-app-mounts.mjs                        # e.g. calendar,infra,learn,...
+node scripts/active-app-mounts.mjs --live <version.json>  # also require every path live
+```
+
+The script maps each mount base to its app through the shared-origin registry
+(`packages/utils/src/app-mounts.ts`, aliases included), skips the session-less
+`/roadmap` and `/lms`, and exits non-zero on an unregistered mount or an empty
+list. Web returns a login to `/<app>/verify-token` only for listed apps, so commit
+a mount only after, or in the same change as, the gateway write that makes it
+live, and run the `--live` check against the captured version after that write.
+
 ### Legacy subdomain redirect
 
 Once `tuturuuu.com/<app>` passes its smoke, the app's legacy hostname
