@@ -1,18 +1,14 @@
-import { defaultContentSecurityPolicy } from '../core/csp';
-import { secureBridgeDocument } from '../core/document-security';
+// Node loads app configs (`start-bridge.config.ts`) directly in release
+// acceptance, so this module imports only package entries whose own imports
+// Node resolves. The mounted response guard is loaded on first use, inside the
+// bundled Worker.
+import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
+import { secureBridgeDocument } from '@tuturuuu/start-bridge/document-security';
+import {
+  type AppMountConfig,
+  resolveAppBase,
+} from '@tuturuuu/start-bridge/mounts';
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
-import {
-  isolateMountedCookieHeader,
-  type MountIsolationConfig,
-  reduceMountedSessionCookieHeader,
-  scopeMountedResponseCookies,
-  stripMountedSupabaseWrites,
-} from '../core/mount-isolation';
-import { type AppMountConfig, resolveAppBase } from '../core/mounts';
-import {
-  isMountedLogoutPath,
-  stripMountedSessionWrites,
-} from './mounted-session-guard';
 
 /**
  * The Worker options an app owns in its `start-bridge.config.ts`. The codemod
@@ -114,22 +110,6 @@ function mountedBase<Env>(
 }
 
 /**
- * A body-less copy of a mounted request with the mount's cookie view: an
- * isolated mount's own cookies, or the baseline reduction. The body may
- * already have been read by the time responses are wrapped.
- */
-function reducedView(request: Request, isolation?: MountIsolationConfig) {
-  const headers = new Headers(request.headers);
-  const raw = headers.get('cookie');
-  const cookie = isolation
-    ? isolateMountedCookieHeader(raw, isolation)
-    : reduceMountedSessionCookieHeader(raw);
-  if (cookie === null) headers.delete('cookie');
-  else headers.set('cookie', cookie);
-  return new Request(request.url, { method: request.method, headers });
-}
-
-/**
  * Declares an app's Worker options. `wrapResponse` runs after the bridge, so
  * on a mount it receives the reduced request and its result is guarded again:
  * whatever it adds, a mounted response never writes the Supabase or
@@ -146,30 +126,9 @@ export function defineBridgeAppConfig<Env = unknown>(
     wrapResponse(response, context) {
       const mount = mountedBase(context, config.mounts);
       if (!mount) return wrap(response, context);
-      const appPath =
-        new URL(context.request.url).pathname.slice(mount.basePath.length) ||
-        '/';
-      const logout = isMountedLogoutPath(appPath);
-      const guard = (wrapped: Response) => {
-        const guarded = stripMountedSupabaseWrites(
-          stripMountedSessionWrites(wrapped),
-          logout
-        );
-        return mount.isolation
-          ? scopeMountedResponseCookies(
-              guarded,
-              mount.basePath,
-              mount.isolation,
-              logout
-            )
-          : guarded;
-      };
-      const wrapped = wrap(response, {
-        ...context,
-        request: reducedView(context.request, mount.isolation),
-      });
-      // A synchronous wrapper stays synchronous.
-      return wrapped instanceof Promise ? wrapped.then(guard) : guard(wrapped);
+      return import('./mounted-wrap-guard').then(({ guardMountedWrap }) =>
+        guardMountedWrap(wrap, response, context, mount)
+      );
     },
   };
 }
@@ -208,4 +167,4 @@ export {
   CSP_REPORT_PATH,
   collectDocumentSecurityReport,
   secureBridgeDocument,
-} from '../core/document-security';
+} from '@tuturuuu/start-bridge/document-security';

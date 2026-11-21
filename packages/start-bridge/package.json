@@ -21,6 +21,7 @@
     "./assets": "./src/core/assets.ts",
     "./canary": "./src/core/canary.ts",
     "./csp": "./src/core/csp.ts",
+    "./document-security": "./src/core/document-security.ts",
     "./response-policy": "./src/core/response-policy.ts",
     "./next/headers": "./src/next/headers.ts",
     "./next/server": "./src/next/server.ts",

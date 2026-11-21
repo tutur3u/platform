@@ -1,4 +1,4 @@
-import { TRUSTED_TYPES_DIRECTIVES } from './csp';
+import { TRUSTED_TYPES_DIRECTIVES } from '@tuturuuu/start-bridge/csp';
 
 export const CSP_REPORT_PATH = '/api/csp-report';
 const MAX_BYTES = 16 * 1024;
