@@ -27,12 +27,8 @@ function fixture() {
   return { handle, ctx, start, proxy, assets, outbound };
 }
 
-describe('CMS root-only host policy', () => {
+describe('CMS host host policy', () => {
   it.each([
-    'https://tuturuuu.com/cms',
-    'https://tuturuuu.com/cms/api/v1/admin/external-projects',
-    'https://tuturuuu.com/cms/_serverFn/fixture',
-    'https://tuturuuu.com/cms/assets/fixture.js',
     'https://unknown.example.test/',
     'https://tuturuuu-cms-vite-staging.tuturuuu-e89.workers.dev/',
   ])('rejects %s before app dispatch or egress', async (url) => {

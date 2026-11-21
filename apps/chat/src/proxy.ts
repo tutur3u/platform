@@ -1,3 +1,4 @@
+import { mountedLogin } from './start-bridge/mounted-login';
 import {
   getCanonicalLocaleCookieOptions,
   withCanonicalLocaleCookie,
@@ -91,6 +92,8 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const login = mountedLogin(request);
+  if (login) return login;
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
     const isBuildInfoRead =

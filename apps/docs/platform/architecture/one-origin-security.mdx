@@ -14,3 +14,23 @@ Browsers isolate origins rather than application paths. Apps sharing an origin t
 The recorded design uses one shared session across apps on the main origin. Sign-in and logout are intended to apply across those apps. Per-app sessions are not the intended design. The shared-session implementation and each app's admission need separate verification before cutover.
 
 See the [security overview](/platform/architecture/system-design/security-architecture) and [authentication overview](/platform/architecture/authentication).
+
+## Drive, Chat, CMS and Forms mounts
+
+Drive, Chat, CMS and Forms admit their matching `tuturuuu.com/<app>` prefix
+alongside their subdomain root. Drive admits the apex only in its production
+profile; its staging profile retains separate host and environment fences.
+
+On these mounts, `NEXT_LOCALE`, `sidebar-collapsed`, `sidebar-behavior` and
+`sidebar-behavior-updated-at` are app-owned preferences. The bridge filters
+incoming cookies and writes owned preferences host-only with `Path=/<app>` and
+`Secure`. Session cookies are never app-owned. Subdomain cookie handling retains
+its existing policy. Mounted login routes send users to the central `/login`
+with a return URL inside the app's mount. Offline providers do not register a
+service worker on these surfaces.
+
+Each app's `src/start-bridge/apex-mount.test.ts` covers host admission, cookie
+isolation, mounted assets and API dispatch, central login return URLs and root
+behavior. Drive's `src/start-candidate/apex-worker.test.ts` additionally covers
+production bindings on the apex. Emitted Worker and deployed acceptance remain
+required before routing production traffic.

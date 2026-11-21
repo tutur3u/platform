@@ -1,3 +1,4 @@
+import { mountedLogin } from './start-bridge/mounted-login';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -73,6 +74,8 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const login = mountedLogin(req);
+  if (login) return login;
   const mounted = Boolean(req.nextUrl.basePath);
   if (
     mounted &&

@@ -17,6 +17,14 @@ export default defineBridgeAppConfig({
     rootHosts: [production ? 'drive.tuturuuu.com' : 'drive.tutur3u.com'],
     mountHosts: production ? ['tuturuuu.com'] : [],
     basePath: '/drive',
+    isolation: {
+      ownedCookies: [
+        'NEXT_LOCALE',
+        'sidebar-collapsed',
+        'sidebar-behavior',
+        'sidebar-behavior-updated-at',
+      ],
+    },
     unknownHost: 'reject',
   },
   worker: { workersDev: false },

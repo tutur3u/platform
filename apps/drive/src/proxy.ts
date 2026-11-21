@@ -1,3 +1,4 @@
+import { mountedLogin } from './start-bridge/mounted-login';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -55,6 +56,8 @@ function workspaceRedirectUrl(req: NextRequest, path: string) {
 }
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const login = mountedLogin(req);
+  if (login) return login;
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX

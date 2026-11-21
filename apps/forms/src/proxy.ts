@@ -1,3 +1,4 @@
+import { mountedLogin } from './start-bridge/mounted-login';
 import { match } from '@formatjs/intl-localematcher';
 import {
   getCanonicalLocaleCookieOptions,
@@ -223,6 +224,8 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const login = mountedLogin(request);
+  if (login) return login;
   const mounted = Boolean(request.nextUrl.basePath);
   if (
     mounted &&

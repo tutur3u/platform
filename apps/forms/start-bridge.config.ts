@@ -18,6 +18,15 @@ export default defineBridgeAppConfig<FormsEnvironment>({
   mounts: {
     rootHosts: ['forms.tuturuuu.com', 'forms.tutur3u.com'],
     mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
+    basePath: '/forms',
+    isolation: {
+      ownedCookies: [
+        'NEXT_LOCALE',
+        'sidebar-collapsed',
+        'sidebar-behavior',
+        'sidebar-behavior-updated-at',
+      ],
+    },
     unknownHost: 'reject',
   },
   // Shared forms render Cloudflare Turnstile, so its origin is allowed in

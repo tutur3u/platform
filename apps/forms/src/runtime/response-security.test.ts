@@ -5,6 +5,12 @@ import { NextResponse } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 import appConfig from '../../start-bridge.config';
 
+// Only the production profile admits the tuturuuu.com/forms mount; the
+// config reads it once at import.
+vi.hoisted(() => {
+  process.env.VITE_FORMS_NATIVE_PROFILE = 'production';
+});
+
 const env = {
   ASSETS: { fetch: async () => new Response('asset') },
   TUTURUUU_NOINDEX: '1',
@@ -39,10 +45,6 @@ describe('Forms root-only admission', () => {
     mountHosts: [],
   };
   it.each([
-    'https://tuturuuu.com/forms',
-    'https://tuturuuu.com/forms/api/v1/shared/forms/example',
-    'https://tuturuuu.com/forms/_serverFn/example',
-    'https://tuturuuu.com/forms/assets/example.js',
     'https://unknown.example.test/',
     'https://tuturuuu-forms-vite-staging.tuturuuu-e89.workers.dev/',
   ])('rejects %s before app dispatch or egress', async (url) => {
@@ -217,5 +219,20 @@ describe('Forms response security', () => {
       'strict-origin-when-cross-origin'
     );
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+  });
+});
+
+describe('Forms mounted embed response policy', () => {
+  it('allows framing the mounted embed page and scopes its robots policy', async () => {
+    const response = await appConfig.wrapResponse?.(new Response('embed'), {
+      request: new Request('https://tuturuuu.com/forms/embed/shared'),
+      env: { ...env, TUTURUUU_NOINDEX: '0' },
+      mounts: { app: 'forms', rootHosts: [], ...appConfig.mounts },
+    });
+    expect(response?.headers.get('X-Frame-Options')).toBeNull();
+    expect(response?.headers.get('Content-Security-Policy')).toContain(
+      'frame-ancestors *'
+    );
+    expect(response?.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
   });
 });

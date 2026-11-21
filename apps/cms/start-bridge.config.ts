@@ -8,12 +8,26 @@ const framablePaths = framablePathRegexes();
 export default defineBridgeAppConfig<CmsEnvironment>({
   mounts: {
     rootHosts: ['cms.tuturuuu.com', 'cms.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/cms',
+    isolation: {
+      ownedCookies: [
+        'NEXT_LOCALE',
+        'sidebar-collapsed',
+        'sidebar-behavior',
+        'sidebar-behavior-updated-at',
+      ],
+    },
     unknownHost: 'reject',
   },
   wrapResponse(response, { request }) {
     const headers = new Headers(response.headers);
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const path =
+      url.hostname === 'tuturuuu.com' &&
+      (url.pathname === '/cms' || url.pathname.startsWith('/cms/'))
+        ? url.pathname.slice('/cms'.length) || '/'
+        : url.pathname;
     headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
