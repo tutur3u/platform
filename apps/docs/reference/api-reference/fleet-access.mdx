@@ -169,3 +169,37 @@ consumption. Signed proof and bearer credentials are required together.
 only. It namespaces stored sender and conversation fingerprints by provider
 and account. Preserve the key across deployments. Rotating it requires
 coordinating retirement and re-linking of existing identities.
+
+## Dry-run consumer
+
+Cron Control calls these routes with its dedicated
+`Authorization: Bearer <token>` over HTTPS. The token is
+`ttr_fleet_consumer_` followed by 32 random bytes encoded as unpadded
+base64url. Keep the token in the Worker secret `FLEET_CONSUMER_TOKEN`.
+Configure its lowercase hex SHA-256 on Web as `FLEET_CONSUMER_TOKEN_SHA256`.
+This principal has no submit, approval, grant, or dispatch authority.
+
+Send JSON bodies with `Content-Type: application/json`. Bodies are capped
+at 4 KiB and unknown fields are rejected.
+
+| POST path under `/api/v1/fleet/consumer/` | Request | Success response |
+| --- | --- | --- |
+| `status` | `{}` | `{state:"active",generation}` or `{state:"stopped"}` |
+| `claim` | `{slot,generation}` | `{state:"claimed",claims:[{id,leaseId,idempotencyKey}]}`, with at most 20 entries |
+| `receipt` | `{slot,generation,id,leaseId,idempotencyKey,state:"dry_run"}` | `{state:"dry_run"}` or `{state:"voided"}` for stale authorization or lease expiry |
+| `purge` | `{slot,generation}` | `{state:"purged",counts:{quotes,events,linkCodes}}`, with up to 1,000 rows total |
+
+`slot` is the UTC start of the current 15-minute window in ISO 8601 format
+with milliseconds. `generation` is the decimal string returned by `status`.
+Use the same generation for the whole run. A stop or generation change returns
+`{state:"stopped"}`; an out-of-window request returns `{state:"slot_closed"}`.
+A missing or mismatched current lease returns `{state:"lease_conflict"}`.
+These protocol states use HTTP `200`. Invalid credentials return `401`,
+invalid input returns `400`, oversized bodies return `413`, and unavailable
+storage or verifier configuration returns `503`.
+
+A repeated claim in the same slot returns only the batch's remaining live
+leases. A new slot reconciles existing leases before admitting fresh work.
+A repeated successful receipt or purge in the same slot yields the recorded
+result. Claims contain opaque IDs only. A dry-run receipt closes the intent
+with state `done` and the database records `dry_run`.

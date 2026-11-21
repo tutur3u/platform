@@ -107,6 +107,38 @@ flowchart LR
     Branch --> Docker
 ```
 
+## Fleet dry-run consumer
+
+Cron Control owns the Fleet consumer and retention job on its shared
+15-minute trigger. The job starts disabled. For an approved activation,
+wire the `FLEET_CONSUMER_TOKEN` Worker secret and set its SHA-256 verifier
+`FLEET_CONSUMER_TOKEN_SHA256` on Web. Include the Worker bindings in the
+publication workflow and parity fixture. Confirm the Web routes and private
+RPCs are ready, then add `fleet-access-consumer` to
+`CRON_CONTROL_ENABLED_JOBS` and set `FLEET_CONSUMER_MODE=dry-run`. The
+mode enables dry-run intent receipts and actual retention deletes.
+
+To stop in-flight mutations, use the Fleet Owner database operation
+`private.fleet_set_stopped(true, 'operator_stop')` with the verified Owner
+session. It advances the Fleet generation and waits for database work that
+already holds the fence. This stops Fleet access as well as the consumer.
+For a consumer-only stop between API calls, use the authenticated Cron
+Control operation `POST /control/jobs/fleet-access-consumer/stop`. Verify
+the persisted state with `GET /control/jobs`. Set
+`FLEET_CONSUMER_MODE=off` or remove the job from the allowlist to stop new
+admissions. Removing the Web verifier disables the consumer credential.
+The three database mutation RPCs check the generation in their own
+transactions.
+
+Each slot makes one attempt and stops on the first unknown result. Five
+consecutive failures put the job in the persisted ledger stop state.
+Inspect Cron Control job status, lease states and append-only purge counts
+before resuming. The next admitted slot reconciles SQL state without
+renewing expired leases. A Fleet-wide stop requires fresh intent
+authorization. Resume Cron Control only after the fault is resolved and the
+appropriate Fleet stop is cleared. The operator should rehearse both stops
+and review hosted usage and alert delivery before activation.
+
 ## What Changed Recently
 
 - TanStack/Rust migration maintenance is paused. `rust-backend.yml` and automatic TanStack production builds are switchboard-disabled; the retained source and runbooks are for local or explicitly approved future resumption work.

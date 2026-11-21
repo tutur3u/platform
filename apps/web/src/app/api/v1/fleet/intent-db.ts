@@ -1,12 +1,26 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, Json } from '@tuturuuu/types';
 
+type ConsumerSlot = { p_slot: string; p_generation: string };
+
 type PrivateSchema = Database['private'];
 
 // Bind the private migration RPCs at this adapter until schema type generation.
 type FleetIntentDatabase = Omit<Database, 'private'> & {
   private: Omit<PrivateSchema, 'Functions'> & {
     Functions: PrivateSchema['Functions'] & {
+      fleet_consumer_status: { Args: never; Returns: Json };
+      fleet_consumer_claim: { Args: ConsumerSlot; Returns: Json };
+      fleet_consumer_receipt: {
+        Args: ConsumerSlot & {
+          p_intent_id: string;
+          p_lease_id: string;
+          p_idempotency_key: string;
+          p_state: 'dry_run';
+        };
+        Returns: Json;
+      };
+      fleet_consumer_purge: { Args: ConsumerSlot; Returns: Json };
       fleet_create_link_code: {
         Args: { p_actor_id: string; p_code_hash: string };
         Returns: boolean;

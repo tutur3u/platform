@@ -40,6 +40,14 @@ export async function postPrivateRpc(
       signal,
     })
   );
+  return readRpcResponse(context, response, maxBytes);
+}
+
+export async function readRpcResponse(
+  context: Pick<ProcessorContext, 'deadline' | 'now' | 'signal'>,
+  response: Response,
+  maxBytes: number
+): Promise<PrivateRpcResult> {
   if (!response.ok) {
     void response.body?.cancel().catch(() => undefined);
     return { kind: 'http', status: response.status };

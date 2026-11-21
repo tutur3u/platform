@@ -151,9 +151,11 @@ select is(private.fleet_confirm_link_code('fc000000-0000-4000-8000-000000000002'
   decode(repeat('14', 32), 'hex')) ->> 'reason', 'invalid_confirmation',
   'a pending link cannot be confirmed after its original code expires');
 reset role;
-select ok(not exists (select 1 from private.fleet_identity_link_codes
-  where user_id = 'fc000000-0000-4000-8000-000000000002'),
-  'an expired confirmation attempt removes the stored identity fingerprints');
+select ok((select expires_at <= clock_timestamp()
+  and num_nonnulls(pending_id, confirmation_hash, channel, provider_account_id,
+    provider_account_label, sender_hash, conversation_hash) = 0
+  from private.fleet_identity_link_codes where user_id = 'fc000000-0000-4000-8000-000000000002'),
+  'an expired confirmation clears pending identity fields and leaves the row for retention');
 
 set local role service_role;
 select is(private.fleet_create_link_code('fc000000-0000-4000-8000-000000000002',

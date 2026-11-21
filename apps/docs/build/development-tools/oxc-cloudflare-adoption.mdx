@@ -380,6 +380,42 @@ history retention runbook
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
+### Fleet dry-run and retention envelope
+
+Fleet reuses one existing 15-minute Cron Control trigger. Disabled mode
+adds no network or ledger calls. One admitted run has a 90-second deadline
+and performs one status read, one claim, at most 20 receipts and one purge.
+Each Web request invokes one private Postgres RPC. The purge deletes at
+most 1,000 rows per slot across the three retention stores and writes one
+counts-only audit record. An empty queue still runs retention. A stopped
+database costs at most the status request before mutations. An ambiguous
+response ends the slot without retry. There are no provider, AI, queue,
+alarm or lane calls.
+
+At 96 slots per day, a full queue permits 2,208 Web requests and as many
+Postgres RPCs, 1,920 examined intents, 96,000 retention deletes and 96
+counts-only purge audit rows. Each slot has at most 25 ledger RPCs
+(claim, fence per request, completion), 25 logical ledger reads, two
+logical writes and one completion report with counts. This yields up to
+2,400 ledger RPCs and 192 logical writes per day from admitted runs.
+A duplicate tick checks the ledger once. The SQL slot watermark prevents
+an extra claim batch or deletion on replay. Delivery duplicates and
+external requests are outside the scheduled operation count.
+
+At Cloudflare's paid overage rates, 72,000 ledger requests and 5,760 logical
+ledger row writes over 30 days contribute approximately $0.017 combined
+if both dimensions are fully overage and each write bills one row.
+Compute, physical storage, logs and the Web/Postgres bill depend on
+measured service usage and shared plan allowances.
+[Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
+
+Tests count calls at full batch, exercise the Worker mode and persisted
+ledger stop and restart after lost claim and receipt responses. SQL
+regressions cover bounded deletes, replay, and stale approvals after a
+database stop and resume. Hosted stop readback, emitted-Worker execution
+and billed usage remain activation evidence. See the
+[Fleet consumer runbook](/build/devops/overview#fleet-dry-run-consumer).
+
 The Mastermind store Worker (`apps/mastermind-store`) has no alarms, crons,
 queues or in-Worker retries. It caps ops per request, value size and live
 rows, charges a durable daily write budget before running a batch, deletes at

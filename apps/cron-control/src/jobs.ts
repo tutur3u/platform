@@ -26,6 +26,7 @@ export type WorkerProcessorId =
   | 'cron-history-retention'
   | 'devbox-unauthorized-run-sweep'
   | 'finance-bill-split-reminders'
+  | 'fleet-access-consumer'
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
@@ -201,6 +202,18 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/cleanup_ai_studio_retention_batch',
     'idempotent',
     { workerProcessor: 'ai-studio-retention', timeoutMs: 150_000 }
+  ),
+  job(
+    'fleet-access-consumer',
+    '*/15 * * * *',
+    'web',
+    '/api/v1/fleet/consumer/',
+    'claim-fenced',
+    {
+      method: 'POST',
+      workerProcessor: 'fleet-access-consumer',
+      timeoutMs: 90_000,
+    }
   ),
   // Observability (apps/docs/build/devops/observability-analytics.mdx). The
   // collectors also need their source's database control row set to
@@ -425,6 +438,7 @@ export const TARGET_SECRET_VARS = {
 export function maxAttempts(cronJob: CronJob) {
   return isWebJob(cronJob.id) ||
     cronJob.overlap === 'handover' ||
+    cronJob.id === 'fleet-access-consumer' ||
     cronJob.id === TASKS_RECURRENCE_JOB
     ? 1
     : 2;

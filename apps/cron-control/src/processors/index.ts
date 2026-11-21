@@ -6,6 +6,7 @@ import { expireCheckouts } from './checkout-expiry';
 import { pruneCronHistory } from './cron-history-retention';
 import { sweepUnauthorizedDevboxRuns } from './devbox-unauthorized-run-sweep';
 import { dispatchBillSplitReminders } from './finance-bill-split-reminders';
+import { consumeFleetIntents } from './fleet-access-consumer';
 import { eraseMeetAttendance } from './meet-attendance-erasure';
 import { retainMeetAttendance } from './meet-attendance-retention';
 import { purgeMeetTranscripts } from './meet-transcript-retention';
@@ -36,6 +37,7 @@ export const WORKER_PROCESSORS: Record<
   'cron-history-retention': pruneCronHistory,
   'devbox-unauthorized-run-sweep': sweepUnauthorizedDevboxRuns,
   'finance-bill-split-reminders': dispatchBillSplitReminders,
+  'fleet-access-consumer': consumeFleetIntents,
   'meet-attendance-erasure': eraseMeetAttendance,
   'meet-attendance-retention': retainMeetAttendance,
   'meet-transcript-retention': purgeMeetTranscripts,

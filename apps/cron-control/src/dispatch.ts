@@ -54,6 +54,19 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  if (cronJob.workerProcessor === 'fleet-access-consumer') {
+    const secret = env.FLEET_CONSUMER_TOKEN;
+    if (!secret || !/^ttr_fleet_consumer_[A-Za-z0-9_-]{43}$/.test(secret))
+      return { problem: 'FLEET_CONSUMER_TOKEN missing or invalid' };
+    try {
+      const origin = new URL(env.WEB_ORIGIN ?? '');
+      if (origin.protocol === 'https:' && origin.href === origin.origin + '/')
+        return { secret, url: new URL(cronJob.path, origin) };
+    } catch {
+      // Malformed origins fail closed.
+    }
+    return { problem: 'WEB_ORIGIN must be an HTTPS origin' };
+  }
   if (cronJob.workerProcessor === 'chat-realtime-revocations') {
     const secret = env.CHAT_REALTIME_TOKEN_SECRET?.trim();
     if (!secret || secret.length < CHAT_REALTIME_SECRET_MIN_LENGTH)
@@ -136,6 +149,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
   if (
     !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
     cronJob.workerProcessor !== 'chat-realtime-revocations' &&
+    cronJob.workerProcessor !== 'fleet-access-consumer' &&
     !selected.includes(cronJob.id)
   )
     return null;
@@ -253,6 +267,11 @@ async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (
+    cronJob.id === 'fleet-access-consumer' &&
+    env.FLEET_CONSUMER_MODE !== 'dry-run'
+  )
+    return { id: cronJob.id, outcome: 'skipped', reason: 'fleet-consumer-off' };
   if (
     cronJob.id === TASKS_RECURRENCE_JOB &&
     tasksRecurrenceMode(env.TASKS_RECURRENCE_MODE) === 'off'

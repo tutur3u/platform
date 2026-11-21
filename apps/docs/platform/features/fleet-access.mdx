@@ -196,16 +196,22 @@ person ─▶ surface (web / Mira / mobile)
 - **States:** `pending_approval`, `approved`, `rejected`, `claimed`,
   `dispatched`, `done`, `failed`, `expired`, `cancelled`. Pending intents
   expire after 72 hours. Transitions are enforced in the database.
-- **Consumption:** the orchestrator claims eligible intents with a 15-minute
-  lease and an idempotency key, then writes typed receipts against its current
-  lease only.
+- **Dry-run consumption:** Cron Control examines at most 20 approved or
+  previously claimed intents per 15-minute tick. It uses a 15-minute lease
+  and the intent's idempotency key. The database rechecks the stop, live
+  grants, target mapping and medium-risk quota at claim and receipt.
+  `dry_run` closes the intent as `done` without moving through `dispatched`.
+  Owner-required and high-risk approvals remain outside this consumer's
+  scope. After a restart, a still-live claim keeps its lease and key.
+  An expired or stale lease is settled without renewal. See the
+  [consumer runbook](/build/devops/overview#fleet-dry-run-consumer).
 
 ### Machine principals
 
 | Principal        | May                                                                 |
 | ---------------- | ------------------------------------------------------------------- |
 | Mira desk        | read the scoped digest and submit intents for verified events only  |
-| Consumer         | claim eligible intents and write receipts against its current lease |
+| Consumer         | read the stop fence, claim eligible intents, record dry-run receipts on its current lease, and purge expired data |
 | Digest publisher | write schema-validated digests                                      |
 
 Machine credentials confer no approval or grant authority.
@@ -268,7 +274,7 @@ the verified user's request identity and a live explicit root Mastermind grant.
 The service role can submit a server-resolved intent. The insert checks the
 live grant, project versions and the rolling one-hour question and 24-hour
 intent counts. The daily intent quota is the medium-risk budget. Slice 5
-rechecks that budget at dispatch. Model budget consumption belongs to the Ask
+rechecks that budget at claim and dry-run completion. Model budget consumption belongs to the Ask
 execution path.
 Auth account deletion revokes the grant and retains its generation and historical
 intent references. Fleet grant, project and control rows retain their fences.
@@ -293,9 +299,11 @@ reason in the append-only audit log.
 
 Keep replay fingerprints for 90 days from `consumed_at`. Trusted ingress
 must enforce provider-event freshness, including when it signs a redelivered
-event. The Slice 5 Cloudflare retention job owns purge of expired link codes,
-expired quotes and event fingerprints past the 90-day horizon. Quote readers
-must filter on `expires_at` from their first release.
+event. The Cloudflare retention job purges expired link codes, expired quotes and
+event fingerprints older than 90 days. Unconfirmed link codes stay usable
+until expiry. Confirmation consumes the code and account deletion removes its
+codes. Every scheduled purge records counts in the append-only audit log.
+Quote readers must filter on `expires_at` from their first release.
 
 ## Implementation plan
 
@@ -337,7 +345,12 @@ Each slice links its coverage here when it lands:
   revocation, quota, quote isolation and digest JSON types.
   See [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts)
   and [fleet-intent-admission.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-intent-admission.sql).
-- Slice 5: consumer tests for lease expiry, stale generations, idempotent
-  claims and the stop fence.
+- Slice 5 covers racing claims, lease expiry, idempotent receipts,
+  requester and approver generations, mapping drift, the dispatch fence and
+  bounded retention in `apps/database/supabase/tests/fleet-dry-run-consumer.sql`.
+  `apps/cron-control/src/fleet-access-consumer.test.ts` exercises operation
+  limits, stop and restart through the scheduler and ledger.
+  `apps/web/src/app/api/v1/fleet/consumer/route.test.ts` checks bearer
+  isolation, request bounds and the private RPC bindings.
 - Slice 4: desk tests for unlinked senders, group chats, injected instructions
   and stale digests.

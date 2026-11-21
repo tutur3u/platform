@@ -88,6 +88,8 @@ it('catalog ids are unique and every cadence has a trigger', () => {
     if (maintenanceRpc) expect(job.path).toBe(`/rest/v1/rpc/${maintenanceRpc}`);
     else if (job.workerProcessor === 'chat-realtime-revocations')
       expect(job.path).toBe('/v1/publish');
+    else if (job.workerProcessor === 'fleet-access-consumer')
+      expect(job.path).toBe('/api/v1/fleet/consumer/');
     else expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
     expect(leaseMs(job)).toBeGreaterThan(job.timeoutMs);
   }
