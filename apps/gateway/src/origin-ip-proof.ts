@@ -120,7 +120,7 @@ function warnUnsigned(reason: string) {
   if (unsignedWarned) return;
   unsignedWarned = true;
   console.warn(
-    `[gateway] ${ORIGIN_AUTH_HEADER} not sent: ${reason}; Web resolves the client IP from Vercel headers.`
+    `[gateway] ${ORIGIN_AUTH_HEADER} not sent: ${reason}; web families key on cf-connecting-ip.`
   );
 }
 

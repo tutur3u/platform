@@ -30,8 +30,8 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // with a reviewed push, schedule or manual trigger change.
 // 4122fb86 dropped cf-wrangler-publication path filters from coordination and
 // devbox-control workflows; app sources and cf parity paths are unchanged.
-// Removing the deleted packages/vercel workspace dropped its path filter from
-// fifteen satellite Cloudflare workflows; no other trigger input changed.
+// The fifteen satellite Cloudflare workflows carry no packages/vercel path
+// filter; their other trigger inputs are unchanged.
 // CodeQL push and pull_request runs share one security-sensitive path list;
 // the nightly security-checks.yaml schedule is the complete scan.
 const PROTECTED_TRIGGERS = {

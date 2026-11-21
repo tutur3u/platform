@@ -241,6 +241,10 @@ function originRequest(
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
   const outgoing = new Request(target, request);
   outgoing.headers.set(HOP_HEADER, '1');
+  for (const name of [...outgoing.headers.keys()]) {
+    if (name.toLowerCase().startsWith('x-vercel-'))
+      outgoing.headers.delete(name);
+  }
   withOriginAuth(outgoing.headers, null);
   outgoing.headers.delete(FORWARDED_HOST);
   outgoing.headers.delete(FORWARDED_PROTO);

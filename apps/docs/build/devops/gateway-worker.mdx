@@ -97,9 +97,11 @@ expire within 65 minutes.
 Web family requests come from the gateway Worker, so Web rate-limiting keyed
 on the calling address would block one shared address for every visitor
 behind it. The gateway therefore signs the
-visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
-`TRUSTED_PROXY=cloudflare-origin`
-(`packages/utils/src/abuse-protection/client-ip.ts`).
+visitor address into `x-tuturuuu-origin-auth`, which a Web runtime set to
+`TRUSTED_PROXY=cloudflare-origin` verifies
+(`packages/utils/src/abuse-protection/client-ip.ts`). The family Workers run
+`TRUSTED_PROXY=cloudflare` and read `cf-connecting-ip` directly. Client-sent
+`x-vercel-*` headers never reach a family or the Marketing origin.
 
 - **Proof:** `hmac-v1;<unix seconds>;<ip>;<hex HMAC-SHA256>`, valid for 60
   seconds. `apps/gateway/src/origin-ip-proof.ts` signs with Web Crypto and
@@ -418,8 +420,9 @@ route. Family Workers have no routes, so no zone or DNS change is involved.
   ending in `/`), `exclude` subtrees, `localized` and `assetPrefix` (`/_f/<id>`
   for page families, stripped before the family sees the request). Matching is
   method-agnostic.
-- `webFamilies.deny` lists subtrees that never reach a family, whatever the
-  flags say: `/api/v1/auth/accounts`, `/api/cron`,
+- `webFamilies.deny` lists subtrees that never reach an OpenNext family,
+  whatever the flags say; the vinext table assigns them to `api-ops`, and
+  without it they go to `web-rest`: `/api/v1/auth/accounts`, `/api/cron`,
   `/api/notifications/send-immediate`, `/api/v1/infrastructure`,
   `/api/v1/devboxes`, the ChatGPT credential routes and `/_next/image`.
 - `GATEWAY_WEB_FAMILIES` (comma-separated ids, default empty) turns families

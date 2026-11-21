@@ -16,8 +16,7 @@ export function isClientForwardingHeader(name: string) {
     lower.startsWith('x-next-intl-') ||
     lower.startsWith('x-tuturuuu-') ||
     (lower.startsWith('x-gateway-') && lower !== HOP_HEADER) ||
-    lower === 'x-vercel-protection-bypass' ||
-    lower === 'x-vercel-set-bypass-cookie' ||
+    lower.startsWith('x-vercel-') ||
     lower === 'forwarded' ||
     lower === 'x-real-ip' ||
     lower === 'x-rewrite-url'

@@ -123,6 +123,8 @@ describe('gateway handler', () => {
     const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
     expect(sent.headers.get('cookie')).toBe('sb-x-auth-token=1');
     await t.call('/about', { headers: { authorization: 'Bearer t' } });
+    const authorized = t.fetchMock.mock.calls[1]?.[0] as Request;
+    expect(authorized.headers.get('authorization')).toBe('Bearer t');
     expect(t.cache.entries.size).toBe(0);
     expect(t.fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -246,6 +248,20 @@ describe('gateway handler', () => {
     const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
     expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
     expect(sent.headers.get('x-forwarded-proto')).toBe('https');
+  });
+
+  it('never forwards client x-vercel-* headers to the Marketing origin', async () => {
+    const t = setup(() => new Response('ok'));
+    await t.call('/about', {
+      headers: {
+        'x-vercel-forwarded-for': '198.51.100.4',
+        'x-vercel-protection-bypass': 'forged',
+      },
+    });
+    const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
+    expect(new URL(sent.url).host).toBe('marketing-origin.example');
+    expect(sent.headers.has('x-vercel-forwarded-for')).toBe(false);
+    expect(sent.headers.has('x-vercel-protection-bypass')).toBe(false);
   });
 
   it('drops client X-Forwarded-Host when no public host is configured', async () => {
