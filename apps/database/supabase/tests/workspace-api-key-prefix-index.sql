@@ -19,10 +19,9 @@ select ok(
       and access_method.amname = 'btree'
       and index_row.indnkeyatts = 1
       and pg_get_indexdef(index_row.indexrelid, 1, true) = 'key_prefix'
-      and pg_get_expr(index_row.indpred, index_row.indrelid)
-        ilike '%key_prefix IS NOT NULL%'
+      and index_row.indpred is null
   ),
-  'workspace API keys have a valid non-unique partial btree prefix index'
+  'workspace API keys have a valid non-unique btree prefix index over all rows'
 );
 
 select ok(
@@ -111,7 +110,7 @@ $$;
 select ok(
   pg_temp.workspace_api_key_lookup_plan('ttr_00000001')::text
     like '%idx_workspace_api_keys_key_prefix%',
-  'prefix-only API key lookup can use the dedicated partial index'
+  'prefix-only API key lookup can use the dedicated prefix index'
 );
 
 select * from finish();

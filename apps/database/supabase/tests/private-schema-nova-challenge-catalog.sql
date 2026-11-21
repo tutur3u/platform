@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(26);
 
+\ir helpers/account-required-mfa-policy.inc
+
 create temporary table private_nova_catalog_tables(table_name text primary key)
 on commit drop;
 
@@ -121,8 +123,9 @@ select ok(
 select ok(
   not exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename in (select table_name from private_nova_catalog_tables)
       and (
         'authenticated' = any (roles)
@@ -130,7 +133,7 @@ select ok(
         or 'public' = any (roles)
       )
   ),
-  'private Nova catalog tables have no direct anon/authenticated/public policies'
+  'private Nova catalog tables have no client-role policies except the canonical MFA gate'
 );
 
 create temporary table expected_nova_catalog_fks(
@@ -280,8 +283,15 @@ select ok(
         from unnest(coalesce(p.proconfig, array[]::text[])) as config(value)
         where config.value = 'search_path=private, public, pg_temp'
       )
+      and not (
+        p.oid = 'public.check_challenge_attempt_limits()'::regprocedure
+        and coalesce(p.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+        and p.prosrc like '%from private.nova_challenges%'
+        and p.prosrc like '%from private.nova_sessions%'
+        and p.prosrc not like '%public.nova_%'
+      )
   ),
-  'Nova catalog functions resolve private before public in their search path'
+  'Nova functions resolve private catalog tables through a pinned path or qualified lookups'
 );
 
 set local role service_role;

@@ -220,9 +220,21 @@ select ok(
       'public.validate_cross_app_token_with_session(text,text)'::regprocedure,
       'public.revoke_all_cross_app_tokens(uuid)'::regprocedure
     )
-      and pg_get_functiondef(oid) not like '%private.cross_app_tokens%'
+      and prosrc not like '%private.cross_app_tokens%'
+      and not (
+        oid = 'public.validate_cross_app_token_with_session(text,text)'::regprocedure
+        and coalesce(proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+        and prosrc like '%private.redeem_cross_app_token(p_token, p_target_app, null)%'
+        and exists (
+          select 1 from pg_proc redemption
+          where redemption.oid = to_regprocedure('private.redeem_cross_app_token(text,text,text)')
+            and coalesce(redemption.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+            and redemption.prosrc like '%private.cross_app_tokens%'
+            and redemption.prosrc not like '%public.cross_app_tokens%'
+        )
+      )
   ),
-  'cross-app token helpers reference the private token table'
+  'cross-app token helpers resolve the private token table directly or through the redemption helper'
 );
 
 select ok(

@@ -481,6 +481,33 @@ select ok(
               and proc_row.prosrc like '%private.external_user_monthly_report_logs%')
             -- Batch wrappers delegate to the helper that keeps the private path.
             or (proc_row.proname like '%\_batch' and proc_row.prosrc like '%public.merge_workspace_users_batch_update(%')
+            or (
+              proc_row.oid = 'public.merge_workspace_users(uuid,uuid,uuid)'::regprocedure
+              and proc_row.prosrc like '%private.merge_workspace_users_for_actor(_source_id, _target_id, _ws_id, auth.uid())%'
+              and exists (
+                select 1 from pg_proc implementation
+                where implementation.oid = to_regprocedure('private.merge_workspace_users_for_actor(uuid,uuid,uuid,uuid)')
+                  and coalesce(implementation.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+                  and implementation.prosrc like '%private.external_user_monthly_reports%'
+                  and implementation.prosrc like '%private.external_user_monthly_report_logs%'
+              )
+            )
+            or (
+              proc_row.oid = 'public.merge_workspace_users_batch_update(uuid,uuid,uuid,text,text,integer)'::regprocedure
+              and strpos(proc_row.prosrc, 'UPDATE %I.%I t') > 0
+              and proc_row.prosrc like '%v_schema_name, _table_name, _column_name%'
+              and not exists (
+                select 1
+                from (values
+                  ('external_user_monthly_report_logs', 'creator_id'),
+                  ('external_user_monthly_report_logs', 'user_id'),
+                  ('external_user_monthly_reports', 'creator_id'),
+                  ('external_user_monthly_reports', 'updated_by'),
+                  ('external_user_monthly_reports', 'user_id')
+                ) as expected(table_name, column_name)
+                where strpos(proc_row.prosrc, format('(%L, %L, %L)', 'private', table_name, column_name)) = 0
+              )
+            )
           )
         )
       )

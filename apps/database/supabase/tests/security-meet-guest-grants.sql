@@ -4,6 +4,8 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(12);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   (
     select relrowsecurity
@@ -16,13 +18,14 @@ select ok(
 select is(
   (
     select count(*)::integer
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'public'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'meet_together_guests'
       and roles && array['anon', 'authenticated', 'public']::name[]
   ),
   0,
-  'meet guests have no client-role policies'
+  'meet guests have no client-role policies except the canonical MFA gate'
 );
 
 select ok(
