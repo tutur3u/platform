@@ -100,6 +100,19 @@ export interface BulkOperationI18n {
   assigneesClearedDescription: (count: number) => string;
   assigneesClearedPartialDescription: (count: number, failed: number) => string;
   deletedPartialDescription: (count: number, failed: number) => string;
+  deletedDescription: (count: number) => string;
+  deletingTasksProgress: () => string;
+  restoringTasksProgress: () => string;
+  undoAction: () => string;
+  tasksRestoredTitle: () => string;
+  restoredDescription: (count: number) => string;
+  partialRestoreCompletedTitle: () => string;
+  restoredPartialDescription: (count: number, failed: number) => string;
+  failedRestoreTasks: () => string;
+  deleteConfirmTitle: () => string;
+  deleteConfirmDescription: (count: number) => string;
+  deleteConfirmAction: () => string;
+  deleteConfirmCancel: () => string;
   defaultLabelName: () => string;
   defaultProjectName: () => string;
   loadingAssigneeName: () => string;
@@ -516,6 +529,56 @@ export function useBulkOperationI18n(): BulkOperationI18n {
           taskWord: getTaskWord(count),
         }
       ),
+    deletedDescription: (count: number) =>
+      translate('descriptions.deleted', '{count} {taskWord} deleted', {
+        count,
+        taskWord: getTaskWord(count),
+      }),
+    deletingTasksProgress: () =>
+      translate('progress.deleting_tasks', 'Deleting tasks'),
+    restoringTasksProgress: () =>
+      translate('progress.restoring_tasks', 'Restoring tasks'),
+    undoAction: () => translate('actions.undo', 'Undo'),
+    tasksRestoredTitle: () =>
+      translate('titles.tasks_restored', 'Tasks restored'),
+    restoredDescription: (count: number) =>
+      translate('descriptions.restored', '{count} {taskWord} restored', {
+        count,
+        taskWord: getTaskWord(count),
+      }),
+    partialRestoreCompletedTitle: () =>
+      translate(
+        'titles.partial_restore_completed',
+        'Partial restore completed'
+      ),
+    restoredPartialDescription: (count: number, failed: number) =>
+      translate(
+        'descriptions.restored_partial',
+        '{count} {taskWord} restored, {failed} failed to restore',
+        {
+          count,
+          failed,
+          taskWord: getTaskWord(count),
+        }
+      ),
+    failedRestoreTasks: () =>
+      translate(
+        'errors.failed_restore_tasks',
+        'Failed to restore deleted tasks'
+      ),
+    deleteConfirmTitle: () =>
+      translate('confirm.delete_title', 'Delete selected tasks'),
+    deleteConfirmDescription: (count: number) =>
+      translate(
+        'confirm.delete_description',
+        'Delete {count} selected {taskWord}? You can undo this right after.',
+        {
+          count,
+          taskWord: getTaskWord(count),
+        }
+      ),
+    deleteConfirmAction: () => translate('confirm.delete', 'Delete'),
+    deleteConfirmCancel: () => translate('confirm.cancel', 'Cancel'),
     defaultLabelName: () => translate('defaults.label_name', 'Label'),
     defaultProjectName: () => translate('defaults.project_name', 'Project'),
     loadingAssigneeName: () =>

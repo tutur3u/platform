@@ -453,7 +453,7 @@
     "delete_list_title": "Xóa “{name}”?",
     "delete_permanently": "Xóa vĩnh viễn",
     "delete_selected_tasks": "Xóa công việc đã chọn?",
-    "delete_selected_tasks_confirmation": "Bạn có chắc chắn muốn xóa {count} công việc đã chọn? Hành động này không thể hoàn tác.",
+    "delete_selected_tasks_confirmation": "Xóa {count} công việc đã chọn? Bạn có thể hoàn tác ngay sau đó.",
     "delete_task": "Xóa công việc",
     "delete_task_confirmation": "Bạn có chắc chắn muốn chuyển \"{name}\" vào thùng rác không?",
     "delete_tasks": "Xóa các công việc",

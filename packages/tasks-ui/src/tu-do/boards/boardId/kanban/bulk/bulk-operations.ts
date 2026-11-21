@@ -16,6 +16,7 @@ import {
   useBulkClearProjects,
   useBulkDeleteTasks,
 } from './bulk-mutations-clear-delete';
+import { nextBulkDeleteToastId } from './bulk-mutations-delete';
 import {
   useBulkMoveToBoard,
   useBulkMoveToList,
@@ -377,7 +378,11 @@ export function useBulkOperations(config: BulkOperationsConfig) {
         defaultWorkspaceId: wsId,
         taskIds,
       });
-      await deleteMutation.mutateAsync({ taskIds, workspaceGroups });
+      await deleteMutation.mutateAsync({
+        taskIds,
+        workspaceGroups,
+        toastId: nextBulkDeleteToastId(),
+      });
       dispatchBulkTaskSoundCue('delete', taskIds.length);
     },
     bulkMoveToBoard: async (targetBoardId: string, targetListId: string) => {

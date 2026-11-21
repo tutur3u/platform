@@ -300,6 +300,14 @@
   :root [data-sonner-toaster] [data-sonner-toast] [data-icon] svg {
     animation: none;
   }
+
+  :root
+    [data-sonner-toaster]
+    [data-sonner-toast]
+    [data-slot="toast-progress"]
+    [data-slot="progress-indicator"] {
+    transition: none;
+  }
 }
 
 :root
@@ -318,4 +326,98 @@
   box-shadow: none;
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/*
+  Bulk-operation progress (ToastProgress in toast-progress.tsx). The bar
+  spans the message column; the count stays quiet next to the label, and a
+  finished toast's Undo action sits on the right of the same row.
+*/
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-title]:has([data-slot="toast-progress"]) {
+  width: 100%;
+}
+
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast]
+  [data-slot="toast-progress"]
+  [data-slot="progress"] {
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast]
+  [data-slot="toast-progress"]
+  [data-slot="progress-indicator"] {
+  background: var(--primary);
+  transition-duration: var(--sorbet-duration-slow, 300ms);
+  transition-timing-function: var(--sorbet-ease-standard, ease-out);
+}
+
+/*
+  Sorbet: the toast floats like a card (receding border, soft shadow), the
+  type icon sits in a pastel chip of its own ink, and buttons are pill
+  controls that follow the Corners choice through --sorbet-control-radius.
+  Only colour and shape tokens change, so every palette and both modes follow.
+*/
+:root[data-ui="sorbet"] [data-sonner-toaster][data-sonner-theme] {
+  --normal-border: color-mix(in oklab, var(--border) 70%, transparent);
+  --normal-border-hover: var(--border);
+}
+
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"] {
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-icon] {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-block-start: 0;
+  justify-content: center;
+  border-radius: var(--sorbet-control-radius, 9999px);
+  background: color-mix(in oklab, currentColor 14%, transparent);
+}
+
+/* A one-line message centres on the chip; longer copy starts at its top. */
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]:has([data-icon])
+  [data-content] {
+  min-height: 1.75rem;
+  justify-content: center;
+}
+
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-button] {
+  height: 2rem;
+  padding-inline: 0.875rem;
+  border-radius: var(--sorbet-control-radius, 9999px);
+}
+
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-cancel] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+:root[data-ui="sorbet"]
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-close-button] {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: var(--sorbet-shadow-sm, none);
 }

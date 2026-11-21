@@ -5147,7 +5147,7 @@
     "delete_list_title": "Xóa “{name}”?",
     "delete_permanently": "Xóa vĩnh viễn",
     "delete_selected_tasks": "Xóa công việc đã chọn?",
-    "delete_selected_tasks_confirmation": "Bạn có chắc chắn muốn xóa {count} công việc đã chọn? Hành động này không thể hoàn tác.",
+    "delete_selected_tasks_confirmation": "Xóa {count} công việc đã chọn? Bạn có thể hoàn tác ngay sau đó.",
     "delete_task": "Xóa công việc",
     "delete_task_confirmation": "Bạn có chắc chắn muốn chuyển \"{name}\" vào thùng rác không?",
     "delete_tasks": "Xóa các công việc",
@@ -25118,6 +25118,15 @@
       "create_new_project": "Tạo dự án mới",
       "move_to_list": "Di chuyển đến danh sách",
       "operations": {
+        "actions": {
+          "undo": "Hoàn tác"
+        },
+        "confirm": {
+          "cancel": "Hủy",
+          "delete": "Xóa",
+          "delete_description": "Xóa {count} nhiệm vụ đã chọn? Bạn có thể hoàn tác ngay sau đó.",
+          "delete_title": "Xóa các nhiệm vụ đã chọn"
+        },
         "defaults": {
           "label_name": "Nhãn",
           "loading_assignee_name": "Đang tải...",
@@ -25130,6 +25139,7 @@
           "assignee_removed_partial": "Đã xóa người được giao khỏi {count} mục, {failed} mục thất bại",
           "assignees_cleared": "Đã xóa tất cả người được giao khỏi {count} mục",
           "assignees_cleared_partial": "Đã xóa người được giao khỏi {count} mục, {failed} mục thất bại",
+          "deleted": "Đã xóa {count} mục",
           "deleted_partial": "Đã xóa {count} mục, {failed} mục xóa thất bại",
           "label_added": "Đã thêm \"{labelName}\" vào {count} mục",
           "label_added_partial": "Đã thêm \"{labelName}\" vào {count} mục, {failed} mục thất bại",
@@ -25145,6 +25155,8 @@
           "project_removed_partial": "Đã xóa \"{projectName}\" khỏi {count} mục, {failed} mục thất bại",
           "projects_cleared": "Đã xóa tất cả dự án khỏi {count} mục",
           "projects_cleared_partial": "Đã xóa dự án khỏi {count} mục, {failed} mục thất bại",
+          "restored": "Đã khôi phục {count} mục",
+          "restored_partial": "Đã khôi phục {count} mục, {failed} mục khôi phục thất bại",
           "updated": "Đã cập nhật {count} mục",
           "updated_partial": "Đã cập nhật {count} mục, {failed} mục cập nhật thất bại"
         },
@@ -25161,9 +25173,14 @@
           "failed_remove_assignee": "Không thể xóa người được giao khỏi các nhiệm vụ đã chọn",
           "failed_remove_label": "Không thể xóa nhãn khỏi các nhiệm vụ đã chọn",
           "failed_remove_project": "Không thể xóa dự án khỏi các nhiệm vụ đã chọn",
+          "failed_restore_tasks": "Không thể khôi phục các nhiệm vụ đã xóa",
           "failed_update_due_date": "Không thể cập nhật hạn chót cho các nhiệm vụ đã chọn",
           "failed_update_estimation": "Không thể cập nhật ước lượng cho các nhiệm vụ đã chọn",
           "failed_update_priority": "Không thể cập nhật mức ưu tiên cho các nhiệm vụ đã chọn"
+        },
+        "progress": {
+          "deleting_tasks": "Đang xóa nhiệm vụ",
+          "restoring_tasks": "Đang khôi phục nhiệm vụ"
         },
         "titles": {
           "assignee_added": "Đã thêm người được giao",
@@ -25186,6 +25203,7 @@
           "partial_project_addition_completed": "Hoàn tất một phần thao tác thêm dự án",
           "partial_project_clear_completed": "Hoàn tất một phần thao tác xóa dự án",
           "partial_project_removal_completed": "Hoàn tất một phần thao tác gỡ dự án",
+          "partial_restore_completed": "Hoàn tất khôi phục một phần",
           "partial_update_completed": "Hoàn tất cập nhật một phần",
           "priority_updated": "Đã cập nhật mức ưu tiên",
           "project_added": "Đã thêm dự án",
@@ -25193,7 +25211,8 @@
           "projects_cleared": "Đã xóa dự án",
           "tasks_moved_to_board": "Đã di chuyển nhiệm vụ sang bảng",
           "tasks_moved_to_list": "Đã di chuyển nhiệm vụ đến {listName}",
-          "tasks_moved_to_status": "Đã di chuyển nhiệm vụ sang {status}"
+          "tasks_moved_to_status": "Đã di chuyển nhiệm vụ sang {status}",
+          "tasks_restored": "Đã khôi phục nhiệm vụ"
         }
       },
       "set_custom_due_date": "Đặt ngày đến hạn tùy chỉnh",

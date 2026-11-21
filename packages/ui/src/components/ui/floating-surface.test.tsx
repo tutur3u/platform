@@ -148,6 +148,44 @@ describe('sonner toast skin', () => {
     expect(compact).toMatch(
       /@media \(prefers-reduced-motion: reduce\) \{.*\[data-icon\] svg \{ animation: none;/
     );
+    expect(compact).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{.*\[data-slot="progress-indicator"\] \{ transition: none;/
+    );
+  });
+
+  it('spans the progress bar across the message and draws it in ink', () => {
+    expect(compact).toContain(
+      '[data-title]:has([data-slot="toast-progress"]) { width: 100%;'
+    );
+    expect(compact).toMatch(
+      /\[data-slot="toast-progress"\] \[data-slot="progress-indicator"\] \{ background: var\(--primary\);/
+    );
+  });
+
+  it('gives Sorbet toasts pill controls, a receding border and an icon chip', () => {
+    const sorbetRules = toastRules.filter((rule) =>
+      rule.includes(':root[data-ui="sorbet"]')
+    );
+    const rule = (needle: string) =>
+      sorbetRules.find((candidate) => candidate.includes(needle));
+
+    expect(compact).toContain(
+      ':root[data-ui="sorbet"] [data-sonner-toaster][data-sonner-theme] { --normal-border: color-mix(in oklab, var(--border) 70%, transparent);'
+    );
+    expect(rule('[data-button] {')).toContain(
+      'border-radius: var(--sorbet-control-radius, 9999px);'
+    );
+    const icon = rule('[data-icon] {');
+    expect(icon).toContain(
+      'border-radius: var(--sorbet-control-radius, 9999px);'
+    );
+    expect(icon).toContain(
+      'background: color-mix(in oklab, currentColor 14%, transparent);'
+    );
+    // Colour comes only from tokens, so palettes and dark mode follow.
+    for (const sorbetRule of sorbetRules) {
+      expect(sorbetRule).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(/i);
+    }
   });
 
   it('lifts the stack above the Sorbet dock only where the dock shows', () => {

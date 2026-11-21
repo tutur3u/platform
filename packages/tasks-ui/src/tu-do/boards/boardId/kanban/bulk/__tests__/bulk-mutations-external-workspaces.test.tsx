@@ -53,6 +53,7 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
+    loading: vi.fn(),
     success: vi.fn(),
     warning: vi.fn(),
   },

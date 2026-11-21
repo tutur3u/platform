@@ -2961,7 +2961,7 @@
     "delete_list_title": "Delete “{name}”?",
     "delete_permanently": "Delete Permanently",
     "delete_selected_tasks": "Delete selected tasks?",
-    "delete_selected_tasks_confirmation": "Are you sure you want to delete {count} selected task(s)? This action cannot be undone.",
+    "delete_selected_tasks_confirmation": "Delete {count} selected task(s)? You can undo this right after.",
     "delete_task": "Delete Task",
     "delete_task_confirmation": "Are you sure you want to move \"{name}\" to the recycle bin?",
     "delete_tasks": "Delete tasks",
@@ -14031,6 +14031,15 @@
       "create_new_project": "Create new project",
       "move_to_list": "Move to list",
       "operations": {
+        "actions": {
+          "undo": "Undo"
+        },
+        "confirm": {
+          "cancel": "Cancel",
+          "delete": "Delete",
+          "delete_description": "Delete {count} selected {taskWord}? You can undo this right after.",
+          "delete_title": "Delete selected tasks"
+        },
         "defaults": {
           "label_name": "Label",
           "loading_assignee_name": "Loading...",
@@ -14043,6 +14052,7 @@
           "assignee_removed_partial": "Removed assignee from {count} {taskWord}, {failed} failed",
           "assignees_cleared": "Cleared all assignees from {count} {taskWord}",
           "assignees_cleared_partial": "Cleared assignees from {count} {taskWord}, {failed} failed",
+          "deleted": "{count} {taskWord} deleted",
           "deleted_partial": "{count} {taskWord} deleted, {failed} failed to delete",
           "label_added": "Added \"{labelName}\" to {count} {taskWord}",
           "label_added_partial": "Added \"{labelName}\" to {count} {taskWord}, {failed} failed",
@@ -14058,6 +14068,8 @@
           "project_removed_partial": "Removed \"{projectName}\" from {count} {taskWord}, {failed} failed",
           "projects_cleared": "Cleared all projects from {count} {taskWord}",
           "projects_cleared_partial": "Cleared projects from {count} {taskWord}, {failed} failed",
+          "restored": "{count} {taskWord} restored",
+          "restored_partial": "{count} {taskWord} restored, {failed} failed to restore",
           "updated": "{count} {taskWord} updated",
           "updated_partial": "{count} {taskWord} updated, {failed} failed to update"
         },
@@ -14074,9 +14086,14 @@
           "failed_remove_assignee": "Failed to remove assignee from selected tasks",
           "failed_remove_label": "Failed to remove label from selected tasks",
           "failed_remove_project": "Failed to remove project from selected tasks",
+          "failed_restore_tasks": "Failed to restore deleted tasks",
           "failed_update_due_date": "Failed to update due date for selected tasks",
           "failed_update_estimation": "Failed to update estimation for selected tasks",
           "failed_update_priority": "Failed to update priority for selected tasks"
+        },
+        "progress": {
+          "deleting_tasks": "Deleting tasks",
+          "restoring_tasks": "Restoring tasks"
         },
         "titles": {
           "assignee_added": "Assignee added",
@@ -14099,6 +14116,7 @@
           "partial_project_addition_completed": "Partial project addition completed",
           "partial_project_clear_completed": "Partial project clear completed",
           "partial_project_removal_completed": "Partial project removal completed",
+          "partial_restore_completed": "Partial restore completed",
           "partial_update_completed": "Partial update completed",
           "priority_updated": "Priority updated",
           "project_added": "Project added",
@@ -14106,7 +14124,8 @@
           "projects_cleared": "Projects cleared",
           "tasks_moved_to_board": "Tasks moved to board",
           "tasks_moved_to_list": "Tasks moved to {listName}",
-          "tasks_moved_to_status": "Tasks moved to {status}"
+          "tasks_moved_to_status": "Tasks moved to {status}",
+          "tasks_restored": "Tasks restored"
         }
       },
       "set_custom_due_date": "Set custom due date",

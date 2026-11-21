@@ -453,7 +453,7 @@
     "delete_list_title": "Delete “{name}”?",
     "delete_permanently": "Delete Permanently",
     "delete_selected_tasks": "Delete selected tasks?",
-    "delete_selected_tasks_confirmation": "Are you sure you want to delete {count} selected task(s)? This action cannot be undone.",
+    "delete_selected_tasks_confirmation": "Delete {count} selected task(s)? You can undo this right after.",
     "delete_task": "Delete Task",
     "delete_task_confirmation": "Are you sure you want to move \"{name}\" to the recycle bin?",
     "delete_tasks": "Delete tasks",

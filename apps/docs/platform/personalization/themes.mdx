@@ -140,6 +140,15 @@ the table adds `destructive-ink` (`--red`) for destructive text; Sorbet's
 `destructive` already reads as text. `sorbet-classic-tokens.test.ts` keeps the
 table equal to `globals.css` and the dialog scrim and checks text contrast.
 
+Toasts come from the shared Toaster (`@tuturuuu/ui/sonner`), so every app
+gets the same skin from `floating-surface.css`. With Sorbet on, a toast floats
+like a card (receding border, soft shadow, the popover corner), its type icon
+sits in a pastel chip of its own ink, and its buttons are pill controls that
+follow Corners. Bulk operations show `ToastProgress` (`@tuturuuu/ui/toast-progress`):
+the label, x/N and an ink progress bar, replaced in the same toast by the
+result and its Undo action. `floating-surface.test.tsx` keeps these rules on
+tokens only.
+
 `sorbet-surfaces.css` styles the shared shells (the settings dialog's
 navigation, sections, rows and tabs) and `sorbet-components.css` the shared
 primitives: accordion, breadcrumb, pagination, toggles and toggle groups,

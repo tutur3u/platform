@@ -322,6 +322,37 @@ settings are unchanged. Regression coverage lives in
 - Realtime receivers may reconcile task detail, history, counts, and personal task queries in the background. The board page should revalidate loaded progressive-list data without invalidating visible task arrays so shared boards stay current without remounting cards. During the Cloudflare migration, the server publishes the same authorized task events to both transports so supported older mobile and cached web clients retain updates; new clients use Cloudflare only. See the [bounded compatibility bridge and removal criterion](/build/devops/programming-realtime-runbook#existing-client-transition) and its [regression coverage](https://github.com/tutur3u/platform/blob/main/packages/tasks-api/src/server/tasks/realtime-broadcast.test.ts).
 - Task edit dialogs should keep dropdowns and popovers controlled from a single active overlay id within each dialog section. Opening another menu must close the previous one, and outside-click/Escape close behavior should flow through the same `onOpenChange` path.
 
+## Bulk delete and Undo
+
+- **Scope:** deleting a multi-select on a board (Kanban and the list view) in
+  every app that ships the shared task board. Archiving or moving a whole
+  list follows the same flow.
+- **Behavior:** confirming closes the dialog at once and the cards leave the
+  board. The selection is sent to `POST /tasks/bulk` in batches of 50
+  (`BULK_DELETE_CHUNK_SIZE`; the route takes at most 200 per request), grouped
+  by each task's source workspace, while one toast shows x/N progress. Tasks
+  the server did not delete come back; if none were deleted, the board rolls
+  back and the same toast shows the error.
+- **Undo:** the finished toast offers Undo for 8 seconds. Undo sets
+  `deleted: false` on the deleted ids (a soft-delete restore, in the same
+  batches), puts the cards back from the pre-delete snapshot, and reports in
+  its own toast. A delete also removes the tasks' calendar events and
+  per-user scheduling settings (`task_user_scheduling_settings`); Undo does not
+  recreate them, so restored tasks need rescheduling. Other people on the same
+  board get the restored cards from the board broadcast (card fields without
+  the description, in groups of 50); views of other boards, such as a source
+  workspace's board for a task shown on a personal board, show them on their
+  next refresh. Delete and Undo both refresh the recycle bin.
+- **Copy:** the confirm dialog names the exact count and says the delete can be
+  undone; it never claims the delete is permanent.
+
+Regression coverage:
+`packages/tasks-ui/src/tu-do/boards/boardId/kanban/bulk/__tests__/bulk-mutations-delete.test.tsx`
+(batches, progress, rollback scoped to the run, partial failure, Undo through
+each task's source workspace, one restore per toast) and
+`packages/ui/src/components/ui/toast-progress.test.tsx` (the shared progress
+toast and its Undo layout).
+
 ## AI Journal Capture Notes
 
 - The quick-journal endpoint at `/api/v1/workspaces/{wsId}/tasks/journal` is a two-step flow: preview requests may invoke AI, but save requests that already include reviewed `tasks` plus a `listId` must persist directly.

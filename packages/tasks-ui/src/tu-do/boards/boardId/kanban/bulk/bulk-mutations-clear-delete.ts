@@ -6,15 +6,15 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import {
-  type BulkTaskWorkspaceGroup,
   bulkWorkspaceTasksByEffectiveWorkspace,
   getInternalApiOptions,
   restoreBoardTaskCaches,
-  restoreDeletedBoardTasks,
   restoreFailedBoardTasks,
   snapshotBoardTaskCaches,
   updateBoardTaskCaches,
 } from './bulk-operation-utils';
+
+export { useBulkDeleteTasks } from './bulk-mutations-delete';
 
 export function useBulkClearLabels(
   queryClient: QueryClient,
@@ -76,7 +76,7 @@ export function useBulkClearLabels(
       );
     },
     onSuccess: (data, _variables, context) => {
-      const failedTaskIds = new Set(
+      const failedTaskIds = new Set<string>(
         data.failures.map((failure) => failure.taskId)
       );
 
@@ -180,7 +180,7 @@ export function useBulkClearProjects(
       );
     },
     onSuccess: (data, _variables, context) => {
-      const failedTaskIds = new Set(
+      const failedTaskIds = new Set<string>(
         data.failures.map((failure) => failure.taskId)
       );
 
@@ -284,7 +284,7 @@ export function useBulkClearAssignees(
       );
     },
     onSuccess: (data, _variables, context) => {
-      const failedTaskIds = new Set(
+      const failedTaskIds = new Set<string>(
         data.failures.map((failure) => failure.taskId)
       );
 
@@ -323,111 +323,6 @@ export function useBulkClearAssignees(
             i18n?.assigneesClearedDescription(data.count) ??
             `Cleared all assignees from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
-      }
-    },
-  });
-}
-
-export function useBulkDeleteTasks(
-  queryClient: QueryClient,
-  wsId: string,
-  boardId: string,
-  clearSelection: () => void,
-  setBulkDeleteOpen: (open: boolean) => void,
-  broadcast?: BoardBroadcastFn | null,
-  i18n?: BulkOperationI18n
-) {
-  return useMutation({
-    mutationFn: async ({
-      taskIds,
-      workspaceGroups,
-    }: {
-      taskIds: string[];
-      workspaceGroups?: BulkTaskWorkspaceGroup[];
-    }) => {
-      const apiOptions = getInternalApiOptions();
-
-      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
-        queryClient,
-        boardId,
-        defaultWorkspaceId: wsId,
-        taskIds,
-        operation: {
-          type: 'update_fields',
-          updates: { deleted: true },
-        },
-        options: apiOptions,
-        workspaceGroups,
-      });
-
-      if (result.successCount === 0 && taskIds.length > 0) {
-        throw new Error(`Failed to delete all ${taskIds.length} tasks`);
-      }
-
-      return { count: result.successCount, taskIds, failures: result.failures };
-    },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
-      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
-      const taskIdSet = new Set(taskIds);
-
-      updateBoardTaskCaches(queryClient, boardId, (old) => {
-        if (!old) return old;
-        return old.filter((task) => !taskIdSet.has(task.id));
-      });
-
-      return cacheSnapshot;
-    },
-    onError: (error, _, context) => {
-      if (context) {
-        restoreBoardTaskCaches(queryClient, boardId, context);
-      }
-      console.error('Bulk delete failed', error);
-      toast.error(
-        i18n?.failedDeleteTasks() ?? 'Failed to delete selected tasks'
-      );
-    },
-    onSuccess: (data, _variables, context) => {
-      const failedTaskIds = new Set(
-        data.failures.map((failure) => failure.taskId)
-      );
-
-      restoreDeletedBoardTasks({
-        queryClient,
-        boardId,
-        previousTasks: context?.previousTasks,
-        previousFullTasks: context?.previousFullTasks,
-        failedTaskIds,
-      });
-
-      const succeededTaskIds = data.taskIds.filter(
-        (taskId) => !failedTaskIds.has(taskId)
-      );
-
-      for (const tid of succeededTaskIds) {
-        broadcast?.('task:delete', { taskId: tid });
-      }
-
-      clearSelection();
-      setBulkDeleteOpen(false);
-
-      if (data.failures.length > 0) {
-        toast.warning(
-          i18n?.partialDeletionCompletedTitle() ?? 'Partial deletion completed',
-          {
-            description:
-              i18n?.deletedPartialDescription(
-                data.count,
-                data.failures.length
-              ) ??
-              `${data.count} task${data.count === 1 ? '' : 's'} deleted, ${data.failures.length} failed to delete`,
-          }
-        );
-      } else {
-        toast.success(
-          i18n?.deletedSelectedTasksTitle() ?? 'Deleted selected tasks'
-        );
       }
     },
   });

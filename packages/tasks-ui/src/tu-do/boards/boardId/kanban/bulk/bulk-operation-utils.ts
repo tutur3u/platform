@@ -25,6 +25,9 @@ type CachedTaskWithWorkspace = Task & {
 
 type BulkWorkspaceTasksOptions = Parameters<typeof bulkWorkspaceTasks>[2];
 
+/** `/tasks/bulk` accepts at most this many task ids per request. */
+export const BULK_TASKS_MAX_PER_REQUEST = 200;
+
 export type BulkTaskWorkspaceGroup = {
   workspaceId: string;
   taskIds: string[];
@@ -103,6 +106,8 @@ export async function bulkWorkspaceTasksByEffectiveWorkspace({
   operation,
   options,
   workspaceGroups,
+  chunkSize = BULK_TASKS_MAX_PER_REQUEST,
+  onProgress,
 }: {
   queryClient: QueryClient;
   boardId: string;
@@ -111,6 +116,10 @@ export async function bulkWorkspaceTasksByEffectiveWorkspace({
   operation: BulkWorkspaceTaskOperation;
   options?: BulkWorkspaceTasksOptions;
   workspaceGroups?: BulkTaskWorkspaceGroup[];
+  /** Tasks per request, capped at the route's limit. */
+  chunkSize?: number;
+  /** Called with the tasks settled so far, before the first request and after each. */
+  onProgress?: (progress: { done: number; total: number }) => void;
 }): Promise<BulkWorkspaceTasksResponse> {
   const groups =
     workspaceGroups ??
@@ -130,7 +139,25 @@ export async function bulkWorkspaceTasksByEffectiveWorkspace({
     taskMetaById: {},
   };
 
-  for (const group of groups) {
+  const size = Math.max(
+    1,
+    Math.min(Math.floor(chunkSize), BULK_TASKS_MAX_PER_REQUEST)
+  );
+  const chunks = groups.flatMap((group) => {
+    const groupChunks: BulkTaskWorkspaceGroup[] = [];
+    for (let offset = 0; offset < group.taskIds.length; offset += size) {
+      groupChunks.push({
+        workspaceId: group.workspaceId,
+        taskIds: group.taskIds.slice(offset, offset + size),
+      });
+    }
+    return groupChunks;
+  });
+  const total = chunks.reduce((sum, chunk) => sum + chunk.taskIds.length, 0);
+  let done = 0;
+  onProgress?.({ done, total });
+
+  for (const group of chunks) {
     try {
       const result = await bulkWorkspaceTasks(
         group.workspaceId,
@@ -164,6 +191,9 @@ export async function bulkWorkspaceTasksByEffectiveWorkspace({
         }))
       );
     }
+
+    done += group.taskIds.length;
+    onProgress?.({ done, total });
   }
 
   return aggregate;
