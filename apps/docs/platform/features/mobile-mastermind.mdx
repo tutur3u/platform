@@ -281,8 +281,13 @@ product rules of the shell entry and every tab.
   open file, and each sweep closes any open file the ask ledger already
   answered or withdrew, so a stale card lasts at most one cycle. Web answers
   409 `decision_closed` to an answer for a decision the stored snapshot no
-  longer carries: the phone treats that card as closed
-  (`FleetFailure.closed`), never as a retryable send.
+  longer carries (and `login_closed` to "I signed in" on a closed login
+  request): the phone treats that card as closed (`FleetFailure.closed`),
+  never as a retryable send. The one exception is a retry of an answer Web
+  already recorded: the same signed-in actor, Idempotency-Key and payload
+  gets the original 202 receipt, so a send whose response was lost never
+  reads as closed. Answers recorded before the actor was stored never
+  replay.
 - **Verifying the SLO:** create a throwaway ask titled "Test: Mastermind
   reply path" with urgency `fyi` through `iris-ask` (no WhatsApp relay), and
   time the first `published:true` line in `logs/publisher.log` after it
@@ -430,7 +435,9 @@ never left stuck as "Not sent".
   push arrives or is tapped. The card shows "Not sent yet · retrying in N s"
   with Retry now.
 - **What stops.** A 409 (`decision_closed`, `login_closed`) settles as closed
-  and is never resent. Any other 4xx, such as a 422 `invalid_answer` or
+  and is never resent. Web replays the original 202 receipt instead when the
+  same actor retries the same key and payload, so a lost response settles
+  as delivered. Any other 4xx, such as a 422 `invalid_answer` or
   `unknown_option`, settles as "Not delivered" with the reason and Dismiss,
   which brings the actions back.
 - **Abuse step-up (mobile).** A 403 that asks for a browser check
@@ -457,8 +464,9 @@ never left stuck as "Not sent".
   while the account that read the file is signed in. The file is erased on
   logout, account switch or lost access, both by the fleet cubit and with the
   whole Mastermind cache. A 401 or 403 on a fleet read drops the snapshot
-  but keeps unsent answers. Restored answers wait for the first snapshot,
-  settle against it, then go out. Settled entries are pruned after 24 hours.
+  but keeps unsent answers. Restored answers wait for one snapshot read,
+  settle against it, then go out; when that read fails they go out anyway.
+  Closed and refused entries are pruned 24 hours after the owner answered.
   The web app retries only while the ask's card is mounted, one resend at a
   time, and treats a receipt for a different choice as another device's
   answer. It does not persist across reloads.
@@ -478,8 +486,11 @@ never left stuck as "Not sent".
   (same-key retry and backoff, 409, 422, abuse step-up, resume, restart,
   closed-ask settling, resolved precedence, push refresh),
   `fleet_delivery_view_test.dart` (freshness tick, resolved display, not
-  delivered and Send to Iris) and `apps/mastermind/src/fleet/model.test.ts`
-  (web retry reducer).
+  delivered and Send to Iris), `apps/mastermind/src/fleet/model.test.ts`
+  (web retry reducer), and `apps/web/src/lib/mastermind/fleet/store.test.ts`
+  plus `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`
+  (replay after a decision or login request closes, and actor, key and
+  payload mismatches).
 
 ### Access requests
 

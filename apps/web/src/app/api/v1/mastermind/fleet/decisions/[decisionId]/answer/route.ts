@@ -4,7 +4,10 @@ import {
   isFleetOwner,
   MASTERMIND_APP_SESSION,
 } from '@/lib/mastermind/fleet/auth';
-import { fleetAnswerInputSchema } from '@/lib/mastermind/fleet/contract';
+import {
+  type FleetAnswerRecord,
+  fleetAnswerInputSchema,
+} from '@/lib/mastermind/fleet/contract';
 import { isLoginActionable } from '@/lib/mastermind/fleet/login';
 import {
   FLEET_NO_STORE,
@@ -15,15 +18,32 @@ import {
 import {
   readFleetState,
   recordFleetAnswer,
+  replayFleetAnswer,
 } from '@/lib/mastermind/fleet/store';
 
 const IDEMPOTENCY_KEY =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DECISION_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
+function receipt(answer: FleetAnswerRecord) {
+  return NextResponse.json(
+    {
+      action: answer.action,
+      ...(answer.optionId ? { optionId: answer.optionId } : {}),
+      revision: answer.revision,
+      answeredAt: answer.answeredAt,
+      pickedUp: answer.pickedUpRevision >= answer.revision,
+    },
+    { status: 202, headers: FLEET_NO_STORE }
+  );
+}
+
 /**
  * Owner answer to an open fleet decision. It is stored as a durable record the
- * orchestrator pulls; nothing here messages a fleet thread.
+ * orchestrator pulls; nothing here messages a fleet thread. A retry of an
+ * answer this actor already recorded (same key and payload) gets its original
+ * receipt even after the decision closed, so a lost response never reads as
+ * closed; anything else on a closed decision is a 409.
  */
 export const POST = withSessionAuth<{ decisionId: string }>(
   async (request, { user }, { decisionId }) => {
@@ -53,7 +73,17 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     try {
       const stored = await readFleetState(store);
       const decision = stored?.state.decisions.find((d) => d.id === decisionId);
-      if (!decision) return fleetError('decision_closed', 409);
+      const closed = async (error: 'decision_closed' | 'login_closed') => {
+        const replay = await replayFleetAnswer(
+          store,
+          decisionId,
+          parsed.data,
+          idempotencyKey,
+          user.id
+        );
+        return replay ? receipt(replay) : fleetError(error, 409);
+      };
+      if (!decision) return closed('decision_closed');
       // "I signed in" exists only on login requests that are still open, and
       // an ask's approve or hold never answers a login request.
       if (
@@ -65,28 +95,22 @@ export const POST = withSessionAuth<{ decisionId: string }>(
         parsed.data.action === 'signed_in' &&
         (!decision.login || !isLoginActionable(decision.login))
       )
-        return fleetError('login_closed', 409);
+        return closed('login_closed');
       if (
         parsed.data.optionId &&
         !decision.options.some((option) => option.id === parsed.data.optionId)
       )
         return fleetError('unknown_option', 422);
 
-      const answer = await recordFleetAnswer(
-        store,
-        decisionId,
-        parsed.data,
-        idempotencyKey
-      );
-      return NextResponse.json(
-        {
-          action: answer.action,
-          ...(answer.optionId ? { optionId: answer.optionId } : {}),
-          revision: answer.revision,
-          answeredAt: answer.answeredAt,
-          pickedUp: answer.pickedUpRevision >= answer.revision,
-        },
-        { status: 202, headers: FLEET_NO_STORE }
+      return receipt(
+        await recordFleetAnswer(
+          store,
+          decisionId,
+          parsed.data,
+          idempotencyKey,
+          new Date(),
+          user.id
+        )
       );
     } catch {
       return fleetError('unavailable', 503);

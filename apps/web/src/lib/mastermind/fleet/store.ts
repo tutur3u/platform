@@ -263,7 +263,8 @@ export async function recordFleetAnswer(
   decisionId: string,
   input: FleetAnswerInput,
   idempotencyKey: string,
-  now = new Date()
+  now = new Date(),
+  actorId?: string
 ): Promise<FleetAnswerRecord> {
   const key = `${ANSWER_PREFIX}${decisionId}`;
   for (let attempt = 0; attempt < CAS_ATTEMPTS; attempt++) {
@@ -278,6 +279,7 @@ export async function recordFleetAnswer(
       ...(input.optionId ? { optionId: input.optionId } : {}),
       ...(input.text ? { text: input.text } : {}),
       idempotencyKey,
+      ...(actorId ? { actorId } : {}),
       answeredAt: now.toISOString(),
     };
     if (
@@ -291,6 +293,37 @@ export async function recordFleetAnswer(
       return merge(next, ack);
   }
   throw new Error('answer contention');
+}
+
+/**
+ * The stored answer a retry repeats: the same actor, Idempotency-Key and
+ * payload as the latest record for the decision. Lets a send whose response
+ * was lost read its receipt after the decision closed. Anything else, a
+ * record without an actor included, is null.
+ */
+export async function replayFleetAnswer(
+  store: MastermindStore,
+  decisionId: string,
+  input: FleetAnswerInput,
+  idempotencyKey: string,
+  actorId: string
+): Promise<FleetAnswerRecord | null> {
+  const [raw, ackRaw] = await store.mget([
+    `${ANSWER_PREFIX}${decisionId}`,
+    `${ACK_PREFIX}${decisionId}`,
+  ]);
+  const current = parseJson<StoredAnswer>(raw ?? null);
+  if (
+    !current ||
+    current.actorId !== actorId ||
+    current.idempotencyKey !== idempotencyKey ||
+    current.action !== input.action ||
+    // Empty values are not stored, so they compare as absent.
+    (current.optionId || null) !== (input.optionId || null) ||
+    (current.text || null) !== (input.text || null)
+  )
+    return null;
+  return merge(current, parseJson<StoredAck>(ackRaw ?? null));
 }
 
 /** Marks answers picked up; stale or repeated acks change nothing. */

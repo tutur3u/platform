@@ -219,7 +219,10 @@ export const fleetAnswerInputSchema = z
   });
 export type FleetAnswerInput = z.infer<typeof fleetAnswerInputSchema>;
 
-/** One owner answer, as stored and as the orchestrator receives it. */
+/**
+ * One owner answer as stored; the orchestrator receives every field except
+ * `actorId`.
+ */
 export interface FleetAnswerRecord {
   decisionId: string;
   revision: number;
@@ -227,6 +230,11 @@ export interface FleetAnswerRecord {
   optionId?: string;
   text?: string;
   idempotencyKey: string;
+  /**
+   * Who answered, kept only to replay this record's receipt to the same
+   * actor; never sent to the orchestrator or another reader.
+   */
+  actorId?: string;
   answeredAt: string;
   /** Revision the orchestrator acknowledged; equal to `revision` once picked up. */
   pickedUpRevision: number;

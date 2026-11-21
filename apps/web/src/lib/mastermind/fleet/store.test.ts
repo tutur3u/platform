@@ -8,6 +8,7 @@ import {
   readFleetAnswers,
   readFleetState,
   recordFleetAnswer,
+  replayFleetAnswer,
   StaleFleetSnapshotError,
   writeFleetState,
 } from './store';
@@ -206,6 +207,62 @@ describe('fleet store', () => {
     const store = createMemoryMastermindStore();
     expect(await claimFleetNonce(store, 'sig')).toBe(true);
     expect(await claimFleetNonce(store, 'sig')).toBe(false);
+  });
+
+  it('replays only the same actor, key and payload', async () => {
+    const store = createMemoryMastermindStore();
+    const reply = { action: 'reply' as const, text: 'Wait' };
+    const recorded = await recordFleetAnswer(
+      store,
+      'ship',
+      reply,
+      'key-1',
+      new Date('2026-11-20T03:00:00.000Z'),
+      'owner-a'
+    );
+    expect(recorded.actorId).toBe('owner-a');
+    expect(
+      await replayFleetAnswer(store, 'ship', reply, 'key-1', 'owner-a')
+    ).toMatchObject({ revision: 1, action: 'reply', text: 'Wait' });
+    // Another actor holding the key, another key, or another payload: none.
+    expect(
+      await replayFleetAnswer(store, 'ship', reply, 'key-1', 'owner-b')
+    ).toBeNull();
+    expect(
+      await replayFleetAnswer(store, 'ship', reply, 'key-2', 'owner-a')
+    ).toBeNull();
+    expect(
+      await replayFleetAnswer(
+        store,
+        'ship',
+        { action: 'reply', text: 'Go' },
+        'key-1',
+        'owner-a'
+      )
+    ).toBeNull();
+    expect(
+      await replayFleetAnswer(
+        store,
+        'ship',
+        { action: 'hold' },
+        'key-1',
+        'owner-a'
+      )
+    ).toBeNull();
+    expect(
+      await replayFleetAnswer(store, 'gone', reply, 'key-1', 'owner-a')
+    ).toBeNull();
+    // A record stored without an actor is never replayed.
+    await recordFleetAnswer(store, 'legacy', { action: 'hold' }, 'key-3');
+    expect(
+      await replayFleetAnswer(
+        store,
+        'legacy',
+        { action: 'hold' },
+        'key-3',
+        'owner-a'
+      )
+    ).toBeNull();
   });
 
   it('records, dedupes, revises and acknowledges answers', async () => {

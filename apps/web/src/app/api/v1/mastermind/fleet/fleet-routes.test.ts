@@ -501,6 +501,16 @@ describe('Mastermind fleet sync routes', () => {
       ).toBe(202);
     });
 
+    it('replays "I signed in" after the request closes', async () => {
+      await publishLogin(soon());
+      const key = randomUUID();
+      const body = { action: 'signed_in' };
+      expect((await answer('gh-login', body, key)).status).toBe(202);
+      vi.setSystemTime(Date.now() + 20 * 60_000);
+      expect((await answer('gh-login', body, key)).status).toBe(202);
+      expect((await answer('gh-login', body)).status).toBe(409);
+    });
+
     it('refuses "I signed in" once the request has expired', async () => {
       await publishLogin('2026-11-20T02:45:00.000Z');
       expect((await answer('gh-login', { action: 'signed_in' })).status).toBe(
@@ -561,6 +571,25 @@ describe('Mastermind fleet sync routes', () => {
       ).toBe(400);
     });
 
+    it('replays a recorded answer after its decision closed', async () => {
+      const key = randomUUID();
+      const body = { action: 'reply', text: 'Wait' };
+      const first = await answer('ship-fleet-sync', body, key);
+      expect(first.status).toBe(202);
+      const { revision } = await first.json();
+      await publish(sampleFleetState({ decisions: [] }));
+
+      const retry = await answer('ship-fleet-sync', body, key);
+      expect(retry.status).toBe(202);
+      expect(await retry.json()).toMatchObject({ action: 'reply', revision });
+      const other = { action: 'reply', text: 'Go' };
+      expect((await answer('ship-fleet-sync', other, key)).status).toBe(409);
+      expect((await answer('ship-fleet-sync', body)).status).toBe(409);
+      vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', `${OWNER},${PUSH_OWNER}`);
+      mocks.user = { id: PUSH_OWNER };
+      expect((await answer('ship-fleet-sync', body, key)).status).toBe(409);
+    });
+
     it('denies a non-owner', async () => {
       mocks.user = { id: '22222222-2222-4222-8222-222222222222' };
       expect((await answer('ship-fleet-sync', { action: 'hold' })).status).toBe(
@@ -610,7 +639,10 @@ describe('Mastermind fleet sync routes', () => {
         signed('GET', `/api/v1/mastermind/fleet/answers?nonce=${randomUUID()}`)
       );
       expect(pulled.status).toBe(200);
-      expect((await pulled.json()).answers).toEqual([
+      const pulledBody = await pulled.json();
+      // Who answered is kept for receipts only; the orchestrator never sees it.
+      expect(JSON.stringify(pulledBody)).not.toContain(OWNER);
+      expect(pulledBody.answers).toEqual([
         expect.objectContaining({
           decisionId: 'ship-fleet-sync',
           revision: 1,
