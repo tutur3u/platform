@@ -82,8 +82,31 @@ The dedicated memory database uses
 `apps/supermemory/db/001_schema.sql` followed by
 `apps/supermemory/db/002_worker.sql`. This database has its own migration history.
 Validate 002 on a disposable pgvector database with 001 and legacy rows already
-present. Preserve the old rows and duplicate legacy custom IDs. Apply the
-reviewed migration through the owning database lane before binding the Worker.
+present. Preserve the old rows and duplicate legacy custom IDs.
+
+The production operator dispatches `memory-db-production.yaml` from `main`.
+The protected `memory-db-production` GitHub environment requires approval
+from `vhpx` and permits that reviewer to approve their own dispatch. Disable
+administrator bypass and allow deployments from the exact `main` branch.
+Configure `MEMORY_DB_PRODUCTION_HOST`,
+`MEMORY_DB_PRODUCTION_PORT`, `MEMORY_DB_PRODUCTION_DATABASE`, and
+`MEMORY_DB_PRODUCTION_USER` in that environment. Store
+`MEMORY_DB_PRODUCTION_PASSWORD` only as an environment secret. The runner needs
+an approved network path and verified TLS to the dedicated database. Its
+migration login needs ownership of the memory table and permission to create
+the migration schemas and runtime role. The Worker uses its separate runtime
+login.
+
+1. Run `list_only` with the reviewed full `source_sha`. The job checks the
+   committed SQL digests and reads the baseline, pending migration and applied
+   ledger in a read-only transaction. Review the plan summary before approval.
+2. Run `apply` with the same `source_sha` and the approved
+   `expected_plan_sha256`. The job rechecks the plan under lock, commits the SQL
+   and ledger receipt together, and returns a separate readback. A changed plan
+   requires a fresh `list_only` run and approval. An unknown apply outcome can be
+   reconciled with `list_only` before retrying.
+3. Confirm the `002_worker.sql` receipt and its digest before binding the
+   Worker. Keep Worker ingress and caller flags disabled through this check.
 
 Each caller starts stopped with zero budget. An operator supplies a finite
 request budget and opens that caller's admission row. A stop changes the

@@ -1910,6 +1910,16 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/supermemory/wrangler.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e545e8065cf07ee0ad12f5b40a3a762db78973c6",
+        "reason": "Keep the reviewed disabled Memory Worker configuration for exact binding and artifact parity checks before migration to cf."
+      },
+      "digest": "407c9b83e7f4cbeb47d35ae67cbdb7890c82c34b67bc77b60cf1cfba784bfeb2"
+    },
     "apps/tanstack-web/package.json": {
       "lines": 5,
       "uses": 5,

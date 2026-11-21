@@ -1,0 +1,97 @@
+name: Memory Database Production Migration
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full main commit SHA containing the reviewed memory SQL receipts
+        type: string
+        required: true
+      mode:
+        description: Inspect the dedicated database or apply an approved plan
+        type: choice
+        options:
+          - list_only
+          - apply
+        default: list_only
+        required: true
+      expected_plan_sha256:
+        description: Plan SHA-256 from the approved list_only run, required for apply
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: memory-db-production
+  cancel-in-progress: false
+
+env:
+  MEMORY_DB_MODE: ${{ inputs.mode }}
+  MEMORY_DB_SOURCE_SHA: ${{ inputs.source_sha }}
+  MEMORY_DB_EXPECTED_PLAN_SHA256: ${{ inputs.expected_plan_sha256 }}
+
+jobs:
+  preflight:
+    if: ${{ github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Verify pinned history and tests
+        run: |
+          node scripts/ci/memory-db-production.mjs verify-source
+          node --test scripts/ci/memory-db-production.test.mjs
+      - name: Require a protected environment restricted to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/tutur3u/platform/environments/memory-db-production | jq -e '
+            .name == "memory-db-production" and
+            .can_admins_bypass == false and
+            .deployment_branch_policy.custom_branch_policies == true and
+            .deployment_branch_policy.protected_branches == false and
+            any(.protection_rules[]; .type == "required_reviewers" and
+              .prevent_self_review == false and (.reviewers | length == 1 and
+                .[0].type == "User" and .[0].reviewer.login == "vhpx"))
+          ' >/dev/null
+          gh api 'repos/tutur3u/platform/environments/memory-db-production/deployment-branch-policies?per_page=100' | jq -e '
+            .total_count == 1 and (.branch_policies | length == 1 and
+              .[0].name == "main" and .[0].type == "branch")
+          ' >/dev/null
+
+  database:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: memory-db-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Run approved memory migration operation
+        env:
+          PGHOST: ${{ vars.MEMORY_DB_PRODUCTION_HOST }}
+          PGPORT: ${{ vars.MEMORY_DB_PRODUCTION_PORT }}
+          PGDATABASE: ${{ vars.MEMORY_DB_PRODUCTION_DATABASE }}
+          PGUSER: ${{ vars.MEMORY_DB_PRODUCTION_USER }}
+          PGPASSWORD: ${{ secrets.MEMORY_DB_PRODUCTION_PASSWORD }}
+        run: node scripts/ci/memory-db-production.mjs database

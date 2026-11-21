@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "file": "001_schema.sql",
+    "sha256": "69e5e28d21f8e54e892d36acf6613b417d0f3d106bee09e1ae78adb57b08cea8"
+  },
+  "migration": {
+    "file": "002_worker.sql",
+    "sha256": "42bdd6f9c9499cf1e66b6c3238ccfa5090828dcceeae21acd0338849f06ff350"
+  }
+}
