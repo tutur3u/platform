@@ -198,6 +198,10 @@
       "reason": "Connected mail provider access token used as an upstream bearer, server-side"
     },
     {
+      "file": "apps/mastermind/src/native/session.ts",
+      "reason": "Worker-side handoff and refresh exchange with Web (Worker-only redeem proof); the session reaches the browser only as host-only HttpOnly cookies, never in a response body"
+    },
+    {
       "file": "apps/nova/src/app/api/v1/sessions/[sessionId]/route.ts",
       "reason": "Nova challenge-session record (a domain object), not an auth session"
     },

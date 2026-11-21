@@ -3,7 +3,20 @@ import {
   type ResolvedMount,
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
-import { authenticate, type MastermindEnvironment, type Owner } from './auth';
+import {
+  authenticate,
+  type MastermindEnvironment,
+  type Owner,
+  verifyAccessEmail,
+} from './auth';
+import {
+  exchangeHandoff,
+  loginRedirect,
+  refreshSession,
+  safeNextPath,
+  sessionCookies,
+  withSessionCookie,
+} from './session';
 
 /**
  * Only the dedicated host is admitted. `tuturuuu.com/mastermind` is refused:
@@ -84,15 +97,55 @@ export async function mastermindRequest(
   const mount =
     url.protocol === 'https:' ? resolveAppBase(url, mastermindMount) : null;
   if (!mount) return secure(new Response('Forbidden', { status: 403 }));
-  const owner = await authenticate(request, env, now);
-  if (!owner && request.method === 'GET' && url.pathname === '/') {
-    return secure(
-      new Response(null, { status: 303, headers: { Location: '/login' } })
-    );
+  const email = await verifyAccessEmail(request, env, now);
+  if (!email) {
+    return request.method === 'GET' && url.pathname === '/'
+      ? secure(
+          new Response(null, { status: 303, headers: { Location: '/login' } })
+        )
+      : secure(new Response('Forbidden', { status: 403 }));
   }
-  if (!owner) return secure(new Response('Forbidden', { status: 403 }));
+  if (request.method === 'GET' && url.pathname === '/login') {
+    return secure(loginRedirect(url.searchParams.get('nextUrl') ?? '/en'));
+  }
+  if (request.method === 'GET' && url.pathname === '/verify-token') {
+    const token = url.searchParams.get('token');
+    const session = token
+      ? await exchangeHandoff(token, env, email, now)
+      : null;
+    if (!session) return secure(new Response('Forbidden', { status: 403 }));
+    const headers = new Headers({
+      Location: safeNextPath(url.searchParams.get('nextUrl')),
+    });
+    for (const cookie of sessionCookies(session))
+      headers.append('Set-Cookie', cookie);
+    return secure(new Response(null, { status: 303, headers }));
+  }
+
+  let admitted = request;
+  let owner = await authenticate(request, env, now);
+  let issued: string[] = [];
+  if (!owner) {
+    // An expired access session rotates its refresh credential inline.
+    const session = await refreshSession(request, env, email, now);
+    if (session) {
+      admitted = withSessionCookie(request, session);
+      owner = await authenticate(admitted, env, now);
+      if (owner) issued = sessionCookies(session);
+    }
+  }
+  if (!owner) {
+    const navigation =
+      request.method === 'GET' &&
+      request.headers.get('Sec-Fetch-Mode') === 'navigate';
+    return navigation
+      ? secure(loginRedirect(`${url.pathname}${url.search}`))
+      : secure(new Response('Forbidden', { status: 403 }));
+  }
   if (!admitsMethod(request, url, mount)) {
     return secure(new Response('Method not allowed', { status: 405 }));
   }
-  return secure(await render(request, owner, mount), nonce);
+  const response = secure(await render(admitted, owner, mount), nonce);
+  for (const cookie of issued) response.headers.append('Set-Cookie', cookie);
+  return response;
 }

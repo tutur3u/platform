@@ -1,4 +1,9 @@
 import {
+  APP_REDEEM_PROOF_HEADER,
+  requiresWorkerRedeemProof,
+  verifyAppRedeemProof,
+} from '@tuturuuu/auth/app-redeem-proof';
+import {
   createAppSessionTokenPair,
   verifyAppSessionRefreshToken,
 } from '@tuturuuu/auth/app-session';
@@ -130,6 +135,23 @@ async function refreshCrossAppSession(
       'MISSING_REFRESH_CREDENTIALS',
       jsonNoStore(
         { error: 'Missing app session refresh credentials' },
+        { status: 401 }
+      )
+    );
+  }
+
+  if (
+    requiresWorkerRedeemProof(targetApp) &&
+    !verifyAppRedeemProof({
+      targetApp,
+      credential: refreshToken,
+      proof: request.headers.get(APP_REDEEM_PROOF_HEADER),
+    })
+  ) {
+    return fail(
+      'REDEEM_PROOF_REQUIRED',
+      jsonNoStore(
+        { error: 'Invalid or expired app session refresh credentials' },
         { status: 401 }
       )
     );

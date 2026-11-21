@@ -8,6 +8,7 @@ import {
 } from './app-coordination';
 import {
   DEFAULT_APP_COORDINATION_SESSION_POLICY,
+  FIXED_INTERNAL_APP_SESSION_CAPS,
   type ResolvedInternalAppSessionPolicy,
 } from './app-session-policy';
 
@@ -135,7 +136,7 @@ export function createAppSessionTokenPair(
     secret?: string;
   } = {}
 ): AppSessionTokenPair {
-  const policy = {
+  const requested = {
     internalAppAccessTtlSeconds:
       options.policy?.internalAppAccessTtlSeconds ??
       DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppAccessTtlSeconds,
@@ -146,6 +147,25 @@ export function createAppSessionTokenPair(
       options.policy?.internalAppRefreshTtlSeconds ??
       DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppRefreshTtlSeconds,
   };
+  // Fixed caps hold even for a caller that skips the policy resolver.
+  const cap =
+    FIXED_INTERNAL_APP_SESSION_CAPS[payload.targetApp.trim().toLowerCase()];
+  const policy = cap
+    ? {
+        internalAppAccessTtlSeconds: Math.min(
+          cap.internalAppAccessTtlSeconds,
+          requested.internalAppAccessTtlSeconds
+        ),
+        internalAppRefreshEarlySeconds: Math.min(
+          cap.internalAppRefreshEarlySeconds,
+          requested.internalAppRefreshEarlySeconds
+        ),
+        internalAppRefreshTtlSeconds: Math.min(
+          cap.internalAppRefreshTtlSeconds,
+          requested.internalAppRefreshTtlSeconds
+        ),
+      }
+    : requested;
   const access = createAppSessionToken(
     {
       ...payload,

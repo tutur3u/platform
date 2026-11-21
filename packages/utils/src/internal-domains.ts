@@ -139,6 +139,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'workspace',
     url: 'https://workspace.tuturuuu.com',
   },
+  { name: 'mastermind', url: 'https://mastermind.tuturuuu.com' },
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [

@@ -141,22 +141,48 @@ export function safeParseAppCoordinationSessionPolicy(value: unknown) {
   return appCoordinationSessionPolicySchema.safeParse(value ?? {});
 }
 
+/**
+ * Upper bounds no runtime policy can raise. The Mastermind Worker refuses
+ * any access session longer than 300 seconds, so its issuer never mints
+ * one, and its refresh credential lives at most a day (the Access session).
+ */
+export const FIXED_INTERNAL_APP_SESSION_CAPS: Readonly<
+  Record<string, ResolvedInternalAppSessionPolicy>
+> = {
+  mastermind: {
+    internalAppAccessTtlSeconds: 300,
+    internalAppRefreshEarlySeconds: 60,
+    internalAppRefreshTtlSeconds: 86_400,
+  },
+};
+
 export function resolveInternalAppSessionPolicy(
   policy: AppCoordinationSessionPolicy,
   appId: string
 ): ResolvedInternalAppSessionPolicy {
   const normalizedAppId = appId.trim().toLowerCase();
   const override = policy.internalAppOverrides[normalizedAppId];
+  const cap = FIXED_INTERNAL_APP_SESSION_CAPS[normalizedAppId];
+  const capped = (
+    key: keyof ResolvedInternalAppSessionPolicy,
+    value: number
+  ) => (cap ? Math.min(cap[key], value) : value);
 
   return {
-    internalAppAccessTtlSeconds:
+    internalAppAccessTtlSeconds: capped(
+      'internalAppAccessTtlSeconds',
       override?.internalAppAccessTtlSeconds ??
-      policy.internalAppAccessTtlSeconds,
-    internalAppRefreshEarlySeconds:
+        policy.internalAppAccessTtlSeconds
+    ),
+    internalAppRefreshEarlySeconds: capped(
+      'internalAppRefreshEarlySeconds',
       override?.internalAppRefreshEarlySeconds ??
-      policy.internalAppRefreshEarlySeconds,
-    internalAppRefreshTtlSeconds:
+        policy.internalAppRefreshEarlySeconds
+    ),
+    internalAppRefreshTtlSeconds: capped(
+      'internalAppRefreshTtlSeconds',
       override?.internalAppRefreshTtlSeconds ??
-      policy.internalAppRefreshTtlSeconds,
+        policy.internalAppRefreshTtlSeconds
+    ),
   };
 }

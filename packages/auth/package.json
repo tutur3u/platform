@@ -22,7 +22,8 @@
     "./mfa-mobile-approval": "./src/mfa-mobile-approval.ts",
     "./identity-linking": "./src/identity-linking.ts",
     "./api-keys": "./src/api-keys.ts",
-    "./app-session-core": "./src/app-session-core.ts"
+    "./app-session-core": "./src/app-session-core.ts",
+    "./app-redeem-proof": "./src/app-redeem-proof.ts"
   },
   "license": "MIT",
   "scripts": {

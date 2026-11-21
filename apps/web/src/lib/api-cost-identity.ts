@@ -8,6 +8,7 @@ import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-u
 import { reserveSecurityBudget } from '@tuturuuu/storage-core/security-budget';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { PRODUCTION_INTERNAL_APP_DOMAINS } from '@tuturuuu/utils/internal-domains';
+import { isOwnerOnlyInternalApp } from '@tuturuuu/utils/owner-only-apps';
 import type { NextRequest } from 'next/server';
 
 const cache = new Map<
@@ -61,7 +62,9 @@ export async function resolveApiCostUserId(request: NextRequest) {
 
   const app = verifyAppSessionRequest(request, {
     requiredScope: APP_SESSION_SCOPE,
-    targetApp: PRODUCTION_INTERNAL_APP_DOMAINS.map(({ name }) => name),
+    targetApp: PRODUCTION_INTERNAL_APP_DOMAINS.map(({ name }) => name).filter(
+      (name) => !isOwnerOnlyInternalApp(name)
+    ),
   });
   return app.ok ? app.claims.sub : undefined;
 }

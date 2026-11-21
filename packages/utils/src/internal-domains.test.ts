@@ -15,6 +15,7 @@ describe('registered production satellite origins', () => {
     ['rewise', 'https://rewise.tuturuuu.com'],
     ['nova', 'https://nova.tuturuuu.com'],
     ['cms', 'https://cms.tuturuuu.com'],
+    ['mastermind', 'https://mastermind.tuturuuu.com'],
   ])('resolves %s at %s for central login', (name, origin) => {
     const returnUrl = `${origin}/verify-token?nextUrl=%2F`;
     expect(getAppDomainByUrl(returnUrl)).toMatchObject({
@@ -62,6 +63,16 @@ describe('registered production satellite origins', () => {
       expect(getAppDomainByUrl('https://app.rewise.school')).toBeNull();
     } finally {
       vi.unstubAllEnvs();
+    }
+  });
+
+  it('registers Mastermind on its exact host only', () => {
+    for (const url of [
+      'https://preview.mastermind.tuturuuu.com/verify-token',
+      'https://mastermind.tuturuuu.com.example.org/verify-token',
+      'https://tuturuuu.com/mastermind/verify-token',
+    ]) {
+      expect(getInternalAppDomainByUrl(url)?.name).not.toBe('mastermind');
     }
   });
 

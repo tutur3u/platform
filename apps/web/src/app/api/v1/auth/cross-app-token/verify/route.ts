@@ -1,3 +1,8 @@
+import {
+  APP_REDEEM_PROOF_HEADER,
+  requiresWorkerRedeemProof,
+  verifyAppRedeemProof,
+} from '@tuturuuu/auth/app-redeem-proof';
 import { createAppSessionTokenPair } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { validateCrossAppTokenWithClient } from '@tuturuuu/auth/cross-app/server';
@@ -51,6 +56,20 @@ async function verifyCrossAppToken(
         { error: 'Invalid cross-app token verification payload' },
         { status: 400 }
       )
+    );
+  }
+
+  if (
+    requiresWorkerRedeemProof(parsed.data.targetApp) &&
+    !verifyAppRedeemProof({
+      targetApp: parsed.data.targetApp,
+      credential: parsed.data.token,
+      proof: request.headers.get(APP_REDEEM_PROOF_HEADER),
+    })
+  ) {
+    return fail(
+      'REDEEM_PROOF_REQUIRED',
+      jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 })
     );
   }
 

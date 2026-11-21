@@ -4,6 +4,7 @@ import {
   PORTLESS_INTERNAL_APP_DOMAINS,
   PRODUCTION_INTERNAL_APP_DOMAINS,
 } from '@tuturuuu/utils/internal-domains';
+import { isOwnerOnlyInternalApp } from '@tuturuuu/utils/owner-only-apps';
 import { getConfiguredSharedCookieDomainOverride } from '@tuturuuu/utils/shared-cookie';
 import { isStagingAppOrigin } from '@tuturuuu/utils/staging-hosts';
 import { NextResponse } from 'next/server';
@@ -40,7 +41,10 @@ function getAllowedOrigin(request: Request) {
   }
 
   return getAllowedFirstPartyCorsOrigin(origin, { development: false }) ===
-    origin && PRODUCTION_INTERNAL_APP_DOMAINS.some(({ url }) => url === origin)
+    origin &&
+    PRODUCTION_INTERNAL_APP_DOMAINS.some(
+      ({ name, url }) => url === origin && !isOwnerOnlyInternalApp(name)
+    )
     ? origin
     : null;
 }

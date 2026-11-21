@@ -83,6 +83,39 @@ error denies the request with 403 before any application data reads.
 The Access policy must cover all paths, use Google IdP, allow only the
 approved owner, cap sessions at 24 hours and enable audit logs.
 
+## Session issuance
+
+`mastermind` is a registered internal app on `https://mastermind.tuturuuu.com`
+only (`PRODUCTION_INTERNAL_APP_DOMAINS`), so the central login hands off to it
+like every other satellite. No other host, subdomain or path maps to it.
+
+1. A navigation that passes Access but carries no valid session goes to
+   `/login`, which answers 303 to `https://tuturuuu.com/login` with
+   `returnUrl=https://mastermind.tuturuuu.com/verify-token?nextUrl=<path>`.
+   Return paths must stay on the host and never point at `/login` or
+   `/verify-token`.
+2. Web mints a single-use, 300-second cross-app token for target
+   `mastermind` after its own MFA policy. `/verify-token` exchanges it at
+   `POST /api/v1/auth/cross-app-token/verify` and accepts the answer only when
+   the access and refresh tokens verify locally for target `mastermind`, the
+   subject is in `OWNER_IDS`, the token email equals the Access email and the
+   access session lives at most 300 seconds.
+3. Both credentials are set host-only (no `Domain`), `Path=/`, `HttpOnly`,
+   `Secure`, `SameSite=Lax`, and the owner returns to the path.
+4. When the access session expires, the next request sends the refresh
+   credential to `POST /api/v1/auth/cross-app-session/refresh` (after verifying
+   it locally for an allowlisted owner), renders with the new session and sets
+   the rotated cookies on that response. Web's replay grace covers concurrent
+   requests. A non-navigation without a session is 403.
+
+`FIXED_INTERNAL_APP_SESSION_CAPS` in `@tuturuuu/auth/app-session-policy` caps
+Mastermind at a 300-second access session, a 60-second refresh-early window
+and a one-day refresh credential. The resolver and `createAppSessionTokenPair`
+both apply it, so no `APP_COORDINATION_SESSION_POLICY` value can loosen it.
+`mastermind` is not in `ALL_SATELLITE_APP_SESSION_TARGETS`: its session opens
+only the routes that name it (`/api/v1/mastermind/access`, fleet state and
+answers). Signing out of Access or Web ends the next refresh.
+
 ## Data boundaries and memo
 
 Data moves only through two server functions, `loadFleet` (GET) and
@@ -186,11 +219,9 @@ and owner removal is immediate.
 `mastermind` publication policy hold production. Deleting that entry fails closed.
 No DNS or Access application is provisioned by the source.
 
-Before the dedicated host goes live, the owner needs a satellite session on
-it: the Worker mints and refreshes none, and Web's cross-app token
-verification accepts only registered app domains. Then require exact-commit
-CI, sealed original/restored Worker acceptance on the dedicated hostname,
-staging behind Access with session issuance and refresh, a real-browser smoke that loads,
+Before the dedicated host goes live require exact-commit CI, sealed
+original/restored Worker acceptance on the dedicated hostname, staging behind
+Access with session issuance and refresh, a real-browser smoke that loads,
 refreshes and answers through the compiled server functions, MFA and live
 permission acceptance, C1 minimum-field serialization and revocation tests,
 approved sanitized publisher samples, security design and implementation

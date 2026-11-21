@@ -40,7 +40,6 @@ export function isReservedInternalAppName(name: string) {
  */
 export const INTERNAL_TOKEN_TARGETS = [
   'managed-tuturuuu',
-  'mastermind',
   'profile-media-upload',
 ] as const;
 

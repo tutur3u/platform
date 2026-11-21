@@ -82,11 +82,15 @@ export function getSatelliteAppSessionUser(
   };
 }
 
-export async function authenticate(
+/**
+ * The Cloudflare Access identity: a verified `Cf-Access-Jwt-Assertion` for
+ * the owner's email on the dedicated HTTPS host, or null.
+ */
+export async function verifyAccessEmail(
   request: Request,
   env: MastermindEnvironment,
   now = Date.now()
-): Promise<Owner | null> {
+): Promise<string | null> {
   try {
     const url = new URL(request.url);
     // Never trust forwarded host headers to turn a preview into the canonical host.
@@ -120,13 +124,31 @@ export async function authenticate(
       payload.iat * 1000 > now
     )
       return null;
+    return payload.email;
+  } catch {
+    return null;
+  }
+}
+
+/** The allowlisted owner ids; missing or empty admits nobody. */
+export function ownerIds(env: MastermindEnvironment) {
+  return (env.OWNER_IDS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+export async function authenticate(
+  request: Request,
+  env: MastermindEnvironment,
+  now = Date.now()
+): Promise<Owner | null> {
+  try {
+    const email = await verifyAccessEmail(request, env, now);
+    if (!email) return null;
     const owner = getSatelliteAppSessionUser('mastermind', request, env, now);
-    if (!owner || owner.email !== payload.email) return null;
-    const allowed = (env.OWNER_IDS ?? '')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (!allowed.includes(owner.id)) return null;
+    if (!owner || owner.email !== email) return null;
+    if (!ownerIds(env).includes(owner.id)) return null;
     return (await hasLiveRootAccess(owner)) ? owner : null;
   } catch {
     return null;
