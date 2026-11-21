@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
-import { classifyCalendarProviderAccountStatus } from '@/lib/calendar/provider-account-status';
+import { inspectCalendarProviderAccountFailure } from '@/lib/calendar/provider-account-status';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
@@ -30,6 +30,16 @@ const getGoogleAuthClient = (tokens: {
   oauth2Client.setCredentials(tokens);
   return oauth2Client;
 };
+
+async function hashAccountRow(accountId: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(accountId)
+  );
+  return Array.from(new Uint8Array(digest, 0, 8), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -96,6 +106,7 @@ export async function GET(request: Request) {
   const calendars: unknown[] = [];
   const accountStatuses: Record<string, CalendarProviderAccountStatusPayload> =
     {};
+  const requestId = crypto.randomUUID();
 
   for (const token of tokens ?? []) {
     if (token.provider !== 'google' && token.provider !== 'microsoft') continue;
@@ -172,13 +183,14 @@ export async function GET(request: Request) {
         calendars.push(...accountCalendars);
       }
     } catch (error) {
-      const state = classifyCalendarProviderAccountStatus(
+      const { state, ...diagnostics } = inspectCalendarProviderAccountFailure(
         token.provider,
         error
       );
       console.warn('Failed to fetch provider calendars', {
-        provider: token.provider,
-        state,
+        ...diagnostics,
+        accountHash: await hashAccountRow(token.id).catch(() => null),
+        requestId,
       });
       byAccount[token.id] = [];
       accountStatuses[token.id] =
@@ -188,16 +200,19 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({
-    calendars,
-    byAccount,
-    accountStatuses,
-    accounts:
-      tokens?.map((token) => ({
-        id: token.id,
-        provider: token.provider,
-        email: token.account_email,
-        name: token.account_name,
-      })) ?? [],
-  });
+  return NextResponse.json(
+    {
+      calendars,
+      byAccount,
+      accountStatuses,
+      accounts:
+        tokens?.map((token) => ({
+          id: token.id,
+          provider: token.provider,
+          email: token.account_email,
+          name: token.account_name,
+        })) ?? [],
+    },
+    { headers: { 'X-Calendar-Request-Id': requestId } }
+  );
 }

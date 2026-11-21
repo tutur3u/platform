@@ -157,10 +157,7 @@ describe('calendar provider calendars route', () => {
       'invalid_request',
       { state: 'temporarily_unavailable', issue: 'configuration' },
     ],
-    [
-      'rateLimitExceeded',
-      { state: 'temporarily_unavailable', issue: 'status_unknown' },
-    ],
+    ['rateLimitExceeded', { state: 'temporarily_unavailable' }],
   ])(
     'maps provider error %s with a compatible retry state',
     async (error, status) => {
@@ -199,4 +196,74 @@ describe('calendar provider calendars route', () => {
       });
     }
   );
+
+  it('correlates a failing account without logging identifiers, credentials or error payloads', async () => {
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const tokenQuery = createTokenQuery();
+      tokenQuery.data = ['failing-row', 'working-row'].map((id) => ({
+        id,
+        provider: 'google',
+        account_email: 'member@example.test',
+        access_token: 'fixture-access',
+        refresh_token: 'fixture-refresh',
+      }));
+      resolveSessionAuthContextMock.mockResolvedValue({
+        ok: true,
+        supabase: { from: () => tokenQuery },
+        user: { id: 'user-1' },
+      });
+      const upstreamFailure = Object.assign(
+        new Error('private upstream text'),
+        {
+          name: 'GaxiosError',
+          response: {
+            status: 403,
+            data: {
+              error: { errors: [{ reason: 'insufficientPermissions' }] },
+            },
+          },
+        }
+      );
+      googleCalendarMock
+        .mockImplementationOnce(() => ({
+          calendarList: { list: vi.fn().mockRejectedValue(upstreamFailure) },
+        }))
+        .mockImplementationOnce(() => ({
+          calendarList: {
+            list: vi
+              .fn()
+              .mockResolvedValue({ data: { items: [{ id: 'primary' }] } }),
+          },
+        }));
+
+      const response = await GET(
+        new Request(
+          'http://localhost/api/v1/calendar/auth/provider-calendars?wsId=workspace-1'
+        )
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        accountStatuses: {
+          'failing-row': { state: 'scope_required' },
+          'working-row': { state: 'connected' },
+        },
+      });
+      const requestId = response.headers.get('x-calendar-request-id');
+      expect(requestId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(log).toHaveBeenCalledExactlyOnceWith(
+        'Failed to fetch provider calendars',
+        {
+          requestId,
+          accountHash: expect.stringMatching(/^[0-9a-f]{16}$/),
+          upstreamStatus: 403,
+          googleErrorCode: 'insufficientPermissions',
+          errorName: 'GaxiosError',
+          transportCategory: null,
+        }
+      );
+    } finally {
+      log.mockRestore();
+    }
+  });
 });

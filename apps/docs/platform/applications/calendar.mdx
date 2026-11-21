@@ -460,6 +460,12 @@ sections that succeeded, and the Accounts tab keeps each account's own provider
 status and recovery action. The foreground poll waits for a complete status
 before starting sync. The service logs the failed read category and database
 error code, while the browser receives only the unavailable section names.
+For a failed provider account check, use the `X-Calendar-Request-Id` response
+header to find the matching warning in Workers Observability. The warning
+includes a hashed account row, an allowlisted error name and provider code,
+upstream HTTP status, and a transport category when known. The route keeps
+successful accounts available and offers the matching recovery action for an
+expired grant, missing scope, or a temporary provider error.
 
 Calendar Settings loads Hours and Category Colors through the shared typed
 client. Under the apex mount, the client targets `/calendar/api/` for these
