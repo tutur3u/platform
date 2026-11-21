@@ -76,6 +76,7 @@
     "../../packages/realtime/src/meet/csv-cell.ts",
     "../../packages/realtime/src/meet/endpoint.ts",
     "../../packages/realtime/src/meet/index.ts",
+    "../../packages/realtime/src/meet/live-qa.ts",
     "../../packages/realtime/src/meet/message-size.ts",
     "../../packages/realtime/src/meet/messages.ts",
     "../../packages/realtime/src/meet/permissions.ts",
