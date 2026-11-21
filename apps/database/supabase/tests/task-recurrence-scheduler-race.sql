@@ -117,6 +117,9 @@ DELETE FROM private.task_recurrence_slots WHERE slot=:'slot';
 UPDATE private.task_recurrence_scheduler SET latest_slot=0,seek_ws_id=NULL WHERE singleton;
 UPDATE private.task_recurrence_control SET request_enabled=false,scheduler_enabled=false WHERE singleton;
 DELETE FROM public.workspaces WHERE id IN (SELECT ws FROM scheduler_workspaces);
-DELETE FROM auth.users WHERE id='00000000-0000-4000-8000-0000000d1101';
+DELETE FROM auth.users WHERE id=:'scheduler_fixture_owner';
+-- The signup workspace can only be removed after its auth account is deleted.
+DELETE FROM public.workspaces WHERE creator_id=:'scheduler_fixture_owner' AND personal;
+DELETE FROM public.users WHERE id=:'scheduler_fixture_owner';
 COMMIT;
 SELECT * FROM finish();
