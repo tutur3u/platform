@@ -148,11 +148,10 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     android,
     'Publish Android App Bundle to Google Play internal'
   );
-  assert.equal(publish.with.track, 'internal');
-  assert.equal(publish.with.status, 'completed');
-  assert.equal(
-    publish.with.releaseFiles,
-    'apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab'
+  assert.equal(publish.uses, undefined);
+  assert.match(
+    publish.run,
+    /play-beta\.mjs --upload "\$\{\{ needs\.mobile-credentials-preflight\.outputs\.build_number \}\}" build\/app\/outputs\/bundle\/productionRelease\/app-production-release\.aab "\$MOBILE_PLAY_NOTES"/
   );
   assert.match(
     step(android, 'Verify committed Google Play internal release').run,
@@ -237,12 +236,8 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.match(workflow, /bun build:android/);
   assert.match(workflow, /Build and verify signed Android App Bundle/);
   assert.match(workflow, /--dart-define-from-file=\.env\.github/);
-  assert.match(
-    workflow,
-    /serviceAccountJson: \$\{\{ env\.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH \}\}/
-  );
-  assert.match(workflow, /track:\s*internal/);
-  assert.match(workflow, /status: completed/);
+  assert.match(workflow, /play-beta\.mjs --upload/);
+  assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
   assert.match(workflow, /xcrun altool --upload-app/);
   assert.match(workflow, /--type ios/);
   assert.doesNotMatch(workflow, /^\s*pull_request:/m);
@@ -546,7 +541,7 @@ test('both store paths use the shared mobile note policy and bounded Play metada
   assert.match(workflow, /normalize-release-description\.js --mobile/);
   assert.match(
     workflow,
-    /whatsNewDirectory: \$\{\{ env\.MOBILE_PLAY_NOTES \}\}/
+    /play-beta\.mjs --upload [^\n]* "\$MOBILE_PLAY_NOTES"/
   );
   assert.match(workflow, /-le 500/);
   const history = fs.readFileSync(

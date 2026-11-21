@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   check-ci:
+    # External review retries exist only for opted-in external groups; without
+    # the opt-in every scheduled run skips before using a runner.
+    if: vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS != ''
     permissions:
       contents: read
       deployments: read
@@ -52,4 +55,10 @@ jobs:
         if: steps.promoted.outputs.enabled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=retry_ios_review'
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+        run: |
+          if [ -z "${TESTFLIGHT_EXTERNAL_BETA_GROUPS// /}" ]; then
+            echo "No external TestFlight groups are opted in; skipping dispatch."
+            exit 0
+          fi
+          gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=retry_ios_review'

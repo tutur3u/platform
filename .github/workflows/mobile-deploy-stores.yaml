@@ -263,7 +263,12 @@ jobs:
             --bundle "$bundle_path" \
             --mobile-root "$PWD"
 
+      - name: Check for an existing Google Play internal build
+        id: existing
+        run: node ../../scripts/mobile-deployment/play-beta.mjs --check "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
+
       - name: Install dependencies
+        if: steps.existing.outputs.present != 'true'
         run: flutter pub get
 
       - name: Validate Android deployment identity
@@ -279,6 +284,7 @@ jobs:
             -alias "$ANDROID_KEYSTORE_ALIAS" >/dev/null
 
       - name: Build and verify signed Android App Bundle
+        if: steps.existing.outputs.present != 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
           MOBILE_DART_DEFINE_FILE: .env.github
@@ -286,6 +292,7 @@ jobs:
           command: bun build:android --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
+        if: steps.existing.outputs.present != 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-production-aab
@@ -306,17 +313,18 @@ jobs:
           echo "MOBILE_PLAY_NOTES=$notes_dir" >> "$GITHUB_ENV"
 
       - name: Publish Android App Bundle to Google Play internal
-        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
-        with:
-          packageName: com.tuturuuu.app.mobile
-          releaseFiles: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
-          serviceAccountJson: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH }}
-          status: completed
-          whatsNewDirectory: ${{ env.MOBILE_PLAY_NOTES }}
-          track: internal
+        if: steps.existing.outputs.present != 'true'
+        # One edit uploads the bundle and commits a completed internal release
+        # with ERROR_IF_IN_REVIEW, so it never cancels a release in review.
+        run: node ../../scripts/mobile-deployment/play-beta.mjs --upload "${{ needs.mobile-credentials-preflight.outputs.build_number }}" build/app/outputs/bundle/productionRelease/app-production-release.aab "$MOBILE_PLAY_NOTES"
 
       - name: Verify committed Google Play internal release
         run: node ../../scripts/mobile-deployment/verify-store.mjs android "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
+
+      - name: Add Vietnamese notes and promote to Google Play testing tracks
+        env:
+          GOOGLE_PLAY_BETA_TRACKS: ${{ vars.GOOGLE_PLAY_BETA_TRACKS || '' }}
+        run: node ../../scripts/mobile-deployment/play-beta.mjs "${{ needs.mobile-credentials-preflight.outputs.build_number }}" "$MOBILE_PLAY_NOTES"
 
       - name: Cleanup Android release files
         if: always()
@@ -582,6 +590,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
+      - name: Add Vietnamese TestFlight notes
+        continue-on-error: true
+        run: node ../../scripts/mobile-deployment/testflight-vi-notes.mjs "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
+
       - name: Cleanup iOS release files
         if: always()
         shell: bash
@@ -768,6 +780,57 @@ jobs:
           path: ${{ runner.temp }}/mobile-store-uploaded-tree.txt
           if-no-files-found: error
           retention-days: 90
+
+  mobile-store-receipt:
+    permissions:
+      contents: read
+      issues: write
+    name: Write mobile store receipt and alerts
+    needs:
+      [
+        check-ci,
+        mobile-store-publish-gate,
+        mobile-credentials-preflight,
+        publish-android-internal,
+        publish-ios-testflight,
+      ]
+    if: always() && github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && (contains(fromJSON('["failure","cancelled"]'), needs.check-ci.result) || contains(fromJSON('["failure","cancelled"]'), needs.mobile-store-publish-gate.result) || needs.mobile-store-publish-gate.outputs.publish == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/mobile-deployment
+
+      - name: Write the mobile store receipt
+        id: receipt
+        env:
+          MOBILE_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          MOBILE_BUILD_NUMBER: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+          GOOGLE_PLAY_BETA_TRACKS: ${{ vars.GOOGLE_PLAY_BETA_TRACKS || '' }}
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+          RESULT_CHECK: ${{ needs.check-ci.result }}
+          RESULT_GATE: ${{ needs.mobile-store-publish-gate.result }}
+          RESULT_PREFLIGHT: ${{ needs.mobile-credentials-preflight.result }}
+          RESULT_ANDROID: ${{ needs.publish-android-internal.result }}
+          RESULT_IOS: ${{ needs.publish-ios-testflight.result }}
+        run: node scripts/mobile-deployment/store-receipt.mjs write "$RUNNER_TEMP/mobile-store-receipt.json"
+
+      - name: Upload the mobile store receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mobile-store-receipt
+          path: ${{ runner.temp }}/mobile-store-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Sync the mobile-store-alert issue
+        # Alert even when artifact storage fails after the receipt was written.
+        if: always() && steps.receipt.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/mobile-deployment/store-receipt.mjs alert "$RUNNER_TEMP/mobile-store-receipt.json"
 
   retry-ios-testflight-review:
     permissions:

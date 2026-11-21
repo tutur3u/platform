@@ -376,9 +376,44 @@ a fresh number. Release Please continues to own the marketing version. Retry
 the newest release workflow rather than an older source revision after a more
 recent build has already been published.
 
-Android uploads a signed AAB to the **internal** track with completed status.
+Android uploads a signed AAB to the **internal** track with completed status
+through `scripts/mobile-deployment/play-beta.mjs --upload`. It uploads the
+bundle, checks its version code, sets en-US notes and commits in one edit. Every
+CI commit uses `changesInReviewBehavior=ERROR_IF_IN_REVIEW`, so it fails instead
+of cancelling a release that is already in Google review. Because a commit
+sends every change waiting to be sent for review, CI first lists the releases on
+every track (`applications.tracks.releases.list`) and refuses to commit while
+any of them is `RELEASE_LIFECYCLE_STATE_NOT_SENT_FOR_REVIEW`. An unreadable
+list or an unknown, unspecified or missing lifecycle state also stops the commit. That API does not
+cover store listing or other non-release changes, so send or discard those in
+Play Console before the next production store run. Hand-written release notes
+for a language are never replaced by generated ones.
 The verification step reads that track using a temporary Play API edit and
 requires the exact version code. It deletes the edit without committing it.
+A second committed edit then reuses that exact version code:
+
+- If the app has a Vietnamese Play listing, it adds `vi` release notes. These
+  are the en-US bullets under a localized header, so the bullet text stays in
+  its source language. Without a `vi` listing the notes stay en-US and the log
+  says so.
+- It creates a completed release on each track in `GOOGLE_PLAY_BETA_TRACKS`
+  (for example `alpha` for closed testing or `beta` for open testing).
+  `internal`, `qa` and `production` are rejected, including form-factor names
+  such as `wear:production`. An unknown track, or a track with a staged
+  (`inProgress` or `halted`) rollout or a `draft` release, fails the job before anything is
+  committed. A fresh edit then reads every promoted track back. The commit uses
+  `changesInReviewBehavior=ERROR_IF_IN_REVIEW`, so it never cancels a release
+  already in Google review. Google's review of closed and open testing releases
+  still applies.
+
+Before building, the Android job checks whether the internal track already
+holds the run's version code. A rerun of a failed Android job reuses the
+preflight build number, so it skips the build and upload and goes straight to
+promotion. A track that already carries the build keeps its release list and
+release metadata; only missing Vietnamese notes are added.
+
+Leave `GOOGLE_PLAY_BETA_TRACKS` empty to publish to internal testing only.
+Regression coverage: `scripts/mobile-deployment/play-beta.test.mjs`.
 
 iOS validates the profile's expiration, exact team and bundle ID, App Store
 distribution type, and production push entitlement. CI uses a temporary
@@ -403,6 +438,13 @@ the repository-level external opt-in before entering any environment:
 | `TESTFLIGHT_BETA_GROUPS` | empty | Optional internal group names or IDs. Empty or `all` selects internal groups only. |
 | `TESTFLIGHT_EXTERNAL_BETA_GROUPS` | empty | Explicit opt-in: comma-separated exact external group names or IDs. `all` is rejected. Empty disables external assignment, review submission and notification, including the review queue. |
 
+| `GOOGLE_PLAY_BETA_TRACKS` | empty | Explicit opt-in: comma-separated Play testing track IDs that receive the verified internal version code. Empty keeps Android on internal testing only. |
+
+After TestFlight verification, CI adds a Vietnamese (`vi`) What to Test beside
+the verified en-US notes when Apple accepts that locale. It is best effort: a
+refusal logs a warning and never fails an upload that testers can already
+install.
+
 Distribution defaults to internal only to prevent unintended external disclosure. Legacy `TESTFLIGHT_BETA_GROUPS` cannot authorize external distribution. Regression coverage: `scripts/ci/testflight-distribution.test.js`.
 
 External groups require TestFlight beta review before testers can install a new
@@ -414,6 +456,46 @@ Apple's approval and external testing status in App Store Connect. Keep the
 app's beta review contact and app description current there. Missing export
 compliance, processing failures, and internal distribution must also be
 resolved in App Store Connect.
+
+### Receipts and failure alerts
+
+Every publishing run, and every production release run whose CI check or
+publish gate fails or is cancelled, ends with
+**Write mobile store receipt and alerts**. That job writes the version, store
+build number, commit, the number of configured Play testing tracks and
+TestFlight external groups (identifiers stay private) and per-stage results to the
+job summary and to the `mobile-store-receipt` artifact (kept 90 days). The
+artifact uploads before the alert step calls the Issues API, and the alert
+still runs when the artifact upload fails. When any stage fails or is cancelled, it opens one GitHub issue labeled
+`mobile-store-alert`, or comments on the open one. Fleet monitors watch that
+label. The next run that publishes both stores comments its receipt on the
+issue and closes it. The job needs only `issues: write` and never reads store
+credentials. Regression coverage: `scripts/mobile-deployment/store-receipt.test.mjs`.
+
+The TestFlight review queue skips all of its jobs, including the CI check, while
+`TESTFLIGHT_EXTERNAL_BETA_GROUPS` is empty. Its dispatch step checks the value
+again before calling the API.
+
+### Human-only release steps
+
+CI delivers beta builds only. These steps stay manual in App Store Connect and
+Play Console:
+
+- Choosing the tester audiences: the exact external TestFlight groups
+  (`TESTFLIGHT_EXTERNAL_BETA_GROUPS`) and Play testing tracks
+  (`GOOGLE_PLAY_BETA_TRACKS`).
+- Setting `MOBILE_IOS_EFFECTIVE_VERSION` / `MOBILE_ANDROID_EFFECTIVE_VERSION`
+  once the public store release is live. They drive the in-app update prompt
+  for public store users, so CI never writes them.
+- Submitting a verified build for App Store review and choosing its public
+  release date or phased release.
+- Promoting a Play build to the production track and setting its staged
+  rollout percentage.
+- Answering App Review or Play policy messages, and accepting updated Apple
+  Developer Program or Play agreements. An unaccepted agreement fails the
+  App Store Connect calls with `FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`.
+- Renewing the distribution certificate and provisioning profile before they
+  expire, then activating the new vault bundle.
 
 ### Reviewer sign-in and QA accounts
 

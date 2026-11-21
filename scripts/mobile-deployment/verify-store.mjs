@@ -15,7 +15,7 @@ const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
 const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
 
-function jwt(header, claims, key) {
+export function jwt(header, claims, key) {
   const encode = (value) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
   const input = `${encode(header)}.${encode(claims)}`;
@@ -26,7 +26,7 @@ function jwt(header, claims, key) {
   return `${input}.${signature.toString('base64url')}`;
 }
 
-async function json(url, options = {}) {
+export async function json(url, options = {}) {
   const response = await fetch(url, {
     ...options,
     redirect: 'error',
@@ -546,15 +546,15 @@ export async function verifyPlay(buildNumber) {
       );
     }
   } finally {
-    // A verification edit is never committed and cannot publish another release.
-    await json(editUrl, { method: 'DELETE', headers });
+    // Never committed; a failed cleanup must not mask the verification result.
+    await json(editUrl, { method: 'DELETE', headers }).catch(() => {});
   }
   console.log(
     `Verified Google Play internal build ${buildNumber} for ${APP_ID}.`
   );
 }
 
-async function connectApple() {
+export async function connectApple() {
   const key = await readFile(
     process.env.APP_STORE_CONNECT_PRIVATE_KEY_PATH,
     'utf8'
