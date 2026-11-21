@@ -14,6 +14,7 @@
     "nav": {
       "overview": "Today",
       "inbox": "Inbox",
+      "projects": "Projects",
       "access": "Access requests",
       "fleet": "Fleet",
       "activity": "Activity",
@@ -353,6 +354,67 @@
       "pausedBody": "Last publish {time} ({age} ago). This browser is online and checked {checked} ago, so the numbers below are {age} old.",
       "offline": "This device is offline",
       "offlineBody": "Showing what it received at {time}. The publisher may still be running; this clears when you reconnect."
+    },
+    "projects": {
+      "title": "Projects",
+      "subtitle": "Every T3 thread on every linked machine, grouped by project.",
+      "read": "{machines} machines · read {age} ago",
+      "search": "Search threads",
+      "sorted": "Sorted by last update",
+      "refresh": "Refresh",
+      "unassigned": "Unassigned",
+      "loadMore": "Load {n} more",
+      "loadingSlow": "Reading {machine}. This takes a few seconds.",
+      "unreachable": "Unreachable",
+      "new": "New",
+      "unreadLabel": "{n} unread",
+      "empty": "No threads match",
+      "emptyHint": "Search covers thread titles on the selected machine.",
+      "noThreads": "No threads on this machine yet.",
+      "staleOffline": "The machine is offline. Showing the list from {age} ago.",
+      "allThreads": "All threads",
+      "select": "Select a thread to read it and reply.",
+      "updated": "Updated {age} ago",
+      "openT3": "Open in T3 Code",
+      "loadEarlier": "Load earlier",
+      "start": "Start of the thread",
+      "truncated": "Truncated",
+      "role": {
+        "user": "Message",
+        "assistant": "Agent"
+      },
+      "filter": {
+        "all": "All",
+        "running": "Running",
+        "waiting": "Waiting",
+        "failed": "Failed",
+        "idle": "Idle"
+      },
+      "error": {
+        "machine_offline": "The machine is offline.",
+        "timeout": "The machine took too long to answer. Try again.",
+        "not_found": "Not found. The thread or machine may be gone.",
+        "mfa_required": "Sending needs a fresh second-factor check. Sign in again, then send.",
+        "rate_limited": "Too many requests. Wait a moment and try again.",
+        "unsupported_for_linked_machine": "Grouping by project is only available on this machine.",
+        "denied": "You do not have access to fleet threads.",
+        "invalid": "The answer could not be read.",
+        "unavailable": "Threads are unavailable right now."
+      },
+      "reply": {
+        "placeholder": "Reply to this thread. It is steered into the running turn.",
+        "send": "Send",
+        "hint": "Text only, up to {max} characters.",
+        "signIn": "Sign in again",
+        "sending": "Sending",
+        "sent": "Sent",
+        "steered": "Steered into the running turn",
+        "started": "Started the thread",
+        "queued": "Queued behind the running turn",
+        "failed": "Not delivered",
+        "expired": "Not delivered: the machine stayed offline",
+        "shortcut": "Ctrl/Cmd Enter to send"
+      }
     }
   },
   "owner": "Authenticated owner",

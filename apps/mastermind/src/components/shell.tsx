@@ -3,6 +3,7 @@ import {
   Activity,
   Bell,
   ChartLine,
+  Folder,
   Inbox,
   KeyRound,
   LayoutDashboard,
@@ -50,6 +51,12 @@ export interface NavEntry {
 export const NAV: readonly NavEntry[] = [
   { id: 'overview', label: 'nav.overview', icon: LayoutDashboard },
   { id: 'inbox', label: 'nav.inbox', icon: Inbox },
+  {
+    id: 'projects',
+    label: 'nav.projects',
+    icon: Folder,
+    to: '/$locale/projects',
+  },
   { id: 'access', label: 'nav.access', icon: KeyRound },
   { id: 'fleet', label: 'nav.fleet', icon: Server },
   {

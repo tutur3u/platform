@@ -1,0 +1,73 @@
+---
+title: Mastermind Projects
+description: Every fleet T3 thread, grouped by project, with the transcript and steered replies, on Mastermind web and the mobile Work tab.
+updatedAt: "2026-11-22"
+audience: developers
+---
+
+Projects lists every T3 thread on every machine the owner's fleet bridge can
+reach. It is owner-only: web `/{locale}/projects` (sidebar "Projects"), and on
+the phone it is the Work tab, labelled Projects (route `/mastermind/work`, so
+existing links keep working; a thread opens at
+`/mastermind/work/thread/:threadId`).
+
+## Product rules
+
+- **This machine groups by project**, as in the T3 Code sidebar. Each header
+  shows the running, waiting and failed counts tinted, and idle as a plain
+  number; the first project starts open. An open project pages its own
+  threads, 50 at a time ("Load 50 more"), newest first. Threads without a
+  project come last under "Unassigned". Headers come from one snapshot
+  (`GET /threads/projects`); a thread page is read only while its group is
+  open.
+- **Linked machines list flat.** They cannot group by project
+  (`422 unsupported_for_linked_machine`), so the page never asks: it shows a
+  newest-first list with search and state chips. Each page takes 4 to 8
+  seconds, so the loading row says the machine is being read. An unreachable
+  machine's chip is greyed out and cannot be chosen.
+- **Search** lists matching titles flat on the selected machine. **State
+  chips** filter by the thread's `state`. On this machine they show totals
+  from the snapshot and hide projects with no thread in that state.
+- **Rows** show the title, a state dot, the last update and an unread badge:
+  `itemCount - seenItemCount`, or "New" when the owner has never opened the
+  thread. Opening a thread moves the read marker (`POST /threads/read`) and
+  clears the badge in place. Rows carry no provider, model or subagent
+  nesting, because the bridge does not report them.
+- **State words come only from `state`**: running means the agent is
+  working, waiting means it waits for the owner, idle means it finished,
+  failed means it stopped on an error.
+- **Refresh is never on a timer.** Lists refresh on window focus or app
+  resume, on pull to refresh or the refresh button, and on a `threads` notice
+  from the owner socket.
+- **Errors keep the last list.** A refresh refused with `503
+  machine_offline` keeps the list on screen with "Showing the list from N
+  ago". With nothing to show, each refusal (`504`, `404`, `429`, `401
+  mfa_required`) has its own message and a retry.
+- **Thread view**: the newest page of messages, with "Load earlier" until the
+  start of the thread. Credentials redacted by the machine appear as a muted
+  `[redacted]` token. A cut message says "Truncated". User-role messages carry
+  no "You" label, because other agents write with that role too.
+- **Replies are steered** (see [thread replies](/platform/features/mastermind-thread-replies)).
+  A sent reply shows from its receipt, with Sending, Sent, then Steered,
+  Started or Queued, or Not delivered. It reaches the transcript only after
+  the machine delivers it. When sending needs a fresh second factor, the
+  composer offers to sign in again.
+
+## Where the code lives
+
+- Web: `apps/mastermind/src/projects/`. `upstream.ts` is the only data path:
+  owner bearer, redirects refused, every body parsed by `contract.ts`.
+  `fixtures.ts` backs tests and a development build started with
+  `VITE_MASTERMIND_THREAD_FIXTURES=1`.
+- Mobile: `apps/mobile/lib/features/mastermind/projects/`, behind one
+  repository interface.
+
+## Regression coverage
+
+`apps/mastermind/src/projects/model.test.ts` covers the unread rule, chip
+totals, group visibility, error-code mapping, request shapes and receipt
+labels. `projects-page.test.tsx` covers the accordion and its paging, a
+linked machine never asked to group, unreachable machines greyed out, the
+offline staleness line, the flat fallback, the thread view with earlier
+pages and redaction, the read marker, a steered reply and the sign-in prompt.
+Mobile tests live in `apps/mobile/test/features/mastermind/projects/`.

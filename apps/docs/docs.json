@@ -131,6 +131,7 @@
               "platform/features/mobile-mastermind-answered-elsewhere",
               "platform/features/mobile-mastermind-decision-detail",
               "platform/features/fleet-access",
+              "platform/features/mastermind-projects",
               "platform/features/mastermind-thread-replies",
               "platform/features/people-registry",
               "platform/features/mira-client-actions",

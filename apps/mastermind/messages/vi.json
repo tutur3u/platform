@@ -14,6 +14,7 @@
     "nav": {
       "overview": "Hôm nay",
       "inbox": "Hộp thư",
+      "projects": "Dự án",
       "access": "Yêu cầu đăng nhập",
       "fleet": "Đội máy",
       "activity": "Hoạt động",
@@ -353,6 +354,67 @@
       "pausedBody": "Lần phát cuối {time} ({age} trước). Trình duyệt này đang trực tuyến và đã kiểm tra {checked} trước, nên số liệu dưới đây đã cũ {age}.",
       "offline": "Thiết bị này đang ngoại tuyến",
       "offlineBody": "Đang hiện dữ liệu nhận lúc {time}. Bộ phát có thể vẫn chạy; thông báo này tự tắt khi bạn kết nối lại."
+    },
+    "projects": {
+      "title": "Dự án",
+      "subtitle": "Mọi luồng T3 trên mọi máy đã liên kết, nhóm theo dự án.",
+      "read": "{machines} máy · đọc {age} trước",
+      "search": "Tìm luồng",
+      "sorted": "Sắp theo cập nhật mới nhất",
+      "refresh": "Làm mới",
+      "unassigned": "Chưa gán dự án",
+      "loadMore": "Tải thêm {n}",
+      "loadingSlow": "Đang đọc {machine}. Việc này mất vài giây.",
+      "unreachable": "Không kết nối được",
+      "new": "Mới",
+      "unreadLabel": "{n} chưa đọc",
+      "empty": "Không có luồng phù hợp",
+      "emptyHint": "Tìm theo tiêu đề luồng trên máy đang chọn.",
+      "noThreads": "Máy này chưa có luồng nào.",
+      "staleOffline": "Máy đang ngoại tuyến. Đang hiện danh sách từ {age} trước.",
+      "allThreads": "Mọi luồng",
+      "select": "Chọn một luồng để đọc và trả lời.",
+      "updated": "Cập nhật {age} trước",
+      "openT3": "Mở trong T3 Code",
+      "loadEarlier": "Tải tin cũ hơn",
+      "start": "Đầu luồng",
+      "truncated": "Đã rút gọn",
+      "role": {
+        "user": "Tin nhắn",
+        "assistant": "Agent"
+      },
+      "filter": {
+        "all": "Tất cả",
+        "running": "Đang chạy",
+        "waiting": "Đang chờ",
+        "failed": "Lỗi",
+        "idle": "Rảnh"
+      },
+      "error": {
+        "machine_offline": "Máy đang ngoại tuyến.",
+        "timeout": "Máy phản hồi quá lâu. Hãy thử lại.",
+        "not_found": "Không tìm thấy. Luồng hoặc máy có thể đã bị xoá.",
+        "mfa_required": "Cần xác thực hai lớp mới để gửi. Hãy đăng nhập lại rồi gửi.",
+        "rate_limited": "Quá nhiều yêu cầu. Hãy đợi một chút rồi thử lại.",
+        "unsupported_for_linked_machine": "Nhóm theo dự án chỉ có trên máy này.",
+        "denied": "Bạn không có quyền xem luồng của đội máy.",
+        "invalid": "Không đọc được phản hồi.",
+        "unavailable": "Hiện không xem được luồng."
+      },
+      "reply": {
+        "placeholder": "Trả lời luồng này. Tin được điều hướng vào lượt đang chạy.",
+        "send": "Gửi",
+        "hint": "Chỉ văn bản, tối đa {max} ký tự.",
+        "signIn": "Đăng nhập lại",
+        "sending": "Đang gửi",
+        "sent": "Đã gửi",
+        "steered": "Đã điều hướng vào lượt đang chạy",
+        "started": "Đã bắt đầu luồng",
+        "queued": "Đang xếp sau lượt đang chạy",
+        "failed": "Chưa gửi được",
+        "expired": "Chưa gửi được: máy ngoại tuyến quá lâu",
+        "shortcut": "Ctrl/Cmd Enter để gửi"
+      }
     }
   },
   "owner": "Chủ sở hữu đã xác thực",
