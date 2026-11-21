@@ -1,0 +1,76 @@
+---
+title: Fleet access and digest
+description: Live Fleet access, project-scoped digest reads, and machine publishing.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+The [Fleet access policy](/platform/features/fleet-access) governs these
+endpoints on `tuturuuu.com`. Responses use `Cache-Control: private, no-store`.
+Use `getFleetAccess`, `getFleetDigest`, and `publishFleetDigest` from
+`@tuturuuu/internal-api/fleet` for TypeScript callers.
+
+## Read access
+
+`GET /api/v1/fleet/access` accepts a signed-in Tuturuuu session or an app
+access session with the `platform` or `mastermind` audience and
+`internal-app:session` scope. The server uses the verified user ID and looks up
+the grant and stop state on every request. An unsigned request receives `401`.
+
+A signed-in account without live access receives:
+
+```json
+{"enabled":false,"tier":null,"projects":[],"capabilities":[],"stopped":false}
+```
+
+A live grant returns `enabled: true`, its tier, project keys and capabilities.
+While Fleet is stopped, the endpoint returns `stopped: true` and disables
+access for every tier.
+
+## Read the digest
+
+`GET /api/v1/fleet/digest` uses the same sessions and requires live
+`status.read` access. The response contains `sections` and `totals`. Each
+section is the latest visible snapshot for a project in the grant. It carries
+the publisher timestamp `generatedAt`, the server timestamp `receivedAt`, and
+`stale`, which becomes true one hour after receipt. Totals
+count visible sections as projects, and their lanes overall and by state.
+An authorized reader with no visible snapshots receives empty sections and
+zero totals. A disabled or stopped reader, or a grant without `status.read`,
+receives `403`.
+
+## Publish a project snapshot
+
+`PUT /api/v1/fleet/digest` accepts one project snapshot and returns `204`.
+The digest publisher uses a dedicated `Authorization: Bearer <token>`
+credential over HTTPS. Provision the token as the prefix `ttr_fleet_digest_`
+followed by 32 cryptographically random bytes encoded as unpadded base64url.
+Store the full token in the publisher's secret store. Set
+`FLEET_DIGEST_PUBLISHER_TOKEN_SHA256` on Web to the lowercase hex SHA-256 of
+the full token. Remove the configured hash to disable publishing or replace
+it with a new hash to rotate the credential. A missing or invalid publisher
+credential is denied. A Fleet stop also denies publishing.
+
+| Field | Accepted value |
+| --- | --- |
+| `projectKey` | Catalog key, 1–64 lowercase ASCII letters, digits, underscores or hyphens, starting with a letter or digit |
+| `generatedAt` | UTC ISO 8601 timestamp with milliseconds, at most 30 seconds in the future |
+| `lanes` | Up to 100 entries with unique lane names |
+| `lanes[].lane` | Project-approved display value |
+| `lanes[].state` | `planned`, `running`, `blocked`, `ready`, `done`, or `paused` |
+| `lanes[].eta` | Optional UTC ISO 8601 timestamp with milliseconds |
+| `lanes[].shortSha` | Optional 7–12 lowercase hexadecimal characters |
+| `lanes[].releaseTitle`, `lanes[].readinessItem` | Optional project-approved display values |
+| `lanes[].blockerCodes` | Up to seven distinct codes from `dependency`, `review`, `ci`, `approval`, `release_hold`, `capacity`, and `incident` |
+
+The route rejects unknown fields at every level and caps the body at 128 KiB.
+Only the database owner can provision approved display values in
+`private.fleet_digest_display_values`. Approvals are specific to a project
+and field. Approve only text safe for the project's Fleet readers. A removed
+approval hides any affected snapshot while one of its display values lacks approval.
+
+Retrying the same snapshot preserves its original receipt time. A
+snapshot older than the stored snapshot, or different content at the same
+timestamp, receives `409`. Invalid documents, unapproved labels, and unknown
+projects receive `400`. Excess body bytes receive `413`. Unavailable storage
+or invalid publisher configuration returns `503`.

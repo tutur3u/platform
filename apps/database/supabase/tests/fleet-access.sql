@@ -12,11 +12,12 @@ where relnamespace = 'private'::regnamespace and relkind = 'r'
   and relname in (
     'fleet_projects', 'fleet_access_grants', 'fleet_access_grant_projects',
     'fleet_channel_identities', 'fleet_intents', 'fleet_intent_quotes',
-    'fleet_audit_events', 'fleet_control'
+    'fleet_audit_events', 'fleet_control',
+    'fleet_digest_display_values', 'fleet_project_digests'
   );
 select is(
   (select count(*) from fleet_access_test_tables where relrowsecurity),
-  8::bigint, 'all Fleet tables have RLS enabled'
+  10::bigint, 'all Fleet access tables have RLS enabled'
 );
 select ok(not exists (
   select 1 from fleet_access_test_tables c
@@ -31,11 +32,14 @@ select ok(not exists (
     'fleet_reject_audit_mutation', 'fleet_reject_fence_reset', 'fleet_check_grant',
     'fleet_version_project', 'fleet_version_control', 'fleet_check_intent_transition',
     'fleet_require_owner', 'fleet_grant_access', 'fleet_revoke_access',
-    'fleet_set_stopped', 'fleet_admit_intent', 'fleet_submit_intent'
+    'fleet_set_stopped', 'fleet_admit_intent', 'fleet_submit_intent',
+    'fleet_digest_labels_approved', 'fleet_get_access', 'fleet_get_digest', 'fleet_publish_digest'
   )
-    and (p.proname <> 'fleet_submit_intent' or caller <> 'service_role')
+    and (caller <> 'service_role' or p.proname not in (
+      'fleet_submit_intent', 'fleet_get_access', 'fleet_get_digest', 'fleet_publish_digest'
+    ))
     and has_function_privilege(caller, p.oid, 'EXECUTE')
-), 'only the service submission function is executable by API roles');
+), 'only designated Fleet access functions are executable by the service role');
 
 select set_config('request.jwt.claims', '{}', true);
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values

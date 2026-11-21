@@ -7442,6 +7442,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      fleet_digest_display_values: {
+        Row: {
+          field: string;
+          project_key: string;
+          value: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          field: string;
+          project_key: string;
+          value: string;
+        };
+        Update: {
+          field?: string;
+          project_key?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_digest_display_values_project_key_fkey';
+            columns: ['project_key'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_projects';
+            referencedColumns: ['key'];
+          },
+        ];
+      };
       fleet_intent_quotes: {
         Row: {
           created_at: string;
@@ -7547,6 +7574,36 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'fleet_access_grants';
             referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      fleet_project_digests: {
+        Row: {
+          generated_at: string;
+          lanes: NonNullable<Json>;
+          project_key: string;
+          received_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          generated_at: string;
+          lanes: NonNullable<Json>;
+          project_key: string;
+          received_at?: string;
+        };
+        Update: {
+          generated_at?: string;
+          lanes?: NonNullable<Json>;
+          project_key?: string;
+          received_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_project_digests_project_key_fkey';
+            columns: ['project_key'];
+            isOneToOne: true;
+            referencedRelation: 'fleet_projects';
+            referencedColumns: ['key'];
           },
         ];
       };
@@ -27772,6 +27829,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      fleet_digest_labels_approved: {
+        Args: { p_lanes: Json; p_project_key: string };
+        Returns: boolean;
+      };
+      fleet_get_access: { Args: { p_actor_id: string }; Returns: Json };
+      fleet_get_digest: { Args: { p_actor_id: string }; Returns: Json };
       fleet_grant_access: {
         Args: {
           p_capabilities: string[];
@@ -27785,6 +27848,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: number;
+      };
+      fleet_publish_digest: {
+        Args: { p_generated_at: string; p_lanes: Json; p_project_key: string };
+        Returns: string;
       };
       fleet_require_owner: {
         Args: Record<PropertyKey, never>;

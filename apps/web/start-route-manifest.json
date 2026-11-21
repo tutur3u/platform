@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 814,
+    "total": 827,
     "categories": {
-      "api": 615,
+      "api": 628,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 802 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 815 }
   },
   "routes": [
     {
@@ -1934,6 +1934,94 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/admin/accounts/[userId]/admin",
+      "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/admin/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/[userId]/challenge",
+      "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/challenge/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/[userId]/disable",
+      "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/disable/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/[userId]/role",
+      "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/role/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/[userId]",
+      "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/invite",
+      "source": "apps/web/src/app/api/v1/admin/accounts/invite/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/machine-token",
+      "source": "apps/web/src/app/api/v1/admin/accounts/machine-token/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/operations/[operationId]",
+      "source": "apps/web/src/app/api/v1/admin/accounts/operations/[operationId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts",
+      "source": "apps/web/src/app/api/v1/admin/accounts/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/tests/[userId]",
+      "source": "apps/web/src/app/api/v1/admin/accounts/tests/[userId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/admin/accounts/tests",
+      "source": "apps/web/src/app/api/v1/admin/accounts/tests/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/admin/ai/memory/backfill-mira",
       "source": "apps/web/src/app/api/v1/admin/ai/memory/backfill-mira/route.ts",
       "category": "api",
@@ -2536,6 +2624,22 @@
     {
       "pattern": "/api/v1/external-ai/chat/completions",
       "source": "apps/web/src/app/api/v1/external-ai/chat/completions/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/access",
+      "source": "apps/web/src/app/api/v1/fleet/access/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/digest",
+      "source": "apps/web/src/app/api/v1/fleet/digest/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

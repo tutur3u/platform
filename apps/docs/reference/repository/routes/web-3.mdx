@@ -14,6 +14,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/meet/plans` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/route.ts) |
+| `/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/preview/%5Bport%5D/%5B%5B...path%5D%5D/route.ts) |
 | `/api/v1/meetings/[meetingId]/collaboration` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/route.ts) |
 | `/api/v1/mira/achievements` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/route.ts) |
 | `/api/v1/mira/achievements/unlock` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/unlock/route.ts) |
@@ -192,7 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/import-jobs/%5BjobId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/assets/import-jobs` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/import-jobs/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/assets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/assets/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/upload-url/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/blocks/[blockId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/blocks/%5BblockId%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

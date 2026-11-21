@@ -1490,6 +1490,26 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/fleet/access",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/access/route.ts",
+    "sourceSha256": "31e2de0b3c45558d2d18807603a70eb79ff4e0a2dcd54d61eb37e9f5a209c398",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/digest",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/digest/route.ts",
+    "sourceSha256": "6918272fd263609fe40a964dbc6eba7badb7e783361686363c9e8f25416f834c",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained",
     "sideEffects": "unknown",
     "shadow": "never",

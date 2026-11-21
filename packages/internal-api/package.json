@@ -91,6 +91,11 @@
       "import": "./dist/auth.js",
       "require": "./dist/auth.js"
     },
+    "./fleet": {
+      "types": "./dist/fleet.d.ts",
+      "import": "./dist/fleet.js",
+      "require": "./dist/fleet.js"
+    },
     "./backend": {
       "types": "./dist/backend.d.ts",
       "import": "./dist/backend.js",

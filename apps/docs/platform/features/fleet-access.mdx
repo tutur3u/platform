@@ -6,8 +6,9 @@ audience: developers
 ---
 
 **Status:** [Slice 0](#transitional-slice-0) is the transitional desk rule. Slice 1
-defines the database foundation. Production application and later slices need
-the approvals in the [implementation plan](#implementation-plan).
+defines the database foundation. Slice 2 adds the [Fleet API](/reference/api-reference/fleet-access)
+for live access, digest publishing and scoped reads. Production application and
+later slices need the approvals in the [implementation plan](#implementation-plan).
 
 Fleet access lets named teammates (for example an operations lead) read the
 state of the agent fleet, ask about it, and steer work without routing every
@@ -250,6 +251,8 @@ transitions and audit writes atomically.
 | `fleet_intent_quotes`         | redacted quote, 90-day retention                              |
 | `fleet_audit_events`          | append-only events with reason codes                          |
 | `fleet_control`               | singleton stop state and generation                           |
+| `fleet_digest_display_values` | approved display values per project and field                 |
+| `fleet_project_digests`       | latest approved snapshot per project                          |
 
 Triggers reject updates and deletes on audit events, capabilities above the
 tier ceiling and Owner-tier grants. Fleet access is not a workspace role
@@ -266,6 +269,13 @@ rechecks that budget at dispatch. Model budget consumption belongs to the Ask
 execution path.
 Auth account deletion revokes the grant and retains its generation and historical
 intent references. Fleet grant, project and control rows retain their fences.
+
+The Observer API uses service-role-only definer functions. It binds read actors
+to verified Tuturuuu sessions and checks live grants, stop state and project
+scope before reading digest rows.
+
+Slice 3 write routes must exclude the `platform` app-session audience used by
+CLI access tokens.
 
 Slice 3 must bind and consume verified provider event evidence before any desk
 receives a credential that can reach the submission function. Quote readers
@@ -300,9 +310,14 @@ Each slice links its coverage here when it lands:
   grant and project fences, and intent approvals and leases. See [fleet-access.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access.sql).
 - Slice 1 also races two PostgreSQL sessions against the final question and
   steer slots. See [fleet-access-quota-race.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access-quota-race.sql).
-- Slices 2–3: route tests under `apps/web/src/app/api/v1/fleet/**` —
-  cross-project target denial, action-hash binding, replay rejection, quote
-  isolation, live revocation.
+- Slice 2 covers default deny, live revocation, no-store responses, scoped totals,
+  strict schema validation and the machine-only publish boundary in the
+  [Fleet route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/route.test.ts).
+  The [digest SQL tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-observer-digest.sql)
+  cover actual project filtering, revoked and expired grants, stop, label
+  approvals and snapshot ordering.
+- Slice 3 covers cross-project target denial, action-hash binding, replay
+  rejection and quote isolation.
 - Slice 5: consumer tests for lease expiry, stale generations, idempotent
   claims and the stop fence.
 - Slice 4: desk tests for unlinked senders, group chats, injected instructions

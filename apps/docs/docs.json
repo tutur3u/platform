@@ -535,6 +535,7 @@
                   "reference/api-reference/status",
                   "reference/api-reference/ai-studio",
                   "reference/api-reference/mastermind-push-events",
+                  "reference/api-reference/fleet-access",
                   "reference/api-reference/endpoint/generate"
                 ]
               },
