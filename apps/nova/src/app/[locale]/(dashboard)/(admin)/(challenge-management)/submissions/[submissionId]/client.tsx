@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   ArrowLeft,
@@ -74,7 +75,7 @@ export default function SubmissionClient({
         message: 'Starting re-evaluation...',
       });
 
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/submissions/${submission.id}/re-evaluate`,
         {
           method: 'POST',

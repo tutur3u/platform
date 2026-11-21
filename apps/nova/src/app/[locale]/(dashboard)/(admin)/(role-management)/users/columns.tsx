@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -69,7 +70,7 @@ export const getUserColumns = ({
       allow_role_management: boolean;
     }) => {
       // apps/nova/src/app/api/v1/nova/users/[userId]/route.ts
-      const res = await fetch(`/api/v1/nova/users/${userId}`, {
+      const res = await mountedFetch(`/api/v1/nova/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

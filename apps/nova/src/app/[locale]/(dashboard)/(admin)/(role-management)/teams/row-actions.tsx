@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Ellipsis, Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -33,7 +34,7 @@ export function TeamRowActions({ row }: TeamRowActionsProps) {
 
   const deleteTeam = async () => {
     try {
-      const res = await fetch(`/api/v1/nova/teams/${data.id}`, {
+      const res = await mountedFetch(`/api/v1/nova/teams/${data.id}`, {
         method: 'DELETE',
       });
 

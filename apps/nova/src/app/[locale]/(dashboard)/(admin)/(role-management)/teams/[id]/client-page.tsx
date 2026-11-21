@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   Loader2,
@@ -96,7 +97,7 @@ export default function TeamDetailsClient({
     try {
       setIsUpdatingName(true);
 
-      const res = await fetch(`/api/v1/nova/teams/${teamId}`, {
+      const res = await mountedFetch(`/api/v1/nova/teams/${teamId}`, {
         method: 'PATCH',
         body: JSON.stringify({
           name: newTeamName.trim(),
@@ -124,7 +125,7 @@ export default function TeamDetailsClient({
 
   const removeMember = async (userId: string) => {
     try {
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/v1/nova/teams/${teamId}/members/${userId}`,
         {
           method: 'DELETE',
@@ -154,12 +155,15 @@ export default function TeamDetailsClient({
         return;
       }
 
-      const res = await fetch(`/api/v1/nova/teams/${teamId}/invitations`, {
-        method: 'POST',
-        body: JSON.stringify({
-          email: values.email,
-        }),
-      });
+      const res = await mountedFetch(
+        `/api/v1/nova/teams/${teamId}/invitations`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email: values.email,
+          }),
+        }
+      );
 
       if (res.ok) {
         const data = await res.json();
@@ -181,7 +185,7 @@ export default function TeamDetailsClient({
 
   const removeInvitation = async (email: string) => {
     try {
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/v1/nova/teams/${teamId}/invitations/${encodeURIComponent(email)}`,
         {
           method: 'DELETE',

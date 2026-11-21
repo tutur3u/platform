@@ -1,3 +1,4 @@
+import { mountedFetch } from '@/lib/mounted-api';
 /**
  * Utility functions for handling streaming responses in Nova
  */
@@ -158,7 +159,7 @@ export async function evaluatePromptStreaming(
   onProgress: ProgressHandler,
   onError?: (error: Error) => void
 ): Promise<void> {
-  const response = await fetch(`/api/v1/problems/${problemId}/prompt`, {
+  const response = await mountedFetch(`/api/v1/problems/${problemId}/prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

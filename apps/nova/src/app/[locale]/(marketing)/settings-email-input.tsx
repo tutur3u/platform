@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -49,7 +50,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
 
-    const res = await fetch('/api/v1/users/me/email', {
+    const res = await mountedFetch('/api/v1/users/me/email', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

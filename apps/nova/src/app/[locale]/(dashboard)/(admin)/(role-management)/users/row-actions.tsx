@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Ellipsis, ExternalLink } from '@tuturuuu/icons';
 import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
@@ -40,7 +41,7 @@ export function NovaUsersRowActions({ row }: NovaUserRowActionsProps) {
   const userId = user.id;
 
   const deleteUser = async () => {
-    const res = await fetch(`/api/v1/nova/users/${userId}`, {
+    const res = await mountedFetch(`/api/v1/nova/users/${userId}`, {
       method: 'DELETE',
     });
 

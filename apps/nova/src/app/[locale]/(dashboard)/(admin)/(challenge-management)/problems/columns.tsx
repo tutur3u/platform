@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Edit, Eye, MoreHorizontal, Trash } from '@tuturuuu/icons';
 import type { ExtendedNovaProblem } from '@tuturuuu/types';
@@ -121,7 +122,7 @@ function ActionCell({ problem }: { problem: ExtendedNovaProblem }) {
 
   const handleDeleteProblem = async () => {
     try {
-      const response = await fetch(`/api/v1/problems/${problem.id}`, {
+      const response = await mountedFetch(`/api/v1/problems/${problem.id}`, {
         method: 'DELETE',
       });
 

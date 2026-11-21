@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import {
@@ -58,16 +59,21 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...values,
-          password: values.enablePassword ? values.password || undefined : null,
-        }),
-      });
+      const response = await mountedFetch(
+        `/api/v1/challenges/${challenge.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...values,
+            password: values.enablePassword
+              ? values.password || undefined
+              : null,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to save challenge');
@@ -93,7 +99,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       await Promise.allSettled([
         // Create new criteria
         ...criteriaToCreate.map((c) =>
-          fetch(`/api/v1/criteria`, {
+          mountedFetch(`/api/v1/criteria`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -107,7 +113,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         ),
         // Update existing criteria
         ...criteriaToUpdate.map((c) =>
-          fetch(`/api/v1/criteria/${c.id}`, {
+          mountedFetch(`/api/v1/criteria/${c.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -117,7 +123,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         ),
         // Delete removed criteria
         ...criteriaToDelete.map((c) =>
-          fetch(`/api/v1/criteria/${c.id}`, {
+          mountedFetch(`/api/v1/criteria/${c.id}`, {
             method: 'DELETE',
           })
         ),
@@ -134,13 +140,13 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
 
       await Promise.allSettled([
         ...emailsToCreate.map((email) =>
-          fetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
+          mountedFetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
             method: 'POST',
             body: JSON.stringify({ email }),
           })
         ),
         ...emailsToDelete.map((email) =>
-          fetch(
+          mountedFetch(
             `/api/v1/challenges/${challenge.id}/whitelists?email=${email}`,
             {
               method: 'DELETE',
@@ -162,7 +168,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       await Promise.allSettled([
         // Add new admin managers
         ...adminsToAdd.map((adminEmail) =>
-          fetch(`/api/v1/challenges/${challenge.id}/managers`, {
+          mountedFetch(`/api/v1/challenges/${challenge.id}/managers`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -172,7 +178,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         ),
         // Remove admin managers that were deselected
         ...adminsToRemove.map((adminEmail) =>
-          fetch(
+          mountedFetch(
             `/api/v1/challenges/${challenge.id}/managers?adminEmail=${encodeURIComponent(adminEmail)}`,
             {
               method: 'DELETE',

@@ -1,3 +1,4 @@
+import { mountedFetch } from '@/lib/mounted-api';
 import { Plus, Trash } from '@tuturuuu/icons';
 import type { NovaChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -117,7 +118,7 @@ export default function ProblemForm({
   useEffect(() => {
     // Fetch available challenges
     const fetchChallenges = async () => {
-      const response = await fetch('/api/v1/challenges');
+      const response = await mountedFetch('/api/v1/challenges');
       if (!response.ok) {
         toast({
           title: 'Error',

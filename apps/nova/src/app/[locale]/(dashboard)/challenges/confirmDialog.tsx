@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Clock, Eye, EyeOff } from '@tuturuuu/icons';
 import { verifyNovaChallengePassword } from '@tuturuuu/internal-api/nova';
@@ -113,7 +114,7 @@ export function ConfirmDialog({
         // Create a new session
         const startTime = new Date();
 
-        const response = await fetch(`/api/v1/sessions`, {
+        const response = await mountedFetch(`/api/v1/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -241,7 +242,7 @@ export function ConfirmDialog({
 }
 
 export async function challengeHasProblems(challengeId: string) {
-  const response = await fetch(
+  const response = await mountedFetch(
     `/api/v1/problems?challengeId=${challengeId}&availability=true`
   );
   if (!response.ok) return false;

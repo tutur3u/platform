@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   useIsFetching,
@@ -27,13 +28,16 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRoleBasic>[] => {
       email: string;
       enabled: boolean;
     }) => {
-      const res = await fetch(`/api/v1/infrastructure/whitelist/${email}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          email,
-          enabled,
-        }),
-      });
+      const res = await mountedFetch(
+        `/api/v1/infrastructure/whitelist/${email}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            email,
+            enabled,
+          }),
+        }
+      );
 
       if (!res.ok) {
         throw new Error('Failed to toggle whitelist status');

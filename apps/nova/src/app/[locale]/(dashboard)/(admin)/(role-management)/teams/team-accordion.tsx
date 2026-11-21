@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useQuery } from '@tanstack/react-query';
 import { Mail, Users } from '@tuturuuu/icons';
@@ -38,7 +39,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
   const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
     queryKey: ['team', teamId, 'members'],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/nova/teams/${teamId}/members`, {
+      const res = await mountedFetch(`/api/v1/nova/teams/${teamId}/members`, {
         cache: 'no-store',
       });
       if (!res.ok) throw new Error('Failed to fetch members');
@@ -53,9 +54,12 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
   >({
     queryKey: ['team', teamId, 'invitations'],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/nova/teams/${teamId}/invitations`, {
-        cache: 'no-store',
-      });
+      const res = await mountedFetch(
+        `/api/v1/nova/teams/${teamId}/invitations`,
+        {
+          cache: 'no-store',
+        }
+      );
       if (!res.ok) throw new Error('Failed to fetch invitations');
       const data = await res.json();
       return data.data as Invitation[];

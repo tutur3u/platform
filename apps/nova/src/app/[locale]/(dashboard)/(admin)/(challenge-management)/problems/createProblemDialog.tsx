@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   Dialog,
@@ -29,7 +30,7 @@ export default function CreateProblemDialog({
     try {
       setIsSubmitting(true);
 
-      const response = await fetch('/api/v1/problems', {
+      const response = await mountedFetch('/api/v1/problems', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export default function CreateProblemDialog({
       if (problem?.id) {
         Promise.allSettled(
           values.testCases.map((tc) =>
-            fetch('/api/v1/test-cases', {
+            mountedFetch('/api/v1/test-cases', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

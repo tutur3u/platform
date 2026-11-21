@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type { Workspace } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -38,9 +39,12 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   const declineInviteErrorMessage = 'decline-invite-error-msg';
 
   const acceptInvite = async (ws: Pick<Workspace, 'id'>) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
-      method: 'POST',
-    });
+    const response = await mountedFetch(
+      `/api/workspaces/${ws.id}/accept-invite`,
+      {
+        method: 'POST',
+      }
+    );
 
     if (response.ok) {
       toast({
@@ -59,9 +63,12 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
   };
 
   const declineInvite = async (ws: Pick<Workspace, 'id'>) => {
-    const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
-      method: 'POST',
-    });
+    const response = await mountedFetch(
+      `/api/workspaces/${ws.id}/decline-invite`,
+      {
+        method: 'POST',
+      }
+    );
 
     if (response.ok) {
       toast({

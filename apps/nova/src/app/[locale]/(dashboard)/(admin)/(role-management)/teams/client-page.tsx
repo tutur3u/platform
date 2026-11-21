@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -42,7 +43,7 @@ export default function TeamClient({ onFinish }: { onFinish?: () => void }) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/v1/nova/teams', {
+      const res = await mountedFetch('/api/v1/nova/teams', {
         method: 'POST',
         body: JSON.stringify({
           name: values.name,

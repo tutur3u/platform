@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -48,7 +49,7 @@ export default function DisplayNameInput({
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
 
-    const res = await fetch('/api/v1/users/me/profile', {
+    const res = await mountedFetch('/api/v1/users/me/profile', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

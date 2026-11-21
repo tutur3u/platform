@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   AlertCircle,
@@ -114,7 +115,7 @@ export default function ChallengeCard({
   };
 
   const handleEndChallenge = async () => {
-    const response = await fetch(
+    const response = await mountedFetch(
       `/api/v1/sessions/${challenge.lastSession?.id}`,
       {
         method: 'PUT',
@@ -141,9 +142,12 @@ export default function ChallengeCard({
 
   const handleDeleteChallenge = async () => {
     try {
-      const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
-        method: 'DELETE',
-      });
+      const response = await mountedFetch(
+        `/api/v1/challenges/${challenge.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         router.refresh();

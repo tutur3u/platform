@@ -1,3 +1,4 @@
+import { mountedFetch } from '@/lib/mounted-api';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { NovaRoleBasic } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,9 +23,12 @@ export function NovaRoleRowActions({ row }: NovaRoleRowActionsProps) {
   const data = row.original;
 
   const deleteNovaRole = async () => {
-    const res = await fetch(`/api/v1/infrastructure/whitelist/${data.email}`, {
-      method: 'DELETE',
-    });
+    const res = await mountedFetch(
+      `/api/v1/infrastructure/whitelist/${data.email}`,
+      {
+        method: 'DELETE',
+      }
+    );
 
     if (res.ok) {
       router.refresh();

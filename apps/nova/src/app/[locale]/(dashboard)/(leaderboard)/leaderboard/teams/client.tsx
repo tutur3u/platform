@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   ArrowLeftToLine,
@@ -62,7 +63,7 @@ export default function TeamsLeaderboardClient({
 
   useEffect(() => {
     const getTeam = async () => {
-      const payload = await fetch('/api/v1/nova/me/team', {
+      const payload = await mountedFetch('/api/v1/nova/me/team', {
         cache: 'no-store',
       })
         .then(async (response) => {

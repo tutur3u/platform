@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type { ExtendedNovaProblem } from '@tuturuuu/types';
 import {
@@ -50,7 +51,7 @@ export default function EditProblemDialog({
   const onSubmit = async (values: ProblemFormValues) => {
     try {
       setIsSubmitting(true);
-      const response = await fetch(`/api/v1/problems/${problem.id}`, {
+      const response = await mountedFetch(`/api/v1/problems/${problem.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ export default function EditProblemDialog({
       await Promise.allSettled([
         // Create new testCases
         ...testCasesToCreate.map((tc) =>
-          fetch(`/api/v1/test-cases`, {
+          mountedFetch(`/api/v1/test-cases`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ export default function EditProblemDialog({
         ),
         // Update existing testCases
         ...testCasesToUpdate.map((tc) =>
-          fetch(`/api/v1/test-cases/${tc.id}`, {
+          mountedFetch(`/api/v1/test-cases/${tc.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ export default function EditProblemDialog({
         ),
         // Delete removed testCases
         ...(testCasesToDelete || []).map((tc) =>
-          fetch(`/api/v1/test-cases/${tc.id}`, {
+          mountedFetch(`/api/v1/test-cases/${tc.id}`, {
             method: 'DELETE',
           })
         ),

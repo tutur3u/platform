@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type {
   NovaChallenge,
@@ -95,7 +96,7 @@ export default function ChallengeClient({
   };
 
   const handleEndChallenge = async () => {
-    const response = await fetch(`/api/v1/sessions/${session?.id}`, {
+    const response = await mountedFetch(`/api/v1/sessions/${session?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

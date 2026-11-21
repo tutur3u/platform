@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   Dialog,
@@ -31,7 +32,7 @@ export default function CreateChallengeDialog({
     try {
       setIsSubmitting(true);
 
-      const response = await fetch('/api/v1/challenges', {
+      const response = await mountedFetch('/api/v1/challenges', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ export default function CreateChallengeDialog({
 
       await Promise.allSettled(
         values.criteria.map((c) =>
-          fetch(`/api/v1/criteria`, {
+          mountedFetch(`/api/v1/criteria`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ export default function CreateChallengeDialog({
 
       await Promise.allSettled(
         values.whitelistedEmails.map((email) =>
-          fetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
+          mountedFetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
             method: 'POST',
             body: JSON.stringify({ email }),
           })
@@ -82,7 +83,7 @@ export default function CreateChallengeDialog({
       if (values.managingAdmins.length > 0) {
         await Promise.allSettled(
           values.managingAdmins.map((adminEmail) =>
-            fetch(`/api/v1/challenges/${challenge.id}/managers`, {
+            mountedFetch(`/api/v1/challenges/${challenge.id}/managers`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

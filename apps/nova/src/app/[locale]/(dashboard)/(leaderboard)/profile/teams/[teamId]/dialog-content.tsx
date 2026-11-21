@@ -1,3 +1,4 @@
+import { mountedFetch } from '@/lib/mounted-api';
 import { ScrollText, Target } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -46,7 +47,7 @@ export function TeamActionDialog({
   const handleSave = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/v1/nova/teams/${teamId}`, {
+      const response = await mountedFetch(`/api/v1/nova/teams/${teamId}`, {
         body: JSON.stringify({
           description: formData.description,
           goals: formData.goals,
