@@ -45,8 +45,7 @@ export function getInitials(value: string) {
 export function ConfirmationCard({ children }: { children: ReactNode }) {
   return (
     <div>
-      <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-2xl">
-        <div className="h-1 bg-gradient-to-r from-dynamic-blue via-dynamic-green to-dynamic-red" />
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
         <CardContent className="space-y-6 p-6 sm:p-8">{children}</CardContent>
       </Card>
     </div>
@@ -58,7 +57,7 @@ function LoginMethodSeparator({ label }: { label: string }) {
     <div className="relative py-0.5">
       <Separator className="bg-border/60" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="bg-background/95 px-3 text-muted-foreground text-xs">
+        <span className="bg-card px-3 text-muted-foreground text-xs">
           {label}
         </span>
       </div>
@@ -80,8 +79,8 @@ export function ProfileLoadingState({
   return (
     <ConfirmationCard>
       <div className="space-y-4 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 shadow-sm">
-          <LoadingIndicator className="size-5 text-dynamic-blue" />
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-border bg-muted">
+          <LoadingIndicator className="size-5 text-muted-foreground" />
         </div>
         <div className="space-y-2">
           <h2 className="font-semibold text-2xl tracking-tight">
@@ -137,7 +136,7 @@ export function ProfileUnavailableState({
   return (
     <ConfirmationCard>
       <div className="space-y-4 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 shadow-sm">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10">
           <RefreshCcw className="size-6 text-dynamic-orange" />
         </div>
         <div className="space-y-2">

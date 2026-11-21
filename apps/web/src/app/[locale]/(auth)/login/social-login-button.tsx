@@ -21,7 +21,7 @@ export function SocialLoginButton({
       type={type}
       variant={variant}
       className={cn(
-        'group relative h-12 w-full rounded-2xl border-border/60 bg-background font-medium shadow-sm transition-colors hover:bg-muted/40',
+        'group relative h-12 w-full rounded-2xl border-border bg-background font-medium transition-colors hover:bg-muted/40',
         className
       )}
       {...props}

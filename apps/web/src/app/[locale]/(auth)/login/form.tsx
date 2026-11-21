@@ -1662,7 +1662,7 @@ export default function LoginForm({
     return (
       <RequiredMfaEnrollment key={user?.id} onVerified={completeMfaSignIn}>
         <div>
-          <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+          <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
             <CardContent className="space-y-6 p-6 sm:p-8">
               <div className="space-y-2 text-center">
                 <h2 className="font-semibold text-2xl tracking-tight">
@@ -1699,7 +1699,7 @@ export default function LoginForm({
                                   <InputOTPSlot
                                     key={`totp-${index + 1}`}
                                     index={index}
-                                    className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                    className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
                                   />
                                 ))}
                               </InputOTPGroup>
@@ -1713,7 +1713,7 @@ export default function LoginForm({
 
                   <Button
                     type="submit"
-                    className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                    className="h-12 w-full rounded-2xl font-medium"
                     disabled={loading || totpForm.watch('totp').length !== 6}
                   >
                     {loading ? (
@@ -1817,7 +1817,7 @@ export default function LoginForm({
 
   return (
     <fieldset disabled={!isHydrated} className="contents">
-      <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
         <CardContent className="p-6 sm:p-8">
           <div>
             {authStage === 'identify' ? (
@@ -1849,7 +1849,7 @@ export default function LoginForm({
                             <div className="group relative">
                               <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                               <Input
-                                className={`h-12 rounded-2xl border-border/60 bg-background pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
+                                className={`h-12 rounded-2xl border-border bg-background pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
                                   normalizedPreviewEmail ? 'pr-32' : ''
                                 }`}
                                 placeholder={t(
@@ -1878,7 +1878,7 @@ export default function LoginForm({
                               />
                               {normalizedPreviewEmail ? (
                                 <div className="absolute inset-y-0 right-3 flex items-center">
-                                  <span className="rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 px-2.5 py-1 font-medium text-[11px] text-dynamic-blue">
+                                  <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground text-xs">
                                     @tuturuuu.com
                                   </span>
                                 </div>
@@ -1924,7 +1924,7 @@ export default function LoginForm({
 
                     <Button
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full rounded-2xl font-medium"
                       disabled={
                         isResolvingOtpEnablement ||
                         loading ||
@@ -2028,7 +2028,7 @@ export default function LoginForm({
                                     <InputOTPSlot
                                       key={`otp-${index + 1}`}
                                       index={index}
-                                      className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                      className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
                                     />
                                   ))}
                                 </InputOTPGroup>
@@ -2042,7 +2042,7 @@ export default function LoginForm({
 
                     <Button
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full rounded-2xl font-medium"
                       disabled={loading || otpValue.length !== 6}
                     >
                       {loading ? (
@@ -2170,7 +2170,7 @@ export default function LoginForm({
                             <div className="group relative">
                               <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                               <Input
-                                className="h-12 rounded-2xl border-border/60 bg-background pr-12 pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15"
+                                className="h-12 rounded-2xl border-border bg-background pr-12 pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder={t('login.password_placeholder')}
                                 {...field}
@@ -2216,7 +2216,7 @@ export default function LoginForm({
 
                     <Button
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full rounded-2xl font-medium"
                       disabled={
                         loading ||
                         !passwordCredentialsAreValid ||

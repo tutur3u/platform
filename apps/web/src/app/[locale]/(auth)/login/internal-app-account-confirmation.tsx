@@ -89,18 +89,17 @@ export function InternalAppAccountConfirmation({
   return (
     <ConfirmationCard>
       <div className="space-y-2 text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 font-medium text-muted-foreground text-xs">
           <ShieldCheck className="size-3.5" />
           {t('login.profile_source_label')}
         </div>
-        <div className="relative mx-auto size-20">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-dynamic-blue/20 via-dynamic-green/20 to-dynamic-red/20 blur-md" />
-          <Avatar className="relative size-20 border border-border/70 shadow-lg">
+        <div className="mx-auto size-20">
+          <Avatar className="size-20 border border-border">
             <AvatarImage
               alt={currentAccountName}
               src={currentAccountAvatarUrl}
             />
-            <AvatarFallback className="bg-dynamic-green/10 font-semibold text-dynamic-green text-xl">
+            <AvatarFallback className="bg-muted font-semibold text-xl">
               {currentAccountInitials}
             </AvatarFallback>
           </Avatar>
@@ -119,7 +118,7 @@ export function InternalAppAccountConfirmation({
         </p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-gradient-to-br from-muted/30 to-background/60 p-4 shadow-sm">
+      <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 p-4">
         <Avatar className="size-12 border border-border/70">
           <AvatarImage alt={currentAccountName} src={currentAccountAvatarUrl} />
           <AvatarFallback className="bg-foreground/10 font-semibold">
@@ -144,7 +143,7 @@ export function InternalAppAccountConfirmation({
 
       <div className="space-y-3">
         <Button
-          className="group h-12 w-full rounded-2xl font-medium shadow-lg"
+          className="group h-12 w-full rounded-2xl font-medium"
           disabled={controlsDisabled}
           onClick={onContinue}
         >

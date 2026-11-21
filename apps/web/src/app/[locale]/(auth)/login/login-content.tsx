@@ -124,7 +124,7 @@ function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
 
 function LoginFormFallback() {
   return (
-    <div className="animate-pulse rounded-3xl border bg-background/95 p-8 shadow-xl">
+    <div className="animate-pulse rounded-3xl border bg-card p-8 shadow-elevation-1">
       <div className="space-y-3">
         <div className="h-5 w-16 rounded bg-muted" />
         <div className="h-12 w-full rounded-2xl bg-muted" />

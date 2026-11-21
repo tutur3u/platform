@@ -48,7 +48,7 @@ export function InvalidReturnUrlWarning({
   return (
     <ConfirmationCard>
       <div className="space-y-4 text-center" role="alert">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 shadow-sm">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10">
           <AlertTriangle className="size-6 text-dynamic-orange" />
         </div>
         <div className="space-y-2">
@@ -81,7 +81,7 @@ export function InvalidReturnUrlWarning({
       )}
 
       <Button
-        className="group h-12 w-full rounded-2xl font-medium shadow-lg"
+        className="group h-12 w-full rounded-2xl font-medium"
         onClick={linkIsInvalid ? onClear : () => window.location.reload()}
         type="button"
       >

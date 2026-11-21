@@ -62,7 +62,7 @@ export function InternalAppAccountConfirmationFallback({
 export function RedirectingAfterAuthCard({ label }: { label: string }) {
   return (
     <div>
-      <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
         <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
           <LoadingIndicator className="size-6" />
           <p className="font-medium text-muted-foreground text-sm">{label}</p>
@@ -119,7 +119,7 @@ export function LoginMethodSeparator({ label }: { label: string }) {
     <div className="relative py-0.5">
       <Separator className="bg-border/60" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="bg-background/95 px-3 text-muted-foreground text-xs">
+        <span className="bg-card px-3 text-muted-foreground text-xs">
           {label}
         </span>
       </div>
