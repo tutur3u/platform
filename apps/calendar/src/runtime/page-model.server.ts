@@ -3,7 +3,11 @@ import { calendarBase } from './calendar-mount';
 import { pages } from './page-registry.bridge.gen';
 import '@tanstack/react-start/server-only';
 import { redirect as documentRedirect } from '@tanstack/react-router';
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import {
+  getSatelliteAppSessionUser,
+  getSatelliteSupabaseSessionUser,
+} from '@tuturuuu/satellite/auth';
+import { signedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { PUBLIC_PATHS } from '../constants/common';
@@ -57,7 +61,7 @@ async function loadResolvedPageModel(url: URL) {
         reloadDocument: true,
       });
   }
-  const request = calendarRequest().request;
+  const { request, responseHeaders } = calendarRequest();
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
     PUBLIC_PATHS.includes(pathname) &&
@@ -70,7 +74,10 @@ async function loadResolvedPageModel(url: URL) {
       actorId: undefined,
       showVersionBadge: false,
     };
-  const actor = await getSatelliteAppSessionUser('calendar');
+  const timing = signedInLoaderTiming(request, responseHeaders);
+  const actor = await timing.measure('actor', () =>
+    getSatelliteAppSessionUser('calendar')
+  );
   const params: Record<string, string> = { locale };
   if (segments[0]) params.wsId = segments[0];
   if (segments[1] === 'tasks' && segments[2] === 'boards' && segments[3])
@@ -104,7 +111,7 @@ async function loadResolvedPageModel(url: URL) {
   if (segments.length > 1 && segments[1] !== 'lab' && segments[1] !== 'tasks')
     notFound();
   if (segments[1] === 'lab' && segments.length !== 2) notFound();
-  const scope = await workspaceModel(wsId);
+  const scope = await workspaceModel(wsId, timing);
   if (scope.kind === 'invitation')
     return {
       ...common,
@@ -113,16 +120,25 @@ async function loadResolvedPageModel(url: URL) {
     };
   if (segments.length === 1) {
     const calendar = await calendarPageModel({
+      timing,
       params: Promise.resolve({ wsId, locale }),
       searchParams: Promise.resolve({
         date: url.searchParams.get('date') ?? undefined,
         eventId: url.searchParams.get('eventId') ?? undefined,
       }),
     });
+    const shell = await workspaceShellModel(scope, timing);
+    await timing.appendToResponse(async () => {
+      const verified = await getSatelliteSupabaseSessionUser();
+      return (
+        verified?.id === scope.user.id &&
+        verified?.app_metadata?.qa_test === true
+      );
+    });
     return {
       ...common,
       kind: 'calendar' as const,
-      shell: await workspaceShellModel(scope),
+      shell,
       calendar,
     };
   }

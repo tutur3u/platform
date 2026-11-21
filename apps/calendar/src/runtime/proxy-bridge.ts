@@ -9,6 +9,7 @@ import {
   bridgeRequest,
   maybeBridgeRequest,
 } from '@tuturuuu/start-bridge/request-context';
+import { signedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   type CalendarRequestContext,
@@ -57,7 +58,14 @@ export function dispatchThroughCalendarProxy({
     basePath: runtimeAppBase(),
     requestInit,
     rewriteOrigins: [resolveTuturuuuWebAppUrl()],
-    proxy: (forwarded) => enter(forwarded, () => proxy(forwarded)),
+    proxy: (forwarded) =>
+      enter(forwarded, () => {
+        const context = bridgeRequest();
+        return signedInLoaderTiming(
+          context.request,
+          context.responseHeaders
+        ).measure('proxy', () => proxy(forwarded));
+      }),
     dispatch: (forwarded) => enter(forwarded, () => dispatch(forwarded)),
   });
 }

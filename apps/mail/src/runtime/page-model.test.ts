@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
+  verifiedSession: vi.fn(),
   profile: vi.fn(),
   workspace: vi.fn(),
   invitation: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.actor,
+  getSatelliteSupabaseSessionUser: mocks.verifiedSession,
   getSatelliteCurrentUser: mocks.profile,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -101,6 +103,53 @@ describe('Mail page authorization and projections', () => {
         );
       }
   });
+  it('adds opted-in timing only after a signed-in folder model is admitted', async () => {
+    const url = `https://mail.tuturuuu.com/${tenant}/inbox`;
+    const responseHeaders = new Headers();
+    const request = new Request(url, {
+      headers: { 'sec-fetch-dest': 'document', 'x-tuturuuu-qa-timing': '1' },
+    });
+
+    const run = (headers: Headers) =>
+      withMailRequest(
+        { request, responseHeaders: headers, waitUntil: () => {} },
+        () => loadPageModel(`/${tenant}/inbox`)
+      );
+
+    mocks.verifiedSession.mockResolvedValue({
+      id: 'actor',
+      app_metadata: { qa_test: true },
+    });
+    await expect(run(responseHeaders)).resolves.toMatchObject({
+      kind: 'folder',
+    });
+    const timing = responseHeaders.get('server-timing');
+    for (const label of [
+      'actor',
+      'workspace-actor',
+      'staff',
+      'workspace',
+      'profile',
+    ]) {
+      expect(timing).toContain(`${label};dur=`);
+    }
+    expect(timing).not.toContain('must-not-serialize');
+
+    mocks.verifiedSession.mockResolvedValue({ id: 'actor', app_metadata: {} });
+    const regularHeaders = new Headers();
+    await expect(run(regularHeaders)).resolves.toMatchObject({
+      kind: 'folder',
+    });
+    expect(regularHeaders.has('server-timing')).toBe(false);
+
+    mocks.actor.mockResolvedValue(null);
+    const deniedHeaders = new Headers();
+    await expect(run(deniedHeaders)).rejects.toMatchObject({
+      options: { href: '/login' },
+    });
+    expect(deniedHeaders.has('server-timing')).toBe(false);
+  });
+
   it('rejects anonymous callers before workspace or invitation reads', async () => {
     mocks.actor.mockResolvedValue(null);
     await expect(load(`/${tenant}/inbox`)).rejects.toMatchObject({

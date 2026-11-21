@@ -18,6 +18,20 @@ alias, Vite preset and central API forwarding come from
 maps each retained App Router file to the native module that owns it, and CI
 fails on any unmapped `route.*` or `page.*`.
 
+## Signed-in loader timing
+
+For an approved Mail or Calendar QA browser profile, set
+`x-tuturuuu-qa-timing: 1` on document requests. The Mail folder and Calendar
+landing loaders add finite phase durations to `Server-Timing` after passing
+their existing session and workspace guards and verifying that the current
+Supabase user is the same actor and has the server-managed QA fixture marker.
+The response carries timings for
+proxy admission, actor resolution and the data stages the loader actually ran.
+Some stages contain more than one HTTP request. Compare labels as overlapping
+spans where the loader starts work concurrently, and keep the redacted timing
+receipt with the serving build SHA. Navigation timings do not identify Worker
+isolate state.
+
 ## Owning validation
 
 `.github/workflows/apps-cloudflare.yaml` uses Bun 1.4.4 and Node 24.22.0. Root

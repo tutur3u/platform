@@ -19,13 +19,22 @@ import {
   appBasePath,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
+import {
+  signedInLoaderTiming,
+  type SignedInLoaderTiming,
+} from '@tuturuuu/utils/signed-in-loader-timing';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveNotificationWebAppUrl } from './notification-url.server';
 import { cookies, headers, mailRequest } from './request-context';
 
-export async function loadMailWorkspace(id: string) {
-  const user = await getSatelliteAppSessionUser('mail');
+export async function loadMailWorkspace(
+  id: string,
+  timing: SignedInLoaderTiming = signedInLoaderTiming()
+) {
+  const user = await timing.measure('workspace-actor', () =>
+    getSatelliteAppSessionUser('mail')
+  );
   if (!user?.id) {
     const appBase = appBasePath();
     if (!appBase) throw redirect({ href: '/login' });
@@ -39,16 +48,22 @@ export async function loadMailWorkspace(id: string) {
   }
   const isStaff = isVerifiedTuturuuuStaffSession(
     user &&
-      (await getVerifiedAuthUser(
-        await createAdminClient({ noCookie: true }),
-        user.id
+      (await timing.measure('staff', async () =>
+        getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        )
       ))
   );
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  const workspace = await timing.measure('workspace', () =>
+    getWorkspace(id, { useAdmin: true, user })
+  );
   if (!workspace?.personal && !isStaff)
     throw redirect({ href: withAppBase('/not-available') });
   if (!workspace?.joined) {
-    const invitation = await getPendingWorkspaceInvitation(id, await headers());
+    const invitation = await timing.measure('invitation', async () =>
+      getPendingWorkspaceInvitation(id, await headers())
+    );
     if (invitation) return { kind: 'invitation' as const, invitation };
   }
   if (!workspace) throw notFound();
@@ -66,7 +81,9 @@ export async function loadMailWorkspace(id: string) {
     notificationWebAppUrl: resolveNotificationWebAppUrl(),
     canConnectAccounts: isStaff && Boolean(workspace.personal),
     connectedByDefault: !isStaff,
-    profile: await getSatelliteCurrentUser('mail'),
+    profile: await timing.measure('profile', () =>
+      getSatelliteCurrentUser('mail')
+    ),
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(store),
     defaultCollapsed: getSidebarCollapsedState(store, behavior),

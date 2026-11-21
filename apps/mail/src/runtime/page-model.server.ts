@@ -1,11 +1,15 @@
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import {
+  getSatelliteAppSessionUser,
+  getSatelliteSupabaseSessionUser,
+} from '@tuturuuu/satellite/auth';
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import {
   appBasePath,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
+import { signedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { proxy } from '../proxy';
@@ -103,7 +107,11 @@ async function loadResolvedPage(url: URL) {
     }
     throw redirect({ href: destination.href, reloadDocument: true });
   }
-  const actor = await getSatelliteAppSessionUser('mail');
+  const { request, responseHeaders } = mailRequest();
+  const timing = signedInLoaderTiming(request, responseHeaders);
+  const actor = await timing.measure('actor', () =>
+    getSatelliteAppSessionUser('mail')
+  );
   const params: Record<string, string> = { locale };
   const common = {
     locale,
@@ -127,7 +135,7 @@ async function loadResolvedPage(url: URL) {
       throw notFound();
     case 'workspace-index':
     case 'folder': {
-      const workspace = await loadMailWorkspace(page.wsId);
+      const workspace = await loadMailWorkspace(page.wsId, timing);
       const params = { locale, wsId: page.wsId };
       if (workspace.kind === 'invitation')
         return { ...common, params, ...workspace };
@@ -135,6 +143,12 @@ async function loadResolvedPage(url: URL) {
         throw redirect({
           href: `${prefix}/${workspace.workspaceSlug}/inbox${url.search}`,
         });
+      await timing.appendToResponse(async () => {
+        const verified = await getSatelliteSupabaseSessionUser();
+        return (
+          verified?.id === actor?.id && verified?.app_metadata?.qa_test === true
+        );
+      });
       return {
         ...common,
         params,

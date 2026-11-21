@@ -8,6 +8,10 @@ import {
   PLAN_PANEL_COOKIE_NAME,
   parsePlanPanelOpen,
 } from '@tuturuuu/ui/lib/calendar/plan-panel-state';
+import {
+  signedInLoaderTiming,
+  type SignedInLoaderTiming,
+} from '@tuturuuu/utils/signed-in-loader-timing';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -15,6 +19,7 @@ import { schedulingTaskTransport } from './page-transport';
 import { cookies } from './request-context';
 
 interface PageProps {
+  timing?: SignedInLoaderTiming;
   params: Promise<{
     wsId: string;
     locale: string;
@@ -43,21 +48,31 @@ function navigationDateValue(value?: string) {
   return Number.isFinite(instant.getTime()) ? instant.toISOString() : undefined;
 }
 
-export async function calendarPageModel({ params, searchParams }: PageProps) {
+export async function calendarPageModel({
+  params,
+  searchParams,
+  timing = signedInLoaderTiming(),
+}: PageProps) {
   await connection();
 
   const { wsId, locale } = await params;
   const deepLink = await searchParams;
   const eventId = firstQueryValue(deepLink.eventId);
   const requestedDate = firstQueryValue(deepLink.date);
-  const user = await getSatelliteAppSessionUser('calendar');
+  const user = await timing.measure('calendar-actor', () =>
+    getSatelliteAppSessionUser('calendar')
+  );
 
   if (!user?.id) redirect('/login');
 
-  const workspace = await getWorkspace(wsId, { useAdmin: true, user });
+  const workspace = await timing.measure('calendar-workspace', () =>
+    getWorkspace(wsId, { useAdmin: true, user })
+  );
   if (!workspace) notFound();
 
-  const permissions = await getPermissions({ user, wsId: workspace.id });
+  const permissions = await timing.measure('permissions', () =>
+    getPermissions({ user, wsId: workspace.id })
+  );
   if (!permissions) notFound();
 
   const { withoutPermission } = permissions;
@@ -70,14 +85,18 @@ export async function calendarPageModel({ params, searchParams }: PageProps) {
   // so a linked-event lookup error remains authoritative without an unhandled
   // rejection from the background reads.
   const calendarDataPromise = Promise.all([
-    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
-      wsId: workspace.id,
-      userId: user.id,
-    }),
-    loadSmartSchedulingTasks({
-      resolvedWsId: workspace.id,
-      userId: user.id,
-    }),
+    timing.measure('google-token', () =>
+      fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+        wsId: workspace.id,
+        userId: user.id,
+      })
+    ),
+    timing.measure('scheduling-tasks', () =>
+      loadSmartSchedulingTasks({
+        resolvedWsId: workspace.id,
+        userId: user.id,
+      })
+    ),
   ]).then(
     (data) => ({ data }),
     (error: unknown) => ({ error })
@@ -85,12 +104,16 @@ export async function calendarPageModel({ params, searchParams }: PageProps) {
 
   let initialDate = navigationDateValue(requestedDate);
   if (!initialDate && eventId) {
-    const { data: linkedEvent, error: linkedEventError } = await sbAdmin
-      .from('workspace_calendar_events')
-      .select('start_at')
-      .eq('id', eventId)
-      .eq('ws_id', workspace.id)
-      .maybeSingle();
+    const { data: linkedEvent, error: linkedEventError } = await timing.measure(
+      'linked-event',
+      async () =>
+        sbAdmin
+          .from('workspace_calendar_events')
+          .select('start_at')
+          .eq('id', eventId)
+          .eq('ws_id', workspace.id)
+          .maybeSingle()
+    );
     if (linkedEventError) throw linkedEventError;
     // Stored event start_at is an instant, even when navigation has a date-only contract.
     const eventStart = linkedEvent?.start_at

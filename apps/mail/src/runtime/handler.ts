@@ -19,6 +19,7 @@ import {
   applyOneOriginNoindex,
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
+import { signedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { endpoints } from './api-registry.bridge.gen';
@@ -42,7 +43,13 @@ const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
   mounts: mailMounts,
   start: createBridgeStartHandler(),
   serverFnBase: MAIL_FUNCTION_BASE,
-  proxy,
+  proxy: (request) => {
+    const context = bridgeRequest();
+    return signedInLoaderTiming(
+      context.request,
+      context.responseHeaders
+    ).measure('proxy', () => proxy(request));
+  },
   endpoints,
   functionBase: MAIL_FUNCTION_BASE,
   functionProxy: nativeFunctionProxy,
