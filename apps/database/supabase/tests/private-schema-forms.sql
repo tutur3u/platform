@@ -4,6 +4,8 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(88);
 
+\ir helpers/account-required-mfa-policy.inc
+
 create temporary table form_private_tables(table_name text primary key)
 on commit drop;
 
@@ -97,8 +99,9 @@ select ok(
 select is(
   (
     select count(*)::integer
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename in (
         select table_name
         from form_private_tables
@@ -106,10 +109,11 @@ select is(
       and (
         'anon' = any(roles)
         or 'authenticated' = any(roles)
+        or 'public' = any(roles)
       )
   ),
   0,
-  'private forms tables have no anon or authenticated RLS policies'
+  'private forms tables have no client-role policies except the canonical MFA gate'
 );
 
 select is(

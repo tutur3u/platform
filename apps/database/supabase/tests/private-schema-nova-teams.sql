@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(21);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   to_regclass('public.nova_teams') is null,
   'Nova teams are no longer in the public schema'
@@ -106,8 +108,9 @@ select ok(
 select ok(
   not exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'nova_teams'
       and (
         'authenticated' = any (roles)
@@ -115,7 +118,7 @@ select ok(
         or 'public' = any (roles)
       )
   ),
-  'private Nova teams have no direct anon/authenticated/public policy'
+  'private Nova teams have no client-role policies except the canonical MFA gate'
 );
 
 select ok(

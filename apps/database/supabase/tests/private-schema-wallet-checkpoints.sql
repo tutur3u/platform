@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(64);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   to_regclass('private.workspace_wallet_checkpoints') is not null,
   'wallet checkpoints exist in the private schema'
@@ -79,16 +81,13 @@ select ok(
 select ok(
   not exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'workspace_wallet_checkpoints'
-      and (
-        'authenticated' = any (roles)
-        or 'anon' = any (roles)
-        or 'public' = any (roles)
-      )
+      and roles && array['authenticated', 'anon', 'public']::name[]
   ),
-  'private wallet checkpoints have no direct anon/authenticated/public policy'
+  'private wallet checkpoints have no client-role policies except the canonical MFA gate'
 );
 
 select ok(

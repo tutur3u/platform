@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(52);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   to_regclass('public.workspace_debt_loans') is null,
   'workspace debt loans are no longer in the public schema'
@@ -225,8 +227,9 @@ select ok(
 select ok(
   not exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename in (
         'workspace_debt_loans',
         'workspace_debt_loan_transactions'
@@ -237,7 +240,7 @@ select ok(
         or 'public' = any (roles)
       )
   ),
-  'private workspace debt tables have no direct anon/authenticated/public policy'
+  'private workspace debt tables have no client-role policies except the canonical MFA gate'
 );
 
 select ok(

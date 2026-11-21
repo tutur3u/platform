@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(15);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   to_regclass('public.payroll_runs') is null
     and to_regclass('public.payroll_run_items') is null,
@@ -134,8 +136,9 @@ select ok(
 select ok(
   not exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename in ('payroll_runs', 'payroll_run_items')
       and (
         'authenticated' = any (roles)
@@ -143,7 +146,7 @@ select ok(
         or 'public' = any (roles)
       )
   ),
-  'private payroll tables have no client-role policies'
+  'private payroll tables have no client-role policies except the canonical MFA gate'
 );
 
 select ok(

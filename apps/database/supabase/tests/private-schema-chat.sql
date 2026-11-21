@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(57);
 
+\ir helpers/account-required-mfa-policy.inc
+
 select ok(
   to_regclass('private.chat_conversations') is not null,
   'chat conversations live in the private schema'
@@ -425,31 +427,34 @@ select ok(
 select ok(
   exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'chat_conversations'
   ) = false,
-  'chat_conversations keeps deny-by-default RLS with no permissive policies'
+  'chat_conversations has no policies except the canonical MFA gate'
 );
 
 select ok(
   exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'chat_messages'
   ) = false,
-  'chat_messages keeps deny-by-default RLS with no permissive policies'
+  'chat_messages has no policies except the canonical MFA gate'
 );
 
 select ok(
   exists (
     select 1
-    from pg_policies
+    from pg_policies policy_row
     where schemaname = 'private'
+      and pg_temp.is_canonical_account_mfa_policy(policy_row) is not true
       and tablename = 'chat_message_attachments'
   ) = false,
-  'chat_message_attachments keeps deny-by-default RLS with no permissive policies'
+  'chat_message_attachments has no policies except the canonical MFA gate'
 );
 
 select ok(
