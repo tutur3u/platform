@@ -165,9 +165,9 @@ export async function githubSigner(kid = 'test-key') {
       run_attempt: '1',
       event_name: 'push',
       job_workflow_ref:
-        'tutur3u/platform/.github/workflows/vercel-production-calendar.yaml@refs/heads/production',
+        'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/production',
       workflow_ref:
-        'tutur3u/platform/.github/workflows/vercel-production.yaml@refs/heads/production',
+        'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/production',
       actor: 'release-bot',
       ...claims,
     };

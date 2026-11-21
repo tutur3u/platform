@@ -20,8 +20,9 @@ export type ProjectEntry = {
   workflows: Readonly<Record<EnvironmentName, readonly WorkflowRule[]>>;
 };
 
-// Vercel apps publish production through their per-app production workflow.
-// No workflow reports previews: Cloudflare Worker previews run on pull request
+// Apps registered as Vercel projects. No Vercel workflow reports: production
+// lists only the Cloudflare publishers named in `extra`, and no workflow
+// reports previews because Cloudflare Worker previews run on pull request
 // events, which the coordinator rejects.
 const vercel = (
   app: string,
@@ -30,7 +31,7 @@ const vercel = (
   id: app,
   provider: 'vercel',
   workflows: {
-    production: [`vercel-production-${app}.yaml`, ...(extra.production ?? [])],
+    production: extra.production ?? [],
     staging: extra.staging ?? [],
     preview: [],
   },

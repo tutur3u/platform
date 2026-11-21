@@ -58,7 +58,7 @@ const request = (
   ) as Promise<LooseResponse>;
 
 const op = { token: OPERATOR, actor: 'user-1' };
-const PROD = '/v1/projects/calendar/environments/production';
+const PROD = '/v1/projects/meet/environments/production';
 const STAGING = '/v1/projects/calendar/environments/staging';
 
 beforeAll(async () => {
@@ -215,7 +215,7 @@ describe('router', () => {
     const production = await signer.sign({
       ref: 'refs/heads/main',
       job_workflow_ref:
-        'tutur3u/platform/.github/workflows/vercel-production-calendar.yaml@refs/heads/main',
+        'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/main',
     });
     const refused = await request(`${STAGING}/deployments`, {
       token: production,
@@ -252,7 +252,7 @@ describe('router', () => {
       actor: 'user-1',
     });
     const resolved = await request(
-      `${PROD}/deployments/${promoted.deployment.id}/resolve`,
+      `/v1/projects/calendar/environments/production/deployments/${promoted.deployment.id}/resolve`,
       {
         ...op,
         body: { outcome: 'succeeded' },
@@ -266,7 +266,7 @@ describe('router', () => {
     const { deployment } = await (
       await request(`${PROD}/deployments`, { token, body: {} })
     ).json();
-    const store = stores.get('calendar:production')!;
+    const store = stores.get('meet:production')!;
     for (let index = 0; index < LIMITS.dailyBudget; index += 1)
       store.countRequest(new Date().toISOString().slice(0, 10), Infinity, true);
     const path = `${PROD}/deployments/${deployment.id}/claim`;

@@ -110,6 +110,7 @@ describe('GitHub OIDC verification', () => {
 
 describe('environment authorization', () => {
   const calendar = findProject('calendar')!;
+  const meet = findProject('meet')!;
   const base: GithubClaims = {
     repository: 'tutur3u/platform',
     repository_id: REPOSITORY_ID,
@@ -119,34 +120,26 @@ describe('environment authorization', () => {
     run_attempt: '1',
     event_name: 'push',
     job_workflow_ref:
-      'tutur3u/platform/.github/workflows/vercel-production-calendar.yaml@refs/heads/production',
+      'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/production',
     workflow_ref:
-      'tutur3u/platform/.github/workflows/vercel-production.yaml@refs/heads/production',
+      'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/production',
     actor: 'bot',
   };
 
   it('requires the catalog workflow at the protected ref', () => {
-    expect(authorizeForEnvironment(base, calendar, 'production')).toBeNull();
-    expect(authorizeForEnvironment(base, calendar, 'staging')).toBe('BAD_REF');
+    expect(authorizeForEnvironment(base, meet, 'production')).toBeNull();
+    expect(authorizeForEnvironment(base, meet, 'staging')).toBe('BAD_REF');
+    expect(authorizeForEnvironment(base, calendar, 'production')).toBe(
+      'BAD_WORKFLOW'
+    );
     expect(
       authorizeForEnvironment(
         {
           ...base,
           job_workflow_ref:
-            'tutur3u/platform/.github/workflows/vercel-production-mail.yaml@refs/heads/production',
+            'tutur3u/platform/.github/workflows/meet-cloudflare.yaml@refs/heads/feature',
         },
-        calendar,
-        'production'
-      )
-    ).toBe('BAD_WORKFLOW');
-    expect(
-      authorizeForEnvironment(
-        {
-          ...base,
-          job_workflow_ref:
-            'tutur3u/platform/.github/workflows/vercel-production-calendar.yaml@refs/heads/feature',
-        },
-        calendar,
+        meet,
         'production'
       )
     ).toBe('BAD_WORKFLOW');

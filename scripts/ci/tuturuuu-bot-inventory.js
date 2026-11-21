@@ -102,9 +102,7 @@ function inventory() {
         reason =
           'b: approval identity remains GITHUB_TOKEN; never pass the App token.';
       else if (
-        /github-deployment-markers|record-deployment-marker|record-vercel-deployment/.test(
-          relative
-        )
+        /github-deployment-markers|record-deployment-marker/.test(relative)
       )
         reason =
           'b: job-bound deployments write; App deliberately has no deployment authority.';

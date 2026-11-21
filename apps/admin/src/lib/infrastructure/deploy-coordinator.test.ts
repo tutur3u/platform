@@ -14,7 +14,7 @@ const project = {
   id: 'calendar',
   provider: 'vercel',
   workflows: {
-    production: ['vercel-production-calendar.yaml'],
+    production: [],
     staging: [
       {
         reusable: 'wave1-native-publish.yaml',

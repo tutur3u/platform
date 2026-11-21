@@ -1218,9 +1218,9 @@ The table separates what is **implemented today** from patterns presented as **t
 
 | Attribute | Implemented today | Illustrative / aspirational | Primary Benefit |
 |-----------|-------------------|-----------------------------|-----------------|
-| **Maintainability** | App + feature-folder boundaries, shared Supabase + `@tuturuuu/types/db`, shared `packages/internal-api` / `packages/apis`, modular Next.js frontend, per-app Vercel projects | Hexagonal ports/adapters, repository interfaces, technology-swap seams | Sustainable long-term evolution |
+| **Maintainability** | App + feature-folder boundaries, shared Supabase + `@tuturuuu/types/db`, shared `packages/internal-api` / `packages/apis`, modular Next.js frontend, per-app Cloudflare Workers | Hexagonal ports/adapters, repository interfaces, technology-swap seams | Sustainable long-term evolution |
 | **Testability** | Vitest unit + colocated `*.test.ts`, Zod payload validation, Turborepo affected-package CI | Pure domain objects, in-memory test doubles, formal contract tests, event replay | High confidence in changes |
-| **Deployability** | Per-app Vercel preview/deploy workflows, separate Rust `apps/backend` track, pinned toolchain (`bun@1.4.4`, Node `>=22`), Supabase migrations + typegen | Canary/blue-green orchestration scripts, custom feature-flag service | Frequent, low-risk releases |
+| **Deployability** | Per-app Cloudflare Worker workflows with 0% version stages, separate Rust `apps/backend` track, pinned toolchain (`bun@1.4.4`, Node `>=22`), Supabase migrations + typegen | Canary/blue-green orchestration scripts, custom feature-flag service | Frequent, low-risk releases |
 
 <Note>
 These properties are being preserved through the `apps/web` → `apps/tanstack-web` + Rust `apps/backend` migration. See [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration).

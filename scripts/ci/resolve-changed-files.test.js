@@ -76,9 +76,9 @@ test('changed-file resolver uses deployment marker baseline before latest push p
   const baseSha = initializeGitRepo(rootDir);
   commitFile(
     rootDir,
-    'apps/finance/src/app/page.tsx',
+    'apps/meet/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'finance change'
+    'meet change'
   );
   const headSha = commitFile(
     rootDir,
@@ -98,10 +98,10 @@ test('changed-file resolver uses deployment marker baseline before latest push p
     ],
     size: 1,
   });
-  const workflowName = 'vercel-production-finance.yaml';
+  const workflowName = 'meet-cloudflare.yaml';
   const resolver = runChangedFileResolver({
     env: {
-      VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
+      DEPLOYMENT_MARKER_SHA: baseSha,
     },
     eventPath,
     headSha,
@@ -112,7 +112,7 @@ test('changed-file resolver uses deployment marker baseline before latest push p
   assert.match(resolver.output, /Changed-file source: deployment-marker/);
   assert.deepEqual(resolver.changedFiles, [
     'apps/docs/build/devops/github-actions-runbook.mdx',
-    'apps/finance/src/app/page.tsx',
+    'apps/meet/src/app/page.tsx',
   ]);
 
   assertWorkflowDecision(

@@ -331,10 +331,6 @@ function getMergeGroupRange({
   return range;
 }
 
-function isVercelWorkflow(workflowName?: string): workflowName is string {
-  return /^vercel-(preview|production)-.+\.ya?ml$/.test(workflowName ?? '');
-}
-
 function isCloudflareProductionWorkflow(
   workflowName?: string
 ): workflowName is string {
@@ -368,9 +364,7 @@ export async function resolveChangedFiles({
   }
 
   const usesDeploymentMarkerRange =
-    (eventName === 'push' &&
-      (isVercelWorkflow(workflowName) ||
-        isCloudflareProductionWorkflow(workflowName))) ||
+    (eventName === 'push' && isCloudflareProductionWorkflow(workflowName)) ||
     (eventName === 'workflow_run' && isSupabaseMigrationWorkflow(workflowName));
 
   if (usesDeploymentMarkerRange) {

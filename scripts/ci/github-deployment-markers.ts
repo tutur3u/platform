@@ -73,7 +73,7 @@ export function getVercelDeploymentEnvironment(workflowName: string): string {
 }
 
 function isPlatformWorkflow(workflowName: string): boolean {
-  return /^vercel-(preview|production)-platform\.ya?ml$/.test(workflowName);
+  return /^vercel-production-platform\.ya?ml$/.test(workflowName);
 }
 
 function markerKindMatches({
@@ -234,14 +234,6 @@ export async function findLastSuccessfulDeploymentSha({
     }
 
     if (typeof markerRefName === 'string' && markerRefName !== refName) {
-      continue;
-    }
-
-    // Learn preview validates artifacts only; it never advances a deployed baseline.
-    if (
-      workflowName === 'vercel-preview-learn.yaml' &&
-      payload.markerKind === 'build'
-    ) {
       continue;
     }
 

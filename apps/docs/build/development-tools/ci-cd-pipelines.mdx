@@ -31,10 +31,9 @@ in the dedicated DevOps pages below so the docs stay current as workflows change
 
 Tuturuuu currently automates:
 
-- Vercel preview deployments for non-`production` branches
+- Cloudflare Worker publication per app, with previews as Worker versions at a 0% stage
 - Cloudflare production planning and Web serving proof on the `production` branch
-- Independent Vercel preview and production deployments for satellite apps such as `apps/cms`
-- Affected-app gating for Vercel deployments before dependency install, build, or deploy work
+- Affected-app gating for the Cloudflare app workflows before dependency install, build, or deploy work
 - Supabase staging migrations driven from `main` and production migrations driven from `production`
 - Docker parity and image validation for the self-hosted web runtime
 - Modal deployment for `apps/discord`

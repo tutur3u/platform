@@ -128,6 +128,20 @@ describe('resolveCanonicalRequestOrigin (SR-XFH-RETURN)', () => {
       ).toBe(APP);
       expect(resolve('https://ORIGIN.tuturuuu.com/personal')).toBe(APP);
     });
+
+    it('uses the app origin for gateway alias hosts even with a valid gateway proof', () => {
+      expect(
+        resolve('https://rewise-worker.example.workers.dev/personal', {
+          'x-forwarded-host': 'origin.tuturuuu.com',
+          'x-tuturuuu-origin-auth': gatewayProof(),
+        })
+      ).toBe(APP);
+      expect(
+        resolve('https://origin.tuturuuu.com/personal', {
+          'x-tuturuuu-origin-auth': gatewayProof(),
+        })
+      ).toBe(APP);
+    });
   });
 
   describe('trusted forwarded hosts are kept', () => {
