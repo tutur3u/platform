@@ -38,7 +38,7 @@ account connectors, see [per-channel decisions](#per-channel-decisions)).
 ```txt
  Discord Gateway ──► DiscordGatewayDO (outbound WebSocket, per bot)
  Discord HTTP    ─┐
- WhatsApp Cloud  ─┼─► mira-ingress ─► mira-tenant-signer | mira-fleet-signer ─► ConversationDO
+ WhatsApp Cloud  ─┼─► mira-tenant-signer | mira-fleet-signer (own routes) ─► mira-router ─► ConversationDO
  Zalo OA / Bot   ─┘   (signature, tenant lookup, rate limit)     (per conversation:
  Personal session ──► SessionContainer (internal tenant only) ─┘  ledger, order,
                                                                    lock, reply)
@@ -63,13 +63,13 @@ and fetch.
 
 | Component | Primitive | Responsibility |
 | --- | --- | --- |
-| `mira-ingress` | Worker `fetch` | Public edge: applies ingress rate limits, passes the raw request bytes and headers to the signer that owns the provider account (by a non-secret routing table) for verification, routes the verified, normalized `InboundEvent` to the conversation object and acknowledges the provider. Holds no webhook secrets, evidence keys or proofs. |
-| `mira-tenant-signer` | Worker, service binding only | Verifies tenant channel events with the tenant provider credentials and signs People registry operations. Holds no Fleet material. See [event evidence](#event-evidence). |
-| `mira-fleet-signer` | Worker, service binding only | Verifies the internal tenant's desk accounts and signs Fleet operations with the per-desk keys and bearers. Holds no tenant or registry material. |
-| `DiscordGatewayDO` | Durable Object | Holds one outbound Gateway WebSocket per Discord application (and per shard when sharded). Heartbeats, resumes and identifies inside Discord's session budget. Forwards `MESSAGE_CREATE` events for linked guilds and DMs to ingress routing. |
+| `mira-router` | Worker, service binding only | Receives only verified, normalized `InboundEvent`s from the signers, applies per-account and per-sender rate limits, and routes to conversation objects. It never sees a raw provider request, header, secret or proof; its routing and rate state holds identifiers only. |
+| `mira-tenant-signer` | Worker with its own public webhook routes | Verifies tenant channel events with the tenant provider credentials and signs People registry operations. Holds no Fleet material. See [event evidence](#event-evidence). |
+| `mira-fleet-signer` | Worker with its own public webhook routes | Verifies the internal tenant's desk accounts and signs Fleet operations with the per-desk keys and bearers. Holds no tenant or registry material. |
+| `DiscordGatewayDO` | Durable Object | Holds one outbound Gateway WebSocket per Discord application (and per shard when sharded). Heartbeats, resumes and identifies inside Discord's session budget. Runs inside the signer domain that owns the application, which treats its authenticated session as native verification, and forwards `MESSAGE_CREATE` events for linked guilds and DMs to the router. |
 | `ConversationDO` | Durable Object, SQLite | One per tenant conversation. Replay ledger, ordering, burst coalescing, the per-conversation reply lock, rolling context, outbound send records and the owner-generation check before every send. Runs the responder from an alarm. |
 | `TenantDO` | Durable Object, SQLite | One per tenant workspace. Versioned config snapshot, spend and token ledger with reservations, per-person rate limits, quiet hours, the tenant and channel stop fences. |
-| `SessionContainer` | Cloudflare Container | Internal tenant only. Runs a personal-account library that needs a long-lived Node process. Forwards events to ingress and executes sends the conversation object authorizes. |
+| `SessionContainer` | Cloudflare Container | Internal tenant only. Runs a personal-account library that needs a long-lived Node process. Forwards signed connector envelopes to its domain's signer and executes only sends the owner fence dispatches. |
 | `mira-work` | Queue + consumer | Off-critical-path work: Tuturuuu chat mirror, People & memory writes, usage settlement to Postgres, media copy to Drive, people snapshot invalidation, metrics export. |
 
 ### Object identity and tenant isolation
@@ -134,7 +134,7 @@ provider, not which tenant it belongs to. Therefore:
 
 Gateway is required because message events are not delivered over HTTP. The
 Interactions webhook (slash commands, buttons, the setup test) runs in the
-ingress Worker; it acknowledges within Discord's three-second window and
+tenant signer (or the Fleet signer for internal desks); it acknowledges within Discord's three-second window and
 defers when the responder needs longer.
 
 The bot reads messages that mention it, replies in threads and DMs, and needs
@@ -165,7 +165,7 @@ is not offered.
 **Decision:** paying tenants use only the official **WhatsApp Business Cloud
 API**. Tuturuuu onboards as a Meta Tech Provider and offers Embedded Signup so a
 tenant connects its own WhatsApp Business Account and number in the wizard.
-Webhooks arrive at the ingress Worker, signed with the Tuturuuu app secret, and
+Webhooks arrive at the tenant signer's route, signed with the Tuturuuu app secret, and
 route by `phone_number_id` to the tenant channel.
 
 Constraints the product surfaces honestly:
@@ -212,7 +212,7 @@ number banned. Material; the owner decides whether the internal desk keeps it.
   returned `expires_in`. Each new single-use refresh token is written back to
   the vault by compare-and-swap before the old one is discarded; a failed
   write stops the channel and asks the tenant to reconnect, rather than
-  losing the only valid token. Signed webhooks into ingress. Consultation replies are
+  losing the only valid token. Signed webhooks into the tenant signer. Consultation replies are
   free within Zalo's interaction window; reported per-user reply quotas inside
   that window must be confirmed against Zalo's official documentation before
   the OA route is offered, because a low quota would cap conversational use.
@@ -260,7 +260,7 @@ bans. Material; the owner decides for the internal desk.
 
 ### Ingress to reply
 
-1. **Verify and route** (ingress): check the provider signature, drop
+1. **Verify and route** (signer, then router): check the provider signature, drop
    non-message events, resolve the tenant channel, rate-limit by provider
    account and sender, then call `ConversationDO.ingest(event)`.
 2. **Record** (conversation object): insert the provider event id into the
@@ -296,8 +296,9 @@ set.
 
 - **Inbound:** at-least-once delivery from providers, deduplicated by the
   ledger key `(channel, provider account, provider event id)`.
-- **Outbound:** at-most-once. Before calling a provider send, the object
-  writes `send_started` with a deterministic idempotency key. Discord sends
+- **Outbound:** at-most-once. The conversation object hands each send to the
+  owner fence for its `(channel, account)` (see [migration](#migration)),
+  which writes `send_started` with a deterministic idempotency key. Discord sends
   carry it as an enforced nonce. WhatsApp and Zalo have no send idempotency, so
   a send whose outcome is unknown after a crash is marked `uncertain`, never
   retried automatically, and shown to the operator. This guarantees no double
@@ -395,7 +396,7 @@ enabled and revoked on disable or delete. Requests are signed with that
 principal's Ed25519 key (method, path, body hash, audience, principal,
 timestamp and a single-use nonce); there are no bearer tokens.
 
-- **Evidence-bound recall:** every recall and write carries ingress
+- **Evidence-bound recall:** every recall and write carries signer-issued
   event evidence from the tenant signer (see [event evidence](#event-evidence)).
   The registry derives the person and conversation from that evidence, so the
   request body carries no sender or conversation id. One provider event
@@ -440,10 +441,14 @@ acknowledged and relayed). The pure evaluation lives in
 ### Event evidence
 
 Verification and signing are split into two independently permissioned
-Workers, each a separate script with its own secrets, reached from ingress
-only by service binding. Neither can reach the other's credentials, and
-ingress holds none of them, so it never sees a secret or a proof and cannot
-forge, replay or redirect one.
+Workers, each a separate script with its own public webhook routes, secrets
+and scoped vault, service and storage bindings. Each provider webhook points
+at the entry route of the domain that owns the account, so a secret-bearing
+request (a Meta signature, a Zalo Bot secret header, a Discord signature)
+never passes through shared infrastructure. Neither signer can reach the
+other's credentials. The shared `mira-router` receives only verified,
+normalized events, so it never sees a secret or a proof and cannot forge,
+replay or redirect one.
 
 - **`mira-tenant-signer`:** provider credentials for tenant channels and the
   People registry signing key. Signs only `registry.recall` and
@@ -461,9 +466,10 @@ forge, replay or redirect one.
   verifies with both versions during a bounded overlap, then removes the old
   one; revocation removes it immediately and fails closed. Both paths are
   rehearsed before launch and audited.
-- **Logging:** neither signer logs or traces raw headers, bodies, signatures
-  or proofs. Invocation logs and tail consumers are off for both signers;
-  errors carry codes only.
+- **Logging:** neither the signers nor the router log or trace raw headers,
+  bodies, signatures or proofs. Invocation logs and tail consumers are off
+  for the signers; errors carry codes only. Redaction is covered by tests in
+  both signers and the router.
 
 - **Native verification first:** Meta `X-Hub-Signature-256`, Zalo event
   signatures and the Zalo Bot secret header, Discord Ed25519 for
@@ -495,11 +501,14 @@ forge, replay or redirect one.
   conversations. Registry operations for any `(channel, account)` bound to the
   requesting workspace in the registry's live binding table, in one-to-one or
   group conversations, after the provider confirms the sender's membership.
-- **Replay slots:** slots are atomic and scoped to
-  `(channel, provider account, provider event id)`. Fleet keeps one slot per
-  event across all Fleet operations and desk ids. The registry has its own
-  two slots per event: one `registry.recall` and at most one
-  `registry.write`. The write is a single
+- **Replay slots:** one atomic consume row per
+  `(channel, provider account, provider event id)` with typed slots, owned by
+  the Fleet consume wrapper. Fleet keeps one slot per event across all Fleet
+  operations and desk ids. A Fleet slot and a `registry.write` slot are
+  mutually exclusive for the same event; `registry.recall` may coexist with
+  either. There is no standalone observe operation: observations travel in
+  the write bundle. Queue work is keyed by the same
+  `(channel, account, event)` tuple. The write is a single
   bundle of every observation and memory derived from that event, committed
   atomically by the registry and consumed through its own replay wrapper; a
   retry with the same input hash returns the original receipt, and a
@@ -552,8 +561,9 @@ Registration prerequisites:
    - Fleet content never reaches prompts, memory, the mirror or telemetry,
      answers are tool-free and logs are redacted;
    - shadow performs zero Fleet effects; partial cutover, mixed versions and
-     rollback with in-flight work are rehearsed, including a paused sender
-     and a stale Web replica during both cutover and rollback;
+     rollback with in-flight work are rehearsed, including a paused sender,
+     a stale Web replica, clock skew, fence failover and delayed provider
+     completion, in both directions;
    - the two signers cannot reach each other's credentials, provider secret
      rotation and revocation work, and no raw headers, bodies or proofs
      appear in logs or traces;
@@ -756,7 +766,7 @@ with the first deployable slice.
 | Credential theft | Vault environment per tenant, one-hour leases, no secrets in logs or payloads, rotation without deploy |
 | Media and knowledge fetch SSRF | Media: exact provider media hosts only; the WhatsApp bearer is sent only to the Meta media host and never forwarded on a redirect. Knowledge URLs: DNS resolved and private, link-local and metadata addresses blocked, every redirect hop re-checked, size and time bounds, on a fetch path that carries no secrets |
 | One tenant damages the shared Meta app or shared Discord bot | Templates only from tenant-approved, Meta-approved templates triggered by a person; a tenant is auto-suspended (operator reason) when Meta lowers its quality rating or flags it; caps and rate limits apply to BYOK and triage as well |
-| Personal-session third parties | Container drops conversations outside the allowlist before forwarding; sends require a signed single-use command from the owning conversation object; container egress limited to the provider and ingress |
+| Personal-session third parties | Container drops conversations outside the allowlist before forwarding; sends require a signed single-use command from the owning conversation object; container egress limited to the provider and its signer |
 | Double send across runtimes | One owner generation per `(channel, account)`, enforced at Web admission and at the final send or edit boundary (see [migration](#migration)), at-most-once outbound |
 | Personal-account ban | Internal tenant only, pacing and caps, session lease, stop on lock signal |
 
@@ -791,22 +801,33 @@ with the first deployable slice.
    and latencies are compared with the M4 replies. Drafts live only in the
    conversation object's SQLite, readable by the owner through the operator
    view's break-glass path, and are deleted after 14 days.
-3. **Cutover per channel:** one authoritative owner generation per
-   `(channel, account)` decides which runtime may admit and send. The
-   generation lives in a private database table that Web's admission
-   transaction checks (Fleet Slice 4), not in deployment-local
-   configuration, so a stale Web replica cannot admit for an old owner. The
-   signed Fleet claims carry `ownerGeneration`. Every final send or edit
-   needs a short send lease from the channel's owner fence (a Durable
-   Object per `(channel, account)`) at the current generation; quiescing
-   stops issuing leases and waits for outstanding leases to finish or
-   expire before the generation moves, so a paused sender cannot send after
-   the fence moves. In either direction:
-   1. Quiesce the current owner: stop new admission and send leases; drain
-      or reconcile in-flight work, including uncertain sends.
-   2. Replace the Fleet registry entry and the channel's send owner, and
-      verify both by readback.
-   3. Enable the new owner under a fresh generation.
+3. **Cutover per channel:** one authoritative owner per `(channel, account)`
+   decides which runtime may admit and send. Web's authoritative desk-owner
+   row (Fleet Slice 4) holds the active desk id, credential version,
+   account, generation and quiesce state, and the admission transaction
+   checks all of them against the proof, whose signed claims carry
+   `deskId`, `credentialVersion` and `ownerGeneration`. Deployment-local
+   configuration is not trusted for admission, so a stale Web replica
+   accepts a current-generation proof only from the current desk.
+
+   Sends are **fence-owned**. A Durable Object per `(channel, account)`
+   performs every final send or edit for the cloud runtime itself, after
+   writing a durable send-start record; for the M4 runtime it issues a
+   one-shot dispatch token that it records before handing out. The fence
+   keeps its quiesce state durably, so a restart or failover resumes it. It
+   expires unused dispatch tokens on its own clock, but an issued token
+   counts as possibly in flight until the M4 reports its result or
+   reconciliation shows its outcome; no lease timeout ends that wait. In
+   either direction:
+   1. Quiesce: the fence stops starting sends and issuing tokens, and new
+      admission stops.
+   2. Reconcile every started send and issued token from provider receipts
+      (message ids, delivery or status events). Promotion is blocked while
+      any started send could still take effect; an outcome that cannot be
+      established is resolved by the operator before promotion.
+   3. Replace the desk-owner row and the channel's send owner, and verify
+      both by readback.
+   4. Enable the new owner under a fresh generation.
    Provider ids, the identity HMAC key and replay state are preserved.
 4. **Rollback:** the same fence in reverse with the previous owner's valid
    credentials, under another fresh generation. The M4 receivers keep running
@@ -815,9 +836,9 @@ with the first deployable slice.
 6. **Paying tenants:** open after the internal tenant has run each official
    route for a full week within latency and error targets.
 
-The M4 receivers need one change for cutover: take a send lease from the
-owner fence for their `(channel, account)` before every send or edit, and
-refuse when they are not the current owner.
+The M4 receivers need one change for cutover: obtain a one-shot dispatch
+token from the owner fence for their `(channel, account)` before every send
+or edit, refuse without one, and report each result back to the fence.
 
 ## Open decisions
 
