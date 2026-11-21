@@ -192,7 +192,7 @@ export function checkProductionMigrationRecovery(input: {
     for (const name of verificationFailures.keys()) {
       if (
         names.get(name.replace(' / deploy', ' / validate'))?.conclusion !==
-          'success'
+        'success'
       )
         return result(false, 'all_cloudflare_validations_required');
     }
@@ -215,7 +215,9 @@ export function checkProductionMigrationRecovery(input: {
 
 function main() {
   const env = process.env;
-  const jobPages = JSON.parse(readFileSync(env.RECOVERY_JOBS_FILE ?? '', 'utf8'));
+  const jobPages = JSON.parse(
+    readFileSync(env.RECOVERY_JOBS_FILE ?? '', 'utf8')
+  );
   applyQuotaLogs(jobPages, env.RECOVERY_JOB_LOG_DIR);
   const decision = checkProductionMigrationRecovery({
     allow: env.ALLOW_CLOUDFLARE_VERIFICATION_FAILURES === 'true',

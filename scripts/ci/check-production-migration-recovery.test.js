@@ -78,7 +78,8 @@ const QUOTA = 'api-deployments-free-per-day';
 function quotaFixture() {
   const x = fixture();
   x.jobPages[0].jobs = x.jobPages[0].jobs.filter(
-    (job) => !String(job.name).startsWith('deploy-lettin') &&
+    (job) =>
+      !String(job.name).startsWith('deploy-lettin') &&
       !String(job.name).startsWith('deploy-meet') &&
       !String(job.name).startsWith('deploy-parley')
   );
@@ -174,17 +175,11 @@ test('Meet planner outcome does not gate migration recovery', async () => {
     const job = x.jobPages[0].jobs[0];
     job.name = name;
     delete job.vercelQuotaCode;
-    job.steps = [
-      { name: stepName, status: 'completed', conclusion },
-    ];
+    job.steps = [{ name: stepName, status: 'completed', conclusion }];
     return x;
   }
-  const evaluate =
-    'Evaluate Meet production publication and exact-source CI';
-  const only = meetOnly(
-    `deploy-meet-cloudflare / ${evaluate}`,
-    evaluate
-  );
+  const evaluate = 'Evaluate Meet production publication and exact-source CI';
+  const only = meetOnly(`deploy-meet-cloudflare / ${evaluate}`, evaluate);
   assert.deepEqual(await decision(only), {
     allowed: true,
     reason: 'meet_planner_job_ignored',
@@ -204,9 +199,7 @@ test('Meet planner outcome does not gate migration recovery', async () => {
     ...withCron.jobPages[0].jobs[0],
     id: 62,
     name: 'deploy-cron-control-cloudflare / validate',
-    steps: [
-      { name: 'Validate', status: 'completed', conclusion: 'failure' },
-    ],
+    steps: [{ name: 'Validate', status: 'completed', conclusion: 'failure' }],
   });
   withCron.jobPages[0].total_count = withCron.jobPages[0].jobs.length;
   assert.equal((await decision(withCron)).allowed, false);
@@ -242,10 +235,7 @@ test('Meet planner outcome does not gate migration recovery', async () => {
 test('quota code is a whole token and the CLI reads it only from the job log', async () => {
   const { vercelHobbyDeployQuotaCode } = await helper;
   assert.equal(vercelHobbyDeployQuotaCode(`Error: ${QUOTA}`), QUOTA);
-  assert.equal(
-    vercelHobbyDeployQuotaCode(`prefix-${QUOTA}`),
-    null
-  );
+  assert.equal(vercelHobbyDeployQuotaCode(`prefix-${QUOTA}`), null);
   assert.equal(vercelHobbyDeployQuotaCode(`${QUOTA}-extra`), null);
   const dir = mkdtempSync(join(tmpdir(), 'migration-quota-'));
   try {
