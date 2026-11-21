@@ -132,6 +132,7 @@ describe('fleet usage route', () => {
   it('preserves the newest observation across stale and future writes', async () => {
     expect((await put()).status).toBe(200);
     expect((await put()).status).toBe(409);
+    expect((await put({ ...snapshot, machines: [] })).status).toBe(409);
     expect(
       (await put({ ...snapshot, generatedAt: '2026-11-21T11:24:59.000Z' }))
         .status

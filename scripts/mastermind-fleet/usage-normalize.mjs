@@ -20,6 +20,14 @@ function isoTime(value) {
   return Number.isFinite(at) ? new Date(at).toISOString() : null;
 }
 
+function validDay(value) {
+  if (typeof value !== 'string' || !DAY.test(value)) return false;
+  const at = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(at.getTime()) && at.toISOString().slice(0, 10) === value
+  );
+}
+
 function safeEmail(value) {
   if (
     typeof value !== 'string' ||
@@ -145,7 +153,7 @@ function normalizedBucket(row) {
   if (
     !provider ||
     !model ||
-    !DAY.test(row?.day ?? '') ||
+    !validDay(row?.day) ||
     ![
       uncachedInputTokens,
       cachedInputTokens,
