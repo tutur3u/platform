@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 
 export type MeetToolPanelProps = {
   meetingId?: string;
-  role?: 'host' | 'participant';
+  roomRole?: 'host' | 'participant';
   participantId?: string;
   onClose?: () => void;
 };

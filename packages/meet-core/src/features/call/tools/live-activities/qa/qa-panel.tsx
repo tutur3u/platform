@@ -17,7 +17,7 @@ export const LiveQaClientContext = createContext<LiveQaClient | null>(null);
 
 export function QaPanel({
   meetingId = 'default',
-  role,
+  roomRole,
   participantId,
   onClose,
 }: MeetToolPanelProps) {
@@ -27,7 +27,7 @@ export function QaPanel({
     <LiveActivityPanelFrame title="Q&A" onClose={onClose}>
       <ConnectedQa
         client={client}
-        isHost={role === 'host'}
+        isHost={roomRole === 'host'}
         participantId={participantId}
       />
     </LiveActivityPanelFrame>

@@ -11,11 +11,11 @@ import {
 } from './registry';
 import { toolIdFromDrawer, useMeetTools } from './use-meet-tools';
 
-function SamplePanel({ role, participantId }: MeetToolPanelProps) {
+function SamplePanel({ roomRole, participantId }: MeetToolPanelProps) {
   const { meetingId, close } = useMeetTool();
   return (
     <button type="button" onClick={close}>
-      panel for {meetingId} as {role} {participantId}
+      panel for {meetingId} as {roomRole} {participantId}
     </button>
   );
 }

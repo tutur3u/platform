@@ -35,7 +35,7 @@ const inkIcons: Record<WhiteboardColor, ReturnType<typeof inkIcon>> = {
 
 export function WhiteboardPanel({
   meetingId = 'default',
-  role = 'participant',
+  roomRole = 'participant',
   participantId = 'guest',
   onClose,
 }: MeetToolPanelProps) {
@@ -83,7 +83,7 @@ export function WhiteboardPanel({
               }
               onClick={() => undoWhiteboardStroke(meetingId, participantId)}
             />
-            {role === 'host' ? (
+            {roomRole === 'host' ? (
               <ToolIconAction
                 icon={Trash2}
                 label={t('whiteboard.clear')}

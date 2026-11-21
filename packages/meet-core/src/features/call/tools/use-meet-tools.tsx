@@ -78,7 +78,7 @@ export function useMeetTools<A extends string>({
         <Panel
           key={activeId}
           meetingId={meetingId}
-          role={canManage ? 'host' : 'participant'}
+          roomRole={canManage ? 'host' : 'participant'}
           participantId={accountId}
           onClose={close}
         />

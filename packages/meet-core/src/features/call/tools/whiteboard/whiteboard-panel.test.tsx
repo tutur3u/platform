@@ -64,7 +64,7 @@ it('exports a tool definition the call shell can list', () => {
 it.each(['en', 'vi'] as const)(
   'gives every button an icon and a name in %s',
   (locale) => {
-    renderPanel(locale, { role: 'host', onClose: () => {} });
+    renderPanel(locale, { roomRole: 'host', onClose: () => {} });
     const buttons = screen.getAllByRole('button');
     // Four inks, undo, clear and close.
     expect(buttons).toHaveLength(7);
@@ -151,7 +151,7 @@ it('ignores a palm while the pen is down and still draws with a mouse', () => {
 });
 
 it('undoes the last stroke and lets the host clear the board', () => {
-  renderPanel('en', { role: 'host' });
+  renderPanel('en', { roomRole: 'host' });
   const svg = surface();
   const undo = screen.getByRole('button', { name: 'Undo drawing' });
   const clear = screen.getByRole('button', { name: 'Clear board' });

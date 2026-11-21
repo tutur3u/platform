@@ -180,7 +180,7 @@ it('sends participant questions through the channel and renders only server stat
     },
   });
   const props = {
-    role: 'participant',
+    roomRole: 'participant',
     participantId: token(false).userId,
   } as const;
   render(
