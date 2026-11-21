@@ -407,10 +407,15 @@ replaces the 307.
 ## Same-origin wins
 
 - **Document prefetch.** The launcher currently uses ordinary navigation.
-  Cloudflare Speed Brain advertises `/cdn-cgi/speculation` and rejects
-  prefetches on Worker routes. Tools and Roadmap returned 503 for
-  `Sec-Purpose: prefetch` at the edge before Worker routing. The zone
-  setting is `speed_brain` under Speed → Settings → Content Optimization.
+  Cloudflare Speed Brain (zone setting `speed_brain`, under Speed → Settings
+  → Content Optimization) is off on `tuturuuu.com`. Every path there is a
+  Worker route, and Speed Brain advertises `/cdn-cgi/speculation` while the
+  edge answers prefetches of Worker routes with an empty 503, so it only
+  wasted requests and overrode the app's own speculation rules. With it off,
+  responses carry no `Speculation-Rules` header and a `Sec-Purpose: prefetch`
+  GET reaches the Worker and is answered like any GET. Turning it back on is
+  the rollback (`PATCH /zones/<zone>/settings/speed_brain` with
+  `{"value":"on"}`, using a token with Zone Settings Write on that zone only).
   Before enabling launcher prefetch, verify the exact public destination
   accepts same-origin GET prefetch using the ordinary rate-limit bucket,
   with existing authorization and no `Set-Cookie` on speculative responses.
