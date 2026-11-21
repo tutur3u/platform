@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VersionBadge, VersionBadgeSetting } from './version-badge';
@@ -11,16 +11,26 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
     mockUseUserBooleanConfig(...args),
 }));
 
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-}));
+vi.mock('next-intl', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next-intl')>();
+  const format = actual.createFormatter({
+    locale: 'en',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  });
+  return {
+    useFormatter: () => format,
+    useNow: () => new Date('2026-05-27T10:05:00.000Z'),
+    useTimeZone: () => 'Asia/Ho_Chi_Minh',
+    useTranslations: () => (key: string) => key,
+  };
+});
 
-vi.mock('@tuturuuu/ui/hover-card', () => ({
-  HoverCard: ({ children }: { children: ReactNode }) => <>{children}</>,
-  HoverCardContent: ({ children }: { children: ReactNode }) => (
+vi.mock('@tuturuuu/ui/popover', () => ({
+  Popover: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverContent: ({ children }: { children: ReactNode }) => (
     <div>{children}</div>
   ),
-  HoverCardTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PopoverTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 const release = {
@@ -89,7 +99,62 @@ describe('VersionBadge', () => {
     expect(screen.getAllByText('v0.1.0')).toHaveLength(2);
     expect(screen.getAllByText('abcdef1')).toHaveLength(2);
     expect(screen.getByText('feat: ship version badge')).toBeInTheDocument();
-    expect(screen.getByText('2026-05-27T10:00:00.000Z')).toBeInTheDocument();
+    expect(screen.getByText('5 minutes ago')).toBeInTheDocument();
+  });
+
+  it('shows the build time as relative time and toggles the exact time', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      value: true,
+    });
+
+    render(<VersionBadge release={release} />);
+
+    const toggle = screen.getByRole('button', {
+      name: /built_at_toggle_label/,
+    });
+    const exact = 'May 27, 2026, 5:00:00 PM GMT+7';
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(toggle).toHaveAttribute('title', exact);
+    expect(toggle.querySelector('time')).toHaveAttribute(
+      'datetime',
+      '2026-05-27T10:00:00.000Z'
+    );
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(exact)).toBeInTheDocument();
+    expect(toggle).toHaveAttribute('title', '5 minutes ago');
+  });
+
+  it('reads a build clock ahead of the viewer as now, not the future', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      value: true,
+    });
+
+    render(
+      <VersionBadge
+        release={{ ...release, builtAt: '2026-05-27T10:06:00.000Z' }}
+      />
+    );
+
+    expect(screen.getByText('now')).toBeInTheDocument();
+  });
+
+  it('shows a build without a timestamp as not available', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      value: true,
+    });
+
+    render(<VersionBadge release={{ ...release, builtAt: 'local' }} />);
+
+    expect(screen.getAllByText('not_available').length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('button', { name: /built_at_toggle_label/ })
+    ).not.toBeInTheDocument();
   });
 
   it('stays hidden until hover, keyboard focus or open details', () => {
@@ -105,7 +170,8 @@ describe('VersionBadge', () => {
       'opacity-0',
       'hover:opacity-100',
       'focus-visible:opacity-100',
-      'data-[state=open]:opacity-100'
+      'data-[state=open]:opacity-100',
+      '[@media(hover:none)]:opacity-100'
     );
   });
 });

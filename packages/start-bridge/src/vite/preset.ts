@@ -1,11 +1,16 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import {
+  type PlatformBuildEnv,
+  platformBuildDefines,
+  resolveLocalPlatformBuildEnv,
+} from '@tuturuuu/utils/platform-build-env';
 
 /**
  * Vite+/TanStack Start configuration fragments for a bridged app. Vite+ loads
  * workspace config dependencies with native Node type stripping, which cannot
- * resolve extensionless relative imports, so this module imports nothing but
- * Node built-ins. Its basePath rules mirror `createBasePath` (parity-tested).
+ * resolve extensionless relative imports, so this module imports only Node
+ * built-ins and the dependency-free `@tuturuuu/utils/platform-build-env`. Its basePath rules mirror `createBasePath` (parity-tested).
  */
 export const NEXT_SHIMS = {
   'next/headers': 'next/headers.ts',
@@ -43,6 +48,11 @@ export interface StartBridgePresetOptions {
   srcAlias?: boolean;
   /** App-relative server-function base (default `/_serverFn`). */
   serverFnBase?: string;
+  /**
+   * `PLATFORM_BUILD_*` values inlined into both environments. Defaults to
+   * `resolveLocalPlatformBuildEnv` (empty for CI and reproducible builds).
+   */
+  buildMetadata?: PlatformBuildEnv;
   /** Specifiers that must never reach the client bundle. */
   serverOnlySpecifiers?: readonly string[];
   /** App module replacing the generic `next-intl/server` shim. */
@@ -211,6 +221,10 @@ export interface StartBridgePreset {
   alias: StartBridgeAlias[];
   /** Shared `define` (both environments). */
   define: Record<string, string>;
+  /** The `PLATFORM_BUILD_*` values inside `define` and `clientDefine`. */
+  buildMetadata: PlatformBuildEnv;
+  /** `define` entries for `buildMetadata` alone, for hand-written defines. */
+  buildDefine: Record<string, string>;
   /**
    * Vite `experimental`: client asset URLs read the document's runtime app
    * base. CSS dependencies resolve relative to the stylesheet. The Worker
@@ -251,6 +265,14 @@ export function startBridgePreset(
     options.app,
     options.basePath ?? env.TUTURUUU_BASE_PATH
   );
+  // Resolved once per config load, so the stamp is the dev-server or build
+  // start time and the server and client bundles agree on it.
+  const buildMetadata =
+    options.buildMetadata ??
+    resolveLocalPlatformBuildEnv({
+      cwd: fileURLToPath(new URL('.', options.appRoot)),
+      env,
+    });
   return {
     basePath,
     base: basePath.assetBase,
@@ -265,7 +287,10 @@ export function startBridgePreset(
         };
       },
     },
+    buildMetadata,
+    buildDefine: platformBuildDefines(buildMetadata),
     define: {
+      ...platformBuildDefines(buildMetadata),
       'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV ?? 'production'),
       'import.meta.env.VITE_TUTURUUU_BASE_PATH': JSON.stringify(
         basePath.basePath
@@ -280,6 +305,7 @@ export function startBridgePreset(
             name.startsWith('NEXT_PUBLIC_')
           )
         ),
+        ...buildMetadata,
         NODE_ENV:
           env.NODE_ENV ?? (command === 'build' ? 'production' : 'development'),
       }),

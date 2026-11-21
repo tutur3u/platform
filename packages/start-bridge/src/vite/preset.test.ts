@@ -20,7 +20,7 @@ describe('Vite preset', () => {
         ],
         serverOnlySpecifiers: ['@tuturuuu/satellite/auth'],
       },
-      { NEXT_PUBLIC_A: 'a', SECRET: 's' }
+      { CI: 'true', NEXT_PUBLIC_A: 'a', SECRET: 's' }
     );
     expect(preset.base).toBe('/');
     expect(preset.tanstackStart.serverFns.base).toBe('/_serverFn');
@@ -60,6 +60,45 @@ describe('Vite preset', () => {
     ).toBe('true');
     expect(preset.define).not.toHaveProperty(
       'import.meta.env.START_BRIDGE_CLIENT'
+    );
+  });
+
+  it('inlines local build metadata into both environments', () => {
+    const buildMetadata = {
+      PLATFORM_LOCAL_BUILD_BUILT_AT: '2026-11-21T02:00:00.000Z',
+      PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH: '0123456',
+    };
+    const preset = startBridgePreset(
+      { appRoot, app: 'mail', shims: [], buildMetadata },
+      { NEXT_PUBLIC_A: 'a', SECRET: 's' }
+    );
+    expect(preset.buildMetadata).toBe(buildMetadata);
+    expect(preset.define).toMatchObject(preset.buildDefine);
+    expect(preset.buildDefine).toEqual({
+      'process.env.PLATFORM_LOCAL_BUILD_BUILT_AT': '"2026-11-21T02:00:00.000Z"',
+      'process.env.PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH': '"0123456"',
+    });
+    expect(
+      JSON.parse(preset.clientDefine('serve')['process.env'] ?? '')
+    ).toEqual({
+      NEXT_PUBLIC_A: 'a',
+      ...buildMetadata,
+      NODE_ENV: 'development',
+    });
+  });
+
+  it('stamps a local config load and leaves CI builds reproducible', () => {
+    const local = startBridgePreset({ appRoot, app: 'mail', shims: [] }, {});
+    expect(
+      Date.parse(local.buildMetadata.PLATFORM_LOCAL_BUILD_BUILT_AT ?? '')
+    ).not.toBeNaN();
+    const ci = startBridgePreset(
+      { appRoot, app: 'mail', shims: [] },
+      { CI: 'true' }
+    );
+    expect(ci.buildMetadata).toEqual({});
+    expect(Object.keys(ci.define).some((key) => key.includes('PLATFORM'))).toBe(
+      false
     );
   });
 

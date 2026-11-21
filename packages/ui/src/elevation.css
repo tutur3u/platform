@@ -1,0 +1,46 @@
+/*
+  Elevation scale. Every level casts --elevation-shadow, a colour mixed from
+  the theme's own tokens, so a shadow follows the surface it sits on: a soft
+  foreground tint on light surfaces and a deeper shade of the background in
+  dark mode, never pure black or a light glow. Tinted Sorbet presets carry
+  their hue into the shadow through the same tokens.
+
+  shadow-elevation-1  resting cards and raised controls
+  shadow-elevation-2  floating bars, docks and toolbars
+  shadow-elevation-3  floating windows and detached panels
+
+  Use one level per surface. Draw outlines with a ring or border, not a
+  heavier shadow.
+*/
+
+:root {
+  --elevation-shadow: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --elevation-shadow-strong: color-mix(
+    in oklab,
+    var(--foreground) 16%,
+    transparent
+  );
+}
+
+.dark {
+  --elevation-shadow: color-mix(
+    in oklab,
+    var(--background) 45%,
+    rgb(0 0 0 / 0.55)
+  );
+  --elevation-shadow-strong: color-mix(
+    in oklab,
+    var(--background) 30%,
+    rgb(0 0 0 / 0.7)
+  );
+}
+
+@theme inline {
+  --shadow-elevation-1: 0 1px 2px 0 var(--elevation-shadow);
+  --shadow-elevation-2:
+    0 1px 2px 0 var(--elevation-shadow),
+    0 8px 20px -8px var(--elevation-shadow-strong);
+  --shadow-elevation-3:
+    0 2px 6px -1px var(--elevation-shadow),
+    0 24px 48px -16px var(--elevation-shadow-strong);
+}

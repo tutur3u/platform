@@ -3,16 +3,14 @@
 import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import type { PlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { SettingItemTab } from './settings-item-tab';
+import { VersionBadgeBuiltAt } from './version-badge-built-at';
 
 type VersionBadgeProps = {
   className?: string;
@@ -29,7 +27,7 @@ function DetailRow({
   valueClassName,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   valueClassName?: string;
 }) {
   return (
@@ -68,30 +66,34 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
     [t('commit_message'), release.commitMessage],
   ] as const;
   const deploymentDetails = [
+    [
+      t('built_at'),
+      <VersionBadgeBuiltAt key="built_at" builtAt={release.builtAt} />,
+    ],
     [t('ref'), release.refName],
     [t('environment'), release.environment],
-    [t('deployment_time'), release.builtAt],
     [t('deployment_url'), release.deploymentUrl ?? t('not_available')],
     [t('deployment_stamp'), release.deploymentStamp ?? t('not_available')],
   ] as const;
 
   return (
-    <HoverCard openDelay={120}>
-      <HoverCardTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <button
           type="button"
           aria-label={t('trigger_label')}
           className={cn(
             // Hidden until the pointer reaches the corner, keyboard focus lands on
-            // it or its details are open, so it never covers app content.
-            'fixed right-3 bottom-3 z-1000 rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs opacity-0 shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue data-[state=open]:opacity-100 motion-reduce:transition-none',
+            // it or its details are open, so it never covers app content. Touch
+            // devices cannot hover, so it stays visible there.
+            'fixed right-3 bottom-3 z-1000 rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs opacity-0 shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100 motion-reduce:transition-none',
             className
           )}
         >
           v{release.version}
         </button>
-      </HoverCardTrigger>
-      <HoverCardContent
+      </PopoverTrigger>
+      <PopoverContent
         align="end"
         className="w-[24rem] max-w-[calc(100vw-1rem)] p-0"
       >
@@ -131,8 +133,8 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
             </dl>
           </div>
         </div>
-      </HoverCardContent>
-    </HoverCard>
+      </PopoverContent>
+    </Popover>
   );
 }
 

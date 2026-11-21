@@ -16,6 +16,28 @@ import {
 } from './next-config';
 
 describe('createTuturuuuNextConfig', () => {
+  it('stamps local builds with their build time and keeps app env', () => {
+    const originalCi = process.env.CI;
+    const originalEpoch = process.env.SOURCE_DATE_EPOCH;
+    delete process.env.CI;
+    delete process.env.SOURCE_DATE_EPOCH;
+    try {
+      const config = createTuturuuuNextConfig({ env: { APP_FLAG: '1' } });
+      expect(
+        Date.parse(config.env?.PLATFORM_LOCAL_BUILD_BUILT_AT ?? '')
+      ).not.toBeNaN();
+      expect(config.env?.APP_FLAG).toBe('1');
+
+      process.env.CI = 'true';
+      expect(createTuturuuuNextConfig().env).toEqual({});
+    } finally {
+      if (originalCi === undefined) delete process.env.CI;
+      else process.env.CI = originalCi;
+      if (originalEpoch === undefined) delete process.env.SOURCE_DATE_EPOCH;
+      else process.env.SOURCE_DATE_EPOCH = originalEpoch;
+    }
+  });
+
   it('applies shared local development defaults', () => {
     const config = createTuturuuuNextConfig();
 

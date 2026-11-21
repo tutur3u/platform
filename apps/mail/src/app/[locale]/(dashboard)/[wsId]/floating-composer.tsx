@@ -437,7 +437,7 @@ export function FloatingComposer({
         tabIndex={-1}
         aria-label={t('new_message')}
         className={cn(
-          'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-2xl',
+          'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-elevation-3',
           minimized
             ? 'right-0 bottom-0 left-0 h-14 md:right-5 md:bottom-5 md:left-auto md:w-[28rem] md:rounded-2xl'
             : maximized

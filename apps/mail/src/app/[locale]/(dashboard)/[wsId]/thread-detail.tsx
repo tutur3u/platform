@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import { FloatingBar } from '@tuturuuu/ui/floating-bar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
@@ -37,6 +38,10 @@ import type { MailFolder } from './mail-folders';
 import { MailIconButton } from './mail-icon-button';
 import { MailThreadHeader } from './mail-thread-header';
 import { ThreadMessageCard } from './thread-message-card';
+
+// Icon-only circles on narrow screens, labelled pills from `sm` up; the bar
+// supplies the control height and the concentric radius.
+const BAR_ACTION_CLASS = 'gap-1.5 px-0 max-sm:w-(--bar-control-height) sm:px-3';
 
 export function ThreadDetail({
   folder,
@@ -123,8 +128,13 @@ export function ThreadDetail({
     return (
       <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
         {header}
-        <div className="absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center lg:hidden">
-          {mobileList}
+        <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-3 lg:hidden">
+          <FloatingBar
+            aria-label={t('message_actions')}
+            className="pointer-events-auto"
+          >
+            {mobileList}
+          </FloatingBar>
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <MailContentState
@@ -196,10 +206,9 @@ export function ThreadDetail({
           </div>
           {(hasHtml || replyMessage) && (
             <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-3">
-              <div
-                className="pointer-events-auto flex max-w-full items-center gap-1 rounded-2xl bg-background/95 p-1.5 shadow-foreground/10 shadow-lg backdrop-blur"
-                role="toolbar"
+              <FloatingBar
                 aria-label={t('message_actions')}
+                className="pointer-events-auto"
               >
                 {mobileList}
                 {isDraft && draft && onEditDraft && (
@@ -213,7 +222,7 @@ export function ThreadDetail({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                          className={BAR_ACTION_CLASS}
                           aria-label={t('reply')}
                           onClick={() => onReply(replyMessage)}
                           size="sm"
@@ -228,7 +237,7 @@ export function ThreadDetail({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                          className={BAR_ACTION_CLASS}
                           aria-label={t('reply_all')}
                           onClick={() => onReplyAll(replyMessage)}
                           size="sm"
@@ -245,7 +254,7 @@ export function ThreadDetail({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                          className={BAR_ACTION_CLASS}
                           aria-label={t('forward')}
                           onClick={() => onForward(replyMessage)}
                           size="sm"
@@ -266,7 +275,7 @@ export function ThreadDetail({
                     standalone={isDraft || !replyMessage}
                   />
                 )}
-              </div>
+              </FloatingBar>
             </div>
           )}
         </TabsContent>

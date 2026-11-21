@@ -10,6 +10,12 @@ import {
   FloatingBarSeparator,
 } from './floating-bar';
 import { Tabs, TabsList, TabsTrigger } from './tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';
 
 const read = (path: string) =>
   readFileSync(resolve(__dirname, path), 'utf8').replace(/\s+/g, ' ');
@@ -24,6 +30,7 @@ const BAR_SURFACES = [
   '../../../../mind-ui/src/components/mind/mind-dashboard.tsx',
   '../../../../mind-ui/src/components/mind/mind-auto-save-island.tsx',
   '../../../../../apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/drive-selection-bar.tsx',
+  '../../../../../apps/mail/src/app/[locale]/(dashboard)/[wsId]/thread-detail.tsx',
 ];
 
 describe('floating bar tokens', () => {
@@ -70,6 +77,25 @@ describe('floating bar tokens', () => {
     );
   });
 
+  it('defines a theme-tinted elevation scale in the shared stylesheet', () => {
+    const elevation = read('../../elevation.css');
+    expect(read('../../floating-surface.css')).toContain(
+      '@import "./elevation.css";'
+    );
+    expect(read('../../globals.css')).toContain(
+      '@import "./floating-surface.css";'
+    );
+    for (const level of [1, 2, 3])
+      expect(elevation).toContain(`--shadow-elevation-${level}:`);
+    // Shadows mix the theme tokens, so neither theme casts pure black or a glow.
+    expect(elevation).toMatch(
+      /:root \{ --elevation-shadow: color-mix\(in oklab, var\(--foreground\)/
+    );
+    expect(elevation).toMatch(
+      /\.dark \{ --elevation-shadow: color-mix\( in oklab, var\(--background\)/
+    );
+  });
+
   it('lets Sorbet set only the track radius for tabs', () => {
     const sorbet = read('../../sorbet-surfaces.css');
     expect(sorbet).toContain('--radius-segment: var(--sorbet-control-radius);');
@@ -101,13 +127,17 @@ describe('FloatingBar', () => {
       'rounded-(--radius-bar)',
       'p-(--bar-padding)',
       'gap-(--bar-gap)',
-      '**:data-[slot=button]:rounded-(--radius-bar-inner)',
-      '**:data-[slot=button]:h-(--bar-control-height)',
-      '**:data-[slot=button]:data-[size=icon]:w-(--bar-control-height)',
+      '**:[&:is([data-slot=button],[data-slot=tooltip-trigger][data-size])]:rounded-(--radius-bar-inner)',
+      '**:[&:is([data-slot=button],[data-slot=tooltip-trigger][data-size])]:h-(--bar-control-height)',
+      '**:[&:is([data-slot=button],[data-slot=tooltip-trigger])]:data-[size=icon]:w-(--bar-control-height)',
     ])
       expect(bar.className).toContain(token);
     // A layout border would add to the inset and break the radius relation.
     expect(bar.className).not.toMatch(/(^|\s)border(\s|$)/);
+    // One elevation level with a theme-tinted colour; a foreground-tinted
+    // shadow glows in dark mode.
+    expect(bar.className).toContain('shadow-elevation-2');
+    expect(bar.className).not.toMatch(/shadow-foreground|shadow-(lg|xl|2xl)/);
 
     expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute(
       'data-size',
@@ -121,6 +151,27 @@ describe('FloatingBar', () => {
     expect(separator).toHaveAttribute('aria-hidden', 'true');
     expect(separator.className).toContain('h-(--bar-separator-height)');
     expect(separator.className).toContain('mx-(--bar-separator-margin)');
+  });
+
+  it('still reaches a Button wrapped in a tooltip trigger', () => {
+    render(
+      <TooltipProvider>
+        <FloatingBar aria-label="Actions">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button aria-label="Reply" size="icon" />
+            </TooltipTrigger>
+            <TooltipContent>Reply</TooltipContent>
+          </Tooltip>
+        </FloatingBar>
+      </TooltipProvider>
+    );
+    // The trigger's slot replaces the Button's; data-size is what the bar's
+    // control selectors and the Sorbet rule match instead.
+    const reply = screen.getByRole('button', { name: 'Reply' });
+    expect(reply).toHaveAttribute('data-slot', 'tooltip-trigger');
+    expect(reply).toHaveAttribute('data-size', 'icon');
+    expect(css).toContain('[data-slot="tooltip-trigger"][data-size],');
   });
 
   it('gives tabs a concentric track and triggers', () => {

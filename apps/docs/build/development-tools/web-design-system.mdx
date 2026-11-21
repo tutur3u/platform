@@ -105,13 +105,21 @@ variables; do not hardcode a second radius.
 - Use `FloatingBar`, `FloatingBarGroup` and `FloatingBarSeparator` from
   `@tuturuuu/ui/floating-bar` for floating action bars, docks and canvas
   toolbars. Every `Button` inside gets the inner radius and control height, and
-  the active (filled) control sits flush with the inset. Raw buttons use
+  the active (filled) control sits flush with the inset, including a Button
+  wrapped in `TooltipTrigger asChild` (the trigger replaces its `data-slot`,
+  so the bar matches its `data-size`). Raw buttons use
   `size-(--bar-control-height) rounded-(--radius-bar-inner)`.
 - A bar that needs larger controls sets `[--bar-control-height:2.5rem]` on the
   bar; the radii follow.
 - Draw a bar's outline with a ring or shadow, never a layout border: a border
   adds to the inset and breaks the relation.
 - Light, dark and Sorbet use the same geometry; only colour tokens change.
+- Shadows come from the elevation scale in `packages/ui/src/elevation.css`:
+  `shadow-elevation-1` for resting cards and raised controls,
+  `shadow-elevation-2` for floating bars, `shadow-elevation-3` for floating
+  windows. Each level casts `--elevation-shadow`, mixed from the theme tokens,
+  so a dark surface never gets a light glow. Use one level per surface and no
+  raw `shadow-sm`…`shadow-2xl` or `shadow-foreground/*` on product surfaces.
 - For a rounded-rectangle bar, set `--bar-radius-max` to a length (for
   example `1rem`); `--radius-bar` and `--radius-bar-inner` follow.
 - A Tabs list with a different track sets `[--radius-segment:…]` and

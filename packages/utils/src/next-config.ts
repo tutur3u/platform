@@ -4,6 +4,7 @@ import { resolveInternalAppUrl } from './app-url';
 // start-bridge Worker).
 import { TUTURUUU_DEFAULT_FRAMABLE_PATTERNS } from './framable-paths';
 import { getLocalInternalAppUrl } from './internal-domains';
+import { resolveLocalPlatformBuildEnv } from './platform-build-env';
 import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
 import { createSeoHeaders, type SeoApp } from './seo';
 
@@ -159,6 +160,9 @@ export function createTuturuuuNextConfig(
     reactStrictMode: true,
     poweredByHeader: false,
     ...nextConfig,
+    // Stamps local builds and dev servers with their start time and Git
+    // commit; CI builds get nothing here and keep the generated metadata.
+    env: { ...resolveLocalPlatformBuildEnv(), ...nextConfig.env },
     reactCompiler: isTuturuuuNextReactCompilerEnabled(),
     cacheComponents:
       config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),

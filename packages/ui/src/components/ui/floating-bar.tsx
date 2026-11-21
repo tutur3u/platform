@@ -19,9 +19,11 @@ function FloatingBar({
       className={cn(
         // A ring, not a border: a border would add to the inset and break
         // the inner = outer − padding relation.
-        'flex max-w-full items-center gap-(--bar-gap) rounded-(--radius-bar) bg-background/95 p-(--bar-padding) shadow-foreground/10 shadow-lg ring-1 ring-foreground/5 backdrop-blur',
-        '**:data-[slot=button]:h-(--bar-control-height) **:data-[slot=button]:rounded-(--radius-bar-inner)',
-        '**:data-[slot=button]:data-[size=icon]:w-(--bar-control-height)',
+        'flex max-w-full items-center gap-(--bar-gap) rounded-(--radius-bar) bg-background/95 p-(--bar-padding) shadow-elevation-2 ring-1 ring-border/70 backdrop-blur',
+        // A Button inside `TooltipTrigger asChild` carries the trigger's
+        // data-slot; its Button-only data-size still marks it as a control.
+        '**:[&:is([data-slot=button],[data-slot=tooltip-trigger][data-size])]:h-(--bar-control-height) **:[&:is([data-slot=button],[data-slot=tooltip-trigger][data-size])]:rounded-(--radius-bar-inner)',
+        '**:[&:is([data-slot=button],[data-slot=tooltip-trigger])]:data-[size=icon]:w-(--bar-control-height)',
         '**:data-[slot=floating-bar-group]:gap-(--bar-gap)',
         className
       )}

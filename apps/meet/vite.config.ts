@@ -125,6 +125,7 @@ export default defineConfig(({ command }) => ({
     ],
   },
   define: {
+    ...bridge.buildDefine,
     'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
       process.env.NEXT_PUBLIC_SUPABASE_URL
     ),
@@ -158,6 +159,7 @@ export default defineConfig(({ command }) => ({
               key.startsWith('NEXT_PUBLIC_')
             )
           ),
+          ...bridge.buildMetadata,
           NODE_ENV: command === 'serve' ? 'development' : 'production',
         }),
       },

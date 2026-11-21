@@ -3,7 +3,7 @@ import { PLATFORM_BUILD_METADATA } from './generated/platform-build-metadata';
 export const TUTURUUU_PLATFORM_VERSION = '0.73.0'; // x-release-please-version
 
 export type PlatformBuildMetadataInput = {
-  /** ISO timestamp of the source commit used for the build, not deployment time. */
+  /** ISO build time: the source commit time for reproducible (CI) builds, the start time for local builds and dev servers. */
   builtAt?: string | null;
   commitHash?: string | null;
   commitMessage?: string | null;
@@ -15,7 +15,7 @@ export type PlatformBuildMetadataInput = {
 };
 
 export type PlatformBuildMetadata = {
-  /** ISO timestamp of the source commit used for the build, not deployment time. */
+  /** ISO build time: the source commit time for reproducible (CI) builds, the start time for local builds and dev servers. */
   builtAt: string;
   commitHash: string;
   commitMessage: string;
@@ -98,19 +98,110 @@ function getRuntimeEnv(): PlatformBuildRuntimeEnv {
   };
 }
 
+export type PlatformLocalBuildEnv = Partial<
+  Record<
+    | 'PLATFORM_LOCAL_BUILD_BUILT_AT'
+    | 'PLATFORM_LOCAL_BUILD_COMMIT_HASH'
+    | 'PLATFORM_LOCAL_BUILD_COMMIT_MESSAGE'
+    | 'PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH'
+    | 'PLATFORM_LOCAL_BUILD_REF_NAME',
+    string | null | undefined
+  >
+>;
+
+/**
+ * The stamp `platform-build-env` inlines into local builds and dev servers.
+ * Each key is read statically so Vite `define` and Next `env` can replace it.
+ */
+function getLocalBuildEnv(): PlatformLocalBuildEnv {
+  // Unguarded on purpose: in a browser bundle each reference below is a
+  // literal Vite inlined, and an unreplaced one throws and reads as unset.
+  return {
+    PLATFORM_LOCAL_BUILD_BUILT_AT: readInlinedEnv(
+      () => process.env.PLATFORM_LOCAL_BUILD_BUILT_AT
+    ),
+    PLATFORM_LOCAL_BUILD_COMMIT_HASH: readInlinedEnv(
+      () => process.env.PLATFORM_LOCAL_BUILD_COMMIT_HASH
+    ),
+    PLATFORM_LOCAL_BUILD_COMMIT_MESSAGE: readInlinedEnv(
+      () => process.env.PLATFORM_LOCAL_BUILD_COMMIT_MESSAGE
+    ),
+    PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH: readInlinedEnv(
+      () => process.env.PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH
+    ),
+    PLATFORM_LOCAL_BUILD_REF_NAME: readInlinedEnv(
+      () => process.env.PLATFORM_LOCAL_BUILD_REF_NAME
+    ),
+  };
+}
+
+/** Reads a bundler-inlined env value; a missing `process` reads as unset. */
+export function readInlinedEnv(
+  read: () => string | undefined
+): string | undefined {
+  try {
+    return read();
+  } catch {
+    return undefined;
+  }
+}
+
+/** Generated placeholders mean "no reproducible metadata"; a local stamp fills them. */
+function generatedValue(value: string | null | undefined) {
+  const cleaned = cleanString(value);
+  return cleaned === 'local' || cleaned === 'Unknown' ? null : cleaned;
+}
+
+function readLocalPlatformBuildMetadata(
+  generated: PlatformBuildMetadataInput,
+  local: PlatformLocalBuildEnv
+): PlatformBuildMetadataInput {
+  const localHash = cleanString(local.PLATFORM_LOCAL_BUILD_COMMIT_HASH);
+  const useLocalCommit = !generatedValue(generated.commitHash) && localHash;
+
+  return {
+    ...generated,
+    builtAt:
+      generatedValue(generated.builtAt) ??
+      cleanString(local.PLATFORM_LOCAL_BUILD_BUILT_AT),
+    // Commit fields move together, so a hash never pairs with another
+    // commit's message.
+    commitHash: useLocalCommit ? localHash : generated.commitHash,
+    commitMessage: useLocalCommit
+      ? cleanString(local.PLATFORM_LOCAL_BUILD_COMMIT_MESSAGE)
+      : generated.commitMessage,
+    shortCommitHash: useLocalCommit
+      ? cleanString(local.PLATFORM_LOCAL_BUILD_COMMIT_SHORT_HASH)
+      : generated.shortCommitHash,
+    refName:
+      generatedValue(generated.refName) ??
+      cleanString(local.PLATFORM_LOCAL_BUILD_REF_NAME) ??
+      generated.refName,
+  };
+}
+
 function mergePlatformBuildMetadata(
   generated: PlatformBuildMetadataInput,
   runtime: PlatformBuildMetadataInput
 ): PlatformBuildMetadataInput {
+  const runtimeHash = cleanString(runtime.commitHash);
+  // Commit fields move together: a runtime hash keeps another source's message
+  // or short hash only when that source describes the same commit.
+  const sameCommit =
+    !runtimeHash || runtimeHash === cleanString(generated.commitHash);
+
   return {
     builtAt: runtime.builtAt ?? generated.builtAt,
-    commitHash: runtime.commitHash ?? generated.commitHash,
-    commitMessage: runtime.commitMessage ?? generated.commitMessage,
+    commitHash: runtimeHash ?? generated.commitHash,
+    commitMessage:
+      runtime.commitMessage ?? (sameCommit ? generated.commitMessage : null),
     deploymentStamp: runtime.deploymentStamp ?? generated.deploymentStamp,
     deploymentUrl: runtime.deploymentUrl ?? generated.deploymentUrl,
     environment: runtime.environment ?? generated.environment,
     refName: runtime.refName ?? generated.refName,
-    shortCommitHash: runtime.shortCommitHash ?? generated.shortCommitHash,
+    shortCommitHash:
+      runtime.shortCommitHash ??
+      (sameCommit ? generated.shortCommitHash : null),
   };
 }
 
@@ -138,13 +229,19 @@ export const TUTURUUU_PLATFORM_BUILD_METADATA = normalizePlatformBuildMetadata(
   PLATFORM_BUILD_METADATA
 );
 
+/**
+ * Precedence per field: runtime `PLATFORM_BUILD_*` variables, then the
+ * generated (CI) metadata, then the local build stamp, then placeholders.
+ */
 export function getPlatformReleaseInfo(
   appName: string,
-  env: PlatformBuildRuntimeEnv = getRuntimeEnv()
+  env: PlatformBuildRuntimeEnv = getRuntimeEnv(),
+  local: PlatformLocalBuildEnv = getLocalBuildEnv(),
+  generated: PlatformBuildMetadataInput = PLATFORM_BUILD_METADATA
 ): PlatformReleaseInfo {
   const metadata = normalizePlatformBuildMetadata(
     mergePlatformBuildMetadata(
-      PLATFORM_BUILD_METADATA,
+      readLocalPlatformBuildMetadata(generated, local),
       readRuntimePlatformBuildMetadata(env)
     )
   );

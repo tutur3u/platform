@@ -53,7 +53,7 @@ export function ThreadMessageCard({
 
   return (
     <AccordionItem
-      className="group/message min-w-0 max-w-full overflow-hidden rounded-2xl border-0 bg-background shadow-foreground/5 shadow-sm transition-shadow data-[state=open]:shadow-foreground/8 data-[state=open]:shadow-md"
+      className="group/message min-w-0 max-w-full overflow-hidden rounded-2xl border-0 bg-background ring-1 ring-border/60 transition-shadow data-[state=open]:shadow-elevation-1"
       value={message.id}
     >
       <div className="px-4 py-3 md:px-5 md:py-4">

@@ -8,7 +8,7 @@ export default async function NotAvailablePage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-root-background p-6">
-      <div className="w-full max-w-sm space-y-5 rounded-lg border border-dynamic bg-background p-6 text-center shadow-sm">
+      <div className="w-full max-w-sm space-y-5 rounded-lg border border-dynamic bg-background p-6 text-center shadow-elevation-1">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-dynamic bg-foreground/5">
           <MailX className="h-5 w-5" />
         </div>

@@ -228,7 +228,7 @@ export function MailSidebarPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="space-y-3 p-3">
         <Button
-          className="h-10 w-full justify-start rounded-lg px-3 shadow-sm"
+          className="h-10 w-full justify-start rounded-lg px-3 shadow-elevation-1"
           onClick={compose}
         >
           <PenLine className="size-4" /> {t('compose')}

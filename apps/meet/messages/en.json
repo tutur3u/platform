@@ -7452,11 +7452,12 @@
   },
   "version-badge": {
     "app": "App",
+    "built_at": "Built",
+    "built_at_toggle_label": "Switch between relative and exact build time",
     "commit": "Commit",
     "commit_hash": "Commit hash",
     "commit_message": "Commit message",
     "deployment_stamp": "Deployment stamp",
-    "deployment_time": "Source timestamp",
     "deployment_url": "Deployment URL",
     "description": "Build and deployment details for this app.",
     "environment": "Environment",

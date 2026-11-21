@@ -75,6 +75,7 @@
   :where([data-slot="floating-bar"])
   :where(
     [data-slot="button"],
+    [data-slot="tooltip-trigger"][data-size],
     [data-slot="input"],
     [data-slot="select-trigger"]
   ) {

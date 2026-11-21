@@ -1,3 +1,5 @@
+@import "./elevation.css";
+
 /*
   Concentric corners for floating surfaces (menus, popovers, toasts).
   --radius-inner = container radius − padding, never below 0.125rem.
