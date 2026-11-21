@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(50);
+select plan(52);
 
 -- Fixtures: a creator-owned workspace with an admin member (admin role) and a
 -- billing role that already holds manage_subscription.
@@ -458,8 +458,21 @@ select is(pg_temp.as_service($q$
 select ok(public.has_workspace_permission('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'manage_subscription'), 'accepted member inherits the creator-enabled default');
 
 select is(pg_temp.as_service($q$
-    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', ARRAY['5ab00000-0000-4000-8000-0000000000b2'::uuid])::text
+    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', ARRAY[]::uuid[])::text
   $q$), 'false', 'finalize_workspace_invitation_membership_v2 completes membership with billing defaults');
+
+-- Removal ended the member's Billing role, so it is no longer theirs to keep.
+select is(pg_temp.as_service($q$
+    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', ARRAY['5ab00000-0000-4000-8000-0000000000b2'::uuid])::text
+  $q$), '42501', 'finalize_workspace_invitation_membership_v2 refuses a billing role a removed member no longer holds');
+
+-- A current holder of the Billing role may re-finalize with it.
+insert into public.workspace_role_members (role_id, user_id)
+values ('5ab00000-0000-4000-8000-0000000000b2', '5ab00000-0000-4000-8000-000000000003')
+on conflict (role_id, user_id) do nothing;
+select is(pg_temp.as_service($q$
+    select private.finalize_workspace_invitation_membership_v2('5ab00000-0000-4000-8000-0000000000a1', '5ab00000-0000-4000-8000-000000000003', 'MEMBER', ARRAY['5ab00000-0000-4000-8000-0000000000b2'::uuid])::text
+  $q$), 'false', 'finalize_workspace_invitation_membership_v2 keeps a billing role the member already holds');
 
 
 insert into public.workspaces (id, name, personal, creator_id)
