@@ -2,7 +2,6 @@
 
 import type { JSONContent } from '@tiptap/react';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
@@ -16,7 +15,6 @@ import {
 } from '../utils';
 
 // Module-level singleton to avoid repeated instantiation
-const supabase = createClient();
 
 export interface WorkspaceAssignee {
   id: string;
@@ -203,20 +201,12 @@ export function useTaskFormReset({
         // Fetch and add current user
         (async () => {
           try {
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-
-            if (!user || cancelled) {
-              return;
-            }
-
             const userData = await getCurrentUserProfile().catch(() => null);
 
-            if (userData && !cancelled) {
+            if (userData?.id && !cancelled) {
               setSelectedAssignees([
                 {
-                  user_id: user.id,
+                  user_id: userData.id,
                   id: userData.id,
                   display_name: userData.display_name,
                   avatar_url: userData.avatar_url,

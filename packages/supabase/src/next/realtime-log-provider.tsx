@@ -1,7 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from './client';
+import { createContext, useContext, useEffect } from 'react';
 import { addRealtimeLog } from './realtime-log-actions';
 
 interface RealtimeContextValue {
@@ -26,6 +25,10 @@ export function useRealtimeLogContext() {
 
 interface RealtimeProviderProps {
   wsId: string;
+  /**
+   * The signed-in user verified on the server. Page script never reads the
+   * session, so without this prop the provider reports no user.
+   */
   verifiedUserId?: string | null;
   children: React.ReactNode;
 }
@@ -35,29 +38,7 @@ export function RealtimeLogProvider({
   verifiedUserId,
   children,
 }: RealtimeProviderProps) {
-  const [browserUserId, setBrowserUserId] = useState<string | null>(null);
-  const userId = verifiedUserId === undefined ? browserUserId : verifiedUserId;
-
-  useEffect(() => {
-    if (verifiedUserId !== undefined) return;
-    const supabase = createClient();
-
-    // Get initial user
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setBrowserUserId(user?.id ?? null);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setBrowserUserId(session?.user?.id ?? null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [verifiedUserId]);
+  const userId = verifiedUserId ?? null;
 
   // Update module-level context when values change
   useEffect(() => {

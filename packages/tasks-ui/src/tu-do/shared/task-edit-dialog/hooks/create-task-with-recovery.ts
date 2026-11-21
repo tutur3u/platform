@@ -2,7 +2,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import type { notifySave } from '@tuturuuu/ui/save-notification';
 import {
@@ -33,8 +32,7 @@ import {
   applyPendingRelationshipSummary,
   persistPendingTaskRelationships,
 } from './task-create-relationships';
-
-const supabase = createClient();
+import { fetchCurrentUserIdentity } from '@tuturuuu/ui/hooks/use-current-user-identity';
 
 export async function handleCreateTask({
   wsId,
@@ -206,10 +204,7 @@ export async function handleCreateTask({
   try {
     let resolvedUserId = user?.id;
     if (!resolvedUserId) {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      resolvedUserId = authUser?.id;
+      resolvedUserId = (await fetchCurrentUserIdentity())?.id;
     }
 
     let desiredAssignees = [...selectedAssignees];

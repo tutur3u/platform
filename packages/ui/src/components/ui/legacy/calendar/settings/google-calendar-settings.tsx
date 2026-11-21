@@ -2,7 +2,6 @@
 
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from '@tuturuuu/icons';
 import { getGoogleCalendarAuthUrl } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleTokenClient } from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -15,11 +14,12 @@ import {
 } from '@tuturuuu/ui/card';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { useCurrentUserIdentity } from '@tuturuuu/ui/hooks/use-current-user-identity';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -88,22 +88,8 @@ export function GoogleCalendarSettings({
   const { syncGoogleCalendarNow, getGoogleEvents } = useCalendar();
   const { setIsActiveSyncOn, isActiveSyncOn } = useCalendarSync();
 
-  const [isTuturuuuUser, setIsTuturuuuUser] = useState(false);
-
-  useEffect(() => {
-    const checkIfTuturuuuUser = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user?.email?.includes('@tuturuuu.com')) {
-        setIsTuturuuuUser(true);
-      } else {
-        setIsTuturuuuUser(false);
-      }
-    };
-    checkIfTuturuuuUser();
-  }, []);
+  const { data: identity } = useCurrentUserIdentity();
+  const isTuturuuuUser = Boolean(identity?.email?.includes('@tuturuuu.com'));
 
   // Show connected events count
   const connectedEventsCount = getGoogleEvents().length;

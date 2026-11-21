@@ -19,11 +19,11 @@ import {
   updateWorkspaceCalendar,
 } from '@tuturuuu/internal-api/calendar';
 import { resolveInternalApiUrl } from '@tuturuuu/internal-api/client';
-import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { runCalendarProviderSync } from '../../../../hooks/calendar-provider-sync';
+import { useCurrentUserIdentity } from '../../../../hooks/use-current-user-identity';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { toast } from '../../sonner';
 import {
@@ -229,11 +229,8 @@ export function useCalendarConnectionsManager(wsId: string) {
     },
   });
 
-  const { data: userEmail } = useQuery({
-    queryKey: ['current-user-email'],
-    queryFn: async () => (await getCurrentUserProfile()).email,
-    staleTime: Infinity, // User email rarely changes
-  });
+  const { data: identity } = useCurrentUserIdentity();
+  const userEmail = identity?.email ?? null;
 
   // Fetch workspace calendars (Tuturuuu native calendars)
   const {

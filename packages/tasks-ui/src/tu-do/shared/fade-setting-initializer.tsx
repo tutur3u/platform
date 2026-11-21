@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useCurrentUserIdentity } from '@tuturuuu/ui/hooks/use-current-user-identity';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -16,19 +16,7 @@ interface TaskSettingsData {
  * Sets the body data attribute based on user preferences.
  */
 export function FadeSettingInitializer() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-
-  // Check if user is logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-    };
-    checkAuth();
-  }, []);
+  const { data: identity } = useCurrentUserIdentity();
 
   const { data: settings } = useQuery({
     queryKey: ['user-task-settings'],
@@ -48,7 +36,7 @@ export function FadeSettingInitializer() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     // Only fetch if user is logged in
-    enabled: isLoggedIn === true,
+    enabled: Boolean(identity),
   });
 
   useEffect(() => {

@@ -89,9 +89,12 @@ without project JWT-signing material, which Tuturuuu does not hold.
   re-emit could also race a later refresh, switch or logout. There is no
   guaranteed upgrade of a readable cookie written before the flip until that
   cookie expires (400-day max age): an idle browser may never refresh, and an
-  unchanged chunk is skipped even during a write. The flip waits for a migration design that Web owns: a
-  versioned `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a
-  stale response from restoring a superseded session.
+  unchanged chunk is skipped even during a write. The flip waits for a migration that Web owns: a
+  new `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a stale
+  response from restoring a superseded session. That cookie is the
+  first-party, provider-independent Tuturuuu session (a host-only `__Host-`
+  handle issued alongside `sb-*` during a dual-run period), not a second
+  versioned Supabase cookie.
 - The host-only clear header serializer (`getHostOnlyCookieClearHeadersForNames`)
   appends `HttpOnly` when the cookie options carry it, and keeps its current
   bytes otherwise.
@@ -126,10 +129,15 @@ flips for every writer at once.
      `qr-login.test.ts` (with a native-poller control) and the QA admin
      `route.test.ts`. The Web and Workspace `LoginQrCard` components, which no
      page mounts, would need a server-set cookie before they could be used.
-3. **Slice 3, shared identity.** `RealtimeLogProvider` (mounted in 12 apps) and
-   the `getUser`-only call sites in `packages/ui` and `packages/tasks-ui` read
-   identity from `/api/v1/realtime/session` or an existing internal-api user
-   query through TanStack Query.
+3. **Slice 3, shared identity.** Implemented for `RealtimeLogProvider`
+   (mounted in 12 apps), which no longer builds a browser auth client, and for
+   the `getUser`-only call sites in `google-calendar-settings`,
+   `use-calendar-connections-manager`, `fade-setting-initializer`,
+   `use-task-form-reset` and `create-task-with-recovery`. They read identity
+   through `useCurrentUserIdentity` / `fetchCurrentUserIdentity`
+   (`packages/ui/src/hooks/use-current-user-identity.ts`): a TanStack Query
+   over the same-origin profile API, independent of the auth provider. The
+   identity-plus-CRUD sites move in slice 4.
 4. **Slice 4, shared CRUD and storage.**
    - `use-calendar`, the `supabase-provider` fallback, `task-item-checkbox`,
      `scheduling-dialog`, `use-task-data`, `task-actions` and `task-list-form`

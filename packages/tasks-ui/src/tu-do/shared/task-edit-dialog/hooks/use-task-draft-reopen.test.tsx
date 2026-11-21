@@ -6,12 +6,8 @@ import { getDraftStorageKey, saveDraft } from '../utils';
 import { useTaskFormReset } from './use-task-form-reset';
 import { useTaskFormState } from './use-task-form-state';
 
-const { getUser, getProfile } = vi.hoisted(() => ({
-  getUser: vi.fn(),
+const { getProfile } = vi.hoisted(() => ({
   getProfile: vi.fn(),
-}));
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({ auth: { getUser } }),
 }));
 vi.mock('@tuturuuu/internal-api', async (original) => ({
   ...(await original<typeof import('@tuturuuu/internal-api')>()),
@@ -123,13 +119,12 @@ it('keeps a server-backed draft separate from the board creation recovery draft'
 it.each(['recover', 'unmount'])(
   'ignores an old auto-assignment lookup after %s',
   async (mode) => {
-    let resolveUser!: (value: { data: { user: { id: string } } }) => void;
-    getUser.mockReturnValueOnce(
+    let resolveProfile!: (value: { id: string; display_name: string }) => void;
+    getProfile.mockReturnValueOnce(
       new Promise((resolve) => {
-        resolveUser = resolve;
+        resolveProfile = resolve;
       })
     );
-    getProfile.mockResolvedValue({ id: 'me', display_name: 'Me' });
     const task = { id: 'new', name: '', list_id: 'list-1' } as Task;
     const filters = {
       ...filtersWithAssignee,
@@ -151,7 +146,7 @@ it.each(['recover', 'unmount'])(
       },
       { initialProps: { isOpen: true } }
     );
-    expect(getUser).toHaveBeenCalledOnce();
+    expect(getProfile).toHaveBeenCalledOnce();
     if (mode === 'unmount') unmount();
     else {
       rerender({ isOpen: false });
@@ -162,9 +157,9 @@ it.each(['recover', 'unmount'])(
       rerender({ isOpen: true });
     }
     await act(async () => {
-      resolveUser({ data: { user: { id: 'me' } } });
+      resolveProfile({ id: 'me', display_name: 'Me' });
     });
-    expect(getProfile).not.toHaveBeenCalled();
+    expect(getProfile).toHaveBeenCalledOnce();
     if (mode === 'recover')
       expect(result.current.selectedAssignees).toEqual([
         { id: 'recovered-assignee' },
