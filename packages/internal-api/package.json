@@ -96,6 +96,11 @@
       "import": "./dist/fleet.js",
       "require": "./dist/fleet.js"
     },
+    "./people-registry": {
+      "types": "./dist/people-registry.d.ts",
+      "import": "./dist/people-registry.js",
+      "require": "./dist/people-registry.js"
+    },
     "./backend": {
       "types": "./dist/backend.d.ts",
       "import": "./dist/backend.js",

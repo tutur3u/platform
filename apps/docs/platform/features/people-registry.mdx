@@ -136,13 +136,25 @@ The owner's own row is flagged `is_owner`, once per workspace.
 Channels are `zalo`, `whatsapp`, `discord`, `email` and `phone`.
 
 - **Lookup hash:** HMAC-SHA-256 with a per-workspace lookup key over a
-  canonical, length-prefixed encoding of
-  `("people-lookup", key_version, ws_id, channel, provider_account_id,
-  normalised_external_id)`. It is unique per
+  canonical encoding, in which each field is a 4-byte big-endian length
+  followed by its UTF-8 bytes, of `(purpose, key_version, ws_id, channel,
+  provider_account_id, normalised_external_id)`. `purpose` is
+  `sender_lookup` or `conversation_lookup`. It is unique per
   `(ws_id, channel, provider_account_id, lookup_hash)`.
+- **Normalisation:** each identifier has one canonical form, so a deleted
+  identity cannot come back under another spelling.
+  - Phone numbers must carry their country code, as `+` or `00`, and become
+    `+` and digits. A national spelling is rejected rather than guessed.
+  - WhatsApp phone IDs, including `@s.whatsapp.net` user parts, already carry
+    the country code and are treated as phone numbers even as bare digits.
+    Other WhatsApp IDs are lowercased.
+  - Email addresses are lowercased.
+  - Anything else on the phone channel is rejected.
 - **Display value:** the phone number or handle, encrypted with AES-256-GCM
-  under the workspace encryption key, with `(ws_id, identity_id, "display")` as
-  associated data. Only registry managers can read it.
+  under the workspace `display` key, with the workspace, person, channel and
+  provider account as associated data. The ciphertext starts with the
+  two-byte key version, which is also authenticated. Only registry managers can
+  read it.
 - **Verification:** `asserted` (entered by the owner or imported, with
   provenance), `desk_observed` (seen through signed ingress evidence) or
   `code_verified` (proven through Fleet access linking).
@@ -880,6 +892,39 @@ A slice ships only when its gates pass:
   - Every writer fenced.
   - Each staged item given an explicit disposition before retirement.
 
+## Configuration
+
+| Variable                    | Used by           | Purpose                                                        |
+| --------------------------- | ----------------- | -------------------------------------------------------------- |
+| `PEOPLE_REGISTRY_WRAP_KEY`  | `apps/web`        | 64 hex characters; wraps each workspace's random key material   |
+| `FLEET_DESKS`               | `apps/web`        | Fleet desk accounts, which can never be bound to a tenant      |
+
 ## Regression coverage
 
 Each slice links its coverage here when it lands.
+
+- **Slice 1** (database): [people-registry.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry.sql)
+  covers:
+  - privileges and ownership, and the Fleet wrappers;
+  - replay slots and the attempt cap;
+  - one-time bootstrap with rollback;
+  - owner and manager authority, live root ownership, transfer, revocation
+    and manager expiry;
+  - bindings;
+  - revision conflicts, rule values and consent bases;
+  - suppression coverage;
+  - deletion fences, hidden deleting people and tombstones;
+  - append-only audit.
+
+  [people-registry-replay-race.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry-replay-race.sql)
+  races two sessions for a write-first event, a purge then redelivery, and a
+  record that vanishes between conflict and update.
+- **Slice 2, manager routes:**
+  - The [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/route.test.ts)
+    cover session-only actors, strict bodies, refusal mapping, wrapped keys
+    staying server-side, identities stored as hashes, tokens and bound
+    ciphertext, and Fleet desk accounts refused as bindings.
+  - The [key tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/keys.test.ts)
+    cover wrapping, lookup separation, suppression tokens and display binding.
+  - The machine routes (`/api/v1/people/**`) follow in Slice 2b, after the
+    principal and ledger tables.
