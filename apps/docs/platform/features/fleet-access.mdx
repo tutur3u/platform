@@ -261,7 +261,9 @@ operation. The management functions require a database-owner connection with
 the verified user's request identity and a live explicit root Mastermind grant.
 The service role can submit a server-resolved intent. The insert checks the
 live grant, project versions and the rolling one-hour question and 24-hour
-intent counts. Model budget consumption belongs to the Ask execution path.
+intent counts. The daily intent quota is the medium-risk budget. Slice 5
+rechecks that budget at dispatch. Model budget consumption belongs to the Ask
+execution path.
 Auth account deletion revokes the grant and retains its generation and historical
 intent references. Fleet grant, project and control rows retain their fences.
 

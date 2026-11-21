@@ -4,7 +4,10 @@ select plan(6);
 
 create function pg_temp.clear_fleet_quota_fixture()
 returns void language sql as $$
+  -- Restore only this synthetic fixture under a transaction-held table lock.
+  alter table private.fleet_intents disable trigger fleet_preserve_intent_history;
   delete from private.fleet_intents where requester_id = 'fa000000-0000-4000-8000-000000000003';
+  alter table private.fleet_intents enable trigger fleet_preserve_intent_history;
   delete from auth.users where id = 'fa000000-0000-4000-8000-000000000003';
   delete from public.workspaces where personal and creator_id = 'fa000000-0000-4000-8000-000000000003';
   delete from public.users where id = 'fa000000-0000-4000-8000-000000000003';

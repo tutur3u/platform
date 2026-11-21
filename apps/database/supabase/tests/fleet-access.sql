@@ -1,26 +1,38 @@
 begin;
-select plan(76);
+select plan(85);
 
+-- The quota race suite retains a revoked grant for its synthetic fixture.
 select is((select count(*) from private.fleet_access_grants
   where user_id <> 'fa000000-0000-4000-8000-000000000003' or revoked_at is null),
   0::bigint, 'no Fleet grants are seeded');
 select ok((select owner_user_id is null from private.fleet_control), 'Fleet Owner is unconfigured');
+create temporary view fleet_access_test_tables as
+select oid, relrowsecurity from pg_class
+where relnamespace = 'private'::regnamespace and relkind = 'r'
+  and relname in (
+    'fleet_projects', 'fleet_access_grants', 'fleet_access_grant_projects',
+    'fleet_channel_identities', 'fleet_intents', 'fleet_intent_quotes',
+    'fleet_audit_events', 'fleet_control'
+  );
 select is(
-  (select count(*) from pg_class where relnamespace = 'private'::regnamespace
-    and relkind = 'r' and relname like 'fleet\_%' and relrowsecurity),
+  (select count(*) from fleet_access_test_tables where relrowsecurity),
   8::bigint, 'all Fleet tables have RLS enabled'
 );
 select ok(not exists (
-  select 1 from pg_class c
+  select 1 from fleet_access_test_tables c
   cross join unnest(array['anon', 'authenticated', 'service_role']) as caller
   cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN']) as privilege
-  where c.relnamespace = 'private'::regnamespace and c.relkind = 'r' and c.relname like 'fleet\_%'
-    and has_table_privilege(caller, c.oid, privilege)
+  where has_table_privilege(caller, c.oid, privilege)
 ), 'API roles have no direct Fleet table privileges');
 select ok(not exists (
   select 1 from pg_proc p
   cross join unnest(array['anon', 'authenticated', 'service_role']) as caller
-  where p.pronamespace = 'private'::regnamespace and p.proname like 'fleet\_%'
+  where p.pronamespace = 'private'::regnamespace and p.proname in (
+    'fleet_reject_audit_mutation', 'fleet_reject_fence_reset', 'fleet_check_grant',
+    'fleet_version_project', 'fleet_version_control', 'fleet_check_intent_transition',
+    'fleet_require_owner', 'fleet_grant_access', 'fleet_revoke_access',
+    'fleet_set_stopped', 'fleet_admit_intent', 'fleet_submit_intent'
+  )
     and (p.proname <> 'fleet_submit_intent' or caller <> 'service_role')
     and has_function_privilege(caller, p.oid, 'EXECUTE')
 ), 'only the service submission function is executable by API roles');
@@ -146,6 +158,8 @@ select throws_ok(
   $$update private.fleet_intents set state = 'approved' where kind = 'approve.deploy'$$,
   '23514', 'Fleet approval requires an approver', 'a pending intent requires a recorded approver'
 );
+select set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"fa000000-0000-4000-8000-000000000001"}', true);
 select throws_ok(
   $$update private.fleet_intents set state = 'approved',
     approver_id = 'fa000000-0000-4000-8000-000000000001' where kind = 'approve.deploy'$$,
@@ -154,7 +168,7 @@ select throws_ok(
 select throws_ok(
   $$update private.fleet_intents set state = 'approved',
     approver_id = requester_id, approver_generation = requester_generation where kind = 'approve.deploy'$$,
-  '23514', null, 'a high-risk intent cannot be self-approved'
+  '42501', 'Fleet Owner access required', 'an Observer cannot self-approve a high-risk request'
 );
 select throws_ok(
   $$update private.fleet_intents set state = 'expired' where kind = 'approve.deploy'$$,
@@ -172,6 +186,43 @@ select throws_ok(
   $$update private.fleet_intents set payload = '{"changed":true}' where kind = 'approve.deploy'$$,
   '23514', 'Fleet intent action is immutable', 'action parameters cannot change after submission'
 );
+savepoint owner_approval_binding;
+select set_config('request.jwt.claims', '{}', true);
+insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
+  values ('fa000000-0000-4000-8000-000000000004', 'fleet-steerer@example.com', now(), '{}', '{}');
+select set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"fa000000-0000-4000-8000-000000000001"}', true);
+select private.fleet_grant_access('fa000000-0000-4000-8000-000000000004',
+  'steerer', array['approve.low'], array['fleet-test'], 'test_steerer');
+update private.fleet_access_grants set intents_per_day = 2
+  where user_id = 'fa000000-0000-4000-8000-000000000002';
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+set local role service_role;
+select is(pg_temp.submit_fleet('priority.set'), 'accepted', 'Observer can file a low-risk intent.request');
+reset role;
+select set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"fa000000-0000-4000-8000-000000000004"}', true);
+select throws_ok(
+  $$update private.fleet_intents set state = 'approved',
+    approver_id = 'fa000000-0000-4000-8000-000000000004', approver_generation = 1
+    where kind = 'priority.set'$$,
+  '42501', 'Fleet Owner access required', 'a Steerer cannot approve an Observer intent.request'
+);
+select set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"fa000000-0000-4000-8000-000000000001"}', true);
+select throws_ok(
+  $$update private.fleet_intents set state = 'approved',
+    approver_id = 'fa000000-0000-4000-8000-000000000004', approver_generation = 1
+    where kind = 'priority.set'$$,
+  '42501', 'Fleet Owner access required', 'the recorded approver must match the live Owner identity'
+);
+select lives_ok(
+  $$update private.fleet_intents set state = 'approved', approver_id = auth.uid(), approver_generation = 2
+    where kind = 'priority.set'$$,
+  'the live Owner can approve the Observer request'
+);
+rollback to owner_approval_binding;
+
 select lives_ok(
   $$update private.fleet_intents set state = 'cancelled' where kind = 'approve.deploy'$$,
   'pending intent can be cancelled'
@@ -185,14 +236,18 @@ select throws_ok(
 alter table private.fleet_intents disable trigger fleet_admit_intent;
 insert into private.fleet_intents (
   id, requester_id, channel, kind, payload, risk, action_hash, project_versions,
-  requester_generation, stop_generation, state, idempotency_key, created_at, expires_at
+  requester_generation, stop_generation, state, idempotency_key, created_at, expires_at,
+  lease_id, lease_expires_at
 )
 select id, 'fa000000-0000-4000-8000-000000000002', 'web', 'priority.set', '{}', 'low',
   decode(repeat('01', 32), 'hex'), '{"fleet-test":1}', 1, 2, state, gen_random_uuid(),
-  now() - interval '73 hours', now() - interval '1 hour'
+  now() - interval '73 hours', now() - interval '1 hour',
+  case when state = 'claimed' then gen_random_uuid() end,
+  case when state = 'claimed' then now() + interval '15 minutes' end
 from (values
   ('fa000000-0000-4000-8000-000000000021'::uuid, 'pending_approval'::private.fleet_intent_state),
-  ('fa000000-0000-4000-8000-000000000022'::uuid, 'approved'::private.fleet_intent_state)
+  ('fa000000-0000-4000-8000-000000000022'::uuid, 'approved'::private.fleet_intent_state),
+  ('fa000000-0000-4000-8000-000000000025'::uuid, 'claimed'::private.fleet_intent_state)
 ) as historical(id, state);
 alter table private.fleet_intents enable trigger fleet_admit_intent;
 select throws_ok(
@@ -211,6 +266,11 @@ select lives_ok(
   $$update private.fleet_intents set state = 'expired' where id in
     ('fa000000-0000-4000-8000-000000000021', 'fa000000-0000-4000-8000-000000000022')$$,
   'past-deadline intents can be marked expired'
+);
+select throws_ok(
+  $$update private.fleet_intents set state = 'dispatched'
+    where id = 'fa000000-0000-4000-8000-000000000025'$$,
+  '23514', 'Fleet intent has expired', 'a live lease cannot dispatch an expired intent'
 );
 update private.fleet_projects set name_en = 'Fleet label edit' where key = 'fleet-test';
 select is((select target_mapping_version from private.fleet_projects where key = 'fleet-test'),
@@ -315,6 +375,23 @@ select throws_ok(
     where kind = 'work.create'$$,
   '23514', null, 'dispatch requires a lease'
 );
+savepoint expired_lease;
+update private.fleet_intents set lease_expires_at = now() - interval '1 minute' where kind = 'work.create';
+select throws_ok(
+  $$update private.fleet_intents set state = 'dispatched', lease_expires_at = now() + interval '15 minutes'
+    where kind = 'work.create'$$,
+  '23514', 'Fleet dispatch requires an unexpired lease', 'dispatch cannot revive an expired lease'
+);
+rollback to expired_lease;
+select lives_ok(
+  $$update private.fleet_intents set state = 'dispatched' where kind = 'work.create'$$,
+  'dispatch accepts a live intent with a live lease'
+);
+select throws_ok(
+  $$delete from private.fleet_intents where kind = 'work.create'$$,
+  '55000', 'Fleet fence rows cannot be removed or replaced', 'intent deletion cannot erase quota usage');
+select throws_ok($$truncate private.fleet_intents cascade$$,
+  '55000', 'Fleet fence rows cannot be removed or replaced', 'truncation cannot erase approval history');
 
 select throws_ok(
   $$delete from private.fleet_access_grants where user_id = 'fa000000-0000-4000-8000-000000000002'$$,

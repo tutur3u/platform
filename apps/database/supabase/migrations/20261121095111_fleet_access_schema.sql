@@ -172,6 +172,10 @@ create trigger fleet_preserve_control_fence
 before insert or delete or truncate on private.fleet_control
 for each statement execute function private.fleet_reject_fence_reset();
 
+create trigger fleet_preserve_intent_history
+before delete or truncate on private.fleet_intents
+for each statement execute function private.fleet_reject_fence_reset();
+
 -- tuturuuu: no-grant (trigger)
 create function private.fleet_check_grant()
 returns trigger
@@ -302,15 +306,27 @@ begin
     raise exception 'Invalid Fleet intent state transition' using errcode = '23514';
   end if;
   if new.state is distinct from old.state then
-    if new.state in ('approved', 'claimed') and v_now >= old.expires_at then
+    if new.state in ('approved', 'claimed', 'dispatched') and v_now >= old.expires_at then
       raise exception 'Fleet intent has expired' using errcode = '23514';
+    end if;
+    if new.state = 'dispatched' and (
+      old.lease_expires_at <= v_now or (new.lease_expires_at > v_now) is distinct from true
+    ) then
+      raise exception 'Fleet dispatch requires an unexpired lease' using errcode = '23514';
     end if;
     if new.state = 'expired' and v_now < old.expires_at then
       raise exception 'Fleet intent has not expired' using errcode = '23514';
     end if;
   end if;
-  if old.state = 'pending_approval' and new.state = 'approved' and new.approver_id is null then
-    raise exception 'Fleet approval requires an approver' using errcode = '23514';
+  if old.state = 'pending_approval' and new.state = 'approved' then
+    if new.approver_id is null then
+      raise exception 'Fleet approval requires an approver' using errcode = '23514';
+    end if;
+    if old.requires_owner_approval then
+      if new.approver_id is distinct from private.fleet_require_owner() then
+        raise exception 'Fleet Owner access required' using errcode = '42501';
+      end if;
+    end if;
   end if;
   if old.state <> 'pending_approval'
     and row(new.approver_id, new.approver_generation)
