@@ -1,0 +1,290 @@
+---
+title: Fleet access
+description: Tiered, audited access for people other than the platform owner to read fleet status, ask questions and steer agent work through Mira, Mastermind web and the Mastermind mobile app.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+**Status: proposed.** Only the transitional [Slice 0](#transitional-slice-0) exists
+today. Slices 1 and later need the approvals named in the
+[implementation plan](#implementation-plan).
+
+Fleet access lets named teammates (for example an operations lead) read the
+state of the agent fleet, ask about it, and steer work without routing every
+request through the platform owner. Agents never act on a teammate's free text.
+Every request becomes a typed, authorised **intent**, and the orchestrator
+consumes only intents the access rules allow.
+
+## Scope and default
+
+- **Scope:** every surface that serves fleet data or accepts fleet requests from
+  someone other than the owner. That covers the Mira desks (WhatsApp, Zalo,
+  Discord), the Fleet area of Mastermind web, the Fleet view of the Mastermind
+  mobile section, the `/api/v1/fleet/**` API and the intent queue the
+  orchestrator reads.
+- **Default:** deny. Nobody but the owner has fleet access until the owner
+  grants it. A grant names one person, one tier, a set of projects and an
+  optional expiry.
+- **Owner:** the configured owner UUID that also holds a live explicit root
+  `manage_mastermind` grant (see [Mobile Mastermind](/platform/features/mobile-mastermind#access-rule)).
+  Both checks are required. The Owner tier cannot be granted.
+- **Boundary with Mastermind:** a fleet grant admits only Fleet routes and
+  `/api/v1/fleet/**`. Existing Mastermind shell data, hub, push and mobile
+  Mastermind routes keep their owner-only gates.
+- **Supplements, never replaces:** fleet approval adds to existing custody,
+  review, CI and release gates. An approved deploy intent still needs every gate
+  the release runbooks require.
+- **Exceptions:** the time-limited Slice 0 Observer described below.
+
+## Tiers
+
+Tiers are ordered. Each tier holds every capability of the tiers below it, but
+only inside the projects its grant names.
+
+| Tier     | Purpose                                 | Ceiling                                                                                                    |
+| -------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Observer | Read status and ask questions           | `status.read`, `ask`, `intent.request` (a steer request that always waits for the owner)                  |
+| Steerer  | Shape work inside assigned projects     | adds `work.create`, `work.redirect`, `priority.set`, `comment`, `approve.low`                              |
+| Operator | Approve releases inside assigned scopes | adds `approve.deploy`, `approve.production_change`, `lane.pause`                                           |
+| Owner    | Everything                              | adds `approve.migration`, `approve.billing`, `access.grant`, `access.revoke`, `fleet.stop`, `fleet.resume` |
+
+A grant may hold fewer capabilities than its tier's ceiling, never more; the
+database rejects a grant above its ceiling. `approve.migration` stays
+Owner-only because production migrations need explicit owner approval.
+Credentials, secrets and DNS have no fleet capability: no tier can ask the
+fleet to read, rotate or reveal them.
+
+## Intent kinds and binding
+
+Each intent kind defines its request capability, its approval capability and a
+strict payload schema made of enumerated values and server-resolved
+identifiers.
+
+| Kind                        | Request capability | Approval capability         | Risk     |
+| --------------------------- | ------------------ | --------------------------- | -------- |
+| `status_question`           | `ask`              | none                        | none     |
+| `comment`                   | `comment`          | none                        | low      |
+| `priority.set`              | `priority.set`     | `approve.low` (self)        | low      |
+| `approve.item`              | `approve.low`      | `approve.low` (self)        | low      |
+| `work.create`               | `work.create`      | `approve.low` (self, in budget) | medium |
+| `work.redirect`             | `work.redirect`    | `approve.low` (self, in budget) | medium |
+| `lane.pause`                | `lane.pause`       | `lane.pause`                | high     |
+| `approve.deploy`            | `approve.deploy`   | `approve.deploy`            | high     |
+| `approve.production_change` | `approve.production_change` | `approve.production_change` | high |
+
+An Observer `ask` executes as a read. Every Observer steer request is filed as
+`intent.request` and needs Owner approval of the exact action.
+
+- **Authoritative project:** the server resolves each target (lane, thread,
+  repository path, deployment) to its owning project from the project catalog.
+  A request naming a target outside the requester's projects is refused, even
+  when the request labels another project. The catalog's target mapping
+  carries a version number.
+- **Immutable approval:** an approval binds one intent ID and a hash of the
+  canonical action: kind, authoritative project IDs, every execution parameter,
+  resolved targets, environment and commit SHA. Project ownership is
+  re-resolved before dispatch, and any drift voids the approval.
+- **High risk:** needs an approver other than the requester and an interactive
+  step-up (fresh tuturuuu.com sign-in within five minutes). Chat channels can
+  file high-risk requests but cannot approve them.
+- **Critical** actions (migration, billing, access, fleet stop) stay
+  Owner-only and outside the intent queue's self-service paths.
+
+## Protections
+
+1. **No secrets or private data.** Fleet answers come from a digest of
+   schema-validated status fields (lane, project, state, ETA, short SHA,
+   release title, readiness item). Titles and readiness items are controlled
+   values or explicitly approved display strings. Aggregates are computed only
+   from the caller's authorised projects, and the digest is filtered by those
+   projects before any answer. Receipt reads are scoped to the requester or an
+   authorised approver. It never includes raw
+   coordination files, environment values, logs, transcripts, emails, phone
+   numbers, customer names or host paths.
+2. **No production, deploy, billing or credential action below Operator.**
+3. **Every steer is audited.** Each intent, decision and refusal writes an
+   append-only event with actor, channel, time, action and a reason code. The
+   verbatim quote is stored separately, redacted, readable only by the Owner and
+   the requester, and deleted after 90 days.
+4. **Rate and budget caps per person.** Each grant carries
+   `questions_per_hour` (default 30), `intents_per_day` (default 10) and
+   `model_budget_per_month`. The database enforces them atomically with the
+   insert. Exhausted caps defer the request and audit the refusal.
+5. **Requests are untrusted input.** Execution briefs are built only from
+   enumerated values and server-resolved identifiers. Quotes and comments stay on
+   the display path and never reach an executing lane. Ask runs in a tool-free
+   model context over the caller's scoped digest only. Lane tool and target
+   restrictions are enforced by the orchestrator, independent of model output.
+6. **Live authorisation, revocation and stop.** Every protected read and
+   mutation checks the live grant. Grants and the fleet stop carry generation
+   numbers. The consumer rechecks requester and approver grants and the stop
+   generation at claim and dispatch, and the lease and generation fences are
+   enforced at the side-effect boundary itself, together with the approved
+   target-to-project mapping version, atomically with the action. An operation
+   that cannot honour the fence is rejected. A stale lease, generation or
+   mapping version fails closed and voids the approval. An uncertain dispatch
+   is reconciled before any retry. Resume after a stop requires fresh authorisation for every
+   fenced intent.
+7. **Verified identity.** See [Identity](#identity). Display names prove
+   nothing; an unlinked sender gets the desk's ordinary behaviour.
+
+## Identity
+
+- **tuturuuu.com account:** the source of truth for a person and their grant.
+- **Channel identity:** a WhatsApp, Zalo or Discord sender linked to that
+  account. Linking: the person signs in to the Fleet page and takes a
+  single-use code valid for ten minutes, sends it to the desk in a private
+  one-to-one conversation, then confirms the pending link on the signed-in page.
+  The server stores a keyed hash of the provider sender ID, unique per
+  provider account, together with the linked private conversation.
+- **Event binding:** desks accept only authenticated provider events from
+  approved private conversations. Linking, digest reads and submissions require
+  API-verifiable event evidence from trusted ingress. The evidence binds the
+  provider account, sender, conversation, event ID, the one permitted
+  operation and a hash of its inputs. The API consumes the event ID atomically
+  within its provider account, so a replay fails. The server resolves the actor
+  from the linked provider account, sender and private conversation; desk
+  credentials alone confer no actor authority.
+- **Person registry:** each desk's registry mirrors links and tiers for
+  routing only. The API decides every request.
+
+## Surfaces
+
+### Mastermind web
+
+The Fleet area lives in Mastermind web (`apps/mastermind`) at
+`mastermind.tuturuuu.com/{locale}/fleet`:
+
+- **Status:** lanes, releases and readiness items for the person's projects,
+  with the digest's generated time.
+- **Ask:** a question box answered from the scoped digest.
+- **Requests:** the person's intents and typed receipt states.
+- **Approvals:** intents waiting for this person's capability.
+- **Access (Owner only):** grants, revocation, caps, fleet stop and the audit
+  log.
+
+Admission binds the verified Access identity to the app session and admits a
+fleet grantee only to Fleet routes. This changes the Mastermind web admission
+rule and ships in its own reviewed slice with release-authority approval. All
+strings ship in English and Vietnamese.
+
+### Mira chat
+
+A verified person can ask about status, readiness and timelines. Mira answers
+from the scoped digest and says when it is more than one hour old. A steering
+request is acknowledged and filed as an intent; Mira never runs it.
+
+### Mastermind mobile
+
+A Fleet view appears to anyone whose fleet access answer is enabled, separate
+from the owner-only Mastermind entry and its offline fallback. The app decides
+nothing; the API enforces every rule.
+
+## Intent queue
+
+```
+person ─▶ surface (web / Mira / mobile)
+        ─▶ POST /api/v1/fleet/intents   (typed payload; quote kept apart)
+        ─▶ server: resolve actor and targets, authorise, classify, cap, audit
+        ─▶ pending_approval | approved | rejected
+        ─▶ approver decides (bound to the action hash) ─▶ approved
+        ─▶ consumer claims (lease + generations) ─▶ dispatches ─▶ receipts
+```
+
+- **States:** `pending_approval`, `approved`, `rejected`, `claimed`,
+  `dispatched`, `done`, `failed`, `expired`, `cancelled`. Pending intents
+  expire after 72 hours. Transitions are enforced in the database.
+- **Consumption:** the orchestrator claims eligible intents with a 15-minute
+  lease and an idempotency key, then writes typed receipts against its current
+  lease only.
+
+### Machine principals
+
+| Principal        | May                                                                 |
+| ---------------- | ------------------------------------------------------------------- |
+| Mira desk        | read the scoped digest and submit intents for verified events only  |
+| Consumer         | claim eligible intents and write receipts against its current lease |
+| Digest publisher | write schema-validated digests                                      |
+
+Machine credentials confer no approval or grant authority.
+
+## Transitional Slice 0
+
+Until the API exists, the desk host runs a local Observer rule:
+
+- the person registry holds an owner-confirmed Observer entry with the owner's
+  written authorisation as provenance;
+- before every reply and every queue write, the desk verifies the provider's
+  authentication, matches the configured provider account, sender and private
+  one-to-one conversation, rejects replayed events, and checks the stop file,
+  revocation and expiry;
+- a scheduled script on the desk host writes a sanitised digest from lane
+  receipts every 15 minutes, using the field allowlist above;
+- desks answer the Observer through a tool-free path from the Owner-approved
+  project digest only;
+- steering stays disabled: a steer request is only appended to a local queue
+  for Owner review, and that queue cannot dispatch work;
+- access ends on the local stop file, on revocation, or at the earlier of API
+  cutover and the 2026-12-21 expiry.
+
+**Exception:** Slice 0 lacks event binding and signed-in confirmation, so it is
+limited to one Observer grant, read-only digest answers and owner-gated
+requests.
+
+## Data model
+
+Base tables stay private with no grants to `anon` or `authenticated`. Callers
+reach them through `SECURITY DEFINER` functions with pinned `search_path`.
+Each function revokes `PUBLIC` execution at creation and grants execution only
+to its designated roles. The functions derive the actor from trusted request identity, scope
+every read by live capability and project, and enforce quotas, state
+transitions and audit writes atomically.
+
+| Table                         | Purpose                                                       |
+| ----------------------------- | ------------------------------------------------------------- |
+| `fleet_projects`              | catalog: key, en/vi names, default risk, target resolution    |
+| `fleet_access_grants`         | person, tier, capabilities, caps, expiry, status, generation  |
+| `fleet_access_grant_projects` | grant to project keys                                         |
+| `fleet_channel_identities`    | channel, keyed sender hash, verified time                     |
+| `fleet_intents`               | kind, typed payload, risk, action hash, state, lease, receipts |
+| `fleet_intent_quotes`         | redacted quote, 90-day retention                              |
+| `fleet_audit_events`          | append-only events with reason codes                          |
+| `fleet_control`               | singleton stop state and generation                           |
+
+Triggers reject updates and deletes on audit events, capabilities above the
+tier ceiling and Owner-tier grants. Fleet access is not a workspace role
+permission and is never implied by creator, `admin` or default permissions.
+
+## Implementation plan
+
+| Slice | Outcome                                                                                       | Owner lane                   | Gate |
+| ----- | --------------------------------------------------------------------------------------------- | ---------------------------- | ---- |
+| 0     | Local Observer on the desk host (above)                                                       | Mira desk host               | owner authorisation; verified provider identity |
+| 1     | Migrations: private tables, definer functions, triggers, quotas; SQL tests                    | Database (Codex)             | explicit owner approval before production |
+| 2     | Observer reads: `GET /api/v1/fleet/access`, digest publish and scoped read, `@tuturuuu/internal-api` client | Web API (Codex) | 1 |
+| 3     | Pending submissions: `POST /api/v1/fleet/intents`, identity linking, event binding            | Web API (Codex)              | 2 |
+| 4     | Mira desks move to the API; Slice 0 retired                                                   | Mira desk host (Codex)       | 3 and 5 acceptance |
+| 5     | Dry-run consumer: claims, leases, generations, receipts without dispatch, on Cloudflare scheduling | Orchestrator          | 3 |
+| 6     | Mastermind web Fleet area and admission change (en and vi)                                    | Design (Claude Opus)         | 2, release approval |
+| 7     | Mastermind mobile Fleet view                                                                  | Mobile design (Claude Opus)  | 2 |
+| 8     | Steerer: live dispatch for low and medium risk                                                | Orchestrator, then Owner grant | replay, revocation-race, isolation and web/mobile admission tests |
+| 9     | Operator tier                                                                                 | separate design review       | 8 |
+
+Slice 4 cutover requires Slice 5 acceptance. Slice 8 live dispatch requires
+passing lease, reconciliation and durable stop-fence tests. New scheduling and
+delivery for slices 2 and later run on Cloudflare.
+
+## Regression coverage
+
+Each slice links its coverage here when it lands:
+
+- Slice 1: `apps/database/supabase/tests/fleet-access.sql` — default deny,
+  no client table grants, tier ceiling, Owner-only functions, append-only
+  audit, atomic quotas, generations.
+- Slices 2–3: route tests under `apps/web/src/app/api/v1/fleet/**` —
+  cross-project target denial, action-hash binding, replay rejection, quote
+  isolation, live revocation.
+- Slice 5: consumer tests for lease expiry, stale generations, idempotent
+  claims and the stop fence.
+- Slice 4: desk tests for unlinked senders, group chats, injected instructions
+  and stale digests.

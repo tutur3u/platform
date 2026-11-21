@@ -128,6 +128,7 @@
               "platform/features/mobile-mastermind-machines",
               "platform/features/mobile-mastermind-answered-elsewhere",
               "platform/features/mobile-mastermind-decision-detail",
+              "platform/features/fleet-access",
               "platform/features/mira-client-actions",
               "platform/features/colab",
               "platform/features/lettin",
