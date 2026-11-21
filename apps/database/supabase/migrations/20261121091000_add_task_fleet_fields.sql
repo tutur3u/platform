@@ -36,7 +36,7 @@ ALTER TABLE public.tasks
           && @.kind.type() == "string" && @.kind == "link"
           && @.url.type() == "string"
           && @.url like_regex "^https?://.+$" flag "is"
-          && (!exists(@.title) || (@.title.type() == "string" && @.title like_regex "^.{1,256}$" flag "s"))
+          && (!exists(@.title) || (@.title.type() == "string" && @.title like_regex "^.{1,128}.{0,128}$" flag "s"))
           && !exists(@.keyvalue() ? (@.key != "kind" && @.key != "url" && @.key != "title")))'
       ) = task_resources
     ELSE task_resources IS NULL END
