@@ -47,7 +47,7 @@
     "GATEWAY_WEB_FAMILIES": "",
   },
   // Worker secrets the deploy requires on the live gateway (names only; values
-  // are set with `wrangler secret put`). TRUSTED_PROXY_ORIGIN_SECRET signs the
+  // are set in the Worker secret store). TRUSTED_PROXY_ORIGIN_SECRET signs the
   // visitor IP for Web's TRUSTED_PROXY=cloudflare-origin and must equal Web's
   // TRUSTED_PROXY_ORIGIN_SECRET.
   "secrets": { "required": ["TRUSTED_PROXY_ORIGIN_SECRET"] },

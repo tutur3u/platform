@@ -206,7 +206,7 @@ jobs:
           python3 scripts/ci/mastermind-native-artifact.py config apps/mastermind
           python3 scripts/ci/mastermind-native-artifact.py seal apps/mastermind --receipt "$RUNNER_TEMP/mastermind-native-artifact.json"
           python3 scripts/ci/mastermind-native-artifact.py pack apps/mastermind --receipt "$RUNNER_TEMP/mastermind-native-artifact.json" --archive "$RUNNER_TEMP/mastermind-native.tar.gz"
-      - name: Upload Worker, assets, emitted Wrangler config and source receipt
+      - name: Upload Worker, assets, emitted config and source receipt
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mastermind-cutover-${{ env.SOURCE_SHA }}
@@ -294,20 +294,43 @@ jobs:
         id: secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
-        working-directory: apps/mastermind
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
-          if bun x --no-install wrangler secret list --name tuturuuu-mastermind --format json > "$RUNNER_TEMP/mastermind-secrets.json" 2> "$RUNNER_TEMP/mastermind-secrets.err"; then
-            jq -e --argjson required '["CF_ACCESS_TEAM_DOMAIN","CF_ACCESS_AUD","MASTERMIND_OWNER_EMAIL","OWNER_IDS","TUTURUUU_APP_COORDINATION_SECRET"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/mastermind-secrets.json" > /dev/null
-            echo 'exists=true' >> "$GITHUB_OUTPUT"
-          elif grep -qi 'not found\|10007' "$RUNNER_TEMP/mastermind-secrets.err"; then
-            # First release: the Worker does not exist yet and fails closed
-            # with 503 until its secrets are set.
-            echo 'exists=false' >> "$GITHUB_OUTPUT"
-          else
-            cat "$RUNNER_TEMP/mastermind-secrets.err"
-            exit 1
-          fi
+          # Names only. A missing Worker is a first release and stays closed
+          # with 503 until its secrets are set. Any other failure stops the job.
+          node --input-type=module <<'EOF' >> "$GITHUB_OUTPUT"
+          const required = ["CF_ACCESS_TEAM_DOMAIN","CF_ACCESS_AUD","MASTERMIND_OWNER_EMAIL","OWNER_IDS","TUTURUUU_APP_COORDINATION_SECRET"];
+          const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          if (!account || !token) {
+            console.error("Missing Cloudflare account or credential");
+            process.exit(1);
+          }
+          const url = `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/tuturuuu-mastermind/secrets`;
+          const response = await fetch(url, {
+            headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+            redirect: "error",
+            signal: AbortSignal.timeout(30_000),
+          });
+          let body = null;
+          try { body = await response.json(); } catch { body = null; }
+          const gone = response.status === 404 || (Array.isArray(body?.errors) && body.errors.some((entry) => entry?.code === 10007));
+          if (gone) {
+            process.stdout.write("exists=false\n");
+            process.exit(0);
+          }
+          if (!response.ok || !Array.isArray(body?.result)) {
+            console.error(`secret name check failed with HTTP ${response.status}`);
+            process.exit(1);
+          }
+          const names = new Set(body.result.map((entry) => entry?.name));
+          const absent = required.filter((name) => !names.has(name));
+          if (absent.length > 0) {
+            console.error(`missing required secret names: ${absent.join(", ")}`);
+            process.exit(1);
+          }
+          process.stdout.write("exists=true\n");
+          EOF
       # A rerun keeps its original ref and SHA; only the current production
       # head may publish, checked after this job holds the deploy slot.
       - name: Admit only the current production head

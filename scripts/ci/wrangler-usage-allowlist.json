@@ -46,6 +46,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete in the service PR that moves it to cloudflare.config.ts, cf types, Build Output parity and cf deploy --prebuilt."
     },
+    "planner-script-paths": {
+      "reason": "The CI plan catalog lists existing native-wrangler script paths as affected-file globs. Those scripts stay on their own allowlist entries. The catalog invokes no Wrangler CLI and publishes nothing.",
+      "owner": "CI planner maintainers",
+      "removal": "Remove when the catalog no longer names those script paths, or the scripts are renamed off the Wrangler token and their own entries are gone."
+    },
     "producer-inventory": {
       "reason": "Compiler qualification detects pre-existing wrangler types producers and cf types equivalents; its detector and data-only regression fixture perform no invocation.",
       "owner": "Development tooling and native type-check qualification owner",
@@ -60,6 +65,16 @@
       "reason": "Root wrangler devDependency supplies the CLI for every remaining gap; trustedDependencies, .wrangler ignores and policy tests cover @cloudflare/vite-plugin 1.x, which depends on the wrangler library.",
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
+    },
+    "vinext-family-schema": {
+      "reason": "The vinext route-family table copies the OpenNext family schema and sets wrangler to null, recording that the family has no Wrangler config. No CLI, SDK, or config path is named.",
+      "owner": "Web vinext and Cloudflare migration maintainers",
+      "removal": "Remove when the family schema drops the wrangler key or the vinext family table is deleted."
+    },
+    "vinext-local-workerd": {
+      "reason": "The vinext Workers-fetch check starts local workerd through the Wrangler SDK unstable_startWorker, with remote disabled and provider auth denied. It writes a scratch config and publishes nothing.",
+      "owner": "Web vinext runtime maintainers",
+      "removal": "Remove when this fetch-cache proof runs on a local runner that does not load the Wrangler SDK or write a Wrangler config."
     },
     "void-emitted-artifact-seal": {
       "reason": "Public merged-main qualification seals the Meet build exactly as Void emits it: dist/server/wrangler.json and the hidden .wrangler/deploy/config.json pointer, plus a digest of the checked-in apps/meet-realtime/wrangler.jsonc. The workflows only set WRANGLER_SEND_METRICS=false. No Wrangler CLI or SDK is invoked and nothing is published.",
@@ -263,10 +278,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7608",
-        "reason": "REV-7608: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/c7a3a4f389c3ec775ca13bc23ce82600d0a82a63",
+        "reason": "The dedicated-host deploy keeps metrics off on both jobs and checks Worker secret names through the Cloudflare API. It does not invoke the Wrangler CLI, so lines and uses stay at 2. The void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
+      "digest": "373bb5a635ce0b333ae46e905c5cf5fe5d1eaab687846d2ac8c6510f68bb46c4"
     },
     ".github/workflows/meet-cloudflare.yaml": {
       "lines": 29,
@@ -470,14 +485,14 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 14,
-      "uses": 16,
+      "lines": 12,
+      "uses": 14,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
-        "reason": "Gateway traffic moves through cf workers deployments create (the annotated 100% request with the default code update strategy, settled readback and the observability settings sync) for both uploads. The rollback target comes from the validated settings snapshot. The remaining references are the family Worker OpenNext publication, the family secret-name check and the Wrangler gateway upload kept until GATEWAY_CF_VERSION_UPLOAD_LIVE."
+        "decision": "https://github.com/tutur3u/platform/commit/4178955fdab0990a8e70b0cafbb014b2f4050751",
+        "reason": "The vinext family check removed two Wrangler mentions. Lines fell from 14 to 12 and uses from 16 to 14. The family deploy, secret-name check, and gateway upload fallback remain, and publish calls stay at 2."
       },
-      "digest": "62859f6b47d5284b8eec035ba9ee491d12d7f0feae2120dd94f6d8bad91d8924"
+      "digest": "2cd2ca57c620192e4ea1dd3094c8fbfdf3d4a3d0a62f06e248570ec8beb92541"
     },
     ".github/workflows/web-start-candidate.yaml": {
       "lines": 1,
@@ -914,10 +929,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
-        "reason": "The gateway config pins the Tuturuuu account id so any credential deploys to that account, and a config file digest covers every line. No Wrangler invocation or route changes; the single Wrangler line and use are unchanged, and the pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/c2e7e43dc42fe44a1a828348103e4cd214d397ff",
+        "reason": "Gateway config after the trusted-proxy secret name and the learn/nova mounts. The secret comment no longer spells a Wrangler command, so the file stays one config use and zero publish calls. The pending-migration gap is unchanged."
       },
-      "digest": "782214f22a0e82ed1e17825b036b3dfb3c13e8eb378e5cd950379ac446fa2b43"
+      "digest": "d59918a1a323c1e93ce92bd752df39e494789cfa01500bc485e491a45c111aa5"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -1204,10 +1219,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 disabled public Worker development origins (workers_dev/preview_urls false); config content only."
+        "decision": "https://github.com/tutur3u/platform/commit/b6a194eef819809bc23a3093a8955287484d1d80",
+        "reason": "Email Routing config content changed when the Mail Worker binding landed. The only Wrangler token is the config schema path, lines and uses stay 2, and there is no publish command. The pending-migration gap and its removal condition remain."
       },
-      "digest": "4585b7e4bd06457395f808b2696af3582bfe78acccf73909256d28a43e1d7ee6"
+      "digest": "bf7bf2d6572c24aab8648db3bdac6a7ffc43eaf070c363e493aeff18ade87c71"
     },
     "apps/marketing/.gitignore": {
       "lines": 1,
@@ -2097,6 +2112,26 @@
       "digest": "74e630c6e3dfa4183f1096f3e78a0428834cb91a1b4b5048edf9153afbbfc4c9",
       "kind": "config"
     },
+    "apps/web/cloudflare/vinext/families.json": {
+      "lines": 6,
+      "uses": 6,
+      "gap": "vinext-family-schema",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/0a5a567abc8430ced58fe12454c140c9a07a2f4b",
+        "reason": "The vinext family table sets wrangler to null on every family, recording that none has a Wrangler config. No CLI, SDK, or config path is named."
+      },
+      "digest": "e237a8c89edec0db0ce1de5b5e31d91cf0ec0d5387e1b9564984b40dd173bbb2"
+    },
+    "apps/web/cloudflare/vinext/workers-fetch.runtime.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "vinext-local-workerd",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c8a0fc2f7240d10a9cfbe873b7a77118272e8d5",
+        "reason": "Local workerd proof for Workers fetch cache modes. unstable_startWorker runs with remote disabled and provider auth denied. It publishes nothing."
+      },
+      "digest": "36a84742ad961b6df34f2fdf82514882e6fd6dc4b850309596e454d6318ad609"
+    },
     "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
       "lines": 3,
       "uses": 3,
@@ -2112,10 +2147,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/300fe9fe8c7f309ba60d8c00476c8e82e2b2fa24",
-        "reason": "apps/web pins @opennextjs/cloudflare next to the existing Wrangler devDependency; the OpenNext adapter invokes Wrangler to build and deploy the route family Workers. The void-wave1-publication gap and its removal condition remain for the existing usage."
+        "decision": "https://github.com/tutur3u/platform/commit/da9b6bfabcfaddc664c80a0c4b1f7198cbee45ae",
+        "reason": "The OpenNext family build script line only gained a JSON comma when vinext family scripts were added. The command is unchanged and does not invoke the Wrangler CLI. Token counts stay at two. The void-wave1-publication gap remains."
       },
-      "digest": "3560a099c5baeb232c85182ae178cb45af61f9ec64dab5a3b80fcfdf7ac3f85a"
+      "digest": "c40958cfd7fa15f16d2bfc7034ed9702b1b943520176824878b09b20fc136ead"
     },
     "apps/web/src/__tests__/lettin-fixture-diagnostics.test.ts": {
       "lines": 3,
@@ -2757,6 +2792,16 @@
       },
       "digest": "870ee7dc37ba959b9cf0e198972ba5843606a36acbccdcc3bb58c4bf40b73626"
     },
+    "scripts/ci/ci-plan-catalog.json": {
+      "lines": 8,
+      "uses": 8,
+      "gap": "planner-script-paths",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2a62e44de3e0aa0689585848e79d3f25eda6b27",
+        "reason": "The plan catalog names existing native-wrangler script paths as affected-file globs. Those scripts stay allowlisted. The catalog invokes no Wrangler CLI."
+      },
+      "digest": "3ec0711591ad042dfd247a17f34b08e02fad3065ae38bbc2178df14cf92a509a"
+    },
     "scripts/ci/cms-cutover-smoke.mjs": {
       "lines": 1,
       "uses": 1,
@@ -2872,10 +2917,10 @@
       "uses": 5,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
-        "reason": "Gateway deploy config writer reads cloudflare.config.ts for operator merge parity while OpenNext family deploy configs remain on the legacy JSONC shape."
+        "decision": "https://github.com/tutur3u/platform/commit/4178955fdab0990a8e70b0cafbb014b2f4050751",
+        "reason": "family-spec reads the OpenNext family config path. Duplicate comments no longer name Wrangler, so lines and uses stay 5. It does not invoke the CLI or publish."
       },
-      "digest": "d6c8e9ef37cb66793a0ad104d2718eecaae4d0f8d4ca52a10f473533baab4f28"
+      "digest": "c15cd83a9a79023618cb5905a218e375a029aaf11369d86efac9e3b0ef73cd1f"
     },
     "scripts/ci/gateway-deploy-config.test.mjs": {
       "lines": 1,
@@ -3352,10 +3397,10 @@
       "uses": 1,
       "gap": "shared-toolchain",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/commit/c7a3a4f389c3ec775ca13bc23ce82600d0a82a63",
+        "reason": "The publication detector also matches the cf prebuilt deploy used by the Mastermind host. The Wrangler token stays a denial regex, lines and uses stay 1, and the pattern still rejects wrangler deploy and secret commands."
       },
-      "digest": "7902b728885910d8a84d66eb479e4e73fa343225b451cdce29599cb5f45001aa"
+      "digest": "fcdb939b2964fbf1261cde8911f0425ed03740e631d5a6f16a19eac3f3ad47a2"
     },
     "scripts/ci/public-build.js": {
       "lines": 4,

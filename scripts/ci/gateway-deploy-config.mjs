@@ -234,7 +234,7 @@ export function deployConfig(base, liveBindings, families, env) {
 /**
  * The Worker a flagged family id names and the secret names it must hold: a
  * vinext family's `worker` and its table's `requiredSecrets`, or an OpenNext
- * family's `tuturuuu-web-<id>` and its committed wrangler config.
+ * family's `tuturuuu-web-<id>` and its committed Worker config.
  */
 export function familySpec(id, openNext, vinext, root = ROOT) {
   if (!/^[a-z0-9-]+$/u.test(id)) throw new Error('invalid family id');
@@ -259,7 +259,7 @@ export function familySpec(id, openNext, vinext, root = ROOT) {
   };
 }
 
-/** Secret names a family's committed wrangler config requires. */
+/** Secret names a family's committed Worker config requires. */
 export function requiredSecrets(config) {
   return config.secrets?.required ?? [];
 }

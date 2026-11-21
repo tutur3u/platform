@@ -110,10 +110,14 @@ test('validates exact committed notes delta against production, retaining all un
 test('shared, inline and E2E preflights validate notes rather than trusting ref names', () => {
   for (const name of ['ci-check.yml', 'type-check.yaml']) {
     const workflow = readWorkflow(name);
-    const steps = Object.values(workflow.jobs)[0].steps;
-    const config = steps.find((step) => step.id === 'check_config');
-    assert.match(config.run, /node scripts\/ci\/overflow-notes-ci.js/);
-    assert.match(config.run, /should_run=false/);
+    const configs = Object.values(workflow.jobs).flatMap((job) =>
+      (job.steps ?? []).filter((step) => step.id === 'check_config')
+    );
+    assert.ok(configs.length > 0, `${name} must validate overflow notes`);
+    for (const config of configs) {
+      assert.match(config.run, /node scripts\/ci\/overflow-notes-ci.js/);
+      assert.match(config.run, /should_run=false/);
+    }
   }
   const e2e = readWorkflow('e2e-tests.yaml');
   assert.match(

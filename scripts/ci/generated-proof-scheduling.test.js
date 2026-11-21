@@ -35,6 +35,7 @@ for (const file of ['oxc-check.yaml']) {
       outputs: { should_run: 'true', run_checks: 'true' },
     },
     'duplicate-validation': { result: 'skipped', outputs: {} },
+    plan: { result: 'success', outputs: { run: 'true' } },
   };
 
   test(`${file}: ordinary pushes do not allocate a duplicate-proof runner`, () => {
@@ -102,5 +103,24 @@ for (const file of ['oxc-check.yaml']) {
     };
     assert.equal(admitted(job, { github: {}, needs: proven }), false);
     assert.equal(admitted(job, { github: {}, needs }, true), false);
+    assert.equal(
+      admitted(job, {
+        github: {},
+        needs: { ...needs, plan: { result: 'failure', outputs: {} } },
+      }),
+      true,
+      'a failed plan still runs the check'
+    );
+    assert.equal(
+      admitted(job, {
+        github: {},
+        needs: {
+          ...needs,
+          plan: { result: 'success', outputs: { run: 'false' } },
+        },
+      }),
+      false,
+      'a successful plan with run false skips the check'
+    );
   });
 }

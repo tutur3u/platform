@@ -9,7 +9,7 @@ test('Deepgram SDK imports, dependencies, hosts and environment keys stay absent
     'git',
     [
       'grep',
-      '-ilE',
+      '-nE',
       '@deepgram/|@ai-sdk/deepgram|DEEPGRAM_(API_KEY|ENV)|deepgram\\.com',
       '--',
       '.',
@@ -21,5 +21,26 @@ test('Deepgram SDK imports, dependencies, hosts and environment keys stay absent
 
   // git grep uses status 1 for no matches, distinct from execution failure.
   assert.ifError(result.error);
-  assert.equal(result.status, 1, result.stderr || result.stdout);
+  assert.ok(result.status === 0 || result.status === 1, result.stderr);
+  const matches =
+    result.status === 1 ? [] : result.stdout.split('\n').filter(Boolean);
+  // The sync denylist is the control that refuses to copy the retired key.
+  // It is not an SDK, a host, or a live environment value.
+  const denialRecords = new Set([
+    'apps/docs/build/devops/shared-secret-write.mdx',
+    'scripts/ci/web-cf-env-sync.mjs',
+    'scripts/ci/web-cf-env-sync.test.mjs',
+  ]);
+  for (const match of matches) {
+    const file = match.split(':')[0];
+    assert.ok(denialRecords.has(file), match);
+    assert.match(match, /DEEPGRAM_API_KEY/);
+    assert.doesNotMatch(match, /@deepgram\/|@ai-sdk\/deepgram|deepgram\.com/);
+  }
+  assert.ok(
+    matches.some((match) =>
+      match.startsWith('scripts/ci/web-cf-env-sync.mjs:')
+    ),
+    'the Worker sync denylist must keep refusing DEEPGRAM_API_KEY'
+  );
 });

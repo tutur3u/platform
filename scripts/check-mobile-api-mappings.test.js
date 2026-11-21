@@ -145,11 +145,11 @@ test('all checked-in mobile API paths have a canonical owner', () => {
   assert.deepEqual(result.originRouting.errors, []);
 });
 
-test('accounts reserves only its exact CLI path without claiming a deployed route', () => {
+test('accounts CLI path is the deployed web route, not a reserved placeholder', () => {
   const result = validateMobileApiMappings();
   const reserved = collectReservedCliApiRoutes();
-  assert.ok(reserved.has('/api/v1/admin/accounts'));
-  assert.ok(!result.ownedRoutes.has('/api/v1/admin/accounts'));
+  assert.ok(result.ownedRoutes.has('/api/v1/admin/accounts'));
+  assert.ok(!reserved.has('/api/v1/admin/accounts'));
   assert.deepEqual(
     findUnmappedMobileApiPaths({
       mobilePaths: new Set([
@@ -165,6 +165,6 @@ test('accounts reserves only its exact CLI path without claiming a deployed rout
       mobilePaths: new Set(['/api/v1/admin/accounts']),
       ownedRoutes: result.ownedRoutes,
     }),
-    ['/api/v1/admin/accounts']
+    []
   );
 });

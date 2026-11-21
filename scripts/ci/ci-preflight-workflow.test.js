@@ -157,6 +157,7 @@ for (const [workflowName, jobs] of [['oxc-check.yaml', ['format', 'lint']]]) {
           result: 'success',
           outputs: { should_run: 'true', run_checks: 'true' },
         },
+        plan: { result: 'success', outputs: { run: 'true' } },
         'test-shards': { result: 'success' },
         'root-script-tests': { result: 'success' },
       };
@@ -199,6 +200,19 @@ for (const [workflowName, jobs] of [['oxc-check.yaml', ['format', 'lint']]]) {
         evaluateValidationGate(workflow.jobs[id], needs),
         workflowName === 'oxc-check.yaml'
       );
+      needs.plan = { result: 'failure', outputs: {} };
+      assert.equal(
+        evaluateValidationGate(workflow.jobs[id], needs),
+        true,
+        'a failed plan still runs the check'
+      );
+      needs.plan = { result: 'success', outputs: { run: 'false' } };
+      assert.equal(
+        evaluateValidationGate(workflow.jobs[id], needs),
+        false,
+        'a successful plan with run false skips the check'
+      );
+      needs.plan = { result: 'success', outputs: { run: 'true' } };
       if (id === 'test' || id === 'build') {
         needs['check-ci'].outputs.run_checks = 'true';
         needs['test-shards'].result = 'failure';
