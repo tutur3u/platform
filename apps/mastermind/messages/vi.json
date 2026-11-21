@@ -19,7 +19,8 @@
       "activity": "Hoạt động",
       "approvals": "Phê duyệt",
       "cost": "Chi phí và sức khỏe",
-      "settings": "Thông báo"
+      "settings": "Thông báo",
+      "fleetAccess": "Quyền truy cập đội máy"
     },
     "sidebar": {
       "open": "Mở điều hướng",

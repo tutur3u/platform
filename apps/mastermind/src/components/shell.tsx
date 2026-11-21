@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Server,
   ShieldCheck,
+  Users,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Structure } from '@tuturuuu/ui/custom/structure';
@@ -51,6 +52,12 @@ export const NAV: readonly NavEntry[] = [
   { id: 'inbox', label: 'nav.inbox', icon: Inbox },
   { id: 'access', label: 'nav.access', icon: KeyRound },
   { id: 'fleet', label: 'nav.fleet', icon: Server },
+  {
+    id: 'fleet-access',
+    label: 'nav.fleetAccess',
+    icon: Users,
+    to: '/$locale/fleet-access',
+  },
   { id: 'activity', label: 'nav.activity', icon: Activity },
   { id: 'approvals', label: 'nav.approvals', icon: ShieldCheck },
   { id: 'cost', label: 'nav.cost', icon: ChartLine },

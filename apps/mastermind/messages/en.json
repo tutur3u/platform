@@ -19,7 +19,8 @@
       "activity": "Activity",
       "approvals": "Approvals",
       "cost": "Cost and health",
-      "settings": "Notifications"
+      "settings": "Notifications",
+      "fleetAccess": "Fleet access"
     },
     "sidebar": {
       "open": "Open navigation",
