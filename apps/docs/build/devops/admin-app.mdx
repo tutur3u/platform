@@ -1,0 +1,93 @@
+---
+title: "Admin app"
+description: "Information architecture, migration map and delivery path for the platform admin app served at tuturuuu.com/admin."
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+The platform admin surface is served at `https://tuturuuu.com/admin` by the
+`tuturuuu-infrastructure` Cloudflare Worker behind the apex gateway (binding
+`MOUNT_ADMIN`). The source lives in `apps/infrastructure` and moves to
+`apps/admin` once the mount is live; `infrastructure.tuturuuu.com` then redirects
+(301) to `tuturuuu.com/admin`.
+
+## Access
+
+Every page and API keeps the existing gate: the root workspace plus a root
+admin check (`enforceInfrastructureRootWorkspace` →
+`enforceRootWorkspaceAdmin`). Pages that need a narrower permission keep that
+check as well. The rebuild reuses these checks unchanged and never adds a
+fallback page for denied members (they get 404).
+
+## Information architecture
+
+| Section | Routes (under `/admin/<wsId>`) |
+| --- | --- |
+| Overview | `/` |
+| Users and accounts | `/users`, `/internal-accounts`, `/account-benefits`, `/auth-recovery`, `/parley` |
+| Workspaces | `/workspaces`, `/entity-creation-limits` |
+| Rate limits and abuse protection | `/rate-limits`, `/rate-limit-appeals`, `/blocked-ips`, `/abuse-events`, `/abuse-intelligence`, `/otp-limits`, `/email-blacklist` |
+| Deployments | `/deployments` (deploy coordinator at `deploy.tuturuuu.com`), `/desktop-deployment`, `/mobile-deployment`, `/mobile-versions`, `/feature-flags`, `/migrations` |
+| Costs | `/costs` |
+| Monitoring and observability | `/monitoring` and its children (`analytics`, `observability`, `resources`, `deployments`, `rollouts`, `requests`, `logs`, `cron`, `projects`, `stress-tests`, `watcher-logs`), `/realtime` |
+| Push and notifications | `/push-notifications`, `/email-audit`, `/email-templates`, `/post-email-queue` |
+| Fleet and Mastermind | `/fleet`, `/fleet/jobs`, `/fleet/machines/*`, `/devboxes`, `/github-bot` |
+| AI operations | `/ai-agents`, `/ai-credits`, `/ai/studio`, `/ai/whitelist/*` |
+| Integrations | `/external-apps`, `/external-chat-lab`, `/app-coordination`, `/calendar-sync`, `/cron/whitelist/domains` |
+| Settings and audit log | `/timezones`, `/translations`, `/holidays`, `/changelog`, `/secrets` |
+
+Every route keeps its path, so links into `infrastructure.tuturuuu.com/<path>`
+map one to one onto `tuturuuu.com/admin/<path>`. Navigation entries live in
+`src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` with aliases, icons and
+permissions.
+
+## Delivery order
+
+1. **Mount.** Activate the Worker at `/admin`: provision its secrets (below),
+   publish the sealed artifact with `void-cf-publisher.mjs publish --strict`,
+   assign it with `--expect-current`, then add `/admin,/admin/*` to the
+   gateway's `GATEWAY_MOUNTED_PATHS` and the `MOUNT_ADMIN →
+   tuturuuu-infrastructure` service binding. Build the gateway version from the
+   deployed one and keep every other mount. Web needs
+   `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS=infra` for direct login returns.
+2. **Protection controls.** Rate limits and kill switches are rebuilt first, with
+   success and error feedback on every write and end-to-end tests.
+3. **Sections.** The remaining sections are rebuilt on the shared `Structure`
+   shell and `@tuturuuu/ui` in the order of the table above. Old code is removed
+   only after the rebuilt section reaches parity.
+4. **Redirect.** After `/admin` is verified, `infrastructure.tuturuuu.com`
+   answers 301 to `tuturuuu.com/admin` with path and query kept.
+
+Mounted apps follow the apex isolation rules: app-owned cookies use
+`Path=/admin`, and no service worker is registered over `/`.
+
+## Worker secrets
+
+Names only. Values are copied from the Vercel `infrastructure` project (project
+and team-shared variables) or minted for the Worker; nothing is printed or
+committed.
+
+| Name | Source |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Vercel (shared) |
+| `SUPABASE_SECRET_KEY` | A dedicated Supabase secret key for the Worker |
+| `ENCRYPTION_MASTER_KEY` | Vercel (shared); must equal the Web value |
+| `CRON_SECRET`, `TUTURUUU_AZURE_TENANT_ID` | Vercel (project) |
+| `CLOUDFLARE_COORDINATION_URL`, `CLOUDFLARE_COORDINATION_TOKEN` | Vercel (project; the token is sensitive and comes from custody) |
+| `DEPLOY_COORDINATOR_ORIGIN`, `DEPLOY_COORDINATOR_OPERATOR_TOKEN` | Vercel (project; the token is sensitive and comes from custody) |
+
+Revealing Vercel values can require a step-up `vercel login`; a human runs it.
+A missing optional secret degrades only its own page (for example, Deployments
+reports the coordinator as unavailable).
+
+## Rollback
+
+- Admin Worker: `void-cf-publisher.mjs assign --version <previous> --expect-current <new>`.
+- Gateway: redeploy the previous gateway version; removing `/admin` entries
+  returns the path to Web.
+- Redirect: remove the `infrastructure.tuturuuu.com` redirect rule; the prior
+  serving version keeps working.
+
+Rollback always targets the previous Cloudflare version, never a Vercel
+deployment. See [Infrastructure on Start + Void](/build/devops/infrastructure-start-void)
+and [Gateway Worker](/build/devops/gateway-worker).

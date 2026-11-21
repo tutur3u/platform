@@ -240,6 +240,7 @@
                   "build/devops/storefront-start-void",
                   "build/devops/hive-start-void",
                   "build/devops/chat-start-void",
+                  "build/devops/admin-app",
                   "build/devops/infrastructure-start-void",
                   "build/devops/mind-start-void",
                   "build/devops/git-start-void",
