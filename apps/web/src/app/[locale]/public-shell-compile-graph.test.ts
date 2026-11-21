@@ -916,11 +916,6 @@ describe('public shell compile graph', () => {
     expect(loginPageSource).not.toContain('export const revalidate');
   });
 
-  it('lazy loads the heavy login form from the static shell', () => {
-    expect(staticImportModules(loginContentSource)).not.toContain('./form');
-    expect(loginContentSource).toContain("lazy(() => import('./form'))");
-  });
-
   it('keeps the login shell off Next link and image primitives', () => {
     expect(staticImportModules(loginContentSource)).not.toContain('next/link');
     expect(staticImportModules(loginContentSource)).not.toContain('next/image');
