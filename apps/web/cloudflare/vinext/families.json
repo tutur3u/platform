@@ -137,6 +137,49 @@
       "wrangler": null,
       "exact": ["/[wsId]"],
       "prefix": ["/[wsId]/"],
+      "exclude": [
+        "/[wsId]/tasks",
+        "/[wsId]/whiteboards",
+        "/[wsId]/mind",
+        "/[wsId]/documents",
+        "/[wsId]/calendar",
+        "/[wsId]/habits",
+        "/[wsId]/notes",
+        "/[wsId]/inventory",
+        "/[wsId]/epm"
+      ]
+    },
+    {
+      "id": "dashboard-apps",
+      "worker": "tuturuuu-web-vinext-dashboard-apps",
+      "kind": "pages",
+      "enabled": true,
+      "held": null,
+      "localized": true,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [
+        "/[wsId]/tasks",
+        "/[wsId]/whiteboards",
+        "/[wsId]/mind",
+        "/[wsId]/documents",
+        "/[wsId]/calendar",
+        "/[wsId]/habits",
+        "/[wsId]/notes",
+        "/[wsId]/inventory",
+        "/[wsId]/epm"
+      ],
+      "prefix": [
+        "/[wsId]/tasks/",
+        "/[wsId]/whiteboards/",
+        "/[wsId]/mind/",
+        "/[wsId]/documents/",
+        "/[wsId]/calendar/",
+        "/[wsId]/habits/",
+        "/[wsId]/notes/",
+        "/[wsId]/inventory/",
+        "/[wsId]/epm/"
+      ],
       "exclude": []
     },
     {

@@ -23,7 +23,8 @@ The whole app is 17.3 MiB gzip as one Worker (`cf deploy --dry-run`), over the
 | `api-core` | `/api/**` except the OpenNext global deny list |
 | `api-ops` | The OpenNext global deny list (crons, devboxes, infrastructure, account switching, immediate notifications) |
 | `public-auth` | `[locale]` sign-in and auth pages, the landing page and marketing pages outside the public docs family |
-| `dashboard` | `[locale]/[wsId]/**` |
+| `dashboard` | `[locale]/[wsId]/**` except the `dashboard-apps` paths |
+| `dashboard-apps` | `[locale]/[wsId]/{tasks,whiteboards,mind,documents,calendar,habits,notes,inventory,epm}` and their subtrees |
 | `web-rest` | Every other route entry |
 
 `nodeOnly` lists entries that still need Node-only APIs. No family owns them:
@@ -38,6 +39,16 @@ Builds run in a disposable checkout, because they delete unowned routes and
 upgrade React to 19.3.1, which vinext requires. The monorepo keeps its React
 pin.
 
+`build-family.sh` refuses to run when:
+
+- the checkout has no disposable marker;
+- Node is older than 24.22, which cannot strip TypeScript (use the version in
+  `.node-version`);
+- the checkout sits under another directory with a `tsconfig.json`, such as
+  `.worktrees/` in the main checkout. Vite+ resolves `tsconfig.json` upward
+  past the checkout root, so create the checkout elsewhere, for example
+  `~/.t3/scratch/vinext-<family>`.
+
 ```bash
 git worktree add --detach <dir> <sha> && cd <dir> && bun install
 printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
@@ -51,6 +62,23 @@ runs `cf deploy --dry-run --prebuilt`, then
 `scripts/ci/web-vinext-bundle-check.mjs`. The check fails when any emitted
 module carries the real Redis client or the upload exceeds the 9.5 MiB family
 budget. Its result is in `apps/web/cloudflare/vinext/<family>.check.json`.
+
+Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
+rejects an upload whose source maps exceed 60 MiB (error 10021), and the
+`public-auth` maps alone reach about 70 MiB.
+
+## Deploying a family
+
+A new Worker needs its secrets in the first upload. From `apps/web` of the
+built checkout:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=... WEB_VINEXT_FAMILY=<family> node_modules/.bin/cf deploy \
+  --prebuilt --no-provision --secrets-file <secrets.json> --message "vinext <family> <sha>"
+```
+
+The deploy reports `No targets deployed`: the Worker has no routes, custom
+domains, workers.dev or preview URLs.
 
 ## Runtime bindings
 

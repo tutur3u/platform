@@ -68,6 +68,25 @@ describe('vinext route families', () => {
     );
   });
 
+  it('splits the workspace apps out of dashboard', () => {
+    const dashboard = planVinextPrune('dashboard').keep;
+    const apps = planVinextPrune('dashboard-apps').keep;
+    for (const keep of [dashboard, apps]) {
+      expect(keep).toContain('api/build-info/route.ts');
+    }
+    const app = (rel: string) =>
+      /^\/\[locale\]\/\[wsId\]\/(tasks|whiteboards|mind|documents|calendar|habits|notes|inventory|epm)(\/|$)/.test(
+        routePathFor(rel) ?? ''
+      );
+    expect(apps.filter((rel) => !PROBE_ENTRIES.includes(rel)).every(app)).toBe(
+      true
+    );
+    expect(dashboard.some(app)).toBe(false);
+    expect(dashboard).toContain(
+      '[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx'
+    );
+  });
+
   // vinext compiles every kept entry, so an entry that imports another
   // route entry (a page re-rendering a sibling page) needs both in one family.
   it('keeps every route entry that a kept entry imports', () => {

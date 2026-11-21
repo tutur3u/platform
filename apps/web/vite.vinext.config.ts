@@ -34,6 +34,9 @@ export default defineConfig({
       viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
     }),
   ],
+  // Cloudflare rejects a Worker upload whose source maps exceed 60 MiB, and
+  // the Worker Vite plugin emits them unless build.sourcemap is set.
+  build: { sourcemap: false },
   environments: {
     // The RSC entry loads `./ssr/index.js`. Without `"type": "module"` (which
     // the Next.js build of this package cannot take) Vite names ESM entries
