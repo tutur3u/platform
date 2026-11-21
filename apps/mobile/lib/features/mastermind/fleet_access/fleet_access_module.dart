@@ -41,8 +41,8 @@ const fleetAccessModule = AppModule(
     MiniAppNavItem(
       id: 'mastermind_work',
       route: Routes.mastermindWork,
-      icon: LucideIcons.briefcase,
-      labelBuilder: _labelWork,
+      icon: LucideIcons.folder,
+      labelBuilder: _labelProjects,
       isVisible: mastermindOwnerVisible,
     ),
     MiniAppNavItem(
@@ -65,7 +65,7 @@ const fleetAccessModule = AppModule(
 String _label(AppLocalizations l10n) => l10n.mastermindFleetAccessTitle;
 String _labelHome(AppLocalizations l10n) => l10n.mastermindTabHome;
 String _labelInbox(AppLocalizations l10n) => l10n.mastermindTabInbox;
-String _labelWork(AppLocalizations l10n) => l10n.mastermindTabWork;
+String _labelProjects(AppLocalizations l10n) => l10n.mastermindTabProjects;
 String _labelShip(AppLocalizations l10n) => l10n.mastermindTabShip;
 String _labelInsights(AppLocalizations l10n) => l10n.mastermindTabInsights;
 

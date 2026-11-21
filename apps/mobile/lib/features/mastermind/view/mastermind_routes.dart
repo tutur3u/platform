@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_page.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
 import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
@@ -13,6 +12,9 @@ import 'package:mobile/features/mastermind/machines/machine_detail.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/projects/projects_location.dart';
+import 'package:mobile/features/mastermind/projects/view/project_thread_page.dart';
+import 'package:mobile/features/mastermind/projects/view/projects_page.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
@@ -99,15 +101,20 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindWork,
-    // Live fleet lanes; `?state=` and `?group=` seed the filter and grouping.
-    builder: (context, state) {
-      final query = state.uri.queryParameters;
-      return FleetWorkPage(
-        key: ValueKey(state.uri.toString()),
-        initialState: fleetLaneStateFromQuery(query['state']),
-        initialGrouping: fleetGroupingFromQuery(query['group']),
-      );
-    },
+    // Projects; `?state=` preselects a state chip. Older `?group=` links
+    // open the same list.
+    builder: (context, state) => ProjectsPage(
+      key: ValueKey(state.uri.toString()),
+      initialState: projectsStateFromQuery(state.uri.queryParameters['state']),
+    ),
+  ),
+  GoRoute(
+    path: projectThreadRoute,
+    builder: (context, state) => ProjectThreadPage(
+      key: ValueKey(state.uri.toString()),
+      machine: projectsMachineFromQuery(state.uri.queryParameters),
+      threadId: state.pathParameters['threadId'] ?? '',
+    ),
   ),
   GoRoute(
     path: Routes.mastermindWorkLane,

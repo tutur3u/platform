@@ -9446,6 +9446,71 @@
       }
     }
   },
+  "mastermindTabProjects": "Projects",
+  "mastermindProjectsThisMachine": "This machine",
+  "mastermindProjectsSearch": "Search threads",
+  "mastermindProjectsUnassigned": "Unassigned",
+  "mastermindProjectsLoadMore": "Load 50 more",
+  "mastermindProjectsLoadingThreads": "Loading threads",
+  "mastermindProjectsNew": "new",
+  "mastermindProjectsUnread": "{count} unread",
+  "@mastermindProjectsUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindProjectsEmpty": "No threads match",
+  "mastermindProjectsStaleList": "Showing the list from {time}",
+  "@mastermindProjectsStaleList": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindProjectsMachineUnreachable": "{machine}, unreachable",
+  "@mastermindProjectsMachineUnreachable": {
+    "placeholders": {
+      "machine": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindProjectsErrorOffline": "The machine is offline",
+  "mastermindProjectsErrorTimeout": "The machine did not answer in time",
+  "mastermindProjectsErrorNotFound": "This thread is no longer on the machine",
+  "mastermindProjectsErrorMfa": "Verify this device with MFA to reply",
+  "mastermindProjectsErrorRateLimited": "Too many requests. Try again shortly",
+  "mastermindProjectsErrorUnsupported": "This machine lists threads without projects",
+  "mastermindProjectsErrorUnavailable": "Threads are unavailable right now",
+  "mastermindProjectsStateRunning": "Agent working",
+  "mastermindProjectsStateWaiting": "Waiting for you",
+  "mastermindProjectsStateIdle": "Finished",
+  "mastermindProjectsStateFailed": "Failed",
+  "mastermindProjectsLoadEarlier": "Load earlier",
+  "mastermindProjectsTruncated": "Truncated",
+  "mastermindProjectsReplyHint": "Reply, steered",
+  "mastermindProjectsSend": "Send",
+  "mastermindProjectsReplyTooLong": "Up to 4,000 characters",
+  "mastermindProjectsReceiptSending": "Sending",
+  "mastermindProjectsReceiptSent": "Sent",
+  "mastermindProjectsReceiptSteered": "Steered into the running turn",
+  "mastermindProjectsReceiptStarted": "Started",
+  "mastermindProjectsReceiptQueued": "Queued",
+  "mastermindProjectsReceiptDelivered": "Delivered",
+  "mastermindProjectsReceiptNotDelivered": "Not delivered",
+  "mastermindProjectsErrorInvalid": "This search can't be used. Try fewer words",
+  "mastermindProjectsReadingMachine": "Reading {machine}. This takes a few seconds.",
+  "@mastermindProjectsReadingMachine": {
+    "placeholders": {
+      "machine": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindProjectsSignInAgain": "Sign in again",
   "mastermindFleetAnswerRetryingAttempt": "Not sent yet · attempt {attempt} · retrying in {seconds} s",
   "@mastermindFleetAnswerRetryingAttempt": {
     "placeholders": {

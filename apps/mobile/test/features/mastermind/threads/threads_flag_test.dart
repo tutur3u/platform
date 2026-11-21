@@ -6,8 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
 import 'package:mobile/features/mastermind/mastermind_module.dart';
+import 'package:mobile/features/mastermind/projects/data/fixture_projects_repository.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_live.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
+import 'package:mobile/features/mastermind/projects/view/projects_page.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
@@ -45,7 +48,18 @@ Future<List<MiniAppNavItem>> _visibleItems(WidgetTester tester) async {
 
 void main() {
   setUpAll(initializeDateFormatting);
-  tearDown(() => debugOverrideMastermindThreads(enabled: null));
+  final live = ProjectsLive.shared;
+  final repository = createProjectsRepository;
+  setUp(() {
+    createProjectsRepository = FixtureProjectsRepository.new;
+    ProjectsLive.shared = ProjectsLive((_) => (start: () {}, stop: () {}));
+  });
+  tearDown(() {
+    debugOverrideMastermindThreads(enabled: null);
+    createProjectsRepository = repository;
+    resetSharedProjectsRepository();
+    ProjectsLive.shared = live;
+  });
 
   test('the flag defaults to off in a default build', () {
     debugOverrideMastermindThreads(enabled: null);
@@ -55,12 +69,12 @@ void main() {
   group('flag off (default)', () {
     setUp(() => debugOverrideMastermindThreads(enabled: false));
 
-    testWidgets('the Work tab keeps its route and label', (tester) async {
+    testWidgets('the Work tab is Projects on the same route', (tester) async {
       final items = await _visibleItems(tester);
       final work = items.singleWhere((item) => item.id == 'mastermind_work');
       expect(items.any((item) => item.id == 'mastermind_threads'), isFalse);
       expect(work.route, Routes.mastermindWork);
-      expect(work.label(AppLocalizationsEn()), 'Work');
+      expect(work.label(AppLocalizationsEn()), 'Projects');
     });
 
     for (final location in [
@@ -71,7 +85,7 @@ void main() {
         final router = await _pumpRouter(tester, location);
         expect(workUri(router).path, Routes.mastermindWork);
         expect(find.byType(MastermindThreadsPage), findsNothing);
-        expect(find.byType(FleetWorkPage), findsOneWidget);
+        expect(find.byType(ProjectsPage), findsOneWidget);
       });
     }
 

@@ -35101,6 +35101,228 @@ abstract class AppLocalizations {
   /// **'{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified'**
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified);
 
+  /// No description provided for @mastermindTabProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get mastermindTabProjects;
+
+  /// No description provided for @mastermindProjectsThisMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine'**
+  String get mastermindProjectsThisMachine;
+
+  /// No description provided for @mastermindProjectsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search threads'**
+  String get mastermindProjectsSearch;
+
+  /// No description provided for @mastermindProjectsUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned'**
+  String get mastermindProjectsUnassigned;
+
+  /// No description provided for @mastermindProjectsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load 50 more'**
+  String get mastermindProjectsLoadMore;
+
+  /// No description provided for @mastermindProjectsLoadingThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading threads'**
+  String get mastermindProjectsLoadingThreads;
+
+  /// No description provided for @mastermindProjectsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'new'**
+  String get mastermindProjectsNew;
+
+  /// No description provided for @mastermindProjectsUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String mastermindProjectsUnread(int count);
+
+  /// No description provided for @mastermindProjectsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No threads match'**
+  String get mastermindProjectsEmpty;
+
+  /// No description provided for @mastermindProjectsStaleList.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the list from {time}'**
+  String mastermindProjectsStaleList(String time);
+
+  /// No description provided for @mastermindProjectsMachineUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'{machine}, unreachable'**
+  String mastermindProjectsMachineUnreachable(String machine);
+
+  /// No description provided for @mastermindProjectsErrorOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine is offline'**
+  String get mastermindProjectsErrorOffline;
+
+  /// No description provided for @mastermindProjectsErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine did not answer in time'**
+  String get mastermindProjectsErrorTimeout;
+
+  /// No description provided for @mastermindProjectsErrorNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This thread is no longer on the machine'**
+  String get mastermindProjectsErrorNotFound;
+
+  /// No description provided for @mastermindProjectsErrorMfa.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify this device with MFA to reply'**
+  String get mastermindProjectsErrorMfa;
+
+  /// No description provided for @mastermindProjectsErrorRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Try again shortly'**
+  String get mastermindProjectsErrorRateLimited;
+
+  /// No description provided for @mastermindProjectsErrorUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine lists threads without projects'**
+  String get mastermindProjectsErrorUnsupported;
+
+  /// No description provided for @mastermindProjectsErrorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Threads are unavailable right now'**
+  String get mastermindProjectsErrorUnavailable;
+
+  /// No description provided for @mastermindProjectsStateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent working'**
+  String get mastermindProjectsStateRunning;
+
+  /// No description provided for @mastermindProjectsStateWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you'**
+  String get mastermindProjectsStateWaiting;
+
+  /// No description provided for @mastermindProjectsStateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get mastermindProjectsStateIdle;
+
+  /// No description provided for @mastermindProjectsStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindProjectsStateFailed;
+
+  /// No description provided for @mastermindProjectsLoadEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier'**
+  String get mastermindProjectsLoadEarlier;
+
+  /// No description provided for @mastermindProjectsTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truncated'**
+  String get mastermindProjectsTruncated;
+
+  /// No description provided for @mastermindProjectsReplyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply, steered'**
+  String get mastermindProjectsReplyHint;
+
+  /// No description provided for @mastermindProjectsSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mastermindProjectsSend;
+
+  /// No description provided for @mastermindProjectsReplyTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 4,000 characters'**
+  String get mastermindProjectsReplyTooLong;
+
+  /// No description provided for @mastermindProjectsReceiptSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get mastermindProjectsReceiptSending;
+
+  /// No description provided for @mastermindProjectsReceiptSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get mastermindProjectsReceiptSent;
+
+  /// No description provided for @mastermindProjectsReceiptSteered.
+  ///
+  /// In en, this message translates to:
+  /// **'Steered into the running turn'**
+  String get mastermindProjectsReceiptSteered;
+
+  /// No description provided for @mastermindProjectsReceiptStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started'**
+  String get mastermindProjectsReceiptStarted;
+
+  /// No description provided for @mastermindProjectsReceiptQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get mastermindProjectsReceiptQueued;
+
+  /// No description provided for @mastermindProjectsReceiptDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get mastermindProjectsReceiptDelivered;
+
+  /// No description provided for @mastermindProjectsReceiptNotDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered'**
+  String get mastermindProjectsReceiptNotDelivered;
+
+  /// No description provided for @mastermindProjectsErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This search can\'t be used. Try fewer words'**
+  String get mastermindProjectsErrorInvalid;
+
+  /// No description provided for @mastermindProjectsReadingMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading {machine}. This takes a few seconds.'**
+  String mastermindProjectsReadingMachine(String machine);
+
+  /// No description provided for @mastermindProjectsSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get mastermindProjectsSignInAgain;
+
   /// No description provided for @mastermindFleetAnswerRetryingAttempt.
   ///
   /// In en, this message translates to:

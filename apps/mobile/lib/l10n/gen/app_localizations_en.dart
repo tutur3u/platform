@@ -19108,6 +19108,125 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindTabProjects => 'Projects';
+
+  @override
+  String get mastermindProjectsThisMachine => 'This machine';
+
+  @override
+  String get mastermindProjectsSearch => 'Search threads';
+
+  @override
+  String get mastermindProjectsUnassigned => 'Unassigned';
+
+  @override
+  String get mastermindProjectsLoadMore => 'Load 50 more';
+
+  @override
+  String get mastermindProjectsLoadingThreads => 'Loading threads';
+
+  @override
+  String get mastermindProjectsNew => 'new';
+
+  @override
+  String mastermindProjectsUnread(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get mastermindProjectsEmpty => 'No threads match';
+
+  @override
+  String mastermindProjectsStaleList(String time) {
+    return 'Showing the list from $time';
+  }
+
+  @override
+  String mastermindProjectsMachineUnreachable(String machine) {
+    return '$machine, unreachable';
+  }
+
+  @override
+  String get mastermindProjectsErrorOffline => 'The machine is offline';
+
+  @override
+  String get mastermindProjectsErrorTimeout => 'The machine did not answer in time';
+
+  @override
+  String get mastermindProjectsErrorNotFound => 'This thread is no longer on the machine';
+
+  @override
+  String get mastermindProjectsErrorMfa => 'Verify this device with MFA to reply';
+
+  @override
+  String get mastermindProjectsErrorRateLimited => 'Too many requests. Try again shortly';
+
+  @override
+  String get mastermindProjectsErrorUnsupported => 'This machine lists threads without projects';
+
+  @override
+  String get mastermindProjectsErrorUnavailable => 'Threads are unavailable right now';
+
+  @override
+  String get mastermindProjectsStateRunning => 'Agent working';
+
+  @override
+  String get mastermindProjectsStateWaiting => 'Waiting for you';
+
+  @override
+  String get mastermindProjectsStateIdle => 'Finished';
+
+  @override
+  String get mastermindProjectsStateFailed => 'Failed';
+
+  @override
+  String get mastermindProjectsLoadEarlier => 'Load earlier';
+
+  @override
+  String get mastermindProjectsTruncated => 'Truncated';
+
+  @override
+  String get mastermindProjectsReplyHint => 'Reply, steered';
+
+  @override
+  String get mastermindProjectsSend => 'Send';
+
+  @override
+  String get mastermindProjectsReplyTooLong => 'Up to 4,000 characters';
+
+  @override
+  String get mastermindProjectsReceiptSending => 'Sending';
+
+  @override
+  String get mastermindProjectsReceiptSent => 'Sent';
+
+  @override
+  String get mastermindProjectsReceiptSteered => 'Steered into the running turn';
+
+  @override
+  String get mastermindProjectsReceiptStarted => 'Started';
+
+  @override
+  String get mastermindProjectsReceiptQueued => 'Queued';
+
+  @override
+  String get mastermindProjectsReceiptDelivered => 'Delivered';
+
+  @override
+  String get mastermindProjectsReceiptNotDelivered => 'Not delivered';
+
+  @override
+  String get mastermindProjectsErrorInvalid => 'This search can\'t be used. Try fewer words';
+
+  @override
+  String mastermindProjectsReadingMachine(String machine) {
+    return 'Reading $machine. This takes a few seconds.';
+  }
+
+  @override
+  String get mastermindProjectsSignInAgain => 'Sign in again';
+
+  @override
   String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
     return 'Not sent yet · attempt $attempt · retrying in $seconds s';
   }

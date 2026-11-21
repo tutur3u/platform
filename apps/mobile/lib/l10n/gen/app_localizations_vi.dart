@@ -18885,6 +18885,125 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindTabProjects => 'Dự án';
+
+  @override
+  String get mastermindProjectsThisMachine => 'Máy này';
+
+  @override
+  String get mastermindProjectsSearch => 'Tìm luồng';
+
+  @override
+  String get mastermindProjectsUnassigned => 'Chưa gán dự án';
+
+  @override
+  String get mastermindProjectsLoadMore => 'Tải thêm 50';
+
+  @override
+  String get mastermindProjectsLoadingThreads => 'Đang tải luồng';
+
+  @override
+  String get mastermindProjectsNew => 'mới';
+
+  @override
+  String mastermindProjectsUnread(int count) {
+    return '$count chưa đọc';
+  }
+
+  @override
+  String get mastermindProjectsEmpty => 'Không có luồng phù hợp';
+
+  @override
+  String mastermindProjectsStaleList(String time) {
+    return 'Đang hiện danh sách lúc $time';
+  }
+
+  @override
+  String mastermindProjectsMachineUnreachable(String machine) {
+    return '$machine, không kết nối được';
+  }
+
+  @override
+  String get mastermindProjectsErrorOffline => 'Máy đang ngoại tuyến';
+
+  @override
+  String get mastermindProjectsErrorTimeout => 'Máy không phản hồi kịp';
+
+  @override
+  String get mastermindProjectsErrorNotFound => 'Luồng này không còn trên máy';
+
+  @override
+  String get mastermindProjectsErrorMfa => 'Xác thực MFA trên thiết bị này để trả lời';
+
+  @override
+  String get mastermindProjectsErrorRateLimited => 'Quá nhiều yêu cầu. Hãy thử lại sau';
+
+  @override
+  String get mastermindProjectsErrorUnsupported => 'Máy này liệt kê luồng không theo dự án';
+
+  @override
+  String get mastermindProjectsErrorUnavailable => 'Hiện không đọc được luồng';
+
+  @override
+  String get mastermindProjectsStateRunning => 'Agent đang làm';
+
+  @override
+  String get mastermindProjectsStateWaiting => 'Đang chờ bạn';
+
+  @override
+  String get mastermindProjectsStateIdle => 'Đã xong';
+
+  @override
+  String get mastermindProjectsStateFailed => 'Lỗi';
+
+  @override
+  String get mastermindProjectsLoadEarlier => 'Tải tin cũ hơn';
+
+  @override
+  String get mastermindProjectsTruncated => 'Đã cắt bớt';
+
+  @override
+  String get mastermindProjectsReplyHint => 'Trả lời, có điều hướng';
+
+  @override
+  String get mastermindProjectsSend => 'Gửi';
+
+  @override
+  String get mastermindProjectsReplyTooLong => 'Tối đa 4.000 ký tự';
+
+  @override
+  String get mastermindProjectsReceiptSending => 'Đang gửi';
+
+  @override
+  String get mastermindProjectsReceiptSent => 'Đã gửi';
+
+  @override
+  String get mastermindProjectsReceiptSteered => 'Đã điều hướng vào lượt đang chạy';
+
+  @override
+  String get mastermindProjectsReceiptStarted => 'Đã bắt đầu';
+
+  @override
+  String get mastermindProjectsReceiptQueued => 'Đã xếp hàng';
+
+  @override
+  String get mastermindProjectsReceiptDelivered => 'Đã chuyển';
+
+  @override
+  String get mastermindProjectsReceiptNotDelivered => 'Chưa gửi được';
+
+  @override
+  String get mastermindProjectsErrorInvalid => 'Không dùng được nội dung tìm này. Hãy thử ít từ hơn';
+
+  @override
+  String mastermindProjectsReadingMachine(String machine) {
+    return 'Đang đọc $machine. Việc này mất vài giây.';
+  }
+
+  @override
+  String get mastermindProjectsSignInAgain => 'Đăng nhập lại';
+
+  @override
   String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
     return 'Chưa gửi được · lần $attempt · thử lại sau $seconds giây';
   }

@@ -31,13 +31,14 @@ const mastermindModule = AppModule(
       icon: LucideIcons.inbox,
       labelBuilder: _labelInbox,
     ),
-    // Work shows the live fleet lanes. The hub-based Threads preview stays
-    // reachable by link only.
+    // Projects keeps the Work tab's id and path so saved tabs and links
+    // still open it. The hub-based Threads preview stays reachable by link
+    // only.
     MiniAppNavItem(
       id: 'mastermind_work',
       route: Routes.mastermindWork,
-      icon: LucideIcons.briefcase,
-      labelBuilder: _labelWork,
+      icon: LucideIcons.folder,
+      labelBuilder: _labelProjects,
     ),
     MiniAppNavItem(
       id: 'mastermind_ship',
@@ -57,7 +58,7 @@ const mastermindModule = AppModule(
 String _label(AppLocalizations l10n) => l10n.mastermindAppName;
 String _labelHome(AppLocalizations l10n) => l10n.mastermindTabHome;
 String _labelInbox(AppLocalizations l10n) => l10n.mastermindTabInbox;
-String _labelWork(AppLocalizations l10n) => l10n.mastermindTabWork;
+String _labelProjects(AppLocalizations l10n) => l10n.mastermindTabProjects;
 String _labelShip(AppLocalizations l10n) => l10n.mastermindTabShip;
 String _labelInsights(AppLocalizations l10n) => l10n.mastermindTabInsights;
 Widget _page(BuildContext context) => const FleetTodayPage();
