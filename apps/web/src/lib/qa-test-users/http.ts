@@ -10,8 +10,19 @@ export function qaJson(body: unknown, status = 200) {
 export function qaErrorResponse(error: unknown, operation: string) {
   if (error instanceof QaStoreError && error.status !== 503)
     return qaJson({ error: error.message }, error.status);
+  // Fixed-vocabulary fields only: the Postgres/PostgREST error code (for
+  // example PGRST202 for a function missing from the schema cache) and a
+  // flag for a malformed ledger result. Never the message or row data.
   console.error(`QA test users ${operation} failed`, {
     errorType: error instanceof Error ? error.name : 'unknown',
+    code:
+      error instanceof QaStoreError && error.code
+        ? error.code.slice(0, 16)
+        : null,
+    invalidResult:
+      error instanceof QaStoreError &&
+      error.code === undefined &&
+      error.message === 'QA test user ledger returned an invalid result',
   });
   return qaJson({ error: 'QA test users unavailable' }, 503);
 }
