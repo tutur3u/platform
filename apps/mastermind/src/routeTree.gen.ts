@@ -4,33 +4,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LocaleRouteImport } from './routes/$locale'
+import { Route as LocaleFleetAccessRouteImport } from './routes/$locale_.fleet-access'
 
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
   path: '/$locale',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleFleetAccessRoute = LocaleFleetAccessRouteImport.update({
+  id: '/$locale_/fleet-access',
+  path: '/$locale/fleet-access',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleRoute
+  '/$locale/fleet-access': typeof LocaleFleetAccessRoute
 }
 export interface FileRoutesByTo {
   '/$locale': typeof LocaleRoute
+  '/$locale/fleet-access': typeof LocaleFleetAccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/$locale': typeof LocaleRoute
+  '/$locale_/fleet-access': typeof LocaleFleetAccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/$locale'
+  fullPaths: '/$locale' | '/$locale/fleet-access'
   fileRoutesByTo: FileRoutesByTo
-  to: '/$locale'
-  id: '__root__' | '/$locale'
+  to: '/$locale' | '/$locale/fleet-access'
+  id: '__root__' | '/$locale' | '/$locale_/fleet-access'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   LocaleRoute: typeof LocaleRoute
+  LocaleFleetAccessRoute: typeof LocaleFleetAccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -42,11 +52,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale_/fleet-access': {
+      id: '/$locale_/fleet-access'
+      path: '/$locale/fleet-access'
+      fullPath: '/$locale/fleet-access'
+      preLoaderRoute: typeof LocaleFleetAccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   LocaleRoute: LocaleRoute,
+  LocaleFleetAccessRoute: LocaleFleetAccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

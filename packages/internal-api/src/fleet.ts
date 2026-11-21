@@ -3,6 +3,13 @@ import {
   createInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+import type {
+  FleetIntentInput,
+  FleetIntentPage,
+  FleetLinkCode,
+  FleetLinkConfirmation,
+  FleetLinkConfirmationInput,
+} from './fleet-intents';
 
 export const fleetDigestStates = [
   'planned',
@@ -164,9 +171,67 @@ export function publishFleetDigest(
   });
 }
 
+export function listFleetIntents(
+  before?: string,
+  options?: InternalApiClientOptions
+) {
+  return createInternalApiClient(options).json<FleetIntentPage>(
+    '/api/v1/fleet/intents',
+    { cache: 'no-store', query: { before } }
+  );
+}
+
+function postFleet<T>(
+  path: string,
+  body: unknown,
+  options?: InternalApiClientOptions
+) {
+  return createInternalApiClient(options).json<T>(path, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export function submitFleetIntent(
+  input: FleetIntentInput,
+  options?: InternalApiClientOptions
+) {
+  return postFleet<{ id: string }>('/api/v1/fleet/intents', input, options);
+}
+
+export function createFleetLinkCode(options?: InternalApiClientOptions) {
+  return postFleet<FleetLinkCode>(
+    '/api/v1/fleet/identity/link-codes',
+    {},
+    options
+  );
+}
+
+/** Previews the pending link with `preview: true`; confirms it otherwise. */
+export function confirmFleetLink(
+  input: FleetLinkConfirmationInput,
+  options?: InternalApiClientOptions
+) {
+  return postFleet<FleetLinkConfirmation>(
+    '/api/v1/fleet/identity/confirm',
+    input,
+    options
+  );
+}
+
 export {
   type FleetIntentInput,
+  type FleetIntentPage,
   type FleetIntentReceipt,
+  type FleetLinkCode,
+  type FleetLinkConfirmation,
+  type FleetLinkConfirmationInput,
   fleetIntentInputSchema,
+  fleetIntentPageSchema,
   fleetIntentReceiptSchema,
+  fleetLinkCodeSchema,
+  fleetLinkConfirmationInputSchema,
+  fleetLinkConfirmationSchema,
 } from './fleet-intents';

@@ -242,5 +242,191 @@
     },
     "reload": "Làm mới"
   },
-  "owner": "Chủ sở hữu đã xác thực"
+  "owner": "Chủ sở hữu đã xác thực",
+  "fleetAccess": {
+    "title": "Quyền truy cập đội máy",
+    "tabs": {
+      "status": "Trạng thái",
+      "ask": "Hỏi",
+      "requests": "Yêu cầu",
+      "approvals": "Phê duyệt",
+      "link": "Liên kết chat",
+      "access": "Quyền truy cập"
+    },
+    "tier": {
+      "observer": "Quan sát viên",
+      "steerer": "Điều phối viên",
+      "operator": "Vận hành viên",
+      "owner": "Chủ sở hữu"
+    },
+    "gate": {
+      "disabled": "Bạn chưa có quyền truy cập đội máy.",
+      "stopped": "Đội máy đang dừng.",
+      "denied": "Quyền truy cập đội máy của bạn đã thay đổi. Tải lại để tiếp tục."
+    },
+    "common": {
+      "retry": "Thử lại",
+      "loading": "Đang tải",
+      "error": "Không thể tải nội dung này.",
+      "loadMore": "Tải thêm",
+      "reload": "Tải lại"
+    },
+    "laneState": {
+      "planned": "Đã lên kế hoạch",
+      "running": "Đang chạy",
+      "blocked": "Bị chặn",
+      "ready": "Sẵn sàng",
+      "done": "Hoàn tất",
+      "paused": "Tạm dừng"
+    },
+    "blocker": {
+      "dependency": "Phụ thuộc",
+      "review": "Đánh giá",
+      "ci": "CI",
+      "approval": "Phê duyệt",
+      "release_hold": "Giữ phát hành",
+      "capacity": "Năng lực",
+      "incident": "Sự cố"
+    },
+    "status": {
+      "empty": "Chưa có ảnh chụp nào cho các dự án của bạn.",
+      "generated": "Tạo lúc {time}",
+      "received": "Nhận lúc {time}",
+      "stale": "Đã cũ",
+      "projects": "Dự án",
+      "lanes": "Luồng",
+      "eta": "Dự kiến {time}",
+      "noLanes": "Ảnh chụp này chưa có luồng nào."
+    },
+    "ask": {
+      "project": "Dự án",
+      "topic": "Câu hỏi",
+      "noSnapshot": "Dự án này chưa có ảnh chụp.",
+      "noReadiness": "Không có mục sẵn sàng hoặc điểm chặn nào.",
+      "noTimeline": "Chưa có thời gian dự kiến.",
+      "noLanes": "Chưa có luồng nào."
+    },
+    "topic": {
+      "status": "Trạng thái",
+      "readiness": "Mức sẵn sàng",
+      "timeline": "Tiến độ"
+    },
+    "kind": {
+      "status_question": "Câu hỏi trạng thái",
+      "comment": "Bình luận",
+      "priority.set": "Đặt mức ưu tiên",
+      "approve.item": "Phê duyệt mục sẵn sàng",
+      "work.create": "Tạo công việc",
+      "work.redirect": "Chuyển hướng công việc",
+      "lane.pause": "Tạm dừng luồng",
+      "approve.deploy": "Phê duyệt triển khai",
+      "approve.production_change": "Phê duyệt thay đổi production"
+    },
+    "receipt": {
+      "pending_approval": "Đang chờ phê duyệt",
+      "approved": "Đã phê duyệt",
+      "rejected": "Bị từ chối",
+      "claimed": "Đã nhận",
+      "dispatched": "Đã điều phối",
+      "done": "Hoàn tất",
+      "failed": "Thất bại",
+      "expired": "Đã hết hạn",
+      "cancelled": "Đã hủy"
+    },
+    "choice": {
+      "topic": {
+        "status": "Trạng thái",
+        "readiness": "Mức sẵn sàng",
+        "timeline": "Tiến độ"
+      },
+      "priority": {
+        "low": "Thấp",
+        "normal": "Bình thường",
+        "high": "Cao",
+        "urgent": "Khẩn cấp"
+      },
+      "template": {
+        "investigation": "Điều tra",
+        "maintenance": "Bảo trì",
+        "regression_fix": "Sửa lỗi hồi quy"
+      },
+      "objective": {
+        "investigate": "Điều tra",
+        "verify": "Xác minh",
+        "prepare_review": "Chuẩn bị đánh giá"
+      },
+      "environment": {
+        "staging": "Staging",
+        "production": "Production"
+      }
+    },
+    "field": {
+      "kind": "Yêu cầu",
+      "project": "Dự án",
+      "target": "Khóa mục tiêu",
+      "topic": "Chủ đề",
+      "priority": "Mức ưu tiên",
+      "template": "Mẫu",
+      "objective": "Mục tiêu",
+      "environment": "Môi trường",
+      "commitSha": "Commit SHA",
+      "quote": "Ghi chú",
+      "quoteRequired": "Ghi chú (bắt buộc)"
+    },
+    "requests": {
+      "new": "Yêu cầu mới",
+      "submit": "Gửi yêu cầu",
+      "submitting": "Đang gửi",
+      "submitted": "Đã ghi nhận yêu cầu.",
+      "ownerApproval": "Chủ sở hữu duyệt",
+      "empty": "Chưa có yêu cầu nào.",
+      "history": "Yêu cầu của bạn",
+      "required": "Bắt buộc.",
+      "badKey": "Dùng chữ thường, chữ số, dấu gạch ngang hoặc gạch dưới.",
+      "badSha": "Dùng commit SHA đầy đủ 40 ký tự."
+    },
+    "refusal": {
+      "questions_per_hour": "Đã đạt giới hạn câu hỏi mỗi giờ.",
+      "intents_per_day": "Đã đạt giới hạn yêu cầu mỗi ngày.",
+      "stale_project_mapping": "Danh mục dự án đã thay đổi. Hãy thử lại.",
+      "fleet_stopped": "Đội máy đang dừng.",
+      "inactive_grant": "Quyền của bạn không còn hiệu lực.",
+      "missing_capability": "Quyền của bạn không cho phép yêu cầu này.",
+      "project_outside_grant": "Mục tiêu này nằm ngoài các dự án của bạn.",
+      "identity_already_linked": "Cuộc trò chuyện này đã liên kết với tài khoản khác.",
+      "invalid_confirmation": "Mã liên kết hoặc mã xác nhận không khớp.",
+      "forbidden": "Quyền của bạn không cho phép thao tác này.",
+      "invalid": "Yêu cầu đã bị từ chối.",
+      "conflict": "Yêu cầu xung đột với một thay đổi mới hơn. Hãy thử lại.",
+      "quota": "Đã đạt giới hạn. Hãy thử lại sau.",
+      "unavailable": "Đội máy hiện không khả dụng. Hãy thử lại."
+    },
+    "approvals": {
+      "unavailable": "Chưa thể phê duyệt tại đây."
+    },
+    "access": {
+      "unavailable": "Chưa thể quản lý quyền tại đây."
+    },
+    "link": {
+      "issue": "Lấy mã liên kết",
+      "reissue": "Lấy mã mới",
+      "code": "Mã liên kết",
+      "expires": "Hết hạn lúc {time}",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "instructions": "Gửi mã này cho desk trong cuộc trò chuyện riêng. Desk sẽ trả lời bằng mã liên kết và mã xác nhận.",
+      "linkId": "Mã liên kết",
+      "confirmation": "Mã xác nhận",
+      "preview": "Kiểm tra",
+      "confirm": "Liên kết chat",
+      "change": "Sửa",
+      "linked": "Đã liên kết",
+      "pending": "Đang chờ"
+    },
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo",
+      "discord": "Discord"
+    }
+  }
 }

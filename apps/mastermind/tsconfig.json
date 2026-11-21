@@ -11,7 +11,8 @@
     "incremental": false,
     "types": ["vite/client", "node"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true

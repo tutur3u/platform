@@ -7,8 +7,10 @@ audience: developers
 
 The [Fleet access policy](/platform/features/fleet-access) governs these
 endpoints on `tuturuuu.com`. Responses use `Cache-Control: private, no-store`.
-Use `getFleetAccess`, `getFleetDigest`, and `publishFleetDigest` from
-`@tuturuuu/internal-api/fleet` for TypeScript callers.
+Use `getFleetAccess`, `getFleetDigest`, `publishFleetDigest`,
+`listFleetIntents`, `submitFleetIntent`, `createFleetLinkCode` and
+`confirmFleetLink` from `@tuturuuu/internal-api/fleet` for TypeScript callers.
+The package also exports the response schemas; validate responses before use.
 
 ## Read access
 

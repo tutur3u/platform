@@ -155,15 +155,30 @@ An Observer `ask` executes as a read. Every Observer steer request is filed as
 ### Mastermind web
 
 The Fleet area lives in Mastermind web (`apps/mastermind`) at
-`mastermind.tuturuuu.com/{locale}/fleet`:
+`mastermind.tuturuuu.com/{locale}/fleet-access`. The `#fleet` anchor on the
+Mastermind page shows machines and lanes, so the Fleet area takes its own
+route. Tabs follow the live capabilities that `GET /api/v1/fleet/access`
+returns, and the API still decides every read and write:
 
-- **Status:** lanes, releases and readiness items for the person's projects,
-  with the digest's generated time.
-- **Ask:** a question box answered from the scoped digest.
-- **Requests:** the person's intents and typed receipt states.
-- **Approvals:** intents waiting for this person's capability.
+- **Status** (`status.read`): lanes, releases, readiness items and blockers
+  for the person's projects, with each snapshot's generated and received time
+  and a stale badge.
+- **Ask** (`ask` and `status.read`): a project and a typed topic (status,
+  readiness or timeline) answered from the scoped digest in the page, without
+  a model. Free-text questions wait for the tool-free Ask execution path.
+- **Requests:** the person's receipts with typed states, and a typed form per
+  intent kind the grant can file. Kinds filed through `intent.request` are
+  marked for Owner approval. Target keys are typed as catalog keys.
+- **Approvals** (`approve.low`): read-only until an approval API exists.
+- **Link chat:** issue a link code, preview the pending channel and account
+  label, then confirm.
 - **Access (Owner only):** grants, revocation, caps, fleet stop and the audit
-  log.
+  log. Read-only until grant management APIs exist.
+
+A disabled, stopped or revoked grant shows no tabs. A read refused mid-session
+asks the person to reload. Server functions call the Fleet API with the
+caller's short-lived Mastermind session and validate every response against
+the `@tuturuuu/internal-api/fleet` schemas.
 
 Admission binds the verified Access identity to the app session and admits a
 fleet grantee only to Fleet routes. This changes the Mastermind web admission
@@ -345,6 +360,10 @@ Each slice links its coverage here when it lands:
   revocation, quota, quote isolation and digest JSON types.
   See [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts)
   and [fleet-intent-admission.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-intent-admission.sql).
+- Slice 6 covers tab visibility per tier, request options against intent
+  admission, typed drafts, digest answers, redirect refusal, strict response
+  validation, refusal mapping, the link flow and bilingual message parity. See
+  the [Fleet access web tests](https://github.com/tutur3u/platform/tree/main/apps/mastermind/src/fleet-access).
 - Slice 5 covers racing claims, lease expiry, idempotent receipts,
   requester and approver generations, mapping drift, the dispatch fence and
   bounded retention in `apps/database/supabase/tests/fleet-dry-run-consumer.sql`.

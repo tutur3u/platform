@@ -242,5 +242,191 @@
     },
     "reload": "Refresh"
   },
-  "owner": "Authenticated owner"
+  "owner": "Authenticated owner",
+  "fleetAccess": {
+    "title": "Fleet access",
+    "tabs": {
+      "status": "Status",
+      "ask": "Ask",
+      "requests": "Requests",
+      "approvals": "Approvals",
+      "link": "Link chat",
+      "access": "Access"
+    },
+    "tier": {
+      "observer": "Observer",
+      "steerer": "Steerer",
+      "operator": "Operator",
+      "owner": "Owner"
+    },
+    "gate": {
+      "disabled": "You don't have Fleet access.",
+      "stopped": "Fleet is stopped.",
+      "denied": "Your Fleet access changed. Reload to continue."
+    },
+    "common": {
+      "retry": "Retry",
+      "loading": "Loading",
+      "error": "Couldn't load this.",
+      "loadMore": "Load more",
+      "reload": "Reload"
+    },
+    "laneState": {
+      "planned": "Planned",
+      "running": "Running",
+      "blocked": "Blocked",
+      "ready": "Ready",
+      "done": "Done",
+      "paused": "Paused"
+    },
+    "blocker": {
+      "dependency": "Dependency",
+      "review": "Review",
+      "ci": "CI",
+      "approval": "Approval",
+      "release_hold": "Release hold",
+      "capacity": "Capacity",
+      "incident": "Incident"
+    },
+    "status": {
+      "empty": "No snapshots for your projects yet.",
+      "generated": "Generated {time}",
+      "received": "Received {time}",
+      "stale": "Stale",
+      "projects": "Projects",
+      "lanes": "Lanes",
+      "eta": "ETA {time}",
+      "noLanes": "No lanes in this snapshot."
+    },
+    "ask": {
+      "project": "Project",
+      "topic": "Question",
+      "noSnapshot": "No snapshot for this project yet.",
+      "noReadiness": "No readiness items or blockers.",
+      "noTimeline": "No ETAs yet.",
+      "noLanes": "No lanes yet."
+    },
+    "topic": {
+      "status": "Status",
+      "readiness": "Readiness",
+      "timeline": "Timeline"
+    },
+    "kind": {
+      "status_question": "Status question",
+      "comment": "Comment",
+      "priority.set": "Set priority",
+      "approve.item": "Approve readiness item",
+      "work.create": "Create work",
+      "work.redirect": "Redirect work",
+      "lane.pause": "Pause lane",
+      "approve.deploy": "Approve deploy",
+      "approve.production_change": "Approve production change"
+    },
+    "receipt": {
+      "pending_approval": "Waiting for approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "claimed": "Claimed",
+      "dispatched": "Dispatched",
+      "done": "Done",
+      "failed": "Failed",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "choice": {
+      "topic": {
+        "status": "Status",
+        "readiness": "Readiness",
+        "timeline": "Timeline"
+      },
+      "priority": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "template": {
+        "investigation": "Investigation",
+        "maintenance": "Maintenance",
+        "regression_fix": "Regression fix"
+      },
+      "objective": {
+        "investigate": "Investigate",
+        "verify": "Verify",
+        "prepare_review": "Prepare review"
+      },
+      "environment": {
+        "staging": "Staging",
+        "production": "Production"
+      }
+    },
+    "field": {
+      "kind": "Request",
+      "project": "Project",
+      "target": "Target key",
+      "topic": "Topic",
+      "priority": "Priority",
+      "template": "Template",
+      "objective": "Objective",
+      "environment": "Environment",
+      "commitSha": "Commit SHA",
+      "quote": "Note",
+      "quoteRequired": "Note (required)"
+    },
+    "requests": {
+      "new": "New request",
+      "submit": "Send request",
+      "submitting": "Sending",
+      "submitted": "Request filed.",
+      "ownerApproval": "Owner approval",
+      "empty": "No requests yet.",
+      "history": "Your requests",
+      "required": "Required.",
+      "badKey": "Use lowercase letters, digits, hyphens or underscores.",
+      "badSha": "Use the full 40-character commit SHA."
+    },
+    "refusal": {
+      "questions_per_hour": "Hourly question limit reached.",
+      "intents_per_day": "Daily request limit reached.",
+      "stale_project_mapping": "The project catalog changed. Try again.",
+      "fleet_stopped": "Fleet is stopped.",
+      "inactive_grant": "Your grant isn't active.",
+      "missing_capability": "Your access doesn't allow this request.",
+      "project_outside_grant": "That target is outside your projects.",
+      "identity_already_linked": "This chat is already linked to another account.",
+      "invalid_confirmation": "The link ID or confirmation code doesn't match.",
+      "forbidden": "Your access doesn't allow this.",
+      "invalid": "The request was rejected.",
+      "conflict": "The request conflicts with a newer change. Try again.",
+      "quota": "Limit reached. Try again later.",
+      "unavailable": "Fleet is unavailable. Try again."
+    },
+    "approvals": {
+      "unavailable": "Approvals can't be decided here yet."
+    },
+    "access": {
+      "unavailable": "Grants can't be managed here yet."
+    },
+    "link": {
+      "issue": "Get link code",
+      "reissue": "Get a new code",
+      "code": "Link code",
+      "expires": "Expires at {time}",
+      "copy": "Copy",
+      "copied": "Copied",
+      "instructions": "Send this code to the desk in a private chat. The desk replies with a link ID and a confirmation code.",
+      "linkId": "Link ID",
+      "confirmation": "Confirmation code",
+      "preview": "Check",
+      "confirm": "Link chat",
+      "change": "Edit",
+      "linked": "Linked",
+      "pending": "Pending"
+    },
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo",
+      "discord": "Discord"
+    }
+  }
 }

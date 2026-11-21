@@ -104,3 +104,37 @@ export const fleetIntentReceiptSchema = z.strictObject({
 });
 
 export type FleetIntentReceipt = z.infer<typeof fleetIntentReceiptSchema>;
+
+export const fleetIntentPageSchema = z.strictObject({
+  intents: z.array(fleetIntentReceiptSchema).max(50),
+  nextBefore: z.uuid().nullable(),
+});
+
+export type FleetIntentPage = z.infer<typeof fleetIntentPageSchema>;
+
+const fleetCode = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+
+export const fleetLinkCodeSchema = z.strictObject({
+  code: fleetCode,
+  expiresIn: z.literal(600),
+});
+
+export type FleetLinkCode = z.infer<typeof fleetLinkCodeSchema>;
+
+export const fleetLinkConfirmationInputSchema = z.strictObject({
+  linkId: z.uuid(),
+  confirmationCode: fleetCode,
+  preview: z.boolean().optional(),
+});
+
+export type FleetLinkConfirmationInput = z.infer<
+  typeof fleetLinkConfirmationInputSchema
+>;
+
+export const fleetLinkConfirmationSchema = z.strictObject({
+  linked: z.boolean(),
+  channel: z.enum(['whatsapp', 'zalo', 'discord']),
+  accountLabel: z.string().min(1).max(80),
+});
+
+export type FleetLinkConfirmation = z.infer<typeof fleetLinkConfirmationSchema>;
