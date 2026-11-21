@@ -223,6 +223,7 @@ test('targets are fixed per secret and environment', () => {
       name: 'tuturuuu-abuse-guard',
       binding: 'ABUSE_GUARD_SECRETS',
       type: 'secret_text',
+      group: 'peer',
     },
   ]);
   assert.deepEqual(abuse.vercel, {

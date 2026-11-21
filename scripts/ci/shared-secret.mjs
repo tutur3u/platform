@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 // Operator CLI behind .github/workflows/shared-secret-write.yaml.
 //
-//   preflight <secret> <environment>    every destination exists; no writes
-//   write vercel <secret> <environment> value on stdin -> Vercel env
-//   write workers <secret> <environment> value on stdin -> every Worker
-//   verify <secret> <environment>       name + type readback; fails closed
+//   plan <secret> <environment> [scope]       destinations and rotation notes
+//   preflight <secret> <environment> [scope]  every destination exists
+//   write vercel <secret> <environment>       value on stdin -> Vercel env
+//   write workers <secret> <environment> [scope]  value on stdin -> Workers
+//   verify <secret> <environment> [scope]     name + type readback
+//
+// `scope` is `all` (default) or `web`: `web` selects only the apps/web Workers
+// and leaves Vercel and the peer Workers alone, which is how an existing value
+// is copied to a new web Worker without rotating it. `plan` needs no
+// credentials and makes no request.
 //
 // The value is read from stdin only. Output names destinations and types,
 // never a value. Credentials come from the environment by name:
@@ -24,6 +30,7 @@ import {
   verifyWorkerSecret,
   workerExists,
 } from './shared-secret-api.mjs';
+import { formatRotationPlan } from './shared-secret-rotation.mjs';
 import { resolveSharedSecret } from './shared-secret-targets.mjs';
 
 function requiredEnv(env, name) {
@@ -31,10 +38,18 @@ function requiredEnv(env, name) {
   return env[name];
 }
 
+const includesVercel = (plan) => plan.scope === 'all';
+
 export async function preflight(plan, { env, fetchImpl = fetch, log }) {
   const token = requiredEnv(env, 'CLOUDFLARE_API_TOKEN');
-  requiredEnv(env, 'VERCEL_TOKEN');
-  requiredEnv(env, 'VERCEL_ORG_ID');
+  if (includesVercel(plan)) {
+    requiredEnv(env, 'VERCEL_TOKEN');
+    requiredEnv(env, 'VERCEL_ORG_ID');
+  }
+  assert.ok(
+    plan.workers.length > 0,
+    `no Worker selected for ${plan.secret}; opt the vinext families in first`
+  );
   for (const { name } of plan.workers) {
     assert.ok(
       await workerExists({ token, name, fetchImpl }),
@@ -42,7 +57,8 @@ export async function preflight(plan, { env, fetchImpl = fetch, log }) {
     );
     log(`worker ${name} present`);
   }
-  log(`vercel ${plan.vercel.key} -> ${plan.vercel.target}`);
+  if (includesVercel(plan))
+    log(`vercel ${plan.vercel.key} -> ${plan.vercel.target}`);
 }
 
 export async function writeVercel(
@@ -50,6 +66,10 @@ export async function writeVercel(
   value,
   { env, fetchImpl = fetch, log }
 ) {
+  // Only a minted value may replace the Vercel one: a copy or operator-held
+  // value already lives there, and Vercel cannot be read back to compare.
+  assert.equal(plan.mode, 'mint', `${plan.secret} is not minted here`);
+  assert.equal(plan.scope, 'all', 'Vercel writes need scope all');
   await putVercelEnv({
     token: requiredEnv(env, 'VERCEL_TOKEN'),
     teamId: requiredEnv(env, 'VERCEL_ORG_ID'),
@@ -68,6 +88,12 @@ export async function writeWorkers(
   { env, fetchImpl = fetch, log }
 ) {
   const token = requiredEnv(env, 'CLOUDFLARE_API_TOKEN');
+  // Scope all replaces the value everywhere and is only for a minted value;
+  // scope web copies the current value to the web Workers for any secret.
+  assert.ok(
+    plan.scope === 'web' || plan.mode === 'mint',
+    `${plan.secret} is not minted here; copy it with scope web`
+  );
   for (const { name, binding } of plan.workers) {
     await putWorkerSecret({ token, name, binding, value, fetchImpl });
     log(`wrote ${name}: ${binding} (secret_text)`);
@@ -76,19 +102,21 @@ export async function writeWorkers(
 
 export async function verify(plan, { env, fetchImpl = fetch, log, retry }) {
   const token = requiredEnv(env, 'CLOUDFLARE_API_TOKEN');
-  const vercel = {
-    token: requiredEnv(env, 'VERCEL_TOKEN'),
-    teamId: requiredEnv(env, 'VERCEL_ORG_ID'),
-    projectId: plan.vercel.projectId,
-    fetchImpl,
-  };
-  log(
-    await readBack(
-      () => listVercelEnv(vercel),
-      (entries) => verifyVercelEnv(entries, plan.vercel),
-      retry
-    )
-  );
+  if (includesVercel(plan)) {
+    const vercel = {
+      token: requiredEnv(env, 'VERCEL_TOKEN'),
+      teamId: requiredEnv(env, 'VERCEL_ORG_ID'),
+      projectId: plan.vercel.projectId,
+      fetchImpl,
+    };
+    log(
+      await readBack(
+        () => listVercelEnv(vercel),
+        (entries) => verifyVercelEnv(entries, plan.vercel),
+        retry
+      )
+    );
+  }
   for (const { name, binding } of plan.workers)
     log(
       await readBack(
@@ -108,14 +136,15 @@ export async function main(
   const log = (line) => console.log(line);
   const retry = { attempts: 5, delayMs: 3000 };
   const root = fileURLToPath(new URL('../..', import.meta.url));
-  const plan = (secret, environment) =>
-    resolveSharedSecret({ secret, environment, root });
+  const plan = (secret, environment, scope = 'all') =>
+    resolveSharedSecret({ secret, environment, root, scope });
   const stdin = () => assertSecretValue((readStdin ?? readValue)());
+  if (command === 'plan') return log(formatRotationPlan(plan(...rest)));
   if (command === 'preflight')
     return preflight(plan(...rest), { env, fetchImpl, log });
   if (command === 'verify')
     return verify(plan(...rest), { env, fetchImpl, log, retry });
-  assert.equal(command, 'write', 'usage: preflight|write|verify');
+  assert.equal(command, 'write', 'usage: plan|preflight|write|verify');
   const [kind, ...target] = rest;
   assert.ok(kind === 'vercel' || kind === 'workers', 'write vercel|workers');
   const resolved = plan(...target);

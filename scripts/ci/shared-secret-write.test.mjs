@@ -26,8 +26,15 @@ const WORKFLOWS = {
       'node scripts/ci/shared-secret.mjs write vercel "$SHARED_SECRET" "$TARGET_ENVIRONMENT"',
       'node scripts/ci/shared-secret.mjs write workers "$SHARED_SECRET" "$TARGET_ENVIRONMENT"',
     ],
+    assignment: 'value="$(',
     inputs: {
-      secret: ['ABUSE_GUARD_SECRET', 'WEB_MULTI_ACCOUNT_SESSION_SECRET'],
+      secret: [
+        'ABUSE_GUARD_SECRET',
+        'WEB_MULTI_ACCOUNT_SESSION_SECRET',
+        'ABUSE_GUARD_KEY_PEPPER',
+        'CLOUDFLARE_COORDINATION_TOKEN',
+        'MASTERMIND_STORE_TOKEN',
+      ],
       environment: ['staging', 'production'],
     },
   },
@@ -39,6 +46,7 @@ const WORKFLOWS = {
       'SUPABASE_ACCESS_TOKEN',
     ],
     consumers: ['node scripts/ci/supabase-family-key.mjs put'],
+    assignment: 'value="$(',
     inputs: { action: ['create', 'revoke'] },
   },
 };
@@ -140,7 +148,9 @@ for (const [file, spec] of Object.entries(WORKFLOWS)) {
       .filter(({ line }) => /\bvalue\b/.test(line));
     const mask = uses.find(({ line }) => line.includes('::add-mask::'));
     assert.equal(mask.line, `printf '::add-mask::%s\\n' "$value"`);
-    const assignment = uses.find(({ line }) => line.startsWith('value="$('));
+    const assignment = uses.find(({ line }) =>
+      line.startsWith(spec.assignment)
+    );
     assert.ok(assignment.index < mask.index);
     const consumers = uses.filter(({ line }) =>
       line.startsWith(`printf '%s' "$value" | `)
