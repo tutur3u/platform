@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { APP_SESSION_COOKIE_NAME } from '@tuturuuu/auth/app-session';
 import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -89,13 +90,19 @@ const writes = [
   },
 ];
 
-function request(path: string, body: unknown, token: string) {
+function request(
+  path: string,
+  body: unknown,
+  token: string,
+  headers: Record<string, string> = {}
+) {
   return new NextRequest(`https://tuturuuu.com/api/v1/fleet/${path}`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,
       'content-type': 'application/json',
       'x-user-id': intentId,
+      ...headers,
     },
     body: JSON.stringify(body),
   });
@@ -145,10 +152,39 @@ describe.each(writes)(
       expect(rpc).not.toHaveBeenCalled();
     });
 
+    it('refuses a platform app-session cookie ahead of a valid mobile bearer', async () => {
+      const { access } = createCliAppSession({ userId: actorId });
+      const response = await handler(
+        request(path, body, mobileBearer, {
+          cookie: `${APP_SESSION_COOKIE_NAME}=${access.token}`,
+        })
+      );
+      expect(response.status).toBe(401);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(createClient).not.toHaveBeenCalled();
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
+    it('refuses a lowercase platform bearer before any write', async () => {
+      const { access } = createCliAppSession({ userId: actorId });
+      const response = await handler(
+        request(path, body, access.token, {
+          authorization: `bearer ${access.token}`,
+        })
+      );
+      expect(response.status).toBe(401);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(createClient).not.toHaveBeenCalled();
+      expect(rpc).not.toHaveBeenCalled();
+    });
+
     it('refuses an unknown bearer before any write', async () => {
       const response = await handler(request(path, body, 'unknown.bearer.jwt'));
       expect(response.status).toBe(401);
       expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(getUser).toHaveBeenCalledExactlyOnceWith(
+        'Bearer unknown.bearer.jwt'
+      );
       expect(rpc).not.toHaveBeenCalled();
     });
   }

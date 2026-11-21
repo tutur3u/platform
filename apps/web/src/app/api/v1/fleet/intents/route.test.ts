@@ -183,14 +183,6 @@ describe('Fleet intent routes', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('rejects a raw authentication bearer on the web-session write path', async () => {
-    expect(
-      (await POST(request('intents', intent, 'Bearer raw-supabase-session')))
-        .status
-    ).toBe(401);
-    expect(rpc).not.toHaveBeenCalled();
-  });
-
   it('uses the Mastermind session actor and keeps scrubbed quotes out of the payload', async () => {
     submission('accepted', intentId);
     const response = await POST(
