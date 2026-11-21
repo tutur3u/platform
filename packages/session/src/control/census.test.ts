@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { replaceFirst } from '../__tests__/text-edits';
 import {
   createWorld,
   keyEntry,
@@ -528,7 +529,8 @@ describe('evaluateClassCensus', () => {
     [
       'versions only under __proto__',
       {
-        deployments: JSON.stringify(deployments).replace(
+        deployments: replaceFirst(
+          JSON.stringify(deployments),
           '{"versions"',
           '{"__proto__":{"versions":[]},"other"'
         ),

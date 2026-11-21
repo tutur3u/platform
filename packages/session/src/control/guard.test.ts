@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { insertAfter } from '../__tests__/text-edits';
 import {
   createSigner,
   ENV,
@@ -81,14 +82,17 @@ describe('verifyGuardResponse', () => {
   });
 
   it.each([
-    ['whitespace', (text: string) => text.replace(',', ', ')],
+    ['whitespace', (text: string) => insertAfter(text, ',', ' ')],
     [
       'unsorted members',
       () =>
         '{"listVersion":7,"env":"production","gatewayVersions":[],"identityBlocked":false,"issuedAtMs":1800000000000,"kids":[],"mintHalt":false}',
     ],
-    ['a duplicate member', (text: string) => text.replace('{', '{"env":"x",')],
-    ['a non-canonical number', (text: string) => text.replace(':7,', ':7.0,')],
+    [
+      'a duplicate member',
+      (text: string) => insertAfter(text, '{', '"env":"x",'),
+    ],
+    ['a non-canonical number', (text: string) => insertAfter(text, ':7', '.0')],
   ])('rejects a correctly signed payload with %s', async (_, mutate) => {
     const text = mutate(canonicalJson(listFields()) as string);
     expect(await verify(await signText(current, text))).toEqual({

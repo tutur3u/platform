@@ -30,7 +30,7 @@ function options(
 async function rawReason(headerJson: string, claimsJson: string) {
   const issuer = await createTestIssuer();
   const token = await issuer.signRaw(
-    headerJson.replaceAll('$KID', issuer.kid),
+    headerJson.split('$KID').join(issuer.kid),
     claimsJson
   );
   const result = await verifyIdentityAssertion(token, options(issuer));

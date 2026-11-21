@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { insertAfter, insertBefore } from '../__tests__/text-edits';
 import { evaluateClassCensus } from './census-class';
 import {
   type CfBinding,
@@ -81,7 +82,7 @@ describe('checkIdentityMembership traffic percentage', () => {
       checkIdentityMembership(
         baseMembership(
           versionsText('12.5'),
-          ARTIFACT.replace('"registryVersion":12', '"registryVersion":12.5')
+          insertAfter(ARTIFACT, '"registryVersion":12', '.5')
         )
       )
     ).toEqual({ ok: false, reason: 'bad_artifact' });
@@ -167,7 +168,7 @@ describe('evaluateClassCensus deployment percentage', () => {
   });
 
   it('keeps reports on safe integers', () => {
-    const fractional = reports.replace('"outcome"', '"weight":1.5,"outcome"');
+    const fractional = insertBefore(reports, '"outcome"', '"weight":1.5,');
     expect(
       evaluateClassCensus({
         entries,
