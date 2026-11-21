@@ -2,35 +2,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 
 const ROW_COUNT = 7;
-const FOLDER_COUNT = 7;
 const pulse = 'motion-reduce:animate-none';
-
-function SidebarSkeleton() {
-  return (
-    <div
-      className="hidden w-60 shrink-0 flex-col gap-4 border-dynamic border-r p-3 md:flex"
-      data-slot="mail-skeleton-sidebar"
-    >
-      <div className="flex items-center gap-2">
-        <Skeleton className={`size-8 rounded-lg ${pulse}`} />
-        <Skeleton className={`h-4 w-28 ${pulse}`} />
-      </div>
-      <Skeleton className={`h-9 w-full rounded-lg ${pulse}`} />
-      <div className="flex flex-col gap-1">
-        {Array.from({ length: FOLDER_COUNT }, (_, row) => (
-          <div className="flex h-9 items-center gap-3 px-2" key={row}>
-            <Skeleton className={`size-4 ${pulse}`} />
-            <Skeleton className={`h-3 w-24 ${pulse}`} />
-          </div>
-        ))}
-      </div>
-      <div className="mt-auto flex items-center gap-2">
-        <Skeleton className={`size-8 rounded-full ${pulse}`} />
-        <Skeleton className={`h-3 w-24 ${pulse}`} />
-      </div>
-    </div>
-  );
-}
 
 function ListSkeleton() {
   return (
@@ -105,28 +77,6 @@ export function MailContentSkeleton() {
       className="-m-2 h-[calc(100dvh-4.25rem)] min-h-[calc(100dvh-4.25rem)] min-w-0 md:-m-4 md:h-dvh md:min-h-dvh"
     >
       <div aria-hidden className="flex h-full w-full overflow-hidden">
-        <ListSkeleton />
-        <ReaderSkeleton />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Placeholder for the whole Mail workspace (sidebar, list, reader) that holds
- * the default layout while the page model resolves. The initial document uses
- * the real sidebar and its persisted width alongside MailContentSkeleton.
- */
-export function MailWorkspaceSkeleton() {
-  const t = useTranslations('mail');
-  return (
-    <div
-      {...STATUS_PROPS}
-      aria-label={t('loading')}
-      className="flex h-dvh w-full overflow-hidden bg-root-background"
-    >
-      <div aria-hidden className="flex h-full w-full">
-        <SidebarSkeleton />
         <ListSkeleton />
         <ReaderSkeleton />
       </div>

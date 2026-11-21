@@ -2,10 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { createElement as h } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import {
-  MailContentSkeleton,
-  MailWorkspaceSkeleton,
-} from './mail-workspace-skeleton';
+import { MailContentSkeleton } from './mail-workspace-skeleton';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => `t:${key}`,
@@ -13,7 +10,7 @@ vi.mock('next-intl', () => ({
 afterEach(cleanup);
 
 it('announces one busy status and hides the decorative shapes', () => {
-  const { container } = render(h(MailWorkspaceSkeleton));
+  const { container } = render(h(MailContentSkeleton));
   const status = screen.getByRole('status', { name: 't:loading' });
   expect(status.getAttribute('aria-busy')).toBe('true');
   expect(screen.getAllByRole('status')).toHaveLength(1);
@@ -23,21 +20,8 @@ it('announces one busy status and hides the decorative shapes', () => {
   expect(screen.queryByText(/\S/u)).toBeNull();
 });
 
-it('matches the shell regions: sidebar, thread list and reader', () => {
-  const { container } = render(h(MailWorkspaceSkeleton));
-  for (const slot of [
-    'mail-skeleton-sidebar',
-    'mail-skeleton-list',
-    'mail-skeleton-reader',
-  ])
-    expect(container.querySelector(`[data-slot="${slot}"]`)).not.toBeNull();
-  expect(
-    container.querySelectorAll('[data-slot="mail-skeleton-list"] > div')
-  ).toHaveLength(3);
-});
-
 it('stops pulsing for reduced motion on every shape', () => {
-  const { container } = render(h(MailWorkspaceSkeleton));
+  const { container } = render(h(MailContentSkeleton));
   const shapes = [...container.querySelectorAll('[data-slot="skeleton"]')];
   expect(shapes.length).toBeGreaterThan(10);
   for (const shape of shapes)
