@@ -59,8 +59,7 @@ key to the message or the user, so deleting either leaves the record to end
 
 ## Retry job
 
-Cron Control job `ai-credit-unbilled-settlement` (`*/15 * * * *`, enabled in
-`apps/cron-control/cloudflare.config.ts`) calls
+Cron Control job `ai-credit-unbilled-settlement` (`*/15 * * * *`) calls
 `private.settle_unbilled_ai_charges(p_limit)` once per slot:
 
 - At most 100 pending rows per call, oldest first, `FOR UPDATE SKIP LOCKED`.
@@ -80,6 +79,35 @@ Cron Control job `ai-credit-unbilled-settlement` (`*/15 * * * *`, enabled in
 | Database requests | 1 |
 | Rows processed | At most 100, each at most 5 times in its lifetime |
 | Processor time | 30 seconds |
+
+## Enablement
+
+1. The gated migration workflow (`supabase db push --include-all`) applies,
+   in order:
+   - `20261121184400`: the concurrent unique index, its file's only
+     statement; the CLI runs it on its own before recording the version.
+     It fails if a chat message already has two deductions since the cutoff,
+     and the push stops there.
+   - `20261121184500`: refuses with
+     `AI_CREDIT_CHAT_DEDUCTION_INDEX_NOT_VALID` unless the index is valid,
+     then installs the idempotent `deduct_ai_credits`, the unbilled store
+     and its functions in one transaction.
+   - `20261121194300`: the same validity check, as a second gate.
+
+   A failed build leaves an INVALID index that still rejects colliding
+   deduction inserts until it is dropped. To recover: find the duplicates
+   with the query above and resolve them; run
+   `drop index concurrently if exists public.ai_credit_transactions_one_chat_message_deduction;`
+   outside a transaction; rebuild it with the exact statement in
+   `20261121184400` (by hand if that version is already recorded in
+   `supabase_migrations.schema_migrations`, since `db push` will not re-run
+   it); then retry from `20261121184500`.
+2. Deploy the web families and Cron Control. Before the migrations, the
+   chat route's recorder fails soft and logs `recordedUnbilled: false`.
+3. Only after the migrations are applied in production, a reviewed change
+   adds `ai-credit-unbilled-settlement` to `CRON_CONTROL_ENABLED_JOBS` in
+   `apps/cron-control/cloudflare.config.ts`. Enabling it earlier makes every
+   slot fail until its five-failure durable stop trips.
 
 ## Stop
 
@@ -106,6 +134,10 @@ from private.ai_credit_unbilled_charges group by status;
   record wins, settlement of pending rows without re-charging an already
   charged message, abandonment after five attempts, the zero limit, grants and
   pinned search paths.
+- `apps/database/scripts/ai-chat-credit-race.mjs`: two real sessions against a
+  disposable Supabase PG17 container (`node <script> <supabase_db_tt-...>`).
+  Settling one message on two wallets and on one wallet at once charges it
+  once and returns the first charge to the second session.
 - `packages/ai/src/chat/google/stream-finish-persistence.test.ts`: a thrown or
   unsuccessful deduction keeps the reply and records it unbilled; a deducted
   charge is not recorded.
