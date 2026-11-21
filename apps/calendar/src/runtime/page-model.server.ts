@@ -6,6 +6,7 @@ import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { PUBLIC_PATHS } from '../constants/common';
+import { calendarMountedDestination } from '../lib/central-login';
 import { calendarPageModel } from './calendar-page-model.server';
 import { labModel } from './lab-model.server';
 import { loadLocaleContext } from './locale-context.server';
@@ -40,7 +41,14 @@ async function loadResolvedPageModel(url: URL) {
   const locale = loadLocaleContext(`${url.pathname}${url.search}`);
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
   const verifier = segments[0] === 'verify-token' && segments.length === 1;
-  if (verifier && base && !base.isRoot) redirect(base.withBase('/login'));
+  if (verifier && base && !base.isRoot)
+    redirect(
+      calendarMountedDestination(
+        url.searchParams.get('nextUrl') ?? url.searchParams.get('next'),
+        url.origin,
+        base.basePath
+      )
+    );
   const request = calendarRequest().request;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&

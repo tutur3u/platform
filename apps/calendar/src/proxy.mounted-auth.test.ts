@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   ),
   consumeVerifyTokenRequest: vi.fn(),
   getSatelliteAppSession: vi.fn(),
+  getSatelliteSupabaseSessionUser: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   headers: vi.fn(),
   redirect: vi.fn((url: string): never => {
@@ -63,6 +64,8 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSession: (
     ...args: Parameters<typeof mocks.getSatelliteAppSession>
   ) => mocks.getSatelliteAppSession(...args),
+  getSatelliteSupabaseSessionUser: () =>
+    mocks.getSatelliteSupabaseSessionUser(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -138,6 +141,7 @@ beforeEach(() => {
   mocks.authProxy.mockReturnValue(NextResponse.next());
   mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
   mocks.getSatelliteAppSession.mockResolvedValue(null);
+  mocks.getSatelliteSupabaseSessionUser.mockResolvedValue(null);
   mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
   mocks.headers.mockResolvedValue(new Headers());
   mocks.refreshAppSessionForRequest.mockResolvedValue({
@@ -154,24 +158,7 @@ describe('mounted Calendar verify-token resume', () => {
     const handoff = new URL(await renderMountedLogin({ next: '/abc' }));
     expect(`${handoff.origin}${handoff.pathname}`).toBe(`${APEX}/login`);
     const returnUrl = new URL(handoff.searchParams.get('returnUrl') ?? '');
-    expect(`${returnUrl.origin}${returnUrl.pathname}`).toBe(
-      `${APEX}${BASE}/verify-token`
-    );
-    expect(returnUrl.searchParams.get('nextUrl')).toBe('/abc');
-
-    // Web signs in, sets the shared apex cookie and returns with a token.
-    returnUrl.searchParams.set('token', 'x');
-    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
-    const resume = await proxy(
-      mounted(`${returnUrl.pathname}${returnUrl.search}`, {
-        cookie: SHARED_COOKIE,
-      })
-    );
-
-    expect(resume.status).toBe(307);
-    expect(resume.headers.get('location')).not.toBe(`${APEX}${BASE}/login`);
-    expect(resume.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
-    expectNoSessionWrites(resume);
+    expect(returnUrl.href).toBe(`${APEX}${BASE}/abc`);
   });
 
   it.each([
@@ -288,15 +275,16 @@ describe('mounted Calendar verify-token resume', () => {
   });
 });
 
-describe('mounted Calendar public completion document', () => {
+describe('mounted Calendar public completion redirect', () => {
   for (const method of ['GET', 'HEAD']) {
     it.each([
-      ['/verify-token', {}, 'en'],
-      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, 'vi'],
-      ['/verify-token?nextUrl=%2Fabc', {}, 'en'],
+      ['/verify-token', {}, '/personal'],
+      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, '/personal'],
+      ['/vi/verify-token', {}, '/personal'],
+      ['/verify-token?nextUrl=%2Fabc', {}, '/abc'],
     ] as const)(
-      `${method} tokenless %s renders its locale route in place`,
-      async (path, headers, locale) => {
+      `${method} tokenless %s resumes without rendering the verifier`,
+      async (path, headers, destination) => {
         const response = await proxy(
           new NextRequest(`${APEX}${BASE}${path}`, {
             method,
@@ -304,26 +292,14 @@ describe('mounted Calendar public completion document', () => {
             nextConfig: { basePath: BASE },
           })
         );
-        expect(response.headers.get('location')).toBeNull();
-        const rewrite = new URL(
-          response.headers.get('x-middleware-rewrite') ?? ''
+        expect(response.status).toBe(307);
+        expect(response.headers.get('location')).toBe(
+          `${APEX}${BASE}${destination}`
         );
-        expect(`${rewrite.origin}${rewrite.pathname}`).toBe(
-          `${APEX}${BASE}/${locale}/verify-token`
-        );
-        expect(rewrite.search).toBe(new URL(`${APEX}${path}`).search);
+        expect(response.headers.has('x-middleware-rewrite')).toBe(false);
         expectNoSessionWrites(response);
       }
     );
-
-    it(`${method} tokenless /vi/verify-token keeps its route`, async () => {
-      const response = await proxy(
-        mounted(`${BASE}/vi/verify-token`, { method })
-      );
-      expect(response.headers.get('location')).toBeNull();
-      expect(response.headers.get('x-middleware-next')).toBe('1');
-      expectNoSessionWrites(response);
-    });
   }
 
   it('keeps a token-bearing mounted request on the resume redirect', async () => {
@@ -359,12 +335,12 @@ describe('mounted Calendar login with a stale shared cookie', () => {
     const target = new URL(await renderMountedLogin({}, SHARED_COOKIE));
     expect(`${target.origin}${target.pathname}`).toBe(`${APEX}/login`);
     expect(target.searchParams.get('returnUrl')).toBe(
-      `${APEX}${BASE}/verify-token?nextUrl=%2Fpersonal`
+      `${APEX}${BASE}/personal`
     );
   });
 
   it('sends a verified session from the mounted login to its next path', async () => {
-    mocks.getSatelliteAppSession.mockResolvedValue({ sub: 'user-1' });
+    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue({ id: 'user-1' });
     await expect(
       renderMountedLogin({ next: '/abc' }, SHARED_COOKIE)
     ).resolves.toBe(`${BASE}/abc`);

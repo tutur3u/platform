@@ -38,7 +38,10 @@ import {
 } from './constants/common';
 import { type Locale, supportedLocales } from './i18n/routing';
 import { isCalendarApexMountUrl } from './lib/calendar-mount-hosts';
-import { centralCalendarLoginUrl } from './lib/central-login';
+import {
+  calendarMountedDestination,
+  centralCalendarLoginUrl,
+} from './lib/central-login';
 import {
   preferredCalendarLocale,
   resolveCalendarLocale,
@@ -164,9 +167,15 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
   ) {
     // Web owns the shared session. A mounted legacy handoff never renders
     // or forwards its verifier, even when the request carries no token.
-    return NextResponse.redirect(
-      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
-    );
+    const destination = isDocumentRequest
+      ? calendarMountedDestination(
+          req.nextUrl.searchParams.get('nextUrl') ??
+            req.nextUrl.searchParams.get('next'),
+          req.nextUrl.origin,
+          req.nextUrl.basePath
+        )
+      : withAppBase('/login', req.nextUrl.basePath);
+    return NextResponse.redirect(new URL(destination, req.nextUrl.origin));
   }
   const verifyTokenResponse =
     mounted || publicCompletion

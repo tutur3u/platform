@@ -10,7 +10,7 @@ import {
   updateWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarSyncPreferences,
 } from '@tuturuuu/internal-api/calendar';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -209,16 +209,9 @@ export function useCalendarConnectionsManager(wsId: string) {
     },
   });
 
-  // Fetch current user's email
   const { data: userEmail } = useQuery({
     queryKey: ['current-user-email'],
-    queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      return user?.email || null;
-    },
+    queryFn: async () => (await getCurrentUserProfile()).email,
     staleTime: Infinity, // User email rarely changes
   });
 

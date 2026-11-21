@@ -469,12 +469,39 @@ it('retains the mount when the real router supplies an app-relative loader URL',
       () => loadPageModel(loaderPath)
     )
   ).rejects.toMatchObject({
-    options: { href: '/calendar/login', statusCode: 307 },
+    options: {
+      href: `/calendar/login?${new URLSearchParams({ next: loaderPath })}`,
+      statusCode: 307,
+    },
   });
   expect(ports.actor).toHaveBeenCalledTimes(1);
   expect(ports.data).not.toHaveBeenCalled();
   expect(outbound).not.toHaveBeenCalled();
 });
+
+it.each(['/verify-token', '/vi/%76erify-token/'])(
+  'does not render the mounted verifier at %s',
+  async (path) => {
+    const next = '/vi/personal?date=2026-11-13';
+    const location = `${path}?${new URLSearchParams({ nextUrl: next })}`;
+    await expect(
+      withCalendarRequest(
+        {
+          request: new Request(`https://tuturuuu.com/calendar${location}`),
+          appBase: '/calendar',
+          responseHeaders: new Headers(),
+          waitUntil: () => {},
+        },
+        () => loadPageModel(location)
+      )
+    ).rejects.toMatchObject({
+      options: { href: `/calendar${next}`, statusCode: 307 },
+    });
+    expect(ports.actor).not.toHaveBeenCalled();
+    expect(ports.data).not.toHaveBeenCalled();
+    expect(outbound).not.toHaveBeenCalled();
+  }
+);
 
 it.each(['https://attacker.invalid/workspace', '//attacker.invalid/workspace'])(
   'rejects foreign loader target %s before actor resolution',

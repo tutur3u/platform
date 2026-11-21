@@ -8,13 +8,15 @@ import {
   getSatelliteSupabaseSessionUser,
 } from '@tuturuuu/satellite/auth';
 import { runtimeAppBase, withAppBase } from '@tuturuuu/start-bridge/app-url';
-import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
 
-const DEFAULT_CALENDAR_PATH = '/personal';
+import {
+  calendarMountedDestination,
+  DEFAULT_CALENDAR_PATH,
+} from '@/lib/central-login';
 
 function normalizeNextPath(
   value: string | string[] | undefined,
@@ -40,17 +42,7 @@ export default async function LoginPage({
   );
   const shouldRefreshCrossAppSession = params.refresh === '1';
   if (appBase) {
-    const path = new URL(nextPath, origin).pathname;
-    const relative =
-      createBasePath({ app: 'calendar', basePath: appBase }).strip(path) ??
-      path;
-    const authStep = /^\/(?:(?:en|vi)\/)?(?:login|verify-token)\/?$/u.test(
-      relative
-    );
-    const destination = withAppBase(
-      authStep ? DEFAULT_CALENDAR_PATH : nextPath,
-      appBase
-    );
+    const destination = calendarMountedDestination(nextPath, origin, appBase);
     const user = await getSatelliteSupabaseSessionUser();
     if (user?.id && !shouldRefreshCrossAppSession) redirect(destination);
     const central = new URL('/login', TTR_URL);

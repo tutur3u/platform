@@ -39,6 +39,7 @@ import {
 // Artifact-dependent: intentionally outside root source-only .test.* discovery.
 const app = fileURLToPath(new URL('../../apps/calendar', import.meta.url));
 const name = 'calendar';
+const CALENDAR_SUBDOMAIN = 'calendar.tuturuuu.com';
 const CALENDAR_MOUNT_HOST = 'tuturuuu.com';
 const CALENDAR_BASE_PATH = '/calendar';
 const sourceSHA = process.env.NATIVE_FIXTURE_CASE
@@ -216,8 +217,9 @@ async function runChild() {
       `https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}${path}`,
       { headers, redirect: 'manual' }
     );
-  const fetchAbsolutePath = (path) =>
-    runtime.worker.fetch(`https://${CALENDAR_MOUNT_HOST}${path}`, {
+  const fetchSubdomain = (path, headers = {}) =>
+    runtime.worker.fetch(`https://${CALENDAR_SUBDOMAIN}${path}`, {
+      headers,
       redirect: 'manual',
     });
   checkedTest(
@@ -232,12 +234,12 @@ async function runChild() {
         ['/verify-token', 'vi', { cookie: 'NEXT_LOCALE=vi' }],
         ['/verify-token', 'vi', { 'accept-language': 'vi,en;q=0.5' }],
       ]) {
-        const response = await fetchWorker(path, headers);
+        const response = await fetchSubdomain(path, headers);
         try {
           assert.equal(
             response.status,
             200,
-            `Calendar request=https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+            `Calendar request=https://${CALENDAR_SUBDOMAIN}${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
           );
         } catch (error) {
           primary = error;
@@ -251,18 +253,31 @@ async function runChild() {
           (m) => m[1]
         );
         const module = scripts.find(
-          (src) =>
-            src.startsWith(`${CALENDAR_BASE_PATH}/assets/`) &&
-            /\.js(?:\?|$)/.test(src)
+          (src) => src.startsWith('/assets/') && /\.js(?:\?|$)/.test(src)
         );
         assert.ok(module, 'SSR hydration module missing');
-        const asset = await fetchAbsolutePath(module);
+        const asset = await fetchSubdomain(module);
         assert.equal(asset.status, 200);
         assert.match(asset.headers.get('content-type') ?? '', /javascript/);
       }
       assert.deepEqual(unexpected, []);
     }
   );
+  checkedTest('mounted Calendar never serves a verifier document', async () => {
+    for (const path of ['/verify-token', '/vi/%76erify-token/']) {
+      const response = await fetchWorker(path);
+      assert.equal(response.status, 307);
+      assert.equal(
+        new URL(
+          response.headers.get('location'),
+          `https://${CALENDAR_MOUNT_HOST}`
+        ).href,
+        `https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}/personal`
+      );
+      assert.equal(response.headers.get('set-cookie'), null);
+    }
+    assert.deepEqual(unexpected, []);
+  });
   checkedTest(
     'native offline fallback and stylesheet keep their exact public URLs',
     async () => {

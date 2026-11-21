@@ -431,12 +431,12 @@ const getLocale = (
 };
 
 const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
-  const { locale } = getLocale(req);
+  const { locale, pathname } = getLocale(req);
 
   const nextIntlMiddleware = createIntlMiddleware({
     defaultLocale: locale as Locale,
     localeDetection: false,
-    localePrefix: 'as-needed',
+    localePrefix: req.nextUrl.basePath && pathname ? 'always' : 'as-needed',
     locales: supportedLocales,
   });
 

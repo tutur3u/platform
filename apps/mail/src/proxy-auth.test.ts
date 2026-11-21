@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => {
     ),
     consumeVerifyTokenRequest: vi.fn(),
     createCentralizedAuthProxy: vi.fn(() => authProxy),
+    createIntlMiddleware: vi.fn<typeof import('next-intl/middleware').default>(
+      () => () => NextResponse.next()
+    ),
     getAppSessionClaimsFromRequest: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(
       (_request: NextRequest, response: NextResponse) => response.headers
@@ -86,7 +89,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: (...args: Parameters<typeof mocks.createIntlMiddleware>) =>
+    mocks.createIntlMiddleware(...args),
 }));
 
 vi.mock('next-intl/routing', () => ({
@@ -409,6 +413,26 @@ describe('mounted Mail app-owned redirects', () => {
       expect(response.headers.get('x-middleware-next')).toBe('1');
       expect(response.headers.getSetCookie()).toEqual([]);
       expect(mocks.authProxy).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['en', 'vi'])(
+    'retains the explicit mounted %s locale on a deep link',
+    async (locale) => {
+      const { default: createIntlMiddleware } = await vi.importActual<
+        typeof import('next-intl/middleware')
+      >('next-intl/middleware');
+      mocks.createIntlMiddleware.mockImplementationOnce(createIntlMiddleware);
+      mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+      const path = `/mail/${locale}/personal/inbox?q=one%26two`;
+      const request = new NextRequest(`https://tuturuuu.com${path}`, {
+        nextConfig: { basePath: '/mail' },
+        headers: { cookie: 'NEXT_LOCALE=vi; sb-fixture-auth-token=shared' },
+      });
+
+      const response = await proxy(request);
+
+      expect(response.headers.get('location')).toBeNull();
     }
   );
 });
