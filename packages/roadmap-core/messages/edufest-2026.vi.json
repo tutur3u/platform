@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Một lớp học, nhiều AI Agent · EduFest 2026",
-    "description": "Workshop thực hành về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Vào lớp học Agentic AI trực tuyến, làm bài kiểm tra trực tiếp và nhận gợi ý thay vì đáp án. 40 suất."
+    "title": "Khi thầy cô làm học trò · EduFest 2026",
+    "description": "Workshop thực hành về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Ngồi ghế học trò trong lớp học Agentic AI trực tuyến, nhận gợi ý thay vì đáp án, rồi đổi ghế. 40 suất."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -16,9 +16,9 @@
   },
   "hero": {
     "eyebrow": "EduFest 2026 · Workshop thực hành",
-    "title": "Một lớp học, nhiều AI Agent",
-    "titleAccent": "Vận hành lớp học AI trực tuyến, từ bài giảng đến bài kiểm tra",
-    "subtitle": "Trợ lý AI đang dần có mặt ở những nơi học sinh học tập, còn lớp học trực tuyến ngày càng đông. Hãy tham gia một lớp học trực tuyến ngay trên điện thoại hoặc laptop, nhờ trợ lý AI gợi ý thay vì cho đáp án, làm bài kiểm tra trực tiếp, và cùng bàn những điều nhà trường cần quyết định trước khi bật AI.",
+    "title": "Khi thầy cô làm học trò",
+    "titleAccent": "Bên trong một lớp học AI trực tuyến",
+    "subtitle": "Phần lớn thầy cô vào một lớp học trực tuyến trong vai học trò, ngay trên điện thoại hoặc laptop của mình, còn vài đồng nghiệp đứng lớp. Nhờ trợ lý AI gợi ý thay vì cho đáp án và thi theo đội trong một lượt đố vui trực tiếp, với đáp án được giữ kín. Sau đó đổi ghế để xem giáo viên tạo, chấm và theo dõi bài kiểm tra, xem trước trợ lý AI Mira, và quyết định AI nên làm gì trước khi nhà trường bật AI.",
     "date": "Thời gian",
     "venue": "Địa điểm",
     "toBeAnnounced": "Sẽ thông báo sớm",
@@ -29,7 +29,7 @@
     "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
     "addToCalendar": "Thêm vào lịch",
     "openMap": "Mở bản đồ",
-    "titleMark": "nhiều AI Agent",
+    "titleMark": "học trò",
     "stageLabel": "Minh hoạ một lớp học trực tuyến: thầy cô ngồi ở ghế học trò, còn AI Agent trả lời bằng một gợi ý thay vì đưa sẵn đáp án.",
     "stageWindow": "Lớp học trực tuyến · AI Agent nhập môn",
     "stageLive": "Trực tiếp",

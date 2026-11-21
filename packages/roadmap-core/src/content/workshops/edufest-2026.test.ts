@@ -129,16 +129,10 @@ describe('EduFest workshop: copy', () => {
       assert.doesNotMatch(neutral, /Tuturuuu|Upskii/);
     }
     assert.doesNotMatch(JSON.stringify(vi), /tác tử/);
-    assert.equal(vi.hero.title, 'Một lớp học, nhiều AI Agent');
-    assert.equal(
-      vi.hero.titleAccent,
-      'Vận hành lớp học AI trực tuyến, từ bài giảng đến bài kiểm tra'
-    );
-    assert.equal(en.hero.title, 'One Class, Many Agents');
-    assert.equal(
-      en.hero.titleAccent,
-      'Running a Live AI Classroom, From Lesson to Quiz'
-    );
+    assert.equal(vi.hero.title, 'Khi thầy cô làm học trò');
+    assert.equal(vi.hero.titleAccent, 'Bên trong một lớp học AI trực tuyến');
+    assert.equal(en.hero.title, 'When Teachers Become Students');
+    assert.equal(en.hero.titleAccent, 'Inside a Live AI Classroom');
   });
 
   it('the date and venue are the confirmed ones; no price, form or link in the call to action', () => {

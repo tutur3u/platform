@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "One Class, Many Agents · EduFest 2026",
-    "description": "Hands-on AI in education workshop at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Join a live AI classroom, take a live quiz and get hints, not answers. 40 seats."
+    "title": "When Teachers Become Students · EduFest 2026",
+    "description": "Hands-on AI in education workshop at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Join a live AI class as a student, get hints, not answers, then swap seats. 40 seats."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -16,9 +16,9 @@
   },
   "hero": {
     "eyebrow": "EduFest 2026 · Hands-on workshop",
-    "title": "One Class, Many Agents",
-    "titleAccent": "Running a Live AI Classroom, From Lesson to Quiz",
-    "subtitle": "AI assistants are moving into the places students learn, and live online classes keep getting bigger. Join a live class on your own phone or laptop, ask an AI assistant for a hint instead of the answer, take a live quiz, and see what schools should decide before they switch AI on.",
+    "title": "When Teachers Become Students",
+    "titleAccent": "Inside a Live AI Classroom",
+    "subtitle": "Most of the room joins a live online class as students, on their own phone or laptop, while a few colleagues teach. Ask an AI assistant for a hint instead of the answer and race a live team quiz with hidden answers. Then swap seats to see how teachers build, grade and track quizzes, preview the AI assistant Mira, and decide what AI should do before your school switches it on.",
     "date": "Date",
     "venue": "Venue",
     "toBeAnnounced": "To be announced",
@@ -29,7 +29,7 @@
     "venueValue": "RMIT University Vietnam, Saigon South (SGS) Campus, 702 Nguyen Van Linh, Building 2",
     "addToCalendar": "Add to calendar",
     "openMap": "Open map",
-    "titleMark": "Many Agents",
+    "titleMark": "Students",
     "stageLabel": "An illustrated live class: you sit in a student seat while the AI agent answers with a hint, not the answer.",
     "stageWindow": "Live class · Agentic AI 101",
     "stageLive": "Live",
