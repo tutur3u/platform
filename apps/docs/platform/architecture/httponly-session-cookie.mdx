@@ -12,7 +12,7 @@ the `sb-<ref>-auth-token*` cookie becomes `HttpOnly`, so no script on any
 access or refresh token. The product rule is listed in
 [Shared session](/platform/architecture/shared-session#who-can-read-the-session).
 
-**Status:** Slices 1 and 2 are implemented with the flag off. The flip is
+**Status:** Slices 1, 2 and 3 are implemented with the flag off. The flip is
 held. Security finding `APEX-SESSION-COOKIE` is open. Release authority record
 `RA-20261121-1145-APEX-SESSION-COOKIE` accepts enforced CSP plus Trusted Types
 as an interim control until 2026-12-05. This design removes the root cause.
@@ -31,7 +31,7 @@ keep a full Web session after the tab closes.
 
 | Property | Rule |
 | --- | --- |
-| Session cookie | `HttpOnly; Secure; SameSite=Lax; Path=/`, keeping `Domain=.tuturuuu.com` in Stage A so subdomain servers still read it |
+| Session cookie | At the flip, every server writer sets the existing `sb-*` cookie `HttpOnly; Secure; SameSite=Lax; Path=/`, keeping `Domain=.tuturuuu.com` so subdomain servers still read it. Copies written readable before the flip are retired by the first-party session migration (a flip gate below), not by the flag |
 | Writers | Server code only: Web, plus the server proxies and route handlers of subdomain apps. Mounted apps stay non-writers through the bridge guard |
 | Browser data access | Same-origin `/api/*` routes and `@tuturuuu/internal-api` with the cookie, using TanStack Query and no `useEffect` data fetching |
 | Browser realtime | `@tuturuuu/internal-api/realtime` only: Cloudflare realtime with 60 s topic join tickets from `/api/v1/realtime/channels`. No browser code uses Supabase Realtime |
@@ -129,15 +129,29 @@ flips for every writer at once.
      `qr-login.test.ts` (with a native-poller control) and the QA admin
      `route.test.ts`. The Web and Workspace `LoginQrCard` components, which no
      page mounts, would need a server-set cookie before they could be used.
-3. **Slice 3, shared identity.** Implemented for `RealtimeLogProvider`
-   (mounted in 12 apps), which no longer builds a browser auth client, and for
-   the `getUser`-only call sites in `google-calendar-settings`,
-   `use-calendar-connections-manager`, `fade-setting-initializer`,
-   `use-task-form-reset` and `create-task-with-recovery`. They read identity
-   through `useCurrentUserIdentity` / `fetchCurrentUserIdentity`
-   (`packages/ui/src/hooks/use-current-user-identity.ts`): a TanStack Query
-   over the same-origin profile API, independent of the auth provider. The
-   identity-plus-CRUD sites move in slice 4.
+3. **Slice 3, shared identity.** Implemented.
+   - `RealtimeLogProvider` (mounted in 12 apps) no longer builds a browser
+     auth client. It reports the server-verified `verifiedUserId` prop when a
+     mount passes one, and `null` otherwise; its logger has no callers.
+   - `google-calendar-settings`, `use-calendar-connections-manager` and
+     `fade-setting-initializer` use `useCurrentUserIdentity`
+     (`packages/ui/src/hooks/use-current-user-identity.ts`). It is a TanStack
+     Query over the same-origin profile API, independent of the auth
+     provider:
+     - Only a 401 or 403 means signed out. Transient failures reject and are
+       retried twice.
+     - The cache is dropped on this tab's session-ending signal and refetched
+       when a tab regains focus. A second tab keeps its old value until it
+       regains focus or the 30-second staleness window passes.
+   - `fade-setting-initializer` applies the fade preference only with a known
+     identity, and drops `['user-task-settings']` on session end.
+   - `create-task-with-recovery` calls `fetchCurrentUserIdentity` once, and
+     only when self-assignment applies; a failed lookup creates the task
+     without it.
+   - `use-task-form-reset` calls the profile API directly for the
+     `includeMyTasks` assignee.
+
+   The identity-plus-CRUD sites move in slice 4.
 4. **Slice 4, shared CRUD and storage.**
    - `use-calendar`, the `supabase-provider` fallback, `task-item-checkbox`,
      `scheduling-dialog`, `use-task-data`, `task-actions` and `task-list-form`
@@ -305,16 +319,16 @@ Workspace has copies of the Web login, MFA, SSO, notes, Mira and passkey files.
 
 | File | Calls |
 | --- | --- |
-| `packages/supabase/src/next/realtime-log-provider.tsx` | `getUser`, `onAuthStateChange` (logging context only) |
+| `packages/supabase/src/next/realtime-log-provider.tsx` | `getUser`, `onAuthStateChange` (logging context only). Migrated in slice 3 |
 | `packages/ui/src/hooks/use-calendar.tsx` | `getUser`; `task_calendar_events`, `task_user_scheduling_settings`, `workspace_calendar_events` |
 | `packages/ui/src/hooks/use-yjs-collaboration.ts` with `supabase-provider.ts` | `.from(table)` fallback when no `loadState`/`saveState` is supplied |
 | `packages/ui/src/components/ui/text-editor/task-item-checkbox.ts` | `.from('tasks')` |
-| `packages/ui/src/components/ui/calendar-app/components/use-calendar-connections-manager.ts` | `getUser` |
-| `packages/ui/src/components/ui/legacy/calendar/settings/google-calendar-settings.tsx` | `getUser` |
+| `packages/ui/src/components/ui/calendar-app/components/use-calendar-connections-manager.ts` | `getUser`. Migrated in slice 3 |
+| `packages/ui/src/components/ui/legacy/calendar/settings/google-calendar-settings.tsx` | `getUser`. Migrated in slice 3 |
 | `packages/tasks-ui/src/calendar/components/scheduling-dialog.tsx` | `getUser`, `task_user_scheduling_settings` |
-| `packages/tasks-ui/src/tu-do/shared/fade-setting-initializer.tsx` | `getUser` |
-| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-form-reset.ts` | `getUser` |
-| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/create-task-with-recovery.ts` | `getUser` |
+| `packages/tasks-ui/src/tu-do/shared/fade-setting-initializer.tsx` | `getUser`. Migrated in slice 3 |
+| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-form-reset.ts` | `getUser`. Migrated in slice 3 |
+| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/create-task-with-recovery.ts` | `getUser`. Migrated in slice 3 |
 | `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-data.ts` | `getUser`, `.from('users')` |
 | `packages/tasks-ui/src/tu-do/boards/boardId/task-actions.tsx` | `.from('tasks')` select and soft delete, without a `workspaceId` |
 | `packages/tasks-ui/src/tu-do/boards/boardId/task-list-form.tsx` | `.from('task_lists').insert` |

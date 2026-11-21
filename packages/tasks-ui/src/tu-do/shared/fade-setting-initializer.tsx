@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUserIdentity } from '@tuturuuu/ui/hooks/use-current-user-identity';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
+import { onSessionEnding } from '@tuturuuu/utils/session-events';
 import { useEffect } from 'react';
 
 interface TaskSettingsData {
@@ -16,7 +17,17 @@ interface TaskSettingsData {
  * Sets the body data attribute based on user preferences.
  */
 export function FadeSettingInitializer() {
+  const queryClient = useQueryClient();
   const { data: identity } = useCurrentUserIdentity();
+
+  // The settings cache belongs to the account that loaded it.
+  useEffect(
+    () =>
+      onSessionEnding(() => {
+        queryClient.removeQueries({ queryKey: ['user-task-settings'] });
+      }),
+    [queryClient]
+  );
 
   const { data: settings } = useQuery({
     queryKey: ['user-task-settings'],
@@ -40,10 +51,11 @@ export function FadeSettingInitializer() {
   });
 
   useEffect(() => {
-    // Default to false (no fade) until settings are loaded
-    const enabled = settings?.fade_completed_tasks ?? false;
+    // Default to false (no fade) until a signed-in user's settings load.
+    const enabled =
+      Boolean(identity) && settings?.fade_completed_tasks === true;
     document.body.setAttribute('data-fade-completed', String(enabled));
-  }, [settings?.fade_completed_tasks]);
+  }, [identity, settings?.fade_completed_tasks]);
 
   return null;
 }

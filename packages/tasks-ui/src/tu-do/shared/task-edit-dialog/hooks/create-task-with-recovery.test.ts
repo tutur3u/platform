@@ -9,7 +9,9 @@ const {
   mockUpdateTask,
   mockUpdateDescription,
   mockSaveScheduling,
+  mockFetchIdentity,
 } = vi.hoisted(() => ({
+  mockFetchIdentity: vi.fn(),
   mockCreateTask: vi.fn(),
   mockSaveScheduling: vi.fn(),
   mockUpdateTask: vi.fn(),
@@ -34,14 +36,8 @@ vi.mock('@tuturuuu/internal-api/tasks', async () => {
   };
 });
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(() => ({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'user-1' } },
-      }),
-    },
-  })),
+vi.mock('@tuturuuu/ui/hooks/use-current-user-identity', () => ({
+  fetchCurrentUserIdentity: mockFetchIdentity,
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', async (importOriginal) => ({
@@ -391,6 +387,57 @@ describe('handleCreateTask', () => {
     expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('create');
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['task-list-counts', 'board-1'],
+    });
+  });
+
+  describe('self-assignment without a user prop', () => {
+    const created = { id: 'task-self', name: 'Mine', list_id: 'list-1' };
+    const assigneeIds = () => mockCreateTask.mock.calls[0]?.[2]?.assignee_ids;
+
+    it('assigns the identity from the profile API when auto-assign applies', async () => {
+      mockFetchIdentity.mockResolvedValueOnce({ id: 'me', email: null });
+      mockCreateTask.mockResolvedValueOnce(created);
+
+      await handleCreateTask(
+        createOptions({
+          user: null as never,
+          userTaskSettings: { task_auto_assign_to_self: true },
+        })
+      );
+
+      expect(mockFetchIdentity).toHaveBeenCalledOnce();
+      expect(assigneeIds()).toEqual(['me']);
+    });
+
+    it('creates the task unassigned when the identity lookup fails', async () => {
+      mockFetchIdentity.mockImplementationOnce(() =>
+        Promise.reject(Object.assign(new Error('busy'), { status: 503 }))
+      );
+      mockCreateTask.mockResolvedValueOnce(created);
+
+      await handleCreateTask(
+        createOptions({
+          user: null as never,
+          userTaskSettings: { task_auto_assign_to_self: true },
+        })
+      );
+
+      expect(mockCreateTask).toHaveBeenCalledOnce();
+      expect(assigneeIds()).toEqual([]);
+    });
+
+    it('skips the lookup when self-assignment does not apply', async () => {
+      mockCreateTask.mockResolvedValueOnce(created);
+
+      await handleCreateTask(
+        createOptions({
+          user: null as never,
+          userTaskSettings: { task_auto_assign_to_self: false },
+        })
+      );
+
+      expect(mockFetchIdentity).not.toHaveBeenCalled();
+      expect(assigneeIds()).toEqual([]);
     });
   });
 });

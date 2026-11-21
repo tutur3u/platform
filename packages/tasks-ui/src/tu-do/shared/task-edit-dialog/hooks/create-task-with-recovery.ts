@@ -202,18 +202,17 @@ export async function handleCreateTask({
   insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
 
   try {
-    let resolvedUserId = user?.id;
-    if (!resolvedUserId) {
-      resolvedUserId = (await fetchCurrentUserIdentity())?.id;
-    }
-
     let desiredAssignees = [...selectedAssignees];
-    if (
+    const wantsSelfAssignment =
       desiredAssignees.length === 0 &&
-      userTaskSettings?.task_auto_assign_to_self &&
-      resolvedUserId &&
-      !isPersonalWorkspace
-    ) {
+      Boolean(userTaskSettings?.task_auto_assign_to_self) &&
+      !isPersonalWorkspace;
+    // Look the user up only when self-assignment applies; a failed lookup
+    // creates the task without it.
+    const resolvedUserId = wantsSelfAssignment
+      ? (user?.id ?? (await fetchCurrentUserIdentity().catch(() => null))?.id)
+      : undefined;
+    if (wantsSelfAssignment && resolvedUserId) {
       desiredAssignees = [
         {
           id: resolvedUserId,
