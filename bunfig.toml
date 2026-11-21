@@ -105,6 +105,7 @@ minimumReleaseAgeExcludes = [
   "@cloudflare/kv-asset-handler",
   "@cloudflare/unenv-preset",
   "@cloudflare/vite-plugin",
+  "@cloudflare/workers-response-store",
   "@cloudflare/workers-types",
   "@cloudflare/workerd-darwin-64",
   "@cloudflare/workerd-darwin-arm64",

@@ -230,6 +230,10 @@ test('flags a production host fallback in staging forwarding sources', () => {
     'src/runtime/other.ts': "const web = 'https://tuturuuu.com';",
     'src/runtime/allowed.ts': "const root = 'tuturuuu.com'; // host-scan-allow",
     'src/runtime/clean.ts': 'const tasks = process.env.TASKS_APP_URL;',
+    'src/runtime/error-prose.ts':
+      "{ error: 'Calendar provider sign-in uses calendar.tuturuuu.com' },",
+    'src/runtime/error-url.ts': "{ error: 'https://tasks.tuturuuu.com' },",
+    'src/runtime/error-host.ts': "{ error: 'calendar.tuturuuu.com' },",
   });
   try {
     assert.throws(
@@ -244,8 +248,17 @@ test('flags a production host fallback in staging forwarding sources', () => {
       scanCalendarForwardingSources(root, [
         'src/runtime/allowed.ts',
         'src/runtime/clean.ts',
+        'src/runtime/error-prose.ts',
       ]),
-      { sources: 2 }
+      { sources: 3 }
+    );
+    assert.throws(
+      () => scanCalendarForwardingSources(root, ['src/runtime/error-url.ts']),
+      /error-url\.ts:1 names a production host/
+    );
+    assert.throws(
+      () => scanCalendarForwardingSources(root, ['src/runtime/error-host.ts']),
+      /error-host\.ts:1 names a production host/
     );
   } finally {
     rmSync(root, { recursive: true });

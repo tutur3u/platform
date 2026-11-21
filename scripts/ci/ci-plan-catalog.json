@@ -224,8 +224,11 @@
     "apps/deploy-coordinator/",
     "apps/deploy-coordinator/**",
     "scripts/ci/cf-vite-worker.mjs",
+    "scripts/ci/cf-worker-parity.mjs",
+    "scripts/ci/cf-worker-settings.mjs",
     "scripts/ci/deploy-coordinator-client.mjs",
     "scripts/ci/deploy-coordinator-client.test.mjs",
+    "scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json",
     "scripts/ci/run-with-backoff.sh"
   ],
   "devbox-control": [

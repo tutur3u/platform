@@ -77,11 +77,13 @@ COPY packages/microsoft/package.json ./packages/microsoft/package.json
 COPY packages/multiplayer/package.json ./packages/multiplayer/package.json
 COPY packages/mind-core/package.json ./packages/mind-core/package.json
 COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
+COPY packages/mira-runtime/package.json ./packages/mira-runtime/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
 COPY packages/realtime/package.json ./packages/realtime/package.json
 COPY packages/satellite/package.json ./packages/satellite/package.json
 COPY packages/sdk/package.json ./packages/sdk/package.json
+COPY packages/session/package.json ./packages/session/package.json
 COPY packages/supabase/package.json ./packages/supabase/package.json
 COPY packages/tasks-api/package.json ./packages/tasks-api/package.json
 COPY packages/tasks-ui/package.json ./packages/tasks-ui/package.json
@@ -95,6 +97,7 @@ COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz
 COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
+COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 

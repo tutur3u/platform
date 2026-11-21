@@ -23,6 +23,20 @@ const forbidden = {
 // cookies to production. A guard line opts out with `host-scan-allow`.
 export const productionHostPattern =
   /(?<![a-z0-9-])(?:[a-z0-9-]+\.)*tuturuuu\.com(?![a-z0-9-])/iu;
+const productionHostValuePattern =
+  /^(?:[a-z0-9-]+\.)*tuturuuu\.com(?:[/?#][^\s'"`]*)?$/iu;
+
+// A URL, a bare host, or a host path is a forwarding target. Prose in an
+// error message may name the host without being one. The pattern itself stays
+// strict, and a URL inside an error message still counts.
+export function declaresProductionForwardingHost(line) {
+  if (line.includes('host-scan-allow') || !productionHostPattern.test(line))
+    return false;
+  if (/https?:\/\//iu.test(line)) return true;
+  const errorMessage = line.match(/\berror\s*:\s*(['"`])([\s\S]*?)\1/iu);
+  if (!errorMessage) return true;
+  return productionHostValuePattern.test(errorMessage[2].trim());
+}
 export const forwardingSources = [
   'src/runtime/handler.ts',
   'src/runtime/api-owner-routing.ts',
@@ -102,7 +116,7 @@ export function scanCalendarForwardingSources(
     const lines = readFileSync(join(appDir, source), 'utf8').split('\n');
     lines.forEach((line, index) => {
       assert.ok(
-        line.includes('host-scan-allow') || !productionHostPattern.test(line),
+        !declaresProductionForwardingHost(line),
         `staging forwarding source ${source}:${index + 1} names a production host`
       );
     });

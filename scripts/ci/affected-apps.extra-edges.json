@@ -40,6 +40,7 @@
   "apps/rewise/src/lib/": ["apps/web"],
   "apps/roadmap/": ["packages/roadmap-core"],
   "apps/storefront/": ["apps/inventory"],
+  "apps/tasks/messages/": ["packages/tasks-ui"],
   "apps/teach/": ["apps/database"],
   "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/members/": [
     "apps/web"
@@ -55,6 +56,7 @@
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
   "apps/web/src/lib/chat/realtime-worker.ts": ["apps/chat-realtime"],
+  "apps/web/src/lib/mastermind/fleet/": ["apps/mastermind"],
   "apps/web/src/lib/seo/": ["apps/gateway", "packages/utils"],
   "packages/hive-ui/src/components/hive/": ["packages/ui"],
   "packages/internal-api/src/": [

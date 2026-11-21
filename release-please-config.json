@@ -271,6 +271,10 @@
       "component": "mind-ui",
       "package-name": "@tuturuuu/mind-ui"
     },
+    "packages/mira-runtime": {
+      "component": "mira-runtime",
+      "package-name": "@tuturuuu/mira-runtime"
+    },
     "packages/offline": {
       "component": "offline",
       "package-name": "@tuturuuu/offline"
@@ -298,6 +302,10 @@
     "packages/sdk": {
       "component": "sdk",
       "package-name": "tuturuuu"
+    },
+    "packages/session": {
+      "component": "session",
+      "package-name": "@tuturuuu/session"
     },
     "packages/sso": {
       "component": "sso",
