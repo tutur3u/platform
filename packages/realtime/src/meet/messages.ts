@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ClassTimer } from './class-timer';
-import type { MeetCameraRid } from './simulcast-layers';
+import type { MeetCameraRid, MeetMediaCapability } from './simulcast-layers';
 import {
   cloudflareSfuSessionDescriptionSchema,
   cloudflareSfuTrackSchema,
@@ -272,6 +272,7 @@ export type MeetRealtimeServerMessage =
       roomId: string;
       stage: MeetRealtimeStageState;
       type: 'ready';
+      mediaCapabilities?: MeetMediaCapability[];
       resumed?: boolean;
       tracks?: MeetRealtimeRoomTrack[];
       userId: string;

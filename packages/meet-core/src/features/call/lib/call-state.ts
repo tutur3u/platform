@@ -54,6 +54,8 @@ export interface CallState {
   roomExpiresAt?: string;
   maxParticipants?: number;
   classViewersAvailable?: boolean;
+  /** Media protocol features the room server advertised on join. */
+  mediaCapabilities?: readonly string[];
   ended: boolean;
   canManageParticipants?: boolean;
   recentSpeakerIds?: string[];
@@ -164,6 +166,7 @@ export function reduceCallState(
         roomExpiresAt: message.roomExpiresAt,
         maxParticipants: message.limits?.maxParticipants,
         classViewersAvailable: message.classViewersAvailable,
+        mediaCapabilities: message.mediaCapabilities ?? [],
         error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(

@@ -267,6 +267,7 @@ export {
 
 export {
   canCloseMeetSubscriptions,
+  createMeetSnapshotWriteGate,
   isMeetStatelessSfuOutcome,
   recordMeetSubscriptionOperation,
 } from './room-sfu';

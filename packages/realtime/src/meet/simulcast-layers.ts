@@ -10,6 +10,16 @@
 export const MEET_CAMERA_RIDS = ['f', 'h', 'q'] as const;
 /** Names published by clients built before the ASCII-ordered scheme. */
 export const LEGACY_MEET_CAMERA_RIDS = ['h', 'm', 'l'] as const;
+/**
+ * Media protocol features this room server understands. Clients publish the
+ * ASCII-ordered RIDs and send layer updates only when the server advertises
+ * them, so a rollback to an older room server keeps every subscription valid.
+ */
+export const MEET_MEDIA_CAPABILITIES = [
+  'ascii-simulcast',
+  'layer-update',
+] as const;
+export type MeetMediaCapability = (typeof MEET_MEDIA_CAPABILITIES)[number];
 export const MEET_CAMERA_RID_VALUES = ['f', 'h', 'q', 'm', 'l'] as const;
 
 export type MeetCameraRid = (typeof MEET_CAMERA_RID_VALUES)[number];
@@ -74,4 +84,25 @@ export function simulcastPreference(
     priorityOrdering: 'asciibetical',
     ridNotAvailable: 'asciibetical',
   } as const;
+}
+
+/**
+ * The publisher RIDs a subscriber may request from this room server. A server
+ * that does not advertise ASCII-ordered simulcast only accepts legacy RIDs.
+ */
+export function negotiableCameraRids(
+  rids: readonly MeetCameraRid[] | undefined,
+  capabilities: readonly string[] | undefined
+): readonly MeetCameraRid[] | undefined {
+  if (!rids || capabilities?.includes('ascii-simulcast')) return rids;
+  return scheme(rids) === LEGACY_MEET_CAMERA_RIDS ? rids : undefined;
+}
+
+/** Camera RIDs a publisher should advertise to this room server. */
+export function publishedCameraRids(
+  capabilities: readonly string[] | undefined
+) {
+  return capabilities?.includes('ascii-simulcast')
+    ? MEET_CAMERA_RIDS
+    : LEGACY_MEET_CAMERA_RIDS;
 }

@@ -1,0 +1,113 @@
+// @vitest-environment jsdom
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import type { RemoteTrackOwner } from './remote-playback';
+import type { StageVideoWindow } from './room-actions';
+import type { MeetSignaling } from './signaling';
+import { type RequestedLayer, useSubscriberLayers } from './subscriber-layers';
+
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
+
+function setup(capabilities: string[] = ['ascii-simulcast', 'layer-update']) {
+  const pc = {
+    connectionState: 'connected',
+    getStats: vi.fn(async () => new Map()),
+  } as unknown as RTCPeerConnection;
+  const request = vi.fn(
+    async (message: { tracks: Array<{ mid: string }> }) => ({
+      tracks: message.tracks.map(({ mid }) => ({ mid })),
+    })
+  );
+  const refs = {
+    queue: { current: Promise.resolve() },
+    peer: { current: pc as RTCPeerConnection | null },
+    sessionRef: { current: 'receiver' as string | null },
+    owners: {
+      current: new Map<string, RemoteTrackOwner>([
+        ['4', { userId: 'a', kind: 'video', subscriptionKey: 'pub:a-video' }],
+      ]),
+    },
+    state: {
+      current: {
+        mediaCapabilities: capabilities,
+        remoteTracks: {
+          'pub:a-video': {
+            sessionId: 'pub',
+            trackName: 'a-video',
+            userId: 'a',
+            cameraRids: ['f', 'h', 'q'] as Array<'f' | 'h' | 'q'>,
+          },
+        },
+      },
+    },
+    requestedLayers: {
+      current: new Map<string, RequestedLayer>([
+        ['pub:a-video', { layer: 'high', peer: pc }],
+      ]),
+    },
+    stageWindow: {
+      current: {
+        cameraUserIds: ['a'],
+        changedAt: 0,
+        tileHeights: new Map([['a', 120]]),
+      } as StageVideoWindow | null,
+    },
+    signalingRef: {
+      current: { request } as unknown as MeetSignaling | null,
+    },
+  };
+  renderHook(() => useSubscriberLayers({ active: true, ...refs }));
+  return { pc, request, refs };
+}
+
+it('downgrades a thumbnail through the subscriber queue and records the confirmed layer', async () => {
+  const { request, refs } = setup();
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(request).toHaveBeenCalledWith({
+    type: 'sfu.tracks.update',
+    sessionId: 'receiver',
+    tracks: [
+      {
+        location: 'remote',
+        mid: '4',
+        sessionId: 'pub',
+        trackName: 'a-video',
+        simulcast: {
+          preferredRid: 'q',
+          priorityOrdering: 'asciibetical',
+          ridNotAvailable: 'asciibetical',
+        },
+      },
+    ],
+  });
+  expect(refs.requestedLayers.current.get('pub:a-video')?.layer).toBe('low');
+});
+
+it('waits for an in-flight subscription before sending a layer change', async () => {
+  const { request, refs } = setup();
+  let release!: () => void;
+  refs.queue.current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(request).not.toHaveBeenCalled();
+  // The subscription replaced the receiver session before finishing.
+  refs.sessionRef.current = 'replacement';
+  await act(async () => release());
+  expect(request).not.toHaveBeenCalled();
+});
+
+it('drops planned changes when the receiver closes during sampling', async () => {
+  const { request, refs } = setup();
+  refs.owners.current.clear();
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(request).not.toHaveBeenCalled();
+});
+
+it('sends nothing to a room server without layer updates', async () => {
+  const { pc, request } = setup(['ascii-simulcast']);
+  await act(() => vi.advanceTimersByTimeAsync(4000));
+  expect(request).not.toHaveBeenCalled();
+  expect(pc.getStats).not.toHaveBeenCalled();
+});

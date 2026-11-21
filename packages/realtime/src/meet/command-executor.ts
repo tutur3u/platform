@@ -63,7 +63,11 @@ export class MeetCommandExecutor {
       result = await options.runSfu(planned.sfu);
       // A partial pull may already have moved the SFU into have-local-offer.
       // Forward its SDP and per-track errors so the browser can finish negotiation.
-      assertSfuSuccess(result, command.message.type === 'sfu.tracks.subscribe');
+      assertSfuSuccess(
+        result,
+        command.message.type === 'sfu.tracks.subscribe' ||
+          command.message.type === 'sfu.tracks.update'
+      );
       if (
         options.read().ended ||
         !options.read().presence[command.token.userId]

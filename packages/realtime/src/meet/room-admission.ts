@@ -1,3 +1,4 @@
+import { MEET_MEDIA_CAPABILITIES } from './simulcast-layers';
 import {
   attendanceIdentity,
   attendancePatch,
@@ -242,6 +243,7 @@ function buildReady(
       maxPublishers: state.budget?.maxPublishers ?? token.limits.maxPublishers,
       maxViewers: state.budget?.maxViewers ?? token.limits.maxViewers,
     },
+    mediaCapabilities: [...MEET_MEDIA_CAPABILITIES],
     mode: token.mode,
     role: token.role,
     roomId: token.roomId,

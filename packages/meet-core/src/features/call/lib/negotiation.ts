@@ -4,13 +4,19 @@ import type {
   MeetRealtimeTrackKind,
 } from '@tuturuuu/realtime/meet';
 import {
+  MEET_MEDIA_CAPABILITIES,
   meetTrackKind,
   type MeetVideoLayer,
+  negotiableCameraRids,
   simulcastPreference,
 } from '@tuturuuu/realtime/meet';
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import { layerForTile } from './layer-policy';
-import { useSubscriberLayers } from './subscriber-layers';
+import {
+  recordSubscribedLayers,
+  type RequestedLayer,
+  useSubscriberLayers,
+} from './subscriber-layers';
 import type { RemoteMedia } from './remote-streams';
 import { preparePeerSession } from './peer-connection';
 import {
@@ -187,11 +193,13 @@ export function localTrackSource(
 }
 
 export function planWindowedRemoteSubscriptions({
+  capabilities = MEET_MEDIA_CAPABILITIES,
   remoteTracks,
   subscribedKeys,
   selfUserId,
   videoWindow,
 }: {
+  capabilities?: readonly string[];
   remoteTracks: Record<string, MeetRealtimeRoomTrack>;
   subscribedKeys: Iterable<string>;
   selfUserId: string | null;
@@ -225,7 +233,10 @@ export function planWindowedRemoteSubscriptions({
       visibleTiles: visible.size,
       smallMode: videoWindow?.smallMode,
     });
-    const simulcast = simulcastPreference(publication.cameraRids, layer);
+    const simulcast = simulcastPreference(
+      negotiableCameraRids(publication.cameraRids, capabilities),
+      layer
+    );
     if (!simulcast) return track;
     layers.set(remoteTrackKey(publication), layer);
     return { ...track, simulcast } satisfies CloudflareSfuTrack;
@@ -287,9 +298,10 @@ export function useWindowedSubscriber({
   signalingRef: Ref<MeetSignaling | null>;
   setRemoteMedia: Dispatch<SetStateAction<RemoteMedia>>;
 }) {
-  const requestedLayers = useRef(new Map<string, MeetVideoLayer>());
+  const requestedLayers = useRef(new Map<string, RequestedLayer>());
   useSubscriberLayers({
     active: admission === 'admitted',
+    queue: subscribeQueue,
     peer: subscribePcRef,
     sessionRef: subscribeSessionRef,
     owners: trackOwnersRef,
@@ -316,6 +328,7 @@ export function useWindowedSubscriber({
       if (!nextWindow || Date.now() - nextWindow.changedAt >= 700)
         settledWindow = nextWindow;
       const { pending, close, layers } = planWindowedRemoteSubscriptions({
+        capabilities: stateRef.current.mediaCapabilities,
         remoteTracks: stateRef.current.remoteTracks,
         subscribedKeys: subscribedRef.current,
         selfUserId: stateRef.current.selfUserId,
@@ -378,8 +391,13 @@ export function useWindowedSubscriber({
           type: 'sfu.tracks.subscribe',
         });
         if (subscribePcRef.current !== pc) return;
-        for (const [key, layer] of layers)
-          requestedLayers.current.set(key, layer);
+        recordSubscribedLayers(
+          requestedLayers.current,
+          layers,
+          pending,
+          answer,
+          pc
+        );
         applySubscribeResponse(
           answer,
           pending,

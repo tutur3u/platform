@@ -4,7 +4,7 @@ import {
   applyMeetRoomSettings,
   MeetPresencePublisher,
   canCloseMeetSubscriptions,
-  isMeetStatelessSfuOutcome,
+  createMeetSnapshotWriteGate,
   recordMeetSubscriptionOperation,
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
@@ -185,6 +185,7 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private sockets = () => this.state.getWebSockets();
+  private deferWrite = createMeetSnapshotWriteGate();
 
   private connectionState(
     excluded?: WebSocket,
@@ -490,10 +491,10 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
-    const stateless = isMeetStatelessSfuOutcome(this.snapshot, result);
+    const deferred = this.deferWrite(this.snapshot, result);
     this.snapshot = result.state;
-    this.snapshot = this.connectionState();
-    if (!stateless) await this.persist();
+    const observed = this.connectionState();
+    if (!deferred || observed !== this.snapshot) await this.persist();
     await this.scheduleEmptyRoom();
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());

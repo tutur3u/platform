@@ -20,12 +20,17 @@ const DEFAULT_FLAGS: MeetMediaFlags = {
 export const MEET_MEDIA_FLAGS_STORAGE_KEY = 'tumeet:media-flags';
 
 export function readMeetMediaFlags(
-  storage: Pick<Storage, 'getItem'> | null = typeof localStorage === 'undefined'
-    ? null
-    : localStorage
+  storage?: Pick<Storage, 'getItem'> | null
 ): MeetMediaFlags {
   try {
-    const raw = storage?.getItem(MEET_MEDIA_FLAGS_STORAGE_KEY);
+    // Reading `localStorage` itself throws when the browser denies storage.
+    const source =
+      storage !== undefined
+        ? storage
+        : typeof localStorage === 'undefined'
+          ? null
+          : localStorage;
+    const raw = source?.getItem(MEET_MEDIA_FLAGS_STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (!parsed || typeof parsed !== 'object') return DEFAULT_FLAGS;
     const flags = { ...DEFAULT_FLAGS };

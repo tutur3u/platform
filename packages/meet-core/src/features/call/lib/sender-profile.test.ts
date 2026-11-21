@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { withOpusResilience } from './audio-sdp';
 import { planSenderEncodings } from './bandwidth';
+import { readMeetMediaFlags } from './media-flags';
 import {
   contentHintFor,
+  cpuLimitationOf,
   initialCpuPressure,
   nextCpuPressure,
   senderPriority,
@@ -14,38 +16,81 @@ const answer = (lines: string[]) => ({
 });
 
 describe('withOpusResilience', () => {
-  it('adds in-band FEC and DTX to Opus without touching other codecs', () => {
+  const mic = new Set(['0']);
+  it('adds FEC to every Opus section and DTX to microphones only', () => {
     const result = withOpusResilience(
       answer([
         'm=audio 9 UDP/TLS/RTP/SAVPF 111 0',
+        'a=mid:0',
         'a=rtpmap:111 opus/48000/2',
-        'a=fmtp:111 minptime=10;useinbandfec=1',
+        'a=fmtp:111 minptime=10;useinbandfec=0;usedtx=0',
         'a=rtpmap:0 PCMU/8000',
         'a=fmtp:0 foo=1',
+        'm=audio 9 UDP/TLS/RTP/SAVPF 111',
+        'a=mid:3',
+        'a=rtpmap:111 opus/48000/2',
       ]),
+      mic,
       true
     );
     expect(result.sdp).toContain(
-      'a=fmtp:111 minptime=10;useinbandfec=1;usedtx=1\r\n'
+      'a=mid:0\r\na=rtpmap:111 opus/48000/2\r\na=fmtp:111 minptime=10;useinbandfec=1;usedtx=1\r\n'
     );
     expect(result.sdp).toContain('a=fmtp:0 foo=1\r\n');
+    // Payload 111 in the screen-audio section gets its own fmtp line.
+    expect(result.sdp).toContain(
+      'a=mid:3\r\na=rtpmap:111 opus/48000/2\r\na=fmtp:111 useinbandfec=1;usedtx=0\r\n'
+    );
   });
 
-  it('creates a missing fmtp line and honours a DTX opt-out', () => {
+  it('turns DTX off explicitly when opted out', () => {
     const result = withOpusResilience(
-      answer(['m=audio 9 RTP 109', 'a=rtpmap:109 opus/48000/2']),
+      answer([
+        'm=audio 9 RTP 109',
+        'a=mid:0',
+        'a=rtpmap:109 opus/48000/2',
+        'a=fmtp:109 usedtx=1',
+      ]),
+      mic,
       false
     );
-    expect(result.sdp).toContain(
-      'a=rtpmap:109 opus/48000/2\r\na=fmtp:109 useinbandfec=1\r\n'
-    );
-    expect(result.sdp).not.toContain('usedtx');
+    expect(result.sdp).toContain('a=fmtp:109 useinbandfec=1;usedtx=0');
   });
 
-  it('leaves video-only and missing descriptions unchanged', () => {
+  it('keeps LF line endings and leaves video-only descriptions unchanged', () => {
+    const lf = {
+      type: 'answer' as const,
+      sdp: 'v=0\nm=audio 9 RTP 111\na=mid:0\na=rtpmap:111 opus/48000/2\n',
+    };
+    expect(withOpusResilience(lf, mic, true).sdp).toContain(
+      'a=rtpmap:111 opus/48000/2\na=fmtp:111 useinbandfec=1;usedtx=1\n'
+    );
     const video = answer(['m=video 9 RTP 96', 'a=rtpmap:96 VP8/90000']);
-    expect(withOpusResilience(video, true)).toBe(video);
-    expect(withOpusResilience(undefined, true)).toBeUndefined();
+    expect(withOpusResilience(video, mic, true)).toBe(video);
+    expect(withOpusResilience(undefined, mic, true)).toBeUndefined();
+  });
+});
+
+describe('cpuLimitationOf', () => {
+  it('treats only all-none reports as clean', () => {
+    expect(cpuLimitationOf(['none', 'cpu'])).toBe(true);
+    expect(cpuLimitationOf(['none', 'none'])).toBe(false);
+    expect(cpuLimitationOf(['bandwidth'])).toBeNull();
+    expect(cpuLimitationOf([])).toBeNull();
+  });
+});
+
+describe('readMeetMediaFlags with denied storage', () => {
+  it('falls back to defaults when reading storage throws', () => {
+    const denied = {
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
+    };
+    expect(readMeetMediaFlags(denied)).toMatchObject({
+      opusDtx: true,
+      cpuAdaptation: true,
+    });
   });
 });
 

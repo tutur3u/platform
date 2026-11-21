@@ -24,21 +24,19 @@ export function senderPriority(kind: MeetRealtimeTrackKind): RTCPriorityType {
       : 'low';
 }
 
-/** Screens keep text legible by giving up frame rate before resolution. */
-export async function applyDegradationPreference(
-  sender: RTCRtpSender,
-  kind: MeetRealtimeTrackKind
-) {
-  if (kind !== 'screen') return;
-  try {
-    const parameters = sender.getParameters() as RTCRtpSendParameters & {
-      degradationPreference?: string;
-    };
-    parameters.degradationPreference = 'maintain-resolution';
-    await sender.setParameters(parameters);
-  } catch {
-    // Browsers without the control keep their default trade-off.
-  }
+/** Minimum spacing between CPU samples so refreshes cannot rush recovery. */
+export const CPU_SAMPLE_SPACING_MS = 2500;
+
+/**
+ * Reduce active video encoders' limitation reasons to one CPU signal: any
+ * `cpu` is limited; only all-`none` is clean. `bandwidth` and `other` say
+ * nothing about CPU, and no report at all is unknown.
+ */
+export function cpuLimitationOf(reasons: readonly string[]): boolean | null {
+  if (reasons.includes('cpu')) return true;
+  if (reasons.length && reasons.every((reason) => reason === 'none'))
+    return false;
+  return null;
 }
 
 export type CpuPressure = {

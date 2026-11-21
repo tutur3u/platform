@@ -116,17 +116,21 @@ export function nextReceiverGovernor(
   now: number
 ): ReceiverGovernor {
   if (isReceiverCongested(sample)) {
+    // A failed probe doubles the wait once; later congestion does not.
     const failedProbe = now - governor.lastUpgradeAt < FAILED_PROBE_MS;
-    const required = failedProbe
-      ? Math.min(MAX_HEALTHY_SAMPLES, governor.required * 2)
-      : governor.required;
+    const probe = failedProbe
+      ? {
+          required: Math.min(MAX_HEALTHY_SAMPLES, governor.required * 2),
+          lastUpgradeAt: -Infinity,
+        }
+      : {};
     if (now - governor.lastDowngradeAt < DOWNGRADE_COOLDOWN_MS)
-      return { ...governor, healthy: 0, required };
+      return { ...governor, ...probe, healthy: 0 };
     return {
       ...governor,
+      ...probe,
       ceiling: stepDown(governor.ceiling),
       healthy: 0,
-      required,
       lastDowngradeAt: now,
     };
   }

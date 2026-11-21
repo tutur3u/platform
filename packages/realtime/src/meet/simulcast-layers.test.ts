@@ -5,12 +5,15 @@ import {
   canCloseMeetSubscriptions,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
+  createMeetSnapshotWriteGate,
   isMeetStatelessSfuOutcome,
   meetRealtimeClientMessageSchema,
   meetRealtimeTokenPayloadSchema,
 } from './index';
 import {
   advertisedCameraRids,
+  negotiableCameraRids,
+  publishedCameraRids,
   layerForRid,
   ridForLayer,
   simulcastPreference,
@@ -67,6 +70,18 @@ describe('simulcast RID schemes', () => {
     expect(simulcastPreference(['f', 'h'], 'low')).toBeNull();
   });
 
+  it('only negotiates ASCII RIDs with a room server that advertises them', () => {
+    expect(negotiableCameraRids(['f', 'h', 'q'], [])).toBeUndefined();
+    expect(negotiableCameraRids(['h', 'm', 'l'], [])).toEqual(['h', 'm', 'l']);
+    expect(negotiableCameraRids(['f', 'h', 'q'], ['ascii-simulcast'])).toEqual([
+      'f',
+      'h',
+      'q',
+    ]);
+    expect(publishedCameraRids(undefined)).toEqual(['h', 'm', 'l']);
+    expect(publishedCameraRids(['ascii-simulcast'])).toEqual(['f', 'h', 'q']);
+  });
+
   it('records current-scheme RIDs from a publish offer', () => {
     const actor = token('host');
     const state = admitOrHold(createMeetRoomSnapshot(), actor, now).state;
@@ -91,7 +106,18 @@ describe('simulcast RID schemes', () => {
 
 describe('sfu.tracks.update', () => {
   const viewer = token('viewer');
-  const state = admitOrHold(createMeetRoomSnapshot(), viewer, now).state;
+  const admitted = admitOrHold(createMeetRoomSnapshot(), viewer, now).state;
+  const camera = {
+    sessionId: 'publisher',
+    trackName: 'someone-video',
+    userId: 'someone',
+    kind: 'video',
+    cameraRids: ['f', 'h', 'q'] as Array<'f' | 'h' | 'q'>,
+  };
+  const state = {
+    ...admitted,
+    tracks: { 'publisher:someone-video': camera },
+  };
   const parsed = meetRealtimeClientMessageSchema.parse({
     type: 'sfu.tracks.update',
     requestId: 'layer',
@@ -153,6 +179,28 @@ describe('sfu.tracks.update', () => {
     expect(attempt(['8']).sfu).toBeNull();
   });
 
+  it('refuses a RID or publication the room does not advertise', () => {
+    const track = message.tracks[0]!;
+    for (const variant of [
+      {
+        ...track,
+        simulcast: { ...track.simulcast!, preferredRid: 'm' as const },
+      },
+      { ...track, trackName: 'someone-screen' },
+      { ...track, sessionId: 'elsewhere' },
+    ]) {
+      const changed = { ...message, tracks: [variant] };
+      const result = applyMeetRoomCommand(state, {
+        token: viewer,
+        now,
+        message: changed,
+        canCloseSubscriptions: () =>
+          canCloseMeetSubscriptions({ receiver: ['7'] }, changed),
+      });
+      expect(result.sfu).toBeNull();
+    }
+  });
+
   it('refuses an update without a simulcast preference', () => {
     const bare = {
       ...message,
@@ -203,9 +251,23 @@ describe('sfu.tracks.update', () => {
       sfu: null,
     };
     expect(isMeetStatelessSfuOutcome(state, base)).toBe(true);
+    // Time accounting alone keeps the outcome stateless.
     expect(
       isMeetStatelessSfuOutcome(state, { ...base, state: { ...state } })
+    ).toBe(true);
+    expect(
+      isMeetStatelessSfuOutcome(state, {
+        ...base,
+        state: { ...state, tracks: {} },
+      })
     ).toBe(false);
+    let clock = 0;
+    const gate = createMeetSnapshotWriteGate(15_000, () => clock);
+    expect(gate(state, base)).toBe(false);
+    clock = 5_000;
+    expect(gate(state, base)).toBe(true);
+    clock = 16_000;
+    expect(gate(state, base)).toBe(false);
     expect(
       isMeetStatelessSfuOutcome(state, {
         ...base,

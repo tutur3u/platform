@@ -4,6 +4,7 @@ import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-ass
 import {
   type CloudflareSfuTrack,
   type MeetMediaState,
+  publishedCameraRids,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -18,7 +19,7 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
-import { withOpusResilience } from '../lib/audio-sdp';
+import { microphoneMids, withOpusResilience } from '../lib/audio-sdp';
 import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
@@ -364,7 +365,8 @@ export function useMeetRoom({
             pc,
             source,
             plan.kind,
-            Object.keys(stateRef.current.participants).length
+            Object.keys(stateRef.current.participants).length,
+            publishedCameraRids(stateRef.current.mediaCapabilities)
           );
           sendersRef.current.set(plan.trackName, transceiver.sender);
           added.push({ plan, transceiver });
@@ -401,7 +403,7 @@ export function useMeetRoom({
           if (publishPcRef.current !== pc) return;
           assertPublishedResponse(answer);
           await pc.setRemoteDescription(
-            withOpusResilience(answer.sessionDescription)
+            withOpusResilience(answer.sessionDescription, microphoneMids(pc))
           );
           await waitForPeerConnection(pc);
           if (publishPcRef.current !== pc) return;

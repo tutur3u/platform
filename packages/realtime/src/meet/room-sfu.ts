@@ -19,7 +19,11 @@ import type {
 import { roomCapacityError } from './room-budget';
 import { denied, outcome } from './room-outcome';
 import { meetTrackKey, replaceRoomPublications } from './room-tracks';
+import { takeActorRateLimit } from './actor-rate-limit';
 import { advertisedCameraRids } from './simulcast-layers';
+
+/** Layer update batches a receiver may send per minute. */
+export const MEET_LAYER_UPDATES_PER_MINUTE = 40;
 export function applySfuCommand(
   state: MeetRoomSnapshot,
   message: MeetRealtimeSfuClientMessage,
@@ -27,17 +31,38 @@ export function applySfuCommand(
   canCloseSubscriptions?: () => boolean
 ): MeetRoomOutcome {
   if (message.type === 'sfu.tracks.update') {
-    // Only the subscriber's own provider-confirmed receivers may change layer.
+    // Only the subscriber's own provider-confirmed receivers may change layer,
+    // and only to a layer a current room camera publication advertises. A
+    // receiver can never be pointed at anything it could not subscribe to.
+    const cameras = new Map(
+      Object.values(state.tracks).map((track) => [
+        `${track.sessionId}\u0000${track.trackName}`,
+        track,
+      ])
+    );
     if (
       !hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.sfuSubscribe) ||
       !canCloseSubscriptions?.() ||
-      message.tracks.some(
-        (track) =>
+      // Clients send at most one batch per two-second sample; the executor
+      // plans and confirms each command, so every request takes two tokens.
+      !takeActorRateLimit(
+        `layers:${token.roomId}:${token.userId}`,
+        MEET_LAYER_UPDATES_PER_MINUTE * 2,
+        60_000
+      ) ||
+      message.tracks.some((track) => {
+        const publication = cameras.get(
+          `${track.sessionId}\u0000${track.trackName}`
+        );
+        return (
           !track.simulcast ||
-          !track.trackName ||
-          !track.sessionId ||
+          !publication ||
+          publication.userId === token.userId ||
+          meetTrackKind(publication) !== 'video' ||
+          !publication.cameraRids?.includes(track.simulcast.preferredRid) ||
           (track.location !== undefined && track.location !== 'remote')
-      )
+        );
+      })
     )
       return denied(state, 'permission_denied', message.requestId);
     return outcome(state, {
@@ -337,17 +362,51 @@ export function recordMeetSubscriptionOperation(
   if (sessions !== prior) socket.serializeAttachment({ ...attached, sessions });
 }
 
-/** A layer switch changes no room state, so it needs no durable snapshot write. */
+/**
+ * A layer switch changes no tracks, presence, settings or lifecycle; only the
+ * running time accounting advances. Those outcomes may skip the durable write.
+ */
 export function isMeetStatelessSfuOutcome(
   previous: MeetRoomSnapshot,
   result: MeetRoomOutcome
 ) {
+  const next = result.state;
   return (
-    result.state === previous &&
     !result.broadcast.length &&
-    result.reply.some(
+    !result.toManagers.length &&
+    !result.direct.length &&
+    !result.disconnect.length &&
+    next.tracks === previous.tracks &&
+    next.presence === previous.presence &&
+    next.waiting === previous.waiting &&
+    next.settings === previous.settings &&
+    next.ended === previous.ended &&
+    next.lifecycle === previous.lifecycle &&
+    result.reply.length > 0 &&
+    result.reply.every(
       (reply) =>
         reply.type === 'sfu.response' && reply.action === 'sfu.tracks.update'
     )
   );
+}
+
+/**
+ * Coalesces durable snapshot writes for layer switches: at most one per
+ * interval, so time accounting lost on an eviction is bounded by it.
+ */
+export function createMeetSnapshotWriteGate(
+  intervalMs = 15_000,
+  clock: () => number = Date.now
+) {
+  let lastWrite = -Infinity;
+  return (previous: MeetRoomSnapshot, result: MeetRoomOutcome) => {
+    const now = clock();
+    if (
+      isMeetStatelessSfuOutcome(previous, result) &&
+      now - lastWrite < intervalMs
+    )
+      return true;
+    lastWrite = now;
+    return false;
+  };
 }

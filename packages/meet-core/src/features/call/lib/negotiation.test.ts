@@ -265,4 +265,14 @@ it('requests the layer a measured tile needs from ASCII-ordered publishers', () 
   expect(plan([['a', 280]])?.preferredRid).toBe('h');
   expect(plan([['a', 720]])?.preferredRid).toBe('f');
   expect(plan([['a', 160]], 'a')?.preferredRid).toBe('h');
+  // A room server without ASCII simulcast gets no preference it would reject.
+  expect(
+    planWindowedRemoteSubscriptions({
+      capabilities: [],
+      remoteTracks: { 'a:a-video': publication },
+      subscribedKeys: [],
+      selfUserId: 'me',
+      videoWindow: { cameraUserIds: ['a'], changedAt: 0 },
+    }).pending[0]?.simulcast
+  ).toBeUndefined();
 });

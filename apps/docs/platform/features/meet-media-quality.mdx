@@ -1,0 +1,171 @@
+---
+title: Meet media quality
+updatedAt: '2026-11-21'
+description: How Tuturuuu Meet chooses simulcast layers, prioritises speech and screen share, and adapts to network and CPU limits in large rooms.
+audience: users
+---
+
+These rules apply to web Meet and Parley calls on Cloudflare Realtime SFU. They
+cover both the browser publisher and subscriber and the `meet-realtime` room
+server. Bitrate ceilings and congestion handling for the sender are described in
+[Meet calls](/platform/features/meet-calls#bandwidth-and-cost-attribution).
+
+## Simulcast layers
+
+Cameras publish three RID simulcast layers: `f` (full), `h` (half) and `q`
+(quarter resolution). Cloudflare Realtime falls back between layers in ASCII
+order, so the RIDs sort from highest to lowest quality. Under receiver
+congestion, or when the publisher pauses its full layer, a subscriber steps
+down one layer instead of jumping to the smallest.
+
+Publishers from older clients advertise `h`/`m`/`l`. The room server records
+whichever scheme an offer carries, and subscribers address both by semantic
+layer: high, mid or low.
+
+The room server advertises `ascii-simulcast` and `layer-update` in its `ready`
+message. Without them, a client publishes `h`/`m`/`l`, requests only legacy
+RIDs and sends no layer updates. A rollback to an older room server therefore
+keeps every subscription valid.
+
+### Choosing a layer per tile
+
+Each subscriber requests the smallest layer that fills its tile:
+
+| Rendered tile height (device px) | Layer |
+| --- | --- |
+| 400 or more | high |
+| 200 to 399 | mid |
+| Under 200 | low |
+
+Heights are measured in device pixels, with the pixel ratio capped at 2 and
+rounded to 40 px steps. A spotlit camera never drops below mid on size alone.
+
+Before a tile is measured, the layer depends on the camera window:
+
+| Before measurement | Layer |
+| --- | --- |
+| Spotlit camera | high |
+| Window of nine or more cameras | low |
+| Any other camera | mid |
+
+Cameras on another grid page are not subscribed at all.
+
+### Receiver congestion ceiling
+
+A receiver-wide ceiling caps every tile's layer. Any one of these counts as
+congestion:
+
+- At least 6% inbound video loss.
+- Two new freezes in one 2-second sample.
+- A round-trip time of 700 ms or more.
+- A saturated receive estimate.
+
+Congestion lowers the ceiling one layer at once, with a 4-second cooldown.
+Recovery raises it one layer after five healthy samples (10 seconds). A recovery
+that meets congestion within 15 seconds doubles the healthy run needed next
+time, once per failed probe and up to 40 samples. Missing statistics never
+upgrade.
+
+Per tile, a downgrade applies immediately. An upgrade waits until it has been
+wanted for two consecutive samples.
+
+### Layer updates
+
+Layer changes use the SFU's `PUT /sessions/{id}/tracks/update`, which needs no
+renegotiation. They run in the same client queue as subscribe, close and
+renegotiate, so a change never lands between a subscription's offer and its
+answer. Each change is checked against the live receiver just before it is
+sent. Only layers the SFU confirmed per MID are cached for the current receiving
+peer.
+
+The room server accepts a change only when all of these hold:
+
+- The receiver MID belongs to the requesting socket's own session.
+- The target is a current camera publication from another participant.
+- That publication advertised the requested RID.
+- The receiver has sent no more than 40 update batches in the past minute.
+
+A receiver can therefore only re-layer a camera it could already subscribe to.
+
+Layer switches never rewrite the durable room snapshot more than once every 15
+seconds. If the Durable Object is evicted, the time accounting lost is bounded
+by that interval.
+
+A rejected or failed update keeps the current layers and retries after 30
+seconds. If the SFU asks for immediate renegotiation after an update, layer
+switching stops on that receiving peer.
+
+## Sender priority and screen share
+
+Microphone senders carry high send and network priority, screen share and screen
+audio carry medium priority, and cameras carry low priority. Browsers treat
+these as allocation hints. Chromium and WebKit honour both fields; Firefox
+exposes only `priority`.
+
+Cameras hint `motion`, screens `detail`, speech `speech`, and screen audio
+`music`. Screen senders prefer `maintain-resolution`, which the bandwidth
+watcher applies after negotiation, so text stays legible while the frame rate
+drops.
+
+## Speech resilience
+
+The publisher sets Opus in-band FEC on every audio section of the SFU's answer,
+so a receiver can rebuild a lost frame from the next packet. Microphones,
+identified by their `speech` hint, also get DTX, which sends almost nothing
+during silence. Screen audio always has DTX off, so quiet passages of shared
+media are not gated. Each audio section is rewritten on its own, because payload
+numbers are scoped per media section.
+
+## CPU adaptation
+
+CPU adaptation depends on the browser reporting `qualityLimitationReason`.
+Chromium and WebKit do; Firefox does not. When any active video encoder reports
+`cpu`, the publisher sheds load at once:
+
+- The camera drops its full layer and caps its frame rate at 15 fps.
+- A single-encoding camera halves its resolution.
+- A screen keeps its resolution and drops to 5 fps.
+
+Only samples where every encoder reports `none` count toward recovery.
+`bandwidth` and missing reports are neutral. Samples count at most every
+2.5 seconds, so refreshes cannot rush recovery.
+
+Recovery needs ten clean samples. That run doubles, up to 80 samples, when the
+limit returns within a minute of recovering, and it resets after ten quiet
+minutes.
+
+## Device kill switches
+
+Support can turn a behaviour off on one device. Set the browser storage key
+`tumeet:media-flags` to a JSON object such as `{"layerSwitching":false}`.
+
+| Flag | Turns off |
+| --- | --- |
+| `layerSwitching` | Layer switching |
+| `opusDtx` | DTX, sent as `usedtx=0` |
+| `cpuAdaptation` | CPU adaptation, clearing any active cap |
+
+Denied or unreadable storage falls back to the shipped defaults.
+
+## Known gaps
+
+- The SFU gives publishers no feedback about which layers are subscribed.
+  Publishers therefore pause the full layer from their own bandwidth and CPU
+  budget rather than from audience demand.
+- Cloudflare Realtime documents RID simulcast only. It has no SVC
+  `scalabilityMode`.
+- While a deployment rolls out, an older subscriber can misread a newer
+  publisher's `h` as its high layer and receive half resolution in the
+  spotlight until it reloads.
+- DTX with the hosted SFU still needs live verification of silent joins and of
+  mute and unmute across the SFU's 30-second inactivity timeout, including on
+  iOS Safari.
+
+## Regression coverage
+
+- `packages/meet-core/src/features/call/lib/layer-policy.test.ts`
+- `subscriber-layers.test.tsx`
+- `negotiation.test.ts`
+- `sender-profile.test.ts`
+- `bandwidth.test.ts`
+- `packages/realtime/src/meet/simulcast-layers.test.ts`
