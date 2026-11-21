@@ -44,6 +44,12 @@ import { REGISTRY, T0, USER_A, USER_B } from './device-fixtures';
 
 export const USER_C = '2d8b3e4c-5f60-4172-8c83-9d0e1f2a3b4c' as UserId;
 export const USERS = [USER_A, USER_B, USER_C] as const;
+/** More users than one device admits, so sign-ins reach its user ceiling. */
+export const CROWD = Array.from(
+  { length: 12 },
+  (_, index) =>
+    `c${index.toString(16).padStart(7, '0')}-0000-4000-8000-000000000000` as UserId
+);
 export const DEVICE_ID = 'device-under-test';
 export const CAP = 2;
 

@@ -354,6 +354,7 @@ export type FailureReason =
   | 'epoch_unavailable'
   | 'factors_unavailable'
   | 'credentials_changed'
+  | 'account_limit'
   | 'second_factor_required'
   | 'factor_mismatch'
   | 'reauth_required'

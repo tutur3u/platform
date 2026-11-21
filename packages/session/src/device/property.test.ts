@@ -7,6 +7,9 @@ const SEEDS = Array.from({ length: 16 }, (_, index) => 0x5eed + index * 7919);
 const STEPS = 160;
 
 describe('device state machine under random interleavings', () => {
+  // Refusals at the per-device user ceiling across every seeded run.
+  let accountLimits = 0;
+
   it.each(SEEDS)('holds every invariant for seed %i', async (seed) => {
     const model = createModel(seed);
     model.concurrent = () => randomOp(model, true);
@@ -27,6 +30,14 @@ describe('device state machine under random interleavings', () => {
         (write) => write.fault === 'unknown_committed'
       )
     ).toBe(true);
+    accountLimits += model.commits.filter(
+      ({ outcome }) =>
+        !outcome.result.ok && outcome.result.reason === 'account_limit'
+    ).length;
+  });
+
+  it('reaches the per-device user ceiling in the seeded runs', () => {
+    expect(accountLimits).toBeGreaterThan(0);
   });
 
   it('replays the same run from the same seed', async () => {

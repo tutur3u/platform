@@ -71,6 +71,7 @@ export {
   MAX_RETAINED_CHILDREN,
 } from './device/reduce-child';
 export type { DeviceContext } from './device/reduce-common';
+export { MAX_DEVICE_USERS } from './device/reduce-sign-in';
 export { GRANT_TTL_MS } from './device/reduce-step-up';
 export {
   actSpec,

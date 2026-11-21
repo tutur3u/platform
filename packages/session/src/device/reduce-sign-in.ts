@@ -2,7 +2,8 @@
  * `sign_in`: admits a new session under the index reservation the host
  * obtained, after the epoch capture and second-factor rules. A rejection is
  * stored as a record that changes no session, so the index lease sees it as
- * `rejected` and releases the reservation.
+ * `rejected` and releases the reservation. A new user past the device's
+ * distinct-user ceiling is one such rejection, `account_limit`.
  */
 import { AUTH_METHODS } from '../auth-methods';
 import { initialClocks } from '../expiry';
@@ -34,6 +35,30 @@ import type {
 } from './types';
 
 const SESSION_KINDS = new Set(['browser', 'mobile', 'cli', 'external_app']);
+
+/**
+ * Distinct users with a live non-child session one device holds at most. It
+ * equals the saved-account vault's `MAX_WEB_ACCOUNT_SESSIONS`, so moving
+ * saved accounts to sibling sessions drops none.
+ */
+export const MAX_DEVICE_USERS = 10;
+
+/** Whether admitting `userId` would put the device past `MAX_DEVICE_USERS`. */
+function atUserLimit(
+  state: DeviceState,
+  userId: SignInOutcome['userId'],
+  nowMs: number
+): boolean {
+  const others = new Set<string>();
+  for (const row of Object.values(state.sessions)) {
+    // A user who already holds a live session here is replaced, never added.
+    if (row.userId === userId) continue;
+    if (row.kind !== 'child' && isLive(state, row, nowMs)) {
+      others.add(row.userId);
+    }
+  }
+  return others.size >= MAX_DEVICE_USERS;
+}
 
 function validOutcome(outcome: SignInOutcome): boolean {
   return (
@@ -150,6 +175,10 @@ export async function reduceSignIn(
   const decision = factorDecision(outcome, factors.factors);
   if (!decision.ok)
     return rejected(draft, mutation, decision.reason, epoch.raise);
+  // Refused before any row is written: the host cannot undo a committed row.
+  if (atUserLimit(draft, outcome.userId, nowMs)) {
+    return rejected(draft, mutation, 'account_limit', epoch.raise);
+  }
 
   const previousActive = draft.activeSid;
   // One live session per user per device: a new sign-in replaces the old one.

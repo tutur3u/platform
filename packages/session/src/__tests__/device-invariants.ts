@@ -8,6 +8,8 @@ import { constantTimeEqual } from '../encoding';
 import {
   type DeviceMutation,
   type DeviceState,
+  isLive,
+  MAX_DEVICE_USERS,
   MAX_EXPIRED_IDS,
   MAX_RECORDS,
   operationStatus,
@@ -51,6 +53,49 @@ function fenceMatches(state: DeviceState, fence: NonNullable<Fenced['fence']>) {
     fence.gen === state.gen &&
     fence.version === state.version
   );
+}
+
+/** Distinct users with a live non-child session, other than `except`. */
+function liveUsers(state: DeviceState, nowMs: number, except?: string) {
+  const users = new Set<string>();
+  for (const row of Object.values(state.sessions)) {
+    if (row.userId === except) continue;
+    if (row.kind !== 'child' && isLive(state, row, nowMs))
+      users.add(row.userId);
+  }
+  return users.size;
+}
+
+/**
+ * The per-device user ceiling: a sign-in never leaves more than
+ * `MAX_DEVICE_USERS` distinct live users, and an `account_limit` refusal
+ * writes no session and only happens on a full device.
+ */
+function checkUserCeiling(
+  write: AppliedWrite,
+  tag: DeviceMutation,
+  where: string
+) {
+  if (tag.kind !== 'sign_in') return;
+  const { base, next } = write;
+  expect(liveUsers(next, tag.nowMs), `${where} users`).toBeLessThanOrEqual(
+    MAX_DEVICE_USERS
+  );
+  const record = next.operations[tag.operationId];
+  if (record?.result.ok !== false || record.result.reason !== 'account_limit') {
+    return;
+  }
+  expect(next.sessions, where).toEqual(base.sessions);
+  expect(next.activeSid, where).toBe(base.activeSid);
+  expect(next.gen, where).toBe(base.gen);
+  expect(
+    liveUsers(base, tag.nowMs, tag.outcome.userId),
+    `${where} refused below the ceiling`
+  ).toBeGreaterThanOrEqual(MAX_DEVICE_USERS);
+  expect(
+    record.effects.map((effect) => effect.type),
+    where
+  ).toContain('index_release');
 }
 
 function newlyRevoked(write: AppliedWrite) {
@@ -125,6 +170,7 @@ function checkWrite(write: AppliedWrite, committedOps: Set<string>) {
 
   checkRevocations(write, tag, where);
   checkEpochsAndGrants(write, tag, where);
+  checkUserCeiling(write, tag, where);
 }
 
 function checkRevocations(
@@ -356,6 +402,7 @@ export async function checkSince(model: Model, checker: Checker) {
     constantTimeEqual(hash, state.secretHash)
   );
   expect(current.length).toBeLessThanOrEqual(1);
+  expect(liveUsers(state, model.now)).toBeLessThanOrEqual(MAX_DEVICE_USERS);
   expect(Object.keys(state.operations).length).toBeLessThanOrEqual(MAX_RECORDS);
   expect(Object.keys(state.expiredOperations).length).toBeLessThanOrEqual(
     MAX_EXPIRED_IDS

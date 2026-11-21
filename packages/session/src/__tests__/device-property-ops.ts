@@ -20,6 +20,7 @@ import { testHashSecret } from './device-fakes';
 import { ACT_PARAMS, REGISTRY, stepUpRouteFor, T0 } from './device-fixtures';
 import { checkResolve, checkSignInIndex } from './device-invariants';
 import {
+  CROWD,
   currentOrStaleFence,
   epochFor,
   freshRead,
@@ -316,6 +317,15 @@ async function signIn(model: Model, userId: UserId = model.random.pick(USERS)) {
   await settle(model, out);
 }
 
+/** A run of sign-ins by users beyond the core three, up to the device's user ceiling and past it. */
+async function crowdSignIns(model: Model) {
+  if (model.nested()) return signIn(model, model.random.pick(CROWD));
+  const count = 1 + model.random.int(CROWD.length);
+  for (let index = 0; index < count; index += 1) {
+    await signIn(model, model.random.pick(CROWD));
+  }
+}
+
 /** Two sign-ins of one user on this device, the second inside the first's write. */
 async function raceSignIns(model: Model) {
   const userId = model.random.pick(USERS);
@@ -425,6 +435,7 @@ async function advance(model: Model) {
 const OPS: [number, (model: Model) => Promise<void>][] = [
   [12, (model) => signIn(model)],
   [4, raceSignIns],
+  [3, crowdSignIns],
   [
     5,
     async (model) => {
