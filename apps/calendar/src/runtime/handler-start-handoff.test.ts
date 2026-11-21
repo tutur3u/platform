@@ -27,6 +27,7 @@ const env = {
       throw new Error('Start handoff must not fetch assets');
     },
   },
+  TTR_ONE_ORIGIN_CALENDAR: 'shadow',
 };
 const ctx = { waitUntil: (work: Promise<unknown>) => void work };
 const telemetry: CalendarTelemetryPort = {
@@ -549,7 +550,7 @@ describe('production apex /calendar mount ownership', () => {
     });
     const response = await handleCalendarRequest(
       new Request('https://tuturuuu.com/calendar/serwist/sw.js?x=1'),
-      { ASSETS: { fetch: asset } },
+      { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'shadow' },
       ctx,
       telemetry
     );
@@ -568,7 +569,7 @@ describe('production apex /calendar mount ownership', () => {
     );
     const response = await handleCalendarRequest(
       request,
-      { ASSETS: { fetch: asset } },
+      { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'shadow' },
       ctx,
       telemetry
     );
@@ -587,7 +588,7 @@ describe('production apex /calendar mount ownership', () => {
     );
     const response = await handleCalendarRequest(
       request,
-      { ASSETS: { fetch: asset } },
+      { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'shadow' },
       ctx,
       telemetry
     );

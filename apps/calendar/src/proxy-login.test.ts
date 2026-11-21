@@ -174,6 +174,23 @@ describe('Calendar proxy signed-out login handoff', () => {
     );
   });
 
+  it('keeps nested next-path queries for the web callback single decode', async () => {
+    const nextPath = '/personal/tasks?view=week&q=a%26b%3Fc%25d%2Be';
+    const response = await proxy(
+      new NextRequest(
+        `${CALENDAR_ORIGIN}/login?next=${encodeURIComponent(nextPath)}`
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    const parsed = location.searchParams.get('returnUrl') ?? '';
+    expect(parsed.startsWith(`${CALENDAR_ORIGIN}/verify-token?`)).toBe(true);
+    expect(parsed).not.toMatch(/^(?:https?%3A%2F%2F|%2F)/i);
+    const returnUrl = new URL(parsed);
+    expect(returnUrl.searchParams.get('nextUrl')).toBe(nextPath);
+    expect(returnUrl.searchParams.has('token')).toBe(false);
+  });
+
   it.each([
     '//evil.example/x',
     '/\\evil.example/x',

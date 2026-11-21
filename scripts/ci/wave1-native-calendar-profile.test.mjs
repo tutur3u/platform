@@ -41,6 +41,7 @@ test('Calendar staging seal restores its explicit host without a provider subdom
     config.vars.MICROSOFT_REDIRECT_URI,
     'https://calendar.tutur3u.com/api/v1/calendar/auth/microsoft/callback'
   );
+  assert.equal(config.vars.TTR_ONE_ORIGIN_CALENDAR, 'off');
 });
 
 test('production and other apps keep their existing profile identities', () => {
@@ -128,6 +129,8 @@ test('Calendar production preserves the registered subdomain for OAuth and post-
     config.vars.MICROSOFT_REDIRECT_URI,
     'https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
   );
+  assert.equal(config.vars.TTR_ONE_ORIGIN_CALENDAR, 'shadow');
+  assert.notEqual(config.vars.TTR_ONE_ORIGIN_CALENDAR, 'on');
   assert.equal(Object.hasOwn(config.vars, 'GOOGLE_REDIRECT_URI'), false);
   assert.ok(config.secrets.required.includes('GOOGLE_REDIRECT_URI'));
   assert.equal(

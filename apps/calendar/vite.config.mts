@@ -23,8 +23,10 @@ if (
 ) {
   throw new Error('Calendar build base must match its deployment profile');
 }
+// Shadow keeps the registered subdomain in the bundle. The apex URL is the
+// later `on` cutover, after both callback URIs are registered with providers.
 const publicAppUrl = productionArtifact
-  ? 'https://tuturuuu.com/calendar'
+  ? 'https://calendar.tuturuuu.com'
   : (process.env.NEXT_PUBLIC_CALENDAR_APP_URL ??
     process.env.NEXT_PUBLIC_APP_URL);
 

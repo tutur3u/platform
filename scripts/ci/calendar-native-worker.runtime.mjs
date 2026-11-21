@@ -53,13 +53,17 @@ async function runParent() {
   const root = resolve(app, 'dist');
   const options = {
     profile: 'calendar',
-    fixtureVars: { CALENDAR_SSR_DIAGNOSTICS: 'fixture-v1' },
+    fixtureVars: {
+      CALENDAR_SSR_DIAGNOSTICS: 'fixture-v1',
+      TTR_ONE_ORIGIN_CALENDAR: 'shadow',
+    },
     root,
     config: configPath,
     main,
     sourceSHA,
-    // Production Calendar is served at the tuturuuu.com/calendar apex mount;
-    // the legacy calendar host only redirects there (pinned by source tests).
+    // Shadow serves the tuturuuu.com/calendar mount. The subdomain stays
+    // canonical until TTR_ONE_ORIGIN_CALENDAR is on; wave1 runtime acceptance
+    // proves both hosts.
     canonicalHost: CALENDAR_MOUNT_HOST,
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),

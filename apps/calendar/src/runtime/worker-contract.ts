@@ -6,6 +6,11 @@ export interface CalendarWorkerEnvironment {
   /** Staging only: service token for server-side calls to the issuer. */
   CF_ACCESS_CLIENT_ID?: string;
   CF_ACCESS_CLIENT_SECRET?: string;
+  /**
+   * `off` | `shadow` | `on`. Absent fails closed to `off`.
+   * Production shadow keeps `calendar.tuturuuu.com` serving.
+   */
+  TTR_ONE_ORIGIN_CALENDAR?: string;
 }
 export interface CalendarExecutionContext {
   waitUntil(work: Promise<unknown>): void;

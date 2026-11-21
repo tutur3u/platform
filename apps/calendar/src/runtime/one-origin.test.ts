@@ -1,0 +1,188 @@
+// @vitest-environment node
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CalendarTelemetryPort } from './request-telemetry.server';
+
+const suppliers = vi.hoisted(() => ({
+  start: vi.fn<(request: Request) => Promise<Response>>(),
+  proxy: vi.fn(),
+}));
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: suppliers.start }),
+}));
+vi.mock('@tanstack/react-start/server-only', () => ({}));
+vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
+
+import { handleCalendarRequest } from './handler';
+import { LEGACY_SERVICE_WORKER_SOURCE } from './legacy-host';
+
+const asset = vi.fn(async () => new Response('asset-bytes'));
+const ctx = { waitUntil: (work: Promise<unknown>) => void work };
+const telemetry: CalendarTelemetryPort = {
+  setActor: () => {},
+  cron: async (_options, handler) => handler(),
+};
+const WORKSPACE = '/en/00000000-0000-4000-8000-000000000001?view=week';
+const CALLBACKS = [
+  '/api/v1/calendar/auth/callback',
+  '/api/v1/calendar/auth/microsoft/callback',
+] as const;
+const SESSION_PATHS = [
+  '/api/auth/logout',
+  '/api/auth/refresh-app-session',
+  '/api/auth/verify-app-token',
+] as const;
+
+function workerEnv(mode?: string) {
+  return {
+    ASSETS: { fetch: asset },
+    ...(mode === undefined ? {} : { TTR_ONE_ORIGIN_CALENDAR: mode }),
+  };
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  suppliers.proxy.mockImplementation(async () => NextResponse.next());
+  suppliers.start.mockResolvedValue(new Response('served'));
+});
+
+describe('Calendar one-origin activation', () => {
+  it.each([undefined, 'off', 'later'])(
+    'mode %j refuses the apex mount and keeps the subdomain',
+    async (mode) => {
+      const env = workerEnv(mode);
+      const apex = await handleCalendarRequest(
+        new Request('https://tuturuuu.com/calendar/personal'),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(apex.status).toBe(404);
+      expect(await apex.text()).toBe('Not Found');
+      expect(apex.headers.get('cache-control')).toMatch(/no-store/);
+      expect(suppliers.proxy).not.toHaveBeenCalled();
+      expect(suppliers.start).not.toHaveBeenCalled();
+
+      const page = await handleCalendarRequest(
+        new Request(`https://calendar.tuturuuu.com${WORKSPACE}`),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(page.status).not.toBe(301);
+      expect(page.headers.get('location') ?? '').not.toContain(
+        'https://tuturuuu.com/calendar'
+      );
+      expect(suppliers.proxy).toHaveBeenCalled();
+    }
+  );
+
+  it.each(['off', 'shadow'])(
+    'mode %s serves registered callbacks and the installed service worker',
+    async (mode) => {
+      const env = workerEnv(mode);
+      for (const path of CALLBACKS) {
+        const response = await handleCalendarRequest(
+          new Request(`https://calendar.tuturuuu.com${path}`),
+          env,
+          ctx,
+          telemetry
+        );
+        expect(response.status).not.toBe(301);
+        expect(response.headers.get('location') ?? '').not.toContain(
+          'https://tuturuuu.com/calendar'
+        );
+      }
+      const serviceWorker = await handleCalendarRequest(
+        new Request('https://calendar.tuturuuu.com/serwist/sw.js'),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(serviceWorker.status).toBe(200);
+      expect(await serviceWorker.text()).toBe('asset-bytes');
+      expect(suppliers.proxy).toHaveBeenCalled();
+    }
+  );
+
+  it('on redirects subdomain navigations and replaces the service worker', async () => {
+    const env = workerEnv('on');
+    const page = await handleCalendarRequest(
+      new Request(`https://calendar.tuturuuu.com${WORKSPACE}`),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(page.status).toBe(301);
+    expect(page.headers.get('location')).toBe(
+      `https://tuturuuu.com/calendar${WORKSPACE}`
+    );
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+
+    const serviceWorker = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/serwist/sw.js'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(await serviceWorker.text()).toBe(LEGACY_SERVICE_WORKER_SOURCE);
+    expect(serviceWorker.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('on still redirects callback paths, so provider registration stays deferred', async () => {
+    const response = await handleCalendarRequest(
+      new Request(
+        'https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback?code=1'
+      ),
+      workerEnv('on'),
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback?code=1'
+    );
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+
+  it('shadow serves the apex mount', async () => {
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/personal'),
+      workerEnv('shadow'),
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('served');
+    expect(response.headers.get('x-robots-tag')).toMatch(/noindex/);
+    expect(suppliers.proxy).toHaveBeenCalled();
+  });
+
+  it('keeps mounted session minting on Web and leaves the subdomain session routes alone', async () => {
+    const env = workerEnv('shadow');
+    for (const path of SESSION_PATHS) {
+      vi.clearAllMocks();
+      const apex = await handleCalendarRequest(
+        new Request(`https://tuturuuu.com/calendar${path}`, { method: 'POST' }),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(apex.status).toBe(409);
+      expect(await apex.json()).toEqual({
+        error: 'The shared session is managed by Web',
+      });
+      expect(suppliers.proxy).not.toHaveBeenCalled();
+
+      const subdomain = await handleCalendarRequest(
+        new Request(`https://calendar.tuturuuu.com${path}`, { method: 'POST' }),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(subdomain.status).not.toBe(409);
+      expect(suppliers.proxy).toHaveBeenCalled();
+    }
+  });
+});

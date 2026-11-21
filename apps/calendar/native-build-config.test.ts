@@ -13,7 +13,7 @@ describe('Calendar native build configuration', () => {
       '/calendar/',
       '/calendar',
       '/calendar/_fn',
-      'https://tuturuuu.com/calendar',
+      'https://calendar.tuturuuu.com',
     ],
     ['staging', '/', '', '/_fn', 'https://calendar.tutur3u.com'],
     ['development', '/', '', '/_fn', 'http://localhost:7806'],
@@ -25,11 +25,11 @@ describe('Calendar native build configuration', () => {
       vi.stubEnv('TUTURUUU_BASE_PATH', basePath);
       vi.stubEnv(
         'NEXT_PUBLIC_APP_URL',
-        profile === 'production' ? 'https://calendar.tuturuuu.com' : publicUrl
+        profile === 'production' ? 'https://tuturuuu.com/calendar' : publicUrl
       );
       vi.stubEnv(
         'NEXT_PUBLIC_CALENDAR_APP_URL',
-        profile === 'production' ? 'https://calendar.tuturuuu.com' : publicUrl
+        profile === 'production' ? 'https://tuturuuu.com/calendar' : publicUrl
       );
       const { bridge } = await import('./vite.config.mjs');
       expect(bridge.base).toBe(assetBase);

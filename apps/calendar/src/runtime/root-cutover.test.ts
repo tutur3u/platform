@@ -19,7 +19,8 @@ import { handleCalendarRequest } from './handler';
 import { LEGACY_SERVICE_WORKER_SOURCE } from './legacy-host';
 
 const asset = vi.fn(async () => new Response('asset'));
-const env = { ASSETS: { fetch: asset } };
+const env = { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'shadow' };
+const apexRedirect = { ...env, TTR_ONE_ORIGIN_CALENDAR: 'on' };
 const ctx = { waitUntil: (work: Promise<unknown>) => void work };
 const telemetry: CalendarTelemetryPort = {
   setActor: () => {},
@@ -94,7 +95,7 @@ describe('Calendar cutover boundary', () => {
         new Request(
           'https://calendar.tuturuuu.com/.well-known/acme-challenge/probe'
         ),
-        env,
+        apexRedirect,
         ctx,
         telemetry
       );
@@ -156,7 +157,7 @@ describe('Calendar cutover boundary', () => {
   );
 });
 
-describe('legacy calendar.tuturuuu.com host', () => {
+describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
   const methods = [
     'GET',
     'HEAD',
@@ -189,7 +190,7 @@ describe('legacy calendar.tuturuuu.com host', () => {
           method,
           headers: { cookie: 'sb-fixture-auth-token=stale' },
         }),
-        env,
+        apexRedirect,
         ctx,
         telemetry
       );
@@ -210,7 +211,7 @@ describe('legacy calendar.tuturuuu.com host', () => {
   it('keeps serving build-info for monitoring', async () => {
     const response = await handleCalendarRequest(
       new Request('https://calendar.tuturuuu.com/api/build-info'),
-      env,
+      apexRedirect,
       ctx,
       telemetry
     );
@@ -222,7 +223,7 @@ describe('legacy calendar.tuturuuu.com host', () => {
   it('answers the service-worker path with a self-removing worker', async () => {
     const response = await handleCalendarRequest(
       new Request('https://calendar.tuturuuu.com/serwist/sw.js?revision=7'),
-      env,
+      apexRedirect,
       ctx,
       telemetry
     );

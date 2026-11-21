@@ -5,12 +5,15 @@ import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
+import { isCalendarApexMountUrl } from '../lib/calendar-mount-hosts';
 import { proxy } from '../proxy';
 import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
 import { dispatchCalendarEndpoint } from './api-registry.server';
 import { registerCalendarServerApiPaths } from './calendar-api-server';
 import { calendarBase } from './calendar-mount';
+import { isCalendarStagingArtifact } from './deployment-profile';
 import { legacyHostResponse } from './legacy-host';
+import { calendarOneOriginMode } from './one-origin';
 import {
   CALENDAR_FUNCTION_BASE,
   CALENDAR_LEGACY_FUNCTION_BASE,
@@ -61,9 +64,21 @@ async function dispatchCalendarRequest(
   nonce: string,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
-  const legacy = legacyHostResponse(request);
+  const legacy = legacyHostResponse(request, env);
   if (legacy) return legacy;
   const url = new URL(request.url);
+  // The apex mount is admitted only in shadow (this release) and on (later).
+  // Off refuses it, matching Mail, so an unset variable cannot publish /calendar.
+  if (
+    !isCalendarStagingArtifact() &&
+    calendarOneOriginMode(env) === 'off' &&
+    isCalendarApexMountUrl(url, '/calendar')
+  ) {
+    return new Response('Not Found', {
+      status: 404,
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  }
   const base = calendarBase(url);
   let path = base?.strip(url.pathname);
   if (!base || path == null) return new Response('Not Found', { status: 404 });

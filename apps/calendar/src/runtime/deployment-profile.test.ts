@@ -19,7 +19,7 @@ vi.mock('@tuturuuu/utils/cloudflare-access', async (actual) => ({
 }));
 
 const asset = vi.fn(async () => new Response('asset'));
-const env = { ASSETS: { fetch: asset } };
+const env = { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'shadow' };
 const ctx = { waitUntil: (work: Promise<unknown>) => void work };
 const telemetry: CalendarTelemetryPort = {
   setActor: () => {},
@@ -153,6 +153,46 @@ describe('Calendar deployment profile', () => {
     expect(response.status).toBe(200);
     expect(suppliers.verify).not.toHaveBeenCalled();
   });
+  it.each([undefined, 'off', 'later'])(
+    'refuses the production apex mount when one-origin mode is %j',
+    async (mode) => {
+      const { handleCalendarRequest } = await load('production');
+      const response = await handleCalendarRequest(
+        new Request('https://tuturuuu.com/calendar/api/build-info'),
+        {
+          ASSETS: { fetch: asset },
+          ...(mode === undefined ? {} : { TTR_ONE_ORIGIN_CALENDAR: mode }),
+        },
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(404);
+      expect(response.headers.get('cache-control')).toMatch(/no-store/);
+      expect(suppliers.proxy).not.toHaveBeenCalled();
+      expect(suppliers.start).not.toHaveBeenCalled();
+    }
+  );
+
+  it('staging does not redirect even when the flag is on', async () => {
+    const { handleCalendarRequest } = await load('staging');
+    const served = await handleCalendarRequest(
+      new Request('https://calendar.tutur3u.com/personal'),
+      { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'on' },
+      ctx,
+      telemetry
+    );
+    expect(served.status).toBe(200);
+    expect(served.headers.get('location')).toBeNull();
+    const foreign = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/personal'),
+      { ASSETS: { fetch: asset }, TTR_ONE_ORIGIN_CALENDAR: 'on' },
+      ctx,
+      telemetry
+    );
+    expect(foreign.status).not.toBe(301);
+    expect(foreign.headers.get('location')).toBeNull();
+  });
+
   it('serves production mount and rollback host without an old-host redirect', async () => {
     const { handleCalendarRequest } = await load('production');
     for (const url of [

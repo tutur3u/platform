@@ -334,16 +334,25 @@ test('Calendar production acceptance exercises the existing Worker at the apex m
   const target = calendarProductionRuntimeTarget({
     name: 'tuturuuu-calendar',
   });
-  assert.equal(target.host, 'tuturuuu.com');
+  assert.equal(target.host, 'calendar.tuturuuu.com');
+  assert.equal(target.apexHost, 'tuturuuu.com');
   assert.equal(target.basePath, '/calendar');
+  assert.equal(target.mode, 'shadow');
   for (const path of [
     '/api/build-info',
     '/assets/client.js',
     '/en/00000000-0000-4000-8000-000000000001',
   ]) {
     assert.equal(
-      new URL(`${target.basePath}${path}`, `https://${target.host}`).toString(),
+      new URL(
+        `${target.basePath}${path}`,
+        `https://${target.apexHost}`
+      ).toString(),
       `https://tuturuuu.com/calendar${path}`
+    );
+    assert.equal(
+      new URL(path, `https://${target.host}`).toString(),
+      `https://calendar.tuturuuu.com${path}`
     );
   }
   assert.deepEqual(target.functionProbes, [

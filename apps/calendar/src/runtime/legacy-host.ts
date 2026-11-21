@@ -1,6 +1,7 @@
 import type { AppMountConfig } from '@tuturuuu/start-bridge/mounts';
 import { calendarMounts } from './calendar-mount';
 import { isCalendarStagingArtifact } from './deployment-profile';
+import { calendarOneOriginMode } from './one-origin';
 
 /** Monitoring keeps reading the subdomain's build identity directly. */
 const LEGACY_HOST_SERVED_PATHS = new Set(['/api/build-info']);
@@ -38,16 +39,20 @@ function mountPath(pathname: string, basePath: string) {
 }
 
 /**
- * In an artifact with an apex mount, the subdomain only moves visitors to
- * `https://<mount host><base><path>?<query>` (301 for GET/HEAD; 307 preserves other methods), before any
- * auth, locale or app handling. Its build identity stays served, and its
- * service-worker path answers with a worker that removes itself.
+ * When `TTR_ONE_ORIGIN_CALENDAR=on`, the subdomain moves visitors to
+ * `https://<mount host><base><path>?<query>` (301 for GET/HEAD; 307 preserves
+ * other methods) before any auth, locale or app handling. Its build identity
+ * stays served, and its service-worker path answers with a worker that
+ * removes itself. `off` and `shadow` serve the subdomain unchanged, including
+ * the registered OAuth callbacks. Staging never redirects.
  */
 export function legacyHostResponse(
   request: Request,
+  env?: object,
   mounts: AppMountConfig = calendarMounts
 ): Response | null {
   if (isCalendarStagingArtifact()) return null;
+  if (calendarOneOriginMode(env) !== 'on') return null;
   const url = new URL(request.url);
   const mountHost = mounts.mountHosts?.[0];
   const basePath = mounts.basePath;

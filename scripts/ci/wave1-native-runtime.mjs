@@ -25,8 +25,10 @@ export function calendarProductionRuntimeTarget(profile) {
     'Calendar apex acceptance requires the sealed production Worker'
   );
   return {
-    host: 'tuturuuu.com',
+    host: 'calendar.tuturuuu.com',
+    apexHost: 'tuturuuu.com',
     basePath: '/calendar',
+    mode: 'shadow',
     functionProbes: [
       {
         path: '/_fn/path-acceptance',
@@ -87,7 +89,7 @@ async function runRuntimeAcceptance() {
   let clean = false;
   try {
     const hosts = [receipt.profile.host];
-    const calendarPathTarget =
+    const calendarShadow =
       app === 'calendar' && environment === 'production'
         ? calendarProductionRuntimeTarget(receipt.profile)
         : null;
@@ -98,8 +100,9 @@ async function runRuntimeAcceptance() {
             basePath: '/finance',
           }
         : null;
-    const pathTarget = calendarPathTarget ?? financePathTarget;
+    const pathTarget = financePathTarget;
     if (pathTarget) hosts.unshift(pathTarget.host);
+    if (calendarShadow) hosts.unshift(calendarShadow.apexHost);
     const appsMountHost =
       app === 'apps' && environment === 'production'
         ? appsProductionMountHost(releaseRecipes.apps)
@@ -159,7 +162,12 @@ async function runRuntimeAcceptance() {
           },
         });
         await worker.ready;
-        const basePath = host === pathTarget?.host ? pathTarget.basePath : '';
+        const basePath =
+          calendarShadow && host === calendarShadow.apexHost
+            ? calendarShadow.basePath
+            : host === pathTarget?.host
+              ? pathTarget.basePath
+              : '';
         const fetchWorker = (path, init = {}, jwt = access?.token()) =>
           worker.fetch(`https://${host}${basePath}${path}`, {
             ...init,
@@ -228,7 +236,11 @@ async function runRuntimeAcceptance() {
             assert.equal(refused.status, 404, `${host}${path} must 404`);
             assert.deepEqual(refused.headers.getSetCookie(), []);
           }
-          for (const probe of calendarPathTarget?.functionProbes ?? []) {
+          const functionProbes =
+            calendarShadow && host === calendarShadow.apexHost
+              ? calendarShadow.functionProbes
+              : [];
+          for (const probe of functionProbes) {
             const refused = await fetchWorker(probe.path, {
               method: probe.method,
               headers: probe.headers,
@@ -270,6 +282,8 @@ async function runRuntimeAcceptance() {
         );
         assert.equal(info.environment, environment);
         assert.match(identity.headers.get('cache-control'), /no-store/);
+        if (calendarShadow && host === calendarShadow.apexHost)
+          assert.match(identity.headers.get('x-robots-tag') ?? '', /noindex/);
         if (host === financePathTarget?.host)
           assert.deepEqual(identity.headers.getSetCookie(), []);
         if (host === financePathTarget?.host) {
@@ -298,28 +312,36 @@ async function runRuntimeAcceptance() {
           (name) => name.startsWith('client/assets/') && name.endsWith('.js')
         );
         assert.ok(file, 'Native client asset missing');
-        if (calendarPathTarget && host !== calendarPathTarget.host) {
-          // Legacy Calendar browser GETs permanently move to the apex mount.
-          const apex = `https://${calendarPathTarget.host}${calendarPathTarget.basePath}`;
-          const asset = `/${file.slice('client/'.length)}`;
-          for (const [path, location] of [
-            [asset, `${apex}${asset}`],
-            [
-              '/en/00000000-0000-4000-8000-000000000001?view=week',
-              `${apex}/en/00000000-0000-4000-8000-000000000001?view=week`,
-            ],
-            ['/?view=week', `${apex}?view=week`],
+        if (calendarShadow && host === calendarShadow.host) {
+          // Shadow keeps the registered subdomain serving. The 301 and the
+          // unregister worker run only when TTR_ONE_ORIGIN_CALENDAR is on.
+          const apex = `https://${calendarShadow.apexHost}${calendarShadow.basePath}`;
+          for (const path of [
+            `/${file.slice('client/'.length)}`,
+            '/en/00000000-0000-4000-8000-000000000001?view=week',
+            '/?view=week',
+            '/api/v1/calendar/auth/callback',
+            '/api/v1/calendar/auth/microsoft/callback',
           ]) {
-            const moved = await fetchWorker(path);
-            assert.equal(moved.status, 301, `${host}${path} must move`);
-            assert.equal(moved.headers.get('location'), location);
-            assert.deepEqual(moved.headers.getSetCookie(), []);
+            const served = await fetchWorker(path);
+            assert.notEqual(
+              served.status,
+              301,
+              `${host}${path} must keep serving`
+            );
+            const location = served.headers.get('location');
+            assert.ok(
+              location == null || !location.startsWith(apex),
+              `${host}${path} must not move to the apex mount`
+            );
+            await served.body?.cancel();
           }
           const serviceWorker = await fetchWorker('/serwist/sw.js');
-          assert.equal(serviceWorker.status, 200);
-          assert.match(serviceWorker.headers.get('cache-control'), /no-store/);
-          assert.match(await serviceWorker.text(), /registration\.unregister/);
-          continue;
+          assert.notEqual(serviceWorker.status, 301);
+          assert.doesNotMatch(
+            await serviceWorker.text(),
+            /registration\.unregister/
+          );
         }
         const response = await fetchWorker(`/${file.slice('client/'.length)}`);
         assert.equal(response.status, 200);
@@ -349,11 +371,7 @@ async function runRuntimeAcceptance() {
             assert.equal(returnUrl.pathname, '/finance/verify-token');
             assert.equal(returnUrl.searchParams.get('nextUrl'), workspace);
           }
-          if (
-            calendarPathTarget &&
-            basePath &&
-            !target.pathname.includes('login')
-          ) {
+          if (calendarShadow && host === calendarShadow.apexHost) {
             assert.equal(
               target.href,
               `https://${host}${basePath}/00000000-0000-4000-8000-000000000001`,
@@ -386,6 +404,12 @@ async function runRuntimeAcceptance() {
             assert.equal(returnUrl.origin, 'https://tuturuuu.com');
             assert.equal(returnUrl.pathname, '/calendar/verify-token');
             assert.equal(returnUrl.searchParams.get('nextUrl'), '/personal');
+          }
+          if (calendarShadow && host === calendarShadow.host) {
+            const returnUrl = new URL(target.searchParams.get('returnUrl'));
+            assert.equal(returnUrl.origin, `https://${calendarShadow.host}`);
+            assert.equal(returnUrl.pathname, '/verify-token');
+            assert.equal(returnUrl.searchParams.get('nextUrl'), workspace);
           }
           assert.ok(
             target.pathname.includes('login'),
