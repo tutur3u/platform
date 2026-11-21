@@ -79,6 +79,7 @@ export async function loadMail(result) {
         [
           'framable-paths',
           'seo-robots',
+          'signed-in-loader-timing',
           'staging-cookie-policy',
           'staging-hosts',
         ].includes(specifier.split('/').at(-1))
