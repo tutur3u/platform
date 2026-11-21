@@ -72,6 +72,7 @@ describe('mounted base without the head script', () => {
   }
 
   it('reads the base from the document’s own mounted script URL', () => {
+    vi.stubGlobal('location', new URL('https://tuturuuu.com/tasks/en/board'));
     const remove = withScript('https://tuturuuu.com/tasks/assets/index-abc.js');
     try {
       expect(browserMountedAppBase()).toBe('/tasks');
@@ -84,7 +85,9 @@ describe('mounted base without the head script', () => {
     'https://tuturuuu.com/_next/static/chunks/main.js',
     'https://tuturuuu.com/assets/index-abc.js',
     'https://cdn.example/tasks/assets/index-abc.js',
+    'https://tuturuuu.com/x/assets/index-abc.js',
   ])('stays at the root for %s', (src) => {
+    vi.stubGlobal('location', new URL('https://tuturuuu.com/x/page'));
     const remove = withScript(src);
     try {
       expect(browserMountedAppBase()).toBe('');
@@ -92,4 +95,16 @@ describe('mounted base without the head script', () => {
       remove();
     }
   });
+});
+
+it('ignores a mounted script on a page outside that mount', () => {
+  vi.stubGlobal('location', new URL('https://tuturuuu.com/settings'));
+  const script = document.createElement('script');
+  script.src = 'https://tuturuuu.com/tasks/assets/index-abc.js';
+  document.head.append(script);
+  try {
+    expect(browserMountedAppBase()).toBe('');
+  } finally {
+    script.remove();
+  }
 });

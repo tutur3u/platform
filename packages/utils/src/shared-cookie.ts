@@ -1,4 +1,5 @@
 import { isStagingSharedCookieDeployment } from '@tuturuuu/supabase/shared-cookie-domains';
+import { getAppMountBasePaths, ONE_ORIGIN_APP_BASE_PATHS } from './app-mounts';
 import { resolveTrustedForwardedHostname } from './forwarded-host-trust';
 
 export { resolveTrustedForwardedHostname } from './forwarded-host-trust';
@@ -323,20 +324,31 @@ const MOUNT_BASE = /^(?:\/[a-z0-9][a-z0-9-]*)+$/u;
 /** A mounted build's script URL: `<base>/assets/<file>`. */
 const MOUNTED_CHUNK = /^((?:\/[a-z0-9][a-z0-9-]*)+)\/assets\//u;
 
+const REGISTERED_BASES = Object.keys(ONE_ORIGIN_APP_BASE_PATHS).flatMap(
+  getAppMountBasePaths
+);
+
 /**
- * The base the document's own same-origin scripts are served under: a
- * mounted build loads `<base>/assets/...`, Web loads `/_next/...` and a
- * subdomain root `/assets/...`, neither of which match.
+ * The base the document's own same-origin head scripts are served under: a
+ * mounted build loads `<base>/assets/...`. Only a registered mount base that
+ * the document's own path is under counts, so a Web page (never served under
+ * a mount base) cannot be made to look mounted by injected markup.
  */
 function scriptBase() {
-  for (const script of document.querySelectorAll<HTMLScriptElement>(
+  const path = globalThis.location?.pathname ?? '';
+  for (const script of document.head?.querySelectorAll<HTMLScriptElement>(
     'script[src]'
-  )) {
+  ) ?? []) {
     try {
       const url = new URL(script.src, document.baseURI);
       if (url.origin !== globalThis.location?.origin) continue;
       const base = MOUNTED_CHUNK.exec(url.pathname)?.[1];
-      if (base) return base;
+      if (
+        base &&
+        REGISTERED_BASES.includes(base) &&
+        (path === base || path.startsWith(`${base}/`))
+      )
+        return base;
     } catch {}
   }
   return '';
