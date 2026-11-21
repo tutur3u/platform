@@ -125,6 +125,9 @@ describe('LoginForm focused external sign-in', () => {
     });
 
     await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(tokenized));
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedUserId: 'user-1', returnUrl })
+    );
     expect(screen.getByText('Person Example')).toBeInTheDocument();
   });
 

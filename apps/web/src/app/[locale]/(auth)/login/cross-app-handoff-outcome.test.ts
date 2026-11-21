@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   classifyCrossAppHandoff,
   getConfirmedReturnKey,
+  getConfirmedUserId,
   withHandoffTimeout,
 } from './cross-app-handoff-outcome';
 
@@ -41,6 +42,7 @@ describe('classifyCrossAppHandoff', () => {
 
   it.each([
     [{ code: 'AUTH_UNAVAILABLE' }, 'handoff'],
+    [{ code: 'ACCOUNT_CHANGED' }, 'handoff'],
     [{ error: 'Failed to generate token' }, 'handoff'],
     [
       { code: 'PKCE_REQUIRED', error: 'An S256 code challenge is required' },
@@ -89,5 +91,16 @@ describe('withHandoffTimeout', () => {
     await expect(withHandoffTimeout(Promise.resolve('ok'), 1000)).resolves.toBe(
       'ok'
     );
+  });
+});
+
+describe('getConfirmedUserId', () => {
+  it('applies a confirmation only to the return it confirmed', () => {
+    const key = getConfirmedReturnKey('user-1', 'https://a.example/cb');
+
+    expect(getConfirmedUserId(key, 'https://a.example/cb')).toBe('user-1');
+    expect(getConfirmedUserId(key, 'https://mail.example/cb')).toBeUndefined();
+    expect(getConfirmedUserId(null, 'https://a.example/cb')).toBeUndefined();
+    expect(getConfirmedUserId('not json', 'x')).toBeUndefined();
   });
 });

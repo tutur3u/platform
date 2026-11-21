@@ -4,6 +4,7 @@ type HandoffPath =
   | '/api/v1/auth/cross-app-token/verify';
 
 type HandoffErrorCode =
+  | 'ACCOUNT_CHANGED'
   | 'APP_SESSION_REFRESH_UNAVAILABLE'
   | 'AUTH_UNAVAILABLE'
   | 'INVALID_CODE_CHALLENGE'

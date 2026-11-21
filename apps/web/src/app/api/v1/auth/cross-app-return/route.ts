@@ -32,6 +32,8 @@ import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 const returnUrlSchema = z.object({
   codeChallenge: z.string().max(128).optional(),
   codeChallengeMethod: z.string().max(16).optional(),
+  /** The account the user confirmed; a different session never mints. */
+  expectedUserId: z.string().max(64).optional(),
   generateToken: z.boolean().optional().default(true),
   returnUrl: z.string().min(1).max(MAX_URL_LENGTH),
 });
@@ -232,6 +234,13 @@ async function createCrossAppReturn(
     return fail(
       'UNAUTHORIZED',
       NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    );
+  }
+
+  if (parsed.data.expectedUserId && parsed.data.expectedUserId !== user.id) {
+    return fail(
+      'ACCOUNT_CHANGED',
+      NextResponse.json({ code: 'ACCOUNT_CHANGED' }, { status: 409 })
     );
   }
 

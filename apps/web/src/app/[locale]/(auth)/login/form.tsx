@@ -61,7 +61,6 @@ import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
-import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
 import { buildOAuthCallbackUrl } from '@/lib/auth/oauth-callback-url';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
 import {
@@ -75,6 +74,7 @@ import { useSignInRouting } from './use-sign-in-routing';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import {
   classifyCrossAppHandoff,
+  buildHandoffRequest,
   getConfirmedReturnKey,
   withHandoffTimeout,
 } from './cross-app-handoff-outcome';
@@ -728,16 +728,18 @@ export default function LoginForm({
         return;
       }
 
-      // Bootstrap effects can call this concurrently. One mint per attempt
-      // keeps a single step-up decision, and a minted handoff is never
-      // followed by a second one-time token while the browser navigates.
+      // One mint per attempt, even when bootstrap effects call this at once:
+      // no second one-time token follows a minted handoff.
       if (handoffInFlightRef.current) return;
       handoffInFlightRef.current = true;
       const handoff = await withHandoffTimeout(
-        createCrossAppReturnUrlWithInternalApi({
-          ...getCrossAppPkceParams(searchParams),
-          returnUrl,
-        })
+        createCrossAppReturnUrlWithInternalApi(
+          buildHandoffRequest(
+            searchParams,
+            returnUrl,
+            confirmedReturnRef.current
+          )
+        )
       ).catch(() => null);
       const outcome = classifyCrossAppHandoff(handoff, {
         stepUpAttempted: mfaStepUpAttemptedRef.current,
@@ -946,6 +948,7 @@ export default function LoginForm({
   );
 
   const handleUseAnotherAccount = useCallback(async () => {
+    confirmedReturnRef.current = null;
     setLoading(true);
     await supabase.auth.signOut({ scope: 'local' });
     setUser(null);

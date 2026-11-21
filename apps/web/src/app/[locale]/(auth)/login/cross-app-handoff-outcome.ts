@@ -1,3 +1,4 @@
+import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
 import type { ReturnUrlFailureKind } from './invalid-return-url-warning';
 
 export type CrossAppHandoffResponse = {
@@ -49,6 +50,39 @@ export function getConfirmedReturnKey(
   returnUrl: string | null | undefined
 ) {
   return userId && returnUrl ? JSON.stringify([userId, returnUrl]) : null;
+}
+
+/**
+ * The account an explicit Continue confirmed, only for that exact return;
+ * the mint sends it so the server refuses any other session.
+ */
+export function getConfirmedUserId(
+  confirmedReturnKey: string | null,
+  returnUrl: string
+) {
+  if (!confirmedReturnKey) return undefined;
+  try {
+    const [userId, confirmedReturnUrl] = JSON.parse(confirmedReturnKey) as [
+      string,
+      string,
+    ];
+    return confirmedReturnUrl === returnUrl ? userId : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The mint request: the app's PKCE challenge and the confirmed account. */
+export function buildHandoffRequest(
+  searchParams: Pick<URLSearchParams, 'get'>,
+  returnUrl: string,
+  confirmedReturnKey: string | null
+) {
+  return {
+    ...getCrossAppPkceParams(searchParams),
+    expectedUserId: getConfirmedUserId(confirmedReturnKey, returnUrl),
+    returnUrl,
+  };
 }
 
 export const CROSS_APP_HANDOFF_TIMEOUT_MS = 15_000;

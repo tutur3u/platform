@@ -29,6 +29,7 @@ it('does not mint or navigate an already authenticated app return until the user
   fireEvent.click(screen.getByRole('button', { name: /login.continue/ }));
   await waitFor(() =>
     expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith({
+      expectedUserId: 'user-1',
       returnUrl,
     })
   );
