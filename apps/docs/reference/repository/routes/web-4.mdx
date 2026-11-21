@@ -14,6 +14,12 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/documents` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/route.ts) |
+| `/api/v1/workspaces/[wsId]/domains/[domainId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/domains/[domainId]/verify` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/verify/route.ts) |
+| `/api/v1/workspaces/[wsId]/domains` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/route.ts) |
+| `/api/v1/workspaces/[wsId]/education/classes/[classId]/attendance` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/attendance/route.ts) |
+| `/api/v1/workspaces/[wsId]/education/classes/[classId]/lessons` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/lessons/route.ts) |
 | `/api/v1/workspaces/[wsId]/education/classes/[classId]/roster` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/roster/route.ts) |
 | `/api/v1/workspaces/[wsId]/education/classes/[classId]/schedule` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/schedule/route.ts) |
 | `/api/v1/workspaces/[wsId]/education/classes/[classId]/tuition-invoices` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/tuition-invoices/route.ts) |
@@ -188,11 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/templates/[templateId]` | DELETE, GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/templates/[templateId]/shares` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/shares/route.ts) |
 | `/api/v1/workspaces/[wsId]/templates/[templateId]/use` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/use/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/background` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/background/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/upload-url/route.ts) |
-| `/api/v1/workspaces/[wsId]/time-tracker/stats` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/time-tracker/stats/route.ts) |
-| `/api/v1/workspaces/[wsId]/time-tracking/[...segments]` | DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/time-tracking/%5B...segments%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/topic-announcements/[...segments]` | DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/%5B...segments%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

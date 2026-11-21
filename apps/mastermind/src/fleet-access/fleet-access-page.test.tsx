@@ -27,6 +27,8 @@ const api = vi.hoisted(() => ({
   confirmFleetLinkFn: vi.fn(),
 }));
 vi.mock('./api', () => api);
+const ownerApi = vi.hoisted(() => ({ fleetOwnerConsoleFn: vi.fn() }));
+vi.mock('./owner-api', () => ownerApi);
 // The shell's navigation links need a router; navFor is tested in
 // shell-nav.test.ts. These stand-ins expose the scope and header actions.
 vi.mock('../components/shell', () => ({
@@ -80,6 +82,8 @@ function show(
 const live = (access: FleetAccess) => ({ kind: 'ok', data: access }) as const;
 
 beforeEach(() => {
+  // The Worker refuses Owner server functions on a grantee's request.
+  ownerApi.fleetOwnerConsoleFn.mockRejectedValue(new Error('403'));
   api.fleetDigestFn.mockResolvedValue({ kind: 'ok', data: fixtures.digest });
   api.fleetIntentsFn.mockResolvedValue({
     kind: 'ok',
@@ -133,7 +137,7 @@ describe('Fleet access page', () => {
     ).toBe('true');
   });
 
-  it('explains disabled, stopped and changed access without tabs', () => {
+  it('explains disabled, stopped and changed access without tabs', async () => {
     const off = (stopped: boolean): FleetAccess => ({
       enabled: false,
       tier: null,
@@ -147,7 +151,8 @@ describe('Fleet access page', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     cleanup();
     show(live(off(true)));
-    expect(screen.getByText(t.gate.stopped)).toBeTruthy();
+    expect(await screen.findByText(t.gate.stopped)).toBeTruthy();
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
     expect(screen.queryByRole('alert')).toBeNull();
     cleanup();
     show({ kind: 'denied' });

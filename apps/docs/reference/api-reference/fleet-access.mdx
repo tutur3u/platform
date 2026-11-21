@@ -8,8 +8,11 @@ audience: developers
 The [Fleet access policy](/platform/features/fleet-access) governs these
 endpoints on `tuturuuu.com`. Responses use `Cache-Control: private, no-store`.
 Use `getFleetAccess`, `getFleetDigest`, `publishFleetDigest`,
-`listFleetIntents`, `submitFleetIntent`, `createFleetLinkCode` and
-`confirmFleetLink` from `@tuturuuu/internal-api/fleet` for TypeScript callers.
+`listFleetIntents`, `submitFleetIntent`, `createFleetLinkCode`,
+`confirmFleetLink`, `getFleetOwnerConsole`, `grantFleetAccess`,
+`revokeFleetAccess`, `setFleetStopped`, `upsertFleetProject` and
+`setFleetDisplayValue` from `@tuturuuu/internal-api/fleet` for TypeScript
+callers.
 The package also exports the response schemas; validate responses before use.
 
 ## Read access
@@ -66,8 +69,8 @@ credential is denied. A Fleet stop also denies publishing.
 | `lanes[].blockerCodes` | Up to seven distinct codes from `dependency`, `review`, `ci`, `approval`, `release_hold`, `capacity`, and `incident` |
 
 The route rejects unknown fields at every level and caps the body at 128 KiB.
-Only the database owner can provision approved display values in
-`private.fleet_digest_display_values`. Approvals are specific to a project
+The Owner approves display values from the Access tab, described below. The
+database-owner SQL path remains a fallback. Approvals are specific to a project
 and field. Approve only text safe for the project's Fleet readers. A removed
 approval hides any affected snapshot while one of its display values lacks approval.
 
@@ -76,6 +79,54 @@ snapshot older than the stored snapshot, or different content at the same
 timestamp, receives `409`. Invalid documents, unapproved labels, and unknown
 projects receive `400`. Excess body bytes receive `413`. Unavailable storage
 or invalid publisher configuration returns `503`.
+
+## Owner console
+
+These routes are for the configured Fleet Owner in Mastermind web. Each one
+requires a Mastermind access session whose MFA proof was verified within the
+last 24 hours and has not expired. The actor is the verified session user.
+The platform (CLI) audience, desk bearers and Supabase session cookies are
+refused with `403`. A stale or missing proof returns `403 {"error":"mfa_required"}`.
+Responses use `Cache-Control: private, no-store`. Mutations are limited to 20
+per minute per Owner and return `429 {"error":"rate_limited"}` past that.
+Someone who is not the configured Owner receives `403 {"error":"forbidden"}`.
+Unknown JSON fields are rejected with `400`.
+
+`GET /api/v1/fleet/owner/access` returns the stop flag, the control generation,
+every grant and the catalog with approved display values.
+
+`POST /api/v1/fleet/owner/grants` grants or edits one person, looked up by
+account email. The tier is `observer`, `steerer` or `operator`. Capabilities
+must sit inside that tier's ceiling. `projectKeys` must be catalog keys.
+`expiresAt` is optional and must be in the future. Caps are
+`questionsPerHour`, `intentsPerDay` and `modelBudgetPerMonth`. A new grant
+sends `expectedGeneration: null` and cannot replace a live grant. An edit
+sends the generation it read. Success is `{"result":"granted"|"updated","userId","generation"}`.
+
+`POST /api/v1/fleet/owner/grants/revoke` sends `{ userId, expectedGeneration }`
+and returns `{"result":"revoked","generation"}`. The revoke applies on the
+person's next request.
+
+`POST /api/v1/fleet/owner/control` sends `{ stopped, expectedGeneration }` and
+returns `{"result":"stopped"|"resumed"|"unchanged","stopped","generation"}`.
+
+`POST /api/v1/fleet/owner/projects` sends `{ key, nameEn, nameVi }`. Names are
+1–80 characters. Success is `{"result":"created"|"updated"}`.
+
+`POST /api/v1/fleet/owner/display-values` sends
+`{ projectKey, field, value, approved }`. `field` is `lane`, `releaseTitle`
+or `readinessItem`. `approved: true` adds the value; `false` removes it.
+Success is `{"result":"approved"|"removed"|"unchanged"}`.
+
+Refusal bodies are `{"error":"<code>"}`. `unknown_user`, `unknown_project` and
+`not_found` are `404`. `invalid_grant`, `invalid_project` and `invalid_value`
+are `400`. `grant_exists`, `generation_changed`, `already_revoked` and
+`too_many_values` are `409`. Storage or configuration failure is `503
+{"error":"owner_unavailable"}`.
+
+The database-owner functions `fleet_grant_access`, `fleet_revoke_access` and
+`fleet_set_stopped` stay available as a fallback. They still require a
+database-owner session and are not what Web calls.
 
 ## Submit and read intents
 

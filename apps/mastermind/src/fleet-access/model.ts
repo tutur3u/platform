@@ -8,8 +8,8 @@ import {
 } from '@tuturuuu/internal-api/fleet';
 import type { Tone } from '../components/tone';
 
-/** Approvals and grant management join when their APIs exist. */
-export const fleetTabs = ['status', 'ask', 'requests', 'link'] as const;
+/** Approvals join when its API exists. */
+export const fleetTabs = ['status', 'ask', 'requests', 'link', 'access'] as const;
 export type FleetTab = (typeof fleetTabs)[number];
 
 type Capability = Extract<
@@ -34,6 +34,9 @@ export function visibleTabs(access: LiveFleetAccess): FleetTab[] {
       case 'requests':
       case 'link':
         return true;
+      // Owner only; the Web API still requires the Owner and a fresh MFA proof.
+      case 'access':
+        return access.tier === 'owner';
     }
   });
 }

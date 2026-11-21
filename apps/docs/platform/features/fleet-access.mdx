@@ -184,9 +184,10 @@ returns, and the API still decides every read and write:
   confirm as sent for Owner approval. Target keys are typed as catalog keys.
 - **Link chat:** issue a link code, send it to Mira in a private chat, preview
   the pending channel and account label, then confirm.
-- **Approvals** (`approve.low`) and **Access** (Owner only: grants,
-  revocation, caps, fleet stop and the audit log) stay hidden until their APIs
-  exist.
+- **Approvals** (`approve.low`) stay hidden until that API exists.
+- **Access** (Owner only): grants, edits, revocation, caps, Fleet stop and
+  resume, the project catalog and approved digest display values. Grantees
+  never see the tab.
 
 The Mastermind shell shows a grantee only the Fleet access entry, and the
 Owner keeps the full navigation. Every tier gets the language and theme
@@ -401,11 +402,13 @@ run by the owner or the release owners:
 
 1. **Database:** the gated production migration workflow applies the Fleet
    migrations after their exact-SQL review, CI and staging.
-2. **Grant:** the Owner grants a person a tier and projects through the
-   owner-only grant function. That person needs a tuturuuu.com account.
+2. **Grant:** the Owner grants, edits or revokes a person from the Access tab
+   in Mastermind web. The tier is at most Operator. The database-owner SQL
+   functions (`fleet_grant_access`, `fleet_revoke_access`, `fleet_set_stopped`)
+   remain a fallback. That person needs a tuturuuu.com account.
 3. **Catalog and digest:** the Owner registers project catalog rows and approved
-   display values, and the digest publisher token is issued so status exists to
-   read.
+   display values from the same Access tab. The database-owner SQL path remains
+   a fallback. The digest publisher token is issued so status exists to read.
 4. **Web admission:** none beyond the grant. The person signs in to
    Mastermind web with their tuturuuu.com account, and the live grant admits
    them to the Fleet area, as described in the
@@ -469,6 +472,14 @@ Each slice links its coverage here when it lands:
   admission, typed drafts, digest answers, redirect refusal, strict response
   validation, refusal mapping, the link flow and bilingual message parity. See
   the [Fleet access web tests](https://github.com/tutur3u/platform/tree/main/apps/mastermind/src/fleet-access).
+- Slice 6b covers the Owner console: a non-owner and an Owner acting as another
+  ID are refused, the tier ceiling holds, audit rows are written, and a revoke
+  takes effect on the next read. See
+  [fleet-owner-console.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-owner-console.sql).
+  The [Owner route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/owner/route.test.ts)
+  require a fresh MFA proof, refuse the platform CLI audience and desk bearers,
+  reject bad schemas and rate-limit mutations. The Access tab tests cover
+  Owner-only visibility, the grant and edit forms, and the confirm steps.
 - Slice 6 admission covers grantee reach, 403 on every owner route without
   session work, revocation and stop on the next request, identity binding,
   unchanged Owner admission and pinned server-function IDs in

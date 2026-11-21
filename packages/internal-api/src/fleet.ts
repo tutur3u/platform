@@ -235,3 +235,5 @@ export {
   fleetLinkConfirmationInputSchema,
   fleetLinkConfirmationSchema,
 } from './fleet-intents';
+
+export * from './fleet-owner';

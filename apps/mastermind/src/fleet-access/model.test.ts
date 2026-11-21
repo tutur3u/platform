@@ -33,15 +33,23 @@ describe('Fleet tabs', () => {
     ]);
   });
 
-  it('hides Approvals and Access for every tier until their APIs exist', () => {
-    for (const access of [fixtures.steerer, fixtures.owner]) {
-      expect(visibleTabs(access)).toEqual([
-        'status',
-        'ask',
-        'requests',
-        'link',
-      ]);
-    }
+  it('shows Access to the Owner tier only', () => {
+    expect(visibleTabs(fixtures.steerer)).toEqual([
+      'status',
+      'ask',
+      'requests',
+      'link',
+    ]);
+    expect(
+      visibleTabs({ ...fixtures.steerer, tier: 'operator' })
+    ).not.toContain('access');
+    expect(visibleTabs(fixtures.owner)).toEqual([
+      'status',
+      'ask',
+      'requests',
+      'link',
+      'access',
+    ]);
   });
 
   it('hides digest tabs without status.read', () => {

@@ -7419,6 +7419,7 @@ export type Database = {
           desk_owner_change: Json | null;
           id: number;
           intent_id: string | null;
+          owner_change: Json | null;
           reason_code: string;
           retention_counts: Json | null;
           subject_user_id: string | null;
@@ -7432,6 +7433,7 @@ export type Database = {
           desk_owner_change?: Json | null;
           id?: never;
           intent_id?: string | null;
+          owner_change?: Json | null;
           reason_code: string;
           retention_counts?: Json | null;
           subject_user_id?: string | null;
@@ -7444,6 +7446,7 @@ export type Database = {
           desk_owner_change?: Json | null;
           id?: never;
           intent_id?: string | null;
+          owner_change?: Json | null;
           reason_code?: string;
           retention_counts?: Json | null;
           subject_user_id?: string | null;
@@ -30273,6 +30276,59 @@ export type Database = {
           provider_account_id: string;
           verified_at: string;
         }[];
+      };
+      fleet_owner_actor: { Args: { p_actor_id: string }; Returns: string };
+      fleet_owner_grant_access: {
+        Args: {
+          p_actor_id: string;
+          p_capabilities: string[];
+          p_email: string;
+          p_expected_generation?: number;
+          p_expires_at: string;
+          p_intents_per_day: number;
+          p_model_budget_per_month: number;
+          p_project_keys: string[];
+          p_questions_per_hour: number;
+          p_tier: Database['private']['Enums']['fleet_tier'];
+        };
+        Returns: Json;
+      };
+      fleet_owner_instant: { Args: { p_value: string }; Returns: string };
+      fleet_owner_list_access: { Args: { p_actor_id: string }; Returns: Json };
+      fleet_owner_revoke_access: {
+        Args: {
+          p_actor_id: string;
+          p_expected_generation: number;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      fleet_owner_set_display_value: {
+        Args: {
+          p_actor_id: string;
+          p_approved: boolean;
+          p_field: string;
+          p_project_key: string;
+          p_value: string;
+        };
+        Returns: Json;
+      };
+      fleet_owner_set_stopped: {
+        Args: {
+          p_actor_id: string;
+          p_expected_generation: number;
+          p_stopped: boolean;
+        };
+        Returns: Json;
+      };
+      fleet_owner_upsert_project: {
+        Args: {
+          p_actor_id: string;
+          p_key: string;
+          p_name_en: string;
+          p_name_vi: string;
+        };
+        Returns: Json;
       };
       fleet_promote_desk_owner: {
         Args: {

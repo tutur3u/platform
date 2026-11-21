@@ -6,9 +6,11 @@
 @source not '../../../node_modules/streamdown';
 @source not '../../../node_modules/@streamdown';
 @source './';
+@source '../../../packages/ui/src/components/ui/alert-dialog.tsx';
 @source '../../../packages/ui/src/components/ui/badge.tsx';
 @source '../../../packages/ui/src/components/ui/button.tsx';
 @source '../../../packages/ui/src/components/ui/card.tsx';
+@source '../../../packages/ui/src/components/ui/checkbox.tsx';
 @source '../../../packages/ui/src/components/ui/dropdown-menu.tsx';
 @source '../../../packages/ui/src/components/ui/input.tsx';
 @source '../../../packages/ui/src/components/ui/skeleton.tsx';

@@ -14,6 +14,12 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/integrations/external-chat/pairing/verify` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts) |
+| `/api/v1/integrations/external-chat/widget.js` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts) |
+| `/api/v1/link-shortener/[linkId]/analytics` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/link-shortener/%5BlinkId%5D/analytics/route.ts) |
+| `/api/v1/link-shortener/[linkId]/password` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/link-shortener/%5BlinkId%5D/password/route.ts) |
+| `/api/v1/link-shortener/shorten` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/link-shortener/shorten/route.ts) |
+| `/api/v1/live/eligibility` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/eligibility/route.ts) |
 | `/api/v1/live/session` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/session/route.ts) |
 | `/api/v1/live/token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/token/route.ts) |
 | `/api/v1/live/tools/execute` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/tools/execute/route.ts) |
@@ -188,11 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/datasets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/route.ts) |
 | `/api/v1/workspaces/[wsId]/deleted` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/deleted/route.ts) |
 | `/api/v1/workspaces/[wsId]/documents/[documentId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/%5BdocumentId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/documents` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/route.ts) |
-| `/api/v1/workspaces/[wsId]/domains/[domainId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/domains/[domainId]/verify` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/verify/route.ts) |
-| `/api/v1/workspaces/[wsId]/domains` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/route.ts) |
-| `/api/v1/workspaces/[wsId]/education/classes/[classId]/attendance` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/attendance/route.ts) |
-| `/api/v1/workspaces/[wsId]/education/classes/[classId]/lessons` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/education/classes/%5BclassId%5D/lessons/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

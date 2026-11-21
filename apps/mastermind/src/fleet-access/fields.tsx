@@ -92,12 +92,16 @@ export function TextField({
   onChange,
   multiline,
   mono,
+  type = 'text',
+  inputMode,
   ...field
 }: FieldProps & {
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;
   mono?: boolean;
+  type?: 'text' | 'email' | 'date';
+  inputMode?: 'numeric';
 }) {
   const shared = {
     id: field.id,
@@ -118,6 +122,8 @@ export function TextField({
       ) : (
         <Input
           {...shared}
+          type={type}
+          inputMode={inputMode}
           className={mono ? 'font-mono' : undefined}
           onChange={(event) => onChange(event.target.value)}
         />
