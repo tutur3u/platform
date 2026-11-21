@@ -109,7 +109,6 @@ a Tuturuuu account, and each link is explicit and audited.
 | `people_change_events`         | invalidation outbox                                                                           |
 | `people_principals`            | per-workspace machine principals and their public keys                                       |
 | `people_channel_bindings`      | which workspace each provider account serves, unique per account                             |
-| `people_recall_events`         | one-time recall evidence per provider event                                                  |
 | `people_import_runs`, `people_import_items`, `people_import_staging` | migration runs, receipts and quarantined records         |
 | `people_audit_events`          | append-only events                                                                            |
 
@@ -485,8 +484,9 @@ need ingress evidence. That reuses the Fleet access event contract in
 
 - The trusted ingress signs the channel, provider account, sender,
   conversation, conversation type, event ID, operation and input hash.
-- Registry operations are `registry.recall`, `registry.observe` and
-  `registry.write`. A fixed per-operation map allows `private_1_to_1` or
+- Registry operations are `registry.recall` and `registry.write`.
+  Observation travels inside the write bundle and has no operation of its
+  own. A fixed per-operation map allows `private_1_to_1` or
   `group` for registry operations, and `private_1_to_1` only for Fleet
   operations. The verifier rejects any other pair before touching the
   database.
@@ -496,11 +496,23 @@ need ingress evidence. That reuses the Fleet access event contract in
   one write bundle. The bundle is a single request to `POST /api/v1/people/events`
   that carries every observation and memory derived from that event, at most
   one per kind and target. It commits atomically: all items commit or none do.
-  The write consumes the event ID through `private.fleet_consume_registry_event`,
-  a narrow Fleet-owned wrapper over `private.fleet_provider_events`, inside the
-  bundle's transaction. One provider event can therefore never serve two writes
-  across Fleet and the registry. `registry.recall` records the event once in
-  `people_recall_events`.
+  Recall and write consume the event through
+  `private.fleet_consume_registry_event`, a narrow Fleet-owned wrapper over
+  `private.fleet_provider_events`, inside the operation's transaction:
+  - There is one record per `(channel, provider account, event ID)`, with three
+    slots: `fleet`, `registry_recall` and `registry_write`.
+  - `fleet` and `registry_write` exclude each other. Whichever consumes first
+    wins, so one provider event never serves both a Fleet action and a registry
+    write.
+  - `registry_recall` can coexist with either.
+  - Every attempt, across all slots and redeliveries, increments one durable
+    counter per event. Once the counter passes five, every slot is refused.
+  - The proof is verified before anything is consumed. A refusal returns
+    rather than raising, so each counted attempt commits.
+  - The Fleet retention purge resets an event's record. After a purge, replay
+    safety depends on every ingress refusing provider events older than the
+    5-minute evidence window, including redeliveries, and never re-signing a
+    fresh proof for an expired event.
 - **Retries:** a retry of the same bundle with the same input hash returns the
   original receipt. An unknown outcome is resolved by reading that receipt by
   event, never by sending a different bundle. A different bundle for a consumed
@@ -790,6 +802,8 @@ A slice ships only when its gates pass:
   - A live account binding checked at signing and at verification.
   - Tests for evidence mismatches and account reassignment.
   - Single use of a provider event across Fleet and the registry.
+  - A verifier test that stale provider events and redeliveries outside the
+    evidence window are refused before any slot is consumed.
   - Canonical signature bytes, covering the exact query and the key ID.
   - Nonce admission shared across replicas for the whole acceptance window.
   - Key revocation and rollover under retries.
