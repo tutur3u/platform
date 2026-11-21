@@ -101,6 +101,13 @@ describe('stop fence ownership', () => {
     ).toBe(false);
   });
 
+  it('lets only the system clear a cap stop', () => {
+    const capped = addStopReason(OPEN_FENCE, 'cap', 'system');
+    expect(() => clearStopReason(capped, 'cap', 'tenant_manager')).toThrow(
+      StopAuthorityError
+    );
+  });
+
   it('keeps the tenant kill switch owned by the tenant', () => {
     const stopped = addStopReason(OPEN_FENCE, 'tenant', 'tenant_manager');
     expect(() => clearStopReason(stopped, 'tenant', 'operator')).toThrow(

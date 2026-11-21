@@ -16,8 +16,9 @@ const REASON_OWNERS: Record<StopReason, readonly StopAuthority[]> = {
   tenant: ['tenant_manager'],
   operator: ['operator'],
   billing: ['billing'],
-  // Spend caps clear when a new period starts or a manager raises the cap.
-  cap: ['system', 'tenant_manager'],
+  // Spend caps clear when a new period starts or a raised cap is saved,
+  // both performed by the system.
+  cap: ['system'],
 };
 
 export interface StopFenceState {

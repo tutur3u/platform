@@ -95,8 +95,11 @@ Routing by provider account is only as safe as the step that binds that
 account to a tenant. A provider signature proves the event came from the
 provider, not which tenant it belongs to. Therefore:
 
-- `(provider, provider_account_id)` is unique across all tenants. Re-binding
-  requires the current tenant to unbind first; both steps are audited.
+- `(provider, provider_account_id)` is unique across all tenants while bound.
+  Re-binding requires the current tenant to unbind first; both steps are
+  audited. Unbinding is refused while an operator or billing stop is set, so
+  a tenant cannot shed a stop it does not own, and an unbound channel row is
+  kept (immutable) so its usage history and audit stay attached.
 - The People registry's own channel binding is the authority for registry
   operations. Binding a channel writes the Mira binding and the registry
   binding in one flow and reports failure if either does not land; unbinding
@@ -388,11 +391,11 @@ enabled and revoked on disable or delete. Requests are signed with that
 principal's Ed25519 key (method, path, body hash, audience, principal,
 timestamp and a single-use nonce); there are no bearer tokens.
 
-- **Evidence-bound recall:** every recall, observe and write carries ingress
+- **Evidence-bound recall:** every recall and write carries ingress
   event evidence from the event signer (see [event evidence](#event-evidence)).
   The registry derives the person and conversation from that evidence, so the
   request body carries no sender or conversation id. One provider event
-  supports one recall and at most one write.
+  supports one recall and at most one write bundle.
 - **Revalidated cache:** the conversation object keeps the last snapshot with
   its `version` and `consent_version`, but never serves it on age alone. Each
   turn starts with recall carrying `if_version`; the registry answers
@@ -454,7 +457,7 @@ redirect one.
   behavior and no person context.
 - **Typed private operations:** one typed operation per use
   (`fleet.identity_verify`, `fleet.intent_submit`, `fleet.digest_read`,
-  `registry.recall`, `registry.observe`, `registry.write`). The signer
+  `registry.recall`, `registry.write`). The signer
   derives parameters and the reply destination from the verified event and
   policy, builds and hashes the exact UTF-8 body, and sends it to a fixed
   endpoint per operation. The caller supplies no URL, body or account.
@@ -470,8 +473,11 @@ redirect one.
   group conversations, after the provider confirms the sender's membership.
 - **Replay slots:** Fleet keeps its rule of one operation per provider event.
   Registry operations have their own slots per provider event: one
-  `registry.recall`, one `registry.observe` and at most one `registry.write`,
-  consumed through the registry's own replay wrapper.
+  `registry.recall` and at most one `registry.write`. The write is a single
+  bundle of every observation and memory derived from that event, committed
+  atomically by the registry and consumed through its own replay wrapper; a
+  retry with the same input hash returns the original receipt, and a
+  different bundle for a consumed event is refused.
 - **Freshness and budgets:** the original provider age is checked on every
   signing attempt, including Queue and object redelivery. Each provider event
   has one persisted operation and attempt budget. Live grant and stop
@@ -545,6 +551,7 @@ argument against the stored channel binding.
 | `mira_personas` | system prompt, tone, knowledge source refs, escalation contacts, versioned |
 | `mira_rules` | per-person and per-group rules: reply, tag owner, escalate, mute; quiet hours |
 | `mira_usage_daily` | settled messages, tokens (input, cached, output), cost, per tenant, channel, model and day |
+| `mira_usage_receipts` | settlement receipt ids, so Queue redelivery never counts usage twice; pruned on Cloudflare after a retention window longer than Queue redelivery |
 | `mira_audit_events` | append-only config, connect, stop, resume, export and delete events |
 
 Every Admin save increments the tenant `config_version` and pushes the new
@@ -685,7 +692,8 @@ with the first deployable slice.
 - **Export:** a tenant exports its config, rules, usage and mirrored
   conversations as a workspace data export.
 - **Delete:** disabling Mira stops all channels; deleting it revokes the
-  service principal and vault grant, deletes tenant and conversation objects'
+  service principal and vault grant, purges the vault variables named by the
+  channel secret references before the tenant rows are removed, deletes tenant and conversation objects'
   storage, purges mirror rows and asks People & memory to apply its deletion
   fences. A per-person delete request propagates through the same fences and
   purges, within 24 hours, conversation-object context (indexed by a keyed
