@@ -132,7 +132,13 @@ function scanWranglerUsage({
 // publication uses cf (see cf-cli-wrangler-parity.mdx).
 // Commands that print an invocation instead of running it.
 const PRINTERS = new Set(['echo', 'printf']);
-const TOKEN_SPLIT = /[\s'"`,[\](){}]+/u;
+// Keep quoted shell arguments and argv string literals whole.
+const ARGUMENT =
+  /(?:'[^']*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|[^\s'"`,[\](){}])+/gu;
+const QUOTED_SCRIPT =
+  /^(?:[\w$.]+=?|=)?('([^']*)'|"((?:\\.|[^"\\])*)"|`((?:\\.|[^`\\])*)`)/u;
+const YAML_RUN = /^\s*(?:-\s+)?run:\s*(["'])(.*)\1\s*$/u;
+const JSON_PROPERTY = /^\s*"(?:\\.|[^"\\])*":\s*("(?:\\.|[^"\\])*"),?\s*$/u;
 const VALUE_FLAGS = new Set([
   '-c',
   '--config',
@@ -197,9 +203,48 @@ function invocations(content) {
     current = '';
   }
   if (current) logical.push(current);
-  return logical
-    .flatMap(splitCommands)
-    .map((part) => part.split(TOKEN_SPLIT).filter(Boolean));
+  return logical.flatMap((line) => tokenizedCommands(unwrapScript(line)));
+}
+
+/** Inspect embedded shell scripts, keeping the values of publisher flags whole. */
+function tokenizedCommands(line) {
+  const commands = [];
+  for (const part of splitCommands(line)) {
+    const words = [];
+    let seenPublisher = false;
+    for (const argument of part.match(ARGUMENT) ?? []) {
+      const quoted = QUOTED_SCRIPT.exec(argument);
+      const script = quoted?.[2] ?? quoted?.[3] ?? quoted?.[4];
+      const word = quoted?.[1] === argument ? script : argument;
+      const flagValue = seenPublisher && VALUE_FLAGS.has(words.at(-1));
+      if (
+        script &&
+        !flagValue &&
+        /\s/u.test(script) &&
+        /wrangler|opennextjs-cloudflare/iu.test(script) &&
+        !words.some((token) => PRINTERS.has(token))
+      )
+        commands.push(...tokenizedCommands(script));
+      if (!flagValue && (isWranglerToken(word) || isAdapterToken(word)))
+        seenPublisher = true;
+      words.push(word);
+    }
+    commands.push(words);
+  }
+  return commands;
+}
+
+function unwrapScript(line) {
+  const property = JSON_PROPERTY.exec(line);
+  const yaml = YAML_RUN.exec(line);
+  if (yaml?.[1] === "'") return yaml[2].replaceAll("''", "'");
+  const json = property?.[1] ?? (yaml ? `"${yaml[2]}"` : null);
+  if (!json) return line;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return yaml?.[2] ?? line;
+  }
 }
 
 /** Split at `&&`, `||`, `;`, `|` and `&` outside single, double or back quotes. */
@@ -247,6 +292,7 @@ function commandWords(tokens) {
 
 /** Count non-dry-run Wrangler and OpenNext publish invocations. */
 function countPublishCalls(content) {
+  if (!/wrangler|opennextjs-cloudflare/iu.test(content)) return 0;
   let calls = 0;
   for (const tokens of invocations(content)) {
     for (let index = 0; index < tokens.length; index += 1) {
@@ -289,6 +335,16 @@ function isPublishExempt(file) {
   );
 }
 
+function manifestScripts(file, content) {
+  if (file !== 'package.json' && !file.endsWith('/package.json'))
+    return content;
+  try {
+    return Object.values(JSON.parse(content).scripts ?? {}).join('\n');
+  } catch {
+    return content;
+  }
+}
+
 /** Return `{ [file]: count }` for scanned files with publish calls. */
 function scanPublishCalls({
   repoRoot = REPO_ROOT,
@@ -305,7 +361,7 @@ function scanPublishCalls({
       if (error?.code === 'ENOENT' || error?.code === 'EISDIR') continue;
       throw error;
     }
-    const count = countPublishCalls(content);
+    const count = countPublishCalls(manifestScripts(file, content));
     if (count > 0) calls[file] = count;
   }
   return calls;

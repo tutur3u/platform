@@ -419,6 +419,8 @@ test('same-count comment replacement and changed arguments require admission', (
 test('publish calls count real writes, not dry runs, reads or local state', () => {
   for (const source of [
     'run: bun x --no-install wrangler deploy -c x.json',
+    `run: "wrangler deploy --message 'x --dry-run'"`,
+    `bash -c "wrangler deploy --message 'x --dry-run'"`,
     'bunx wrangler@4.152.0 versions upload --message "$SHA"',
     'wrangler --config worker.jsonc --env staging deploy',
     'npx wrangler secret put TOKEN',
@@ -433,12 +435,28 @@ test('publish calls count real writes, not dry runs, reads or local state', () =
     'bun x wrangler deploy \\\n  -c a.json --message "$SHA"',
     'wrangler deploy & echo --dry-run',
     'wrangler deploy --message "--dry-run"',
+    'wrangler deploy --message "x --dry-run"',
+    "wrangler deploy --message='x --local'",
+    String.raw`"deploy": "wrangler deploy --message \"x --dry-run\""`,
+    "spawn('wrangler', ['deploy', '--message', 'x --dry-run']);",
+    "execSync('wrangler deploy')",
+    '$`wrangler deploy`',
+    'await $`wrangler deploy`.quiet();',
+    'await $`wrangler deploy`.text()',
+    '$.sync`wrangler deploy`',
+    "subprocess.check_output('wrangler deploy'.split())",
+    'const command="wrangler deploy";',
+    "subprocess.run('wrangler deploy', shell=True)",
+    "spawnSync('sh', ['-c', 'wrangler deploy'])",
+    `execSync('npx wrangler deploy --message "x --dry-run"')`,
     'npx wrangler pages deploy dist',
     'FOO=1 bunx --bun wrangler deploy',
   ])
     assert.equal(countPublishCalls(source), 1, source);
   for (const source of [
     'wrangler deploy --dry-run --outdir out',
+    'wrangler deploy --message "x --dry-run" --dry-run',
+    "spawn('wrangler', ['deploy', '--message', 'x --dry-run', '--dry-run']);",
     'wrangler types --env-interface Env',
     'wrangler versions list --name gw --json',
     'wrangler deployments list --name gw',
@@ -448,6 +466,9 @@ test('publish calls count real writes, not dry runs, reads or local state', () =
     '// cf replaces wrangler for this worker',
     "'wrangler.deploy.json'",
     'echo "run: bun wrangler secret put TOKEN"',
+    'echo bash -c "wrangler deploy"',
+    "execSync('npx wrangler deploy --dry-run')",
+    'wrangler deploy --dry-run --message "wrangler deploy"',
     'echo "Dry-run only; do not run wrangler deploy"',
     'run: echo "use cf && never wrangler deploy | tee log"',
     "printf '%s\\n' 'wrangler deploy'",
@@ -491,6 +512,17 @@ test('publish calls ratchet down and admission cannot raise them', () => {
       readFile: () => 'wrangler deploy',
     }),
     { 'run.sh': 1 }
+  );
+
+  assert.deepEqual(
+    scanPublishCalls({
+      files: ['apps/fixture/package.json'],
+      readFile: () =>
+        JSON.stringify({
+          scripts: { deploy: 'wrangler deploy --message "x --dry-run"' },
+        }),
+    }),
+    { 'apps/fixture/package.json': 1 }
   );
 
   const base = { publishCalls: { 'run.sh': 1 } };
