@@ -6,7 +6,7 @@ import {
   useMatches,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { appBaseHeadScript } from './base-path';
+import { appBaseHeadScript, trustedTypesHeadScript } from './base-path';
 import type { BridgeHead } from './metadata';
 import {
   type BridgeStatusOptions,
@@ -79,11 +79,22 @@ export function BridgeDocument({ children }: { children: ReactNode }) {
  * Root route options for a bridged app. Unknown paths and uncaught render
  * errors show the shared Tuturuuu status page (404 / 500).
  */
-export function createBridgeRootRoute(status: BridgeStatusOptions = {}) {
-  const { BridgeNotFound, BridgeError } = createBridgeStatusComponents(status);
+export function createBridgeRootRoute(
+  status: BridgeStatusOptions & {
+    /** Register the Trusted Types `default` policy before any other script. */
+    trustedTypes?: boolean;
+  } = {}
+) {
+  const { trustedTypes, ...statusOptions } = status;
+  const { BridgeNotFound, BridgeError } =
+    createBridgeStatusComponents(statusOptions);
   return {
     // The request's mount must reach the browser before the router starts.
-    head: () => ({ scripts: [appBaseHeadScript()] }),
+    head: () => ({
+      scripts: trustedTypes
+        ? [trustedTypesHeadScript(), appBaseHeadScript()]
+        : [appBaseHeadScript()],
+    }),
     shellComponent: BridgeDocument,
     notFoundComponent: BridgeNotFound,
     errorComponent: BridgeError,

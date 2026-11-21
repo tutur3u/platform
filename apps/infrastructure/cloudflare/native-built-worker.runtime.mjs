@@ -405,6 +405,21 @@ test(
               /(?:^|;\s*)script-src [^;]*'nonce-[A-Za-z0-9+/=]+'[^;]*'strict-dynamic'/u,
               `${where}: enforced nonce script CSP`
             );
+          if (probe.kind === 'page') {
+            assert.match(
+              headers['content-security-policy'] ?? '',
+              /require-trusted-types-for 'script'; trusted-types default(?:;|$)/u,
+              `${where}: enforced Trusted Types`
+            );
+            const scriptAt = body.indexOf('<script');
+            assert.ok(scriptAt >= 0, `${where}: renders a script`);
+            const firstScript = body.slice(scriptAt);
+            assert.match(
+              firstScript,
+              /^<script[^>]*\snonce="[^"]+"[^>]*>\(function\(t\)\{if\(!t\|\|t\.defaultPolicy\)return;t\.createPolicy\("default"/u,
+              `${where}: Trusted Types default policy registered first`
+            );
+          }
         }
         assert.ok(executed > 0, 'no response-policy probe ran');
       }
