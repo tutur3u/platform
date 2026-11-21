@@ -357,7 +357,7 @@ export default async function InfrastructurePushNotificationsPage({
     getTranslations('settings-account.push-notification-dashboard' as never),
     Promise.resolve(getFirebaseMessagingConfigurationStatus()),
     getPushDashboardData(),
-    createAdminClient().then((sbAdmin) => loadPushLatency(sbAdmin)),
+    (async () => loadPushLatency(await createAdminClient()))(),
   ]);
   const t = (key: string, values?: Record<string, unknown>) =>
     rawT(key as never, values as never);
