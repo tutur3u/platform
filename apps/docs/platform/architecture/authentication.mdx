@@ -177,10 +177,14 @@ trust signal that a spoofed User-Agent cannot produce.
   `verifiedNativeClient` to `resolveAbuseRiskDecision`.
 - **Scope of trust:** a verified credential clears only the browser-shape
   heuristic (`verified_native_client`), and only on the Supabase-bearer path.
-  It keeps a stricter server tier such as `watch` and its multiplier, and it
-  never grants more than `standard`.
-  It does not clear the heuristic for a scripted, crawler, automation or
-  missing User-Agent. A server `restricted` or `challenge_required` tier
+  It keeps a stricter server tier such as `watch` and its multiplier, caps any
+  kept multiplier at 1, and never grants more than `standard`.
+  It clears only for a User-Agent with a native app signature (for example
+  `Dart/x (dart:io)`); a missing User-Agent or one without that signature
+  stays challenged. The User-Agent is client-controlled, so the signed
+  credential is the gate, not the User-Agent.
+  Credentials issued in mobile sign-in responses rely on the Supabase project's
+  sign-in captcha being enforced with the production Turnstile secret. A server `restricted` or `challenge_required` tier
   always wins, as on the session-challenge-passed path. It adds no rate-limit
   trust.
 - **Exceptions:** the fleet answer route keeps its owner-only `stepUpExempt`.

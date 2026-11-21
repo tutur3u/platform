@@ -204,6 +204,24 @@ describe('adaptive abuse reputation', () => {
       expect(decision.reasons).toContain('verified_native_client');
     });
 
+    it('caps a kept server multiplier at 1 when clearing', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            decision_source: 'admin_override',
+            subject_key: 'user:caller',
+            tier: 'standard',
+            trust_multiplier: 5,
+          },
+        ],
+        error: null,
+      });
+      const decision = await nativeMutation();
+      expect(decision.tier).toBe('standard');
+      expect(decision.trustMultiplier).toBe(1);
+      expect(decision.reasons).toContain('verified_native_client');
+    });
+
     it('never grants more than standard trust when clearing', async () => {
       mockRpc.mockResolvedValue({
         data: [

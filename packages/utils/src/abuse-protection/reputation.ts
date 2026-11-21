@@ -493,7 +493,9 @@ export async function resolveAbuseRiskDecision(
       : cleared
         ? 'standard'
         : 'challenge_required';
-    trustMultiplier = keepServerTier ? serverDecision.trustMultiplier : 1;
+    trustMultiplier = keepServerTier
+      ? Math.min(1, serverDecision.trustMultiplier)
+      : 1;
     decisionSource = keepServerTier
       ? serverDecision.decisionSource
       : 'heuristic';
