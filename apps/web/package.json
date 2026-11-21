@@ -49,7 +49,9 @@
     "build:opennext": "test -n \"$WEB_OPENNEXT_FAMILY\" && opennextjs-cloudflare build --config \"cloudflare/opennext/wrangler.$WEB_OPENNEXT_FAMILY.jsonc\"",
     "build:vinext": "vp build --config vite.vinext.config.ts --configLoader runner",
     "vinext:prune": "bun cloudflare/vinext/prune.ts",
-    "test:vinext:runtime": "node --test cloudflare/vinext/workers-fetch.runtime.mjs"
+    "test:vinext:runtime": "node --test cloudflare/vinext/workers-fetch.runtime.mjs",
+    "routes:gateway": "bun cloudflare/vinext/gateway-routes.ts",
+    "routes:gateway:check": "bun cloudflare/vinext/gateway-routes.ts --check"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",

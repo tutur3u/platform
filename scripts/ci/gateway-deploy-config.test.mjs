@@ -15,6 +15,7 @@ import {
   assertServingGateway,
   captureGatewaySettings,
   deployConfig,
+  gatewayFamilies,
   familyBinding,
   parseFlagged,
   readJsonc,
@@ -430,5 +431,45 @@ test('write returns a name-only readback and fails before creating forbidden out
   assert.equal(
     JSON.parse(readFileSync(out, 'utf8')).vars.WEB_ORIGIN,
     env.WEB_ORIGIN
+  );
+});
+
+test('binds activated vinext families and refuses held ones', () => {
+  const vinext = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../apps/web/cloudflare/vinext/families.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+  const merged = gatewayFamilies(families, vinext);
+  const config = deployConfig(base, live, merged, {
+    ...env,
+    GATEWAY_WEB_FAMILIES: 'api-ops,api-core',
+  });
+  assert.equal(config.vars.GATEWAY_WEB_FAMILIES, 'api-ops,api-core');
+  for (const [binding, service] of [
+    ['WEB_FAMILY_API_OPS', 'tuturuuu-web-vinext-api-ops'],
+    ['WEB_FAMILY_API_CORE', 'tuturuuu-web-vinext-api-core'],
+  ]) {
+    assert.deepEqual(
+      config.services.find((entry) => entry.binding === binding),
+      { binding, service }
+    );
+  }
+  assert.throws(
+    () =>
+      deployConfig(base, live, merged, {
+        ...env,
+        GATEWAY_WEB_FAMILIES: 'api-ops,dashboard',
+      }),
+    /not activated/
+  );
+  const enabledOpenNext = families.families.find((family) => family.enabled);
+  assert.throws(
+    () => gatewayFamilies(families, { families: [enabledOpenNext] }),
+    /is enabled and also a vinext family/
   );
 });

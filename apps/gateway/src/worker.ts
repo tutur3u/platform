@@ -12,6 +12,7 @@ import { originProofFor, withOriginAuth } from './origin-ip-proof';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
+import { vinextFamilyTarget } from './web-route-table';
 import {
   bypassReason,
   hasAuthCookie,
@@ -533,14 +534,21 @@ export function createHandler(deps: HandlerDeps) {
         return plain(502, 'gateway mounted app unreachable');
       }
     }
-    // Flagged and bound web families come next; passthrough mode disables them
-    // so the global rollback sends every web request to WEB_ORIGIN.
-    if (env.GATEWAY_MODE !== 'passthrough') {
-      const family = webFamilyTarget(request, env, deps.manifest);
-      if (family) return dispatchWebFamily(request, family, env);
-    }
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);
+    // Flagged and bound web families (vinext route table, then OpenNext) come
+    // next unless the manifest routes the path to another configured origin;
+    // passthrough mode disables them so the rollback reaches WEB_ORIGIN.
+    const elsewhere =
+      chosen.flagged ||
+      (match.origin !== deps.manifest.default.origin &&
+        resolveOrigin(env, deps.manifest, match.origin) !== null);
+    if (env.GATEWAY_MODE !== 'passthrough' && !elsewhere) {
+      const family =
+        vinextFamilyTarget(request, env, deps.manifest.locales) ??
+        webFamilyTarget(request, env, deps.manifest);
+      if (family) return dispatchWebFamily(request, family, env);
+    }
     const origin = chosen.url;
     if (!origin) return plain(500, 'gateway origin not configured');
 

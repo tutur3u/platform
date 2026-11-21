@@ -1,5 +1,5 @@
 {
-  "note": "Route families for apps/web vinext Worker builds. Ownership uses the OpenNext family rules (cloudflare/opennext/prune.ts). api-ops owns the OpenNext global deny list; every other family excludes it. nodeOnly lists entries that still need Node-only APIs and so have no Worker home yet. A `rest` family owns every entry no other enabled family owns, except nodeOnly entries.",
+  "note": "Route families for apps/web vinext Worker builds. Ownership uses the OpenNext family rules (cloudflare/opennext/prune.ts). api-ops owns the OpenNext global deny list; every other family excludes it. nodeOnly lists entries that still need Node-only APIs and so have no Worker home yet. A `rest` family owns every entry no other enabled family owns, except nodeOnly entries. `activated` admits a family to GATEWAY_WEB_FAMILIES (scripts/ci/gateway-deploy-config.mjs); page families activate once built with their /_f/<id> asset prefix.",
   "families": [
     {
       "id": "api-core",
@@ -12,7 +12,8 @@
       "wrangler": null,
       "exact": [],
       "prefix": ["/api/"],
-      "exclude": []
+      "exclude": [],
+      "activated": true
     },
     {
       "id": "api-ops",
@@ -26,7 +27,8 @@
       "wrangler": null,
       "exact": [],
       "prefix": [],
-      "exclude": []
+      "exclude": [],
+      "activated": true
     },
     {
       "id": "public-auth",
@@ -124,7 +126,8 @@
         "/users/",
         "/women-in-tech/"
       ],
-      "exclude": []
+      "exclude": [],
+      "activated": false
     },
     {
       "id": "dashboard",
@@ -147,7 +150,8 @@
         "/[wsId]/notes",
         "/[wsId]/inventory",
         "/[wsId]/epm"
-      ]
+      ],
+      "activated": false
     },
     {
       "id": "dashboard-apps",
@@ -180,7 +184,8 @@
         "/[wsId]/inventory/",
         "/[wsId]/epm/"
       ],
-      "exclude": []
+      "exclude": [],
+      "activated": false
     },
     {
       "id": "web-rest",
@@ -194,7 +199,8 @@
       "wrangler": null,
       "exact": [],
       "prefix": [],
-      "exclude": []
+      "exclude": [],
+      "activated": false
     }
   ],
   "nodeOnly": []

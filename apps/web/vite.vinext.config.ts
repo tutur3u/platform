@@ -16,6 +16,7 @@ const { generate: generatePublicSeoRoutes } = createRequire(import.meta.url)(
   '../../scripts/generate-public-seo-routes.js'
 ) as { generate: () => string[] };
 const publicSeoPaths = generatePublicSeoRoutes();
+const family = process.env.WEB_VINEXT_FAMILY?.trim();
 
 // Whole-app vinext Worker build of apps/web. `vite.config.mts` stays the
 // native Start candidate config; this file is selected explicitly with
@@ -27,7 +28,12 @@ export default defineConfig({
     // inlining would resolve package `@plugin`s from the importing package.
     tailwindcss(),
     vinext({
-      nextConfig: createWebNextConfig({ publicSeoPaths }),
+      nextConfig: {
+        ...createWebNextConfig({ publicSeoPaths }),
+        // Each family serves its own hashed client assets under /_f/<id>, so
+        // the gateway can route every asset back to the family that built it.
+        ...(family ? { assetPrefix: `/_f/${family}` } : {}),
+      },
       react: { compiler: false },
     }),
     cloudflare({

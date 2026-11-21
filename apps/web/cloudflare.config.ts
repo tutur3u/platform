@@ -29,7 +29,13 @@ export default defineConfig({
     assets: {
       htmlHandling: 'none',
       notFoundHandling: 'none',
-      runWorkerFirst: ['/*', '!/_next/static/*', '!/*/_next/static/*'],
+      runWorkerFirst: [
+        '/*',
+        '!/_next/static/*',
+        '!/*/_next/static/*',
+        // Family client assets (assetPrefix /_f/<id>).
+        '!/_f/*/_next/static/*',
+      ],
     },
     env: {
       ASSETS: bindings.assets(),

@@ -39,6 +39,34 @@ export function familyBinding(id) {
   return `WEB_FAMILY_${id.toUpperCase().replaceAll('-', '_')}`;
 }
 
+/**
+ * Families GATEWAY_WEB_FAMILIES may name: the OpenNext families and the
+ * vinext families (apps/web/cloudflare/vinext/families.json). A vinext family
+ * replaces a disabled OpenNext family with the same id; both enabled is an
+ * error, because they would share the WEB_FAMILY_<ID> binding.
+ */
+export function gatewayFamilies(openNext, vinext) {
+  const vinextFamilies = vinext?.families ?? [];
+  const ids = new Set(vinextFamilies.map((family) => family.id));
+  if (ids.size !== vinextFamilies.length) {
+    throw new Error('vinext family ids are not unique');
+  }
+  for (const family of openNext.families) {
+    if (ids.has(family.id) && family.enabled) {
+      throw new Error(
+        `OpenNext family ${family.id} is enabled and also a vinext family`
+      );
+    }
+  }
+  return {
+    ...openNext,
+    families: [
+      ...openNext.families.filter((family) => !ids.has(family.id)),
+      ...vinextFamilies,
+    ],
+  };
+}
+
 export function parseFlagged(value) {
   return [
     ...new Set(
@@ -303,10 +331,18 @@ async function main([command, ...args]) {
     const config = deployConfig(
       readJsonc(resolve(ROOT, 'apps/gateway/wrangler.jsonc')),
       settings.result.bindings,
-      JSON.parse(
-        readFileSync(
-          resolve(ROOT, 'apps/web/cloudflare/opennext/families.json'),
-          'utf8'
+      gatewayFamilies(
+        JSON.parse(
+          readFileSync(
+            resolve(ROOT, 'apps/web/cloudflare/opennext/families.json'),
+            'utf8'
+          )
+        ),
+        JSON.parse(
+          readFileSync(
+            resolve(ROOT, 'apps/web/cloudflare/vinext/families.json'),
+            'utf8'
+          )
         )
       ),
       process.env

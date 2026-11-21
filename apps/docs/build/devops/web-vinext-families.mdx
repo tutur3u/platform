@@ -82,6 +82,17 @@ CLOUDFLARE_ACCOUNT_ID=... WEB_VINEXT_FAMILY=<family> node_modules/.bin/cf deploy
 The deploy reports `No targets deployed`: the Worker has no routes, custom
 domains, workers.dev or preview URLs.
 
+## Gateway routing
+
+The gateway routes each family from
+`apps/gateway/src/web-routes.generated.json`. Regenerate it with
+`bun run --cwd apps/web routes:gateway` after changing routes or
+`families.json`. See [Gateway Worker](/build/devops/gateway-worker#vinext-family-route-table)
+for matching, flags, cutover and rollback. A family build sets `assetPrefix`
+to `/_f/<id>` from `WEB_VINEXT_FAMILY`, so each family's client assets have
+their own URL base. Page families need that build before their id goes into
+`GATEWAY_WEB_FAMILIES`.
+
 ## Runtime bindings
 
 `apps/web/cloudflare.config.ts` declares the Worker (`workersDev` and
