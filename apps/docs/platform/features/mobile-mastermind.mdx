@@ -270,6 +270,16 @@ product rules of the shell entry and every tab.
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
+- **Fleet usage endpoint:** `/api/v1/mastermind/fleet/usage` stores a bounded
+  usage snapshot separately from lanes and decisions. The existing fleet
+  publisher signature authorizes writes. Reads require the fleet owner
+  allowlist and root permission on the existing session path. The response is
+  private and no-store because account emails can appear in it. The route
+  tests cover owner and publisher admission, payload limits and stale writes.
+  The T3 normalization tests cover authenticated account identity, quota
+  windows and accounting coverage. T3's summary groups cost and tokens by
+  day, provider and model. Account attribution stays absent unless the source
+  identifies the account that incurred the cost.
 - **Delivery and freshness SLO:** Mastermind is the primary owner channel,
   at least as fresh as the WhatsApp relay. Targets on the orchestrator Mac:
   a new or closed decision reaches Web within 30 seconds (one run, kicked by
