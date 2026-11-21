@@ -3410,6 +3410,15 @@
         "vitest": "^5.0.5",
       },
     },
+    "packages/mira-runtime": {
+      "name": "@tuturuuu/mira-runtime",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
     "packages/multiplayer": {
       "name": "@tuturuuu/multiplayer",
       "devDependencies": {
@@ -6186,6 +6195,8 @@
     "@tuturuuu/mind-core": ["@tuturuuu/mind-core@workspace:packages/mind-core"],
 
     "@tuturuuu/mind-ui": ["@tuturuuu/mind-ui@workspace:packages/mind-ui"],
+
+    "@tuturuuu/mira-runtime": ["@tuturuuu/mira-runtime@workspace:packages/mira-runtime"],
 
     "@tuturuuu/mobile": ["@tuturuuu/mobile@workspace:apps/mobile"],
 

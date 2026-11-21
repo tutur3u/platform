@@ -96,6 +96,11 @@ provider, not which tenant it belongs to. Therefore:
 
 - `(provider, provider_account_id)` is unique across all tenants. Re-binding
   requires the current tenant to unbind first; both steps are audited.
+- The People registry's own channel binding is the authority for registry
+  operations. Binding a channel writes the Mira binding and the registry
+  binding in one flow and reports failure if either does not land; unbinding
+  removes the registry binding first, which stops registry operations for that
+  account immediately.
 - WhatsApp numbers bind only from the Embedded Signup code exchange, after
   checking that the returned business account owns the `phone_number_id`.
 - Discord guilds bind only from the OAuth install callback, with a signed
@@ -375,44 +380,118 @@ crafted preview URLs.
 
 ### Memory and people
 
-The responder reads people and memory only from the People & memory service
-on tuturuuu.com, through a service principal minted per tenant workspace with
-`people:recall` and `memories:write`:
+The responder reads people and memory only from the
+People registry on tuturuuu.com. Each
+tenant workspace has its own `responder` principal, registered when Mira is
+enabled and revoked on disable or delete. Requests are signed with that
+principal's Ed25519 key (method, path, body hash, audience, principal,
+timestamp and a single-use nonce); there are no bearer tokens.
 
-- `POST /api/v1/people/recall` returns the person, a versioned snapshot
-  (profile, reply/tag/escalate rules, consent) and recent or high-salience
-  memories. Unknown senders return no person and store nothing.
-- The conversation object caches the snapshot with its `version` and
-  `consent_version` for at most five minutes. Invalidation events
-  `{workspace_id, person_id, version, consent_version, kind}` arrive on the
-  work Queue; `revoke` and `delete` purge the cache immediately.
-- In group conversations, recall uses only the sender's group-safe snapshot
-  (rules and display profile, no private memories), because everyone in the
-  group reads the reply. Memory writes from group messages require that
-  person's consent for group capture.
-- Live semantic recall is an asynchronous enrichment: if it returns within the
-  latency budget it joins the prompt, otherwise the turn proceeds with the
-  snapshot.
-- Memory writes go through the Queue with idempotency key
-  `(channel, provider_message_id)` and provenance; the service enforces consent
-  and deletion fences and the consumer records created, duplicate or rejected
-  truthfully. Recalled content is untrusted context, never instructions.
+- **Evidence-bound recall:** every recall, observe and write carries ingress
+  event evidence from the event signer (see [event evidence](#event-evidence)).
+  The registry derives the person and conversation from that evidence, so the
+  request body carries no sender or conversation id. One provider event
+  supports one recall and at most one write.
+- **Revalidated cache:** the conversation object keeps the last snapshot with
+  its `version` and `consent_version`, but never serves it on age alone. Each
+  turn starts with recall carrying `if_version`; the registry answers
+  `not_modified` or a fresh snapshot after live consent, suppression and
+  status checks. If that check fails or misses its 150 ms budget, the turn
+  runs with no person context and default behavior. Recall runs in parallel
+  with the typing signal and prompt assembly.
+- **Invalidation:** events `{event_id, workspace_id, person_id or
+  conversation_id, version, consent_version, kind}` arrive on the work Queue
+  with an `event_id` monotonic per workspace and a dead-letter queue. Fills
+  older than the cached version and fills for tombstoned people are dropped;
+  `revoke` and `delete` purge immediately.
+- **Chat-safe projection:** recall returns enumerated rules and memories only
+  about the current conversation or its members. In groups that excludes
+  private memories, because everyone in the group reads the reply. Recalled
+  content is data, never instructions; tools and sends are decided outside
+  the model.
+- **Writes** go through the Queue with idempotency key
+  `(channel, provider_message_id)` and provenance, consuming the event id in
+  the shared replay table. Refusals (`consent_required`, `suppressed`,
+  `deleting`, `revision_conflict`, `scope_denied`) are recorded as rejected
+  with their reason, never retried as if transient.
+
+### Reply rules
+
+Rules mirror the registry's per-chat, per-person and per-channel model and
+resolve chat before person before channel before tenant. The tenant default
+is **never silent**: every message that addresses Mira (a direct message, a
+mention, a reply to Mira or a ping of Mira's role) gets a reply or, for a
+muted person, an acknowledgement. Groups get replies only when addressed.
+Quiet hours shorten replies and never skip them. Mira never starts a
+conversation. Commitments get a holding line and go to the escalation
+target. An optional, expiring owner-instruction rule on a named group treats
+the owner's untagged clear instructions as requests (triaged, then
+acknowledged and relayed). The pure evaluation lives in
+`@tuturuuu/mira-runtime` (`decideReply`).
+
+### Event evidence
+
+A separate `mira-event-signer` Worker, reached from ingress only by service
+binding, is the only holder of evidence keys, desk bearers and Fleet proofs.
+Ingress never receives a proof, so it cannot replay or redirect one.
+
+- **Verified input only:** the signer accepts an event only with native
+  provider verification (Meta and Zalo webhook signatures, Discord Ed25519 for
+  interactions, the gateway object's authenticated session for Gateway
+  events) or a connector envelope signed by the session container's own key
+  that binds the original timestamp, event id, account, sender, conversation,
+  conversation type and content hash. Anything else is denied.
+- **Typed private operations:** the signer exposes one typed operation per use
+  (`fleet.identity_verify`, `fleet.intent_submit`, `fleet.digest_read`,
+  `registry.recall`, `registry.observe`, `registry.write`). It derives the
+  operation parameters and reply destination from the verified event and
+  policy, builds and hashes the exact UTF-8 body itself, and sends it to a
+  fixed endpoint per operation. The caller supplies no URL, body or account.
+- **Allowlist per operation and conversation type:** Fleet operations only for
+  the internal tenant's desks and only for verified private one-to-one
+  conversations, signed with the registered desk keys; registry operations
+  for any `(channel, account)` bound to the requesting workspace, in
+  one-to-one or group conversations, after the provider confirms the
+  sender's membership, signed with the versioned Mira ingress key that the
+  registry accepts for registry operations only.
+- **Freshness and budgets:** the original provider age is checked on every
+  signing attempt, including Queue and object redelivery. Each provider event
+  has one persisted operation and attempt budget. Live grant and stop
+  generations are rechecked at admission and before each send or edit.
+  Uncertain results are reconciled before any retry; terminal work never
+  reschedules.
+- **Fleet content isolation:** Fleet answers are tool-free and use only the
+  caller's authorized digest. Quotes go only to the Fleet's redacted display
+  storage; quotes, claims, codes and digests never enter generic prompts,
+  memory, the chat mirror or telemetry.
+- **Rotation:** each desk has its own key and bearer. Rotation adds the new
+  verifier to Web, switches the signer, then removes the old verifier;
+  revocation removes the verifier first. Rollback re-registers the previous
+  verifier only while its key is still held and unexpired.
 
 ### Fleet access desks
 
-For the internal tenant, `mira-ingress` becomes the trusted ingress for the
+For the internal tenant, the event signer is the trusted ingress for the
 [Fleet access](/platform/features/fleet-access) desks (Fleet Slice 4). Each
-cloud desk has its own desk id, bearer and Ed25519 key. They are held only by
-a separate `mira-fleet-signer` Worker, reached from ingress by service
-binding, never by the multi-tenant ingress Worker, an object or a Queue
-payload. The signer resolves the channel and account itself and signs only for
-its allowlist of internal-tenant `(channel, account)` pairs, never for values
-the caller supplies. The cloud desk is not
-registered in `FLEET_DESKS` while it observes; cutover swaps the M4 desk entry
-for the cloud entry per channel and account in one change, and rollback is the
-reverse swap. Evidence is minted only for verified private one-to-one
-conversations, never for an expired provider event, and stop and revocation are
-checked before every reply and submission.
+cloud desk has its own desk id, bearer and key. While the cloud runtime only
+observes, its desk is not registered in `FLEET_DESKS`, it submits nothing, and
+it never promotes queued events.
+
+Cutover is fenced by one authoritative **owner generation per
+`(channel, account)`**, enforced both at Web admission (the desk config
+carries the generation) and at every send:
+
+1. Quiesce the current owner: stop new admission and sends, drain or
+   reconcile in-flight work.
+2. Replace the registry entry with the new desk and generation, and verify the
+   replacement by readback.
+3. Enable the new owner at that generation. Work admitted under an older
+   generation is refused.
+
+Rollback runs the same fence in reverse with the previous owner's valid
+credentials. Provider ids, the identity HMAC key and replay state are
+unchanged, so identity links survive either direction. No desk is
+registered until the Fleet review approves and its acceptance tests pass.
 
 ## Configuration
 

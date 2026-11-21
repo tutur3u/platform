@@ -1,0 +1,23 @@
+{
+  "name": "@tuturuuu/mira-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-free rules for the Mira channel runtime: replay ledger, stop fences, budgets, reply rules and outbound safety.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --project tsconfig.typecheck.json"
+  },
+  "packageManager": "bun@1.4.4",
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
