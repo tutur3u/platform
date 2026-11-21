@@ -5,10 +5,12 @@ import { mailLoaderPath } from '../runtime/loader-path';
 import { loadMailPage } from '../runtime/page-loader';
 import { PageView } from '../runtime/page-view';
 import { AppProviders } from '../runtime/providers';
+import { mailPendingOptions } from '../runtime/route-pending';
 
 export const Route = createFileRoute('/$')({
   loader: ({ location }) =>
     loadMailPage({ data: { path: mailLoaderPath(location.publicHref) } }),
+  ...mailPendingOptions,
   head: ({ loaderData }) => (loaderData ? mailPageHead(loaderData) : {}),
   component: function MailPage(): ReactElement {
     const model = Route.useLoaderData();

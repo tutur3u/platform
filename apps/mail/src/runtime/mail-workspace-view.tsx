@@ -2,6 +2,7 @@ import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import UserNavClient from '@tuturuuu/satellite/user-nav-client';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { useTranslations } from 'next-intl';
+import { useSyncExternalStore } from 'react';
 import {
   getMailFolderHref,
   MAIL_FOLDERS,
@@ -11,6 +12,7 @@ import { MailSourceProvider } from '../app/[locale]/(dashboard)/[wsId]/mail-sour
 import { MailWorkspace } from '../app/[locale]/(dashboard)/[wsId]/mail-workspace';
 import { Structure } from '../app/[locale]/(dashboard)/[wsId]/structure';
 import { MailActorProvider } from '../components/mail-actor-provider';
+import { MailContentSkeleton } from './mail-workspace-skeleton';
 import type { loadMailWorkspace } from './mail-workspace-model.server';
 import NotificationPopover from './notification-popover';
 
@@ -18,6 +20,17 @@ type Workspace = Extract<
   Awaited<ReturnType<typeof loadMailWorkspace>>,
   { kind: 'workspace' }
 >;
+const subscribe = () => () => undefined;
+
+/** False for the server render and the hydration pass, true afterwards. */
+function useHydrated() {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
+}
+
 export function MailWorkspaceView({
   workspace: model,
   locale,
@@ -26,6 +39,7 @@ export function MailWorkspaceView({
   locale: string;
 }) {
   const t = useTranslations();
+  const hydrated = useHydrated();
   const { actorId, profile, workspaceSlug, wsId } = model;
   const userPopover = (
     <UserNavClient user={profile} locale={locale} hideMetadata />
@@ -73,12 +87,16 @@ export function MailWorkspaceView({
           >
             <RealtimeLogProvider wsId={wsId} verifiedUserId={actorId}>
               <div data-workspace-slug={workspaceSlug}>
-                <MailWorkspace
-                  workspaceId={workspaceSlug}
-                  handoffWorkspaceId={wsId}
-                >
-                  {null}
-                </MailWorkspace>
+                {hydrated ? (
+                  <MailWorkspace
+                    workspaceId={workspaceSlug}
+                    handoffWorkspaceId={wsId}
+                  >
+                    {null}
+                  </MailWorkspace>
+                ) : (
+                  <MailContentSkeleton />
+                )}
               </div>
             </RealtimeLogProvider>
           </Structure>
