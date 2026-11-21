@@ -7,6 +7,10 @@
 //   node beta-status.mjs <platform> <store>   (env: APP_VERSION, APP_BUILD, APP_LABEL)
 import { pathToFileURL } from 'node:url';
 import { github } from './allocate.mjs';
+import {
+  addsDesktopManifestAssets,
+  readDesktopManifest,
+} from './desktop-manifest.mjs';
 import { parseVersion } from './ledger.mjs';
 
 const REPOSITORY = 'tutur3u/platform';
@@ -225,7 +229,11 @@ export async function publishStatus({ request, token, document, fetchImpl }) {
   );
   if (pointer) {
     const current = await readPublished(pointer, fetchImpl);
-    if (!shouldReplace(current, target) || current.build === target.build) {
+    if (
+      !shouldReplace(current, target) ||
+      (current.build === target.build &&
+        !addsDesktopManifestAssets(current, target))
+    ) {
       console.log(
         `${name} already reports build ${current.build}; keeping it.`
       );
@@ -263,8 +271,11 @@ if (
       sha: process.env.GITHUB_SHA,
       now: new Date(),
     });
+    const request = (path, options) => github(path, { ...options, token });
+    if (platform === 'desktop')
+      document.desktopRelease = await readDesktopManifest(request, document);
     await publishStatus({
-      request: (path, options) => github(path, { ...options, token }),
+      request,
       token,
       document,
     });

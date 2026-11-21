@@ -29,7 +29,7 @@ export type DesktopDownload = {
   tag: string;
   releaseUrl: string;
   url: string;
-  size: number;
+  size: number | null;
   sha256: string;
 };
 export type DesktopRelease = {
@@ -40,7 +40,7 @@ export type DesktopRelease = {
 
 // Tags are desktop-v<version>-<build> on the shared release train. Older
 // betas used desktop-v<version> or appended the CI run ID.
-const tagPattern = /^desktop-v\d+\.\d+\.\d+(?:-\d+)?$/;
+export const DESKTOP_TAG_PATTERN = /^desktop-v\d+\.\d+\.\d+(?:-\d+)?$/;
 const object = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -54,7 +54,7 @@ export function parseDesktopRelease(value: unknown): DesktopRelease | null {
     release?.draft !== false ||
     release.prerelease !== true ||
     typeof release.tag_name !== 'string' ||
-    !tagPattern.test(release.tag_name) ||
+    !DESKTOP_TAG_PATTERN.test(release.tag_name) ||
     !Array.isArray(release.assets)
   )
     return null;

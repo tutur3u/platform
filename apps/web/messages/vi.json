@@ -7362,7 +7362,7 @@
     "windows": {
       "installation": "Hãy kiểm tra ghi chú phát hành và mã SHA-256 trước khi chạy bộ cài. Nếu thiết bị chặn cài đặt, hãy dùng ứng dụng web.",
       "legacy_update": "Bản beta Windows được cài trước ngày 21/11/2026 hiển thị phiên bản 1.0.0 và cần được cập nhật thủ công.",
-      "may_be_unsigned": "Bộ cài beta Windows có thể chưa được ký số.",
+      "may_be_unsigned": "Bộ cài beta Windows có thể chưa được ký số. SmartScreen có thể hiển thị cảnh báo.",
       "name": "Windows",
       "requirements": "Windows {version} trở lên · Intel / AMD 64-bit",
       "unsigned": "Bộ cài beta Windows này chưa được ký số. SmartScreen có thể hiển thị cảnh báo."

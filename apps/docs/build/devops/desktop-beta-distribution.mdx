@@ -222,23 +222,47 @@ identity mismatch leaves publication blocked. The actual publisher's mocked-CLI
 `node --test scripts/desktop-deployment/publish.test.mjs`; no release is written
 by those tests.
 
-The site reads up to 100 recent GitHub releases and uses the newest valid
-desktop package per platform. If the list misses a platform, the site also
-checks the tag for the version and build in the public desktop beta status.
-This lookup can recover a package from a release that has aged out of the list.
-Both requests share a five-second deadline and send a User-Agent header required
-by GitHub. The requests use the public API without a token. Downloads link
-directly to GitHub.
+After publication, the desktop status job verifies the exact prerelease
+tag, source SHA, and uploaded packages. It writes a compact manifest into
+`app-release-status/desktop.json` and the corresponding per-build status
+record. The Web Worker reads the public GitHub download URL for that status.
+Keep the manifest in the companion release, since desktop app updaters
+require the installer prerelease to contain only known installer files.
+
+The companion manifest supplies exact package metadata. Web also checks the
+public GitHub release feed so a lagging pointer cannot hide a newer package.
+Web checks up to three listed desktop tags to fill missing platforms and
+recognize same-build top-ups while the pointer is being replaced. The immutable
+per-build status record retains the first verified snapshot. If the feed or
+asset listings cannot resolve the newer release or every platform, Web checks
+the REST catalog once.
+
+For older status records without manifests, the site reads up to 100 recent
+GitHub releases and uses the newest valid desktop package per platform. If the
+REST catalog fails or misses a platform, the site reads GitHub's public asset
+listing for the verified status version and build. That listing supports a
+cold Worker when the REST quota is exhausted. It supplies exact asset paths
+and SHA-256 digests. Fallback cards omit the unavailable exact byte size
+and use the general Windows SmartScreen warning.
+
+The token-free lookup allows at most one two-second feed request, up to three
+asset listing requests sharing a two-second deadline, and one optional
+three-second REST request per refresh. It logs upstream HTTP status without
+logging response bodies. Successful lookups store the last verified result for one hour in
+the local Cloudflare data center's named cache. Transient failures reuse that
+result until expiry without renewing it. A confirmed missing release clears
+the saved entry. Cache eviction or an unvisited data center can leave no saved
+entry, so verify all published platform links on `/download` after deployment.
 
 The site validates the repository, tag, filenames, uploaded state, positive
 sizes, and GitHub SHA-256 digests. It offers a download only when GitHub returns
 a matching asset. Platforms without one show **Coming soon**, with the web app
-available as an alternative. All results refresh after five minutes to keep
-partial releases and upstream failures within the public request budget. When withdrawing an
-asset, verify the public page again after the cache refresh and confirm the old
-asset URL stops serving the file. Asset and cache behavior are covered by
-`apps/web/src/lib/desktop-downloads.test.ts` and
-`apps/web/src/lib/desktop-downloads.server.test.ts`.
+available as an alternative. Results refresh after five minutes. When
+withdrawing a release, also withdraw its published status pointer and
+per-build record, then verify the download page after cache expiry and confirm
+the old asset URL stops serving the file. Publisher checks are covered by
+`scripts/app-version/desktop-manifest.test.mjs`. Download parsing and cache
+recovery are covered by the Web desktop download tests.
 
 ## Verification
 

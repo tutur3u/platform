@@ -150,7 +150,9 @@ export async function buildDownloadContent(
       meta: download
         ? [
             desktopVersionLabel(download.tag),
-            t('size', { size: Math.ceil(download.size / 1024 / 1024) }),
+            ...(download.size === null
+              ? []
+              : [t('size', { size: Math.ceil(download.size / 1024 / 1024) })]),
           ]
         : [],
       action: download

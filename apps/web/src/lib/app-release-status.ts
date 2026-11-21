@@ -1,4 +1,8 @@
-import { DESKTOP_REPOSITORY } from './desktop-downloads';
+import {
+  DESKTOP_REPOSITORY,
+  type DesktopRelease,
+  parseDesktopRelease,
+} from './desktop-downloads';
 
 // Beta release facts the store pipeline publishes after each store verifies a
 // build. `<platform>.json` on the `app-release-status` release points at the
@@ -23,6 +27,7 @@ export type BetaReleaseStatus = {
   build: number;
   // Short pipeline note from the label, such as "android fix".
   note: string | null;
+  desktopRelease?: DesktopRelease;
 };
 
 export type BetaReleaseStatuses = Record<
@@ -68,10 +73,15 @@ export function parseReleaseStatus(
     status.build <= 0
   )
     return null;
+  const desktopRelease =
+    platform === 'desktop' ? parseDesktopRelease(status.desktopRelease) : null;
   return {
     version: status.version,
     build: status.build,
     note: labelNote(status.label, status.version, status.build),
+    ...(desktopRelease?.tag === `desktop-v${status.version}-${status.build}`
+      ? { desktopRelease }
+      : {}),
   };
 }
 

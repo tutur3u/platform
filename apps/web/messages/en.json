@@ -7362,7 +7362,7 @@
     "windows": {
       "installation": "Check the release notes and SHA-256 checksum before running the installer. If your device blocks installation, use the web app.",
       "legacy_update": "Windows betas installed before 21 November 2026 report version 1.0.0 and require a manual update.",
-      "may_be_unsigned": "Windows beta installers may be unsigned.",
+      "may_be_unsigned": "Windows beta installers may be unsigned. SmartScreen may warn you.",
       "name": "Windows",
       "requirements": "Windows {version} or later · Intel / AMD 64-bit",
       "unsigned": "This Windows beta installer is unsigned. SmartScreen may warn you."

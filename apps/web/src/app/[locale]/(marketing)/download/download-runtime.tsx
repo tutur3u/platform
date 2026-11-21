@@ -24,7 +24,8 @@ export async function DownloadRuntime() {
   ]);
   const desktop = await getDesktopRelease(
     betaStatus.desktop?.version,
-    betaStatus.desktop?.build
+    betaStatus.desktop?.build,
+    betaStatus.desktop?.desktopRelease
   );
   const userAgent = requestHeaders.get('user-agent');
   const { labels, options } = await buildDownloadContent(
