@@ -12,18 +12,18 @@
   },
   "crons": [],
   "summary": {
-    "total": 838,
+    "total": 862,
     "categories": {
-      "api": 639,
+      "api": 662,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 168,
+      "page": 169,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 826 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 850 }
   },
   "routes": [
     {
@@ -863,6 +863,14 @@
     {
       "pattern": "/[locale]/facebook-mockup",
       "source": "apps/web/src/app/[locale]/(marketing)/facebook-mockup/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/integrations",
+      "source": "apps/web/src/app/[locale]/(marketing)/integrations/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -2350,6 +2358,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/auth/mobile/client-credential",
+      "source": "apps/web/src/app/api/v1/auth/mobile/client-credential/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/auth/mobile/password-login",
       "source": "apps/web/src/app/api/v1/auth/mobile/password-login/route.ts",
       "category": "api",
@@ -2672,6 +2688,14 @@
     {
       "pattern": "/api/v1/fleet/consumer/status",
       "source": "apps/web/src/app/api/v1/fleet/consumer/status/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/desk/digest",
+      "source": "apps/web/src/app/api/v1/fleet/desk/digest/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3280,6 +3304,22 @@
     {
       "pattern": "/api/v1/nova/me/team",
       "source": "apps/web/src/app/api/v1/nova/me/team/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/people/changes",
+      "source": "apps/web/src/app/api/v1/people/changes/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/people/recall",
+      "source": "apps/web/src/app/api/v1/people/recall/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -5110,6 +5150,22 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/[linkId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/[linkId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]/stream",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/stream/route.ts",
       "category": "api",
@@ -5136,6 +5192,54 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/members",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/members/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira/channels/[channel]/connect",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/channels/[channel]/connect/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira/channels/[channel]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/channels/[channel]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira/settings",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/settings/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira/stop",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/stop/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/mira/usage",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/usage/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -5240,6 +5344,94 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/notes/voice-jobs",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/bindings",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/bindings/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/flags",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/flags/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/managers",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/managers/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/consents",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/consents/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/facts",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/facts/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/identities",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/identities/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/relationships",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/relationships/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/rules",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/rules/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
