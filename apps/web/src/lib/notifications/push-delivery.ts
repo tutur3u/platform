@@ -35,11 +35,50 @@ export interface CustomPushMessageInput {
   category?: string;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// invalid-argument also reports payload errors, so it never proves a dead token.
 const INVALID_TOKEN_CODES = new Set([
   'messaging/invalid-registration-token',
   'messaging/registration-token-not-registered',
-  'messaging/invalid-argument',
 ]);
+
+// One provider call per send: the SDK already retries 503 and connection
+// resets, and any other failure can hide an accepted send, so failed sends
+// surface to the caller's ambiguity fence and recovery instead of replaying.
+
+// Rapid edits to one task replace the visible alert on iOS. Android notification
+// messages ignore collapseKey and keep one tray entry per inbox identity tag.
+const TASK_COLLAPSE_TYPES = new Set([
+  'task_updated',
+  'task_due_date_changed',
+  'task_moved',
+  'task_title_changed',
+  'task_description_changed',
+  'task_priority_changed',
+  'task_start_date_changed',
+  'task_estimation_changed',
+  'task_label_added',
+  'task_label_removed',
+  'task_project_linked',
+  'task_project_unlinked',
+]);
+
+export function buildPushCollapseKey(
+  notification: Pick<
+    PushNotificationRecord,
+    'type' | 'entity_type' | 'entity_id'
+  >
+): string | null {
+  if (
+    notification.entity_type === 'task' &&
+    typeof notification.entity_id === 'string' &&
+    UUID.test(notification.entity_id) &&
+    TASK_COLLAPSE_TYPES.has(notification.type)
+  )
+    return `task:${notification.entity_id.toLowerCase()}`;
+  return null;
+}
 
 function asOptionalString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
@@ -75,7 +114,6 @@ export function buildPushOpenTarget(
 }
 
 const INBOX_IDENTITY_PREFIX = 'tuturuuu:inbox:v1:';
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Full persisted identity, not a hash or an action-authorizing token. */
 function inboxIdentity(notification: PushNotificationRecord): string | null {
@@ -148,39 +186,18 @@ export function buildPushData(
   };
 }
 
-async function sendMessageBatch(
-  {
-    devices,
-    message,
-  }: {
-    devices: PushDeviceRegistration[];
-    message: CustomPushMessageInput;
-  },
-  ownedInboxIdentity?: string
-): Promise<PushSendResult> {
-  if (devices.length === 0) {
-    return {
-      deliveredCount: 0,
-      invalidTokens: [],
-    };
-  }
-
-  const tokens = devices
-    .map((device) => device.token.trim())
-    .filter((token) => token.length > 0);
-
-  if (tokens.length === 0) {
-    return {
-      deliveredCount: 0,
-      invalidTokens: [],
-    };
-  }
-
-  const payload: MulticastMessage = {
+export function buildMulticastMessage(
+  tokens: string[],
+  message: CustomPushMessageInput,
+  options: { collapseKey?: string | null; ownedInboxIdentity?: string } = {}
+): MulticastMessage {
+  const { collapseKey, ownedInboxIdentity } = options;
+  return {
     tokens,
     data: message.data,
     android: {
       priority: 'high',
+      ...(collapseKey ? { collapseKey } : {}),
       ...(message.expiresAt
         ? { ttl: Math.max(0, Date.parse(message.expiresAt) - Date.now()) }
         : {}),
@@ -193,7 +210,10 @@ async function sendMessageBatch(
     },
     apns: {
       headers: {
-        'apns-priority': '10',
+        // APNs requires background pushes at priority 5 and alerts at 10.
+        'apns-push-type': message.dataOnly ? 'background' : 'alert',
+        'apns-priority': message.dataOnly ? '5' : '10',
+        ...(collapseKey ? { 'apns-collapse-id': collapseKey } : {}),
         ...(message.expiresAt
           ? {
               'apns-expiration': String(
@@ -206,10 +226,12 @@ async function sendMessageBatch(
         ...(message.category === 'tuturuuu_login_approval'
           ? { payload: JSON.stringify(message.data) }
           : {}),
-        aps: {
-          sound: 'default',
-          ...(message.category ? { category: message.category } : {}),
-        },
+        aps: message.dataOnly
+          ? { contentAvailable: true }
+          : {
+              sound: 'default',
+              ...(message.category ? { category: message.category } : {}),
+            },
       },
     },
     notification: message.dataOnly
@@ -219,18 +241,41 @@ async function sendMessageBatch(
           body: message.body,
         },
   };
+}
 
-  const response =
-    await getFirebaseMessagingClient().sendEachForMulticast(payload);
+async function sendMessageBatch(
+  {
+    devices,
+    message,
+  }: {
+    devices: PushDeviceRegistration[];
+    message: CustomPushMessageInput;
+  },
+  options: {
+    collapseKey?: string | null;
+    ownedInboxIdentity?: string;
+  } = {}
+): Promise<PushSendResult> {
+  const tokens = devices
+    .map((device) => device.token.trim())
+    .filter((token) => token.length > 0);
 
+  if (tokens.length === 0) {
+    return {
+      deliveredCount: 0,
+      invalidTokens: [],
+    };
+  }
+
+  const response = await getFirebaseMessagingClient().sendEachForMulticast(
+    buildMulticastMessage(tokens, message, options)
+  );
   const invalidTokens: string[] = [];
   response.responses.forEach((result, index) => {
-    if (!result.success) {
-      const code = result.error?.code;
-      if (code && INVALID_TOKEN_CODES.has(code)) {
-        invalidTokens.push(tokens[index]!);
-      }
-    }
+    if (result.success) return;
+    const code = result.error?.code;
+    if (code && INVALID_TOKEN_CODES.has(code))
+      invalidTokens.push(tokens[index]!);
   });
 
   return {
@@ -270,6 +315,9 @@ export async function sendPushNotificationBatch({
         data,
       },
     },
-    data.inboxIdentity
+    {
+      collapseKey: buildPushCollapseKey(notification),
+      ownedInboxIdentity: data.inboxIdentity,
+    }
   );
 }

@@ -1,5 +1,5 @@
 ---
-updatedAt: "2026-11-19"
+updatedAt: "2026-11-21"
 title: 'Mobile notifications'
 description: 'How the mobile Inbox tab lists, filters, opens and marks notifications.'
 audience: users
@@ -34,6 +34,48 @@ scope when the personal workspace is active).
 - **Badges**: every notifications cubit publishes its unread count to
   `NotificationsUnreadCount`, and in-app reads emit an archive-changed push
   event so the top-bar bell refreshes.
+
+## Push delivery
+
+- **Timing**: pushes are sent at event time. A push requested in batched mode
+  is promoted to immediate when the recipient is reachable (a registered
+  device and the account-wide push switch on), is under six immediate pushes
+  per minute, and the durable stop fence
+  (`private.push_dispatch_control.immediate_enabled`) allows it. Pushes whose
+  callers request immediate delivery (Chat, mentions, invites, security
+  alerts) stay immediate for every reachable recipient, unaffected by the cap
+  and the fence. Mail inserts its own immediate batches with its own access and
+  preference checks, so the fence does not cover Mail either. The transport
+  trigger dispatches immediate batches within seconds, in every workspace. The
+  cap reserves each recipient's window with a non-blocking lock; a concurrent
+  reservation sends the push to the digest instead, so fan-out never blocks or
+  deadlocks the source write. Other pushes take the digest path and its
+  root-workspace rollout. Email keeps its digest windows. Push settings are
+  checked when the batch is created and again before an immediate push or a
+  push digest is sent, so an opt-out made in between still holds.
+- **Provider flags**: alerts use FCM `priority: high` on the
+  `tuturuuu_notifications` channel (high importance) and APNs
+  `apns-push-type: alert` with `apns-priority: 10`. Data-only pushes use
+  `background` at priority 5 with `content-available`, as APNs requires.
+- **Collapse**: task field-change pushes (updates, moves, title, description,
+  priority, dates, estimation, labels, projects) collapse per task on iOS
+  through `apns-collapse-id`. Android keeps one tray entry per notification,
+  because notification messages ignore the collapse key and each alert carries
+  its own inbox identity tag. Mentions, assignments, deadlines, chat and mail
+  never collapse.
+- **Failures**: each send makes one provider call. The Firebase SDK already
+  retries unavailable responses and connection resets; any other failure can
+  hide an accepted send, so it fails the batch for the recovery fence instead
+  of being replayed. Tokens are pruned only when FCM reports them unregistered
+  or invalid; `invalid-argument` can describe the payload, so it never prunes.
+- **Latency**: the admin Push notifications page shows push dispatch latency
+  per channel over 24 hours: p50, p95 and max from notification creation until
+  FCM accepted the send.
+  Only immediate sends count; skips and digest sends are excluded.
+
+Push regression coverage: `push-batches-immediate.sql`,
+`push-delivery-latency.sql`, `push-delivery-transport.test.ts`,
+`push-eligibility.test.ts` and `push-latency.test.ts`.
 
 Regression coverage: `notifications_inbox_test.dart` (filters, open, missing
 target, swipe and Undo, states), `notification_open_plan_test.dart` (target
