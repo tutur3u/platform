@@ -73,6 +73,25 @@ python3 scripts/ci/shortener-native-artifact.test.py
 `bun run dev` serves the Worker through Void's dev server. Do not run
 `build:cloudflare` locally; CI builds the exact commit.
 
+### Redirect parity
+
+`apps/shortener/cloudflare/redirect-parity.mjs` compares status and `Location`
+for a list of stored slugs between a baseline (live `ttr.gg`) and a candidate:
+
+```bash
+node apps/shortener/cloudflare/redirect-parity.mjs \
+  --baseline https://ttr.gg --candidate http://127.0.0.1:8787 \
+  --host ttr.gg --slugs slugs.txt
+```
+
+The Worker answers only its production hostnames, so a candidate served on
+loopback needs `--host ttr.gg`. The script sends that header through
+`node:http(s)`, because `fetch()` drops a custom Host. It refuses `--host` for
+non-loopback candidates: an edge routes by Host, so the request would reach
+production. Each probe resolves the link and records one analytics click on
+both sides, so keep the sample small. Run it before and after a release, and
+treat any `DIFF` line as a blocker.
+
 ## CI qualification
 
 `shortener-cloudflare.yaml` runs on pull requests and `main` pushes for the

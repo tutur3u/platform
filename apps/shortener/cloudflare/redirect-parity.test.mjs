@@ -1,44 +1,45 @@
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import test from 'node:test';
-import { compare, probe } from './redirect-parity.mjs';
+import {
+  assertHostOverrideAllowed,
+  compare,
+  nodeRequest,
+  probe,
+} from './redirect-parity.mjs';
 
-function fakeFetch(answers) {
+function fakeRequest(answers) {
   const seen = [];
-  const fetcher = async (url, init) => {
-    seen.push({ url, init });
-    const answer = answers[url] ?? { status: 200 };
-    return new Response(null, {
-      status: answer.status,
-      headers: answer.location ? { location: answer.location } : {},
-    });
+  const request = async (url, headers) => {
+    seen.push({ url, headers });
+    return answers[url] ?? { status: 200, location: null };
   };
-  return { fetcher, seen };
+  return { request, seen };
 }
 
-test('probes without following redirects and encodes each segment', async () => {
-  const { fetcher, seen } = fakeFetch({
+test('encodes each segment and sends no cookies', async () => {
+  const { request, seen } = fakeRequest({
     'https://a.example/meet/Ab%20c': { status: 307, location: 'https://x' },
   });
-  assert.deepEqual(await probe('https://a.example/', 'meet/Ab c', fetcher), {
+  assert.deepEqual(await probe('https://a.example/', 'meet/Ab c', request), {
     status: 307,
     location: 'https://x',
   });
-  assert.equal(seen[0].init.redirect, 'manual');
-  assert.equal(seen[0].init.headers.cookie, undefined);
+  assert.equal(seen[0].headers.cookie, undefined);
 });
 
 test('flags status or Location differences', async () => {
-  const { fetcher } = fakeFetch({
+  const { request } = fakeRequest({
     'https://old.example/abc': { status: 307, location: 'https://dest/' },
     'https://new.example/abc': { status: 307, location: 'https://dest/' },
-    'https://old.example/gone': { status: 200 },
-    'https://new.example/gone': { status: 404 },
+    'https://old.example/gone': { status: 200, location: null },
+    'https://new.example/gone': { status: 404, location: null },
   });
   const rows = await compare({
     baseline: 'https://old.example',
     candidate: 'https://new.example',
     slugs: ['abc', 'gone'],
-    fetcher,
+    request,
   });
   assert.deepEqual(
     rows.map((row) => [row.slug, row.ok]),
@@ -47,4 +48,34 @@ test('flags status or Location differences', async () => {
       ['gone', false],
     ]
   );
+});
+
+test('refuses a Host override for remote candidates', () => {
+  assert.throws(
+    () => assertHostOverrideAllowed('https://x.workers.dev', 'ttr.gg'),
+    /loopback/
+  );
+  assert.doesNotThrow(() =>
+    assertHostOverrideAllowed('http://127.0.0.1:8787', 'ttr.gg')
+  );
+  assert.doesNotThrow(() => assertHostOverrideAllowed('https://x.dev'));
+  for (const candidate of ['http://localhost:3002', 'http://[::1]:8787'])
+    assert.doesNotThrow(() => assertHostOverrideAllowed(candidate, 'ttr.gg'));
+});
+
+test('delivers the Host override to a loopback server without following redirects', async (t) => {
+  const hosts = [];
+  const server = http.createServer((request, response) => {
+    hosts.push(request.headers.host);
+    response.writeHead(307, { location: 'https://dest.example/' });
+    response.end('moved');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => server.close());
+  const { port } = server.address();
+  const answer = await probe(`http://127.0.0.1:${port}`, 'abc', nodeRequest, {
+    host: 'ttr.gg',
+  });
+  assert.deepEqual(answer, { status: 307, location: 'https://dest.example/' });
+  assert.deepEqual(hosts, ['ttr.gg']);
 });
