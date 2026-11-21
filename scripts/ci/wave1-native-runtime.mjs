@@ -199,12 +199,26 @@ async function runRuntimeAcceptance() {
           });
         if (calendarOn) {
           const path = '/vi/personal?view=week&tag=1&tag=2';
-          const navigation = await fetchWorker(path);
+          const navigation = await fetchWorker(path, {
+            headers: { 'sec-fetch-mode': 'navigate' },
+          });
           assert.equal(navigation.status, 301);
           assert.equal(
             navigation.headers.get('location'),
             `https://tuturuuu.com/calendar${path}`
           );
+          // Only document navigations move; a fetch stays on the subdomain.
+          const subresource = await fetchWorker(path, {
+            headers: { 'sec-fetch-mode': 'cors' },
+          });
+          assert.notEqual(subresource.status, 301);
+          assert.ok(
+            !subresource.headers
+              .get('location')
+              ?.startsWith('https://tuturuuu.com/calendar'),
+            'A non-navigation fetch moved to the apex mount'
+          );
+          await subresource.body?.cancel();
           const completion = await fetchWorker('/vi/verify-token');
           assert.equal(completion.status, 200);
           const html = await completion.text();
