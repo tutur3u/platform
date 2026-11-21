@@ -268,6 +268,15 @@ goes to the USER.
    it, but the dispatch must select the `production` branch and still satisfy
    the same production-deployment and staging-migration SHA checks.
 
+Before dispatching a production apply, run `supabase-production.yaml` on
+`main` with `list_only: true`. Save its applied-version summary and compare
+the pending migration filenames for the exact apply SHA against the reviewed
+SQL set. The sets must match, including older locally present versions absent
+from the remote ledger, because the apply step uses `--include-all`. Hold the
+dispatch if any pending version is missing from review or if a reviewed
+version is unexpectedly absent. Repeat the comparison if the target commit
+or production ledger changes.
+
 The staging-triggered path is an automatic retry for the case where production
 production deploy finishes before staging migration does. The production
 migration job still checks out the verified target commit explicitly before

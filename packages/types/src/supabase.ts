@@ -18496,6 +18496,465 @@ export type Database = {
           },
         ];
       };
+      task_recurrence_active_slots: {
+        Row: {
+          owner_id: string;
+          owner_slot: number;
+          series_id: string;
+          ws_id: string;
+          ws_slot: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          owner_id: string;
+          owner_slot: number;
+          series_id: string;
+          ws_id: string;
+          ws_slot: number;
+        };
+        Update: {
+          owner_id?: string;
+          owner_slot?: number;
+          series_id?: string;
+          ws_id?: string;
+          ws_slot?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_active_slots_series_id_ws_id_fkey';
+            columns: ['series_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_series';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      task_recurrence_batches: {
+        Row: {
+          batch: number;
+          examined: number;
+          exhausted: boolean;
+          input_hash: string | null;
+          result: Json | null;
+          slot: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          batch: number;
+          examined: number;
+          exhausted: boolean;
+          input_hash?: string | null;
+          result?: Json | null;
+          slot: number;
+        };
+        Update: {
+          batch?: number;
+          examined?: number;
+          exhausted?: boolean;
+          input_hash?: string | null;
+          result?: Json | null;
+          slot?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_batches_slot_fkey';
+            columns: ['slot'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_slots';
+            referencedColumns: ['slot'];
+          },
+        ];
+      };
+      task_recurrence_claims: {
+        Row: {
+          batch: number;
+          cursor_date: string;
+          expires_at: string;
+          planned_at: string;
+          position: number;
+          progress: number;
+          revision: number;
+          series_id: string;
+          slot: number;
+          state: string;
+          token: string;
+          workspace_epoch: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          batch: number;
+          cursor_date: string;
+          expires_at: string;
+          planned_at: string;
+          position: number;
+          progress: number;
+          revision: number;
+          series_id: string;
+          slot: number;
+          state?: string;
+          token?: string;
+          workspace_epoch: number;
+          ws_id: string;
+        };
+        Update: {
+          batch?: number;
+          cursor_date?: string;
+          expires_at?: string;
+          planned_at?: string;
+          position?: number;
+          progress?: number;
+          revision?: number;
+          series_id?: string;
+          slot?: number;
+          state?: string;
+          token?: string;
+          workspace_epoch?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_claims_slot_batch_fkey';
+            columns: ['slot', 'batch'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_batches';
+            referencedColumns: ['slot', 'batch'];
+          },
+        ];
+      };
+      task_recurrence_control: {
+        Row: {
+          epoch: number;
+          request_enabled: boolean;
+          scheduler_after_slot: number;
+          scheduler_enabled: boolean;
+          singleton: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          epoch?: number;
+          request_enabled?: boolean;
+          scheduler_after_slot?: number;
+          scheduler_enabled?: boolean;
+          singleton?: boolean;
+        };
+        Update: {
+          epoch?: number;
+          request_enabled?: boolean;
+          scheduler_after_slot?: number;
+          scheduler_enabled?: boolean;
+          singleton?: boolean;
+        };
+        Relationships: [];
+      };
+      task_recurrence_occurrences: {
+        Row: {
+          created_at: string;
+          occurrence_date: string;
+          open_slot: number | null;
+          request_actor_id: string | null;
+          series_id: string;
+          series_revision: number;
+          skip_reason: string | null;
+          source: string;
+          state: string;
+          task_id: string | null;
+          task_list_id: string | null;
+          task_write_version: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          occurrence_date: string;
+          open_slot?: number | null;
+          request_actor_id?: string | null;
+          series_id: string;
+          series_revision: number;
+          skip_reason?: string | null;
+          source: string;
+          state: string;
+          task_id?: string | null;
+          task_list_id?: string | null;
+          task_write_version?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          occurrence_date?: string;
+          open_slot?: number | null;
+          request_actor_id?: string | null;
+          series_id?: string;
+          series_revision?: number;
+          skip_reason?: string | null;
+          source?: string;
+          state?: string;
+          task_id?: string | null;
+          task_list_id?: string | null;
+          task_write_version?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_occurrences_series_id_ws_id_fkey';
+            columns: ['series_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_series';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      task_recurrence_receipts: {
+        Row: {
+          actor_id: string;
+          expires_at: string;
+          input_hash: string;
+          operation: string;
+          request_id: string;
+          result: NonNullable<Json>;
+          scope: NonNullable<Json>;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          expires_at: string;
+          input_hash: string;
+          operation: string;
+          request_id: string;
+          result: NonNullable<Json>;
+          scope: NonNullable<Json>;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          expires_at?: string;
+          input_hash?: string;
+          operation?: string;
+          request_id?: string;
+          result?: NonNullable<Json>;
+          scope?: NonNullable<Json>;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      task_recurrence_scheduler: {
+        Row: {
+          latest_slot: number;
+          seek_at: string | null;
+          seek_id: string | null;
+          seek_ws_id: string | null;
+          singleton: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          latest_slot?: number;
+          seek_at?: string | null;
+          seek_id?: string | null;
+          seek_ws_id?: string | null;
+          singleton?: boolean;
+        };
+        Update: {
+          latest_slot?: number;
+          seek_at?: string | null;
+          seek_id?: string | null;
+          seek_ws_id?: string | null;
+          singleton?: boolean;
+        };
+        Relationships: [];
+      };
+      task_recurrence_series: {
+        Row: {
+          anchor_date: string;
+          board_id: string;
+          consecutive_failures: number;
+          consumed_count: number;
+          consumed_through: string | null;
+          cursor_date: string | null;
+          due_time: string | null;
+          generate_at: string | null;
+          id: string;
+          list_id: string | null;
+          owner_id: string | null;
+          progress: number;
+          retry_after_slot: number;
+          revision: number;
+          rule: NonNullable<Json>;
+          start_offset_days: number;
+          state: string;
+          state_reason: string | null;
+          template: NonNullable<Json>;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          anchor_date: string;
+          board_id: string;
+          consecutive_failures?: number;
+          consumed_count?: number;
+          consumed_through?: string | null;
+          cursor_date?: string | null;
+          due_time?: string | null;
+          generate_at?: string | null;
+          id?: string;
+          list_id?: string | null;
+          owner_id?: string | null;
+          progress?: number;
+          retry_after_slot?: number;
+          revision?: number;
+          rule: NonNullable<Json>;
+          start_offset_days?: number;
+          state: string;
+          state_reason?: string | null;
+          template: NonNullable<Json>;
+          ws_id: string;
+        };
+        Update: {
+          anchor_date?: string;
+          board_id?: string;
+          consecutive_failures?: number;
+          consumed_count?: number;
+          consumed_through?: string | null;
+          cursor_date?: string | null;
+          due_time?: string | null;
+          generate_at?: string | null;
+          id?: string;
+          list_id?: string | null;
+          owner_id?: string | null;
+          progress?: number;
+          retry_after_slot?: number;
+          revision?: number;
+          rule?: NonNullable<Json>;
+          start_offset_days?: number;
+          state?: string;
+          state_reason?: string | null;
+          template?: NonNullable<Json>;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      task_recurrence_slot_workspaces: {
+        Row: {
+          reserved: number;
+          slot: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          reserved: number;
+          slot: number;
+          ws_id: string;
+        };
+        Update: {
+          reserved?: number;
+          slot?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_slot_workspaces_slot_fkey';
+            columns: ['slot'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_slots';
+            referencedColumns: ['slot'];
+          },
+        ];
+      };
+      task_recurrence_slots: {
+        Row: {
+          finalized: boolean;
+          global_epoch: number;
+          reserved: number;
+          slot: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          finalized?: boolean;
+          global_epoch: number;
+          reserved?: number;
+          slot: number;
+        };
+        Update: {
+          finalized?: boolean;
+          global_epoch?: number;
+          reserved?: number;
+          slot?: number;
+        };
+        Relationships: [];
+      };
+      task_recurrence_transitions: {
+        Row: {
+          actor_id: string;
+          cursor_date: string;
+          expires_at: string;
+          global_epoch: number;
+          progress: number;
+          revision: number;
+          series_id: string;
+          task_id: string;
+          transition_id: string;
+          workspace_epoch: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          cursor_date: string;
+          expires_at: string;
+          global_epoch: number;
+          progress: number;
+          revision: number;
+          series_id: string;
+          task_id: string;
+          transition_id?: string;
+          workspace_epoch: number;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          cursor_date?: string;
+          expires_at?: string;
+          global_epoch?: number;
+          progress?: number;
+          revision?: number;
+          series_id?: string;
+          task_id?: string;
+          transition_id?: string;
+          workspace_epoch?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_recurrence_transitions_series_id_ws_id_fkey';
+            columns: ['series_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_recurrence_series';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      task_recurrence_workspace: {
+        Row: {
+          enabled: boolean;
+          epoch: number;
+          scheduler_after_slot: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          enabled?: boolean;
+          epoch?: number;
+          scheduler_after_slot?: number;
+          ws_id: string;
+        };
+        Update: {
+          enabled?: boolean;
+          epoch?: number;
+          scheduler_after_slot?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       task_reminder_sent: {
         Row: {
           id: string;
@@ -27988,6 +28447,54 @@ export type Database = {
           p_task_id: string;
         };
         Returns: boolean;
+      };
+      task_recurrence_capture_completion: {
+        Args: {
+          p_actor: string;
+          p_list: string;
+          p_sort_key: number;
+          p_task: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_disable_control: {
+        Args: { p_expected_epoch: number };
+        Returns: Json;
+      };
+      task_recurrence_disable_workspace: {
+        Args: { p_expected_epoch: number; p_ws: string };
+        Returns: Json;
+      };
+      task_recurrence_is_open: {
+        Args: {
+          p_closed_at: string;
+          p_completed_at: string;
+          p_deleted_at: string;
+          p_status: Database['public']['Enums']['task_board_status'];
+        };
+        Returns: boolean;
+      };
+      task_recurrence_lock_member_edit: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: boolean;
+      };
+      task_recurrence_probe: { Args: { p_slot: number }; Returns: Json };
+      task_recurrence_reclassify: {
+        Args: { p_tasks: string[] };
+        Returns: undefined;
+      };
+      task_recurrence_set_control: {
+        Args: {
+          p_expected_epoch: number;
+          p_request_enabled: boolean;
+          p_scheduler_enabled: boolean;
+        };
+        Returns: Json;
+      };
+      task_recurrence_set_workspace: {
+        Args: { p_enabled: boolean; p_expected_epoch: number; p_ws: string };
+        Returns: Json;
       };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };

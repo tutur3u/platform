@@ -1,0 +1,80 @@
+---
+title: "Recurring tasks"
+description: "Recurring task defaults, schedule behavior, and the dormant database rollout."
+---
+
+Recurring tasks apply to workspace members with edit access to the task board.
+Recurrence badges, summaries, and templates are member-only across task
+responses, realtime events, bulk operations, and mobile. Guests can still
+complete an ordinary task using their board access. Their completion creates no
+recurrence evidence or new task.
+
+## Schedule and capacity
+
+- Daily, weekly, monthly, and yearly schedules support intervals from 1 to 99.
+  Weekly rules can select weekdays. Monthly and yearly dates on the 29th through
+  31st clamp to the last day of shorter months.
+- A task becomes eligible at the start of its local start date, normally 00:00.
+  The start offset defaults to zero. If a civil date is entirely absent, the
+  series is saved and that occurrence is recorded as skipped.
+- A series generates even while earlier instances are open, up to three open
+  tasks. Further dates are recorded as held. Review still counts as open. Tasks
+  in done or closed lists, tasks with completion or closure timestamps, and
+  soft-deleted tasks don't consume a slot. Archiving alone leaves slots in place.
+- A workspace can have 200 active series, with at most 50 per owner. Pausing
+  releases the active slot. Removing a member pauses that member's active series.
+- A member completing the latest task in its original board can trigger the
+  next date early. If only overdue dates are eligible, scheduled generation
+  processes the latest and records the earlier dates as skipped. Held and
+  skipped dates are never backfilled.
+
+## Dormant rollout
+
+The database starts with request and scheduler generation off and every
+workspace disabled. The dormant migration adds private storage, gate controls,
+capacity guards, a read-only probe, and a separate completion evidence entry
+point for the trusted server. No application surface or scheduler invokes it
+in this stage. The feature requires a separate request-path rollout and workspace
+admission before members can create series.
+
+An operator can enable gates with the restricted database role using the
+current epoch. The service credential can disable gates using compare-and-set.
+The scheduler release must prove the database and Worker stop fences together,
+including bounded assignee notifications and watcher fan-out. Its pilot budget
+is 160 admissions per 15-minute slot across five batches, at most 32 per
+workspace, with fair rotation among enabled workspaces. Disabled workspaces
+must not advance through downtime skips. Request mutations require authorized
+receipts with a verified expiry of up to seven days. The database rejects
+expired receipt requests and persists their verified expiry.
+
+A list-status update is atomic and fails if more than 500 linked tasks would
+change open state or any series would exceed three open tasks. A move across
+boards within one workspace retains the capacity link and cannot drive
+generation from the destination. A linked row cannot move across workspaces.
+
+## Database write paths
+
+The task guard sees row changes from the shared task detail and bulk handlers,
+direct task updates, the task-history restore RPC, and both functions in the
+task update wrapper chain. The actor-binding migration leaves those writers
+proof-free. The guard uses the row after list moves have assigned timestamps
+and display numbers and after the fleet metadata trigger has stamped
+`updated_at`. Board capacity, history, notification, and blocker triggers
+continue to run on their ordinary write paths.
+
+The list guard covers status changes made directly or through task list
+management. List hard deletion cascades through task deletion, which clears the
+task link and preserves the occurrence date when its series survives.
+Private occurrence and active-slot constraints check the final transaction
+state. Workspace membership loss and account erasure release active slots,
+and account erasure clears actor references.
+
+## Database verification
+
+[Foundation pgTAP coverage](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-recurrence-foundation.sql)
+checks off-by-default gates, role access, epoch conflicts, capacity and
+topology, actor erasure, and forged proof attempts. The
+[search path contract](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/security-definer-search-paths.sql)
+checks the exposed definer functions after a full reset. The
+[production migration runbook](/build/devops/environments-release-flow)
+requires the pending production set to match the reviewed SQL before dispatch.
