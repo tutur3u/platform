@@ -55,25 +55,29 @@ void main() {
     'resolvedAt': '2026-11-20T03:01:00.000Z',
   };
 
-  testWidgets('the freshness line ticks from receivedAt and warns when stale', (
-    tester,
-  ) async {
-    clock = DateTime.utc(2026, 11, 20, 3, 0, 12);
-    await harness.runtime.fleet.refresh();
-    await pump(
-      tester,
-      FleetFreshnessLine(state: harness.runtime.fleet.state, now: () => clock),
-    );
-    expect(find.text('Updated 12 s ago'), findsOneWidget);
+  testWidgets(
+    'the freshness line ticks from receivedAt and says the publisher paused',
+    (tester) async {
+      clock = DateTime.utc(2026, 11, 20, 3, 0, 12);
+      await harness.runtime.fleet.refresh();
+      await pump(
+        tester,
+        FleetFreshnessLine(
+          state: harness.runtime.fleet.state,
+          now: () => clock,
+        ),
+      );
+      expect(find.text('Live · published 12 s ago'), findsOneWidget);
 
-    clock = clock.add(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Updated 13 s ago'), findsOneWidget);
+      clock = clock.add(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Live · published 13 s ago'), findsOneWidget);
 
-    clock = DateTime.utc(2026, 11, 20, 3, 6);
-    await tester.pump(const Duration(seconds: 1));
-    expect(find.textContaining('Last fleet update'), findsOneWidget);
-  });
+      clock = DateTime.utc(2026, 11, 20, 3, 6);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Publisher paused'), findsOneWidget);
+    },
+  );
 
   testWidgets('an ask listed as resolved leaves Urgent for Answered', (
     tester,
@@ -82,7 +86,10 @@ void main() {
     await pump(tester, FleetInboxPage(now: () => clock));
     expect(find.text('Urgent'), findsNothing);
     expect(find.text('Ship now'), findsNothing);
+    await tester.tap(find.text('FYI 1'));
+    await tester.pump();
     expect(find.text('Answered on WhatsApp'), findsOneWidget);
+    expect(find.textContaining('closed here too'), findsOneWidget);
   });
 
   testWidgets('a reply that missed a closed ask is not delivered, not stuck', (
@@ -103,6 +110,8 @@ void main() {
     await harness.runtime.fleet.refresh();
     await tester.pump();
     expect(find.text('Urgent'), findsNothing);
+    await tester.tap(find.text('FYI 2'));
+    await tester.pump();
     expect(find.text('Not delivered'), findsOneWidget);
     expect(
       find.text('This request closed before your answer arrived'),

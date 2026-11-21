@@ -4,17 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_decision_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_groups.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_rows.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_lanes.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_login_card.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_review_card.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_review_preview.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_snooze.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_undelivered_row.dart';
@@ -23,16 +24,22 @@ import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind/inbox`: urgent asks, access requests, decisions and FYI,
-/// then what is snoozed on this device and what was answered, here or on
-/// another channel. A snoozed card returns on its own when its time passes.
+/// `/mastermind/inbox`: a Needs you / FYI switch over two lanes. Needs you
+/// holds open asks, sign-in requests and design reviews, most urgent first,
+/// then what is snoozed on this device; answering a card moves on to the
+/// next one. FYI holds updates, answers that did not arrive, and answers
+/// with how far they got, here or on another channel. A snoozed card
+/// returns on its own when its time passes.
 class FleetInboxPage extends StatefulWidget {
-  const FleetInboxPage({this.now, this.launch, super.key});
+  const FleetInboxPage({this.now, this.launch, this.reviewAssets, super.key});
 
   final DateTime Function()? now;
 
   /// Test seam for the app's link launcher.
   final MobileLinkLaunch? launch;
+
+  /// Test seam for review preview bytes; the fleet repository otherwise.
+  final FleetReviewAssetLoader? reviewAssets;
 
   @override
   State<FleetInboxPage> createState() => _FleetInboxPageState();
@@ -40,11 +47,25 @@ class FleetInboxPage extends StatefulWidget {
 
 class _FleetInboxPageState extends State<FleetInboxPage> {
   late final MastermindRuntime _runtime = context.read<MastermindRuntime>();
+  late final FleetReviewAssetLoader _assets =
+      widget.reviewAssets ?? FleetRepository().reviewAsset;
+  final _cardKeys = <String, GlobalKey>{};
+  final _replyFocus = <String, FocusNode>{};
+  FleetInboxLane _lane = FleetInboxLane.needsYou;
+  List<String> _needsOrder = const [];
 
   @override
   void initState() {
     super.initState();
     unawaited(_runtime.fleetSnoozes.load());
+  }
+
+  @override
+  void dispose() {
+    for (final node in _replyFocus.values) {
+      node.dispose();
+    }
+    super.dispose();
   }
 
   DateTime _now() => (widget.now ?? DateTime.now)().toUtc();
@@ -57,6 +78,39 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
         for (final d in snapshot.needsYouAt(_now())) d.id,
       }, _now()),
     );
+  }
+
+  /// Send and next: brings the card after [decisionId] to the top of the
+  /// screen unless its top already shows in the upper half, and focuses its
+  /// reply box when the answer was typed.
+  void _advance(String decisionId, {required bool typed}) {
+    final index = _needsOrder.indexOf(decisionId);
+    if (index < 0 || index + 1 >= _needsOrder.length) return;
+    final next = _needsOrder[index + 1];
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _cardKeys[next]?.currentContext;
+      if (!mounted || target == null || !target.mounted) return;
+      final scrollable = Scrollable.maybeOf(target);
+      final card = target.findRenderObject();
+      final frame = scrollable?.context.findRenderObject();
+      if (scrollable == null || card is! RenderBox || frame is! RenderBox) {
+        return;
+      }
+      final top = card.localToGlobal(Offset.zero, ancestor: frame).dy;
+      if (top < 0 || top > frame.size.height / 2) {
+        unawaited(
+          Scrollable.ensureVisible(
+            target,
+            alignment: 0.05,
+            duration: reduced
+                ? Duration.zero
+                : const Duration(milliseconds: 250),
+          ),
+        );
+      }
+      if (typed) _replyFocus[next]?.requestFocus();
+    });
   }
 
   @override
@@ -93,6 +147,88 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
         ),
       );
 
+  Widget _card(
+    FleetSnapshot snapshot,
+    FleetViewState state,
+    FleetDecision decision,
+    DateTime now, {
+    bool snoozable = true,
+  }) {
+    final fleet = _runtime.fleet;
+    final id = decision.id;
+    final receipt = snapshot.answers[id];
+    final pending = state.pending[id];
+    final actionable = decision.login?.isOpenAt(now) ?? true;
+    final snooze = snoozable && actionable && receipt == null
+        ? () =>
+              unawaited(snoozeFleetDecision(context, decision, now: widget.now))
+        : null;
+    void answer(FleetAnswerAction action, {String? optionId, String? text}) {
+      unawaited(fleet.answer(id, action, optionId: optionId, text: text));
+      _advance(id, typed: text != null);
+    }
+
+    void retry() => unawaited(fleet.retry(id));
+    void undo() => fleet.undo(id);
+    void dismiss() => fleet.dismiss(id);
+    final login = decision.login;
+    final review = decision.review;
+    final orchestrator = snapshot.orchestratorLabel;
+    final child = login != null
+        ? FleetLoginCard(
+            key: ValueKey('fleet-login-$id'),
+            decision: decision,
+            login: login,
+            machine: snapshot.machineLabel(login.machineId),
+            orchestrator: orchestrator,
+            receipt: receipt,
+            pending: pending,
+            now: widget.now,
+            launch: widget.launch,
+            onSignedIn: () => answer(FleetAnswerAction.signedIn),
+            onRetry: retry,
+            onUndo: undo,
+            onDismiss: dismiss,
+            onSnooze: snooze,
+          )
+        : review != null
+        ? FleetReviewCard(
+            key: ValueKey('fleet-review-$id'),
+            decision: decision,
+            review: review,
+            orchestrator: orchestrator,
+            receipt: receipt,
+            pending: pending,
+            now: widget.now,
+            launch: widget.launch,
+            loadAsset: _assets,
+            onAnswer: answer,
+            onRetry: retry,
+            onUndo: undo,
+            onDismiss: dismiss,
+            onSnooze: snooze,
+          )
+        : FleetDecisionCard(
+            key: ValueKey('fleet-decision-$id'),
+            decision: decision,
+            orchestrator: orchestrator,
+            receipt: receipt,
+            pending: pending,
+            now: widget.now,
+            replyFocus: _replyFocus.putIfAbsent(id, FocusNode.new),
+            onAnswer: answer,
+            onRetry: retry,
+            onUndo: undo,
+            onDismiss: dismiss,
+            onSnooze: snooze,
+          );
+    return Padding(
+      key: _cardKeys.putIfAbsent(id, GlobalKey.new),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: child,
+    );
+  }
+
   Widget _body(
     BuildContext context,
     FleetSnapshot snapshot,
@@ -102,126 +238,48 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
   ) {
     final l10n = context.l10n;
     final fleet = _runtime.fleet;
-    final snoozes = _runtime.fleetSnoozes;
-    Widget card(FleetDecision decision, {bool snoozable = true}) {
-      final receipt = snapshot.answers[decision.id];
-      final pending = state.pending[decision.id];
-      final actionable = decision.login?.isOpenAt(now) ?? true;
-      final snooze = snoozable && actionable && receipt == null
-          ? () => unawaited(
-              snoozeFleetDecision(context, decision, now: widget.now),
-            )
-          : null;
-      final login = decision.login;
-      return Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-        child: login != null
-            ? FleetLoginCard(
-                key: ValueKey('fleet-login-${decision.id}'),
-                decision: decision,
-                login: login,
-                machine: snapshot.machineLabel(login.machineId),
-                orchestrator: snapshot.orchestratorLabel,
-                receipt: receipt,
-                pending: pending,
-                now: widget.now,
-                launch: widget.launch,
-                onSignedIn: () => unawaited(
-                  fleet.answer(decision.id, FleetAnswerAction.signedIn),
-                ),
-                onRetry: () => unawaited(fleet.retry(decision.id)),
-                onUndo: () => fleet.undo(decision.id),
-                onDismiss: () => fleet.dismiss(decision.id),
-                onSnooze: snooze,
-              )
-            : FleetDecisionCard(
-                key: ValueKey('fleet-decision-${decision.id}'),
-                decision: decision,
-                orchestrator: snapshot.orchestratorLabel,
-                receipt: receipt,
-                pending: pending,
-                now: widget.now,
-                onAnswer: (action, {optionId, text}) => unawaited(
-                  fleet.answer(
-                    decision.id,
-                    action,
-                    optionId: optionId,
-                    text: text,
-                  ),
-                ),
-                onRetry: () => unawaited(fleet.retry(decision.id)),
-                onUndo: () => fleet.undo(decision.id),
-                onDismiss: () => fleet.dismiss(decision.id),
-                onSnooze: snooze,
-              ),
-      );
-    }
-
-    List<Widget> tier(String title, List<FleetDecision> decisions) => [
-      if (decisions.isNotEmpty) ...[
-        AppSectionHeader(title: title, count: decisions.length),
-        ...decisions.map(card),
-      ],
-    ];
-
+    _needsOrder = [for (final d in groups.needs) d.id];
+    Widget card(FleetDecision decision, {bool snoozable = true}) =>
+        _card(snapshot, state, decision, now, snoozable: snoozable);
     return AppPageScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverList.list(
           children: [
             FleetFreshnessLine(state: state, now: widget.now),
-            if (groups.openCount == 0)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                child: AppStateMessage.inline(
-                  icon: LucideIcons.circleCheck,
-                  title: l10n.mastermindFleetInboxEmpty,
-                  tone: AppTone.success,
-                ),
-              ),
-            ...tier(l10n.mastermindFleetTierUrgent, groups.urgent),
-            ...tier(l10n.mastermindFleetTierAccess, groups.access),
-            ...tier(l10n.mastermindFleetTierDecide, groups.decide),
-            ...tier(l10n.mastermindFleetTierFyi, groups.fyi),
-            if (groups.snoozed.isNotEmpty) ...[
-              AppSectionHeader(
-                title: l10n.mastermindFleetSnoozedTitle,
-                count: groups.snoozed.length,
-              ),
-              for (final (decision, until) in groups.snoozed)
-                FleetSnoozedRow(
-                  key: ValueKey('fleet-snoozed-${decision.id}'),
-                  decision: decision,
-                  until: until,
-                  onWake: () => unawaited(snoozes.wake(decision.id)),
-                ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            ...fleetUndeliveredSection(
-              l10n,
-              groups.undelivered,
-              orchestrator: snapshot.orchestratorLabel,
-              onDismiss: fleet.dismiss,
-              sendNote:
-                  _runtime.iris.isConfigured &&
-                      mastermindIrisSendCapability.value
-                  ? _runtime.iris.send
-                  : null,
+            FleetInboxLaneSwitch(
+              lane: _lane,
+              needsYou: groups.openCount,
+              fyi: groups.fyiCount + snapshot.alerts.length,
+              onChanged: (lane) => setState(() => _lane = lane),
             ),
-            if (groups.answered.isNotEmpty || groups.resolved.isNotEmpty) ...[
-              AppSectionHeader(
-                title: l10n.mastermindFleetAnsweredTitle,
-                count: groups.answered.length + groups.resolved.length,
+            ...switch (_lane) {
+              FleetInboxLane.needsYou => fleetNeedsYouLane(
+                l10n,
+                groups,
+                card: card,
+                onWake: (id) => unawaited(_runtime.fleetSnoozes.wake(id)),
               ),
-              for (final decision in groups.answered)
-                card(decision, snoozable: false),
-              for (final resolved in groups.resolved)
-                FleetResolvedRow(
-                  key: ValueKey('fleet-resolved-${resolved.id}'),
-                  resolved: resolved,
-                  now: now,
+              FleetInboxLane.fyi => fleetFyiLane(
+                l10n,
+                snapshot,
+                groups,
+                card: card,
+                now: now,
+                clock: widget.now,
+                undelivered: fleetUndeliveredSection(
+                  l10n,
+                  groups.undelivered,
+                  orchestrator: snapshot.orchestratorLabel,
+                  onDismiss: fleet.dismiss,
+                  sendNote:
+                      _runtime.iris.isConfigured &&
+                          mastermindIrisSendCapability.value
+                      ? _runtime.iris.send
+                      : null,
                 ),
-            ],
+              ),
+            },
             const FleetAccessRequestsRow(),
           ],
         ),

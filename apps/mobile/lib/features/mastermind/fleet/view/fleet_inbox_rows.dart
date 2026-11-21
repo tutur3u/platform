@@ -3,7 +3,6 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_labels.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -39,8 +38,9 @@ class FleetSnoozedRow extends StatelessWidget {
   }
 }
 
-/// A decision closed in the last day and where its answer came from, such
-/// as "Answered on WhatsApp · Retire it".
+/// A decision closed in the last day: where its answer came from as a chip,
+/// its title, then the outcome, the time and, for an answer on another
+/// channel, that it closed here too, so nothing is asked twice.
 class FleetResolvedRow extends StatelessWidget {
   const FleetResolvedRow({
     required this.resolved,
@@ -54,17 +54,46 @@ class FleetResolvedRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final via = resolved.answeredVia.label(l10n);
-    return AppRichRow(
-      title: resolved.title,
-      subtitle: resolved.outcome == null ? via : '$via · ${resolved.outcome}',
-      leading: AppIconTile(
-        icon: resolved.kind == FleetDecisionKind.login
-            ? LucideIcons.keyRound
-            : LucideIcons.circleCheck,
-        tone: AppTone.success,
+    final tokens = AppTokens.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final via = resolved.answeredVia;
+    final details = [
+      ?resolved.outcome,
+      Gmt7.time(resolved.resolvedAt, locale),
+      if (via != null && via != FleetAnswerChannel.mobile)
+        l10n.mastermindFleetResolvedClosedHere,
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppCard(
+        child: MergeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppBadge(
+                variant: via == null
+                    ? AppBadgeVariant.secondary
+                    : AppBadgeVariant.success,
+                leading: Icon(
+                  resolved.kind == FleetDecisionKind.login
+                      ? LucideIcons.keyRound
+                      : LucideIcons.circleCheck,
+                ),
+                child: Text(via.label(l10n)),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(resolved.title, style: tokens.typography.p),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                details,
+                style: tokens.typography.small.copyWith(
+                  color: tokens.colorScheme.mutedForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      trailingCaption: fleetAge(l10n, resolved.resolvedAt, now),
     );
   }
 }

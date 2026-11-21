@@ -18883,4 +18883,103 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {
     return '$real lần lỗi · $quotaRecovered lần hết hạn mức đã tự phục hồi · $quotaUnrecovered lần hết hạn mức chưa tự phục hồi · $unclassified chưa phân loại';
   }
+
+  @override
+  String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
+    return 'Chưa gửi được · lần $attempt · thử lại sau $seconds giây';
+  }
+
+  @override
+  String get mastermindFleetAnswerChangesRequested => 'Đã yêu cầu chỉnh sửa';
+
+  @override
+  String get mastermindFleetUrgencyHigh => 'Cao';
+
+  @override
+  String get mastermindFleetUrgencyNormal => 'Thường';
+
+  @override
+  String mastermindFleetInboxNeedsYouTab(int count) {
+    return 'Cần bạn $count';
+  }
+
+  @override
+  String mastermindFleetInboxFyiTab(int count) {
+    return 'FYI $count';
+  }
+
+  @override
+  String get mastermindFleetUpdatesTitle => 'Cập nhật';
+
+  @override
+  String get mastermindFleetMoreOptions => 'Thêm lựa chọn';
+
+  @override
+  String get mastermindFleetInlineReplyPlaceholder => 'Trả lời…';
+
+  @override
+  String get mastermindFleetSendAndNext => 'Gửi và tiếp';
+
+  @override
+  String get mastermindFleetResolvedClosedHere => 'cũng đã đóng ở đây';
+
+  @override
+  String get mastermindFleetReviewBadge => 'Duyệt thiết kế';
+
+  @override
+  String get mastermindFleetReviewOpenMockup => 'Mở bản thiết kế đầy đủ';
+
+  @override
+  String get mastermindFleetReviewRequestChanges => 'Yêu cầu chỉnh sửa';
+
+  @override
+  String get mastermindFleetReviewChangesPlaceholder => 'Cần thay đổi gì?';
+
+  @override
+  String get mastermindFleetReviewPreview => 'Bản xem trước. Mở bản thiết kế đầy đủ.';
+
+  @override
+  String get mastermindFleetReviewPreviewUnavailable => 'Không tải được bản xem trước';
+
+  @override
+  String mastermindFleetLive(String age) {
+    return 'Trực tiếp · phát $age';
+  }
+
+  @override
+  String get mastermindFleetPublisherPausedTitle => 'Bộ phát tạm dừng';
+
+  @override
+  String mastermindFleetPublisherPausedBody(String time, String age) {
+    return 'Phát lần cuối $time ($age). Điện thoại đang trực tuyến.';
+  }
+
+  @override
+  String get mastermindFleetPhoneOfflineTitle => 'Điện thoại ngoại tuyến';
+
+  @override
+  String mastermindFleetPhoneOfflineBody(String time) {
+    return 'Đang hiện dữ liệu $time. Đội máy có thể đã thay đổi.';
+  }
+
+  @override
+  String mastermindFleetLastReached(String time) {
+    return 'Kết nối đội máy lần cuối $time';
+  }
+
+  @override
+  String mastermindFleetHeadlineRunningFailed(int running, int failed) {
+    return '$running đang chạy, $failed lỗi';
+  }
+
+  @override
+  String get mastermindFleetKpiFailed => 'Lỗi';
+
+  @override
+  String get mastermindFleetRecoveredTitle => 'Phục hồi hoặc đã hủy';
+
+  @override
+  String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
+    return '$cancelled trùng lặp · $quota sau hạn mức · $recovered chạy lại đạt';
+  }
 }

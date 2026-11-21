@@ -95,7 +95,7 @@ void main() {
       ),
     );
     await pump(tester);
-    expect(find.text('Access requests'), findsOneWidget);
+    expect(find.text('Needs you 2'), findsOneWidget);
     expect(find.text('GitHub on MacStudio1'), findsOneWidget);
     expect(find.text('Waiting for you'), findsNWidgets(2));
     expect(find.text('8F3K-Q2MX'), findsOneWidget);
@@ -163,6 +163,16 @@ void main() {
     expect(find.text('Retry now'), findsOneWidget);
     clock = DateTime.utc(2026, 11, 20, 3, 12);
     await tester.pump(const Duration(seconds: 1));
+    // Answering moved on to the next card; scroll back to this one.
+    await tester.scrollUntilVisible(
+      find.textContaining('retrying in'),
+      -200,
+      scrollable: find
+          .byWidgetPredicate(
+            (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+          )
+          .first,
+    );
     expect(find.textContaining('retrying in'), findsOneWidget);
     expect(find.text('Retry now'), findsNothing);
   });

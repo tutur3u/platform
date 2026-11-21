@@ -35100,6 +35100,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified'**
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified);
+
+  /// No description provided for @mastermindFleetAnswerRetryingAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet · attempt {attempt} · retrying in {seconds} s'**
+  String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds);
+
+  /// No description provided for @mastermindFleetAnswerChangesRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes requested'**
+  String get mastermindFleetAnswerChangesRequested;
+
+  /// No description provided for @mastermindFleetUrgencyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get mastermindFleetUrgencyHigh;
+
+  /// No description provided for @mastermindFleetUrgencyNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get mastermindFleetUrgencyNormal;
+
+  /// No description provided for @mastermindFleetInboxNeedsYouTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you {count}'**
+  String mastermindFleetInboxNeedsYouTab(int count);
+
+  /// No description provided for @mastermindFleetInboxFyiTab.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI {count}'**
+  String mastermindFleetInboxFyiTab(int count);
+
+  /// No description provided for @mastermindFleetUpdatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get mastermindFleetUpdatesTitle;
+
+  /// No description provided for @mastermindFleetMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get mastermindFleetMoreOptions;
+
+  /// No description provided for @mastermindFleetInlineReplyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply…'**
+  String get mastermindFleetInlineReplyPlaceholder;
+
+  /// No description provided for @mastermindFleetSendAndNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Send and next'**
+  String get mastermindFleetSendAndNext;
+
+  /// No description provided for @mastermindFleetResolvedClosedHere.
+  ///
+  /// In en, this message translates to:
+  /// **'closed here too'**
+  String get mastermindFleetResolvedClosedHere;
+
+  /// No description provided for @mastermindFleetReviewBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Design review'**
+  String get mastermindFleetReviewBadge;
+
+  /// No description provided for @mastermindFleetReviewOpenMockup.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full mockup'**
+  String get mastermindFleetReviewOpenMockup;
+
+  /// No description provided for @mastermindFleetReviewRequestChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Request changes'**
+  String get mastermindFleetReviewRequestChanges;
+
+  /// No description provided for @mastermindFleetReviewChangesPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What should change?'**
+  String get mastermindFleetReviewChangesPlaceholder;
+
+  /// No description provided for @mastermindFleetReviewPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Mockup preview. Opens the full mockup.'**
+  String get mastermindFleetReviewPreview;
+
+  /// No description provided for @mastermindFleetReviewPreviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview unavailable'**
+  String get mastermindFleetReviewPreviewUnavailable;
+
+  /// No description provided for @mastermindFleetLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · published {age}'**
+  String mastermindFleetLive(String age);
+
+  /// No description provided for @mastermindFleetPublisherPausedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Publisher paused'**
+  String get mastermindFleetPublisherPausedTitle;
+
+  /// No description provided for @mastermindFleetPublisherPausedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Last published {time} ({age}). Your phone is online.'**
+  String mastermindFleetPublisherPausedBody(String time, String age);
+
+  /// No description provided for @mastermindFleetPhoneOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone offline'**
+  String get mastermindFleetPhoneOfflineTitle;
+
+  /// No description provided for @mastermindFleetPhoneOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {time}. The fleet may have moved on.'**
+  String mastermindFleetPhoneOfflineBody(String time);
+
+  /// No description provided for @mastermindFleetLastReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Last reached the fleet {time}'**
+  String mastermindFleetLastReached(String time);
+
+  /// No description provided for @mastermindFleetHeadlineRunningFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{running} running, {failed} failed'**
+  String mastermindFleetHeadlineRunningFailed(int running, int failed);
+
+  /// No description provided for @mastermindFleetKpiFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindFleetKpiFailed;
+
+  /// No description provided for @mastermindFleetRecoveredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovered or cancelled'**
+  String get mastermindFleetRecoveredTitle;
+
+  /// No description provided for @mastermindFleetRecoveredBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'{cancelled} duplicates · {quota} after quota · {recovered} retried OK'**
+  String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

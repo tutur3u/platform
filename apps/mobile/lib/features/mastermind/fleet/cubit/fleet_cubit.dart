@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_pending_answer.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_fetch_clock_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_outbox_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
@@ -21,6 +22,7 @@ class FleetViewState {
     this.failure,
     this.refreshing = false,
     this.pending = const {},
+    this.lastFetchedAt,
   });
 
   final FleetLoadStatus status;
@@ -32,6 +34,11 @@ class FleetViewState {
   final bool refreshing;
   final Map<String, FleetPendingAnswer> pending;
 
+  /// When this device last read the snapshot successfully, kept across
+  /// restarts. A fresh value beside an old `receivedAt` means the publisher
+  /// stopped; a failing refresh means this device is offline.
+  final DateTime? lastFetchedAt;
+
   FleetViewState copyWith({
     FleetLoadStatus? status,
     FleetSnapshot? snapshot,
@@ -39,12 +46,14 @@ class FleetViewState {
     bool clearFailure = false,
     bool? refreshing,
     Map<String, FleetPendingAnswer>? pending,
+    DateTime? lastFetchedAt,
   }) => FleetViewState(
     status: status ?? this.status,
     snapshot: snapshot ?? this.snapshot,
     failure: clearFailure ? null : failure ?? this.failure,
     refreshing: refreshing ?? this.refreshing,
     pending: pending ?? this.pending,
+    lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
   );
 }
 
@@ -62,6 +71,7 @@ class FleetCubit extends Cubit<FleetViewState> {
   FleetCubit({
     required FleetSource source,
     FleetOutboxStore? outbox,
+    FleetFetchClockStore? fetchClock,
     this.interval = const Duration(seconds: 15),
     this.undoWindow = Duration.zero,
     String Function()? newKey,
@@ -70,6 +80,7 @@ class FleetCubit extends Cubit<FleetViewState> {
     DateTime Function()? clock,
   }) : _source = source,
        _outbox = outbox ?? MemoryFleetOutboxStore(),
+       _fetchClock = fetchClock ?? MemoryFleetFetchClockStore(),
        _clock = clock ?? DateTime.now,
        _newKey = newKey ?? newReplyIdempotencyKey,
        _periodic = periodic ?? Timer.periodic,
@@ -81,6 +92,8 @@ class FleetCubit extends Cubit<FleetViewState> {
 
   final FleetSource _source;
   final FleetOutboxStore _outbox;
+  final FleetFetchClockStore _fetchClock;
+  Future<void>? _clockRead;
   final Duration interval;
   final Duration undoWindow;
   final DateTime Function() _clock;
@@ -102,6 +115,7 @@ class FleetCubit extends Cubit<FleetViewState> {
     _attached++;
     _schedule();
     unawaited(restore());
+    unawaited(_clockRead ??= _readFetchClock());
     if (_attached == 1 && _foreground) unawaited(refresh());
   }
 
@@ -131,6 +145,17 @@ class FleetCubit extends Cubit<FleetViewState> {
     }
   }
 
+  Future<void> _readFetchClock() async {
+    final generation = _generation;
+    try {
+      final at = await _fetchClock.read();
+      if (isClosed || generation != _generation || at == null) return;
+      if (state.lastFetchedAt == null) emit(state.copyWith(lastFetchedAt: at));
+    } on Object {
+      _clockRead = null;
+    }
+  }
+
   /// Fetches now; concurrent calls share one request.
   Future<void> refresh() => _inFlight ??= _fetch().whenComplete(() {
     _inFlight = null;
@@ -146,14 +171,17 @@ class FleetCubit extends Cubit<FleetViewState> {
     try {
       final snapshot = await _source.fetch();
       if (isClosed || generation != _generation) return;
+      final fetchedAt = _now();
       emit(
         state.copyWith(
           status: FleetLoadStatus.ready,
           snapshot: snapshot,
           clearFailure: true,
           refreshing: false,
+          lastFetchedAt: fetchedAt,
         ),
       );
+      unawaited(_fetchClock.write(fetchedAt).catchError((Object _) {}));
       _settleClosed(snapshot);
     } on Object catch (error) {
       if (isClosed || generation != _generation) return;
@@ -168,6 +196,7 @@ class FleetCubit extends Cubit<FleetViewState> {
             status: FleetLoadStatus.failed,
             failure: failure,
             pending: state.pending,
+            lastFetchedAt: state.lastFetchedAt,
           ),
         );
         return;
@@ -349,6 +378,7 @@ class FleetCubit extends Cubit<FleetViewState> {
   void clear() {
     _generation++;
     _restored = null;
+    _clockRead = null;
     _cancelAllTimers();
     // Queued behind any write still in flight, so nothing recreates the
     // departing account's file after this erase.

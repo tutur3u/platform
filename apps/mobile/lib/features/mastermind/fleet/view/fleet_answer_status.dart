@@ -32,6 +32,7 @@ Widget? fleetAnswerStatus({
   ),
   (_, FleetSendStatus.retrying) => FleetRetryCountdown(
     at: pending!.nextAttemptAt,
+    attempt: pending.attempts + 1,
     challenged: pending.reason == 'verification_required',
     now: now,
     onRetry: onRetry,
@@ -69,10 +70,12 @@ String fleetRejectionLabel(AppLocalizations l10n, String? reason) =>
       _ => l10n.mastermindFleetRejectInvalid,
     };
 
-/// "Retrying in 12 s", counting down each second to the next attempt.
+/// "Not sent yet · attempt 2 · retrying in 12 s", counting down each second
+/// to the next attempt. Every attempt reuses the answer's idempotency key.
 class FleetRetryCountdown extends StatefulWidget {
   const FleetRetryCountdown({
     required this.at,
+    this.attempt,
     this.challenged = false,
     this.now,
     this.onRetry,
@@ -80,6 +83,9 @@ class FleetRetryCountdown extends StatefulWidget {
   });
 
   final DateTime? at;
+
+  /// The number of the next attempt; left out of the label when null.
+  final int? attempt;
 
   /// Web asked for a browser check this app cannot pass.
   final bool challenged;
@@ -116,7 +122,13 @@ class _FleetRetryCountdownState extends State<FleetRetryCountdown> {
       icon: LucideIcons.refreshCw,
       label: (l10n) => switch ((left > 0, widget.challenged)) {
         (true, true) => l10n.mastermindFleetAnswerChallenged(left),
-        (true, false) => l10n.mastermindFleetAnswerRetrying(left),
+        (true, false) => switch (widget.attempt) {
+          final attempt? => l10n.mastermindFleetAnswerRetryingAttempt(
+            attempt,
+            left,
+          ),
+          null => l10n.mastermindFleetAnswerRetrying(left),
+        },
         (false, _) => l10n.mastermindFleetAnswerSending,
       },
       destructive: widget.challenged,

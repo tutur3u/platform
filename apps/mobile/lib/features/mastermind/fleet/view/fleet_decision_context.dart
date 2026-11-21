@@ -47,11 +47,17 @@ class FleetDecisionMeta extends StatelessWidget {
 }
 
 /// Why it was asked, what happens without an answer, and who asks. Rows
-/// without a value are left out.
+/// without a value are left out; [showRequester] false leaves out who asks
+/// for a card that names it in its header.
 class FleetDecisionContext extends StatelessWidget {
-  const FleetDecisionContext({required this.decision, super.key});
+  const FleetDecisionContext({
+    required this.decision,
+    this.showRequester = true,
+    super.key,
+  });
 
   final FleetDecision decision;
+  final bool showRequester;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +66,8 @@ class FleetDecisionContext extends StatelessWidget {
       if (decision.why case final why?) (l10n.mastermindFleetWhy, why),
       if (decision.defaultOutcome case final outcome?)
         (l10n.mastermindFleetIfNoAnswer, outcome),
-      if (decision.requester case final from?) (l10n.mastermindFleetFrom, from),
+      if (decision.requester case final from? when showRequester)
+        (l10n.mastermindFleetFrom, from),
     ];
     if (rows.isEmpty) return const SizedBox.shrink();
     return Padding(

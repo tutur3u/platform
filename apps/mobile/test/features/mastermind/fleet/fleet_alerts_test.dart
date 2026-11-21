@@ -153,7 +153,7 @@ void main() {
 
     testWidgets('without alerts, nothing about SLOs shows', (tester) async {
       await pump(tester);
-      expect(find.text('2 decisions need you'), findsOneWidget);
+      expect(find.text('3 running, 1 failed'), findsOneWidget);
       expect(find.text('SLO burn alerts'), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
     });

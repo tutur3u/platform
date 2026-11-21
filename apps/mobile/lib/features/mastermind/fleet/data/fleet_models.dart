@@ -5,8 +5,10 @@
 library;
 
 part 'fleet_alerts.dart';
+part 'fleet_counts.dart';
 part 'fleet_login.dart';
 part 'fleet_release.dart';
+part 'fleet_review.dart';
 
 enum FleetLaneState { running, waiting, queued, idle, failed }
 
@@ -22,7 +24,10 @@ enum FleetAnswerAction {
   reply('reply'),
 
   /// "I signed in" on an open login request.
-  signedIn('signed_in');
+  signedIn('signed_in'),
+
+  /// "Request changes" on a design review; carries the owner's notes.
+  requestChanges('request_changes');
 
   const FleetAnswerAction(this.wire);
 
@@ -30,8 +35,9 @@ enum FleetAnswerAction {
   final String wire;
 }
 
-/// `ask` is the default; `login` is an access request with a [FleetLogin].
-enum FleetDecisionKind { ask, login }
+/// `ask` is the default; `login` is an access request with a [FleetLogin];
+/// `review` asks the owner to approve a design with a [FleetReview].
+enum FleetDecisionKind { ask, login, review }
 
 T? _enum<T extends Enum>(List<T> values, Object? raw) {
   for (final value in values) {
@@ -69,6 +75,7 @@ class FleetLane {
     this.model,
     this.parentId,
     this.startedAt,
+    this.resolution,
   });
 
   static FleetLane? parse(Map<String, dynamic> json) {
@@ -95,6 +102,7 @@ class FleetLane {
       model: _string(json['model']),
       parentId: _string(json['parentId']),
       startedAt: _time(json['startedAt']),
+      resolution: _enum(FleetLaneResolution.values, json['resolution']),
     );
   }
 
@@ -108,6 +116,9 @@ class FleetLane {
   final String? model;
   final String? parentId;
   final DateTime? startedAt;
+
+  /// How an idle lane that is not a failure ended; null for the rest.
+  final FleetLaneResolution? resolution;
 }
 
 class FleetMachine {
@@ -143,50 +154,6 @@ class FleetMachine {
   final FleetTodayOutcomes? todayOutcomes;
 }
 
-class FleetTodayOutcomes {
-  const FleetTodayOutcomes({
-    required this.observedAt,
-    required this.dayStart,
-    required this.partial,
-    required this.real,
-    required this.quotaRecovered,
-    required this.quotaUnrecovered,
-    required this.unclassified,
-  });
-
-  static FleetTodayOutcomes? parse(Map<String, dynamic> json) {
-    final observedAt = _time(json['observedAt']);
-    final dayStart = _time(json['dayStart']);
-    final kind = json['kind'];
-    if (observedAt == null ||
-        dayStart == null ||
-        (kind != 'complete' && kind != 'partial')) {
-      return null;
-    }
-    return FleetTodayOutcomes(
-      observedAt: observedAt,
-      dayStart: dayStart,
-      partial: kind == 'partial',
-      real: _count(json['real']),
-      quotaRecovered: _count(json['quotaRecovered']),
-      quotaUnrecovered: _count(json['quotaUnrecovered']),
-      unclassified: _count(json['unclassified']),
-    );
-  }
-
-  final DateTime observedAt;
-  final DateTime dayStart;
-  final bool partial;
-  final int real;
-  final int quotaRecovered;
-  final int quotaUnrecovered;
-  final int unclassified;
-
-  bool isToday(DateTime now) =>
-      !now.isBefore(dayStart) &&
-      now.isBefore(dayStart.add(const Duration(days: 1)));
-}
-
 class FleetOption {
   const FleetOption({required this.id, required this.label});
 
@@ -218,10 +185,11 @@ class FleetDecision {
     this.defaultOutcome,
     this.requester,
     this.login,
+    this.review,
   });
 
-  /// A login request whose payload does not parse is dropped: without it the
-  /// card could only offer answers Web refuses.
+  /// A login request or review whose payload does not parse is dropped:
+  /// without it the card could only offer answers Web refuses.
   static FleetDecision? parse(Map<String, dynamic> json) {
     final id = _string(json['id']);
     final title = _string(json['title']);
@@ -235,6 +203,10 @@ class FleetDecision {
         ? FleetLogin.parse(loginJson)
         : null;
     if (kind == FleetDecisionKind.login && login == null) return null;
+    final review = kind == FleetDecisionKind.review
+        ? FleetReview.parse(json['review'])
+        : null;
+    if (kind == FleetDecisionKind.review && review == null) return null;
     final options = _list(json['options'], FleetOption.parse);
     final recommended = _string(json['recommendedOptionId']);
     return FleetDecision(
@@ -245,6 +217,7 @@ class FleetDecision {
       defaultOutcome: _string(json['defaultOutcome']),
       requester: _string(json['requester']),
       login: login,
+      review: review,
       urgency:
           _enum(FleetUrgency.values, json['urgency']) ?? FleetUrgency.normal,
       createdAt: createdAt,
@@ -281,6 +254,9 @@ class FleetDecision {
   /// Set exactly when [kind] is [FleetDecisionKind.login].
   final FleetLogin? login;
 
+  /// Set exactly when [kind] is [FleetDecisionKind.review].
+  final FleetReview? review;
+
   FleetOption? get recommended =>
       options.where((o) => o.id == recommendedOptionId).firstOrNull;
 }
@@ -314,41 +290,6 @@ class FleetAnswerReceipt {
   final DateTime answeredAt;
   final bool pickedUp;
   final String? optionId;
-}
-
-class FleetCounts {
-  const FleetCounts({
-    this.running = 0,
-    this.waiting = 0,
-    this.queued = 0,
-    this.idle = 0,
-    this.failed = 0,
-  });
-
-  factory FleetCounts.parse(Object? raw) {
-    final json = raw is Map<String, dynamic> ? raw : const <String, dynamic>{};
-    return FleetCounts(
-      running: _count(json['running']),
-      waiting: _count(json['waiting']),
-      queued: _count(json['queued']),
-      idle: _count(json['idle']),
-      failed: _count(json['failed']),
-    );
-  }
-
-  final int running;
-  final int waiting;
-  final int queued;
-  final int idle;
-  final int failed;
-
-  int of(FleetLaneState state) => switch (state) {
-    FleetLaneState.running => running,
-    FleetLaneState.waiting => waiting,
-    FleetLaneState.queued => queued,
-    FleetLaneState.idle => idle,
-    FleetLaneState.failed => failed,
-  };
 }
 
 class FleetSnapshot {

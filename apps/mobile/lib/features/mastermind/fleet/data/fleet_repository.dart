@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 
@@ -80,10 +82,18 @@ class FleetRepository implements FleetSource {
 
   static const statePath = '/api/v1/mastermind/fleet/state';
 
-  /// Snapshot features this app renders. Without `login`, Web omits access
-  /// requests because older clients would offer answers it refuses; without
-  /// `alerts`, it omits SLO burn alerts.
-  static const featuresHeader = {'x-mastermind-fleet-features': 'login,alerts'};
+  /// Snapshot features this app renders. Without `login` or `review`, Web
+  /// omits access requests or design reviews because older clients would
+  /// offer answers it refuses; without `alerts`, it omits SLO burn alerts.
+  static const featuresHeader = {
+    'x-mastermind-fleet-features': 'login,alerts,review',
+  };
+
+  /// Web's cap on an uploaded review preview.
+  static const int reviewAssetMaxBytes = 200 * 1024;
+  static final RegExp _assetId = RegExp(r'^[0-9a-f]{64}$');
+  static String reviewAssetPath(String assetId) =>
+      '/api/v1/mastermind/fleet/review-assets/$assetId';
   static String answerPath(String decisionId) =>
       '/api/v1/mastermind/fleet/decisions/${Uri.encodeComponent(decisionId)}/answer';
 
@@ -94,6 +104,22 @@ class FleetRepository implements FleetSource {
     try {
       return FleetSnapshot.parse(
         await _api.getJsonWithHeaders(statePath, featuresHeader),
+      );
+    } on Object catch (error) {
+      throw FleetException.from(error);
+    }
+  }
+
+  /// A review preview's bytes, read with the same owner session as the
+  /// snapshot. Only a content-addressed asset id is ever requested.
+  Future<Uint8List> reviewAsset(String assetId) async {
+    if (!_assetId.hasMatch(assetId)) {
+      throw const FleetException(FleetFailure.unreadable);
+    }
+    try {
+      return await _api.getBytes(
+        reviewAssetPath(assetId),
+        maxBytes: reviewAssetMaxBytes,
       );
     } on Object catch (error) {
       throw FleetException.from(error);

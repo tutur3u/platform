@@ -19106,4 +19106,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {
     return '$real failures · $quotaRecovered quota stops auto-recovered · $quotaUnrecovered quota stops with no automatic recovery · $unclassified unclassified';
   }
+
+  @override
+  String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
+    return 'Not sent yet · attempt $attempt · retrying in $seconds s';
+  }
+
+  @override
+  String get mastermindFleetAnswerChangesRequested => 'Changes requested';
+
+  @override
+  String get mastermindFleetUrgencyHigh => 'High';
+
+  @override
+  String get mastermindFleetUrgencyNormal => 'Normal';
+
+  @override
+  String mastermindFleetInboxNeedsYouTab(int count) {
+    return 'Needs you $count';
+  }
+
+  @override
+  String mastermindFleetInboxFyiTab(int count) {
+    return 'FYI $count';
+  }
+
+  @override
+  String get mastermindFleetUpdatesTitle => 'Updates';
+
+  @override
+  String get mastermindFleetMoreOptions => 'More options';
+
+  @override
+  String get mastermindFleetInlineReplyPlaceholder => 'Reply…';
+
+  @override
+  String get mastermindFleetSendAndNext => 'Send and next';
+
+  @override
+  String get mastermindFleetResolvedClosedHere => 'closed here too';
+
+  @override
+  String get mastermindFleetReviewBadge => 'Design review';
+
+  @override
+  String get mastermindFleetReviewOpenMockup => 'Open full mockup';
+
+  @override
+  String get mastermindFleetReviewRequestChanges => 'Request changes';
+
+  @override
+  String get mastermindFleetReviewChangesPlaceholder => 'What should change?';
+
+  @override
+  String get mastermindFleetReviewPreview => 'Mockup preview. Opens the full mockup.';
+
+  @override
+  String get mastermindFleetReviewPreviewUnavailable => 'Preview unavailable';
+
+  @override
+  String mastermindFleetLive(String age) {
+    return 'Live · published $age';
+  }
+
+  @override
+  String get mastermindFleetPublisherPausedTitle => 'Publisher paused';
+
+  @override
+  String mastermindFleetPublisherPausedBody(String time, String age) {
+    return 'Last published $time ($age). Your phone is online.';
+  }
+
+  @override
+  String get mastermindFleetPhoneOfflineTitle => 'Phone offline';
+
+  @override
+  String mastermindFleetPhoneOfflineBody(String time) {
+    return 'Showing $time. The fleet may have moved on.';
+  }
+
+  @override
+  String mastermindFleetLastReached(String time) {
+    return 'Last reached the fleet $time';
+  }
+
+  @override
+  String mastermindFleetHeadlineRunningFailed(int running, int failed) {
+    return '$running running, $failed failed';
+  }
+
+  @override
+  String get mastermindFleetKpiFailed => 'Failed';
+
+  @override
+  String get mastermindFleetRecoveredTitle => 'Recovered or cancelled';
+
+  @override
+  String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
+    return '$cancelled duplicates · $quota after quota · $recovered retried OK';
+  }
 }

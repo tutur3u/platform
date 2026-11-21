@@ -9445,5 +9445,110 @@
         "type": "int"
       }
     }
+  },
+  "mastermindFleetAnswerRetryingAttempt": "Not sent yet · attempt {attempt} · retrying in {seconds} s",
+  "@mastermindFleetAnswerRetryingAttempt": {
+    "placeholders": {
+      "attempt": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetAnswerChangesRequested": "Changes requested",
+  "mastermindFleetUrgencyHigh": "High",
+  "mastermindFleetUrgencyNormal": "Normal",
+  "mastermindFleetInboxNeedsYouTab": "Needs you {count}",
+  "@mastermindFleetInboxNeedsYouTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetInboxFyiTab": "FYI {count}",
+  "@mastermindFleetInboxFyiTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetUpdatesTitle": "Updates",
+  "mastermindFleetMoreOptions": "More options",
+  "mastermindFleetInlineReplyPlaceholder": "Reply…",
+  "mastermindFleetSendAndNext": "Send and next",
+  "mastermindFleetResolvedClosedHere": "closed here too",
+  "mastermindFleetReviewBadge": "Design review",
+  "mastermindFleetReviewOpenMockup": "Open full mockup",
+  "mastermindFleetReviewRequestChanges": "Request changes",
+  "mastermindFleetReviewChangesPlaceholder": "What should change?",
+  "mastermindFleetReviewPreview": "Mockup preview. Opens the full mockup.",
+  "mastermindFleetReviewPreviewUnavailable": "Preview unavailable",
+  "mastermindFleetLive": "Live · published {age}",
+  "@mastermindFleetLive": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetPublisherPausedTitle": "Publisher paused",
+  "mastermindFleetPublisherPausedBody": "Last published {time} ({age}). Your phone is online.",
+  "@mastermindFleetPublisherPausedBody": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetPhoneOfflineTitle": "Phone offline",
+  "mastermindFleetPhoneOfflineBody": "Showing {time}. The fleet may have moved on.",
+  "@mastermindFleetPhoneOfflineBody": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetLastReached": "Last reached the fleet {time}",
+  "@mastermindFleetLastReached": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetHeadlineRunningFailed": "{running} running, {failed} failed",
+  "@mastermindFleetHeadlineRunningFailed": {
+    "placeholders": {
+      "running": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetKpiFailed": "Failed",
+  "mastermindFleetRecoveredTitle": "Recovered or cancelled",
+  "mastermindFleetRecoveredBreakdown": "{cancelled} duplicates · {quota} after quota · {recovered} retried OK",
+  "@mastermindFleetRecoveredBreakdown": {
+    "placeholders": {
+      "cancelled": {
+        "type": "int"
+      },
+      "quota": {
+        "type": "int"
+      },
+      "recovered": {
+        "type": "int"
+      }
+    }
   }
 }

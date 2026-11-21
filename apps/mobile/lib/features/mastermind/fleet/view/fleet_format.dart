@@ -70,6 +70,8 @@ extension FleetAnswerActionView on FleetAnswerAction {
     FleetAnswerAction.hold => l10n.mastermindFleetAnswerHeld,
     FleetAnswerAction.reply => l10n.mastermindFleetAnswerReplied,
     FleetAnswerAction.signedIn => l10n.mastermindFleetAnswerSignedIn,
+    FleetAnswerAction.requestChanges =>
+      l10n.mastermindFleetAnswerChangesRequested,
   };
 }
 

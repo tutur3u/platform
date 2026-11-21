@@ -10,6 +10,7 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -120,6 +121,7 @@ class _AttachedFleetState extends State<_AttachedFleet>
           onRefresh: _fleet.refresh,
           child: FleetFailureMessage(
             failure: state.failure!,
+            lastFetchedAt: state.lastFetchedAt,
             onRetry: () => unawaited(_fleet.refresh()),
           ),
         );
@@ -134,15 +136,26 @@ class FleetFailureMessage extends StatelessWidget {
   const FleetFailureMessage({
     required this.failure,
     required this.onRetry,
+    this.lastFetchedAt,
     super.key,
   });
 
   final FleetFailure failure;
   final VoidCallback onRetry;
 
+  /// When this device last reached the fleet, kept across restarts.
+  final DateTime? lastFetchedAt;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final reached = switch (lastFetchedAt) {
+      final at? => l10n.mastermindFleetLastReached(
+        '${Gmt7.day(at, locale)} ${Gmt7.time(at, locale)}',
+      ),
+      null => null,
+    };
     return switch (failure) {
       FleetFailure.forbidden => AppStateMessage(
         icon: LucideIcons.shieldOff,
@@ -161,6 +174,7 @@ class FleetFailureMessage extends StatelessWidget {
       FleetFailure.rejected => AppStateMessage(
         icon: LucideIcons.cloudOff,
         title: l10n.mastermindFleetUnavailableTitle,
+        message: reached,
         tone: AppTone.warning,
         actionLabel: l10n.commonRetry,
         onAction: onRetry,

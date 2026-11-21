@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
@@ -50,6 +51,14 @@ void main() {
     await tester.pump();
   }
 
+  // Snooze sits in a card's overflow sheet.
+  Future<void> openSnooze(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('More options').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Snooze'));
+    await tester.pumpAndSettle();
+  }
+
   Finder page() => find
       .byWidgetPredicate(
         (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
@@ -63,8 +72,7 @@ void main() {
     await pump(tester, FleetInboxPage(now: () => clock));
     expect(find.text('Ship fleet sync to production?'), findsOneWidget);
 
-    await tester.tap(find.text('Snooze').first);
-    await tester.pumpAndSettle();
+    await openSnooze(tester);
     expect(find.text('Until 5 min before deadline'), findsOneWidget);
     await tester.tap(find.text('15 minutes'));
     await tester.pumpAndSettle();
@@ -86,8 +94,7 @@ void main() {
     final store = _FailingStore();
     await setUpHarness(snoozeStore: store);
     await pump(tester, FleetInboxPage(now: () => clock));
-    await tester.tap(find.text('Snooze').first);
-    await tester.pumpAndSettle();
+    await openSnooze(tester);
     await tester.tap(find.text('15 minutes'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't snooze on this device"), findsOneWidget);
@@ -127,8 +134,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.text('Snooze').first);
-    await tester.pumpAndSettle();
+    await openSnooze(tester);
     await tester.tap(find.text('15 minutes'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't snooze on this device"), findsOneWidget);
@@ -146,8 +152,7 @@ void main() {
   ) async {
     await setUpHarness();
     await pump(tester, FleetInboxPage(now: () => clock));
-    await tester.tap(find.text('Snooze').first);
-    await tester.pumpAndSettle();
+    await openSnooze(tester);
     await tester.tap(find.text('1 hour'));
     await tester.pumpAndSettle();
     expect(find.text('Ship now'), findsNothing);
@@ -155,8 +160,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ship now'), findsOneWidget);
 
-    await tester.tap(find.text('Snooze').first);
-    await tester.pumpAndSettle();
+    await openSnooze(tester);
     await tester.tap(find.text('Tomorrow 08:00'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
@@ -220,6 +224,9 @@ void main() {
     await tester.tap(find.text('Undo'));
     await tester.pump(const Duration(seconds: 6));
     expect(source.answers, isEmpty);
+    // With nothing left in flight, the other device's answer moves to FYI.
+    await tester.tap(find.text('FYI 1'));
+    await tester.pump();
     expect(find.textContaining('On hold'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -297,16 +304,39 @@ void main() {
     expect(find.text('If no answer'), findsOneWidget);
     expect(find.text('post-deploy watch'), findsOneWidget);
     expect(find.text('Roll back now'), findsOneWidget);
-    expect(find.text('Fix forward'), findsNothing);
-    await tester.tap(find.text('More'));
-    await tester.pump();
     expect(find.text('Fix forward'), findsOneWidget);
-    expect(find.text('Hold'), findsOneWidget);
+    expect(find.text('Hold'), findsNothing);
+    await tester.tap(find.byTooltip('More options').first);
+    await tester.pumpAndSettle();
+    final sheet = find.byWidgetPredicate((w) => w is AppActionSheet);
+    for (final action in ['Hold', 'Snooze']) {
+      expect(
+        find.descendant(of: sheet, matching: find.text(action)),
+        findsOneWidget,
+      );
+    }
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
 
+    // Asks and sign-in requests share Needs you, most urgent first.
+    expect(find.text('Needs you 2'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('GitHub on MacStudio1'),
+      200,
+      scrollable: page(),
+    );
+    await tester.scrollUntilVisible(
+      find.text('FYI 2'),
+      -200,
+      scrollable: page(),
+    );
+    await tester.tap(find.text('FYI 2'));
+    await tester.pump();
     for (final text in [
-      'Access requests',
-      'For your information',
-      'Answered on WhatsApp · Retire it',
+      'Updates',
+      'Daily CI sample recorded',
+      'Answered on WhatsApp',
+      'Retire it · 09:11 · closed here too',
     ]) {
       await tester.scrollUntilVisible(find.text(text), 200, scrollable: page());
       expect(find.text(text), findsOneWidget);
@@ -330,7 +360,7 @@ void main() {
     await pump(tester, FleetTodayPage(now: () => clock));
     expect(
       find.text(
-        '3 lanes are running. 1 lane failed. Main is frozen: Vercel '
+        '3 lanes are running. Main is frozen: Vercel '
         'retirement. 3 commits are queued behind it. One login is blocking '
         'work: GitHub on MacStudio1.',
       ),

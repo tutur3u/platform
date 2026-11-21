@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/account_overlay_scope.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
@@ -115,8 +116,8 @@ void main() {
     tester,
   ) async {
     await pump(tester, FleetTodayPage(now: now));
-    expect(find.text('Updated 2 min ago'), findsOneWidget);
-    expect(find.text('2 decisions need you'), findsOneWidget);
+    expect(find.text('Live · published 2 min ago'), findsOneWidget);
+    expect(find.text('3 running, 1 failed'), findsOneWidget);
     expect(find.text('Working'), findsOneWidget);
     expect(find.text('1 of 3'), findsOneWidget);
     expect(find.text('Ship fleet sync to production?'), findsOneWidget);
@@ -143,36 +144,61 @@ void main() {
   testWidgets('a stale snapshot and a failed refresh warn', (tester) async {
     source.json = fleetSampleJson(receivedAt: '2026-11-20T02:40:00.000Z');
     await pump(tester, FleetTodayPage(now: now));
-    expect(find.textContaining('Last fleet update'), findsOneWidget);
+    // This device reads Web fine: the publisher stopped.
+    expect(find.text('Publisher paused'), findsOneWidget);
+    expect(find.textContaining('Your phone is online'), findsOneWidget);
 
+    // This device cannot reach Web: it shows when its data was read.
     source.fetchError = const ApiException.transport(message: 'offline');
     await harness.runtime.fleet.refresh();
     await tester.pump();
-    expect(find.textContaining("Couldn't refresh"), findsOneWidget);
+    expect(find.text('Phone offline'), findsOneWidget);
+    expect(find.text('Publisher paused'), findsNothing);
     expect(find.text('Ship fleet sync to production?'), findsOneWidget);
   });
 
   testWidgets('Inbox approves with the recommended option', (tester) async {
     await pump(tester, FleetInboxPage(now: now));
     expect(find.text('Urgent'), findsOneWidget);
-    expect(find.textContaining('Recommended'), findsOneWidget);
+    expect(find.text('Needs you 2'), findsOneWidget);
+    // The recommended option is the filled, first-numbered button.
+    expect(
+      find.ancestor(
+        of: find.text('Ship now'),
+        matching: find.byType(AppButton),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<AppButton>(
+            find.ancestor(
+              of: find.text('Ship now'),
+              matching: find.byType(AppButton),
+            ),
+          )
+          .variant,
+      AppButtonVariant.primary,
+    );
 
     await tester.tap(find.text('Ship now'));
     await tester.pump();
     await tester.pump();
     expect(source.answers.single, containsPair('optionId', 'now'));
     expect(source.answers.single['action'], FleetAnswerAction.approve);
+    // Answered, it leaves Needs you for FYI with how far it got.
+    expect(find.text('Needs you 1'), findsOneWidget);
+    await tester.tap(find.text('FYI 1'));
+    await tester.pump();
     expect(find.text('Answered'), findsOneWidget);
     expect(find.text('Approved · Waiting for Iris'), findsOneWidget);
   });
 
-  testWidgets('Inbox replies through the sheet and holds', (tester) async {
+  testWidgets('Inbox replies inline and sends', (tester) async {
     await pump(tester, FleetInboxPage(now: now));
-    await tester.tap(find.text('Reply').last);
-    await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText).last, 'Do it Monday');
     await tester.pump();
-    await tester.tap(find.text('Send'));
+    await tester.tap(find.byTooltip('Send and next').last);
     await tester.pumpAndSettle();
     expect(source.answers.single['text'], 'Do it Monday');
     expect(source.answers.single['decisionId'], 'pool-switch');
@@ -185,6 +211,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.textContaining('retrying in'), findsOneWidget);
+    expect(find.textContaining('attempt 2'), findsOneWidget);
     source.answerError = null;
     await tester.tap(find.text('Retry now'));
     await tester.pump();

@@ -4,12 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_banner.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// "Updated 12 s ago", measured from Web's `receivedAt` (when the publisher's
-/// snapshot arrived) and re-rendered every second so the age stays true
-/// between polls. Warns when the snapshot is older than [fleetStaleAfter].
+/// Which side is behind. "Live · published 12 s ago" while the snapshot is
+/// fresh, measured from Web's `receivedAt` and re-rendered every second.
+/// "Phone offline" when this device's own refresh cannot reach Web, with the
+/// time of the data on screen. "Publisher paused" when this device reads Web
+/// fine but the snapshot is older than [fleetStaleAfter]: the machine stopped
+/// publishing. Any other refresh failure keeps the "Couldn't refresh" line.
 class FleetFreshnessLine extends StatelessWidget {
   const FleetFreshnessLine({required this.state, this.now, super.key});
 
@@ -22,11 +28,28 @@ class FleetFreshnessLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final snapshot = state.snapshot;
     if (snapshot == null) return const SizedBox.shrink();
-    return FleetReceiptFreshnessLine(
-      receivedAt: snapshot.receivedAt,
-      failed: state.failure != null,
-      refreshing: state.refreshing,
+    final failure = state.failure;
+    if (failure == FleetFailure.unavailable) {
+      return FleetFreshnessBanner.offline(
+        shownAt: state.lastFetchedAt ?? snapshot.receivedAt,
+      );
+    }
+    return FleetClock(
       now: now,
+      builder: (context, current) =>
+          failure == null &&
+              current.difference(snapshot.receivedAt) > fleetStaleAfter
+          ? FleetFreshnessBanner.paused(
+              publishedAt: snapshot.receivedAt,
+              now: current,
+            )
+          : FleetReceiptFreshnessLine(
+              receivedAt: snapshot.receivedAt,
+              failed: failure != null,
+              refreshing: state.refreshing,
+              freshLabel: (l10n, age) => l10n.mastermindFleetLive(age),
+              now: now,
+            ),
     );
   }
 }
@@ -36,6 +59,7 @@ class FleetReceiptFreshnessLine extends StatefulWidget {
     required this.receivedAt,
     this.failed = false,
     this.refreshing = false,
+    this.freshLabel,
     this.now,
     super.key,
   });
@@ -43,6 +67,9 @@ class FleetReceiptFreshnessLine extends StatefulWidget {
   final DateTime receivedAt;
   final bool failed;
   final bool refreshing;
+
+  /// The fresh-state wording; "Updated {age}" without it.
+  final String Function(AppLocalizations l10n, String age)? freshLabel;
   final DateTime Function()? now;
 
   @override
@@ -87,7 +114,8 @@ class _FleetFreshnessLineState extends State<FleetReceiptFreshnessLine> {
             AppTone.warning,
           )
         : (
-            l10n.mastermindFleetUpdated(age),
+            widget.freshLabel?.call(l10n, age) ??
+                l10n.mastermindFleetUpdated(age),
             LucideIcons.refreshCw,
             AppTone.neutral,
           );

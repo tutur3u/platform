@@ -12,6 +12,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_digest.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_machines_panel.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_recovered_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_release_strip.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
@@ -41,6 +42,10 @@ class FleetTodayPage extends StatelessWidget {
                   FleetHealthHero(snapshot: snapshot, now: current),
                   const SizedBox(height: AppSpacing.lg),
                   _Kpis(snapshot: snapshot, now: current),
+                  if (snapshot.counts.resolved > 0) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    FleetRecoveredCard(counts: snapshot.counts),
+                  ],
                 ],
               ),
             ),
@@ -85,41 +90,31 @@ class FleetHealthHero extends StatelessWidget {
     final counts = snapshot.counts;
     final open = snapshot.needsYouAt(now).length;
     final paging = snapshot.pageAlerts.length;
-    final failures = _observedRealFailures(snapshot, now);
+    // Failed counts only terminal failures nobody picked up again; recovered
+    // and cancelled lanes have their own card.
     final (headline, tone, icon) = paging > 0
         ? (
             l10n.mastermindFleetHeadlinePaging(paging),
             AppTone.destructive,
             LucideIcons.flame,
           )
-        : open > 0
+        : counts.running == 0 && counts.failed == 0
         ? (
-            l10n.mastermindFleetHeadlineNeedsYou(open),
-            AppTone.warning,
-            LucideIcons.inbox,
-          )
-        : failures > 0
-        ? (
-            l10n.mastermindFleetHeadlineFailed(failures),
-            AppTone.destructive,
-            LucideIcons.circleAlert,
-          )
-        : counts.failed > 0
-        ? (
-            '${l10n.mastermindFleetStopped} · ${counts.failed}',
-            AppTone.warning,
-            LucideIcons.circleAlert,
-          )
-        : counts.running > 0
-        ? (
-            l10n.mastermindFleetHeadlineRunning(counts.running),
-            AppTone.success,
-            LucideIcons.activity,
+            l10n.mastermindFleetHeadlineQuiet,
+            open > 0 ? AppTone.warning : AppTone.neutral,
+            open > 0 ? LucideIcons.inbox : LucideIcons.moon,
           )
         : (
-            l10n.mastermindFleetHeadlineQuiet,
-            AppTone.neutral,
-            LucideIcons.moon,
+            l10n.mastermindFleetHeadlineRunningFailed(
+              counts.running,
+              counts.failed,
+            ),
+            counts.failed > 0
+                ? AppTone.destructive
+                : open > 0
+                ? AppTone.warning
+                : AppTone.success,
+            counts.failed > 0 ? LucideIcons.circleAlert : LucideIcons.activity,
           );
     final online = snapshot.machines
         .where(
@@ -201,10 +196,10 @@ class _Kpis extends StatelessWidget {
           onTap: () => context.go(Routes.mastermindInbox),
         ),
         AppStatTile(
-          label: l10n.mastermindFleetStopped,
+          label: l10n.mastermindFleetKpiFailed,
           value: '${counts.failed}',
           icon: FleetLaneState.failed.icon,
-          tone: alarm(counts.failed, AppTone.warning),
+          tone: alarm(counts.failed, AppTone.destructive),
           onTap: () => context.go(
             '${Routes.mastermindWork}?state=${FleetLaneState.failed.name}',
           ),
@@ -213,17 +208,6 @@ class _Kpis extends StatelessWidget {
     );
   }
 }
-
-int _observedRealFailures(FleetSnapshot snapshot, DateTime now) => snapshot
-    .machines
-    .map((machine) => machine.todayOutcomes)
-    .whereType<FleetTodayOutcomes>()
-    .where(
-      (outcome) =>
-          outcome.isToday(now) &&
-          now.difference(outcome.observedAt) <= fleetStaleAfter,
-    )
-    .fold(0, (total, outcome) => total + outcome.real);
 
 class _TodayOutcomesPanel extends StatelessWidget {
   const _TodayOutcomesPanel({required this.snapshot, required this.now});

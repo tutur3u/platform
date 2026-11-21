@@ -452,18 +452,29 @@ product rules of the shell entry and every tab.
 Today and Inbox are the phone's command center over the fleet snapshot. They
 use the shared Sorbet-aware kit (`AppSummaryHero`, `AppStatTile`, `AppCard`,
 `AppRichRow`) inside the Mastermind shell: one top title, the floating dock
-owns Back, and every list reserves the dock clearance. Code lives in
+owns Back (on root tabs it returns to the app hub, which is how iPhone
+users leave Mastermind), and every list reserves the dock clearance. The
+Mastermind web app has no dock Back; the browser owns it. Code lives in
 `apps/mobile/lib/features/mastermind/fleet/`.
 
 - **Feature header:** every snapshot read sends
-  `x-mastermind-fleet-features: login,alerts`, so Web includes access
-  requests and firing SLO burn alerts.
+  `x-mastermind-fleet-features: login,alerts,review`, so Web includes access
+  requests, firing SLO burn alerts and design reviews.
   The parser stays tolerant per entry: a login request whose payload does
   not parse is dropped rather than shown as an ask, as is an open one
   without a safe https link, an expiry or (device flow) a code, and an
   unknown answer channel or release part is omitted.
-- **Today:** the hero headline keeps the most pressing fact (paging SLO
-  burns, decisions waiting, failed lanes, running lanes or a quiet fleet). Under "What's
+- **Today:** the hero headline keeps paging SLO burns first, otherwise "N
+  running, M failed" with `counts.failed` (failures nobody picked up again),
+  or a quiet fleet. A "Recovered or cancelled" card shows the total of
+  `counts.cancelled`, `quotaRecovered` and `recovered` with the breakdown
+  "X duplicates · Y after quota · Z retried OK", hidden when all are zero.
+  A freshness banner tells "Publisher paused" (this phone's own last fetch
+  succeeded recently but the snapshot's `receivedAt` is old) from "Phone
+  offline" (this phone's fetches fail; it shows when the data on screen
+  arrived). The phone keeps its last successful fetch time per signed-in
+  user, and only that time: the snapshot itself is not cached on disk,
+  because it can carry device sign-in codes. Under "What's
   happening now" it composes a digest only from snapshot fields: running and
   failed lanes, the main freeze with its reason and queue, production down or
   degraded, open incidents, and each open login as "<service> on
@@ -485,21 +496,28 @@ owns Back, and every list reserves the dock clearance. Code lives in
 
 ### Fleet Inbox
 
-- **Tiers:** Urgent (`urgent`), Access requests (every open login request,
-  whatever its urgency, because it blocks work), Needs a decision (`high`
-  and `normal`) and For your information (`fyi`), then Snoozed and Answered.
-  "Nothing needs you" shows when no open card is left after snoozes. A login
-  request that has ended stays in Access requests with its state but no
-  longer counts toward Need you and cannot be snoozed; one answered with
-  "I signed in" still counts as blocked on login until the agent verifies
-  it.
-- **Ask cards:** age and a deadline countdown ("Due in 19:00" under an hour,
-  "Due in 2 h 5 min" beyond it, "Past deadline" after it), the title and
-  body, then Why, If no answer and From rows when the publisher sent `why`,
-  `defaultOutcome` and `requester`. With a recommended option the primary
-  button answers it in one tap; More reveals the other options and Hold.
-  Without one, the options, Approve and Hold show directly. Reply and Snooze
-  are always offered.
+- **Lanes:** a "Needs you N" / "FYI N" switch at the top of the Inbox root
+  (no extra top bar; the shell owns the title). Needs you holds open asks,
+  design reviews and open sign-in requests, most urgent first; FYI holds
+  FYI asks, this device's answers with their delivery state, and decisions
+  resolved anywhere ("Answered on WhatsApp" with the chosen option and
+  "closed here too"). "Nothing needs you" shows when no open card is left
+  after snoozes. A login request that has ended no longer counts toward
+  Need you and cannot be snoozed; one answered with "I signed in" still
+  counts as blocked on login until the agent verifies it.
+- **Ask cards:** urgency, deadline countdown ("Due in 19:00" under an hour,
+  "Due in 2 h 5 min" beyond it, "Past deadline" after it), the title, Why
+  now and If no answer. The recommended option is the filled primary
+  button; the next option sits beside More, which opens the remaining
+  options, Hold and Snooze. An inline reply box sends a free reply steered
+  to the asking lane ("send and next": the list moves to the next card).
+- **Design reviews:** the preview image (the uploaded asset is read with the
+  owner's bearer from `/api/v1/mastermind/fleet/review-assets/<id>`, at most
+  200 KiB; a hosted preview must be https on a tuturuuu.com host with an
+  image path), Open full mockup through the app link launcher (claude.ai
+  artifact paths or tuturuuu.com hosts only), Approve, and Request changes,
+  which opens an inline notes box and sends `request_changes`. The app
+  declares `x-mastermind-fleet-features: login,alerts,review`.
 - **Undo:** an answer waits five seconds ("About to send") before it is
   posted, and Undo in that window drops it unsent, even when a poll brings
   another device's answer meanwhile: the card keeps its place and this

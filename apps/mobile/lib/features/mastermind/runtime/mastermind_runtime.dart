@@ -15,6 +15,7 @@ import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_fetch_clock_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_outbox_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
@@ -52,11 +53,13 @@ final class MastermindRuntime {
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
     FleetOutboxStore? fleetOutboxStore,
+    FleetFetchClockStore? fleetFetchClockStore,
     FleetAccessCubit? fleetAccess,
     Stream<bool>? onlineChanges,
     Stream<void>? mastermindPushes,
   }) : _fleet = fleet,
        _fleetOutboxStore = fleetOutboxStore,
+       _fleetFetchClockStore = fleetFetchClockStore,
        fleetAccess =
            fleetAccess ?? FleetAccessCubit(source: FleetAccessRepository()),
        _fleetSnoozeStore = fleetSnoozeStore,
@@ -147,6 +150,7 @@ final class MastermindRuntime {
       irisTrust: trust,
       fleetSnoozeStore: PrefsFleetSnoozeStore(userId: userId),
       fleetOutboxStore: createFleetOutboxStore(userId: userId),
+      fleetFetchClockStore: PrefsFleetFetchClockStore(userId: userId),
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
       mastermindPushes: mastermindPushes,
     );
@@ -197,10 +201,12 @@ final class MastermindRuntime {
   FleetCubit get fleet => _fleet ??= FleetCubit(
     source: FleetRepository(),
     outbox: _fleetOutboxStore,
+    fetchClock: _fleetFetchClockStore,
     undoWindow: fleetUndoWindow,
   );
   FleetCubit? _fleet;
   final FleetOutboxStore? _fleetOutboxStore;
+  final FleetFetchClockStore? _fleetFetchClockStore;
 
   static const fleetUndoWindow = Duration(seconds: 5);
 
