@@ -319,19 +319,6 @@ export const USE_CASES: readonly UseCase[] = [
   uc('ai-spend', 'govern', 'ai-studio', ['admin'], 'ai-provider-expenses'),
 ];
 
-/** Role-play journey: each step lists the capabilities it relies on. */
-export const JOURNEY: readonly { id: string; uses: readonly string[] }[] = [
-  { id: 'arrive', uses: ['class-size', 'co-teach'] },
-  { id: 'learn', uses: ['share', 'captions', 'transcripts'] },
-  { id: 'stuck', uses: ['ai-levels', 'mira-screen'] },
-  { id: 'upskii', uses: ['generators', 'quiz-sets'] },
-  { id: 'practise', uses: ['handwriting', 'co-code', 'notebooks'] },
-  { id: 'check', uses: ['quiz', 'points'] },
-  { id: 'switch', uses: ['captions', 'integrity', 'ai-log'] },
-];
-/** From this step on, the participant is back in the teacher's seat. */
-export const TEACHER_SEAT_FROM = 'switch';
-
 export const AGENDA = [
   'join',
   'class',
@@ -340,20 +327,8 @@ export const AGENDA = [
   'behind',
   'plan',
 ] as const;
-export const AI_LEVELS = ['off', 'hints', 'full'] as const;
-export type AiLevel = (typeof AI_LEVELS)[number];
 /** The deliverable behind the AI-help demo. */
 export const AI_LEVELS_DELIVERABLE = 'meet-classroom-ai-levels';
-/**
- * The only journey steps whose screen changes with the AI help level. The
- * level control is shown on these steps alone: no control without an effect.
- */
-export const AI_LEVEL_STEPS = ['stuck', 'practise', 'check'] as const;
-export type AiLevelStep = (typeof AI_LEVEL_STEPS)[number];
-export function isAiLevelStep(id: string): id is AiLevelStep {
-  return (AI_LEVEL_STEPS as readonly string[]).includes(id);
-}
-
 /** "What you'll learn" cards, after the hero. */
 export const LEARN = [
   'classroom',

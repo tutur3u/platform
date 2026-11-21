@@ -36,7 +36,7 @@ export function UpskiiLink({ children = 'Upskii' }: { children?: ReactNode }) {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <img src={upskiiLogo} alt="" width={16} height={16} loading="lazy" />
+      <img src={upskiiLogo} alt="" width={16} height={16} />
       {children}
     </a>
   );
@@ -50,13 +50,7 @@ export function UpskiiMark({ text }: { text: string }) {
       {parts.map((part, index) =>
         part === 'Upskii' ? (
           <span key={index} className="ws-upskii is-plain">
-            <img
-              src={upskiiLogo}
-              alt=""
-              width={16}
-              height={16}
-              loading="lazy"
-            />
+            <img src={upskiiLogo} alt="" width={16} height={16} />
             Upskii
           </span>
         ) : (

@@ -148,86 +148,6 @@
   letter-spacing: -0.01em;
 }
 
-.ws-agenda {
-  position: relative;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 10px;
-}
-.ws-agenda li {
-  position: relative;
-  display: flex;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--rm-line);
-  border-radius: var(--rm-radius);
-  background: var(--rm-panel);
-}
-.ws-agenda h3 {
-  margin: 0;
-  font-size: 16px;
-}
-.ws-agenda p {
-  margin: 4px 0 0;
-  color: var(--rm-muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-.ws-num {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: var(--rm-soft);
-  font-size: 13px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.ws-journey {
-  display: grid;
-  gap: 16px;
-}
-.ws-steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.ws-steps button {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid var(--rm-line);
-  background: var(--rm-panel);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.ws-steps [aria-current="step"] {
-  background: var(--rm-ink);
-  color: var(--rm-bg);
-  border-color: var(--rm-ink);
-}
-.ws-step h3 {
-  margin: 8px 0 6px;
-  font-size: 20px;
-}
-.ws-step p {
-  margin: 0;
-  color: var(--rm-muted);
-  line-height: 1.55;
-}
-.ws-step-count {
-  color: var(--rm-muted);
-  font-weight: 600;
-  font-size: 14px;
-}
 .ws-seat {
   display: inline-flex;
   padding: 3px 10px;
@@ -243,33 +163,7 @@
   color: var(--rm-merge-text);
   background: color-mix(in oklab, var(--rm-merge) 12%, transparent);
 }
-.ws-uses-label {
-  margin: 14px 0 6px !important;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.ws-step-nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.ws-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--rm-line);
-  border-radius: 999px;
-  background: transparent;
-  font-weight: 600;
-}
-.ws-ghost:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+
 .ws-uses {
   margin: 0;
   padding: 0;
@@ -307,76 +201,7 @@
 .ws-tool .ws-upskii {
   min-height: 24px;
 }
-.ws-ai {
-  display: grid;
-  gap: 16px;
-}
-.ws-levels {
-  max-width: 100%;
-  overflow-x: auto;
-}
-.ws-levels label {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  min-height: 32px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--rm-muted);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.ws-levels input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.ws-levels label:has(input:focus-visible) {
-  outline: 2px solid var(--rm-sync);
-  outline-offset: 2px;
-}
-.ws-levels label[data-checked] {
-  background: var(--rm-ink);
-  color: var(--rm-bg);
-}
-.ws-chat {
-  display: grid;
-  gap: 10px;
-}
-.ws-bubble {
-  margin: 0;
-  max-width: 34rem;
-  padding: 12px 14px;
-  border-radius: 16px;
-  line-height: 1.5;
-  display: grid;
-  gap: 4px;
-}
-.ws-bubble.student {
-  justify-self: end;
-  background: var(--rm-soft);
-}
-.ws-bubble.assistant {
-  border: 1px solid color-mix(in oklab, var(--rm-merge) 35%, transparent);
-  background: color-mix(in oklab, var(--rm-merge) 8%, transparent);
-}
-.ws-bubble.assistant.off {
-  border-style: dashed;
-  border-color: var(--rm-line);
-  background: transparent;
-  color: var(--rm-muted);
-}
-.ws-who {
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--rm-muted);
-}
+
 .ws-note,
 .ws-honesty {
   margin: 0;
@@ -437,21 +262,21 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+/* Product pills share one height; the Upskii pill reads like its neighbours. */
+.ws-tool-list .ws-tool {
+  align-items: center;
+  min-height: 24px;
+}
+.ws-tool-list .ws-upskii {
+  font-weight: inherit;
+  text-decoration: none;
+}
 @media (min-width: 720px) {
   .ws-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ws-steps button,
-  .ws-levels label,
-  .ws-ghost {
-    transition:
-      background-color 160ms ease,
-      color 160ms ease;
-  }
-}
 .ws-explore {
   display: grid;
   gap: 10px;

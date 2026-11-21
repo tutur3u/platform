@@ -1,0 +1,247 @@
+/* EduFest workshop: the interactive live-class demo. Responsive and motion
+   rules for it live in workshop-visuals.css with the other sections. */
+/* Live class. */
+.ws-live-frame {
+  gap: 0;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-lg);
+  background: var(--rm-panel);
+}
+.ws-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rm-line);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ws-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rm-live);
+}
+.ws-live-window {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ws-live-demo {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: var(--rm-merge-text);
+  background: var(--rm-merge-fill);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ws-live-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: auto;
+  margin: 14px 16px 0;
+}
+.ws-live-stack {
+  display: grid;
+}
+.ws-live-panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+  padding: 16px;
+}
+.ws-live-panel[data-state="inactive"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.ws-ask {
+  display: grid;
+  gap: 16px;
+}
+.ws-ask-thread {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.ws-msg {
+  max-width: 36rem;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  line-height: 1.55;
+}
+.ws-msg b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.ws-msg.you {
+  justify-self: end;
+  background: var(--rm-soft);
+}
+.ws-msg.ai.hint {
+  background: var(--rm-merge-fill);
+}
+.ws-msg.ai.answer {
+  background: var(--rm-progress-fill);
+}
+.ws-msg-tag {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--rm-panel);
+  font-size: 11px;
+}
+.ws-ask-controls {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  justify-items: start;
+}
+.ws-ask-controls .ws-note {
+  margin: 0;
+  color: var(--rm-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ws-quiz-q {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.ws-quiz-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-quiz-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  overflow: hidden;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  color: var(--rm-ink);
+  background: var(--rm-panel);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ws-quiz-option:disabled {
+  cursor: default;
+}
+.ws-quiz-option:focus-visible {
+  outline: 2px solid var(--rm-ring);
+  outline-offset: 2px;
+}
+.ws-quiz-option[data-picked] {
+  border-color: var(--rm-ring);
+  background: var(--rm-sync-fill);
+}
+.ws-quiz-option[data-right] {
+  border-color: var(--rm-live);
+  background: var(--rm-live-fill);
+}
+.ws-quiz-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-quiz-share {
+  margin-left: auto;
+  color: var(--rm-muted);
+  font-size: 13px;
+}
+.ws-quiz-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--rm-ring);
+  transform-origin: left;
+}
+.ws-quiz-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+.ws-quiz-foot p {
+  margin: 0;
+  color: var(--rm-muted);
+  font-size: 14px;
+}
+.ws-seat-view {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-soft);
+}
+.ws-seat-view > p:not(.ws-seat-kicker) {
+  margin: 0;
+  line-height: 1.6;
+}
+.ws-seat-view.is-teacher {
+  background: var(--rm-panel);
+}
+.ws-kpi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 14px;
+}
+.ws-kpi dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--rm-muted);
+  font-size: 13px;
+}
+.ws-kpi dd {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-meter {
+  display: block;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+}
+.ws-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--rm-live);
+  transform-origin: left;
+}
+.ws-stuck-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-stuck-list li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--rm-progress-text);
+  background: var(--rm-progress-fill);
+  font-size: 13px;
+}

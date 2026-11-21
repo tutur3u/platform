@@ -15,13 +15,11 @@ import {
 import { tracks } from '../tracks.ts';
 import {
   AGENDA,
-  AI_LEVELS,
   AI_LEVELS_DELIVERABLE,
   CAPABILITIES,
   DEMOS,
   demoBadge,
   FAQ,
-  JOURNEY,
   LEARN,
   PRACTICAL,
   TOOLS,
@@ -64,13 +62,10 @@ function keys(value: unknown, prefix = ''): string[] {
 }
 
 describe('EduFest workshop: statuses come only from the roadmap', () => {
-  it('every capability, the AI demo and the journey resolve to real deliverables', () => {
+  it('every capability and the AI help demo resolve to real deliverables', () => {
     assert.deepEqual(unresolved(USE_CASES.map((item) => item.deliverable)), []);
     assert.ok(deliverables.has(AI_LEVELS_DELIVERABLE));
     const ids = new Set(USE_CASES.map((item) => item.id));
-    for (const step of JOURNEY)
-      for (const id of step.uses)
-        assert.ok(ids.has(id), `${step.id} uses ${id}`);
     assert.equal(ids.size, USE_CASES.length, 'use case ids are unique');
   });
 
@@ -125,11 +120,6 @@ describe('EduFest workshop: copy', () => {
         assert.ok(messages.capabilities.groups[id]);
       for (const id of TOOLS) assert.ok(messages.tools.names[id]);
       for (const id of AGENDA) assert.ok(messages.agenda.items[id]);
-      for (const id of AI_LEVELS) assert.ok(messages.aiDemo.levels[id]);
-      for (const step of JOURNEY)
-        assert.ok(
-          messages.journey.steps[step.id as keyof typeof messages.journey.steps]
-        );
     }
   });
 
@@ -269,9 +259,9 @@ describe('EduFest workshop: learn, demos and practical information', () => {
       en.demos.items.classroom.body,
       /a target; hosted video capacity is not yet verified/
     );
-    assert.match(en.journey.steps.stuck.body, /teacher controls are planned/);
+    assert.match(en.liveClass.ask.workshopNote, /hints only/);
     assert.match(en.demos.items.booth.body, /^A preview/);
-    assert.ok(!('subtitle' in en.aiDemo), 'unused default-off claim');
+    assert.match(en.booth.note, /not public yet/);
     assert.match(en.demos.items.mira.body, /18\+/);
     // Broken variant: the old wording promised a teacher choice that is planned.
     assert.doesNotMatch(
@@ -331,29 +321,6 @@ describe('EduFest workshop: hero', () => {
         messages.hero.title.includes(messages.hero.titleMark),
         messages.hero.titleMark
       );
-  });
-});
-
-describe('EduFest workshop: AI help levels', () => {
-  it('the level control shows only on steps whose screen changes with it', async () => {
-    const { AI_LEVEL_STEPS, isAiLevelStep } = await import('./edufest-2026.ts');
-    const steps = new Set(JOURNEY.map((step) => step.id));
-    for (const id of AI_LEVEL_STEPS) assert.ok(steps.has(id), id);
-    assert.equal(isAiLevelStep('stuck'), true);
-    // Broken variant: a step without level-dependent content gets no control.
-    assert.equal(isAiLevelStep('arrive'), false);
-    const component = workshopSource('simulator.tsx');
-    const gate = component.indexOf('isAiLevelStep(step.id) ?');
-    assert.ok(gate > 0 && gate < component.indexOf('ws-levels'));
-  });
-
-  it('every level-dependent step has copy for every level, in EN and VI', () => {
-    for (const messages of [en, vi])
-      for (const level of AI_LEVELS) {
-        assert.ok(messages.aiDemo.levels[level].reply);
-        assert.ok(messages.aiDemo.practise[level]);
-        assert.ok(messages.aiDemo.check[level]);
-      }
   });
 });
 

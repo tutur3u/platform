@@ -35,20 +35,19 @@
 
 /* FAQ: one light card of rows with hairline dividers and a turning chevron. */
 .ws-faq {
-  border: 1px solid var(--rm-line);
-  border-radius: calc(var(--rm-radius) + 4px);
-  background: var(--rm-panel);
-  overflow: hidden;
-}
-.ws-faq-item + .ws-faq-item {
+  width: 100%;
   border-top: 1px solid var(--rm-line);
+}
+.ws-faq-item {
+  border-bottom: 1px solid var(--rm-line);
 }
 .ws-faq-item summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 22px;
+  min-height: 56px;
+  padding: 16px 4px;
   cursor: pointer;
   list-style: none;
   font-size: 16px;
@@ -59,11 +58,11 @@
   display: none;
 }
 .ws-faq-item summary:hover {
-  background: var(--rm-soft);
+  color: var(--rm-mark);
 }
 .ws-faq-item summary:focus-visible {
-  outline: 2px solid var(--purple);
-  outline-offset: -2px;
+  outline: 2px solid var(--rm-ring);
+  outline-offset: 2px;
   border-radius: 6px;
 }
 .ws-faq-icon {
@@ -74,12 +73,15 @@
   transform: rotate(180deg);
   color: var(--rm-ink);
 }
+.ws-faq-answer {
+  padding: 0 4px 20px;
+}
 .ws-faq-answer p {
   margin: 0;
-  padding: 0 22px 20px;
-  max-width: 68ch;
+  max-width: 72ch;
   color: var(--rm-muted);
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.65;
 }
 @media (prefers-reduced-motion: no-preference) {
   .ws-faq-icon {
@@ -100,157 +102,8 @@
     block-size: auto;
   }
 }
-/* Agenda as a timeline: a rail through the numbered steps. */
-.ws-agenda::before {
-  content: "";
-  position: absolute;
-  left: 27px;
-  top: 18px;
-  bottom: 18px;
-  width: 2px;
-  background: var(--rm-line);
-}
-.ws-agenda .ws-num {
-  background: var(--rm-panel);
-  border: 2px solid var(--rm-merge);
-  color: var(--rm-merge-text);
-}
+/* EduFest workshop: Upskii marks and the brand cards. */
 
-/* EduFest redesign: hero art, stage band, simulator, brands. */
-.ws-stage {
-  position: relative;
-  padding: 28px 18px;
-  border-radius: calc(var(--rm-radius) + 8px);
-  background:
-    radial-gradient(
-      60% 80% at 10% 0%,
-      color-mix(in oklab, var(--cyan) 14%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      60% 80% at 100% 100%,
-      color-mix(in oklab, var(--purple) 16%, transparent),
-      transparent 70%
-    ),
-    color-mix(in oklab, var(--rm-ink) 4%, var(--rm-panel));
-  border: 1px solid var(--rm-line);
-}
-.ws-sim {
-  display: grid;
-  gap: 16px;
-}
-.ws-sim-rail {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.ws-sim-rail button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 6px 12px 6px 6px;
-  border: 1px solid var(--rm-line);
-  border-radius: 999px;
-  background: var(--rm-panel);
-  font-size: 13.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-align: left;
-}
-.ws-sim-rail [aria-current="step"] {
-  border-color: var(--rm-merge);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rm-merge) 18%, transparent);
-}
-.ws-sim-dot {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: var(--rm-soft);
-  font-variant-numeric: tabular-nums;
-}
-.ws-sim-rail [aria-current="step"] .ws-sim-dot {
-  background: var(--rm-merge);
-  color: var(--rm-bg);
-}
 .ws-upskii.is-plain {
   text-decoration: none;
-}
-.ws-sim-rail .ws-upskii img {
-  display: none;
-}
-.ws-device {
-  display: grid;
-  gap: 0;
-  border: 1px solid var(--rm-line);
-  border-radius: 18px;
-  background: var(--rm-panel);
-  overflow: hidden;
-  box-shadow: 0 24px 60px -32px
-    color-mix(in oklab, var(--rm-ink) 45%, transparent);
-}
-.ws-device-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--rm-line);
-  background: var(--rm-soft);
-}
-.ws-device-dots {
-  display: inline-flex;
-  gap: 5px;
-}
-.ws-device-dots i {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--rm-ink) 22%, transparent);
-}
-.ws-device-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--rm-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ws-device-screen {
-  display: grid;
-  gap: 10px;
-  padding: 18px;
-  min-height: 300px;
-  align-content: start;
-}
-.ws-device-screen h3 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(22px, 4vw, 30px);
-  letter-spacing: -0.03em;
-}
-.ws-device-body {
-  margin: 0;
-  color: var(--rm-muted);
-  line-height: 1.55;
-}
-.ws-device-foot {
-  display: grid;
-  gap: 8px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--rm-line);
-}
-.ws-device-foot legend {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
 }

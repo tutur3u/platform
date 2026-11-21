@@ -12,14 +12,16 @@ import type { Lang } from '../components/shared';
 import {
   useWorkshopStatuses,
   WsAgenda,
+  WsAgentTeam,
+  WsBoothHall,
   WsCapabilities,
   WsDemos,
   WsFaq,
   WsHero,
   WsLearn,
-  WsPractical,
-  WsSimulator,
+  WsLiveClass,
   WsTools,
+  WsVenue,
 } from '../components/workshop';
 import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
@@ -73,19 +75,25 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
             <WsLearn t={t} />
           </Suspense>
           <Suspense>
+            <WsLiveClass t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
             <WsAgenda t={t} />
           </Suspense>
           <Suspense>
             <WsDemos t={t} statuses={statuses} />
           </Suspense>
           <Suspense>
-            <WsSimulator t={t} statuses={statuses} />
+            <WsAgentTeam t={t} />
+          </Suspense>
+          <Suspense>
+            <WsBoothHall t={t} />
           </Suspense>
           <Suspense>
             <WsTools t={t} logo={logo} />
           </Suspense>
           <Suspense>
-            <WsPractical t={t} />
+            <WsVenue t={t} />
           </Suspense>
           <Suspense>
             <WsCapabilities t={t} statuses={statuses} />

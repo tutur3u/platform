@@ -29,7 +29,7 @@ export function WsTools({ t, logo }: { t: EduMessages; logo: string }) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <img src={upskiiLogo} alt="" width={40} height={40} loading="lazy" />
+          <img src={upskiiLogo} alt="" width={40} height={40} />
           <div>
             <strong>Upskii</strong>
             <p>{t.tools.upskiiBlurb}</p>

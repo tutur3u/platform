@@ -12,6 +12,7 @@ import '@tuturuuu/roadmap-core/csp.test.ts';
 import '@tuturuuu/roadmap-core/history/history.test.ts';
 import '@tuturuuu/roadmap-core/live/regressions.test.ts';
 import '@tuturuuu/roadmap-core/content/workshops/edufest-2026.test.ts';
+import '@tuturuuu/roadmap-core/content/workshops/edufest-2026-demos.test.ts';
 import '@tuturuuu/roadmap-core/live/initial-data.test.ts';
 import '@tuturuuu/roadmap-core/live/runtime-refresh.test.ts';
 import '@tuturuuu/roadmap-core/live/pulse.test.ts';

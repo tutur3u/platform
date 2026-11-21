@@ -329,7 +329,7 @@ describe('perf: hydration is split into section boundaries', () => {
     assert.ok(wrapped(read('./pages/roadmap.tsx')).includes('HostingSection'));
     assert.deepEqual(wrapped(read('./components/tracks.tsx')), ['TrackCard']);
     const edufest = wrapped(read('./pages/edufest.tsx'));
-    for (const section of ['WsSimulator', 'WsCapabilities', 'WsFaq'])
+    for (const section of ['WsLiveClass', 'WsCapabilities', 'WsFaq'])
       assert.ok(edufest.includes(section), section);
     assert.ok(!edufest.includes('WsHero'), 'the hero hydrates with the shell');
     // Broken variant: one unsplit list hydrates as a single long task.

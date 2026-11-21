@@ -1,29 +1,16 @@
-/** EduFest workshop page: what you'll learn, the live demos and practical info. */
+/** EduFest workshop page: what you'll learn and the live demo cards. */
 import {
   ArrowRight,
   Bot,
-  CalendarDays,
-  Clock,
   Gamepad2,
   GraduationCap,
-  Laptop,
-  MapPin,
   MessageCircle,
   ShieldCheck,
   Sparkles,
-  Ticket,
-  Users,
   Video,
   Zap,
 } from '@tuturuuu/icons';
-import {
-  DEMOS,
-  demoBadge,
-  LEARN,
-  mapHref,
-  PRACTICAL,
-  WORKSHOP_EVENT,
-} from '../../content/workshops/edufest-2026';
+import { DEMOS, demoBadge, LEARN } from '../../content/workshops/edufest-2026';
 import { type EduMessages, type Statuses, WsBadge } from './shared';
 
 const LEARN_ICON = {
@@ -122,70 +109,6 @@ export function WsDemos({
           );
         })}
       </ul>
-    </section>
-  );
-}
-
-const PRACTICAL_ICON = {
-  date: CalendarDays,
-  time: Clock,
-  venue: MapPin,
-  seats: Users,
-  registration: Ticket,
-  bring: Laptop,
-} as const;
-
-export function WsPractical({ t }: { t: EduMessages }) {
-  const map = mapHref(WORKSHOP_EVENT.mapQuery);
-  const value = (id: (typeof PRACTICAL)[number]) => {
-    if (id === 'date')
-      return WORKSHOP_EVENT.isoDate ? (
-        <time dateTime={WORKSHOP_EVENT.isoDate}>{t.hero.dateValue}</time>
-      ) : (
-        t.hero.toBeAnnounced
-      );
-    if (id === 'venue')
-      return WORKSHOP_EVENT.mapQuery ? (
-        <>
-          {t.hero.venueValue}
-          {map ? (
-            <>
-              {' '}
-              <a
-                className="ws-practical-link"
-                href={map}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t.hero.openMap}
-              </a>
-            </>
-          ) : null}
-        </>
-      ) : (
-        t.hero.toBeAnnounced
-      );
-    return t.practical.items[id];
-  };
-  return (
-    <section className="section" aria-labelledby="ws-practical">
-      <header className="section-head">
-        <h2 id="ws-practical">{t.practical.title}</h2>
-      </header>
-      <dl className="ws-practical">
-        {PRACTICAL.map((id) => {
-          const Icon = PRACTICAL_ICON[id];
-          return (
-            <div key={id}>
-              <dt>
-                <Icon size={16} aria-hidden />
-                {t.practical.labels[id]}
-              </dt>
-              <dd>{value(id)}</dd>
-            </div>
-          );
-        })}
-      </dl>
     </section>
   );
 }

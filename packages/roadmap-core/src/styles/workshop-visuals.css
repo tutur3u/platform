@@ -1,0 +1,477 @@
+/* EduFest workshop: the live-class demo, agenda timeline, agent flow, booth
+   hall and venue. Colours come from the --rm-* tokens; motion is transform
+   and opacity only, and anything infinite runs in the rich tier alone. */
+
+/* Shared bits. */
+.ws-seat.everyone {
+  color: var(--rm-ink);
+  background: var(--rm-soft);
+}
+.ws-seat-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--rm-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ws-demo-tag {
+  display: inline-flex;
+  padding: 1px 8px;
+  border: 1px dashed var(--rm-line);
+  border-radius: 999px;
+  color: var(--rm-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: middle;
+}
+.ws-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ws-choice legend {
+  width: 100%;
+  margin-bottom: 8px;
+  color: var(--rm-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ws-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Agenda timeline. */
+.ws-timeline {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-timeline::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 17px;
+  width: 2px;
+  background: var(--rm-line);
+}
+.ws-tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+}
+.ws-tl-node {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--rm-line);
+  border-radius: 999px;
+  background: var(--rm-panel);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-tl-card {
+  padding: 14px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-tl-card h3 {
+  margin: 10px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ws-tl-card p {
+  margin: 0;
+  color: var(--rm-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* Agent team flow. */
+.ws-flowline {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-flow-step {
+  position: relative;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-flow-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 37px;
+  bottom: -15px;
+  width: 2px;
+  height: 14px;
+  background: var(--rm-line);
+}
+.ws-flow-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  color: var(--rm-sync-text);
+  background: var(--rm-sync-fill);
+}
+.ws-flow-step.is-human .ws-flow-node {
+  color: var(--rm-merge-text);
+  background: var(--rm-merge-fill);
+}
+/* Beside the Build icon, never over it: one mark per parallel machine. */
+.ws-flow-stack {
+  position: absolute;
+  top: 50%;
+  left: 52px;
+  display: flex;
+  gap: 3px;
+  transform: translateY(-50%);
+}
+.ws-flow-stack i {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--rm-sync);
+}
+.ws-flow-actor {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+.ws-flow-step h3 {
+  margin: 8px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ws-flow-step p {
+  margin: 0;
+  color: var(--rm-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Booth hall. */
+.ws-hall-wrap {
+  display: grid;
+  align-items: start;
+  gap: 14px;
+}
+.ws-hall-stage {
+  padding: 28px 18px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-lg);
+  background-color: var(--rm-panel);
+  background-image:
+    linear-gradient(var(--rm-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rm-soft) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.ws-hall {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  max-width: 560px;
+  margin-inline: auto;
+  list-style: none;
+  transform: perspective(900px) rotateX(16deg);
+  transform-origin: center bottom;
+}
+.ws-booth {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 64px;
+  aspect-ratio: 16 / 10;
+  padding: 14px 6px 8px;
+  overflow: hidden;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-sm);
+  color: var(--rm-ink);
+  background: var(--rm-panel);
+  box-shadow: 0 6px 0 var(--rm-line);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ws-booth:disabled {
+  cursor: default;
+}
+.ws-booth:focus-visible {
+  outline: 2px solid var(--rm-ring);
+  outline-offset: 2px;
+}
+.ws-booth-roof {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 10px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--rm-merge-fill) 0 10px,
+    transparent 10px 20px
+  );
+}
+.ws-booth[data-chosen] {
+  border-color: var(--rm-ring);
+  background: var(--rm-sync-fill);
+}
+.ws-booth[data-cast] {
+  border-color: var(--rm-live);
+  background: var(--rm-live-fill);
+}
+.ws-hall-door {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0 0;
+  color: var(--rm-muted);
+  font-size: 12px;
+}
+.ws-hall-panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  justify-items: start;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-lg);
+  background: var(--rm-panel);
+}
+.ws-hall-panel p {
+  margin: 0;
+  line-height: 1.55;
+}
+.ws-hall-panel .ws-note {
+  color: var(--rm-muted);
+  font-size: 13px;
+}
+
+/* Venue. */
+.ws-venue {
+  display: grid;
+  gap: 14px;
+}
+.ws-map {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-lg);
+  background: var(--rm-panel);
+}
+.ws-map-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--rm-soft);
+}
+.ws-map-road {
+  fill: none;
+  stroke: var(--rm-line);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.ws-map-road.major {
+  stroke-width: 16;
+}
+.ws-map-water {
+  fill: none;
+  stroke: color-mix(in oklab, var(--blue) 30%, transparent);
+  stroke-width: 14;
+}
+.ws-map-block {
+  fill: var(--rm-panel);
+  stroke: var(--rm-line);
+}
+.ws-map-block.soft {
+  fill: var(--rm-soft);
+}
+.ws-map-pin path {
+  fill: var(--rm-accent);
+}
+.ws-map-dot {
+  fill: var(--rm-panel);
+}
+.ws-map-halo {
+  fill: color-mix(in oklab, var(--rm-accent) 18%, transparent);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.ws-map figcaption {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+}
+.ws-map figcaption span {
+  color: var(--rm-muted);
+  font-size: 13px;
+}
+.ws-venue-info {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.ws-venue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .ws-ask {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+  .ws-live-panel {
+    padding: 20px;
+  }
+  .ws-live-tabs {
+    width: fit-content;
+    margin: 16px 20px 0;
+  }
+  .ws-quiz-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .ws-flowline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ws-flow-step:not(:last-child)::after {
+    display: none;
+  }
+}
+@media (min-width: 960px) {
+  .ws-hall-wrap {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+  .ws-venue {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .ws-venue .ws-practical {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .ws-timeline {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ws-timeline::before {
+    top: 17px;
+    bottom: auto;
+    left: 18px;
+    right: calc((100% - 60px) / 6 - 18px);
+    width: auto;
+    height: 2px;
+  }
+  .ws-tl-item {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .ws-flowline {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ws-flow-step:not(:last-child)::after {
+    display: block;
+    left: auto;
+    right: -13px;
+    top: 37px;
+    bottom: auto;
+    width: 12px;
+    height: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ws-msg.ai,
+  .ws-seat-view {
+    animation: ws-pop 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .ws-quiz-fill,
+  .ws-meter span {
+    animation: ws-grow 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .ws-booth {
+    transition:
+      transform 180ms ease,
+      background-color 180ms ease;
+  }
+  .ws-booth:not(:disabled):hover {
+    transform: translateY(-3px);
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  :root:not([data-lite]) .ws-flow-node {
+    animation: ws-flow-pulse 7.2s ease-in-out infinite;
+    animation-delay: calc(var(--ws-step, 0) * 1.2s);
+  }
+  :root:not([data-lite]) .ws-map-halo {
+    animation: ws-halo 2.4s ease-out infinite;
+  }
+}
+@keyframes ws-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes ws-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes ws-flow-pulse {
+  0%,
+  18%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    transform: none;
+  }
+  8% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--rm-ring) 28%, transparent);
+    transform: translateY(-2px);
+  }
+}
+@keyframes ws-halo {
+  from {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}

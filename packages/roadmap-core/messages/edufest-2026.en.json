@@ -79,79 +79,11 @@
         "title": "Plan your first lesson",
         "body": "Swap seats, decide what AI may do in your class, and leave with a plan and your questions answered."
       }
-    }
-  },
-  "journey": {
-    "title": "Your seat, step by step",
-    "subtitle": "Walk through the workshop from the student's seat and back again.",
-    "step": "Step",
-    "previous": "Previous",
-    "next": "Next",
-    "seatStudent": "You are a student",
-    "seatTeacher": "You are the teacher again",
-    "uses": "What helps here",
-    "steps": {
-      "arrive": {
-        "title": "Take a student's seat",
-        "body": "You join a live class as a student. A few colleagues take the teacher and teaching assistant seats."
-      },
-      "learn": {
-        "title": "Learn something new",
-        "body": "The topic is new to you on purpose, so you feel what your students feel."
-      },
-      "stuck": {
-        "title": "Get stuck, get a hint",
-        "body": "When you are stuck, the AI agent gives a hint, not the answer. The workshop is set to hints only; teacher controls are planned."
-      },
-      "upskii": {
-        "title": "Try a lesson on Upskii",
-        "body": "An AI-assisted lesson and quiz, made in minutes, taken from the student's side."
-      },
-      "practise": {
-        "title": "Practise together",
-        "body": "Write by hand, code with a partner, and keep notes linked to your tasks."
-      },
-      "check": {
-        "title": "Check what you learned",
-        "body": "A short quiz on a timer, with plus points for taking part."
-      },
-      "switch": {
-        "title": "Switch seats",
-        "body": "Back in the teacher's seat, you see how the class went, the fairness settings, and what the AI did."
-      }
-    }
-  },
-  "aiDemo": {
-    "title": "How much should the AI agent help?",
-    "legend": "AI help level",
-    "student": "Student",
-    "assistant": "AI agent",
-    "note": "A demonstration of the planned behaviour, not a live AI.",
-    "question": "Solve 2x + 6 = 14.",
-    "levels": {
-      "off": {
-        "label": "Off",
-        "reply": "AI help is off for this class. Ask your teacher or a teaching assistant."
-      },
-      "hints": {
-        "label": "Hints, no answers",
-        "reply": "What could you do to both sides to leave 2x on its own? Try that first."
-      },
-      "full": {
-        "label": "Full help",
-        "reply": "Subtract 6 from both sides: 2x = 8. Divide both sides by 2: x = 4."
-      }
     },
-    "practise": {
-      "question": "My loop never stops. What did I miss?",
-      "off": "AI help is off while you practise. Work it out with your partner first.",
-      "hints": "Look at the line that changes your counter. Does it ever reach the value that stops the loop?",
-      "full": "The counter never increases. Add count = count + 1 inside the loop and it stops after 10 runs."
-    },
-    "check": {
-      "off": "Quiz mode: AI help stays locked until everyone has answered.",
-      "hints": "Wrong answer? The AI agent gives one hint before your second try.",
-      "full": "When the quiz closes, the AI agent explains every answer step by step."
+    "seats": {
+      "everyone": "Everyone",
+      "student": "Student seat",
+      "teacher": "Teacher seat"
     }
   },
   "capabilities": {
@@ -293,14 +225,6 @@
       }
     }
   },
-  "sim": {
-    "title": "Try the classroom",
-    "subtitle": "Step through the session from the student’s seat and back. Preview how the AI agent could respond at each help level; teacher controls for these levels are planned.",
-    "window": "Live class · Agentic AI 101",
-    "quizQuestion": "Quick check: what is the first step to solve 2x + 6 = 14?",
-    "timer": "Time left",
-    "points": "plus point"
-  },
   "learn": {
     "title": "What you'll learn",
     "items": {
@@ -345,7 +269,7 @@
       },
       "booth": {
         "title": "The EduFest booth game",
-        "body": "A preview of a walkable 3D booth fair where each visitor signs in with Google or Microsoft and casts one vote, with live results for organisers.",
+        "body": "A preview of a walkable 3D booth fair where each visitor signs in with Google (or a Tuturuuu work account) and casts one vote, with live results for organisers.",
         "try": "a first look at the fair and how voting works, if it is ready on the day."
       },
       "fleet": {
@@ -375,6 +299,120 @@
       "seats": "40 seats, in order of registration",
       "registration": "Not open yet. Details will be announced here.",
       "bring": "A charged phone or laptop. Everything runs in the browser."
+    },
+    "campus": "RMIT University Vietnam, Saigon South",
+    "building": "Building 2 · 702 Nguyen Van Linh, District 7"
+  },
+  "liveClass": {
+    "title": "Try the live class",
+    "subtitle": "Three moments from the session. Ask for help, play the team quiz, then swap to the teacher's seat.",
+    "window": "Live class · Algebra warm-up",
+    "demo": "Interactive demo",
+    "demoData": "Demo data",
+    "tabsLabel": "Moments from the live class",
+    "tabs": {
+      "ask": "Ask for help",
+      "quiz": "Team quiz",
+      "seats": "Swap seats"
+    },
+    "ask": {
+      "you": "You",
+      "assistant": "AI assistant",
+      "modeLabel": "How the assistant replies",
+      "modes": {
+        "hint": "Hint",
+        "answer": "Full answer"
+      },
+      "workshopNote": "The workshop runs on hints only. Teacher controls for each class:",
+      "another": "Ask another question",
+      "questions": {
+        "equation": {
+          "q": "How do I solve 2x + 6 = 14?",
+          "hint": "What could you do to both sides to leave 2x on its own? Try that first.",
+          "answer": "Subtract 6 from both sides: 2x = 8. Divide both sides by 2: x = 4."
+        },
+        "loop": {
+          "q": "My loop never stops. What did I miss?",
+          "hint": "Look at the line that changes your counter. Does it ever reach the value that stops the loop?",
+          "answer": "The counter never increases. Add count = count + 1 inside the loop and it stops after 10 runs."
+        }
+      }
+    },
+    "quiz": {
+      "question": "Team quiz: 2x + 6 = 14. What is x?",
+      "pickPrompt": "Pick your team's answer, then lock it in.",
+      "lock": "Lock in",
+      "locked": "Locked in. Answers stay hidden until the teacher reveals them.",
+      "reveal": "Reveal answers",
+      "right": "Correct. Your team earns a point.",
+      "wrong": "Not this time: x = 4.",
+      "teams": "teams",
+      "hidden": "Answer hidden",
+      "reset": "Play again"
+    },
+    "seats": {
+      "label": "Your seat",
+      "student": "Student seat",
+      "teacher": "Teacher seat",
+      "studentKicker": "You are a student",
+      "studentBody": "You learn something new on your own device, ask for hints when stuck and answer the quiz with your team.",
+      "teacherKicker": "You are the teacher",
+      "joined": "Joined",
+      "hints": "Hints given",
+      "stuckTitle": "Where the class got stuck",
+      "stuck": {
+        "step2": "Moving terms to the other side",
+        "checking": "Checking the answer"
+      }
     }
+  },
+  "agentTeam": {
+    "title": "The agent team behind the tools",
+    "subtitle": "One example of how a change reaches you: people ask and approve, and AI agents help plan, build and check the work in between.",
+    "actors": {
+      "human": "Person",
+      "agent": "AI agents"
+    },
+    "steps": {
+      "request": {
+        "title": "Request",
+        "body": "A person describes what is needed."
+      },
+      "plan": {
+        "title": "Plan",
+        "body": "An orchestrator agent splits the work into parallel lanes."
+      },
+      "build": {
+        "title": "Build",
+        "body": "Builder agents work at the same time on several machines, each in its own copy of the code."
+      },
+      "review": {
+        "title": "Review",
+        "body": "Agents help review the change and run the checks. Sensitive areas also need a person's review."
+      },
+      "approve": {
+        "title": "Approve",
+        "body": "People approve sensitive changes, such as sign-in, billing and infrastructure."
+      },
+      "ship": {
+        "title": "Ship",
+        "body": "The change reaches the main branch and is released once its checks pass."
+      }
+    }
+  },
+  "booth": {
+    "title": "Booth hall preview",
+    "subtitle": "A first look at the EduFest booth game: walk the hall, pick a booth and cast one vote.",
+    "hallLabel": "Booth hall",
+    "boothLabel": "Booth",
+    "entrance": "Hall entrance",
+    "panelTitle": "Your vote",
+    "choose": "Choose a booth in the hall.",
+    "chosen": "{booth} selected. Cast your vote when you are sure.",
+    "castButton": "Cast my vote",
+    "cast": "Your vote for {booth} is in. Each visitor gets one vote.",
+    "reset": "Reset preview",
+    "signIn": "On the day, visitors sign in with Google (or a Tuturuuu work account) before voting.",
+    "note": "Preview only: the game is not public yet, and these booths are placeholders."
   }
 }

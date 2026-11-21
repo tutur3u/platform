@@ -77,7 +77,6 @@ describe('Upskii is the official mark and always linked', () => {
       't.agenda.items[id].title',
       't.agenda.items[id].body',
       't.tools.subtitle',
-      'copy.title',
     ])
       assert.ok(source.includes(`<UpskiiText text={${field}} />`), field);
     assert.match(

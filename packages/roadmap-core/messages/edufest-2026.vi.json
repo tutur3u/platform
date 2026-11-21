@@ -79,79 +79,11 @@
         "title": "Lên kế hoạch bài học đầu tiên",
         "body": "Đổi ghế, quyết định AI được làm gì trong lớp của bạn, và ra về với một kế hoạch cùng lời giải đáp cho các câu hỏi."
       }
-    }
-  },
-  "journey": {
-    "title": "Hành trình đổi vai",
-    "subtitle": "Đi qua từng chặng của buổi workshop: từ ghế học trò, rồi trở lại bục giảng.",
-    "step": "Bước",
-    "previous": "Trước",
-    "next": "Tiếp theo",
-    "seatStudent": "Thầy cô đang là học trò",
-    "seatTeacher": "Thầy cô trở lại bục giảng",
-    "uses": "Công cụ hỗ trợ ở bước này",
-    "steps": {
-      "arrive": {
-        "title": "Ngồi vào ghế học trò",
-        "body": "Thầy cô bước vào một lớp học trực tuyến trong vai học trò, còn vài đồng nghiệp nhận vai giáo viên và trợ giảng."
-      },
-      "learn": {
-        "title": "Học một điều hoàn toàn mới",
-        "body": "Chủ đề được chọn vì thầy cô chưa từng học, để thầy cô thấu hiểu đúng cảm giác của học trò mình."
-      },
-      "stuck": {
-        "title": "Bí bài? Có gợi ý ngay",
-        "body": "Khi bí bài, AI Agent gợi ý hướng làm, không đưa sẵn đáp án. Workshop được đặt ở chế độ chỉ gợi ý; tùy chọn cho giáo viên đang trong kế hoạch."
-      },
-      "upskii": {
-        "title": "Thử một bài học trên Upskii",
-        "body": "Một bài học và bài kiểm tra do AI hỗ trợ soạn chỉ trong vài phút, để thầy cô làm thử ngay từ phía học trò."
-      },
-      "practise": {
-        "title": "Cùng nhau luyện tập",
-        "body": "Viết tay, lập trình cùng một đồng nghiệp, và lưu ghi chú gắn với bài tập của mình."
-      },
-      "check": {
-        "title": "Kiểm tra điều đã học",
-        "body": "Một bài kiểm tra ngắn có đếm giờ, kèm điểm cộng cho những ai tích cực tham gia."
-      },
-      "switch": {
-        "title": "Đổi vai",
-        "body": "Trở lại bục giảng, thầy cô xem lớp vừa diễn ra thế nào, các thiết lập đảm bảo công bằng trong lớp, và những gì AI đã hỗ trợ."
-      }
-    }
-  },
-  "aiDemo": {
-    "title": "AI Agent nên giúp đến đâu?",
-    "legend": "Mức hỗ trợ của AI",
-    "student": "Học trò",
-    "assistant": "AI Agent",
-    "note": "Đây chỉ là mô phỏng cách hoạt động dự kiến, không phải AI thật.",
-    "question": "Giải phương trình 2x + 6 = 14.",
-    "levels": {
-      "off": {
-        "label": "Tắt",
-        "reply": "Lớp này đang tắt hỗ trợ AI. Em hãy hỏi thầy cô hoặc trợ giảng nhé."
-      },
-      "hints": {
-        "label": "Chỉ gợi ý",
-        "reply": "Em thử nghĩ xem: mình cần làm gì với cả hai vế để 2x đứng một mình? Em thử bước đó trước nhé."
-      },
-      "full": {
-        "label": "Hỗ trợ đầy đủ",
-        "reply": "Trừ 6 ở cả hai vế, ta được 2x = 8. Chia cả hai vế cho 2, ta được x = 4."
-      }
     },
-    "practise": {
-      "question": "Vòng lặp của em chạy mãi không dừng. Em bỏ sót chỗ nào ạ?",
-      "off": "Lúc luyện tập, hỗ trợ AI đang tắt. Em thử cùng bạn tìm ra lỗi trước nhé.",
-      "hints": "Em xem lại dòng thay đổi biến đếm nhé. Biến đó có bao giờ chạm tới mốc khiến vòng lặp dừng không?",
-      "full": "Biến đếm của em không bao giờ tăng. Hãy thêm count = count + 1 vào trong vòng lặp, và chương trình sẽ dừng sau 10 lần."
-    },
-    "check": {
-      "off": "Đang làm bài kiểm tra: hỗ trợ AI bị khoá cho tới khi cả lớp nộp bài.",
-      "hints": "Trả lời sai? AI Agent sẽ đưa một gợi ý trước khi em làm lại lần hai.",
-      "full": "Khi bài kiểm tra kết thúc, AI Agent giải thích từng đáp án, từng bước một."
+    "seats": {
+      "everyone": "Cả lớp",
+      "student": "Ghế học sinh",
+      "teacher": "Ghế giáo viên"
     }
   },
   "capabilities": {
@@ -293,14 +225,6 @@
       }
     }
   },
-  "sim": {
-    "title": "Thử ngồi vào lớp học",
-    "subtitle": "Đi qua từng bước của buổi học, từ ghế học trò rồi trở lại bục giảng. Xem trước AI Agent có thể phản hồi thế nào ở từng mức hỗ trợ; tùy chọn này cho giáo viên đang trong kế hoạch.",
-    "window": "Lớp học trực tuyến · AI Agent nhập môn",
-    "quizQuestion": "Kiểm tra nhanh: bước đầu tiên để giải 2x + 6 = 14 là gì?",
-    "timer": "Thời gian còn lại",
-    "points": "điểm cộng"
-  },
   "learn": {
     "title": "Bạn sẽ học được gì",
     "items": {
@@ -345,7 +269,7 @@
       },
       "booth": {
         "title": "Trò chơi gian hàng EduFest",
-        "body": "Bản xem trước của hội chợ gian hàng 3D có thể đi dạo, mỗi khách đăng nhập bằng Google hoặc Microsoft và bỏ một phiếu, ban tổ chức xem kết quả trực tiếp.",
+        "body": "Bản xem trước của hội chợ gian hàng 3D có thể đi dạo, mỗi khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) và bỏ một phiếu, ban tổ chức xem kết quả trực tiếp.",
         "try": "xem trước hội chợ và cách bỏ phiếu, nếu đã sẵn sàng vào ngày diễn ra."
       },
       "fleet": {
@@ -375,6 +299,120 @@
       "seats": "40 suất, phân bổ theo thứ tự đăng ký",
       "registration": "Chưa mở. Thông tin sẽ được thông báo tại đây.",
       "bring": "Điện thoại hoặc laptop đã sạc pin. Mọi thứ chạy trên trình duyệt."
+    },
+    "campus": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn",
+    "building": "Tòa nhà 2 · 702 Nguyễn Văn Linh, Quận 7"
+  },
+  "liveClass": {
+    "title": "Thử lớp học trực tuyến",
+    "subtitle": "Ba khoảnh khắc trong buổi học. Nhờ trợ giúp, chơi bài kiểm tra theo đội, rồi đổi sang ghế giáo viên.",
+    "window": "Lớp học trực tuyến · Khởi động đại số",
+    "demo": "Demo tương tác",
+    "demoData": "Dữ liệu mẫu",
+    "tabsLabel": "Các khoảnh khắc trong lớp học trực tuyến",
+    "tabs": {
+      "ask": "Nhờ trợ giúp",
+      "quiz": "Đố vui theo đội",
+      "seats": "Đổi ghế"
+    },
+    "ask": {
+      "you": "Bạn",
+      "assistant": "Trợ lý AI",
+      "modeLabel": "Cách trợ lý trả lời",
+      "modes": {
+        "hint": "Gợi ý",
+        "answer": "Đáp án đầy đủ"
+      },
+      "workshopNote": "Workshop chỉ dùng chế độ gợi ý. Tùy chọn cho giáo viên ở từng lớp:",
+      "another": "Hỏi câu khác",
+      "questions": {
+        "equation": {
+          "q": "Giải 2x + 6 = 14 thế nào ạ?",
+          "hint": "Bạn có thể làm gì với cả hai vế để chỉ còn 2x? Thử bước đó trước nhé.",
+          "answer": "Trừ 6 ở cả hai vế: 2x = 8. Chia cả hai vế cho 2: x = 4."
+        },
+        "loop": {
+          "q": "Vòng lặp của em không dừng. Em thiếu gì ạ?",
+          "hint": "Xem dòng thay đổi biến đếm. Biến đó có bao giờ đạt tới mức làm vòng lặp dừng không?",
+          "answer": "Biến đếm không bao giờ tăng. Thêm count = count + 1 trong vòng lặp, nó sẽ dừng sau 10 lần."
+        }
+      }
+    },
+    "quiz": {
+      "question": "Đố vui theo đội: 2x + 6 = 14. x bằng bao nhiêu?",
+      "pickPrompt": "Chọn đáp án của đội, rồi chốt lại.",
+      "lock": "Chốt đáp án",
+      "locked": "Đã chốt. Đáp án được giữ kín cho đến khi giáo viên công bố.",
+      "reveal": "Công bố đáp án",
+      "right": "Chính xác. Đội bạn được cộng một điểm.",
+      "wrong": "Chưa đúng lần này: x = 4.",
+      "teams": "đội",
+      "hidden": "Đáp án đang ẩn",
+      "reset": "Chơi lại"
+    },
+    "seats": {
+      "label": "Ghế của bạn",
+      "student": "Ghế học sinh",
+      "teacher": "Ghế giáo viên",
+      "studentKicker": "Bạn là học sinh",
+      "studentBody": "Bạn học một điều mới trên thiết bị của mình, nhờ gợi ý khi bí và làm bài đố cùng đội.",
+      "teacherKicker": "Bạn là giáo viên",
+      "joined": "Đã vào lớp",
+      "hints": "Số lần gợi ý",
+      "stuckTitle": "Lớp bị bí ở đâu",
+      "stuck": {
+        "step2": "Chuyển vế các số hạng",
+        "checking": "Kiểm tra lại đáp án"
+      }
     }
+  },
+  "agentTeam": {
+    "title": "Đội AI Agent phía sau các công cụ",
+    "subtitle": "Một ví dụ về cách một thay đổi đến với bạn: con người đặt yêu cầu và phê duyệt; trong quá trình đó, các AI Agent giúp lên kế hoạch, xây dựng và kiểm tra.",
+    "actors": {
+      "human": "Con người",
+      "agent": "AI Agent"
+    },
+    "steps": {
+      "request": {
+        "title": "Yêu cầu",
+        "body": "Một người mô tả điều cần làm."
+      },
+      "plan": {
+        "title": "Lên kế hoạch",
+        "body": "Agent điều phối chia công việc thành các luồng song song."
+      },
+      "build": {
+        "title": "Xây dựng",
+        "body": "Các agent xây dựng làm việc cùng lúc trên nhiều máy, mỗi agent có bản sao mã nguồn riêng."
+      },
+      "review": {
+        "title": "Rà soát",
+        "body": "Các agent giúp rà soát thay đổi và chạy các bước kiểm tra. Những phần quan trọng cần thêm con người rà soát."
+      },
+      "approve": {
+        "title": "Phê duyệt",
+        "body": "Con người phê duyệt các thay đổi quan trọng như đăng nhập, thanh toán và hạ tầng."
+      },
+      "ship": {
+        "title": "Phát hành",
+        "body": "Thay đổi được đưa vào nhánh chính và phát hành khi đã qua các bước kiểm tra."
+      }
+    }
+  },
+  "booth": {
+    "title": "Xem trước sảnh gian hàng",
+    "subtitle": "Cái nhìn đầu tiên về trò chơi gian hàng EduFest: dạo quanh sảnh, chọn một gian hàng và bỏ một phiếu.",
+    "hallLabel": "Sảnh gian hàng",
+    "boothLabel": "Gian",
+    "entrance": "Lối vào sảnh",
+    "panelTitle": "Phiếu của bạn",
+    "choose": "Chọn một gian hàng trong sảnh.",
+    "chosen": "Đã chọn {booth}. Bỏ phiếu khi bạn chắc chắn.",
+    "castButton": "Bỏ phiếu",
+    "cast": "Phiếu của bạn cho {booth} đã được ghi nhận. Mỗi khách có một phiếu.",
+    "reset": "Đặt lại bản xem trước",
+    "signIn": "Vào ngày diễn ra, khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) trước khi bỏ phiếu.",
+    "note": "Chỉ là bản xem trước: trò chơi chưa công khai và các gian hàng ở đây chỉ để minh hoạ."
   }
 }
