@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
@@ -12,11 +13,11 @@ import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 final _steering = RegExp(
   r'upgrade|top.?up|subscri|purchase|\bbuy\b|billing|pricing|checkout|'
   r'paid plan|tuturuuu\.com|on the web|nâng cấp|nạp thêm|trả phí|thanh toán|'
-  r'đăng ký gói|mua |trên web',
+  'đăng ký gói|mua |trên web',
   caseSensitive: false,
 );
 
-const _apple = [TargetPlatform.iOS, TargetPlatform.macOS];
+const List<TargetPlatform> _apple = [TargetPlatform.iOS, TargetPlatform.macOS];
 
 AssistantLiveEligibility _blocked(AssistantLiveBlockReason reason) =>
     AssistantLiveEligibility(
@@ -28,6 +29,8 @@ AssistantLiveEligibility _blocked(AssistantLiveBlockReason reason) =>
     );
 
 void main() {
+  setUpAll(initializeDateFormatting);
+
   test('only iOS and macOS count as Apple store platforms', () {
     expect(isAppleStorePlatform(TargetPlatform.iOS), isTrue);
     expect(isAppleStorePlatform(TargetPlatform.macOS), isTrue);
@@ -36,7 +39,7 @@ void main() {
     expect(isAppleStorePlatform(TargetPlatform.linux), isFalse);
   });
 
-  for (final AppLocalizations l10n in [
+  for (final l10n in <AppLocalizations>[
     AppLocalizationsEn(),
     AppLocalizationsVi(),
   ]) {
