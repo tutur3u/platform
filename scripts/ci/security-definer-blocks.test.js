@@ -69,6 +69,48 @@ test('historical acceptance binds path and raw block digest', (t) => {
   assert.equal(run([entry]).length, 1);
 });
 
+test('the Task Fleet actor review binds the exact migration and DO block', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'task-actor-block-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file =
+    'apps/database/supabase/migrations/20261121093435_bind_task_update_actor.sql';
+  const sql = fs.readFileSync(path.resolve(__dirname, '../..', file), 'utf8');
+  const run = (source, target = file) => {
+    const destination = path.join(root, target);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.writeFileSync(destination, source);
+    return checkRepository({
+      root,
+      files: [target],
+      verifiedFindings: [],
+      baseline: [],
+      reviewedBlocks: [],
+      historicalBlocks: [],
+    }).map(({ rule }) => rule);
+  };
+
+  assert.deepEqual(run(sql), []);
+  // PostgreSQL ignores the whitespace change inside the DO body.
+  const oneByteChange = sql.replace(
+    '  EXECUTE definition;',
+    ' \tEXECUTE definition;'
+  );
+  assert.notEqual(oneByteChange, sql);
+  assert.deepEqual(run(oneByteChange), ['dynamic-execute-acl']);
+  // The review marker alone cannot authorize a different DO body.
+  const sameMarker = sql.slice(0, sql.indexOf('DO $migration$'));
+  assert.deepEqual(
+    run(
+      sameMarker +
+        "DO $$ DECLARE query text := 'SELECT 1'; BEGIN EXECUTE query; END $$;"
+    ),
+    ['dynamic-execute-acl']
+  );
+  assert.deepEqual(run(sql, file.replace('_bind_', '_copy_')), [
+    'dynamic-execute-acl',
+  ]);
+});
+
 const file =
   'apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql';
 for (const record of reviewed.filter(

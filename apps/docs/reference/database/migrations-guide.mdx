@@ -1037,6 +1037,21 @@ on the exact head. For that conversion, the trusted acceptance must already
 name the remediating migration. Keep the acceptance row until every covered
 record has been converted.
 
+The Task Fleet actor migration has an independent false-positive disposition
+for `dynamic-execute-acl` at
+`apps/database/supabase/migrations/20261121093435_bind_task_update_actor.sql:4`.
+The finding digest is
+`91620c540298acc0bc4d81b8a11548b843bad3eb25c10e918a6893d6992d168f`.
+The reviewed DO text through the semicolon hashes to
+`647006a02271a650aa5f17ffc8c706e7eec9ed56e0ddc072282ede2cf618a1be`.
+The definer guard uses block digest
+`f204cc1107b3bf87683b0b0246af2c56597ab934ae05768c0657c102691f6619`
+and also pins the full migration bytes. The review verified that the migration
+executes a fixed catalog definition with exactly two checked literal
+substitutions. It preserves invoker execution, ACLs, owner and search path, and
+accepts no caller SQL. The disposition covers staging and gated production
+replay of those exact bytes.
+
 ### Changing a migration that security records pin
 
 Several records pin a migration's bytes. If a change must alter such a file,

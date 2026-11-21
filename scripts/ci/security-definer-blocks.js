@@ -76,10 +76,28 @@ function reviewedBlockMatches(entry, file, finding, sql) {
     : entry.grantedRoles === undefined || entry.grantedRoles.length === 0;
 }
 
+const taskActorBlockReview = {
+  file: 'apps/database/supabase/migrations/20261121093435_bind_task_update_actor.sql',
+  blockDigest:
+    'f204cc1107b3bf87683b0b0246af2c56597ab934ae05768c0657c102691f6619',
+  sourceDigest:
+    'f6b8e954d254544471de428ce1b7c83248f42463e5ab48ee7e9604dd4acd0115',
+  reason:
+    'The migration rewrites a fixed catalog invoker function with two checked literal substitutions, preserving ownership, search path and ACLs.',
+};
+
+function reviewedTaskActorBlockMatches(file, finding, sql, sourceDigest) {
+  return (
+    sourceDigest === taskActorBlockReview.sourceDigest &&
+    reviewedBlockMatches(taskActorBlockReview, file, finding, sql)
+  );
+}
+
 module.exports = {
   assertShrinkingBlocks,
   assertReviewedBlocks,
   reviewedBlockMatches,
+  reviewedTaskActorBlockMatches,
 };
 
 function readReviewedFile(root, trustedDirectory, name) {

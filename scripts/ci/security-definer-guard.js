@@ -15,6 +15,7 @@ const {
   readReviewedFile,
   verifiedFindingMatches,
   reviewedBlockMatches,
+  reviewedTaskActorBlockMatches,
   verifyRemediation: verifyStaticRemediation,
 } = require('./security-definer-blocks');
 const {
@@ -588,7 +589,8 @@ function checkRepository({
         ) ||
           blocks.some((entry) =>
             reviewedBlockMatches(entry, file, finding, sql)
-          ))
+          ) ||
+          reviewedTaskActorBlockMatches(file, finding, sql, sourceDigest))
       )
         continue;
       const routine =
