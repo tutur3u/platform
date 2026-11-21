@@ -55,7 +55,7 @@ async function loadWorkerNow(app, result) {
     isDriveProductionEnvironment: () => true,
     isDriveStagingEnvironment: () => true,
   };
-  async function source(file) {
+  async function loadModule(file) {
     file = resolve(file);
     if (cache.has(file)) return cache.get(file);
     let text =
@@ -80,68 +80,69 @@ async function loadWorkerNow(app, result) {
       identifier: file,
     });
     cache.set(file, mod);
-    await mod.link(async (specifier, parent) => {
-      let target;
-      if (specifier === '@tuturuuu/start-bridge/response-policy')
-        target = 'packages/start-bridge/src/core/response-policy.ts';
-      else if (specifier === '@tuturuuu/start-bridge/base-path')
-        target = 'packages/start-bridge/src/core/base-path.ts';
-      else if (specifier === '@tuturuuu/start-bridge/mounts')
-        target = 'packages/start-bridge/src/core/mounts.ts';
-      else if (specifier === '@tuturuuu/start-bridge/startup')
-        target = 'packages/start-bridge/src/server/startup.ts';
-      else if (
-        specifier.startsWith('@tuturuuu/utils/') &&
-        [
-          'framable-paths',
-          'seo-robots',
-          'staging-cookie-policy',
-          'staging-hosts',
-        ].includes(specifier.split('/').at(-1))
-      )
-        target = `packages/utils/src/${specifier.split('/').at(-1)}.ts`;
-      else if (
-        [
-          './startup',
-          './required-bindings',
-          '../src/native/required-secrets',
-        ].includes(specifier)
-      )
-        target = resolve(parent.identifier, '..', `${specifier}.ts`);
-      if (target) return source(target);
-      const values = { ...mocks };
-      if (specifier === '../start-bridge.config')
-        values.default = { mounts: {} };
-      if (specifier === '@tuturuuu/start-bridge/start/app-config') {
-        values.CSP_REPORT_PATH = '/api/csp-report';
-        values.collectDocumentSecurityReport = () =>
-          new Response(null, {
-            status: 204,
-            headers: { 'Cache-Control': 'no-store' },
-          });
-        values.secureBridgeDocument = (response) => response;
-      } else if (specifier === '@tuturuuu/start-bridge/csp') {
-        values.createNonce = () => 'fixture-nonce';
-        values.defaultContentSecurityPolicy = () => "default-src 'none'";
-      } else if (specifier === '@tuturuuu/start-bridge/mount-isolation') {
-        values.hasAmbiguousSupabaseSession = () => false;
-        values.isolateMountedRequest = (request) => request;
-        values.scopeMountedResponseCookies = (response) => response;
-        values.stripMountedSupabaseWrites = (response) => response;
-      } else if (specifier === '@tuturuuu/start-bridge/start/csrf-admission')
-        values.admitMountedMutation = () => null;
-      else if (
-        specifier === '@tuturuuu/start-bridge/start/mounted-session-guard'
-      )
-        values.stripMountedSessionWrites = (response) => response;
-      return new SyntheticModule(Object.keys(values), function () {
-        for (const [key, value] of Object.entries(values))
-          this.setExport(key, value);
-      });
-    });
     return mod;
   }
-  const entry = await source(`apps/${app}/cloudflare/worker.ts`);
+  // Return the module unlinked. Linking it here makes Node resolve the next
+  // import on a module that has not finished linking.
+  async function linker(specifier, parent) {
+    let target;
+    if (specifier === '@tuturuuu/start-bridge/response-policy')
+      target = 'packages/start-bridge/src/core/response-policy.ts';
+    else if (specifier === '@tuturuuu/start-bridge/base-path')
+      target = 'packages/start-bridge/src/core/base-path.ts';
+    else if (specifier === '@tuturuuu/start-bridge/mounts')
+      target = 'packages/start-bridge/src/core/mounts.ts';
+    else if (specifier === '@tuturuuu/start-bridge/startup')
+      target = 'packages/start-bridge/src/server/startup.ts';
+    else if (
+      specifier.startsWith('@tuturuuu/utils/') &&
+      [
+        'framable-paths',
+        'seo-robots',
+        'staging-cookie-policy',
+        'staging-hosts',
+      ].includes(specifier.split('/').at(-1))
+    )
+      target = `packages/utils/src/${specifier.split('/').at(-1)}.ts`;
+    else if (
+      [
+        './startup',
+        './required-bindings',
+        '../src/native/required-secrets',
+      ].includes(specifier)
+    )
+      target = resolve(parent.identifier, '..', `${specifier}.ts`);
+    if (target) return loadModule(target);
+    const values = { ...mocks };
+    if (specifier === '../start-bridge.config')
+      values.default = { mounts: {} };
+    if (specifier === '@tuturuuu/start-bridge/start/app-config') {
+      values.CSP_REPORT_PATH = '/api/csp-report';
+      values.collectDocumentSecurityReport = () =>
+        new Response(null, {
+          status: 204,
+          headers: { 'Cache-Control': 'no-store' },
+        });
+      values.secureBridgeDocument = (response) => response;
+    } else if (specifier === '@tuturuuu/start-bridge/csp') {
+      values.createNonce = () => 'fixture-nonce';
+      values.defaultContentSecurityPolicy = () => "default-src 'none'";
+    } else if (specifier === '@tuturuuu/start-bridge/mount-isolation') {
+      values.hasAmbiguousSupabaseSession = () => false;
+      values.isolateMountedRequest = (request) => request;
+      values.scopeMountedResponseCookies = (response) => response;
+      values.stripMountedSupabaseWrites = (response) => response;
+    } else if (specifier === '@tuturuuu/start-bridge/start/csrf-admission')
+      values.admitMountedMutation = () => null;
+    else if (specifier === '@tuturuuu/start-bridge/start/mounted-session-guard')
+      values.stripMountedSessionWrites = (response) => response;
+    return new SyntheticModule(Object.keys(values), function () {
+      for (const [key, value] of Object.entries(values))
+        this.setExport(key, value);
+    });
+  }
+  const entry = await loadModule(`apps/${app}/cloudflare/worker.ts`);
+  await entry.link(linker);
   await entry.evaluate();
   return entry.namespace.default;
 }
