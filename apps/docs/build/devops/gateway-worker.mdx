@@ -539,7 +539,10 @@ of its `/_f/<id>/_next/static/*` assets. Then move the version to 100%.
 rolls back to its own previous Worker version instead (see
 [Web vinext Workers](/build/devops/web-vinext-families#deploying-a-family)).
 Dropping an id from `GATEWAY_WEB_FAMILIES` sends its paths to `web-rest`,
-which does not own them, so it is not a rollback.
+which does not own them, so it is not a rollback. `write` refuses a
+`GATEWAY_WEB_FAMILIES` that omits any id the serving gateway's variable
+routes, so the `colab-production` environment variable must list every live
+family before CI can write or publish a gateway config.
 
 ## Path ownership and rollback
 

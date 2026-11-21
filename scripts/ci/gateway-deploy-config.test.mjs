@@ -462,6 +462,29 @@ test('binds activated vinext families and refuses held ones', () => {
     GATEWAY_WEB_FAMILIES: 'api-ops,api-core',
   });
   assert.equal(config.vars.GATEWAY_WEB_FAMILIES, 'api-ops,api-core');
+  const liveRouting = [
+    ...live,
+    {
+      type: 'plain_text',
+      name: 'GATEWAY_WEB_FAMILIES',
+      text: 'api-ops,api-core',
+    },
+  ];
+  assert.throws(
+    () =>
+      deployConfig(base, liveRouting, merged, {
+        ...env,
+        GATEWAY_WEB_FAMILIES: 'api-ops',
+      }),
+    /would stop routing live families: api-core/
+  );
+  assert.equal(
+    deployConfig(base, liveRouting, merged, {
+      ...env,
+      GATEWAY_WEB_FAMILIES: 'api-core,api-ops',
+    }).vars.GATEWAY_WEB_FAMILIES,
+    'api-core,api-ops'
+  );
   for (const [binding, service] of [
     ['WEB_FAMILY_API_OPS', 'tuturuuu-web-vinext-api-ops'],
     ['WEB_FAMILY_API_CORE', 'tuturuuu-web-vinext-api-core'],

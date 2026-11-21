@@ -203,6 +203,22 @@ export function deployConfig(base, liveBindings, families, env) {
     vars[name] = origin;
   }
   const flagged = parseFlagged(env.GATEWAY_WEB_FAMILIES);
+  // A CI deploy must never silently stop routing a family the live gateway
+  // serves: its paths would fall to `web-rest`, which does not own them (503
+  // without a web-rest binding). Dropping one is a reviewed change to the live
+  // gateway first, not a variable edit.
+  const liveFlagged = parseFlagged(
+    liveBindings.find(
+      (binding) =>
+        binding.type === 'plain_text' && binding.name === 'GATEWAY_WEB_FAMILIES'
+    )?.text
+  );
+  const dropped = liveFlagged.filter((id) => !flagged.includes(id));
+  if (dropped.length > 0) {
+    throw new Error(
+      `GATEWAY_WEB_FAMILIES would stop routing live families: ${dropped.join(',')}`
+    );
+  }
   for (const id of flagged) {
     const family = families.families.find((candidate) => candidate.id === id);
     if (!family?.enabled) {
