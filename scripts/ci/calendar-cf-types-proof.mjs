@@ -2,13 +2,24 @@ import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
+const bindings = {
+  ASSETS: 'Fetcher',
+  ABUSE_GUARD: 'Service',
+  ABUSE_GUARD_FAMILIES: '"proxy"',
+};
+
 export function standaloneDeclaration(output, main) {
   let module = relative(dirname(output), main);
   module = module.split('\\').join('/');
   if (!module.startsWith('.')) module = `./${module}`;
+  const fields = Object.entries(bindings)
+    .map(([name, type]) => `  ${name}: ${type};`)
+    .join('\n');
   return `// Generated from cf workers types; standalone Calendar compatibility declaration.
 /// <reference types="@cloudflare/workers-types" />
-interface __CalendarEnv { ASSETS: Fetcher; }
+interface __CalendarEnv {
+${fields}
+}
 declare namespace Cloudflare {
   interface GlobalProps { mainModule: typeof import(${JSON.stringify(module)}); }
   interface Env extends __CalendarEnv {}
@@ -47,11 +58,14 @@ export function qualifyDeclarations({
     imports.push('import type { Reference } from "./reference";');
     names.push('Reference');
   }
+  const keys = Object.keys(bindings).map((key) => JSON.stringify(key));
   const assertions = names.flatMap((name) => [
-    `type ${name}Keys = Assert<Equal<keyof ${name}, "ASSETS">>;`,
-    `type ${name}Required = Assert<Equal<{} extends Pick<${name}, "ASSETS"> ? true : false, false>>;`,
-    `type ${name}NotAny = Assert<Equal<IsAny<${name}["ASSETS"]>, false>>;`,
-    `type ${name}Fetcher = Assert<Equal<${name}["ASSETS"], Fetcher>>;`,
+    `type ${name}Keys = Assert<Equal<keyof ${name}, ${keys.join(' | ')}>>;`,
+    ...Object.entries(bindings).flatMap(([binding, type]) => [
+      `type ${name}_${binding}_Required = Assert<Equal<{} extends Pick<${name}, "${binding}"> ? true : false, false>>;`,
+      `type ${name}_${binding}_NotAny = Assert<Equal<IsAny<${name}["${binding}"]>, false>>;`,
+      `type ${name}_${binding}_Type = Assert<Equal<${name}["${binding}"], ${type}>>;`,
+    ]),
   ]);
   writeFileSync(
     join(stage, 'proof.ts'),

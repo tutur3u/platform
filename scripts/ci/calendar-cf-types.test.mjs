@@ -23,8 +23,9 @@ import {
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const sha = 'a'.repeat(40);
-const original =
-  '/// unchanged declaration\ninterface CloudflareEnv { ASSETS: Fetcher; }\n';
+const baselineBindings =
+  'ASSETS: Fetcher; ABUSE_GUARD: Service; ABUSE_GUARD_FAMILIES: "proxy";';
+const original = `/// unchanged declaration\ninterface CloudflareEnv { ${baselineBindings} }\n`;
 const generated = `type Config = import("cf/config").UnwrapConfig<typeof import("../../cloudflare.config").default>;
 type Worker = import("cf/config").UnwrapConfig<Config["worker"]>;
 type BindingEnv = import("cf/config").InferEnv<Worker>;
@@ -103,6 +104,11 @@ function fixture(t) {
       assert.match(input, /2026-10-19/);
       assert.match(input, /global_fetch_strictly_public/);
       assert.match(input, /workersDev: false/);
+      assert.match(
+        input,
+        /"ABUSE_GUARD": bindings\.worker\(\{\s*worker: "tuturuuu-abuse-guard",\s*exportName: "AbuseGuardEntrypoint"\s*\}\)/
+      );
+      assert.match(input, /ABUSE_GUARD_FAMILIES: bindings\.text\("proxy"\)/);
       const destination = join(options.cwd, '.cloudflare/types/index.d.ts');
       mkdirSync(dirname(destination), { recursive: true });
       writeFileSync(destination, generated);
@@ -152,6 +158,8 @@ test('cf inferred bindings and reference agree; only the standalone declaration 
   const declaration = readFileSync(f.output, 'utf8');
   assert.match(declaration, /interface CloudflareEnv extends __CalendarEnv/);
   assert.match(declaration, /import\("\.\/dist\/server\/worker\.js"\)/);
+  assert.match(declaration, /ABUSE_GUARD: Service;/);
+  assert.match(declaration, /ABUSE_GUARD_FAMILIES: "proxy";/);
   assert.doesNotMatch(
     declaration,
     /cf\/config|\.cloudflare|UnwrapConfig|calendar-types-/
@@ -199,14 +207,36 @@ for (const mode of ['partial', 'missing', 'empty', 'symlink']) {
   });
 }
 
-for (const content of [
-  'interface CloudflareEnv { ASSETS: any; }',
-  'interface CloudflareEnv { ASSETS?: Fetcher; }',
-  'interface CloudflareEnv { ASSETS: Fetcher; EXTRA: string; }',
-]) {
-  test(`reference binding drift fails parity: ${content}`, (t) => {
+const bindingDrift = {
+  'untyped assets': baselineBindings.replace('ASSETS: Fetcher', 'ASSETS: any'),
+  'optional assets': baselineBindings.replace(
+    'ASSETS: Fetcher',
+    'ASSETS?: Fetcher'
+  ),
+  'optional abuse guard': baselineBindings.replace(
+    'ABUSE_GUARD: Service',
+    'ABUSE_GUARD?: Service'
+  ),
+  'untyped abuse guard': baselineBindings.replace(
+    'ABUSE_GUARD: Service',
+    'ABUSE_GUARD: any'
+  ),
+  'incorrect abuse guard': baselineBindings.replace(
+    'ABUSE_GUARD: Service',
+    'ABUSE_GUARD: string'
+  ),
+  'wrong proxy family': baselineBindings.replace('"proxy"', '"public"'),
+  'missing proxy family': baselineBindings.replace(
+    ' ABUSE_GUARD_FAMILIES: "proxy";',
+    ''
+  ),
+  'extra binding': `${baselineBindings} EXTRA: string;`,
+};
+
+for (const [name, fields] of Object.entries(bindingDrift)) {
+  test(`reference binding drift fails parity: ${name}`, (t) => {
     const f = fixture(t);
-    writeFileSync(f.referencePath, content);
+    writeFileSync(f.referencePath, `interface CloudflareEnv { ${fields} }`);
     assert.throws(
       () => generateCalendarTypes(options(f)),
       /declaration parity failed/
@@ -215,12 +245,8 @@ for (const content of [
   });
 }
 
-for (const fields of [
-  'ASSETS: any',
-  'ASSETS?: Fetcher',
-  'ASSETS: Fetcher; EXTRA: string',
-]) {
-  test(`cf binding drift fails parity: ${fields}`, (t) => {
+for (const [name, fields] of Object.entries(bindingDrift)) {
+  test(`cf binding drift fails parity: ${name}`, (t) => {
     const f = fixture(t);
     const execute = (command, args, opts) => {
       const result = f.execute(command, args, opts);

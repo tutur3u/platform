@@ -147,6 +147,7 @@ function generateUnderCustody({
   const temporary = `${output}.cf-${randomUUID()}`;
   try {
     const { config } = qualified;
+    const [guard] = config.services;
     writeFileSync(
       join(stage, 'cloudflare.config.ts'),
       `import { bindings, defineConfig } from 'cf/config';
@@ -155,7 +156,14 @@ export default defineConfig({ worker: {
   compatibilityDate: ${JSON.stringify(config.compatibility_date)},
   compatibilityFlags: ${JSON.stringify(config.compatibility_flags)},
   workersDev: ${JSON.stringify(config.workers_dev)},
-  env: { ASSETS: bindings.assets() }
+  env: {
+    ASSETS: bindings.assets(),
+    ${JSON.stringify(guard.binding)}: bindings.worker({
+      worker: ${JSON.stringify(guard.service)},
+      exportName: ${JSON.stringify(guard.entrypoint)}
+    }),
+    ABUSE_GUARD_FAMILIES: bindings.text(${JSON.stringify(config.vars.ABUSE_GUARD_FAMILIES)})
+  }
 } });\n`
     );
     const result = execute(
