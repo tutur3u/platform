@@ -32881,12 +32881,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t refresh · showing {age}'**
   String mastermindFleetRefreshFailed(String age);
 
-  /// No description provided for @mastermindFleetHealthEyebrow.
-  ///
-  /// In en, this message translates to:
-  /// **'Fleet health'**
-  String get mastermindFleetHealthEyebrow;
-
   /// No description provided for @mastermindFleetHeadlineNeedsYou.
   ///
   /// In en, this message translates to:
@@ -33558,6 +33552,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Projected interest'**
   String get financeInterestProjectionChart;
+
+  /// No description provided for @mastermindFleetNowEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s happening now'**
+  String get mastermindFleetNowEyebrow;
+
+  /// No description provided for @mastermindFleetDigestLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No lanes are running.} =1{1 lane is running.} other{{count} lanes are running.}}'**
+  String mastermindFleetDigestLanes(int count);
+
+  /// No description provided for @mastermindFleetDigestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lane failed.} other{{count} lanes failed.}}'**
+  String mastermindFleetDigestFailed(int count);
+
+  /// No description provided for @mastermindFleetDigestFrozen.
+  ///
+  /// In en, this message translates to:
+  /// **'Main is frozen.'**
+  String get mastermindFleetDigestFrozen;
+
+  /// No description provided for @mastermindFleetDigestFrozenReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Main is frozen: {reason}.'**
+  String mastermindFleetDigestFrozenReason(String reason);
+
+  /// No description provided for @mastermindFleetDigestQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 commit is queued behind it.} other{{count} commits are queued behind it.}}'**
+  String mastermindFleetDigestQueued(int count);
+
+  /// No description provided for @mastermindFleetDigestLogins.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One login is blocking work: {list}.} other{{count} logins are blocking work: {list}.}}'**
+  String mastermindFleetDigestLogins(int count, String list);
+
+  /// No description provided for @mastermindFleetDigestProductionDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Production is down.'**
+  String get mastermindFleetDigestProductionDown;
+
+  /// No description provided for @mastermindFleetDigestProductionDegraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Production is degraded.'**
+  String get mastermindFleetDigestProductionDegraded;
+
+  /// No description provided for @mastermindFleetDigestIncidents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 incident is open.} other{{count} incidents are open.}}'**
+  String mastermindFleetDigestIncidents(int count);
+
+  /// No description provided for @mastermindFleetLoginOn.
+  ///
+  /// In en, this message translates to:
+  /// **'{service} on {machine}'**
+  String mastermindFleetLoginOn(String service, String machine);
+
+  /// No description provided for @mastermindFleetKpiRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running lanes'**
+  String get mastermindFleetKpiRunning;
+
+  /// No description provided for @mastermindFleetKpiNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Need you'**
+  String get mastermindFleetKpiNeedsYou;
+
+  /// No description provided for @mastermindFleetKpiLogins.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked on login'**
+  String get mastermindFleetKpiLogins;
+
+  /// No description provided for @mastermindFleetReleaseMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get mastermindFleetReleaseMain;
+
+  /// No description provided for @mastermindFleetReleaseProduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Production'**
+  String get mastermindFleetReleaseProduction;
+
+  /// No description provided for @mastermindFleetReleaseMigrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Migrations'**
+  String get mastermindFleetReleaseMigrations;
+
+  /// No description provided for @mastermindFleetReleaseIncidents.
+  ///
+  /// In en, this message translates to:
+  /// **'Incidents'**
+  String get mastermindFleetReleaseIncidents;
+
+  /// No description provided for @mastermindFleetMainOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get mastermindFleetMainOpen;
+
+  /// No description provided for @mastermindFleetMainFrozen.
+  ///
+  /// In en, this message translates to:
+  /// **'Frozen'**
+  String get mastermindFleetMainFrozen;
+
+  /// No description provided for @mastermindFleetQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} queued'**
+  String mastermindFleetQueued(int count);
+
+  /// No description provided for @mastermindFleetProductionHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy'**
+  String get mastermindFleetProductionHealthy;
+
+  /// No description provided for @mastermindFleetProductionDegraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Degraded'**
+  String get mastermindFleetProductionDegraded;
+
+  /// No description provided for @mastermindFleetProductionDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down'**
+  String get mastermindFleetProductionDown;
+
+  /// No description provided for @mastermindFleetProductionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get mastermindFleetProductionUnknown;
+
+  /// No description provided for @mastermindFleetMigrationsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{None pending} other{{count} pending}}'**
+  String mastermindFleetMigrationsPending(int count);
+
+  /// No description provided for @mastermindFleetMigrationIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get mastermindFleetMigrationIdle;
+
+  /// No description provided for @mastermindFleetMigrationStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'On staging'**
+  String get mastermindFleetMigrationStaging;
+
+  /// No description provided for @mastermindFleetMigrationGated.
+  ///
+  /// In en, this message translates to:
+  /// **'Production gated'**
+  String get mastermindFleetMigrationGated;
+
+  /// No description provided for @mastermindFleetMigrationApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying'**
+  String get mastermindFleetMigrationApplying;
+
+  /// No description provided for @mastermindFleetMigrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindFleetMigrationFailed;
+
+  /// No description provided for @mastermindFleetIncidentsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{None open} other{{count} open}}'**
+  String mastermindFleetIncidentsOpen(int count);
+
+  /// No description provided for @mastermindFleetTierUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindFleetTierUrgent;
+
+  /// No description provided for @mastermindFleetTierAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Access requests'**
+  String get mastermindFleetTierAccess;
+
+  /// No description provided for @mastermindFleetTierDecide.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a decision'**
+  String get mastermindFleetTierDecide;
+
+  /// No description provided for @mastermindFleetTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindFleetTierFyi;
+
+  /// No description provided for @mastermindFleetDueIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Due in {time}'**
+  String mastermindFleetDueIn(String time);
+
+  /// No description provided for @mastermindFleetPastDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Past deadline'**
+  String get mastermindFleetPastDeadline;
+
+  /// No description provided for @mastermindFleetCountdownHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String mastermindFleetCountdownHours(int hours, int minutes);
+
+  /// No description provided for @mastermindFleetWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get mastermindFleetWhy;
+
+  /// No description provided for @mastermindFleetIfNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'If no answer'**
+  String get mastermindFleetIfNoAnswer;
+
+  /// No description provided for @mastermindFleetFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get mastermindFleetFrom;
+
+  /// No description provided for @mastermindFleetMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get mastermindFleetMore;
+
+  /// No description provided for @mastermindFleetFewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer'**
+  String get mastermindFleetFewer;
+
+  /// No description provided for @mastermindFleetSnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get mastermindFleetSnooze;
+
+  /// No description provided for @mastermindFleetSnooze15.
+  ///
+  /// In en, this message translates to:
+  /// **'15 minutes'**
+  String get mastermindFleetSnooze15;
+
+  /// No description provided for @mastermindFleetSnooze60.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get mastermindFleetSnooze60;
+
+  /// No description provided for @mastermindFleetSnoozeMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow 08:00'**
+  String get mastermindFleetSnoozeMorning;
+
+  /// No description provided for @mastermindFleetSnoozeDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Until 5 min before deadline'**
+  String get mastermindFleetSnoozeDeadline;
+
+  /// No description provided for @mastermindFleetSnoozedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed'**
+  String get mastermindFleetSnoozedTitle;
+
+  /// No description provided for @mastermindFleetSnoozedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Back at {time}'**
+  String mastermindFleetSnoozedUntil(String time);
+
+  /// No description provided for @mastermindFleetSnoozedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Snoozed until {time}'**
+  String mastermindFleetSnoozedToast(String time);
+
+  /// No description provided for @mastermindFleetUnsnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Show now'**
+  String get mastermindFleetUnsnooze;
+
+  /// No description provided for @mastermindFleetUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get mastermindFleetUndo;
+
+  /// No description provided for @mastermindFleetAnswerQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'About to send'**
+  String get mastermindFleetAnswerQueued;
+
+  /// No description provided for @mastermindFleetAnswerClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This request has already closed'**
+  String get mastermindFleetAnswerClosed;
+
+  /// No description provided for @mastermindFleetAnswerSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get mastermindFleetAnswerSignedIn;
+
+  /// No description provided for @mastermindFleetAnsweredOnMastermind.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Mastermind'**
+  String get mastermindFleetAnsweredOnMastermind;
+
+  /// No description provided for @mastermindFleetAnsweredOnMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on mobile'**
+  String get mastermindFleetAnsweredOnMobile;
+
+  /// No description provided for @mastermindFleetAnsweredOnWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on WhatsApp'**
+  String get mastermindFleetAnsweredOnWhatsapp;
+
+  /// No description provided for @mastermindFleetAnsweredOnCli.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in the CLI'**
+  String get mastermindFleetAnsweredOnCli;
+
+  /// No description provided for @mastermindFleetResolvedClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get mastermindFleetResolvedClosed;
+
+  /// No description provided for @mastermindFleetLoginWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you'**
+  String get mastermindFleetLoginWaiting;
+
+  /// No description provided for @mastermindFleetLoginApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking sign-in'**
+  String get mastermindFleetLoginApproved;
+
+  /// No description provided for @mastermindFleetLoginVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified by agent'**
+  String get mastermindFleetLoginVerified;
+
+  /// No description provided for @mastermindFleetLoginExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindFleetLoginExpired;
+
+  /// No description provided for @mastermindFleetLoginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in not detected'**
+  String get mastermindFleetLoginFailed;
+
+  /// No description provided for @mastermindFleetExpiresIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {time}'**
+  String mastermindFleetExpiresIn(String time);
+
+  /// No description provided for @mastermindFleetCopyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get mastermindFleetCopyCode;
+
+  /// No description provided for @mastermindFleetCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get mastermindFleetCodeCopied;
+
+  /// No description provided for @mastermindFleetDeviceCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Device code {code}'**
+  String mastermindFleetDeviceCode(String code);
+
+  /// No description provided for @mastermindFleetOpenHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {host}'**
+  String mastermindFleetOpenHost(String host);
+
+  /// No description provided for @mastermindFleetFinishOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish on {machine}'**
+  String mastermindFleetFinishOn(String machine);
+
+  /// No description provided for @mastermindFleetSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'I signed in'**
+  String get mastermindFleetSignedIn;
+
+  /// No description provided for @mastermindFleetSnoozeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t snooze on this device'**
+  String get mastermindFleetSnoozeFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

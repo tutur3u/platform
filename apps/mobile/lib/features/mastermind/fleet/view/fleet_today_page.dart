@@ -6,14 +6,17 @@ import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_digest.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_machines_panel.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_release_strip.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind`, Today: fleet health at a glance, what needs the owner, lane
-/// counts that open Work filtered, and every machine.
+/// `/mastermind`, Today: what is happening now, the figures that need the
+/// owner, the release train, what needs the owner and every machine.
 class FleetTodayPage extends StatelessWidget {
   const FleetTodayPage({this.now, super.key});
 
@@ -27,11 +30,23 @@ class FleetTodayPage extends StatelessWidget {
         SliverList.list(
           children: [
             FleetFreshnessLine(state: state, now: now),
-            FleetHealthHero(snapshot: snapshot),
+            FleetClock(
+              period: const Duration(seconds: 30),
+              now: now,
+              builder: (context, current) => Column(
+                children: [
+                  FleetHealthHero(snapshot: snapshot, now: current),
+                  const SizedBox(height: AppSpacing.lg),
+                  _Kpis(snapshot: snapshot, now: current),
+                ],
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
-            _LaneCounts(counts: snapshot.counts),
-            const SizedBox(height: AppSpacing.lg),
-            _NeedsYouPanel(snapshot: snapshot, state: state),
+            if (snapshot.release case final release?) ...[
+              FleetReleaseStrip(release: release),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+            _NeedsYouPanel(snapshot: snapshot, state: state, now: now),
             const SizedBox(height: AppSpacing.lg),
             FleetMachinesPanel(snapshot: snapshot, now: now),
           ],
@@ -42,15 +57,16 @@ class FleetTodayPage extends StatelessWidget {
 }
 
 class FleetHealthHero extends StatelessWidget {
-  const FleetHealthHero({required this.snapshot, super.key});
+  const FleetHealthHero({required this.snapshot, required this.now, super.key});
 
   final FleetSnapshot snapshot;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final counts = snapshot.counts;
-    final open = snapshot.openDecisions.length;
+    final open = snapshot.needsYouAt(now).length;
     final (headline, tone, icon) = open > 0
         ? (
             l10n.mastermindFleetHeadlineNeedsYou(open),
@@ -78,8 +94,9 @@ class FleetHealthHero extends StatelessWidget {
         .where((m) => m.status == FleetMachineStatus.online)
         .length;
     return AppSummaryHero(
-      eyebrow: l10n.mastermindFleetHealthEyebrow,
+      eyebrow: l10n.mastermindFleetNowEyebrow,
       headline: headline,
+      supporting: fleetDigest(l10n, snapshot, now),
       icon: icon,
       tone: tone,
       facts: [
@@ -99,49 +116,75 @@ class FleetHealthHero extends StatelessWidget {
   }
 }
 
-class _LaneCounts extends StatelessWidget {
-  const _LaneCounts({required this.counts});
+/// Running lanes, what needs the owner, logins blocking work and failed
+/// lanes; each opens the list behind it.
+class _Kpis extends StatelessWidget {
+  const _Kpis({required this.snapshot, required this.now});
 
-  final FleetCounts counts;
+  final FleetSnapshot snapshot;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final counts = snapshot.counts;
+    final needs = snapshot.needsYouAt(now).length;
+    final logins = fleetOpenLogins(snapshot, now);
+    AppTone alarm(int value, AppTone tone) =>
+        value == 0 ? AppTone.neutral : tone;
     return AppAdaptiveGrid(
       minTileWidth: 140,
       equalHeight: true,
       children: [
-        for (final state in const [
-          FleetLaneState.running,
-          FleetLaneState.waiting,
-          FleetLaneState.queued,
-          FleetLaneState.failed,
-          FleetLaneState.idle,
-        ])
-          AppStatTile(
-            label: state.label(l10n),
-            value: '${counts.of(state)}',
-            icon: state.icon,
-            // A zero keeps a neutral glyph: only real failures alarm.
-            tone: counts.of(state) == 0 ? AppTone.neutral : state.tone,
-            onTap: () =>
-                context.go('${Routes.mastermindWork}?state=${state.name}'),
+        AppStatTile(
+          label: l10n.mastermindFleetKpiRunning,
+          value: '${counts.running}',
+          icon: FleetLaneState.running.icon,
+          tone: alarm(counts.running, AppTone.success),
+          onTap: () => context.go(
+            '${Routes.mastermindWork}?state=${FleetLaneState.running.name}',
           ),
+        ),
+        AppStatTile(
+          label: l10n.mastermindFleetKpiNeedsYou,
+          value: '$needs',
+          icon: LucideIcons.inbox,
+          tone: alarm(needs, AppTone.warning),
+          onTap: () => context.go(Routes.mastermindInbox),
+        ),
+        AppStatTile(
+          label: l10n.mastermindFleetKpiLogins,
+          value: '$logins',
+          icon: LucideIcons.keyRound,
+          tone: alarm(logins, AppTone.warning),
+          onTap: () => context.go(Routes.mastermindInbox),
+        ),
+        AppStatTile(
+          label: FleetLaneState.failed.label(l10n),
+          value: '${counts.failed}',
+          icon: FleetLaneState.failed.icon,
+          // A zero keeps a neutral glyph: only real failures alarm.
+          tone: alarm(counts.failed, AppTone.destructive),
+          onTap: () => context.go(
+            '${Routes.mastermindWork}?state=${FleetLaneState.failed.name}',
+          ),
+        ),
       ],
     );
   }
 }
 
 class _NeedsYouPanel extends StatelessWidget {
-  const _NeedsYouPanel({required this.snapshot, required this.state});
+  const _NeedsYouPanel({required this.snapshot, required this.state, this.now});
 
   final FleetSnapshot snapshot;
   final FleetViewState state;
+  final DateTime Function()? now;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final open = snapshot.openDecisions;
+    final open = snapshot.needsYouAt((now ?? DateTime.now)().toUtc());
     return AppPanel(
       title: l10n.mastermindFleetNeedsYouTitle,
       actionLabel: open.length > 3 ? l10n.mastermindFleetSeeAll : null,

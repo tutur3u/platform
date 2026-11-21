@@ -4,6 +4,9 @@
 /// screen. See apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync.
 library;
 
+part 'fleet_login.dart';
+part 'fleet_release.dart';
+
 enum FleetLaneState { running, waiting, queued, idle, failed }
 
 enum FleetMachineStatus { online, stale, offline }
@@ -12,7 +15,22 @@ enum FleetUrgency { urgent, high, normal, fyi }
 
 enum FleetOrchestratorState { running, waiting, idle, offline }
 
-enum FleetAnswerAction { approve, hold, reply }
+enum FleetAnswerAction {
+  approve('approve'),
+  hold('hold'),
+  reply('reply'),
+
+  /// "I signed in" on an open login request.
+  signedIn('signed_in');
+
+  const FleetAnswerAction(this.wire);
+
+  /// The contract value; [name] differs where the wire uses snake case.
+  final String wire;
+}
+
+/// `ask` is the default; `login` is an access request with a [FleetLogin].
+enum FleetDecisionKind { ask, login }
 
 T? _enum<T extends Enum>(List<T> values, Object? raw) {
   for (final value in values) {
@@ -20,6 +38,9 @@ T? _enum<T extends Enum>(List<T> values, Object? raw) {
   }
   return null;
 }
+
+FleetAnswerAction? _action(Object? raw) =>
+    FleetAnswerAction.values.where((a) => a.wire == raw).firstOrNull;
 
 String? _string(Object? raw) =>
     raw is String && raw.trim().isNotEmpty ? raw : null;
@@ -141,18 +162,38 @@ class FleetDecision {
     this.recommendedOptionId,
     this.laneId,
     this.deadlineAt,
+    this.kind = FleetDecisionKind.ask,
+    this.why,
+    this.defaultOutcome,
+    this.requester,
+    this.login,
   });
 
+  /// A login request whose payload does not parse is dropped: without it the
+  /// card could only offer answers Web refuses.
   static FleetDecision? parse(Map<String, dynamic> json) {
     final id = _string(json['id']);
     final title = _string(json['title']);
     final createdAt = _time(json['createdAt']);
     if (id == null || title == null || createdAt == null) return null;
+    final kind =
+        _enum(FleetDecisionKind.values, json['kind']) ?? FleetDecisionKind.ask;
+    final loginJson = json['login'];
+    final login =
+        kind == FleetDecisionKind.login && loginJson is Map<String, dynamic>
+        ? FleetLogin.parse(loginJson)
+        : null;
+    if (kind == FleetDecisionKind.login && login == null) return null;
     final options = _list(json['options'], FleetOption.parse);
     final recommended = _string(json['recommendedOptionId']);
     return FleetDecision(
       id: id,
       title: title,
+      kind: kind,
+      why: _string(json['why']),
+      defaultOutcome: _string(json['defaultOutcome']),
+      requester: _string(json['requester']),
+      login: login,
       urgency:
           _enum(FleetUrgency.values, json['urgency']) ?? FleetUrgency.normal,
       createdAt: createdAt,
@@ -175,6 +216,19 @@ class FleetDecision {
   final String? recommendedOptionId;
   final String? laneId;
   final DateTime? deadlineAt;
+  final FleetDecisionKind kind;
+
+  /// Why the orchestrator is asking now.
+  final String? why;
+
+  /// What happens at the deadline without an answer.
+  final String? defaultOutcome;
+
+  /// The asking agent, lane or machine.
+  final String? requester;
+
+  /// Set exactly when [kind] is [FleetDecisionKind.login].
+  final FleetLogin? login;
 
   FleetOption? get recommended =>
       options.where((o) => o.id == recommendedOptionId).firstOrNull;
@@ -191,7 +245,7 @@ class FleetAnswerReceipt {
   });
 
   static FleetAnswerReceipt? parse(Map<String, dynamic> json) {
-    final action = _enum(FleetAnswerAction.values, json['action']);
+    final action = _action(json['action']);
     final revision = json['revision'];
     final answeredAt = _time(json['answeredAt']);
     if (action == null || revision is! int || answeredAt == null) return null;
@@ -258,6 +312,8 @@ class FleetSnapshot {
     this.lanes = const [],
     this.decisions = const [],
     this.answers = const {},
+    this.resolved = const [],
+    this.release,
   });
 
   /// Throws [FormatException] only when the envelope itself is unusable.
@@ -294,6 +350,12 @@ class FleetSnapshot {
               if (FleetAnswerReceipt.parse(value) case final receipt?)
                 key: receipt,
       },
+      resolved: _list(state['resolved'], FleetResolvedDecision.parse)
+        ..sort((a, b) => b.resolvedAt.compareTo(a.resolvedAt)),
+      release: switch (state['release']) {
+        final Map<String, dynamic> release => FleetRelease.parse(release),
+        _ => null,
+      },
     );
   }
 
@@ -308,6 +370,13 @@ class FleetSnapshot {
   final List<FleetDecision> decisions;
   final Map<String, FleetAnswerReceipt> answers;
 
+  /// Decisions closed in the last day, newest first, with where they went.
+  final List<FleetResolvedDecision> resolved;
+  final FleetRelease? release;
+
+  String? machineLabel(String? id) =>
+      machines.where((m) => m.id == id).firstOrNull?.label;
+
   /// Decisions the owner has not answered yet, most urgent first.
   List<FleetDecision> get openDecisions =>
       decisions.where((d) => !answers.containsKey(d.id)).toList()..sort(
@@ -315,6 +384,16 @@ class FleetSnapshot {
             ? a.urgency.index - b.urgency.index
             : a.createdAt.compareTo(b.createdAt),
       );
+
+  /// Unanswered decisions the owner can still act on at [now]: a login
+  /// request that has expired or ended no longer counts.
+  List<FleetDecision> needsYouAt(DateTime now) =>
+      openDecisions.where((d) => d.login?.isOpenAt(now) ?? true).toList();
+
+  /// Login requests still open at [now], answered or not: until the agent
+  /// verifies a sign-in, the request keeps blocking work.
+  List<FleetDecision> openLoginsAt(DateTime now) =>
+      decisions.where((d) => d.login?.isOpenAt(now) ?? false).toList();
 
   FleetSnapshot withAnswer(String decisionId, FleetAnswerReceipt receipt) =>
       FleetSnapshot(
@@ -328,5 +407,7 @@ class FleetSnapshot {
         lanes: lanes,
         decisions: decisions,
         answers: {...answers, decisionId: receipt},
+        resolved: resolved,
+        release: release,
       );
 }

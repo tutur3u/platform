@@ -2,7 +2,10 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 
 /// Why a fleet read failed, as a closed category; never a server message.
-enum FleetFailure { forbidden, notPublished, unavailable, unreadable }
+///
+/// [closed] is an answer Web refused because the decision or login request
+/// already ended (409); resending the same answer cannot succeed.
+enum FleetFailure { forbidden, notPublished, closed, unavailable, unreadable }
 
 class FleetException implements Exception {
   const FleetException(this.failure);
@@ -16,6 +19,7 @@ class FleetException implements Exception {
     ApiException(statusCode: 404) => const FleetException(
       FleetFailure.notPublished,
     ),
+    ApiException(statusCode: 409) => const FleetException(FleetFailure.closed),
     _ => const FleetException(FleetFailure.unavailable),
   };
 
@@ -39,6 +43,10 @@ class FleetRepository implements FleetSource {
   FleetRepository({ApiClient? api}) : _api = api ?? ApiClient();
 
   static const statePath = '/api/v1/mastermind/fleet/state';
+
+  /// Snapshot features this app renders. Without `login`, Web omits access
+  /// requests because older clients would offer answers it refuses.
+  static const featuresHeader = {'x-mastermind-fleet-features': 'login'};
   static String answerPath(String decisionId) =>
       '/api/v1/mastermind/fleet/decisions/${Uri.encodeComponent(decisionId)}/answer';
 
@@ -47,7 +55,9 @@ class FleetRepository implements FleetSource {
   @override
   Future<FleetSnapshot> fetch() async {
     try {
-      return FleetSnapshot.parse(await _api.getJson(statePath));
+      return FleetSnapshot.parse(
+        await _api.getJsonWithHeaders(statePath, featuresHeader),
+      );
     } on Object catch (error) {
       throw FleetException.from(error);
     }
@@ -64,7 +74,7 @@ class FleetRepository implements FleetSource {
     try {
       // The key travels in the body: ApiClient owns the request headers.
       final json = await _api.postJson(answerPath(decisionId), {
-        'action': action.name,
+        'action': action.wire,
         'optionId': ?optionId,
         'text': ?text,
         'idempotencyKey': idempotencyKey,

@@ -17779,9 +17779,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindFleetHealthEyebrow => 'Fleet health';
-
-  @override
   String mastermindFleetHeadlineNeedsYou(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -18194,4 +18191,308 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeInterestProjectionChart => 'Projected interest';
+
+  @override
+  String get mastermindFleetNowEyebrow => 'What\'s happening now';
+
+  @override
+  String mastermindFleetDigestLanes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lanes are running.',
+      one: '1 lane is running.',
+      zero: 'No lanes are running.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lanes failed.',
+      one: '1 lane failed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetDigestFrozen => 'Main is frozen.';
+
+  @override
+  String mastermindFleetDigestFrozenReason(String reason) {
+    return 'Main is frozen: $reason.';
+  }
+
+  @override
+  String mastermindFleetDigestQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count commits are queued behind it.',
+      one: '1 commit is queued behind it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestLogins(int count, String list) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count logins are blocking work: $list.',
+      one: 'One login is blocking work: $list.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetDigestProductionDown => 'Production is down.';
+
+  @override
+  String get mastermindFleetDigestProductionDegraded => 'Production is degraded.';
+
+  @override
+  String mastermindFleetDigestIncidents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count incidents are open.',
+      one: '1 incident is open.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetLoginOn(String service, String machine) {
+    return '$service on $machine';
+  }
+
+  @override
+  String get mastermindFleetKpiRunning => 'Running lanes';
+
+  @override
+  String get mastermindFleetKpiNeedsYou => 'Need you';
+
+  @override
+  String get mastermindFleetKpiLogins => 'Blocked on login';
+
+  @override
+  String get mastermindFleetReleaseMain => 'Main';
+
+  @override
+  String get mastermindFleetReleaseProduction => 'Production';
+
+  @override
+  String get mastermindFleetReleaseMigrations => 'Migrations';
+
+  @override
+  String get mastermindFleetReleaseIncidents => 'Incidents';
+
+  @override
+  String get mastermindFleetMainOpen => 'Open';
+
+  @override
+  String get mastermindFleetMainFrozen => 'Frozen';
+
+  @override
+  String mastermindFleetQueued(int count) {
+    return '$count queued';
+  }
+
+  @override
+  String get mastermindFleetProductionHealthy => 'Healthy';
+
+  @override
+  String get mastermindFleetProductionDegraded => 'Degraded';
+
+  @override
+  String get mastermindFleetProductionDown => 'Down';
+
+  @override
+  String get mastermindFleetProductionUnknown => 'Unknown';
+
+  @override
+  String mastermindFleetMigrationsPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending',
+      zero: 'None pending',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetMigrationIdle => 'Idle';
+
+  @override
+  String get mastermindFleetMigrationStaging => 'On staging';
+
+  @override
+  String get mastermindFleetMigrationGated => 'Production gated';
+
+  @override
+  String get mastermindFleetMigrationApplying => 'Applying';
+
+  @override
+  String get mastermindFleetMigrationFailed => 'Failed';
+
+  @override
+  String mastermindFleetIncidentsOpen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open',
+      zero: 'None open',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetTierUrgent => 'Urgent';
+
+  @override
+  String get mastermindFleetTierAccess => 'Access requests';
+
+  @override
+  String get mastermindFleetTierDecide => 'Needs a decision';
+
+  @override
+  String get mastermindFleetTierFyi => 'For your information';
+
+  @override
+  String mastermindFleetDueIn(String time) {
+    return 'Due in $time';
+  }
+
+  @override
+  String get mastermindFleetPastDeadline => 'Past deadline';
+
+  @override
+  String mastermindFleetCountdownHours(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get mastermindFleetWhy => 'Why';
+
+  @override
+  String get mastermindFleetIfNoAnswer => 'If no answer';
+
+  @override
+  String get mastermindFleetFrom => 'From';
+
+  @override
+  String get mastermindFleetMore => 'More';
+
+  @override
+  String get mastermindFleetFewer => 'Fewer';
+
+  @override
+  String get mastermindFleetSnooze => 'Snooze';
+
+  @override
+  String get mastermindFleetSnooze15 => '15 minutes';
+
+  @override
+  String get mastermindFleetSnooze60 => '1 hour';
+
+  @override
+  String get mastermindFleetSnoozeMorning => 'Tomorrow 08:00';
+
+  @override
+  String get mastermindFleetSnoozeDeadline => 'Until 5 min before deadline';
+
+  @override
+  String get mastermindFleetSnoozedTitle => 'Snoozed';
+
+  @override
+  String mastermindFleetSnoozedUntil(String time) {
+    return 'Back at $time';
+  }
+
+  @override
+  String mastermindFleetSnoozedToast(String time) {
+    return 'Snoozed until $time';
+  }
+
+  @override
+  String get mastermindFleetUnsnooze => 'Show now';
+
+  @override
+  String get mastermindFleetUndo => 'Undo';
+
+  @override
+  String get mastermindFleetAnswerQueued => 'About to send';
+
+  @override
+  String get mastermindFleetAnswerClosed => 'This request has already closed';
+
+  @override
+  String get mastermindFleetAnswerSignedIn => 'Signed in';
+
+  @override
+  String get mastermindFleetAnsweredOnMastermind => 'Answered on Mastermind';
+
+  @override
+  String get mastermindFleetAnsweredOnMobile => 'Answered on mobile';
+
+  @override
+  String get mastermindFleetAnsweredOnWhatsapp => 'Answered on WhatsApp';
+
+  @override
+  String get mastermindFleetAnsweredOnCli => 'Answered in the CLI';
+
+  @override
+  String get mastermindFleetResolvedClosed => 'Closed';
+
+  @override
+  String get mastermindFleetLoginWaiting => 'Waiting for you';
+
+  @override
+  String get mastermindFleetLoginApproved => 'Checking sign-in';
+
+  @override
+  String get mastermindFleetLoginVerified => 'Verified by agent';
+
+  @override
+  String get mastermindFleetLoginExpired => 'Expired';
+
+  @override
+  String get mastermindFleetLoginFailed => 'Sign-in not detected';
+
+  @override
+  String mastermindFleetExpiresIn(String time) {
+    return 'Expires in $time';
+  }
+
+  @override
+  String get mastermindFleetCopyCode => 'Copy code';
+
+  @override
+  String get mastermindFleetCodeCopied => 'Code copied';
+
+  @override
+  String mastermindFleetDeviceCode(String code) {
+    return 'Device code $code';
+  }
+
+  @override
+  String mastermindFleetOpenHost(String host) {
+    return 'Open $host';
+  }
+
+  @override
+  String mastermindFleetFinishOn(String machine) {
+    return 'Finish on $machine';
+  }
+
+  @override
+  String get mastermindFleetSignedIn => 'I signed in';
+
+  @override
+  String get mastermindFleetSnoozeFailed => 'Couldn\'t snooze on this device';
 }

@@ -8632,7 +8632,6 @@
       }
     }
   },
-  "mastermindFleetHealthEyebrow": "Fleet health",
   "mastermindFleetHeadlineNeedsYou": "{count, plural, =1{1 decision needs you} other{{count} decisions need you}}",
   "@mastermindFleetHeadlineNeedsYou": {
     "placeholders": {
@@ -8899,5 +8898,215 @@
       }
     }
   },
-  "financeInterestProjectionChart": "Projected interest"
+  "financeInterestProjectionChart": "Projected interest",
+  "mastermindFleetNowEyebrow": "What's happening now",
+  "mastermindFleetDigestLanes": "{count, plural, =0{No lanes are running.} =1{1 lane is running.} other{{count} lanes are running.}}",
+  "@mastermindFleetDigestLanes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetDigestFailed": "{count, plural, =1{1 lane failed.} other{{count} lanes failed.}}",
+  "@mastermindFleetDigestFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetDigestFrozen": "Main is frozen.",
+  "mastermindFleetDigestFrozenReason": "Main is frozen: {reason}.",
+  "@mastermindFleetDigestFrozenReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetDigestQueued": "{count, plural, =1{1 commit is queued behind it.} other{{count} commits are queued behind it.}}",
+  "@mastermindFleetDigestQueued": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetDigestLogins": "{count, plural, =1{One login is blocking work: {list}.} other{{count} logins are blocking work: {list}.}}",
+  "@mastermindFleetDigestLogins": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetDigestProductionDown": "Production is down.",
+  "mastermindFleetDigestProductionDegraded": "Production is degraded.",
+  "mastermindFleetDigestIncidents": "{count, plural, =1{1 incident is open.} other{{count} incidents are open.}}",
+  "@mastermindFleetDigestIncidents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetLoginOn": "{service} on {machine}",
+  "@mastermindFleetLoginOn": {
+    "placeholders": {
+      "service": {
+        "type": "String"
+      },
+      "machine": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetKpiRunning": "Running lanes",
+  "mastermindFleetKpiNeedsYou": "Need you",
+  "mastermindFleetKpiLogins": "Blocked on login",
+  "mastermindFleetReleaseMain": "Main",
+  "mastermindFleetReleaseProduction": "Production",
+  "mastermindFleetReleaseMigrations": "Migrations",
+  "mastermindFleetReleaseIncidents": "Incidents",
+  "mastermindFleetMainOpen": "Open",
+  "mastermindFleetMainFrozen": "Frozen",
+  "mastermindFleetQueued": "{count} queued",
+  "@mastermindFleetQueued": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetProductionHealthy": "Healthy",
+  "mastermindFleetProductionDegraded": "Degraded",
+  "mastermindFleetProductionDown": "Down",
+  "mastermindFleetProductionUnknown": "Unknown",
+  "mastermindFleetMigrationsPending": "{count, plural, =0{None pending} other{{count} pending}}",
+  "@mastermindFleetMigrationsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetMigrationIdle": "Idle",
+  "mastermindFleetMigrationStaging": "On staging",
+  "mastermindFleetMigrationGated": "Production gated",
+  "mastermindFleetMigrationApplying": "Applying",
+  "mastermindFleetMigrationFailed": "Failed",
+  "mastermindFleetIncidentsOpen": "{count, plural, =0{None open} other{{count} open}}",
+  "@mastermindFleetIncidentsOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetTierUrgent": "Urgent",
+  "mastermindFleetTierAccess": "Access requests",
+  "mastermindFleetTierDecide": "Needs a decision",
+  "mastermindFleetTierFyi": "For your information",
+  "mastermindFleetDueIn": "Due in {time}",
+  "@mastermindFleetDueIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetPastDeadline": "Past deadline",
+  "mastermindFleetCountdownHours": "{hours} h {minutes} min",
+  "@mastermindFleetCountdownHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetWhy": "Why",
+  "mastermindFleetIfNoAnswer": "If no answer",
+  "mastermindFleetFrom": "From",
+  "mastermindFleetMore": "More",
+  "mastermindFleetFewer": "Fewer",
+  "mastermindFleetSnooze": "Snooze",
+  "mastermindFleetSnooze15": "15 minutes",
+  "mastermindFleetSnooze60": "1 hour",
+  "mastermindFleetSnoozeMorning": "Tomorrow 08:00",
+  "mastermindFleetSnoozeDeadline": "Until 5 min before deadline",
+  "mastermindFleetSnoozedTitle": "Snoozed",
+  "mastermindFleetSnoozedUntil": "Back at {time}",
+  "@mastermindFleetSnoozedUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetSnoozedToast": "Snoozed until {time}",
+  "@mastermindFleetSnoozedToast": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetUnsnooze": "Show now",
+  "mastermindFleetUndo": "Undo",
+  "mastermindFleetAnswerQueued": "About to send",
+  "mastermindFleetAnswerClosed": "This request has already closed",
+  "mastermindFleetAnswerSignedIn": "Signed in",
+  "mastermindFleetAnsweredOnMastermind": "Answered on Mastermind",
+  "mastermindFleetAnsweredOnMobile": "Answered on mobile",
+  "mastermindFleetAnsweredOnWhatsapp": "Answered on WhatsApp",
+  "mastermindFleetAnsweredOnCli": "Answered in the CLI",
+  "mastermindFleetResolvedClosed": "Closed",
+  "mastermindFleetLoginWaiting": "Waiting for you",
+  "mastermindFleetLoginApproved": "Checking sign-in",
+  "mastermindFleetLoginVerified": "Verified by agent",
+  "mastermindFleetLoginExpired": "Expired",
+  "mastermindFleetLoginFailed": "Sign-in not detected",
+  "mastermindFleetExpiresIn": "Expires in {time}",
+  "@mastermindFleetExpiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetCopyCode": "Copy code",
+  "mastermindFleetCodeCopied": "Code copied",
+  "mastermindFleetDeviceCode": "Device code {code}",
+  "@mastermindFleetDeviceCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetOpenHost": "Open {host}",
+  "@mastermindFleetOpenHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetFinishOn": "Finish on {machine}",
+  "@mastermindFleetFinishOn": {
+    "placeholders": {
+      "machine": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetSignedIn": "I signed in",
+  "mastermindFleetSnoozeFailed": "Couldn't snooze on this device"
 }

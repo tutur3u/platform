@@ -201,6 +201,19 @@ class ApiClient {
   Future<Map<String, dynamic>> getJson(
     String path, {
     bool requiresAuth = true,
+  }) => _getJson(path, requiresAuth: requiresAuth);
+
+  /// GET JSON from [path] with extra request [headers], such as a feature
+  /// declaration. They are added to the client's own and cannot replace them.
+  Future<Map<String, dynamic>> getJsonWithHeaders(
+    String path,
+    Map<String, String> headers,
+  ) => _getJson(path, headers: headers);
+
+  Future<Map<String, dynamic>> _getJson(
+    String path, {
+    bool requiresAuth = true,
+    Map<String, String> headers = const {},
   }) async {
     if (requiresAuth && NativeIntegrityClient.protects(path)) {
       return _handleResponse(await _requestWithIntegrity('GET', path));
@@ -209,17 +222,19 @@ class ApiClient {
 
     final response = await _performRequest(() async {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      late Map<String, String> headers;
+      late Map<String, String> requestHeaders;
       return await OfflineApiRequest.paced(
         () {
           if (requiresAuth) _checkRequestUser(userId);
-          return _client.get(url, headers: headers).timeout(_requestTimeout);
+          return _client
+              .get(url, headers: requestHeaders)
+              .timeout(_requestTimeout);
         },
         prepare: () async {
-          headers = await _getHeaders(
-            requiresAuth: requiresAuth,
-            offlineRead: true,
-          );
+          requestHeaders = {
+            ...headers,
+            ...await _getHeaders(requiresAuth: requiresAuth, offlineRead: true),
+          };
         },
       );
     }, requiresAuth: requiresAuth);

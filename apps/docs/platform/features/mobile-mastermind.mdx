@@ -251,6 +251,110 @@ product rules of the shell entry and every tab.
   publisher output through the real edge guard, contract and body cap) and
   `apps/mobile/test/features/mastermind/fleet/`.
 
+## Fleet command center on mobile
+
+Today and Inbox are the phone's command center over the fleet snapshot. They
+use the shared Sorbet-aware kit (`AppSummaryHero`, `AppStatTile`, `AppCard`,
+`AppRichRow`) inside the Mastermind shell: one top title, the floating dock
+owns Back, and every list reserves the dock clearance. Code lives in
+`apps/mobile/lib/features/mastermind/fleet/`.
+
+- **Feature header:** every snapshot read sends
+  `x-mastermind-fleet-features: login`, so Web includes access requests.
+  The parser stays tolerant per entry: a login request whose payload does
+  not parse is dropped rather than shown as an ask, as is an open one
+  without a safe https link, an expiry or (device flow) a code, and an
+  unknown answer channel or release part is omitted.
+- **Today:** the hero headline keeps the most pressing fact (decisions
+  waiting, failed lanes, running lanes or a quiet fleet). Under "What's
+  happening now" it composes a digest only from snapshot fields: running and
+  failed lanes, the main freeze with its reason and queue, production down or
+  degraded, open incidents, and each open login as "<service> on
+  <machine>". Four figures follow: running lanes, need you, blocked on login
+  and failed lanes, each opening Work or Inbox. The release strip (main,
+  production, migrations, incidents) appears only when the snapshot carries
+  `release`, and shows only the parts it reports. Spend is not shown: the
+  snapshot carries no cost data. The machines list follows.
+- **Settings:** there is no per-tier Mastermind notification setting to back
+  a preferences screen, so none is shown; push follows the account push
+  preference (see Push notifications).
+
+### Fleet Inbox
+
+- **Tiers:** Urgent (`urgent`), Access requests (every open login request,
+  whatever its urgency, because it blocks work), Needs a decision (`high`
+  and `normal`) and For your information (`fyi`), then Snoozed and Answered.
+  "Nothing needs you" shows when no open card is left after snoozes. A login
+  request that has ended stays in Access requests with its state but no
+  longer counts toward Need you and cannot be snoozed; one answered with
+  "I signed in" still counts as blocked on login until the agent verifies
+  it.
+- **Ask cards:** age and a deadline countdown ("Due in 19:00" under an hour,
+  "Due in 2 h 5 min" beyond it, "Past deadline" after it), the title and
+  body, then Why, If no answer and From rows when the publisher sent `why`,
+  `defaultOutcome` and `requester`. With a recommended option the primary
+  button answers it in one tap; More reveals the other options and Hold.
+  Without one, the options, Approve and Hold show directly. Reply and Snooze
+  are always offered.
+- **Undo:** an answer waits five seconds ("About to send") before it is
+  posted, and Undo in that window drops it unsent, even when a poll brings
+  another device's answer meanwhile: the card keeps its place and this
+  device's own submission (waiting, not sent or closed) shows over the
+  other receipt until it settles. A queued answer to a decision another
+  channel closed meanwhile, or to a login request that ended, is dropped
+  unsent. A login request that has ended
+  offers no Retry. After posting, Web keeps every answer
+  as a revision, so there is no later undo.
+- **Snooze:** 15 minutes, 1 hour, 08:00 the next day in Mastermind time
+  (UTC+7) and, while it is more than five minutes away, until 5 minutes
+  before the deadline. A snooze hides the card on this device only; the
+  decision stays open for the fleet. Snoozes are stored on the device per
+  signed-in user as decision ids and wake times (no titles), are bound to
+  the account that read or made them (nothing is read or written while
+  signed out, and a read or change finishing after an account switch is
+  dropped; a failed storage read writes nothing until a read succeeds),
+  survive app
+  restarts, and are pruned once they pass or the decision closes. The toast
+  confirms only an applied snooze; when the device's snoozes cannot be read
+  it says "Couldn't snooze on this device" with Retry. The confirmation
+  offers Undo, the Snoozed row offers Show now, and a card returns on its
+  own when its time passes.
+- **Answered:** answers given here show their pickup status. Decisions in
+  `resolved` show where the answer came from ("Answered on WhatsApp",
+  "Answered on Mastermind", "Answered on mobile", "Answered in the CLI",
+  or "Closed" without a channel) with the chosen outcome. A 409 from Web
+  marks the answer "This request has already closed" without Retry and
+  refetches the snapshot.
+
+### Access requests
+
+- **Card:** "<service> on <machine>", the request title, its state badge,
+  the expiry countdown, and Why and From rows.
+- **Flows:** a `device` request shows its code in large mono type with Copy
+  (a toast confirms; the code is never logged) and opens the link. A `link`
+  request only opens the link. A `local_callback` request shows "Finish on
+  <machine>" and offers no link, because the sign-in completes only in a
+  browser on that machine. Links open through the app link launcher, which
+  honors the device browser preference; the app keeps a link only when it is
+  https with a host and no credentials.
+- **States:** Waiting for you, Checking sign-in (`approved`), Verified by
+  agent, Expired and Sign-in not detected (`failed`). I signed in posts the
+  `signed_in` answer while the request waits; the agent still verifies it,
+  so the code and the provider link stay on the card while it is open and
+  only the answer controls give way to the answer line.
+  When the countdown reaches the expiry the card reads Expired on the
+  phone's own clock and drops the code, the link and I signed in, even
+  before the next snapshot.
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/fleet/fleet_login_card_test.dart`
+  (code, Copy, the link launcher, local callback, `signed_in`, closed,
+  countdown to expiry, every state, Sorbet light and dark),
+  `fleet_inbox_snooze_test.dart` (snooze hide and return, toast Undo, Show
+  now, answer Undo, tiers, context rows, resolved channel, Today digest and
+  release strip) and `fleet_contract_test.dart` (parsing, the feature
+  header, `signed_in`, 409 as closed, the undo window, per-user snooze
+  storage).
+
 ## Native Worker live admission
 
 The native Mastermind Worker also reads `GET /api/v1/mastermind/access` on every

@@ -17570,9 +17570,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindFleetHealthEyebrow => 'Tình trạng đội';
-
-  @override
   String mastermindFleetHeadlineNeedsYou(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -17980,4 +17977,303 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeInterestProjectionChart => 'Lãi dự kiến';
+
+  @override
+  String get mastermindFleetNowEyebrow => 'Đang diễn ra';
+
+  @override
+  String mastermindFleetDigestLanes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count luồng đang chạy.',
+      zero: 'Không có luồng nào đang chạy.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count luồng thất bại.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetDigestFrozen => 'Main đang đóng băng.';
+
+  @override
+  String mastermindFleetDigestFrozenReason(String reason) {
+    return 'Main đang đóng băng: $reason.';
+  }
+
+  @override
+  String mastermindFleetDigestQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count commit đang chờ phía sau.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetDigestLogins(int count, String list) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lần đăng nhập đang chặn công việc: $list.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetDigestProductionDown => 'Production đang ngừng hoạt động.';
+
+  @override
+  String get mastermindFleetDigestProductionDegraded => 'Production đang suy giảm.';
+
+  @override
+  String mastermindFleetDigestIncidents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sự cố đang mở.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetLoginOn(String service, String machine) {
+    return '$service trên $machine';
+  }
+
+  @override
+  String get mastermindFleetKpiRunning => 'Luồng đang chạy';
+
+  @override
+  String get mastermindFleetKpiNeedsYou => 'Cần bạn';
+
+  @override
+  String get mastermindFleetKpiLogins => 'Chờ đăng nhập';
+
+  @override
+  String get mastermindFleetReleaseMain => 'Main';
+
+  @override
+  String get mastermindFleetReleaseProduction => 'Production';
+
+  @override
+  String get mastermindFleetReleaseMigrations => 'Migration';
+
+  @override
+  String get mastermindFleetReleaseIncidents => 'Sự cố';
+
+  @override
+  String get mastermindFleetMainOpen => 'Đang mở';
+
+  @override
+  String get mastermindFleetMainFrozen => 'Đóng băng';
+
+  @override
+  String mastermindFleetQueued(int count) {
+    return '$count đang chờ';
+  }
+
+  @override
+  String get mastermindFleetProductionHealthy => 'Ổn định';
+
+  @override
+  String get mastermindFleetProductionDegraded => 'Suy giảm';
+
+  @override
+  String get mastermindFleetProductionDown => 'Ngừng hoạt động';
+
+  @override
+  String get mastermindFleetProductionUnknown => 'Không rõ';
+
+  @override
+  String mastermindFleetMigrationsPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count đang chờ',
+      zero: 'Không có',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetMigrationIdle => 'Rảnh';
+
+  @override
+  String get mastermindFleetMigrationStaging => 'Trên staging';
+
+  @override
+  String get mastermindFleetMigrationGated => 'Production đang chờ cổng';
+
+  @override
+  String get mastermindFleetMigrationApplying => 'Đang áp dụng';
+
+  @override
+  String get mastermindFleetMigrationFailed => 'Thất bại';
+
+  @override
+  String mastermindFleetIncidentsOpen(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count đang mở',
+      zero: 'Không có',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetTierUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindFleetTierAccess => 'Yêu cầu đăng nhập';
+
+  @override
+  String get mastermindFleetTierDecide => 'Cần quyết định';
+
+  @override
+  String get mastermindFleetTierFyi => 'Để bạn biết';
+
+  @override
+  String mastermindFleetDueIn(String time) {
+    return 'Còn $time';
+  }
+
+  @override
+  String get mastermindFleetPastDeadline => 'Đã quá hạn';
+
+  @override
+  String mastermindFleetCountdownHours(int hours, int minutes) {
+    return '$hours giờ $minutes phút';
+  }
+
+  @override
+  String get mastermindFleetWhy => 'Lý do';
+
+  @override
+  String get mastermindFleetIfNoAnswer => 'Nếu không trả lời';
+
+  @override
+  String get mastermindFleetFrom => 'Từ';
+
+  @override
+  String get mastermindFleetMore => 'Thêm';
+
+  @override
+  String get mastermindFleetFewer => 'Thu gọn';
+
+  @override
+  String get mastermindFleetSnooze => 'Tạm hoãn';
+
+  @override
+  String get mastermindFleetSnooze15 => '15 phút';
+
+  @override
+  String get mastermindFleetSnooze60 => '1 giờ';
+
+  @override
+  String get mastermindFleetSnoozeMorning => '08:00 ngày mai';
+
+  @override
+  String get mastermindFleetSnoozeDeadline => 'Đến 5 phút trước hạn';
+
+  @override
+  String get mastermindFleetSnoozedTitle => 'Tạm hoãn';
+
+  @override
+  String mastermindFleetSnoozedUntil(String time) {
+    return 'Quay lại lúc $time';
+  }
+
+  @override
+  String mastermindFleetSnoozedToast(String time) {
+    return 'Tạm hoãn đến $time';
+  }
+
+  @override
+  String get mastermindFleetUnsnooze => 'Hiện ngay';
+
+  @override
+  String get mastermindFleetUndo => 'Hoàn tác';
+
+  @override
+  String get mastermindFleetAnswerQueued => 'Sắp gửi';
+
+  @override
+  String get mastermindFleetAnswerClosed => 'Yêu cầu này đã đóng';
+
+  @override
+  String get mastermindFleetAnswerSignedIn => 'Đã đăng nhập';
+
+  @override
+  String get mastermindFleetAnsweredOnMastermind => 'Đã trả lời trên Mastermind';
+
+  @override
+  String get mastermindFleetAnsweredOnMobile => 'Đã trả lời trên di động';
+
+  @override
+  String get mastermindFleetAnsweredOnWhatsapp => 'Đã trả lời trên WhatsApp';
+
+  @override
+  String get mastermindFleetAnsweredOnCli => 'Đã trả lời qua CLI';
+
+  @override
+  String get mastermindFleetResolvedClosed => 'Đã đóng';
+
+  @override
+  String get mastermindFleetLoginWaiting => 'Đang chờ bạn';
+
+  @override
+  String get mastermindFleetLoginApproved => 'Đang kiểm tra đăng nhập';
+
+  @override
+  String get mastermindFleetLoginVerified => 'Agent đã xác minh';
+
+  @override
+  String get mastermindFleetLoginExpired => 'Hết hạn';
+
+  @override
+  String get mastermindFleetLoginFailed => 'Không thấy đăng nhập';
+
+  @override
+  String mastermindFleetExpiresIn(String time) {
+    return 'Hết hạn sau $time';
+  }
+
+  @override
+  String get mastermindFleetCopyCode => 'Sao chép mã';
+
+  @override
+  String get mastermindFleetCodeCopied => 'Đã sao chép mã';
+
+  @override
+  String mastermindFleetDeviceCode(String code) {
+    return 'Mã thiết bị $code';
+  }
+
+  @override
+  String mastermindFleetOpenHost(String host) {
+    return 'Mở $host';
+  }
+
+  @override
+  String mastermindFleetFinishOn(String machine) {
+    return 'Hoàn tất trên $machine';
+  }
+
+  @override
+  String get mastermindFleetSignedIn => 'Tôi đã đăng nhập';
+
+  @override
+  String get mastermindFleetSnoozeFailed => 'Không thể tạm hoãn trên thiết bị này';
 }

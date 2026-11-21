@@ -14,7 +14,9 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
 import 'package:mobile/features/mastermind/iris/data/http_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay_factory.dart';
@@ -45,8 +47,10 @@ final class MastermindRuntime {
     IrisRelay? iris,
     this.irisTrust,
     FleetCubit? fleet,
+    FleetSnoozeStore? fleetSnoozeStore,
     Stream<bool>? onlineChanges,
   }) : _fleet = fleet,
+       _fleetSnoozeStore = fleetSnoozeStore,
        iris = iris ?? const UnconfiguredIrisRelay(),
        replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
        answered = answered ?? MastermindAnsweredElsewhereCubit(),
@@ -124,6 +128,7 @@ final class MastermindRuntime {
           (source == null ? createMastermindAskDetailSource() : null),
       iris: iris ?? (source == null ? createIrisRelay(trust: trust) : null),
       irisTrust: trust,
+      fleetSnoozeStore: PrefsFleetSnoozeStore(userId: userId),
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
@@ -164,8 +169,20 @@ final class MastermindRuntime {
 
   /// The live fleet snapshot behind Today, Inbox and Work. Created on first
   /// use so a runtime that never shows a fleet tab opens no API client.
-  FleetCubit get fleet => _fleet ??= FleetCubit(source: FleetRepository());
+  /// Answers wait [fleetUndoWindow] before they are sent, so Undo is real.
+  FleetCubit get fleet => _fleet ??= FleetCubit(
+    source: FleetRepository(),
+    undoWindow: fleetUndoWindow,
+  );
   FleetCubit? _fleet;
+
+  static const fleetUndoWindow = Duration(seconds: 5);
+
+  /// Inbox snoozes, kept on this device per user.
+  FleetSnoozeCubit get fleetSnoozes =>
+      _fleetSnoozes ??= FleetSnoozeCubit(store: _fleetSnoozeStore);
+  FleetSnoozeCubit? _fleetSnoozes;
+  final FleetSnoozeStore? _fleetSnoozeStore;
 
   final MastermindSnapshotSource? _source;
   final MastermindReplyTransport? _replyTransport;
@@ -177,6 +194,7 @@ final class MastermindRuntime {
   void _onAccess(MastermindAccessState state) {
     if (state.status == MastermindAccessStatus.loaded && !state.enabled) {
       _fleet?.clear();
+      _fleetSnoozes?.clear();
       if (snapshot.state is! MastermindSnapshotInitial) {
         unawaited(snapshot.clear());
       }
@@ -212,6 +230,7 @@ final class MastermindRuntime {
     final synced = access.sync(wsId);
     answered.clear();
     _fleet?.clear();
+    _fleetSnoozes?.clear();
     await Future.wait([
       snapshot.clear(),
       replies.clear(),
@@ -253,6 +272,7 @@ final class MastermindRuntime {
     await replies.close();
     await answered.close();
     await _fleet?.close();
+    await _fleetSnoozes?.close();
     await snapshot.close();
     await access.close();
     if (_source case final HubHttpSnapshotSource live) live.close();

@@ -8,7 +8,9 @@ import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
 
 enum FleetLoadStatus { initial, loading, ready, failed }
 
-enum FleetSendStatus { sending, failed }
+/// [queued] waits out the undo window before it is sent; [closed] was refused
+/// because the decision or login request already ended.
+enum FleetSendStatus { queued, sending, failed, closed }
 
 /// One answer on its way to Web. The key is kept so Retry is the same answer.
 class FleetPendingAnswer {
@@ -26,10 +28,10 @@ class FleetPendingAnswer {
   final String? optionId;
   final String? text;
 
-  FleetPendingAnswer failed() => FleetPendingAnswer(
+  FleetPendingAnswer withStatus(FleetSendStatus status) => FleetPendingAnswer(
     action: action,
     idempotencyKey: idempotencyKey,
-    status: FleetSendStatus.failed,
+    status: status,
     optionId: optionId,
     text: text,
   );
@@ -71,21 +73,28 @@ class FleetViewState {
 
 /// Owns the live fleet snapshot: polls every [interval] while at least one
 /// fleet screen is attached and the app is in the foreground, refreshes on
-/// demand, and sends owner answers with a durable Idempotency-Key.
+/// demand, and sends owner answers with a durable Idempotency-Key after
+/// [undoWindow], during which [undo] drops the answer unsent.
 class FleetCubit extends Cubit<FleetViewState> {
   FleetCubit({
     required FleetSource source,
     this.interval = const Duration(seconds: 15),
+    this.undoWindow = Duration.zero,
     String Function()? newKey,
     Timer Function(Duration, void Function(Timer))? periodic,
+    DateTime Function()? clock,
   }) : _source = source,
+       _clock = clock ?? DateTime.now,
        _newKey = newKey ?? newReplyIdempotencyKey,
        _periodic = periodic ?? Timer.periodic,
        super(const FleetViewState());
 
   final FleetSource _source;
   final Duration interval;
+  final Duration undoWindow;
+  final DateTime Function() _clock;
   final String Function() _newKey;
+  final _undoTimers = <String, (Timer, Completer<void>)>{};
   final Timer Function(Duration, void Function(Timer)) _periodic;
   Timer? _timer;
   int _attached = 0;
@@ -146,6 +155,7 @@ class FleetCubit extends Cubit<FleetViewState> {
           refreshing: false,
         ),
       );
+      _dropClosedQueued(snapshot);
     } on Object catch (error) {
       if (isClosed || generation != _generation) return;
       final failure = FleetException.from(error).failure;
@@ -167,23 +177,108 @@ class FleetCubit extends Cubit<FleetViewState> {
     }
   }
 
-  /// Approve, Hold or Reply. A failed send keeps its key so [retry] cannot
-  /// record the answer twice.
+  /// Approve, Hold, Reply or "I signed in". A failed send keeps its key so
+  /// [retry] cannot record the answer twice.
   Future<void> answer(
     String decisionId,
     FleetAnswerAction action, {
     String? optionId,
     String? text,
-  }) => _send(
-    decisionId,
-    FleetPendingAnswer(
+  }) {
+    final pending = FleetPendingAnswer(
       action: action,
       idempotencyKey: _newKey(),
       status: FleetSendStatus.sending,
       optionId: optionId,
       text: text,
-    ),
-  );
+    );
+    if (undoWindow <= Duration.zero) return _send(decisionId, pending);
+    _cancelQueued(decisionId);
+    final generation = _generation;
+    final queued = pending.withStatus(FleetSendStatus.queued);
+    emit(state.copyWith(pending: {...state.pending, decisionId: queued}));
+    final sent = Completer<void>();
+    final timer = Timer(undoWindow, () {
+      _undoTimers.remove(decisionId);
+      if (isClosed ||
+          generation != _generation ||
+          state.pending[decisionId] != queued) {
+        sent.complete();
+        return;
+      }
+      // A login request that ended while the answer waited would only be
+      // refused; settle it as closed without sending.
+      if (_loginEnded(state.snapshot, decisionId)) {
+        emit(
+          state.copyWith(
+            pending: {
+              ...state.pending,
+              decisionId: pending.withStatus(FleetSendStatus.closed),
+            },
+          ),
+        );
+        sent.complete();
+        return;
+      }
+      sent.complete(_send(decisionId, pending));
+    });
+    _undoTimers[decisionId] = (timer, sent);
+    return sent.future;
+  }
+
+  /// Stops a queued answer's timer and settles its [answer] future.
+  bool _cancelQueued(String decisionId) {
+    final queued = _undoTimers.remove(decisionId);
+    if (queued == null) return false;
+    final (timer, sent) = queued;
+    timer.cancel();
+    if (!sent.isCompleted) sent.complete();
+    return true;
+  }
+
+  /// A queued answer to a decision another channel closed meanwhile (gone
+  /// from the open list, listed as resolved, or a login request that ended)
+  /// is dropped unsent: Web
+  /// would refuse it, and its card has already left the Inbox.
+  void _dropClosedQueued(FleetSnapshot snapshot) {
+    final live = {for (final d in snapshot.decisions) d.id};
+    final resolved = {for (final r in snapshot.resolved) r.id};
+    final closed = [
+      for (final MapEntry(:key, :value) in state.pending.entries)
+        if (value.status == FleetSendStatus.queued &&
+            (!live.contains(key) ||
+                resolved.contains(key) ||
+                _loginEnded(snapshot, key)))
+          key,
+    ];
+    if (closed.isEmpty) return;
+    closed.forEach(_cancelQueued);
+    emit(
+      state.copyWith(
+        pending: {...state.pending}
+          ..removeWhere((id, _) => closed.contains(id)),
+      ),
+    );
+  }
+
+  bool _loginEnded(FleetSnapshot? snapshot, String decisionId) {
+    final login = snapshot?.decisions
+        .where((d) => d.id == decisionId)
+        .firstOrNull
+        ?.login;
+    return login != null && !login.isOpenAt(_clock().toUtc());
+  }
+
+  void _cancelAllQueued() {
+    [..._undoTimers.keys].forEach(_cancelQueued);
+  }
+
+  /// Drops an answer still inside its undo window; nothing reaches Web.
+  void undo(String decisionId) {
+    if (!_cancelQueued(decisionId)) return;
+    if (state.pending[decisionId]?.status != FleetSendStatus.queued) return;
+    emit(state.copyWith(pending: {...state.pending}..remove(decisionId)));
+  }
 
   Future<void> retry(String decisionId) async {
     final pending = state.pending[decisionId];
@@ -218,25 +313,35 @@ class FleetCubit extends Cubit<FleetViewState> {
           pending: {...state.pending}..remove(decisionId),
         ),
       );
-    } on Object {
+    } on Object catch (error) {
       if (isClosed || generation != _generation) return;
+      final closed = FleetException.from(error).failure == FleetFailure.closed;
       emit(
         state.copyWith(
-          pending: {...state.pending, decisionId: pending.failed()},
+          pending: {
+            ...state.pending,
+            decisionId: pending.withStatus(
+              closed ? FleetSendStatus.closed : FleetSendStatus.failed,
+            ),
+          },
         ),
       );
+      // The snapshot on screen is behind: fetch the state that closed it.
+      if (closed) unawaited(refresh());
     }
   }
 
   /// Logout, account switch or lost access: forget everything held.
   void clear() {
     _generation++;
+    _cancelAllQueued();
     if (!isClosed) emit(const FleetViewState());
   }
 
   @override
   Future<void> close() {
     _timer?.cancel();
+    _cancelAllQueued();
     return super.close();
   }
 }

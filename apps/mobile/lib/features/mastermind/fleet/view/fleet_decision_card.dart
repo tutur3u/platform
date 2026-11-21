@@ -1,24 +1,29 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_answer_status.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_decision_context.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_reply_sheet.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One open decision: urgency, the question, its options (the recommended one
-/// preselected), and Approve, Hold and Reply. Once answered it shows what was
-/// sent and whether the orchestrator has picked it up.
+typedef FleetAnswerCallback =
+    void Function(FleetAnswerAction action, {String? optionId, String? text});
+
+/// One ask: the question, why it is asked, what happens without an answer,
+/// who asks and the deadline countdown. With a recommendation the primary
+/// button answers it in one tap and More reveals the other options and Hold;
+/// Reply and Snooze are always there. Once answered it shows the answer line.
 class FleetDecisionCard extends StatefulWidget {
   const FleetDecisionCard({
     required this.decision,
     required this.orchestrator,
     required this.onAnswer,
     required this.onRetry,
+    this.onUndo,
+    this.onSnooze,
     this.receipt,
     this.pending,
     this.now,
@@ -30,13 +35,10 @@ class FleetDecisionCard extends StatefulWidget {
   final FleetAnswerReceipt? receipt;
   final FleetPendingAnswer? pending;
   final DateTime Function()? now;
-  final void Function(
-    FleetAnswerAction action, {
-    String? optionId,
-    String? text,
-  })
-  onAnswer;
+  final FleetAnswerCallback onAnswer;
   final VoidCallback onRetry;
+  final VoidCallback? onUndo;
+  final VoidCallback? onSnooze;
 
   @override
   State<FleetDecisionCard> createState() => _FleetDecisionCardState();
@@ -48,6 +50,7 @@ class _FleetDecisionCardState extends State<FleetDecisionCard> {
       (widget.decision.options.length == 1
           ? widget.decision.options.single.id
           : null);
+  bool _more = false;
 
   Future<void> _reply() async {
     final text = await showFleetReplySheet(
@@ -66,17 +69,25 @@ class _FleetDecisionCardState extends State<FleetDecisionCard> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final decision = widget.decision;
-    final sending = widget.pending?.status == FleetSendStatus.sending;
-    final answered = widget.receipt != null;
-    final needsOption = decision.options.length > 1 && _option == null;
+    final status = fleetAnswerStatus(
+      receipt: widget.receipt,
+      pending: widget.pending,
+      orchestrator: widget.orchestrator,
+      onRetry: widget.onRetry,
+      onUndo: widget.onUndo ?? () {},
+    );
+    final recommended = decision.recommended;
+    final showOptions =
+        status == null &&
+        decision.options.isNotEmpty &&
+        (recommended == null || _more);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(decision: decision, now: widget.now),
+          FleetDecisionMeta(decision: decision, now: widget.now),
           const SizedBox(height: AppSpacing.sm),
           Text(decision.title, style: tokens.typography.large),
           if (decision.body case final body?) ...[
@@ -88,170 +99,114 @@ class _FleetDecisionCardState extends State<FleetDecisionCard> {
               ),
             ),
           ],
-          if (decision.options.isNotEmpty) ...[
+          FleetDecisionContext(decision: decision),
+          if (showOptions) ...[
             const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                for (final option in decision.options)
-                  AppChip(
-                    label: Text(
-                      option.id == decision.recommendedOptionId
-                          ? '${option.label} · '
-                                '${l10n.mastermindFleetRecommended}'
-                          : option.label,
-                    ),
-                    selected: _option == option.id,
-                    inMutuallyExclusiveGroup: true,
-                    onSelected: answered || sending
-                        ? null
-                        : (_) => setState(() => _option = option.id),
-                  ),
-              ],
+            _Options(
+              decision: decision,
+              selected: _option,
+              onSelected: (id) => setState(() => _option = id),
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          if (widget.receipt case final receipt?)
-            _Receipt(receipt: receipt, orchestrator: widget.orchestrator)
-          else if (widget.pending?.status == FleetSendStatus.failed)
-            _NotSent(onRetry: widget.onRetry)
-          else
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                AppButton.primary(
-                  loading:
-                      sending &&
-                      widget.pending?.action == FleetAnswerAction.approve,
-                  enabled: !sending && !needsOption,
-                  leading: const Icon(LucideIcons.check, size: 16),
-                  onPressed: () => widget.onAnswer(
-                    FleetAnswerAction.approve,
-                    optionId: _option,
-                  ),
-                  child: Text(l10n.mastermindFleetApprove),
-                ),
-                AppButton.outline(
-                  loading:
-                      sending &&
-                      widget.pending?.action == FleetAnswerAction.hold,
-                  enabled: !sending,
-                  leading: const Icon(LucideIcons.pause, size: 16),
-                  onPressed: () => widget.onAnswer(FleetAnswerAction.hold),
-                  child: Text(l10n.mastermindFleetHold),
-                ),
-                AppButton.ghost(
-                  loading:
-                      sending &&
-                      widget.pending?.action == FleetAnswerAction.reply,
-                  enabled: !sending,
-                  leading: const Icon(LucideIcons.messageSquare, size: 16),
-                  onPressed: () => unawaited(_reply()),
-                  child: Text(l10n.mastermindFleetReply),
-                ),
-              ],
-            ),
+          status ?? _actions(context, recommended),
         ],
       ),
     );
   }
-}
 
-class _Header extends StatelessWidget {
-  const _Header({required this.decision, this.now});
-
-  final FleetDecision decision;
-  final DateTime Function()? now;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _actions(BuildContext context, FleetOption? recommended) {
     final l10n = context.l10n;
-    final current = (now ?? DateTime.now)().toUtc();
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final badge = switch (decision.urgency) {
-      FleetUrgency.urgent => AppBadge(
-        variant: AppBadgeVariant.destructive,
-        leading: const Icon(LucideIcons.circleAlert, size: 12),
-        child: Text(l10n.mastermindFleetUrgent),
-      ),
-      FleetUrgency.high => AppBadge(
-        variant: AppBadgeVariant.warning,
-        leading: const Icon(LucideIcons.arrowUp, size: 12),
-        child: Text(l10n.mastermindFleetHigh),
-      ),
-      FleetUrgency.fyi => AppBadge.outline(
-        child: Text(l10n.mastermindFleetFyi),
-      ),
-      FleetUrgency.normal => null,
-    };
+    final sending = widget.pending?.status == FleetSendStatus.sending;
+    bool loading(FleetAnswerAction action) =>
+        sending && widget.pending?.action == action;
+    final oneTap = recommended != null && !_more;
+    final needsOption = widget.decision.options.length > 1 && _option == null;
     return Wrap(
       spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.xs,
+      runSpacing: AppSpacing.sm,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        ?badge,
-        AppMetaItem(
-          icon: LucideIcons.clock,
-          label: fleetAge(l10n, decision.createdAt, current),
+        if (oneTap)
+          AppBadge.outline(
+            leading: const Icon(LucideIcons.sparkles, size: 12),
+            child: Text(l10n.mastermindFleetRecommended),
+          ),
+        AppButton.primary(
+          loading: loading(FleetAnswerAction.approve),
+          enabled: !sending && (oneTap || !needsOption),
+          leading: const Icon(LucideIcons.check, size: 16),
+          onPressed: () => widget.onAnswer(
+            FleetAnswerAction.approve,
+            optionId: oneTap ? recommended.id : _option,
+          ),
+          child: Text(oneTap ? recommended.label : l10n.mastermindFleetApprove),
         ),
-        if (decision.deadlineAt case final deadline?)
-          AppMetaItem(
-            icon: LucideIcons.calendarClock,
-            label: l10n.mastermindFleetDue(
-              '${Gmt7.day(deadline, locale)} ${Gmt7.time(deadline, locale)}',
+        if (!oneTap)
+          AppButton.outline(
+            loading: loading(FleetAnswerAction.hold),
+            enabled: !sending,
+            leading: const Icon(LucideIcons.pause, size: 16),
+            onPressed: () => widget.onAnswer(FleetAnswerAction.hold),
+            child: Text(l10n.mastermindFleetHold),
+          ),
+        AppButton.ghost(
+          loading: loading(FleetAnswerAction.reply),
+          enabled: !sending,
+          leading: const Icon(LucideIcons.messageSquare, size: 16),
+          onPressed: () => unawaited(_reply()),
+          child: Text(l10n.mastermindFleetReply),
+        ),
+        if (widget.onSnooze case final snooze?)
+          AppButton.ghost(
+            enabled: !sending,
+            leading: const Icon(LucideIcons.alarmClock, size: 16),
+            onPressed: snooze,
+            child: Text(l10n.mastermindFleetSnooze),
+          ),
+        if (recommended != null)
+          AppButton.ghost(
+            enabled: !sending,
+            onPressed: () => setState(() => _more = !_more),
+            child: Text(
+              _more ? l10n.mastermindFleetFewer : l10n.mastermindFleetMore,
             ),
-            color: deadline.isBefore(current)
-                ? AppTokens.of(context).colorScheme.destructive
-                : null,
           ),
       ],
     );
   }
 }
 
-class _Receipt extends StatelessWidget {
-  const _Receipt({required this.receipt, required this.orchestrator});
+class _Options extends StatelessWidget {
+  const _Options({
+    required this.decision,
+    required this.selected,
+    required this.onSelected,
+  });
 
-  final FleetAnswerReceipt receipt;
-  final String orchestrator;
+  final FleetDecision decision;
+  final String? selected;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final status = receipt.pickedUp
-        ? l10n.mastermindFleetAnswerReceived(orchestrator)
-        : l10n.mastermindFleetAnswerWaiting(orchestrator);
-    return AppMetaItem(
-      icon: receipt.pickedUp ? LucideIcons.circleCheck : LucideIcons.hourglass,
-      label: '${receipt.action.doneLabel(l10n)} · $status',
-      color: receipt.pickedUp
-          ? AppTokens.of(context).colorScheme.success
-          : null,
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        for (final option in decision.options)
+          AppChip(
+            label: Text(
+              option.id == decision.recommendedOptionId
+                  ? '${option.label} · ${l10n.mastermindFleetRecommended}'
+                  : option.label,
+            ),
+            selected: selected == option.id,
+            inMutuallyExclusiveGroup: true,
+            onSelected: (_) => onSelected(option.id),
+          ),
+      ],
     );
   }
-}
-
-class _NotSent extends StatelessWidget {
-  const _NotSent({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: AppMetaItem(
-          icon: LucideIcons.cloudOff,
-          label: context.l10n.mastermindFleetAnswerNotSent,
-          color: AppTokens.of(context).colorScheme.destructive,
-        ),
-      ),
-      AppButton.outline(
-        onPressed: onRetry,
-        child: Text(context.l10n.commonRetry),
-      ),
-    ],
-  );
 }

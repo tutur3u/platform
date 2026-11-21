@@ -155,7 +155,7 @@ class FleetFailureMessage extends StatelessWidget {
         actionLabel: l10n.commonRetry,
         onAction: onRetry,
       ),
-      FleetFailure.unavailable => AppStateMessage(
+      FleetFailure.unavailable || FleetFailure.closed => AppStateMessage(
         icon: LucideIcons.cloudOff,
         title: l10n.mastermindFleetUnavailableTitle,
         tone: AppTone.warning,

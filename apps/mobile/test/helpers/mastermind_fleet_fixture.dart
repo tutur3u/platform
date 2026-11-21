@@ -11,6 +11,8 @@ Map<String, dynamic> fleetSampleJson({
   List<Map<String, dynamic>>? decisions,
   Map<String, dynamic> answers = const {},
   String receivedAt = '2026-11-20T03:00:00.000Z',
+  List<Map<String, dynamic>>? resolved,
+  Map<String, dynamic>? release,
 }) => {
   'receivedAt': receivedAt,
   'answers': answers,
@@ -71,6 +73,39 @@ Map<String, dynamic> fleetSampleJson({
             'createdAt': '2026-11-20T02:50:00.000Z',
           },
         ],
+    'resolved': ?resolved,
+    'release': ?release,
+  },
+};
+
+/// An open access request, as the publisher sends it with the `login`
+/// feature.
+Map<String, dynamic> fleetLoginJson({
+  String id = 'login-gh',
+  String service = 'github',
+  String flow = 'device',
+  String state = 'waiting',
+  String? url = 'https://github.com/login/device',
+  String? userCode = '8F3K-Q2MX',
+  String? expiresAt = '2026-11-20T03:12:00.000Z',
+  String machineId = 'macstudio1',
+  String urgency = 'high',
+}) => {
+  'id': id,
+  'kind': 'login',
+  'title': 'Sign in to GitHub for the release bot',
+  'why': 'The release bot sign-off needs repo scope.',
+  'requester': 'release-bot-signoff',
+  'urgency': urgency,
+  'createdAt': '2026-11-20T02:58:00.000Z',
+  'login': {
+    'service': service,
+    'flow': flow,
+    'state': state,
+    'url': ?url,
+    'userCode': ?userCode,
+    'expiresAt': ?expiresAt,
+    'machineId': machineId,
   },
 };
 

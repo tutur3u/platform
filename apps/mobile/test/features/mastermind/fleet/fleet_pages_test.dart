@@ -138,7 +138,7 @@ void main() {
     expect(find.text('Urgent'), findsOneWidget);
     expect(find.textContaining('Recommended'), findsOneWidget);
 
-    await tester.tap(find.text('Approve').first);
+    await tester.tap(find.text('Ship now'));
     await tester.pump();
     await tester.pump();
     expect(source.answers.single, containsPair('optionId', 'now'));
