@@ -199,3 +199,25 @@ it('keeps a rebuilt receiver at the link ceiling until it earns an upgrade', asy
   expect(request).not.toHaveBeenCalled();
   expect(ceilingRef.current).toBe('low');
 });
+
+it('clears a recorded receive reading once the receiver disappears', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { refs } = setup(undefined, undefined, { policy });
+  policy.quality.recordReceiver(
+    {
+      loss: 0.01,
+      freezes: 0,
+      rttMs: 40,
+      availableKbps: null,
+      receivedKbps: 900,
+    },
+    ['high'],
+    false
+  );
+  refs.peer.current = null;
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(policy.quality.take(policy.getSnapshot())).toMatchObject({
+    recvVideoKbps: null,
+    layers: { high: 0, mid: 0, low: 0 },
+  });
+});

@@ -217,6 +217,32 @@ describe('WebKit Picture-in-Picture', () => {
   });
 });
 
+describe('document Picture-in-Picture', () => {
+  it('watches a window that was already open when watching started', () => {
+    const pipWindow = new EventTarget();
+    const pip = Object.assign(new EventTarget(), {
+      window: pipWindow as unknown,
+    });
+    vi.stubGlobal('documentPictureInPicture', pip);
+    const doc = {
+      visibilityState: 'hidden' as DocumentVisibilityState,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
+    const policy = createMediaPolicy(null);
+    const stop = watchPageVisibility(policy, doc as never);
+    vi.advanceTimersByTime(30_000);
+    expect(policy.getSnapshot().visibility).toBe('visible');
+    pip.window = undefined;
+    pipWindow.dispatchEvent(new Event('pagehide'));
+    vi.advanceTimersByTime(0);
+    vi.advanceTimersByTime(1500);
+    expect(policy.getSnapshot().visibility).toBe('dimmed');
+    stop();
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('subscription ceiling', () => {
   it('opens new camera subscriptions no higher than the receiver ceiling', () => {
     const plan = planWindowedRemoteSubscriptions({

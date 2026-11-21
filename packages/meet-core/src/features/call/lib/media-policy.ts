@@ -200,6 +200,9 @@ export function watchPageVisibility(
     pipWindow?.addEventListener('pagehide', onPipHide, { once: true });
   };
   pip?.addEventListener('enter', onPipEnter);
+  // A window opened before this watcher started reports its close too.
+  if (pip?.window)
+    onPipEnter(Object.assign(new Event('enter'), { window: pip.window }));
   return () => {
     clear();
     pipWindow?.removeEventListener('pagehide', onPipHide);

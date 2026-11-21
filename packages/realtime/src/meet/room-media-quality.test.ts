@@ -178,12 +178,12 @@ describe('media quality admission', () => {
       });
       expect(accepted.state.mediaQuality?.[speaker.userId]).toBeDefined();
     }
+    // A dropped report never commits, so it can never reach storage.
     const dropped = await run(executor, speaker, state, {
       type: 'media.quality',
       sample,
     });
-    expect(dropped.state).toBe(state);
-    expect(dropped.reply).toEqual([]);
+    expect(dropped).toBeUndefined();
   });
 
   it('refuses excess manager reads with a correlated reply and no write', async () => {

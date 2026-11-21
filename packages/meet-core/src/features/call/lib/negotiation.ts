@@ -362,6 +362,8 @@ export function useWindowedSubscriber({
       const nextWindow = stageWindow.current;
       if (!nextWindow || Date.now() - nextWindow.changedAt >= 700)
         settledWindow = nextWindow;
+      // RIDs in this batch follow this advertisement; a newer one replans.
+      const batchCapabilities = stateRef.current.mediaCapabilities;
       const { pending, close, layers } = planWindowedRemoteSubscriptions({
         capabilities: capabilities(),
         remoteTracks: stateRef.current.remoteTracks,
@@ -428,7 +430,8 @@ export function useWindowedSubscriber({
         // An older room server drops a request it cannot parse without a
         // correlated reply, so only this request timing out after asking for
         // current RIDs, under the same advertisement, marks a rollback.
-        const sentCapabilities = stateRef.current.mediaCapabilities;
+        if (stateRef.current.mediaCapabilities !== batchCapabilities) return;
+        const sentCapabilities = batchCapabilities;
         const answer = await signalingRef.current
           ?.request<SfuTracksResponse>({
             sessionId,
@@ -438,7 +441,8 @@ export function useWindowedSubscriber({
           .catch((error: unknown) => {
             if (
               error instanceof Error &&
-              error.message === 'signaling_timeout' &&
+              (error as Error & { requestTimedOut?: boolean })
+                .requestTimedOut === true &&
               sentCapabilities === stateRef.current.mediaCapabilities &&
               pending.some(
                 ({ simulcast }) =>

@@ -81,6 +81,8 @@ export class MeetCommandExecutor {
     // Charged once at admission, before room processing, any provider call
     // or queue wait. Refusals change no room state.
     const refusal = admissionRefusal(command);
+    // A silently dropped report never reaches the room or its storage.
+    if (refusal?.length === 0) return Promise.resolve();
     if (refusal !== undefined)
       return Promise.resolve(
         options.commit(outcome(options.read(), { reply: refusal }))

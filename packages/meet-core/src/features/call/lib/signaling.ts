@@ -384,7 +384,13 @@ export class MeetSignaling {
     return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pending.delete(requestId);
-        reject(new Error('signaling_timeout'));
+        // Marked so callers can tell their own request timing out from the
+        // connection failing every pending request.
+        reject(
+          Object.assign(new Error('signaling_timeout'), {
+            requestTimedOut: true,
+          })
+        );
       }, timeoutMs);
 
       this.pending.set(requestId, {

@@ -150,3 +150,23 @@ it('does not retry a permanent title rejection', async () => {
   socket.ack();
   signaling.close();
 });
+
+it('marks a request that timed out on its own, unlike a connection failure', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('WebSocket', Socket);
+  const signaling = new MeetSignaling({
+    resolveUrl: () => 'ws://test',
+    onMessage: vi.fn(),
+  });
+  signaling.connect();
+  await Promise.resolve();
+  await vi.advanceTimersByTimeAsync(0);
+  Socket.instances[0]!.open();
+  const request = signaling.request({ type: 'media.quality.read' });
+  const caught = request.catch((error: unknown) => error);
+  await vi.advanceTimersByTimeAsync(15_000);
+  const error = (await caught) as Error & { requestTimedOut?: boolean };
+  expect(error.message).toBe('signaling_timeout');
+  expect(error.requestTimedOut).toBe(true);
+  signaling.close?.();
+});

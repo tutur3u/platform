@@ -305,8 +305,16 @@ export function useSubscriberLayers({
       counters.clear();
       policy?.quality.recordReceiver(null, [], false);
     };
+    let recorded = false;
+    // Every tick that does not record a measurement clears the reading, so
+    // room reports never repeat a stale receive rate.
     const tick = async () => {
       if (busy) return;
+      recorded = false;
+      await step();
+      if (!recorded) policy?.quality.recordReceiver(null, [], false);
+    };
+    const step = async () => {
       const now = Date.now();
       // The audio-only pause belongs to the link, not to any receiving peer:
       // its probe runs even while no receiver exists, because closing every
@@ -423,6 +431,7 @@ export function useSubscriberLayers({
           governor.ceiling
         );
         restoring = false;
+        recorded = true;
         policy?.quality.recordReceiver(
           sample,
           cameras.flatMap(({ owner }) => {
