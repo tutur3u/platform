@@ -400,12 +400,11 @@ async function runRuntimeAcceptance() {
             '/api/v1/calendar/auth/microsoft/callback',
           ]) {
             const callback = await fetchWorker(path);
-            assert.equal(
-              callback.status,
-              400,
-              `${path} must reach the registered callback`
-            );
-            assert.equal((await callback.json()).error, 'state is required');
+            // This Worker fixture is anonymous. The legacy API proxy
+            // requires a session before dispatching a provider callback.
+            assert.equal(callback.status, 401, `${path} must require sign-in`);
+            assert.equal(callback.headers.get('location'), null);
+            await callback.body?.cancel();
           }
           const serviceWorker = await fetchWorker('/serwist/sw.js');
           assert.equal(serviceWorker.status, 200);
