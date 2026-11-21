@@ -671,9 +671,9 @@ describe('public shell compile graph', () => {
   it('keeps UI docs dev code blocks off the static Shiki import graph', () => {
     expect(uiDocsShikiSource).not.toContain('import { createHighlighter');
     expect(uiDocsShikiSource).toContain(
-      "import type { Highlighter } from 'shiki';"
+      "import type { HighlighterCore } from 'shiki/core';"
     );
-    expect(uiDocsShikiSource).toContain("import('shiki')");
+    expect(uiDocsShikiSource).toContain("import('shiki/core')");
     expect(uiDocsShikiSource).toContain("NODE_ENV === 'development'");
   });
 
