@@ -127,7 +127,7 @@
         "/women-in-tech/"
       ],
       "exclude": [],
-      "activated": false
+      "activated": true
     },
     {
       "id": "dashboard",
