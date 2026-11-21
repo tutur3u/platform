@@ -1,0 +1,219 @@
+---
+title: "App Release Versioning"
+description: "One shared version and build number for iOS, Android, macOS, Windows and Linux releases."
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+Every Flutter app channel ships from `apps/mobile` and reports one version
+train. A production commit gets one `X.Y.Z` and one build number `B`, and every
+platform that ships that commit uses both.
+
+## Release ledger
+
+The ledger is a set of annotated git tags `app-b<B>`, one per production commit
+that ships. Each tag points at its commit and carries
+`{ build, version, sha, shared, platforms }` as JSON. `scripts/app-version/allocate.mjs`
+reads and extends it. It runs before any build in `mobile-deploy-stores.yaml`
+(**Allocate shared app version**) and in `desktop-beta.yaml` (`release-status`):
+
+1. If the commit is older than the newest entry, it is superseded, even when it
+   holds an entry from an earlier run, so builds always follow source order.
+   The superseded run publishes nothing and dispatches one release of the
+   production head for its own workflow (`mode=release` with `force=true` for
+   mobile, so the mobile tree gate cannot skip a store that failed earlier;
+   `dry_run=false` for desktop). The head contains this commit, so its changes
+   ship under a newer build even when the newer commit (for example a
+   desktop-only change) never ran this channel's workflow.
+2. If an entry already points at the commit, both workflows and every rerun
+   reuse it.
+3. Otherwise a new entry takes `B = previous B + 1` and:
+   - `X.Y` from `apps/mobile/pubspec.yaml`, owned by Release Please. When
+     Release Please opens a new minor, its pubspec patch is the floor.
+   - `Z + 1` when shared app code changed since the previous entry
+     (`apps/mobile/**` outside the platform directories).
+   - The same `X.Y.Z` when only platform inputs changed
+     (`apps/mobile/{ios,android,macos,windows,linux}/**`,
+     `apps/mobile/vendor/record_ios/**`, `scripts/mobile-deployment/**`,
+     `scripts/desktop-deployment/**`). The entry records those platforms, and
+     release surfaces label the build `0.28.0 (build 1000005, android fix)`.
+     Files that never ship (`apps/mobile/{test,integration_test,test_driver,docs,coverage,tool}/**`
+     and Markdown) count as neither. Paths are read NUL-delimited, and both
+     sides of a rename are classified.
+   - `B` one above the highest `app-b<B>` ref name, including lightweight or
+     malformed refs, so a reserved number is never reused.
+4. The ref is created through the GitHub refs API, which is atomic. A workflow
+   that loses the race (HTTP 422) re-fetches the ledger tags and replans, with
+   at most five attempts. A commit the checkout lacks is fetched before any
+   ancestry check.
+
+The ledger is read from local tags (`git fetch origin
+'+refs/tags/app-b*:refs/tags/app-b*'`), so every entry is visible. Annotations
+are validated strictly: exact keys, a bounded `X.Y.Z`, known platform names
+only, and a target that matches the ref. An invalid annotation is ignored but
+its number stays reserved. Outputs are checked again before they reach
+`GITHUB_OUTPUT`.
+
+Protect the ledger with repository tag rulesets on `app-b*` only after a
+dedicated writer exists, and restrict creation before locking entries:
+
+1. Create a GitHub App with `contents: write`. Store its credentials in a
+   `release-ledger` environment limited to the `production` branch, and switch
+   the allocation steps to a token minted from it
+   (`actions/create-github-app-token`). The shared GitHub Actions actor is not
+   enough, because any workflow with a write-capable token could create entries.
+2. Add a ruleset with **Restrict creations** and that App as its only bypass
+   actor.
+3. Then add a separate ruleset with **Restrict updates** and **Restrict
+   deletions** and no bypass actors. A bypass applies to a whole ruleset,
+   which is why the two are separate.
+
+Adding step 3 first would make any entry created by another workflow
+permanent. Until the rulesets exist, strict parsing keeps every emitted value
+well formed. A forged but valid entry can skip a number or give its commit a
+well-formed version; it cannot inject commands or credentials.
+
+The first entry starts at `0.27.27` and build `1000000`. That is above desktop
+`desktop-v0.27.26`, mobile `0.27.20` and every Play version code (`578001`), so
+no store or updater sees a version go backwards.
+
+Allocation needs `contents: write` for tag refs only. The Windows Store draft
+workflow keeps read-only permissions and runs `allocate.mjs --reuse-only`. It
+fails when no desktop or mobile release has allocated the commit yet.
+
+## Platform mapping
+
+| Platform | Version | Build |
+| --- | --- | --- |
+| iOS (TestFlight) | `CFBundleShortVersionString = X.Y.Z` | `CFBundleVersion = B` |
+| Android (Play) | `versionName = X.Y.Z` | `versionCode = B` |
+| macOS (direct and Mac App Store) | `X.Y.Z` | `CFBundleVersion = B` |
+| Windows (direct download) | `X.Y.Z` | `B` in the release tag and the updater |
+| Windows Store | `(X+1).Y.Z.0` (MSIX needs a nonzero first part, revision 0, parts up to 65535) | none |
+| Linux | `X.Y.Z` | `B` in the release tag and the updater |
+
+Desktop releases are tagged `desktop-v<X.Y.Z>-<B>`, and desktop builds embed
+`DESKTOP_RELEASE_RUN_ID=<B>`. The Windows runner resource reads Flutter's
+generated version: the numeric fields carry `X,Y,Z,0`, and the
+`ProductVersion` string carries `X.Y.Z+B`, which `package_info_plus` reports to
+the updater. CI fails a Windows build whose executable reports another value.
+Windows builds published before this wiring report `1.0.0`, which ranks above
+every `0.x` release, so those installs need a one-time manual update from
+`/download`. The in-app updater orders releases by `X.Y.Z` and
+then by that suffix, so a desktop-only rebuild of the same `X.Y.Z` reaches
+installed apps.
+
+The Windows Store cannot accept a second package with the same version, so a
+Windows-only fix reaches the Store only with the next shared patch. The Store
+draft reads the ledger before compiling and checks that the executable reports
+the ledger version.
+
+## Reruns and guards
+
+A failed-job rerun keeps its earlier allocation outputs. So right before every
+upload, distribution and desktop publication, `allocate.mjs --assert-current`
+re-checks source order through GitHub's compare API (job checkouts are
+shallow). The step fails when a newer commit holds the ledger, and a
+`release-head-when-stale` job then dispatches one release of the production
+head. The same check runs again after slow steps: after TestFlight
+processing, right before beta-group assignment (`LEDGER_RECHECK`). The
+scheduled review retry runs it too, resolving the selected build's commit from
+its ledger entry. To recover that build's upload notes, it searches one-day
+windows across the history artifact's 14-day retention, because GitHub returns
+at most 1,000 runs per filtered search. The check runs only while that build
+still needs external delivery
+(not yet approved or in review). When it is stale, the retry dispatches one
+release of the production head, so external testers get a newer build instead
+of waiting on one that can never ship. It skips the dispatch when a run that
+can publish is already queued or running: a production push, or a dispatch
+titled `Mobile Store Deployment (release)`. Queued review retries never
+count. It also runs after
+the desktop draft upload, right before the release goes public. What remains
+is the few seconds between that last check and the store call.
+
+The mobile store gate compares against the newest run that attempted the
+stores, and only if that run's jobs show every enabled store verifiably
+accepted its tree. For the Mac App Store, while `MAC_APP_STORE_ENABLED` is
+`true`, that means its Apple acceptance step succeeded, not only its job. A
+newer partial attempt yields no baseline. For example, tree B reached
+TestFlight but Google Play failed. Even if production reverts to an older,
+fully delivered tree, the next run publishes so both stores match again. The
+gate reads jobs from every attempt of a run (`filter=all`, every page), so a
+rerun can't hide an earlier partial delivery. Artifacts written by older runs
+count only once those jobs prove delivery.
+
+Each channel also refuses a build below one it already delivered, so an older
+run that finishes late can never move testers back:
+
+- each workflow's concurrency queue keeps that channel's runs in production
+  order;
+- right before an upload or distribution, each channel re-checks its own store
+  (below).
+
+- **Apple** (iOS and Mac App Store): before building, `apple-guard.mjs` looks
+  up build `B` in App Store Connect. If it already exists with the same version,
+  the job skips the build and upload and resumes at verification. A `FAILED` or
+  `INVALID` build stops the run, because Apple never accepts that number again;
+  the fix ships with the next production commit. The guard runs again right
+  before each upload; if the build became visible meanwhile, the upload is
+  skipped. After processing, TestFlight distribution and the scheduled review
+  retry refuse when a newer iOS build was uploaded in any processing state. The Mac job waits for Apple to report
+  the build `VALID` (`apple-guard.mjs --wait`). The guard also refuses a
+  version whose App Store train is released or approved, a version below a
+  train TestFlight already holds, and a train that already has a newer build.
+- **Google Play**: the Android job skips the upload when the internal track
+  already has `B`, and fails when internal or a promoted track already serves a
+  newer version code. The upload and promotion edits re-read the internal track
+  before writing, so a release that went live in between is never replaced or
+  outranked.
+- **Desktop**: a rerun reuses the commit's tag. When the first attempt
+  published a verified subset, the rerun adds only the missing platform assets
+  and never replaces a published one; a digest mismatch fails the run. The rerun
+  must carry verified packages for every platform already on the release, since
+  the refreshed notes list them all. A rebuilt package can differ byte for byte
+  (a signed installer is re-timestamped). The published asset then stays as it
+  is, and the notes describe it with its published digest and size. Its
+  signature was checked only by the run that published it, so the notes make
+  no signing claim for it and ask users to verify it. Notes describing a new package go out
+  before the package does. After a failed upload, the notes are rewritten to
+  list exactly the packages GitHub accepted. Publication also refuses when a
+  newer desktop ledger build has already shipped. A draft or another commit holding the tag
+  still blocks publication. The Debian package version is `X.Y.Z-B`, and CI
+  checks the emitted package metadata.
+
+## Beta channel status
+
+After a store verifies a build, its pipeline publishes the facts as public JSON
+on the rolling `app-release-status` prerelease:
+
+- `https://github.com/tutur3u/platform/releases/download/app-release-status/ios.json` (TestFlight)
+- `https://github.com/tutur3u/platform/releases/download/app-release-status/android.json` (Google Play internal)
+- `https://github.com/tutur3u/platform/releases/download/app-release-status/desktop.json` (desktop GitHub release)
+
+Each file has one writer and the shape
+`{ schema: 1, platform, channel: "beta", store, version, build, label, sha, publishedAt }`.
+The pipeline first uploads an immutable `<platform>-<build>.json` record to the
+shard release `app-release-status-<platform>-<floor(build / 500)>`, which keeps
+each release below GitHub's asset limit. It then moves the `<platform>.json`
+pointer on `app-release-status` forward:
+
+- the pointer never drops below the highest uploaded record across all shards
+  (the release list is scanned to the end, and the pointer is left alone if it
+  cannot be), so an older retry repairs a missing pointer with the newer build;
+- a pointer that cannot be read is never overwritten;
+- a failed upload's leftover `starter` asset is cleared before a retry.
+
+GitHub has no atomic asset replace, so the pointer is briefly absent during an
+update. Readers then fall back to the highest record in the current shard (the
+shard of the newest known build, or the next one), and treat no data as
+"unavailable". Status reporting runs in its own job, so it can be retried
+without touching the release.
+The public store version stays in the `*_EFFECTIVE_VERSION` workspace config,
+which a person sets after the public release is live.
+
+Regression coverage: `scripts/app-version/ledger.test.mjs` (derivation,
+monotonic and reserved builds, same-commit reuse, supersession, the create
+race, read-only reuse, strict annotations, classification, MSIX mapping and
+the Apple guard), `scripts/app-version/beta-status.test.mjs`,
+`scripts/desktop-deployment/release-topup.test.mjs`, and the ledger cases in
+`release-history.test.mjs` and `play-beta.test.mjs`.

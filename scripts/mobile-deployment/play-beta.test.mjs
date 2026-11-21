@@ -206,6 +206,7 @@ test('internal upload commits with ERROR_IF_IN_REVIEW and cleans up on failure',
       headers: { 'Content-Type': 'application/json' },
     });
   let pending = false;
+  let newer = false;
   const run = async (versionCode) => {
     calls.length = 0;
     t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
@@ -217,6 +218,13 @@ test('internal upload commits with ERROR_IF_IN_REVIEW and cleans up on failure',
       if (String(url).includes('oauth2')) return respond({ access_token: 'x' });
       if (String(url).endsWith('/edits')) return respond({ id: 'e1' });
       if (String(url).includes('/bundles')) return respond({ versionCode });
+      if (String(url).endsWith('/edits/e1/tracks/internal'))
+        return respond({
+          track: 'internal',
+          releases: newer
+            ? [{ status: 'completed', versionCodes: ['1000009'] }]
+            : [],
+        });
       if (String(url).endsWith('/edits/e1/tracks'))
         return respond({
           tracks: [{ track: 'internal' }, { track: 'production' }],
@@ -280,6 +288,11 @@ test('internal upload commits with ERROR_IF_IN_REVIEW and cleans up on failure',
   await assert.rejects(run(578001), /not yet sent for review/);
   assert.ok(!calls.some((call) => call.url.includes(':commit')));
   pending = false;
+
+  newer = true;
+  await assert.rejects(run(578001), /newer than 578001/);
+  assert.ok(!calls.some((call) => call.url.includes('/bundles')));
+  newer = false;
 
   await assert.rejects(run(999), /expected 578001/);
   assert.ok(!calls.some((call) => call.url.includes(':commit')));
@@ -387,4 +400,40 @@ test('an unknown or missing release state stops the commit', () => {
       /unknown release state/
     );
   }
+});
+
+test('promotion never moves a track back to an older build', () => {
+  assert.throws(
+    () =>
+      planPlayBeta({
+        internal,
+        buildNumber: '578001',
+        notes: [],
+        targets: {
+          alpha: {
+            releases: [{ status: 'completed', versionCodes: ['1000004'] }],
+          },
+        },
+      }),
+    /newer than 578001/
+  );
+});
+
+test('promotion refuses when internal already serves a newer code', () => {
+  assert.throws(
+    () =>
+      planPlayBeta({
+        internal: {
+          ...internal,
+          releases: [
+            ...internal.releases,
+            { status: 'completed', versionCodes: ['1000009'] },
+          ],
+        },
+        buildNumber: '578001',
+        notes: [],
+        targets: { alpha: {} },
+      }),
+    /internal already serves a build newer than 578001/
+  );
 });

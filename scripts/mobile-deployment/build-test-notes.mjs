@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -165,13 +166,180 @@ export async function ensureBuildWhatsNew(apple, buildId, notes) {
   return existing ? 'filled' : 'created';
 }
 
+const LEDGER_BUILD_FLOOR = 1_000_000;
+
+/**
+ * Refuses to distribute a build after a newer iOS build was uploaded, for
+ * example while this run waited for processing. Testers never move back.
+ */
+export async function assertNewestIosBuild(apple, appId, buildNumber) {
+  const newest = await apple(
+    `/v1/builds?${new URLSearchParams({ ...iosBuilds(appId), sort: '-uploadedDate', limit: '1' })}`
+  );
+  const number = Number(newest.data?.[0]?.attributes?.version);
+  if (Number.isSafeInteger(number) && number > Number(buildNumber))
+    throw new Error(
+      `A newer iOS build ${number} exists; build ${buildNumber} is not distributed`
+    );
+  // The upload job also re-checks source order after waiting for processing:
+  // a newer production commit may have allocated a ledger build meanwhile.
+  // The build's own ledger entry names its commit, so this also works in the
+  // review-retry job, whose checkout is the production head.
+  if (
+    process.env.LEDGER_RECHECK === 'true' &&
+    Number(buildNumber) >= LEDGER_BUILD_FLOOR
+  ) {
+    const { github, isStale, localGit, readLedger } =
+      await import('../app-version/allocate.mjs');
+    localGit.fetchLedger({ shallow: true });
+    const entry = readLedger().entries.find(
+      (item) => item.build === Number(buildNumber)
+    );
+    if (!entry)
+      throw new Error(`Build ${buildNumber} has no release ledger entry`);
+    const token = process.env.GITHUB_TOKEN;
+    if (
+      await isStale({
+        request: (path, options) => github(path, { ...options, token }),
+        sha: entry.sha,
+        git: localGit,
+      })
+    ) {
+      // Lets the workflow release the production head, which carries this
+      // build's changes, instead of retrying a build that can never ship.
+      if (process.env.GITHUB_OUTPUT)
+        appendFileSync(process.env.GITHUB_OUTPUT, 'ledger_stale=true\n');
+      throw new Error(
+        `A newer production commit holds the release ledger; build ${buildNumber} is not distributed`
+      );
+    }
+  }
+}
+
+/** iOS and Mac share ledger build numbers; TestFlight queries name the platform. */
+export function iosBuilds(appId) {
+  return { 'filter[app]': appId, 'filter[preReleaseVersion.platform]': 'IOS' };
+}
+
+function githubApi(run, path, jq) {
+  return JSON.parse(
+    run('gh', ['api', `repos/tutur3u/platform/${path}`, '--jq', jq], {
+      encoding: 'utf8',
+      timeout: 30_000,
+      maxBuffer: 1024 * 1024,
+    })
+  );
+}
+
+async function historyFromArtifact(run, artifactId, identity) {
+  const directory = await mkdtemp(join(tmpdir(), 'beta-test-notes-'));
+  try {
+    const archive = join(directory, 'history.zip');
+    await writeFile(
+      archive,
+      run(
+        'gh',
+        ['api', `repos/tutur3u/platform/actions/artifacts/${artifactId}/zip`],
+        { timeout: 30_000, maxBuffer: 1024 * 1024 }
+      )
+    );
+    const history = JSON.parse(
+      run('unzip', ['-p', archive, 'release_history.json'], {
+        encoding: 'utf8',
+        timeout: 30_000,
+        maxBuffer: 1024 * 1024,
+      })
+    );
+    return renderBuildTestNotes(history, identity);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+// Ledger builds name their commit through the validated `app-b<build>` tag
+// (scripts/app-version). The production store run for that commit holds the
+// history artifact; renderBuildTestNotes checks the build identity inside it.
+const HISTORY_RETENTION_DAYS = 14;
+
+async function readLedgerBuildHistory(
+  buildNumber,
+  version,
+  { run, ledger, now = Date.now }
+) {
+  const readEntries =
+    ledger ??
+    (async () => {
+      const { localGit, readLedger } =
+        await import('../app-version/allocate.mjs');
+      localGit.fetchLedger({ shallow: true });
+      return readLedger().entries;
+    });
+  const entry = (await readEntries()).find(
+    (item) => item.build === buildNumber
+  );
+  if (!entry || entry.version !== version)
+    throw new Error('Ledger beta build has no matching ledger entry');
+  // Review retries share the production SHA but never upload, and they run
+  // every few minutes. GitHub returns at most 1,000 runs per filtered search,
+  // so search one-day windows across the history artifact's retention (14
+  // days), newest first, skipping review-only runs.
+  const runs = [];
+  const day = 24 * 60 * 60_000;
+  for (let back = 0; back <= HISTORY_RETENTION_DAYS; back++) {
+    const date = new Date(now() - back * day).toISOString().slice(0, 10);
+    for (let page = 1; page <= 10; page++) {
+      const listed =
+        githubApi(
+          run,
+          `actions/workflows/mobile-deploy-stores.yaml/runs?head_sha=${entry.sha}&branch=production&created=${date}&per_page=100&page=${page}`,
+          '{workflow_runs:[.workflow_runs[]|{id,head_branch,head_sha,display_title}]}'
+        ).workflow_runs ?? [];
+      runs.push(
+        ...listed.filter(
+          (item) =>
+            item.head_branch === 'production' &&
+            item.head_sha === entry.sha &&
+            !item.display_title?.endsWith('(retry_ios_review)')
+        )
+      );
+      if (listed.length < 100) break;
+    }
+  }
+  for (const upload of runs) {
+    const artifacts = githubApi(
+      run,
+      `actions/runs/${upload.id}/artifacts?per_page=100`,
+      '{artifacts:[.artifacts[]|{id,name,expired,size_in_bytes}]}'
+    );
+    const match = artifacts.artifacts?.find(
+      (item) =>
+        item.name === 'mobile-beta-release-history' &&
+        !item.expired &&
+        item.size_in_bytes <= 1024 * 1024
+    );
+    if (!match) continue;
+    try {
+      return await historyFromArtifact(run, match.id, {
+        version,
+        number: String(buildNumber),
+        sourceSha: entry.sha,
+      });
+    } catch {
+      // Another run for the same commit; keep looking.
+    }
+  }
+  throw new Error('Original ledger beta history artifact is unavailable');
+}
+
 // Read only the original upload's nonsecret history artifact, never today's checkout.
 async function readOriginalBuildHistory(
   number,
   version,
-  { run = execFileSync } = {}
+  { run = execFileSync, ledger, now } = {}
 ) {
   const buildNumber = Number(number);
+  if (buildNumber >= LEDGER_BUILD_FLOOR)
+    return readLedgerBuildHistory(buildNumber, version, { run, ledger, now });
   const runNumber = Math.floor((buildNumber - 100000) / 1000);
   const attempt = buildNumber - 100000 - runNumber * 1000;
   if (

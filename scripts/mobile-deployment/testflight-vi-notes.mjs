@@ -59,7 +59,7 @@ export async function ensureVietnameseTestNotes(apple, buildId) {
 async function main(buildNumber) {
   const { apple, appId } = await connectApple();
   const builds = await apple(
-    `/v1/builds?${new URLSearchParams({ 'filter[app]': appId, 'filter[version]': buildNumber, limit: '2' })}`
+    `/v1/builds?${new URLSearchParams({ 'filter[app]': appId, 'filter[preReleaseVersion.platform]': 'IOS', 'filter[version]': buildNumber, limit: '2' })}`
   );
   if (builds.data?.length !== 1)
     throw new Error(`Expected one TestFlight build ${buildNumber}`);

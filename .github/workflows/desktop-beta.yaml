@@ -119,6 +119,8 @@ jobs:
     name: Desktop beta availability
     # GitHub requires push access to include draft releases in the listing.
     permissions:
+      # Ledger tag refs, and a head release when this commit is superseded.
+      actions: write
       contents: write
     needs: check-ci
     if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
@@ -128,9 +130,13 @@ jobs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       matrix: ${{ steps.platforms.outputs.matrix }}
       version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
+      superseded: ${{ steps.version.outputs.superseded }}
+      label: ${{ steps.version.outputs.label }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -147,17 +153,26 @@ jobs:
           if [ "$ENABLED" != true ]; then
             echo 'Desktop downloads are coming soon. Signing setup and platform verification are deferred; no desktop release was published.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Derive next desktop version
+      # Desktop and mobile read one ledger, so a production commit gets the same
+      # X.Y.Z and build number on every platform.
+      - name: Allocate shared app version
         id: version
         if: steps.status.outputs.enabled == 'true'
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs
+      # A newer production commit allocated first and contains this one; a
+      # desktop release of the production head carries these changes forward.
+      - name: Release the production head instead
+        if: steps.version.outputs.superseded == 'true'
+        env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/desktop-deployment/release-version.mjs
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/desktop-beta.yaml/dispatches -f ref=production -f 'inputs[dry_run]=false'
 
   build:
     name: Desktop beta (${{ matrix.platform }})
     needs: [check-ci, validate, release-status]
-    if: (needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (needs.release-status.outputs.enabled == 'true' && needs.release-status.outputs.superseded == 'false' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     permissions:
       contents: read
@@ -170,6 +185,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
+      DESKTOP_BUILD: ${{ needs.release-status.outputs.build }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -214,7 +230,14 @@ jobs:
       - name: Build Windows beta
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
-        run: flutter build windows --release --target lib/main_production.dart --build-name="$env:DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+        run: flutter build windows --release --target lib/main_production.dart --build-name="$env:DESKTOP_VERSION" --build-number="$env:DESKTOP_BUILD" --dart-define=DESKTOP_RELEASE_RUN_ID="$env:DESKTOP_BUILD" --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+      - name: Verify the Windows executable reports the shared version
+        if: matrix.platform == 'windows'
+        working-directory: apps/mobile
+        run: |
+          $actual = (Get-Item build/windows/x64/runner/Release/tuturuuu.exe).VersionInfo.ProductVersion
+          $expected = "$env:DESKTOP_VERSION+$env:DESKTOP_BUILD"
+          if ($actual -ne $expected) { throw "Windows ProductVersion is '$actual', expected '$expected'" }
       - name: Select Windows signing mode
         id: windows-signing
         if: matrix.platform == 'windows'
@@ -227,11 +250,11 @@ jobs:
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
-        run: flutter build macos --release --flavor production --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --build-number="$DESKTOP_BUILD" --dart-define=DESKTOP_RELEASE_RUN_ID="$DESKTOP_BUILD" --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Build Linux beta
         if: matrix.platform == 'linux'
         working-directory: apps/mobile
-        run: flutter build linux --release --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build linux --release --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --build-number="$DESKTOP_BUILD" --dart-define=DESKTOP_RELEASE_RUN_ID="$DESKTOP_BUILD" --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Audit and package beta
         if: matrix.platform == 'linux'
         shell: bash
@@ -311,7 +334,8 @@ jobs:
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
       DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
-    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+      DESKTOP_BUILD: ${{ needs.release-status.outputs.build }}
+    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && needs.release-status.outputs.superseded == 'false' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
     timeout-minutes: 45
@@ -345,6 +369,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/verify-provenance.mjs
+      - name: Recheck source order before publishing
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs --assert-current
       - name: Publish immutable beta release
         id: publication
         env:
@@ -356,3 +384,53 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DESKTOP_DRAFT_TAG: ${{ steps.publication.outputs.draft_tag }}
         run: node scripts/desktop-deployment/cleanup-draft.mjs
+
+  release-head-when-stale:
+    # A failed-job rerun keeps its old allocation. When publication refused
+    # because a newer commit holds the ledger, one head release carries the work.
+    name: Release the production head after a stale attempt
+    needs: [release-status, publish]
+    if: (always() && needs.release-status.outputs.superseded == 'false' && needs.publish.result == 'failure') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/app-version
+      - name: Check whether a newer commit holds the ledger
+        id: stale
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs --report-stale
+      - name: Release the production head
+        if: steps.stale.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/desktop-beta.yaml/dispatches -f ref=production -f 'inputs[dry_run]=false'
+
+  report-beta-status:
+    # Separate from publication so a status failure can be retried without
+    # touching the immutable release.
+    name: Report desktop beta channel status
+    needs: [release-status, publish]
+    if: (needs.publish.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/app-version
+      - name: Report the desktop beta channel status
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ needs.release-status.outputs.version }}
+          APP_BUILD: ${{ needs.release-status.outputs.build }}
+          APP_LABEL: ${{ needs.release-status.outputs.label }}
+        run: node scripts/app-version/beta-status.mjs desktop github-release

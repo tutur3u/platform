@@ -148,7 +148,9 @@ test('failed matrix still permits only an existing verified subset, never empty 
       const allowed = evaluateExpression(expression, {
         needs: {
           build: { result },
-          'release-status': { outputs: { enabled: 'true' } },
+          'release-status': {
+            outputs: { enabled: 'true', superseded: 'false' },
+          },
         },
         github: {
           ref: 'refs/heads/production',
@@ -189,13 +191,20 @@ test('version derivation sees drafts and concurrency queues racing publishers', 
   const status = workflow
     .split('\n  release-status:\n')[1]
     .split('\n  build:\n')[0];
-  assert.match(status, /permissions:\n {6}contents: write/);
-  assert.match(status, /version: \$\{\{ steps.version.outputs.version \}\}/);
-  assert.match(status, /GH_TOKEN: \$\{\{ github.token \}\}/);
   assert.match(
     status,
-    /run: node scripts\/desktop-deployment\/release-version\.mjs/
+    /permissions:\n(?: {6}#[^\n]*\n)? {6}actions: write\n {6}contents: write/
   );
+  // A superseded commit releases the production head instead of publishing.
+  assert.match(
+    status,
+    /if: steps\.version\.outputs\.superseded == 'true'[\s\S]*desktop-beta\.yaml\/dispatches -f ref=production -f 'inputs\[dry_run\]=false'/
+  );
+  assert.match(status, /version: \$\{\{ steps.version.outputs.version \}\}/);
+  assert.match(status, /build: \$\{\{ steps.version.outputs.build \}\}/);
+  assert.match(status, /fetch-depth: 0/);
+  assert.match(status, /GITHUB_TOKEN: \$\{\{ github.token \}\}/);
+  assert.match(status, /run: node scripts\/app-version\/allocate\.mjs/);
   assert.match(
     publish,
     /concurrency:\n {6}group: desktop-beta-production-publish\n {6}cancel-in-progress: false\n {6}queue: max/
@@ -224,6 +233,16 @@ test('derived DESKTOP_VERSION reaches all three platform builds and publication'
     ['Build Windows beta', '--build-name="$env:DESKTOP_VERSION"'],
     ['Build macOS beta', '--build-name="$DESKTOP_VERSION"'],
     ['Build Linux beta', '--build-name="$DESKTOP_VERSION"'],
+    // The shared ledger build orders same-version rebuilds in the updater.
+    [
+      'Build Windows beta',
+      '--dart-define=DESKTOP_RELEASE_RUN_ID="$env:DESKTOP_BUILD"',
+    ],
+    ['Build macOS beta', '--build-number="$DESKTOP_BUILD"'],
+    [
+      'Build Linux beta',
+      '--dart-define=DESKTOP_RELEASE_RUN_ID="$DESKTOP_BUILD"',
+    ],
   ])
     assert.ok(
       step(name).includes(flag),

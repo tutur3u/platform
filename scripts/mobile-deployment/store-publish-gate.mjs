@@ -204,19 +204,84 @@ export function treeAt(sha, git = execFileSync) {
   return hash;
 }
 
-function uploaded(jobs) {
-  return (jobs ?? []).some(
-    (job) => UPLOAD_JOB_NAMES.includes(job.name) && job.conclusion === 'success'
+export const MAC_UPLOAD_JOB_NAME = 'Upload macOS to the Mac App Store';
+// A Mac job can conclude `success` with its upload skipped (older runs did so
+// when signing entries were missing), so its acceptance step must succeed.
+export const MAC_ACCEPTED_STEP_NAME =
+  'Verify App Store Connect accepted the macOS build';
+
+function requiredJobs(macEnabled) {
+  return macEnabled
+    ? [...UPLOAD_JOB_NAMES, MAC_UPLOAD_JOB_NAME]
+    : UPLOAD_JOB_NAMES;
+}
+
+function delivered(job) {
+  if (job?.conclusion !== 'success') return false;
+  if (job.name !== MAC_UPLOAD_JOB_NAME) return true;
+  return (job.steps ?? []).some(
+    (step) =>
+      step.name === MAC_ACCEPTED_STEP_NAME && step.conclusion === 'success'
   );
 }
 
-export async function loadRecordedTree({ repo, token, readTree, request }) {
+/** True when the run reached any store job (it was not skipped or pending). */
+function attempted(jobs, macEnabled) {
+  return requiredJobs(macEnabled).some((name) =>
+    (jobs ?? []).some(
+      (job) =>
+        job.name === name &&
+        ['success', 'failure', 'cancelled', 'timed_out'].includes(
+          job.conclusion
+        )
+    )
+  );
+}
+
+function uploaded(jobs, macEnabled) {
+  return requiredJobs(macEnabled).every((name) =>
+    (jobs ?? []).some((job) => job.name === name && delivered(job))
+  );
+}
+
+/**
+ * The baseline is the tree of the newest run that attempted the stores, and
+ * only if every enabled store verifiably accepted it. A newer partial attempt
+ * (one store took tree B, another failed) leaves the stores on different
+ * trees, so it yields no baseline and the next run publishes, even when
+ * production reverted to an older, fully delivered tree. Artifacts written by
+ * older runs are trusted only after the run's own jobs prove delivery.
+ */
+export async function loadRecordedTree({
+  repo,
+  token,
+  readTree,
+  request,
+  macEnabled = false,
+}) {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repo)) {
     throw new Error('repository is malformed');
   }
   const listed = await request(workflowRunsPath.replace('REPO', repo), token);
-  const runs = listed.workflow_runs ?? [];
-  for (const run of runs) {
+  for (const run of listed.workflow_runs ?? []) {
+    // Every attempt (a rerun's latest view can hide an earlier partial
+    // delivery), across every page: reruns can push store jobs past page 1.
+    const jobs = [];
+    for (let page = 1; ; page++) {
+      if (page > 50) throw new Error('workflow run has too many jobs to read');
+      const listed = (
+        await request(
+          `/repos/${repo}/actions/runs/${run.id}/jobs?filter=all&per_page=100&page=${page}`,
+          token
+        )
+      ).jobs;
+      if (!Array.isArray(listed))
+        throw new Error('workflow jobs are unreadable');
+      jobs.push(...listed);
+      if (listed.length < 100) break;
+    }
+    if (!attempted(jobs, macEnabled)) continue;
+    if (!uploaded(jobs, macEnabled)) return null;
     const artifacts = await request(
       `/repos/${repo}/actions/runs/${run.id}/artifacts?per_page=100`,
       token
@@ -224,24 +289,19 @@ export async function loadRecordedTree({ repo, token, readTree, request }) {
     const match = (artifacts.artifacts ?? []).find(
       (item) => item.name === UPLOADED_TREE_ARTIFACT && item.expired !== true
     );
-    if (!match) continue;
-    const zip = await request(
-      `/repos/${repo}/actions/artifacts/${match.id}/zip`,
-      token,
-      { zip: true }
-    );
-    return parseUploadedTree(readZipText(zip, UPLOADED_TREE_FILE));
-  }
-  for (const run of runs) {
-    const jobs = await request(
-      `/repos/${repo}/actions/runs/${run.id}/jobs?per_page=100`,
-      token
-    );
-    if (!uploaded(jobs.jobs)) continue;
+    if (match) {
+      const zip = await request(
+        `/repos/${repo}/actions/artifacts/${match.id}/zip`,
+        token,
+        { zip: true }
+      );
+      return parseUploadedTree(readZipText(zip, UPLOADED_TREE_FILE));
+    }
     try {
       return readTree(run.head_sha);
     } catch {
-      // That upload commit is no longer reachable. Try the next one.
+      // That upload commit is no longer reachable: no trustworthy baseline.
+      return null;
     }
   }
   return null;
@@ -281,6 +341,7 @@ async function main() {
     token,
     readTree: treeAt,
     request: githubRequest,
+    macEnabled: process.env.MAC_APP_STORE_ENABLED === 'true',
   });
   const decision = decideStorePublish({
     currentTree,

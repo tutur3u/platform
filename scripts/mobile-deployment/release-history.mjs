@@ -59,6 +59,35 @@ function historyBaseTag(version, sha, git) {
   }
 }
 
+// Ledger builds (scripts/app-version) start at 1000000 and name their commit
+// through the `app-b<build>` tag; earlier builds encode the workflow run as
+// 100000 + run * 1000 + attempt.
+const LEDGER_BUILD_FLOOR = 1_000_000;
+
+export function legacyRunNumber(buildNumber) {
+  const number = Number(buildNumber);
+  return number < LEDGER_BUILD_FLOOR ? Math.floor((number - 100000) / 1000) : 0;
+}
+
+export function ledgerSha(buildNumber, git) {
+  if (Number(buildNumber) < LEDGER_BUILD_FLOOR) return null;
+  try {
+    const sha = git(
+      'git',
+      [
+        'rev-parse',
+        '--verify',
+        '--quiet',
+        `refs/tags/app-b${Number(buildNumber)}^{commit}`,
+      ],
+      { cwd: repoRoot, encoding: 'utf8' }
+    ).trim();
+    return /^[a-f0-9]{40}$/u.test(sha) ? sha : null;
+  } catch {
+    return null;
+  }
+}
+
 function isAncestor(ancestor, descendant, git) {
   try {
     git('git', ['merge-base', '--is-ancestor', ancestor, descendant], {
@@ -159,7 +188,7 @@ export async function releaseHistory({
     uploaded.push({
       version: record.attributes.version,
       buildNumber: build.attributes.version,
-      runNumber: Math.floor((Number(build.attributes.version) - 100000) / 1000),
+      runNumber: legacyRunNumber(build.attributes.version),
       date: build.attributes.uploadedDate?.slice(0, 10),
     });
   }
@@ -172,7 +201,10 @@ export async function releaseHistory({
       version: item.version,
       date:
         item.date ?? runs.get(item.runNumber)?.created_at.slice(0, 10) ?? date,
-      sha: runs.get(item.runNumber)?.head_sha ?? null,
+      sha:
+        ledgerSha(item.buildNumber, git) ??
+        runs.get(item.runNumber)?.head_sha ??
+        null,
       buildNumber: item.buildNumber,
     }))
     .sort((a, b) => compareVersions(a.version, b.version));

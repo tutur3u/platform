@@ -69,6 +69,15 @@ export function withNotes(release, notes) {
   return { ...release, releaseNotes: [...byLanguage.values()] };
 }
 
+/** A track already serving a higher version code than this build. */
+export function hasNewerBuild(track, buildNumber) {
+  return (track?.releases ?? []).some((release) =>
+    (release.versionCodes ?? []).some(
+      (code) => Number(code) > Number(buildNumber)
+    )
+  );
+}
+
 export function releaseForBuild(track, buildNumber) {
   return (
     track?.releases?.find(
@@ -157,6 +166,12 @@ async function assertNothingPendingReview(editUrl, headers) {
  * never replaced.
  */
 export function planPlayBeta({ internal, buildNumber, notes, targets }) {
+  // Planned inside the promotion edit, so a newer internal release published
+  // since the job's earlier check stops an older build from being promoted.
+  if (hasNewerBuild(internal, buildNumber))
+    throw new Error(
+      `Google Play internal already serves a build newer than ${buildNumber}`
+    );
   const release = releaseForBuild(internal, buildNumber);
   if (!release)
     throw new Error(
@@ -183,6 +198,10 @@ export function planPlayBeta({ internal, buildNumber, notes, targets }) {
   for (const [track, state] of Object.entries(targets)) {
     if (!readableTrack(state))
       throw new Error(`Google Play track ${track} is unreadable`);
+    if (hasNewerBuild(state, buildNumber))
+      throw new Error(
+        `Google Play track ${track} already serves a build newer than ${buildNumber}`
+      );
     const existing = releaseForBuild(state, buildNumber);
     if (existing) {
       // Keep the target's own release list and metadata; only add notes.
@@ -288,6 +307,15 @@ export async function uploadInternal(buildNumber, aabPath, notesDir) {
   if (!english) throw new Error('Google Play en-US notes are empty');
   const headers = await playHeaders();
   await withEdit(headers, async (editUrl, commit) => {
+    // Re-read inside the edit that writes the track: a newer release may have
+    // gone live since the job's earlier check.
+    const internal = await json(`${editUrl}/tracks/internal`, { headers });
+    if (!readableTrack(internal))
+      throw new Error('Google Play internal track is unreadable');
+    if (hasNewerBuild(internal, buildNumber))
+      throw new Error(
+        `Google Play internal already serves a build newer than ${buildNumber}`
+      );
     const bundle = await uploadBundle(editUrl, headers, aabPath);
     if (String(bundle.versionCode) !== String(buildNumber))
       throw new Error(
@@ -316,12 +344,13 @@ export async function internalHasBuild(buildNumber) {
   const headers = await playHeaders();
   let present = false;
   await withEdit(headers, async (editUrl) => {
-    present = Boolean(
-      releaseForBuild(
-        await json(`${editUrl}/tracks/internal`, { headers }),
-        buildNumber
-      )
-    );
+    const internal = await json(`${editUrl}/tracks/internal`, { headers });
+    // A rerun of a superseded build must not re-upload or move the track back.
+    if (hasNewerBuild(internal, buildNumber))
+      throw new Error(
+        `Google Play internal already serves a build newer than ${buildNumber}`
+      );
+    present = Boolean(releaseForBuild(internal, buildNumber));
   });
   return present;
 }

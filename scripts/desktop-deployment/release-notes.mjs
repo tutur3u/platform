@@ -98,6 +98,10 @@ function knownIssues(files, previous) {
     issues.push(
       'Windows packages are UNSIGNED for now. SmartScreen may show "Windows protected your PC" or "Unknown publisher". After verifying the SHA-256 checksum below, choose More info, then Run anyway if you trust this release and Windows offers that option. Organization policy or Smart App Control may block unsigned apps; use the web app instead of disabling security protections. Unsigned beta updates require manually installing a verified package; the in-app updater requires publisher signatures.'
     );
+  if (files.some(({ verification }) => verification === 'published-unverified'))
+    issues.push(
+      'Some packages were published by an earlier build of this release and were not re-verified by this one. Verify their SHA-256 checksums below, and check the code signature before running them.'
+    );
   if (previous?.legacy)
     issues.push(
       `Desktop betas published before this one can't see it in the in-app updater. Download it once from [tuturuuu.com/download](https://tuturuuu.com/download); later updates arrive in the app as usual.`
@@ -105,7 +109,22 @@ function knownIssues(files, previous) {
   return issues;
 }
 
+// Only packages this run verified get the provenance claim; kept packages
+// published by an earlier build were not re-checked here.
+function provenanceClaim(files) {
+  const unverified = files.filter(
+    ({ verification }) => verification === 'published-unverified'
+  );
+  if (!unverified.length)
+    return 'All packages have cryptographically signed GitHub build provenance verified against this workflow, production ref, and exact source SHA before publication.';
+  if (unverified.length === files.length)
+    return 'These packages were published by an earlier build, and their GitHub build provenance was not re-verified; check it before installing.';
+  return `Packages built by this run have cryptographically signed GitHub build provenance verified against this workflow, production ref, and exact source SHA before publication. ${unverified.map(({ name }) => name).join(', ')} came from an earlier build and were not re-verified; check their provenance before installing.`;
+}
+
 function trust({ name, verification }) {
+  if (verification === 'published-unverified')
+    return `${name}: published by an earlier build of this release; its signature was not re-verified (see Known issues).`;
   if (name.endsWith('.exe'))
     return verification === 'unsigned-windows'
       ? 'Windows: the installer is not code-signed yet (see Known issues).'
@@ -122,6 +141,7 @@ function trust({ name, verification }) {
  */
 export function renderDesktopReleaseNotes({
   version,
+  build,
   source,
   run,
   files,
@@ -130,7 +150,7 @@ export function renderDesktopReleaseNotes({
 }) {
   if (!/^[a-f0-9]{40}$/u.test(source ?? '') || !/^\d+$/u.test(run ?? ''))
     throw new Error('Invalid release identity');
-  const tag = desktopReleaseTag(version);
+  const tag = desktopReleaseTag(version, build);
   const ordered = Object.keys(DESKTOP_PLATFORMS)
     .map((platform) => files.find((file) => platformOf(file.name) === platform))
     .filter(Boolean);
@@ -187,7 +207,7 @@ ${ordered
   )
   .join('\n')}
 
-${ordered.map(trust).join(' ')} All packages have cryptographically signed GitHub build provenance verified against this workflow, production ref, and exact source SHA before publication. To check it with GitHub CLI:
+${ordered.map(trust).join(' ')} ${provenanceClaim(ordered)} To check it with GitHub CLI:
 
 \`\`\`sh
 gh attestation verify <downloaded-package> --repo ${repository} --signer-workflow ${repository}/.github/workflows/desktop-beta.yaml --source-ref refs/heads/production --source-digest ${source} --deny-self-hosted-runners

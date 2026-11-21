@@ -296,6 +296,7 @@
                   "build/devops/desktop-beta-distribution",
                   "build/devops/mac-app-store-distribution",
                   "build/devops/desktop-release-versioning",
+                  "build/devops/app-release-versioning",
                   "build/devops/sepay-testing-guide",
                   "build/devops/polar-storefront-integration",
                   "build/devops/square-terminal-integration",

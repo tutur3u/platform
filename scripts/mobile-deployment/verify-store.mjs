@@ -7,6 +7,8 @@ import { isTuturuuuReviewEmail } from '../../packages/utils/src/email/reviewer-d
 import {
   BetaHistoryUnavailableError,
   ensureBuildWhatsNew,
+  iosBuilds,
+  assertNewestIosBuild,
   originalBuildHistory,
   uploadedBuildTestNotes,
 } from './build-test-notes.mjs';
@@ -110,9 +112,8 @@ export function selectBetaGroups(
   externalGroups = ''
 ) {
   if (enabled === 'false') return [];
-  if (enabled !== 'true') {
+  if (enabled !== 'true')
     throw new Error('TESTFLIGHT_BETA_ENABLED must be true or false');
-  }
   const externalNames = externalGroups
     .split(',')
     .map((name) => name.trim())
@@ -178,9 +179,8 @@ async function listAppleResources(apple, path) {
     const page = await apple(next);
     resources.push(...(page.data ?? []));
     const nextUrl = page.links?.next;
-    if (nextUrl && new URL(nextUrl).origin !== APPLE_ORIGIN) {
+    if (nextUrl && new URL(nextUrl).origin !== APPLE_ORIGIN)
       throw new Error('Unexpected App Store Connect pagination origin');
-    }
     next = nextUrl ? new URL(nextUrl).pathname + new URL(nextUrl).search : null;
   }
   return resources;
@@ -189,9 +189,8 @@ async function listAppleResources(apple, path) {
 async function assignedBetaGroupIds(apple, buildId) {
   const build = await apple(`/v1/builds/${buildId}?include=betaGroups`);
   const relationships = build.data?.relationships?.betaGroups?.data;
-  if (!Array.isArray(relationships)) {
+  if (!Array.isArray(relationships))
     throw new Error('App Store Connect omitted build beta group relationships');
-  }
   return new Set(relationships.map((group) => group.id));
 }
 
@@ -210,9 +209,8 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
     config.groups,
     config.externalGroups
   );
-  if (selected.length === 0) {
+  if (selected.length === 0)
     throw new Error('No TestFlight beta groups are available for this app');
-  }
   const assignedIds = await assignedBetaGroupIds(apple, buildId);
   for (const group of selected) {
     if (assignedIds.has(group.id)) continue;
@@ -267,12 +265,11 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
 export async function pendingExternalBetaReview(apple, appId, buildId) {
   const target = await apple(`/v1/builds/${buildId}?include=preReleaseVersion`);
   const versionId = target.data?.relationships?.preReleaseVersion?.data?.id;
-  if (!versionId) {
+  if (!versionId)
     throw new Error('TestFlight build prerelease version is missing');
-  }
   for (const state of ['WAITING_FOR_REVIEW', 'IN_REVIEW']) {
     const query = new URLSearchParams({
-      'filter[app]': appId,
+      ...iosBuilds(appId),
       'filter[betaAppReviewSubmission.betaReviewState]': state,
       include: 'preReleaseVersion',
       limit: '200',
@@ -444,7 +441,7 @@ export function supersededTestFlightBuildIds(page, now = Date.now()) {
 
 export async function expireSupersededTestFlightBuilds(apple, appId) {
   const query = new URLSearchParams({
-    'filter[app]': appId,
+    ...iosBuilds(appId),
     sort: '-uploadedDate',
     include: 'betaAppReviewSubmission,appStoreVersion',
     limit: '200',
@@ -459,9 +456,8 @@ export async function expireSupersededTestFlightBuilds(apple, appId) {
       }),
     });
   }
-  if (ids.length) {
+  if (ids.length)
     console.log(`Expired ${ids.length} superseded TestFlight build(s).`);
-  }
   return ids.length;
 }
 
@@ -478,11 +474,10 @@ export async function retryDeferredTestFlightReview(apple, appId, config) {
     config.groups,
     config.externalGroups
   );
-  if (!selected.some((group) => group.attributes?.isInternalGroup === false)) {
+  if (!selected.some((group) => group.attributes?.isInternalGroup === false))
     return 'no-external-groups';
-  }
   const query = new URLSearchParams({
-    'filter[app]': appId,
+    ...iosBuilds(appId),
     'filter[processingState]': 'VALID',
     sort: '-uploadedDate',
     include: 'buildBetaDetail',
@@ -497,12 +492,17 @@ export async function retryDeferredTestFlightReview(apple, appId, config) {
   const existing = await apple(
     `/v1/betaAppReviewSubmissions?${new URLSearchParams({ 'filter[build]': build.id, limit: '2' })}`
   );
-  if (existing.data?.[0]?.attributes?.betaReviewState === 'REJECTED') {
+  const reviewState = existing.data?.[0]?.attributes?.betaReviewState;
+  if (reviewState === 'REJECTED') {
     console.log(
       `Latest TestFlight build ${build.id} was rejected; waiting for a newer build.`
     );
     return 'rejected';
   }
+  // Approved or in-review builds already reached review; only pending delivery
+  // can be stale work that needs a replacement release.
+  if (!['APPROVED', 'WAITING_FOR_REVIEW', 'IN_REVIEW'].includes(reviewState))
+    await assertNewestIosBuild(apple, appId, build.attributes?.version);
   await distributeTestFlightBuild(apple, appId, build.id, config);
   await expireSupersededTestFlightBuilds(apple, appId);
   return 'processed';
@@ -631,7 +631,7 @@ function betaDistributionConfig(expectedBuildNumber) {
 export async function verifyTestFlight(buildNumber) {
   const { apple, appId } = await connectApple();
   const query = new URLSearchParams({
-    'filter[app]': appId,
+    ...iosBuilds(appId),
     'filter[version]': String(buildNumber),
     include: 'buildBetaDetail',
     limit: '2',
@@ -650,6 +650,7 @@ export async function verifyTestFlight(buildNumber) {
       (item) => item.type === 'buildBetaDetails' && item.id === detailId
     );
     if (testFlightReady(build, detail)) {
+      await assertNewestIosBuild(apple, appId, buildNumber);
       await distributeTestFlightBuild(
         apple,
         appId,

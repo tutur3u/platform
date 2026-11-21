@@ -3,10 +3,10 @@ import { pathToFileURL } from 'node:url';
 import { nextBuildName } from '../mobile-deployment/build-name.mjs';
 import { runCommand } from './command.mjs';
 
-// Desktop and mobile share one scheme: Release Please owns major.minor (and a
-// patch floor) in apps/mobile/pubspec.yaml; CI publishes the next unused patch
-// from that channel's own history. Run IDs and commits stay in release metadata.
-// Legacy tags carried a `-<run-id>` suffix; their version still counts as used.
+// Tags are `desktop-v<X.Y.Z>-<build>`: the shared release ledger
+// (scripts/app-version) assigns both, so a desktop-only rebuild of the same
+// X.Y.Z gets a higher build suffix that the in-app updater orders after it.
+// Legacy tags carried a `-<run-id>` suffix or none; their version still counts.
 const TAG = /^desktop-v(\d+\.\d+\.\d+)(?:-\d+)?$/u;
 const VERSION = /^\d+\.\d+\.\d+$/u;
 
@@ -14,10 +14,13 @@ export function desktopTagVersion(tag) {
   return typeof tag === 'string' ? (TAG.exec(tag)?.[1] ?? null) : null;
 }
 
-export function desktopReleaseTag(version) {
+export function desktopReleaseTag(version, build) {
   if (!VERSION.test(version ?? ''))
     throw new Error('Desktop version must be major.minor.patch');
-  return `desktop-v${version}`;
+  if (build === undefined) return `desktop-v${version}`;
+  if (!/^[1-9]\d{0,9}$/u.test(String(build)))
+    throw new Error('Desktop build must be a positive integer');
+  return `desktop-v${version}-${build}`;
 }
 
 export function nextDesktopVersion(pubspec, tags) {

@@ -1,4 +1,7 @@
 name: Mobile Store Deployment
+# Release dispatches are labeled so recovery can tell a run that publishes from
+# a review-retry run.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Mobile Store Deployment ({0})', inputs.mode) || 'Mobile Store Deployment' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -72,8 +75,50 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           FORCE_STORE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force == true }}
+          MAC_APP_STORE_ENABLED: ${{ vars.MAC_APP_STORE_ENABLED == 'true' }}
           HEAD_SHA: ${{ github.sha }}
         run: node scripts/mobile-deployment/store-publish-gate.mjs
+
+  allocate-app-version:
+    permissions:
+      # Ledger tag refs, and a head release when this commit is superseded.
+      actions: write
+      contents: write
+    name: Allocate shared app version
+    needs: [check-ci, mobile-store-publish-gate]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      superseded: ${{ steps.allocate.outputs.superseded }}
+      version: ${{ steps.allocate.outputs.version }}
+      build: ${{ steps.allocate.outputs.build }}
+      label: ${{ steps.allocate.outputs.label }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Desktop and mobile read one ledger, so a production commit gets the same
+      # X.Y.Z and build number on every platform.
+      - name: Allocate or reuse the ledger entry
+        id: allocate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs
+
+      # A newer production commit (for example a desktop-only change that never
+      # runs this workflow) allocated first. That commit contains this one, so a
+      # release of the production head carries these mobile changes forward.
+      - name: Release the production head instead
+        if: steps.allocate.outputs.superseded == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # force: the head may share this commit's mobile tree, and a store
+        # that failed here must still receive it.
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=release' -f 'inputs[force]=true'
 
   mobile-credentials-preflight:
     permissions:
@@ -82,8 +127,8 @@ jobs:
       deployments: read
       id-token: write
     name: Check mobile deployment credentials
-    needs: [check-ci, mobile-store-publish-gate]
-    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true'
+    needs: [check-ci, mobile-store-publish-gate, allocate-app-version]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.allocate-app-version.outputs.superseded == 'false'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
@@ -107,16 +152,18 @@ jobs:
         shell: bash
         env:
           MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+          LEDGER_BUILD: ${{ needs.allocate-app-version.outputs.build }}
         run: |
           if [ -z "${MOBILE_DEPLOYMENT_CI_TOKEN:-}" ]; then
             echo "::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
             exit 1
           fi
 
-          build_number=$((100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
-          test "$GITHUB_RUN_ATTEMPT" -lt 1000
-          test "$build_number" -le 2100000000
-          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          # The shared ledger build number is the iOS CFBundleVersion and the
+          # Android versionCode.
+          [[ "$LEDGER_BUILD" =~ ^[1-9][0-9]{0,9}$ ]]
+          test "$LEDGER_BUILD" -le 2100000000
+          echo "build_number=$LEDGER_BUILD" >> "$GITHUB_OUTPUT"
 
       - name: Fetch iOS release metadata credentials
         shell: bash
@@ -149,11 +196,18 @@ jobs:
       - name: Calculate next mobile app version
         id: version_name
         shell: bash
+        env:
+          LEDGER_VERSION: ${{ needs.allocate-app-version.outputs.version }}
         run: |
           set -euo pipefail
-          build_name="$(node ../../scripts/mobile-deployment/build-name.mjs)"
-          test -n "$build_name"
-          echo "build_name=$build_name" >> "$GITHUB_OUTPUT"
+          # The ledger owns the version. Each Apple job checks its train with
+          # apple-guard.mjs before uploading.
+          [[ "$LEDGER_VERSION" =~ ^(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})$ ]]
+          echo "build_name=$LEDGER_VERSION" >> "$GITHUB_OUTPUT"
+
+      # Ledger tags name the commit behind each ledger build number.
+      - name: Fetch release ledger tags
+        run: git fetch --quiet --no-tags origin '+refs/tags/app-b*:refs/tags/app-b*'
 
       - name: Bundle mobile beta release history
         env:
@@ -325,6 +379,12 @@ jobs:
           test "$(wc -m < "$notes_dir/whatsnew-en-US")" -le 500
           echo "MOBILE_PLAY_NOTES=$notes_dir" >> "$GITHUB_ENV"
 
+      - name: Recheck source order before the Play upload
+        if: steps.existing.outputs.present != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../../scripts/app-version/allocate.mjs --assert-current
+
       - name: Publish Android App Bundle to Google Play internal
         if: steps.existing.outputs.present != 'true'
         # One edit uploads the bundle and commits a completed internal release
@@ -333,6 +393,11 @@ jobs:
 
       - name: Verify committed Google Play internal release
         run: node ../../scripts/mobile-deployment/verify-store.mjs android "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
+
+      - name: Recheck source order before Play promotion
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../../scripts/app-version/allocate.mjs --assert-current
 
       - name: Add Vietnamese notes and promote to Google Play testing tracks
         env:
@@ -452,13 +517,23 @@ jobs:
             --bundle "$bundle_path" \
             --mobile-root "$PWD"
 
+      - name: Check App Store Connect for this build
+        id: existing
+        env:
+          LEDGER_VERSION: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          LEDGER_BUILD: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+        run: node ../../scripts/app-version/apple-guard.mjs IOS "$LEDGER_VERSION" "$LEDGER_BUILD"
+
       - name: Disable Flutter Swift Package Manager
+        if: steps.existing.outputs.present != 'true'
         run: flutter config --no-enable-swift-package-manager
 
       - name: Install dependencies
+        if: steps.existing.outputs.present != 'true'
         run: flutter pub get
 
       - name: Import Apple signing assets
+        if: steps.existing.outputs.present != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -531,15 +606,19 @@ jobs:
           EOF
 
       - name: Omit Live screen broadcast from TestFlight beta
+        if: steps.existing.outputs.present != 'true'
         run: ruby ../../scripts/mobile-deployment/omit-broadcast-extension.rb ios/Runner.xcodeproj
 
       - name: Verify release backend URLs are https
+        if: steps.existing.outputs.present != 'true'
         run: node ../../scripts/mobile-validate-dart-defines.js .env.github
 
       - name: Build iOS IPA
+        if: steps.existing.outputs.present != 'true'
         run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --dart-define=IOS_LIVE_SCREEN_BROADCAST_ENABLED=false --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 
       - name: Resolve iOS IPA path
+        if: steps.existing.outputs.present != 'true'
         id: ios-ipa
         shell: bash
         run: |
@@ -555,6 +634,7 @@ jobs:
           echo "local_path=$ipa_path" >> "$GITHUB_OUTPUT"
 
       - name: Verify exported iOS signature and build identity
+        if: steps.existing.outputs.present != 'true'
         shell: bash
         env:
           EXPECTED_BUILD_NUMBER: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
@@ -582,11 +662,12 @@ jobs:
           test ! -e "$app_path/PlugIns/LiveScreenBroadcast.appex"
 
       - name: Verify and upload iOS Crashlytics symbols
+        if: steps.existing.outputs.present != 'true'
         shell: bash
         run: bash ../../scripts/mobile-deployment/upload-ios-symbols.sh build/ios/archive/Runner.xcarchive ios/Runner/GoogleService-Info-production.plist ios/Pods/FirebaseCrashlytics/upload-symbols
 
       - name: Preserve iOS dSYM artifact
-        if: always()
+        if: always() && steps.existing.outputs.present != 'true'
         continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -597,6 +678,7 @@ jobs:
           compression-level: 0
 
       - name: Upload iOS IPA artifact
+        if: steps.existing.outputs.present != 'true'
         # TestFlight uses the verified local IPA. GitHub artifact storage is
         # diagnostic only and must not block distribution when it times out.
         continue-on-error: true
@@ -608,7 +690,22 @@ jobs:
           retention-days: 14
           compression-level: 0
 
+      - name: Recheck source order before the TestFlight upload
+        if: steps.existing.outputs.present != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../../scripts/app-version/allocate.mjs --assert-current
+
+      - name: Recheck App Store Connect before the upload
+        id: recheck
+        if: steps.existing.outputs.present != 'true'
+        env:
+          LEDGER_VERSION: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          LEDGER_BUILD: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+        run: node ../../scripts/app-version/apple-guard.mjs IOS "$LEDGER_VERSION" "$LEDGER_BUILD"
+
       - name: Upload iOS IPA to TestFlight
+        if: steps.existing.outputs.present != 'true' && steps.recheck.outputs.present != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -619,9 +716,15 @@ jobs:
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 
+      - name: Recheck source order before TestFlight distribution
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../../scripts/app-version/allocate.mjs --assert-current
+
       - name: Verify TestFlight and distribute to beta groups
         timeout-minutes: 35
         env:
+          LEDGER_RECHECK: "true"
           MOBILE_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
           TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
@@ -748,8 +851,20 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Mac App Store skipped::The deployment bundle has no Mac installer certificate or Mac App Store profile yet."
+            # MAC_APP_STORE_ENABLED promises a Mac build, so a missing signing
+            # entry fails the job. A skip would look like a delivered tree, and
+            # the store gate would then never retry the Mac upload.
+            echo "::error title=Mac App Store blocked::MAC_APP_STORE_ENABLED is true, but the deployment bundle has no Mac installer certificate or Mac App Store profile."
+            exit 1
           fi
+
+      - name: Check App Store Connect for this build
+        id: existing
+        if: steps.ready.outputs.ready == 'true'
+        env:
+          LEDGER_VERSION: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          LEDGER_BUILD: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+        run: node ../../scripts/app-version/apple-guard.mjs MAC_OS "$LEDGER_VERSION" "$LEDGER_BUILD"
 
       - name: Setup Flutter
         if: steps.ready.outputs.ready == 'true'
@@ -776,13 +891,13 @@ jobs:
       # Sandboxed entitlements and the store channel define: the direct-download
       # updater is compiled out because the Mac App Store owns updates.
       - name: Build sandboxed macOS app
-        if: steps.ready.outputs.ready == 'true'
+        if: steps.ready.outputs.ready == 'true' && steps.existing.outputs.present != 'true'
         env:
           FLUTTER_XCODE_TUTURUUU_RELEASE_ENTITLEMENTS: Runner/AppStore.entitlements
         run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --dart-define=DESKTOP_STORE_CHANNEL=true --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Sign and package for the Mac App Store
-        if: steps.ready.outputs.ready == 'true'
+        if: steps.ready.outputs.ready == 'true' && steps.existing.outputs.present != 'true'
         working-directory: .
         run: |
           set -euo pipefail
@@ -791,8 +906,22 @@ jobs:
           case "$archs" in *arm64*x86_64*|*x86_64*arm64*) ;; *) echo "::error::Mac App Store build must be universal"; exit 1 ;; esac
           node scripts/desktop-deployment/package-mac-app-store.mjs "$app_path" "$RUNNER_TEMP/mac-app-store/Tuturuuu.pkg"
 
+      - name: Recheck source order before the Mac upload
+        if: steps.ready.outputs.ready == 'true' && steps.existing.outputs.present != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node ../../scripts/app-version/allocate.mjs --assert-current
+
+      - name: Recheck App Store Connect before the upload
+        id: recheck
+        if: steps.ready.outputs.ready == 'true' && steps.existing.outputs.present != 'true'
+        env:
+          LEDGER_VERSION: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          LEDGER_BUILD: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+        run: node ../../scripts/app-version/apple-guard.mjs MAC_OS "$LEDGER_VERSION" "$LEDGER_BUILD"
+
       - name: Upload macOS package to App Store Connect
-        if: steps.ready.outputs.ready == 'true'
+        if: steps.ready.outputs.ready == 'true' && steps.existing.outputs.present != 'true' && steps.recheck.outputs.present != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -801,6 +930,14 @@ jobs:
             --file "$RUNNER_TEMP/mac-app-store/Tuturuuu.pkg" \
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Verify App Store Connect accepted the macOS build
+        if: steps.ready.outputs.ready == 'true'
+        timeout-minutes: 35
+        env:
+          LEDGER_VERSION: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
+          LEDGER_BUILD: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+        run: node ../../scripts/app-version/apple-guard.mjs --wait MAC_OS "$LEDGER_VERSION" "$LEDGER_BUILD"
 
       - name: Cleanup macOS release files
         if: always()
@@ -829,6 +966,42 @@ jobs:
           environment: production
           job-status: ${{ job.status }}
 
+  release-head-when-stale:
+    permissions:
+      actions: write
+      contents: read
+    name: Release the production head after a stale attempt
+    needs:
+      [
+        allocate-app-version,
+        publish-android-internal,
+        publish-ios-testflight,
+        publish-macos-app-store,
+      ]
+    # A failed-job rerun keeps its old allocation. When a store step refused
+    # because a newer commit holds the ledger, one head release carries the work.
+    if: always() && needs.allocate-app-version.outputs.superseded == 'false' && (needs.publish-android-internal.result == 'failure' || needs.publish-ios-testflight.result == 'failure' || needs.publish-macos-app-store.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/app-version
+
+      - name: Check whether a newer commit holds the ledger
+        id: stale
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs --report-stale
+
+      - name: Release the production head
+        if: steps.stale.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=release' -f 'inputs[force]=true'
+
   record-mobile-store-tree:
     permissions:
       actions: read
@@ -839,8 +1012,12 @@ jobs:
         mobile-store-publish-gate,
         publish-android-internal,
         publish-ios-testflight,
+        publish-macos-app-store,
       ]
-    if: always() && needs.mobile-store-publish-gate.outputs.publish == 'true' && (needs.publish-ios-testflight.result == 'success' || needs.publish-android-internal.result == 'success')
+    # Only a tree every enabled store accepted counts as uploaded, so a store
+    # that failed is retried by the next run instead of being skipped by the
+    # gate. The Mac App Store counts only while it is enabled.
+    if: always() && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.publish-ios-testflight.result == 'success' && needs.publish-android-internal.result == 'success' && (vars.MAC_APP_STORE_ENABLED != 'true' || needs.publish-macos-app-store.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Write the uploaded mobile tree
@@ -858,6 +1035,36 @@ jobs:
           path: ${{ runner.temp }}/mobile-store-uploaded-tree.txt
           if-no-files-found: error
           retention-days: 90
+
+  publish-beta-status:
+    permissions:
+      contents: write
+    name: Report beta channel status
+    needs: [allocate-app-version, publish-android-internal, publish-ios-testflight]
+    if: always() && (needs.publish-ios-testflight.result == 'success' || needs.publish-android-internal.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      APP_VERSION: ${{ needs.allocate-app-version.outputs.version }}
+      APP_BUILD: ${{ needs.allocate-app-version.outputs.build }}
+      APP_LABEL: ${{ needs.allocate-app-version.outputs.label }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/app-version
+
+      # Public JSON the download page reads; each platform reports only the
+      # build its own store verified.
+      - name: Report the TestFlight beta
+        if: needs.publish-ios-testflight.result == 'success'
+        run: node scripts/app-version/beta-status.mjs ios testflight
+
+      - name: Report the Google Play beta
+        if: always() && needs.publish-android-internal.result == 'success'
+        run: node scripts/app-version/beta-status.mjs android google-play-internal
 
   mobile-store-receipt:
     permissions:
@@ -922,6 +1129,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     timeout-minutes: 15
+    outputs:
+      ledger_stale: ${{ steps.retry.outputs.ledger_stale }}
     steps:
       - name: Checkout production code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -953,11 +1162,13 @@ jobs:
             --mobile-root "$RUNNER_TEMP/mobile-review"
 
       - name: Retry newest eligible build
+        id: retry
         env:
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
           TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
           TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}
           GITHUB_TOKEN: ${{ github.token }}
+          LEDGER_RECHECK: "true"
         run: node scripts/mobile-deployment/verify-store.mjs ios-pending
 
       - name: Cleanup iOS release files
@@ -966,3 +1177,35 @@ jobs:
         run: |
           rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-review"
           rm -f "$RUNNER_TEMP/mobile-review-bundle.json" "$RUNNER_TEMP/mobile-review-oidc.json"
+
+  release-head-after-stale-retry:
+    permissions:
+      actions: write
+      contents: read
+    name: Release the production head after a stale review retry
+    needs: [retry-ios-testflight-review]
+    # The pending build belongs to a commit a newer one superseded (for example
+    # a desktop-only change that never ran this workflow). One head release
+    # uploads a newer iOS build carrying its changes.
+    if: always() && needs.retry-ios-testflight-review.outputs.ledger_stale == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Release the production head unless a store run is pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The review queue retries every few minutes. Dispatch only when no
+          # run that can publish a replacement (a production push, or a release
+          # dispatch) is queued or running; queued review retries never count.
+          pending=0
+          for status in queued in_progress waiting pending requested; do
+            count="$(gh api "repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/runs?status=${status}&branch=production&per_page=100" --jq "[.workflow_runs[] | select(.id != ${GITHUB_RUN_ID}) | select(.event == \"push\" or (.event == \"workflow_dispatch\" and (.display_title | endswith(\"(release)\"))))] | length")"
+            pending=$((pending + count))
+          done
+          if [ "$pending" -gt 0 ]; then
+            echo "A mobile store run is already pending; it will carry the changes."
+            exit 0
+          fi
+          gh api -X POST repos/tutur3u/platform/actions/workflows/mobile-deploy-stores.yaml/dispatches -f ref=production -f 'inputs[mode]=release' -f 'inputs[force]=true'

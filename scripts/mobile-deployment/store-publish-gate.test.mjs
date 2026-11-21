@@ -93,6 +93,13 @@ function archive(entries) {
   return Buffer.concat([...locals, directory, end]);
 }
 
+const BOTH_STORES = {
+  jobs: [
+    { name: 'Publish Android to Google Play internal', conclusion: 'success' },
+    { name: 'Upload iOS to TestFlight', conclusion: 'success' },
+  ],
+};
+
 async function recordedFrom(zip) {
   return loadRecordedTree({
     repo: 'tutur3u/platform',
@@ -105,6 +112,8 @@ async function recordedFrom(zip) {
         return { workflow_runs: [{ id: 1 }] };
       if (path.endsWith('/artifacts?per_page=100'))
         return { artifacts: [{ id: 2, name: UPLOADED_TREE_ARTIFACT }] };
+      if (path.endsWith('/jobs?filter=all&per_page=100&page=1'))
+        return BOTH_STORES;
       if (path.endsWith('/zip')) return zip;
       throw new Error(path);
     },
@@ -230,6 +239,8 @@ test('the last uploaded artifact wins over an older successful job', async () =>
         artifacts: [{ id: 4, name: UPLOADED_TREE_ARTIFACT, expired: false }],
       };
     }
+    if (path.endsWith('/jobs?filter=all&per_page=100&page=1'))
+      return BOTH_STORES;
     if (path.endsWith('/zip'))
       return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
     throw new Error(path);
@@ -241,33 +252,38 @@ test('the last uploaded artifact wins over an older successful job', async () =>
     request,
   });
   assert.equal(recorded, same);
-  assert.equal(
-    requests.some((path) => path.endsWith('/jobs?per_page=100')),
-    false
+  // The artifact is trusted only after the run's jobs prove both stores.
+  assert.ok(
+    requests.some((path) =>
+      path.endsWith('/runs/9/jobs?filter=all&per_page=100&page=1')
+    )
   );
 });
 
-test('without an artifact, the last successful upload tree is the baseline', async () => {
+test('without an artifact, the newest fully delivered attempt is the baseline', async () => {
   const request = async (path) => {
     if (path.endsWith('/runs?per_page=30')) {
       return {
         workflow_runs: [
-          { id: 2, head_sha: '2'.repeat(40) },
+          { id: 3, head_sha: '3'.repeat(40) },
           { id: 1, head_sha: '1'.repeat(40) },
         ],
       };
     }
     if (path.endsWith('/artifacts?per_page=100')) return { artifacts: [] };
-    if (path.endsWith('/runs/2/jobs?per_page=100')) {
+    // A run whose store jobs never ran (an unchanged tree) is not an attempt.
+    if (path.endsWith('/runs/3/jobs?filter=all&per_page=100&page=1'))
       return {
-        jobs: [{ name: 'Upload iOS to TestFlight', conclusion: 'failure' }],
+        jobs: [
+          { name: 'Upload iOS to TestFlight', conclusion: 'skipped' },
+          {
+            name: 'Publish Android to Google Play internal',
+            conclusion: 'skipped',
+          },
+        ],
       };
-    }
-    if (path.endsWith('/runs/1/jobs?per_page=100')) {
-      return {
-        jobs: [{ name: 'Upload iOS to TestFlight', conclusion: 'success' }],
-      };
-    }
+    if (path.endsWith('/runs/1/jobs?filter=all&per_page=100&page=1'))
+      return BOTH_STORES;
     throw new Error(path);
   };
   const recorded = await loadRecordedTree({
@@ -293,6 +309,76 @@ test('without an artifact, the last successful upload tree is the baseline', asy
     }).publish,
     true
   );
+});
+
+test('a newer partial attempt blocks skipping even after a revert', async () => {
+  // Tree A reached both stores (run 1), then tree B reached TestFlight only
+  // (run 2). Production reverts to A: the stores now differ, so A publishes.
+  const request = async (path) => {
+    if (path.endsWith('/runs?per_page=30'))
+      return {
+        workflow_runs: [
+          { id: 2, head_sha: '2'.repeat(40) },
+          { id: 1, head_sha: '1'.repeat(40) },
+        ],
+      };
+    if (path.endsWith('/artifacts?per_page=100'))
+      return { artifacts: [{ id: 7, name: UPLOADED_TREE_ARTIFACT }] };
+    if (path.endsWith('/runs/2/jobs?filter=all&per_page=100&page=1'))
+      return {
+        jobs: [
+          { name: 'Upload iOS to TestFlight', conclusion: 'success' },
+          {
+            name: 'Publish Android to Google Play internal',
+            conclusion: 'failure',
+          },
+        ],
+      };
+    if (path.endsWith('/runs/1/jobs?filter=all&per_page=100&page=1'))
+      return BOTH_STORES;
+    if (path.endsWith('/zip'))
+      return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
+    throw new Error(path);
+  };
+  const recorded = await loadRecordedTree({
+    repo: 'tutur3u/platform',
+    token: 'test-token',
+    readTree: () => same,
+    request,
+  });
+  assert.equal(recorded, null);
+});
+
+test('a historical Mac job counts only when its acceptance step succeeded', async () => {
+  const macJob = (stepConclusion) => ({
+    name: 'Upload macOS to the Mac App Store',
+    conclusion: 'success',
+    steps: [
+      {
+        name: 'Verify App Store Connect accepted the macOS build',
+        conclusion: stepConclusion,
+      },
+    ],
+  });
+  const load = (job) =>
+    loadRecordedTree({
+      repo: 'tutur3u/platform',
+      token: 'test-token',
+      readTree: () => same,
+      macEnabled: true,
+      request: async (path) => {
+        if (path.endsWith('/runs?per_page=30'))
+          return { workflow_runs: [{ id: 8, head_sha: '8'.repeat(40) }] };
+        if (path.endsWith('/jobs?filter=all&per_page=100&page=1'))
+          return { jobs: [...BOTH_STORES.jobs, job] };
+        if (path.endsWith('/artifacts?per_page=100')) return { artifacts: [] };
+        throw new Error(path);
+      },
+    });
+  assert.equal(await load(macJob('success')), same);
+  // Older runs skipped the upload yet concluded success.
+  assert.equal(await load(macJob('skipped')), null);
+  assert.equal(await load({ ...macJob('success'), steps: [] }), null);
 });
 
 for (const method of [0, 8]) {
@@ -431,4 +517,164 @@ test('truncated directory cannot turn a complete stored archive into a successfu
     { name: UPLOADED_TREE_FILE, text: `tree ${same}\n`, method: 0 },
   ]);
   await assert.rejects(recordedFrom(zip.subarray(0, -1)));
+});
+
+test('a run where only one store succeeded never sets the baseline', async () => {
+  const onePassed = {
+    jobs: [
+      {
+        name: 'Publish Android to Google Play internal',
+        conclusion: 'success',
+      },
+      { name: 'Upload iOS to TestFlight', conclusion: 'failure' },
+    ],
+  };
+  const request = async (path) => {
+    if (path.endsWith('/runs?per_page=30'))
+      return { workflow_runs: [{ id: 3, head_sha: '3'.repeat(40) }] };
+    // An artifact written by the older either-store rule.
+    if (path.endsWith('/artifacts?per_page=100'))
+      return { artifacts: [{ id: 5, name: UPLOADED_TREE_ARTIFACT }] };
+    if (path.endsWith('/jobs?filter=all&per_page=100&page=1')) return onePassed;
+    if (path.endsWith('/zip'))
+      return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
+    throw new Error(path);
+  };
+  const recorded = await loadRecordedTree({
+    repo: 'tutur3u/platform',
+    token: 'test-token',
+    readTree: () => same,
+    request,
+  });
+  assert.equal(recorded, null);
+  assert.equal(
+    decideStorePublish({
+      currentTree: same,
+      recordedTree: recorded,
+      force: false,
+    }).publish,
+    true
+  );
+});
+
+test('an enabled Mac App Store must also accept the tree', async () => {
+  const request = async (path) => {
+    if (path.endsWith('/runs?per_page=30'))
+      return { workflow_runs: [{ id: 4, head_sha: '4'.repeat(40) }] };
+    if (path.endsWith('/artifacts?per_page=100'))
+      return { artifacts: [{ id: 6, name: UPLOADED_TREE_ARTIFACT }] };
+    if (path.endsWith('/jobs?filter=all&per_page=100&page=1'))
+      return {
+        jobs: [
+          ...BOTH_STORES.jobs,
+          { name: 'Upload macOS to the Mac App Store', conclusion: 'failure' },
+        ],
+      };
+    if (path.endsWith('/zip'))
+      return storedZip(UPLOADED_TREE_FILE, `tree ${same}\n`);
+    throw new Error(path);
+  };
+  const load = (macEnabled) =>
+    loadRecordedTree({
+      repo: 'tutur3u/platform',
+      token: 'test-token',
+      readTree: () => same,
+      request,
+      macEnabled,
+    });
+  assert.equal(await load(false), same);
+  assert.equal(await load(true), null);
+});
+
+test('a rerun cannot hide an earlier partial delivery', async () => {
+  // Run 2 attempt 1: TestFlight took tree B, Play failed. Attempt 2 (rerun all)
+  // failed preflight, so both store jobs were skipped. Run 1 delivered A.
+  const request = async (path) => {
+    if (path.endsWith('/runs?per_page=30'))
+      return {
+        workflow_runs: [
+          { id: 2, head_sha: '2'.repeat(40) },
+          { id: 1, head_sha: '1'.repeat(40) },
+        ],
+      };
+    if (path.endsWith('/runs/2/jobs?filter=all&per_page=100&page=1'))
+      return {
+        jobs: [
+          {
+            name: 'Upload iOS to TestFlight',
+            conclusion: 'success',
+            run_attempt: 1,
+          },
+          {
+            name: 'Publish Android to Google Play internal',
+            conclusion: 'failure',
+            run_attempt: 1,
+          },
+          {
+            name: 'Upload iOS to TestFlight',
+            conclusion: 'skipped',
+            run_attempt: 2,
+          },
+          {
+            name: 'Publish Android to Google Play internal',
+            conclusion: 'skipped',
+            run_attempt: 2,
+          },
+        ],
+      };
+    if (path.endsWith('/runs/1/jobs?filter=all&per_page=100&page=1'))
+      return BOTH_STORES;
+    if (path.endsWith('/artifacts?per_page=100')) return { artifacts: [] };
+    throw new Error(path);
+  };
+  assert.equal(
+    await loadRecordedTree({
+      repo: 'tutur3u/platform',
+      token: 'test-token',
+      readTree: () => same,
+      request,
+    }),
+    null
+  );
+});
+
+test('store jobs on a later jobs page still count', async () => {
+  const filler = Array.from({ length: 100 }, (_, i) => ({
+    name: `Other job ${i}`,
+    conclusion: 'success',
+  }));
+  const request = async (path) => {
+    if (path.endsWith('/runs?per_page=30'))
+      return {
+        workflow_runs: [
+          { id: 2, head_sha: '2'.repeat(40) },
+          { id: 1, head_sha: '1'.repeat(40) },
+        ],
+      };
+    if (path.endsWith('/runs/2/jobs?filter=all&per_page=100&page=1'))
+      return { jobs: filler };
+    if (path.endsWith('/runs/2/jobs?filter=all&per_page=100&page=2'))
+      return {
+        jobs: [
+          { name: 'Upload iOS to TestFlight', conclusion: 'success' },
+          {
+            name: 'Publish Android to Google Play internal',
+            conclusion: 'failure',
+          },
+        ],
+      };
+    if (path.endsWith('/runs/1/jobs?filter=all&per_page=100&page=1'))
+      return BOTH_STORES;
+    if (path.endsWith('/artifacts?per_page=100')) return { artifacts: [] };
+    throw new Error(path);
+  };
+  assert.equal(
+    await loadRecordedTree({
+      repo: 'tutur3u/platform',
+      token: 'test-token',
+      readTree: () => same,
+      request,
+    }),
+    null
+  );
 });

@@ -237,3 +237,50 @@ test('store workflow promotes opted-in Play tracks, localizes notes, and alerts'
   assert.equal(write.env.GITHUB_TOKEN, undefined);
   assert.equal(write.env.RESULT_CHECK, '${{ needs.check-ci.result }}');
 });
+
+test('a superseded mobile commit releases the production head instead', () => {
+  const workflow = readWorkflow('mobile-deploy-stores.yaml');
+  const job = workflow.jobs['allocate-app-version'];
+  assert.deepEqual(job.permissions, { actions: 'write', contents: 'write' });
+  const dispatch = job.steps.find(
+    (step) => step.name === 'Release the production head instead'
+  );
+  assert.equal(dispatch.if, "steps.allocate.outputs.superseded == 'true'");
+  assert.match(
+    dispatch.run,
+    /mobile-deploy-stores\.yaml\/dispatches -f ref=production -f 'inputs\[mode\]=release'/
+  );
+  for (const [jobId, name] of [
+    ['publish-ios-testflight', 'Upload iOS IPA to TestFlight'],
+    ['publish-macos-app-store', 'Upload macOS package to App Store Connect'],
+  ]) {
+    const upload = workflow.jobs[jobId].steps.find(
+      (step) => step.name === name
+    );
+    assert.match(upload.if, /steps\.recheck\.outputs\.present != 'true'/);
+  }
+});
+
+test('a stale review retry releases the production head once', () => {
+  const workflow = readWorkflow('mobile-deploy-stores.yaml');
+  const retry = workflow.jobs['retry-ios-testflight-review'];
+  assert.equal(
+    retry.outputs.ledger_stale,
+    '${{ steps.retry.outputs.ledger_stale }}'
+  );
+  const recover = workflow.jobs['release-head-after-stale-retry'];
+  assert.deepEqual(recover.permissions, { actions: 'write', contents: 'read' });
+  assert.equal(
+    recover.if,
+    "always() && needs.retry-ios-testflight-review.outputs.ledger_stale == 'true'"
+  );
+  const run = recover.steps[0].run;
+  assert.match(run, /status=\$\{status\}/);
+  // Queued review retries cannot publish, so they never suppress recovery.
+  assert.match(run, /endswith\(\\"\(release\)\\"\)/);
+  assert.match(
+    workflow['run-name'],
+    /format\('Mobile Store Deployment \(\{0\}\)', inputs\.mode\)/
+  );
+  assert.match(run, /inputs\[mode\]=release' -f 'inputs\[force\]=true'/);
+});

@@ -84,9 +84,10 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     step(preflight, 'Fetch iOS release metadata credentials').run,
     /mobile-deployment\/bundle\?environment=production&platform=ios/
   );
+  // The ledger owns the version; the preflight only validates its shape.
   assert.match(
     step(preflight, 'Calculate next mobile app version').run,
-    /build-name\.mjs/
+    /LEDGER_VERSION" =~/
   );
   assert.match(
     step(preflight, 'Bundle mobile beta release history').run,
@@ -402,6 +403,10 @@ test('mobile store event guards separate new releases from review retries', () =
       .replaceAll(
         'needs.mobile-credentials-preflight',
         "needs['mobile-credentials-preflight']"
+      )
+      .replaceAll(
+        'needs.allocate-app-version',
+        "needs['allocate-app-version']"
       );
     return Function(
       'github',
@@ -425,6 +430,7 @@ test('mobile store event guards separate new releases from review retries', () =
       'check-ci': { outputs: { should_run: 'true' } },
       'mobile-store-publish-gate': { outputs: { publish: 'false' } },
       'mobile-credentials-preflight': { result: 'success' },
+      'allocate-app-version': { outputs: { superseded: 'false' } },
     },
   };
   assert.equal(evaluate('retry-ios-testflight-review', queuedContext), true);
@@ -467,6 +473,7 @@ test('mobile store event guards separate new releases from review retries', () =
                   outputs: { publish: 'true' },
                 },
                 'mobile-credentials-preflight': { result: preflight },
+                'allocate-app-version': { outputs: { superseded: 'false' } },
               },
             };
             const admitted =
@@ -506,6 +513,22 @@ test('mobile store event guards separate new releases from review retries', () =
                 },
               },
             };
+            assert.equal(
+              evaluate('mobile-credentials-preflight', {
+                ...context,
+                needs: {
+                  ...context.needs,
+                  'allocate-app-version': { outputs: { superseded: 'true' } },
+                },
+              }),
+              false,
+              `a superseded commit never publishes: ${label}`
+            );
+            assert.equal(
+              evaluate('allocate-app-version', context),
+              release,
+              `allocation: ${label}`
+            );
             assert.equal(
               evaluate('mobile-credentials-preflight', unchanged),
               false,

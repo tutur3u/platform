@@ -370,11 +370,18 @@ validation stopped without recording credentials or the OIDC token. If that log
 is absent, inspect the proxy or deployment edge. Vault bundle-fetch rows appear
 only after OIDC validation and admin-client setup have succeeded.
 
-Each workflow run assigns both platforms the build number
-`100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`. Retrying a job receives
-a fresh number. Release Please continues to own the marketing version. Retry
-the newest release workflow rather than an older source revision after a more
-recent build has already been published.
+**Allocate shared app version** assigns the commit's version and build number
+from the [release ledger](/build/devops/app-release-versioning). Desktop uses
+the same ledger, so iOS, Android and desktop report one `X.Y.Z` and one build
+number for a production commit. Reruns and the desktop workflow reuse the
+commit's entry. A commit older than the newest ledger entry is superseded: it
+publishes nothing and dispatches a release of the production head, which
+carries its changes. Each store also refuses a build below one it already
+serves. Release Please owns `X.Y` in `apps/mobile/pubspec.yaml`.
+Before building, the iOS and Mac jobs run `apple-guard.mjs`. When Apple already
+has the build they resume at verification, and they refuse a closed, behind or
+out-of-order train (see [reruns and guards](/build/devops/app-release-versioning#reruns-and-guards)). After both stores verify, the pipeline
+publishes `ios.json` and `android.json` on the `app-release-status` prerelease.
 
 Android uploads a signed AAB to the **internal** track with completed status
 through `scripts/mobile-deployment/play-beta.mjs --upload`. It uploads the

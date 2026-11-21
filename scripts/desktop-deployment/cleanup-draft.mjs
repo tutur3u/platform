@@ -4,11 +4,11 @@ import { readDraftRelease } from './draft-release.mjs';
 import { desktopReleaseTag } from './release-version.mjs';
 
 export function cleanupDraft(
-  { tag, version, source, run },
+  { tag, version, build, source, run },
   execute = execFileSync
 ) {
   if (
-    tag !== desktopReleaseTag(version) ||
+    tag !== desktopReleaseTag(version, build) ||
     !/^[a-f0-9]{40}$/u.test(source ?? '') ||
     !/^\d+$/u.test(run ?? '')
   )
@@ -47,6 +47,7 @@ if (
   cleanupDraft({
     tag: process.env.DESKTOP_DRAFT_TAG,
     version: process.env.DESKTOP_VERSION,
+    build: process.env.DESKTOP_BUILD,
     source: process.env.GITHUB_SHA,
     run: process.env.GITHUB_RUN_ID,
   });

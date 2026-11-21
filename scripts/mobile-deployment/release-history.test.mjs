@@ -327,3 +327,23 @@ test('finds product commits introduced by a merge without exposing its tracking 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('ledger build numbers resolve through their tag, not a workflow run', async () => {
+  const { ledgerSha, legacyRunNumber } = await import('./release-history.mjs');
+  assert.equal(legacyRunNumber('577001'), 477);
+  assert.equal(legacyRunNumber('1000000'), 0);
+  const calls = [];
+  const git = (_command, args) => {
+    calls.push(args.join(' '));
+    return `${'c'.repeat(40)}\n`;
+  };
+  assert.equal(ledgerSha('1000003', git), 'c'.repeat(40));
+  assert.match(calls[0], /refs\/tags\/app-b1000003\^\{commit\}/);
+  assert.equal(ledgerSha('577001', git), null);
+  assert.equal(
+    ledgerSha('1000004', () => {
+      throw new Error('missing');
+    }),
+    null
+  );
+});

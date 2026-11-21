@@ -87,8 +87,11 @@ store metadata on every run.
 ## Enabling the channel
 
 The job is skipped unless the repository variable `MAC_APP_STORE_ENABLED` is
-`true`, and its build steps are skipped until the iOS deployment bundle holds
-all Mac App Store entries (`hydrate-bundle.mjs` exports `MAC_APP_STORE_READY`):
+`true`. Once it is enabled, the iOS deployment bundle must hold all Mac App
+Store entries (`hydrate-bundle.mjs` exports `MAC_APP_STORE_READY`), or the job
+fails. Enabling the channel promises a Mac build, and a skip would count the
+tree as delivered, so the store gate would never retry the Mac upload. Add the
+entries before setting the variable:
 
 | Bundle entry | Kind | Exported as |
 | --- | --- | --- |

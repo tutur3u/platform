@@ -24,6 +24,12 @@ const version = desktopBuildVersion(
   await readFile('apps/mobile/pubspec.yaml', 'utf8'),
   process.env.DESKTOP_VERSION
 );
+// The Debian revision is the shared ledger build, so every run packaging one
+// ledger entry emits the same package version; dry runs fall back to the run.
+const build = process.env.DESKTOP_BUILD;
+if (build !== undefined && build !== '' && !/^[1-9]\d{0,9}$/u.test(build))
+  throw new Error('Invalid desktop ledger build');
+const revision = build || run;
 const output = join(runnerTemp, 'desktop-artifacts');
 await mkdir(output, { recursive: true });
 async function receipt(name, verification) {
@@ -49,13 +55,17 @@ if (platform === 'linux') {
       'scripts/desktop-deployment/package-linux.mjs',
       bundle,
       output,
-      `${version}-${run}`,
+      `${version}-${revision}`,
     ],
     { stdio: 'inherit' }
   );
-  execFileSync('dpkg-deb', ['--info', join(output, 'Tuturuuu-linux-x64.deb')], {
-    stdio: 'ignore',
-  });
+  const packaged = execFileSync(
+    'dpkg-deb',
+    ['--field', join(output, 'Tuturuuu-linux-x64.deb'), 'Version'],
+    { encoding: 'utf8' }
+  ).trim();
+  if (packaged !== `${version}-${revision}`)
+    throw new Error(`Debian package reports version ${packaged}`);
   await receipt('Tuturuuu-linux-x64.deb', 'deb-package-verified');
 } else if (platform === 'windows') {
   const bundle = resolve('apps/mobile/build/windows/x64/runner/Release');

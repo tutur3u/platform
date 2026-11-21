@@ -15,16 +15,26 @@ const sha256 = createHash('sha256').update('synthetic package').digest('hex');
 const pubspec = await readFile(join(root, 'apps/mobile/pubspec.yaml'), 'utf8');
 const pubspecVersion = pubspec.match(/^version: (\d+\.\d+\.\d+)\+/m)[1];
 // A legacy run-suffixed beta already used the pubspec version.
-const history = [`desktop-v${pubspecVersion}-99\t${'b'.repeat(40)}\tfalse`];
-const version = nextDesktopVersion(pubspec, [`desktop-v${pubspecVersion}-99`]);
-const tag = `desktop-v${version}`;
+const history = [
+  `desktop-v${pubspecVersion}-19000000000\t${'b'.repeat(40)}\tfalse`,
+];
+const version = nextDesktopVersion(pubspec, [
+  `desktop-v${pubspecVersion}-19000000000`,
+]);
+const build = '1000001';
+const tag = `desktop-v${version}-${build}`;
 
 async function runPublication(
   change = {},
   view = { databaseId: 456 },
   platform = 'linux',
   verification = 'deb-package-verified',
-  { desktopVersion = version, releases = history } = {}
+  {
+    desktopVersion = version,
+    desktopBuild = build,
+    releases = history,
+    stale = false,
+  } = {}
 ) {
   const name =
     platform === 'windows'
@@ -51,7 +61,7 @@ async function runPublication(
       view,
       release: {
         id: 456,
-        tag_name: `desktop-v${desktopVersion}`,
+        tag_name: `desktop-v${desktopVersion}-${desktopBuild}`,
         target_commitish: source,
         draft: true,
         prerelease: true,
@@ -63,6 +73,14 @@ async function runPublication(
     // The publisher reaches gh and git through DESKTOP_COMMAND_STUB_ROOT.
     // A direct PATH lookup is a separate fail-closed stub so a missed call
     // site cannot use the real CLI. Windows resolves `gh.cmd`, not a shebang.
+    // The ledger recheck runs through the same stub root.
+    await writeFile(
+      join(temp, 'node.mjs'),
+      `import fs from 'node:fs';
+fs.appendFileSync(process.env.TEST_CALLS, JSON.stringify(['node', ...process.argv.slice(2)]) + '\\n');
+if (process.env.TEST_STALE === 'true') { console.error('stale'); process.exit(1); }
+`
+    );
     await writeFile(
       join(temp, 'git.mjs'),
       "console.error('direct desktop command lookup is refused');\nprocess.exit(1);\n"
@@ -121,7 +139,9 @@ console.error('gh: Not Found (HTTP 404)'); process.exit(1);
           GITHUB_RUN_ID: '123',
           DESKTOP_BETA_PLATFORMS: platform,
           DESKTOP_VERSION: desktopVersion,
+          DESKTOP_BUILD: desktopBuild,
           TEST_FIXTURE: join(temp, 'fixture.json'),
+          TEST_STALE: String(stale),
           TEST_CALLS: join(temp, 'calls.jsonl'),
         },
       }
@@ -179,17 +199,19 @@ test('actual publisher verifies a draft by database ID when tag REST lookup is 4
     (args) => args[0] === 'release' && args[1] === 'create'
   );
   assert.equal(create[2], tag);
-  assert.doesNotMatch(create[2], /-\d+$/);
+  assert.match(create[2], /-1000001$/);
   assert.ok(create.includes(`Tuturuuu ${version} desktop beta`));
   assert.ok(create.includes('--draft'));
   assert.ok(!create.includes('--clobber'));
 });
 
-test('publication refuses a version that is missing or no longer next', async () => {
+test('publication refuses a missing identity or an existing ledger tag', async () => {
   for (const options of [
     { desktopVersion: '' },
-    { desktopVersion: pubspecVersion },
+    { desktopBuild: '' },
+    { desktopBuild: '0' },
     { releases: [...history, `${tag}\t${'c'.repeat(40)}\ttrue`] },
+    { releases: [...history, `${tag}\t${'c'.repeat(40)}\tfalse`] },
   ]) {
     const { result, calls } = await runPublication(
       {},
@@ -310,34 +332,88 @@ test('actual Windows release notes disclose unsigned trust and checksum without 
   assert.doesNotMatch(signed.notes, /Windows packages are UNSIGNED/);
 });
 
-test('queued run skips a leftover draft; a racing stale build is refused before creation', async () => {
+test('a leftover draft never blocks the next ledger build; a reused tag is refused', async () => {
   const reserved = [...history, `${tag}\t${'c'.repeat(40)}\ttrue`];
-  const next = nextDesktopVersion(
-    pubspec,
-    reserved.map((line) => line.split('\t')[0])
-  );
-  assert.notEqual(next, version);
   const queued = await runPublication(
     {},
     undefined,
     'linux',
     'deb-package-verified',
-    { desktopVersion: next, releases: reserved }
+    { desktopBuild: '1000002', releases: reserved }
   );
   assert.equal(queued.result.status, 0, queued.result.stderr);
   assert.equal(
     queued.calls.find((args) => args[1] === 'create')[2],
-    `desktop-v${next}`
+    `desktop-v${version}-1000002`
   );
-  for (const state of ['true', 'false']) {
+  // A draft holding the tag, or a published tag from another commit, is never
+  // reused. Only this commit's published beta may be topped up.
+  for (const line of [
+    `${tag}\t${source}\ttrue`,
+    `${tag}\t${'d'.repeat(40)}\tfalse`,
+  ]) {
     const stale = await runPublication(
       {},
       undefined,
       'linux',
       'deb-package-verified',
-      { releases: [...history, `${tag}\t${source}\t${state}`] }
+      { releases: [...history, line] }
     );
     assert.notEqual(stale.result.status, 0);
     assert.ok(!stale.calls.some((args) => args[0] === 'release'));
   }
+});
+
+test('a rerun never publishes below a newer shipped desktop build', async () => {
+  const newer = await runPublication(
+    {},
+    undefined,
+    'linux',
+    'deb-package-verified',
+    {
+      releases: [
+        ...history,
+        `desktop-v${version}-1000009\t${'e'.repeat(40)}\tfalse`,
+      ],
+    }
+  );
+  assert.notEqual(newer.result.status, 0);
+  assert.ok(!newer.calls.some((args) => args[0] === 'release'));
+  // A legacy run-ID suffix is not a ledger build.
+  const legacy = await runPublication(
+    {},
+    undefined,
+    'linux',
+    'deb-package-verified',
+    {
+      releases: [
+        ...history,
+        `desktop-v0.26.0-19000000001\t${'e'.repeat(40)}\tfalse`,
+      ],
+    }
+  );
+  assert.equal(legacy.result.status, 0, legacy.result.stderr);
+});
+
+test('a stale ledger stops a draft from going public', async () => {
+  const ok = await runPublication();
+  assert.equal(ok.result.status, 0, ok.result.stderr);
+  const recheck = ok.calls.findIndex(
+    (args) => args[0] === 'node' && args.includes('--assert-current')
+  );
+  const publicEdit = ok.calls.findIndex((args) =>
+    args.includes('--draft=false')
+  );
+  assert.ok(recheck !== -1 && recheck < publicEdit);
+  const stale = await runPublication(
+    {},
+    undefined,
+    'linux',
+    'deb-package-verified',
+    {
+      stale: true,
+    }
+  );
+  assert.notEqual(stale.result.status, 0);
+  assert.ok(!stale.calls.some((args) => args.includes('--draft=false')));
 });

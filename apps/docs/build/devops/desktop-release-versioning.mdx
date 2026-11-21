@@ -1,32 +1,32 @@
 ---
 title: "Desktop Release Versioning"
 description: "Allocate desktop versions, recover failed drafts, and generate release notes."
-updatedAt: "2026-10-29"
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
 ## Versions and release notes
 
-Desktop and mobile use one scheme without manual version bumps. Release Please
-owns `major.minor` (and a patch floor) in `apps/mobile/pubspec.yaml`; CI
-publishes the next unused patch from each channel's own history through the
-shared `nextBuildName` rule. Mobile reads App Store Connect TestFlight versions;
-desktop reads `desktop-v*` GitHub releases, including drafts. The version
-derivation job has `contents: write`, the minimum GitHub token permission that
-allows draft listing.
+Desktop and mobile share one version train from the
+[release ledger](/build/devops/app-release-versioning). The `release-status`
+job runs `scripts/app-version/allocate.mjs`, which assigns the commit's shared
+`X.Y.Z` and build number `B`, or reuses them when the mobile workflow already
+did.
 
-- The `release-status` job runs `scripts/desktop-deployment/release-version.mjs`
-  and every platform builds with `--build-name=<version>`, so the installed app,
-  the Windows installer and the Linux package report the published version.
-- The tag is `desktop-v<version>` with no run ID. Legacy
-  `desktop-v<version>-<run-id>` tags still count as used, so the first release
-  after them takes the next patch (for example `0.26.0-<run>` -> `0.26.1`).
-- `publish.mjs` recomputes the version with draft visibility and refuses to
-  publish when the build version is no longer next. A draft left by a failed
-  run reserves its version and the next derivation skips it.
+- Every platform builds with `--build-name=<X.Y.Z> --build-number=<B>` and
+  `DESKTOP_RELEASE_RUN_ID=<B>`, so the installed app, the Windows installer and
+  the Linux package report the shared version.
+- The tag is `desktop-v<X.Y.Z>-<B>`. A desktop-only rebuild of the same `X.Y.Z`
+  gets a higher `B`, which the in-app updater orders after the earlier build.
+- `publish.mjs` refuses to publish when a draft or another commit's release
+  holds the tag. A rerun for the same commit adds only the platform assets the
+  first attempt could not publish, and never replaces a published asset.
+- Release notes warn about the in-app updater only after legacy run-ID tags
+  (`desktop-v<version>-<run-id>`). Ledger build suffixes order correctly.
 - The run ID, source commit and previous beta appear in the release body's
   Build details table and in a `tuturuuu-desktop-release` HTML comment. The
-  Debian package revision also keeps the run ID.
+  Debian package version is `<X.Y.Z>-<B>`, the same for every run of a ledger
+  entry; dry runs use the run ID as the revision.
 
 `scripts/desktop-deployment/release-notes.mjs` renders the body: Highlights
 (`feat`) and Fixes (other product changes) from `apps/mobile` commits since the
@@ -37,10 +37,10 @@ and rounding used by `tuturuuu.com/download`; and checksum plus provenance
 verification commands. Release Please uses the same Highlights/Fixes headings for
 the mobile changelog.
 
-Desktop builds published before run-free tags only recognize
-`desktop-v<version>-<run-id>`, so they cannot see newer betas in the in-app
-updater. The first run-free release notes say so; affected users reinstall once
-from `/download`. The download page and Infrastructure status accept both forms.
+Builds installed from `desktop-v<version>` tags embed their CI run ID. Ledger
+releases start at `0.27.27`, so the version comparison offers them the update
+before any build suffix is compared. The download page and Infrastructure status
+accept `desktop-v<version>` and `desktop-v<version>-<number>` tags.
 
 On startup and every six hours, the app checks the public GitHub release list and
 automatically downloads a newer desktop beta for its platform. Downloads use no account
@@ -97,11 +97,15 @@ output. An `if: failure()` cleanup step resolves that tag and deletes by databas
 ID only while it is still a draft with matching tag, source SHA, and this run's
 release-notes metadata. It never deletes a published release or another run's
 draft. If creation fails before recording the output, or cleanup cannot verify
-ownership, the draft remains reserved and the next run skips its version.
+ownership, the draft keeps its tag. The next production commit gets a new ledger
+build and therefore a new tag.
 
-Workflow concurrency queues runs per ref without cancellation. The publish-time
-version recheck remains mandatory: a stale build refuses publication before any
-release creation. Coverage: `release-version.test.mjs`, `publish.test.mjs`,
+Workflow concurrency queues runs per ref without cancellation. A superseded
+commit dispatches a desktop release of the production head instead of
+publishing. Publication refuses when a newer desktop ledger build has already
+shipped, and a draft or
+another commit holding the tag refuses publication before any release
+creation. Coverage: `release-version.test.mjs`, `publish.test.mjs`,
 `cleanup-draft.test.mjs`, and `desktop-beta-workflow.test.mjs`.
 
 See [Desktop Beta Distribution](/build/devops/desktop-beta-distribution) for

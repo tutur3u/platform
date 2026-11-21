@@ -56,22 +56,47 @@ jobs:
             [System.Management.Automation.Language.Parser]::ParseFile("$pwd/scripts/desktop-deployment/$script",[ref]$tokens,[ref]$errors) > $null
             if ($errors.Count -gt 0) { throw 'Invalid Store packaging helper' }
           }
+      # Store submissions share the X.Y.Z every platform ships for this commit;
+      # the desktop or mobile release run allocates it, this job only reads it.
+      - name: Read the shared app version
+        id: ledger
+        if: github.ref == 'refs/heads/production'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-version/allocate.mjs --reuse-only
       - name: Build Store channel without the direct-download updater
         working-directory: apps/mobile
+        env:
+          LEDGER_VERSION: ${{ steps.ledger.outputs.version }}
+          LEDGER_BUILD: ${{ steps.ledger.outputs.build }}
         run: |
           flutter pub get --enforce-lockfile
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          flutter build windows --release --target lib/main_production.dart --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+          $versionArgs = @()
+          if ($env:LEDGER_VERSION) { $versionArgs = @("--build-name=$env:LEDGER_VERSION", "--build-number=$env:LEDGER_BUILD") }
+          flutter build windows --release --target lib/main_production.dart @versionArgs --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($env:LEDGER_VERSION) {
+            $actual = (Get-Item build/windows/x64/runner/Release/tuturuuu.exe).VersionInfo.ProductVersion
+            if ($actual -ne "$env:LEDGER_VERSION+$env:LEDGER_BUILD") { throw "Windows ProductVersion is '$actual'" }
+          }
       - name: Audit and create unsigned Store submission package
         env:
           DESKTOP_STORE_RUN_NUMBER: ${{ github.run_number }}
+          LEDGER_VERSION: ${{ steps.ledger.outputs.version }}
         run: |
           node scripts/desktop-deployment/audit-bundle.mjs apps/mobile/build/windows/x64/runner/Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $versionText = Get-Content apps/mobile/pubspec.yaml -Raw
           if ($versionText -notmatch '(?m)^version: (\d+)\.(\d+)\.\d+\+') { throw 'Invalid app version' }
-          $version = "$($Matches[1]).$($Matches[2]).$env:DESKTOP_STORE_RUN_NUMBER.0"
+          # Production maps the ledger X.Y.Z to (X+1).Y.Z.0; main diagnostics never
+          # upload and keep a run-numbered version.
+          if ($env:LEDGER_VERSION) {
+            $version = node scripts/app-version/windows-version.mjs $env:LEDGER_VERSION
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            $version = "$($Matches[1]).$($Matches[2]).$env:DESKTOP_STORE_RUN_NUMBER.0"
+          }
           ./scripts/desktop-deployment/package-windows-store.ps1 -Bundle apps/mobile/build/windows/x64/runner/Release -Output "$env:RUNNER_TEMP/store-draft" -Version $version
       - name: Validate installed Store package and certification report
         env:
