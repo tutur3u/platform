@@ -8,11 +8,19 @@ import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 import { resolveCalendarDeploymentProfile } from './src/runtime/deployment-profile';
 import { CALENDAR_FUNCTION_BASE } from './src/runtime/native-function-config';
+import { devWorkspaceSourcePlugin } from './src/runtime/dev-workspace-source';
 import { createCalendarNativePortResolver } from './src/runtime/native-port-resolver';
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 const nativePorts = createCalendarNativePortResolver(local);
+
+/** Server-only modules a client import must fail on, in dev and builds. */
+const CLIENT_DENIED_SPECIFIERS = [
+  'server-only',
+  'next/headers',
+  '@tuturuuu/supabase/next/server',
+];
 
 const productionArtifact =
   process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production';
@@ -81,6 +89,9 @@ export default defineConfig(({ command }): UserConfig => ({
           nativePorts.assertComplete(this.environment.name);
       },
     },
+    devWorkspaceSourcePlugin(local('../../packages'), {
+      clientDenied: CLIENT_DENIED_SPECIFIERS,
+    }),
     startBridgeNodeBuiltinsPlugin(),
     voidPlugin(),
     tanstackStart({
@@ -95,13 +106,7 @@ export default defineConfig(({ command }): UserConfig => ({
       rsc: { enabled: false },
       importProtection: {
         behavior: 'error',
-        client: {
-          specifiers: [
-            'server-only',
-            'next/headers',
-            '@tuturuuu/supabase/next/server',
-          ],
-        },
+        client: { specifiers: CLIENT_DENIED_SPECIFIERS },
       },
     }),
     react(),

@@ -393,20 +393,19 @@ This sync compares app env files only. The root `.env.local` can intentionally
 target a different Docker or deployment workflow without keeping the app
 mismatch warning alive.
 
-### Calendar dev server and built workspace declarations
+### Calendar dev server and dist-only workspace packages
 
 The Calendar dev server (`vp dev` with Void and the Cloudflare Vite plugin)
 evaluates server modules in the Cloudflare worker module runner. Workspace
-packages whose exports point only at `dist` (for example
-`@tuturuuu/internal-api`) load as CommonJS there, because their
-`tsconfig.build.json` emits `NodeNext` output. Startup then fails with
-`ReferenceError: exports is not defined` at `packages/internal-api/dist/index.js`.
-Without built declarations, dependency scanning instead fails on unresolved
-subpaths such as `@tuturuuu/internal-api/task-recurrence`. Neither state starts
-the dev server. Until calendar dev resolves these packages to source or
-pre-bundles them for the worker runner, verify Calendar UI with focused Vitest
-suites and exact-commit CI, and use a signed-in deployed preview for
-screenshots.
+packages that publish only a built `dist` (`@tuturuuu/internal-api`,
+`@tuturuuu/types`, `@tuturuuu/supabase` and `@tuturuuu/masonry`) either emit
+CommonJS there, which that runner cannot evaluate, or are missing in a fresh
+checkout. In dev only, `apps/calendar/src/runtime/dev-workspace-source.ts`
+resolves those specifiers, and their package-internal `#` imports, to
+TypeScript source through each package's `exports` and `imports` maps. The dev
+server therefore starts without building any workspace package, and release
+builds keep resolving the published `dist`. Coverage lives in
+`dev-workspace-source.test.ts`.
 
 ### Diagnose web dev memory and cache pressure
 
