@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   appRouteEntries,
   DEFAULT_APP_DIR,
@@ -57,6 +57,38 @@ describe('vinext route families', () => {
     const { keep } = planVinextPrune('api-core');
     expect(keep).toContain('api/v1/users/me/avatar/upload/route.ts');
     expect(keep).toContain('api/v1/product-feedback/route.ts');
+  });
+
+  it('serves the ChatGPT credential routes from api-ops', () => {
+    expect(config.nodeOnly).toEqual([]);
+    const { keep } = planVinextPrune('api-ops');
+    for (const rel of [
+      'api/ai/chatgpt/route.ts',
+      'api/ai/chatgpt/new/route.ts',
+      'api/v1/users/chatgpt/route.ts',
+    ]) {
+      expect(keep).toContain(rel);
+    }
+  });
+
+  it('binds the ChatGPT credential bucket on api-ops only', async () => {
+    const workerEnv = async (family?: string) => {
+      vi.resetModules();
+      if (family) vi.stubEnv('WEB_VINEXT_FAMILY', family);
+      else vi.stubEnv('WEB_VINEXT_FAMILY', '');
+      const { default: config } = await import('../../cloudflare.config');
+      vi.unstubAllEnvs();
+      return (config as { worker: { env: Record<string, unknown> } }).worker
+        .env;
+    };
+    expect((await workerEnv('api-ops')).CHATGPT_FILES).toMatchObject({
+      type: 'r2',
+      name: 'tuturuuu-web-chatgpt-files',
+    });
+    expect((await workerEnv()).CHATGPT_FILES).toMatchObject({ type: 'r2' });
+    for (const family of ['api-core', 'public-auth', 'dashboard', 'web-rest']) {
+      expect((await workerEnv(family)).CHATGPT_FILES, family).toBeFalsy();
+    }
   });
 
   it('keeps the localized sign-in and landing pages in public-auth', () => {

@@ -1,6 +1,6 @@
 ---
 title: ChatGPT subscriptions
-updatedAt: 2026-10-02
+updatedAt: 2026-11-21
 description: Use a personal ChatGPT plan for eligible chat requests in a local or self-hosted Tuturuuu installation.
 audience: developers
 ---
@@ -26,6 +26,9 @@ directories use `0700` and credential files use `0600` on Unix. The default path
 `~/.config/tuturuuu/chatgpt`. Never place it inside public assets, source control,
 logs, analytics, backups accessible to workspace members, or browser storage.
 Serverless installations with ephemeral filesystems are not supported by this flow.
+Cloudflare Worker builds of the web app keep these stores in the private R2
+bucket bound as `CHATGPT_FILES` instead (see
+[Web vinext Workers](/build/devops/web-vinext-families#chatgpt-credential-storage)).
 
 ## Connect your account
 

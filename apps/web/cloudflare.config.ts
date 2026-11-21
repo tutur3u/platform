@@ -42,6 +42,11 @@ export default defineConfig({
         exportName: 'AbuseGuardEntrypoint',
       }),
       ABUSE_GUARD_FAMILIES: bindings.text('proxy,ratelimit,integrity'),
+      // Private per-user ChatGPT credential stores for the api-ops routes
+      // under /api/ai/chatgpt and /api/v1/users/chatgpt.
+      CHATGPT_FILES:
+        (!family || family === 'api-ops') &&
+        bindings.r2({ name: 'tuturuuu-web-chatgpt-files' }),
       NATIVE_INTEGRITY_STORE: bindings.text('abuse-guard'),
       APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK: bindings.text('1'),
       // Client IP comes only from cf-connecting-ip.

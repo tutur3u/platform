@@ -318,7 +318,7 @@ route. Family Workers have no routes, so no zone or DNS change is involved.
 - `webFamilies.deny` lists subtrees that never reach a family, whatever the
   flags say: `/api/v1/auth/accounts`, `/api/cron`,
   `/api/notifications/send-immediate`, `/api/v1/infrastructure`,
-  `/api/v1/devboxes`, the ChatGPT file-store routes and `/_next/image`.
+  `/api/v1/devboxes`, the ChatGPT credential routes and `/_next/image`.
 - `GATEWAY_WEB_FAMILIES` (comma-separated ids, default empty) turns families
   on. A listed family serves its paths only when its binding exists;
   otherwise they stay on `WEB_ORIGIN`. Percent-encoded, doubled-slash and

@@ -27,11 +27,9 @@ The whole app is 17.3 MiB gzip as one Worker (`cf deploy --dry-run`), over the
 | `dashboard-apps` | `[locale]/[wsId]/{tasks,whiteboards,mind,documents,calendar,habits,notes,inventory,epm}` and their subtrees |
 | `web-rest` | Every other route entry |
 
-`nodeOnly` lists entries that still need Node-only APIs. No family owns them:
-the ChatGPT file store (`src/lib/chatgpt/storage.ts`) keeps state with
-`node:fs/promises` under the home directory. `families.test.ts` checks that
-every other route entry has exactly one family and that only `api-ops` owns
-denied paths.
+`nodeOnly` lists entries that still need Node-only APIs, which no family
+owns. It is empty. `families.test.ts` checks that every route entry has exactly
+one family and that only `api-ops` owns denied paths.
 
 ## Building a family
 
@@ -95,9 +93,56 @@ domains, workers.dev or preview URLs.
 - `IMAGES` (Cloudflare Images) behind `ImageTransformer` for profile media,
   feedback images and external project assets. Animated input is flattened
   to one frame. A profile upload makes at most six transformations.
+- `CHATGPT_FILES`, the private R2 bucket `tuturuuu-web-chatgpt-files`, on
+  `api-ops` and the whole-app build only. See
+  [ChatGPT credential storage](#chatgpt-credential-storage).
 - Secret names only for Supabase, app coordination and the abuse-guard
   pepper. `@opennextjs/cloudflare` resolves to
   `cloudflare/vinext/cloudflare-context.ts`, which reads `cloudflare:workers`.
+
+## ChatGPT credential storage
+
+`api-ops` serves `/api/ai/chatgpt`, `/api/ai/chatgpt/new` and
+`/api/v1/users/chatgpt`. These routes back the
+[ChatGPT plan](/platform/ai/chatgpt-subscriptions) picker beside the Mira chat
+model picker. They list, use and disconnect a user's ChatGPT subscription
+accounts. They hold per-user OAuth credential stores (access and refresh
+tokens), not uploaded files. The routes answer `404` or `enabled: false`
+unless `TUTURUUU_DEPLOYMENT_MODE=self-hosted` and `OPENAI_CHATGPT_ENABLED=true`.
+
+`src/lib/chatgpt/storage.ts` picks a `ChatGPTStorageAdapter` per call:
+
+- `storage-r2.ts` when the Worker binds `CHATGPT_FILES`. Each user has one
+  object at `chatgpt/<userId>/store.json`, where `userId` is the session user's
+  UUID and the object name is a constant, so no client input reaches a key.
+  The object records its owner in custom metadata, and a read rejects a
+  mismatch. A create-only `chatgpt/<userId>/store.lock` object
+  (`If-None-Match: *`) serializes refresh-token rotation. A lock older
+  than 45 seconds is taken over with an ETag-conditional write. The closing
+  store write is fenced on the ETag of the opening one, so a request that
+  outlived its lock fails instead of overwriting newer tokens.
+- `storage-fs.ts` otherwise (local development, tests, self-hosted Node):
+  owner-only files under `CHATGPT_SUBSCRIPTIONS_DIR` or
+  `~/.config/tuturuuu/chatgpt`.
+
+Both adapters share the store schema, UUID validation and the
+persist-before-operation order. Tests: `storage-r2.test.ts` (fake bucket
+round-trip, owner isolation, traversal, locking) and `storage.test.ts`
+(filesystem).
+
+There is nothing to migrate. The hosted service never enables the
+integration. On Vercel, any credential file would have lived on the ephemeral
+function filesystem, so it was never durable. Create the bucket before the
+first `api-ops` deploy, with no public access and no `r2.dev` URL:
+
+```bash
+cf r2 buckets create --name tuturuuu-web-chatgpt-files
+```
+
+The hosted Workers do not set `TUTURUUU_DEPLOYMENT_MODE` or
+`OPENAI_CHATGPT_ENABLED`, so they answer the disabled responses and never read
+the bucket. `scripts/chatgpt-connect.ts` writes only the filesystem store, so
+nothing populates the R2 store yet.
 
 ## Local check
 
