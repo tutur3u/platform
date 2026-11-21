@@ -56,7 +56,11 @@ later green run may have skipped its checks. A red or superseded run caused
 only by another app therefore does not block Meet; any relevant change still
 needs the exact SHA's green run. The receipt records the equivalent commit
 (`equivalentSha`) and its distance. The logic lives in
-`scripts/ci/release-relevant-ci.mjs`.
+`scripts/ci/release-relevant-ci.mjs`. It relies on those three workflows
+checking the whole tree on main pushes even when the CI planner
+(`scripts/ci/ci-plan.mjs`) narrows pull requests;
+`scripts/ci/release-relevant-ci-plan.test.mjs` fails if a main push could
+narrow Type Check, Test shards or Oxc.
 
 CodeQL is not a release gate. Its diff-scoped main push scan and the nightly
 full scan surface new high or critical results without holding a release; an
