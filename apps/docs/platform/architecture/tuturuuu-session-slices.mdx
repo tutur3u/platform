@@ -54,6 +54,9 @@ Slices 2a and 3 also leave these requirements to slice 4:
 - move the AI temporary token store and `private.cross_app_tokens` onto the
   session-bound issuer contract before the first-party session mints or
   revokes through them.
+- set a ceiling on distinct users' sessions per device, enforced by the
+  slice 3 reducer at sign-in, before the device object is hosted, because the
+  host cannot refuse a row the reducer has already committed.
 
 Slice 5 adds the step-up confirmation page on Web and the one-time code
 redemption that mints `ttr+stepup` for relying services. It is not designed
