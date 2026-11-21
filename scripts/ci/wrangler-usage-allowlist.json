@@ -1409,6 +1409,16 @@
       },
       "digest": "ecc58801844cc878cce17bacfae5b9b456db314a4bdef4cff17bc7ead28ff504"
     },
+    "apps/meet-realtime/tests/scale-local.ts": {
+      "lines": 3,
+      "uses": 4,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/f5d9d02b57a8f24e53d9f41b20827ae3cc869e19",
+        "reason": "Local-only signaling capacity rehearsal: runs the realtime Worker under the package-local Wrangler dev binary with metrics off, like the sibling local-worker checks. It publishes nothing; it retires with the realtime cf migration."
+      },
+      "digest": "7adfb6f0421b7053f764a0308e8135061136cd068c9c8f4ad9d468441ae72fea"
+    },
     "apps/meet-realtime/vite.config.ts": {
       "lines": 1,
       "uses": 1,
