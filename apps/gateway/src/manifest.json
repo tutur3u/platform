@@ -100,7 +100,9 @@
       "localized": true,
       "exact": [
         "/changelog",
+        "/cite",
         "/download",
+        "/integrations",
         "/meet",
         "/meet-together",
         "/models",
