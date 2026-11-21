@@ -54,6 +54,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .from('shortened_links')
       .select('id, ws_id, password_hash')
       .eq('id', linkId)
+      // Meeting links are managed by the Meet API and never take a password.
+      .is('meet_meeting_id', null)
       .single();
 
     if (fetchError || !link) {
@@ -188,6 +190,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .from('shortened_links')
       .select('id, ws_id, password_hash')
       .eq('id', linkId)
+      // Meeting links are managed by the Meet API and never take a password.
+      .is('meet_meeting_id', null)
       .single();
 
     if (fetchError || !link) {

@@ -5508,6 +5508,37 @@
     "recording_permissions": {
       "denied": "Chỉ người tạo bản ghi hoặc quản trị viên không gian làm việc mới có thể dừng bản ghi này. Bản ghi vẫn đang hoạt động."
     },
+    "share": {
+      "add": "Thêm",
+      "cancel": "Hủy",
+      "clicks": "{count, plural, other {# lượt nhấp}}",
+      "close": "Đóng",
+      "copied": "Đã sao chép liên kết",
+      "copy": "Sao chép",
+      "copy_failed": "Không thể sao chép. Hãy sao chép liên kết thủ công.",
+      "delete": "Xóa",
+      "edit": "Sửa",
+      "errors": {
+        "invalid_slug": "Dùng 3–40 chữ thường, chữ số hoặc dấu gạch ngang đơn.",
+        "rate_limited": "Quá nhiều thay đổi. Hãy thử lại sau một giờ.",
+        "reserved_slug": "Từ này đã được giữ chỗ.",
+        "staff_only": "Chỉ nhân viên Tuturuuu mới có thể thay đổi mục này.",
+        "taken": "Liên kết này đã được dùng.",
+        "unavailable": "Liên kết rút gọn hiện không khả dụng.",
+        "vanity_limit": "Mỗi cuộc họp có tối đa 5 liên kết tùy chỉnh."
+      },
+      "exit_present": "Thoát",
+      "expires": "Hết hạn {date}",
+      "link": "Liên kết cuộc họp",
+      "meet_prefix": "Dùng tiền tố /meet/",
+      "present": "Trình chiếu",
+      "qr_title": "Quét để tham gia",
+      "save": "Lưu",
+      "show_qr": "Hiện mã QR",
+      "title": "Chia sẻ cuộc họp",
+      "vanity_placeholder": "hop-nhom",
+      "vanity_title": "Liên kết tùy chỉnh"
+    },
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "legacy_disabled": "Không thể xác minh sự đồng ý của người nói cho bản ghi cũ. Hãy sử dụng Meet AI.",

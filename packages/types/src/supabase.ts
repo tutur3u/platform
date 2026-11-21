@@ -15153,6 +15153,43 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_short_link_audit: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          id: string;
+          link_kind: string;
+          meeting_id: string;
+          previous_slug: string | null;
+          slug: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: string;
+          link_kind: string;
+          meeting_id: string;
+          previous_slug?: string | null;
+          slug: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: string;
+          link_kind?: string;
+          meeting_id?: string;
+          previous_slug?: string | null;
+          slug?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       meet_stream_events: {
         Row: {
           actor_id: string | null;
@@ -40916,8 +40953,11 @@ export type Database = {
           created_at: string;
           creator_id: string;
           domain: string;
+          expires_at: string | null;
           id: string;
           link: string;
+          meet_link_kind: string | null;
+          meet_meeting_id: string | null;
           password_hash: string | null;
           password_hint: string | null;
           slug: string;
@@ -40928,8 +40968,11 @@ export type Database = {
           created_at?: string;
           creator_id: string;
           domain: string;
+          expires_at?: string | null;
           id?: string;
           link: string;
+          meet_link_kind?: string | null;
+          meet_meeting_id?: string | null;
           password_hash?: string | null;
           password_hint?: string | null;
           slug: string;
@@ -40939,8 +40982,11 @@ export type Database = {
           created_at?: string;
           creator_id?: string;
           domain?: string;
+          expires_at?: string | null;
           id?: string;
           link?: string;
+          meet_link_kind?: string | null;
+          meet_meeting_id?: string | null;
           password_hash?: string | null;
           password_hint?: string | null;
           slug?: string;
@@ -40959,6 +41005,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'shortened_links_meet_meeting_id_fkey';
+            columns: ['meet_meeting_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_meetings';
             referencedColumns: ['id'];
           },
           {

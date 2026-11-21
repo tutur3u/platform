@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isExpired } from './resolve';
 import type { LinkClickRecord, ShortLinkStore } from './store';
 
 const verifySchema = z.object({
@@ -29,7 +30,7 @@ export async function verifyShortLinkPassword(
     }
     const { linkId, password } = result.data;
     const link = await deps.store.findById(linkId);
-    if (!link) {
+    if (!link || isExpired(link.expires_at, Date.now())) {
       return Response.json({ error: 'Link not found' }, { status: 404 });
     }
     if (!link.password_hash) return Response.json({ url: link.link });

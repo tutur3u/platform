@@ -23,6 +23,20 @@ const rows: ShortLinkRecord[] = [
     password_hint: 'hint',
   },
   { id: 'l3', link: 'nope', password_hash: null, password_hint: null },
+  {
+    id: 'l4',
+    link: 'https://tuturuuu.com/meet/ws/meetings/m1',
+    password_hash: null,
+    password_hint: null,
+    expires_at: '2999-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'l5',
+    link: 'https://tuturuuu.com/meet/ws/meetings/m2',
+    password_hash: null,
+    password_hint: null,
+    expires_at: '2000-01-01T00:00:00.000Z',
+  },
 ];
 const slugs: Record<string, string> = {
   abc123: 'l1',
@@ -30,6 +44,9 @@ const slugs: Record<string, string> = {
   'a/b': 'l1',
   locked: 'l2',
   broken: 'l3',
+  'meet/Ab3dE9x': 'l4',
+  'meet/Old1234': 'l5',
+  'phuc-standup': 'l4',
 };
 
 function setup(env: Partial<ShortenerEnvironment> = {}) {
@@ -229,6 +246,27 @@ describe('short-link documents', () => {
     expect(page.status).toBe(200);
     expect(page.body).toBeNull();
     expect(deps.renderPage.mock.calls.at(-1)?.[0].method).toBe('GET');
+  });
+
+  it('resolves meet/{code} meeting links and treats expired links as missing', async () => {
+    const { call, clicks, pages } = setup();
+    for (const path of ['/meet/Ab3dE9x', '/meet%2FAb3dE9x', '/phuc-standup']) {
+      const response = await call(`${origin}${path}?x=1`);
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/meet/ws/meetings/m1'
+      );
+    }
+    expect(clicks.map((click) => click.link_id)).toEqual(['l4', 'l4', 'l4']);
+    expect((await call(`${origin}/meet/Old1234`)).status).toBe(200);
+    expect((await call(`${origin}/meet/ab3de9x`)).status).toBe(200);
+    expect(pages).toEqual([{ kind: 'not-found' }, { kind: 'not-found' }]);
+    for (const path of ['/meet/a/b', '/other/Ab3dE9x', '/meet/a%2Fb'])
+      expect((await call(`${origin}${path}`)).status).toBe(404);
+    const slash = await call(`${origin}/meet/Ab3dE9x/`);
+    expect(slash.status).toBe(308);
+    expect(slash.headers.get('location')).toBe('/meet/Ab3dE9x');
+    expect(clicks).toHaveLength(3);
   });
 
   it('redirects every slash-terminated vector with 308 to a same-origin Location', async () => {

@@ -65,8 +65,9 @@ vi.mock('@tuturuuu/ui/dialog', () => {
     DialogFooter: Part,
   };
 });
-vi.mock('@tuturuuu/ui/input', () => ({ Input: () => null }));
-vi.mock('@tuturuuu/ui/label', () => ({ Label: () => null }));
+vi.mock('@/features/share-link/meeting-share-dialog', () => ({
+  MeetingShareDialog: () => null,
+}));
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: mocks.error, success: mocks.success, info: vi.fn() },
 }));

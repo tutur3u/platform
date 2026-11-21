@@ -23,7 +23,11 @@ These rules apply to every Shortener host (`ttr.gg` and its configured aliases)
 on the native Start + Void runtime:
 
 - **Lookup.** Generated slugs and custom aliases share one exact,
-  case-sensitive lookup of the stored slug.
+  case-sensitive lookup of the stored slug. `/meet/{code}` looks up the stored
+  slug `meet/{code}`. That prefix is reserved for
+  [Meet short links](/platform/features/meet-short-links).
+- **Expiry.** A link whose `expires_at` has passed renders the not-found page
+  and records no click. Links without `expires_at` never expire.
 - **Redirect.** A found link with a valid destination answers `307` with
   `Location` set to the stored target, byte for byte. The URL parser serializes
   the target only when it contains spaces or non-ASCII characters. The short
@@ -39,7 +43,7 @@ on the native Start + Void runtime:
   `500`) and records a click only after a correct password. The browser leaves
   only for a navigable destination.
 - **Missing links.** A missing slug renders the not-found page with `200`, as
-  before. Deeper paths return `404`.
+  before. Deeper paths other than `/meet/{code}` return `404`.
 - **Aliases.** Alias hosts redirect to `ttr.gg`, preserving the path and the
   raw query, duplicate keys included. `www.ttr.gg` uses `308`; the other five
   aliases use `307`.

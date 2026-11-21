@@ -35,7 +35,8 @@ The Worker owns the request policy before Start runs:
 | `/` | `307` to `SHORTENER_HOME_URL` (default `https://tuturuuu.com`). |
 | `/{slug}/` | `308` to `/{slug}` with the raw query. |
 | `/{slug}` | Exact, case-sensitive lookup; see [Shortener](/platform/applications/shortener) for the result rules. |
-| Deeper paths | Start renders the not-found page with `404`. |
+| `/meet/{code}` | Exact lookup of the stored slug `meet/{code}` (meeting links). |
+| Other deeper paths | Start renders the not-found page with `404`. |
 | Other document methods | `405` with `Allow: GET, HEAD`. |
 
 Every response carries `X-Robots-Tag: noindex, nofollow, nosnippet`,

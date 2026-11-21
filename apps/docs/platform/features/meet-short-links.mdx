@@ -1,0 +1,57 @@
+---
+title: Meet short links
+updatedAt: '2026-11-21'
+description: Short ttr.gg meeting links, QR present mode and staff vanity slugs for Tuturuuu Meet.
+audience: users
+---
+
+The Meet share dialog (`/meet/{wsId}/meetings/{meetingId}`, **Share meeting**)
+shows one link, a copy button and **Show QR**. Eligible meetings get a short
+`ttr.gg` link. Every other meeting shows the canonical
+`https://tuturuuu.com/meet/{wsId}/meetings/{meetingId}` link.
+
+## Product decision
+
+| Rule | Decision |
+| --- | --- |
+| Rollout | Off unless the Web server flag `MEET_SHORT_LINKS_ENABLED` is exactly `true`. Set it only once `ttr.gg` serves `/meet/{code}` from the native Shortener Worker. While it is off, everyone gets the canonical link. |
+| Eligibility | The meeting host (`workspace_meetings.creator_id`) has a paid personal plan (Plus, Pro or Enterprise, from `getHostMeetingTier`), **or** the requester is verified Tuturuuu staff (`isVerifiedTuturuuuStaffSession` on the subject-bound Auth record). Ineligible users keep the canonical link. |
+| URL scheme | `https://ttr.gg/meet/{code}`, where the code is 7 random base62 characters (about 3.5 × 10¹² values) drawn with uniform rejection sampling. Codes never contain meeting or workspace IDs. |
+| Prefix | Only verified staff may drop the `/meet/` prefix (`ttr.gg/{code}`) or set vanity slugs. Paid users who are not staff always get `/meet/`. |
+| Vanity slugs | Staff only. `[a-z0-9-]`, 3–40 characters, starting and ending with a letter or digit, no `--`, and no reserved word (`api`, `assets`, `meet`, `admin`, …, see `MEET_RESERVED_SLUGS`). Each meeting has at most 5. A vanity slug is unique across all of `ttr.gg`, either at the root or under `meet/`. Staff can rename or delete only their own vanity slugs. |
+| Destination | Exactly the canonical join URL. A short link only redirects, and Meet's join authentication and access rules still apply. |
+| Lifetime | Generated links expire **30 days** after the later of creation and the scheduled meeting time, and are renewed (at most daily) whenever an eligible member opens the share dialog. Vanity links expire **365 days** after they are set or renamed. Deleting the meeting deletes all of its links. Expired links resolve as not found and are purged the next time the meeting's links load. |
+| Abuse limits | 20 generated-link changes and 10 vanity changes per actor per hour, counted from the audit log. These limits are best-effort under parallel requests. The database enforces the cap of 5 vanity slugs per meeting under a per-meeting lock. |
+| Passwords | Meeting links never take a password. The join page owns access. |
+| QR | Rendered client-side (`qrcode.react`) from the displayed link. It is dark on light in both themes and has a full-screen **Present** mode for scanning across a room. |
+| Analytics | Click counts reuse the shortener's `link_analytics` rows. |
+
+## Enforcement
+
+- `apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links`
+  serves `GET`/`POST` and `…/[linkId]` serves `PATCH`/`DELETE`. They require
+  workspace membership and write with the service role.
+- The database migration `20261121160000_meet_short_links.sql` adds
+  `expires_at`, `meet_meeting_id` (cascading from the meeting) and
+  `meet_link_kind` to `shortened_links`. Restrictive RLS stops clients from
+  writing meeting rows. The `guard_meet_short_link` trigger allows root and
+  vanity slugs only for verified staff creators, reserves `meet/` for meeting
+  links, pins the destination to the canonical join URL, and caps vanity
+  slugs per meeting. A check constraint keeps passwords off meeting rows, and
+  the link-shortener password route ignores them.
+- `private.meet_short_link_audit` records every create, rename and delete.
+  Only the service role reads or writes it.
+
+Regression coverage: `apps/database/supabase/tests/meet-short-links.sql`,
+`apps/web/src/lib/meet-short-links/service.test.ts`,
+`packages/utils/src/meet-short-link-policy.test.ts` and
+`apps/shortener/src/native/shortener-request.test.ts`.
+
+## Redirect runtime
+
+`ttr.gg/meet/{code}` and expiry resolve only on the native Shortener Worker (see
+[Shortener](/platform/applications/shortener)). The legacy runtime answers
+`404` for two-segment paths and ignores `expires_at`. Until the migration
+is applied, the native store retries a lookup without `expires_at` when
+PostgREST reports the column missing (42703), so existing links keep
+resolving. `/api/verify` also treats expired links as missing.

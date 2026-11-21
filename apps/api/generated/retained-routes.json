@@ -4590,6 +4590,26 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/meetings/{meetingId}/short-links/{linkId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/[linkId]/route.ts",
+    "sourceSha256": "913d47a60dea5cbc1ec56a5c022e6187fa0f050ee7e21477c4d36c4593ceb5ef",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/meetings/{meetingId}/short-links",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/route.ts",
+    "sourceSha256": "f569af7973c64359545ee43b7cc9d1b68d8895f95af4bd9d6e02734f3fec2007",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/meetings/{meetingId}/stream",
     "sideEffects": "unknown",
     "shadow": "never",

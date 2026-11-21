@@ -281,6 +281,20 @@ describe('POST /api/verify', () => {
     };
   }
 
+  it('treats an expired link as missing', async () => {
+    const { deps: d } = deps([
+      {
+        ...row('old', 'https://old.example'),
+        expires_at: '2000-01-01T00:00:00.000Z',
+      },
+    ]);
+    const response = await verifyShortLinkPassword(
+      post('{"linkId":"id:old","password":""}'),
+      d
+    );
+    expect(response.status).toBe(404);
+  });
+
   it('keeps the legacy statuses and bodies', async () => {
     const { deps: d, fixture } = deps([
       row('open', 'https://open.example'),

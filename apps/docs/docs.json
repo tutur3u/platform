@@ -140,6 +140,7 @@
               "platform/features/forms-studio-layouts",
               "platform/features/chat-realtime",
               "platform/features/meet-calls",
+              "platform/features/meet-short-links",
               "platform/features/meet-media-quality",
               "platform/features/native-calendar-recurrence",
               "platform/features/native-calendar-preferences",

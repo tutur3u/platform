@@ -18,11 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MeetingShareDialog } from '@/features/share-link/meeting-share-dialog';
 
 interface MeetingActionsProps {
   wsId: string;
@@ -41,10 +40,10 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   const queryClient = useQueryClient();
   const t = useTranslations('meet.recording_permissions');
   const tRecorder = useTranslations('meet.legacy_recorder');
+  const tShare = useTranslations('meet.share');
   const [stopRecordingDialogOpen, setStopRecordingDialogOpen] = useState(false);
   const [isStoppingSession, setIsStoppingSession] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [shareLink, setShareLink] = useState('');
 
   const activeSessionQueryKey = [
     'active-recording-session',
@@ -87,22 +86,6 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
     }
   };
 
-  const handleShareMeeting = () => {
-    const shareUrl = meetPublicUrl(`/${wsId}/meetings/${meetingId}`);
-    setShareLink(shareUrl);
-    setShareDialogOpen(true);
-  };
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(shareLink);
-      toast.success('Meeting link copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      toast.error('Failed to copy link. Please copy it manually.');
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* The legacy recorder is retired: no new recordings start here. An
@@ -122,44 +105,23 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           </Button>
         ) : null}
 
-        <Button variant="outline" size="lg" onClick={handleShareMeeting}>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => setShareDialogOpen(true)}
+        >
           <Share2 className="mr-2 h-5 w-5" />
-          Share Meeting
+          {tShare('title')}
         </Button>
       </div>
 
-      {/* Share Meeting Dialog */}
-      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share Meeting</DialogTitle>
-            <DialogDescription>
-              Share this meeting link with others to invite them to join.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="share-link">Meeting Link</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="share-link"
-                  value={shareLink}
-                  readOnly
-                  className="flex-1"
-                />
-                <Button onClick={copyToClipboard} size="sm">
-                  Copy
-                </Button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MeetingShareDialog
+        wsId={wsId}
+        meetingId={meetingId}
+        fallbackUrl={meetPublicUrl(`/${wsId}/meetings/${meetingId}`)}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+      />
 
       {/* Stop Recording Confirmation Dialog */}
       <Dialog

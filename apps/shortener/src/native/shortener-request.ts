@@ -62,6 +62,21 @@ export function trailingSlashPath(pathname: string): string {
   return `/${pathname.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '')}`;
 }
 
+/** Prefix of meeting links (`/meet/{code}`), stored as the slug `meet/{code}`. */
+export const MEET_LINK_PREFIX = 'meet';
+
+/**
+ * The stored slug for a decoded path: one segment is a root slug, and
+ * `meet/{code}` is a meeting link. Every other shape has no slug.
+ */
+export function storedSlug(segments: readonly string[]): string | null {
+  const [first, second] = segments;
+  if (segments.length === 1) return first || null;
+  if (segments.length === 2 && first === MEET_LINK_PREFIX && second)
+    return second.includes('/') ? null : `${MEET_LINK_PREFIX}/${second}`;
+  return null;
+}
+
 function geolocation(request: Request): ClickGeolocation | undefined {
   return (request as Request & { cf?: ClickGeolocation }).cf;
 }
@@ -127,13 +142,13 @@ async function documentRequest(
   } catch {
     return plain('Invalid path', 400);
   }
-  const [slug] = segments;
+  const slug = storedSlug(segments);
   // Start renders documents for GET; `finalize` strips the body for HEAD.
   const document =
     request.method === 'HEAD'
       ? new Request(request, { method: 'GET' })
       : request;
-  if (segments.length !== 1 || !slug) return deps.renderPage(document, null);
+  if (!slug) return deps.renderPage(document, null);
   const store = deps.store();
   const resolution = await resolveShortLink(store, slug);
   if (resolution.kind !== 'redirect')

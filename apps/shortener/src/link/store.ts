@@ -3,6 +3,8 @@ export interface ShortLinkRecord {
   link: string;
   password_hash: string | null;
   password_hint: string | null;
+  /** A link at or past this instant resolves as missing. */
+  expires_at?: string | null;
 }
 
 export interface LinkClickRecord {
@@ -21,11 +23,14 @@ export interface LinkClickRecord {
   vercel_id: string | null;
 }
 
+export type ShortLinkByIdRecord = Pick<
+  ShortLinkRecord,
+  'id' | 'link' | 'password_hash' | 'expires_at'
+>;
+
 /** Storage port; adapters return null for a missing or ambiguous row. */
 export interface ShortLinkStore {
   findBySlug(slug: string): Promise<ShortLinkRecord | null>;
-  findById(
-    id: string
-  ): Promise<Pick<ShortLinkRecord, 'id' | 'link' | 'password_hash'> | null>;
+  findById(id: string): Promise<ShortLinkByIdRecord | null>;
   recordClick(record: LinkClickRecord): Promise<void>;
 }

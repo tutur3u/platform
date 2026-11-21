@@ -5508,6 +5508,37 @@
     "recording_permissions": {
       "denied": "Only the recording creator or a workspace admin can stop this recording. The recording is still active."
     },
+    "share": {
+      "add": "Add",
+      "cancel": "Cancel",
+      "clicks": "{count, plural, one {# click} other {# clicks}}",
+      "close": "Close",
+      "copied": "Link copied",
+      "copy": "Copy",
+      "copy_failed": "Could not copy. Copy the link manually.",
+      "delete": "Delete",
+      "edit": "Edit",
+      "errors": {
+        "invalid_slug": "Use 3–40 lowercase letters, numbers or single hyphens.",
+        "rate_limited": "Too many changes. Try again in an hour.",
+        "reserved_slug": "That word is reserved.",
+        "staff_only": "Only Tuturuuu staff can change this.",
+        "taken": "That link is already taken.",
+        "unavailable": "Short links are unavailable right now.",
+        "vanity_limit": "A meeting can have up to 5 custom links."
+      },
+      "exit_present": "Exit",
+      "expires": "Expires {date}",
+      "link": "Meeting link",
+      "meet_prefix": "Use the /meet/ prefix",
+      "present": "Present",
+      "qr_title": "Scan to join",
+      "save": "Save",
+      "show_qr": "Show QR",
+      "title": "Share meeting",
+      "vanity_placeholder": "team-standup",
+      "vanity_title": "Custom links"
+    },
     "transcription": {
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "legacy_disabled": "Speaker consent cannot be verified for legacy recordings. Use Meet AI.",

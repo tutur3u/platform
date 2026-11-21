@@ -35,12 +35,44 @@ describe('Supabase link store', () => {
     expect(url.pathname).toBe('/rest/v1/shortened_links');
     expect(url.searchParams.get('slug')).toBe('eq.My-Alias_1');
     expect(url.searchParams.get('select')).toBe(
-      'id,link,password_hash,password_hint'
+      'id,link,password_hash,password_hint,expires_at'
     );
     expect(requests[0]!.headers.get('accept')).toBe(
       'application/vnd.pgrst.object+json'
     );
     expect(requests[0]!.headers.get('apikey')).toBe(env.SUPABASE_SECRET_KEY);
+  });
+
+  it('keeps resolving links before the expires_at column exists', async () => {
+    const selects: (string | null)[] = [];
+    const fetcher = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const select = new URL(new Request(input, init).url).searchParams.get(
+          'select'
+        );
+        selects.push(select);
+        return select?.includes('expires_at')
+          ? Response.json(
+              { code: '42703', message: 'column does not exist' },
+              { status: 400 }
+            )
+          : Response.json({
+              id: 'l1',
+              link: 'https://example.com',
+              password_hash: null,
+              password_hint: null,
+            });
+      }
+    );
+    const store = createSupabaseLinkStore(fetcher as unknown as typeof fetch);
+    expect(await store.findBySlug('abc')).toMatchObject({ id: 'l1' });
+    expect(await store.findById('l1')).toMatchObject({ id: 'l1' });
+    expect(selects).toEqual([
+      'id,link,password_hash,password_hint,expires_at',
+      'id,link,password_hash,password_hint',
+      'id,link,password_hash,expires_at',
+      'id,link,password_hash',
+    ]);
   });
 
   it('treats missing or failed rows as not found and inserts clicks', async () => {
