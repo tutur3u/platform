@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -10,8 +11,20 @@ import 'package:mobile/l10n/l10n.dart';
 /// deletion request itself.
 final Uri accountDeletionUri = Uri.parse('https://tuturuuu.com/account/delete');
 
-/// Destructive Settings row that opens [accountDeletionUri] in the in-app
-/// browser, regardless of the device's link-browser preference.
+/// Apple store builds keep the website's commercial navigation outside the app.
+Future<bool> openAccountDeletionPage(
+  BuildContext context, {
+  MobileLinkLaunch? launch,
+}) => openMobileLink(
+  context,
+  accountDeletionUri,
+  launch: launch,
+  readPreference: () async => isAppleStorePlatform()
+      ? LinkBrowserPreference.external
+      : LinkBrowserPreference.builtIn,
+);
+
+/// Destructive Settings row that opens [accountDeletionUri].
 class SettingsDeleteAccountRow extends StatelessWidget {
   const SettingsDeleteAccountRow({this.launch, super.key});
 
@@ -25,12 +38,7 @@ class SettingsDeleteAccountRow extends StatelessWidget {
       isDestructive: true,
       icon: LucideIcons.userMinus,
       title: context.l10n.settingsDeleteAccount,
-      onTap: () => openMobileLink(
-        context,
-        accountDeletionUri,
-        launch: launch,
-        readPreference: () async => LinkBrowserPreference.builtIn,
-      ),
+      onTap: () => openAccountDeletionPage(context, launch: launch),
     );
   }
 }

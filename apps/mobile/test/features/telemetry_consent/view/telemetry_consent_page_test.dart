@@ -9,6 +9,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/telemetry_consent/view/telemetry_consent_page.dart';
 import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../helpers/helpers.dart';
 
@@ -258,12 +259,12 @@ void main() {
       tester,
     ) async {
       final (preference, _, _) = await _start(direct: true);
-      final opened = <Uri>[];
+      final opened = <(Uri, LaunchMode)>[];
       await tester.pumpApp(
         TelemetryConsentPage(
           preference: preference,
-          openLink: (context, uri) async {
-            opened.add(uri);
+          launch: (uri, mode) async {
+            opened.add((uri, mode));
             return true;
           },
         ),
@@ -292,46 +293,63 @@ void main() {
       );
       await tester.tap(find.text('Privacy details'));
       await tester.pumpAndSettle();
-      expect(opened, [Uri.parse('https://tuturuuu.com/privacy')]);
-    });
+      expect(opened, [
+        (
+          Uri.parse('https://tuturuuu.com/privacy'),
+          LaunchMode.inAppBrowserView,
+        ),
+      ]);
+    }, variant: TargetPlatformVariant({TargetPlatform.android}));
 
     for (final language in ['en', 'vi']) {
-      testWidgets('privacy link follows app locale $language', (tester) async {
-        tester.binding.platformDispatcher.localeTestValue = Locale(
-          language == 'vi' ? 'en' : 'vi',
-        );
-        final (preference, _, _) = await _start(direct: true);
-        final opened = <Uri>[];
-        await tester.pumpApp(
-          Builder(
-            builder: (context) => Localizations.override(
-              context: context,
-              locale: Locale(language),
-              child: TelemetryConsentPage(
-                preference: preference,
-                openLink: (_, uri) async {
-                  opened.add(uri);
-                  return true;
-                },
+      testWidgets(
+        'privacy link follows app locale $language',
+        (tester) async {
+          tester.binding.platformDispatcher.localeTestValue = Locale(
+            language == 'vi' ? 'en' : 'vi',
+          );
+          final (preference, _, _) = await _start(direct: true);
+          final opened = <(Uri, LaunchMode)>[];
+          await tester.pumpApp(
+            Builder(
+              builder: (context) => Localizations.override(
+                context: context,
+                locale: Locale(language),
+                child: TelemetryConsentPage(
+                  preference: preference,
+                  launch: (uri, mode) async {
+                    opened.add((uri, mode));
+                    return true;
+                  },
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(
-          find.text(
-            language == 'vi' ? 'Chi tiết về quyền riêng tư' : 'Privacy details',
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(opened, [
-          Uri.parse(
-            language == 'vi'
-                ? 'https://tuturuuu.com/vi/privacy'
-                : 'https://tuturuuu.com/privacy',
-          ),
-        ]);
-      });
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.text(
+              language == 'vi'
+                  ? 'Chi tiết về quyền riêng tư'
+                  : 'Privacy details',
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(opened, [
+            (
+              Uri.parse(
+                language == 'vi'
+                    ? 'https://tuturuuu.com/vi/privacy'
+                    : 'https://tuturuuu.com/privacy',
+              ),
+              LaunchMode.externalApplication,
+            ),
+          ]);
+        },
+        variant: TargetPlatformVariant({
+          TargetPlatform.iOS,
+          TargetPlatform.macOS,
+        }),
+      );
     }
 
     test('Vietnamese copy matches the Legal draft verbatim', () {

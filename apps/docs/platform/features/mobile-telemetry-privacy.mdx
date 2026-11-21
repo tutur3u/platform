@@ -35,7 +35,11 @@ Production builds show a one-time, full-screen prompt (route
 `/telemetry-consent`, above the shell) once a signed-in user has a workspace and
 the device has no stored answer for the current notice version. **Allow** and
 **Don't allow** share one size and style, in that order, nothing is preselected,
-and **Privacy details** opens the public privacy notice. Closing the prompt with
+and **Privacy details** opens the public privacy notice. The iOS and Mac App
+Store builds open it in the system browser so the website's pricing navigation
+stays outside the app. Other platforms use the link browser preference.
+`telemetry_consent_page_test.dart` covers the launch mode and localized URL.
+Closing the prompt with
 the back gesture counts as **Don't allow**, never as consent. An answer persists
 exactly like the Settings switch (declining revokes before persisting) and the
 prompt is not shown again until the notice version changes. Settings stays the

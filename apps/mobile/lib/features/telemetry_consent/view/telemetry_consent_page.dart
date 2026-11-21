@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
+import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -19,10 +21,10 @@ Uri telemetryPrivacyUri(Locale locale) => Uri.https(
 /// counts as "Don't allow", never as consent; the route leaves once an answer
 /// is stored.
 class TelemetryConsentPage extends StatefulWidget {
-  const TelemetryConsentPage({super.key, this.preference, this.openLink});
+  const TelemetryConsentPage({super.key, this.preference, this.launch});
 
   final TelemetryPreference? preference;
-  final Future<bool> Function(BuildContext context, Uri uri)? openLink;
+  final MobileLinkLaunch? launch;
 
   @override
   State<TelemetryConsentPage> createState() => _TelemetryConsentPageState();
@@ -84,13 +86,16 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
                           Text(l10n.telemetryFirebaseInstallationDisclosure),
                           const SizedBox(height: AppSpacing.sm),
                           AppButton.ghost(
-                            onPressed: () =>
-                                (widget.openLink ?? openMobileLink)(
-                                  context,
-                                  telemetryPrivacyUri(
-                                    Localizations.localeOf(context),
-                                  ),
-                                ),
+                            onPressed: () => openMobileLink(
+                              context,
+                              telemetryPrivacyUri(
+                                Localizations.localeOf(context),
+                              ),
+                              launch: widget.launch,
+                              readPreference: isAppleStorePlatform()
+                                  ? () async => LinkBrowserPreference.external
+                                  : null,
+                            ),
                             child: Text(l10n.telemetryConsentLearnMore),
                           ),
                           if (_failed) ...[

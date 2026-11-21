@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -165,14 +164,8 @@ class ProfileDangerGroup extends StatelessWidget {
           title: l10n.settingsDeleteAccount,
           destructive: true,
           showChevron: false,
-          onTap: () => unawaited(
-            openMobileLink(
-              context,
-              accountDeletionUri,
-              launch: launch,
-              readPreference: () async => LinkBrowserPreference.builtIn,
-            ),
-          ),
+          onTap: () =>
+              unawaited(openAccountDeletionPage(context, launch: launch)),
         ),
       ],
     );

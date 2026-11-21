@@ -33,8 +33,11 @@ From top to bottom, Profile shows:
 - **Quick links.** Settings, Appearance, Notifications, Security and
   devices, Help and feedback, and About.
 - **Sign out and Delete account.** Sign out asks for confirmation first.
-  Delete account opens the public account-deletion page in the in-app
-  browser, like the Settings row.
+  Delete account opens the public account-deletion page, like the Settings row.
+  The iOS and Mac App Store builds open it in the system browser so the website's
+  pricing navigation stays outside the app. Other platforms use the in-app
+  browser. Coverage: `settings_delete_account_row_test.dart` and
+  `profile_sections_test.dart`.
 
 The profile banner is edited in Edit profile and is not displayed on
 Profile. Pull to refresh and re-selecting the Profile dock item reload the

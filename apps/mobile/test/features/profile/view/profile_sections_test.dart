@@ -125,20 +125,24 @@ void main() {
     verify(() => auth.signOutCurrentAccount()).called(1);
   });
 
-  testWidgets('delete account opens the deletion page in-app', (tester) async {
-    final calls = <(Uri, LaunchMode)>[];
-    await pump(
-      tester,
-      ProfileDangerGroup(
-        launch: (uri, mode) async {
-          calls.add((uri, mode));
-          return true;
-        },
-      ),
-    );
-    expect(find.text('Delete account'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('profile-delete-account')));
-    await tester.pumpAndSettle();
-    expect(calls, [(accountDeletionUri, LaunchMode.inAppBrowserView)]);
-  });
+  testWidgets(
+    'Apple account deletion opens the system browser',
+    (tester) async {
+      final calls = <(Uri, LaunchMode)>[];
+      await pump(
+        tester,
+        ProfileDangerGroup(
+          launch: (uri, mode) async {
+            calls.add((uri, mode));
+            return true;
+          },
+        ),
+      );
+      expect(find.text('Delete account'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('profile-delete-account')));
+      await tester.pumpAndSettle();
+      expect(calls, [(accountDeletionUri, LaunchMode.externalApplication)]);
+    },
+    variant: TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.macOS}),
+  );
 }

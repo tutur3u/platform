@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/settings/view/settings_delete_account_row.dart';
@@ -26,29 +27,40 @@ void main() {
     );
   });
 
-  testWidgets('opens the deletion page in the in-app browser', (tester) async {
-    final calls = <(Uri, LaunchMode)>[];
-    await tester.pumpApp(
-      Scaffold(
-        body: SettingsDeleteAccountRow(
-          launch: (uri, mode) async {
-            calls.add((uri, mode));
-            return true;
-          },
+  testWidgets(
+    'uses the platform browser policy for account deletion',
+    (tester) async {
+      final calls = <(Uri, LaunchMode)>[];
+      await tester.pumpApp(
+        Scaffold(
+          body: SettingsDeleteAccountRow(
+            launch: (uri, mode) async {
+              calls.add((uri, mode));
+              return true;
+            },
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final tile = tester.widget<SettingsTile>(find.byType(SettingsTile));
-    expect(tile.isDestructive, isTrue);
-    expect(find.text('Delete account'), findsOneWidget);
+      final tile = tester.widget<SettingsTile>(find.byType(SettingsTile));
+      expect(tile.isDestructive, isTrue);
+      expect(find.text('Delete account'), findsOneWidget);
 
-    await tester.tap(find.text('Delete account'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete account'));
+      await tester.pumpAndSettle();
 
-    expect(calls, [(accountDeletionUri, LaunchMode.inAppBrowserView)]);
-  });
+      final mode = defaultTargetPlatform == TargetPlatform.android
+          ? LaunchMode.inAppBrowserView
+          : LaunchMode.externalApplication;
+      expect(calls, [(accountDeletionUri, mode)]);
+    },
+    variant: TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+      TargetPlatform.macOS,
+    }),
+  );
 
   testWidgets('reports a launch failure without leaving Settings', (
     tester,
