@@ -19,7 +19,9 @@ export const AUTH_OAUTH_PROVIDER_OPTIONS: Record<
     name: 'Google',
     queryParams: {
       access_type: 'offline',
-      prompt: 'consent',
+      // Lets a returning user pick their Google account in one tap; consent
+      // is shown only when Google needs it.
+      prompt: 'select_account',
     },
   },
   azure: {

@@ -83,6 +83,14 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the MFA step-up once and mints again. A second refusal, a mint failure,
   unavailable assurance or a stalled step shows the retry card instead of the
   home page.
+- Google sign-in asks with `prompt=select_account`, so a returning user
+  picks an account in one tap and sees consent only when Google needs it.
+- The login form loads with the shell rather than as a lazy chunk, and the
+  entry animations stop under `prefers-reduced-motion`.
+- The `/login` and `/add-account` CDN policy is set both by the proxy and by
+  the `headers()` rules in `apps/web/next-config.web.ts`; config headers win,
+  so the public rule there is conditioned on a missing session cookie and a
+  private rule follows it.
 - Turnstile renders in a fixed 300 by 65 slot, and every focused step uses
   one fixed-height frame (a long saved-account list scrolls inside it), so
   nothing shifts as the widget or the view loads.
@@ -96,7 +104,8 @@ Coverage: `apps/web/src/app/[locale]/(auth)/login/form-focused-sign-in.test.tsx`
 `form-saved-account-chooser.test.tsx`, `login-view.test.ts`,
 `login-view.server.test.ts`, `form-mfa-step-up.test.tsx`, `page.test.tsx`,
 `apps/web/src/app/api/v1/auth/login-view/route.test.ts`,
-`apps/web/src/lib/auth-shell-cache.test.ts`,
+`apps/web/src/lib/auth-shell-cache.test.ts`, `apps/web/next.config.test.ts`,
+`apps/web/src/lib/auth/oauth-providers.test.ts`,
 `apps/web/src/app/api/v1/auth/cross-app-return/route-expected-user.test.ts`, `apps/web/src/__tests__/proxy.test.ts`,
 `apps/web/src/app/api/auth/callback/route-pkce.test.ts` and
 `apps/web/src/lib/auth/oauth-callback-url.test.ts`.

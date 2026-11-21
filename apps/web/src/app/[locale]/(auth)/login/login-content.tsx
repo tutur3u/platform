@@ -6,15 +6,16 @@ import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { DEV_MODE } from '@/constants/env';
+// Imported eagerly so the form renders with the shell; a lazy chunk would
+// swap a shorter skeleton for it and move the centered column.
+import LoginForm from './form';
 import {
   isFocusedExternalSignIn,
   mayBeFocusedExternalSignIn,
 } from './login-view';
 import { useLoginView } from './use-login-view';
-
-const LoginForm = lazy(() => import('./form'));
 
 export type LoginDomain = {
   href: string;
@@ -192,7 +193,7 @@ export function LoginContent({
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
-        <div className="fade-in-0 slide-in-from-bottom-4 w-full animate-in duration-300">
+        <div className="fade-in-0 slide-in-from-bottom-4 w-full animate-in duration-300 motion-reduce:animate-none">
           <div className="mb-8 text-center">
             {focusedAppName || focusedPending ? (
               <div className="space-y-4">
@@ -249,24 +250,22 @@ export function LoginContent({
             )}
           </div>
 
-          <div className="fade-in-0 slide-in-from-bottom-3 animate-in duration-300 [animation-delay:50ms] [animation-fill-mode:both]">
+          <div className="fade-in-0 slide-in-from-bottom-3 animate-in duration-300 [animation-delay:50ms] [animation-fill-mode:both] motion-reduce:animate-none">
             {callbackCode ? (
               <LoginFormFallback />
             ) : (
-              <Suspense fallback={<LoginFormFallback />}>
-                <LoginForm
-                  deferAuthSurfaceUntilSessionCheck={
-                    deferAuthSurfaceUntilSessionCheck
-                  }
-                  loginView={loginView}
-                  localE2EAuthBypass={localE2EAuthBypass}
-                  runtimeSupabaseConfig={runtimeSupabaseConfig}
-                />
-              </Suspense>
+              <LoginForm
+                deferAuthSurfaceUntilSessionCheck={
+                  deferAuthSurfaceUntilSessionCheck
+                }
+                loginView={loginView}
+                localE2EAuthBypass={localE2EAuthBypass}
+                runtimeSupabaseConfig={runtimeSupabaseConfig}
+              />
             )}
           </div>
 
-          <div className="fade-in-0 mt-8 animate-in text-center duration-300 [animation-delay:100ms] [animation-fill-mode:both]">
+          <div className="fade-in-0 mt-8 animate-in text-center duration-300 [animation-delay:100ms] [animation-fill-mode:both] motion-reduce:animate-none">
             <div className="text-balance text-muted-foreground text-xs leading-relaxed">
               <span>{t('auth.notice-p1')} </span>
               <a

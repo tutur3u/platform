@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AUTH_OAUTH_PROVIDER_OPTIONS,
   AUTH_OAUTH_PROVIDERS,
+  getAuthOAuthProviderOptions,
 } from './oauth-providers';
 
 describe('auth OAuth providers', () => {
@@ -17,6 +18,12 @@ describe('auth OAuth providers', () => {
       name: 'Microsoft',
       scopes: 'email',
     });
+  });
+
+  it('lets a returning Google user pick an account instead of forcing consent', () => {
+    expect(getAuthOAuthProviderOptions('google').queryParams?.prompt).toBe(
+      'select_account'
+    );
   });
 
   it('keeps an options entry for every advertised provider', () => {
