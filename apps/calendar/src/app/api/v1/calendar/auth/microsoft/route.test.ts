@@ -97,4 +97,22 @@ describe('Microsoft Calendar auth route', () => {
     });
     expect(response.cookies.get('ms_pkce_verifier')?.httpOnly).toBe(true);
   });
+
+  it('keeps the HttpOnly PKCE cookie on the provider document redirect', async () => {
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(`${startRequest().url}&navigation=1`)
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'https://login.example/authorize'
+    );
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.cookies.get('ms_pkce_verifier')).toMatchObject({
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+  });
 });

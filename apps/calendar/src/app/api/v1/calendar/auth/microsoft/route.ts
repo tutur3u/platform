@@ -115,7 +115,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // Create response with the auth URL
-    const response = NextResponse.json({ authUrl }, { status: 200 });
+    const response =
+      url.searchParams.get('navigation') === '1'
+        ? NextResponse.redirect(authUrl, {
+            status: 302,
+            headers: { 'Cache-Control': 'no-store' },
+          })
+        : NextResponse.json({ authUrl }, { status: 200 });
 
     // Store code verifier in an HttpOnly cookie for the callback
     response.cookies.set('ms_pkce_verifier', codeVerifier, {

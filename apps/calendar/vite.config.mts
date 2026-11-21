@@ -16,12 +16,8 @@ const nativePorts = createCalendarNativePortResolver(local);
 
 const productionArtifact =
   process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production';
-const artifactBasePath = productionArtifact ? '/calendar' : '';
-if (
-  process.env.TUTURUUU_BASE_PATH !== undefined &&
-  process.env.TUTURUUU_BASE_PATH !== artifactBasePath
-) {
-  throw new Error('Calendar build base must match its deployment profile');
+if (process.env.TUTURUUU_BASE_PATH) {
+  throw new Error('Calendar build base must be empty for request-time routing');
 }
 // Shadow keeps the registered subdomain in the bundle. The apex URL is the
 // later `on` cutover, after both callback URIs are registered with providers.
@@ -32,7 +28,7 @@ const publicAppUrl = productionArtifact
 
 export const bridge = startBridgePreset(
   {
-    basePath: artifactBasePath,
+    basePath: '',
     appRoot: import.meta.url,
     app: 'calendar',
     inertVercel: true,

@@ -1,3 +1,8 @@
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -230,10 +235,10 @@ describe('Mail page authorization and projections', () => {
 });
 
 describe('Mail page model under the /mail apex mount', () => {
-  function loadMounted(path: string) {
+  function loadMounted(path: string, requestedPath = path) {
     return withMailRequest(
       {
-        request: new Request(`https://tuturuuu.com${path}`),
+        request: new Request(`https://tuturuuu.com${requestedPath}`),
         appBase: '/mail',
         responseHeaders: new Headers(),
         waitUntil: () => {},
@@ -241,6 +246,25 @@ describe('Mail page model under the /mail apex mount', () => {
       () => loadPageModel(path)
     );
   }
+  it('preserves the mounted browser query and also accepts app-relative router paths', async () => {
+    const origin = 'https://tuturuuu.com';
+    const next = '/vi/personal/sent?q=a%2Bb&tag=1&tag=2';
+    const publicPath = `/mail${next}`;
+    const router = createRouter({
+      routeTree: createRootRoute(),
+      basepath: '/mail',
+      history: createMemoryHistory({ initialEntries: [publicPath] }),
+      origin,
+    });
+    mocks.actor.mockResolvedValue(null);
+
+    expect(router.state.location.publicHref).toBe(publicPath);
+    for (const path of [router.state.location.publicHref, next]) {
+      await expect(loadMounted(path, publicPath)).rejects.toMatchObject({
+        options: { href: `/mail/login?${new URLSearchParams({ next })}` },
+      });
+    }
+  });
   it('keeps every app redirect and locale prefix under the mount', async () => {
     await expect(loadMounted('/mail')).rejects.toMatchObject({
       options: { href: '/mail/personal/inbox' },

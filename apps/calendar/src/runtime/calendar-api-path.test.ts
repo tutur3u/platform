@@ -21,6 +21,9 @@ describe('Calendar client API ownership', () => {
     const client = createInternalApiClient();
     for (const path of [
       '/api/v1/workspaces/ws/calendar/events',
+      '/api/v1/workspaces/ws/calendars',
+      '/api/v1/calendar/connections',
+      '/api/v1/calendar/auth/accounts',
       '/api/v1/workspaces/ws/tasks/task',
       '/api/v1/workspaces/ws/settings/permissions',
       '/api/v1/users/me/profile',
@@ -28,6 +31,9 @@ describe('Calendar client API ownership', () => {
       await client.json(path);
     expect(fetch.mock.calls.map(([path]) => path)).toEqual([
       '/calendar/api/v1/workspaces/ws/calendar/events',
+      '/calendar/api/v1/workspaces/ws/calendars',
+      '/calendar/api/v1/calendar/connections',
+      '/calendar/api/v1/calendar/auth/accounts',
       '/calendar/api/v1/workspaces/ws/tasks/task',
       '/api/v1/workspaces/ws/settings/permissions',
       '/api/v1/users/me/profile',

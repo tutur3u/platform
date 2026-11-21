@@ -29,10 +29,10 @@ verifier cookies; failure retains the safe fallback and cookie cleanup. Other
 methods, protected pages, shared auth defaults and other satellite apps are
 unchanged. Web and mobile Calendar surfaces are outside this rule's scope.
 
-The `tuturuuu.com/calendar` mount renders the same tokenless completion document
-for these paths under its base. A token-bearing mounted request never consumes
-or forwards the token: GET and HEAD resume the validated same-origin next path,
-and other methods return to login, because the mount shares the apex session.
+Web owns the session at `tuturuuu.com/calendar`. Mounted completion requests
+resume a validated Calendar destination with GET or HEAD and return to the
+mounted login with other methods. They discard any handoff token. The legacy
+subdomain continues to serve and verify its completion flow.
 These mounted rules apply only when the request URL's host is a configured apex
 mount host (`tuturuuu.com`, from `apps/calendar/src/lib/calendar-mount-hosts.ts`)
 and the base path is set. The same base path on `calendar.tuturuuu.com` keeps
@@ -42,15 +42,18 @@ central auth proxy. The decision reads the routed request URL, never `Host` or
 scope and `apps/calendar/src/proxy.cookie-path.test.ts` the `Path=/` session
 cookies that the satellite flow writes under `/calendar/*`.
 
-In the production Worker artifact, `calendar.tuturuuu.com` only moves visitors to
-the mount: every request, before auth, locale or app handling, answers
-`https://tuturuuu.com/calendar/<path>?<query>` with a 301 for GET and HEAD and a
-307 for other methods (method kept). Two paths stay on
-the subdomain: `/api/build-info` keeps answering for monitoring, and
+The production Worker uses `TTR_ONE_ORIGIN_CALENDAR` to control activation.
+`shadow` serves both hosts. After the apex is verified, `on` redirects
+subdomain pages to the corresponding path and query under the apex. GET and
+HEAD use 301, and other methods use 307. API, server-function and legacy
+completion paths continue to serve on the subdomain. Google and Microsoft
+connections started at the apex navigate to their registered subdomain flow.
+Microsoft keeps its HttpOnly PKCE cookie on that host through its callback.
+Moving these callbacks to the apex requires registration with both providers.
 `/serwist/sw.js` answers with a worker that clears the subdomain's caches,
 unregisters itself and reloads open tabs, so browsers that installed the old
-worker reach the mount. `apps/calendar/src/proxy.mounted-auth.test.ts` covers the
-mount rule and `apps/calendar/src/runtime/root-cutover.test.ts` the subdomain.
+worker reach the mount. Calendar's `proxy.mounted-auth.test.ts` covers completion
+and `runtime/one-origin.test.ts` covers the serving modes and provider navigation.
 
 The Next build serves the app under the `/calendar` base path on its own host.
 Next prefixes the proxy matchers with the base path, so the proxy only sees

@@ -8,14 +8,14 @@ const mocks = vi.hoisted(() => ({
   model: vi.fn(async (path: string) => ({ path })),
   loaders: new Map<
     string,
-    (input: { location: { href: string } }) => unknown
+    (input: { location: { publicHref: string } }) => unknown
   >(),
 }));
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute:
     (path: string) =>
     (options: {
-      loader: (input: { location: { href: string } }) => unknown;
+      loader: (input: { location: { publicHref: string } }) => unknown;
     }) => {
       mocks.loaders.set(path, options.loader);
       return options;
@@ -52,7 +52,7 @@ it.each(['/$', '/'])(
       '/vi/workspace/inbox?account=a%2Bb#meet-mail=private%40example.invalid%20body';
     const loader = mocks.loaders.get(path);
     expect(loader).toBeTypeOf('function');
-    expect(await loader?.({ location: { href } })).toEqual({
+    expect(await loader?.({ location: { publicHref: href } })).toEqual({
       path: '/vi/workspace/inbox?account=a%2Bb',
     });
     expect(mocks.transport).toHaveBeenCalledExactlyOnceWith({
@@ -83,7 +83,7 @@ it.each(['/$', '/'])(
       '/' + 'x'.repeat(8192) + '#private',
     ]) {
       await expect(
-        mocks.loaders.get(path)?.({ location: { href } })
+        mocks.loaders.get(path)?.({ location: { publicHref: href } })
       ).rejects.toThrow();
     }
     expect(mocks.model).not.toHaveBeenCalled();
@@ -95,7 +95,9 @@ it.each(['/$', '/'])(
   'removes a long fragment before the real %s server validator sees length',
   async (path) => {
     const href = '/en/personal/inbox#meet-mail=' + 'private-body'.repeat(1000);
-    expect(await mocks.loaders.get(path)?.({ location: { href } })).toEqual({
+    expect(
+      await mocks.loaders.get(path)?.({ location: { publicHref: href } })
+    ).toEqual({
       path: '/en/personal/inbox',
     });
     expect(mocks.transport).toHaveBeenCalledExactlyOnceWith({

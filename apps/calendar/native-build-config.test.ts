@@ -8,13 +8,7 @@ afterEach(() => {
 
 describe('Calendar native build configuration', () => {
   it.each([
-    [
-      'production',
-      '/calendar/',
-      '/calendar',
-      '/calendar/_fn',
-      'https://calendar.tuturuuu.com',
-    ],
+    ['production', '/', '', '/_fn', 'https://calendar.tuturuuu.com'],
     ['staging', '/', '', '/_fn', 'https://calendar.tutur3u.com'],
     ['development', '/', '', '/_fn', 'http://localhost:7806'],
   ])(
@@ -47,7 +41,7 @@ describe('Calendar native build configuration', () => {
   );
 
   it.each([
-    ['production', ''],
+    ['production', '/calendar'],
     ['production', '/other'],
     ['staging', '/calendar'],
   ])(
@@ -57,7 +51,7 @@ describe('Calendar native build configuration', () => {
       vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', profile);
       vi.stubEnv('TUTURUUU_BASE_PATH', base);
       await expect(import('./vite.config.mjs')).rejects.toThrow(
-        'Calendar build base must match its deployment profile'
+        'Calendar build base must be empty for request-time routing'
       );
     }
   );

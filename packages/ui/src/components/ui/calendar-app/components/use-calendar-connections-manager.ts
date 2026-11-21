@@ -1,15 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type CalendarSyncResult,
+  createCalendarConnection,
+  createWorkspaceCalendar,
+  deleteWorkspaceCalendar,
+  disconnectCalendarAccount,
   getGoogleCalendarAuthUrl,
+  getMicrosoftCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
   listCalendarAccounts,
   listProviderCalendars,
+  listWorkspaceCalendars,
+  resetWorkspaceCalendars,
   updateCalendarConnection as updateCalendarConnectionRequest,
   updateWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarSyncPreferences,
+  updateWorkspaceCalendar,
 } from '@tuturuuu/internal-api/calendar';
+import {
+  InternalApiError,
+  resolveInternalApiUrl,
+} from '@tuturuuu/internal-api/client';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -21,7 +33,6 @@ import {
   type AccountsResponse,
   getCalendarColor,
   sourceInputFromOption,
-  type WorkspaceCalendarsResponse,
 } from './calendar-connections-manager-helpers';
 import type { AuthResponse } from './calendar-types';
 import {
@@ -35,6 +46,18 @@ export type CalendarConnectionsUnifiedVariant =
   | 'compact'
   | 'settings'
   | 'status';
+
+function mountedProviderStart(
+  providerPath: '/api/v1/calendar/auth' | '/api/v1/calendar/auth/microsoft',
+  wsId: string,
+  reconnect = false
+): AuthResponse | undefined {
+  const path = resolveInternalApiUrl(providerPath);
+  if (path !== `/calendar${providerPath}`) return;
+  const search = new URLSearchParams({ wsId, navigation: '1' });
+  if (reconnect) search.set('reconnect', '1');
+  return { authUrl: `${path}?${search}` };
+}
 
 export function useCalendarConnectionsManager(wsId: string) {
   const t = useTranslations('calendar');
@@ -221,14 +244,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     isLoading: isLoadingWorkspaceCalendars,
   } = useQuery({
     queryKey: ['workspace-calendars', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`, {
-        cache: 'no-store',
-      });
-      if (!response.ok)
-        return { calendars: [], grouped: { system: [], custom: [] }, total: 0 };
-      return response.json() as Promise<WorkspaceCalendarsResponse>;
-    },
+    queryFn: () => listWorkspaceCalendars(wsId),
     staleTime: 30_000,
   });
 
@@ -245,21 +261,8 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   // Toggle workspace calendar visibility
   const toggleWorkspaceCalendarMutation = useMutation({
-    mutationFn: async ({
-      id,
-      is_enabled,
-    }: {
-      id: string;
-      is_enabled: boolean;
-    }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, is_enabled }),
-      });
-      if (!response.ok) throw new Error('Failed to toggle calendar');
-      return response.json();
-    },
+    mutationFn: (payload: { id: string; is_enabled: boolean }) =>
+      updateWorkspaceCalendar(wsId, payload),
     onMutate: ({ id }) => {
       setTogglingTuturuuuIds((prev) => new Set(prev).add(id));
     },
@@ -281,15 +284,8 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   // Create custom calendar
   const createCalendarMutation = useMutation({
-    mutationFn: async (data: { name: string; color?: string }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/calendars`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('Failed to create calendar');
-      return response.json();
-    },
+    mutationFn: (data: { name: string; color?: string }) =>
+      createWorkspaceCalendar(wsId, data),
     onSuccess: () => {
       toast.success(t('calendar_created') || 'Calendar created');
       queryClient.invalidateQueries({
@@ -302,16 +298,7 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   // Delete custom calendar
   const deleteCalendarMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendars?id=${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) throw new Error('Failed to delete calendar');
-      return response.json();
-    },
+    mutationFn: (id: string) => deleteWorkspaceCalendar(wsId, id),
     onSuccess: () => {
       toast.success(t('calendar_deleted') || 'Calendar deleted');
       queryClient.invalidateQueries({
@@ -324,17 +311,7 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   // Reset all calendar data
   const resetCalendarDataMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendars/reset`,
-        { method: 'POST' }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to reset calendar data');
-      }
-      return response.json();
-    },
+    mutationFn: () => resetWorkspaceCalendars(wsId),
     onSuccess: () => {
       toast.success(
         t('calendar_data_reset') || 'Calendar data reset successfully'
@@ -374,8 +351,12 @@ export function useCalendarConnectionsManager(wsId: string) {
     { reconnect?: boolean } | void
   >({
     mutationKey: ['calendar', 'google-auth', wsId],
-    mutationFn: (variables) =>
-      getGoogleCalendarAuthUrl(wsId, undefined, !!variables?.reconnect),
+    mutationFn: async (variables) =>
+      mountedProviderStart(
+        '/api/v1/calendar/auth',
+        wsId,
+        variables?.reconnect
+      ) ?? getGoogleCalendarAuthUrl(wsId, undefined, !!variables?.reconnect),
     onSuccess: (data) => {
       if (data.authUrl) window.location.href = data.authUrl;
       else toast.error(t('auth_url_invalid'));
@@ -386,13 +367,9 @@ export function useCalendarConnectionsManager(wsId: string) {
   // Microsoft auth mutation
   const microsoftAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationKey: ['calendar', 'microsoft-auth', wsId],
-    mutationFn: async () => {
-      const response = await fetch(
-        `/api/v1/calendar/auth/microsoft?wsId=${wsId}`
-      );
-      if (!response.ok) throw new Error('Failed to get auth URL');
-      return response.json();
-    },
+    mutationFn: async () =>
+      mountedProviderStart('/api/v1/calendar/auth/microsoft', wsId) ??
+      getMicrosoftCalendarAuthUrl(wsId),
     onSuccess: (data) => {
       if (data.authUrl) window.location.href = data.authUrl;
       else toast.error(t('auth_url_invalid'));
@@ -402,14 +379,8 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   // Disconnect account mutation
   const disconnectMutation = useMutation({
-    mutationFn: async (accountId: string) => {
-      const response = await fetch(
-        `/api/v1/calendar/auth/accounts?accountId=${accountId}&wsId=${wsId}`,
-        { method: 'DELETE' }
-      );
-      if (!response.ok) throw new Error('Failed to disconnect');
-      return response.json();
-    },
+    mutationFn: (accountId: string) =>
+      disconnectCalendarAccount(wsId, accountId),
     onMutate: (accountId) => {
       setDisconnectingId(accountId);
     },
@@ -437,87 +408,43 @@ export function useCalendarConnectionsManager(wsId: string) {
     const newState = !currentState;
     setTogglingIds((prev) => new Set(prev).add(calendarId));
 
+    const create = !!calendarData && !calendarData.connectionExists && newState;
     try {
-      // If connection doesn't exist in database and we're enabling, create it
-      if (calendarData && !calendarData.connectionExists && newState) {
-        const response = await fetch('/api/v1/calendar/connections', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            wsId,
-            calendarId: calendarData.calendar_id,
+      if (create) {
+        const connection = {
+          calendarId: calendarData.calendar_id,
+          authTokenId: calendarData.accountId,
+          accessRole: calendarData.accessRole,
+          isEnabled: true,
+        };
+        try {
+          await createCalendarConnection(wsId, {
+            ...connection,
             calendarName: calendarData.calendar_name,
             color: calendarData.color,
-            isEnabled: true,
-            authTokenId: calendarData.accountId,
-            accessRole: calendarData.accessRole,
-          }),
-        });
-
-        if (!response.ok) {
-          // Handle 409 Conflict - calendar already exists, update it instead
-          if (response.status === 409) {
-            // Calendar already exists, make a PATCH request to enable it
-            const patchResponse = await fetch('/api/v1/calendar/connections', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                // Use calendar_id to find the connection since we don't have the connection ID
-                calendarId: calendarData.calendar_id,
-                wsId,
-                authTokenId: calendarData.accountId,
-                isEnabled: true,
-                accessRole: calendarData.accessRole,
-              }),
-            });
-
-            if (patchResponse.ok) {
-              // Update local state immediately
-              updateCalendarConnection(calendarId, true);
-              queryClient.invalidateQueries({
-                queryKey: ['provider-calendar-list', wsId],
-              });
-              queryClient.invalidateQueries({
-                queryKey: ['calendar-connections', wsId],
-              });
-              toast.success(t('calendar_enabled'));
-            } else {
-              toast.error(t('toggle_failed'));
-            }
-          } else {
-            toast.error(t('toggle_failed'));
-          }
-        } else {
-          // Update local state immediately
-          updateCalendarConnection(calendarId, true);
-          // Invalidate queries to refresh the list
-          queryClient.invalidateQueries({
-            queryKey: ['provider-calendar-list', wsId],
           });
-          queryClient.invalidateQueries({
-            queryKey: ['calendar-connections', wsId],
-          });
-          toast.success(t('calendar_enabled'));
+        } catch (error) {
+          if (!(error instanceof InternalApiError && error.status === 409))
+            throw error;
+          await updateCalendarConnectionRequest({ ...connection, wsId });
         }
+        updateCalendarConnection(calendarId, true);
+        queryClient.invalidateQueries({
+          queryKey: ['provider-calendar-list', wsId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['calendar-connections', wsId],
+        });
+        toast.success(t('calendar_enabled'));
       } else {
-        // Update existing connection
         updateCalendarConnection(calendarId, newState);
-
-        const response = await fetch('/api/v1/calendar/connections', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: calendarId, isEnabled: newState }),
+        await updateCalendarConnectionRequest({
+          id: calendarId,
+          isEnabled: newState,
         });
-
-        if (!response.ok) {
-          updateCalendarConnection(calendarId, currentState);
-          toast.error(t('toggle_failed'));
-        }
       }
     } catch {
-      if (calendarData?.connectionExists) {
-        updateCalendarConnection(calendarId, currentState);
-      }
+      if (!create) updateCalendarConnection(calendarId, currentState);
       toast.error(t('toggle_failed'));
     } finally {
       setTogglingIds((prev) => {

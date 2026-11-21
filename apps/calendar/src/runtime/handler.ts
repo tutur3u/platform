@@ -17,7 +17,7 @@ import { proxy } from '../proxy';
 import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
 import { dispatchCalendarEndpoint } from './api-registry.server';
 import { registerCalendarServerApiPaths } from './calendar-api-server';
-import { calendarBase } from './calendar-mount';
+import { calendarBase, calendarMounts } from './calendar-mount';
 import { isCalendarStagingArtifact } from './deployment-profile';
 import { legacyHostResponse } from './legacy-host';
 import { calendarOneOriginMode } from './one-origin';
@@ -106,8 +106,10 @@ async function dispatchCalendarRequest(
     });
   }
   const base = calendarBase(url);
-  let path = base?.strip(url.pathname);
-  if (!base || path == null) return new Response('Not Found', { status: 404 });
+  const appPath = base?.strip(url.pathname);
+  if (!base || appPath == null)
+    return new Response('Not Found', { status: 404 });
+  let path = appPath;
   const denied = await denyWithoutStagingAccess(request, env);
   if (denied) return denied;
   if (!base.isRoot) {
@@ -119,11 +121,32 @@ async function dispatchCalendarRequest(
         { error: 'The shared session is managed by Web' },
         { status: 409 }
       );
-    if (providerHandoffs.some((pattern) => matchRoute(pattern, path)))
+    if (providerHandoffs.some((pattern) => matchRoute(pattern, appPath))) {
+      const host = calendarMounts.rootHosts[0];
+      // Start the document flow on the registered callback host so its
+      // HttpOnly PKCE state stays there throughout the Microsoft handoff.
+      if (
+        host &&
+        request.method === 'GET' &&
+        (appPath === '/api/v1/calendar/auth' ||
+          appPath === '/api/v1/calendar/auth/microsoft') &&
+        url.searchParams.get('navigation') === '1'
+      ) {
+        const target = new URL(appPath, `https://${host}`);
+        for (const name of ['wsId', 'reconnect', 'navigation']) {
+          const value = url.searchParams.get(name);
+          if (value !== null) target.searchParams.set(name, value);
+        }
+        return new Response(null, {
+          status: 307,
+          headers: { Location: target.href, 'Cache-Control': 'no-store' },
+        });
+      }
       return Response.json(
         { error: 'Calendar provider sign-in uses calendar.tuturuuu.com' },
         { status: 409, headers: { 'Cache-Control': 'no-store' } }
       );
+    }
     const rejected = admitMountedMutation({
       appPath: path,
       mode: 'enforce',

@@ -8,7 +8,7 @@ import { AppProviders } from '../runtime/providers';
 
 export const Route = createFileRoute('/')({
   loader: ({ location }) =>
-    loadMailPage({ data: { path: mailLoaderPath(location.href) } }),
+    loadMailPage({ data: { path: mailLoaderPath(location.publicHref) } }),
   head: ({ loaderData }) => (loaderData ? mailPageHead(loaderData) : {}),
   component: function IndexPage(): ReactElement {
     const model = Route.useLoaderData();

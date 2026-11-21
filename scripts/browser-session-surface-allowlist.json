@@ -114,7 +114,6 @@
     "packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-data.ts",
     "packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-form-reset.ts",
     "packages/trigger/src/calendar-sync-coordination.ts",
-    "packages/ui/src/components/ui/calendar-app/components/use-calendar-connections-manager.ts",
     "packages/ui/src/components/ui/legacy/calendar/settings/google-calendar-settings.tsx",
     "packages/ui/src/components/ui/text-editor/task-item-checkbox.ts",
     "packages/ui/src/hooks/supabase-provider.ts",

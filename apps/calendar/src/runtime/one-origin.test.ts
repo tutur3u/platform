@@ -221,6 +221,32 @@ describe('Calendar one-origin activation', () => {
     expect(suppliers.proxy).toHaveBeenCalled();
   });
 
+  it.each(['/api/v1/calendar/auth', '/api/v1/calendar/auth/microsoft'])(
+    'starts %s on the registered subdomain for a mounted navigation',
+    async (path) => {
+      const response = await handleCalendarRequest(
+        new Request(
+          `https://tuturuuu.com/calendar${path}?wsId=personal&reconnect=1&navigation=1`
+        ),
+        workerEnv('shadow'),
+        ctx,
+        telemetry
+      );
+      const target = new URL(response.headers.get('location') ?? '');
+      expect(response.status).toBe(307);
+      expect(target.origin + target.pathname).toBe(
+        `https://calendar.tuturuuu.com${path}`
+      );
+      expect(Object.fromEntries(target.searchParams)).toEqual({
+        wsId: 'personal',
+        reconnect: '1',
+        navigation: '1',
+      });
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(suppliers.proxy).not.toHaveBeenCalled();
+    }
+  );
+
   it('keeps mounted session minting on Web and leaves the subdomain session routes alone', async () => {
     const env = workerEnv('shadow');
     for (const path of SESSION_PATHS) {

@@ -60,11 +60,16 @@ function mountedLoginRedirect(url: URL, basePath: string) {
 
 export async function loadPageModel(path: string) {
   const current = mailRequest();
-  const url = new URL(path, current.request.url);
-  if (url.origin !== new URL(current.request.url).origin)
+  const requestUrl = new URL(current.request.url);
+  const base = createBasePath({ app: 'mail', basePath: appBasePath() });
+  const url = new URL(base.withBase(path), requestUrl);
+  if (url.origin !== requestUrl.origin)
     throw new Error('Invalid Mail page origin');
+  // Start can reserialize the search while matching the first document.
+  if (!base.isRoot && url.pathname === requestUrl.pathname)
+    url.search = requestUrl.search;
   const logical = new Request(url, { headers: current.request.headers });
-  const actualPath = new URL(current.request.url).pathname;
+  const actualPath = base.strip(requestUrl.pathname) ?? requestUrl.pathname;
   if (
     actualPath !== MAIL_FUNCTION_BASE &&
     !actualPath.startsWith(`${MAIL_FUNCTION_BASE}/`)

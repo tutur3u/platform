@@ -17,10 +17,13 @@ import { workspaceModel, workspaceShellModel } from './workspace-model.server';
 
 export async function loadPageModel(path: string) {
   const current = calendarRequest();
-  const base = calendarBase(new URL(current.request.url));
-  const url = new URL(base?.withBase(path) ?? path, current.request.url);
-  if (url.origin !== new URL(current.request.url).origin)
+  const requestUrl = new URL(current.request.url);
+  const base = calendarBase(requestUrl);
+  const url = new URL(base?.withBase(path) ?? path, requestUrl);
+  if (url.origin !== requestUrl.origin)
     throw new Error('Invalid Calendar page origin');
+  if (base && !base.isRoot && url.pathname === requestUrl.pathname)
+    url.search = requestUrl.search;
   return withCalendarRequest(
     {
       ...current,

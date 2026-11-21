@@ -80,5 +80,10 @@ export async function GET(request: NextRequest) {
     consent: needsConsent,
   });
 
+  if (request.nextUrl.searchParams.get('navigation') === '1')
+    return NextResponse.redirect(authUrl, {
+      status: 302,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   return NextResponse.json({ authUrl }, { status: 200 });
 }
