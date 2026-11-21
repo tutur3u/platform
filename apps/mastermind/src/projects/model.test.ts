@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProjectsSnapshot, ThreadRow } from './contract';
 import { createFixtureThreadsClient } from './fixtures';
-import { filterCounts, t3ThreadLink, unread, visibleGroups } from './model';
 import {
-  deliveryLabel,
-  deliverySteps,
-  pendingReceiptKey,
-  settle,
-} from './reply-model';
-import { createThreadsClient, threadErrorCode } from './upstream';
+  filterCounts,
+  t3ThreadLink,
+  threadErrorCode,
+  unread,
+  visibleGroups,
+} from './model';
+import { receiptLabel } from './receipt-line';
+import { createThreadsClient } from './upstream';
 import { inScope, MAX_SCAN_PAGES, scanPage } from './queries';
 
 const row = (patch: Partial<ThreadRow>): ThreadRow => ({
@@ -33,6 +34,8 @@ const counts = (
 });
 
 const snapshot: ProjectsSnapshot = {
+  machineId: 'm4',
+  total: 2,
   projects: [
     {
       projectId: 'p1',
@@ -99,53 +102,50 @@ describe('projects model', () => {
 });
 
 describe('reply receipts', () => {
-  const receipt = {
-    id: 'r1',
+  const reply = {
+    id: '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c',
+    machineId: 'm4',
     threadId: 't1',
-    createdAt: 1,
+    createdAt: '2026-11-22T00:00:00Z',
     state: 'sent' as const,
   };
+  const base = { key: reply.id, text: 'hi' };
 
-  it('labels each receipt state from the verified receipt', () => {
-    expect(deliveryLabel({ kind: 'sending' })).toBe('sending');
-    expect(deliveryLabel({ kind: 'receipt', receipt })).toBe('sent');
+  it('labels each phase from the receipt only', () => {
+    expect(receiptLabel({ phase: 'sending', ...base })).toBe('sending');
+    expect(receiptLabel({ phase: 'sent', ...base, reply })).toBe('sent');
     expect(
-      deliveryLabel({
-        kind: 'receipt',
-        receipt: { ...receipt, state: 'delivered', delivery: 'queued' },
+      receiptLabel({
+        phase: 'delivered',
+        ...base,
+        reply: { ...reply, state: 'delivered', delivery: 'queued' },
       })
     ).toBe('queued');
     expect(
-      deliveryLabel({
-        kind: 'receipt',
-        receipt: { ...receipt, state: 'expired' },
+      receiptLabel({
+        phase: 'failed',
+        ...base,
+        error: 'expired',
+        retryable: false,
       })
     ).toBe('expired');
     expect(
-      deliveryLabel({ kind: 'error', code: 'mfa_required' })
-    ).toBeUndefined();
-    expect(deliverySteps('sending')).toBe(0);
-    expect(deliverySteps('sent')).toBe(1);
-    expect(deliverySteps('steered')).toBe(2);
-  });
-
-  it('settles only the matching reply and finds pending receipts by id', () => {
-    const list = [
-      { key: 'a', text: 'x', status: { kind: 'sending' as const } },
-      { key: 'b', text: 'y', status: { kind: 'sending' as const } },
-    ];
-    const next = settle(list, 'a', {
-      kind: 'ok',
-      data: receipt,
-      fetchedAt: '',
-    });
-    expect(next[0]?.status).toEqual({ kind: 'receipt', receipt });
-    expect(next[1]?.status).toEqual({ kind: 'sending' });
-    expect(pendingReceiptKey(next[0]!, 'r1')).toBe('a');
-    expect(pendingReceiptKey(next[0]!, 'other')).toBeUndefined();
+      receiptLabel({
+        phase: 'failed',
+        ...base,
+        error: 'machine_refused',
+        retryable: false,
+      })
+    ).toBe('failed');
+    expect(receiptLabel({ phase: 'needs_mfa', ...base })).toBeUndefined();
     expect(
-      settle(list, 'b', { kind: 'error', code: 'rate_limited' })[1]?.status
-    ).toEqual({ kind: 'error', code: 'rate_limited' });
+      receiptLabel({
+        phase: 'failed',
+        ...base,
+        error: 'timeout',
+        retryable: true,
+      })
+    ).toBeUndefined();
   });
 });
 
@@ -157,16 +157,15 @@ describe('threads client', () => {
     expiresAt: Date.now() + 60_000,
   } as never;
 
-  it('maps refusals to closed codes, the body code first', () => {
-    expect(threadErrorCode(503, 'machine_offline')).toBe('machine_offline');
-    expect(threadErrorCode(422, 'unsupported_for_linked_machine')).toBe(
+  it('maps the client refusals to the page codes', () => {
+    expect(threadErrorCode('machine_offline')).toBe('machine_offline');
+    expect(threadErrorCode('unknown_thread')).toBe('not_found');
+    expect(threadErrorCode('forbidden')).toBe('denied');
+    expect(threadErrorCode('invalid_query')).toBe('invalid');
+    expect(threadErrorCode('outbox_full')).toBe('unavailable');
+    expect(threadErrorCode('unsupported_for_linked_machine')).toBe(
       'unsupported_for_linked_machine'
     );
-    expect(threadErrorCode(401, 'mfa_required')).toBe('mfa_required');
-    expect(threadErrorCode(504, undefined)).toBe('timeout');
-    expect(threadErrorCode(404, undefined)).toBe('not_found');
-    expect(threadErrorCode(429, undefined)).toBe('rate_limited');
-    expect(threadErrorCode(500, undefined)).toBe('unavailable');
   });
 
   it('sends the bearer and query, and parses the page', async () => {
@@ -176,11 +175,13 @@ describe('threads client', () => {
       expect(url.pathname).toBe('/api/v1/mastermind/fleet/threads');
       expect(Object.fromEntries(url.searchParams)).toEqual({
         machineId: 'm4',
+        q: 'deploy',
         projectId: 'none',
         state: 'waiting',
         limit: '50',
       });
       return Response.json({
+        machineId: 'm4',
         threads: [row({ state: 'waiting' })],
         nextCursor: null,
         total: 1,
@@ -188,38 +189,44 @@ describe('threads client', () => {
     });
     const result = await createThreadsClient(owner, fetcher as never).threads(
       'm4',
-      { projectId: 'none', state: 'waiting' }
+      { q: 'deploy', projectId: 'none', state: 'waiting', limit: 50 }
     );
     expect(result.kind).toBe('ok');
   });
 
-  it('refuses redirects and unreadable bodies', async () => {
+  it('refuses redirects, unreadable bodies and maps the body code', async () => {
     const redirect = vi.fn(
       async () =>
         new Response(null, { status: 302, headers: { Location: 'https://x' } })
     );
     expect(
-      await createThreadsClient(owner, redirect as never).machines()
+      await createThreadsClient(owner, redirect as never).machines('m4')
     ).toEqual({ kind: 'error', code: 'unavailable' });
-    const bad = vi.fn(async () => Response.json({ machines: [{ label: 1 }] }));
-    expect(await createThreadsClient(owner, bad as never).machines()).toEqual({
-      kind: 'error',
-      code: 'invalid',
-    });
+    const bad = vi.fn(async () =>
+      Response.json({ machineId: 'm4', machines: [{ label: 1 }] })
+    );
+    expect(
+      await createThreadsClient(owner, bad as never).machines('m4')
+    ).toEqual({ kind: 'error', code: 'invalid' });
     const offline = vi.fn(async () =>
       Response.json({ error: 'machine_offline' }, { status: 503 })
     );
     expect(
-      await createThreadsClient(owner, offline as never).machines()
+      await createThreadsClient(owner, offline as never).machines('m4')
     ).toEqual({ kind: 'error', code: 'machine_offline' });
+    const busy = vi.fn(async () =>
+      Response.json({ error: 'unconfigured' }, { status: 503 })
+    );
+    expect(
+      await createThreadsClient(owner, busy as never).machines('m4')
+    ).toEqual({ kind: 'error', code: 'unavailable' });
   });
 
-  it('posts a reply with its idempotency key', async () => {
+  it('posts a reply with its idempotency key and keeps the client result', async () => {
+    const key = '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c';
     const fetcher = vi.fn(async (request: Request) => {
       expect(request.method).toBe('POST');
-      expect(request.headers.get('Idempotency-Key')).toBe(
-        '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c'
-      );
+      expect(request.headers.get('Idempotency-Key')).toBe(key);
       expect(await request.json()).toEqual({
         machineId: 'm4',
         threadId: 't1',
@@ -227,24 +234,21 @@ describe('threads client', () => {
       });
       return Response.json(
         {
-          id: 'r',
+          id: key,
+          machineId: 'm4',
           threadId: 't1',
           state: 'delivered',
           delivery: 'steered',
-          createdAt: 1,
+          createdAt: '2026-11-22T00:00:00Z',
         },
         { status: 202 }
       );
     });
     const result = await createThreadsClient(owner, fetcher as never).reply(
       'm4',
-      {
-        threadId: 't1',
-        text: 'hi',
-        idempotencyKey: '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c',
-      }
+      { threadId: 't1', text: 'hi', idempotencyKey: key }
     );
-    expect(result.kind).toBe('ok');
+    expect(result.ok).toBe(true);
   });
 });
 
@@ -258,7 +262,14 @@ describe('fixture client', () => {
     if (first.kind !== 'ok') throw new Error('expected a page');
     expect(first.data.threads).toHaveLength(50);
     expect(first.data.nextCursor).toBe(50);
-    expect((await client.projects('m', 'env-studio')).kind).toBe('error');
+    expect(
+      (
+        await client.threads('m', {
+          environmentId: 'env-studio',
+          projectId: 'none',
+        })
+      ).kind
+    ).toBe('error');
   });
 });
 
@@ -270,6 +281,7 @@ describe('scanPage', () => {
       kind: 'ok' as const,
       fetchedAt: '',
       data: {
+        machineId: 'm4',
         threads: page,
         nextCursor: start + 50 < rows.length ? start + 50 : null,
         total: rows.length,
@@ -313,9 +325,5 @@ describe('scanPage', () => {
     );
     expect(none.threads.every((r) => !r.projectId)).toBe(true);
     expect(inScope({ state: 'running' }, row({ state: 'idle' }))).toBe(false);
-  });
-
-  it('maps a 503 without machine_offline to unavailable', () => {
-    expect(threadErrorCode(503, 'unconfigured')).toBe('unavailable');
   });
 });

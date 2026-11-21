@@ -47,6 +47,9 @@ existing links keep working; a thread opens at
   start of the thread. Credentials redacted by the machine appear as a muted
   `[redacted]` token. A cut message says "Truncated". User-role messages carry
   no "You" label, because other agents write with that role too.
+- **A reply still held for the machine** offers "Check again" (it reads the
+  receipt) and "Write another"; a reply left that way is still delivered
+  when the machine takes it.
 - **Replies are steered** (see [thread replies](/platform/features/mastermind-thread-replies)).
   A sent reply shows from its receipt, with Sending, Sent, then Steered,
   Started or Queued, or Not delivered. It reaches the transcript only after
@@ -56,11 +59,20 @@ existing links keep working; a thread opens at
 ## Where the code lives
 
 - Web: `apps/mastermind/src/projects/`. `upstream.ts` is the only data path:
-  owner bearer, redirects refused, every body parsed by `contract.ts`.
-  `fixtures.ts` backs tests and a development build started with
-  `VITE_MASTERMIND_THREAD_FIXTURES=1`.
+  it calls `@tuturuuu/internal-api/mastermind-threads` with the owner's
+  bearer, refuses redirects, and reports a request past 12 seconds as a
+  timeout. Replies run through the shared reply state
+  (`apps/mastermind/src/fleet/thread-reply.ts`), which keeps one idempotency
+  key per reply through Retry and a second-factor step-up. The first page of
+  each list (searches excepted) is kept in the encrypted browser cache
+  (`apps/mastermind/src/fleet/thread-cache.ts`) and shown with its age when
+  the machine is offline. `fixtures.ts` backs tests and a development build
+  started with `VITE_MASTERMIND_THREAD_FIXTURES=1`.
 - Mobile: `apps/mobile/lib/features/mastermind/projects/`, behind one
-  repository interface.
+  repository that delegates to the shared `FleetThreadSource`; replies use
+  `FleetThreadReplyCubit` and lists the encrypted `FleetThreadCache`.
+- Entry points: the web sidebar and the "All threads" button on the Inbox;
+  on the phone, the Projects tab and the Inbox header action.
 
 ## Regression coverage
 

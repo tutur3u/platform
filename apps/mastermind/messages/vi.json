@@ -414,7 +414,10 @@
         "queued": "Đang xếp sau lượt đang chạy",
         "failed": "Chưa gửi được",
         "expired": "Chưa gửi được: máy ngoại tuyến quá lâu",
-        "shortcut": "Ctrl/Cmd Enter để gửi"
+        "shortcut": "Ctrl/Cmd Enter để gửi",
+        "checkAgain": "Kiểm tra lại",
+        "writeAnother": "Viết tin khác",
+        "stillDelivers": "Tin này vẫn được gửi khi máy nhận."
       }
     },
     "ship": {

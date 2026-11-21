@@ -8,11 +8,13 @@ import { subscribeOwnerLive } from '../fleet/owner-live';
 import { formatAge, useI18n } from '../i18n';
 import type { ProjectsSearch } from '../routes/$locale_.projects';
 import { FlatThreadList } from './flat-list';
+import { CachedGroups } from './cached-groups';
+import { useListCache } from './list-cache';
 import { LoadingRows, ThreadErrorMessage } from './list-states';
 import { ListTools } from './list-tools';
-import { filterCounts, threadErrorOf } from './model';
+import { filterCounts } from './model';
 import { ProjectAccordion } from './project-accordion';
-import { THREADS_QUERY_ROOT, useMachines, useProjects } from './queries';
+import { THREADS_QUERY_ROOT, useProjects } from './queries';
 import { ThreadPane } from './thread-pane';
 
 /**
@@ -39,10 +41,10 @@ export function ProjectsPage({
   );
 
   const now = useNow(Date.now());
-  const machines = useMachines();
+  const { machines, context, denied, store, cachedProjects } = useListCache();
   const linked = search.machine !== undefined;
-  const projects = useProjects(!linked);
-  const list = machines.data ?? [];
+  const projects = useProjects(!linked && !denied);
+  const list = context?.machines ?? [];
   const machine = list.find(
     (m) => (m.environmentId ?? undefined) === search.machine
   );
@@ -53,12 +55,41 @@ export function ProjectsPage({
   const readAt = projects.dataUpdatedAt || machines.dataUpdatedAt;
 
   let body: ReactNode;
-  // Without the grouping route (404), this machine lists flat as well.
-  const ungrouped =
-    threadErrorOf(projects.error) === 'not_found' && !projects.data;
-  if (linked || search.q || ungrouped) {
+  // Without the grouping route (404), or with no snapshot while the machine
+  // is away, this machine lists flat or shows the groups this browser cached.
+  const ungrouped = !projects.data && projects.isError;
+  if (machines.isPending) {
+    // Lists wait for the machine context, which keys their browser cache.
+    body = <LoadingRows />;
+  } else if (denied) {
+    body = (
+      <ThreadErrorMessage
+        code="denied"
+        retrying={machines.isFetching}
+        onRetry={() => void machines.refetch()}
+      />
+    );
+  } else if (
+    ungrouped &&
+    !linked &&
+    !search.q &&
+    store &&
+    cachedProjects.length
+  ) {
+    body = (
+      <CachedGroups
+        projectIds={cachedProjects}
+        store={store}
+        state={state}
+        selected={search.thread}
+        now={now}
+        onSelect={select}
+      />
+    );
+  } else if (linked || search.q || ungrouped) {
     body = (
       <FlatThreadList
+        store={store}
         environmentId={search.machine}
         machineLabel={machineLabel}
         q={search.q}
@@ -71,6 +102,7 @@ export function ProjectsPage({
   } else if (projects.data) {
     body = (
       <ProjectAccordion
+        store={store}
         snapshot={projects.data}
         updatedAt={projects.dataUpdatedAt}
         error={projects.error}
@@ -80,16 +112,8 @@ export function ProjectsPage({
         onSelect={select}
       />
     );
-  } else if (projects.isPending) {
-    body = <LoadingRows />;
   } else {
-    body = (
-      <ThreadErrorMessage
-        code={threadErrorOf(projects.error) ?? 'unavailable'}
-        retrying={projects.isFetching}
-        onRetry={() => void projects.refetch()}
-      />
-    );
+    body = <LoadingRows />;
   }
 
   return (
@@ -145,8 +169,9 @@ export function ProjectsPage({
           />
           <div className="p-1.5">{body}</div>
         </section>
-        {search.thread ? (
+        {search.thread && context ? (
           <ThreadPane
+            machineId={context.machineId}
             key={`${search.machine ?? ''}:${search.thread}`}
             environmentId={search.machine}
             threadId={search.thread}

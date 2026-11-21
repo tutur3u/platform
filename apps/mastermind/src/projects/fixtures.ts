@@ -1,6 +1,6 @@
+import type { FleetReply } from '@tuturuuu/internal-api/mastermind-threads';
 import type {
   ProjectsSnapshot,
-  ReplyReceipt,
   StateCounts,
   ThreadMachine,
   ThreadMessages,
@@ -9,9 +9,11 @@ import type {
   ThreadRow,
   ThreadState,
 } from './contract';
-import type { createThreadsClient } from './upstream';
+import type { ThreadsClient } from './upstream';
 
-type Client = ReturnType<typeof createThreadsClient>;
+/** The owner id fixture builds key their browser cache by. */
+export const FIXTURE_OWNER = 'fixture-owner';
+const MACHINE_ID = 'fixture';
 
 const BASE = Date.parse('2026-11-22T00:30:00Z');
 const STATES: ThreadState[] = ['running', 'waiting', 'idle', 'idle', 'failed'];
@@ -60,13 +62,13 @@ const MACHINES: ThreadMachine[] = [
 ];
 
 /** The thread routes over in-memory rows, for local development and tests. */
-export function createFixtureThreadsClient(): Client {
+export function createFixtureThreadsClient(): ThreadsClient {
   return {
-    machines: async () => ok(MACHINES),
-    async projects(_machineId, environmentId) {
-      if (environmentId)
-        return { kind: 'error', code: 'unsupported_for_linked_machine' };
+    machines: async () => ok({ machineId: MACHINE_ID, machines: MACHINES }),
+    async projects() {
       const snapshot: ProjectsSnapshot = {
+        machineId: MACHINE_ID,
+        total: PROJECTS.length,
         projects: PROJECTS.map(([projectId, project]) => {
           const rows = ROWS.filter((r) => r.projectId === projectId);
           return {
@@ -87,7 +89,7 @@ export function createFixtureThreadsClient(): Client {
     async threads(_machineId, input) {
       if (input.environmentId === 'env-c02')
         return { kind: 'error', code: 'machine_offline' };
-      if (input.environmentId && input.projectId)
+      if (input.environmentId && input.projectId === 'none')
         return { kind: 'error', code: 'unsupported_for_linked_machine' };
       const q = input.q?.toLowerCase();
       const rows = ROWS.filter(
@@ -102,6 +104,7 @@ export function createFixtureThreadsClient(): Client {
       const start = input.cursor ?? 0;
       const limit = input.limit ?? 50;
       const page: ThreadPage = {
+        machineId: MACHINE_ID,
         threads: rows.slice(start, start + limit),
         nextCursor: start + limit < rows.length ? start + limit : null,
         total: rows.length,
@@ -114,6 +117,7 @@ export function createFixtureThreadsClient(): Client {
       const end = input.before ?? 40;
       const start = Math.max(0, end - (input.limit ?? 30));
       const data: ThreadMessages = {
+        machineId: MACHINE_ID,
         thread,
         messages: Array.from({ length: end - start }, (_, i) => {
           const position = start + i;
@@ -133,8 +137,9 @@ export function createFixtureThreadsClient(): Client {
       return ok(data);
     },
     async reply(machineId, input) {
-      const receipt: ReplyReceipt = {
+      const reply: FleetReply = {
         id: input.idempotencyKey,
+        machineId,
         threadId: input.threadId,
         environmentId: input.environmentId,
         state: 'delivered',
@@ -142,12 +147,10 @@ export function createFixtureThreadsClient(): Client {
         createdAt: new Date().toISOString(),
         settledAt: new Date().toISOString(),
       };
-      return machineId === 'offline'
-        ? { kind: 'error', code: 'machine_offline' }
-        : ok(receipt);
+      return { ok: true, data: reply };
     },
     markRead: async () => ok({ saved: true }),
-    receipt: async () => ({ kind: 'error', code: 'not_found' }),
+    receipt: async () => ({ ok: false, error: 'not_found', status: 404 }),
     bridgeMachineId: async () => 'fixture',
   };
 }

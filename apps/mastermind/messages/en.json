@@ -414,7 +414,10 @@
         "queued": "Queued behind the running turn",
         "failed": "Not delivered",
         "expired": "Not delivered: the machine stayed offline",
-        "shortcut": "Ctrl/Cmd Enter to send"
+        "shortcut": "Ctrl/Cmd Enter to send",
+        "checkAgain": "Check again",
+        "writeAnother": "Write another",
+        "stillDelivers": "This reply is still delivered when the machine takes it."
       }
     },
     "ship": {

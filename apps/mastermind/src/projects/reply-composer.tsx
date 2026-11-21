@@ -1,144 +1,108 @@
 import { Send } from '@tuturuuu/icons';
+import { FLEET_REPLY_MAX_CHARS } from '@tuturuuu/internal-api/mastermind-threads';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { BRIDGE_LIMITS } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
-import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
-import { toneBadge, type Tone } from '../components/tone';
 import { subscribeOwnerLive } from '../fleet/owner-live';
+import { createThreadReply, type ThreadReply } from '../fleet/thread-reply';
 import { useI18n } from '../i18n';
-import {
-  deliveryLabel,
-  deliverySteps,
-  type Outgoing,
-  pendingReceiptKey,
-  settle,
-} from './reply-model';
+import { ReplyBubble, useReplyState } from './reply-bubble';
 import { replyReceiptFn, threadReplyFn } from './server';
 
-const TONE: Record<string, Tone> = {
-  sending: 'gray',
-  sent: 'blue',
-  steered: 'green',
-  started: 'green',
-  queued: 'orange',
-  failed: 'red',
-  expired: 'red',
-};
-
-function ReceiptLine({ item }: { item: Outgoing }) {
-  const { t } = useI18n();
-  const label = deliveryLabel(item.status);
-  if (!label) {
-    const code =
-      item.status.kind === 'error' ? item.status.code : 'unavailable';
-    return (
-      <div
-        role="alert"
-        className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-red text-xs"
-      >
-        {t(`projects.error.${code}`)}
-        {code === 'mfa_required' ? (
-          <a
-            className="underline"
-            href={`/login?nextUrl=${encodeURIComponent(location.pathname + location.search)}`}
-          >
-            {t('projects.reply.signIn')}
-          </a>
-        ) : null}
-      </div>
-    );
-  }
-  const steps = deliverySteps(label);
-  return (
-    <div
-      className="mt-2 flex items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5 text-xs"
-      aria-live="polite"
-    >
-      <span className="flex gap-1" aria-hidden>
-        {[1, 2].map((step) => (
-          <i
-            key={step}
-            className={cn(
-              'block h-0.5 w-5 rounded',
-              steps >= step ? 'bg-dynamic-green' : 'bg-border'
-            )}
-          />
-        ))}
-      </span>
-      <span
-        className={cn(
-          'rounded-md border px-1.5 py-0.5 font-medium',
-          toneBadge(TONE[label] ?? 'gray')
-        )}
-      >
-        {t(`projects.reply.${label}`)}
-      </span>
-    </div>
-  );
-}
-
 /**
- * Steered replies into the open thread. A reply shows from its receipt: it
- * appears in the transcript only once the machine delivers it. A pending
- * receipt is read again when the owner socket announces it settled.
+ * Steered replies into the open thread. Each reply has its own shared reply
+ * state, kept for the life of the page: its idempotency key survives Retry
+ * and a second-factor step-up, and a reply still held for the machine keeps
+ * reading its receipt on owner-socket notices after the owner writes
+ * another. A reply reaches the transcript once the machine delivers it.
  */
 export function ReplyComposer({
+  machineId,
   environmentId,
   threadId,
 }: {
+  machineId: string;
   environmentId?: string;
   threadId: string;
 }) {
   const { t } = useI18n();
+  const make = () =>
+    createThreadReply(
+      { machineId, environmentId, threadId },
+      {
+        send: ({ text, idempotencyKey }) =>
+          threadReplyFn({
+            data: { environmentId, threadId, text, idempotencyKey },
+          }),
+        receipt: (id) => replyReceiptFn({ data: { id } }),
+      }
+    );
+  const [replies, setReplies] = useState<ThreadReply[]>(() => [make()]);
+  // The same list, updated at once, so two clicks in one render see each other.
+  const live = useRef(replies);
+  const add = (reply: ThreadReply) => {
+    live.current = [...live.current, reply];
+    setReplies(live.current);
+  };
+  const current = replies[replies.length - 1] as ThreadReply;
+  const state = useReplyState(current);
   const [draft, setDraft] = useState('');
-  const [sent, setSent] = useState<Outgoing[]>([]);
-
-  const latest = useRef(sent);
-  latest.current = sent;
 
   useEffect(
     () =>
       subscribeOwnerLive((frame) => {
-        if (frame.t !== 'receipt') return;
-        const id = frame.receipt.id;
-        for (const item of latest.current) {
-          const key = pendingReceiptKey(item, id);
-          if (key)
-            // A failed read keeps the last receipt; the next notice retries.
-            void replyReceiptFn({ data: { id } }).then((result) => {
-              if (result.kind === 'ok')
-                setSent((list) => settle(list, key, result));
-            });
-        }
+        const id = frame.t === 'receipt' ? frame.receipt.id : undefined;
+        if (
+          frame.t !== 'receipt' &&
+          !(frame.t === 'poke' && frame.poke.topic === 'threads')
+        )
+          return;
+        // refresh() reads only a reply still held for the machine.
+        for (const reply of replies) void reply.refresh(id);
       }),
-    []
+    [replies]
   );
 
   const text = draft.trim();
-  const tooLong = draft.length > BRIDGE_LIMITS.maxTextChars;
+  const tooLong = draft.length > FLEET_REPLY_MAX_CHARS;
+  const busy = state.phase === 'sending' || state.phase === 'sent';
   const send = () => {
+    // Decide from the machines' states now, not the last render, so a double
+    // click cannot start two replies.
     if (!text || tooLong) return;
-    const key = crypto.randomUUID();
-    setSent((list) => [...list, { key, text, status: { kind: 'sending' } }]);
+    const all = live.current;
+    const latest = all[all.length - 1] as ThreadReply;
+    const states = all.map((reply) => reply.getState());
+    const now = latest.getState();
+    if (states.some((s) => s.phase === 'sending') || now.phase === 'sent')
+      return;
     setDraft('');
-    void threadReplyFn({
-      data: { environmentId, threadId, text, idempotencyKey: key },
-    })
-      .catch(() => ({ kind: 'error', code: 'unavailable' }) as const)
-      .then((result) => setSent((list) => settle(list, key, result)));
+    // The same text as a reply that can still be resent is that reply
+    // again, under its key; anything else starts a new reply.
+    const again = all.find((reply, index) => {
+      const s = states[index];
+      return (
+        s !== undefined &&
+        'text' in s &&
+        s.text === text &&
+        (s.phase === 'needs_mfa' || (s.phase === 'failed' && s.retryable))
+      );
+    });
+    const target =
+      again ?? (now.phase === 'idle' ? latest : undefined) ?? make();
+    if (!all.includes(target)) add(target);
+    void target.submit(text);
   };
+  const writeAnother = () => add(make());
 
   return (
     <>
-      {sent.map((item) => (
-        <div
-          key={item.key}
-          className="max-w-[40rem] self-end rounded-lg bg-secondary px-3.5 py-2.5"
-        >
-          <p className="whitespace-pre-wrap break-words">{item.text}</p>
-          <ReceiptLine item={item} />
-        </div>
+      {replies.map((reply) => (
+        <ReplyBubble
+          key={replies.indexOf(reply)}
+          reply={reply}
+          onWriteAnother={reply === current ? writeAnother : undefined}
+        />
       ))}
       <form
         className="sticky bottom-0 -mx-4 mt-auto border-t bg-card px-4 pt-3"
@@ -163,15 +127,17 @@ export function ReplyComposer({
             aria-label={t('projects.reply.placeholder')}
             className="min-h-9 resize-none"
           />
-          <Button type="submit" disabled={!text || tooLong}>
+          <Button type="submit" disabled={!text || tooLong || busy}>
             <Send />
             {t('projects.reply.send')}
           </Button>
         </div>
         <p className="mt-1.5 text-muted-foreground text-xs">
-          {t('projects.reply.hint', {
-            max: BRIDGE_LIMITS.maxTextChars.toLocaleString(),
-          })}{' '}
+          {state.phase === 'sent'
+            ? t('projects.reply.stillDelivers')
+            : t('projects.reply.hint', {
+                max: FLEET_REPLY_MAX_CHARS.toLocaleString(),
+              })}{' '}
           <kbd className="rounded border px-1 font-mono text-[0.6875rem]">
             {t('projects.reply.shortcut')}
           </kbd>

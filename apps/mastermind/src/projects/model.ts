@@ -1,6 +1,6 @@
+import type { FleetThreadFailure } from '@tuturuuu/internal-api/mastermind-threads';
 import type { Tone } from '../components/tone';
 import type {
-  ProjectGroup,
   ProjectsSnapshot,
   StateCounts,
   ThreadErrorCode,
@@ -56,7 +56,7 @@ export function visibleGroups(
   snapshot: ProjectsSnapshot,
   filter: StateFilter
 ): GroupView[] {
-  const groups: GroupView[] = snapshot.projects.map((p: ProjectGroup) => ({
+  const groups: GroupView[] = snapshot.projects.map((p) => ({
     id: p.projectId,
     label: p.project,
     counts: p.counts,
@@ -75,7 +75,11 @@ export function visibleGroups(
 
 /** A thread route's refusal, thrown so a query keeps its last good data. */
 export class ThreadError extends Error {
-  constructor(readonly code: ThreadErrorCode) {
+  constructor(
+    readonly code: ThreadErrorCode,
+    /** The signed-in owner, when the server knew it despite the refusal. */
+    readonly ownerId?: string
+  ) {
     super(code);
   }
 }
@@ -92,4 +96,28 @@ export function t3ThreadLink(
   return environmentId
     ? `t3-thread://v2/${encodeURIComponent(environmentId)}/${threadId}`
     : undefined;
+}
+
+/** The page's closed codes for the client's refusals. */
+export function threadErrorCode(error: FleetThreadFailure): ThreadErrorCode {
+  switch (error) {
+    case 'machine_offline':
+    case 'timeout':
+    case 'mfa_required':
+    case 'rate_limited':
+    case 'unsupported_for_linked_machine':
+    case 'not_found':
+      return error;
+    case 'unknown_thread':
+      return 'not_found';
+    case 'unauthorized':
+    case 'forbidden':
+      return 'denied';
+    case 'invalid_query':
+    case 'invalid_reply':
+    case 'invalid_response':
+      return 'invalid';
+    default:
+      return 'unavailable';
+  }
 }

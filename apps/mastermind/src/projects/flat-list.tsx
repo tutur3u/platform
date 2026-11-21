@@ -7,7 +7,7 @@ import {
   ThreadErrorMessage,
 } from './list-states';
 import { type StateFilter, threadErrorOf } from './model';
-import { useThreadPages } from './queries';
+import { type ListCache, useThreadPages } from './queries';
 import { ThreadRow } from './thread-row';
 
 /**
@@ -16,6 +16,7 @@ import { ThreadRow } from './thread-row';
  * answers each page in several seconds, so its loading row says so.
  */
 export function FlatThreadList({
+  store,
   environmentId,
   machineLabel,
   q,
@@ -24,6 +25,7 @@ export function FlatThreadList({
   now,
   onSelect,
 }: {
+  store?: ListCache;
   environmentId?: string;
   machineLabel: string;
   q?: string;
@@ -33,9 +35,11 @@ export function FlatThreadList({
   onSelect: (threadId: string) => void;
 }) {
   const { t } = useI18n();
-  const pages = useThreadPages({ environmentId, q, state });
+  const pages = useThreadPages({ environmentId, q, state }, true, store);
   const rows = pages.data?.pages.flatMap((page) => page.threads) ?? [];
   const code = threadErrorOf(pages.error);
+  // A first page read from the browser cache while the machine is away.
+  const cachedAt = pages.data?.pages[0]?.cachedAt;
   const slow = environmentId
     ? t('projects.loadingSlow', { machine: machineLabel })
     : undefined;
@@ -69,7 +73,13 @@ export function FlatThreadList({
   const total = pages.data?.pages[0]?.total;
   return (
     <div className="space-y-0.5">
-      {code ? (
+      {cachedAt ? (
+        <StaleLine
+          code="machine_offline"
+          updatedAt={Date.parse(cachedAt)}
+          now={now}
+        />
+      ) : code ? (
         <StaleLine code={code} updatedAt={pages.dataUpdatedAt} now={now} />
       ) : null}
       {rows.map((row) => (

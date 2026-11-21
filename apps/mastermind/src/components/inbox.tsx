@@ -1,5 +1,6 @@
 import { Badge } from '@tuturuuu/ui/badge';
-import { ChevronDown, ChevronRight } from '@tuturuuu/icons';
+import { Link } from '@tanstack/react-router';
+import { ChevronDown, ChevronRight, Folder } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useRef, useState } from 'react';
 import type { FleetSnapshot } from '../fleet/contract';
@@ -25,7 +26,7 @@ export function Inbox({
   showFyi: boolean;
   interactive: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const lanes = inboxLanes(snapshot, useSnoozes(), now);
   const list = useRef<HTMLDivElement>(null);
   const [showSnoozed, setShowSnoozed] = useState(false);
@@ -74,7 +75,19 @@ export function Inbox({
     item.kind === 'login' ? item.request.decision.id : item.decision.id;
 
   return (
-    <Section id="inbox" title={t('nav.inbox')} note={t('inbox.note')}>
+    <Section
+      id="inbox"
+      title={t('nav.inbox')}
+      note={t('inbox.note')}
+      actions={
+        <Button asChild variant="outline" size="sm">
+          <Link to="/$locale/projects" params={{ locale }}>
+            <Folder />
+            {t('projects.allThreads')}
+          </Link>
+        </Button>
+      }
+    >
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">

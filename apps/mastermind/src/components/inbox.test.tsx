@@ -18,6 +18,12 @@ import { Inbox } from './inbox';
 import { LaneOutcomes } from './lane-outcomes';
 import { FreshnessBanner } from './page-states';
 
+// The Projects link needs a router; a plain anchor stands in for it.
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+}));
 vi.mock('../fleet/server', () => ({
   loadFleet: vi.fn(),
   answerFleetDecision: vi.fn(),
@@ -172,4 +178,11 @@ test('a queued answer survives the card moving into Snoozed', () => {
   ).toBe(card);
   expect(card?.textContent).toContain('Undo');
   act(() => setSnooze('roll-back', null));
+});
+
+test('links to every thread from the Inbox header', () => {
+  render(wrap(<Inbox snapshot={snapshot()} now={now} showFyi interactive />));
+  expect(
+    screen.getByRole('link', { name: 'All threads' }).getAttribute('href')
+  ).toBe('/$locale/projects');
 });

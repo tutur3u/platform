@@ -5,7 +5,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { ThreadCache } from '../fleet/thread-cache';
+import { threadListKey } from '../fleet/thread-cache';
+import { rememberCachedProject } from './cache-owner';
 import type {
+  ThreadErrorCode,
   ThreadMessages,
   ThreadPage,
   ThreadResult,
@@ -34,7 +38,8 @@ const SNAPSHOT = {
 export const THREADS_QUERY_ROOT = ['mastermind-threads'] as const;
 
 function unwrap<T>(result: ThreadResult<T>): T {
-  if (result.kind === 'error') throw new ThreadError(result.code);
+  if (result.kind === 'error')
+    throw new ThreadError(result.code, result.ownerId);
   return result.data;
 }
 
@@ -88,19 +93,87 @@ export async function scanPage(
   read: (cursor: number | undefined) => Promise<ThreadResult<ThreadPage>>
 ): Promise<ThreadPage> {
   const threads: ThreadRow[] = [];
+  let last: ThreadPage | undefined;
   let next: number | null | undefined = cursor;
-  let total = 0;
   for (let reads = 0; reads < MAX_SCAN_PAGES; reads++) {
-    const page: ThreadPage = unwrap(await read(next ?? undefined));
-    threads.push(...page.threads.filter((row) => inScope(scope, row)));
-    total = page.total;
-    next = page.nextCursor;
+    last = unwrap(await read(next ?? undefined));
+    threads.push(...last.threads.filter((row) => inScope(scope, row)));
+    next = last.nextCursor;
     if (next === null || threads.length >= PAGE_SIZE) break;
   }
-  return { threads, nextCursor: next ?? null, total };
+  // The loop runs at least once, so `last` holds the final page read.
+  return { ...(last as ThreadPage), threads, nextCursor: next ?? null };
 }
 
-export function useThreadPages(scope: ListScope, enabled = true) {
+/** Refusals after which a cached first page stands in for the live one. */
+const CACHE_FALLBACK: ReadonlySet<ThreadErrorCode> = new Set([
+  'machine_offline',
+  'timeout',
+  'unavailable',
+]);
+
+/**
+ * The browser cache of one owner's lists on one bridge machine. Searches
+ * are never cached.
+ */
+export interface ListCache {
+  cache: ThreadCache;
+  ownerId: string;
+  machineId: string;
+}
+
+function cacheKey(scope: ListScope, machineId: string) {
+  return threadListKey({
+    machineId,
+    environmentId: scope.environmentId,
+    projectId: scope.projectId,
+    state: scope.state === 'all' ? undefined : scope.state,
+  });
+}
+
+/**
+ * The first page of a list: saved to the cache when it reads, and read from
+ * the cache, marked with `cachedAt`, when the machine cannot answer.
+ */
+async function firstPage(
+  scope: ListScope,
+  read: () => Promise<ThreadPage>,
+  store?: ListCache
+): Promise<ThreadPage> {
+  const key = store && !scope.q ? cacheKey(scope, store.machineId) : undefined;
+  let page: ThreadPage;
+  try {
+    page = await read();
+  } catch (error) {
+    if (
+      key &&
+      store &&
+      error instanceof ThreadError &&
+      CACHE_FALLBACK.has(error.code)
+    ) {
+      const cached = await store.cache.read(key);
+      if (cached) return { ...cached.page, cachedAt: cached.savedAt };
+    }
+    throw error;
+  }
+  // Saving is best effort: a failure here never costs the page just read.
+  if (key && store) {
+    void store.cache.write(key, page);
+    try {
+      if (scope.projectId && !scope.environmentId)
+        rememberCachedProject(store.ownerId, scope.projectId);
+    } catch {
+      // The group stays cached; only the offline group list misses it.
+    }
+  }
+  return page;
+}
+
+export function useThreadPages(
+  scope: ListScope,
+  enabled = true,
+  store?: ListCache
+) {
   return useInfiniteQuery<
     ThreadPage,
     Error,
@@ -113,19 +186,22 @@ export function useThreadPages(scope: ListScope, enabled = true) {
     queryKey: [...THREADS_QUERY_ROOT, 'list', scope],
     initialPageParam: undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
-    queryFn: ({ pageParam }) =>
-      scanPage(scope, pageParam, (cursor) =>
-        threadPageFn({
-          data: {
-            environmentId: scope.environmentId,
-            projectId: scope.projectId,
-            q: scope.q || undefined,
-            state: scope.state === 'all' ? undefined : scope.state,
-            cursor,
-            limit: PAGE_SIZE,
-          },
-        })
-      ),
+    queryFn: ({ pageParam }) => {
+      const read = () =>
+        scanPage(scope, pageParam, (cursor) =>
+          threadPageFn({
+            data: {
+              environmentId: scope.environmentId,
+              projectId: scope.projectId,
+              q: scope.q || undefined,
+              state: scope.state === 'all' ? undefined : scope.state,
+              cursor,
+              limit: PAGE_SIZE,
+            },
+          })
+        );
+      return pageParam === undefined ? firstPage(scope, read, store) : read();
+    },
   });
 }
 

@@ -15,10 +15,11 @@ import {
   threadErrorOf,
   visibleGroups,
 } from './model';
-import { useThreadPages } from './queries';
+import { type ListCache, useThreadPages } from './queries';
 import { StateCountsLine, ThreadRow } from './thread-row';
 
 interface ListProps {
+  store?: ListCache;
   state: StateFilter;
   selected?: string;
   now: number;
@@ -27,7 +28,11 @@ interface ListProps {
 
 /** An open group pages its own threads, newest first, 50 at a time. */
 function GroupThreads({ group, ...props }: ListProps & { group: GroupView }) {
-  const pages = useThreadPages({ projectId: group.id, state: props.state });
+  const pages = useThreadPages(
+    { projectId: group.id, state: props.state },
+    true,
+    props.store
+  );
   const rows = pages.data?.pages.flatMap((page) => page.threads) ?? [];
   const code = threadErrorOf(pages.error);
   if (pages.isPending) return <LoadingRows />;
@@ -39,10 +44,18 @@ function GroupThreads({ group, ...props }: ListProps & { group: GroupView }) {
         onRetry={() => void pages.refetch()}
       />
     );
+  const cachedAt = pages.data?.pages[0]?.cachedAt;
   const shown =
     props.state === 'all' ? group.threadCount : group.counts[props.state];
   return (
     <>
+      {cachedAt ? (
+        <StaleLine
+          code="machine_offline"
+          updatedAt={Date.parse(cachedAt)}
+          now={props.now}
+        />
+      ) : null}
       {rows.map((row) => (
         <ThreadRow
           key={row.threadId}

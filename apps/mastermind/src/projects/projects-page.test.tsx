@@ -25,7 +25,35 @@ const api = vi.hoisted(() => ({
   replyReceiptFn: vi.fn(),
 }));
 vi.mock('./server', () => api);
-vi.mock('../fleet/owner-live', () => ({ subscribeOwnerLive: () => () => {} }));
+const live = vi.hoisted(() => ({
+  listeners: new Set<(frame: unknown) => void>(),
+}));
+vi.mock('../fleet/owner-live', () => ({
+  subscribeOwnerLive: (listener: (frame: unknown) => void) => {
+    live.listeners.add(listener);
+    return () => live.listeners.delete(listener);
+  },
+}));
+// The browser cache in memory: one map per test run.
+const cached = vi.hoisted(
+  () => new Map<string, { page: unknown; savedAt: string }>()
+);
+vi.mock('../fleet/thread-cache', () => ({
+  THREAD_CACHE_LIMITS: { lists: 6, threads: 50, maxBytes: 1048576 },
+  threadListKey: (list: Record<string, string | undefined>) =>
+    [
+      list.machineId,
+      list.environmentId ?? '',
+      list.projectId ?? '',
+      list.state ?? '',
+    ].join('|'),
+  createThreadCache: () => ({
+    read: async (key: string) => cached.get(key) ?? null,
+    write: async (key: string, page: unknown) =>
+      void cached.set(key, { page, savedAt: '2026-11-22T00:00:00Z' }),
+    clear: async () => cached.clear(),
+  }),
+}));
 vi.mock('../components/shell', () => ({
   Shell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   PageHeader: ({ title }: { title: ReactNode }) => <h1>{title}</h1>,
@@ -34,10 +62,13 @@ vi.mock('../components/shell', () => ({
 
 type Input = { data: Record<string, never> };
 function wire() {
-  api.threadMachinesFn.mockImplementation(() => fixture.machines('m'));
-  api.threadProjectsFn.mockImplementation(({ data }: Input) =>
-    fixture.projects('m', (data as { environmentId?: string }).environmentId)
-  );
+  api.threadMachinesFn.mockImplementation(async () => {
+    const result = await fixture.machines('m');
+    return result.kind === 'ok'
+      ? { ...result, data: { ...result.data, ownerId: 'o' } }
+      : result;
+  });
+  api.threadProjectsFn.mockImplementation(() => fixture.projects('m'));
   api.threadPageFn.mockImplementation(({ data }: Input) =>
     fixture.threads('m', data)
   );
@@ -68,6 +99,8 @@ function show(search: ProjectsSearch = {}, onSearch = vi.fn()) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  cached.clear();
+  localStorage.clear();
   wire();
 });
 afterEach(cleanup);
@@ -172,8 +205,9 @@ describe('ProjectsPage', () => {
 
   it('asks for a fresh sign-in when sending needs MFA', async () => {
     api.threadReplyFn.mockResolvedValue({
-      kind: 'error',
-      code: 'mfa_required',
+      ok: false,
+      error: 'mfa_required',
+      status: 401,
     });
     show({ thread: 'thread:tuturuuu-0' });
     const box = await screen.findByRole('textbox', {
@@ -213,5 +247,144 @@ describe('ProjectsPage narrow layout', () => {
       .flatMap((p) => p.threads)
       .find((r) => r.threadId === 'thread:tuturuuu-1');
     expect(row?.seenItemCount).toBe(20);
+  });
+});
+
+describe('ProjectsPage cache', () => {
+  it('shows the cached list with its age when the linked machine goes offline', async () => {
+    const first = show({ machine: 'env-studio' });
+    await screen.findByText('tuturuuu thread 1');
+    cleanup();
+    first.client.clear();
+    api.threadPageFn.mockResolvedValue({
+      kind: 'error',
+      code: 'machine_offline',
+    });
+    show({ machine: 'env-studio' });
+    expect(await screen.findByText(/Showing the list from/)).toBeTruthy();
+    expect(screen.getByText('tuturuuu thread 1')).toBeTruthy();
+  });
+});
+
+describe('ProjectsPage held replies', () => {
+  it('keeps reading a held reply after Write another', async () => {
+    const key = '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c';
+    const held = {
+      id: key,
+      machineId: 'm',
+      threadId: 'thread:tuturuuu-0',
+      state: 'sent',
+      createdAt: '2026-11-22T00:00:00Z',
+    };
+    // Web names a reply by its idempotency key.
+    let sentKey = key;
+    api.threadReplyFn.mockImplementation(
+      async ({ data }: { data: { idempotencyKey: string } }) => {
+        sentKey = data.idempotencyKey;
+        return { ok: true, data: { ...held, id: sentKey } };
+      }
+    );
+    api.replyReceiptFn.mockImplementation(async () => ({
+      ok: true,
+      data: { ...held, id: sentKey, state: 'delivered', delivery: 'steered' },
+    }));
+    show({ thread: 'thread:tuturuuu-0' });
+    const box = await screen.findByRole('textbox', {
+      name: /Reply to this thread/,
+    });
+    fireEvent.change(box, { target: { value: 'Held' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Write another' })
+    );
+    for (const listener of live.listeners)
+      listener({ t: 'receipt', receipt: { id: sentKey } });
+    expect(
+      await screen.findByText('Steered into the running turn')
+    ).toBeTruthy();
+    expect(api.threadReplyFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ProjectsPage cache owner', () => {
+  const offline = () => {
+    api.threadMachinesFn.mockResolvedValue({
+      kind: 'error',
+      code: 'machine_offline',
+      ownerId: 'bob',
+    });
+    api.threadProjectsFn.mockResolvedValue({
+      kind: 'error',
+      code: 'machine_offline',
+    });
+    api.threadPageFn.mockResolvedValue({
+      kind: 'error',
+      code: 'machine_offline',
+    });
+  };
+
+  it("never opens another owner's cached lists", async () => {
+    localStorage.setItem(
+      'mastermind-projects:last-context',
+      JSON.stringify({
+        ownerId: 'alice',
+        machineId: 'fixture',
+        projectIds: ['tuturuuu'],
+      })
+    );
+    cached.set('fixture|||', {
+      page: { machineId: 'fixture', threads: [], nextCursor: null, total: 0 },
+      savedAt: '2026-11-22T00:00:00Z',
+    });
+    offline();
+    show();
+    await screen.findByText('The machine is offline.');
+    expect(localStorage.getItem('mastermind-projects:last-context')).toBeNull();
+    expect(cached.size).toBe(0);
+  });
+
+  it('shows the cached project groups of the same owner on a cold offline open', async () => {
+    const first = show();
+    await screen.findByText('tuturuuu thread 1');
+    cleanup();
+    first.client.clear();
+    offline();
+    api.threadMachinesFn.mockResolvedValue({
+      kind: 'error',
+      code: 'machine_offline',
+      ownerId: 'o',
+    });
+    show();
+    expect(await screen.findByText(/Showing the list from/)).toBeTruthy();
+    expect(screen.getByText('tuturuuu thread 1')).toBeTruthy();
+  });
+});
+
+describe('ProjectsPage reply keys', () => {
+  it('starts one reply for a double click and reuses a resendable reply by text', async () => {
+    api.threadReplyFn.mockResolvedValue({
+      ok: false,
+      error: 'timeout',
+      status: 504,
+    });
+    show({ thread: 'thread:tuturuuu-0' });
+    const box = await screen.findByRole('textbox', {
+      name: /Reply to this thread/,
+    });
+    fireEvent.change(box, { target: { value: 'Ship it' } });
+    const send = screen.getByRole('button', { name: 'Send' });
+    fireEvent.click(send);
+    fireEvent.click(send);
+    await waitFor(() => expect(api.threadReplyFn).toHaveBeenCalledTimes(1));
+    const firstKey = api.threadReplyFn.mock.calls[0]?.[0].data.idempotencyKey;
+    fireEvent.change(box, { target: { value: 'Other' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(api.threadReplyFn).toHaveBeenCalledTimes(2));
+    fireEvent.change(box, { target: { value: 'Ship it' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(api.threadReplyFn).toHaveBeenCalledTimes(3));
+    expect(api.threadReplyFn.mock.calls[2]?.[0].data.idempotencyKey).toBe(
+      firstKey
+    );
   });
 });
