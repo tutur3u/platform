@@ -78,6 +78,9 @@ Publishing commits the entry status, delivery event, and revision proof in one
 database transaction. A retry reuses a complete receipt for the current
 revision. If an older publish left the entry without its event or proof, the
 retry records a complete revision for the same entry.
+Each publication event stores the project's delivery snapshot, including media
+references. The event payload is limited to 256 KiB of stored JSON text. If
+the snapshot exceeds that limit, the publication transaction rolls back.
 Only the server writes media publication proofs. Older event logs do not
 establish a media revision. Re-publish older entries or edited entries to
 record the verified media references for their current revision. Publication verifies
