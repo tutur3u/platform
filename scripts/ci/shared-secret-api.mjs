@@ -14,7 +14,7 @@ const SUPABASE_API = 'https://api.supabase.com';
 const TIMEOUT_MS = 30_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Output of `openssl rand -base64 48` and Supabase API keys.
-const SECRET_VALUE = /^[A-Za-z0-9+/=._-]{32,512}$/;
+export const SECRET_VALUE = /^[A-Za-z0-9+/=._-]{32,512}$/;
 
 export function assertSecretValue(value) {
   assert.ok(

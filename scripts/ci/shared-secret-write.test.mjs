@@ -2,6 +2,7 @@
 // (shared-secret-write.yaml, supabase-family-key.yaml). The behavior of their
 // operator scripts is covered by shared-secret-scripts.test.mjs.
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -14,7 +15,7 @@ const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '../..');
 const workflowsDir = join(repoRoot, '.github/workflows');
-const FLOOR = '018eecf2fff936563b5775f711fbfc5606e361219';
+const FLOOR = '018eecf2fff936563b5775f711bfc5606e361219';
 const ACCOUNT = 'e8912e2867beecc673d171907bf09649';
 
 const WORKFLOWS = {
@@ -230,4 +231,27 @@ test('supabase-family-key: dispatch revokes under the same job protections', () 
     /revoke\)\s+unset CLOUDFLARE_API_TOKEN\s+node scripts\/ci\/supabase-family-key\.mjs revoke\s+exit\s+;;/
   );
   assert.match(run, /\*\).*exit 1/);
+});
+
+test('every tooling floor is a full commit SHA that resolves', (t) => {
+  const floors = [];
+  for (const file of readdirSync(workflowsDir).filter((name) =>
+    /^(?:shared-secret-[a-z]+|supabase-family-key)\.ya?ml$/.test(name)
+  )) {
+    const text = readFileSync(join(workflowsDir, file), 'utf8');
+    for (const [, sha] of text.matchAll(/merge-base --is-ancestor (\S+) HEAD/g))
+      floors.push({ file, sha });
+  }
+  assert.ok(floors.length >= 4, 'expected a floor in each secret workflow');
+  for (const { file, sha } of floors) {
+    assert.match(sha, /^[0-9a-f]{40}$/, `${file}: floor is not a full SHA`);
+    assert.equal(sha, FLOOR, `${file}: floor differs from the reviewed one`);
+  }
+  const git = (...args) =>
+    spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  if (git('cat-file', '-e', `${FLOOR}^{commit}`).status === 0) return;
+  // A shallow CI checkout may lack the floor commit; a full clone must have it.
+  if (git('rev-parse', '--is-shallow-repository').stdout.trim() === 'true')
+    return t.skip('shallow clone: floor commit not fetched');
+  assert.fail(`floor ${FLOOR} is not a commit in this repository`);
 });
