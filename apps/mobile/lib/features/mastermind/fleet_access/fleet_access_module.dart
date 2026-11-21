@@ -1,13 +1,12 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
-import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_page.dart';
+import 'package:mobile/features/mastermind/mastermind_module.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The Apps-hub entry for Fleet access, separate from the owner-only
@@ -30,35 +29,35 @@ const fleetAccessModule = AppModule(
       route: Routes.mastermind,
       icon: LucideIcons.house,
       labelBuilder: _labelHome,
-      isVisible: _mastermindOwner,
+      isVisible: mastermindOwnerVisible,
     ),
     MiniAppNavItem(
       id: 'mastermind_inbox',
       route: Routes.mastermindInbox,
       icon: LucideIcons.inbox,
       labelBuilder: _labelInbox,
-      isVisible: _mastermindOwner,
+      isVisible: mastermindOwnerVisible,
     ),
     MiniAppNavItem(
       id: 'mastermind_work',
       route: Routes.mastermindWork,
       icon: LucideIcons.briefcase,
       labelBuilder: _labelWork,
-      isVisible: _mastermindOwner,
+      isVisible: mastermindOwnerVisible,
     ),
     MiniAppNavItem(
       id: 'mastermind_ship',
       route: Routes.mastermindShip,
       icon: LucideIcons.rocket,
       labelBuilder: _labelShip,
-      isVisible: _mastermindOwner,
+      isVisible: mastermindOwnerVisible,
     ),
     MiniAppNavItem(
       id: 'mastermind_insights',
       route: Routes.mastermindInsights,
       icon: LucideIcons.chartLine,
       labelBuilder: _labelInsights,
-      isVisible: _mastermindOwner,
+      isVisible: mastermindOwnerVisible,
     ),
   ],
 );
@@ -75,10 +74,3 @@ Widget _page(BuildContext context) => FleetAccessPage(
     GoRouterState.of(context).uri.queryParameters['view'],
   ),
 );
-
-bool _mastermindOwner(BuildContext context) =>
-    context.select<MastermindAccessCubit?, bool>(
-      (cubit) =>
-          cubit?.state.status == MastermindAccessStatus.loaded &&
-          cubit?.state.visible == true,
-    );

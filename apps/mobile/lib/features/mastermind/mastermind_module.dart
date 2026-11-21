@@ -17,7 +17,7 @@ const mastermindModule = AppModule(
   icon: LucideIcons.brainCircuit,
   labelBuilder: _label,
   pageBuilder: _page,
-  isVisible: _visible,
+  isVisible: mastermindOwnerVisible,
   miniAppNavItems: [
     MiniAppNavItem(
       id: 'mastermind_home',
@@ -62,7 +62,7 @@ String _labelShip(AppLocalizations l10n) => l10n.mastermindTabShip;
 String _labelInsights(AppLocalizations l10n) => l10n.mastermindTabInsights;
 Widget _page(BuildContext context) => const FleetTodayPage();
 
-bool _visible(BuildContext context) =>
+bool mastermindOwnerVisible(BuildContext context) =>
     context.select<MastermindAccessCubit?, bool>(
       (cubit) =>
           cubit?.state.status == MastermindAccessStatus.loaded &&
