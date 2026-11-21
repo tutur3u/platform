@@ -204,15 +204,17 @@ async function roomModel(code: string, locale: string, url: URL) {
 }
 
 async function workspaceModel(id: string) {
-  // The invitation check, the workspace lookup and the member's profile read
-  // are independent network calls; running them in sequence added all three
-  // latencies to TTFB. The invitation still decides first.
-  const invitationPromise = timeMeetPhase(
-    'invitation',
-    headers().then((requestHeaders) =>
-      getPendingWorkspaceInvitation(id, requestHeaders)
-    )
-  );
+  // Personal workspaces cannot receive invitations. For other workspaces,
+  // start the invitation check alongside the independent reads.
+  const invitationPromise =
+    id === 'personal'
+      ? Promise.resolve(null)
+      : timeMeetPhase(
+          'invitation',
+          headers().then((requestHeaders) =>
+            getPendingWorkspaceInvitation(id, requestHeaders)
+          )
+        );
   const userPromise = timeMeetPhase(
     'profile',
     getSatelliteCurrentUser('meet').catch(() => null)

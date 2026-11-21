@@ -346,6 +346,17 @@ describe('workspace pages', () => {
     expect(mocks.invitation).toHaveBeenCalledTimes(1);
   });
 
+  it('renders personal meetings without an invitation lookup', async () => {
+    signIn('member');
+    mocks.invitation.mockRejectedValue(new Error('Invite service unavailable'));
+
+    const model = await loadPageModel('/personal/meetings');
+    expect(model).toMatchObject({ kind: 'meetings' });
+    expect(mocks.workspaceContext).toHaveBeenCalledWith('personal');
+    expect(mocks.currentUser).toHaveBeenCalledWith('meet');
+    expect(mocks.invitation).not.toHaveBeenCalled();
+  });
+
   it('renders the authorized list shell without loading unused schedule data', async () => {
     signIn('member');
     mocks.from.mockImplementation(() => {

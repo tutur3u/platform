@@ -243,6 +243,9 @@ serialize the full schedule. This keeps unused history, Calendar, timezone and
 preference reads out of the document's critical path. The loader regression in
 `page-model.server.test.ts` verifies that unavailable schedule storage cannot
 block the authorized shell and that workspace and hosting checks still run.
+The personal meetings route skips the invitation lookup because personal
+workspaces cannot receive invitations. Team workspace routes still check pending
+invitations before rendering their shell.
 
 Workspace plans load their view on demand. Meetings do not wait for the plans
 form and its dependencies to download. When profiling, record a first visit and
