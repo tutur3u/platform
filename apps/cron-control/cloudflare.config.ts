@@ -44,7 +44,7 @@ export default defineConfig({
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention,ai-studio-retention,ai-credit-unbilled-settlement,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates'
+        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates'
       ),
       // Cron Control is web's only scheduler (apps/web/vercel.json has no
       // crons). 'active' dispatches the five web-* jobs; 'off' stops only
