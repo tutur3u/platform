@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { PublicationDatabaseError } from '@/lib/external-projects/publication';
 import { publishWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const publishSchema = z.object({
@@ -43,7 +44,16 @@ export async function POST(
       );
     }
 
-    console.error('Failed to publish workspace external project entry', error);
+    console.error(
+      'Failed to publish workspace external project entry',
+      error instanceof PublicationDatabaseError
+        ? {
+            operation: error.operation,
+            code: error.code,
+            message: error.message,
+          }
+        : error
+    );
     return NextResponse.json(
       { error: 'Failed to publish workspace external project entry' },
       { status: 500 }

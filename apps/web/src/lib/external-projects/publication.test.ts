@@ -3,10 +3,12 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  assetPublicationProofId,
   isPublishedAsset,
   loadPublishedAssetManifests,
   publicationEventId,
 } from './published-assets';
+import { PublicationDatabaseError } from './publication';
 import {
   bulkUpdateWorkspaceExternalProjectEntries,
   publishWorkspaceExternalProjectEntry,
@@ -46,7 +48,9 @@ function database() {
     id: entryId,
     ws_id: workspaceId,
     collection_id: 'games',
+    created_at: older,
     profile_data: {},
+    sort_order: 0,
     status: 'draft',
     updated_at: older,
     published_at: null as string | null,
@@ -79,7 +83,10 @@ function database() {
   };
   const staged = { ...webgl, id: 'staged', metadata: {}, asset_type: 'image' };
   const tableRows = new Map<string, Row[]>([
-    ['workspace_external_project_entries', [entry]],
+    [
+      'workspace_external_project_entries',
+      [entry, { ...entry, id: 'unrelated-draft' }],
+    ],
     [
       'workspace_external_project_collections',
       [{ id: 'games', ws_id: workspaceId, slug: 'games', config: {} }],
@@ -95,6 +102,38 @@ function database() {
     if (!events.some(({ id }) => id === event.id)) events.push(event);
     return { error: null };
   });
+  const updateEntry = vi.fn((values: Row) => values);
+  const rpc = vi.fn((_name: string, args: Row) => ({
+    async single(): Promise<{
+      data: Row | null;
+      error: { message: string; code: string } | null;
+    }> {
+      Object.assign(entry, {
+        status: 'published',
+        published_at: args.p_published_at,
+        updated_at: '2026-11-21T20:00:01.123456+00:00',
+      });
+      events.push({
+        id: args.p_event_id,
+        ws_id: workspaceId,
+        entry_id: entry.id,
+        canonical_external_project_id: canonicalProjectId,
+        event_kind: 'publish',
+        visibility_scope: 'public',
+        payload: args.p_payload,
+      });
+      proofs.push({
+        id: assetPublicationProofId(workspaceId, canonicalProjectId, entry),
+        ws_id: workspaceId,
+        canonical_external_project_id: canonicalProjectId,
+        entry_id: entry.id,
+        published_at: entry.published_at,
+        entry_updated_at: entry.updated_at,
+        asset_revisions: args.p_asset_revisions,
+      });
+      return { data: { ...entry }, error: null };
+    },
+  }));
   const from = vi.fn((table: string) => {
     const rows = tableRows.get(table) ?? [];
     const conditions: ((row: Row) => boolean)[] = [];
@@ -117,7 +156,7 @@ function database() {
         return this;
       },
       update(values: Row) {
-        patch = values;
+        patch = updateEntry(values);
         return this;
       },
       async single() {
@@ -149,21 +188,36 @@ function database() {
     };
   });
   return {
-    admin: { from, schema: () => ({ from }) } as unknown as TypedSupabaseClient,
+    admin: {
+      from,
+      rpc,
+      schema: () => ({ from }),
+    } as unknown as TypedSupabaseClient,
     proofs,
     entry,
     events,
     writeEvent,
     webgl,
     staged,
+    rpc,
+    updateEntry,
   };
 }
+
+const input = {
+  actorId: 'editor',
+  binding,
+  entryId,
+  workspaceId,
+  visibilityScope: 'public',
+};
 
 describe('CMS publication settlement', () => {
   beforeEach(() => invalidate.mockReset().mockResolvedValue(undefined));
 
   it('publishes an entry-level finalized WebGL package through bulk set-status', async () => {
-    const { admin, events, proofs, webgl, staged } = database();
+    const { admin, events, proofs, webgl, staged, rpc, updateEntry } =
+      database();
     const [entry] = await bulkUpdateWorkspaceExternalProjectEntries(
       {
         actorId: 'editor',
@@ -179,6 +233,15 @@ describe('CMS publication settlement', () => {
     );
 
     expect(entry?.status).toBe('published');
+    expect(rpc).toHaveBeenCalledExactlyOnceWith(
+      'publish_external_project_entry',
+      expect.objectContaining({
+        p_actor_id: 'editor',
+        p_entry_id: entryId,
+        p_expected_updated_at: older,
+      })
+    );
+    expect(updateEntry).not.toHaveBeenCalled();
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       event_kind: 'publish',
@@ -196,6 +259,15 @@ describe('CMS publication settlement', () => {
       },
     ]);
     expect(events[0]?.payload).not.toHaveProperty('publishedAssetManifest');
+    expect(events[0]?.payload).toMatchObject({
+      collections: [
+        {
+          entries: [
+            { id: entryId, status: 'published', assets: [{ id: webgl.id }] },
+          ],
+        },
+      ],
+    });
     const manifests = await loadPublishedAssetManifests(
       admin,
       workspaceId,
@@ -212,15 +284,90 @@ describe('CMS publication settlement', () => {
     ).toBe(false);
   });
 
+  it.each(['event', 'proof', 'both'] as const)(
+    'repairs an already-published entry missing %s once',
+    async (missing) => {
+      const { admin, entry, events, proofs, rpc, updateEntry } = database();
+      const publish = () =>
+        publishWorkspaceExternalProjectEntry(
+          { ...input, eventKind: 'publish' },
+          admin
+        );
+      await publish();
+      const staleDate = entry.published_at!;
+      const staleRevision = entry.updated_at;
+      if (missing !== 'proof') events.splice(0);
+      if (missing !== 'event') proofs.splice(0);
+      rpc.mockClear();
+
+      const repaired = await publish();
+      expect(repaired.id).toBe(entryId);
+      expect(Date.parse(repaired.published_at!)).toBeGreaterThan(
+        Date.parse(staleDate)
+      );
+      expect(rpc).toHaveBeenCalledExactlyOnceWith(
+        'publish_external_project_entry',
+        expect.objectContaining({
+          p_entry_id: entryId,
+          p_expected_updated_at: staleRevision,
+        })
+      );
+      expect(
+        events.filter(
+          ({ id }) =>
+            id ===
+            publicationEventId(
+              workspaceId,
+              canonicalProjectId,
+              entryId,
+              'publish',
+              repaired.published_at!
+            )
+        )
+      ).toHaveLength(1);
+      expect(
+        proofs.filter(
+          ({ id }) =>
+            id ===
+            assetPublicationProofId(workspaceId, canonicalProjectId, repaired)
+        )
+      ).toHaveLength(1);
+      expect(await publish()).toEqual(repaired);
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(updateEntry).not.toHaveBeenCalled();
+    }
+  );
+
+  it('preserves the draft when the atomic RPC refuses and retains safe diagnostics', async () => {
+    const { admin, entry, events, proofs, rpc, updateEntry } = database();
+    rpc.mockReturnValueOnce({
+      single: async () => ({
+        data: null,
+        error: {
+          code: 'PT409',
+          message: 'Entry changed before publication for "private-value"',
+        },
+      }),
+    });
+    const failure = publishWorkspaceExternalProjectEntry(
+      { ...input, eventKind: 'publish' },
+      admin
+    );
+    await expect(failure).rejects.toBeInstanceOf(PublicationDatabaseError);
+    await expect(failure).rejects.toMatchObject({
+      operation: 'atomic publish',
+      code: 'PT409',
+      message: 'Entry changed before publication for [redacted]',
+    });
+    expect(entry.status).toBe('draft');
+    expect(events).toEqual([]);
+    expect(proofs).toEqual([]);
+    expect(updateEntry).not.toHaveBeenCalled();
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+
   it('settles the same withdrawal after event and invalidation failures', async () => {
     const { admin, entry, events, writeEvent } = database();
-    const input = {
-      actorId: 'editor',
-      binding,
-      entryId,
-      workspaceId,
-      visibilityScope: 'public',
-    };
     await publishWorkspaceExternalProjectEntry(
       { ...input, eventKind: 'publish' },
       admin
@@ -232,7 +379,9 @@ describe('CMS publication settlement', () => {
       );
 
     writeEvent.mockRejectedValueOnce(new Error('event write failed'));
-    await expect(withdraw()).rejects.toThrow('event write failed');
+    await expect(withdraw()).rejects.toMatchObject({
+      message: 'event write failed',
+    });
     expect(entry.status).toBe('draft');
     expect(invalidate).toHaveBeenCalledTimes(2);
     const draftRevision = entry.updated_at;
@@ -245,10 +394,10 @@ describe('CMS publication settlement', () => {
     );
 
     invalidate.mockRejectedValueOnce(new Error('purge failed'));
-    await expect(withdraw()).rejects.toThrow('purge failed');
+    await expect(withdraw()).rejects.toMatchObject({ message: 'purge failed' });
     expect(events.filter(({ id }) => id === withdrawalId)).toHaveLength(1);
     expect((await withdraw()).updated_at).toBe(draftRevision);
-    expect(writeEvent).toHaveBeenCalledTimes(3);
+    expect(writeEvent).toHaveBeenCalledTimes(2);
     expect(invalidate).toHaveBeenCalledTimes(4);
   });
 });

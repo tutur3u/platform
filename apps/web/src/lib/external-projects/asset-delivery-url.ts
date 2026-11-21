@@ -1,4 +1,34 @@
-import type { ImageTransformOptions, Json } from '@tuturuuu/types';
+import type {
+  ExternalProjectAsset,
+  ImageTransformOptions,
+  Json,
+} from '@tuturuuu/types';
+
+export function projectDeliveryAsset(
+  workspaceId: string,
+  asset: ExternalProjectAsset,
+  published: boolean
+) {
+  const assetUrl = buildDeliveryAssetUrl(workspaceId, asset);
+  return {
+    alt_text: asset.alt_text,
+    asset_type: asset.asset_type,
+    assetUrl,
+    block_id: asset.block_id,
+    entry_id: asset.entry_id,
+    id: asset.id,
+    metadata: safeExternalProjectDeliveryMetadata(asset.metadata, assetUrl),
+    sort_order: asset.sort_order,
+    source_url: safeExternalProjectDeliverySourceUrl(
+      asset.source_url,
+      assetUrl
+    ),
+    storage_path: asset.storage_path,
+    updated_at: asset.updated_at,
+    published,
+    assetRevision: getExternalProjectAssetRevision(asset.updated_at),
+  };
+}
 
 export function buildDeliveryAssetUrl(
   workspaceId: string,

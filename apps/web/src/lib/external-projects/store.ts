@@ -1,6 +1,7 @@
 import {
   buildDeliveryAssetUrl,
   getExternalProjectAssetRevision,
+  projectDeliveryAsset,
 } from './asset-delivery-url';
 import {
   fieldDefinitionValues,
@@ -48,17 +49,16 @@ import type {
   YoolaExternalProjectLoreCapsuleLoadingItem,
   YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
-import {
-  safeExternalProjectDeliveryMetadata,
-  safeExternalProjectDeliverySourceUrl,
-} from './asset-delivery-url';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
 import { externalProjectAdapterFixtures } from './fixtures';
-import { recordEntryPublication } from './publication';
+import {
+  includePendingPublication,
+  recordEntryPublication,
+} from './publication';
 import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,
@@ -66,10 +66,11 @@ import {
 import { listWorkspaceExternalProjectRelationData } from './store-relations';
 
 import {
+  type AssetPublicationManifest,
+  captureAssetProofs,
   isPublishedAsset,
   loadPublishedAssetManifests,
   privateExternalProjectCollection,
-  captureAssetProofs,
 } from './published-assets';
 
 type AdminDb = TypedSupabaseClient;
@@ -2457,9 +2458,14 @@ export async function publishWorkspaceExternalProjectEntry(
     eventKind,
     visibilityScope,
     workspaceId,
-    readPayload: () =>
+    readPayload: (pending) =>
       buildWorkspaceExternalProjectDeliveryPayload(
-        { binding, includeDrafts: eventKind === 'preview', workspaceId },
+        {
+          binding,
+          includeDrafts: eventKind === 'preview',
+          workspaceId,
+          pending,
+        },
         admin
       ),
     async readManifest(entry) {
@@ -2878,10 +2884,15 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     binding,
     includeDrafts,
     workspaceId,
+    pending,
   }: {
     binding: WorkspaceExternalProjectBinding;
     includeDrafts: boolean;
     workspaceId: string;
+    pending?: {
+      entry: ExternalProjectEntry;
+      manifest: AssetPublicationManifest;
+    };
   },
   db?: AdminDb
 ): Promise<ExternalProjectDeliveryPayload> {
@@ -2907,6 +2918,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     { includeDrafts },
     admin
   );
+  if (pending) includePendingPublication(entries, pending.entry);
   const entryIds = entries.map((entry) => entry.id);
 
   const [blocks, assets, relationData] = await Promise.all([
@@ -2933,8 +2945,11 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
         admin,
         workspaceId,
         binding.canonical_id,
-        deliveryEntries.filter((entry) => assetOwners.has(entry.id))
+        deliveryEntries.filter(
+          (entry) => assetOwners.has(entry.id) && entry.id !== pending?.entry.id
+        )
       );
+  if (pending) manifests.set(pending.entry.id, pending.manifest);
   const visibleAssets = includeDrafts
     ? assets
     : assets.filter((asset) => isPublishedAsset(manifests, asset));
@@ -2953,27 +2968,9 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
         ...entry,
         assets: visibleAssets
           .filter((asset) => asset.entry_id === entry.id)
-          .map((asset) => ({
-            alt_text: asset.alt_text,
-            asset_type: asset.asset_type,
-            assetUrl: buildDeliveryAssetUrl(workspaceId, asset),
-            block_id: asset.block_id,
-            entry_id: asset.entry_id,
-            id: asset.id,
-            metadata: safeExternalProjectDeliveryMetadata(
-              asset.metadata,
-              buildDeliveryAssetUrl(workspaceId, asset)
-            ),
-            sort_order: asset.sort_order,
-            source_url: safeExternalProjectDeliverySourceUrl(
-              asset.source_url,
-              buildDeliveryAssetUrl(workspaceId, asset)
-            ),
-            storage_path: asset.storage_path,
-            updated_at: asset.updated_at,
-            published: !includeDrafts,
-            assetRevision: getExternalProjectAssetRevision(asset.updated_at),
-          })),
+          .map((asset) =>
+            projectDeliveryAsset(workspaceId, asset, !includeDrafts)
+          ),
         blocks: blocks.filter((block) => block.entry_id === entry.id),
         relations: publicRelations
           .filter((relation) => relation.from_entry_id === entry.id)
