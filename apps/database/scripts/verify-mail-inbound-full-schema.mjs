@@ -27,7 +27,7 @@ import {
 export const sourceSha = 'b06aef6987eb8272dd260c97b7e12b335aee025b';
 export const sourceTree = '3f7c6bc2cb3cf1d33ff2d005ff2ec2239ec5e325';
 export const fixturePath =
-  'apps/database/supabase/tests/mail-inbound-full-schema.sql';
+  'apps/database/supabase/fixtures/mail-inbound/mail-inbound-full-schema.sql';
 export const assertionCount = 40;
 export const namespace = '62550000-0000-4000-8000-';
 const projectLabel = 'com.supabase.cli.project';

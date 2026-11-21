@@ -88,7 +88,10 @@ const snapshot = () => ({
   ],
 });
 const fixtureSql = readFileSync(
-  new URL('../supabase/tests/mail-inbound-full-schema.sql', import.meta.url),
+  new URL(
+    '../supabase/fixtures/mail-inbound/mail-inbound-full-schema.sql',
+    import.meta.url
+  ),
   'utf8'
 );
 

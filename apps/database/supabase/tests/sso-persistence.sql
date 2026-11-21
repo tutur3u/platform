@@ -350,7 +350,9 @@ SELECT ok((SELECT bool_and(r.rolsuper OR r.rolbypassrls) FROM pg_proc p
  WHERE n.nspname IN ('public','private') AND p.proname LIKE 'sso_%' AND p.prosecdef),
  'definer owners bypass forced RLS without permissive policies');
 CREATE ROLE sso_test_owner NOLOGIN NOSUPERUSER NOBYPASSRLS;
-GRANT USAGE ON SCHEMA private, extensions TO sso_test_owner;
+GRANT sso_test_owner TO CURRENT_USER WITH INHERIT TRUE, SET TRUE;
+GRANT USAGE, CREATE ON SCHEMA private TO sso_test_owner;
+GRANT USAGE ON SCHEMA extensions TO sso_test_owner;
 GRANT EXECUTE ON FUNCTION private.sso_valid_acs(text[]), private.sso_valid_domains(text[]) TO sso_test_owner;
 CREATE TEMP TABLE original_owners AS SELECT c.relname, r.rolname FROM pg_class c
  JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_roles r ON r.oid=c.relowner
@@ -361,6 +363,7 @@ DO $$DECLARE t record; BEGIN
    EXECUTE format('GRANT ALL ON TABLE private.%I TO %I',t.relname,t.rolname);
  END LOOP;
 END$$;
+REVOKE CREATE ON SCHEMA private FROM sso_test_owner;
 SET LOCAL ROLE sso_test_owner;
 SELECT is((SELECT count(*)::integer FROM private.sso_clients),0,'forced RLS hides clients from non-bypass owner');
 SELECT is((SELECT count(*)::integer FROM private.sso_saml_clients),0,'forced RLS hides saml_clients from non-bypass owner');

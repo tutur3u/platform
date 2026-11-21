@@ -78,6 +78,11 @@ Run the bounded SQL fixture through the normal resource queue:
 ttr resources run -- bun apps/database/scripts/mail-inbound-notification-fixture.mjs
 ```
 
+The reduced migration-replay fixture and the pinned full-schema fixture live in
+`apps/database/supabase/fixtures/mail-inbound/`. Each runs through its dedicated
+controller to supply its schema and transport inputs. The general pgTAP suite
+runs the retained-schema Mail push and snooze fixtures.
+
 The fixture applies the actual legacy Mail migrations and new admission migration
 in PGlite with pgTAP. The schema, notification preference lookup and `pg_net`
 transport are synthetic scaffolds. Assertions cover receipt reconciliation,

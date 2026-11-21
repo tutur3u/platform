@@ -46,7 +46,9 @@ try {
     );
   }
   const results = await db.exec(
-    await sql('supabase/tests/mail-inbound-notification-admission.sql')
+    await sql(
+      'supabase/fixtures/mail-inbound/mail-inbound-notification-admission.sql'
+    )
   );
   const lines = results
     .flatMap((result) => result.rows.flatMap((row) => Object.values(row)))
