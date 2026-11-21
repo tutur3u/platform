@@ -17,6 +17,11 @@ import {
   createBindingGuardTransport,
   createHttpGuardTransport,
 } from './client';
+import {
+  createGuardBreakerState,
+  type GuardBreakerState,
+  withGuardBreaker,
+} from './breaker';
 import { isStrongGuardSecret, resolveGuardOrigin } from './crypto';
 import { ABUSE_GUARD_FAMILIES, type AbuseGuardFamily } from './protocol';
 
@@ -104,7 +109,12 @@ type RuntimeState = {
   override: RuntimeOverride | null;
   /** Bumped on every change so each bundled copy drops its cached clients. */
   generation: number;
+  /** Circuit breakers keyed by backend target (`binding`, or the HTTP origin). */
+  breakers?: Map<string, GuardBreakerState>;
 };
+
+/** Bound on distinct breaker targets per isolate. */
+const MAX_BREAKER_TARGETS = 8;
 
 /**
  * One override per isolate, shared by every bundled copy of this module. A
@@ -124,6 +134,19 @@ function runtimeState(): RuntimeState {
     holder[RUNTIME_STATE_KEY] = state;
   }
   return state;
+}
+
+/** The isolate-wide breaker for one backend target, shared by every copy. */
+function breakerFor(target: string): GuardBreakerState {
+  const state = runtimeState();
+  state.breakers ??= new Map();
+  let breaker = state.breakers.get(target);
+  if (!breaker) {
+    if (state.breakers.size >= MAX_BREAKER_TARGETS) state.breakers.clear();
+    breaker = createGuardBreakerState();
+    state.breakers.set(target, breaker);
+  }
+  return breaker;
 }
 
 const clientCache = new Map<string, AbuseGuardClient>();
@@ -149,6 +172,8 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
   }
   state.input = input;
   state.generation += 1;
+  // A new binding is a new connection; do not carry an open circuit over.
+  state.breakers?.delete('binding');
   if (!input) {
     state.override = null;
     return;
@@ -159,9 +184,13 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
     usable: pepper
       ? {
           transport: (family) =>
-            createBindingGuardTransport(
-              input.binding,
-              parseAbuseGuardTimeout(input.timeoutMs, family)
+            withGuardBreaker(
+              createBindingGuardTransport(
+                input.binding,
+                parseAbuseGuardTimeout(input.timeoutMs, family)
+              ),
+              breakerFor('binding'),
+              'binding'
             ),
           pepper,
         }
@@ -255,7 +284,11 @@ export function selectAbuseGuard(
         createAbuseGuardClient({
           family,
           pepper,
-          transport: createHttpGuardTransport({ url, secret, timeoutMs }),
+          transport: withGuardBreaker(
+            createHttpGuardTransport({ url, secret, timeoutMs }),
+            breakerFor(`http:${url}`),
+            'http'
+          ),
         })
     ),
   };
