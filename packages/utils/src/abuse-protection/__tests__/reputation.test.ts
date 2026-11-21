@@ -117,6 +117,88 @@ describe('adaptive abuse reputation', () => {
     }
   );
 
+  describe('verified native client credential', () => {
+    const nativeMutation = (
+      overrides: Partial<Parameters<typeof resolveAbuseRiskDecision>[0]> = {}
+    ) =>
+      resolveAbuseRiskDecision({
+        authKind: 'session',
+        headers: {
+          authorization: 'Bearer session-token',
+          'user-agent': 'Dart/3.14 (dart:io)',
+        },
+        isRead: false,
+        method: 'POST',
+        route: '/api/v1/mastermind/fleet/decisions/d-1/answer',
+        userId: 'caller',
+        verifiedNativeClient: true,
+        ...overrides,
+      });
+    const noRecentChallenge = () =>
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+      });
+
+    it('clears the browser-shape heuristic for a native UA', async () => {
+      const decision = await nativeMutation();
+      expect(decision.tier).toBe('standard');
+      expect(decision.trustMultiplier).toBe(1);
+      expect(decision.reasons).toContain('verified_native_client');
+      expect(decision.reasons).not.toContain('suspicious_browser_mutation');
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it('keeps a plain bearer with the same native UA challenged', async () => {
+      noRecentChallenge();
+      const decision = await nativeMutation({ verifiedNativeClient: false });
+      expect(decision.tier).toBe('challenge_required');
+      expect(decision.reasons).toContain('suspicious_browser_mutation');
+    });
+
+    it.each([
+      'curl/8.7.1',
+      'python-requests/2.32',
+      'HeadlessChrome/136',
+      'Go-http-client/2.0',
+      '',
+    ])('keeps a scripted or malformed UA challenged: %j', async (ua) => {
+      noRecentChallenge();
+      const decision = await nativeMutation({
+        headers: { authorization: 'Bearer session-token', 'user-agent': ua },
+      });
+      expect(decision.tier).toBe('challenge_required');
+      expect(decision.reasons).not.toContain('verified_native_client');
+    });
+
+    it.each(['app-session', 'temp'] as const)(
+      'only applies to Supabase bearer sessions, not %s',
+      async (authKind) => {
+        noRecentChallenge();
+        const decision = await nativeMutation({ authKind });
+        expect(decision.tier).toBe('challenge_required');
+        expect(decision.reasons).not.toContain('verified_native_client');
+      }
+    );
+
+    it.each(['restricted', 'challenge_required'])(
+      'never overrides explicit server policy: %s',
+      async (tier) => {
+        mockRpc.mockResolvedValue({
+          data: [{ tier, trust_multiplier: 1, decision_source: 'override' }],
+          error: null,
+        });
+        const decision = await nativeMutation();
+        expect(decision.tier).toBe(tier);
+        expect(decision.reasons).not.toContain('verified_native_client');
+      }
+    );
+  });
+
   it('fails closed when challenge storage is unavailable', async () => {
     mockFrom.mockImplementation(() => {
       throw new Error('offline');

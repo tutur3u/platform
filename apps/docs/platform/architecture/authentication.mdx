@@ -146,6 +146,48 @@ Coverage: `apps/web/src/app/[locale]/(auth)/login/form-focused-sign-in.test.tsx`
 
 Browser sign-in uses the browser session flow. Raw access and refresh tokens are reserved for supported native-client authentication flows; browser requests to those native token flows are refused. Native-client compatibility and browser session behavior require separate verification.
 
+## Native mobile client credential
+
+Web's adaptive abuse check challenges any session mutation whose User-Agent
+is not browser-shaped (403 `ABUSE_CHALLENGE_REQUIRED`, a Turnstile step-up).
+The Flutter app sends `Dart/<version> (dart:io)`, so its mutations need a
+trust signal that a spoofed User-Agent cannot produce.
+
+- **Credential:** a server-signed app-coordination token with `origin_app:
+  mobile`, `target_app: platform` and exactly the scopes `mobile:client` plus
+  a SHA-256 binding to the Supabase `session_id`. It lasts seven days. It is
+  not an auth token: it never carries the app-session scope, so no route
+  accepts it as a bearer.
+- **Issuance:** the mobile password-login and verify-OTP responses include
+  `mobile_client: { token, expires_at }`. Both endpoints already refuse browser
+  requests and sit behind a Turnstile-gated sign-in. For any other session,
+  including OAuth, QR, existing installs and an expired credential, the app
+  calls `POST /api/v1/auth/mobile/client-credential`. That endpoint needs the
+  Supabase bearer and a fresh `captchaToken`, refuses browser requests, and is
+  rate limited to 10 requests per 10 minutes per user.
+- **Use:** the app sends it as `x-tuturuuu-mobile-client` next to
+  `Authorization: Bearer <supabase access token>`. `withSessionAuth` verifies
+  the signature and expiry, and checks that the token's user and session
+  binding match the bearer's `sub` and `session_id`. It then passes
+  `verifiedNativeClient` to `resolveAbuseRiskDecision`.
+- **Scope of trust:** a verified credential clears only the browser-shape
+  heuristic (`verified_native_client`), and only on the Supabase-bearer path.
+  It does not clear the heuristic for a scripted, crawler, automation or
+  missing User-Agent. A server `restricted` or `challenge_required` tier
+  always wins, as on the session-challenge-passed path. It adds no rate-limit
+  trust.
+- **Exceptions:** the fleet answer route keeps its owner-only `stepUpExempt`.
+  Browser-shaped User-Agents never reach this heuristic.
+- **Future hardening:** gate the mint endpoint on the existing App Attest or
+  Play Integrity flow (`NATIVE_INTEGRITY_MODE`) instead of Turnstile.
+
+Regression coverage: `apps/web/src/lib/api-auth-mobile-client.test.ts`
+(end-to-end through `withSessionAuth` with the real decision and step-up),
+`apps/web/src/lib/auth/mobile-client-credential.test.ts` (binding, expiry,
+foreign token shapes, mint endpoint) and
+`packages/utils/src/abuse-protection/__tests__/reputation.test.ts`
+(`verified native client credential`).
+
 ## Mobile App Lock
 
 App Lock is off by default and opt-in from Settings. While it is off, nothing

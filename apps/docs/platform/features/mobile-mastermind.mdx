@@ -231,7 +231,9 @@ product rules of the shell entry and every tab.
   to `withSessionAuth`: only a mutation the browser-shape heuristic would
   challenge consults it, a server reputation challenge always stands, only
   the fleet owner skips the challenge, and the per-user rate limit (30 per
-  minute) still applies. Other session mutations keep the challenge.
+  minute) still applies. Other native session mutations clear the heuristic
+  only with a verified
+  [native mobile client credential](/platform/architecture/authentication#native-mobile-client-credential).
 - **Payload rules:** every free-text field is scrubbed on Web before storage
   (URLs, emails, paths, IPs, UUIDs, token and key shapes, long opaque runs and
   invisible characters are removed) and length-capped; lane and machine labels

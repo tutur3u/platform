@@ -1,0 +1,162 @@
+import { createHash } from 'node:crypto';
+import {
+  createAppCoordinationToken,
+  verifyAppCoordinationToken,
+} from '@tuturuuu/utils/app-coordination-token';
+
+/**
+ * Server-signed native mobile client credential.
+ *
+ * Issued only by mobile sign-in endpoints that already refuse browser requests
+ * and require a Turnstile-gated login, or by the Turnstile-gated mint endpoint.
+ * It is NOT an auth token: it rides alongside the Supabase bearer in
+ * `x-tuturuuu-mobile-client`, is bound to that bearer's user and Supabase
+ * session, and only satisfies the browser-shape mutation heuristic. Server
+ * restrictions and explicit server challenges still win.
+ */
+export const MOBILE_CLIENT_HEADER = 'x-tuturuuu-mobile-client';
+export const MOBILE_CLIENT_ORIGIN_APP = 'mobile';
+export const MOBILE_CLIENT_TARGET_APP = 'platform';
+export const MOBILE_CLIENT_SCOPE = 'mobile:client';
+export const MOBILE_CLIENT_TTL_SECONDS = 7 * 24 * 60 * 60;
+const MOBILE_CLIENT_SESSION_SCOPE_PREFIX = 'mobile:sid:';
+const MAX_HEADER_LENGTH = 4096;
+
+type TokenOptions = { now?: Date; secret?: string };
+
+function sessionBindingScope(sessionId: string) {
+  const digest = createHash('sha256').update(sessionId).digest('base64url');
+  return `${MOBILE_CLIENT_SESSION_SCOPE_PREFIX}${digest}`;
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3 || !parts[1]) return null;
+  try {
+    const payload: unknown = JSON.parse(
+      Buffer.from(parts[1], 'base64url').toString('utf8')
+    );
+    return payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads `session_id` from a Supabase access token whose subject is `userId`.
+ * Callers must pass a token Supabase already verified for this request (the
+ * request bearer after session resolution, or a session Supabase just issued).
+ */
+export function readSupabaseSessionId(
+  accessToken: string | null | undefined,
+  userId: string
+) {
+  if (!accessToken) return null;
+  const payload = decodeJwtPayload(accessToken);
+  if (!payload || payload.sub !== userId) return null;
+  const sessionId = payload.session_id;
+  return typeof sessionId === 'string' && sessionId.length > 0
+    ? sessionId
+    : null;
+}
+
+export function getRequestBearerToken(headers: Pick<Headers, 'get'>) {
+  const authorization = headers.get('authorization');
+  return authorization?.startsWith('Bearer ')
+    ? authorization.slice(7).trim() || null
+    : null;
+}
+
+export function createMobileClientCredential(
+  {
+    email,
+    sessionId,
+    userId,
+  }: { email?: string | null; sessionId: string; userId: string },
+  options: TokenOptions = {}
+) {
+  const { claims, expiresAt, token } = createAppCoordinationToken(
+    {
+      email: email ?? null,
+      expiresInSeconds: MOBILE_CLIENT_TTL_SECONDS,
+      originApp: MOBILE_CLIENT_ORIGIN_APP,
+      scopes: [MOBILE_CLIENT_SCOPE, sessionBindingScope(sessionId)],
+      targetApp: MOBILE_CLIENT_TARGET_APP,
+      userId,
+    },
+    options
+  );
+  return { claims, expiresAt, token };
+}
+
+/**
+ * Issues a credential for a Supabase session a mobile sign-in just created.
+ * Returns undefined when the session cannot be bound, so sign-in never fails
+ * because of this optional trust signal.
+ */
+export function issueMobileClientCredentialForSession(
+  session: { access_token: string },
+  user: { email?: string | null; id: string } | null | undefined
+) {
+  if (!user) return undefined;
+  const sessionId = readSupabaseSessionId(session.access_token, user.id);
+  if (!sessionId) return undefined;
+  try {
+    const { expiresAt, token } = createMobileClientCredential({
+      email: user.email,
+      sessionId,
+      userId: user.id,
+    });
+    return { expires_at: expiresAt, token };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * True only for a signature-valid, unexpired mobile client credential bound
+ * to exactly this user and Supabase session. Every other shape is rejected:
+ * app sessions, CLI tokens, refresh tokens and credentials for another user or
+ * session cannot satisfy it.
+ */
+export function verifyMobileClientCredential(
+  token: string | null | undefined,
+  { sessionId, userId }: { sessionId: string | null; userId: string },
+  options: TokenOptions = {}
+) {
+  if (!token || token.length > MAX_HEADER_LENGTH || !sessionId) return false;
+  const verification = verifyAppCoordinationToken(token, options);
+  if (!verification.ok) return false;
+  const { claims } = verification;
+  return (
+    claims.sub === userId &&
+    claims.origin_app === MOBILE_CLIENT_ORIGIN_APP &&
+    claims.target_app === MOBILE_CLIENT_TARGET_APP &&
+    claims.workspace_id === undefined &&
+    claims.scopes.length === 2 &&
+    claims.scopes[0] === MOBILE_CLIENT_SCOPE &&
+    claims.scopes[1] === sessionBindingScope(sessionId)
+  );
+}
+
+/**
+ * Resolves the native trust signal for a Supabase-bearer request whose user
+ * was already authenticated. Requests without a bearer (cookie sessions)
+ * never qualify.
+ */
+export function hasVerifiedMobileClientCredential(
+  request: { headers: Pick<Headers, 'get'> },
+  userId: string
+) {
+  const credential = request.headers.get(MOBILE_CLIENT_HEADER);
+  if (!credential) return false;
+  return verifyMobileClientCredential(credential, {
+    sessionId: readSupabaseSessionId(
+      getRequestBearerToken(request.headers),
+      userId
+    ),
+    userId,
+  });
+}

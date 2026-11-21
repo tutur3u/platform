@@ -44,6 +44,12 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['claims.target_app !== targetApp', 'APP_TOKEN_REFRESH_SCOPE'],
   },
+  // Native mobile client credential: never authenticates; it only clears the
+  // browser-shape mutation heuristic for an already-verified Supabase bearer.
+  'apps/web/src/lib/auth/mobile-client-credential.ts': {
+    calls: 1,
+    gates: ['MOBILE_CLIENT_SCOPE', 'claims.sub === userId'],
+  },
   'apps/web/src/lib/external-apps/workspace-cron.ts': {
     calls: 1,
     gates: ['hasScope(verification.claims.scopes'],

@@ -82,6 +82,12 @@ export interface ResolveAbuseRiskDecisionInput {
   route: string;
   userCreatedAt?: string | null;
   userId?: string | null;
+  /**
+   * The caller verified a server-signed native client credential bound to
+   * this user's session. It satisfies only the browser-shape mutation
+   * heuristic; it must never come from a client-asserted header or UA.
+   */
+  verifiedNativeClient?: boolean;
   workspaceId?: string | null;
 }
 
@@ -400,8 +406,11 @@ export async function resolveAbuseRiskDecision(
 ): Promise<AbuseRiskDecision> {
   const subjects = buildAbuseRiskSubjects(input);
   const userAgent = extractUserAgentFromHeaders(input.headers);
+  const verifiedNativeClient =
+    input.verifiedNativeClient === true && input.authKind === 'session';
   const userAgentClassification = classifyPotentialSpamUserAgent(userAgent, {
-    allowNativeAppUserAgents: input.authKind === 'api-key',
+    allowNativeAppUserAgents:
+      input.authKind === 'api-key' || verifiedNativeClient,
   });
   const serverDecision = await loadServerTrustDecision(input);
   const accountAgeDays = getAccountAgeDays(input.userCreatedAt);
@@ -462,18 +471,29 @@ export async function resolveAbuseRiskDecision(
     (!likelyBrowser || userAgentClassification.riskLevel === 'block');
 
   if (suspiciousBrowserMutation && tier !== 'restricted') {
-    // A completed session-bound challenge satisfies the browser-shape
-    // heuristic only. Server restrictions and explicit challenges still win.
-    const cleared =
+    // A completed session-bound challenge, or a verified native client
+    // credential on a native-shaped UA, satisfies the browser-shape heuristic
+    // only. Server restrictions and explicit challenges still win.
+    const eligible =
       serverDecision?.tier !== 'challenge_required' &&
-      (input.authKind === 'session' || input.authKind === 'app-session') &&
-      (await hasRecentSessionChallenge(input.userId, subjects));
+      (input.authKind === 'session' || input.authKind === 'app-session');
+    const nativeCleared =
+      eligible &&
+      verifiedNativeClient &&
+      userAgentClassification.riskLevel !== 'block';
+    const cleared =
+      nativeCleared ||
+      (eligible && (await hasRecentSessionChallenge(input.userId, subjects)));
     tier = cleared ? 'standard' : 'challenge_required';
     trustMultiplier = 1;
     decisionSource = 'heuristic';
     subjectKey ??= subjects[0]?.subject_key ?? null;
     reasons.push(
-      cleared ? 'session_challenge_passed' : 'suspicious_browser_mutation'
+      nativeCleared
+        ? 'verified_native_client'
+        : cleared
+          ? 'session_challenge_passed'
+          : 'suspicious_browser_mutation'
     );
   } else if (
     tier === 'trusted' &&

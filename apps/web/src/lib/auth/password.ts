@@ -29,6 +29,7 @@ import {
 import { shouldBypassSupabaseAuthCaptchaForDev } from '@/lib/auth/local-e2e';
 import { OTP_SPAM_BLOCK_ERROR } from '@/lib/auth/otp';
 import { prepareNormalAuthRecoveryOverrideUse } from '@/lib/auth/recovery';
+import { issueMobileClientCredentialForSession } from './mobile-client-credential';
 
 export const PASSWORD_LOGIN_GENERIC_ERROR = 'Invalid login credentials';
 
@@ -285,6 +286,10 @@ export async function passwordLogin(
   if (input.client === 'mobile') {
     return {
       body: {
+        mobile_client: issueMobileClientCredentialForSession(
+          session,
+          data.user
+        ),
         session: {
           access_token: session.access_token,
           expires_at: session.expires_at,

@@ -43,6 +43,7 @@ import {
 } from './api-auth-app-session';
 import { resolveTimedSessionUser } from './server-timing';
 import { supabaseSessionRequest } from './supabase-session-request';
+import { hasVerifiedMobileClientCredential } from './auth/mobile-client-credential';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -335,6 +336,21 @@ function isCliAppSessionClaims(claims: {
   );
 }
 
+function applyPrivateCacheControl(
+  request: NextRequest,
+  response: NextResponse,
+  cache: CacheConfig | undefined
+) {
+  if (!cache || request.method !== 'GET') return;
+  if (response.status < 200 || response.status >= 300) return;
+  const swr =
+    cache.swr === undefined ? '' : `, stale-while-revalidate=${cache.swr}`;
+  response.headers.set(
+    'Cache-Control',
+    `private, max-age=${cache.maxAge}${swr}`
+  );
+}
+
 function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
 }
@@ -349,6 +365,7 @@ async function applyAdaptiveSessionControls({
   skipStepUpChallenge = false,
   stepUpExempt,
   user,
+  verifiedNativeClient,
 }: {
   authKind: SessionAdaptiveAuthKind;
   endpoint: string;
@@ -359,6 +376,8 @@ async function applyAdaptiveSessionControls({
   skipStepUpChallenge?: boolean;
   stepUpExempt?: SessionAuthOptions['stepUpExempt'];
   user: SupabaseUser;
+  /** Server-verified mobile client credential (Supabase bearer path only). */
+  verifiedNativeClient?: boolean;
 }): Promise<{
   decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
   headers: Record<string, string>;
@@ -373,6 +392,7 @@ async function applyAdaptiveSessionControls({
     route: endpoint,
     userCreatedAt: getUserCreatedAt(user),
     userId: user.id,
+    verifiedNativeClient,
   });
 
   const exempt =
@@ -583,19 +603,7 @@ export function withSessionAuth<T = unknown>(
           : ({} as T)
       );
 
-      if (
-        options?.cache &&
-        request.method === 'GET' &&
-        response.status >= 200 &&
-        response.status < 300
-      ) {
-        const { maxAge, swr } = options.cache;
-        const directives = [`private`, `max-age=${maxAge}`];
-        if (swr !== undefined) {
-          directives.push(`stale-while-revalidate=${swr}`);
-        }
-        response.headers.set('Cache-Control', directives.join(', '));
-      }
+      applyPrivateCacheControl(request, response, options?.cache);
 
       applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
       recordResponseAbuseSignal({
@@ -681,19 +689,7 @@ export function withSessionAuth<T = unknown>(
           params
         );
 
-        if (
-          options?.cache &&
-          request.method === 'GET' &&
-          response.status >= 200 &&
-          response.status < 300
-        ) {
-          const { maxAge, swr } = options.cache;
-          const directives = [`private`, `max-age=${maxAge}`];
-          if (swr !== undefined) {
-            directives.push(`stale-while-revalidate=${swr}`);
-          }
-          response.headers.set('Cache-Control', directives.join(', '));
-        }
+        applyPrivateCacheControl(request, response, options?.cache);
 
         applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
         recordResponseAbuseSignal({
@@ -780,25 +776,15 @@ export function withSessionAuth<T = unknown>(
       request,
       stepUpExempt: options?.stepUpExempt,
       user,
+      verifiedNativeClient:
+        !isRead && hasVerifiedMobileClientCredential(request, user.id),
     });
     if (adaptiveControls.response) return adaptiveControls.response;
 
     const response = await handler(request, { user, supabase }, params);
 
     // 7. Apply Cache-Control for successful GET responses
-    if (
-      options?.cache &&
-      request.method === 'GET' &&
-      response.status >= 200 &&
-      response.status < 300
-    ) {
-      const { maxAge, swr } = options.cache;
-      const directives = [`private`, `max-age=${maxAge}`];
-      if (swr !== undefined) {
-        directives.push(`stale-while-revalidate=${swr}`);
-      }
-      response.headers.set('Cache-Control', directives.join(', '));
-    }
+    applyPrivateCacheControl(request, response, options?.cache);
 
     applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
     recordResponseAbuseSignal({

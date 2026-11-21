@@ -44,6 +44,7 @@ import {
 } from './browser-request';
 import { shouldBypassSupabaseAuthCaptchaForDev } from './local-e2e';
 import { prepareNormalAuthRecoveryOverrideUse } from './recovery';
+import { issueMobileClientCredentialForSession } from './mobile-client-credential';
 
 export const OTP_UNAVAILABLE_ERROR =
   'Verification code sign-in is unavailable right now.';
@@ -580,6 +581,7 @@ export async function verifyOtp(
   if (input.client === 'mobile') {
     return {
       body: {
+        mobile_client: issueMobileClientCredentialForSession(session, user),
         session: {
           access_token: session.access_token,
           expires_at: session.expires_at,
