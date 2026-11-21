@@ -468,11 +468,19 @@ messages or API responses; provider and AI SDK errors are redacted before
   operator suspension and the global stop. It shows no message content;
   uncertain-send and error records show metadata only. Content access needs
   an audited break-glass step.
-- **API:** typed routes under `apps/web/src/app/api/v1/workspaces/[wsId]/mira/**`
-  with zod contracts and clients in `packages/internal-api`. Reads require
-  workspace membership with the Mira view permission; writes, connects, caps,
-  kill switches and deletes require the Mira manage permission and are
-  enforced in the route. Kill switches write first and confirm by readback;
+- **Tenant API:** typed routes under `apps/web/src/app/api/v1/workspaces/[wsId]/mira/**`
+  with zod contracts and clients in `packages/internal-api`, serving the
+  tenant surfaces only. Reads require workspace membership with the Mira view
+  permission; writes, connects, caps, kill switches and deletes require the
+  Mira manage permission and are enforced in the route. Tenant routes accept
+  only the `tenant` stop reason and reject `operator`, `billing` and `cap`.
+- **Operator API:** a separate root-scoped surface under
+  `apps/infrastructure/src/app/api/v1/infrastructure/mira/**`, gated by
+  root-workspace admin plus a dedicated Mira operator permission in the route
+  (the same pattern as the abuse-intelligence routes). It serves cross-tenant
+  health and cost reads, operator suspension and the global stop. It never
+  reuses tenant routes, so tenant membership checks stay unwidened.
+- **Writes on both surfaces:** kill switches write first and confirm by readback;
   the UI never shows optimistic success. Secret fields are write-only and show
   only connected state and timestamp.
 
