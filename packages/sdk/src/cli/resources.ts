@@ -39,7 +39,11 @@ import {
   setupResources,
   uninstallResources,
 } from './resources-setup';
-import { nestedOwner, withAdmission } from './resources-slots';
+import {
+  nestedOwner,
+  reclaimResourceSlots,
+  withAdmission,
+} from './resources-slots';
 import {
   renderResourceStatus,
   resourceStatusDetails,
@@ -52,10 +56,11 @@ import {
 
 export function resourcesHelp() {
   return `ttr resources — keep concurrent local work responsive\n
-Usage: ttr resources <setup|status|monitor|run|hosts|enable|disable|uninstall> [options]
+Usage: ttr resources <setup|status|reclaim|monitor|run|hosts|enable|disable|uninstall> [options]
 
   setup --root <path>     opt in a project and its Git worktrees (repeat --root)
   status [--json]         show capacity, owners (command, age, CPU), waiters, idle warnings
+  reclaim [--apply]      preview dead slots; apply backs up receipts and clears slots
   monitor --seconds 60   capture memory/process samples every 5 seconds (JSONL)
   run -- COMMAND ARGS    queue any finite command; explicit setup required
   offload [--json]       local saturation plus trusted devbox runner eligibility
@@ -151,6 +156,7 @@ export async function runResourcesCommand(argv: string[]) {
     offload: ['--json', '--runner'],
     shim: [],
     status: ['--json'],
+    reclaim: ['--apply'],
     monitor: ['--seconds'],
     enable: [],
     disable: [],
@@ -454,6 +460,23 @@ export async function runResourcesCommand(argv: string[]) {
         ? `${JSON.stringify(plan, null, 2)}\n`
         : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} base lane(s), up to ${resourceMaxLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
     );
+    return;
+  }
+  if (action === 'reclaim') {
+    const apply = options.includes('--apply');
+    const slots = await reclaimResourceSlots(home, apply);
+    for (const slot of slots)
+      process.stdout.write(
+        'backup' in slot
+          ? `Reclaimed ${slot.path}. Receipt backed up to ${slot.backup}\n`
+          : `Would reclaim ${slot.path}.\n`
+      );
+    if (!slots.length)
+      process.stdout.write('No dead resource slots to reclaim.\n');
+    else if (!apply)
+      process.stdout.write(
+        'Use --apply to back up receipts and reclaim these slots.\n'
+      );
     return;
   }
   if (action === 'monitor') {

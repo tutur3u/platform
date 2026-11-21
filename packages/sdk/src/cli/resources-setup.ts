@@ -23,7 +23,12 @@ import {
   type ValidationLanes,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
-import { hasSetupMaintenanceLease, withAdmission } from './resources-slots';
+import {
+  hasSetupMaintenanceLease,
+  reclaimDeadResourceSlots,
+  reclaimResourceSlots,
+  withAdmission,
+} from './resources-slots';
 
 const start = '# >>> ttr resources >>>';
 const end = '# <<< ttr resources <<<';
@@ -250,6 +255,7 @@ async function prepareResources(
       `--max-lanes must be an integer between the base lane count and ${maxResourceLanes}.`
     );
   assertLaneBudget(config);
+  if (!options.dryRun) await reclaimDeadResourceSlots(options.home);
   const assertIdle = async (replacing = false) => {
     if (
       resourcePolicyKey(previous || defaultResourceConfig()) ===
@@ -474,6 +480,8 @@ export async function installedResourceShims(
       ? quotedShimRuntime(content, home, entry, name)
       : undefined;
     if (runtime && canonical(runtime) === canonical(process.execPath)) continue;
+    if ((await reclaimResourceSlots(home, false)).length)
+      await reclaimResourceSlots(home, true);
     if (runtime)
       throw new Error(
         `Resource shims are valid for their own runtime ${runtime}. This process is ${process.execPath}. Do not run ttr resources setup. Invoke the shim runtime.`

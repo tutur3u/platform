@@ -1784,6 +1784,33 @@ exactly one remote dispatch and one local fallback, without a larger timeout.
 The bounded monitor emits JSONL memory-pressure, T3-tree resident-memory and top-process samples without arguments or environment values. RSS differs from Activity Monitor's footprint and can count shared pages multiple times.
 Offload full validation with `ttr box run --runner <remote-id> -- <command>` only after verifying a different machine and intended checkout. Same-machine runners/containers consume local RAM; resource setup does not configure runners, transmit credentials, or restart Docker.
 
+### Recover dead resource slots
+
+A broker that exits unexpectedly can leave an occupied numbered lane with no
+live owner. Inspect and recover it with the owning installed CLI.
+
+```sh
+ttr resources status
+ttr resources reclaim           # read-only preview
+ttr resources reclaim --apply   # back up receipts and clear safe candidates
+ttr resources status
+```
+
+Apply acquires the admission mutex and rechecks process liveness. It removes a
+numbered slot only when a valid receipt identifies an absent owner and any
+recorded child PID and process group are gone. The original receipt is saved to
+`<resource-home>/backups/reclaimed-slots/` before the slot is removed.
+Live or unverifiable processes, slots without receipts, legacy locks and queue
+tickets stay in place.
+
+Applying setup and failed `run` launcher validation also recover dead slots
+under the mutex, even when the launchers cannot admit work. If a launcher
+error persists, wait for owners and waiters to drain, then rerun authorized
+setup from the owning CLI with the existing roots and shell settings.
+`setup --dry-run` leaves slots untouched. The tests in
+`resources-reclaim.test.ts` cover a surviving child process group, concurrent
+admission, backup failure and recovery through setup and stale launchers.
+
 ### Cross-project budget on a shared host
 
 A shared host (for example a build Mac shared by two projects) can carry a `budget` block in `config.json`. It is a layer on the existing lane admission, not a second scheduler: tickets, owners, the resources home and the admission mutex are unchanged. The budget decides which waiter may claim the next lane, and how many worker tokens that job may fan out to.

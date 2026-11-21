@@ -275,6 +275,21 @@ pressure, T3 descendants, and top processes, without command arguments or env
 values. RSS differs from Activity Monitor's footprint. A snapshot does not prove
 a historical leak. Identify the owning thread before interrupting active work.
 
+When `status` counts an occupied lane without a live owner, preview recovery with
+`ttr resources reclaim`. If it lists a dead slot, run
+`ttr resources reclaim --apply` and check `ttr resources status` again.
+Apply rechecks the numbered slot under the admission mutex and backs up its
+original receipt under `<resource-home>/backups/reclaimed-slots/` before
+removing it. Only a receipt whose recorded owner, child PID and child process
+group are absent is eligible. Missing receipts, live jobs, legacy locks and queue
+tickets stay in place. The preview leaves the broker state untouched.
+
+Applying setup and failed `run` launcher validation use the same recovery
+before the idle check or launcher error. If the launchers still need refresh,
+run the installed CLI's authorized setup with the existing roots and shell
+settings after owners and waiters drain. See the
+[resource slot recovery procedure](../../../../apps/docs/reference/packages/sdk.mdx#recover-dead-resource-slots).
+
 If an older CLI lacks this command, report its version and use one serialized
 validation command with explicit worker limits until the new CLI is installed;
 do not silently launch unrestricted parallel validation.

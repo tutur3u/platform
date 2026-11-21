@@ -12,7 +12,7 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { z } from 'zod';
 import { assertBudgetLaunchers } from './resources-compatibility';
@@ -61,6 +61,9 @@ export function errno(error: unknown, code: string) {
 }
 export function processAlive(pid?: number) {
   if (!pid || pid < 1) return false;
+  return processTargetAlive(pid);
+}
+function processTargetAlive(pid: number) {
   try {
     process.kill(pid, 0);
     return true;
@@ -453,11 +456,7 @@ async function releaseMutex(path: string, token: string) {
   if (current?.token === token) await rm(path, { recursive: true });
   else await rm(join(path, 'reclaim'), { force: true });
 }
-export async function occupancy(
-  home: string,
-  reclaim = false,
-  configured?: ResourceConfig
-) {
+async function numberedSlotPaths(home: string, configured?: ResourceConfig) {
   const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
@@ -482,15 +481,114 @@ export async function occupancy(
     throw new Error(
       'Unknown resource slot; admission is closed. A slots/budget-v3 marker requires a newer ttr: upgrade the global CLI and refresh shims with ttr resources setup using the existing roots. For rollback, first drain all work and follow the resource budget rollback runbook.'
     );
+  return Array.from({ length: maxLanes }, (_, i) => join(slots, String(i)));
+}
+
+function ownerAndGroupGone({ pid, childPid }: ResourceOwner) {
+  // Only a kernel ESRCH proves absence. In particular, an incomplete ps
+  // snapshot or an inaccessible process must never make a receipt eligible.
+  return (
+    pid <= 0x7fffffff &&
+    !processAlive(pid) &&
+    (childPid === undefined ||
+      (childPid <= 0x7fffffff &&
+        !processAlive(childPid) &&
+        !processTargetAlive(-childPid)))
+  );
+}
+
+async function deadSlotReceipt(path: string) {
+  let file: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    if (!(await lstat(path)).isDirectory())
+      throw new Error(`Invalid resource directory: ${path}`);
+    file = await open(
+      join(path, 'owner.json'),
+      constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW
+    );
+    if (!(await file.stat()).isFile())
+      throw new Error('Malformed resource owner; reclaim is closed.');
+    const receipt = await file.readFile();
+    let data: unknown;
+    try {
+      data = JSON.parse(receipt.toString('utf8'));
+    } catch {
+      throw new Error('Malformed resource owner; reclaim is closed.');
+    }
+    const parsed = ownerSchema.safeParse(data);
+    if (!parsed.success)
+      throw new Error('Malformed resource owner; reclaim is closed.');
+    return ownerAndGroupGone(parsed.data) ? { path, receipt } : undefined;
+  } catch (error) {
+    if (errno(error, 'ENOENT')) return undefined;
+    throw error;
+  } finally {
+    await file?.close();
+  }
+}
+
+async function deadResourceSlots(home: string) {
+  const slots = await lstat(join(home, 'slots')).catch((error) => {
+    if (errno(error, 'ENOENT')) return undefined;
+    throw error;
+  });
+  if (!slots) return [];
+  if (!slots.isDirectory())
+    throw new Error('Invalid resource slots directory; reclaim is closed.');
+  const dead = await Promise.all(
+    (await numberedSlotPaths(home)).map(deadSlotReceipt)
+  );
+  return dead.filter((entry) => entry !== undefined);
+}
+
+// Call only while holding the admission mutex (or its setup maintenance lease).
+export async function reclaimDeadResourceSlots(home: string) {
+  const reclaimed: { path: string; backup: string }[] = [];
+  const backups = join(home, 'backups', 'reclaimed-slots');
+  for (const { path, receipt } of await deadResourceSlots(home)) {
+    await mkdir(backups, { recursive: true, mode: 0o700 });
+    const backup = join(backups, `${basename(path)}-${randomUUID()}.json`);
+    const file = await open(backup, 'wx', 0o600);
+    try {
+      await file.writeFile(receipt);
+      await file.sync();
+    } finally {
+      await file.close();
+    }
+    const current = await deadSlotReceipt(path);
+    if (!current?.receipt.equals(receipt)) continue;
+    await rm(path, { recursive: true });
+    reclaimed.push({ path, backup });
+  }
+  return reclaimed;
+}
+
+export async function reclaimResourceSlots(home: string, apply: boolean) {
+  if (!apply)
+    return (await deadResourceSlots(home)).map(({ path }) => ({ path }));
+  // Recovery has to work with stale launchers and before fence publication.
+  return (
+    (await withAdmission(
+      home,
+      () => reclaimDeadResourceSlots(home),
+      () => false,
+      'setup'
+    )) ?? []
+  );
+}
+
+export async function occupancy(
+  home: string,
+  reclaim = false,
+  configured?: ResourceConfig
+) {
+  const paths = await numberedSlotPaths(home, configured);
   const owners: ResourceOwner[] = [];
   const ownerSlots: string[] = [];
   const occupied: string[] = [];
   let legacy = false;
   let initializing = false;
-  for (const path of [
-    join(home, 'lock'),
-    ...Array.from({ length: maxLanes }, (_, i) => join(slots, String(i))),
-  ]) {
+  for (const path of [join(home, 'lock'), ...paths]) {
     if (!(await resourceDirectory(path))) continue;
     const state = await ownerState(join(path, 'owner.json'));
     const initializingDirectory =
