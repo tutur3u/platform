@@ -11,6 +11,7 @@ vi.mock('../edge', () => ({
 
 import {
   cascadeBackendRateLimitToProxyBan,
+  isAuthBackendUnavailableError,
   isBackendRateLimitError,
 } from '../backend-rate-limit';
 
@@ -18,6 +19,30 @@ describe('backend-rate-limit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.blockIPEdge.mockResolvedValue(null);
+  });
+
+  describe('isAuthBackendUnavailableError', () => {
+    it('separates an auth outage from a refused credential', () => {
+      for (const error of [
+        { status: 429 },
+        { status: 500 },
+        { status: 503 },
+        { status: 0 },
+        { message: 'fetch failed' },
+        { code: 'over_request_rate_limit', status: 400 },
+      ]) {
+        expect(isAuthBackendUnavailableError(error)).toBe(true);
+      }
+      for (const error of [
+        null,
+        undefined,
+        { status: 400 },
+        { status: 401 },
+        { status: 403 },
+      ]) {
+        expect(isAuthBackendUnavailableError(error)).toBe(false);
+      }
+    });
   });
 
   describe('isBackendRateLimitError', () => {

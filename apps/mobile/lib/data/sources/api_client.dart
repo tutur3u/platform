@@ -12,6 +12,7 @@ import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/data/sources/api_multipart_file.dart';
 import 'package:mobile/data/sources/api_rate_limit_diagnostics.dart';
 import 'package:mobile/data/sources/api_verification.dart';
+import 'package:mobile/data/sources/mobile_client_credential.dart';
 import 'package:mobile/data/sources/native_integrity/native_integrity_client.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 import 'package:mobile/data/sources/scoped_stream_error.dart';
@@ -26,6 +27,7 @@ part 'api_client_multipart.dart';
 part 'api_client_mutations.dart';
 part 'api_client_integrity.dart';
 part 'api_client_conditional.dart';
+part 'api_client_mobile_client.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
 class ApiClient {
@@ -38,7 +40,7 @@ class ApiClient {
     String? expectedUserId,
     NativeIntegrityClient? nativeIntegrity,
   }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
-       _client = httpClient ?? http.Client(),
+       _client = _MobileClientRedirectGuard(httpClient ?? http.Client()),
        _authClient = authClient,
        _expectedUserId = expectedUserId,
        _clock = clock ?? DateTime.now,
@@ -192,6 +194,8 @@ class ApiClient {
       if (requiresAuth && offlineRead && OfflineApiRequest.active)
         'x-tuturuuu-offline-download': '1',
       if (token != null) 'Authorization': 'Bearer $token',
+      // Reads pass offlineRead; every other authenticated request mutates.
+      ...await _mobileClientHeaders(userId, token, mutation: !offlineRead),
       if (requiresAuth && ApiVerification.token != null)
         'x-tuturuuu-turnstile-token': ApiVerification.token!,
     };
@@ -516,12 +520,14 @@ class ApiClient {
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      var response = await request();
+      // userId is null when the request carries no auth.
+      Future<http.Response> send() => _withStepUpReplay(userId, request);
+      var response = await send();
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        response = await request();
+        response = await send();
         _checkRequestUser(userId);
       }
       if (requiresAuth &&
@@ -559,13 +565,16 @@ class ApiClient {
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
-      var response = await request();
+      // userId is null when the request carries no auth.
+      Future<http.StreamedResponse> send() =>
+          _withStreamStepUpReplay(userId, request);
+      var response = await send();
       if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await response.stream.listen(null).cancel();
         await _ensureValidSession(forceRefresh: true);
         _checkRequestUser(userId);
-        response = await request();
+        response = await send();
         _checkRequestUser(userId);
       }
       if (requiresAuth &&

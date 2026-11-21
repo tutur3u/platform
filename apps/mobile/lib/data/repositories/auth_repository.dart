@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/provider_sign_in.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
+import 'package:mobile/data/sources/mobile_client_credential.dart';
 import 'package:mobile/data/sources/oauth_url_launcher.dart';
 import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -201,6 +202,7 @@ class AuthRepository {
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
       await _client.auth.setSession(payload.refreshToken);
+      await _storeMobileClient(response['mobile_client']);
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -272,6 +274,7 @@ class AuthRepository {
         );
         rethrow;
       }
+      await _storeMobileClient(response['mobile_client']);
 
       return (success: true, error: null, retryAfter: null);
     } on ApiException catch (e) {
@@ -281,6 +284,18 @@ class AuthRepository {
     } on Exception catch (e) {
       return (success: false, error: e.toString(), retryAfter: null);
     }
+  }
+
+  /// Keeps the native client credential a mobile sign-in issued. It is bound
+  /// to the Supabase session, which a token refresh keeps.
+  Future<void> _storeMobileClient(Object? mobileClient) async {
+    final session = _client.auth.currentSession;
+    if (session == null) return;
+    await MobileClientCredentials.instance.storeIssued(
+      userId: session.user.id,
+      accessToken: session.accessToken,
+      mobileClient: mobileClient,
+    );
   }
 
   // ── MFA ────────────────────────────────────────

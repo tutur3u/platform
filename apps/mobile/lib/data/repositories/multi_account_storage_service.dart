@@ -12,6 +12,7 @@ import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/stored_session_restore.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
+import 'package:mobile/data/sources/mobile_client_credential.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef StoredAccountRemovalResult = ({
@@ -80,9 +81,10 @@ class MultiAccountStorageService {
     );
   }
 
-  Future<void> clearMultiAccountStore() => _editStore(
-    () => _secureStorage.delete(key: StorageKeys.multiAccountStore),
-  );
+  Future<void> clearMultiAccountStore() => _editStore(() async {
+    await MobileClientCredentials.instance.clearAll();
+    await _secureStorage.delete(key: StorageKeys.multiAccountStore);
+  });
 
   String? _readDisplayName(User user) =>
       _nonEmptyTrimmed(user.userMetadata?['display_name']) ??
@@ -480,6 +482,7 @@ class MultiAccountStorageService {
   Future<bool> _deleteStoredAccount(String accountId) => _editStore(() async {
     final store = await _loadMultiAccountStore();
     if (_client.auth.currentUser?.id == accountId) return false;
+    await MobileClientCredentials.instance.clear(accountId);
     final remaining = store.accounts.where((a) => a.id != accountId).toList();
     if (remaining.isEmpty) {
       await _secureStorage.delete(key: StorageKeys.multiAccountStore);

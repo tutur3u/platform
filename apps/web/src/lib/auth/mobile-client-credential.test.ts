@@ -14,6 +14,7 @@ import {
 import {
   MOBILE_CLIENT_TURNSTILE_ACTION,
   mintMobileClientCredential,
+  mobileClientAuthFailureResponse,
 } from './mobile-client-credential-mint';
 
 const b64 = (value: object) =>
@@ -203,6 +204,19 @@ describe('mintMobileClientCredential', () => {
       401
     );
     expect(failed.recordAuthFailure).toHaveBeenCalledOnce();
+    expect(mobileClientAuthFailureResponse({ status: 401 }).status).toBe(401);
+    expect(mobileClientAuthFailureResponse(null).status).toBe(401);
+    for (const authError of [{ status: 429 }, { status: 503 }, { status: 0 }]) {
+      const response = mobileClientAuthFailureResponse(authError);
+      expect(response.status).toBe(503);
+      const unavailable = deps(validSolve, {
+        resolveUser: vi.fn(async () => ({ ok: false, response })),
+      });
+      expect(
+        (await mintMobileClientCredential(request(), unavailable)).status
+      ).toBe(503);
+      expect(unavailable.recordAuthFailure).not.toHaveBeenCalled();
+    }
     const limited = NextResponse.json({}, { status: 429 });
     const d = deps(validSolve, { rateLimit: vi.fn(async () => limited) });
     expect((await mintMobileClientCredential(request(), d)).status).toBe(429);

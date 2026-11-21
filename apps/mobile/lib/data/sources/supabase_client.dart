@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/sources/keychain_accessibility_migration.dart';
+import 'package:mobile/data/sources/mobile_client_credential.dart';
 import 'package:mobile/data/sources/secure_pkce_storage.dart';
 import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -46,6 +47,7 @@ Future<void> initSupabase() async {
     authOptions: buildAuthClientOptions(),
   );
   _supabaseInitialized = true;
+  MobileClientCredentials.instance.watch(Supabase.instance.client.auth);
 }
 
 /// Shorthand accessor for the Supabase client singleton.

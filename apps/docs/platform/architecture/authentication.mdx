@@ -165,11 +165,34 @@ trust signal that a spoofed User-Agent cannot produce.
   including OAuth, QR, existing installs and an expired credential, the app
   calls `POST /api/v1/auth/mobile/client-credential`. That endpoint refuses
   browser requests, checks the IP block list and an IP rate limit (30 per 10
-  minutes) before resolving the user, records auth failures, needs the
-  Supabase bearer, and is rate limited to 10 requests per 10 minutes per user.
+  minutes) before resolving the user, records a refused bearer (401) as an
+  auth failure while an auth rate limit or outage answers 503 and is not
+  counted, needs the Supabase bearer, and is rate limited to 10 requests per 10 minutes per user.
   Its `captchaToken` is purpose-bound: siteverify must report action
   `mobile_client_credential`, the Native Integrity Web origin's hostname,
   and `cData` equal to the base64url SHA-256 of the bearer's `session_id`.
+  The app solves it on `/native-integrity/turnstile?purpose=mobile_client_credential`,
+  which renders that action whatever `NATIVE_INTEGRITY_MODE` is; without
+  `purpose` the page keeps the `native_integrity` action, so a solve for one
+  purpose never verifies for the other.
+- **Mobile client:** `MobileClientCredentials`
+  (`apps/mobile/lib/data/sources/mobile_client_credential.dart`) keeps one
+  credential per account in device secure storage (Keychain/Keystore), bound
+  to the Supabase session it was issued for, and never logs it. A sign-out,
+  an account removal or an account switch clears it. `ApiClient` attaches the
+  stored credential to authenticated mutations only, and a request carrying
+  it never follows redirects, so it cannot reach another host. A mutation
+  with none, or with under one hour left, mints in the background, so a slow
+  Turnstile page never delays the request. On a 403 with
+  `x-abuse-challenge: turnstile` the client replays the request once with a
+  credential that attempt did not carry: one stored meanwhile, or a new mint
+  after dropping the credential the server refused; the
+  step-up runs before the handler, so the replay cannot repeat a write, and
+  the acknowledged request variants replay the same way. A forced re-mint
+  runs at most once per two minutes per account, and failed mints back off
+  from one to thirty minutes, so a refusal never loops. When no credential
+  can be minted, the existing security-check dialog and the Mastermind outbox
+  retry handle the 403 as before.
 - **Use:** the app sends it as `x-tuturuuu-mobile-client` next to
   `Authorization: Bearer <supabase access token>`. `withSessionAuth` verifies
   the signature and expiry, and checks that the token's user and session
@@ -195,7 +218,10 @@ trust signal that a spoofed User-Agent cannot produce.
   the Turnstile check with a device-bound proof. That flow is off by default
   and scoped to calendar settings today.
 
-Regression coverage: `apps/web/src/lib/api-auth-mobile-client.test.ts`
+Regression coverage:
+`apps/mobile/test/data/sources/mobile_client_credential_test.dart` and
+`api_client_mobile_client_test.dart` (client storage, refresh, backoff and
+single replay), `apps/web/src/lib/api-auth-mobile-client.test.ts`
 (end-to-end through `withSessionAuth` with the real decision and step-up),
 `apps/web/src/lib/auth/mobile-client-credential.test.ts` (binding, expiry,
 foreign token shapes, mint endpoint) and

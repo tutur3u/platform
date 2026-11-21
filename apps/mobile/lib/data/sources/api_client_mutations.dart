@@ -90,7 +90,7 @@ extension _ApiClientMutations on ApiClient {
     ApiMutationAdmission admission,
     Future<void> Function(Map<String, dynamic>) onAcknowledged,
   ) async {
-    Future<Map<String, dynamic>> operation() async {
+    Future<http.Response> send() async {
       admission.check();
       final headers = await _getHeaders(contentType: 'application/json');
       _checkRequestUser(admission.actorId);
@@ -99,9 +99,11 @@ extension _ApiClientMutations on ApiClient {
         ..headers.addAll(headers)
         ..body = jsonEncode(body);
       admission.recordDispatchPossible();
-      final response = await http.Response.fromStream(
-        await _client.send(request),
-      );
+      return await http.Response.fromStream(await _client.send(request));
+    }
+
+    Future<Map<String, dynamic>> operation() async {
+      final response = await _withStepUpReplay(admission.actorId, send);
       final receipt = _handleResponse(response);
       // The original operation owns cleanup even after UI departure or timeout.
       await onAcknowledged(receipt);
@@ -115,7 +117,8 @@ extension _ApiClientMutations on ApiClient {
     }
   }
 
-  /// Native mutations dispatch once without auth or challenge response replay.
+  /// Native mutations dispatch once without auth or challenge response replay,
+  /// except one replay after a pre-handler step-up with a re-minted credential.
   Future<http.StreamedResponse> _sendJsonStreamAcknowledged(
     String method,
     String path,
@@ -130,7 +133,7 @@ extension _ApiClientMutations on ApiClient {
 
     try {
       admitted();
-      final response = await _performStreamedRequest(() async {
+      Future<http.StreamedResponse> send() async {
         admitted();
         final headers = await _getHeaders(
           accept: accept,
@@ -144,7 +147,12 @@ extension _ApiClientMutations on ApiClient {
         admitted();
         admission.recordDispatchPossible();
         return await _client.send(request).timeout(_requestTimeout);
-      }, requiresAuth: false);
+      }
+
+      final response = await _performStreamedRequest(
+        () async => await _withStreamStepUpReplay(admission.actorId, send),
+        requiresAuth: false,
+      );
       try {
         admitted();
       } on Object {
@@ -210,7 +218,8 @@ extension _ApiClientMutations on ApiClient {
     return _handleResponse(response);
   }
 
-  /// No response-based retry. Admission follows async credential preparation.
+  /// No response-based retry beyond one replay after a pre-handler step-up.
+  /// Admission follows async credential preparation.
   Future<Map<String, dynamic>> _mutateJsonAcknowledged(
     String method,
     String path,
@@ -218,7 +227,7 @@ extension _ApiClientMutations on ApiClient {
     String actorId,
     bool Function() isCurrent,
   ) async {
-    final response = await _performRequest(() async {
+    Future<http.Response> send() async {
       final headers = await _getHeaders(contentType: 'application/json');
       _checkRequestUser(actorId);
       if (!isCurrent()) {
@@ -232,7 +241,12 @@ extension _ApiClientMutations on ApiClient {
         ..body = jsonEncode(body);
       final streamed = await _client.send(request).timeout(_requestTimeout);
       return await http.Response.fromStream(streamed).timeout(_requestTimeout);
-    }, requiresAuth: false);
+    }
+
+    final response = await _performRequest(
+      () async => await _withStepUpReplay(actorId, send),
+      requiresAuth: false,
+    );
     _checkRequestUser(actorId);
     if (!isCurrent()) {
       throw const ApiException(message: 'Request scope changed', statusCode: 0);

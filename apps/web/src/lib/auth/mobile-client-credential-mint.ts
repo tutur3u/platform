@@ -3,6 +3,7 @@ import {
   verifyTurnstileToken,
 } from '@tuturuuu/cloudflare/turnstile/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { isAuthBackendUnavailableError } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -48,6 +49,16 @@ function json(body: Record<string, unknown>, status: number) {
 }
 
 /**
+ * Response for a bearer the auth backend did not resolve. A rate limit, 5xx
+ * or transport failure is 503, so only a refused bearer reads as 401.
+ */
+export function mobileClientAuthFailureResponse(authError: unknown) {
+  return isAuthBackendUnavailableError(authError)
+    ? json({ error: 'Verification unavailable' }, 503)
+    : json({ error: 'Unauthorized' }, 401);
+}
+
+/**
  * Mints a native mobile client credential for an existing Supabase-bearer
  * session (sessions created outside the password/OTP endpoints, or after the
  * previous credential expired). A fresh Turnstile pass is required, the same
@@ -70,7 +81,8 @@ export async function mintMobileClientCredential(
 
   const auth = await deps.resolveUser(request);
   if (!auth.ok) {
-    deps.recordAuthFailure();
+    // Only a refused credential counts; an auth outage or 429 is not abuse.
+    if (auth.response.status === 401) deps.recordAuthFailure();
     return auth.response;
   }
 
