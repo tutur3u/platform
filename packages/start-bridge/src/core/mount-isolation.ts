@@ -36,6 +36,12 @@ export interface MountIsolationConfig {
   ownedCookies: readonly string[];
 }
 
+/**
+ * The opaque first-party session handle. Only the gateway resolves it; a
+ * mounted app never receives or writes it.
+ */
+export const FIRST_PARTY_SESSION_COOKIE = '__Host-ttr_session';
+
 /** Read-only marker set by an app-only logout; it can only deny access. */
 export const LOGOUT_FENCE_COOKIE_NAME = '__Host-tuturuuu_app_signed_out';
 
@@ -212,7 +218,9 @@ export function reduceMountedSessionCookieHeader(
   header: string | null
 ): string | null {
   const { others, sessions } = splitSessionCookies(header);
-  const kept = others.map(({ name, value }) => `${name}=${value}`);
+  const kept = others
+    .filter(({ name }) => name !== FIRST_PARTY_SESSION_COOKIE)
+    .map(({ name, value }) => `${name}=${value}`);
   kept.push(...reducedSessionCookies(sessions));
   return kept.length ? kept.join('; ') : null;
 }
@@ -239,6 +247,7 @@ export function stripMountedSupabaseWrites(
   const setCookies = response.headers.getSetCookie();
   const kept = setCookies.filter((value) => {
     const name = cookieName(value);
+    if (name === FIRST_PARTY_SESSION_COOKIE) return false;
     if (!SUPABASE_AUTH_COOKIE.test(name)) return true;
     const [pair, ...attributes] = value.split(';');
     return (

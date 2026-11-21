@@ -63,6 +63,12 @@ describe('baseline mounted session reduction', () => {
     expect(decode(map.get(KEY) as string).refresh_token).toBe('');
   });
 
+  it('never forwards the first-party session handle', () => {
+    expect(
+      reduceMountedSessionCookieHeader('__Host-ttr_session=opaque; theme=dark')
+    ).toBe('theme=dark');
+  });
+
   it('withholds a malformed session entirely', () => {
     expect(reduceMountedSessionCookieHeader(`${KEY}=garbage`)).toBeNull();
   });
@@ -95,6 +101,7 @@ describe('mounted Supabase writes', () => {
       withCookies(
         `${KEY}=${encode(SESSION)}; Path=/`,
         `${KEY}.0=; Max-Age=0; Path=/`,
+        '__Host-ttr_session=forged; Path=/; Secure',
         'NEXT_LOCALE=vi; Path=/learn'
       )
     );
