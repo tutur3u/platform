@@ -1,5 +1,5 @@
 import {
-  getSharedAndHostOnlyCookieDeleteOptions,
+  getTuturuuuBrowserCookieDeleteOptions,
   getTuturuuuBrowserSharedCookieOptions,
 } from '@tuturuuu/utils/shared-cookie';
 import { deleteCookie, setCookie } from 'cookies-next';
@@ -24,7 +24,7 @@ export function persistLocalePreference(
 }
 
 export function clearLocalePreference(cookieName = DEFAULT_LOCALE_COOKIE_NAME) {
-  for (const options of getSharedAndHostOnlyCookieDeleteOptions(
+  for (const options of getTuturuuuBrowserCookieDeleteOptions(
     LOCALE_COOKIE_OPTIONS
   )) {
     deleteCookie(cookieName, options);

@@ -3,6 +3,7 @@
 import { Slot } from '@radix-ui/react-slot';
 import { PanelLeftIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
+import { browserMountedAppBase } from '@tuturuuu/utils/shared-cookie';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { useIsMobile } from '../../hooks/use-mobile';
@@ -88,8 +89,7 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState);
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=${browserMountedAppBase() || '/'}; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
       [setOpenProp, open]
     );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { browserMountedAppBase } from '@tuturuuu/utils/shared-cookie';
 
 const CONFIDENTIAL_COOKIE_NAME = 'finance-confidential-mode';
 const CONFIDENTIAL_MODE_CHANGE_EVENT = 'finance-confidential-mode-change';
@@ -25,7 +26,7 @@ const setCookie = (name: string, value: string, days = 365) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   const secure = window.location.protocol === 'https:' ? ';Secure' : '';
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=${browserMountedAppBase() || '/'};SameSite=Lax${secure}`;
 };
 
 export function useFinanceConfidentialVisibility() {

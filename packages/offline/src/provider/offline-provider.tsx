@@ -7,6 +7,25 @@ const registrationPromises = new Map<
   Promise<ServiceWorkerRegistration>
 >();
 
+/**
+ * Global the Tuturuuu Start bridge writes into the document head with the
+ * app's runtime base (`/tasks` on `tuturuuu.com/tasks`, empty at a subdomain
+ * root). Read here without importing the bridge so the package stays
+ * framework-free.
+ */
+const APP_BASE_GLOBAL = '__tuturuuuAppBase';
+
+/**
+ * Whether this document is an app mounted under a path of a shared origin.
+ * Its `/`-scoped worker would control every other app on that origin, so a
+ * mounted document never registers one.
+ */
+export function isMountedDocument(scope: typeof globalThis = globalThis) {
+  const value = (scope as { [APP_BASE_GLOBAL]?: unknown })[APP_BASE_GLOBAL];
+  const base = typeof value === 'function' ? value() : value;
+  return typeof base === 'string' && base !== '' && base !== '/';
+}
+
 function registerWorker(
   swUrl: string,
   options?: RegistrationOptions
@@ -99,6 +118,7 @@ export function OfflineProvider({
     if (
       shouldSkip ||
       !register ||
+      isMountedDocument() ||
       typeof navigator === 'undefined' ||
       !('serviceWorker' in navigator)
     ) {

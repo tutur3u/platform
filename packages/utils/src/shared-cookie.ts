@@ -312,10 +312,52 @@ export function getTuturuuuSharedCookieOptions<
   };
 }
 
+/**
+ * Global the Tuturuuu Start bridge writes into the document head with the
+ * app's runtime base (`@tuturuuu/start-bridge/app-url`).
+ */
+const APP_BASE_GLOBAL = '__tuturuuuAppBase';
+
+/**
+ * In the browser, the base of an app mounted under a path of a shared origin
+ * (`/tasks` on `tuturuuu.com/tasks`). Empty at a subdomain root, in apps
+ * without the bridge, and on the server.
+ */
+export function browserMountedAppBase(): string {
+  if (typeof document === 'undefined') return '';
+  const value = (globalThis as Record<string, unknown>)[APP_BASE_GLOBAL];
+  const base = typeof value === 'function' ? value() : value;
+  return typeof base === 'string' ? base.replace(/\/+$/u, '') : '';
+}
+
+/**
+ * Browser cookie options. At a root host the cookie is shared across
+ * Tuturuuu subdomains; in a mounted app it is host-only at `Path=<base>`, so
+ * it never reaches, shadows or clears another app's or Web's `Path=/` cookie
+ * on the shared origin.
+ */
 export function getTuturuuuBrowserSharedCookieOptions<
   TOptions extends CookieOptionsLike,
 >(options: TOptions): TOptions {
+  const base = browserMountedAppBase();
+  if (base) {
+    const { domain: _domain, ...mountedOptions } = options;
+    return { ...mountedOptions, path: base } as TOptions;
+  }
   return getTuturuuuSharedCookieOptions(options);
+}
+
+/**
+ * Browser deletions matching {@link getTuturuuuBrowserSharedCookieOptions}:
+ * the shared and host-only `Path=/` copies at a root host, and only the
+ * app's own `Path=<base>` copy in a mounted app.
+ */
+export function getTuturuuuBrowserCookieDeleteOptions<
+  TOptions extends CookieOptionsLike,
+>(options: TOptions): TOptions[] {
+  return browserMountedAppBase()
+    ? [getTuturuuuBrowserSharedCookieOptions({ ...options, maxAge: 0 })]
+    : getSharedAndHostOnlyCookieDeleteOptions(options);
 }
 
 export function getHostOnlyCookieOptions<TOptions extends CookieOptionsLike>(
