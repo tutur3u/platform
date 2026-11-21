@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
@@ -104,17 +105,21 @@ class FleetAccessRequestsRow extends StatelessWidget {
     builder: (context, visible) {
       if (!visible) return const SizedBox.shrink();
       final l10n = context.l10n;
-      return MastermindGroup(
-        children: [
-          MastermindListRow(
-            key: const ValueKey('fleet-access-requests-row'),
-            leading: const Icon(LucideIcons.shieldCheck),
-            title: l10n.mastermindFleetAccessViewRequests,
-            subtitle: l10n.mastermindFleetAccessTitle,
-            onTap: () =>
-                openFleetAccess(context, view: FleetAccessView.requests),
-          ),
-        ],
+      // Set apart from the Answered list above it.
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: MastermindGroup(
+          children: [
+            MastermindListRow(
+              key: const ValueKey('fleet-access-requests-row'),
+              leading: const Icon(LucideIcons.shieldCheck),
+              title: l10n.mastermindFleetAccessViewRequests,
+              subtitle: l10n.mastermindFleetAccessTitle,
+              onTap: () =>
+                  openFleetAccess(context, view: FleetAccessView.requests),
+            ),
+          ],
+        ),
       );
     },
   );

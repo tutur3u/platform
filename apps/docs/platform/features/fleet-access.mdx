@@ -239,11 +239,11 @@ nothing; the API enforces every rule.
   then confirm.
 - **Approvals:** shown only to a grant holding an approval capability, and
   read-only: no API lists or decides approvals yet.
-- **Sessions:** the app calls the API with its Supabase bearer session. The
-  read routes accept it. The write routes (`POST /api/v1/fleet/intents`,
-  `identity/link-codes` and `identity/confirm`) accept only a browser
-  session or a Mastermind app session, so they answer 401 and the app shows
-  "Fleet couldn't verify your session" until they admit the mobile session.
+- **Sessions:** the app calls every Fleet route with its Supabase bearer
+  session, the mobile access token. The reads and the writes
+  (`POST /api/v1/fleet/intents`, `identity/link-codes` and
+  `identity/confirm`) accept it; a session the API refuses shows "Fleet
+  couldn't verify your session".
 
 ## Intent queue
 

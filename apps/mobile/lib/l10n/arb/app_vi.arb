@@ -7904,7 +7904,7 @@
   "mastermindFleetAccessLinkLinked": "Đã liên kết với {account} trên {channel}",
   "mastermindFleetAccessApprovalsUnavailable": "Ứng dụng chưa hỗ trợ phê duyệt",
   "mastermindFleetAccessNeedsOwnerApproval": "Cần chủ sở hữu duyệt",
-  "mastermindFleetAccessSentForOwnerApproval": "Đã gửi chủ sở hữu duyệt.",
+  "mastermindFleetAccessSentForOwnerApproval": "Đã gửi để chủ sở hữu duyệt.",
   "mastermindFleetAccessDiscardTitle": "Bỏ yêu cầu này?",
   "mastermindFleetAccessDiscard": "Bỏ",
   "mastermindFleetAccessKeepEditing": "Tiếp tục sửa",

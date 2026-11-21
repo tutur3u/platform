@@ -18672,7 +18672,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFleetAccessNeedsOwnerApproval => 'Cần chủ sở hữu duyệt';
 
   @override
-  String get mastermindFleetAccessSentForOwnerApproval => 'Đã gửi chủ sở hữu duyệt.';
+  String get mastermindFleetAccessSentForOwnerApproval => 'Đã gửi để chủ sở hữu duyệt.';
 
   @override
   String get mastermindFleetAccessDiscardTitle => 'Bỏ yêu cầu này?';
