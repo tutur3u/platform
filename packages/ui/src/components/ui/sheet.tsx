@@ -59,18 +59,19 @@ function SheetOverlay({
  * close button clears the notch with the content. Bottom sheets take the home
  * indicator as padding, matching the Sorbet bottom-sheet rule.
  */
+// CSS custom properties are not part of React.CSSProperties.
 const TOP_INSET = {
   '--sheet-inset-top': 'env(safe-area-inset-top, 0px)',
   borderTop: 'var(--sheet-inset-top) solid transparent',
-};
-const SAFE_AREA_BORDERS = {
+} as React.CSSProperties;
+const SAFE_AREA_BORDERS: Record<'top' | 'edge', React.CSSProperties> = {
   top: TOP_INSET,
   edge: {
     ...TOP_INSET,
     '--sheet-inset-bottom': 'env(safe-area-inset-bottom, 0px)',
     borderBottom: 'var(--sheet-inset-bottom) solid transparent',
-  },
-} as const satisfies Record<string, React.CSSProperties>;
+  } as React.CSSProperties,
+};
 
 function SheetContent({
   className,
