@@ -402,8 +402,10 @@ timestamp and a single-use nonce); there are no bearer tokens.
   request body carries no sender or conversation id. One provider event
   supports one recall and at most one write bundle.
 - **Revalidated cache:** the conversation object keeps the last snapshot with
-  its `version` and `consent_version`, but never serves it on age alone. Each
-  turn starts with recall carrying `if_version`; the registry answers
+  its `version` and `consent_version`, but never serves it on age alone. On
+  official channels each turn starts with full recall carrying `if_version`
+  (personal sessions use the separate addressing projection below, with no
+  versions and its own cache namespace); the registry answers
   `not_modified` or a fresh snapshot after live consent, suppression and
   status checks. If that check fails or misses its 150 ms budget, the turn
   runs with no person context and default behavior. Recall runs in parallel
@@ -419,7 +421,8 @@ timestamp and a single-use nonce); there are no bearer tokens.
   content is data, never instructions; tools and sends are decided outside
   the model.
 - **Writes** go through the Queue with idempotency key
-  `(channel, provider_message_id)` and provenance, consuming the event id in
+  `(channel, provider account, provider event id)`, the same tuple used for
+  enqueue, dedupe and receipt lookup everywhere, and provenance, consuming the event id in
   the shared replay table. Refusals (`consent_required`, `suppressed`,
   `deleting`, `revision_conflict`, `scope_denied`) are recorded as rejected
   with their reason, never retried as if transient.
@@ -466,6 +469,12 @@ replay or redirect one.
   verifies with both versions during a bounded overlap, then removes the old
   one; revocation removes it immediately and fails closed. Both paths are
   rehearsed before launch and audited.
+- **Admission records:** for every verified event the signer issues an
+  admission record, signed with the signer's admission key, that binds the
+  event tuple, the content hash, the destination conversation object name
+  and workspace, and the issue time. The conversation object verifies it
+  with the signer's public key before ingesting, so the router cannot
+  fabricate an event or retarget one to another destination.
 - **Logging:** neither the signers nor the router log or trace raw headers,
   bodies, signatures or proofs. Invocation logs and tail consumers are off
   for the signers; errors carry codes only. Redaction is covered by tests in
@@ -567,8 +576,14 @@ Registration prerequisites:
      answers are tool-free and logs are redacted;
    - shadow performs zero Fleet effects; partial cutover, mixed versions and
      rollback with in-flight work are rehearsed, including a paused sender,
-     a stale Web replica, clock skew, fence failover and delayed provider
-     completion, in both directions;
+     a stale Web replica, clock skew, fence failover, delayed provider
+     completion, lost provider receipts and an M4 returning after its token
+     expired, in both directions;
+   - admission refuses any mismatch between the bearer's desk, the verifying
+     key's desk and credential version, the claims and the live desk-owner
+     row;
+   - conversation objects reject router submissions that are fabricated or
+     retargeted to another destination;
    - the two signers cannot reach each other's credentials, provider secret
      rotation and revocation work, and no raw headers, bodies or proofs
      appear in logs or traces;
@@ -811,25 +826,36 @@ with the first deployable slice.
    row (Fleet Slice 4) holds the active desk id, credential version,
    account, generation and quiesce state, and the admission transaction
    checks all of them against the proof, whose signed claims carry
-   `deskId`, `credentialVersion` and `ownerGeneration`. Deployment-local
-   configuration is not trusted for admission, so a stale Web replica
-   accepts a current-generation proof only from the current desk.
+   `deskId`, `credentialVersion` and `ownerGeneration`. Every admission
+   requires all of these to match: the desk id from the bearer, the desk id
+   and credential version of the key that verified the signature, the claims'
+   `deskId` and `credentialVersion`, and the live desk-owner row.
+   Deployment-local configuration is not trusted for admission, so a stale
+   Web replica holding retired credentials fails against the live row.
 
    Sends are **fence-owned**. A Durable Object per `(channel, account)`
    performs every final send or edit for the cloud runtime itself, after
-   writing a durable send-start record; for the M4 runtime it issues a
-   one-shot dispatch token that it records before handing out. The fence
-   keeps its quiesce state durably, so a restart or failover resumes it. It
-   expires unused dispatch tokens on its own clock, but an issued token
-   counts as possibly in flight until the M4 reports its result or
-   reconciliation shows its outcome; no lease timeout ends that wait. In
-   either direction:
+   writing a durable send-start record. For the M4 runtime it issues a
+   one-shot dispatch token, and the M4 must **redeem** that token online at
+   the fence immediately before dispatching: the fence records the
+   redemption durably, then answers, and only a redeemed token permits a
+   send. Tokens are single-use, and an unredeemed token past its expiry on
+   the fence's clock can never be redeemed, so a paused M4 that returns late
+   cannot send. A redeemed token counts as in flight until the M4 reports its
+   result or reconciliation shows its outcome; no timeout ends that wait. The
+   fence keeps its quiesce state and redemptions durably, so a restart or
+   failover resumes them. In either direction:
    1. Quiesce: the fence stops starting sends and issuing tokens, and new
       admission stops.
    2. Reconcile every started send and issued token from provider receipts
       (message ids, delivery or status events). Promotion is blocked while
-      any started send could still take effect; an outcome that cannot be
-      established is resolved by the operator before promotion. If
+      any started send could still take effect. The operator may clear an
+      unresolved send only with evidence of both: the old sender cannot
+      start (its desk credentials are revoked or its process is proven
+      stopped, on top of the fence refusing further redemptions), and no
+      outstanding provider request can still land (a provider receipt, or
+      the provider's idempotency window or the sender's hard request
+      timeout plus acceptance margin has elapsed). If
       reconciliation does not finish within 15 minutes, the default is to
       abort: the current owner resumes under a fresh generation and the
       unresolved send stays marked uncertain for the operator, so a channel
@@ -846,8 +872,9 @@ with the first deployable slice.
    route for a full week within latency and error targets.
 
 The M4 receivers need one change for cutover: obtain a one-shot dispatch
-token from the owner fence for their `(channel, account)` before every send
-or edit, refuse without one, and report each result back to the fence.
+token from the owner fence for their `(channel, account)`, redeem it online
+immediately before every send or edit, refuse when redemption fails, and
+report each result back to the fence.
 
 ## Open decisions
 
