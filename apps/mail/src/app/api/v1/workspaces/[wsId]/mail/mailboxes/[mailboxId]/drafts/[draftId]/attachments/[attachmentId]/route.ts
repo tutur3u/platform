@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { mailAttachmentPreviewType } from '@/lib/mail/attachment-preview';
 import {
   deleteDraftAttachment,
   getAuthorizedAttachment,
@@ -31,13 +32,21 @@ export async function GET(
     const object = await streamMailStoredObject({
       location: authorized.location,
     });
+    const contentType =
+      object.contentType ??
+      authorized.attachment.content_type ??
+      'application/octet-stream';
+    const preview = mailAttachmentPreviewType(
+      contentType,
+      authorized.attachment.filename
+    );
+    const inline = preview && preview.kind !== 'pdf' && preview.kind !== 'docx';
     const headers = new Headers({
       'Cache-Control': 'private, no-store',
-      'Content-Disposition': 'inline',
-      'Content-Type':
-        object.contentType ??
-        authorized.attachment.content_type ??
-        'application/octet-stream',
+      'Content-Disposition': inline ? 'inline' : 'attachment',
+      'Content-Security-Policy':
+        "sandbox; default-src 'none'; frame-ancestors 'none'",
+      'Content-Type': inline ? preview.contentType : contentType,
       'X-Content-Type-Options': 'nosniff',
     });
     if (object.contentLength != null) {
