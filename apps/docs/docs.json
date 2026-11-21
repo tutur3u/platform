@@ -382,6 +382,7 @@
                   "platform/architecture/app-coordination",
                   "platform/architecture/sepay-integration",
                   "platform/architecture/authorization",
+                  "platform/architecture/public-text-limits",
                   "platform/architecture/workspaces-permissions",
                   {
                     "group": "System Design",

@@ -1,0 +1,94 @@
+---
+title: "Public text and payload limits"
+description: "The approved size and client-access contract for public tables, and the tables it exempts"
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+Public tables bound text and JSON writes in the database, and text-heavy tables
+are reached through server APIs unless a feature needs direct client access.
+The contract matches the shipped application: it records today's enforcement,
+names every exception, and changes no application behavior.
+
+`apps/database/supabase/tests/description-table-hardening.sql` is the
+regression evidence. Each exception list in it is the exact current set, so a
+new gap fails as an extra row and a closed gap fails as a missing row. The
+lists only shrink.
+
+## Rules
+
+| Rule | Default | Exceptions |
+| --- | --- | --- |
+| Strict text trigger | Every public table with a text column runs `enforce_strict_text_field_limits`, which applies `strict_text_field_char_limit`, `strict_text_field_byte_limit` and `strict_payload_field_byte_limit` on every write. `users` and `handles` run `private.enforce_employee_profile_text_limits()`, which adds the administrator rename exception. | The trigger-exempt tables below. |
+| Named strict checks | Text columns carry `<column>_strict_length_check` and `<column>_strict_bytes_check`; JSON columns carry `<column>_strict_payload_size_check`. | Columns on trigger-exempt tables, and the listed columns. |
+| Client access to text-heavy tables | No permissive RLS policy and no `authenticated` CRUD grant. Restrictive policies, such as `account_required_mfa`, are allowed because they only narrow access. | The client-access tables and their exact policies below. |
+| Security floor on text-heavy tables | RLS stays enabled, `anon` holds no table or column CRUD privilege, every policy targets `authenticated` only, and no permissive policy admits every row. | None. |
+| Legacy-sized constraints | No generic 10,000-character, 40,000-byte or 2 MiB check. | The approved limits below. |
+
+## Trigger-exempt tables
+
+These tables were created after the strict-text resync without the generic
+trigger. Writes through their feature APIs are bounded by API validation and
+any table-specific CHECKs. Where RLS also lets clients write a table directly,
+only those CHECKs apply: `task_templates.name`, `task_name`, `slug` and
+`description` accept workspace-member writes with no length limit, and the
+`description` columns of `hive_servers`, `hive_workflows` and
+`hive_research_sessions` accept platform-administrator writes with no length
+limit. Attaching the trigger would apply generic limits that could reject
+supported values, so each table needs a per-column limit review first.
+
+| Feature | Tables |
+| --- | --- |
+| Abuse prevention | `abuse_activity_signals`, `abuse_reputation_subjects`, `abuse_step_up_challenges`, `abuse_trust_overrides`, `rate_limit_appeals` |
+| Learning | `course_module_quiz_submissions`, `course_test_attempt_answers`, `course_tests` |
+| Finance fee locks | `fee_lock_events`, `fee_lock_lines`, `fee_locks`, `fee_notice_templates` |
+| Hive | `hive_members`, `hive_npc_memories`, `hive_npc_runs`, `hive_npcs`, `hive_research_session_events`, `hive_research_sessions`, `hive_servers`, `hive_workflow_runs`, `hive_workflows`, `hive_world_events` |
+| Meet | `meet_ai_chunks`, `meet_ai_memories`, `meet_ai_sessions`, `workspace_meet_settings` |
+| Inventory | `product_stock_changes` |
+| Sign-in | `qr_login_challenges` |
+| Tasks | `task_board_public_links`, `task_board_shares`, `task_capacity_rules`, `task_leaderboard_members`, `task_leaderboard_teams`, `task_leaderboards`, `task_plan_items`, `task_plan_shares`, `task_plans`, `task_profile_progress_settings`, `task_progress_achievements`, `task_progress_entries`, `task_progress_goals`, `task_progress_metrics`, `task_progress_user_achievements`, `task_templates` |
+| External projects | `workspace_external_project_bindings`, `workspace_external_project_entry_placements`, `workspace_external_project_entry_taxonomy_assignments`, `workspace_external_project_field_definitions`, `workspace_external_project_page_versions`, `workspace_external_project_relation_definitions` |
+| Workspaces | `user_workspace_configs`, `workspace_domains`, `workspace_email_invite_roles`, `workspace_habit_tracker_entry_receipts`, `workspace_ownership_transfers`, `workspace_user_profile_links` |
+
+## Columns without named strict checks
+
+On trigger-protected tables, the trigger enforces the strict limits for these
+columns, which were added after the resync:
+
+- Text: `calendar_auth_tokens.deactivated_reason`, `calendar_connections.access_role`, `meet_together_plans.timezone`, `onboarding_progress.guidance_mode`, `onboarding_progress.persona`, `onboarding_progress.replay_app`, `shortened_links.meet_link_kind`, `task_projects.ticket_key`, `transaction_categories.description`, `user_private_details.first_day_of_week`, `user_private_details.time_format`, `user_private_details.timezone`, `users.banner_url`, `workspace_calendar_events.sync_error`, `workspace_calendar_events.sync_status`, `workspace_cron_executions.endpoint_url`, `workspace_cron_executions.error`, `workspace_cron_executions.source`, `workspace_cron_jobs.endpoint_url`, `workspace_cron_jobs.external_app_id`, `workspace_cron_jobs.external_job_key`, `workspace_cron_jobs.http_method`, `workspace_cron_jobs.last_status`, `workspace_cron_jobs.locked_by`, `workspace_cron_jobs.schedule_timezone`, `workspace_habit_trackers.creation_key`, `workspace_quizzes.type`.
+- JSON: `workspace_course_modules.vocabulary`, `workspace_cron_jobs.headers_config`, `workspace_quizzes.answer`, `workspace_quizzes.content`.
+
+These columns have their own rule:
+
+- `users.handle` and `handles.value` keep the transaction-scoped administrator rename exception, which an unconditional CHECK cannot express.
+- `ai_chat_messages.content` uses the database-owned `ai_chat_messages_content_length_check` and `_bytes_check`, because the table stays reachable through PostgREST.
+- `ai_chat_messages.metadata` is exempt from payload limits.
+- `fee_lock_revisions.snapshot` and `hive_world_states.world_data` live on JSON-only tables with no text trigger.
+
+## Client-access tables
+
+Each permissive policy is scoped to the row owner, workspace membership, a
+workspace permission, or a Hive member or platform administrator. The test pins
+every policy by table, name and command and rejects a predicate of `true`, so a
+new or renamed policy, a changed command or an always-true predicate needs
+review before it ships. Other predicate edits rely on code review.
+
+| Table | `authenticated` privileges | Policy scope |
+| --- | --- | --- |
+| `course_tests` | select | Members of the course's workspace |
+| `hive_npc_memories`, `hive_npcs` | select | Hive members and platform administrators |
+| `hive_research_sessions`, `hive_servers`, `hive_workflows` | select, insert, update, delete | Members read; platform administrators manage |
+| `meet_ai_memories` | select | The owning user |
+| `rate_limit_appeals` | select, insert | The appeal's creator |
+| `task_leaderboards`, `task_progress_goals`, `task_progress_metrics` | select, insert, update, delete | Task progress workspace members read, update and delete every row; new rows in `task_leaderboards` and `task_progress_goals` must name the writer as creator or owner |
+| `task_progress_achievements` | select, insert, update, delete | Task progress workspace members; only a select policy exists, so RLS blocks writes |
+| `task_templates` | select, insert, update, delete | The creator, plus workspace members for workspace-visible templates |
+| `workspace_external_project_field_definitions` | select, insert, update, delete | External project managers and publishers |
+| `notifications`, `workspace_calendar_events` | none | Policies exist without grants, so clients cannot reach the rows |
+
+## Approved legacy-sized limits
+
+- `workspace_calendar_events.description` and `crawled_urls.html`: their strict limit is 10,000 characters and 40,000 bytes.
+- `ai_chat_messages.content`: the database-owned 10,000-character and 40,000-byte limit.
+- `task_plan_items.notes`: the 10,000-character note limit.
+- `workspace_external_project_page_versions.data`: the 2 MiB page-version cap.
