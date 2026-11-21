@@ -1,7 +1,11 @@
 import { Download } from '@tuturuuu/icons/lucide-static';
+import { Badge } from '@tuturuuu/ui/badge';
 import { ActionLink } from './action-link';
 import type { DownloadLabels, DownloadOption } from './download-option';
 import { PlatformIcon } from './platform-icon';
+
+const linkClass =
+  'inline-flex items-center gap-1.5 rounded text-sm underline-offset-4 hover:underline';
 
 export function PrimaryDownload({
   option,
@@ -16,20 +20,21 @@ export function PrimaryDownload({
       className="flex min-w-0 flex-col rounded-3xl border border-border/70 bg-background/80 p-6 shadow-sm backdrop-blur-sm sm:min-h-72 sm:p-8"
     >
       <p className="flex items-center gap-2 text-muted-foreground text-sm">
-        <PlatformIcon
-          platform={option.platform}
-          className="size-4 text-dynamic-purple"
-        />
+        <PlatformIcon platform={option.platform} className="size-4" />
         {labels.recommended}
       </p>
       <h2
         id="primary-download-title"
-        className="mt-3 text-balance font-display font-semibold text-2xl tracking-tight sm:text-3xl"
+        className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-balance font-display font-semibold text-2xl tracking-tight sm:text-3xl"
       >
         {option.title}
+        {option.beta && <Badge variant="secondary">{labels.beta}</Badge>}
       </h2>
       <p className="mt-2 text-muted-foreground text-sm">
         {option.meta.join(' · ')}
+      </p>
+      <p className="mt-1 text-muted-foreground text-xs">
+        {option.requirements}
       </p>
       <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-3 pt-8">
         {option.action ? (
@@ -45,11 +50,18 @@ export function PrimaryDownload({
         ) : (
           <p className="text-muted-foreground text-sm">{labels.unavailable}</p>
         )}
+        {option.betaAction && (
+          <ActionLink
+            action={option.betaAction}
+            newTabLabel={labels.newTab}
+            className={linkClass}
+          />
+        )}
         {option.releaseNotes && (
           <ActionLink
             action={option.releaseNotes}
             newTabLabel={labels.newTab}
-            className="inline-flex items-center gap-1.5 rounded text-sm underline-offset-4 hover:underline"
+            className={linkClass}
           />
         )}
       </div>

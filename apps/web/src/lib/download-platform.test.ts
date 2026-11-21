@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   desktopDisplayVersion,
   detectPlatform,
+  parseDesktopTag,
+  parseReleaseVersion,
   parseStoreListing,
   refinePlatform,
   resolvePrimaryPlatform,
@@ -105,5 +107,42 @@ describe('store listings', () => {
   it('drops the CI run suffix from desktop tags', () => {
     expect(desktopDisplayVersion('desktop-v0.26.0-40215487156')).toBe('0.26.0');
     expect(desktopDisplayVersion('desktop-v0.26.1')).toBe('0.26.1');
+    expect(desktopDisplayVersion('desktop-v0.27.27-1000000')).toBe('0.27.27');
+  });
+
+  it('reads the build number only from shared-train tags', () => {
+    expect(parseDesktopTag('desktop-v0.27.27')).toEqual({
+      version: '0.27.27',
+      build: null,
+    });
+    expect(parseDesktopTag('desktop-v0.27.27-1000000')).toEqual({
+      version: '0.27.27',
+      build: '1000000',
+    });
+    expect(parseDesktopTag('desktop-v1.0.0-1000004')).toEqual({
+      version: '1.0.0',
+      build: '1000004',
+    });
+    expect(parseDesktopTag('desktop-v0.27.26-40215487156')).toEqual({
+      version: '0.27.26',
+      build: null,
+    });
+    expect(parseDesktopTag('desktop-v0.26.0-40215487156')).toEqual({
+      version: '0.26.0',
+      build: null,
+    });
+  });
+
+  it('parses recorded versions with an optional build', () => {
+    expect(parseReleaseVersion('0.27.27')).toEqual({
+      version: '0.27.27',
+      build: null,
+    });
+    expect(parseReleaseVersion(' 0.27.27+578001 ')).toEqual({
+      version: '0.27.27',
+      build: '578001',
+    });
+    for (const value of ['latest', '0.27', '0.27.27-beta', 27, null])
+      expect(parseReleaseVersion(value)).toBeNull();
   });
 });

@@ -9,7 +9,7 @@ export function RowDetails({
   option: DownloadOption;
   labels: DownloadLabels;
 }) {
-  if (!option.sha256 && !option.note) return null;
+  if (!option.sha256 && !option.note && !option.releaseNotes) return null;
   return (
     <details className="mt-1 text-muted-foreground text-xs">
       <summary className="w-fit cursor-pointer rounded py-0.5 focus-visible:outline-2 focus-visible:outline-ring">

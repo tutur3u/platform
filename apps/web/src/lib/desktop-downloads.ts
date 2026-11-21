@@ -20,7 +20,8 @@ export type DesktopRelease = {
   downloads: DesktopDownload[];
 };
 
-// Legacy betas appended the CI run ID; current tags are desktop-v<version>.
+// Tags are desktop-v<version>-<build> on the shared release train. Older
+// betas used desktop-v<version> or appended the CI run ID.
 const tagPattern = /^desktop-v\d+\.\d+\.\d+(?:-\d+)?$/;
 const object = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)

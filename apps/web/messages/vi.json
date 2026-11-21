@@ -7220,28 +7220,51 @@
     "yesterday": "Hôm qua"
   },
   "desktop_download": {
+    "all_desktop_releases": "Tất cả bản phát hành máy tính",
     "android": {
       "beta_action": "Tham gia trên Google Play",
       "beta_meta": "Bản beta Google Play",
       "name": "Android",
+      "requirements": "Android 7.0 trở lên",
       "store_action": "Tải trên Google Play",
       "store_meta": "Google Play"
     },
+    "apps": {
+      "description": "Mỗi ứng dụng đều có trong Tuturuuu trên điện thoại và máy tính, và cũng chạy trên web.",
+      "open_web": "Mở trên web",
+      "title": "Ứng dụng đi kèm"
+    },
     "badge": "Truy cập sớm Tuturuuu",
+    "beta_badge": "Beta",
+    "beta_opt_in": "Tham gia bản beta",
+    "beta_opt_in_version": "Tham gia bản beta · {version}",
+    "changelog": "Nhật ký thay đổi",
     "checksum": "Mã kiểm tra SHA-256",
+    "cli": {
+      "copied": "Đã sao chép",
+      "copy": "Sao chép lệnh",
+      "copy_failed": "Không sao chép được. Hãy chọn lệnh để sao chép.",
+      "description": "Cài đặt ttr CLI để dùng Tuturuuu từ terminal.",
+      "docs": "Tài liệu CLI",
+      "package": "Gói npm",
+      "title": "Dòng lệnh"
+    },
     "coming_soon": "Sắp ra mắt",
     "description": "Ứng dụng beta cho điện thoại, máy tính bảng và máy tính. Không gian làm việc luôn được đồng bộ ở mọi nơi.",
     "details": "Chi tiết cài đặt",
     "download": "Tải xuống",
     "download_for": "Tải xuống cho {platform}",
+    "get_app": "Tải ứng dụng",
     "invite_only": "Chỉ dành cho người được mời",
     "ios": {
       "beta_action": "Tham gia trên TestFlight",
       "beta_meta": "Bản beta TestFlight",
       "name": "iPhone và iPad",
+      "requirements": "iOS và iPadOS 15 trở lên",
       "store_action": "Tải trên App Store",
       "store_meta": "App Store"
     },
+    "join_beta": "Tham gia beta",
     "linux": {
       "name": "Linux",
       "requirements": "Ubuntu 24.04 trở lên · Intel / AMD 64-bit · .deb"
@@ -7250,8 +7273,9 @@
       "name": "macOS",
       "requirements": "macOS 12 trở lên · Apple silicon và Intel"
     },
+    "mobile_changelog": "Nhật ký thay đổi di động",
     "mobile_invite": "Bản beta có thể cần lời mời. Hãy dùng tài khoản Apple hoặc Google bạn đã đăng ký truy cập sớm.",
-    "navigation_description": "Ứng dụng cho Windows, macOS và Linux",
+    "navigation_description": "Điện thoại, máy tính, web và CLI",
     "opens_new_tab": "(mở trong thẻ mới)",
     "other_title": "Nền tảng khác",
     "primary_title": "Tuturuuu cho {platform}",
@@ -7267,10 +7291,13 @@
     "size": "{size} MB",
     "title": "Tải Tuturuuu",
     "version": "Phiên bản {version}",
+    "version_build": "Phiên bản {version} (bản dựng {build})",
     "web": {
       "action": "Mở trên trình duyệt",
       "meta": "Không cần cài đặt",
       "name": "Web",
+      "requirements": "Phiên bản mới của Chrome, Edge, Firefox hoặc Safari",
+      "short_action": "Mở",
       "title": "Dùng Tuturuuu trên trình duyệt"
     },
     "windows": {

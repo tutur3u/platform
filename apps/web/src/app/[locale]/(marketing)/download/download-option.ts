@@ -3,7 +3,7 @@ import type { DownloadPlatform } from '@/lib/download-platform';
 export type DownloadAction = {
   href: string;
   label: string;
-  // Compact label for list rows; `label` stays the accessible name.
+  // Compact label for cards; `label` stays the accessible name.
   shortLabel?: string;
   external: boolean;
 };
@@ -14,8 +14,13 @@ export type DownloadOption = {
   platform: DownloadPlatform;
   name: string;
   title: string;
+  // Set when the offered build is a beta (TestFlight, Play testing, desktop).
+  beta: boolean;
   meta: string[];
+  requirements: string;
   action: DownloadAction | null;
+  // Beta channel opt-in, offered beside a public store listing.
+  betaAction?: DownloadAction;
   note?: string;
   noteLink?: DownloadAction;
   releaseNotes?: DownloadAction;
@@ -25,6 +30,7 @@ export type DownloadOption = {
 export type DownloadLabels = {
   recommended: string;
   others: string;
+  beta: string;
   checksum: string;
   details: string;
   newTab: string;

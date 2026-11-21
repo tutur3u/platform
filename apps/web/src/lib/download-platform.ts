@@ -137,8 +137,39 @@ function googlePlayListing(url: URL, publiclyListed: boolean) {
     : { url: androidTestingUrl(packageId), kind: 'beta' as const };
 }
 
-// desktop-v0.26.1 -> 0.26.1; legacy desktop-v0.26.0-40215487156 -> 0.26.0
-// (that suffix was the CI run id).
+export type ReleaseVersion = { version: string; build: string | null };
+
+// The shared release train starts at 0.27.27; from there the numeric tag
+// suffix is the global build number. Older suffixes were CI run ids.
+const SHARED_TRAIN = [0, 27, 27] as const;
+
+function onSharedTrain(version: string) {
+  const [major = 0, minor = 0, patch = 0] = version.split('.').map(Number);
+  const [trainMajor, trainMinor, trainPatch] = SHARED_TRAIN;
+  if (major !== trainMajor) return major > trainMajor;
+  if (minor !== trainMinor) return minor > trainMinor;
+  return patch >= trainPatch;
+}
+
+// desktop-v0.27.27-1000000 -> 0.27.27 build 1000000; desktop-v0.26.1 ->
+// 0.26.1; legacy desktop-v0.26.0-40215487156 -> 0.26.0.
+export function parseDesktopTag(tag: string): ReleaseVersion {
+  const match = tag.match(/^desktop-v(\d+\.\d+\.\d+)(?:-(\d+))?$/);
+  if (!match?.[1]) return { version: desktopDisplayVersion(tag), build: null };
+  const version = match[1];
+  return {
+    version,
+    build: match[2] && onSharedTrain(version) ? match[2] : null,
+  };
+}
+
 export function desktopDisplayVersion(tag: string) {
   return tag.replace(/^desktop-v/, '').replace(/-\d+$/, '');
+}
+
+// A store or beta version recorded as X.Y.Z, optionally with +<build>.
+export function parseReleaseVersion(value: unknown): ReleaseVersion | null {
+  if (typeof value !== 'string') return null;
+  const match = value.trim().match(/^(\d+\.\d+\.\d+)(?:\+(\d+))?$/);
+  return match?.[1] ? { version: match[1], build: match[2] ?? null } : null;
 }

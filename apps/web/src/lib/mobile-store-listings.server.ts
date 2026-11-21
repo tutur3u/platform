@@ -1,22 +1,16 @@
 import 'server-only';
 import { cacheLife } from 'next/cache';
 import {
-  ANDROID_PACKAGE_ID,
-  androidTestingUrl,
-  type MobileStoreListing,
-  parseStoreListing,
-} from './download-platform';
+  type MobileStoreListings,
+  resolveMobileChannels,
+} from './mobile-store-listings';
 import { getMobileVersionPolicies } from './mobile-version-policy';
 
-export type MobileStoreListings = {
-  ios: MobileStoreListing | null;
-  android: MobileStoreListing;
-};
+export type { MobileStoreListings } from './mobile-store-listings';
 
-// The mobile version policy (root workspace config) is the source of truth for
-// store links and the current release. A missing policy shows the store link
-// without a version rather than a guessed one. The version shown is the
-// policy's effective version.
+// The human-set mobile version policy (root workspace config) is the source
+// of truth for public store links and versions; it also drives in-app update
+// prompts. A failed read shows no version rather than a guessed one.
 export async function getMobileStoreListings(): Promise<MobileStoreListings> {
   'use cache';
   cacheLife({ stale: 300, revalidate: 300, expire: 3600 });
@@ -28,19 +22,13 @@ export async function getMobileStoreListings(): Promise<MobileStoreListings> {
     console.warn('Failed to load mobile store listings', error);
   }
   return {
-    ios: parseStoreListing(
-      'ios',
-      policies?.ios.storeUrl,
-      policies?.ios.effectiveVersion
-    ),
-    android: parseStoreListing(
-      'android',
-      policies?.android.storeUrl,
-      policies?.android.effectiveVersion
-    ) ?? {
-      url: androidTestingUrl(ANDROID_PACKAGE_ID),
-      version: null,
-      kind: 'beta',
-    },
+    ios: resolveMobileChannels('ios', {
+      storeUrl: policies?.ios.storeUrl,
+      effectiveVersion: policies?.ios.effectiveVersion,
+    }),
+    android: resolveMobileChannels('android', {
+      storeUrl: policies?.android.storeUrl,
+      effectiveVersion: policies?.android.effectiveVersion,
+    }),
   };
 }

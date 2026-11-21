@@ -7220,28 +7220,51 @@
     "yesterday": "Yesterday"
   },
   "desktop_download": {
+    "all_desktop_releases": "All desktop releases",
     "android": {
       "beta_action": "Join on Google Play",
       "beta_meta": "Google Play beta",
       "name": "Android",
+      "requirements": "Android 7.0 or later",
       "store_action": "Get it on Google Play",
       "store_meta": "Google Play"
     },
+    "apps": {
+      "description": "Each app is part of Tuturuuu on your phone and computer, and also runs on the web.",
+      "open_web": "Open on the web",
+      "title": "Apps included"
+    },
     "badge": "Tuturuuu early access",
+    "beta_badge": "Beta",
+    "beta_opt_in": "Join the beta",
+    "beta_opt_in_version": "Join the beta · {version}",
+    "changelog": "Changelog",
     "checksum": "SHA-256 checksum",
+    "cli": {
+      "copied": "Copied",
+      "copy": "Copy command",
+      "copy_failed": "Copy failed. Select the command to copy it.",
+      "description": "Install the ttr CLI to use Tuturuuu from your terminal.",
+      "docs": "CLI documentation",
+      "package": "npm package",
+      "title": "Command line"
+    },
     "coming_soon": "Coming soon",
     "description": "Beta apps for your phone, tablet, and computer. Your workspace stays in sync everywhere.",
     "details": "Install details",
     "download": "Download",
     "download_for": "Download for {platform}",
+    "get_app": "Get the app",
     "invite_only": "Invitation only",
     "ios": {
       "beta_action": "Join on TestFlight",
       "beta_meta": "TestFlight beta",
       "name": "iPhone and iPad",
+      "requirements": "iOS and iPadOS 15 or later",
       "store_action": "Download on the App Store",
       "store_meta": "App Store"
     },
+    "join_beta": "Join beta",
     "linux": {
       "name": "Linux",
       "requirements": "Ubuntu 24.04 or later · Intel / AMD 64-bit · .deb"
@@ -7250,8 +7273,9 @@
       "name": "macOS",
       "requirements": "macOS 12 or later · Apple silicon and Intel"
     },
+    "mobile_changelog": "Mobile changelog",
     "mobile_invite": "The beta may require an invitation. Use the Apple or Google account you gave us for early access.",
-    "navigation_description": "Windows, macOS, and Linux apps",
+    "navigation_description": "Phone, desktop, web, and CLI",
     "opens_new_tab": "(opens in a new tab)",
     "other_title": "Other platforms",
     "primary_title": "Tuturuuu for {platform}",
@@ -7267,10 +7291,13 @@
     "size": "{size} MB",
     "title": "Download Tuturuuu",
     "version": "Version {version}",
+    "version_build": "Version {version} (build {build})",
     "web": {
       "action": "Open in browser",
       "meta": "Nothing to install",
       "name": "Web",
+      "requirements": "A current version of Chrome, Edge, Firefox, or Safari",
+      "short_action": "Open",
       "title": "Use Tuturuuu in your browser"
     },
     "windows": {
