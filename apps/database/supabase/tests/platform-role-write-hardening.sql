@@ -1,5 +1,5 @@
 begin;
-select plan(42);
+select plan(48);
 select set_config('request.jwt.claims', '{}', true);
 
 insert into auth.users (id, email, role, raw_app_meta_data, raw_user_meta_data)
@@ -57,6 +57,9 @@ select throws_ok(
   $$update public.platform_user_roles set enabled = true where user_id = 'af100000-0000-4000-8000-000000000004'$$,
   '42501', 'Enabled platform role manager required', 'server writes require an actor');
 select throws_ok(
+  $$delete from public.platform_user_roles where user_id = 'af100000-0000-4000-8000-000000000004'$$,
+  '42501', 'Enabled platform role manager required', 'direct server deletion requires an actor');
+select throws_ok(
   $$insert into public.platform_email_roles(email, enabled) values ('role-no-actor@fixture.test', true)$$,
   '42501', 'Enabled platform role manager required', 'pending grant writes require an actor');
 select set_config('request.headers', '{"x-ttr-audit-actor-id":"af100000-0000-4000-8000-000000000002"}', true);
@@ -74,6 +77,9 @@ select throws_ok(
 select lives_ok(
   $$update public.platform_user_roles set enabled = true where user_id = 'af100000-0000-4000-8000-000000000004'$$,
   'enabled server actor can edit another user');
+select lives_ok(
+  $$delete from public.platform_user_roles where user_id = 'af100000-0000-4000-8000-000000000003'$$,
+  'enabled server actor can remove another user’s role');
 select lives_ok(
   $$insert into public.platform_email_roles(email, enabled) values ('role-signup@fixture.test', true)$$,
   'enabled server actor can reserve a grant for signup');
@@ -115,6 +121,27 @@ where user_id = 'af100000-0000-4000-8000-000000000004';
 select throws_ok(
   $$update public.platform_user_roles set enabled = false where enabled and allow_role_management$$,
   'PT409', 'Cannot remove the last enabled platform role manager', 'one statement cannot remove both managers');
+
+-- Erasure removes the Auth account and personal workspace before the profile.
+update public.platform_user_roles set allow_role_management = false
+where user_id = 'af100000-0000-4000-8000-000000000004';
+delete from auth.users where id = 'af100000-0000-4000-8000-000000000001';
+set local role service_role;
+delete from public.workspaces
+where creator_id = 'af100000-0000-4000-8000-000000000001' and personal;
+select lives_ok(
+  $$delete from public.users where id = 'af100000-0000-4000-8000-000000000001'$$,
+  'server can erase the last enabled manager’s profile');
+reset role;
+select is_empty(
+  $$select from public.users where id = 'af100000-0000-4000-8000-000000000001'$$,
+  'the erased profile is gone');
+select is_empty(
+  $$select from public.platform_user_roles where user_id = 'af100000-0000-4000-8000-000000000001'$$,
+  'profile erasure cascades to the role row');
+select is_empty(
+  $$select from public.platform_user_roles where enabled and allow_role_management$$,
+  'erasing the last manager’s account may leave no enabled manager');
 
 select * from finish();
 rollback;

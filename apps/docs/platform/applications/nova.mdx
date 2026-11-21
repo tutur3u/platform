@@ -380,9 +380,10 @@ managers can read other users' roles and pending email grants.
 Platform role writes go through server actions and APIs. The Web role update
 endpoint also requires root workspace role-management permission and an
 MFA-verified session. The database checks the verified server actor, blocks
-self-edits, and preserves at least one enabled role manager once one exists.
-Auth signup can still consume a pending email grant, and deleting an account
-cannot remove the last enabled role manager. Database coverage lives in
+self-edits, and protects the last enabled manager from direct role removal or
+demotion. Server-side account erasure removes the account’s role by cascade,
+including when it belongs to the last enabled manager. Auth signup can consume
+a pending email grant. Database coverage lives in
 [`platform-role-write-hardening.sql`](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/platform-role-write-hardening.sql).
 
 ## Data Access Patterns
