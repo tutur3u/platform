@@ -1,4 +1,3 @@
-import { APP_BASE_GLOBAL } from './app-url';
 /**
  * Per-response CSP script nonces. The Worker handler creates one nonce per
  * request, keeps it in the request context, and sends it in the
@@ -35,6 +34,12 @@ export function defaultContentSecurityPolicy(nonce: string): string {
   ].join('; ');
 }
 
+/**
+ * The app-base global (`APP_BASE_GLOBAL` in ./app-url), repeated here so this
+ * module stays import-free: Node loads it directly from app configs.
+ */
+export const TRUSTED_TYPES_APP_BASE_GLOBAL = '__tuturuuuAppBase';
+
 /** Name of the one Trusted Types policy a bridged document may create. */
 export const TRUSTED_TYPES_POLICY = 'default';
 
@@ -58,4 +63,4 @@ export const TRUSTED_TYPES_DIRECTIVES = [
  *   server already sent with this response's nonce. TanStack Router re-inserts
  *   its inline head scripts after hydration; any other text is refused.
  */
-export const TRUSTED_TYPES_BOOTSTRAP = `(function(t){if(!t||t.defaultPolicy)return;t.createPolicy(${JSON.stringify(TRUSTED_TYPES_POLICY)},{createHTML:function(s){return s},createScriptURL:function(s){var u=new URL(s,document.baseURI),b=globalThis[${JSON.stringify(APP_BASE_GLOBAL)}]||"";if(u.origin===location.origin&&(b===""||u.pathname===b||u.pathname.indexOf(b+"/")===0))return u.href;throw new TypeError("Trusted Types: script URL outside the app")},createScript:function(s){for(var i=0,l=document.scripts;i<l.length;i++)if(l[i].nonce&&l[i].text===s)return s;throw new TypeError("Trusted Types: script text")}})})(globalThis.trustedTypes);`;
+export const TRUSTED_TYPES_BOOTSTRAP = `(function(t){if(!t||t.defaultPolicy)return;t.createPolicy(${JSON.stringify(TRUSTED_TYPES_POLICY)},{createHTML:function(s){return s},createScriptURL:function(s){var u=new URL(s,document.baseURI),b=globalThis[${JSON.stringify(TRUSTED_TYPES_APP_BASE_GLOBAL)}]||"";if(u.origin===location.origin&&(b===""||u.pathname===b||u.pathname.indexOf(b+"/")===0))return u.href;throw new TypeError("Trusted Types: script URL outside the app")},createScript:function(s){for(var i=0,l=document.scripts;i<l.length;i++)if(l[i].nonce&&l[i].text===s)return s;throw new TypeError("Trusted Types: script text")}})})(globalThis.trustedTypes);`;

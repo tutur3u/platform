@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TRUSTED_TYPES_BOOTSTRAP, TRUSTED_TYPES_DIRECTIVES } from '../core/csp';
+import {
+  TRUSTED_TYPES_APP_BASE_GLOBAL,
+  TRUSTED_TYPES_BOOTSTRAP,
+  TRUSTED_TYPES_DIRECTIVES,
+} from '../core/csp';
 import { APP_BASE_GLOBAL } from '../core/app-url';
 import { trustedTypesHeadScript } from './base-path';
 import { createBridgeRootRoute } from './page-route';
@@ -36,6 +40,10 @@ const rulesOf = (createPolicy: ReturnType<typeof register>) =>
   (createPolicy.mock.calls[0] as [string, Rules])[1];
 
 describe('Trusted Types bootstrap', () => {
+  it('reads the app base from the app-base global', () => {
+    expect(TRUSTED_TYPES_APP_BASE_GLOBAL).toBe(APP_BASE_GLOBAL);
+  });
+
   it('requires Trusted Types and allows only the default policy', () => {
     expect(TRUSTED_TYPES_DIRECTIVES).toBe(
       "require-trusted-types-for 'script'; trusted-types default"
