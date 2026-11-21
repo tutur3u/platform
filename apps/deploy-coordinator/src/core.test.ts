@@ -108,7 +108,7 @@ describe.each(STORES)('environment state machine (%s store)', (_, store) => {
       { op: 'heartbeat', id: first.id, grant, runId: null },
       T0 + 4 * MIN
     );
-    expect(Date.parse(renewed.leaseDeadline)).toBe(T0 + 9 * MIN);
+    expect(Date.parse(renewed.leaseDeadline)).toBe(T0 + 14 * MIN);
 
     // Heartbeats keep a lease alive only up to the attempt ceiling.
     let now = T0 + 4 * MIN;
@@ -350,6 +350,43 @@ describe.each(STORES)('environment state machine (%s store)', (_, store) => {
       T0 + 9
     );
     expect(h.call({ op: 'snapshot' }, T0 + 10).lanes[0].held).toBe(true);
+  });
+
+  it('shares one marker between rollbacks that serve the same deployment', () => {
+    const h = harness(store);
+    const publish = (runId: number, now: number) => {
+      const deployment = h.deploy(runId, now);
+      h.complete(deployment.id, h.claim(deployment.id, now).grant, now);
+      return deployment;
+    };
+    const good = publish(100, T0);
+    publish(101, T0 + 1);
+    const first = h.call(
+      { op: 'rollback', id: good.id, actor: 'op' },
+      T0 + 2
+    ).deployment;
+    h.call(
+      {
+        op: 'resolve',
+        id: first.id,
+        outcome: 'succeeded',
+        actor: 'op',
+        url: null,
+      },
+      T0 + 3
+    );
+    h.call({ op: 'releaseHold', lane: 'default' }, T0 + 4);
+    publish(102, T0 + 5);
+    // The succeeded rollback and the deployment it serves are one target.
+    const viaRollback = h.call(
+      { op: 'rollback', id: first.id, actor: 'op' },
+      T0 + 6
+    ).deployment;
+    const viaSource = h.call(
+      { op: 'rollback', id: good.id, actor: 'op' },
+      T0 + 7
+    ).deployment;
+    expect(viaSource.id).toBe(viaRollback.id);
   });
 
   it('passes the hold to another queued rollback when one is cancelled', () => {

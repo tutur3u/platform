@@ -1652,6 +1652,18 @@
     "digest": "23e95e380f5f19bbdf9965ecbfa51cdbfc082232266426c0357a26fc79b3f568"
   },
   {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/[project]/[environment]/route.ts",
+    "digest": "df6235568c3ed9d7aabf2544e7dbb70c2e3092d5258ffb5c7f3ad6ea04d8a01a"
+  },
+  {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/[project]/route.ts",
+    "digest": "ea0d6c60c2bcd7c5af2c2794c01e24283d008899a1bb3b32fd44666a8b39e8fc"
+  },
+  {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/route.ts",
+    "digest": "010d11c1ee3db16a81f3c600b2a5624e4cc7d3f8fc63d267fca3350d4b63fa59"
+  },
+  {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts",
     "digest": "9936b84cc77c0eac838fac06b014f72c8d3b156938b06d3e3574a17bf3f83b75"
   },

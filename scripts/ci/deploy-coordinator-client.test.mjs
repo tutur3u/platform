@@ -114,12 +114,35 @@ describe('deploy coordinator client', () => {
     const result = await begin(h.client, h.deps);
     assert.deepEqual(result, { publish: true, deploymentId: ID, grant });
     // The poll interval never drops below the floor.
-    assert.deepEqual(h.slept, [20_000]);
+    assert.deepEqual(h.slept, [30_000]);
     assert.equal(h.state.heartbeats, 1);
     assert.deepEqual(h.state.value.grant, grant);
     const claim = h.server.calls.find((call) => call.path.endsWith('/claim'));
     assert.equal(claim.init.headers.Authorization, 'Bearer oidc-token');
     assert.deepEqual(JSON.parse(claim.init.body), { workerId: '42:1:deploy' });
+  });
+
+  test('backs claim polls off to the cap', async () => {
+    const wait = {
+      body: { decision: 'wait', retryAfterSeconds: 60, blockedBy: 'x' },
+    };
+    const h = run(
+      { DC_MAX_WAIT_MINUTES: '30' },
+      {
+        [`POST ${PROD}/deployments`]: [created()],
+        [`POST ${PROD}/deployments/:id/claim`]: [
+          wait,
+          wait,
+          wait,
+          wait,
+          wait,
+          { body: { decision: 'granted', grant } },
+        ],
+      }
+    );
+    assert.equal((await begin(h.client, h.deps)).publish, true);
+    // The coordinator's 60 s floor, then doubling to the 180 s cap.
+    assert.deepEqual(h.slept, [60_000, 60_000, 120_000, 180_000, 180_000]);
   });
 
   test('skips publication when superseded or held in enforce mode', async () => {
@@ -275,6 +298,9 @@ describe('deploy coordinator client', () => {
       {
         [`POST ${PROD}/deployments/:id/heartbeat`]: [
           { body: grant },
+          { status: 503, body: { error: 'UNAVAILABLE' } },
+          { status: 503, body: { error: 'UNAVAILABLE' } },
+          { status: 503, body: { error: 'UNAVAILABLE' } },
           { status: 409, body: { error: 'LEASE_EXPIRED' } },
         ],
       }
@@ -290,6 +316,8 @@ describe('deploy coordinator client', () => {
     });
     assert.equal(result, 'fenced');
     assert.equal(fenced, 'LEASE_EXPIRED');
+    // A failed heartbeat (503, retried three times) retries after a minute.
+    assert.deepEqual(h.slept, [240_000, 240_000, 1_000, 2_000, 60_000]);
 
     const done = run({}, {});
     assert.equal(

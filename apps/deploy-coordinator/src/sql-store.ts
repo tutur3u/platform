@@ -11,9 +11,11 @@ export interface SqlExec {
 
 type SqlStorageValue = ArrayBuffer | string | number | null;
 
+// Text-keyed tables are WITHOUT ROWID so the primary key is the table itself:
+// Cloudflare bills every index a write touches as another row written.
 const SCHEMA = [
   'CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL, seq INTEGER NOT NULL DEFAULT 0)',
-  'CREATE TABLE IF NOT EXISTS lanes (lane TEXT PRIMARY KEY, updated_at INTEGER NOT NULL, data TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS lanes (lane TEXT PRIMARY KEY, updated_at INTEGER NOT NULL, data TEXT NOT NULL) WITHOUT ROWID',
   `CREATE TABLE IF NOT EXISTS deployments (
     id TEXT PRIMARY KEY,
     lane TEXT NOT NULL,
@@ -25,10 +27,10 @@ const SCHEMA = [
     idempotency_key TEXT NOT NULL UNIQUE,
     created_at INTEGER NOT NULL,
     data TEXT NOT NULL
-  )`,
+  ) WITHOUT ROWID`,
   'CREATE INDEX IF NOT EXISTS deployments_lane_seq ON deployments (lane, seq)',
   'CREATE INDEX IF NOT EXISTS deployments_status ON deployments (status, created_at)',
-  'CREATE TABLE IF NOT EXISTS budget (day TEXT PRIMARY KEY, used INTEGER NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS budget (day TEXT PRIMARY KEY, used INTEGER NOT NULL) WITHOUT ROWID',
 ];
 
 const TERMINAL = "('succeeded','failed','superseded','cancelled','unknown')";

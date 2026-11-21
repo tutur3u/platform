@@ -390,12 +390,15 @@ cost envelope and regressions are in the
 The deploy coordinator Worker (`apps/deploy-coordinator`) schedules nothing:
 lease lapses and queue expiry are applied lazily at the start of each call. Its
 objects are limited to catalog projects × three environments, each charging a
-durable 5,000-call daily budget before other work and holding a durable
-environment stop fence. Rows written are counted with their index rows and
-pinned per call by a cost test: at most 25 a create, 9 for any other call once
-deferred transitions are charged to the create they belong to. That puts the
-hard ceiling at about $325 a month with every environment at budget, about $28
-for the CI client's own worst case; the figures and the stop order are in the
+durable 500-call daily budget before other work and holding a durable
+environment stop fence. Text-keyed tables are `WITHOUT ROWID`, and rows
+written are counted with their index rows and pinned per call by a cost test:
+at most 18 a create, 6 for any other call once deferred transitions are
+charged to the create they belong to. Clients poll with backoff and heartbeat
+every four minutes, so a worst-case deployment is about 36 calls. With every
+environment at budget the hard ceiling is about $0.07 a month above the plan
+standalone, about $28 a month marginal once other Workers use up the shared
+included allowances; the figures and the stop order are in the
 [deployment coordinator design](/build/devops/deployment-coordinator#cost-and-stop-fence-analysis).
 
 The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and

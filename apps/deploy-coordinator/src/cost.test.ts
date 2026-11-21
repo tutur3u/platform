@@ -6,18 +6,17 @@ import type { EnvironmentName } from './projects';
 import { type SqlExec, SqlEnvironmentStore } from './sql-store';
 
 // Cloudflare bills every row a write touches in a table and in each of its
-// indexes. Each table's weight is one plus the indexes the schema in
-// sql-store.ts creates on it; every changed row is counted at full weight,
-// whether or not the write moved an indexed column.
+// indexes. Each table's weight is its own b-tree plus the secondary indexes the
+// schema in sql-store.ts creates on it; text-keyed tables are WITHOUT ROWID, so
+// their primary key is the table itself. Every changed row is counted at full
+// weight, whether or not the write moved an indexed column.
 const WEIGHT: Record<string, number> = {
-  // id primary key, idempotency_key unique, (lane, seq), (status, created_at)
-  deployments: 5,
-  // lane primary key
-  lanes: 2,
+  // table (keyed by id), idempotency_key unique, (lane, seq), (status, created_at)
+  deployments: 4,
+  lanes: 1,
   // integer primary key is the rowid
   meta: 1,
-  // day primary key
-  budget: 2,
+  budget: 1,
 };
 
 function meteredSql() {
@@ -105,17 +104,17 @@ describe('rows written per call', () => {
   it('pins the direct cost of each CI call', () => {
     const m = metered();
     const first = m.create(100, T0);
-    // budget 2, sequence 1 (2 when the meta row is first written), lane 2,
-    // deployment 5
-    expect(first.rows).toBe(11);
+    // budget 1, sequence 1 (2 when the meta row is first written), lane 1,
+    // deployment 4
+    expect(first.rows).toBe(8);
     const id = first.value.deployment.id;
 
     const claim = m.run({ op: 'claim', id, workerId: 'w', runId: 100 }, T0);
-    expect(claim.rows).toBe(9);
+    expect(claim.rows).toBe(6);
     const grant = claim.value.grant;
 
     const second = m.create(101, T0 + 1);
-    expect(second.rows).toBe(10);
+    expect(second.rows).toBe(7);
     const waiting = m.run(
       {
         op: 'claim',
@@ -126,10 +125,10 @@ describe('rows written per call', () => {
       T0 + 2
     );
     expect(waiting.value.decision).toBe('wait');
-    expect(waiting.rows).toBe(2);
+    expect(waiting.rows).toBe(1);
 
     const beat = m.run({ op: 'heartbeat', id, grant, runId: 100 }, T0 + 3);
-    expect(beat.rows).toBe(7);
+    expect(beat.rows).toBe(5);
 
     const done = m.run(
       {
@@ -146,7 +145,7 @@ describe('rows written per call', () => {
       },
       T0 + 4
     );
-    expect(done.rows).toBe(9);
+    expect(done.rows).toBe(6);
 
     // Operator reads, stop and resume are not counted against the budget.
     expect(m.run({ op: 'snapshot' }, T0 + 5).rows).toBe(0);
@@ -185,8 +184,8 @@ describe('rows written per call', () => {
     publish(101, T0 + 1);
     const marker = m.run({ op: 'rollback', id: good, actor: 'op' }, T0 + 2)
       .value.deployment;
-    // budget 2, lane epoch 2, then the terminal transition: lane 2 and
-    // deployment 5, charged to the marker's create in the ceiling.
+    // budget 1, lane epoch 1, then the terminal transition: lane 1 and
+    // deployment 4, charged to the marker's create in the ceiling.
     const resolved = m.run(
       {
         op: 'resolve',
@@ -197,7 +196,7 @@ describe('rows written per call', () => {
       },
       T0 + 3
     );
-    expect(resolved.rows).toBe(11);
+    expect(resolved.rows).toBe(7);
   });
 
   it('replaces the budget row on the first call of a UTC day', () => {
@@ -213,19 +212,19 @@ describe('rows written per call', () => {
       },
       tomorrow
     );
-    // Yesterday's counter is deleted (2) and today's inserted (2), on top of
+    // Yesterday's counter is deleted (1) and today's inserted (1), on top of
     // the claim's own writes.
-    expect(claim.rows).toBe(4 + 7);
+    expect(claim.rows).toBe(2 + 5);
   });
 
   it('pins a create that supersedes and prunes at full retention', () => {
     const m = metered();
     for (let run = 1; run <= LIMITS.retainPerLane + 1; run += 1)
       m.create(run, T0 + run);
-    // The newest create supersedes the one queued deploy (finish: lane 2,
-    // deployment 5) and prunes the oldest finished row past retention (5).
+    // The newest create supersedes the one queued deploy (finish: lane 1,
+    // deployment 4) and prunes the oldest finished row past retention (4).
     const next = m.create(LIMITS.retainPerLane + 2, T0 + 1_000);
-    expect(next.rows).toBe(10 + 7 + 5);
+    expect(next.rows).toBe(7 + 5 + 4);
   });
 
   it('bounds the amortized rows of a worst-case deployment lifecycle', () => {
@@ -236,13 +235,15 @@ describe('rows written per call', () => {
       calls += 1;
       return m.run(operation, now).value;
     };
-    // An earlier run holds the lane, so this one polls for its full window.
+    // An earlier run holds the lane, so this one polls for the client's full
+    // 30-minute wait (a dozen backed-off polls), then heartbeats every four
+    // minutes for the 90-minute attempt ceiling.
     calls += 1;
     const other = m.create(99, T0).value.deployment.id;
     const held = call({ op: 'claim', id: other, workerId: 'a', runId: 99 }, T0);
     calls += 1;
     const id = m.create(100, T0).value.deployment.id;
-    for (let poll = 0; poll < 90; poll += 1)
+    for (let poll = 0; poll < 12; poll += 1)
       expect(
         call({ op: 'claim', id, workerId: 'w', runId: 100 }, T0 + poll).decision
       ).toBe('wait');
@@ -265,7 +266,7 @@ describe('rows written per call', () => {
       { op: 'claim', id, workerId: 'w', runId: 100 },
       T0 + 96
     );
-    for (let beat = 0; beat < 90; beat += 1)
+    for (let beat = 0; beat < 23; beat += 1)
       call({ op: 'heartbeat', id, grant, runId: 100 }, T0 + 97 + beat);
     call(
       {
@@ -282,7 +283,8 @@ describe('rows written per call', () => {
       },
       T0 + 200
     );
-    const perCall = (m.meter.rows - start) / calls;
-    expect(perCall).toBeLessThan(5);
+    // About four rows a call, including the environment's first sequence row.
+    expect(calls).toBe(41);
+    expect(m.meter.rows - start).toBe(166);
   });
 });

@@ -19,9 +19,15 @@ import { fileURLToPath } from 'node:url';
 export const AUDIENCE = 'tuturuuu-deploy-coordinator';
 export const LIMITS = {
   attempts: 3,
-  minPollSeconds: 20,
-  maxPollSeconds: 60,
-  heartbeatSeconds: 60,
+  // Claim polls back off from 30 s to a 180 s cap, so a 30-minute wait costs
+  // about a dozen calls.
+  minPollSeconds: 30,
+  maxPollSeconds: 180,
+  // A heartbeat every four minutes keeps the coordinator's ten-minute lease; a
+  // heartbeat that fails retries after one minute so one bad cycle cannot
+  // outlast the lease.
+  heartbeatSeconds: 240,
+  heartbeatRetrySeconds: 60,
   maxHeartbeatMinutes: 90,
 };
 
@@ -172,6 +178,7 @@ export async function begin(
   };
 
   const deadline = now() + config.maxWaitMs;
+  let backoffSeconds = LIMITS.minPollSeconds;
   for (;;) {
     const claimed = await post(`/deployments/${id}/claim`, {
       workerId: config.workerId,
@@ -203,10 +210,11 @@ export async function begin(
     if (!enforce) return uncoordinated(`lane busy (${answer.decision})`);
     const delay =
       clamp(
-        answer.retryAfterSeconds ?? 20,
+        Math.max(answer.retryAfterSeconds ?? 0, backoffSeconds),
         LIMITS.minPollSeconds,
         LIMITS.maxPollSeconds
       ) * 1000;
+    backoffSeconds = Math.min(backoffSeconds * 2, LIMITS.maxPollSeconds);
     if (now() + delay > deadline)
       return uncoordinated(`still ${answer.decision} after the wait limit`);
     log(
@@ -221,8 +229,9 @@ export async function begin(
 // `check` can fence later provider effects.
 export async function heartbeat(client, { now, sleep, readState, markFenced }) {
   const started = now();
+  let delaySeconds = LIMITS.heartbeatSeconds;
   for (;;) {
-    await sleep(LIMITS.heartbeatSeconds * 1000);
+    await sleep(delaySeconds * 1000);
     const state = readState();
     if (!state) return 'finished';
     if (now() - started > LIMITS.maxHeartbeatMinutes * 60_000) return 'ceiling';
@@ -236,6 +245,9 @@ export async function heartbeat(client, { now, sleep, readState, markFenced }) {
       markFenced(response.body?.error ?? 'REFUSED');
       return 'fenced';
     }
+    delaySeconds = response.ok
+      ? LIMITS.heartbeatSeconds
+      : LIMITS.heartbeatRetrySeconds;
   }
 }
 

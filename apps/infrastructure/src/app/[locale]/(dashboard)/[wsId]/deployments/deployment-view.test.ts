@@ -1,4 +1,5 @@
 import type {
+  DeployAction,
   DeployLane,
   DeployRecord,
 } from '@tuturuuu/internal-api/infrastructure';
@@ -7,6 +8,7 @@ import {
   laneRecords,
   projectsView,
   projectView,
+  type RecordAction,
   recordActions,
 } from './deployment-view';
 
@@ -48,7 +50,21 @@ const lane = (current: DeployRecord | null): DeployLane => ({
   deployments: [],
 });
 
+// The DeployAction variants that name one deployment.
+type ScopedAction = Extract<DeployAction, { deploymentId: string }>['action'];
+
 describe('deployment actions', () => {
+  it('lists exactly the actions that target one deployment', () => {
+    // Fails to compile when RecordAction and DeployAction drift apart.
+    const same: [RecordAction, ScopedAction] extends [
+      ScopedAction,
+      RecordAction,
+    ]
+      ? true
+      : false = true;
+    expect(same).toBe(true);
+  });
+
   it('offers nothing to viewers', () => {
     expect(recordActions('staging', lane(null), record({}), false)).toEqual([]);
   });

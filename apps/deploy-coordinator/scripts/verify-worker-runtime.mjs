@@ -229,7 +229,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   // request, so read the environment before writing through it.
   assert.equal((await call(PROD)).status, 200);
   await sql('DELETE FROM budget');
-  await sql('INSERT INTO budget (day, used) VALUES (?, 5000)', [day]);
+  await sql('INSERT INTO budget (day, used) VALUES (?, 500)', [day]);
   await worker.restart();
   const rejected = await call(`${PROD}/deployments/${id}/cancel`, {
     method: 'POST',
@@ -245,5 +245,5 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   );
   assert.equal((await call(PROD)).status, 200);
   const [{ used }] = await sql('SELECT used FROM budget');
-  assert.ok(used >= 5000);
+  assert.ok(used >= 500);
 });

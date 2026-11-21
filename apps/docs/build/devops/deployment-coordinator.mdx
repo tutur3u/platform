@@ -126,7 +126,8 @@ interleave with another request.
    `attemptId`. Heartbeat and completion must present the current epoch and
    attempt; anything else is `STALE_GRANT`. The one exception is the
    reconciling completion of an `unknown` attempt described above.
-5. **Leases.** A lease lasts five minutes, heartbeats extend it, and an attempt
+5. **Leases.** A lease lasts ten minutes, heartbeats every four minutes extend
+   it, and an attempt
    may publish for at most 90 minutes. The lock stays held for a two-minute
    grace after the lease lapses, then the deployment becomes `unknown` and the
    lane frees. Executors **self-fence**: they must not start a provider effect
@@ -326,57 +327,62 @@ while handling a call ([pricing](https://developers.cloudflare.com/durable-objec
 | Item | Bound |
 | ---- | ----- |
 | Durable Objects | catalog projects × 3 environments; no other names are addressable |
-| Calls per deployment | create 1, claim polls every ≥20 s for ≤30 min (≤90), heartbeats every 60 s for ≤90 min (≤90), finish 1: worst case ~182, typical under 10 |
+| Calls per deployment | create 1, claims backing off from the coordinator's 60 s floor to a 180 s cap over the default 30-minute wait (≤12, the grant included; `max-wait-minutes: 60` allows about 22), heartbeats every 4 min for ≤90 min (≤22, a failed one retried after 1 min), finish 1: worst case about 36, typical about 6 |
 | Client retries | 3 attempts with backoff on network errors and `5xx` only |
-| Daily budget | 5,000 calls per environment object per UTC day, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Operator stop, resume and reads are neither counted nor rejected, write no rows and cost one Durable Object request each; the dashboard reads on demand and never polls |
+| Daily budget | 500 calls per environment object per UTC day, enough for about 13 worst-case or 80 typical deployments; every preview lane of a project shares its preview environment's budget, so recheck the figure before onboarding busy staging or preview workflows, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Operator stop, resume and reads are neither counted nor rejected, write no rows and cost one Durable Object request each; the dashboard reads on demand and never polls |
 | Preview lanes | 50 open lanes per preview environment; more is `429 CAPACITY` |
 | Lanes | 200 per environment. A new lane evicts the least recently used idle lane with its rows, except a lane with an `unknown` attempt from the last six hours, which GitHub-hosted jobs can still reconcile; with no evictable lane, `429 CAPACITY` |
-| Retention | 100 finished deployments per lane, pruned on write, plus any `unknown` attempt from the last six hours, which can still reconcile (one publisher per lane and the seven-minute lease plus grace keep that under about 52); no log content, only links |
+| Retention | 100 finished deployments per lane, pruned on write, plus any `unknown` attempt from the last six hours, which can still reconcile (one publisher per lane and the twelve-minute lease plus grace keep that under about 30); no log content, only links |
 | Payload | 8 KiB request bodies |
 
-A busy production environment of 20 deployments a day at the worst case uses
-about 3,600 calls, inside its budget. The hard ceiling, with every catalog
-environment pinned at its budget every day:
+A busy production environment of 20 typical deployments a day uses about 120
+calls, well inside its budget; a budget that runs out falls open in CI, so it
+never blocks a release. The hard ceiling, with every catalog environment
+pinned at its budget every day:
 
-- 33 projects × 3 environments × 5,000 calls ≈ 495,000 calls a day, about
-  14.9 million a month.
-- Worker requests above the 10 million included: about $1.46 a month.
-- Durable Object requests above the 1 million included: about $2.08.
+- 33 projects × 3 environments × 500 calls ≈ 49,500 calls a day, about 1.5
+  million a month.
+- Worker requests: inside the 10 million included, so nothing extra.
+- Durable Object requests above the 1 million included: about $0.07.
 - SQLite rows written. Cloudflare bills each row a write touches in a table
-  and in every index on it. The schema weighs a deployment write at 5 rows
-  (row, primary key, idempotency key, lane order and status indexes), a lane
-  or budget write at 2 and the sequence counter at 1. Pinned per call by
-  `src/cost.test.ts`:
+  and in every index on it. Text-keyed tables are `WITHOUT ROWID`, so a
+  primary key is the table itself: a deployment write is 4 rows (table,
+  idempotency key, lane order and status indexes), a lane, budget or sequence
+  write is 1. Pinned per call by `src/cost.test.ts`:
 
   | Call | Rows written |
   | ---- | ------------ |
   | Budget-rejected call; operator read | 0 |
   | Operator stop or resume | 1 |
-  | Resolve a marker | 11, of which its terminal transition (7) belongs to the marker's create |
-  | Claim answered `wait`, `held`, `stopped` or `superseded`; repeated create | 2 |
-  | Heartbeat | 7 |
-  | Granted claim, completion | 9 |
-  | Create | 10, 11 for an environment's first |
-  | Create that supersedes a queued deploy and prunes past retention | 22 |
+  | Claim answered `wait`, `held`, `stopped` or `superseded`; repeated create | 1 |
+  | Heartbeat | 5 |
+  | Granted claim, completion | 6 |
+  | Resolve a marker | 7, of which its terminal transition (5) belongs to the marker's create |
+  | Create | 7, 8 for an environment's first |
+  | Create that supersedes a queued deploy and prunes past retention | 16 |
 
   A call can also apply transitions that belong to earlier calls: lazy lease
   lapse and queue expiry, supersession, pruning and lane eviction. Each
   deployment row is terminated and deleted at most once, so those writes are
-  charged to the create that inserted it: at most 25 rows a create (11, its
-  terminal transition 7, its deletion 5, its lane 2), and no other call
-  exceeds 9 once its share is counted. The first counted call of each UTC day
-  also replaces the budget row, 2 more rows once a day per environment.
-- Hard ceiling, every call a create: 495,000 × 25 ≈ 12.4 million rows a day,
-  about 371 million a month against 50 million included: about $321.
-- Realistic ceiling, every environment at budget running the CI client's
-  worst-case lifecycle (create, 90 wait polls, a grant, 90 heartbeats,
-  completion), which the cost test pins below 5 rows a call: about 74 million
-  a month, about $24.
+  charged to the create that inserted it: at most 18 rows a create (8, its
+  terminal transition 5, its deletion 4, its lane 1), and no other call
+  exceeds 6 once its share is counted. The first counted call of each UTC day
+  also replaces the budget row, 1 more row once a day per environment.
+- Hard ceiling, every call a create: 49,500 × 18 ≈ 0.9 million rows a day,
+  about 27 million a month, inside the 50 million included.
+- The cost test pins a worst-case lifecycle of 41 calls and 166 rows: the
+  deployment's create, 12 backed-off wait polls, its grant, 23 heartbeats and
+  completion, plus the create, claim and completion of the run blocking it.
+  That is about 4 rows a call.
 - Rows read stay far below the 25 billion included; duration is the
   millisecond-scale handling time of each call, far below 400,000 GB-s.
 
-The hard ceiling is about $325 a month above the plan, about $28 for the CI
-client's own worst case, and both scale linearly with the catalog size. A CI
+Standalone, the hard ceiling is about $0.07 a month above the Workers paid
+plan. The included requests and rows are shared by every Worker on the
+account, so once other Workers use them up the coordinator's marginal hard
+ceiling is about $0.45 in Worker requests, $0.22 in Durable Object requests
+and $27 in rows written, about $28 a month, or about $6 at the CI client's 4
+rows a call. Both scale linearly with the catalog size. A CI
 create is idempotent per run attempt and lane, so reaching the hard ceiling
 needs a distinct GitHub run, or a distinct preview lane, for every call. The
 catalog test pins the project count and the cost test pins the rows per call,

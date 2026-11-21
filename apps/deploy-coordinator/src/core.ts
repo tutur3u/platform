@@ -13,7 +13,8 @@ import {
 } from './types';
 
 export const LIMITS = {
-  leaseMs: 5 * 60_000,
+  // Heartbeats every four minutes keep a ten-minute lease alive.
+  leaseMs: 10 * 60_000,
   graceMs: 2 * 60_000,
   maxAttemptMs: 90 * 60_000,
   queueTtlMs: 6 * 60 * 60_000,
@@ -23,8 +24,8 @@ export const LIMITS = {
   openPreviewLanes: 50,
   maxLanes: 200,
   retainPerLane: 100,
-  dailyBudget: 5_000,
-  retryAfterSeconds: 20,
+  dailyBudget: 500,
+  retryAfterSeconds: 60,
   snapshotPerLane: 20,
 } as const;
 
@@ -360,8 +361,10 @@ export class EnvironmentCore {
       d.kind === 'rollback' ? (d.sourceDeploymentId ?? d.id) : d.id;
     if (current && serves(current) === serves(target))
       fail('INVALID_STATE', 'Already current');
+    // Keyed by what the target serves, so rollbacks to a deployment and to a
+    // rollback of it share one marker.
     const key = this.#markerKey(
-      `rollback:${target.id}:${current?.id ?? 'none'}`
+      `rollback:${serves(target)}:${current?.id ?? 'none'}`
     );
     return this.create(
       {
