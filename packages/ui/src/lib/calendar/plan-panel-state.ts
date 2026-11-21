@@ -1,3 +1,5 @@
+import { browserMountedAppBase } from '@tuturuuu/utils/shared-cookie';
+
 /**
  * Calendar Plan panel open state, persisted in a cookie so the server renders
  * the panel at its final width and the grid never shifts after hydration.
@@ -11,8 +13,17 @@ export function parsePlanPanelOpen(value: string | null | undefined) {
   return value === 'open';
 }
 
-export function planPanelCookie(open: boolean) {
-  return `${PLAN_PANEL_COOKIE_NAME}=${open ? 'open' : 'closed'}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+/**
+ * Host-only cookie string. A mounted app (for example tuturuuu.com/calendar)
+ * scopes it to its own `Path=<base>` with `Secure`, so it never lands in the
+ * shared origin's root jar; a subdomain host uses `Path=/`.
+ */
+export function planPanelCookie(
+  open: boolean,
+  mountedBase: string = browserMountedAppBase()
+) {
+  const scope = mountedBase ? `Path=${mountedBase}; Secure` : 'Path=/';
+  return `${PLAN_PANEL_COOKIE_NAME}=${open ? 'open' : 'closed'}; ${scope}; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
 }
 
 /** Reads the cookie in the browser, for hosts that do not pass it in. */
