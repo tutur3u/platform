@@ -225,9 +225,15 @@ import, owning build or deployment proof.
 
 ### Event rendering and provider identity
 
-Web event surfaces render opaque provider fills with the higher-contrast black
-or white foreground. Mobile agenda, day/three-day/week cards, all-day chips and
-month indicators blend the same read-only provider hue into the active theme.
+Web event surfaces map the resolved provider color to the design-system token
+with the nearest hue (`calendarHueForColor`: red, orange, yellow, lime, green,
+teal, cyan, sky, blue, indigo, purple, pink, rose, or gray for low saturation).
+Canonical first-party colors keep their own token. Cards use an opaque tint of
+that token over the theme background with foreground text and a solid token
+border, so contrast follows the active light or dark theme. Swatches, year dots
+and the source-calendar stripe use the solid token. Mobile agenda,
+day/three-day/week cards, all-day chips and month indicators alpha-blend the
+resolved provider RGB itself into the active theme.
 Completed mobile events (end at or before the shared projected wall clock) use
 a weaker background tint and accent; foreground text remains fully opaque with
 at least 4.5:1 contrast. All-day ends remain exclusive, so an event stays active
@@ -244,7 +250,7 @@ without resolved provider metadata retain their canonical event color. Rendering
 does not infer old color intent, fetch a provider palette, or rewrite events.
 
 Web timed, all-day, agenda, month/year, location and drag previews use the same
-read-only color policy. Past web events fade with an overlay over their opaque
+read-only color policy. Past web events fade with an overlay over their token
 fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
 hides upper cards instead of blending their fills, and restores them when the
 hover ends. Focus/drag/resize states retain opaque backgrounds. The existing

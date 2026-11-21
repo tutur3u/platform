@@ -17,7 +17,10 @@ import {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
+import {
+  calendarEventStyle,
+  calendarHueForColor,
+} from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { opaqueGoogleColor } from '@tuturuuu/utils/google-calendar-colors';
@@ -149,10 +152,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
     endHours <= startHours && !_isMultiDay
       ? MAX_HOURS - startHours + endHours
       : endHours - startHours;
-
-  // Calculate duration in minutes
-  // const durationMs = (dayjs(endDate).valueOf() - dayjs(startDate).valueOf());
-  // const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Refs for DOM elements
   const cardRef = useRef<HTMLButtonElement>(null);
@@ -369,9 +368,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
       if (!cardEl || !cellEl) return;
 
       const columnWidth = cellEl.offsetWidth;
-
-      // Calculate event index within its overlap group
-      // const overlapIndex = overlapGroup.indexOf(id);
 
       // If this event has overlaps, distribute width among overlapping events
       const hasOverlaps = overlapCount > 1;
@@ -925,7 +921,10 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
   ]);
 
   const { border } = getEventStyles(color);
-  // Error feedback stays opaque and uses contrast computed for its red fill.
+  // The source calendar's identity shows as a token-colored left stripe.
+  const stripe = opaqueGoogleColor(_calendarColor);
+  const calendarStripe = stripe && `var(--${calendarHueForColor(stripe)})`;
+  // Error feedback renders as a red token card.
   const eventStyle = calendarEventStyle(
     updateStatus === 'error' ? { color: 'RED' } : event
   );
@@ -1078,7 +1077,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
             ...eventStyle,
-            borderLeftColor: opaqueGoogleColor(_calendarColor) ?? undefined,
+            borderLeftColor: calendarStripe ?? undefined,
             // Enhanced border for shorter events (likely on top)
             borderLeftWidth:
               hasOverlaps && isLikelyTopEvent ? '3px' : undefined,

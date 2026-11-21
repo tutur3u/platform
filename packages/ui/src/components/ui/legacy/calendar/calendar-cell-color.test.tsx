@@ -62,9 +62,12 @@ it('gives the duration badge the same opaque contrast colors as its drag card', 
   fireEvent.mouseDown(cell, { button: 0, clientY: 20 });
   fireEvent.mouseMove(document, { clientY: 80 });
   const badge = screen.getByText(/^(?:\d+h(?: \d+m)?|\d+m)$/);
-  expect(badge).toHaveStyle({ backgroundColor: '#2196f3', color: '#000000' });
+  expect(badge).toHaveStyle({
+    backgroundColor: 'color-mix(in oklab, var(--blue) 18%, var(--background))',
+    color: 'var(--foreground)',
+  });
   expect(badge.closest('.border-l-2')).toHaveStyle({
-    backgroundColor: '#2196f3',
-    color: '#000000',
+    backgroundColor: 'color-mix(in oklab, var(--blue) 18%, var(--background))',
+    color: 'var(--foreground)',
   });
 });

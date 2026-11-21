@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarColorForeground,
+  calendarEventAccent,
   calendarEventColors,
+  calendarEventHue,
   calendarEventStyle,
+  calendarHueForColor,
 } from '../calendar-event-colors';
 
 const metadata = (inherited: boolean, background: unknown = '#abcdef') => ({
@@ -18,9 +21,10 @@ describe('effective opaque calendar rendering', () => {
         scheduling_metadata: metadata(false, '#00ff88'),
       })
     ).toEqual({
-      backgroundColor: '#00ff88',
-      borderColor: '#00ff88',
-      color: '#000000',
+      backgroundColor:
+        'color-mix(in oklab, var(--green) 18%, var(--background))',
+      borderColor: 'var(--green)',
+      color: 'var(--foreground)',
     });
   });
   it('updates inherited events from current source RGB before historical metadata', () => {
@@ -46,11 +50,11 @@ describe('effective opaque calendar rendering', () => {
       metadata(false, '#ff000080'),
     ]) {
       expect(
-        calendarEventStyle({
+        calendarEventColors({
           color: 'GREEN',
           _calendarColor: '#ff80ab',
           scheduling_metadata,
-        }).backgroundColor
+        }).background
       ).toBe('#4caf50');
     }
   });
@@ -99,5 +103,54 @@ describe('effective opaque calendar rendering', () => {
         text === '#000000' ? (l + 0.05) / 0.05 : 1.05 / (l + 0.05)
       ).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+describe('design-system event hues', () => {
+  it('maps Google palette colors to the nearest theme hue', () => {
+    expect(calendarHueForColor('#d50000')).toBe('red'); // Tomato
+    expect(calendarHueForColor('#e67c73')).toBe('red'); // Flamingo
+    expect(calendarHueForColor('#f4511e')).toBe('orange'); // Tangerine
+    expect(calendarHueForColor('#f6bf26')).toBe('yellow'); // Banana
+    expect(calendarHueForColor('#7fff00')).toBe('lime');
+    expect(calendarHueForColor('#00ffff')).toBe('cyan');
+    expect(calendarHueForColor('#00ffaa')).toBe('teal');
+    expect(calendarHueForColor('#33b679')).toBe('green'); // Sage
+    expect(calendarHueForColor('#0b8043')).toBe('green'); // Basil
+    expect(calendarHueForColor('#039be5')).toBe('sky'); // Peacock
+    expect(calendarHueForColor('#3f51b5')).toBe('blue'); // Blueberry
+    expect(calendarHueForColor('#7986cb')).toBe('blue'); // Lavender
+    expect(calendarHueForColor('#5b3fd6')).toBe('indigo');
+    expect(calendarHueForColor('#8e24aa')).toBe('purple'); // Grape
+    expect(calendarHueForColor('#e91e63')).toBe('rose');
+    expect(calendarHueForColor('#d81b60')).toBe('rose');
+    expect(calendarHueForColor('#e040a0')).toBe('pink');
+    expect(calendarHueForColor('#616161')).toBe('gray'); // Graphite
+    expect(calendarHueForColor('#795548')).toBe('orange'); // Cocoa
+  });
+
+  it('maps canonical first-party colors to their own hue', () => {
+    for (const [color, hue] of [
+      ['BLUE', 'blue'],
+      ['RED', 'red'],
+      ['GREEN', 'green'],
+      ['YELLOW', 'yellow'],
+      ['PURPLE', 'purple'],
+      ['PINK', 'pink'],
+      ['ORANGE', 'orange'],
+      ['INDIGO', 'indigo'],
+      ['CYAN', 'cyan'],
+      ['GRAY', 'gray'],
+      ['grey', 'gray'],
+      ['#6b7280', 'gray'],
+    ] as const) {
+      expect(calendarEventHue({ color })).toBe(hue);
+    }
+  });
+
+  it('renders surfaces and accents only from theme variables', () => {
+    const style = calendarEventStyle({ color: 'PURPLE' });
+    expect(Object.values(style).join(' ')).not.toMatch(/#[0-9a-f]{3,8}/i);
+    expect(calendarEventAccent({ color: 'PURPLE' })).toBe('var(--purple)');
   });
 });

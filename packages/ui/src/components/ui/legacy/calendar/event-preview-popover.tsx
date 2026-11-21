@@ -7,7 +7,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Popover, PopoverAnchor, PopoverContent } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
+import { calendarEventAccent } from '@tuturuuu/utils/calendar-event-colors';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { useEventPreviewAnchor } from './event-preview-anchor';
@@ -136,7 +136,7 @@ export function EventPreviewPopover() {
             <span
               data-testid="event-preview-swatch"
               className="size-3 shrink-0 rounded-sm"
-              style={calendarEventStyle(previewEvent)}
+              style={{ backgroundColor: calendarEventAccent(previewEvent) }}
             />
             <span className="truncate">{calendarName}</span>
             {showProviderIcon && (

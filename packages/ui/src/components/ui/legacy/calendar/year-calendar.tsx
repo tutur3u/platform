@@ -4,7 +4,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
+import { calendarEventAccent } from '@tuturuuu/utils/calendar-event-colors';
 import { cn } from '@tuturuuu/utils/format';
 import { eachDayOfInterval, endOfMonth, getDay, startOfMonth } from 'date-fns';
 import { useTranslations } from 'next-intl';
@@ -123,7 +123,7 @@ function MiniMonth({
         const seenColors = new Set<string>();
         const dots: string[] = [];
         for (const event of events) {
-          const color = calendarEventStyle(event).backgroundColor;
+          const color = calendarEventAccent(event);
           if (!seenColors.has(color) && dots.length < 3) {
             seenColors.add(color);
             dots.push(color);

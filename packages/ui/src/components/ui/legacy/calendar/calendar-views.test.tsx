@@ -214,9 +214,9 @@ describe('calendar view interactions', () => {
   });
 });
 
-describe('calendar view opaque effective colors', () => {
+describe('calendar view token event colors', () => {
   it.each([false, true])(
-    'preserves provider contrast and accessible month treatment, past=%s',
+    'maps provider color to a token surface with accessible month treatment, past=%s',
     (past) => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(new Date(2026, 8, past ? 8 : 7, 9));
@@ -238,8 +238,10 @@ describe('calendar view opaque effective colors', () => {
       ];
       render(<MonthCalendar date={date} viewedMonth={date} locale="en" />);
       const card = screen.getByRole('button', { name: /Borderline RGB/ });
-      expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
-      expect(card.style.color).toBe('rgb(255, 255, 255)');
+      expect(card.style.backgroundColor).toBe(
+        'color-mix(in oklab, var(--gray) 18%, var(--background))'
+      );
+      expect(card.style.color).toBe('var(--foreground)');
       fireEvent.mouseEnter(card);
       expect(card).toHaveClass('hover:ring-1', 'hover:ring-current');
       const wholeCardDimming = card.className.split(/\s+/).filter((token) => {
@@ -266,17 +268,17 @@ describe('calendar view opaque effective colors', () => {
         expect(card).not.toHaveClass('after:bg-background/50');
       }
       expect(card.style.filter).toBe('');
-      expect(card.style.backgroundColor).toBe('rgb(117, 117, 117)');
-      expect(card.style.color).toBe('rgb(255, 255, 255)');
-      const luminance = ((117 / 255 + 0.055) / 1.055) ** 2.4;
-      expect(1.05 / (luminance + 0.05)).toBeGreaterThanOrEqual(4.5);
+      expect(card.style.backgroundColor).toBe(
+        'color-mix(in oklab, var(--gray) 18%, var(--background))'
+      );
+      expect(card.style.color).toBe('var(--foreground)');
       fireEvent.click(card);
       expect(state.openModal).toHaveBeenCalledWith('borderline-rgb');
     }
   );
 
   it.each([false, true])(
-    'uses provider RGB in month and agenda, inherited=%s',
+    'uses the provider hue token in month and agenda, inherited=%s',
     (inherited) => {
       state.events = [
         {
@@ -291,7 +293,9 @@ describe('calendar view opaque effective colors', () => {
           },
         },
       ];
-      const rgb = inherited ? 'rgb(255, 128, 171)' : 'rgb(0, 255, 136)';
+      const rgb = inherited
+        ? 'color-mix(in oklab, var(--rose) 18%, var(--background))'
+        : 'color-mix(in oklab, var(--green) 18%, var(--background))';
       const month = render(
         <MonthCalendar date={date} viewedMonth={date} locale="en" />
       );
@@ -300,7 +304,7 @@ describe('calendar view opaque effective colors', () => {
       ).toBe(rgb);
       expect(
         screen.getByRole('button', { name: /RGB event/ }).style.color
-      ).toBe('rgb(0, 0, 0)');
+      ).toBe('var(--foreground)');
       month.unmount();
       render(<AgendaView startDate={date} locale="en" daysToShow={1} />);
       expect(
@@ -308,7 +312,7 @@ describe('calendar view opaque effective colors', () => {
       ).toBe(rgb);
       expect(
         screen.getByRole('button', { name: /RGB event/ }).style.color
-      ).toBe('rgb(0, 0, 0)');
+      ).toBe('var(--foreground)');
     }
   );
 });

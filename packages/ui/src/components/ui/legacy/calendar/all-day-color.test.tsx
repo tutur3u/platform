@@ -38,12 +38,22 @@ vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
 import { AllDayEventBar } from './all-day-event-bar';
 
-it('keeps an opaque all-day fill and contrasting dashed cut-off edge', () => {
+/** Inline declarations as authored; computed styles drop unresolved vars. */
+function inlineStyle(element: Element | null) {
+  const style = (element as HTMLElement).style;
+  return {
+    backgroundColor: style.backgroundColor,
+    borderColor: style.borderColor,
+    color: style.color,
+  };
+}
+
+it('keeps a token all-day fill and foreground dashed cut-off edge', () => {
   render(<AllDayEventBar dates={[new Date('2026-09-07T00:00:00Z')]} />);
   const card = screen.getByText('Cut-off event').closest('.border-dashed');
-  expect(card).toHaveStyle({
-    backgroundColor: '#00ff88',
-    color: '#000000',
-    borderColor: '#000000',
+  expect(inlineStyle(card)).toMatchObject({
+    backgroundColor: 'color-mix(in oklab, var(--green) 18%, var(--background))',
+    color: 'var(--foreground)',
+    borderColor: 'var(--foreground)',
   });
 });

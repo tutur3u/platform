@@ -271,7 +271,7 @@ it.each([false, true])(
       },
     });
     expect(screen.getByTestId('event-preview-swatch')).toHaveStyle({
-      backgroundColor: inherited ? '#ff80ab' : '#00ff88',
+      backgroundColor: inherited ? 'var(--rose)' : 'var(--green)',
     });
   }
 );

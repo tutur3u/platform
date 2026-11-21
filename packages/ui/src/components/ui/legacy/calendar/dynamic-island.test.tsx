@@ -57,28 +57,45 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-10-01T09:30:00Z'));
 });
 afterEach(() => vi.useRealTimers());
-it('renders the upcoming provider color as an opaque fill', () => {
+
+/** Inline declarations as authored; computed styles drop unresolved vars. */
+function inlineStyle(element: Element | null) {
+  const style = (element as HTMLElement).style;
+  return {
+    backgroundColor: style.backgroundColor,
+    borderColor: style.borderColor,
+    color: style.color,
+  };
+}
+
+it('renders the upcoming provider color as a token fill', () => {
   render(<DynamicIsland />);
   const card = screen.getByText('Upcoming provider event').closest('.border');
-  expect(card).toHaveStyle({ backgroundColor: '#fbd75b', color: '#000000' });
+  expect(card).toHaveStyle({
+    backgroundColor:
+      'color-mix(in oklab, var(--yellow) 18%, var(--background))',
+    color: 'var(--foreground)',
+  });
   expect(card).toHaveClass('opacity-100');
 });
 
-it('uses matching provider fill and contrast on pomodoro controls and edge', () => {
+it('uses the matching token fill and foreground on pomodoro controls and edge', () => {
   state.current = true;
   const { container } = render(<DynamicIsland />);
   const card = screen.getByText('Current RGB').closest('.border');
-  expect(card).toHaveStyle({
-    backgroundColor: '#fbd75b',
-    borderColor: '#000000',
+  expect(inlineStyle(card)).toMatchObject({
+    backgroundColor:
+      'color-mix(in oklab, var(--yellow) 18%, var(--background))',
+    borderColor: 'var(--foreground)',
   });
-  expect(screen.getByRole('button')).toHaveStyle({
-    backgroundColor: '#fbd75b',
-    color: '#000000',
-    borderColor: '#000000',
+  expect(inlineStyle(screen.getByRole('button'))).toMatchObject({
+    backgroundColor:
+      'color-mix(in oklab, var(--yellow) 18%, var(--background))',
+    color: 'var(--foreground)',
+    borderColor: 'var(--foreground)',
   });
   expect(container.querySelector('[data-orientation="vertical"]')).toHaveStyle({
-    backgroundColor: '#000000',
+    backgroundColor: 'var(--foreground)',
   });
 });
 

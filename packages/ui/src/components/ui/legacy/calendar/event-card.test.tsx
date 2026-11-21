@@ -97,7 +97,7 @@ describe('EventCard read-only adapter events', () => {
     });
   });
 
-  it('renders opaque RGB and contrast text on a timed event', () => {
+  it('renders the provider hue token and foreground text on a timed event', () => {
     renderEventCard({
       id: 'rgb',
       title: 'RGB event',
@@ -109,12 +109,14 @@ describe('EventCard read-only adapter events', () => {
       },
     });
     const card = screen.getByTestId('calendar-event-rgb');
-    expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
-    expect(card.style.color).toBe('rgb(0, 0, 0)');
+    expect(card.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--green) 18%, var(--background))'
+    );
+    expect(card.style.color).toBe('var(--foreground)');
     expect(card.style.opacity).toBe('1');
   });
 
-  it('fades past first-party cards above an opaque fill and restores on hover/focus', () => {
+  it('fades past first-party cards above a token fill and restores on hover/focus', () => {
     calendarMocks.preservePastEventOpacity = false;
     renderEventCard({
       id: 'past-native',
@@ -125,7 +127,9 @@ describe('EventCard read-only adapter events', () => {
     });
     const card = screen.getByTestId('calendar-event-past-native');
     expect(card.style.opacity).toBe('1');
-    expect(card.style.backgroundColor).toBe('rgb(33, 150, 243)');
+    expect(card.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--blue) 18%, var(--background))'
+    );
     expect(card).toHaveClass(
       'after:bg-background/50',
       'hover:after:opacity-0',
@@ -158,7 +162,9 @@ describe('EventCard read-only adapter events', () => {
     );
     const view = render(card(event));
     const element = screen.getByTestId('calendar-event-metadata-rerender');
-    expect(element.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    expect(element.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--green) 18%, var(--background))'
+    );
     view.rerender(
       card({
         ...event,
@@ -170,11 +176,15 @@ describe('EventCard read-only adapter events', () => {
     expect(screen.getByTestId('calendar-event-metadata-rerender')).toBe(
       element
     );
-    expect(element.style.backgroundColor).toBe('rgb(0, 0, 68)');
-    expect(element.style.color).toBe('rgb(255, 255, 255)');
+    expect(element.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--indigo) 18%, var(--background))'
+    );
+    expect(element.style.color).toBe('var(--foreground)');
     expect(element.style.opacity).toBe('1');
     view.rerender(card({ ...event, scheduling_metadata: null }));
-    expect(element.style.backgroundColor).toBe('rgb(33, 150, 243)');
+    expect(element.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--blue) 18%, var(--background))'
+    );
   });
 
   it('keeps pending and past fills opaque, and reveals lower stacks by hiding upper cards', () => {
@@ -199,7 +209,9 @@ describe('EventCard read-only adapter events', () => {
     const card = screen.getByTestId('calendar-event-stack');
     expect(card.style.opacity).toBe('1');
     expect(card.style.visibility).toBe('hidden');
-    expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
+    expect(card.style.backgroundColor).toBe(
+      'color-mix(in oklab, var(--green) 18%, var(--background))'
+    );
     expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
     expect(card).not.toHaveClass('line-through');
     rendered.unmount();
@@ -233,8 +245,10 @@ describe('EventCard read-only adapter events', () => {
           : screen.getByText('Interactive RGB');
       fireEvent.mouseDown(handle, { button: 0, clientX: 20, clientY: 20 });
       expect(card).toHaveClass('shadow-md');
-      expect(card.style.backgroundColor).toBe('rgb(0, 255, 136)');
-      expect(card.style.color).toBe('rgb(0, 0, 0)');
+      expect(card.style.backgroundColor).toBe(
+        'color-mix(in oklab, var(--green) 18%, var(--background))'
+      );
+      expect(card.style.color).toBe('var(--foreground)');
       expect(card.style.opacity).toBe('1');
       expect(card.className).not.toMatch(/opacity-(?:30|50|60|80)/);
       fireEvent.mouseUp(window, { clientX: 20, clientY: 20 });
@@ -242,7 +256,7 @@ describe('EventCard read-only adapter events', () => {
     }
   );
 
-  it('uses an opaque readable error fill after a failed resize', async () => {
+  it('uses the red token fill after a failed resize', async () => {
     calendarMocks.isEventReadOnly.mockReturnValueOnce(false);
     calendarMocks.updateEvent.mockRejectedValueOnce(
       new Error('Synthetic update failure')
@@ -264,9 +278,10 @@ describe('EventCard read-only adapter events', () => {
     fireEvent.mouseMove(document, { clientY: 80 });
     fireEvent.mouseUp(document, { clientY: 80 });
     await waitFor(() =>
-      expect(screen.getByTestId('calendar-event-failed')).toHaveStyle({
-        backgroundColor: '#f44336',
-        color: '#000000',
+      expect(screen.getByTestId('calendar-event-failed').style).toMatchObject({
+        backgroundColor:
+          'color-mix(in oklab, var(--red) 18%, var(--background))',
+        color: 'var(--foreground)',
         opacity: '1',
       })
     );
@@ -277,17 +292,15 @@ describe('EventCard read-only adapter events', () => {
       position: 'start',
       icon: 'arrow-right',
       background: '#a6bff2',
-      foreground: '#000000',
     },
     {
       position: 'end',
       icon: 'arrow-left',
       background: '#3670e2',
-      foreground: '#ffffff',
     },
   ] as const)(
-    'continuation arrows inherit resolved contrast for custom RGB at $position',
-    ({ position, icon, background, foreground }) => {
+    'continuation arrows inherit the card foreground for custom RGB at $position',
+    ({ position, icon, background }) => {
       const { container } = renderEventCard({
         id: 'continuation',
         title: 'Custom Google continuation',
@@ -303,10 +316,10 @@ describe('EventCard read-only adapter events', () => {
       const card = screen.getByTestId('calendar-event-continuation');
       const arrow = container.querySelector(`.lucide-${icon}`);
       expect(arrow).not.toBeNull();
-      expect(card).toHaveStyle({
-        backgroundColor: background,
-        color: foreground,
-      });
+      expect(card.style.backgroundColor).toBe(
+        'color-mix(in oklab, var(--blue) 18%, var(--background))'
+      );
+      expect(card.style.color).toBe('var(--foreground)');
       expect(arrow).toHaveClass('text-inherit');
       expect(arrow).not.toHaveClass('text-dynamic-light-blue');
     }
