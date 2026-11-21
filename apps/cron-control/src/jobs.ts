@@ -1,3 +1,4 @@
+import { TASKS_RECURRENCE_JOB } from './processors/tasks-recurrence';
 import { isWebJob } from './web-gate';
 
 // Scheduled jobs owned by Cron Control. Every job is disabled until its id is
@@ -30,7 +31,8 @@ export type WorkerProcessorId =
   | 'meet-transcript-retention'
   | 'provider-cost-collection'
   | 'qa-test-user-cleanup'
-  | 'storage-access-audit-retention';
+  | 'storage-access-audit-retention'
+  | typeof TASKS_RECURRENCE_JOB;
 
 // Native database maintenance: the Worker calls this private RPC with the
 // service key; there is no legacy HTTP owner to opt in or fall back to.
@@ -50,6 +52,7 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   // Lists expired accounts; the Worker then drives the ledger and Auth deletes.
   'qa-test-user-cleanup': 'qa_test_list_expired',
   'storage-access-audit-retention': 'prune_storage_access_events',
+  [TASKS_RECURRENCE_JOB]: 'task_recurrence_claim',
 };
 
 export interface CronJob {
@@ -98,6 +101,14 @@ function job(
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
 export const CRON_JOBS: readonly CronJob[] = Object.freeze([
+  job(
+    TASKS_RECURRENCE_JOB,
+    '*/15 * * * *',
+    'tasks',
+    '/rest/v1/rpc/task_recurrence_claim',
+    'claim-fenced',
+    { method: 'POST', workerProcessor: TASKS_RECURRENCE_JOB }
+  ),
   job(
     'finance-bill-split-reminders',
     '*/5 * * * *',
@@ -354,7 +365,11 @@ export const TARGET_SECRET_VARS = {
 } as const satisfies Record<ProcessorTarget, string>;
 
 export function maxAttempts(cronJob: CronJob) {
-  return isWebJob(cronJob.id) || cronJob.overlap === 'handover' ? 1 : 2;
+  return isWebJob(cronJob.id) ||
+    cronJob.overlap === 'handover' ||
+    cronJob.id === TASKS_RECURRENCE_JOB
+    ? 1
+    : 2;
 }
 
 // Long enough for every attempt and backoff; an expired lease lets a later

@@ -16,6 +16,10 @@ import {
 import type { ClaimResult, Ledger, RunOutcome } from './ledger';
 import { WORKER_PROCESSORS } from './processors';
 import { withinDeadline } from './processors/deadline';
+import {
+  TASKS_RECURRENCE_JOB,
+  tasksRecurrenceMode,
+} from './processors/tasks-recurrence';
 import type { ProcessorEnv } from './processors/types';
 import { isWebJob } from './web-gate';
 
@@ -249,6 +253,11 @@ async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (
+    cronJob.id === TASKS_RECURRENCE_JOB &&
+    tasksRecurrenceMode(env.TASKS_RECURRENCE_MODE) === 'off'
+  )
+    return { id: cronJob.id, outcome: 'skipped', reason: 'recurrence-off' };
   if (isWebJob(cronJob.id) && env.CRON_CONTROL_WEB_MODE !== 'active')
     return {
       id: cronJob.id,
@@ -316,6 +325,7 @@ async function runJob(
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
           now: deps.now,
           sleep: deps.sleep,
+          slot,
           pending: {
             add: (items) => ledger.addPendingWork(cronJob.id, items),
             fail: (items) =>

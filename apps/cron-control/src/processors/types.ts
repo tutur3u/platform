@@ -13,6 +13,7 @@ export interface ProcessorEnv {
   MEET_ATTENDANCE_ERASURE?: MeetAttendanceErasureBinding;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
+  TASKS_RECURRENCE_MODE?: string;
 }
 
 export interface ProcessorContext {
@@ -25,6 +26,8 @@ export interface ProcessorContext {
   fence: () => Promise<boolean>;
   now: () => number;
   signal?: AbortSignal;
+  /** Minute-normalized ISO timestamp of the admitted scheduled tick. */
+  slot?: string;
   /** Backoff between bounded in-run retries; defaults to a timer. */
   sleep?: (milliseconds: number) => Promise<void>;
   /** Durable follow-up obligations, retried by later runs until settled. */

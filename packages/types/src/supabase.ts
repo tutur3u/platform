@@ -31084,6 +31084,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      task_recurrence_claim: {
+        Args: { p_batch: number; p_slot: number };
+        Returns: Json;
+      };
+      task_recurrence_commit: {
+        Args: { p_batch: number; p_items: Json; p_slot: number };
+        Returns: Json;
+      };
       task_recurrence_complete: {
         Args: {
           p_actor: string;
@@ -31254,6 +31262,21 @@ export type Database = {
           >;
         };
         Returns: undefined;
+      };
+      task_recurrence_scheduler_pause: {
+        Args: { p_reason: string; p_series: string };
+        Returns: undefined;
+      };
+      task_recurrence_scheduler_step: {
+        Args: {
+          p_expiry: string;
+          p_series: Omit<
+            Database['private']['Tables']['task_recurrence_series']['Row'],
+            Database['private']['Tables']['task_recurrence_series']['ComputedFields']
+          >;
+          p_slot: number;
+        };
+        Returns: Json;
       };
       task_recurrence_set_control: {
         Args: {

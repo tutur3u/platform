@@ -50,6 +50,7 @@ export default defineConfig({
       // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
+      TASKS_RECURRENCE_MODE: bindings.text('off'),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),

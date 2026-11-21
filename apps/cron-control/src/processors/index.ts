@@ -12,6 +12,10 @@ import { purgeMeetTranscripts } from './meet-transcript-retention';
 import { collectProviderCosts } from './provider-cost-collection';
 import { cleanupQaTestUsers } from './qa-test-user-cleanup';
 import { pruneStorageAccessEvents } from './storage-access-audit-retention';
+import {
+  generateRecurringTasks,
+  TASKS_RECURRENCE_JOB,
+} from './tasks-recurrence';
 import type { ProcessorContext, ProcessorResult } from './types';
 
 export const WORKER_PROCESSORS: Record<
@@ -31,4 +35,5 @@ export const WORKER_PROCESSORS: Record<
   'provider-cost-collection': (context) => collectProviderCosts(context),
   'qa-test-user-cleanup': cleanupQaTestUsers,
   'storage-access-audit-retention': pruneStorageAccessEvents,
+  [TASKS_RECURRENCE_JOB]: generateRecurringTasks,
 };

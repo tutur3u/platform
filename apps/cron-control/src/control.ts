@@ -1,5 +1,7 @@
 import { CRON_JOBS, findJob, parseEnabledJobs } from './jobs';
 import { initialJobState, type Ledger } from './ledger';
+import { TASKS_RECURRENCE_JOB } from './processors/tasks-recurrence';
+import { stopTaskRecurrence } from './tasks-recurrence-stop';
 
 // Operator stop/resume/status over HTTP, independent of the processors' public
 // ingress. Without a configured token every control path is indistinguishable
@@ -8,6 +10,8 @@ import { initialJobState, type Ledger } from './ledger';
 export interface ControlEnv {
   CRON_CONTROL_ENABLED_JOBS?: string;
   CRON_CONTROL_OPERATOR_TOKEN?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_SECRET_KEY?: string;
 }
 
 const MIN_TOKEN_LENGTH = 32;
@@ -38,7 +42,8 @@ function authorized(request: Request, env: ControlEnv) {
 export async function handleControlRequest(
   request: Request,
   env: ControlEnv,
-  ledger: () => Ledger
+  ledger: () => Ledger,
+  fetcher: typeof fetch = fetch
 ): Promise<Response | null> {
   const { pathname } = new URL(request.url);
   if (!pathname.startsWith('/control/')) return null;
@@ -73,5 +78,18 @@ export async function handleControlRequest(
     action: action[2],
     id: action[1],
   });
+  if (action[1] === TASKS_RECURRENCE_JOB && action[2] === 'stop') {
+    const epoch = await stopTaskRecurrence(env, fetcher);
+    if (epoch === null) {
+      return Response.json(
+        { id: action[1], state, databaseStop: 'pending' },
+        { headers, status: 503 }
+      );
+    }
+    return Response.json(
+      { id: action[1], state, databaseStop: 'confirmed', epoch },
+      { headers }
+    );
+  }
   return Response.json({ id: action[1], state }, { headers });
 }

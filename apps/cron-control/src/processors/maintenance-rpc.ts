@@ -17,7 +17,10 @@ export type PrivateRpcResult =
  * unknown.
  */
 export async function postPrivateRpc(
-  context: ProcessorContext,
+  context: Pick<
+    ProcessorContext,
+    'deadline' | 'env' | 'fetch' | 'now' | 'signal'
+  >,
   rpc: string,
   body: Record<string, unknown>,
   maxBytes = MAX_RPC_RESPONSE_BYTES

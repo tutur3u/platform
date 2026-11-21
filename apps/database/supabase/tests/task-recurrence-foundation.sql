@@ -79,7 +79,11 @@ INSERT INTO recurrence_rpc_acl VALUES
   ('private.task_recurrence_read(uuid,uuid,uuid[],boolean)', 'service_role'),
   ('private.task_recurrence_prepare_completion(uuid,uuid,uuid,uuid)', 'service_role'),
   ('private.task_recurrence_begin_completion(uuid,uuid,uuid,uuid,bigint,uuid,timestamptz)', 'service_role'),
-  ('private.task_recurrence_complete(uuid,uuid,uuid,timestamptz,jsonb)', 'service_role');
+  ('private.task_recurrence_complete(uuid,uuid,uuid,timestamptz,jsonb)', 'service_role'),
+  ('private.task_recurrence_claim(bigint,smallint)', 'service_role'),
+  ('private.task_recurrence_commit(bigint,smallint,jsonb)', 'service_role'),
+  ('private.task_recurrence_scheduler_pause(uuid,text)', NULL),
+  ('private.task_recurrence_scheduler_step(private.task_recurrence_series,bigint,timestamptz)', NULL);
 
 SELECT is((SELECT count(*) FROM pg_proc WHERE pronamespace = 'private'::regnamespace
   AND proname LIKE 'task_recurrence_%'), (SELECT count(*) FROM recurrence_rpc_acl),

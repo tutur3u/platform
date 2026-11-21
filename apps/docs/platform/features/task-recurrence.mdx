@@ -34,7 +34,7 @@ The database starts with request and scheduler generation off and every
 workspace disabled. The dormant migration adds private storage, gate controls,
 capacity guards, a read-only probe, and a separate completion evidence entry
 point for the trusted server. The Tasks request API requires an enabled database
-workspace gate. The Repeat control and scheduler require separate rollout steps.
+workspace gate. The native scheduler and Repeat control have separate rollout steps.
 
 An operator can enable gates with the restricted database role using the
 current epoch. The service credential can disable gates using compare-and-set.
@@ -70,6 +70,53 @@ producer keeps the global and workspace gate locks through notification,
 history, occurrence, and receipt writes. A stopped workspace cannot start
 another generated task or notification fan-out after its gate change commits.
 Predictable capacity conflicts on ordinary task reopen or restore return 409.
+
+## Scheduler and staging cost evidence
+
+Cron Control owns `tasks-recurrence-generation` on its existing 15-minute
+trigger. Production configuration omits the job from the enabled list and
+sets `TASKS_RECURRENCE_MODE=off`. Absent, off, and unrecognized modes make
+zero database calls. Dry-run makes one read-only probe call per tick.
+Generate runs the native private RPCs with the database service credential.
+
+| Per-tick limit | Maximum |
+| --- | ---: |
+| Worker deadline | 120 seconds |
+| Database calls | 10, with no in-slot retries |
+| Claim batches and reservations | 5 batches of 32, 160 total |
+| Reservations per workspace and series | 32 per workspace, 1 per series |
+| Discovery visits | 128 enabled workspace visits per batch |
+| Active series indexed per workspace | 200 |
+| Previous admitted slot reconciled | 160 claims |
+| Old replay history pruned | 1 slot and its bounded children |
+| Assignee notifications and watches | 50 of each per generated task |
+| Claim payload and commit response | 64 KiB and 1 KiB |
+
+Discovery rotates from the last workspace visited using UUID order. Disabled
+workspaces are outside the discovery index. At most one series is selected on
+each visit before moving to the next workspace. Token expiry is the earlier of
+180 seconds from admission and the end of its slot. A later slot retires the
+previous admitted slot's unsettled tokens. Settled duplicates replay their
+stored summaries.
+
+The Worker checks its durable ledger before each claim and commit. Five
+consecutive charged runs stop the native job until an operator resumes it. The
+authenticated hard-stop endpoint stops the ledger first and confirms the
+database epoch with both write bits disabled. A pending stop returns HTTP 503.
+Retrying the stop confirms the database fence while the ledger stays stopped.
+Workspace disable uses the workspace's compare-and-set RPC. Re-enablement admits
+only slots strictly after the recorded cutoff.
+
+Before pilot admission, record per-slot Worker calls, visited workspace counts,
+claim and occurrence totals, notification writes, and lock/statement
+cancellations at the hosted PostgREST endpoint. Exercise duplicate delivery,
+lost responses, stop during settlement and restart from stored ledger state.
+The ceilings are 960 database calls per day in generate mode and 96 in dry-run.
+Verify cap and rollback behavior with the
+[duplicate-worker pgTAP test](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-recurrence-scheduler-race.sql)
+and [settlement pgTAP test](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-recurrence-scheduler.sql).
+Use the [production migration runbook](/build/devops/environments-release-flow)
+for the list-only dispatch gate.
 
 ## Database write paths
 
