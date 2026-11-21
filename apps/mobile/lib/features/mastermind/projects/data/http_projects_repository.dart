@@ -183,15 +183,15 @@ class HttpProjectsRepository implements ProjectsRepository {
     );
   });
 
-  /// [FleetThreadSource.markRead] completes only once Web answered; that
-  /// answer is taken as saved.
+  /// Announces the mark only when Web saved it; a lost race keeps the
+  /// badge, and the next open tries again.
   @override
   Future<bool> markRead(
     ProjectsMachine machine, {
     required String threadId,
     required int itemCount,
   }) async {
-    await _guard(
+    final saved = await _guard(
       () => _source.markRead(
         machineId: machine.machineId,
         environmentId: machine.environmentId,
@@ -199,6 +199,7 @@ class HttpProjectsRepository implements ProjectsRepository {
         itemCount: itemCount,
       ),
     );
+    if (!saved) return false;
     _seen.add((
       machineKey: machine.key,
       threadId: threadId,

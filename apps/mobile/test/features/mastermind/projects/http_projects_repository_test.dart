@@ -221,13 +221,33 @@ void main() {
         itemCount: 9,
         environmentId: any(named: 'environmentId'),
       ),
-    ).thenAnswer((_) async {});
+    ).thenAnswer((_) async => true);
     final mark = repository.seenMarks.first;
     expect(
       await repository.markRead(bridge, threadId: 't1', itemCount: 9),
       isTrue,
     );
     expect((await mark).itemCount, 9);
+  });
+
+  test('keeps the badge when Web did not save the mark', () async {
+    when(
+      () => source.markRead(
+        machineId: 'm4',
+        threadId: 't1',
+        itemCount: 9,
+        environmentId: any(named: 'environmentId'),
+      ),
+    ).thenAnswer((_) async => false);
+    var announced = false;
+    final sub = repository.seenMarks.listen((_) => announced = true);
+    expect(
+      await repository.markRead(bridge, threadId: 't1', itemCount: 9),
+      isFalse,
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(announced, isFalse);
+    await sub.cancel();
   });
 
   test('maps fleet failures to the screen categories', () {
