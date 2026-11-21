@@ -64,7 +64,10 @@ function OptionLink({
     target: openMode === 'new-tab' ? '_blank' : undefined,
   };
 
-  if (linkComponent) {
+  const usesApexDocument =
+    href.startsWith('https://tuturuuu.com/') &&
+    ['platform', 'meet', 'mail', 'calendar'].includes(entry.app.slug);
+  if (linkComponent && !usesApexDocument) {
     const LinkComponent = linkComponent as ComponentType<OptionLinkProps>;
     return <LinkComponent {...props}>{children}</LinkComponent>;
   }

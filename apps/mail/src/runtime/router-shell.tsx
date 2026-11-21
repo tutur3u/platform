@@ -15,6 +15,7 @@ import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement } from 'react';
 import { AppProviders } from './providers';
 import '@tuturuuu/ui/globals.css';
+import '@tuturuuu/ui/document-transitions.css';
 import './typography.css';
 
 type DocumentLocale = 'en' | 'vi';

@@ -16,6 +16,7 @@ import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
+import '@tuturuuu/ui/document-transitions.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 

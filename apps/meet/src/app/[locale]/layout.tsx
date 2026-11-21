@@ -16,6 +16,7 @@ import enMessages from '../../../messages/en.json';
 import viMessages from '../../../messages/vi.json';
 import { Providers } from './providers';
 import './meet.css';
+import '@tuturuuu/ui/document-transitions.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 

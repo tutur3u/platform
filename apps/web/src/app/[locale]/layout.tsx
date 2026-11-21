@@ -6,6 +6,7 @@ import '@/style/prosemirror.css';
 import '@/style/react-easy-crop.css';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/tasks-ui/globals.css';
+import '@tuturuuu/ui/document-transitions.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';

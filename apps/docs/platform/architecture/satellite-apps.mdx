@@ -75,6 +75,15 @@ use the selected workspace, or the personal workspace when none is selected.
 Mail opens its inbox directly. The launcher regression test covers these
 destinations.
 
+The apex launcher entries for Web, Meet, Mail and Calendar use ordinary links
+so opening an app starts a document navigation. Web, Meet, Mail and Calendar
+opt into browser cross-document transitions in their Next.js and Worker
+document entry points. A
+supported browser can cross-fade between participating documents on the same
+origin. The stylesheet respects reduced-motion preferences. This changes how
+navigation is presented, while the destination still loads through its own
+Worker and session checks.
+
 The apps serve separate documents and build their assets independently. When
 measuring a switch, capture the whole document redirect chain, transferred
 JavaScript and CSS, and first contentful paint. Repeat the same journey in the

@@ -18,6 +18,7 @@ import {
 } from './room-route-feedback';
 import { reportMeetSsr } from './ssr-diagnostics';
 import '../app/[locale]/meet.css';
+import '@tuturuuu/ui/document-transitions.css';
 import './typography.css';
 
 type DocumentLocale = 'en' | 'vi';

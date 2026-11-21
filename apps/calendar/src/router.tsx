@@ -5,6 +5,7 @@ import { routeTree } from './routeTree.gen';
 import { registerCalendarBrowserApiPaths } from './runtime/calendar-api-client';
 import { CalendarError } from './runtime/router-shell';
 import '@tuturuuu/tasks-ui/globals.css';
+import '@tuturuuu/ui/document-transitions.css';
 import './runtime/typography.css';
 
 let browserApiRoutingInstalled = false;
