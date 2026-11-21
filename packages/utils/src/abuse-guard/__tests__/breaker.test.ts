@@ -7,7 +7,7 @@ import {
   withGuardBreaker,
 } from '../breaker';
 import { AbuseGuardUnavailableError } from '../client';
-import type { GuardRpc } from '../protocol';
+import type { AbuseGuardFamily, GuardRpc } from '../protocol';
 
 type SelectModule = typeof import('../select');
 
@@ -228,44 +228,113 @@ describe('abuse-guard breaker across bundled copies', () => {
     copies = [];
   });
 
-  it('shares one open circuit between two module copies', async () => {
+  function configure(
+    copy: SelectModule,
+    run: (rpc: GuardRpc) => Promise<unknown>
+  ) {
+    copy.configureAbuseGuardRuntime({
+      binding: { run },
+      pepper: PEPPER,
+      families: 'proxy,replay,ratelimit,password',
+      timeoutMs: '100',
+    });
+  }
+
+  function clientOf(copy: SelectModule, family: AbuseGuardFamily) {
+    const selection = copy.selectAbuseGuard(family, {});
+    if (selection.kind !== 'durable-object') throw new Error('unconfigured');
+    return selection.client;
+  }
+
+  function hangingBinding() {
+    const hungFamilies = new Set<AbuseGuardFamily>();
+    const run = vi.fn((rpc: GuardRpc) =>
+      hungFamilies.has(rpc.family)
+        ? new Promise<never>(() => undefined)
+        : Promise.resolve(reply(rpc))
+    );
+    return { hungFamilies, run };
+  }
+
+  it('shares one family circuit between two module copies', async () => {
     const entry = await freshCopy();
     const routes = await freshCopy();
     expect(routes).not.toBe(entry);
 
-    let hung = true;
-    const run = vi.fn((rpc: { steps: unknown[] }) =>
-      hung ? new Promise<never>(() => undefined) : Promise.resolve(reply(rpc))
-    );
-    entry.configureAbuseGuardRuntime({
-      binding: { run },
-      pepper: PEPPER,
-      families: 'proxy,replay',
-      timeoutMs: '100',
-    });
-
-    const viaEntry = entry.selectAbuseGuard('proxy', {});
-    const viaRoutes = routes.selectAbuseGuard('replay', {});
-    if (
-      viaEntry.kind !== 'durable-object' ||
-      viaRoutes.kind !== 'durable-object'
-    ) {
-      throw new Error('unconfigured');
-    }
+    const { hungFamilies, run } = hangingBinding();
+    configure(entry, run);
+    hungFamilies.add('proxy');
 
     for (let i = 0; i < ABUSE_GUARD_BREAKER_FAILURE_THRESHOLD; i += 1) {
-      expect(await codeOf(viaEntry.client.get('k'))).toBe('timeout');
+      expect(await codeOf(clientOf(entry, 'proxy').get('k'))).toBe('timeout');
     }
     expect(run).toHaveBeenCalledTimes(3);
+    expect(warn.mock.calls.at(-1)?.[1]).toMatchObject({
+      target: 'binding',
+      family: 'proxy',
+      reason: 'threshold',
+    });
 
-    // The other copy (and another family) fails fast on the shared circuit.
-    hung = false;
-    expect(await codeOf(viaRoutes.client.get('k'))).toBe('guard_unavailable');
+    // The other copy fails fast on the same family's shared circuit.
+    hungFamilies.clear();
+    expect(await codeOf(clientOf(routes, 'proxy').get('k'))).toBe(
+      'guard_unavailable'
+    );
     expect(run).toHaveBeenCalledTimes(3);
 
     vi.setSystemTime(Date.now() + ABUSE_GUARD_BREAKER_OPEN_MS);
-    expect(await codeOf(viaRoutes.client.get('k'))).toBe('ok');
-    expect(await codeOf(viaEntry.client.get('k'))).toBe('ok');
+    expect(await codeOf(clientOf(routes, 'proxy').get('k'))).toBe('ok');
+    expect(await codeOf(clientOf(entry, 'proxy').get('k'))).toBe('ok');
     expect(run).toHaveBeenCalledTimes(5);
+  });
+
+  it('opens only the failing family; others on the target call through', async () => {
+    const entry = await freshCopy();
+    const routes = await freshCopy();
+    const { hungFamilies, run } = hangingBinding();
+    configure(entry, run);
+    hungFamilies.add('ratelimit');
+
+    for (let i = 0; i < ABUSE_GUARD_BREAKER_FAILURE_THRESHOLD; i += 1) {
+      expect(await codeOf(clientOf(entry, 'ratelimit').get('k'))).toBe(
+        'timeout'
+      );
+    }
+    expect(await codeOf(clientOf(routes, 'ratelimit').get('k'))).toBe(
+      'guard_unavailable'
+    );
+    expect(run).toHaveBeenCalledTimes(3);
+
+    // Same binding target, other families, both copies: still served.
+    for (const copy of [entry, routes]) {
+      for (const family of ['password', 'replay', 'proxy'] as const) {
+        expect(await codeOf(clientOf(copy, family).get('k'))).toBe('ok');
+      }
+    }
+    expect(run).toHaveBeenCalledTimes(9);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops every family circuit when the binding changes', async () => {
+    const copy = await freshCopy();
+    const first = hangingBinding();
+    configure(copy, first.run);
+    first.hungFamilies.add('proxy');
+    first.hungFamilies.add('replay');
+    for (const family of ['proxy', 'replay'] as const) {
+      for (let i = 0; i < ABUSE_GUARD_BREAKER_FAILURE_THRESHOLD; i += 1) {
+        await codeOf(clientOf(copy, family).get('k'));
+      }
+      expect(await codeOf(clientOf(copy, family).get('k'))).toBe(
+        'guard_unavailable'
+      );
+    }
+
+    const second = hangingBinding();
+    configure(copy, second.run);
+    for (const family of ['proxy', 'replay'] as const) {
+      expect(await codeOf(clientOf(copy, family).get('k'))).toBe('ok');
+    }
+    expect(second.run).toHaveBeenCalledTimes(2);
   });
 });

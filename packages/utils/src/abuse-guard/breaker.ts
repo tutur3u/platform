@@ -13,9 +13,13 @@
  * Any answer from the guard, including a 4xx error such as `bad_request`,
  * `unauthorized`, `guard_limited` or `guard_stopped`, proves it is responsive:
  * it never counts and resets the consecutive-failure count. State is a few
- * numbers per backend target, held in memory only; no storage, no extra calls.
+ * numbers per (backend target, family), held in memory only; no storage, no
+ * extra calls. Keying by family keeps one family's timeouts (for example
+ * attacker-driven `ratelimit` traffic) from opening the circuit for the
+ * fail-closed families that share the same target.
  */
 import { type AbuseGuardTransport, AbuseGuardUnavailableError } from './client';
+import type { AbuseGuardFamily } from './protocol';
 
 /** Consecutive timeout/network failures that open the breaker. */
 export const ABUSE_GUARD_BREAKER_FAILURE_THRESHOLD = 3;
@@ -49,21 +53,29 @@ function isCountedFailure(error: unknown) {
   );
 }
 
+/** Short non-secret labels for the circuit-opened log line. */
+export type GuardBreakerLabel = {
+  target: string;
+  family?: AbuseGuardFamily;
+};
+
 /**
  * Wraps `transport` so it shares `state` with every other transport for the
- * same backend target. `target` is a short non-secret label for the log line.
+ * same breaker key (backend target and family). `label` names that key in the
+ * log line; a bare string is the target alone.
  */
 export function withGuardBreaker(
   transport: AbuseGuardTransport,
   state: GuardBreakerState,
-  target: string,
+  label: string | GuardBreakerLabel,
   now: () => number = Date.now
 ): AbuseGuardTransport {
+  const labels = typeof label === 'string' ? { target: label } : label;
   const open = (reason: 'threshold' | 'trial_failed', failures: number) => {
     state.openedAt = now();
     state.failures = 0;
     console.warn('[abuse-guard] circuit opened', {
-      target,
+      ...labels,
       reason,
       failures,
       openMs: ABUSE_GUARD_BREAKER_OPEN_MS,

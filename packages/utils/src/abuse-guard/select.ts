@@ -109,12 +109,26 @@ type RuntimeState = {
   override: RuntimeOverride | null;
   /** Bumped on every change so each bundled copy drops its cached clients. */
   generation: number;
-  /** Circuit breakers keyed by backend target (`binding`, or the HTTP origin). */
+  /**
+   * Circuit breakers keyed by `<target>|<family>`, where the target is
+   * `binding` or `http:<origin>`. Per family, so one family's timeouts cannot
+   * open the circuit for the others on the same target.
+   */
   breakers?: Map<string, GuardBreakerState>;
 };
 
-/** Bound on distinct breaker targets per isolate. */
-const MAX_BREAKER_TARGETS = 8;
+/**
+ * Bound on breaker entries per isolate. Families are a small fixed set
+ * (`ABUSE_GUARD_FAMILIES`, 8 today) and an isolate normally has one or two
+ * targets, so 32 covers four targets for every family. Past the cap the map
+ * is cleared, which only forgets failure counts (closes circuits).
+ */
+const MAX_BREAKER_ENTRIES = 32;
+const BINDING_TARGET = 'binding';
+
+function breakerKey(target: string, family: AbuseGuardFamily) {
+  return `${target}|${family}`;
+}
 
 /**
  * One override per isolate, shared by every bundled copy of this module. A
@@ -136,15 +150,22 @@ function runtimeState(): RuntimeState {
   return state;
 }
 
-/** The isolate-wide breaker for one backend target, shared by every copy. */
-function breakerFor(target: string): GuardBreakerState {
+/**
+ * The isolate-wide breaker for one (backend target, family), shared by every
+ * bundled copy of this module.
+ */
+function breakerFor(
+  target: string,
+  family: AbuseGuardFamily
+): GuardBreakerState {
   const state = runtimeState();
   state.breakers ??= new Map();
-  let breaker = state.breakers.get(target);
+  const key = breakerKey(target, family);
+  let breaker = state.breakers.get(key);
   if (!breaker) {
-    if (state.breakers.size >= MAX_BREAKER_TARGETS) state.breakers.clear();
+    if (state.breakers.size >= MAX_BREAKER_ENTRIES) state.breakers.clear();
     breaker = createGuardBreakerState();
-    state.breakers.set(target, breaker);
+    state.breakers.set(key, breaker);
   }
   return breaker;
 }
@@ -173,7 +194,9 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
   state.input = input;
   state.generation += 1;
   // A new binding is a new connection; do not carry an open circuit over.
-  state.breakers?.delete('binding');
+  for (const family of ABUSE_GUARD_FAMILIES) {
+    state.breakers?.delete(breakerKey(BINDING_TARGET, family));
+  }
   if (!input) {
     state.override = null;
     return;
@@ -189,8 +212,8 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
                 input.binding,
                 parseAbuseGuardTimeout(input.timeoutMs, family)
               ),
-              breakerFor('binding'),
-              'binding'
+              breakerFor(BINDING_TARGET, family),
+              { target: BINDING_TARGET, family }
             ),
           pepper,
         }
@@ -286,8 +309,8 @@ export function selectAbuseGuard(
           pepper,
           transport: withGuardBreaker(
             createHttpGuardTransport({ url, secret, timeoutMs }),
-            breakerFor(`http:${url}`),
-            'http'
+            breakerFor(`http:${url}`, family),
+            { target: 'http', family }
           ),
         })
     ),
