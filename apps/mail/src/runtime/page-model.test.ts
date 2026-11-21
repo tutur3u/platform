@@ -285,6 +285,46 @@ describe('Mail page model under the /mail apex mount', () => {
       options: { href: '/mail' },
     });
   });
+  it.each([
+    ['/mail/verify-token', undefined],
+    ['/mail/en/verify-token/', undefined],
+    ['/mail/vi/verify-token', undefined],
+    ['/mail/verify-token?token=handoff-secret', undefined],
+    [
+      '/mail/verify-token?token=handoff-secret&nextUrl=%2Fpersonal%2Finbox',
+      '/personal/inbox',
+    ],
+    [
+      '/mail/verify-token?nextUrl=%2Fmail%2Fvi%2Fpersonal%2Fsent%3Ftoken%3Dx',
+      '/vi/personal/sent',
+    ],
+    ['/mail/vi/verify-token?next=%252Fpersonal%252Finbox', '/personal/inbox'],
+    [
+      '/mail/verify-token?nextUrl=%2Fmail%2Fverify-token%3Ftoken%3Dx',
+      undefined,
+    ],
+    ['/mail/verify-token?nextUrl=%2Flogin', undefined],
+    ['/mail/verify-token?nextUrl=%2Fmail%2F..%2Fadmin', undefined],
+    [
+      '/mail/verify-token?nextUrl=https%3A%2F%2Fattacker.example%2Fpersonal',
+      undefined,
+    ],
+    ['/mail/verify-token?nextUrl=%2F%2Fattacker.example', undefined],
+    ['/mail/verify-token?nextUrl=%2Fapi%2Fv1%2Fsecret', undefined],
+  ])(
+    'never serves the token handoff under the mount: %s',
+    async (path, next) => {
+      const href = (
+        (await loadMounted(path).catch((thrown: unknown) => thrown)) as {
+          options?: { href: string };
+        }
+      ).options?.href;
+      expect(href).toBe(
+        next ? `/mail/login?next=${encodeURIComponent(next)}` : '/mail/login'
+      );
+      expect(href).not.toMatch(/token|secret|attacker/u);
+    }
+  );
   it('rejects paths outside the mount and passes login query through', async () => {
     await expect(loadMounted('/personal/inbox')).rejects.toMatchObject({
       isNotFound: true,
