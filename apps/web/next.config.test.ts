@@ -2,6 +2,7 @@ import { isCsrfOriginAllowed } from 'next/dist/server/app-render/csrf-protection
 // @vitest-environment node
 import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
+import type { NextConfig } from 'next';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-intl/plugin', () => ({
@@ -149,5 +150,47 @@ describe('public gateway server action origin', () => {
     ]) {
       expect(isCsrfOriginAllowed(host, allowed)).toBe(false);
     }
+  });
+});
+
+describe('shared web config for the Next.js and vinext builds', () => {
+  async function routing(config: NextConfig) {
+    return {
+      headers: await config.headers?.(),
+      redirects: await config.redirects?.(),
+      rewrites: await config.rewrites?.(),
+    };
+  }
+
+  it('gives vinext the same routing and runtime options as Next.js', async () => {
+    const { default: nextConfig } = await import('./next.config');
+    const { createWebNextConfig } = await import('./next-config.web');
+    const vinextConfig = createWebNextConfig({ publicSeoPaths: [] });
+
+    expect(await routing(vinextConfig)).toEqual(await routing(nextConfig));
+    for (const key of [
+      'cacheComponents',
+      'transpilePackages',
+      'images',
+      'reactCompiler',
+      'partialPrefetching',
+    ] as const) {
+      expect(vinextConfig[key], key).toEqual(nextConfig[key]);
+    }
+    expect(vinextConfig.experimental?.serverActions).toEqual(
+      nextConfig.experimental?.serverActions
+    );
+    expect(vinextConfig.experimental?.authInterrupts).toBe(true);
+    expect(vinextConfig.experimental?.cachedNavigations).toBe(true);
+  });
+
+  it('keeps the Next.js-only offline worker build inputs', async () => {
+    const { default: nextConfig } = await import('./next.config');
+    expect(nextConfig.cacheComponents).toBe(true);
+    expect(nextConfig.serverExternalPackages).toContain(
+      'chat-state-cloudflare-do'
+    );
+    expect(nextConfig.serverExternalPackages).toContain('esbuild-wasm');
+    expect(nextConfig.outputFileTracingIncludes?.['/serwist/*']).toBeTruthy();
   });
 });

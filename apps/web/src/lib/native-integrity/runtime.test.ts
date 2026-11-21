@@ -9,7 +9,8 @@ vi.mock('./store', () => ({
 vi.mock('@tuturuuu/utils/abuse-guard/select', () => ({
   selectAbuseGuard: mocks.select,
 }));
-vi.mock('../web-identity-abuse-guard', () => ({
+vi.mock('../web-identity-abuse-guard', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../web-identity-abuse-guard')>()),
   configureWebIdentityAbuseGuard: vi.fn(),
 }));
 

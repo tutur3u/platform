@@ -13,7 +13,10 @@ import {
 import { googleIntegrityAccessToken } from './google-access-token';
 import { budgetedNativeIntegrityFetch } from './provider-budget';
 import { createNativeIntegrityGuardStore } from './guard-store';
-import { configureWebIdentityAbuseGuard } from '../web-identity-abuse-guard';
+import {
+  configureWebIdentityAbuseGuard,
+  isAbuseGuardWorkerService,
+} from '../web-identity-abuse-guard';
 import {
   configuredNativeIntegrityRedis,
   createNativeIntegrityStore,
@@ -71,10 +74,7 @@ function nativeIntegrityBackend(actorId: string) {
   const backend = process.env.NATIVE_INTEGRITY_STORE;
   if (backend && backend !== 'redis' && backend !== 'abuse-guard')
     throw new Error('Native integrity store configuration unavailable');
-  if (
-    backend === 'abuse-guard' ||
-    process.env.TUTURUUU_SERVICE_NAME === 'web-api-identity'
-  ) {
+  if (backend === 'abuse-guard' || isAbuseGuardWorkerService()) {
     configureWebIdentityAbuseGuard();
     const selected = selectAbuseGuard('integrity');
     if (selected.kind !== 'durable-object')

@@ -145,20 +145,28 @@ export function emittedDeploymentIds(
     }));
 }
 
-export function assertIdentityBundleOmitsRedis(openNextDir) {
+/**
+ * Fails when any emitted JavaScript module under `bundleDir` is, imports or
+ * embeds the real Redis client. `entry` must be among the modules.
+ */
+export function assertBundleOmitsRedis(bundleDir, entry) {
   const redisPackage =
     /(?:@upstash[\\/]+redis(?:[\\/"'`]|$)|\bUpstash(?:JSONParse)?Error\b)/u;
-  const files = readdirSync(openNextDir, { recursive: true }).filter((file) =>
+  const files = readdirSync(bundleDir, { recursive: true }).filter((file) =>
     /\.[cm]?js$/u.test(file)
   );
-  assert.ok(files.includes('worker.js'), 'The identity Worker is missing');
+  assert.ok(files.includes(entry), `The Worker entry ${entry} is missing`);
   for (const file of files) {
     assert.doesNotMatch(file, redisPackage, `Redis package in ${file}`);
     assert.ok(
-      !redisPackage.test(readFileSync(join(openNextDir, file), 'utf8')),
+      !redisPackage.test(readFileSync(join(bundleDir, file), 'utf8')),
       `Redis package or implementation in ${file}`
     );
   }
+}
+
+export function assertIdentityBundleOmitsRedis(openNextDir) {
+  assertBundleOmitsRedis(openNextDir, 'worker.js');
 }
 
 function stripJsonComments(text) {

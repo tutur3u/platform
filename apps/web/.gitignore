@@ -9,3 +9,9 @@ public/swe-worker*
 .open-next/
 .opennext-disposable-checkout
 cloudflare/opennext/prune-receipt.json
+/dist/
+.vinext/
+.cloudflare/
+cloudflare/vinext/prune-receipt.json
+cloudflare/vinext/*.dry-run.log
+cloudflare/vinext/*.check.json

@@ -13,9 +13,24 @@ declare global {
   }
 }
 
-/** Installs the API identity Worker's binding in the current server bundle. */
+/**
+ * Web Workers that bind ABUSE_GUARD: the OpenNext API identity family and the
+ * vinext Workers (`web-vinext`, `web-vinext-<family>`). Other runtimes keep
+ * their configured store.
+ */
+export function isAbuseGuardWorkerService(
+  serviceName = process.env.TUTURUUU_SERVICE_NAME
+) {
+  return (
+    serviceName === 'web-api-identity' ||
+    serviceName === 'web-vinext' ||
+    serviceName?.startsWith('web-vinext-') === true
+  );
+}
+
+/** Installs the Worker's ABUSE_GUARD binding in the current server bundle. */
 export function configureWebIdentityAbuseGuard() {
-  if (process.env.TUTURUUU_SERVICE_NAME !== 'web-api-identity') return;
+  if (!isAbuseGuardWorkerService()) return;
 
   const { env } = getCloudflareContext();
   configureAbuseGuardRuntime(
