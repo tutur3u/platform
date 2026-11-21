@@ -52,7 +52,10 @@ async function submit(
       .rpc('fleet_submit_resolved_intent', {
         p_kind: kind,
         p_project_key: projectKey,
-        p_target_key: targetKey,
+        // Generated RPC args type every text parameter as non-null. A
+        // status question has no target, and the function resolves it by
+        // project alone (covered by fleet-desk-admission.sql).
+        p_target_key: targetKey as string,
         p_parameters: parameters,
         ...('actorId' in principal
           ? { p_actor_id: principal.actorId }

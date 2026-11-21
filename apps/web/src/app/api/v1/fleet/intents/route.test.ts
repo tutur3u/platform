@@ -191,6 +191,29 @@ describe('Fleet intent routes', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it('sends a status question without a target key', async () => {
+    submission('accepted', intentId);
+    const response = await POST(
+      request(
+        'intents',
+        {
+          kind: 'status_question',
+          payload: { projectKey: 'platform', topic: 'readiness' },
+        },
+        appAuthorization('mastermind')
+      )
+    );
+    expect(response.status).toBe(201);
+    expect(rpc).toHaveBeenCalledWith('fleet_submit_resolved_intent', {
+      p_actor_id: actorId,
+      p_kind: 'status_question',
+      p_project_key: 'platform',
+      p_target_key: null,
+      p_parameters: { topic: 'readiness' },
+      p_redacted_quote: undefined,
+    });
+  });
+
   it('uses the Mastermind session actor and keeps scrubbed quotes out of the payload', async () => {
     submission('accepted', intentId);
     const response = await POST(
