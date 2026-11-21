@@ -165,7 +165,7 @@ async function roomModel(code: string, locale: string, url: URL) {
       meta: roomMeta(info),
     };
   }
-  if ('publicInvite' in access) {
+  if ('publicInvite' in access && access.publicInvite) {
     const { info, ...invite } = access;
     return { kind: 'public-invite' as const, ...invite, meta: roomMeta(info) };
   }
