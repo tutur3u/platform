@@ -215,7 +215,7 @@ function sharedModulesOf(appSource) {
       if (!subpath.endsWith(tail)) continue;
       const middle = subpath.slice(head.length, subpath.length - tail.length);
       const file = existing(
-        path.join(dir, targetOf(entry).replace('*', middle))
+        path.join(dir, targetOf(entry).replaceAll('*', middle))
       );
       if (file) return file;
     }
