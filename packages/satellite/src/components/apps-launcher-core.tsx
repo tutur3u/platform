@@ -12,6 +12,7 @@ import type {
 } from '@tuturuuu/utils/launchable-apps';
 import {
   LAUNCHABLE_APPS,
+  resolveLaunchableAppPath,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { type ElementType, useRef, useState } from 'react';
@@ -99,11 +100,33 @@ export function AppsLauncherCoreDialog({
   }
 
   function resolveUrl(app: LaunchableApp) {
+    const currentOrigin =
+      typeof window === 'undefined' ? undefined : window.location.origin;
+    const searchParams = { source: 'sidebar-apps' };
+
+    if (currentOrigin === 'https://tuturuuu.com') {
+      if (app.slug === 'meet') {
+        return new URL('/meet/personal/meetings', currentOrigin).href;
+      }
+      if (app.slug === 'mail' || app.slug === 'calendar') {
+        const workspacePath = resolveLaunchableAppPath({
+          app,
+          workspace: currentWorkspace,
+        });
+        const entry = app.slug === 'mail' ? '/inbox' : '';
+        const url = new URL(
+          `/${app.slug}${workspacePath}${entry}`,
+          currentOrigin
+        );
+        url.search = new URLSearchParams(searchParams).toString();
+        return url.href;
+      }
+    }
+
     return resolveLaunchableAppUrl({
       app,
-      currentOrigin:
-        typeof window === 'undefined' ? undefined : window.location.origin,
-      searchParams: { source: 'sidebar-apps' },
+      currentOrigin,
+      searchParams,
       workspace: currentWorkspace,
     });
   }

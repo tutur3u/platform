@@ -1,5 +1,8 @@
 import { cleanup, render } from '@testing-library/react';
-import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
+import {
+  LAUNCHABLE_APPS,
+  type LaunchableWorkspace,
+} from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
 import { useState } from 'react';
 import { vi } from 'vitest';
@@ -94,7 +97,10 @@ const messages = {
   },
 };
 
-export function renderAppsLauncherDialog({ open = true } = {}) {
+export function renderAppsLauncherDialog({
+  open = true,
+  workspace = { id: 'personal-id', name: 'Personal Space', personal: true },
+}: { open?: boolean; workspace?: LaunchableWorkspace } = {}) {
   const onOpenChange = vi.fn();
 
   function AppsLauncherHarness() {
@@ -102,11 +108,7 @@ export function renderAppsLauncherDialog({ open = true } = {}) {
 
     return (
       <AppsLauncherDialog
-        currentWorkspace={{
-          id: 'personal-id',
-          name: 'Personal Space',
-          personal: true,
-        }}
+        currentWorkspace={workspace}
         onOpenChange={(nextOpen) => {
           onOpenChange(nextOpen);
           setIsOpen(nextOpen);

@@ -67,6 +67,21 @@ Regression coverage in
 `packages/ui/src/components/ui/custom/satellite-shell.test.tsx` checks initial
 mobile state, mobile toggles, desktop persistence, resizing, and server markup.
 
+## Cross-app navigation
+
+On `tuturuuu.com`, the sidebar app launcher links directly to the apex paths
+for Meet, Mail and Calendar. Meet opens personal meetings. Mail and Calendar
+use the selected workspace, or the personal workspace when none is selected.
+Mail opens its inbox directly. The launcher regression test covers these
+destinations.
+
+The apps serve separate documents and build their assets independently. When
+measuring a switch, capture the whole document redirect chain, transferred
+JavaScript and CSS, and first contentful paint. Repeat the same journey in the
+same browser profile to observe cache reuse. A warm browser cache does not
+establish that the Worker was warm. Use Worker timing or tracing to attribute
+server time, and measure login redirects separately from signed-in navigation.
+
 ## Shared UI translations
 
 Each satellite must ship English and Vietnamese messages for the shared UI it
