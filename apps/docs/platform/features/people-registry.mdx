@@ -107,6 +107,7 @@ a Tuturuuu account, and each link is explicit and audited.
 | `people_suppressions`          | suppression tokens left by deletion                                                           |
 | `people_change_events`         | invalidation outbox                                                                           |
 | `people_principals`            | per-workspace machine principals and their public keys                                       |
+| `people_channel_bindings`      | which workspace each provider account serves, unique per account                             |
 | `people_recall_events`         | one-time recall evidence per provider event                                                  |
 | `people_import_runs`, `people_import_items`, `people_import_staging` | migration runs, receipts and quarantined records         |
 | `people_audit_events`          | append-only events                                                                            |
@@ -472,6 +473,15 @@ need ingress evidence. That reuses the Fleet access event contract in
   `registry.recall` records the event once in `people_recall_events`, so an
   event supports one recall and at most one write.
 - Ingress verifies group membership and the sender with the provider itself.
+- **Signers and bindings:** Fleet operations accept only the registered Fleet
+  desks. Registry operations also accept the Mira ingress signer, whose
+  versioned public keys come from `MIRA_INGRESS_PUBLIC_KEYS`. For every
+  registry operation, the server checks that the signed `(channel,
+  provider_account_id)` is bound to the calling principal's workspace in
+  `people_channel_bindings`. That table is unique on `(channel,
+  provider_account_id)`, so one provider account serves at most one workspace.
+  Only the registry owner adds or removes bindings, and removing one stops
+  every registry operation for that account at once.
 
 ## API
 
