@@ -1,6 +1,6 @@
 'use client';
-import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CodeXml } from '@tuturuuu/icons';
 import {
   checkpointMeetProgramming,
   createMeetPlayground,
@@ -9,7 +9,6 @@ import {
   getMeetProgrammingMira,
   getMeetProgrammingTest,
   InternalApiError,
-  type MeetingProgrammingJoin,
   type MeetProgrammingMiraAction,
   runMeetPlayground,
   selectMeetProgramming,
@@ -17,6 +16,15 @@ import {
   updateMeetProgrammingMira,
 } from '@tuturuuu/internal-api';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
+import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -44,6 +52,22 @@ export const meetingProgrammingApi = {
   changeMira: updateMeetProgrammingMira,
 };
 const ACTIVE_TEST = ['queued', 'running', 'cancel_requested'];
+const problemLanguages = PLAYGROUND_LANGUAGES.filter(
+  (language) => language !== 'shell'
+);
+const languageLabel: Record<ProgrammingLanguage, string> = {
+  python: 'Python',
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  c: 'C',
+  cpp: 'C++',
+  java: 'Java',
+  rust: 'Rust',
+  go: 'Go',
+  ruby: 'Ruby',
+  php: 'PHP',
+  shell: 'Shell',
+};
 
 export function ProgrammingPanel({
   meetingId,
@@ -94,7 +118,7 @@ export function ProgrammingPanel({
     },
   });
   const create = useMutation({
-    mutationFn: () =>
+    mutationFn: (): Promise<{ id: string }> =>
       api.create(meetingId, { name: t('playground'), empty: true, language }),
     onSuccess: async (project) => {
       setId(project.id);
@@ -107,9 +131,7 @@ export function ProgrammingPanel({
       void cache.invalidateQueries({ queryKey: key });
     },
   });
-  const active = query.data?.selection
-    ? (query.data as MeetingProgrammingJoin)
-    : null;
+  const active = query.data?.selection ? query.data : null;
   const readMira = api.readMira;
   const changeMira = api.changeMira;
   const miraKey = [
@@ -132,8 +154,8 @@ export function ProgrammingPanel({
     onSettled: () => cache.invalidateQueries({ queryKey: miraKey }),
   });
   const switchRuntime = useMutation({
-    mutationFn: (language: ProgrammingLanguage) =>
-      api.select(meetingId, { ...active!.selection, language }),
+    mutationFn: (selection: MeetingProgramming) =>
+      api.select(meetingId, selection),
     onSuccess: () => cache.invalidateQueries({ queryKey: key }),
   });
   const miraError = miraAction.error;
@@ -181,31 +203,67 @@ export function ProgrammingPanel({
     throw new Error('Programming test timed out');
   }
   const showSetup = canManage && (!active || setupOpen);
+  const problemSelection =
+    canManage && active?.role === 'owner' && active.selection.kind === 'problem'
+      ? active.selection
+      : null;
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 wrap-anywhere">
       {showSetup && (
-        <ProgrammingSetup
-          wsId={wsId}
-          accountId={accountId}
-          kind={kind}
-          id={id}
-          language={language}
-          pending={select.isPending || create.isPending}
-          onKind={(value) => {
-            setKind(value);
-            setId('');
-            if (value === 'problem' && language === 'shell')
-              setLanguage('python');
-          }}
-          onId={(value, projectLanguage) => {
-            setId(value);
-            if (projectLanguage) setLanguage(projectLanguage);
-          }}
-          onLanguage={setLanguage}
-          onOpen={() => select.mutate(false)}
-          onCreate={() => create.mutate()}
-          onDismiss={active ? () => setSetupOpen(false) : undefined}
-        />
+        <div className="max-h-full min-w-0 overflow-y-auto [&_input]:min-w-0">
+          <ProgrammingSetup
+            wsId={wsId}
+            accountId={accountId}
+            kind={kind}
+            id={id}
+            language={language}
+            pending={
+              select.isPending || create.isPending || switchRuntime.isPending
+            }
+            onKind={(value) => {
+              setKind(value);
+              setId('');
+              if (value === 'problem' && language === 'shell')
+                setLanguage('python');
+            }}
+            onId={(value, projectLanguage) => {
+              setId(value);
+              if (projectLanguage) setLanguage(projectLanguage);
+            }}
+            onLanguage={setLanguage}
+            onOpen={() => select.mutate(false)}
+            onCreate={() => create.mutate()}
+            onDismiss={active ? () => setSetupOpen(false) : undefined}
+          />
+        </div>
+      )}
+      {problemSelection && !showSetup && (
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 px-2 pt-1">
+          <Select
+            value={problemSelection.language}
+            disabled={select.isPending || switchRuntime.isPending}
+            onValueChange={(value) => {
+              const language = problemLanguages.find((item) => item === value);
+              if (language && language !== problemSelection.language)
+                switchRuntime.mutate({ ...problemSelection, language });
+            }}
+          >
+            <SelectTrigger
+              aria-label={t('language')}
+              className="h-8 w-auto max-w-full gap-2"
+            >
+              <CodeXml aria-hidden="true" className="size-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {problemLanguages.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {languageLabel[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
       {(query.isError ||
         select.isError ||
@@ -216,7 +274,7 @@ export function ProgrammingPanel({
         </p>
       )}
       {active ? (
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1">
           <Workbench
             key={`${accountId ?? 'native'}:${meetingId}:${active.selection.id}:${active.selection.language}`}
             projectId={active.project.id}
@@ -257,11 +315,6 @@ export function ProgrammingPanel({
                 onAction: (action) => miraAction.mutate(action),
               },
               runTests: active.problem ? test : undefined,
-              onRuntime:
-                canManage && active.problem && active.role === 'owner'
-                  ? (value) => switchRuntime.mutate(value)
-                  : undefined,
-              runtimePending: switchRuntime.isPending,
             }}
             actions={
               canManage
@@ -269,13 +322,14 @@ export function ProgrammingPanel({
                     {
                       id: 'change-resource',
                       label: t('changeResource'),
+                      disabled: switchRuntime.isPending,
                       onSelect: () => setSetupOpen((value) => !value),
                     },
                     {
                       id: 'close-room',
                       label: t('close'),
                       destructive: true,
-                      disabled: select.isPending,
+                      disabled: select.isPending || switchRuntime.isPending,
                       onSelect: () => select.mutate(true),
                     },
                   ]

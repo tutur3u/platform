@@ -201,7 +201,11 @@ export async function joinMeetingProgramming(
       'Only the host can checkpoint programming'
     );
   const selection = await selected(access);
-  if (!selection) return { selection: null };
+  if (!selection) {
+    if (checkpoint)
+      throw new MeetCallAccessError(409, 'No programming resource');
+    return { selection: null };
+  }
   const scope = await meetingProgrammingScope(access, selection);
   const { ownerId, meetingId: elevatedMeetingId } = scope;
   if (selection.kind === 'playground') {

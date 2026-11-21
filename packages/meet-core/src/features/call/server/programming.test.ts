@@ -149,6 +149,16 @@ it.each(['playground', 'problem'])(
   }
 );
 
+it('rejects a checkpoint if the host has already closed the programming room', async () => {
+  await expect(joinMeetingProgramming(access, true)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(mocks.ticket).not.toHaveBeenCalled();
+  await expect(joinMeetingProgramming(access)).resolves.toEqual({
+    selection: null,
+  });
+});
+
 describe('Mira coding routes', () => {
   const selection = {
     kind: 'playground',
