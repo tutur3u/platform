@@ -4,7 +4,7 @@ import {
   fleetLinkConfirmationInputSchema,
 } from '@tuturuuu/internal-api/fleet';
 import { z } from 'zod';
-import { currentFleetActor } from './actor';
+import { currentFleetActor } from '../native/context';
 import {
   checkFleetLink,
   fleetApiOptions,

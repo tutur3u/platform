@@ -181,8 +181,10 @@ caller's short-lived Mastermind session and validate every response against
 the `@tuturuuu/internal-api/fleet` schemas.
 
 Admission binds the verified Access identity to the app session and admits a
-fleet grantee only to Fleet routes. This changes the Mastermind web admission
-rule and ships in its own reviewed slice with release-authority approval. All
+fleet grantee only to the Fleet page, its assets and its server functions,
+rechecking the live grant on every request. See
+[Fleet access admission](/build/devops/mastermind-web#fleet-access-admission).
+Grantees also need an Access policy rule; the owner rule stays unchanged. All
 strings ship in English and Vietnamese.
 
 ### Mira chat
@@ -364,6 +366,10 @@ Each slice links its coverage here when it lands:
   admission, typed drafts, digest answers, redirect refusal, strict response
   validation, refusal mapping, the link flow and bilingual message parity. See
   the [Fleet access web tests](https://github.com/tutur3u/platform/tree/main/apps/mastermind/src/fleet-access).
+- Slice 6 admission covers grantee reach, 403 on every owner route without
+  session work, revocation and stop on the next request, identity binding,
+  unchanged Owner admission and pinned server-function IDs in
+  [fleet-admission.test.ts](https://github.com/tutur3u/platform/blob/main/apps/mastermind/src/native/fleet-admission.test.ts).
 - Slice 5 covers racing claims, lease expiry, idempotent receipts,
   requester and approver generations, mapping drift, the dispatch fence and
   bounded retention in `apps/database/supabase/tests/fleet-dry-run-consumer.sql`.

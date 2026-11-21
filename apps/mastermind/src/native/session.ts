@@ -9,7 +9,8 @@ import {
   verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session-core';
 import { z } from 'zod';
-import { type MastermindEnvironment, ownerIds } from './auth';
+import { isOwnerEmail, type MastermindEnvironment, ownerIds } from './auth';
+import { hasLiveFleetGrant } from './permission';
 
 /**
  * Satellite session issuance for the dedicated host, following the central
@@ -18,8 +19,8 @@ import { type MastermindEnvironment, ownerIds } from './auth';
  * single-use cross-app token for target `mastermind`, and this Worker
  * exchanges it for a 300-second access session and a refresh credential,
  * both host-only `HttpOnly` cookies. Every step runs behind Cloudflare
- * Access and requires the Access email; issuance also requires the
- * allowlisted owner id.
+ * Access and requires the Access email. Issuance for the owner's email also
+ * requires the allowlisted owner id; any other email needs a live Fleet grant.
  */
 export const MASTERMIND_ORIGIN = 'https://mastermind.tuturuuu.com';
 const WEB_ORIGIN = 'https://tuturuuu.com';
@@ -68,17 +69,30 @@ export interface IssuedSession {
   refreshExpiresAt: Date;
 }
 
+/** The owner's email admits only owner ids; another email, only itself. */
+function mayHoldSession(
+  env: MastermindEnvironment,
+  email: string,
+  claims: { sub: string; email?: string | null }
+) {
+  return isOwnerEmail(env, email)
+    ? ownerIds(env).includes(claims.sub)
+    : claims.email === email;
+}
+
 /**
  * Accepts a Web session response only when both credentials verify locally
- * for target `mastermind`, belong to an allowlisted owner with the Access
- * email, and the access session lives at most 300 seconds.
+ * for target `mastermind` with the Access email, and the access session lives
+ * at most 300 seconds. The subject is an allowlisted owner for the owner's
+ * email and holds a live Fleet grant otherwise.
  */
-function acceptSession(
+async function acceptSession(
   body: unknown,
   env: MastermindEnvironment,
   email: string,
-  now: number
-): IssuedSession | null {
+  now: number,
+  fetcher: typeof fetch
+): Promise<IssuedSession | null> {
   const parsed = sessionResponse.safeParse(body);
   const secret = env.TUTURUUU_APP_COORDINATION_SECRET;
   if (!parsed.success || !secret) return null;
@@ -96,7 +110,12 @@ function acceptSession(
     claims.email !== email ||
     claims.exp - claims.iat > MAX_ACCESS_SECONDS ||
     refresh.claims.exp - refresh.claims.iat > MAX_REFRESH_SECONDS ||
-    !ownerIds(env).includes(claims.sub)
+    !mayHoldSession(env, email, claims)
+  )
+    return null;
+  if (
+    !isOwnerEmail(env, email) &&
+    !(await hasLiveFleetGrant(parsed.data.appSessionToken, fetcher))
   )
     return null;
   return {
@@ -163,7 +182,7 @@ export async function exchangeHandoff(
       env,
       fetcher
     );
-    return body ? acceptSession(body, env, email, now) : null;
+    return body ? await acceptSession(body, env, email, now, fetcher) : null;
   } catch {
     return null;
   }
@@ -185,7 +204,7 @@ export async function refreshSession(
     targetApp: TARGET,
     now: new Date(now),
   });
-  if (!local.ok || !ownerIds(env).includes(local.claims.sub)) return null;
+  if (!local.ok || !mayHoldSession(env, email, local.claims)) return null;
   try {
     const body = await postWeb(
       '/api/v1/auth/cross-app-session/refresh',
@@ -194,7 +213,7 @@ export async function refreshSession(
       env,
       fetcher
     );
-    return body ? acceptSession(body, env, email, now) : null;
+    return body ? await acceptSession(body, env, email, now, fetcher) : null;
   } catch {
     return null;
   }

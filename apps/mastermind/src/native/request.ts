@@ -4,11 +4,13 @@ import {
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
 import {
+  type Admitted,
   authenticate,
+  isOwnerEmail,
   type MastermindEnvironment,
-  type Owner,
   verifyAccessEmail,
 } from './auth';
+import { isFleetPath } from './fleet-admission';
 import {
   exchangeHandoff,
   loginRedirect,
@@ -87,7 +89,7 @@ export async function mastermindRequest(
   env: MastermindEnvironment,
   render: (
     request: Request,
-    owner: Owner,
+    owner: Admitted,
     mount: ResolvedMount
   ) => Promise<Response> | Response,
   now = Date.now(),
@@ -122,17 +124,26 @@ export async function mastermindRequest(
     return secure(new Response(null, { status: 303, headers }));
   }
 
+  // A Fleet grantee reaches Fleet paths only; nothing else does session work.
+  const fleetPath = isFleetPath(request.method, url, mount.basePath);
+  if (!isOwnerEmail(env, email) && !fleetPath) {
+    return secure(new Response('Forbidden', { status: 403 }));
+  }
+
   let admitted = request;
-  let owner = await authenticate(request, env, now);
+  let owner = await authenticate(request, env, now, fleetPath);
   let issued: string[] = [];
   if (!owner) {
     // An expired access session rotates its refresh credential inline.
     const session = await refreshSession(request, env, email, now);
     if (session) {
       admitted = withSessionCookie(request, session);
-      owner = await authenticate(admitted, env, now);
+      owner = await authenticate(admitted, env, now, fleetPath);
       if (owner) issued = sessionCookies(session);
     }
+  }
+  if (owner === 'forbidden') {
+    return secure(new Response('Forbidden', { status: 403 }));
   }
   if (!owner) {
     const navigation =

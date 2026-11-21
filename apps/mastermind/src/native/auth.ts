@@ -1,7 +1,7 @@
 import { verifyAppSessionRequestWithToken } from '@tuturuuu/auth/app-session-core';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { hasLiveRootAccess } from './permission';
+import { hasLiveFleetGrant, hasLiveRootAccess } from './permission';
 
 export interface MastermindEnvironment {
   ASSETS?: AssetsBinding;
@@ -51,6 +51,12 @@ export type Owner = {
   expiresAt: number;
 };
 
+/**
+ * An admitted caller. `owner` reaches every route; `fleet` is a live Fleet
+ * grantee admitted only to Fleet paths (fleet-admission.ts).
+ */
+export type Admitted = Owner & { role: 'owner' | 'fleet' };
+
 /** Native, request-injected satellite adapter. No fallback identity or data lookup. */
 export function getSatelliteAppSessionUser(
   app: 'mastermind',
@@ -83,8 +89,10 @@ export function getSatelliteAppSessionUser(
 }
 
 /**
- * The Cloudflare Access identity: a verified `Cf-Access-Jwt-Assertion` for
- * the owner's email on the dedicated HTTPS host, or null.
+ * The Cloudflare Access identity: the email of a verified
+ * `Cf-Access-Jwt-Assertion` on the dedicated HTTPS host, or null. The Access
+ * policy decides who reaches the Worker; `authenticate` decides what each
+ * identity may open.
  */
 export async function verifyAccessEmail(
   request: Request,
@@ -119,7 +127,8 @@ export async function verifyAccessEmail(
       currentDate: new Date(now),
     });
     if (
-      payload.email !== env.MASTERMIND_OWNER_EMAIL ||
+      typeof payload.email !== 'string' ||
+      !payload.email ||
       typeof payload.iat !== 'number' ||
       payload.iat * 1000 > now
     )
@@ -138,18 +147,39 @@ export function ownerIds(env: MastermindEnvironment) {
     .filter(Boolean);
 }
 
+/** The owner's Access email admits only the allowlisted owner ids. */
+export function isOwnerEmail(env: MastermindEnvironment, email: string) {
+  return email === env.MASTERMIND_OWNER_EMAIL;
+}
+
+/**
+ * The session must belong to the Access identity. The owner's email needs an
+ * allowlisted id and live root `manage_mastermind`, as before Fleet access.
+ * Any other email needs a Fleet path and a live Fleet grant, checked on every
+ * request without a memo. `forbidden` marks a valid session that this path
+ * does not admit, so the caller answers 403 instead of sending it to login.
+ */
 export async function authenticate(
   request: Request,
   env: MastermindEnvironment,
-  now = Date.now()
-): Promise<Owner | null> {
+  now = Date.now(),
+  fleetPath = false
+): Promise<Admitted | 'forbidden' | null> {
   try {
     const email = await verifyAccessEmail(request, env, now);
     if (!email) return null;
-    const owner = getSatelliteAppSessionUser('mastermind', request, env, now);
-    if (!owner || owner.email !== email) return null;
-    if (!ownerIds(env).includes(owner.id)) return null;
-    return (await hasLiveRootAccess(owner)) ? owner : null;
+    const user = getSatelliteAppSessionUser('mastermind', request, env, now);
+    if (!user || user.email !== email) return null;
+    if (isOwnerEmail(env, email)) {
+      if (!ownerIds(env).includes(user.id)) return null;
+      return (await hasLiveRootAccess(user))
+        ? { ...user, role: 'owner' }
+        : null;
+    }
+    if (!fleetPath) return 'forbidden';
+    return (await hasLiveFleetGrant(user.token))
+      ? { ...user, role: 'fleet' }
+      : 'forbidden';
   } catch {
     return null;
   }

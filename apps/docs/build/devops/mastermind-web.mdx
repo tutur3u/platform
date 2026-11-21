@@ -67,21 +67,59 @@ error denies the request with 403 before any application data reads.
    cache age and a five-second fetch timeout. Unknown signing keys fail closed
    during cooldown; a rotated key can be accepted after a successful refetch.
    No static signing-key configuration or network-error fallback is used.
-3. Require the JWT email to equal `MASTERMIND_OWNER_EMAIL` exactly. Verify the
-   satellite access session with `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`,
-   access scope and a maximum lifetime of 300 seconds. The request-injected
-   `getSatelliteAppSessionUser` adapter uses shared auth core without the legacy
-   helper's database fallback.
-4. Require `OWNER_IDS` membership on every request. Missing or empty IDs deny
-   access. Session permission scopes are never treated as permission
-   evidence.
-5. Require live root access on every request: `GET /api/v1/mastermind/access`
-   with the owner's session must answer `enabled: true` (five-second
-   timeout, redirects refused). Its staging verification with real permission
+3. Bind the session to the Access identity. Verify the satellite access
+   session with `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`,
+   access scope and a maximum lifetime of 300 seconds, and require its email
+   to equal the JWT email. The request-injected `getSatelliteAppSessionUser`
+   adapter uses shared auth core without the legacy helper's database fallback.
+4. When the JWT email equals `MASTERMIND_OWNER_EMAIL`, require `OWNER_IDS`
+   membership on every request. Missing or empty IDs deny access. Session
+   permission scopes are never treated as permission evidence.
+5. For that owner, require live root access on every request:
+   `GET /api/v1/mastermind/access` with the owner's session must answer
+   `enabled: true` (five-second timeout, redirects refused). The owner never
+   falls back to a Fleet grant. Its staging verification with real permission
    removal remains a cutover gate.
+6. Any other verified email is a [Fleet grantee](#fleet-access-admission) and
+   reaches Fleet paths only.
+
+### Fleet access admission
+
+A person with a live Fleet grant opens only the
+[Fleet area](/platform/features/fleet-access#mastermind-web). Every other path
+answers 403 before any session refresh, permission check or render, with no
+login redirect. Fleet paths are:
+
+- `GET /{en,vi}/fleet-access`;
+- `GET /assets/*`;
+- `/_serverFn/fleet-access.<name>` for the functions in
+  `src/fleet-access/api.ts`, under the same-origin POST rule below.
+
+Production builds give server functions a SHA-256 ID. The Vite config's
+`generateFunctionId` pins readable IDs only for the exports listed in
+`src/native/fleet-admission.ts`, and the Worker matches them exactly. The
+command center's functions keep hashed IDs and stay owner-only. A test fails
+when `api.ts` exports a function the list does not name.
+
+Each Fleet request rechecks `GET /api/v1/fleet/access` with the grantee's
+session and requires `enabled: true` and `stopped: false`. There is no memo:
+a revoked or stopped grant denies the next request, and a failed or
+redirected check denies. The request context sets a Fleet actor for every
+role but the owner identity only for the owner, so `currentOwner()` throws for
+a grantee. The Fleet API checks the live grant again on every read and write.
+
+**Required Access policy change (not applied).** The Access application
+admits only the owner. Grantees need an additional Allow rule on the same
+application: Google IdP, an explicit email list or Access group kept in step
+with the live Fleet grants, the same 24-hour session cap and audit logs. Do
+not widen the existing owner rule or add a path-scoped bypass; the Worker
+enforces the path boundary. Removing someone from the rule ends their Access
+session; revoking the grant denies the next request on its own. Applying the
+rule needs release-authority approval.
 
 The Access policy must cover all paths, use Google IdP, allow only the
-approved owner, cap sessions at 24 hours and enable audit logs.
+approved owner and the listed Fleet grantees, cap sessions at 24 hours and
+enable audit logs.
 
 ## Session issuance
 
@@ -98,13 +136,15 @@ like every other satellite. No other host, subdomain or path maps to it.
    `mastermind` after its own MFA policy. `/verify-token` exchanges it at
    `POST /api/v1/auth/cross-app-token/verify` and accepts the answer only when
    the access and refresh tokens verify locally for target `mastermind`, the
-   subject is in `OWNER_IDS`, the token email equals the Access email and the
-   access session lives at most 300 seconds.
+   token email equals the Access email and the access session lives at most
+   300 seconds. For the owner's email the subject must be in `OWNER_IDS`; for
+   any other email the new session must hold a live Fleet grant.
 3. Both credentials are set host-only (no `Domain`), `Path=/`, `HttpOnly`,
    `Secure`, `SameSite=Lax`, and the owner returns to the path.
 4. When the access session expires, the next request sends the refresh
    credential to `POST /api/v1/auth/cross-app-session/refresh` (after verifying
-   it locally for an allowlisted owner), renders with the new session and sets
+   it locally for an allowlisted owner, or for the Access email of a grantee),
+   renders with the new session and sets
    the rotated cookies on that response. Web's replay grace covers concurrent
    requests. A non-navigation without a session is 403.
 
