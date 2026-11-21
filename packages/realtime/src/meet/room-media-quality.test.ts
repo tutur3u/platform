@@ -250,7 +250,13 @@ describe('freeze rate coverage', () => {
     quality = applyMediaQualityReport(
       quality,
       'b',
-      { ...sample, freezes: 0, recvVideoKbps: null },
+      {
+        ...sample,
+        freezes: 0,
+        recvVideoKbps: null,
+        freezesMeasured: false,
+        freezeMeasuredMs: 0,
+      },
       0
     );
     // Receives video but its browser reports no freeze counter.
@@ -278,6 +284,19 @@ describe('freeze rate coverage', () => {
       );
     const summary = summarizeRoomMediaQuality(quality, 1000);
     expect(summary.freezeReporters).toBe(10);
+    expect(summary.freezesPerMinute).toBeCloseTo(10);
+  });
+
+  it('keeps freezes measured earlier when the final receive sample stalled', () => {
+    const quality = applyMediaQualityReport(
+      undefined,
+      'a',
+      { ...sample, freezes: 1, freezeMeasuredMs: 6000, recvVideoKbps: null },
+      0
+    );
+    const summary = summarizeRoomMediaQuality(quality, 1000);
+    expect(summary.cameraReporters).toBe(0);
+    expect(summary.freezeReporters).toBe(1);
     expect(summary.freezesPerMinute).toBeCloseTo(10);
   });
 });

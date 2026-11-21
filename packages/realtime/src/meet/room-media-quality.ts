@@ -93,7 +93,9 @@ export function summarizeRoomMediaQuality(
   // Receive rates count devices that measured cameras; freezes count only
   // those whose browser also reported freeze counters, so neither is diluted.
   const measured = live.filter((entry) => entry.recvVideoKbps !== null);
-  const frozenCoverage = measured.filter(
+  // Freeze coverage stands on its own: a stalled final receive sample must not
+  // discard freezes measured earlier in the interval.
+  const frozenCoverage = live.filter(
     (entry) => entry.freezesMeasured && (entry.freezeMeasuredMs ?? 0) > 0
   );
   // The denominator is measured time, not the report interval, so a device

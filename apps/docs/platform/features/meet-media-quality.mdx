@@ -266,11 +266,15 @@ does not offer.
 
 The automatic budget uses the same targets on every plan: up to 1.4 Mbps and
 24 fps for a spotlit camera, and 1.8 Mbps at 15 fps for a screen share. In the
-current release, a paid plan therefore changes only the screen-share height
-limit. A paid screen share is sent at its captured size up to 1440p, while a
-free one is downscaled to 720p. The higher paid frame rates and bitrates are
-headroom for an upcoming stream quality picker, and are not reached
-automatically. The camera requests a 720p capture, an `ideal` constraint that
+current release, a paid plan therefore changes two things:
+
+- A spotlit or higher-quality camera may use up to 1.4 Mbps, where the free
+  ceiling holds it at 0.9 Mbps.
+- A screen share is sent at its captured size up to 1440p, where a free one is
+  downscaled to 720p.
+
+The higher paid frame rates, and bitrates beyond those targets, are headroom
+for an upcoming stream quality picker. They are not reached automatically. The camera requests a 720p capture, an `ideal` constraint that
 the browser may not meet.
 
 The plan applies only to the web call for now. Mobile join tokens carry the
