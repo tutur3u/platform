@@ -66,7 +66,7 @@ export function MailComposerFooter({
   const hasStatus = mediaPending > 0 || mediaFailed > 0;
 
   return (
-    <footer className="flex flex-wrap items-center gap-1.5 border-dynamic border-t bg-muted/20 px-3 py-3">
+    <footer className="flex flex-wrap items-center gap-1.5 border-dynamic border-t bg-muted/20 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
       <Button
         className="rounded-lg px-5"
         disabled={!canSend || sending}

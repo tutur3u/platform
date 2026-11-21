@@ -439,10 +439,10 @@ export function FloatingComposer({
         className={cn(
           'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-elevation-3',
           minimized
-            ? 'right-0 bottom-0 left-0 h-14 md:right-5 md:bottom-5 md:left-auto md:w-[28rem] md:rounded-2xl'
+            ? 'right-2 bottom-[calc(var(--mobile-dock-clearance,0px)+0.5rem)] left-2 h-14 rounded-2xl md:right-5 md:bottom-5 md:left-auto md:w-[28rem]'
             : maximized
-              ? 'inset-0 h-dvh w-full md:inset-6 md:h-auto md:w-auto md:rounded-xl'
-              : 'inset-0 h-dvh w-full md:inset-auto md:right-5 md:bottom-5 md:h-[min(78dvh,48rem)] md:min-h-[28rem] md:w-[min(46rem,calc(100vw-2.5rem))] md:min-w-[28rem] md:resize md:rounded-xl'
+              ? 'inset-0 h-dvh w-full pt-[env(safe-area-inset-top,0px)] md:inset-6 md:h-auto md:w-auto md:rounded-xl md:pt-0'
+              : 'inset-0 h-dvh w-full pt-[env(safe-area-inset-top,0px)] md:inset-auto md:pt-0 md:right-5 md:bottom-5 md:h-[min(78dvh,48rem)] md:min-h-[28rem] md:w-[min(46rem,calc(100vw-2.5rem))] md:min-w-[28rem] md:resize md:rounded-xl'
         )}
         onDrop={(event) => {
           event.preventDefault();

@@ -74,7 +74,7 @@ export function MailContentSkeleton() {
     <div
       {...STATUS_PROPS}
       aria-label={t('loading')}
-      className="-m-2 h-[calc(100dvh-4.25rem)] min-h-[calc(100dvh-4.25rem)] min-w-0 md:-m-4 md:h-dvh md:min-h-dvh"
+      className="-m-2 h-[calc(100dvh-var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))-0.75rem-var(--mobile-dock-clearance,0px))] min-h-[calc(100dvh-var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))-0.75rem-var(--mobile-dock-clearance,0px))] min-w-0 md:-m-4 md:h-dvh md:min-h-dvh"
     >
       <div aria-hidden className="flex h-full w-full overflow-hidden">
         <ListSkeleton />

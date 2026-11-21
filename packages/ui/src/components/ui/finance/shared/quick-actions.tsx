@@ -67,7 +67,7 @@ export function QuickActions({
       <DropdownMenuTrigger asChild>
         <Button
           size="lg"
-          className="fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full p-0 shadow-lg"
+          className="fixed right-4 bottom-[calc(var(--mobile-dock-clearance,0px)+1rem)] z-50 h-14 w-14 md:right-6 md:bottom-6 rounded-full p-0 shadow-lg"
         >
           <Plus className="h-6 w-6" />
           <span className="sr-only">{t('quick_actions')}</span>

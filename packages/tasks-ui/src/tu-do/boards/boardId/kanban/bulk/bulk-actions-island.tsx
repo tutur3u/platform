@@ -36,7 +36,7 @@ export function BulkActionsIsland({
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-3 bottom-3 z-40 flex justify-center sm:bottom-5"
+      className="pointer-events-none fixed inset-x-3 bottom-[calc(var(--mobile-dock-clearance,0px)+0.75rem)] z-40 flex justify-center sm:bottom-[calc(var(--mobile-dock-clearance,0px)+1.25rem)]"
       data-testid="kanban-bulk-actions-island"
     >
       <div

@@ -126,7 +126,7 @@ export function BoardPanelFrame({
   return (
     <div
       className={cn(
-        '-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col transition-[padding] [transition-duration:var(--task-board-panel-transition,200ms)] md:-mx-4',
+        '-m-2 -mb-4 flex h-[calc(100dvh-var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))-0.25rem-var(--mobile-dock-clearance,0px))] flex-1 md:h-[calc(100vh-0.5rem)] flex-col transition-[padding] [transition-duration:var(--task-board-panel-transition,200ms)] md:-mx-4',
         panelOpen && 'sm:pr-[var(--task-panel-width,36rem)]'
       )}
     >
