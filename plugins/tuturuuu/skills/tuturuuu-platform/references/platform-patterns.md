@@ -6,6 +6,15 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Sorbet mobile shell (`MobileDock` in `@tuturuuu/ui`, below `md`): browser or
+  system Back owns in-app history on web and every satellite. The floating dock is
+  a centered destination pill only—no dock Back lane or long-press root shortcut.
+  Flutter keeps its detached dock Back circle. Preserve deep-link fallbacks in
+  `*-mobile-dock-location` helpers without rendering a Back control. Product scope,
+  gutters, and dock tokens live in
+  [Sorbet mobile shell](../../../../../apps/docs/platform/personalization/themes.mdx)
+  and root `AGENTS.md` Mandatory Actions.
+
 - Meet-to-Mail handoff is untrusted fragment draft data, with explicit Mail preview
   before composer initialization. Managed drafts can autosave after confirmation.
   Keep normal mailbox/account permissions and retained composers intact. Inspect

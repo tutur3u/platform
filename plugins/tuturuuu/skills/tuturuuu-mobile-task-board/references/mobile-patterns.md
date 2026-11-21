@@ -214,8 +214,11 @@ localization changes.
   a paused session (stopped with an open break, `type=paused`) like a running
   one and stops it before starting; a failed start resumes and re-pauses it
   rather than losing it.
-- The dock reserves a 52dp Back circle and a 52dp priority circle around the
-  center pill even when either action is absent. The pill hides with zero or
+- Flutter only: the dock reserves a 52dp Back circle and a 52dp priority circle
+  around the center pill even when either action is absent. Web and satellite
+  Sorbet docks omit dock Back; see
+  [Sorbet mobile shell](../../../../../apps/docs/platform/personalization/themes.mdx)
+  and `$tuturuuu-platform` platform patterns. The pill hides with zero or
   one destination. Five visible destinations use icons with accessible names;
   More preserves 44dp targets on narrow windows. The first `inDock` action
   uses the priority circle, and the top bar shows the rest.
