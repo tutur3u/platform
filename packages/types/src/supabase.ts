@@ -19908,6 +19908,7 @@ export type Database = {
       task_recurrence_receipts: {
         Row: {
           actor_id: string;
+          created_at: string;
           expires_at: string;
           input_hash: string;
           operation: string;
@@ -19919,6 +19920,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           actor_id: string;
+          created_at?: string;
           expires_at: string;
           input_hash: string;
           operation: string;
@@ -19929,6 +19931,7 @@ export type Database = {
         };
         Update: {
           actor_id?: string;
+          created_at?: string;
           expires_at?: string;
           input_hash?: string;
           operation?: string;
@@ -19986,8 +19989,12 @@ export type Database = {
           state_reason: string | null;
           template: NonNullable<Json>;
           ws_id: string;
+          task_recurrence_generation_list: string | null;
+          task_recurrence_reserve_active: undefined | null;
         };
-        ComputedFields: never;
+        ComputedFields:
+          | 'task_recurrence_generation_list'
+          | 'task_recurrence_reserve_active';
         Insert: {
           anchor_date: string;
           board_id: string;
@@ -30967,6 +30974,39 @@ export type Database = {
         };
         Returns: boolean;
       };
+      task_recurrence_apply_request: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_delete_task: string;
+          p_expires_at: string;
+          p_global_epoch: number;
+          p_list: string;
+          p_operation: string;
+          p_plan: Json;
+          p_progress: number;
+          p_request: string;
+          p_revision: number;
+          p_series: string;
+          p_spec: Json;
+          p_task: string;
+          p_ws: string;
+          p_ws_epoch: number;
+        };
+        Returns: Json;
+      };
+      task_recurrence_begin_completion: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_list: string;
+          p_request: string;
+          p_sort_key: number;
+          p_task: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       task_recurrence_capture_completion: {
         Args: {
           p_actor: string;
@@ -30974,6 +31014,31 @@ export type Database = {
           p_sort_key: number;
           p_task: string;
           p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_complete: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_items: Json;
+          p_request: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_copy_ids: { Args: { p_value: Json }; Returns: string[] };
+      task_recurrence_create: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_global_epoch: number;
+          p_list: string;
+          p_plan: Json;
+          p_request: string;
+          p_spec: Json;
+          p_ws: string;
+          p_ws_epoch: number;
         };
         Returns: Json;
       };
@@ -30985,6 +31050,30 @@ export type Database = {
         Args: { p_expected_epoch: number; p_ws: string };
         Returns: Json;
       };
+      task_recurrence_edit: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_plan: Json;
+          p_progress: number;
+          p_request: string;
+          p_revision: number;
+          p_series: string;
+          p_spec: Json;
+          p_task: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_generation_list: {
+        Args: {
+          p_series: Omit<
+            Database['private']['Tables']['task_recurrence_series']['Row'],
+            Database['private']['Tables']['task_recurrence_series']['ComputedFields']
+          >;
+        };
+        Returns: string;
+      };
       task_recurrence_is_open: {
         Args: {
           p_closed_at: string;
@@ -30994,13 +31083,109 @@ export type Database = {
         };
         Returns: boolean;
       };
+      task_recurrence_local_start: {
+        Args: { p_date: string; p_zone: string };
+        Returns: string;
+      };
       task_recurrence_lock_member_edit: {
         Args: { p_actor: string; p_ws: string };
         Returns: boolean;
       };
+      task_recurrence_materialize: {
+        Args: {
+          p_description_state: Json;
+          p_end_at: string;
+          p_list: string;
+          p_series: Omit<
+            Database['private']['Tables']['task_recurrence_series']['Row'],
+            Database['private']['Tables']['task_recurrence_series']['ComputedFields']
+          >;
+          p_start_at: string;
+        };
+        Returns: Database['public']['Tables']['tasks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'tasks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      task_recurrence_next_pattern: {
+        Args: { p_due: string; p_rule: Json };
+        Returns: string;
+      };
+      task_recurrence_plan_date: { Args: { p_value: Json }; Returns: string };
+      task_recurrence_prepare_completion: {
+        Args: {
+          p_actor: string;
+          p_request: string;
+          p_task: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_prepare_create: {
+        Args: { p_actor: string; p_list: string; p_ws: string };
+        Returns: Json;
+      };
       task_recurrence_probe: { Args: { p_slot: number }; Returns: Json };
+      task_recurrence_read: {
+        Args: {
+          p_actor: string;
+          p_include_template: boolean;
+          p_tasks: string[];
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       task_recurrence_reclassify: {
         Args: { p_tasks: string[] };
+        Returns: undefined;
+      };
+      task_recurrence_request_actor: {
+        Args: { p_actor: string };
+        Returns: undefined;
+      };
+      task_recurrence_request_expiry: {
+        Args: { p_expires_at: string };
+        Returns: undefined;
+      };
+      task_recurrence_request_gate: {
+        Args: { p_ws: string };
+        Returns: number[];
+      };
+      task_recurrence_request_receipt: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_input: Json;
+          p_operation: string;
+          p_request: string;
+          p_result: Json;
+          p_scope: Json;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_request_replay: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_input: Json;
+          p_operation: string;
+          p_request: string;
+          p_scope: Json;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_reserve_active: {
+        Args: {
+          p_series: Omit<
+            Database['private']['Tables']['task_recurrence_series']['Row'],
+            Database['private']['Tables']['task_recurrence_series']['ComputedFields']
+          >;
+        };
         Returns: undefined;
       };
       task_recurrence_set_control: {
@@ -31011,9 +31196,45 @@ export type Database = {
         };
         Returns: Json;
       };
+      task_recurrence_set_status: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_delete_task: string;
+          p_expires_at: string;
+          p_plan: Json;
+          p_progress: number;
+          p_request: string;
+          p_revision: number;
+          p_series: string;
+          p_task: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       task_recurrence_set_workspace: {
         Args: { p_enabled: boolean; p_expected_epoch: number; p_ws: string };
         Returns: Json;
+      };
+      task_recurrence_step: {
+        Args: {
+          p_actor: string;
+          p_plan: Json;
+          p_series: Omit<
+            Database['private']['Tables']['task_recurrence_series']['Row'],
+            Database['private']['Tables']['task_recurrence_series']['ComputedFields']
+          >;
+          p_source: string;
+        };
+        Returns: Json;
+      };
+      task_recurrence_validate_spec: {
+        Args: { p_spec: Json };
+        Returns: undefined;
+      };
+      task_recurrence_wall_instant: {
+        Args: { p_local: string; p_zone: string };
+        Returns: string;
       };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };

@@ -33,6 +33,15 @@ describe('task capacity helpers', () => {
     });
   });
 
+  it('masks private recurrence metadata on the ordinary task writer conflict', () => {
+    expect(
+      parseTaskCapacityViolation({
+        code: 'PT409',
+        message: 'TASK_RECURRENCE_OPEN_CAPACITY',
+      })
+    ).toEqual({ code: 'TASK_CAPACITY_EXCEEDED', violations: [] });
+  });
+
   it('returns only exceeded enabled soft rules as warnings', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [

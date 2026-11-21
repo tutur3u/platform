@@ -607,7 +607,8 @@
                   "reference/repository/routes/storage-unzip-proxy",
                   "reference/repository/routes/storefront",
                   "reference/repository/routes/supermemory",
-                  "reference/repository/routes/tasks",
+                  "reference/repository/routes/tasks-1",
+                  "reference/repository/routes/tasks-2",
                   "reference/repository/routes/teach",
                   "reference/repository/routes/tools",
                   "reference/repository/routes/track",
@@ -746,6 +747,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/reference/repository/routes/tasks",
+      "destination": "/reference/repository/routes/tasks-1"
+    },
     {
       "source": "/build/devops/web-start-candidate",
       "destination": "/build/devops/native-start-migration"

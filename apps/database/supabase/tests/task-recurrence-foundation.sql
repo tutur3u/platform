@@ -55,6 +55,32 @@ INSERT INTO recurrence_rpc_acl VALUES
   ('private.task_recurrence_release_departed_member()', NULL),
   ('private.task_recurrence_lock_member_edit(uuid,uuid)', NULL);
 
+INSERT INTO recurrence_rpc_acl VALUES
+  ('private.task_recurrence_request_actor(uuid)', NULL),
+  ('private.task_recurrence_request_gate(uuid)', NULL),
+  ('private.task_recurrence_request_expiry(timestamptz)', NULL),
+  ('private.task_recurrence_request_replay(uuid,uuid,uuid,timestamptz,text,jsonb,jsonb)', NULL),
+  ('private.task_recurrence_request_receipt(uuid,uuid,uuid,timestamptz,text,jsonb,jsonb,jsonb)', NULL),
+  ('private.task_recurrence_reserve_active(private.task_recurrence_series)', NULL),
+  ('private.task_recurrence_copy_ids(jsonb)', NULL),
+  ('private.task_recurrence_validate_spec(jsonb)', NULL),
+  ('private.task_recurrence_generation_list(private.task_recurrence_series)', NULL),
+  ('private.task_recurrence_materialize(private.task_recurrence_series,uuid,timestamptz,timestamptz,jsonb)', NULL),
+  ('private.task_recurrence_plan_date(jsonb)', NULL),
+  ('private.task_recurrence_next_pattern(jsonb,date)', NULL),
+  ('private.task_recurrence_wall_instant(timestamp,text)', NULL),
+  ('private.task_recurrence_local_start(date,text)', NULL),
+  ('private.task_recurrence_step(private.task_recurrence_series,jsonb,text,uuid)', NULL),
+  ('private.task_recurrence_apply_request(text,uuid,uuid,uuid,uuid,uuid,uuid,timestamptz,bigint,bigint,bigint,bigint,jsonb,jsonb,text,uuid)', NULL),
+  ('private.task_recurrence_prepare_create(uuid,uuid,uuid)', 'service_role'),
+  ('private.task_recurrence_create(uuid,uuid,uuid,uuid,timestamptz,bigint,bigint,jsonb,jsonb)', 'service_role'),
+  ('private.task_recurrence_edit(uuid,uuid,uuid,uuid,uuid,timestamptz,bigint,bigint,jsonb,jsonb)', 'service_role'),
+  ('private.task_recurrence_set_status(uuid,uuid,uuid,uuid,uuid,timestamptz,bigint,bigint,text,uuid,jsonb)', 'service_role'),
+  ('private.task_recurrence_read(uuid,uuid,uuid[],boolean)', 'service_role'),
+  ('private.task_recurrence_prepare_completion(uuid,uuid,uuid,uuid)', 'service_role'),
+  ('private.task_recurrence_begin_completion(uuid,uuid,uuid,uuid,bigint,uuid,timestamptz)', 'service_role'),
+  ('private.task_recurrence_complete(uuid,uuid,uuid,timestamptz,jsonb)', 'service_role');
+
 SELECT is((SELECT count(*) FROM pg_proc WHERE pronamespace = 'private'::regnamespace
   AND proname LIKE 'task_recurrence_%'), (SELECT count(*) FROM recurrence_rpc_acl),
   'the exact RPC inventory covers every recurrence function');

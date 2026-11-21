@@ -142,6 +142,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/tasks/history",
   "/api/v1/workspaces/[wsId]/tasks/journal",
   "/api/v1/workspaces/[wsId]/tasks/media",
+  "/api/v1/workspaces/[wsId]/tasks/recurrence",
   "/api/v1/workspaces/[wsId]/tasks/schedule-batch",
   "/api/v1/workspaces/[wsId]/tasks/search",
   "/api/v1/workspaces/[wsId]/tasks/suggestions",

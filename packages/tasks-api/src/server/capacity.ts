@@ -1,9 +1,26 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
-type DatabaseError = { message?: string; details?: string; detail?: string };
+type DatabaseError = {
+  code?: string;
+  message?: string;
+  details?: string;
+  detail?: string;
+};
 
 export function parseTaskCapacityViolation(error: unknown) {
   const candidate = (error ?? {}) as DatabaseError;
+  if (
+    candidate.code === 'PT409' &&
+    [
+      'TASK_RECURRENCE_OPEN_CAPACITY',
+      'TASK_RECURRENCE_LIST_RECLASSIFICATION_LIMIT',
+      'TASK_RECURRENCE_CROSS_WORKSPACE_MOVE',
+    ].includes(candidate.message ?? '')
+  ) {
+    // This path also serves guests. Preserve the status without exposing the
+    // private series association to ordinary task callers.
+    return { code: 'TASK_CAPACITY_EXCEEDED' as const, violations: [] };
+  }
   if (
     candidate.message !== 'TASK_CAPACITY_EXCEEDED' &&
     !candidate.message?.includes('TASK_CAPACITY_EXCEEDED')
