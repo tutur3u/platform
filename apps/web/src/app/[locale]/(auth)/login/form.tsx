@@ -97,6 +97,7 @@ import {
 } from './return-url-helpers';
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
 import {
+  type AuthStage,
   InputOTPRowFallback,
   InternalAppAccountConfirmationFallback,
   LoginMethodSeparator,
@@ -104,6 +105,8 @@ import {
   SocialImageLogo,
   SocialLogoMask,
   TurnstileLoadingFallback,
+  type MobileMfaApprovalChallenge,
+  type ReturnUrlValidationFailure,
 } from './login-form-parts';
 import {
   FocusedSignInCard,
@@ -154,20 +157,6 @@ const InputOTPSlot = lazy(async () => {
 
   return { default: InputOTPSlotComponent };
 });
-
-type AuthStage = 'identify' | 'otp' | 'password';
-
-interface MobileMfaApprovalChallenge {
-  expiresAt: string;
-  id: string;
-  pairCode: string;
-  secret: string;
-}
-
-interface ReturnUrlValidationFailure {
-  kind: ReturnUrlFailureKind;
-  returnUrl: string;
-}
 
 type LoginFormProps = {
   deferAuthSurfaceUntilSessionCheck?: boolean;
@@ -394,9 +383,6 @@ export default function LoginForm({
       ? returnUrlValidationFailure
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
-  // A provider never starts beside an unverified or failed return target.
-  const returnTargetSettled =
-    !hasActiveReturnUrlFailure && !isResolvingReturnApp;
   const canRenderAuthSurface =
     readyForAuth ||
     (!deferAuthSurfaceUntilSessionCheck && (!initialized || user === null));
@@ -1292,14 +1278,15 @@ export default function LoginForm({
     setRedirectingAfterAuthState,
     setReadyForAuth
   );
+  // Never beside an unverified or failed return target. A focused sign-in
+  // starts from the server view; elsewhere the session check runs first.
   useAutoOAuthLogin(
     providerHint,
     providerAutoStartAllowed &&
-      returnTargetSettled &&
+      !hasActiveReturnUrlFailure &&
+      !isResolvingReturnApp &&
       !requiresMFA &&
       !user &&
-      // A focused sign-in starts at once from the server view; elsewhere the
-      // browser's own session check runs first.
       (focusedSignIn || (initialized && readyForAuth)),
     handleOAuthLogin
   );
@@ -1911,13 +1898,16 @@ export default function LoginForm({
                       )}
                     />
 
-                    {!isResolvingOtpEnablement &&
-                    turnstileClientState.isRequired ? (
+                    {turnstileClientState.isRequired ? (
                       <div className="rounded-2xl bg-transparent py-1">
                         {turnstileClientState.canRenderWidget &&
                         turnstileSiteKey ? (
                           <div className="flex flex-col items-center gap-2">
-                            {renderTurnstile(turnstileSiteKey)}
+                            {isResolvingOtpEnablement ? (
+                              <TurnstileLoadingFallback />
+                            ) : (
+                              renderTurnstile(turnstileSiteKey)
+                            )}
                             {captchaError ? (
                               <p className="text-destructive text-sm">
                                 {captchaError}

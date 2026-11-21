@@ -95,7 +95,8 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the `headers()` rules in `apps/web/next-config.web.ts`; config headers win,
   so the public rule there is conditioned on a missing session cookie and a
   private rule follows it.
-- Turnstile renders in a fixed 300 by 65 slot, and every focused step uses
+- Turnstile renders in a fixed 300 by 65 slot that is reserved while the
+  OTP settings still resolve, and every focused step uses
   one fixed-height frame (a long saved-account list scrolls inside it), so
   nothing shifts as the widget or the view loads.
 

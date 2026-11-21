@@ -2,12 +2,27 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
+import type { ReturnUrlFailureKind } from './invalid-return-url-warning';
+
+export type AuthStage = 'identify' | 'otp' | 'password';
+
+export interface MobileMfaApprovalChallenge {
+  expiresAt: string;
+  id: string;
+  pairCode: string;
+  secret: string;
+}
+
+export interface ReturnUrlValidationFailure {
+  kind: ReturnUrlFailureKind;
+  returnUrl: string;
+}
 
 export function TurnstileLoadingFallback() {
   return (
     <div
       aria-hidden="true"
-      className="h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
+      className="mx-auto h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
     />
   );
 }
