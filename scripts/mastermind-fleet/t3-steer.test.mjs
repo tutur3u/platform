@@ -160,18 +160,19 @@ test('two processes cannot both claim one request id, and a held lock stops the 
   const second = createSendJournal(file);
   assert.deepEqual(first.claim('a-1', 'bearer-1', 1_000), { begun: true });
   assert.deepEqual(second.claim('a-1', 'bearer-2', 1_001), { inFlight: true });
-  // The same bearer may resend: T3 recognises the id under it.
-  assert.deepEqual(second.claim('a-1', 'bearer-1', 1_002), { begun: true });
-  const stale = 1_002 + IN_FLIGHT_GRACE_MS;
-  assert.deepEqual(second.claim('a-1', 'bearer-2', stale), { probe: 1_002 });
+  // Its own unreported begin is checked against the thread before a resend.
+  assert.deepEqual(second.claim('a-1', 'bearer-1', 1_002), { probe: 1_000 });
+  const stale = 1_000 + IN_FLIGHT_GRACE_MS;
+  assert.deepEqual(second.claim('a-1', 'bearer-2', stale), { probe: 1_000 });
   // Taking over needs the very begin that was probed; a newer one wins.
   assert.deepEqual(second.claim('a-1', 'bearer-2', stale, { takeOver: 999 }), {
-    probe: 1_002,
+    probe: 1_000,
   });
   assert.deepEqual(
-    second.claim('a-1', 'bearer-2', stale, { takeOver: 1_002 }),
+    second.claim('a-1', 'bearer-2', stale, { takeOver: 1_000 }),
     { begun: true }
   );
+
   first.settle('a-1', { delivery: 'steered' });
   assert.deepEqual(second.claim('a-1', 'bearer-3', stale), {
     receipt: { delivery: 'steered' },
@@ -203,6 +204,36 @@ test('two processes cannot both claim one request id, and a held lock stops the 
   fs.utimesSync(`${file}.lock`, old, old);
   assert.deepEqual(first.claim('a-2', 'bearer-1', 5), { begun: true });
   fs.rmSync(dir, { recursive: true });
+});
+
+test('a send that timed out but landed is not sent again under the same bearer', async () => {
+  let delivered = 0;
+  const server = fakeServer({
+    tools: {
+      t3_thread_send: () => {
+        delivered++;
+        return ok({ delivery: 'steered' });
+      },
+      t3_thread_read: () =>
+        ok({ items: [{ messageId: 'message:mcp:s:thread-send:a-1' }] }),
+    },
+  });
+  server.state.tokens.add('tok');
+  const session = await openMcpSession({
+    origin: ORIGIN,
+    token: 'tok',
+    fetchImpl: server.fetchImpl,
+  });
+  const journal = createSendJournal(path.join(tempDir(), 'journal.jsonl'));
+  // The first attempt recorded its begin, then the client gave up waiting.
+  journal.begin('a-1', session.bearerId, 1_000);
+  const receipt = await steerThread(
+    session.call,
+    { threadId: THREAD, message: 'hello', clientRequestId: 'a-1' },
+    { journal, bearerId: session.bearerId, now: () => 1_500 }
+  );
+  assert.equal(receipt.delivery, 'delivered');
+  assert.equal(delivered, 0);
 });
 
 test('looks beyond the first timeline page for an interrupted send', async () => {

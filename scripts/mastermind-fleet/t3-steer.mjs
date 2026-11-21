@@ -115,17 +115,17 @@ export function createSendJournal(file) {
     /**
      * Decides, atomically, what the caller may do with `key`:
      * `{ receipt }` (already settled), `{ inFlight }` (another bearer began
-     * it less than the grace ago), `{ probe: at }` (another bearer began it
-     * at `at` and never reported back: look in the thread first), or
-     * `{ begun }` (recorded for this bearer: send). `takeOver` is the `at` of
-     * a stale begin the caller has probed and found undelivered.
+     * it less than the grace ago), `{ probe: at }` (it was begun at `at` and
+     * never reported back: look in the thread first), or `{ begun }`
+     * (recorded for this bearer: send). `takeOver` is the `at` of the begin
+     * the caller has probed and found undelivered.
      */
     claim(key, bearerId, at, { takeOver } = {}) {
       return locked((entries) => {
         const known = entries.get(key);
         if (known?.r) return { receipt: known.r };
-        if (known && known.b !== bearerId && known.at !== takeOver)
-          return at - known.at < IN_FLIGHT_GRACE_MS
+        if (known && known.at !== takeOver)
+          return known.b !== bearerId && at - known.at < IN_FLIGHT_GRACE_MS
             ? { inFlight: true }
             : { probe: known.at };
         put({ k: key, b: bearerId, at });
@@ -202,8 +202,8 @@ export async function steerThread(
       throw new T3McpError('steer_journal_unsafe');
     }
     if (claim.probe !== undefined) {
-      // Begun under a bearer T3 no longer matches to this one, and never
-      // reported back: the thread itself says whether it arrived.
+      // Begun before and never reported back (a timeout, a crash, another
+      // bearer): the thread itself says whether it arrived.
       const landed = await findDelivered(call, target, clientRequestId);
       if (landed) {
         // It arrived; how (steered or started) is no longer knowable.
