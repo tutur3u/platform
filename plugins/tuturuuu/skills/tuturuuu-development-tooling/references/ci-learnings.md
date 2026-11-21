@@ -91,3 +91,30 @@ Longest queues (p90): Oxc Check / check-ci / Check CI Config 28.8 min; Lettin Cl
 Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
 
 No workflow change. Check CI Config queues stay hosted-pool saturation, not concurrency: in one Native Mail main run the affected-gate job queued 18 s and check-ci, created 21 s later on the same ubuntu-latest label, queued 16 min. Each package-touching main push starts about 37 affected-gate jobs that only emit run=true off pull requests yet take a hosted slot and a billed minute each. Skipping the gate on non-PR events needs status-function guards on every consumer, which affected-gate-workflows.test.js forbids so a failed upstream cannot release a production job; the change needs the Cloudflare Source owner and a consumer-guard redesign, not a daily edit. Native Mail main failures are production upload refusals in the cutover lane, not flakes. No failed-then-passed job, so no flake fix.
+
+## 2026-11-21 | Daily CI sample
+
+Window 2026-11-20T01:47 to 2026-11-21T01:47 UTC, main branch: 1000 workflow runs (715 success, 117 cancelled, 96 failure, 39 skipped, 20 queued, 10 in_progress, 3 pending). Job timing covers 120 sampled runs; execution uses successful jobs only.
+
+| Slowest workflows (wall) | p50 / p90 (n) |
+| --- | ---: |
+| mobile | 29.8 min / 58.5 min (5) |
+| Ai Cloudflare Source | 23.6 min / 31.8 min (10) |
+| Apps Cloudflare Source | 23.5 min / 40.3 min (10) |
+| Pay Cloudflare Source | 22.6 min / 30.8 min (9) |
+| Coordination Cloudflare | 21.6 min / 21.6 min (1) |
+| Learn Cloudflare Source | 21.6 min / 32.6 min (9) |
+
+| Slowest jobs (execution) | p50 / p90 (n) | queue p90 |
+| --- | ---: | ---: |
+| Test / Unit test shard (1) | 9.8 min / 9.8 min (1) | 96 s |
+| Test / Unit test shard (2) | 8.8 min / 8.8 min (1) | 114 s |
+| Test / Unit test shard (3) | 7.5 min / 7.5 min (1) | 63 s |
+| Meet Cloudflare / validate | 6.9 min / 8.4 min (2) | 15 s |
+| Workspace Cloudflare Source / native / validate | 4.0 min / 4.1 min (2) | 3.3 min |
+| TypeScript Type Check / Type Check | 3.7 min / 5.9 min (2) | 43 s |
+
+Longest queues (p90): Deploy Coordinator Cloudflare / check-ci / Check CI Config 17.0 min; Cron Control Cloudflare / check-ci / Check CI Config 15.6 min; i18n Check / check-ci / Check CI Config 14.1 min; Periodic report delivery database contract / check-ci / Check CI Config 13.7 min.
+Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
+
+Coalescing from 74ca3852f4 holds: Cloudflare Source wall p50 fell from 38-43 min to 22-24 min and Check CI Config queue p90 from 28-34 min to about 16 min. No failed-then-passed job, so no flake fix. SDK dev channel stayed red on main because packages/sdk/scripts/portable-build.test.cjs compared the staged closure with a hardcoded count (29) that dde408aea6 outgrew by approving users-link-actions.ts; it is the third drift of that count. ec1c821302 exports the approved set and asserts the staged closure equals it, so a new approval needs no test edit and a stale approval fails. Rollback condition: an approved module that is intentionally unreachable from the portable entries. Mobile Tests and the Tutoring absence credit foundation contract fail on consecutive main SHAs with no recovered retry, so they are owner defects, not flakes.
