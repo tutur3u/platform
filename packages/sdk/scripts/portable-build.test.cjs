@@ -5,6 +5,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 const {
   moduleSpecifiers,
+  portableFiles,
   stagePortableSources,
 } = require('./portable-build.cjs');
 
@@ -183,7 +184,14 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     repoRoot: path.resolve(__dirname, '../../..'),
     destination: path.join(destination, 'src'),
   });
-  assert.equal(sources.length, 29);
+  // Every approved module is reachable and every staged module is approved,
+  // so an allowlist edit cannot leave a stale approval or a drifted count.
+  assert.deepEqual(
+    sources
+      .map((source) => source.replace(/^packages\/([^/]+)\/src\//, '$1/'))
+      .sort(),
+    [...portableFiles].sort()
+  );
   assert.equal(
     fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
     false

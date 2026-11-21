@@ -300,6 +300,7 @@ if (require.main === module) {
 }
 module.exports = {
   moduleSpecifiers,
+  portableFiles,
   stagePortableSources,
   checkPortableSources,
 };
