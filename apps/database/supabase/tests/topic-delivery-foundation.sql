@@ -20,7 +20,13 @@ select ok(not has_table_privilege('authenticated','private.topic_announcement_at
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcements',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing parent callers are not revoked');
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcement_recipients',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing recipient callers are not revoked');
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcement_attachments',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing attachment callers are not revoked');
-insert into auth.users(id) values(pg_temp.fid(121701)),(pg_temp.fid(121702));
+-- The platform-role guard admits supabase_auth_admin, the role GoTrue uses.
+set role supabase_auth_admin;
+insert into auth.users(id)
+select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
+from (values (121701),(121702)) as ids(n);
+reset role;
+set local search_path=public,extensions;
 insert into public.users(id) values(pg_temp.fid(121701)),(pg_temp.fid(121702)) on conflict do nothing;
 insert into public.workspaces(id,name,personal,creator_id) values
  (pg_temp.fid(121711),'Synthetic delivery foundation',false,pg_temp.fid(121701)),

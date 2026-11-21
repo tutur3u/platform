@@ -44,7 +44,9 @@ export function absenceRaceScripts(holderCommand, competitorCommand) {
   };
 }
 export function absenceSeedSql() {
-  return `insert into auth.users(id) values('${actor}');
+  return `set role supabase_auth_admin;
+    insert into auth.users(id) values('${actor}');
+    reset role;
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic absence race',false,'${actor}');
     insert into public.workspace_members(ws_id,user_id,type) values('${ws}','${actor}','MEMBER') on conflict do nothing;
@@ -190,7 +192,10 @@ export async function runTutoringAbsenceConcurrency(metadata) {
     );
   } finally {
     execute(
-      `delete from public.workspaces where id='${ws}'; delete from auth.users where id='${actor}';`
+      `delete from public.workspaces where id='${ws}';
+      set role supabase_auth_admin;
+      delete from auth.users where id='${actor}';
+      reset role;`
     );
   }
 }

@@ -5,7 +5,13 @@ select no_plan();
 create function pg_temp.fid(n integer) returns uuid language sql as $$
   select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
-insert into auth.users(id) values(pg_temp.fid(92701)),(pg_temp.fid(92702)),(pg_temp.fid(92703));
+-- The platform-role guard admits supabase_auth_admin, the role GoTrue uses.
+set role supabase_auth_admin;
+insert into auth.users(id)
+select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
+from (values (92701),(92702),(92703)) as ids(n);
+reset role;
+set local search_path=public,extensions;
 insert into public.users(id) values(pg_temp.fid(92701)),(pg_temp.fid(92702)),(pg_temp.fid(92703)) on conflict do nothing;
 insert into public.workspaces(id,name,personal,creator_id) values
   (pg_temp.fid(92711),'Synthetic absence scope',false,pg_temp.fid(92701)),

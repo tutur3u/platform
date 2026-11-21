@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
 import {
   controlRaceScripts,
   normalizedApprovalScript,
@@ -256,4 +257,20 @@ test('normalized approval contention emits the real reviewer RPC after scope and
     'synthetic reviewer differs from session owner'
   );
   assert(emitted.includes(linked));
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
+  for (const [file, label] of [
+    [
+      '../supabase/tests/time-tracker-control.sql',
+      'time tracker control fixture',
+    ],
+    [
+      '../supabase/tests/time-tracker-replace-running.sql',
+      'time tracker replacement fixture',
+    ],
+    ['./time-tracker-control-concurrency.mjs', 'time tracker concurrency'],
+  ])
+    assertAuthUsersUseAuthAdmin(read(file), label);
 });

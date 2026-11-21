@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
+import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
 import { deliveryFoundationRaceScripts } from './topic-delivery-foundation-concurrency.mjs';
 
 const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
@@ -308,4 +309,15 @@ test('workflow preserves PR and push fixture dependencies', () => {
       `PR and push include ${path}`
     );
   }
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  assertAuthUsersUseAuthAdmin(
+    read('../supabase/tests/topic-delivery-foundation.sql'),
+    'topic delivery fixture'
+  );
+  assertAuthUsersUseAuthAdmin(
+    read('./topic-delivery-foundation-concurrency.mjs'),
+    'topic delivery concurrency'
+  );
 });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
 import { assertStrictTap } from './programming-database-tap.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 import {
@@ -129,4 +130,20 @@ test('exact-head workflow cannot silently skip enabled full-schema proof or type
     verifier,
     /metadata.typegenOutput = 'packages\/types\/src\/supabase.ts'/u
   );
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  const read = (file) => readFileSync(new URL(file, import.meta.url), 'utf8');
+  for (const [file, label] of [
+    [
+      '../supabase/tests/tutoring-absence-credit-contract.sql',
+      'absence contract fixture',
+    ],
+    [
+      '../supabase/tests/tutoring-absence-credit-lifecycle.sql',
+      'absence lifecycle fixture',
+    ],
+    ['./tutoring-absence-credit-concurrency.mjs', 'absence concurrency'],
+  ])
+    assertAuthUsersUseAuthAdmin(read(file), label);
 });

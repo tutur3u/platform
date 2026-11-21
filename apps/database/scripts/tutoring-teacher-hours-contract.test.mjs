@@ -4,6 +4,10 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  assertAuthUsersUseAuthAdmin,
+  asAuthAdmin,
+} from './auth-admin-session.mjs';
+import {
   defaultWrite,
   hoursRaceScripts,
   overrideWrite,
@@ -157,5 +161,28 @@ test('read projection uses one expression snapshot and never initializes rows', 
   assert.doesNotMatch(
     body,
     /into base|into custom|insert into|update private/iu
+  );
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  assert.throws(() =>
+    assertAuthUsersUseAuthAdmin(
+      "insert into auth.users(id) values('x');",
+      'negative'
+    )
+  );
+  assert.doesNotThrow(() =>
+    assertAuthUsersUseAuthAdmin(
+      asAuthAdmin("insert into auth.users(id) values('x');"),
+      'helper'
+    )
+  );
+  assertAuthUsersUseAuthAdmin(
+    read('apps/database/supabase/tests/tutoring-teacher-hours.sql'),
+    'teacher hours fixture'
+  );
+  assertAuthUsersUseAuthAdmin(
+    read('apps/database/scripts/tutoring-teacher-hours-concurrency.mjs'),
+    'teacher hours concurrency'
   );
 });
