@@ -188,3 +188,100 @@ export function isJsonObject(
 ): value is { [key: string]: JsonValue } {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+
+/**
+ * The canonical JSON serializer of step-up parameters. Both the minting and
+ * the verifying side hash its output, so it accepts only values with exactly
+ * one encoding: `null`, booleans, safe integers other than `-0`, strings
+ * without lone surrogates, dense arrays and plain objects (prototype
+ * `Object.prototype` or `null`, only own enumerable string-keyed data
+ * properties). Object members are sorted by UTF-16 code unit, nothing is
+ * indented, and strings escape only `"`, `\` and U+0000 to U+001F, the
+ * control characters as lowercase `\u00xx`. Binary values are passed as
+ * canonical base64url strings. Anything else, including cycles, returns
+ * `undefined` rather than being dropped or coerced; it never throws.
+ */
+export function canonicalJson(value: unknown): string | undefined {
+  const ancestors = new Set<object>();
+  const parts: string[] = [];
+
+  const fail = (): never => {
+    throw new StrictJsonError();
+  };
+  const writeString = (text: string) => {
+    let out = '"';
+    for (let index = 0; index < text.length; index += 1) {
+      const code = text.charCodeAt(index);
+      if (code >= 0xd800 && code <= 0xdbff) {
+        const next = text.charCodeAt(index + 1);
+        // NaN past the end fails both comparisons.
+        if (!(next >= 0xdc00 && next <= 0xdfff)) fail();
+        out += text[index] + (text[index + 1] as string);
+        index += 1;
+        continue;
+      }
+      if (code >= 0xdc00 && code <= 0xdfff) fail();
+      if (code === 0x22) out += '\\"';
+      else if (code === 0x5c) out += '\\\\';
+      else if (code < 0x20) out += `\\u00${code.toString(16).padStart(2, '0')}`;
+      else out += text[index];
+    }
+    parts.push(`${out}"`);
+  };
+  /** Reads an own data property without running a getter. */
+  const dataValue = (record: object, key: string): unknown => {
+    const descriptor = Object.getOwnPropertyDescriptor(record, key);
+    if (!descriptor || !('value' in descriptor) || !descriptor.enumerable) {
+      fail();
+    }
+    return (descriptor as PropertyDescriptor).value;
+  };
+  const write = (current: unknown) => {
+    if (current === null) return void parts.push('null');
+    if (current === true || current === false) {
+      return void parts.push(current ? 'true' : 'false');
+    }
+    if (typeof current === 'number') {
+      if (!Number.isSafeInteger(current) || Object.is(current, -0)) fail();
+      return void parts.push(String(current));
+    }
+    if (typeof current === 'string') return writeString(current);
+    if (typeof current !== 'object') return fail();
+    if (ancestors.has(current)) fail();
+    ancestors.add(current);
+    const keys = Reflect.ownKeys(current);
+    if (Array.isArray(current)) {
+      if (Object.getPrototypeOf(current) !== Array.prototype) fail();
+      // Exactly the indices and `length`: no holes, no extra members.
+      if (keys.length !== current.length + 1) fail();
+      parts.push('[');
+      for (let index = 0; index < current.length; index += 1) {
+        if (index > 0) parts.push(',');
+        write(dataValue(current, String(index)));
+      }
+      parts.push(']');
+    } else {
+      const prototype = Object.getPrototypeOf(current);
+      if (prototype !== Object.prototype && prototype !== null) fail();
+      if (keys.some((key) => typeof key !== 'string')) fail();
+      // The default sort compares UTF-16 code units.
+      const names = (keys as string[]).sort();
+      parts.push('{');
+      names.forEach((name, index) => {
+        if (index > 0) parts.push(',');
+        writeString(name);
+        parts.push(':');
+        write(dataValue(current, name));
+      });
+      parts.push('}');
+    }
+    ancestors.delete(current);
+  };
+
+  try {
+    write(value);
+    return parts.join('');
+  } catch {
+    return undefined;
+  }
+}

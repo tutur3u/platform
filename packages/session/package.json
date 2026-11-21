@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./verify": "./src/verify.ts",
     "./provider": "./src/provider.ts",
-    "./tokens": "./src/tokens.ts"
+    "./tokens": "./src/tokens.ts",
+    "./stepup": "./src/stepup.ts"
   },
   "license": "MIT",
   "scripts": {

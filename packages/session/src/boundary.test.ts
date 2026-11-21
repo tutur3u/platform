@@ -105,7 +105,13 @@ function resolveRelative(from: string, specifier: string): string {
 }
 
 const TOKENS_ENTRY = './tokens';
+const STEPUP_ENTRY = './stepup';
 const TOKENS_MODULE = /^src\/tokens(\.ts|\/)/;
+/** The only `./tokens` modules `./stepup` may reach: verification, no signing. */
+const STEPUP_TOKEN_MODULES = [
+  'src/tokens/profiles.ts',
+  'src/tokens/verify-token.ts',
+];
 
 /** The runtime module graph reachable from the given entry targets. */
 function graphFrom(targets: string[]) {
@@ -162,6 +168,12 @@ const NO_SIGNING = /crypto\.subtle\.(?!sign\('HMAC'|verify\()/;
 /** `./tokens`: it may also sign, import keys and hash. */
 const TOKENS_SUBTLE =
   /crypto\.subtle\.(?!sign\(|verify\(|importKey\(|digest\()/;
+/** `./stepup`: it may verify and hash, never sign or import keys. */
+const STEPUP_SUBTLE = /crypto\.subtle\.(?!verify\(|digest\()/;
+const SUBTLE_RULES = new Map([
+  [TOKENS_ENTRY, TOKENS_SUBTLE],
+  [STEPUP_ENTRY, STEPUP_SUBTLE],
+]);
 
 describe('portable entry points', () => {
   const graph = runtimeGraph();
@@ -188,14 +200,15 @@ describe('portable entry points', () => {
     }
   });
 
-  it('expose ./tokens as an entry point', () => {
+  it('expose ./tokens and ./stepup as entry points', () => {
     expect(packageJson.exports).toHaveProperty(TOKENS_ENTRY, './src/tokens.ts');
+    expect(packageJson.exports).toHaveProperty(STEPUP_ENTRY, './src/stepup.ts');
   });
 
   it.each(entryPoints().map(([key, target]) => [key, target]))(
     '%s reads no request globals, network, environment, global randomness or key generation, and signs only as its entry allows',
     (key, target) => {
-      const subtle = key === TOKENS_ENTRY ? TOKENS_SUBTLE : NO_SIGNING;
+      const subtle = SUBTLE_RULES.get(key) ?? NO_SIGNING;
       for (const file of graphFrom([target]).files) {
         const source = readFileSync(file, 'utf8');
         for (const forbidden of [...COMMON_FORBIDDEN, subtle]) {
@@ -210,7 +223,7 @@ describe('portable entry points', () => {
 
   it.each(
     entryPoints()
-      .filter(([key]) => key !== TOKENS_ENTRY)
+      .filter(([key]) => key !== TOKENS_ENTRY && key !== STEPUP_ENTRY)
       .map(([key, target]) => [key, target])
   )('%s never reaches ./tokens', (key, target) => {
     const files = graphFrom([target]).files.map((file) =>
@@ -222,15 +235,28 @@ describe('portable entry points', () => {
     ).toEqual([]);
   });
 
-  it('./verify keeps ECDSA signing out of its graph', () => {
-    const files = graphFrom(['./src/verify.ts']).files;
-    expect(files.some((file) => file.endsWith('token-core.ts'))).toBe(true);
-    for (const file of files) {
-      const source = readFileSync(file, 'utf8');
-      expect(source).not.toMatch(/subtle\.sign\(\s*\{\s*name:\s*'ECDSA'/);
-      expect(source).not.toMatch(/\bimportKey\b/);
-    }
+  it('./stepup reaches only the verification modules of ./tokens', () => {
+    const files = graphFrom(['./src/stepup.ts']).files.map((file) =>
+      relative(PACKAGE_DIR, file)
+    );
+    expect(files.filter((file) => TOKENS_MODULE.test(file)).sort()).toEqual(
+      STEPUP_TOKEN_MODULES
+    );
   });
+
+  it.each(['./src/verify.ts', './src/stepup.ts'])(
+    '%s keeps signing and key import out of its graph',
+    (target) => {
+      const files = graphFrom([target]).files;
+      expect(files.some((file) => file.endsWith('token-core.ts'))).toBe(true);
+      for (const file of files) {
+        const source = readFileSync(file, 'utf8');
+        expect(source).not.toMatch(/subtle\.sign\(/);
+        expect(source).not.toMatch(/\bimportKey\b/);
+        expect(source).not.toMatch(/\bmintToken\b/);
+      }
+    }
+  );
 
   it('expose no bare-CryptoKey adapter or observation fake from any entry', async () => {
     for (const [, target] of entryPoints()) {
@@ -242,7 +268,12 @@ describe('portable entry points', () => {
     }
     const tokens = await import('./tokens');
     const verify = await import('./verify');
-    for (const exported of [...Object.keys(tokens), ...Object.keys(verify)]) {
+    const stepup = await import('./stepup');
+    for (const exported of [
+      ...Object.keys(tokens),
+      ...Object.keys(verify),
+      ...Object.keys(stepup),
+    ]) {
       expect(exported).not.toMatch(/bare|fake|test/i);
     }
   });
