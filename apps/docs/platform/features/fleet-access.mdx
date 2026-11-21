@@ -5,9 +5,9 @@ updatedAt: "2026-11-21"
 audience: developers
 ---
 
-**Status: proposed.** Only the transitional [Slice 0](#transitional-slice-0) exists
-today. Slices 1 and later need the approvals named in the
-[implementation plan](#implementation-plan).
+**Status:** [Slice 0](#transitional-slice-0) is the transitional desk rule. Slice 1
+defines the database foundation. Production application and later slices need
+the approvals in the [implementation plan](#implementation-plan).
 
 Fleet access lets named teammates (for example an operations lead) read the
 state of the agent fleet, ask about it, and steer work without routing every
@@ -255,6 +255,15 @@ Triggers reject updates and deletes on audit events, capabilities above the
 tier ceiling and Owner-tier grants. Fleet access is not a workspace role
 permission and is never implied by creator, `admin` or default permissions.
 
+The database starts with an empty grant table and an unconfigured Owner UUID.
+Configuring `private.fleet_control.owner_user_id` is a separate database-owner
+operation. The management functions require a database-owner connection with
+the verified user's request identity and a live explicit root Mastermind grant.
+The service role can submit a server-resolved intent. The insert checks the
+live grant, project versions and the rolling one-hour question and 24-hour
+intent counts. Model budget consumption belongs to the Ask execution path.
+User-facing routes, event verification and dispatch are covered by later slices.
+
 ## Implementation plan
 
 | Slice | Outcome                                                                                       | Owner lane                   | Gate |
@@ -278,9 +287,11 @@ delivery for slices 2 and later run on Cloudflare.
 
 Each slice links its coverage here when it lands:
 
-- Slice 1: `apps/database/supabase/tests/fleet-access.sql` — default deny,
-  no client table grants, tier ceiling, Owner-only functions, append-only
-  audit, atomic quotas, generations.
+- Slice 1 covers default deny, table and function privileges, tier ceilings,
+  Owner-only mutations, audit immutability, quota refusals, quote expiry and
+  generation changes. See [fleet-access.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access.sql).
+- Slice 1 also races two PostgreSQL sessions against the final question and
+  steer slots. See [fleet-access-quota-race.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access-quota-race.sql).
 - Slices 2–3: route tests under `apps/web/src/app/api/v1/fleet/**` —
   cross-project target denial, action-hash binding, replay rejection, quote
   isolation, live revocation.

@@ -6898,6 +6898,289 @@ export type Database = {
           },
         ];
       };
+      fleet_access_grant_projects: {
+        Row: {
+          project_key: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          project_key: string;
+          user_id: string;
+        };
+        Update: {
+          project_key?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_access_grant_projects_project_key_fkey';
+            columns: ['project_key'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_projects';
+            referencedColumns: ['key'];
+          },
+          {
+            foreignKeyName: 'fleet_access_grant_projects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_access_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      fleet_access_grants: {
+        Row: {
+          capabilities: string[];
+          expires_at: string | null;
+          generation: number;
+          intents_per_day: number;
+          model_budget_per_month: number;
+          questions_per_hour: number;
+          revoked_at: string | null;
+          tier: Database['private']['Enums']['fleet_tier'];
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          capabilities: string[];
+          expires_at?: string | null;
+          generation?: number;
+          intents_per_day?: number;
+          model_budget_per_month?: number;
+          questions_per_hour?: number;
+          revoked_at?: string | null;
+          tier: Database['private']['Enums']['fleet_tier'];
+          user_id: string;
+        };
+        Update: {
+          capabilities?: string[];
+          expires_at?: string | null;
+          generation?: number;
+          intents_per_day?: number;
+          model_budget_per_month?: number;
+          questions_per_hour?: number;
+          revoked_at?: string | null;
+          tier?: Database['private']['Enums']['fleet_tier'];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      fleet_audit_events: {
+        Row: {
+          action: string;
+          actor_id: string;
+          channel: string;
+          created_at: string;
+          id: number;
+          intent_id: string | null;
+          reason_code: string;
+          subject_user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id: string;
+          channel: string;
+          created_at?: string;
+          id?: never;
+          intent_id?: string | null;
+          reason_code: string;
+          subject_user_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          channel?: string;
+          created_at?: string;
+          id?: never;
+          intent_id?: string | null;
+          reason_code?: string;
+          subject_user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      fleet_channel_identities: {
+        Row: {
+          channel: string;
+          id: string;
+          private_conversation_id: string;
+          provider_account_id: string;
+          sender_hash: string;
+          user_id: string;
+          verified_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel: string;
+          id?: string;
+          private_conversation_id: string;
+          provider_account_id: string;
+          sender_hash: string;
+          user_id: string;
+          verified_at?: string;
+        };
+        Update: {
+          channel?: string;
+          id?: string;
+          private_conversation_id?: string;
+          provider_account_id?: string;
+          sender_hash?: string;
+          user_id?: string;
+          verified_at?: string;
+        };
+        Relationships: [];
+      };
+      fleet_control: {
+        Row: {
+          generation: number;
+          owner_user_id: string | null;
+          singleton: boolean;
+          stopped: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          generation?: number;
+          owner_user_id?: string | null;
+          singleton?: boolean;
+          stopped?: boolean;
+        };
+        Update: {
+          generation?: number;
+          owner_user_id?: string | null;
+          singleton?: boolean;
+          stopped?: boolean;
+        };
+        Relationships: [];
+      };
+      fleet_intent_quotes: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          intent_id: string;
+          redacted_quote: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at?: never;
+          intent_id: string;
+          redacted_quote: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: never;
+          intent_id?: string;
+          redacted_quote?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_intent_quotes_intent_id_fkey';
+            columns: ['intent_id'];
+            isOneToOne: true;
+            referencedRelation: 'fleet_intents';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      fleet_intents: {
+        Row: {
+          action_hash: string;
+          approver_generation: number | null;
+          approver_id: string | null;
+          channel: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          idempotency_key: string;
+          kind: Database['private']['Enums']['fleet_intent_kind'];
+          lease_expires_at: string | null;
+          lease_id: string | null;
+          payload: NonNullable<Json>;
+          project_versions: NonNullable<Json>;
+          receipt: Json | null;
+          requester_generation: number;
+          requester_id: string;
+          requires_owner_approval: boolean;
+          risk: Database['private']['Enums']['fleet_risk'];
+          state: Database['private']['Enums']['fleet_intent_state'];
+          stop_generation: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          action_hash: string;
+          approver_generation?: number | null;
+          approver_id?: string | null;
+          channel: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          idempotency_key?: string;
+          kind: Database['private']['Enums']['fleet_intent_kind'];
+          lease_expires_at?: string | null;
+          lease_id?: string | null;
+          payload: NonNullable<Json>;
+          project_versions: NonNullable<Json>;
+          receipt?: Json | null;
+          requester_generation: number;
+          requester_id: string;
+          requires_owner_approval?: boolean;
+          risk: Database['private']['Enums']['fleet_risk'];
+          state?: Database['private']['Enums']['fleet_intent_state'];
+          stop_generation: number;
+        };
+        Update: {
+          action_hash?: string;
+          approver_generation?: number | null;
+          approver_id?: string | null;
+          channel?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          idempotency_key?: string;
+          kind?: Database['private']['Enums']['fleet_intent_kind'];
+          lease_expires_at?: string | null;
+          lease_id?: string | null;
+          payload?: NonNullable<Json>;
+          project_versions?: NonNullable<Json>;
+          receipt?: Json | null;
+          requester_generation?: number;
+          requester_id?: string;
+          requires_owner_approval?: boolean;
+          risk?: Database['private']['Enums']['fleet_risk'];
+          state?: Database['private']['Enums']['fleet_intent_state'];
+          stop_generation?: number;
+        };
+        Relationships: [];
+      };
+      fleet_projects: {
+        Row: {
+          default_risk: Database['private']['Enums']['fleet_risk'];
+          key: string;
+          name_en: string;
+          name_vi: string;
+          target_mapping: NonNullable<Json>;
+          target_mapping_version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          default_risk?: Database['private']['Enums']['fleet_risk'];
+          key: string;
+          name_en: string;
+          name_vi: string;
+          target_mapping?: NonNullable<Json>;
+          target_mapping_version?: number;
+        };
+        Update: {
+          default_risk?: Database['private']['Enums']['fleet_risk'];
+          key?: string;
+          name_en?: string;
+          name_vi?: string;
+          target_mapping?: NonNullable<Json>;
+          target_mapping_version?: number;
+        };
+        Relationships: [];
+      };
       fleet_smoke_operations: {
         Row: {
           activated_at: string | null;
@@ -24998,6 +25281,47 @@ export type Database = {
         };
         Returns: boolean;
       };
+      fleet_grant_access: {
+        Args: {
+          p_capabilities: string[];
+          p_expires_at?: string;
+          p_intents_per_day?: number;
+          p_model_budget_per_month?: number;
+          p_project_keys: string[];
+          p_questions_per_hour?: number;
+          p_reason_code: string;
+          p_tier: Database['private']['Enums']['fleet_tier'];
+          p_user_id: string;
+        };
+        Returns: number;
+      };
+      fleet_require_owner: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      fleet_revoke_access: {
+        Args: { p_reason_code: string; p_user_id: string };
+        Returns: number;
+      };
+      fleet_set_stopped: {
+        Args: { p_reason_code: string; p_stopped: boolean };
+        Returns: number;
+      };
+      fleet_submit_intent: {
+        Args: {
+          p_action_hash: string;
+          p_actor_id: string;
+          p_channel: string;
+          p_kind: Database['private']['Enums']['fleet_intent_kind'];
+          p_payload: Json;
+          p_project_versions: Json;
+          p_redacted_quote?: string;
+        };
+        Returns: {
+          intent_id: string;
+          reason_code: string;
+        }[];
+      };
       fleet_smoke_transition: {
         Args: { p_action: string; p_factor?: string; p_id: string };
         Returns: Json;
@@ -28175,7 +28499,28 @@ export type Database = {
       };
     };
     Enums: {
-      [_ in never]: never;
+      fleet_intent_kind:
+        | 'status_question'
+        | 'comment'
+        | 'priority.set'
+        | 'approve.item'
+        | 'work.create'
+        | 'work.redirect'
+        | 'lane.pause'
+        | 'approve.deploy'
+        | 'approve.production_change';
+      fleet_intent_state:
+        | 'pending_approval'
+        | 'approved'
+        | 'rejected'
+        | 'claimed'
+        | 'dispatched'
+        | 'done'
+        | 'failed'
+        | 'expired'
+        | 'cancelled';
+      fleet_risk: 'none' | 'low' | 'medium' | 'high';
+      fleet_tier: 'observer' | 'steerer' | 'operator' | 'owner';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -59728,7 +60073,32 @@ export type CompositeTypes<
 
 export const Constants = {
   private: {
-    Enums: {},
+    Enums: {
+      fleet_intent_kind: [
+        'status_question',
+        'comment',
+        'priority.set',
+        'approve.item',
+        'work.create',
+        'work.redirect',
+        'lane.pause',
+        'approve.deploy',
+        'approve.production_change',
+      ],
+      fleet_intent_state: [
+        'pending_approval',
+        'approved',
+        'rejected',
+        'claimed',
+        'dispatched',
+        'done',
+        'failed',
+        'expired',
+        'cancelled',
+      ],
+      fleet_risk: ['none', 'low', 'medium', 'high'],
+      fleet_tier: ['observer', 'steerer', 'operator', 'owner'],
+    },
   },
   public: {
     Enums: {
