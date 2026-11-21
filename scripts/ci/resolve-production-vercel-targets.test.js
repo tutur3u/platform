@@ -25,11 +25,11 @@ const testTargets = [
     productionWorkflow: 'vercel-production-calendar.yaml',
   },
   {
-    app: 'storefront',
-    appPath: 'apps/storefront',
-    packageName: '@tuturuuu/storefront',
-    previewWorkflow: 'vercel-preview-storefront.yaml',
-    productionWorkflow: 'vercel-production-storefront.yaml',
+    app: 'inventory',
+    appPath: 'apps/inventory',
+    packageName: '@tuturuuu/inventory',
+    previewWorkflow: 'vercel-preview-inventory.yaml',
+    productionWorkflow: 'vercel-production-inventory.yaml',
   },
 ];
 
@@ -115,9 +115,9 @@ test('production planner evaluates every app from its deployment baseline in one
   const baseSha = initializeGitRepo(rootDir);
   commitFile(
     rootDir,
-    'apps/storefront/src/app/page.tsx',
+    'apps/inventory/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'storefront change'
+    'inventory change'
   );
   const headSha = commitFile(
     rootDir,
@@ -138,7 +138,7 @@ test('production planner evaluates every app from its deployment baseline in one
     },
     {
       shouldRun: true,
-      workflowName: 'vercel-production-storefront.yaml',
+      workflowName: 'vercel-production-inventory.yaml',
     },
   ]);
 });
@@ -156,7 +156,7 @@ test('production planner holds Cloudflare for shared Meet runtime changes', () =
   assert.deepEqual(resolveFixtureTargets({ baseSha, headSha, rootDir }), [
     { shouldRun: false, workflowName: 'meet-cloudflare.yaml' },
     { shouldRun: false, workflowName: 'vercel-production-calendar.yaml' },
-    { shouldRun: false, workflowName: 'vercel-production-storefront.yaml' },
+    { shouldRun: false, workflowName: 'vercel-production-inventory.yaml' },
   ]);
 });
 
@@ -207,9 +207,9 @@ test('exact package recovery retains push subset while normal manual dispatch se
   const baseSha = initializeGitRepo(rootDir);
   const headSha = commitFile(
     rootDir,
-    'apps/storefront/src/app/page.tsx',
+    'apps/inventory/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'storefront change'
+    'inventory change'
   );
   const push = resolveFixtureTargets({ baseSha, headSha, rootDir });
   const recovery = resolveFixtureTargets({
@@ -454,9 +454,9 @@ test('a non-held app still runs beside the slot exclusions, and Web is not liste
   );
   const headSha = commitFile(
     rootDir,
-    'apps/storefront/src/app/page.tsx',
+    'apps/inventory/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'storefront change'
+    'inventory change'
   );
   const decisions = resolveFixtureTargets({
     baseSha,
@@ -464,7 +464,7 @@ test('a non-held app still runs beside the slot exclusions, and Web is not liste
     rootDir,
     targets: [
       { productionWorkflow: 'lettin-cloudflare.yaml' },
-      { productionWorkflow: 'vercel-production-storefront.yaml' },
+      { productionWorkflow: 'vercel-production-inventory.yaml' },
     ],
     workflowMarkers: { 'lettin-cloudflare.yaml': { sha: baseSha } },
     includeEvidence: true,
@@ -472,7 +472,7 @@ test('a non-held app still runs beside the slot exclusions, and Web is not liste
   assert.equal(decisions[0].shouldRun, false);
   assert.equal(decisions[0].changeResult.source, 'publication-hold');
   assert.equal(decisions[1].shouldRun, true);
-  assert.equal(decisions[1].workflowName, 'vercel-production-storefront.yaml');
+  assert.equal(decisions[1].workflowName, 'vercel-production-inventory.yaml');
   const [web] = resolveFixtureTargets({
     baseSha,
     headSha,

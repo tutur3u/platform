@@ -49,6 +49,20 @@ const retiredVercelWorkflows = new Set(
     .filter(({ productionWorkflow }) => productionWorkflow === null)
     .map(({ app }) => `vercel-production-${app}.yaml`)
 );
+// These Vercel publishers must not deploy. The hosts are served from
+// Cloudflare, except rewise.me, which no longer resolves. inventory is absent
+// because inventory.tuturuuu.com still answers as Vercel.
+const retiredSatelliteVercelWorkflows = new Set([
+  'vercel-production-ai.yaml',
+  'vercel-production-finance.yaml',
+  'vercel-production-git.yaml',
+  'vercel-production-infrastructure.yaml',
+  'vercel-production-learn.yaml',
+  'vercel-production-nova.yaml',
+  'vercel-production-pay.yaml',
+  'vercel-production-rewise.yaml',
+  'vercel-production-storefront.yaml',
+]);
 const knownWorkflows = new Set<string>(
   [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets].map(
     ({ productionWorkflow }) => productionWorkflow
@@ -130,7 +144,10 @@ function exclusionHold(workflowName: string): string | undefined {
 export function productionPublicationHold(
   workflowName: string
 ): string | undefined {
-  if (retiredVercelWorkflows.has(workflowName))
+  if (
+    retiredVercelWorkflows.has(workflowName) ||
+    retiredSatelliteVercelWorkflows.has(workflowName)
+  )
     return 'held: Vercel production publisher retired';
   // The app-id deny-list wins over admission, markers, and dispatch.
   const excluded = exclusionHold(workflowName);

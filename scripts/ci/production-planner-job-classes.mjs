@@ -26,6 +26,9 @@ const independentApps = [
   'deploy-calendar-native',
   'deploy-mail-native',
   'deploy-apps-native',
+  // Not a database-migration gate. Recovery ignores this caller because Meet
+  // ships from its own pinned dispatch. This class stays so a failed planner
+  // is still explained, and Meet's own admission stays strict.
   'deploy-meet-cloudflare',
   'deploy-parley-cloudflare',
   'deploy-mastermind-cloudflare',

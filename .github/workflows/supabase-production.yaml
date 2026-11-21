@@ -317,8 +317,23 @@ jobs:
                   "repos/${{ github.repository }}/actions/runs/$PLANNER_ID/attempts/$PLANNER_ATTEMPT/jobs?per_page=100" \
                   > "$RECOVERY_DIR/jobs.json"
                 chmod 600 "$RECOVERY_DIR/jobs.json"
+                mkdir -p "$RECOVERY_DIR/logs"
+                chmod 700 "$RECOVERY_DIR/logs"
+                while IFS= read -r job_id; do
+                  case "$job_id" in
+                    ''|*[!0-9]*) continue ;;
+                  esac
+                  zip="$RECOVERY_DIR/logs/$job_id.zip"
+                  if gh api "repos/${GITHUB_REPOSITORY}/actions/jobs/${job_id}/logs" > "$zip"; then
+                    unzip -p "$zip" > "$RECOVERY_DIR/logs/$job_id.log" || true
+                    chmod 600 "$RECOVERY_DIR/logs/$job_id.log" || true
+                  fi
+                  rm -f "$zip"
+                done < <(jq -r '.[] | .jobs[]? | select(.conclusion == "failure" and (.name | endswith(" / Deploy-Production"))) | .id' "$RECOVERY_DIR/jobs.json")
                 RECOVERY_PLANNER_FILE="$RECOVERY_DIR/planner.json" \
-                  RECOVERY_JOBS_FILE="$RECOVERY_DIR/jobs.json" GITHUB_OUTPUT="$RECOVERY_DIR/output" \
+                  RECOVERY_JOBS_FILE="$RECOVERY_DIR/jobs.json" \
+                  RECOVERY_JOB_LOG_DIR="$RECOVERY_DIR/logs" \
+                  GITHUB_OUTPUT="$RECOVERY_DIR/output" \
                   node --experimental-strip-types scripts/ci/check-production-migration-recovery.ts
                 RECOVERY_ALLOWED=$(sed -n 's/^recovery_allowed=//p' "$RECOVERY_DIR/output")
               fi

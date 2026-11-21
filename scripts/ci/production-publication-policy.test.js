@@ -259,7 +259,10 @@ for (const app of apps.filter((name) => name !== 'mind')) {
         assert.equal(decisions[index].held, true);
         assert.equal(decisions[index].changeResult.source, 'publication-hold');
         const expectedReason =
-          workflow === 'vercel-production-forms.yaml'
+          workflow === 'vercel-production-forms.yaml' ||
+          workflow === 'vercel-production-finance.yaml' ||
+          workflow === 'vercel-production-nova.yaml' ||
+          workflow === 'vercel-production-git.yaml'
             ? /publisher retired/
             : heldReason;
         assert.match(decisions[index].reason, expectedReason);
@@ -331,17 +334,24 @@ for (const app of apps.filter((name) => name !== 'mind')) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = [
-      'meet',
-      'calendar',
-      'mail',
-      'apps',
-      'forms',
-      'workspace',
-      'lms',
-    ].includes(app)
-      ? workflow
-      : `vercel-production-${app}.yaml`;
+    const cloudflareCutover = {
+      finance: 'finance-cloudflare.yaml',
+      nova: 'nova-cloudflare.yaml',
+      git: 'git-cloudflare.yaml',
+    };
+    const target =
+      cloudflareCutover[app] ??
+      ([
+        'meet',
+        'calendar',
+        'mail',
+        'apps',
+        'forms',
+        'workspace',
+        'lms',
+      ].includes(app)
+        ? workflow
+        : `vercel-production-${app}.yaml`);
     const root = fixture(t, policy);
     const [decision] = plan(root, [target]);
     assert.equal(decision.shouldRun, true);
@@ -350,13 +360,51 @@ for (const app of apps.filter((name) => name !== 'mind')) {
   });
 }
 
-test('known unrelated publisher retains normal selection even with malformed protected policy', (t) => {
+const retiredSatelliteVercel = [
+  'vercel-production-ai.yaml',
+  'vercel-production-finance.yaml',
+  'vercel-production-git.yaml',
+  'vercel-production-infrastructure.yaml',
+  'vercel-production-learn.yaml',
+  'vercel-production-nova.yaml',
+  'vercel-production-pay.yaml',
+  'vercel-production-rewise.yaml',
+  'vercel-production-storefront.yaml',
+];
+test('retired Vercel satellites stay held when protected policy is malformed', (t) => {
   const root = fixture(t, {});
-  const [decision] = plan(root, ['vercel-production-storefront.yaml']);
-  assert.equal(decision.shouldRun, true);
-  assert.notEqual(decision.held, true);
+  for (const workflow of retiredSatelliteVercel) {
+    const [decision] = plan(root, [workflow]);
+    assert.equal(decision.shouldRun, false, workflow);
+    assert.equal(decision.held, true, workflow);
+    assert.match(decision.reason, /publisher retired/);
+    assert.equal(runPolicy(root, workflow).output, 'allowed=false\n');
+  }
+  const [inventory] = plan(root, ['vercel-production-inventory.yaml']);
+  assert.doesNotMatch(inventory.reason, /publisher retired/);
+});
+test('Cloudflare-served satellites leave the Vercel planner and inventory stays', (t) => {
+  const root = fixture(t);
+  for (const workflow of retiredSatelliteVercel) {
+    const [decision] = plan(root, [workflow]);
+    assert.equal(decision.shouldRun, false, workflow);
+    assert.match(decision.reason, /publisher retired/);
+  }
+  const [inventory] = plan(root, ['vercel-production-inventory.yaml']);
+  assert.equal(inventory.shouldRun, true);
+  assert.notEqual(inventory.held, true);
+  assert.equal(runPolicy(root, 'git-cloudflare.yaml').output, 'allowed=true\n');
+  const switchboard = readFileSync(join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
+  for (const workflow of [
+    ...retiredSatelliteVercel,
+    'vercel-production-inventory.yaml',
+    'git-cloudflare.yaml',
+    'finance-cloudflare.yaml',
+  ]) {
+    assert.ok(switchboard.includes(`'${workflow}': true,`), workflow);
+  }
   assert.equal(
-    runPolicy(root, 'vercel-production-storefront.yaml').output,
+    runPolicy(root, 'finance-cloudflare.yaml').output,
     'allowed=true\n'
   );
 });
@@ -415,7 +463,8 @@ test('admitted apps refuse a dispatch of their switched-off Vercel publishers', 
 
 test('a known publisher switched off in the switchboard holds on dispatch', (t) => {
   const root = fixture(t);
-  const workflow = 'vercel-production-storefront.yaml';
+  // Inventory stays on Vercel, so this is the publisher the switchboard still gates.
+  const workflow = 'vercel-production-inventory.yaml';
   assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   const config = join(root, 'tuturuuu.ci.ts');
   const source = readFileSync(config, 'utf8');
@@ -462,8 +511,11 @@ test('Workspace admission opens only its route-free seal workflow and adds no pu
 
 test('Git admission opens its route-free upload and adds no Cloudflare publisher', (t) => {
   const root = fixture(t);
-  for (const workflow of ['git-cloudflare.yaml', 'vercel-production-git.yaml'])
-    assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
+  assert.equal(runPolicy(root, 'git-cloudflare.yaml').output, 'allowed=true\n');
+  const vercel = runPolicy(root, 'vercel-production-git.yaml');
+  assert.equal(vercel.output, 'allowed=false\n');
+  assert.match(vercel.stdout, /publisher retired/);
+  assert.match(vercel.summary, /publisher retired/);
   // The sealed artifact job never writes to a provider.
   const { jobs } = readWorkflow('git-cloudflare.yaml');
   assert.deepEqual(
@@ -538,7 +590,10 @@ for (const { workflow, job } of publishers) {
       result.summary,
       workflow === 'vercel-production-mind.yaml'
         ? /held: Mind stays with its dedicated owner/
-        : heldReason
+        : workflow === 'vercel-production-finance.yaml' ||
+            workflow === 'vercel-production-nova.yaml'
+          ? /publisher retired/
+          : heldReason
     );
   });
 }
