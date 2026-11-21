@@ -99,9 +99,35 @@ type RuntimeOverride = {
   } | null;
 };
 
-let runtimeOverride: RuntimeOverride | null = null;
-let runtimeInput: RuntimeInput | null = null;
+type RuntimeState = {
+  input: RuntimeInput | null;
+  override: RuntimeOverride | null;
+  /** Bumped on every change so each bundled copy drops its cached clients. */
+  generation: number;
+};
+
+/**
+ * One override per isolate, shared by every bundled copy of this module. A
+ * Vite RSC Worker bundles its `ssr` entry (which installs the binding) and its
+ * `rsc` route handlers as separate module graphs; module-local state would
+ * leave route-side callers of an assigned family `off`.
+ */
+const RUNTIME_STATE_KEY = Symbol.for('tuturuuu.abuse-guard.runtime');
+
+function runtimeState(): RuntimeState {
+  const holder = globalThis as typeof globalThis & {
+    [RUNTIME_STATE_KEY]?: RuntimeState;
+  };
+  let state = holder[RUNTIME_STATE_KEY];
+  if (!state) {
+    state = { input: null, override: null, generation: 0 };
+    holder[RUNTIME_STATE_KEY] = state;
+  }
+  return state;
+}
+
 const clientCache = new Map<string, AbuseGuardClient>();
+let clientCacheGeneration = -1;
 
 /**
  * Native Workers inject their `ABUSE_GUARD` service binding at the framework
@@ -109,24 +135,26 @@ const clientCache = new Map<string, AbuseGuardClient>();
  * clear it (tests, or a binding removed at runtime).
  */
 export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
+  const state = runtimeState();
+  const current = state.input;
   if (
     input &&
-    runtimeInput &&
-    input.binding === runtimeInput.binding &&
-    input.pepper === runtimeInput.pepper &&
-    input.families === runtimeInput.families &&
-    input.timeoutMs === runtimeInput.timeoutMs
+    current &&
+    input.binding === current.binding &&
+    input.pepper === current.pepper &&
+    input.families === current.families &&
+    input.timeoutMs === current.timeoutMs
   ) {
     return;
   }
-  runtimeInput = input;
-  clientCache.clear();
+  state.input = input;
+  state.generation += 1;
   if (!input) {
-    runtimeOverride = null;
+    state.override = null;
     return;
   }
   const pepper = strong(input.pepper);
-  runtimeOverride = {
+  state.override = {
     families: parseAbuseGuardFamilies(input.families),
     usable: pepper
       ? {
@@ -151,6 +179,11 @@ function cachedClient(
   cacheKey: string,
   create: () => AbuseGuardClient
 ): AbuseGuardClient {
+  const { generation } = runtimeState();
+  if (clientCacheGeneration !== generation) {
+    clientCache.clear();
+    clientCacheGeneration = generation;
+  }
   let client = clientCache.get(cacheKey);
   if (!client) {
     if (clientCache.size >= 16) clientCache.clear();
@@ -185,6 +218,7 @@ export function selectAbuseGuard(
 ): AbuseGuardSelection {
   const backend = env.ABUSE_GUARD_BACKEND?.trim().toLowerCase();
   if (backend === 'upstash') return { kind: 'legacy' };
+  const runtimeOverride = runtimeState().override;
   const assigned =
     runtimeOverride?.families.has(family) === true ||
     parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family);
