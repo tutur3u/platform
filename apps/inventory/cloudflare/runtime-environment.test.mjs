@@ -68,4 +68,13 @@ test('startup accepts a configured guard without SePay or Redis credentials', ()
     () => assertRuntimeEnvironment({ ...valid, ABUSE_GUARD_KEY_PEPPER: '' }),
     /requires a configured abuse guard/
   );
+  assert.throws(
+    () =>
+      assertRuntimeEnvironment({
+        ...valid,
+        ...legacyRedis,
+        ABUSE_GUARD_KEY_PEPPER: '',
+      }),
+    /requires a configured abuse guard/
+  );
 });

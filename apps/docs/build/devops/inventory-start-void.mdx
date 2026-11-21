@@ -117,10 +117,12 @@ dispatch tests. See [the processor runbook](/build/devops/cloudflare-processor-m
 ## Rollback
 
 Before switching, record the active Vercel deployment ID and DNS preimage.
-Qualify a Cloudflare rollback version with the production bindings and verify
-that it can decrypt existing Inventory data. Record its version ID and the
-Cloudflare routing preimage. If smoke, authentication, error rate or latency
-regresses, restore the qualified Cloudflare version and its routing.
+Qualify the first Cloudflare version at zero traffic with production bindings
+and verify that it can decrypt existing Inventory data. Record its version ID
+and the hostname preimage. During the first cutover window, the DNS preimage
+can restore the existing Vercel deployment if acceptance fails. After the
+first Cloudflare release is accepted, restore the last qualified Cloudflare
+version and its routing on subsequent rollbacks.
 
 If checkout expiry regresses, stop the Cron Control job and reconcile the last
 slot and outstanding revalidations before resuming. Confirm that its

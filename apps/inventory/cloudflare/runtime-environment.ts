@@ -21,18 +21,22 @@ export type RuntimeEnvironment = Partial<
   >
 > & { ABUSE_GUARD?: AbuseGuardBinding };
 
+const INVENTORY_GUARD_FAMILIES = ['proxy', 'ratelimit', 'integrity'] as const;
+
+function inventoryGuardFamilies(env: RuntimeEnvironment) {
+  return env.ABUSE_GUARD_FAMILIES?.split(',').map((name) => name.trim());
+}
+
 export function getInventoryAbuseGuard(env: RuntimeEnvironment) {
   const binding = env.ABUSE_GUARD;
   const pepper = env.ABUSE_GUARD_KEY_PEPPER?.trim();
   const families = env.ABUSE_GUARD_FAMILIES;
-  const assigned = families?.split(',').map((name) => name.trim());
+  const assigned = inventoryGuardFamilies(env);
   if (
     !binding ||
     !pepper ||
     pepper.length < 32 ||
-    !['proxy', 'ratelimit', 'integrity'].every((name) =>
-      assigned?.includes(name)
-    )
+    !INVENTORY_GUARD_FAMILIES.every((name) => assigned?.includes(name))
   ) {
     return null;
   }
@@ -51,7 +55,11 @@ export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
   const legacyRedis = !!(
     env.UPSTASH_REDIS_REST_URL?.trim() && env.UPSTASH_REDIS_REST_TOKEN?.trim()
   );
-  if (!getInventoryAbuseGuard(env) && !legacyRedis) {
+  const assigned = inventoryGuardFamilies(env);
+  const selectsGuard = INVENTORY_GUARD_FAMILIES.some((name) =>
+    assigned?.includes(name)
+  );
+  if (!getInventoryAbuseGuard(env) && (selectsGuard || !legacyRedis)) {
     throw new Error(
       'Inventory requires a configured abuse guard or legacy Redis'
     );
