@@ -7358,33 +7358,39 @@ export type Database = {
       fleet_audit_events: {
         Row: {
           action: string;
-          actor_id: string;
+          actor_id: string | null;
           channel: string;
           created_at: string;
+          desk_owner_change: Json | null;
           id: number;
           intent_id: string | null;
           reason_code: string;
+          retention_counts: Json | null;
           subject_user_id: string | null;
         };
         ComputedFields: never;
         Insert: {
           action: string;
-          actor_id: string;
+          actor_id?: string | null;
           channel: string;
           created_at?: string;
+          desk_owner_change?: Json | null;
           id?: never;
           intent_id?: string | null;
           reason_code: string;
+          retention_counts?: Json | null;
           subject_user_id?: string | null;
         };
         Update: {
           action?: string;
-          actor_id?: string;
+          actor_id?: string | null;
           channel?: string;
           created_at?: string;
+          desk_owner_change?: Json | null;
           id?: never;
           intent_id?: string | null;
           reason_code?: string;
+          retention_counts?: Json | null;
           subject_user_id?: string | null;
         };
         Relationships: [];
@@ -7420,6 +7426,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      fleet_consumer_progress: {
+        Row: {
+          claim_slot: string | null;
+          purge_counts: Json | null;
+          purge_slot: string | null;
+          singleton: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          claim_slot?: string | null;
+          purge_counts?: Json | null;
+          purge_slot?: string | null;
+          singleton?: boolean;
+        };
+        Update: {
+          claim_slot?: string | null;
+          purge_counts?: Json | null;
+          purge_slot?: string | null;
+          singleton?: boolean;
+        };
+        Relationships: [];
+      };
       fleet_control: {
         Row: {
           generation: number;
@@ -7439,6 +7467,65 @@ export type Database = {
           owner_user_id?: string | null;
           singleton?: boolean;
           stopped?: boolean;
+        };
+        Relationships: [];
+      };
+      fleet_desk_credentials: {
+        Row: {
+          assigned_at: string;
+          channel: string;
+          credential_version: number;
+          desk_id: string;
+          provider_account_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assigned_at?: string;
+          channel: string;
+          credential_version: number;
+          desk_id: string;
+          provider_account_id: string;
+        };
+        Update: {
+          assigned_at?: string;
+          channel?: string;
+          credential_version?: number;
+          desk_id?: string;
+          provider_account_id?: string;
+        };
+        Relationships: [];
+      };
+      fleet_desk_owners: {
+        Row: {
+          channel: string;
+          credential_version: number;
+          desk_id: string;
+          owner_generation: number;
+          provider_account_id: string;
+          provider_account_label: string;
+          quiesced: boolean;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel: string;
+          credential_version: number;
+          desk_id: string;
+          owner_generation?: number;
+          provider_account_id: string;
+          provider_account_label: string;
+          quiesced?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          channel?: string;
+          credential_version?: number;
+          desk_id?: string;
+          owner_generation?: number;
+          provider_account_id?: string;
+          provider_account_label?: string;
+          quiesced?: boolean;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -7468,6 +7555,46 @@ export type Database = {
             referencedColumns: ['key'];
           },
         ];
+      };
+      fleet_identity_link_codes: {
+        Row: {
+          channel: string | null;
+          code_hash: string;
+          confirmation_hash: string | null;
+          conversation_hash: string | null;
+          expires_at: string;
+          pending_id: string | null;
+          provider_account_id: string | null;
+          provider_account_label: string | null;
+          sender_hash: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel?: string | null;
+          code_hash: string;
+          confirmation_hash?: string | null;
+          conversation_hash?: string | null;
+          expires_at: string;
+          pending_id?: string | null;
+          provider_account_id?: string | null;
+          provider_account_label?: string | null;
+          sender_hash?: string | null;
+          user_id: string;
+        };
+        Update: {
+          channel?: string | null;
+          code_hash?: string;
+          confirmation_hash?: string | null;
+          conversation_hash?: string | null;
+          expires_at?: string;
+          pending_id?: string | null;
+          provider_account_id?: string | null;
+          provider_account_label?: string | null;
+          sender_hash?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       fleet_intent_quotes: {
         Row: {
@@ -7506,6 +7633,7 @@ export type Database = {
           approver_id: string | null;
           channel: string;
           created_at: string;
+          dry_run_slot: string | null;
           expires_at: string;
           id: string;
           idempotency_key: string;
@@ -7529,6 +7657,7 @@ export type Database = {
           approver_id?: string | null;
           channel: string;
           created_at?: string;
+          dry_run_slot?: string | null;
           expires_at: string;
           id?: string;
           idempotency_key: string;
@@ -7551,6 +7680,7 @@ export type Database = {
           approver_id?: string | null;
           channel?: string;
           created_at?: string;
+          dry_run_slot?: string | null;
           expires_at?: string;
           id?: string;
           idempotency_key?: string;
@@ -7632,6 +7762,37 @@ export type Database = {
           name_vi?: string;
           target_mapping?: NonNullable<Json>;
           target_mapping_version?: number;
+        };
+        Relationships: [];
+      };
+      fleet_provider_events: {
+        Row: {
+          attempts: number;
+          channel: string;
+          consumed_at: string;
+          event_hash: string;
+          exclusive_slot: string | null;
+          provider_account_id: string;
+          recall_consumed_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          channel: string;
+          consumed_at?: string;
+          event_hash: string;
+          exclusive_slot?: string | null;
+          provider_account_id: string;
+          recall_consumed_at?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          channel?: string;
+          consumed_at?: string;
+          event_hash?: string;
+          exclusive_slot?: string | null;
+          provider_account_id?: string;
+          recall_consumed_at?: string | null;
         };
         Relationships: [];
       };
@@ -16257,6 +16418,349 @@ export type Database = {
         };
         Relationships: [];
       };
+      mira_audit_events: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          actor_kind: string;
+          channel_id: string | null;
+          created_at: string;
+          id: number;
+          new_generation: number | null;
+          note: string | null;
+          old_generation: number | null;
+          reason_code: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          actor_kind: string;
+          channel_id?: string | null;
+          created_at?: string;
+          id?: never;
+          new_generation?: number | null;
+          note?: string | null;
+          old_generation?: number | null;
+          reason_code: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          actor_kind?: string;
+          channel_id?: string | null;
+          created_at?: string;
+          id?: never;
+          new_generation?: number | null;
+          note?: string | null;
+          old_generation?: number | null;
+          reason_code?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      mira_channel_secret_refs: {
+        Row: {
+          channel_id: string;
+          connected_at: string;
+          name: string;
+          vault_environment: string;
+          vault_variable: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel_id: string;
+          connected_at?: string;
+          name: string;
+          vault_environment: string;
+          vault_variable: string;
+        };
+        Update: {
+          channel_id?: string;
+          connected_at?: string;
+          name?: string;
+          vault_environment?: string;
+          vault_variable?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mira_channel_secret_refs_channel_id_fkey';
+            columns: ['channel_id'];
+            isOneToOne: false;
+            referencedRelation: 'mira_channels';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mira_channels: {
+        Row: {
+          connection_mode: Database['private']['Enums']['mira_connection_mode'];
+          created_at: string;
+          display_name: string;
+          id: string;
+          kind: Database['private']['Enums']['mira_channel_kind'];
+          last_error_at: string | null;
+          last_error_code: string | null;
+          last_event_at: string | null;
+          owner_generation: number;
+          provider_account_id: string;
+          send_owner: Database['private']['Enums']['mira_send_owner'];
+          status: Database['private']['Enums']['mira_channel_status'];
+          stop_generation: number;
+          stop_reasons: string[];
+          unbound_at: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          connection_mode: Database['private']['Enums']['mira_connection_mode'];
+          created_at?: string;
+          display_name: string;
+          id?: string;
+          kind: Database['private']['Enums']['mira_channel_kind'];
+          last_error_at?: string | null;
+          last_error_code?: string | null;
+          last_event_at?: string | null;
+          owner_generation?: number;
+          provider_account_id: string;
+          send_owner?: Database['private']['Enums']['mira_send_owner'];
+          status?: Database['private']['Enums']['mira_channel_status'];
+          stop_generation?: number;
+          stop_reasons?: string[];
+          unbound_at?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          connection_mode?: Database['private']['Enums']['mira_connection_mode'];
+          created_at?: string;
+          display_name?: string;
+          id?: string;
+          kind?: Database['private']['Enums']['mira_channel_kind'];
+          last_error_at?: string | null;
+          last_error_code?: string | null;
+          last_event_at?: string | null;
+          owner_generation?: number;
+          provider_account_id?: string;
+          send_owner?: Database['private']['Enums']['mira_send_owner'];
+          status?: Database['private']['Enums']['mira_channel_status'];
+          stop_generation?: number;
+          stop_reasons?: string[];
+          unbound_at?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mira_channels_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mira_tenants';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      mira_global_control: {
+        Row: {
+          generation: number;
+          singleton: boolean;
+          stopped: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          generation?: number;
+          singleton?: boolean;
+          stopped?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          generation?: number;
+          singleton?: boolean;
+          stopped?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      mira_personas: {
+        Row: {
+          instructions: string;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          instructions?: string;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          instructions?: string;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mira_personas_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'mira_tenants';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      mira_tenants: {
+        Row: {
+          config_version: number;
+          created_at: string;
+          daily_cap_micro_usd: number;
+          enabled: boolean;
+          key_mode: Database['private']['Enums']['mira_key_mode'];
+          model_id: string | null;
+          monthly_cap_micro_usd: number;
+          never_silent: boolean;
+          preset: Database['private']['Enums']['mira_preset'];
+          quiet_end_minute: number | null;
+          quiet_start_minute: number | null;
+          quiet_time_zone: string | null;
+          stop_generation: number;
+          stop_reasons: string[];
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          config_version?: number;
+          created_at?: string;
+          daily_cap_micro_usd?: number;
+          enabled?: boolean;
+          key_mode?: Database['private']['Enums']['mira_key_mode'];
+          model_id?: string | null;
+          monthly_cap_micro_usd?: number;
+          never_silent?: boolean;
+          preset?: Database['private']['Enums']['mira_preset'];
+          quiet_end_minute?: number | null;
+          quiet_start_minute?: number | null;
+          quiet_time_zone?: string | null;
+          stop_generation?: number;
+          stop_reasons?: string[];
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          config_version?: number;
+          created_at?: string;
+          daily_cap_micro_usd?: number;
+          enabled?: boolean;
+          key_mode?: Database['private']['Enums']['mira_key_mode'];
+          model_id?: string | null;
+          monthly_cap_micro_usd?: number;
+          never_silent?: boolean;
+          preset?: Database['private']['Enums']['mira_preset'];
+          quiet_end_minute?: number | null;
+          quiet_start_minute?: number | null;
+          quiet_time_zone?: string | null;
+          stop_generation?: number;
+          stop_reasons?: string[];
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      mira_usage_daily: {
+        Row: {
+          cached_input_tokens: number;
+          channel_id: string;
+          cost_micro_usd: number;
+          day: string;
+          input_tokens: number;
+          model_id: string;
+          output_tokens: number;
+          replies: number;
+          triaged: number;
+          weighted_replies: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cached_input_tokens?: number;
+          channel_id: string;
+          cost_micro_usd?: number;
+          day: string;
+          input_tokens?: number;
+          model_id: string;
+          output_tokens?: number;
+          replies?: number;
+          triaged?: number;
+          weighted_replies?: number;
+          ws_id: string;
+        };
+        Update: {
+          cached_input_tokens?: number;
+          channel_id?: string;
+          cost_micro_usd?: number;
+          day?: string;
+          input_tokens?: number;
+          model_id?: string;
+          output_tokens?: number;
+          replies?: number;
+          triaged?: number;
+          weighted_replies?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mira_usage_daily_channel_id_ws_id_fkey';
+            columns: ['channel_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mira_channels';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'mira_usage_daily_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mira_tenants';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      mira_usage_receipts: {
+        Row: {
+          created_at: string;
+          receipt_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          receipt_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          receipt_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mira_usage_receipts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mira_tenants';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
       mobile_deployment_audit_events: {
         Row: {
           actor_type: string;
@@ -18351,6 +18855,1069 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      people_audit_events: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          id: number;
+          principal_id: string | null;
+          purpose: string | null;
+          reason_code: string;
+          record_ids: string[];
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: never;
+          principal_id?: string | null;
+          purpose?: string | null;
+          reason_code: string;
+          record_ids?: string[];
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: never;
+          principal_id?: string | null;
+          purpose?: string | null;
+          reason_code?: string;
+          record_ids?: string[];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_audit_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_briefs: {
+        Row: {
+          body: string;
+          built_at: string;
+          cited_ids: string[];
+          consent_version: number;
+          conversation_id: string | null;
+          person_id: string | null;
+          revision: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          built_at?: string;
+          cited_ids?: string[];
+          consent_version: number;
+          conversation_id?: string | null;
+          person_id?: string | null;
+          revision?: number;
+          ws_id: string;
+        };
+        Update: {
+          body?: string;
+          built_at?: string;
+          cited_ids?: string[];
+          consent_version?: number;
+          conversation_id?: string | null;
+          person_id?: string | null;
+          revision?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_briefs_ws_id_conversation_id_fkey';
+            columns: ['ws_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_briefs_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_change_events: {
+        Row: {
+          consent_version: number;
+          conversation_id: string | null;
+          created_at: string;
+          event_id: number;
+          kind: Database['private']['Enums']['people_change_kind'];
+          person_id: string | null;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          consent_version: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_id?: never;
+          kind: Database['private']['Enums']['people_change_kind'];
+          person_id?: string | null;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          consent_version?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_id?: never;
+          kind?: Database['private']['Enums']['people_change_kind'];
+          person_id?: string | null;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_change_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_channel_bindings: {
+        Row: {
+          added_at: string;
+          added_by: string;
+          channel: Database['private']['Enums']['people_channel'];
+          provider_account_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_at?: string;
+          added_by: string;
+          channel: Database['private']['Enums']['people_channel'];
+          provider_account_id: string;
+          ws_id: string;
+        };
+        Update: {
+          added_at?: string;
+          added_by?: string;
+          channel?: Database['private']['Enums']['people_channel'];
+          provider_account_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_channel_bindings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_channel_identities: {
+        Row: {
+          basis: Database['private']['Enums']['people_link_basis'];
+          channel: Database['private']['Enums']['people_channel'];
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          display_ciphertext: string | null;
+          evidence_ref: string | null;
+          id: string;
+          key_version: number;
+          link_state: Database['private']['Enums']['people_link_state'];
+          lookup_hash: string;
+          person_id: string;
+          proposed_by: string | null;
+          provider_account_id: string;
+          suppression_key_version: number;
+          suppression_token: string;
+          verification: Database['private']['Enums']['people_verification'];
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          basis: Database['private']['Enums']['people_link_basis'];
+          channel: Database['private']['Enums']['people_channel'];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          display_ciphertext?: string | null;
+          evidence_ref?: string | null;
+          id?: string;
+          key_version: number;
+          link_state?: Database['private']['Enums']['people_link_state'];
+          lookup_hash: string;
+          person_id: string;
+          proposed_by?: string | null;
+          provider_account_id: string;
+          suppression_key_version: number;
+          suppression_token: string;
+          verification: Database['private']['Enums']['people_verification'];
+          ws_id: string;
+        };
+        Update: {
+          basis?: Database['private']['Enums']['people_link_basis'];
+          channel?: Database['private']['Enums']['people_channel'];
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          display_ciphertext?: string | null;
+          evidence_ref?: string | null;
+          id?: string;
+          key_version?: number;
+          link_state?: Database['private']['Enums']['people_link_state'];
+          lookup_hash?: string;
+          person_id?: string;
+          proposed_by?: string | null;
+          provider_account_id?: string;
+          suppression_key_version?: number;
+          suppression_token?: string;
+          verification?: Database['private']['Enums']['people_verification'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_channel_identities_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_consents: {
+        Row: {
+          basis: Database['private']['Enums']['people_consent_basis'] | null;
+          conversation_id: string | null;
+          evidence: NonNullable<Json>;
+          expires_at: string | null;
+          person_id: string | null;
+          recorded_at: string;
+          recorded_by: string | null;
+          scope: NonNullable<Json>;
+          state: Database['private']['Enums']['people_consent_state'];
+          store: Database['private']['Enums']['people_consent_store'];
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          basis?: Database['private']['Enums']['people_consent_basis'] | null;
+          conversation_id?: string | null;
+          evidence?: NonNullable<Json>;
+          expires_at?: string | null;
+          person_id?: string | null;
+          recorded_at?: string;
+          recorded_by?: string | null;
+          scope?: NonNullable<Json>;
+          state: Database['private']['Enums']['people_consent_state'];
+          store: Database['private']['Enums']['people_consent_store'];
+          ws_id: string;
+        };
+        Update: {
+          basis?: Database['private']['Enums']['people_consent_basis'] | null;
+          conversation_id?: string | null;
+          evidence?: NonNullable<Json>;
+          expires_at?: string | null;
+          person_id?: string | null;
+          recorded_at?: string;
+          recorded_by?: string | null;
+          scope?: NonNullable<Json>;
+          state?: Database['private']['Enums']['people_consent_state'];
+          store?: Database['private']['Enums']['people_consent_store'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_consents_ws_id_conversation_id_fkey';
+            columns: ['ws_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_consents_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_conversation_members: {
+        Row: {
+          conversation_id: string;
+          first_seen_at: string;
+          identity_id: string;
+          last_seen_at: string;
+          person_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          conversation_id: string;
+          first_seen_at?: string;
+          identity_id: string;
+          last_seen_at?: string;
+          person_id: string;
+          ws_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          first_seen_at?: string;
+          identity_id?: string;
+          last_seen_at?: string;
+          person_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_conversation_members_ws_id_conversation_id_fkey';
+            columns: ['ws_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_conversation_members_ws_id_identity_id_fkey';
+            columns: ['ws_id', 'identity_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_channel_identities';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_conversation_members_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_conversations: {
+        Row: {
+          channel: Database['private']['Enums']['people_channel'];
+          consent_version: number;
+          created_at: string;
+          id: string;
+          key_version: number;
+          kind: Database['private']['Enums']['people_conversation_kind'];
+          label_ciphertext: string | null;
+          lookup_hash: string;
+          provider_account_id: string;
+          status: Database['private']['Enums']['people_subject_status'];
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel: Database['private']['Enums']['people_channel'];
+          consent_version?: number;
+          created_at?: string;
+          id?: string;
+          key_version: number;
+          kind: Database['private']['Enums']['people_conversation_kind'];
+          label_ciphertext?: string | null;
+          lookup_hash: string;
+          provider_account_id: string;
+          status?: Database['private']['Enums']['people_subject_status'];
+          version?: number;
+          ws_id: string;
+        };
+        Update: {
+          channel?: Database['private']['Enums']['people_channel'];
+          consent_version?: number;
+          created_at?: string;
+          id?: string;
+          key_version?: number;
+          kind?: Database['private']['Enums']['people_conversation_kind'];
+          label_ciphertext?: string | null;
+          lookup_hash?: string;
+          provider_account_id?: string;
+          status?: Database['private']['Enums']['people_subject_status'];
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_conversations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_facts: {
+        Row: {
+          audience: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids: string[];
+          id: string;
+          key: string;
+          origin_conversation_id: string | null;
+          owner_dm: boolean;
+          owner_entered: boolean;
+          person_id: string;
+          provenance: NonNullable<Json>;
+          revision: number;
+          updated_at: string;
+          updated_by: string | null;
+          value: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience?: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids?: string[];
+          id?: string;
+          key: string;
+          origin_conversation_id?: string | null;
+          owner_dm?: boolean;
+          owner_entered: boolean;
+          person_id: string;
+          provenance: NonNullable<Json>;
+          revision?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          value: string;
+          ws_id: string;
+        };
+        Update: {
+          audience?: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids?: string[];
+          id?: string;
+          key?: string;
+          origin_conversation_id?: string | null;
+          owner_dm?: boolean;
+          owner_entered?: boolean;
+          person_id?: string;
+          provenance?: NonNullable<Json>;
+          revision?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          value?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_facts_ws_id_origin_conversation_id_fkey';
+            columns: ['ws_id', 'origin_conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_facts_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_memory_ledger: {
+        Row: {
+          audience: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids: string[];
+          consent_version: number;
+          conversation_id: string | null;
+          created_at: string;
+          custom_id: string;
+          done_at: string | null;
+          due_at: string | null;
+          id: string;
+          idempotency_key: string;
+          kind: Database['private']['Enums']['people_memory_kind'];
+          memory_id: string | null;
+          memory_revision: string | null;
+          origin_conversation_id: string | null;
+          owner_dm: boolean;
+          person_id: string | null;
+          provenance: NonNullable<Json>;
+          state: Database['private']['Enums']['people_memory_state'];
+          updated_at: string;
+          work_status: Database['private']['Enums']['people_work_status'];
+          writer_actor: string | null;
+          writer_principal: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience?: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids?: string[];
+          consent_version: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          custom_id: string;
+          done_at?: string | null;
+          due_at?: string | null;
+          id?: string;
+          idempotency_key: string;
+          kind: Database['private']['Enums']['people_memory_kind'];
+          memory_id?: string | null;
+          memory_revision?: string | null;
+          origin_conversation_id?: string | null;
+          owner_dm?: boolean;
+          person_id?: string | null;
+          provenance: NonNullable<Json>;
+          state?: Database['private']['Enums']['people_memory_state'];
+          updated_at?: string;
+          work_status?: Database['private']['Enums']['people_work_status'];
+          writer_actor?: string | null;
+          writer_principal?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          audience?: Database['private']['Enums']['people_audience'];
+          audience_conversation_ids?: string[];
+          consent_version?: number;
+          conversation_id?: string | null;
+          created_at?: string;
+          custom_id?: string;
+          done_at?: string | null;
+          due_at?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          kind?: Database['private']['Enums']['people_memory_kind'];
+          memory_id?: string | null;
+          memory_revision?: string | null;
+          origin_conversation_id?: string | null;
+          owner_dm?: boolean;
+          person_id?: string | null;
+          provenance?: NonNullable<Json>;
+          state?: Database['private']['Enums']['people_memory_state'];
+          updated_at?: string;
+          work_status?: Database['private']['Enums']['people_work_status'];
+          writer_actor?: string | null;
+          writer_principal?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_memory_ledger_ws_id_conversation_id_fkey';
+            columns: ['ws_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_memory_ledger_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+          {
+            foreignKeyName: 'people_memory_ledger_ws_id_origin_conversation_id_fkey';
+            columns: ['ws_id', 'origin_conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_memory_ledger_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_personal_recalls: {
+        Row: {
+          event_hash: string;
+          recorded_at: string;
+          session_hash: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_hash: string;
+          recorded_at?: string;
+          session_hash: string;
+          ws_id: string;
+        };
+        Update: {
+          event_hash?: string;
+          recorded_at?: string;
+          session_hash?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_personal_recalls_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_persons: {
+        Row: {
+          consent_version: number;
+          contact_id: string | null;
+          created_at: string;
+          id: string;
+          is_owner: boolean;
+          kind: Database['private']['Enums']['people_person_kind'];
+          label: string;
+          linked_user_id: string | null;
+          merged_into: string | null;
+          status: Database['private']['Enums']['people_subject_status'];
+          updated_at: string;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          consent_version?: number;
+          contact_id?: string | null;
+          created_at?: string;
+          id?: string;
+          is_owner?: boolean;
+          kind?: Database['private']['Enums']['people_person_kind'];
+          label: string;
+          linked_user_id?: string | null;
+          merged_into?: string | null;
+          status?: Database['private']['Enums']['people_subject_status'];
+          updated_at?: string;
+          version?: number;
+          ws_id: string;
+        };
+        Update: {
+          consent_version?: number;
+          contact_id?: string | null;
+          created_at?: string;
+          id?: string;
+          is_owner?: boolean;
+          kind?: Database['private']['Enums']['people_person_kind'];
+          label?: string;
+          linked_user_id?: string | null;
+          merged_into?: string | null;
+          status?: Database['private']['Enums']['people_subject_status'];
+          updated_at?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_persons_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+          {
+            foreignKeyName: 'people_persons_ws_id_merged_into_fkey';
+            columns: ['ws_id', 'merged_into'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_principal_keys: {
+        Row: {
+          created_at: string;
+          kid: string;
+          principal_id: string;
+          public_key: string;
+          revoked_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          kid: string;
+          principal_id: string;
+          public_key: string;
+          revoked_at?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          kid?: string;
+          principal_id?: string;
+          public_key?: string;
+          revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_principal_keys_principal_id_fkey';
+            columns: ['principal_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_principals';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      people_principals: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          generation: number;
+          id: string;
+          kind: Database['private']['Enums']['people_principal_kind'];
+          label: string;
+          requests_per_minute: number;
+          revoked_at: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          generation?: number;
+          id?: string;
+          kind: Database['private']['Enums']['people_principal_kind'];
+          label: string;
+          requests_per_minute?: number;
+          revoked_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          generation?: number;
+          id?: string;
+          kind?: Database['private']['Enums']['people_principal_kind'];
+          label?: string;
+          requests_per_minute?: number;
+          revoked_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_principals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_registry_control: {
+        Row: {
+          capture_enabled: boolean;
+          created_at: string;
+          generation: number;
+          owner_user_id: string | null;
+          personal_sessions_enabled: boolean;
+          stopped: boolean;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          capture_enabled?: boolean;
+          created_at?: string;
+          generation?: number;
+          owner_user_id?: string | null;
+          personal_sessions_enabled?: boolean;
+          stopped?: boolean;
+          ws_id: string;
+        };
+        Update: {
+          capture_enabled?: boolean;
+          created_at?: string;
+          generation?: number;
+          owner_user_id?: string | null;
+          personal_sessions_enabled?: boolean;
+          stopped?: boolean;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      people_registry_managers: {
+        Row: {
+          added_at: string;
+          added_by: string;
+          expires_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          added_at?: string;
+          added_by: string;
+          expires_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          added_at?: string;
+          added_by?: string;
+          expires_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_registry_managers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_relationships: {
+        Row: {
+          confidence: number;
+          created_at: string;
+          created_by: string | null;
+          from_person_id: string;
+          id: string;
+          kind: Database['private']['Enums']['people_relationship_kind'];
+          label: string | null;
+          provenance: NonNullable<Json>;
+          to_person_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          confidence?: number;
+          created_at?: string;
+          created_by?: string | null;
+          from_person_id: string;
+          id?: string;
+          kind: Database['private']['Enums']['people_relationship_kind'];
+          label?: string | null;
+          provenance: NonNullable<Json>;
+          to_person_id: string;
+          ws_id: string;
+        };
+        Update: {
+          confidence?: number;
+          created_at?: string;
+          created_by?: string | null;
+          from_person_id?: string;
+          id?: string;
+          kind?: Database['private']['Enums']['people_relationship_kind'];
+          label?: string | null;
+          provenance?: NonNullable<Json>;
+          to_person_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_relationships_ws_id_from_person_id_fkey';
+            columns: ['ws_id', 'from_person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_relationships_ws_id_to_person_id_fkey';
+            columns: ['ws_id', 'to_person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_request_counters: {
+        Row: {
+          count: number;
+          minute: string;
+          principal_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          count?: number;
+          minute: string;
+          principal_id: string;
+        };
+        Update: {
+          count?: number;
+          minute?: string;
+          principal_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_request_counters_principal_id_fkey';
+            columns: ['principal_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_principals';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      people_request_nonces: {
+        Row: {
+          nonce: string;
+          principal_id: string;
+          seen_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          nonce: string;
+          principal_id: string;
+          seen_at?: string;
+        };
+        Update: {
+          nonce?: string;
+          principal_id?: string;
+          seen_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_request_nonces_principal_id_fkey';
+            columns: ['principal_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_principals';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      people_rules: {
+        Row: {
+          channel: Database['private']['Enums']['people_channel'] | null;
+          conversation_id: string | null;
+          expires_at: string | null;
+          id: string;
+          person_id: string | null;
+          provenance: NonNullable<Json>;
+          revision: number;
+          rule: Database['private']['Enums']['people_rule'];
+          scope: Database['private']['Enums']['people_rule_scope'];
+          updated_at: string;
+          updated_by: string | null;
+          value: NonNullable<Json>;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel?: Database['private']['Enums']['people_channel'] | null;
+          conversation_id?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          person_id?: string | null;
+          provenance: NonNullable<Json>;
+          revision?: number;
+          rule: Database['private']['Enums']['people_rule'];
+          scope: Database['private']['Enums']['people_rule_scope'];
+          updated_at?: string;
+          updated_by?: string | null;
+          value: NonNullable<Json>;
+          ws_id: string;
+        };
+        Update: {
+          channel?: Database['private']['Enums']['people_channel'] | null;
+          conversation_id?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          person_id?: string | null;
+          provenance?: NonNullable<Json>;
+          revision?: number;
+          rule?: Database['private']['Enums']['people_rule'];
+          scope?: Database['private']['Enums']['people_rule_scope'];
+          updated_at?: string;
+          updated_by?: string | null;
+          value?: NonNullable<Json>;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_rules_ws_id_conversation_id_fkey';
+            columns: ['ws_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_conversations';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'people_rules_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+          {
+            foreignKeyName: 'people_rules_ws_id_person_id_fkey';
+            columns: ['ws_id', 'person_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_persons';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      people_suppressions: {
+        Row: {
+          deleted_at: string;
+          key_version: number;
+          token: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          deleted_at?: string;
+          key_version: number;
+          token: string;
+          ws_id: string;
+        };
+        Update: {
+          deleted_at?: string;
+          key_version?: number;
+          token?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_suppressions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_workspace_keys: {
+        Row: {
+          created_at: string;
+          purpose: Database['private']['Enums']['people_key_purpose'];
+          retired_at: string | null;
+          version: number;
+          wrapped_key: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          purpose: Database['private']['Enums']['people_key_purpose'];
+          retired_at?: string | null;
+          version: number;
+          wrapped_key: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          purpose?: Database['private']['Enums']['people_key_purpose'];
+          retired_at?: string | null;
+          version?: number;
+          wrapped_key?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_workspace_keys_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
           },
         ];
       };
@@ -23200,6 +24767,339 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      vault_audit_events: {
+        Row: {
+          actor_id: string;
+          actor_kind: string;
+          created_at: string;
+          event: string;
+          event_hash: string;
+          grant_id: string | null;
+          id: number;
+          ip_prefix: unknown;
+          prev_hash: string | null;
+          resource: NonNullable<Json>;
+          result: string;
+          ua_family: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          actor_kind: string;
+          created_at?: string;
+          event: string;
+          event_hash: string;
+          grant_id?: string | null;
+          id?: never;
+          ip_prefix?: unknown;
+          prev_hash?: string | null;
+          resource?: NonNullable<Json>;
+          result: string;
+          ua_family?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          actor_kind?: string;
+          created_at?: string;
+          event?: string;
+          event_hash?: string;
+          grant_id?: string | null;
+          id?: never;
+          ip_prefix?: unknown;
+          prev_hash?: string | null;
+          resource?: NonNullable<Json>;
+          result?: string;
+          ua_family?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      vault_genesis: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          signed_genesis: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          signed_genesis: string;
+          vault_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          signed_genesis?: string;
+          vault_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      vault_key_log: {
+        Row: {
+          entry_hash: string;
+          published_at: string;
+          seq: number;
+          signed_entry: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          entry_hash: string;
+          published_at?: string;
+          seq: number;
+          signed_entry: string;
+          ws_id: string;
+        };
+        Update: {
+          entry_hash?: string;
+          published_at?: string;
+          seq?: number;
+          signed_entry?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_key_log_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_genesis';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      vault_keyrings: {
+        Row: {
+          counter: number;
+          keyring: string;
+          updated_at: string;
+          user_id: string;
+          vault_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          counter: number;
+          keyring: string;
+          updated_at?: string;
+          user_id: string;
+          vault_user_id: string;
+        };
+        Update: {
+          counter?: number;
+          keyring?: string;
+          updated_at?: string;
+          user_id?: string;
+          vault_user_id?: string;
+        };
+        Relationships: [];
+      };
+      vault_passkeys: {
+        Row: {
+          created_at: string;
+          credential_id: string;
+          last_used_at: string | null;
+          public_key: string;
+          sign_count: number;
+          transports: string[];
+          vault_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          credential_id: string;
+          last_used_at?: string | null;
+          public_key: string;
+          sign_count?: number;
+          transports?: string[];
+          vault_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          credential_id?: string;
+          last_used_at?: string | null;
+          public_key?: string;
+          sign_count?: number;
+          transports?: string[];
+          vault_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_passkeys_vault_user_id_fkey';
+            columns: ['vault_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_keyrings';
+            referencedColumns: ['vault_user_id'];
+          },
+        ];
+      };
+      vault_records: {
+        Row: {
+          ciphertext: string | null;
+          ciphertext_hash: string | null;
+          env: string;
+          published_at: string;
+          record_hash: string;
+          signed_record: string;
+          variable_id: string;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ciphertext?: string | null;
+          ciphertext_hash?: string | null;
+          env: string;
+          published_at?: string;
+          record_hash: string;
+          signed_record: string;
+          variable_id: string;
+          version: number;
+          ws_id: string;
+        };
+        Update: {
+          ciphertext?: string | null;
+          ciphertext_hash?: string | null;
+          env?: string;
+          published_at?: string;
+          record_hash?: string;
+          signed_record?: string;
+          variable_id?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_records_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_genesis';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      vault_staged_payloads: {
+        Row: {
+          expires_at: string;
+          kind: string;
+          payload: string;
+          payload_hash: string;
+          staged_at: string;
+          staged_by: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          expires_at?: string;
+          kind: string;
+          payload: string;
+          payload_hash: string;
+          staged_at?: string;
+          staged_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          expires_at?: string;
+          kind?: string;
+          payload?: string;
+          payload_hash?: string;
+          staged_at?: string;
+          staged_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_staged_payloads_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_genesis';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      vault_unlock_wraps: {
+        Row: {
+          created_at: string;
+          method: string;
+          method_id: string;
+          params: string;
+          vault_user_id: string;
+          wrap: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          method: string;
+          method_id: string;
+          params: string;
+          vault_user_id: string;
+          wrap: string;
+        };
+        Update: {
+          created_at?: string;
+          method?: string;
+          method_id?: string;
+          params?: string;
+          vault_user_id?: string;
+          wrap?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_unlock_wraps_vault_user_id_fkey';
+            columns: ['vault_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_keyrings';
+            referencedColumns: ['vault_user_id'];
+          },
+        ];
+      };
+      vault_wraps: {
+        Row: {
+          digest: string;
+          env: string;
+          epoch: number;
+          key_kind: string;
+          published_at: string;
+          recipient_fp: string;
+          wrap: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          digest: string;
+          env: string;
+          epoch: number;
+          key_kind: string;
+          published_at?: string;
+          recipient_fp: string;
+          wrap: string;
+          ws_id: string;
+        };
+        Update: {
+          digest?: string;
+          env?: string;
+          epoch?: number;
+          key_kind?: string;
+          published_at?: string;
+          recipient_fp?: string;
+          wrap?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'vault_wraps_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'vault_genesis';
+            referencedColumns: ['ws_id'];
           },
         ];
       };
@@ -28168,9 +30068,95 @@ export type Database = {
         };
         Returns: boolean;
       };
+      fleet_admit_desk_event: {
+        Args: { p_event: Json; p_operation: string };
+        Returns: string;
+      };
+      fleet_change_desk_owner: {
+        Args: {
+          p_account: string;
+          p_action: string;
+          p_actor: string;
+          p_channel: string;
+          p_credential_version?: number;
+          p_desk_id?: string;
+          p_expected_generation: number;
+        };
+        Returns: Json;
+      };
+      fleet_clear_expired_link_identity: {
+        Args: { p_actor_id: string };
+        Returns: undefined;
+      };
+      fleet_confirm_link_code: {
+        Args: {
+          p_actor_id: string;
+          p_confirmation_hash: string;
+          p_pending_id: string;
+          p_preview?: boolean;
+        };
+        Returns: Json;
+      };
+      fleet_consume_provider_event: {
+        Args: { p_event: Json };
+        Returns: boolean;
+      };
+      fleet_consume_registry_event: {
+        Args: { p_event: Json; p_operation: string };
+        Returns: boolean;
+      };
+      fleet_consumer_claim: {
+        Args: { p_generation: string; p_slot: string };
+        Returns: Json;
+      };
+      fleet_consumer_fence: {
+        Args: { p_generation: string };
+        Returns: boolean;
+      };
+      fleet_consumer_purge: {
+        Args: { p_generation: string; p_slot: string };
+        Returns: Json;
+      };
+      fleet_consumer_receipt: {
+        Args: {
+          p_generation: string;
+          p_idempotency_key: string;
+          p_intent_id: string;
+          p_lease_id: string;
+          p_slot: string;
+          p_state: string;
+        };
+        Returns: Json;
+      };
+      fleet_consumer_slot: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      fleet_consumer_status: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      fleet_create_link_code: {
+        Args: { p_actor_id: string; p_code_hash: string };
+        Returns: boolean;
+      };
       fleet_digest_labels_approved: {
         Args: { p_lanes: Json; p_project_key: string };
         Returns: boolean;
+      };
+      fleet_digest_sections: {
+        Args: { p_project_keys: string[] };
+        Returns: Json;
+      };
+      fleet_dry_run_refusal: {
+        Args: {
+          p_generation: string;
+          p_intent: Omit<
+            Database['private']['Tables']['fleet_intents']['Row'],
+            Database['private']['Tables']['fleet_intents']['ComputedFields']
+          >;
+        };
+        Returns: string;
       };
       fleet_get_access: { Args: { p_actor_id: string }; Returns: Json };
       fleet_get_digest: { Args: { p_actor_id: string }; Returns: Json };
@@ -28188,17 +30174,91 @@ export type Database = {
         };
         Returns: number;
       };
+      fleet_is_owner: { Args: { p_user_id: string }; Returns: boolean };
+      fleet_linked_desk_actor: { Args: { p_event: Json }; Returns: string };
+      fleet_list_intents: {
+        Args: { p_actor_id: string; p_before?: string };
+        Returns: Json;
+      };
+      fleet_list_user_channel_identities: {
+        Args: { p_user_id: string };
+        Returns: {
+          channel: string;
+          provider_account_id: string;
+          verified_at: string;
+        }[];
+      };
+      fleet_promote_desk_owner: {
+        Args: {
+          p_account: string;
+          p_channel: string;
+          p_credential_version: number;
+          p_desk_id: string;
+          p_expected_generation: number;
+        };
+        Returns: Json;
+      };
       fleet_publish_digest: {
         Args: { p_generated_at: string; p_lanes: Json; p_project_key: string };
         Returns: string;
+      };
+      fleet_question_usage: {
+        Args: { p_actor: string; p_at: string };
+        Returns: number;
+      };
+      fleet_quiesce_desk_owner: {
+        Args: {
+          p_account: string;
+          p_channel: string;
+          p_expected_generation: number;
+        };
+        Returns: Json;
+      };
+      fleet_read_desk_digest: { Args: { p_event: Json }; Returns: Json };
+      fleet_register_desk_owner: {
+        Args: {
+          p_account: string;
+          p_account_label: string;
+          p_channel: string;
+          p_credential_version: number;
+          p_desk_id: string;
+        };
+        Returns: Json;
       };
       fleet_require_owner: {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      fleet_resume_desk_owner: {
+        Args: {
+          p_account: string;
+          p_channel: string;
+          p_expected_generation: number;
+        };
+        Returns: Json;
+      };
       fleet_revoke_access: {
         Args: { p_reason_code: string; p_user_id: string };
         Returns: number;
+      };
+      fleet_rollback_desk_owner: {
+        Args: {
+          p_account: string;
+          p_channel: string;
+          p_credential_version: number;
+          p_desk_id: string;
+          p_expected_generation: number;
+        };
+        Returns: Json;
+      };
+      fleet_rotate_desk_credential: {
+        Args: {
+          p_account: string;
+          p_channel: string;
+          p_credential_version: number;
+          p_expected_generation: number;
+        };
+        Returns: Json;
       };
       fleet_set_stopped: {
         Args: { p_reason_code: string; p_stopped: boolean };
@@ -28222,6 +30282,43 @@ export type Database = {
           intent_id: string;
           reason_code: string;
         }[];
+      };
+      fleet_submit_resolved_intent: {
+        Args: {
+          p_actor_id?: string;
+          p_event?: Json;
+          p_kind: Database['private']['Enums']['fleet_intent_kind'];
+          p_parameters: Json;
+          p_project_key: string;
+          p_redacted_quote?: string;
+          p_target_key: string;
+        };
+        Returns: {
+          intent_id: string;
+          reason_code: string;
+        }[];
+      };
+      fleet_take_event_slot: {
+        Args: { p_event: Json; p_slot: string };
+        Returns: boolean;
+      };
+      fleet_verify_link_code: {
+        Args: {
+          p_code_hash: string;
+          p_confirmation_hash: string;
+          p_event: Json;
+        };
+        Returns: Json;
+      };
+      fleet_void_dry_run: {
+        Args: {
+          p_intent: Omit<
+            Database['private']['Tables']['fleet_intents']['Row'],
+            Database['private']['Tables']['fleet_intents']['ComputedFields']
+          >;
+          p_reason: string;
+        };
+        Returns: undefined;
       };
       form_id_from_question: {
         Args: { p_question_id: string };
@@ -30134,6 +32231,122 @@ export type Database = {
         Args: { p_board_id: string; p_input: Json; p_ws_id: string };
         Returns: Json;
       };
+      mira_bind_channel: {
+        Args: {
+          p_actor_id: string;
+          p_display_name: string;
+          p_kind: Database['private']['Enums']['mira_channel_kind'];
+          p_mode: Database['private']['Enums']['mira_connection_mode'];
+          p_provider_account_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      mira_get_global_stop: { Args: Record<PropertyKey, never>; Returns: Json };
+      mira_get_tenant: { Args: { p_ws_id: string }; Returns: Json };
+      mira_list_audit_events: {
+        Args: { p_before: number; p_limit: number; p_ws_id: string };
+        Returns: {
+          action: string;
+          actor_id: string;
+          actor_kind: string;
+          channel_id: string;
+          created_at: string;
+          id: number;
+          new_generation: number;
+          note: string;
+          old_generation: number;
+          reason_code: string;
+          ws_id: string;
+        }[];
+      };
+      mira_list_usage: {
+        Args: { p_from: string; p_to: string; p_ws_id: string };
+        Returns: {
+          cached_input_tokens: number;
+          channel_id: string;
+          cost_micro_usd: number;
+          day: string;
+          input_tokens: number;
+          model_id: string;
+          output_tokens: number;
+          replies: number;
+          triaged: number;
+          weighted_replies: number;
+        }[];
+      };
+      mira_operator_grant_allowed: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      mira_operator_overview: {
+        Args: { p_after: string; p_limit: number };
+        Returns: {
+          channel_count: number;
+          cost_micro_usd_7d: number;
+          enabled: boolean;
+          last_error_at: string;
+          replies_7d: number;
+          stop_reasons: string[];
+          stopped_channel_count: number;
+          ws_id: string;
+        }[];
+      };
+      mira_reason_authority_allowed: {
+        Args: { p_authority: string; p_reason: string };
+        Returns: boolean;
+      };
+      mira_record_usage: {
+        Args: {
+          p_channel_id: string;
+          p_day: string;
+          p_model_id: string;
+          p_receipt_id: string;
+          p_usage: Json;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
+      mira_set_global_stop: {
+        Args: {
+          p_actor_id: string;
+          p_expected_generation: number;
+          p_note: string;
+          p_stopped: boolean;
+        };
+        Returns: Json;
+      };
+      mira_set_stop_reason: {
+        Args: {
+          p_actor_id: string;
+          p_authority: string;
+          p_channel_id: string;
+          p_expected_generation: number;
+          p_note: string;
+          p_reason: string;
+          p_stopped: boolean;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      mira_unbind_channel: {
+        Args: { p_actor_id: string; p_channel_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      mira_update_tenant_settings: {
+        Args: {
+          p_actor_id: string;
+          p_authority: string;
+          p_expected_config_version: number;
+          p_settings: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      mira_valid_stop_reasons: {
+        Args: { p_reasons: string[] };
+        Returns: boolean;
+      };
       mobile_deployment_commit_inheritance: {
         Args: {
           p_files: Json;
@@ -30267,6 +32480,370 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      people_add_identity: {
+        Args: {
+          p_account: string;
+          p_actor: string;
+          p_basis: Database['private']['Enums']['people_link_basis'];
+          p_channel: Database['private']['Enums']['people_channel'];
+          p_display_ciphertext: string;
+          p_key_version: number;
+          p_lookup_hash: string;
+          p_person: string;
+          p_suppression_checks: string[];
+          p_suppression_key_version: number;
+          p_suppression_token: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_admit_request: {
+        Args: {
+          p_generation: number;
+          p_issued_at: string;
+          p_kid: string;
+          p_kinds: Database['private']['Enums']['people_principal_kind'][];
+          p_nonce: string;
+          p_principal: string;
+        };
+        Returns: Json;
+      };
+      people_audit: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_conversation?: string;
+          p_principal: string;
+          p_purpose?: string;
+          p_reason: string;
+          p_records?: string[];
+          p_ws: string;
+        };
+        Returns: undefined;
+      };
+      people_begin_delete: {
+        Args: {
+          p_actor: string;
+          p_person: string;
+          p_without_suppression: boolean;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_bump_person: {
+        Args: { p_consent: boolean; p_person: string; p_ws: string };
+        Returns: undefined;
+      };
+      people_create_person: {
+        Args: {
+          p_actor: string;
+          p_is_owner: boolean;
+          p_kind: Database['private']['Enums']['people_person_kind'];
+          p_label: string;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      people_decide_identity: {
+        Args: {
+          p_actor: string;
+          p_identity: string;
+          p_state: Database['private']['Enums']['people_link_state'];
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_deletion_ledger: {
+        Args: { p_actor: string; p_person: string; p_ws: string };
+        Returns: Json;
+      };
+      people_emit_change: {
+        Args: {
+          p_conversation: string;
+          p_kind: Database['private']['Enums']['people_change_kind'];
+          p_person: string;
+          p_ws: string;
+        };
+        Returns: undefined;
+      };
+      people_finish_delete: {
+        Args: { p_actor: string; p_person: string; p_ws: string };
+        Returns: Json;
+      };
+      people_get_person: {
+        Args: { p_actor: string; p_person: string; p_ws: string };
+        Returns: Json;
+      };
+      people_is_registry_owner: {
+        Args: { p_actor: string; p_owner: string; p_ws: string };
+        Returns: boolean;
+      };
+      people_ledger_writer: {
+        Args: {
+          p_actor: string;
+          p_generation: number;
+          p_owner_only: boolean;
+          p_principal: string;
+          p_ws: string;
+        };
+        Returns: undefined;
+      };
+      people_lift_suppression: {
+        Args: {
+          p_actor: string;
+          p_key_version: number;
+          p_token: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_list_persons: {
+        Args: {
+          p_actor: string;
+          p_after: string;
+          p_limit: number;
+          p_query: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_lock_person: {
+        Args: { p_person: string; p_ws: string };
+        Returns: {
+          consent_version: number;
+          contact_id: string | null;
+          created_at: string;
+          id: string;
+          is_owner: boolean;
+          kind: Database['private']['Enums']['people_person_kind'];
+          label: string;
+          linked_user_id: string | null;
+          merged_into: string | null;
+          status: Database['private']['Enums']['people_subject_status'];
+          updated_at: string;
+          version: number;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'people_persons';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      people_memory_consent_granted: {
+        Args: { p_conversation: string; p_person: string; p_ws: string };
+        Returns: boolean;
+      };
+      people_principal_key: { Args: { p_kid: string }; Returns: Json };
+      people_record_personal_recall: {
+        Args: { p_event_hash: string; p_session_hash: string; p_ws: string };
+        Returns: boolean;
+      };
+      people_register_principal: {
+        Args: {
+          p_actor: string;
+          p_kid: string;
+          p_kind: Database['private']['Enums']['people_principal_kind'];
+          p_label: string;
+          p_public_key: string;
+          p_requests_per_minute: number;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_registry_enable: {
+        Args: { p_actor: string; p_wrapped_keys: Json; p_ws: string };
+        Returns: Json;
+      };
+      people_registry_get_control: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: Json;
+      };
+      people_registry_set_binding: {
+        Args: {
+          p_account: string;
+          p_actor: string;
+          p_channel: Database['private']['Enums']['people_channel'];
+          p_remove: boolean;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_registry_set_flags: {
+        Args: {
+          p_actor: string;
+          p_capture_enabled: boolean;
+          p_personal_sessions_enabled: boolean;
+          p_stopped: boolean;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_registry_set_manager: {
+        Args: {
+          p_actor: string;
+          p_expires_at: string;
+          p_remove: boolean;
+          p_user: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_require_actor: {
+        Args: { p_actor: string; p_owner_only: boolean; p_ws: string };
+        Returns: {
+          capture_enabled: boolean;
+          created_at: string;
+          generation: number;
+          owner_user_id: string | null;
+          personal_sessions_enabled: boolean;
+          stopped: boolean;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'people_registry_control';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      people_reserve_memory: {
+        Args: {
+          p_actor: string;
+          p_conversation: string;
+          p_due_at: string;
+          p_generation: number;
+          p_idempotency_key: string;
+          p_kind: Database['private']['Enums']['people_memory_kind'];
+          p_origin_conversation: string;
+          p_person: string;
+          p_principal: string;
+          p_provenance: Json;
+          p_work_status: Database['private']['Enums']['people_work_status'];
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_revoke_principal: {
+        Args: { p_actor: string; p_principal: string; p_ws: string };
+        Returns: Json;
+      };
+      people_rewrap_key: {
+        Args: {
+          p_new: string;
+          p_old: string;
+          p_purpose: Database['private']['Enums']['people_key_purpose'];
+          p_version: number;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      people_rule_value_valid: {
+        Args: {
+          p_rule: Database['private']['Enums']['people_rule'];
+          p_value: Json;
+        };
+        Returns: boolean;
+      };
+      people_set_consent: {
+        Args: {
+          p_actor: string;
+          p_basis: Database['private']['Enums']['people_consent_basis'];
+          p_conversation: string;
+          p_evidence: Json;
+          p_expires_at: string;
+          p_person: string;
+          p_scope: Json;
+          p_state: Database['private']['Enums']['people_consent_state'];
+          p_store: Database['private']['Enums']['people_consent_store'];
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_set_fact: {
+        Args: {
+          p_actor: string;
+          p_audience: Database['private']['Enums']['people_audience'];
+          p_audience_conversations: string[];
+          p_base_revision: number;
+          p_key: string;
+          p_owner_dm: boolean;
+          p_person: string;
+          p_remove: boolean;
+          p_value: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_set_principal_key: {
+        Args: {
+          p_actor: string;
+          p_kid: string;
+          p_principal: string;
+          p_public_key: string;
+          p_revoke: boolean;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_set_relationship: {
+        Args: {
+          p_actor: string;
+          p_confidence: number;
+          p_from: string;
+          p_kind: Database['private']['Enums']['people_relationship_kind'];
+          p_label: string;
+          p_remove: boolean;
+          p_to: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_set_rule: {
+        Args: {
+          p_actor: string;
+          p_base_revision: number;
+          p_channel: Database['private']['Enums']['people_channel'];
+          p_conversation: string;
+          p_expires_at: string;
+          p_person: string;
+          p_remove: boolean;
+          p_rule: Database['private']['Enums']['people_rule'];
+          p_scope: Database['private']['Enums']['people_rule_scope'];
+          p_value: Json;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_settle_memory: {
+        Args: {
+          p_actor: string;
+          p_base_revision: string;
+          p_generation: number;
+          p_ledger: string;
+          p_memory_id: string;
+          p_memory_revision: string;
+          p_principal: string;
+          p_state: Database['private']['Enums']['people_memory_state'];
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_update_person: {
+        Args: {
+          p_actor: string;
+          p_base_version: number;
+          p_kind: Database['private']['Enums']['people_person_kind'];
+          p_label: string;
+          p_person: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
+      people_user_exists: { Args: { p_user: string }; Returns: boolean };
+      people_workspace_creator: { Args: { p_ws: string }; Returns: string };
+      people_wrap_kid_usage: { Args: { p_kid: string }; Returns: number };
       periodic_report_delivery_contract_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -32190,6 +34767,232 @@ export type Database = {
         Returns: boolean;
       };
       valid_tutoring_hours_week: { Args: { p_week: Json }; Returns: boolean };
+      vault_audit: {
+        Args: {
+          p_actor_id: string;
+          p_actor_kind: string;
+          p_event: string;
+          p_grant_id: string;
+          p_ip: unknown;
+          p_resource: Json;
+          p_result: string;
+          p_ua_family: string;
+          p_ws: string;
+        };
+        Returns: number;
+      };
+      vault_create: {
+        Args: {
+          p_actor: string;
+          p_signed_genesis: string;
+          p_vault_id: string;
+          p_ws: string;
+        };
+        Returns: undefined;
+      };
+      vault_delete_unlock_wrap: {
+        Args: { p_actor: string; p_method: string; p_method_id: string };
+        Returns: undefined;
+      };
+      vault_get_keyring: {
+        Args: { p_actor: string };
+        Returns: {
+          counter: number;
+          keyring: string;
+          vault_user_id: string;
+        }[];
+      };
+      vault_list_passkeys: {
+        Args: { p_actor: string };
+        Returns: {
+          credential_id: string;
+          public_key: string;
+          sign_count: number;
+          transports: string[];
+        }[];
+      };
+      vault_list_unlock_wraps: {
+        Args: { p_actor: string };
+        Returns: {
+          method: string;
+          method_id: string;
+          params: string;
+          wrap: string;
+        }[];
+      };
+      vault_lock: { Args: { p_ws: string }; Returns: undefined };
+      vault_prune_staged: { Args: { p_limit: number }; Returns: number };
+      vault_publish_entry: {
+        Args: {
+          p_entry_hash: string;
+          p_seq: number;
+          p_signed_entry: string;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      vault_publish_record: {
+        Args: {
+          p_ciphertext_hash: string;
+          p_env: string;
+          p_record_hash: string;
+          p_signed_record: string;
+          p_variable_id: string;
+          p_version: number;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      vault_publish_wrap: {
+        Args: {
+          p_digest: string;
+          p_env: string;
+          p_epoch: number;
+          p_key_kind: string;
+          p_recipient_fp: string;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      vault_put_keyring: {
+        Args: {
+          p_actor: string;
+          p_expected_counter: number;
+          p_keyring: string;
+          p_vault_user_id: string;
+        };
+        Returns: number;
+      };
+      vault_put_unlock_wrap: {
+        Args: {
+          p_actor: string;
+          p_method: string;
+          p_method_id: string;
+          p_params: string;
+          p_wrap: string;
+        };
+        Returns: undefined;
+      };
+      vault_read_audit: {
+        Args: {
+          p_actor: string;
+          p_before_id: number;
+          p_limit: number;
+          p_ws: string;
+        };
+        Returns: {
+          actor_id: string;
+          actor_kind: string;
+          created_at: string;
+          event: string;
+          event_hash: string;
+          grant_id: string;
+          id: number;
+          ip_prefix: unknown;
+          resource: Json;
+          result: string;
+          ua_family: string;
+        }[];
+      };
+      vault_read_genesis: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: {
+          signed_genesis: string;
+          vault_id: string;
+        }[];
+      };
+      vault_read_log: {
+        Args: {
+          p_actor: string;
+          p_after_seq: number;
+          p_limit: number;
+          p_ws: string;
+        };
+        Returns: {
+          entry_hash: string;
+          seq: number;
+          signed_entry: string;
+        }[];
+      };
+      vault_read_record_versions: {
+        Args: {
+          p_actor: string;
+          p_before_version: number;
+          p_env: string;
+          p_limit: number;
+          p_variable_id: string;
+          p_ws: string;
+        };
+        Returns: {
+          ciphertext: string;
+          record_hash: string;
+          signed_record: string;
+          version: number;
+        }[];
+      };
+      vault_read_records: {
+        Args: {
+          p_actor: string;
+          p_env: string;
+          p_variable_ids: string[];
+          p_ws: string;
+        };
+        Returns: {
+          ciphertext: string;
+          record_hash: string;
+          signed_record: string;
+          variable_id: string;
+          version: number;
+        }[];
+      };
+      vault_read_wraps: {
+        Args: {
+          p_actor: string;
+          p_before_epoch: number;
+          p_env: string;
+          p_recipient_fp: string;
+          p_ws: string;
+        };
+        Returns: {
+          digest: string;
+          env: string;
+          epoch: number;
+          key_kind: string;
+          wrap: string;
+        }[];
+      };
+      vault_record_passkey_use: {
+        Args: {
+          p_actor: string;
+          p_credential_id: string;
+          p_sign_count: number;
+        };
+        Returns: undefined;
+      };
+      vault_register_passkey: {
+        Args: {
+          p_actor: string;
+          p_credential_id: string;
+          p_public_key: string;
+          p_transports: string[];
+        };
+        Returns: undefined;
+      };
+      vault_require_member: {
+        Args: { p_actor: string; p_ws: string };
+        Returns: undefined;
+      };
+      vault_stage: {
+        Args: {
+          p_actor: string;
+          p_kind: string;
+          p_payload: string;
+          p_ws: string;
+        };
+        Returns: string;
+      };
+      vault_user_of: { Args: { p_actor: string }; Returns: string };
+      vault_workspace_creator: { Args: { p_ws: string }; Returns: string };
       wallet_interest_calculation_result: {
         Args: {
           _config_id: string;
@@ -32353,6 +35156,92 @@ export type Database = {
         | 'cancelled';
       fleet_risk: 'none' | 'low' | 'medium' | 'high';
       fleet_tier: 'observer' | 'steerer' | 'operator' | 'owner';
+      mira_channel_kind: 'discord' | 'whatsapp' | 'zalo';
+      mira_channel_status: 'draft' | 'connected' | 'live' | 'error';
+      mira_connection_mode: 'shared_bot' | 'bot' | 'official' | 'personal';
+      mira_key_mode: 'managed' | 'byok';
+      mira_preset: 'fast' | 'quality';
+      mira_send_owner: 'm4' | 'cloud';
+      people_audience: 'origin' | 'subject_conversations' | 'listed';
+      people_change_kind: 'update' | 'revoke' | 'delete';
+      people_channel: 'zalo' | 'whatsapp' | 'discord' | 'email' | 'phone';
+      people_consent_basis: 'subject_given' | 'owner_attested' | 'imported';
+      people_consent_state:
+        | 'granted'
+        | 'unknown'
+        | 'denied'
+        | 'revoked'
+        | 'expired';
+      people_consent_store: 'profile' | 'memory' | 'capture';
+      people_conversation_kind: 'dm' | 'group';
+      people_key_purpose:
+        | 'sender_lookup'
+        | 'conversation_lookup'
+        | 'suppression'
+        | 'display'
+        | 'audit';
+      people_link_basis:
+        | 'owner_statement'
+        | 'self_introduction'
+        | 'same_phone'
+        | 'same_name'
+        | 'migration'
+        | 'fleet_verified';
+      people_link_state: 'proposed' | 'confirmed' | 'rejected';
+      people_memory_kind:
+        | 'fact'
+        | 'preference'
+        | 'language'
+        | 'topic'
+        | 'decision'
+        | 'link'
+        | 'outcome'
+        | 'commitment';
+      people_memory_state:
+        | 'pending'
+        | 'active'
+        | 'superseded'
+        | 'retained'
+        | 'forgotten'
+        | 'purged';
+      people_person_kind: 'person' | 'organisation';
+      people_principal_kind: 'responder' | 'fleet' | 'import' | 'drain';
+      people_relationship_kind:
+        | 'owner'
+        | 'family'
+        | 'partner'
+        | 'friend'
+        | 'colleague'
+        | 'manager'
+        | 'report'
+        | 'client'
+        | 'vendor'
+        | 'member_of'
+        | 'other';
+      people_rule:
+        | 'addressed_response'
+        | 'group_response'
+        | 'reply_mode'
+        | 'owner_instructions'
+        | 'mention_sender'
+        | 'quiet_hours'
+        | 'quiet_hours_bypass'
+        | 'hold_topics'
+        | 'hold_action'
+        | 'initiate'
+        | 'escalate';
+      people_rule_scope: 'channel_default' | 'conversation' | 'person';
+      people_subject_status: 'active' | 'merged' | 'deleting' | 'deleted';
+      people_verification: 'asserted' | 'desk_observed' | 'code_verified';
+      people_work_status:
+        | 'current'
+        | 'open'
+        | 'pending'
+        | 'blocked'
+        | 'held'
+        | 'resolved'
+        | 'delivered'
+        | 'verified';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -64152,6 +67041,100 @@ export const Constants = {
       ],
       fleet_risk: ['none', 'low', 'medium', 'high'],
       fleet_tier: ['observer', 'steerer', 'operator', 'owner'],
+      mira_channel_kind: ['discord', 'whatsapp', 'zalo'],
+      mira_channel_status: ['draft', 'connected', 'live', 'error'],
+      mira_connection_mode: ['shared_bot', 'bot', 'official', 'personal'],
+      mira_key_mode: ['managed', 'byok'],
+      mira_preset: ['fast', 'quality'],
+      mira_send_owner: ['m4', 'cloud'],
+      people_audience: ['origin', 'subject_conversations', 'listed'],
+      people_change_kind: ['update', 'revoke', 'delete'],
+      people_channel: ['zalo', 'whatsapp', 'discord', 'email', 'phone'],
+      people_consent_basis: ['subject_given', 'owner_attested', 'imported'],
+      people_consent_state: [
+        'granted',
+        'unknown',
+        'denied',
+        'revoked',
+        'expired',
+      ],
+      people_consent_store: ['profile', 'memory', 'capture'],
+      people_conversation_kind: ['dm', 'group'],
+      people_key_purpose: [
+        'sender_lookup',
+        'conversation_lookup',
+        'suppression',
+        'display',
+        'audit',
+      ],
+      people_link_basis: [
+        'owner_statement',
+        'self_introduction',
+        'same_phone',
+        'same_name',
+        'migration',
+        'fleet_verified',
+      ],
+      people_link_state: ['proposed', 'confirmed', 'rejected'],
+      people_memory_kind: [
+        'fact',
+        'preference',
+        'language',
+        'topic',
+        'decision',
+        'link',
+        'outcome',
+        'commitment',
+      ],
+      people_memory_state: [
+        'pending',
+        'active',
+        'superseded',
+        'retained',
+        'forgotten',
+        'purged',
+      ],
+      people_person_kind: ['person', 'organisation'],
+      people_principal_kind: ['responder', 'fleet', 'import', 'drain'],
+      people_relationship_kind: [
+        'owner',
+        'family',
+        'partner',
+        'friend',
+        'colleague',
+        'manager',
+        'report',
+        'client',
+        'vendor',
+        'member_of',
+        'other',
+      ],
+      people_rule: [
+        'addressed_response',
+        'group_response',
+        'reply_mode',
+        'owner_instructions',
+        'mention_sender',
+        'quiet_hours',
+        'quiet_hours_bypass',
+        'hold_topics',
+        'hold_action',
+        'initiate',
+        'escalate',
+      ],
+      people_rule_scope: ['channel_default', 'conversation', 'person'],
+      people_subject_status: ['active', 'merged', 'deleting', 'deleted'],
+      people_verification: ['asserted', 'desk_observed', 'code_verified'],
+      people_work_status: [
+        'current',
+        'open',
+        'pending',
+        'blocked',
+        'held',
+        'resolved',
+        'delivered',
+        'verified',
+      ],
     },
   },
   public: {
