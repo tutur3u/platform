@@ -54,7 +54,10 @@ existing links keep working; a thread opens at
   A sent reply shows from its receipt, with Sending, Sent, then Steered,
   Started or Queued, or Not delivered. It reaches the transcript only after
   the machine delivers it. When sending needs a fresh second factor, the
-  composer offers to sign in again.
+  composer offers "Verify again": a sign-in that asks for the second factor
+  anew (`mfa=fresh`). The reply is kept for that trip in the tab and goes
+  out afterwards as the same reply, under the same key. The phone verifies
+  in place, with this device's own factor or a six-digit code.
 
 ## Where the code lives
 

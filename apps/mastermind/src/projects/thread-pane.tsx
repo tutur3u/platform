@@ -15,6 +15,7 @@ import { ReplyComposer } from './reply-composer';
  * "Load earlier" above it, and the steered reply composer.
  */
 export function ThreadPane({
+  ownerId,
   machineId,
   environmentId,
   threadId,
@@ -22,6 +23,7 @@ export function ThreadPane({
   now,
   onClose,
 }: {
+  ownerId: string;
   machineId: string;
   environmentId?: string;
   threadId: string;
@@ -127,6 +129,7 @@ export function ThreadPane({
           <MessageBubble key={message.position} message={message} />
         ))}
         <ReplyComposer
+          ownerId={ownerId}
           machineId={machineId}
           environmentId={environmentId}
           threadId={threadId}

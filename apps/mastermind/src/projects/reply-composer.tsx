@@ -5,6 +5,12 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useEffect, useRef, useState } from 'react';
 import { subscribeOwnerLive } from '../fleet/owner-live';
 import { createThreadReply, type ThreadReply } from '../fleet/thread-reply';
+import {
+  type PendingReply,
+  replyStepUpHref,
+  savePendingReply,
+  takePendingReply,
+} from '../fleet/thread-reply-pending';
 import { useI18n } from '../i18n';
 import { ReplyBubble, useReplyState } from './reply-bubble';
 import { replyReceiptFn, threadReplyFn } from './server';
@@ -17,27 +23,43 @@ import { replyReceiptFn, threadReplyFn } from './server';
  * another. A reply reaches the transcript once the machine delivers it.
  */
 export function ReplyComposer({
+  ownerId,
   machineId,
   environmentId,
   threadId,
 }: {
+  /** The signed-in owner's stable id; a kept reply returns only to them. */
+  ownerId: string;
   machineId: string;
   environmentId?: string;
   threadId: string;
 }) {
   const { t } = useI18n();
-  const make = () =>
+  const target = { machineId, environmentId, threadId };
+  const make = (resume?: PendingReply) =>
     createThreadReply(
-      { machineId, environmentId, threadId },
+      target,
       {
         send: ({ text, idempotencyKey }) =>
           threadReplyFn({
             data: { environmentId, threadId, text, idempotencyKey },
           }),
         receipt: (id) => replyReceiptFn({ data: { id } }),
-      }
+      },
+      undefined,
+      resume
     );
-  const [replies, setReplies] = useState<ThreadReply[]>(() => [make()]);
+  // A reply kept across the second-factor sign-in comes back once, as the
+  // same reply under its key, and goes out again.
+  const [resumed] = useState(() => takePendingReply(ownerId, target));
+  const [replies, setReplies] = useState<ThreadReply[]>(() => [
+    make(resumed ?? undefined),
+  ]);
+  useEffect(() => {
+    if (resumed) void replies[0]?.retry();
+    // Runs once for the reply taken at mount.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // The same list, updated at once, so two clicks in one render see each other.
   const live = useRef(replies);
   const add = (reply: ThreadReply) => {
@@ -94,6 +116,8 @@ export function ReplyComposer({
     void target.submit(text);
   };
   const writeAnother = () => add(make());
+  const stepUpPath =
+    typeof location === 'undefined' ? '/' : location.pathname + location.search;
 
   return (
     <>
@@ -101,6 +125,8 @@ export function ReplyComposer({
         <ReplyBubble
           key={replies.indexOf(reply)}
           reply={reply}
+          stepUpHref={replyStepUpHref(stepUpPath)}
+          onStepUp={(pending) => savePendingReply(ownerId, target, pending)}
           onWriteAnother={reply === current ? writeAnother : undefined}
         />
       ))}

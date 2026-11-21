@@ -11,9 +11,15 @@ export const useReplyState = (reply: ThreadReply) =>
 /** One reply's bubble, live on its own state machine until it settles. */
 export function ReplyBubble({
   reply,
+  stepUpHref,
+  onStepUp,
   onWriteAnother,
 }: {
   reply: ThreadReply;
+  /** The sign-in that asks for the second factor anew and comes back. */
+  stepUpHref: string;
+  /** Keeps the reply for the return trip, just before the page leaves. */
+  onStepUp: (pending: { key: string; text: string }) => void;
   onWriteAnother?: () => void;
 }) {
   const { t } = useI18n();
@@ -31,7 +37,8 @@ export function ReplyBubble({
         {state.phase === 'needs_mfa' ? (
           <a
             className="underline"
-            href={`/login?nextUrl=${encodeURIComponent(location.pathname + location.search)}`}
+            href={stepUpHref}
+            onClick={() => onStepUp({ key: state.key, text: state.text })}
           >
             {t('projects.reply.signIn')}
           </a>

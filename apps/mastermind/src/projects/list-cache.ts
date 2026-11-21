@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { createThreadCache } from '../fleet/thread-cache';
 import {
   cacheOwnerFor,
+  ownerThreadCache,
   forgetCacheOwner,
   rememberCacheOwner,
 } from './cache-owner';
@@ -35,7 +35,7 @@ export function useListCache() {
   const store = useMemo<ListCache | undefined>(
     () =>
       ownerId && machineId && typeof window !== 'undefined'
-        ? { cache: createThreadCache(ownerId), ownerId, machineId }
+        ? { cache: ownerThreadCache(ownerId), ownerId, machineId }
         : undefined,
     [ownerId, machineId]
   );

@@ -1,4 +1,8 @@
-import { THREAD_CACHE_LIMITS, createThreadCache } from '../fleet/thread-cache';
+import {
+  createThreadCache,
+  THREAD_CACHE_LIMITS,
+  type ThreadCache,
+} from '../fleet/thread-cache';
 
 /**
  * Who the browser's thread cache was last filled for, and which project
@@ -7,6 +11,35 @@ import { THREAD_CACHE_LIMITS, createThreadCache } from '../fleet/thread-cache';
  * and any other owner (or a refused session) erases them.
  */
 const KEY = 'mastermind-projects:last-context';
+
+const EPOCH_KEY = 'mastermind-projects:erase-epoch';
+const caches = new Map<string, ThreadCache>();
+let generation = 0;
+
+/**
+ * The one cache object of an owner, so an erase and a write share its queue
+ * and the erase cannot be overtaken by a write that was already waiting.
+ */
+export function ownerThreadCache(ownerId: string) {
+  let cache = caches.get(ownerId);
+  if (!cache) {
+    cache = createThreadCache(ownerId);
+    caches.set(ownerId, cache);
+  }
+  return cache;
+}
+
+/**
+ * Moves on each erase, in this tab and, through local storage, in every tab
+ * of this browser; a read that started before an erase writes nothing.
+ */
+export function cacheGeneration() {
+  try {
+    return `${generation}:${localStorage.getItem(EPOCH_KEY) ?? '0'}`;
+  } catch {
+    return `${generation}:`;
+  }
+}
 
 export type CacheOwner = {
   ownerId: string;
@@ -44,8 +77,16 @@ function write(owner: CacheOwner) {
 
 /** Erases the last owner's lists and what is known about them. */
 export function forgetCacheOwner() {
+  generation += 1;
+  // The epoch moves before the erase, so a write in another tab that lands
+  // after it sees the move and erases again.
+  try {
+    localStorage.setItem(EPOCH_KEY, String(Date.now()));
+  } catch {
+    // This tab's own counter still fences its reads.
+  }
   const previous = read();
-  if (previous) void createThreadCache(previous.ownerId).clear();
+  if (previous) void ownerThreadCache(previous.ownerId).clear();
   try {
     localStorage.removeItem(KEY);
   } catch {

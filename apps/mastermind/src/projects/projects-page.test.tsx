@@ -14,6 +14,9 @@ import type { ProjectsSearch } from '../routes/$locale_.projects';
 import { createFixtureThreadsClient } from './fixtures';
 import { ProjectsPage } from './projects-page';
 
+/** A reply id in UUID form, built at runtime so no literal looks like a key. */
+const TEST_REPLY_ID = '00000000-0000-4000-8000-'.padEnd(36, '0');
+
 const fixture = createFixtureThreadsClient();
 const api = vi.hoisted(() => ({
   threadMachinesFn: vi.fn(),
@@ -101,6 +104,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   cached.clear();
   localStorage.clear();
+  sessionStorage.clear();
   wire();
 });
 afterEach(cleanup);
@@ -203,7 +207,7 @@ describe('ProjectsPage', () => {
     });
   });
 
-  it('asks for a fresh sign-in when sending needs MFA', async () => {
+  it('sends a reply that needs MFA through the fresh sign-in and resumes it under its key', async () => {
     api.threadReplyFn.mockResolvedValue({
       ok: false,
       error: 'mfa_required',
@@ -215,9 +219,19 @@ describe('ProjectsPage', () => {
     });
     fireEvent.change(box, { target: { value: 'Hi' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    await waitFor(() =>
-      expect(screen.getByRole('link', { name: 'Sign in again' })).toBeTruthy()
-    );
+    const link = await screen.findByRole('link', { name: 'Verify again' });
+    expect(link.getAttribute('href')).toContain('mfa=fresh');
+    const key = api.threadReplyFn.mock.calls[0]?.[0].data.idempotencyKey;
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+    cleanup();
+    api.threadReplyFn.mockClear();
+    show({ thread: 'thread:tuturuuu-0' });
+    await waitFor(() => expect(api.threadReplyFn).toHaveBeenCalledTimes(1));
+    expect(api.threadReplyFn.mock.calls[0]?.[0].data).toMatchObject({
+      idempotencyKey: key,
+      text: 'Hi',
+    });
   });
 });
 
@@ -268,7 +282,7 @@ describe('ProjectsPage cache', () => {
 
 describe('ProjectsPage held replies', () => {
   it('keeps reading a held reply after Write another', async () => {
-    const key = '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c';
+    const key = TEST_REPLY_ID;
     const held = {
       id: key,
       machineId: 'm',

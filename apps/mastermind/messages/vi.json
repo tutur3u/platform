@@ -406,7 +406,7 @@
         "placeholder": "Trả lời luồng này. Tin được điều hướng vào lượt đang chạy.",
         "send": "Gửi",
         "hint": "Chỉ văn bản, tối đa {max} ký tự.",
-        "signIn": "Đăng nhập lại",
+        "signIn": "Xác minh lại",
         "sending": "Đang gửi",
         "sent": "Đã gửi",
         "steered": "Đã điều hướng vào lượt đang chạy",

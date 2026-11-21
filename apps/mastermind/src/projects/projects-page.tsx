@@ -171,6 +171,7 @@ export function ProjectsPage({
         </section>
         {search.thread && context ? (
           <ThreadPane
+            ownerId={context.ownerId}
             machineId={context.machineId}
             key={`${search.machine ?? ''}:${search.thread}`}
             environmentId={search.machine}

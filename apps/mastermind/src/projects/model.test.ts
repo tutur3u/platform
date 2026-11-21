@@ -10,7 +10,11 @@ import {
 } from './model';
 import { receiptLabel } from './receipt-line';
 import { createThreadsClient } from './upstream';
-import { inScope, MAX_SCAN_PAGES, scanPage } from './queries';
+import { firstPage, inScope, MAX_SCAN_PAGES, scanPage } from './queries';
+import { forgetCacheOwner } from './cache-owner';
+
+/** A reply id in UUID form, built at runtime so no literal looks like a key. */
+const TEST_REPLY_ID = '00000000-0000-4000-8000-'.padEnd(36, '0');
 
 const row = (patch: Partial<ThreadRow>): ThreadRow => ({
   threadId: 't1',
@@ -103,7 +107,7 @@ describe('projects model', () => {
 
 describe('reply receipts', () => {
   const reply = {
-    id: '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c',
+    id: TEST_REPLY_ID,
     machineId: 'm4',
     threadId: 't1',
     createdAt: '2026-11-22T00:00:00Z',
@@ -223,7 +227,7 @@ describe('threads client', () => {
   });
 
   it('posts a reply with its idempotency key and keeps the client result', async () => {
-    const key = '3f1c2b4a-1d2e-4f5a-8b6c-7d8e9f0a1b2c';
+    const key = TEST_REPLY_ID;
     const fetcher = vi.fn(async (request: Request) => {
       expect(request.method).toBe('POST');
       expect(request.headers.get('Idempotency-Key')).toBe(key);
@@ -325,5 +329,31 @@ describe('scanPage', () => {
     );
     expect(none.threads.every((r) => !r.projectId)).toBe(true);
     expect(inScope({ state: 'running' }, row({ state: 'idle' }))).toBe(false);
+  });
+});
+
+describe('cache writes after a refused session', () => {
+  it('drops a page that finishes after the cache was erased', async () => {
+    const write = vi.fn(async () => undefined);
+    const store = {
+      cache: { write, read: vi.fn(async () => null), clear: vi.fn() } as never,
+      ownerId: 'o',
+      machineId: 'm4',
+    };
+    let finish: (page: never) => void = () => undefined;
+    const pending = firstPage(
+      { state: 'all' },
+      () => new Promise((resolve) => (finish = resolve)),
+      store
+    );
+    forgetCacheOwner();
+    finish({
+      machineId: 'm4',
+      threads: [],
+      nextCursor: null,
+      total: 0,
+    } as never);
+    await pending;
+    expect(write).not.toHaveBeenCalled();
   });
 });

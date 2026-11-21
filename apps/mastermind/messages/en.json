@@ -406,7 +406,7 @@
         "placeholder": "Reply to this thread. It is steered into the running turn.",
         "send": "Send",
         "hint": "Text only, up to {max} characters.",
-        "signIn": "Sign in again",
+        "signIn": "Verify again",
         "sending": "Sending",
         "sent": "Sent",
         "steered": "Steered into the running turn",

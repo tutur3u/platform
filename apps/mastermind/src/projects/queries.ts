@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import type { ThreadCache } from '../fleet/thread-cache';
 import { threadListKey } from '../fleet/thread-cache';
-import { rememberCachedProject } from './cache-owner';
+import { cacheGeneration, rememberCachedProject } from './cache-owner';
 import type {
   ThreadErrorCode,
   ThreadMessages,
@@ -135,12 +135,13 @@ function cacheKey(scope: ListScope, machineId: string) {
  * The first page of a list: saved to the cache when it reads, and read from
  * the cache, marked with `cachedAt`, when the machine cannot answer.
  */
-async function firstPage(
+export async function firstPage(
   scope: ListScope,
   read: () => Promise<ThreadPage>,
   store?: ListCache
 ): Promise<ThreadPage> {
   const key = store && !scope.q ? cacheKey(scope, store.machineId) : undefined;
+  const started = cacheGeneration();
   let page: ThreadPage;
   try {
     page = await read();
@@ -157,8 +158,17 @@ async function firstPage(
     throw error;
   }
   // Saving is best effort: a failure here never costs the page just read.
-  if (key && store) {
-    void store.cache.write(key, page);
+  // A session refused while this read ran has erased the cache; it stays so.
+  if (key && store && cacheGeneration() === started) {
+    const cache = store.cache;
+    // Another tab may erase while this write is under way: its epoch moves
+    // first, so a write that finds it moved erases what it just wrote.
+    void cache
+      .write(key, page)
+      .then(() => {
+        if (cacheGeneration() !== started) return cache.clear();
+      })
+      .catch(() => undefined);
     try {
       if (scope.projectId && !scope.environmentId)
         rememberCachedProject(store.ownerId, scope.projectId);
