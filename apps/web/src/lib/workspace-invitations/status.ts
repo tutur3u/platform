@@ -300,6 +300,11 @@ export async function getWorkspaceInviteStatus(
     workspaceId,
     userId
   );
+  // An unresolvable identifier (an unknown handle, or a path segment such as
+  // `favicon.ico`) would fail Postgres uuid parsing; it names no workspace.
+  if (!isWorkspaceUuidLiteral(normalizedWorkspaceId)) {
+    return { status: 'none', workspace: null };
+  }
   const [candidateEmails, memberWorkspaceIds, directInvites] =
     await Promise.all([
       getWorkspaceInviteCandidateEmails(admin, { authEmail, userId }),

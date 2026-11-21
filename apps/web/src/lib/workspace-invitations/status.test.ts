@@ -409,6 +409,19 @@ describe('workspace invitation status helpers', () => {
     });
   });
 
+  it('returns none without querying uuid columns for a non-workspace path segment', async () => {
+    const admin = createAdminClientMock({ privateEmail: null });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'user@example.com',
+      userId,
+      workspaceId: 'favicon.ico',
+    });
+
+    expect(result).toEqual({ status: 'none', workspace: null });
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
   it('does not expose personal workspace details to non-members', async () => {
     const admin = createAdminClientMock({
       directInvites: [
