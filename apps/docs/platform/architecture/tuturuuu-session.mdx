@@ -7,7 +7,9 @@ updatedAt: "2026-11-21"
 
 **Status: design, pending independent security review.** Nothing on this page
 is implemented or enabled. Implementation lands in reviewed slices behind flags
-that default off. Landing a slice does not authorize a flag flip.
+that default off, and landing a slice does not authorize a flag flip. Database
+access, the migration phases, the threat model and the stop fence are in
+[Tuturuuu session rollout](/platform/architecture/tuturuuu-session-rollout).
 
 Tuturuuu has one signed-in session for all of `tuturuuu.com`. Tuturuuu issues
 and manages it, whichever identity provider authenticated the user. Supabase
@@ -23,166 +25,197 @@ its phase P0. The product rules stay in
 ## Principles
 
 1. **One session authority.** The session service is the only component that
-   creates, rotates, refreshes or revokes a browser session. Every other app
-   or Worker consumes a derived identity and never sees the session secret.
-2. **Provider tokens never leave the session service.** Apps, browsers, mobile
-   and the CLI never receive a Supabase, Better Auth or OAuth-provider token.
+   creates, rotates, refreshes or revokes a session. Other apps and Workers
+   consume a derived identity and never see the session secret.
+2. **Provider tokens stay in the trusted adapter.** Browsers, mobile, the CLI,
+   external apps and mounted app code never receive a Supabase, Better Auth or
+   OAuth-provider token.
 3. **User IDs are stable.** The Tuturuuu user ID is the existing
-   `public.users.id` (today equal to `auth.users.id`). Providers map onto it.
-   They never mint it.
+   `public.users.id`, today equal to `auth.users.id`. Providers map onto it.
 4. **Portable core, thin adapters.** Session logic lives in a framework-free
-   package, with one adapter per runtime.
-5. **Fail closed.** An unknown, expired, revoked or ambiguous session is
-   signed out. It never falls back to a weaker credential.
+   package with one adapter per runtime.
+5. **Fail closed.** An unknown, expired, revoked, ambiguous or unverifiable
+   session is signed out. It never falls back to a weaker credential.
+6. **Trusted ingress first.** A host reads first-party identity only after
+   every path into it passes through a component that strips client-supplied
+   credentials and identity headers.
 
 ## Components
 
 | Component | Runs on | Owns |
 | --- | --- | --- |
-| Session service (`apps/web` auth BFF routes, then an `auth` Worker) | Cloudflare Worker | Sign-in flows, cookie writes, rotation, step-up, revocation, provider adapters |
-| Session store | Durable Object per user, Postgres for history | Live session records, the rotation lock, revocation epochs |
-| Token service | Same Worker, separate signing secrets | Short-lived signed JWTs and the JWKS |
-| Gateway (`apps/gateway`) | Cloudflare Worker | Resolves the cookie once per request and forwards a per-mount identity assertion |
-| `@tuturuuu/session` | Portable package | Types, cookie codec, policy, assertion verification, runtime adapters |
-| Audit sink | Postgres, through a Queue | Append-only session and credential events |
+| Session service (Web auth routes, then an `auth` Worker) | Cloudflare Worker | Sign-in flows, cookie writes, rotation, step-up grants, revocation, provider adapters |
+| `BrowserDevice` Durable Object, one per device | SQLite-backed Durable Object | The device secret, the device's sessions, the active-account pointer, rotation order |
+| `UserSessions` Durable Object, one per user | SQLite-backed Durable Object | The user's device index, revocation epoch, revoke-all fan-out |
+| `SessionControl` Durable Object, one per environment | SQLite-backed Durable Object | The durable stop fence |
+| Token service | `auth` Worker, separate secrets | Short-lived ES256 JWTs and the JWKS |
+| Gateway (`apps/gateway`) | Cloudflare Worker | The only public ingress: resolves the cookie, enforces CSRF, strips credentials, forwards a per-mount identity assertion |
+| `@tuturuuu/session` | Portable package | Types, cookie codec, expiry policy, assertion verification, runtime adapters |
+| Audit sink | Postgres through a Queue | Append-only session and credential events |
 
 ```text
-browser ── __Host-ttr_session ──▶ gateway ──resolve──▶ session service ─▶ UserSessions DO
-                                   │                      │
-                                   │ identity assertion   └─▶ provider adapter (Supabase | Better Auth)
-                                   ▼   (60 s, aud = mount)
-                           mounted app Worker ── verify with JWKS ─▶ {userId, workspace, scopes}
+browser ── __Host-ttr_session ──▶ gateway ──▶ session service ──▶ BrowserDevice DO ──▶ UserSessions DO
+                                   │  (MAC check before any DO call)      │
+                                   │                                      └─▶ provider adapter
+                                   ▼  service binding only
+                       mount Worker ── x-ttr-identity (≤ 60 s, aud = mount) ── verify with key source
 ```
 
 ## 1. Session model
 
-### Cookie
+### Device cookie
+
+The browser cookie names a **device**, not a user. The active account is a
+server-side pointer in the device's Durable Object, so an account switch never
+needs a cookie write and a late response cannot restore a superseded account.
 
 | Property | Value |
 | --- | --- |
 | Name | `__Host-ttr_session` |
-| Attributes | `HttpOnly; Secure; SameSite=Lax; Path=/`, no `Domain` (required by `__Host-`) |
-| Value | `v1.<dir>.<sid>.<secret>`: `dir` routes to the user's Durable Object, `sid` names the session record, `secret` is 32 random bytes in base64url |
-| Stored | Only `HMAC-SHA-256(TTR_SESSION_PEPPER, secret)`. The raw secret exists only in the cookie |
-| Lifetime | `Max-Age` equals the session's absolute expiry. The cookie carries no claims |
+| Attributes | `HttpOnly; Secure; SameSite=Lax; Path=/`, no `Domain` |
+| Value | `v1.<dev>.<gen>.<secret>.<mac>` |
+| `dev` | 16 random bytes, base64url without padding (22 characters). Addresses the `BrowserDevice` object |
+| `gen` | Device generation, a decimal integer of at most 10 digits |
+| `secret` | 32 random bytes, base64url without padding (43 characters) |
+| `mac` | First 16 bytes of `HMAC-SHA-256(TTR_SESSION_COOKIE_MAC_KEY, "v1." + dev + "." + gen + "." + secret)`, base64url (22 characters) |
+| Stored | `HMAC-SHA-256(TTR_SESSION_PEPPER, secret)` and `gen`. The raw secret exists only in the cookie |
+| `Max-Age` | The longest absolute expiry among the device's live sessions |
 
-`dir` is a random per-user directory ID, not the user ID, so the cookie does
-not reveal who the user is. Pre-authentication state (OAuth `state`, PKCE
-verifier, WebAuthn challenge, login return path) lives in a separate
-`__Host-ttr_flow` cookie. That cookie is bound to one ceremony and lasts at most
-10 minutes. It never becomes a session.
+Codec invariants, in `@tuturuuu/session`:
 
-Subdomain hosts (`*.tuturuuu.com`) cannot read a `__Host-` cookie. Until a
-subdomain app is served only through its apex mount, it holds a **child
-session**: its own `__Host-ttr_session` on that host, created by the handoff in
-[section 4](#4-service-tokens-and-credential-families). Its record names the
-parent `sid`, so revoking the parent revokes the child.
+- The whole value matches one strict pattern and is at most 128 bytes.
+  Base64url must be canonical: no padding and no non-zero trailing bits.
+- A `Cookie` header with more than one `__Host-ttr_session` is **ambiguous**
+  and resolves to signed out for every method. The response clears the name.
+- The gateway checks `mac` in constant time before any Durable Object call, so
+  a forged or random cookie costs no storage request.
+- `dev` reveals nothing about the user. The cookie carries no claims.
+
+Pre-authentication state (OAuth `state`, PKCE verifier, WebAuthn challenge,
+return target, QR and handoff redemption secrets) lives in a separate
+`__Host-ttr_flow` cookie. Each value is bound to one ceremony, lasts at most 10
+minutes and is consumed once. It never becomes a session.
+
+### Generations and rotation
+
+The device record keeps one current generation. A new generation (new `gen`,
+new secret, the previous secret invalid at once) is issued on:
+
+- every sign-in and account addition, including when the browser already
+  sends a cookie, so a planted pre-login cookie dies at login;
+- step-up, MFA enrollment or removal, password change and account switch;
+- every 24 hours of use.
+
+Only the 24-hour rotation keeps the previous generation for 30 seconds, so
+parallel requests from one tab do not sign out. During that window the
+previous generation has **read authority only**:
+
+- it resolves for `GET` and `HEAD` with `stale: true`;
+- it carries no step-up and cannot use a step-up grant;
+- it cannot mint any credential, extend expiry or receive a `Set-Cookie`;
+- an unsafe request with it gets `401 SESSION_ROTATED`, and the client retries
+  with the current cookie.
+
+The `BrowserDevice` object serializes every write for its device, so rotation,
+account switch, sign-in and logout apply in one order. Each write that emits
+`Set-Cookie` carries the new `gen`. A response carrying an older `gen` cannot
+win, because any secret with a `gen` below the current one fails resolution
+(except the read-only window above). Recovery from an unusable cookie is a
+document navigation to Web's sign-in, which keeps the device's saved accounts.
 
 ### Session record
 
+Sessions are rows inside their device's object:
+
 | Field | Meaning |
 | --- | --- |
-| `sid`, `userId`, `parentSid` | Identity and child linkage |
-| `kind` | `browser`, `child`, `mobile`, `cli`, `external_app` |
-| `secretHash`, `prevSecretHash`, `prevValidUntil` | Current secret and the rotation grace window |
-| `createdAt`, `lastSeenAt`, `idleExpiresAt`, `absoluteExpiresAt` | Expiry clocks |
-| `authTime`, `aal`, `amr`, `stepUpAt` | Assurance: when and how the user authenticated, AAL1 or AAL2, last step-up |
-| `provider`, `providerSubject`, `upstream` | Adapter name, provider user ID, encrypted upstream grant (see section 2) |
-| `device` | User-agent family, platform, client name, coarse location from the edge, first and last IP prefix |
+| `sid`, `userId`, `kind` | Identity. `kind` is `browser`, `child`, `mobile`, `cli` or `external_app` |
+| `parentSid`, `parentDev` | Set for a child session on a subdomain host |
+| `createdAt`, `lastSeenAt`, `idleExpiresAt`, `absoluteExpiresAt` | Expiry clocks. A session is expired when `now >= idleExpiresAt` or `now >= absoluteExpiresAt` |
+| `authTime`, `aal`, `amr` | When and how the user authenticated |
+| `provider`, `providerSubject`, `upstream` | Adapter name, provider user ID, encrypted upstream grant |
+| `epochSeen` | The user's revocation epoch when this session was created |
+| `device` | User-agent family, platform, client name and coarse location from the edge |
 | `revokedAt`, `revokedReason` | Terminal state |
 
-### Store
+Saved accounts are sibling sessions on the same device; `activeSid` selects
+one. Switching moves the pointer inside one object and issues a new generation.
 
-Each user has one SQLite-backed Durable Object, `UserSessions`, addressed by
-`dir`. It is the source of truth for live sessions:
-
-- **Strong consistency.** A revocation is visible to the next resolution, with
-  no replication lag. KV is not used for session state, because its eventual
-  consistency would delay revocation.
-- **Serialized rotation.** The object is the single writer for one user's
-  sessions. That orders concurrent refreshes, account switches and logouts,
-  which closes the cross-origin `Set-Cookie` ordering gap (GAP-01) for the
-  first-party cookie.
-- **Bounded work.** One resolution is one Durable Object request. `lastSeenAt`
-  is written at most once every 5 minutes per session. The gateway may cache a
-  successful resolution in its isolate for up to 5 seconds, keyed by the
-  secret's HMAC, and never caches a failure.
-
-Postgres keeps the durable history: a `private.session_events` audit table and
-a `private.user_session_directory` row (`userId`, `dir`) for support tooling
-and the "revoke everything for this user" path. The Durable Object writes
-events through a Queue with idempotent event IDs. A lost event never changes a
-session decision; the object stays authoritative.
-
-### Expiry and rotation
+### Expiry
 
 | Rule | Browser | Mobile and CLI |
 | --- | --- | --- |
 | Idle expiry | 7 days | 30 days |
 | Absolute expiry | 30 days | 90 days |
-| Secret rotation | On sign-in, step-up, MFA change, account switch and every 24 h of use | Every refresh (refresh token rotation) |
-| Rotation grace | The previous secret stays valid for 30 s, so parallel requests from the same tab do not sign out | None: reuse of a rotated refresh token revokes the whole session family |
-| Step-up window | 5 minutes, per [Shared session](/platform/architecture/shared-session#credentials-minted-from-a-signed-in-session) | Same |
+| Child session | Never longer than its parent; resolution checks the parent | Not applicable |
 
-Rotation never accepts a client-chosen `sid` or secret. Every privilege change
-issues a new secret, so a fixated pre-login value cannot survive login.
+`lastSeenAt` is written at most once every 5 minutes per session. Expiry is a
+pure function of the record and an injected clock.
 
 ### Device list and revocation
 
-- **List:** `GET /api/v1/auth/sessions` returns the caller's sessions with
-  device, location, `lastSeenAt` and `current: true` for this one. It never
-  returns secrets or upstream grants.
-- **Revoke one:** `DELETE /api/v1/auth/sessions/:sid` marks the record revoked
-  and revokes its children. It is idempotent.
-- **Revoke all:** `POST /api/v1/auth/sessions/revoke-all` bumps the user's
-  revocation epoch, which rejects every session and every outstanding token
-  issued under an older epoch. An option keeps the current session.
-- **Upstream:** each revocation also calls the provider adapter's
-  `revokeUpstream`. A provider failure is recorded and retried through the
-  Queue, but never undoes the first-party revocation.
+- **List:** `GET /api/v1/auth/sessions` reads the user's device index from
+  `UserSessions` and each device's sessions. It returns device, location,
+  `lastSeenAt` and `current: true` for this session, never secrets or grants.
+- **Revoke one:** `DELETE /api/v1/auth/sessions/:sid` revokes the row in its
+  device object and its children there. It takes effect on the next resolution.
+- **Revoke all:** `POST /api/v1/auth/sessions/revoke-all` increments the
+  user's epoch in `UserSessions`, then revokes the user's sessions in every
+  indexed device object with bounded concurrency, retried by an alarm until
+  each one acknowledges. Each device object re-reads the user's epoch when its
+  cached copy is older than 30 seconds, so a device the fan-out has not reached
+  still stops within 30 seconds. The response reports any device still pending.
+- **Upstream:** every revocation calls the adapter's `revokeUpstream` for that
+  session's grant, retried through the Queue. A provider failure never undoes
+  the first-party revocation.
 - Password change, MFA reset, account deletion and an admin "compromised"
   action run revoke-all.
 
-Revoke-all and MFA changes require a step-up. Listing and revoking one other
-session require only the current session.
+Revocation bounds are listed in
+[Tuturuuu session rollout](/platform/architecture/tuturuuu-session-rollout#revocation-bounds).
 
-### Step-up
+### Step-up grants
 
-Sensitive actions require `stepUpAt` within the last 5 minutes: API keys, CLI
-device approval, QR-login approval, external-app consent, passkey and MFA
-changes, email or password change, account deletion and revoke-all. Step-up is
-passkey user verification, or password plus a second factor, through the
-provider adapter. It rotates the secret and updates `aal`, `amr` and
-`stepUpAt`. Script on the page cannot satisfy it silently, because each
-ceremony needs user verification.
+A sensitive action needs a **step-up grant**, not a general window. The user
+confirms the named action on a Web-owned page with passkey user verification,
+or password plus a second factor. The session service then issues a grant
+bound to:
+
+- the action name and a hash of its parameters (for example the CLI user code,
+  the external client ID and scopes, or the API key name and role);
+- the `sid` and the current generation;
+- an expiry of 5 minutes.
+
+The action consumes the grant atomically in the device object. Covered actions:
+API keys, CLI device approval, QR-login approval, external-app consent, passkey
+and MFA changes, email or password change, account deletion and revoke-all.
 
 ### Audit events
 
-`session.created`, `session.rotated`, `session.refreshed`, `session.step_up`,
+`session.created`, `session.rotated`, `session.switched`, `session.step_up`,
 `session.revoked` (with `reason`), `session.revoked_all`,
 `session.reuse_detected`, `identity.linked`, `identity.unlinked`,
 `token.issued` (with `class` and `aud`) and `provider.error`.
 
-Events carry IDs, the event type, the actor, a /24 (IPv4) or /48 (IPv6) prefix,
-the user-agent family and the time. They never carry secrets, tokens, raw
-cookies or full IP addresses. Users see their own events in the device list.
-Support access follows the [data protection standard](/platform/data-protection-standard).
+Events carry IDs, the event type, the actor, a /24 (IPv4) or /48 (IPv6)
+prefix, the user-agent family and the time. They never carry secrets, tokens,
+raw cookies or full IP addresses. Event IDs are idempotent, and a lost event
+never changes a session decision. Users see their own events in the device
+list; support access follows the
+[data protection standard](/platform/data-protection-standard).
 
 ## 2. Identity provider adapters
 
-The session service talks to identity providers only through this interface,
-in `@tuturuuu/session/provider`:
+The session service talks to providers only through this interface, in
+`@tuturuuu/session/provider`:
 
 ```ts
 interface IdentityProvider {
   readonly name: 'supabase' | 'better-auth' | (string & {});
-  // Runs one sign-in step: password, OTP, OAuth callback, passkey, MFA challenge.
   authenticate(input: AuthStep): Effect<AuthOutcome, AuthError>;
-  // Adds or removes a provider identity for an already signed-in user.
   linkIdentity(userId: UserId, proof: LinkProof): Effect<LinkedIdentity, AuthError>;
   unlinkIdentity(userId: UserId, identityId: string): Effect<void, AuthError>;
-  // Keeps the upstream grant alive while the first-party session lives.
-  refreshUpstream(grant: UpstreamGrant): Effect<UpstreamGrant, UpstreamExpired>;
+  refreshUpstream(grant: UpstreamGrant): Effect<UpstreamGrant, UpstreamExpired | UpstreamUnknown>;
   revokeUpstream(grant: UpstreamGrant): Effect<void, ProviderUnavailable>;
   factors(userId: UserId): Effect<FactorSummary[], ProviderUnavailable>;
   enrollFactor(userId: UserId, request: FactorEnrollment): Effect<FactorChallenge, AuthError>;
@@ -191,137 +224,164 @@ interface IdentityProvider {
 type AuthOutcome =
   | { kind: 'authenticated'; providerSubject: string; userId: UserId;
       aal: 'aal1' | 'aal2'; amr: AuthMethod[]; grant?: UpstreamGrant }
-  | { kind: 'challenge'; challenge: MfaChallenge }  // AAL2 required next
-  | { kind: 'rejected'; reason: 'invalid' | 'locked' | 'unverified' };
+  | { kind: 'challenge'; challenge: MfaChallenge }
+  | { kind: 'rejected'; reason: 'invalid' | 'locked' | 'unverified' | 'unprovisioned' };
 ```
 
-Rules:
+- **Subject mapping.** Each adapter maps its provider subject to a `userId`. A
+  missing mapping is `rejected: 'unprovisioned'`.
+- **Provisioning.** Through P2, user creation stays with the existing
+  `auth.users` triggers. Moving provisioning out of Supabase is a P3 work item
+  with its own transactional function; see the rollout page.
+- **One refresh owner per grant.** Only the device object that holds a grant
+  refreshes it, serialized there. `UpstreamUnknown` (a refresh whose outcome
+  was lost) is reconciled by one bounded retry with the same grant, then the
+  session is signed out. It is never retried blindly.
+- **Grant custody.** `UpstreamGrant` is encrypted with AES-256-GCM under
+  `TTR_SESSION_UPSTREAM_KEY`, with `dev` and `sid` as associated data. Only the
+  trusted data adapter ([rollout page](/platform/architecture/tuturuuu-session-rollout#5-database-access-and-rls))
+  receives a decrypted upstream access token, and only per request.
+- **Linking** needs proof of both identities, as
+  [OAuth sign-in](/platform/architecture/authentication#oauth-sign-in)
+  requires. A matching email alone never links accounts.
+- **Uniform controls.** Rate limits, lockouts and MFA assurance are enforced
+  in the session service, so they behave the same whichever adapter runs.
 
-- The adapter returns a `userId`. Each adapter keeps a provider-subject to
-  `userId` map, and a missing mapping is `rejected`. A provider never creates
-  a Tuturuuu user directly: sign-up goes through the session service, which
-  creates `public.users` first and then the provider identity.
-- `UpstreamGrant` is opaque to the session service. It is encrypted with
-  AES-256-GCM under `TTR_SESSION_UPSTREAM_KEY`, with `sid` as associated data,
-  and stored only in the session record.
-- Account linking needs proof of both identities, as
-  [identity linking](/platform/architecture/authentication#oauth-sign-in)
-  requires today. A matching email alone never links accounts.
-- Rate limits, lockouts and MFA assurance are enforced in the session service,
-  so they behave the same whichever adapter runs.
+**Supabase adapter (P1).** Wraps the provider-thin flow modules in
+`apps/web/src/lib/auth`. `providerSubject` equals `userId`. The grant is the
+Supabase session, and `revokeUpstream` signs that Supabase session out.
 
-**Supabase adapter (P1).** Wraps the existing server flows in
-`packages/supabase` and `apps/web/src/lib/auth`. `providerSubject` equals
-`userId`. The grant is the Supabase refresh token, refreshed lazily when the
-server needs an upstream access token (see section 5). `revokeUpstream` calls
-the admin sign-out for that Supabase session.
-
-**Better Auth adapter (P3).** Runs Better Auth inside the session service with
-its own tables in a `better_auth` schema. Its sessions are an internal detail:
-the adapter turns a successful Better Auth sign-in into an `AuthOutcome` and
-then discards the Better Auth session, or keeps it as the grant when a plugin
-needs one. User records use the existing UUID as the Better Auth user ID.
+**Better Auth adapter (P3).** Runs Better Auth inside the session service
+with its tables in a `better_auth` schema, keyed by the existing UUIDs. Better
+Auth sessions stay internal to the adapter.
 
 ## 3. App identity
 
 ### Principal
-
-Every runtime resolves a request to the same value:
 
 ```ts
 type Principal = {
   kind: 'user' | 'api_key' | 'service' | 'external_app';
   userId: UserId | null;
   sessionId: string | null;
+  generation: number | null;
+  stale: boolean;                // previous-generation read during rotation
+  source: 'cookie' | 'bearer' | 'api_key' | 'service_binding';
   aal: 'aal1' | 'aal2';
   authTime: number;
-  stepUpAt: number | null;
-  appId: string | null;          // mount or client ID the identity was issued for
-  scopes: readonly Scope[];      // for example 'workspace:session', 'tasks:read'
-  workspace: { wsId: string; memberRole: string } | null; // when the route names one
+  appId: string | null;          // mount or client the identity was issued for
+  scopes: readonly Scope[];
 };
 ```
 
-Workspace membership and permissions still come from the existing permission
-helpers. `workspace` only carries the result once the route resolves it.
+A `Principal` says who the request is for. Workspace membership and action
+permissions stay with the existing permission helpers, and step-up is a grant
+(section 1), not a principal field.
 
 ### Package layout
 
-`packages/session` (`@tuturuuu/session`) follows the portable-entrypoint rule:
-
 | Entry point | Contents | May import |
 | --- | --- | --- |
-| `@tuturuuu/session` | Types, cookie codec, expiry policy, `Principal`, errors | Effect, Zod, Web Crypto |
-| `@tuturuuu/session/verify` | Identity assertion and JWT verification with an injected JWKS source and clock | Same |
+| `@tuturuuu/session` | Types, cookie codec, expiry policy, errors | Effect, Zod, Web Crypto |
+| `@tuturuuu/session/verify` | Identity assertion verification with an injected key source and clock | Same |
 | `@tuturuuu/session/provider` | The adapter interface | Same |
-| `@tuturuuu/session/next` | `getPrincipal()`, `requirePrincipal()`, `requireStepUp()` for Next route handlers and server components | `next/headers` |
+| `@tuturuuu/session/next` | `getPrincipal()`, `requirePrincipal()`, `requireLiveSession()` | `next/headers` |
 | `@tuturuuu/session/worker` | `withPrincipal(handler)` for plain Workers and vinext families | Cloudflare types only |
-| `@tuturuuu/session/start` | Server-function and route middleware for TanStack Start satellites through `@tuturuuu/start-bridge` | Start bridge |
+| `@tuturuuu/session/start` | Middleware for TanStack Start satellites through `@tuturuuu/start-bridge` | Start bridge |
 
-Portable entry points have no Next, React Router, TanStack or Cloudflare
-runtime imports and read no request globals; a focused test enforces it, as in
-`packages/start-bridge`. Supabase and Better Auth code live only in the session
-service.
+Portable entry points have no framework or Cloudflare runtime imports, no
+request globals, no implicit network fetch and no signing keys. A focused test
+enforces it. Supabase and Better Auth code live only in the session service.
+
+### Trusted ingress
+
+A mount Worker trusts `x-ttr-identity` only when the request arrived through
+the gateway's service binding:
+
+- **No public ingress.** A mount whose reader flag is `shadow` or
+  `first-party` has no zone route, custom domain, `workers.dev` or preview
+  URL. A CI check on the app's Worker configuration enforces it. Today some
+  apex paths are zone routes straight to their Worker; those move behind the
+  gateway before that app's reader leaves `supabase`.
+- **Exact routing.** The gateway dispatches from an exact host and route
+  allowlist, rejects unknown hosts, and handles assets and WebSocket upgrades
+  on the same path.
+- **Header hygiene.** The gateway deletes every client-sent `x-ttr-*` header
+  and the session cookie before dispatch, and before logging.
+- **Bridge backstop.** `packages/start-bridge` runs with
+  `unknownHost: 'reject'`. On every request it strips `__Host-ttr_session`,
+  drops any app `Set-Cookie` for that name, and deletes `x-ttr-identity` that
+  fails verification. The P0 Supabase-cookie fences stay in force during
+  dual-run.
+- **Subdomain hosts.** A subdomain app holding child sessions gets the same
+  gateway in front of it before its reader leaves `supabase`.
 
 ### Resolution
 
-1. The gateway resolves `__Host-ttr_session` through the session service and
-   removes the cookie from the request before it reaches any mount. Mounted
-   apps never receive the session handle.
-2. It attaches `x-ttr-identity`: a JWT of type `ttr+identity` with `aud` set
-   to the mount, `sub`, `sid`, `aal`, `auth_time`, `step_up_at`, `epoch`, `jti`
-   and a lifetime of 60 seconds. The gateway first deletes any client-sent
-   `x-ttr-identity`.
-3. The app adapter verifies the assertion against the JWKS (cached, with
-   `kid` pinning) and checks `aud` equals its own mount. A missing or invalid
-   assertion means no principal. The app never calls the session store.
-4. Bearer requests (`Authorization: Bearer`) skip the cookie path. The adapter
-   verifies the access JWT (`ttr+access`) or resolves the workspace API key and
-   ignores cookies, as today.
+1. The gateway checks the cookie's codec and MAC, then calls the session
+   service, which resolves the device, its active session and the user's
+   epoch. The gateway may cache a successful resolution for up to 5 seconds,
+   keyed by the cookie's HMAC, and never caches a failure.
+2. For an unsafe method with a cookie, the gateway enforces CSRF before minting
+   (see the rollout page). A failed check means no assertion.
+3. The gateway mints `x-ttr-identity` for this mount and request.
+4. The mount's adapter verifies it with `verifyIdentityAssertion` and builds a
+   `Principal`. Sensitive operations, and anything that mints a credential, also
+   call `requireLiveSession()`, which asks the session service and fails closed.
+5. A bearer request (`Authorization: Bearer`) skips the cookie path. The gateway
+   or the app verifies the access token or resolves the workspace API key, and
+   ignores cookies.
 
-The gateway is not the only way into a mount Worker. Some apex paths are zone
-routes straight to their Workers, and every mount Worker also answers on its
-own hostname. So the Start bridge (`packages/start-bridge`, in the handler that
-builds the mounted request and finalizes its response) enforces the same rules
-on every mounted request:
+Runtimes outside the gateway path (Web on Vercel during migration) call the
+session service's resolve endpoint over an authenticated internal request and
+get the same assertion back.
 
-- It always strips `__Host-ttr_session` from the request.
-- It keeps `x-ttr-identity` only if it verifies (issuer pinned, `aud` equals
-  this mount, unexpired); otherwise it deletes it.
-- It drops any `Set-Cookie` for `__Host-ttr_session` that app code emits.
+### Identity assertion profile
 
-The gateway adds `x-ttr-` to its client-header strip list. Routing every apex
-path through the gateway is a follow-up, so that one component mints for every
-mount.
+| Part | Rule |
+| --- | --- |
+| Header | `alg: ES256`, `typ: ttr+identity`, `kid` matching `[A-Za-z0-9_-]{1,64}`. `jku`, `jwk`, `x5u`, `x5c`, `crit` and any `b64` member are rejected |
+| `iss` | The environment's issuer: `https://tuturuuu.com`, or the staging or local issuer configured for that verifier |
+| `env` | `production`, `staging` or `local`, and equal to the verifier's own environment |
+| `aud` | One string, `mount:<appId>`, equal to the verifier's own mount. Arrays are rejected |
+| `sub`, `sid`, `gen` | User UUID, session ID, device generation |
+| `src` | `cookie` or `bearer`: how the gateway authenticated the request |
+| `stale` | `true` only inside the read-only rotation window |
+| `aal`, `amr`, `auth_time` | Assurance. `auth_time <= iat` |
+| `iat`, `exp`, `jti` | Integers in seconds. `exp > iat`, `exp - iat <= 60`, `iat <= now + 5`, `now < exp + 5`. `exp` is also capped by the session's own expiry |
+| `ipp` | Optional client address prefix (/24 or /48). Never a full address |
+| Encoding | At most 4 KiB, canonical base64url, JSON objects only, duplicate member names rejected |
 
-Each app's mounted session reader (`apps/<app>/src/lib/mounted-auth.ts`)
-selects its source with `TTR_SESSION_READER_<APP>`. Both it and the bridge call
-the same verifier:
+Assertions are not single use. They only travel gateway to mount over a
+service binding, so an outside party cannot present one. A mount that misuses
+its own assertion is already inside its own boundary, and `aud` keeps it from
+using that assertion at another mount.
 
 ```ts
 // @tuturuuu/session/verify
+type KeySource = { get(kid: string): Promise<CryptoKey | null | 'unavailable'> };
+
 function verifyIdentityAssertion(
   token: string,
   options: {
-    audience: string;              // this mount's app ID
-    jwks: JwksSource;              // injected, cached; fetch or service binding
-    now?: () => number;            // injected clock, for tests
-    maxAgeSeconds?: number;        // default and ceiling: 60
-    minEpoch?: (sub: string) => Promise<number | null>; // optional revocation check
+    issuer: string;
+    environment: 'production' | 'staging' | 'local';
+    audience: `mount:${string}`;
+    keys: KeySource;          // injected; trusted keys only, never from the token
+    now: () => number;        // seconds
   }
 ): Promise<
-  | { ok: true; principal: Principal; claims: IdentityClaims }
-  | { ok: false; reason: 'malformed' | 'signature' | 'issuer' | 'audience'
-      | 'expired' | 'type' | 'revoked' }
+  | { ok: true; assertion: VerifiedAssertion }
+  | { ok: false; reason: 'malformed' | 'header' | 'signature' | 'issuer' | 'environment'
+      | 'audience' | 'type' | 'time' | 'claims' | 'unknown_key' | 'keys_unavailable' }
 >;
 ```
 
-It never throws for a bad token, rejects `alg` other than ES256 and unknown
-`kid` values, and has no runtime imports beyond Web Crypto.
-
-Runtimes outside the gateway path (a subdomain app during migration, or Web on
-Vercel) call the session service's resolve endpoint over a service binding or
-an authenticated internal request and get the same assertion back.
+A successful result proves that the gateway issued this assertion for this
+mount within the last 60 seconds. It does not prove the session is still live,
+and it is not an authorization decision. The function never throws for a bad
+token, makes no network call and needs no signing key. Unknown keys and an
+unavailable key source both fail closed.
 
 ## 4. Service tokens and credential families
 
@@ -329,210 +389,56 @@ an authenticated internal request and get the same assertion back.
 
 | Property | Rule |
 | --- | --- |
-| Algorithm | ES256 (P-256), which Workers Web Crypto, Flutter and Postgres tooling all verify |
-| Keys | Private keys only in the token service Worker's secrets (`TTR_TOKEN_SIGNING_KEYS`, a JSON key set with one `active` entry) |
-| JWKS | `https://tuturuuu.com/.well-known/jwks.json`, public keys only, `Cache-Control: public, max-age=300` |
-| Rotation | Every 90 days. A new key is published 7 days before it signs, and a retired key stays published for the longest token lifetime plus 1 day. Emergency rotation removes a key at once and bumps every affected epoch |
-| Claims | `iss=https://tuturuuu.com`, `sub`, `aud`, `iat`, `exp`, `jti`, `sid`, `epoch`, and a `typ` header per class. Verifiers reject a token whose `typ` does not match the class they expect |
+| Algorithm | ES256 (P-256) |
+| Keys | Private keys only in the token service's secrets (`TTR_TOKEN_SIGNING_KEYS`), one active key per class family. Verifiers get public keys through an injected key source |
+| JWKS | `https://tuturuuu.com/.well-known/jwks.json` for external verifiers, `Cache-Control: public, max-age=300`. Internal Workers receive keys through configuration, not a runtime fetch |
+| Rotation | Every 90 days. A new key is published 7 days before it signs. A retired key stays published for the longest token lifetime plus 1 day |
+| Compromise | Remove the `kid` from every key source and the JWKS, then rotate. Verifiers reject that `kid` within the JWKS cache bound (5 minutes) or at once for configuration-fed Workers |
+| Claims | `iss`, `env`, `sub`, `aud`, `iat`, `exp`, `jti`, and a `typ` header per class. Verifiers reject any other `typ` |
 
-| Class (`typ`) | Holder | Lifetime | Audience |
+| Class (`typ`) | Holder | Lifetime | `aud` |
 | --- | --- | --- | --- |
-| `ttr+identity` | Gateway to mounted app, per request | 60 s | One mount |
-| `ttr+s2s` | Worker to Worker over HTTP (service bindings carry an identity assertion instead) | 5 min | One service |
-| `ttr+realtime` | Browser, for one topic | 60 s | Realtime Worker plus topic |
-| `ttr+access` | Mobile, CLI, external app | 15 min | `api` or the client ID |
+| `ttr+identity` | Gateway to mount, per request | ≤ 60 s | `mount:<appId>` |
+| `ttr+s2s` | Worker to Worker over HTTP | 5 min | `service:<name>` |
+| `ttr+realtime` | Browser, one topic | ≤ 60 s for channels, ≤ 10 min for meet and chat joins | `realtime:<service>` plus a `topic` claim |
+| `ttr+access` | Mobile, CLI, external app | 5 min | The resource server, `https://tuturuuu.com/api`. The client is `azp` |
 
 Refresh tokens are never JWTs. They are opaque, single-use secrets stored as
-HMACs in the session record, rotated on every use, and a reuse revokes the
-whole session family.
+HMACs in the session row and rotated on every use. Reusing a rotated refresh
+token revokes the whole session family.
+
+### Credential families
+
+| Family | Design |
+| --- | --- |
+| **Satellite child session** (subdomain hosts) | The destination host starts a handoff: it sets a `__Host-ttr_flow` nonce on its own host and sends the nonce's hash with its registered origin and callback. Web, after its own CSRF and session checks, issues a code bound to the nonce hash, the exact origin and callback, the parent `sid`, generation and epoch, valid 60 s. The destination redeems it server to server with the nonce from its own cookie. Redemption consumes the code and creates the child row in the parent's device object in one serialized step, after checking the parent is live. The child cookie is host-only, its expiry never exceeds the parent's, and every resolution checks the parent. Child logout revokes only the child; the upstream grant belongs to the parent. The app-only logout marker and explicit re-entry rules stay as in [Shared session](/platform/architecture/shared-session#logout-confirmation-and-app-scope). A same-origin mount needs no handoff |
+| **External apps** | OAuth 2.0 authorization code with S256 PKCE only, exact registered redirect URIs, the existing hashed client secret, and atomic one-time code consumption. Consent needs a step-up grant bound to the client and scopes. `ttr+access` has `aud` = the API and `azp` = the client. Every refresh re-checks client status, consent, user membership, scopes and `allowedWorkspaceIds`, intersecting with the current values rather than copying the original grant. Resource handlers check scopes and workspace restrictions on each request |
+| **CLI** | Device authorization (RFC 8628). The CLI holds a secret `device_code`. The user enters an 8-character `user_code` on Web. Codes last 10 minutes; polling has an interval with `slow_down`; wrong `user_code` attempts are limited per account and per IP prefix. The approval page shows the client name, the device name it reported and the request's coarse location, then asks for explicit confirmation and a step-up grant bound to that `user_code`. Redemption is one time and bound to that approval. The CLI gets `ttr+access` and a rotating refresh in a `cli` session |
+| **Mobile** | The existing native sign-in endpoints return `ttr+access` and a rotating refresh in a `mobile` session; the app stops calling Supabase directly. The refresh is bound to the device approval key registered through the existing attested enrollment. Each refresh sends a JWS proof over the method, URL, refresh family, refresh token hash, `iat` and `jti`. `iat` must be within 60 s and `jti` is single use, stored in the device object. If the same old refresh token and key arrive within 30 s after a successful rotation, the object returns the same new pair it stored (encrypted) instead of treating it as reuse, so a lost response does not advance the family twice. Replacing the device key needs a fresh sign-in and revokes the old family |
+| **QR login** | A separate challenge type for browsers. The browser that creates the challenge gets a redemption secret in `__Host-ttr_flow`; the QR shows only the challenge ID and an approval number. A signed-in phone approves with its device approval key after showing the origin, browser and number, using a step-up grant. Only the initiating browser, presenting its flow secret, can redeem it. Redemption is atomic and ends in a server-set `__Host-ttr_session`. Browser challenges have no native-poller redemption path |
+| **Realtime** | `ttr+realtime` tickets verified through the realtime Workers' key source. An established connection holds a lease of at most 5 minutes and renews it with a fresh ticket, so a revoked session disconnects within 5 minutes |
+| **Workspace API keys** | Unchanged (`ttr_<hex>`, scrypt). They resolve to a principal of kind `api_key` |
 
 ### Mapping the existing credentials
 
 Every family except Supabase's own JWT signs today with a shared symmetric
-secret (HS256 or HMAC-SHA-256), and Tuturuuu publishes no JWKS. Moving to one
-asymmetric token service means a verifier never holds a key that can mint.
+secret (HS256 or HMAC-SHA-256), and Tuturuuu publishes no JWKS. With one
+asymmetric token service, a verifier never holds a key that can mint.
 
 | Today | Where | Becomes |
 | --- | --- | --- |
-| Supabase cookie `sb-<ref>-auth-token*` | `packages/supabase/src/next/*` | `__Host-ttr_session`. The Supabase session becomes the encrypted upstream grant in the session record |
-| Cross-app handoff token (opaque, single use, at most 300 s) | `public.cross_app_tokens`, `generate-app-tokens`, `cross-app/server.ts` | Same shape, issued by the session service: an opaque, single-use code of at most 60 s, redeemed server to server. A same-origin mount needs none. A subdomain host redeems it for a child session |
-| Satellite app session (`tuturuuu_app_session*`, `ttr_app_` HS256, 8 h access and 30 d refresh) | `app-coordination-token.ts`, `app-session-core.ts` | The child session on that host, plus `ttr+identity` per request. The HS256 app-coordination secret is retired once no reader accepts `ttr_app_` |
-| External-app exchange (PKCE, `ttr_app_secret_`, `workspace:session`, 8 h bearer) | `api/v1/auth/app-token/exchange`, `external-app*.ts`, `refresh-family.ts` | OAuth 2.0 authorization code with PKCE and the existing client secret. It issues `ttr+access` (15 min, `aud` = client ID, scopes and `allowedWorkspaceIds` as claims) and a rotating refresh in an `external_app` session. Consent needs a step-up |
-| CLI tokens (`cli:access` 8 h, `cli:refresh` 90 d, Redis single-use) | `cli-session.ts`, `api/cli/auth/*` | Device authorization (RFC 8628) approved on Web with a step-up. It issues `ttr+access` (15 min) and a rotating refresh in a `cli` session, listed among the user's devices |
-| Mobile (Supabase session in Keychain or Keystore) | `apps/mobile/lib/data/*`, `api/v1/auth/mobile/*` | The same native endpoints return `ttr+access` and a rotating refresh in a `mobile` session. The refresh is bound to the device approval key. The app stops calling Supabase directly, as the stop-list requires |
-| QR login (120 s challenge, a Supabase session minted by magic link) | `lib/auth/qr-login.ts`, `public.qr_login_challenges` | A signed-in phone approves after step-up. The browser that created the challenge, proven by a `__Host-ttr_flow` nonce, receives a server-set `__Host-ttr_session`. No token pair goes to any client |
-| Realtime tickets (HMAC, per-service secrets, 60 s to 10 min) | `packages/realtime/src/*/token.ts`, `*-realtime` Workers | `ttr+realtime` verified with the JWKS, at most 60 s for channels. Meet and chat keep their own lifetimes, bounded at 10 min, in their `aud`. The per-service HMAC secrets are retired |
-| Workspace API keys (`ttr_<hex>`, scrypt) | `packages/auth/src/api-keys.ts` | Unchanged. They resolve to a principal of kind `api_key` |
-| Saved-account vault (AES-GCM Supabase sessions per device) | `lib/auth/multi-account/*`, `private.web_account_*` | Saved accounts become sibling first-party sessions under the same device. A switch is a Durable Object operation that rotates the cookie, so the vault no longer stores provider sessions |
-| Session list RPCs over `auth.sessions` | `20250611073234_add_session_management.sql`, `/api/v1/users/sessions` | `/api/v1/auth/sessions` over the Durable Object. The old route is a shim during P2 |
-| Refresh replay sets in Redis | `refresh-replay.ts`, `cli:refresh:used` | Refresh secret hashes and family state in the Durable Object |
+| Supabase cookie `sb-<ref>-auth-token*` | `packages/supabase/src/next/*` | `__Host-ttr_session`. The Supabase session becomes the upstream grant |
+| Cross-app handoff token (opaque, single use, at most 300 s) | `public.cross_app_tokens`, `generate-app-tokens`, `cross-app/server.ts` | The child-session handoff above |
+| Satellite app session (`tuturuuu_app_session*`, `ttr_app_` HS256, 8 h and 30 d) | `app-coordination-token.ts`, `app-session-core.ts` | The child session plus `ttr+identity`. The app-coordination secret retires once no reader accepts `ttr_app_` |
+| External-app exchange (PKCE, `ttr_app_secret_`, 8 h bearer) | `api/v1/auth/app-token/exchange`, `external-app*.ts`, `refresh-family.ts` | The external-app OAuth flow above |
+| CLI tokens (`cli:access` 8 h, `cli:refresh` 90 d) | `cli-session.ts`, `api/cli/auth/*` | The device authorization flow above |
+| Mobile Supabase session in Keychain or Keystore | `apps/mobile/lib/data/*`, `api/v1/auth/mobile/*` | The mobile flow above |
+| QR login (120 s challenge, magic-link session) | `lib/auth/qr-login.ts`, `public.qr_login_challenges` | The browser QR challenge above |
+| Realtime tickets (HMAC per service) | `packages/realtime/src/*/token.ts`, `*-realtime` Workers | `ttr+realtime`. The per-service HMAC secrets retire |
+| Saved-account vault (AES-GCM Supabase sessions per device) | `lib/auth/multi-account/*`, `private.web_account_*` | Sibling sessions in the `BrowserDevice` object |
+| Session list RPCs over `auth.sessions` | `/api/v1/users/sessions` | `/api/v1/auth/sessions`, with the old route as a shim during P2 |
+| Refresh replay sets in Redis | `refresh-replay.ts`, `cli:refresh:used` | Refresh state in the device object |
 
 Rate limits use the existing `apps/abuse-guard` Durable Objects. Sign-out,
 password change and revoke-all keep revoking AI temporary auth tokens and
-outstanding handoff codes, as they do today.
-
-## 5. Database access and RLS
-
-Today 452 migration files use `auth.uid()` in RLS policies, and 103 foreign
-keys reference `auth.users`. RLS must keep working without any browser holding
-a Supabase token.
-
-| Option | How it works | Tradeoffs |
-| --- | --- | --- |
-| A. Upstream Supabase session per request | The session service keeps the Supabase grant and gives the server-side Supabase client an access token for the request | No new key or policy change. Couples every request to Supabase Auth, adds refresh traffic, and disappears at P4 |
-| B. Tuturuuu-signed JWT for PostgREST | The server mints a 60 s `role=authenticated` JWT with `sub=userId` under a key Supabase trusts | Keeps supabase-js on the server. Needs a project signing key we hold: Supabase's imported or standby signing keys must be verified to accept it, and a leaked key can impersonate any user |
-| C. Claims-bound transactions over Hyperdrive | Each request runs in a transaction that does `SET LOCAL ROLE authenticated` and `set_config('request.jwt.claims', <claims>, true)`, so `auth.uid()` and every policy behave as today | No signing key. Works with any provider and matches the Cloudflare target. The connection role must be able to assume `authenticated` |
-| D. Service role plus explicit authorization | Server code bypasses RLS and checks permissions itself | One missed check exposes every tenant. Rejected for user requests |
-
-**Recommendation: A through P2, then C as the end state.** B is optional, only
-if staging proves Supabase accepts a Tuturuuu-held key without letting it sign
-Supabase Auth sessions.
-
-Security controls for C:
-
-- Hyperdrive connects as a dedicated `ttr_request` login role with `NOINHERIT`
-  and no table privileges of its own. It is a member of `authenticated` and
-  `anon` only. A code path that forgets `SET LOCAL ROLE` can read nothing.
-- Claims come only from a verified `Principal`, are serialized by one helper in
-  `@tuturuuu/session`, and are scoped to the transaction (`is_local = true`),
-  so they cannot leak between pooled requests.
-- `SECURITY DEFINER` functions keep their current search-path and permission
-  checks. Tests run representative policies through both PostgREST and the
-  claims-bound path and compare results.
-- Service role stays limited to an explicit allowlist of system jobs (webhooks,
-  queues, migrations, account-switch vault writes). User requests never get it.
-
-## 6. Migration plan
-
-Flags are server-only and default off. Each app has its own reader flag, and
-the writer mode is global.
-
-| Flag | Values |
-| --- | --- |
-| `TTR_SESSION_WRITER` | `supabase` (current), `dual`, `first-party` |
-| `TTR_SESSION_READER_<APP>` | `supabase`, `shadow`, `first-party` |
-| `TTR_SESSION_KILL` | `1` makes every reader use `supabase` and stops first-party resolution. It is the stop fence for the new billable path |
-
-### P0: HttpOnly Supabase cookie
-
-The [HttpOnly session cookie](/platform/architecture/httponly-session-cookie)
-plan, unchanged: browser Supabase clients retired, token-returning routes
-closed, the Stage A cookie `HttpOnly`. P1 depends on P0's server-only browser
-auth routes, which become the session service's sign-in routes. Those routes
-keep one module per flow with the Supabase calls behind it, so each module
-becomes a Supabase adapter step.
-
-- **Cookie migration:** the versioned-cookie gate on that page is met by P1.
-  The migration cookie is `__Host-ttr_session` in dual-run, not a second
-  Supabase cookie.
-- **Identity hook:** browser identity reads use `useCurrentUserIdentity`
-  (`packages/ui/src/hooks/use-current-user-identity.ts`), a TanStack Query over
-  the same-origin profile route. P2 keeps that hook and changes only the
-  route's server side to `getPrincipal()`.
-- **Rollback:** as defined on that page.
-- **Data:** none.
-
-### P1: first-party session wrapping Supabase, dual-run
-
-- Ship `@tuturuuu/session` core, the `UserSessions` Durable Object, the token
-  service with JWKS, and the Supabase adapter.
-- With `TTR_SESSION_WRITER=dual`, every sign-in also issues
-  `__Host-ttr_session`. Existing signed-in users get one on their next request
-  that carries a valid Supabase session, with `authTime` copied from it.
-- Readers in `shadow` resolve both, serve the Supabase result and log
-  mismatches by ID only. An app moves to `first-party` after 72 hours of no
-  mismatches on staging, then on production.
-- **Rollback:** set readers to `supabase`, or `TTR_SESSION_KILL=1`. The
-  Supabase cookie stays valid during dual-run, so rollback signs nobody out.
-- **Data:** new Durable Objects and two additive tables. No user data moves.
-
-### P2: every app on the shared helper
-
-- Every app resolves identity through `@tuturuuu/session` adapters.
-  `getSatelliteAppSessionUser`, `getCurrentUser` and direct
-  `supabase.auth.getUser()` server calls become thin wrappers over
-  `getPrincipal()`, then are removed. A guard in `bun validate` blocks new
-  direct provider calls outside the session service.
-- Handoff, CLI, mobile, external-app and QR flows move to the token service as
-  mapped in section 4. Each flow keeps its existing endpoint as a compatibility
-  shim for one mobile release cycle.
-- The gateway strips the session cookie from mounts. `TTR_SESSION_WRITER`
-  becomes `first-party`, and the Supabase cookie is only an upstream detail
-  held server-side.
-- **Rollback:** per app reader flag. Writer rollback to `dual` is possible
-  while upstream grants exist. Old mobile builds keep the shim.
-- **Data:** none.
-
-### P3: Better Auth adapter, parallel then cut over
-
-- Add the Better Auth adapter and its `better_auth` schema.
-- Backfill `auth.users`, `auth.identities`, MFA factors and passkey
-  credentials into Better Auth with the same UUIDs. Supabase password hashes
-  are bcrypt, so the adapter verifies bcrypt and rehashes on the next sign-in.
-  Passkeys keep working because the RP ID stays `tuturuuu.com`. OAuth apps get
-  the session service's callback URL added before the switch.
-- Run both adapters: new sign-ins go to Better Auth for a staff cohort, then a
-  percentage, chosen by `userId` hash. Any sign-in that Better Auth rejects but
-  Supabase accepts is logged and served by Supabase during the parallel run.
-- Databases move from option A to option C before the cutover, because Better
-  Auth sessions have no Supabase access token.
-- **Rollback:** route sign-ins back to the Supabase adapter. Existing
-  first-party sessions stay valid in either direction, because they do not
-  depend on which adapter created them. Credentials changed in Better Auth
-  during the run (password, new passkey, new factor) are written back to
-  Supabase until P4 begins, so rollback does not lose them.
-- **Data:** a one-way, repeatable backfill with a verifier that compares
-  counts and hashes per user.
-
-### P4: Supabase Auth retired
-
-- Repoint the 103 `auth.users` foreign keys to `public.users(id)` in batched
-  migrations. Each one keeps the same IDs, so no row changes.
-- `auth.uid()` keeps working under option C because it reads the request
-  claims, not GoTrue.
-- Disable Supabase sign-ups and sign-ins, revoke all upstream Supabase
-  sessions, and remove the Supabase adapter and its secrets.
-- **Rollback:** before the FK migrations, re-enable the Supabase adapter. After
-  them, rollback means restoring the adapter with `auth.users` kept as a
-  read-only mirror. That mirror is kept for 30 days after P4.
-- **Data:** the FK migrations need an exact-SQL security review, a full local
-  reset and the gated production workflow, like every migration.
-
-## 7. Threat model and abuse controls
-
-| Threat | Control |
-| --- | --- |
-| CSRF | `SameSite=Lax`, plus the framework-free CSRF guard: unsafe cookie requests need `Sec-Fetch-Site: same-origin` or a matching `Origin`. Sign-in and logout POSTs need origin proof even without a session. Bearer requests ignore cookies |
-| Session fixation | The server picks every `sid` and secret. Secrets rotate on sign-in, step-up, MFA change and account switch. Pre-auth state lives only in `__Host-ttr_flow`, bound to one ceremony |
-| Cookie theft by script | `HttpOnly`. No endpoint returns a session secret, refresh token or provider token to a browser |
-| Cookie theft by a compromised mount | The gateway removes `__Host-ttr_session` before forwarding. A mount receives only a 60 s identity assertion whose `aud` is its own mount |
-| Assertion replay | 60 s lifetime, `aud` per mount, `epoch` checked against revocations. A stolen assertion cannot reach another mount or mint a session |
-| Cross-mount XSS | One origin is one browser boundary. Script on any mount can act as the user through same-origin APIs while the page is open, but cannot read or export any credential, cannot pass step-up, and is visible in audit. CSP and Trusted Types stay mandatory per mount |
-| Stolen refresh token (mobile, CLI) | Single-use rotation with reuse detection that revokes the family. Mobile refresh is also bound to its device approval key (P-256) through a signed proof per refresh |
-| Signing-key compromise | Keys live only in the token service. Short lifetimes, `kid` removal, and an epoch bump revoke outstanding tokens |
-| Session store loss | The Durable Object is durable storage. If it is unavailable, resolution fails closed (signed out) and `TTR_SESSION_KILL` returns readers to Supabase during P1 and P2 |
-| Credential stuffing and OTP abuse | Rate limits per IP prefix, per account and per OTP destination, with the existing MFA subject limits, in the session service whichever adapter runs |
-| Token endpoint abuse | Per client and per session limits on refresh, handoff and ticket issuance |
-
-**IP identity rules.** The client address is only the edge-set
-`cf-connecting-ip`, read at the gateway as described in
-[Gateway Worker](/build/devops/gateway-worker). Client-sent `X-Forwarded-For`,
-`X-Real-IP` and `True-Client-IP` are ignored. Downstream services receive the
-address inside the signed identity assertion, never from a header they trust on
-their own. IP is used for rate limits, audit and device display only, never as
-authentication. IPv6 limits aggregate by /64.
-
-**Cost controls.** First-party resolution adds one Durable Object request per
-uncached request, bounded by the 5-second isolate cache and the 5-minute touch
-coalescing. Queue events are idempotent with bounded retries. `TTR_SESSION_KILL`
-is the tested durable stop. The service-specific cost evidence goes in the
-[Cloudflare adoption guidance](/build/development-tools/oxc-cloudflare-adoption)
-before P1 enables writes.
-
-## Open questions for review
-
-- Whether Supabase trusts a Tuturuuu-held signing key (option B) without
-  letting it sign Supabase Auth sessions. It decides if B is offered at all.
-- Whether the `UserSessions` Durable Object should also hold child sessions of
-  subdomain hosts, or whether those should be retired with subdomain hosting.
-- The exact cohort and duration for the P3 parallel run.
+outstanding handoff codes.

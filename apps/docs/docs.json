@@ -369,6 +369,7 @@
                   "platform/architecture/secrets-vault",
                   "platform/architecture/secrets-vault-delivery",
                   "platform/architecture/tuturuuu-session",
+                  "platform/architecture/tuturuuu-session-rollout",
                   "platform/architecture/satellite-apps",
                   "platform/architecture/one-origin-super-app",
                   "platform/architecture/one-origin-security",
