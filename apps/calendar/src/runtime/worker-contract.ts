@@ -1,10 +1,5 @@
 export interface CalendarWorkerEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
-  /**
-   * Shared abuse guard over RPC (`tuturuuu-abuse-guard`, AbuseGuardEntrypoint).
-   * Structural so the Worker type program does not load the guard client.
-   */
-  ABUSE_GUARD?: { run(rpc: never): Promise<unknown> };
   /** Optional secret; without it the assigned families report `off`. */
   ABUSE_GUARD_KEY_PEPPER?: string;
   ABUSE_GUARD_FAMILIES?: string;
