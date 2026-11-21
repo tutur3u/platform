@@ -191,5 +191,16 @@
     "classification": "verified false positive",
     "effectiveRoles": [],
     "reason": "CREATE OR REPLACE of an existing private routine keeps its ACL: 20261027151470 revoked EXECUTE from PUBLIC, anon, authenticated and service_role, and the replacement only adds QA test account exclusions with search_path pg_catalog, pg_temp. 20261120200000_restrict_staff_identity_verifier_execute.sql recreates the complete definition and restates the revocation; only postgres-owned definer staff gates execute it."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261121141020_mira_operator_permission_evaluator.sql",
+    "signature": "public.has_workspace_permission(uuid,uuid,text)",
+    "rule": "public-execute",
+    "line": 4,
+    "digest": "27a98fbec367a6689507bed8d50b63668588549ad5b4d19a3d4891b7dc972db5",
+    "sourceDigest": "cb233263710b3631c37ade8002382d952239acf3b4035ab519db207b3ff28906",
+    "classification": "verified false positive",
+    "effectiveRoles": ["PUBLIC", "anon", "authenticated", "service_role"],
+    "reason": "Recreates the 20261030113002 definition verbatim with one added branch that answers operate_mira_channels only from an enabled root role grant the user holds; creator, admin and default permissions never imply it. Preserves the existing PUBLIC EXECUTE contract required by PUBLIC-targeted RLS policy dependencies; end-user JWT calls bind targets to auth.uid() outside triggers, and the same-file REVOKE precedes the explicit reviewed grant. has-workspace-permission-caller-scope and mira-channel-operator-and-usage pgTAP cover positive and negative controls."
   }
 ]
