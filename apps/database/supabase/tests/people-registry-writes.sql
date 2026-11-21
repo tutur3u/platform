@@ -1,5 +1,5 @@
 begin;
-select plan(38);
+select plan(43);
 
 -- Grants.
 select ok(not has_function_privilege('anon',
@@ -111,6 +111,17 @@ select is(pg_temp.write('evt-1') #>> '{items,0,result}', 'created', 'the replay 
 select is(pg_temp.write('evt-1', p_input => repeat('1', 64)) ->> 'reason', 'event_consumed',
   'a different bundle for a consumed event is refused');
 select is(pg_temp.members('c1'), 1::bigint, 'replays write nothing');
+select pg_temp.write('evt-1') from generate_series(1, 6);
+select is(pg_temp.write('evt-1') -> 'replayed', 'true'::jsonb, 'a replay still reads its receipt past the attempt cap');
+delete from private.fleet_provider_events
+  where channel = 'whatsapp' and provider_account_id = 'writes-acct' and event_hash = sha256(convert_to('evt-1', 'UTF8'));
+select is(pg_temp.write('evt-1') -> 'replayed', 'true'::jsonb, 'a receipt outlives the Fleet purge of its event');
+select is(pg_temp.write('evt-purged', p_input => repeat('2', 64)) #>> '{items,0,result}', 'duplicate',
+  'a new event after the purge is still written');
+delete from private.fleet_provider_events
+  where channel = 'whatsapp' and provider_account_id = 'writes-acct' and event_hash = sha256(convert_to('evt-1', 'UTF8'));
+select is(pg_temp.write('evt-1', p_input => repeat('3', 64)) ->> 'reason', 'event_consumed',
+  'a different body for a purged event with a receipt is refused');
 select is(pg_temp.write('evt-2') #>> '{items,0,result}', 'duplicate', 'a repeated observation is a duplicate');
 
 -- Groups.
@@ -141,6 +152,10 @@ select is(pg_temp.write('evt-desk', p_account => 'writes-desk') ->> 'reason', 's
 select is(pg_temp.slot('evt-desk', 'writes-desk'), 'absent', 'a desk refusal takes no slot');
 select ok(private.fleet_consume_provider_event(pg_temp.event('evt-fleet-first')), 'Fleet consumes an event first');
 select is(pg_temp.write('evt-fleet-first') ->> 'reason', 'event_consumed', 'a Fleet event cannot also be written');
+update private.people_channel_identities set link_state = 'rejected'
+  where person_id = pg_temp.id('lan');
+select is(pg_temp.write('evt-rejected') ->> 'reason', 'unknown_sender', 'a rejected identity is not observed');
+update private.people_channel_identities set link_state = 'confirmed' where person_id = pg_temp.id('lan');
 select is(pg_temp.write('evt-tenant', p_principal => 'other') ->> 'reason', 'principal_refused',
   'another tenant principal is refused');
 select is(pg_temp.slot('evt-tenant'), 'absent', 'a principal refusal takes no slot');

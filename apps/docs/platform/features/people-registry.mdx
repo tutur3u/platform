@@ -676,7 +676,8 @@ recall requires only the signature and returns the reduced projection.
   `event_consumed`. Every check runs before any write. The outcome, accepted
   or refused, is stored as a receipt keyed by the event, so a retry with the
   same body returns the original receipt marked `replayed`, and a different
-  body for a consumed event is refused. A memory edit with a stale revision is
+  body for a consumed event is refused. A receipt outlives the Fleet purge of
+  its provider event, and receipts have no retention job yet. A memory edit with a stale revision is
   a manager action and returns `revision_conflict`.
 - `GET /api/v1/people/changes?after={cursor}&limit={1-500}` — drain principals
   only. The response is `{events, next}`. The cursor is a per-workspace

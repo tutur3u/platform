@@ -4,7 +4,10 @@
 -- The outcome, accepted or refused, is stored as a receipt keyed by the event,
 -- so a retry with the same input hash reads the original receipt and a
 -- different bundle for a consumed event is refused. Every check runs before
--- any write, so a refused bundle writes nothing but its receipt.
+-- any write, so a refused bundle writes nothing but its receipt. A receipt
+-- outlives the Fleet purge of its provider event: an event admitted again
+-- after that purge still reads the stored receipt. Receipts have no retention
+-- job yet and grow by one row per written event.
 -- See apps/docs/platform/features/people-registry.mdx#ingress-evidence.
 begin;
 set local lock_timeout = '3s';
@@ -96,18 +99,18 @@ begin
   end if;
 
   v_admit := private.people_admit_event(p_ws, p_principal, p_event, 'registry.write');
-  if v_admit = 'event_consumed' then
-    -- A retry of the same bundle reads its receipt; any other bundle is refused.
-    select r.* into v_existing from private.people_event_receipts r
-      where r.ws_id = p_ws and r.channel = v_channel and r.provider_account_id = v_account
-        and r.event_hash = v_event_hash;
-    if found and v_existing.input_sha256 = v_input then
-      perform private.people_audit(p_ws, null, p_principal, 'write.replay', 'replayed', 'reply');
-      return v_existing.receipt || jsonb_build_object('replayed', true);
-    end if;
-    return jsonb_build_object('reason', 'event_consumed');
-  elsif v_admit <> 'admitted' then
+  if v_admit not in ('admitted', 'event_consumed') then
     return jsonb_build_object('reason', v_admit);
+  end if;
+  -- A retry of the same bundle reads its receipt; any other bundle is refused.
+  select r.* into v_existing from private.people_event_receipts r
+    where r.ws_id = p_ws and r.channel = v_channel and r.provider_account_id = v_account
+      and r.event_hash = v_event_hash;
+  if found and v_existing.input_sha256 = v_input then
+    perform private.people_audit(p_ws, null, p_principal, 'write.replay', 'replayed', 'reply');
+    return v_existing.receipt || jsonb_build_object('replayed', true);
+  elsif found or v_admit = 'event_consumed' then
+    return jsonb_build_object('reason', 'event_consumed');
   end if;
 
   select i.* into v_identity
@@ -125,6 +128,15 @@ begin
     select p.* into v_person from private.people_persons p
       where p.ws_id = p_ws and p.id = v_identity.person_id and p.status = 'active'
       for update;
+    -- Identity decisions lock the person first, so recheck the link under that
+    -- lock: an identity rejected while this call waited is not observed.
+    select i.* into v_identity from private.people_channel_identities i
+      where v_person.id is not null and i.ws_id = p_ws and i.id = v_identity.id
+        and i.person_id = v_person.id and i.link_state = 'confirmed'
+      for update;
+    if v_identity.id is null then
+      v_person := null;
+    end if;
   end if;
   select c.* into v_conversation
     from private.people_conversations c
