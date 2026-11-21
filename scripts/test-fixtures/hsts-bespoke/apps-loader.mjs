@@ -5,7 +5,20 @@ import { resolve } from 'node:path';
 import { SourceTextModule, SyntheticModule } from 'node:vm';
 
 // Execute the app-owned entry and guards; isolate route/framework suppliers.
-export async function loadWorker(app, result) {
+// Node's VM linker rejects a second module with the same identifier while
+// the first is still linking, so overlapping fixture loads take one turn.
+let loadQueue = Promise.resolve();
+
+export function loadWorker(app, result) {
+  const run = loadQueue.then(() => loadWorkerNow(app, result));
+  loadQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
+
+async function loadWorkerNow(app, result) {
   const cache = new Map();
   const emit = () => {
     if (result instanceof Error) throw result;
