@@ -7,6 +7,7 @@ const owner: Owner = {
   email: 'owner@example.invalid',
   token: 'synthetic-session',
   expiresAt: Date.now() + 300_000,
+  mfa: true,
 };
 
 afterEach(() => {

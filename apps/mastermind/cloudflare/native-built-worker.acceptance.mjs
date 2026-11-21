@@ -7,7 +7,6 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { fleetResponseFixture } from '../src/fleet/fleet-fixture.ts';
 import { createFleetGrantee } from './fleet-admission.acceptance-cases.mjs';
@@ -95,20 +94,11 @@ test(
     await writeFile(envFile, '', { mode: 0o600 });
     const registry = join(scratch, 'registry');
     await mkdir(registry);
-    const keys = await generateKeyPair('RS256', { extractable: true });
-    const jwks = JSON.stringify({
-      keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
-    });
     const secret = randomBytes(48).toString('hex');
     const email = 'owner@example.invalid';
     const seconds = Math.floor(Date.now() / 1000);
-    const access = await new SignJWT({ email })
-      .setProtectedHeader({ alg: 'RS256', kid: 'fixture' })
-      .setIssuer('https://fixture.cloudflareaccess.com')
-      .setAudience('fixture')
-      .setIssuedAt(seconds)
-      .setExpirationTime(seconds + 300)
-      .sign(keys.privateKey);
+    // The owner's session carries Web's MFA (aal2) proof.
+    const mfa = { sessionId: 'web-session', verifiedAt: seconds - 60 };
     const claims = {
       aud: 'tuturuuu-api',
       iss: 'tuturuuu',
@@ -121,27 +111,19 @@ test(
       iat: seconds,
       exp: seconds + 300,
       jti: randomUUID(),
+      mfa,
     };
     const b64 = (value) =>
       Buffer.from(JSON.stringify(value)).toString('base64url');
-    const content = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(claims)}`;
-    const session =
-      'ttr_app_' +
-      content +
-      '.' +
-      createHmac('sha256', secret).update(content).digest('base64url');
-    const grantee = createFleetGrantee({
-      app,
-      secret,
-      accessFor: (granteeEmail) =>
-        new SignJWT({ email: granteeEmail })
-          .setProtectedHeader({ alg: 'RS256', kid: 'fixture' })
-          .setIssuer('https://fixture.cloudflareaccess.com')
-          .setAudience('fixture')
-          .setIssuedAt(seconds)
-          .setExpirationTime(seconds + 300)
-          .sign(keys.privateKey),
-    });
+    const sign = (payload) => {
+      const content = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(payload)}`;
+      return `ttr_app_${content}.${createHmac('sha256', secret).update(content).digest('base64url')}`;
+    };
+    const session = sign(claims);
+    const { mfa: _mfa, ...withoutMfa } = claims;
+    const sessionWithoutMfa = sign({ ...withoutMfa, jti: randomUUID() });
+    const grantee = createFleetGrantee({ app, secret });
+    let handoffRedemptions = 0;
     const plain = (value) => ({ type: 'plain_text', value });
     const require = createRequire(join(app, 'package.json'));
     let rootAccess = true;
@@ -152,8 +134,6 @@ test(
       envFiles: [envFile],
       sendMetrics: false,
       bindings: {
-        CF_ACCESS_TEAM_DOMAIN: plain('fixture.cloudflareaccess.com'),
-        CF_ACCESS_AUD: plain('fixture'),
         MASTERMIND_OWNER_EMAIL: plain(email),
         OWNER_IDS: plain('owner'),
         TUTURUUU_APP_COORDINATION_SECRET: {
@@ -180,14 +160,6 @@ test(
           throw new Error('Provider auth forbidden');
         },
         outboundService: async (request) => {
-          if (
-            request.url ===
-            'https://fixture.cloudflareaccess.com/cdn-cgi/access/certs'
-          ) {
-            return new Response(jwks, {
-              headers: { 'Content-Type': 'application/json' },
-            });
-          }
           if (request.url === 'https://tuturuuu.com/api/v1/mastermind/access') {
             permissionReads++;
             assert.equal(
@@ -209,6 +181,13 @@ test(
               'login'
             );
             return Response.json(fleetResponseFixture(Date.now()));
+          }
+          if (
+            request.url ===
+            'https://tuturuuu.com/api/v1/auth/cross-app-token/verify'
+          ) {
+            handoffRedemptions++;
+            return Response.json({ valid: false }, { status: 401 });
           }
           const fleet = grantee.serve(request);
           if (fleet) return fleet;
@@ -241,10 +220,7 @@ test(
     );
     assert.equal(anonymousRoot.status, 303);
     assert.equal(anonymousRoot.headers.get('Location'), '/login');
-    const headers = {
-      'Cf-Access-Jwt-Assertion': access,
-      Authorization: `Bearer ${session}`,
-    };
+    const headers = { Authorization: `Bearer ${session}` };
     for (const host of [
       'preview.mastermind.example.invalid',
       'mastermind.account.workers.dev',
@@ -258,14 +234,67 @@ test(
       (await worker.fetch('https://mastermind.tuturuuu.com/en')).status,
       403
     );
-    assert.equal(
-      (
-        await worker.fetch('https://mastermind.tuturuuu.com/en', {
-          headers: { 'Cf-Access-Jwt-Assertion': access },
-        })
-      ).status,
-      403
+    // Access headers are never authority: without a session they open nothing.
+    for (const path of ['/en', '/_serverFn/answer', '/assets/probe.js']) {
+      assert.equal(
+        (
+          await worker.fetch(`https://mastermind.tuturuuu.com${path}`, {
+            headers: {
+              'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+              'Cf-Access-Authenticated-User-Email': email,
+            },
+          })
+        ).status,
+        403
+      );
+    }
+    // Signed out, a navigation goes to Tuturuuu sign-in, never Access.
+    const signIn = await worker.fetch('https://mastermind.tuturuuu.com/vi', {
+      headers: { 'Sec-Fetch-Mode': 'navigate' },
+      redirect: 'manual',
+    });
+    assert.equal(signIn.status, 303);
+    assert.ok(
+      (signIn.headers.get('Location') ?? '').startsWith(
+        'https://tuturuuu.com/login?returnUrl='
+      )
     );
+    assert.match(
+      signIn.headers.getSetCookie().join('\n'),
+      /^__Host-mastermind_login_state=[\w-]{22}; Path=\/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$/
+    );
+    // Only a callback carrying this browser's login state reaches Web.
+    const state = /^__Host-mastermind_login_state=([\w-]+);/.exec(
+      signIn.headers.getSetCookie().join('\n')
+    )?.[1];
+    const callback = (cookie) =>
+      worker.fetch(
+        `https://mastermind.tuturuuu.com/verify-token?token=${'a'.repeat(64)}&nextUrl=${encodeURIComponent(`/en?mm_state=${state}`)}`,
+        {
+          headers: cookie
+            ? { cookie: `__Host-mastermind_login_state=${cookie}` }
+            : {},
+          redirect: 'manual',
+        }
+      );
+    for (const cookie of [undefined, 'other-state']) {
+      const refused = await callback(cookie);
+      assert.equal(refused.status, 403);
+      assert.equal(handoffRedemptions, 0);
+    }
+    const matched = await callback(state);
+    assert.equal(matched.status, 403);
+    assert.equal(handoffRedemptions, 1);
+    // An owner session without MFA is refused with the MFA notice.
+    const noMfa = await worker.fetch('https://mastermind.tuturuuu.com/en', {
+      headers: {
+        Authorization: `Bearer ${sessionWithoutMfa}`,
+        'Sec-Fetch-Mode': 'navigate',
+      },
+      redirect: 'manual',
+    });
+    assert.equal(noMfa.status, 403);
+    assert.match(await noMfa.text(), /multi-factor authentication/);
     for (const path of ['/mastermind', '/mastermind/en']) {
       assert.equal(
         (await worker.fetch(`https://tuturuuu.com${path}`, { headers })).status,

@@ -52,36 +52,37 @@ TanStack Query; route changes between locales show a fixed skeleton.
 
 ## Request admission
 
-Every path, including assets and server functions, passes the Worker first.
+The Worker is the only gate: no Cloudflare Access application fronts the host,
+and no unsigned header names the user. The session comes from the host cookie
+or a Bearer credential, signed for target `mastermind` either way. Tuturuuu Auth, with its MFA, decides who
+signed in; the Worker decides what each verified session may open. Every
+path, including assets and server functions, passes the Worker first.
 Missing configuration fails closed with 503 before storage, API or hub reads.
-Signing keys come from the team Access certs endpoint over HTTPS. A JWKS fetch
-error denies the request with 403 before any application data reads.
 
 1. Require HTTPS and exactly `mastermind.tuturuuu.com`.
    Preview and workers.dev hosts are refused regardless of forwarded headers.
-2. Verify `Cf-Access-Jwt-Assertion` using RS256, issuer
-   `https://<CF_ACCESS_TEAM_DOMAIN>`, `CF_ACCESS_AUD`, expiry and issue time.
-   jose's `createRemoteJWKSet` fetches
-   `https://<CF_ACCESS_TEAM_DOMAIN>/cdn-cgi/access/certs`. Its per-team,
-   per-isolate cache uses a five-minute refetch cooldown, a ten-minute maximum
-   cache age and a five-second fetch timeout. Unknown signing keys fail closed
-   during cooldown; a rotated key can be accepted after a successful refetch.
-   No static signing-key configuration or network-error fallback is used.
-3. Bind the session to the Access identity. Verify the satellite access
-   session with `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`,
-   access scope and a maximum lifetime of 300 seconds, and require its email
-   to equal the JWT email. The request-injected `getSatelliteAppSessionUser`
-   adapter uses shared auth core without the legacy helper's database fallback.
-4. When the JWT email equals `MASTERMIND_OWNER_EMAIL`, require `OWNER_IDS`
-   membership on every request. Missing or empty IDs deny access. Session
-   permission scopes are never treated as permission evidence.
-5. For that owner, require live root access on every request:
-   `GET /api/v1/mastermind/access` with the owner's session must answer
-   `enabled: true` (five-second timeout, redirects refused). The owner never
-   falls back to a Fleet grant. Its staging verification with real permission
-   removal remains a cutover gate.
-6. Any other verified email is a [Fleet grantee](#fleet-access-admission) and
-   reaches Fleet paths only.
+2. Verify the satellite access session with
+   `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`, access scope and a
+   maximum lifetime of 300 seconds. Its subject is the actor. The
+   request-injected `getSatelliteAppSessionUser` adapter uses shared auth core
+   without the legacy helper's database fallback. `Cf-Access-*` and other
+   identity headers are ignored.
+3. An id in `OWNER_IDS` is the owner. It must carry
+   `MASTERMIND_OWNER_EMAIL`, an MFA (aal2) proof that Web signed into the
+   session (`mfa`, verified within the last 24 hours and unexpired), and live
+   root access on every
+   request: `GET /api/v1/mastermind/access` with the owner's session must
+   answer `enabled: true` (five-second timeout, redirects refused). Refresh
+   carries the proof forward unchanged, so its age bounds how long one
+   second-factor check admits the owner. An owner session without a current
+   MFA proof gets a 403 notice to sign in again with the second factor, not
+   another sign-in redirect, and the response expires its session cookies. Missing or
+   empty IDs admit no owner. Session permission scopes are never treated as
+   permission evidence, and the owner never falls back to a Fleet grant.
+4. Any other subject is a [Fleet grantee](#fleet-access-admission) and reaches
+   Fleet paths only.
+5. Signed out, `/` and any navigation go to Tuturuuu sign-in through
+   `/login`; every other request is a private 403.
 
 ### Fleet access admission
 
@@ -95,9 +96,14 @@ with no login redirect. The admitted requests are exactly:
 - `GET` or same-origin `POST /_serverFn/fleet-access.<name>` for the six
   functions in `src/fleet-access/api.ts`.
 
-`/login` and `/verify-token` run before this gate for any verified Access
-identity, because a grantee needs them to get a session. For a grantee both
-return only to the Fleet page: any other `nextUrl` becomes `/en/fleet-access`.
+`/login` and `/verify-token` run before this gate, because a grantee needs
+them to get a session. The subject decides the return: `/verify-token` uses
+the subject Web verified, and `/login` the subject of a session the browser
+already holds. For a grantee both return only to the Fleet page: any other
+`nextUrl` becomes `/en/fleet-access`. Before any refresh, the subject of the
+access session (or, once it expires, of the refresh credential) is read from
+local signature checks, so a grantee on another path is refused without a
+network call.
 
 Production builds give a server function the SHA-256 of
 `<root-relative file>--<variable>_createServerFn_handler`. The Vite config's
@@ -127,22 +133,9 @@ require each to reach its Fleet API route, prove the owner's hashed
 `loadFleet` ID is real for the owner and denied to the grantee, deny the owner
 routes and `HEAD`, and deny the Owner tier and a revoked grant.
 
-**Required Access policy change (not applied).** The Access application
-admits only the owner. Grantees need an additional Allow rule on the same
-application: Google IdP, individual email addresses only (no Access groups,
-email domains or other bulk selectors unless separately reviewed), the same
-24-hour session cap and audit logs. Do not widen the existing owner rule or add
-a path-scoped bypass; the Worker enforces the path boundary. Applying the rule
-needs release-authority approval.
-
-**Offboarding.** Revoke the Fleet grant first: it is the immediate stop, and
-the next request is denied. Then remove the email from the Allow rule and
-revoke that person's Cloudflare Access sessions explicitly; editing the policy
-does not end Access tokens already issued.
-
-The Access policy must cover all paths, use Google IdP, allow only the
-approved owner and the individually listed Fleet grantees, cap sessions at 24
-hours and enable audit logs.
+**Granting.** A Fleet grant on Tuturuuu is the whole grant: there is no
+second allowlist at the edge. **Offboarding.** Revoke the Fleet grant; the
+next request is denied, and the next refresh with it.
 
 ## Session issuance
 
@@ -150,7 +143,7 @@ hours and enable audit logs.
 only (`PRODUCTION_INTERNAL_APP_DOMAINS`), so the central login hands off to it
 like every other satellite. No other host, subdomain or path maps to it.
 
-1. A navigation that passes Access but carries no valid session goes to
+1. A navigation without a valid session goes to
    `/login`, which answers 303 to `https://tuturuuu.com/login` with
    `returnUrl=https://mastermind.tuturuuu.com/verify-token?nextUrl=<path>`.
    Return paths must stay on the host and never point at `/login` or
@@ -158,16 +151,18 @@ like every other satellite. No other host, subdomain or path maps to it.
 2. Web mints a single-use, 300-second cross-app token for target
    `mastermind` after its own MFA policy. `/verify-token` exchanges it at
    `POST /api/v1/auth/cross-app-token/verify` and accepts the answer only when
-   the access and refresh tokens verify locally for target `mastermind`, the
-   token email equals the Access email and the access session lives at most
-   300 seconds. For the owner's email the subject must be in `OWNER_IDS`; for
-   any other email the new session must hold a live Fleet grant.
+   the access and refresh tokens verify locally for target `mastermind` and
+   name the same subject, and the access session lives at most 300 seconds.
+   An owner id must carry the owner email; any other subject's new session
+   must hold a live Fleet grant. Web's handoff enforces the account's MFA
+   policy, and its MFA proof travels in the session for the owner check.
 3. Both credentials are set host-only (no `Domain`), `Path=/`, `HttpOnly`,
    `Secure`, `SameSite=Lax`, and the owner returns to the path.
 4. When the access session expires, the next request sends the refresh
    credential to `POST /api/v1/auth/cross-app-session/refresh` (after verifying
-   it locally for an allowlisted owner, or for the Access email of a grantee),
-   renders with the new session and sets
+   it locally; an owner id needs the owner email), accepts only a session for
+   that same subject (a grantee's only with a live grant), renders with it and
+   sets
    the rotated cookies on that response. Web's replay grace covers concurrent
    requests. A non-navigation without a session is 403.
 
@@ -187,15 +182,35 @@ database audience `private.cross_app_internal_app_names()` lists it
 `x-tuturuuu-app-redeem-proof` header: an HMAC-SHA256 of the target and the
 credential under the coordination secret (`@tuturuuu/auth/app-redeem-proof`;
 any current or next secret verifies). Only the Worker and Web hold that
-secret, so a handoff URL copied from history or logs, or a refresh cookie
-lifted from the browser, mints nothing elsewhere. The Worker also rejects a
-refresh credential that lives longer than a day.
+secret, so no other client can redeem them directly. The Worker rejects a
+refresh credential that lives longer than a day and a handoff token that is
+not 64 lowercase hex characters, without calling Web. A refresh cookie lifted
+from the browser still works when replayed to the Worker, so the owner's
+24-hour MFA age is what ends a stolen chain.
+
+**Login state.** `/login` sets a random `__Host-mastermind_login_state` cookie
+(`__Host-` so no sibling subdomain can plant it, `Path=/`, ten minutes, `HttpOnly`, `SameSite=Lax`)
+and carries the same value as `mm_state` inside `nextUrl`, the only part of
+the return Web keeps. `/verify-token` exchanges a handoff only when both
+match, strips `mm_state` from the return and clears the cookie, so a handoff
+URL started in another browser cannot sign this browser in as someone else.
+
+Two gaps remain. The shared session cookie names carry no `__Host-` prefix,
+so script on a sibling `*.tuturuuu.com` host could plant its own valid
+grantee session. The state binds the browser, not the handoff token, so a
+nonce read from the sign-in URL within its ten minutes allows the same swap.
+Binding internal handoffs to an S256 challenge, as external apps already are,
+closes both.
 
 **Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
 Web's root Mastermind permission denies the next request and every refresh.
-Ending the Access session stops the Worker, the only party that can redeem
-the refresh credential. An access session already issued stays valid at the
-Web fleet routes until it expires, at most 300 seconds.
+Revoking a Fleet grant denies the grantee's next request and refresh. Signing
+out of Tuturuuu ends Web's session but not the Worker's: each refresh rotates
+a new one-day credential, so the chain continues while it is used daily. The
+owner's chain stops admitting 24 hours after the second-factor check it
+carries; a grantee's chain ends with the grant. An access session already
+issued stays valid at the Web fleet routes until it expires, at most 300
+seconds.
 
 ## Data boundaries and memo
 
@@ -311,18 +326,21 @@ the `production` ref:
 3. `deploy` (GitHub environment `mastermind-production`, secret
    `MASTERMIND_CLOUDFLARE_API_TOKEN`) restores and re-verifies the sealed
    archive, converts it to cf Build Output without rebuilding and requires the
-   Worker secret names `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`,
-   `MASTERMIND_OWNER_EMAIL`, `OWNER_IDS` and `TUTURUUU_APP_COORDINATION_SECRET`.
+   Worker secret names `MASTERMIND_OWNER_EMAIL`, `OWNER_IDS` and
+   `TUTURUUU_APP_COORDINATION_SECRET`.
    Holding the deploy slot, it publishes only when the run's commit is still
    the `production` head, so a rerun of an older run publishes nothing. It
    captures the serving version, uploads the new one, records its id, checks
    the head again, and moves traffic only while the captured version still
    serves; a run overtaken during upload leaves its version without traffic. The first
    release creates the Worker, which answers 503 until its secrets exist.
-4. With `MASTERMIND_HOST_ATTACHED=true` and `MASTERMIND_ACCESS_TEAM_DOMAIN`
-   set, every probed path (`/`, the locales, `/login`, `/verify-token`, a
-   server function, an asset, `/api/build-info`) must answer an anonymous
-   request with a 302 to that team's Access login for this host. After any
+4. With `MASTERMIND_HOST_ATTACHED=true`, the job checks the sign-in gate
+   anonymously: `/` answers 303 to `/login`, `/login` answers 303 to
+   Tuturuuu sign-in with the `/verify-token` return, and the locales,
+   `/verify-token`, a server function, an asset and `/api/build-info` answer
+   a private 403. While `MASTERMIND_ACCESS_TEAM_DOMAIN` is set (an Access
+   application still fronting the host), it instead requires every path to
+   redirect to that team's Access login. After any
    failure the captured version is assigned back only while this run's own
    version is serving. Receipts are kept for 30 days. A deployment marker is
    recorded only for an existing, configured Worker whose host check passed;
@@ -342,15 +360,13 @@ Manual rollback is one step:
 `node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-mastermind --version <previous version id>`
 with the version from the run's `mastermind-release-*` receipt.
 
-Provisioned outside the source, by name: the Access self-hosted application
-for `mastermind.tuturuuu.com` (owner-only email policy, 24-hour session,
-`HttpOnly` cookie; its AUD is `CF_ACCESS_AUD`), the Worker custom domain
-`mastermind.tuturuuu.com` (DNS), the five Worker secrets, the
+Provisioned outside the source, by name: the Worker custom domain
+`mastermind.tuturuuu.com` (DNS), the three Worker secrets, the
 `mastermind-production` environment with `MASTERMIND_CLOUDFLARE_API_TOKEN`,
-the variables `MASTERMIND_HOST_ATTACHED` and `MASTERMIND_ACCESS_TEAM_DOMAIN`
-and, on the gateway,
-`GATEWAY_MASTERMIND_REDIRECT`. The account's Access identity provider is
-one-time PIN; a Google identity provider needs its own OAuth client.
+the variable `MASTERMIND_HOST_ATTACHED` and, on the gateway,
+`GATEWAY_MASTERMIND_REDIRECT`. No Cloudflare Access application covers the
+host: Tuturuuu Auth, with MFA, is the only sign-in, so Access would only add a
+second login without adding an authority the Worker lacks.
 
 A real-browser smoke that loads, refreshes and answers through the compiled
 server functions, MFA and live permission acceptance, and the revocation

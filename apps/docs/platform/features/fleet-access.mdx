@@ -195,12 +195,13 @@ asks the person to reload. Server functions call the Fleet API with the
 caller's short-lived Mastermind session and validate every response against
 the `@tuturuuu/internal-api/fleet` schemas.
 
-Admission binds the verified Access identity to the app session and admits a
-fleet grantee only to the Fleet page, its assets and its server functions,
-rechecking the live grant on every request. See
+Admission takes the actor only from the verified Tuturuuu Auth session (the
+owner also needs a second-factor check from the last 24 hours) and admits a fleet grantee only to the Fleet page,
+its assets and its server functions, rechecking the live grant on every
+request. No Cloudflare Access application fronts the host, and identity
+headers are ignored. See
 [Fleet access admission](/build/devops/mastermind-web#fleet-access-admission).
-Grantees also need an Access policy rule; the owner rule stays unchanged. All
-strings ship in English and Vietnamese.
+All strings ship in English and Vietnamese.
 
 ### Mira chat
 
@@ -405,9 +406,10 @@ run by the owner or the release owners:
 3. **Catalog and digest:** the Owner registers project catalog rows and approved
    display values, and the digest publisher token is issued so status exists to
    read.
-4. **Web admission:** the Cloudflare Access policy for Mastermind web gains an
-   Allow rule listing the person's individual email, as described in the
-   [Mastermind web runbook](/build/devops/mastermind-web).
+4. **Web admission:** none beyond the grant. The person signs in to
+   Mastermind web with their tuturuuu.com account, and the live grant admits
+   them to the Fleet area, as described in the
+   [Mastermind web runbook](/build/devops/mastermind-web#fleet-access-admission).
 5. **Mobile:** the next app release carries the Fleet access view and its Apps
    hub tile.
 6. **Chat desks:** each desk follows the v2 cutover in the
@@ -416,9 +418,8 @@ run by the owner or the release owners:
 7. **Consumer:** the Slice 5 consumer token and mode are set only when dry-run
    receipts are wanted. Its kill switch and the Fleet stop both halt it.
 
-Offboarding reverses steps 2 and 4: revoke the grant first, which takes effect on
-the next request, then remove the email and revoke the person's Cloudflare Access
-sessions.
+Offboarding reverses step 2: revoking the grant takes effect on the next
+request and the next session refresh.
 
 ## Implementation plan
 

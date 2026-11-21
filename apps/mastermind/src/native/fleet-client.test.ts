@@ -9,6 +9,7 @@ const owner: Owner = {
   email: 'o@example.invalid',
   token: 'session-token',
   expiresAt: Date.now() + 60_000,
+  mfa: true,
 };
 
 test('fleet reads send only the owner bearer and the login feature, and validate the body', async () => {

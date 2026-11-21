@@ -35,7 +35,7 @@ const emptyDigest = {
   },
 };
 
-export function createFleetGrantee({ app, secret, accessFor }) {
+export function createFleetGrantee({ app, secret }) {
   const seconds = Math.floor(Date.now() / 1000);
   const b64 = (value) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -124,10 +124,8 @@ export function createFleetGrantee({ app, secret, accessFor }) {
     worker,
     { ownerHeaders, ownerStateReads, ownerChecks }
   ) {
-    const headers = async () => ({
-      'Cf-Access-Jwt-Assertion': await accessFor(email),
-      Authorization: `Bearer ${session}`,
-    });
+    // The verified session is the whole identity; no Access header is sent.
+    const headers = async () => ({ Authorization: `Bearer ${session}` });
     const rpc = async (as, id, method, data) => {
       const url = new URL(`${host}/_serverFn/${id}`);
       const init = {
@@ -244,6 +242,33 @@ export function createFleetGrantee({ app, secret, accessFor }) {
     assert.equal(ownerStateReads(), stateReads + 1);
     assert.equal(ownerChecks(), ownerChecksAfterOwner);
     assert.ok(ownerChecksAfterOwner > checks);
+
+    // A forged Access identity naming the owner elevates nothing.
+    const forged = {
+      'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+      'Cf-Access-Authenticated-User-Email': 'owner@example.invalid',
+    };
+    assert.equal((await page('/en', { headers: forged })).status, 403);
+    assert.equal(
+      (await page('/en/fleet-access', { headers: forged })).status,
+      200
+    );
+    assert.equal(ownerChecks(), ownerChecksAfterOwner);
+
+    // A grantee's sign-in returns only to the Fleet page.
+    const login = await page('/login?nextUrl=%2Fen');
+    assert.equal(login.status, 303);
+    const returnUrl = new URL(
+      new URL(login.headers.get('Location') ?? '').searchParams.get(
+        'returnUrl'
+      ) ?? ''
+    );
+    const next = new URL(
+      returnUrl.searchParams.get('nextUrl') ?? '',
+      'https://mastermind.tuturuuu.com'
+    );
+    assert.equal(next.pathname, '/en/fleet-access');
+    assert.match(next.searchParams.get('mm_state') ?? '', /^[\w-]{22}$/);
 
     // The Owner tier and a revoked grant deny the next request.
     for (const next of [

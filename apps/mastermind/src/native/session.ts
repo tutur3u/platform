@@ -18,9 +18,11 @@ import { hasLiveFleetGrant } from './permission';
  * `tuturuuu.com/login` with a return to `/verify-token`, Web mints a
  * single-use cross-app token for target `mastermind`, and this Worker
  * exchanges it for a 300-second access session and a refresh credential,
- * both host-only `HttpOnly` cookies. Every step runs behind Cloudflare
- * Access and requires the Access email. Issuance for the owner's email also
- * requires the allowlisted owner id; any other email needs a live Fleet grant.
+ * both host-only `HttpOnly` cookies. The signed session, from those cookies
+ * or a Bearer credential for target `mastermind`, is the only identity; no
+ * unsigned header names the user. An owner id must carry the
+ * owner email; any other subject needs a live Fleet grant at issuance and at
+ * every refresh, and a refresh renews only its own subject.
  */
 export const MASTERMIND_ORIGIN = 'https://mastermind.tuturuuu.com';
 const WEB_ORIGIN = 'https://tuturuuu.com';
@@ -41,15 +43,71 @@ export function safeNextPath(raw: string | null) {
   return `${url.pathname}${url.search}`;
 }
 
+/**
+ * Login state: `/login` sets a random nonce in a `__Host-` cookie, which no
+ * sibling subdomain can plant, and carries it inside the return path (Web keeps only
+ * `nextUrl` across the handoff). `/verify-token` accepts a handoff only when
+ * both match, so a handoff URL started in another browser cannot replace
+ * this browser's session.
+ */
+export const LOGIN_STATE_COOKIE = '__Host-mastermind_login_state';
+export const LOGIN_STATE_PARAM = 'mm_state';
+const LOGIN_STATE_SECONDS = 600;
+
+function randomState() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
 export function loginRedirect(nextPath: string) {
+  const state = randomState();
+  const next = new URL(safeNextPath(nextPath), MASTERMIND_ORIGIN);
+  next.searchParams.set(LOGIN_STATE_PARAM, state);
   const verify = new URL('/verify-token', MASTERMIND_ORIGIN);
-  verify.searchParams.set('nextUrl', safeNextPath(nextPath));
+  verify.searchParams.set('nextUrl', `${next.pathname}${next.search}`);
   const login = new URL('/login', WEB_ORIGIN);
   login.searchParams.set('returnUrl', verify.toString());
-  return new Response(null, {
-    status: 303,
-    headers: { Location: login.toString() },
-  });
+  const headers = new Headers({ Location: login.toString() });
+  headers.append(
+    'Set-Cookie',
+    `${LOGIN_STATE_COOKIE}=${state}; Path=/; Max-Age=${LOGIN_STATE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
+  );
+  return new Response(null, { status: 303, headers });
+}
+
+/** Clears the one-use login state after a callback. */
+export const CLEAR_LOGIN_STATE = `${LOGIN_STATE_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+
+/**
+ * The callback's return path without its login state, or null when the state
+ * is missing or does not match this browser's cookie.
+ */
+export function consumeLoginState(request: Request, rawNext: string | null) {
+  const cookie = readCookie(request, LOGIN_STATE_COOKIE);
+  const next = new URL(safeNextPath(rawNext), MASTERMIND_ORIGIN);
+  const state = next.searchParams.get(LOGIN_STATE_PARAM);
+  if (!cookie || !state || !sameString(cookie, state)) return null;
+  next.searchParams.delete(LOGIN_STATE_PARAM);
+  return safeNextPath(`${next.pathname}${next.search}`);
+}
+
+function sameString(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let index = 0; index < a.length; index++)
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  return diff === 0;
+}
+
+/** Web's handoff token: 32 random bytes, hex. Anything else costs no call. */
+export function isHandoffToken(token: string | null): token is string {
+  return !!token && /^[0-9a-f]{64}$/.test(token);
 }
 
 const sessionResponse = z.object({
@@ -70,31 +128,30 @@ export interface IssuedSession {
 }
 
 /**
- * The owner's email admits only owner ids. Another email admits only itself,
- * and never an owner id.
+ * An owner id holds a session only with the owner email. Any other subject
+ * may hold one only while its Fleet grant is live, checked by the caller.
  */
 function mayHoldSession(
   env: MastermindEnvironment,
-  email: string,
   claims: { sub: string; email?: string | null }
 ) {
-  return isOwnerEmail(env, email)
-    ? ownerIds(env).includes(claims.sub)
-    : claims.email === email && !ownerIds(env).includes(claims.sub);
+  return ownerIds(env).includes(claims.sub)
+    ? isOwnerEmail(env, claims.email ?? '')
+    : true;
 }
 
 /**
  * Accepts a Web session response only when both credentials verify locally
- * for target `mastermind` with the Access email, and the access session lives
- * at most 300 seconds. The subject is an allowlisted owner for the owner's
- * email and holds a live Fleet grant otherwise.
+ * for target `mastermind`, name the same subject (the refreshing subject on a
+ * refresh), and the access session lives at most 300 seconds. An owner id
+ * must carry the owner email; any other subject needs a live Fleet grant.
  */
 async function acceptSession(
   body: unknown,
   env: MastermindEnvironment,
-  email: string,
   now: number,
-  fetcher: typeof fetch
+  fetcher: typeof fetch,
+  expectedSubject?: string
 ): Promise<IssuedSession | null> {
   const parsed = sessionResponse.safeParse(body);
   const secret = env.TUTURUUU_APP_COORDINATION_SECRET;
@@ -110,14 +167,14 @@ async function acceptSession(
   if (
     claims.sub !== parsed.data.userId ||
     refresh.claims.sub !== claims.sub ||
-    claims.email !== email ||
+    (expectedSubject !== undefined && claims.sub !== expectedSubject) ||
     claims.exp - claims.iat > MAX_ACCESS_SECONDS ||
     refresh.claims.exp - refresh.claims.iat > MAX_REFRESH_SECONDS ||
-    !mayHoldSession(env, email, claims)
+    !mayHoldSession(env, claims)
   )
     return null;
   if (
-    !isOwnerEmail(env, email) &&
+    !ownerIds(env).includes(claims.sub) &&
     !(await hasLiveFleetGrant(parsed.data.appSessionToken, fetcher))
   )
     return null;
@@ -173,7 +230,6 @@ async function postWeb(
 export async function exchangeHandoff(
   token: string,
   env: MastermindEnvironment,
-  email: string,
   now = Date.now(),
   fetcher: typeof fetch = fetch
 ) {
@@ -185,7 +241,7 @@ export async function exchangeHandoff(
       env,
       fetcher
     );
-    return body ? await acceptSession(body, env, email, now, fetcher) : null;
+    return body ? await acceptSession(body, env, now, fetcher) : null;
   } catch {
     return null;
   }
@@ -195,7 +251,6 @@ export async function exchangeHandoff(
 export async function refreshSession(
   request: Request,
   env: MastermindEnvironment,
-  email: string,
   now = Date.now(),
   fetcher: typeof fetch = fetch
 ) {
@@ -207,7 +262,7 @@ export async function refreshSession(
     targetApp: TARGET,
     now: new Date(now),
   });
-  if (!local.ok || !mayHoldSession(env, email, local.claims)) return null;
+  if (!local.ok || !mayHoldSession(env, local.claims)) return null;
   try {
     const body = await postWeb(
       '/api/v1/auth/cross-app-session/refresh',
@@ -216,13 +271,15 @@ export async function refreshSession(
       env,
       fetcher
     );
-    return body ? await acceptSession(body, env, email, now, fetcher) : null;
+    return body
+      ? await acceptSession(body, env, now, fetcher, local.claims.sub)
+      : null;
   } catch {
     return null;
   }
 }
 
-function readCookie(request: Request, name: string) {
+export function readCookie(request: Request, name: string) {
   for (const part of (request.headers.get('cookie') ?? '').split(';')) {
     const [key, ...value] = part.trim().split('=');
     if (key === name) return value.join('=') || null;
@@ -242,6 +299,13 @@ export function sessionCookies(session: IssuedSession) {
       session.refreshExpiresAt
     ),
   ];
+}
+
+/** Expires both session cookies so the next visit signs in again. */
+export function clearedSessionCookies() {
+  return [APP_SESSION_COOKIE_NAME, APP_SESSION_REFRESH_COOKIE_NAME].map(
+    (name) => `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
+  );
 }
 
 /** The request as if it had arrived with the new access session. */

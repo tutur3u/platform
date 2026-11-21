@@ -299,7 +299,7 @@ jobs:
           # Names only. A missing Worker is a first release and stays closed
           # with 503 until its secrets are set. Any other failure stops the job.
           node --input-type=module <<'EOF' >> "$GITHUB_OUTPUT"
-          const required = ["CF_ACCESS_TEAM_DOMAIN","CF_ACCESS_AUD","MASTERMIND_OWNER_EMAIL","OWNER_IDS","TUTURUUU_APP_COORDINATION_SECRET"];
+          const required = ["MASTERMIND_OWNER_EMAIL","OWNER_IDS","TUTURUUU_APP_COORDINATION_SECRET"];
           const account = process.env.CLOUDFLARE_ACCOUNT_ID;
           const token = process.env.CLOUDFLARE_API_TOKEN;
           if (!account || !token) {
@@ -389,26 +389,41 @@ jobs:
             "
           fi
           echo 'assigned=true' >> "$GITHUB_OUTPUT"
-      - name: Verify the whole host is served through Access
-        id: access
+      - name: Verify the host's sign-in gate
+        id: gate
         if: steps.publish.outputs.assigned == 'true' && vars.MASTERMIND_HOST_ATTACHED == 'true'
         env:
           TEAM: ${{ vars.MASTERMIND_ACCESS_TEAM_DOMAIN }}
         run: |
-          # Every path, without an Access session, must redirect to this
-          # team's login for this host; any other answer means some path can
-          # reach the Worker without Access.
-          test -n "$TEAM" || { echo 'Missing MASTERMIND_ACCESS_TEAM_DOMAIN'; exit 1; }
-          expected="https://$TEAM/cdn-cgi/access/login/mastermind.tuturuuu.com"
-          for path in / /en /vi /login /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
-            result=$(curl --silent --show-error --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --output /dev/null --write-out '%{http_code} %{redirect_url}' "https://mastermind.tuturuuu.com$path")
-            status=${result%% *}
-            location=${result#* }
-            case "$location" in "$expected"|"$expected?"*) matched=true ;; *) matched=false ;; esac
-            if [ "$status" != 302 ] || [ "$matched" != true ]; then
-              echo "::error::$path answered $status $location; expected 302 to $expected"
-              exit 1
-            fi
+          probe() {
+            curl --silent --show-error --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --output /dev/null --dump-header "$RUNNER_TEMP/gate-headers" --write-out '%{http_code} %{redirect_url}' "https://mastermind.tuturuuu.com$1"
+          }
+          fail() { echo "::error::$1"; exit 1; }
+          if [ -n "$TEAM" ]; then
+            # While a Cloudflare Access application still fronts the host,
+            # every path must redirect to its login for this host.
+            expected="https://$TEAM/cdn-cgi/access/login/mastermind.tuturuuu.com"
+            for path in / /en /vi /login /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
+              result=$(probe "$path")
+              case "${result#* }" in "$expected"|"$expected?"*) ;; *) fail "$path answered $result; expected 302 to $expected" ;; esac
+              [ "${result%% *}" = 302 ] || fail "$path answered $result; expected 302"
+            done
+            exit 0
+          fi
+          # Without Access the Worker is the gate: signed out, the root and
+          # /login lead to Tuturuuu sign-in and every other path is a
+          # private 403 that never names an Access login.
+          result=$(probe /)
+          [ "$result" = "303 https://mastermind.tuturuuu.com/login" ] || fail "/ answered $result; expected 303 to /login"
+          result=$(probe /login)
+          case "$result" in
+            '303 https://tuturuuu.com/login?returnUrl=https%3A%2F%2Fmastermind.tuturuuu.com%2Fverify-token'*) ;;
+            *) fail "/login answered $result; expected 303 to Tuturuuu sign-in" ;;
+          esac
+          for path in /en /vi /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
+            result=$(probe "$path")
+            [ "$result" = "403 " ] || fail "$path answered $result; expected 403"
+            grep -qi '^cache-control: private, no-store' "$RUNNER_TEMP/gate-headers" || fail "$path is not private, no-store"
           done
       # Restores the captured baseline only when this run's own version is
       # serving; a version an operator moved to after capture is left alone.
@@ -441,7 +456,7 @@ jobs:
       # A marker means an existing, configured Worker passed the host check;
       # a first release or an unattached host records none.
       - name: Record successful Cloudflare deployment
-        if: steps.publish.outputs.assigned == 'true' && steps.secrets.outputs.exists == 'true' && steps.access.outcome == 'success'
+        if: steps.publish.outputs.assigned == 'true' && steps.secrets.outputs.exists == 'true' && steps.gate.outcome == 'success'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}

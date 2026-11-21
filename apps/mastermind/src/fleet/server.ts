@@ -5,7 +5,7 @@ import { fleetAnswerRequestSchema } from './contract';
 
 /**
  * The only data paths of the command center. Both run after the Worker's
- * Access, session, allowlist and live-permission gates, read the owner from
+ * session, MFA, allowlist and live-permission gates, read the owner from
  * the request context and talk to Web with the owner's own bearer.
  */
 export const loadFleet = createServerFn({ method: 'GET' }).handler(async () => {

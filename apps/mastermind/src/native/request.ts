@@ -6,13 +6,17 @@ import {
 import {
   type Admitted,
   authenticate,
-  isOwnerEmail,
   type MastermindEnvironment,
-  verifyAccessEmail,
+  ownerIds,
+  sessionSubject,
 } from './auth';
 import { fleetReturnPath, isFleetPath } from './fleet-admission';
 import {
+  CLEAR_LOGIN_STATE,
+  clearedSessionCookies,
+  consumeLoginState,
   exchangeHandoff,
+  isHandoffToken,
   loginRedirect,
   refreshSession,
   safeNextPath,
@@ -84,6 +88,11 @@ function admitsMethod(request: Request, url: URL, mount: ResolvedMount) {
   );
 }
 
+/** The owner's session lacks a second-factor check from the last day. */
+const MFA_REQUIRED =
+  'Mastermind needs a multi-factor authentication check from the last 24 hours. Sign out of Tuturuuu, sign in again with your second factor, then reopen Mastermind.\n' +
+  'Mastermind cần một lần xác thực đa yếu tố trong 24 giờ qua. Hãy đăng xuất khỏi Tuturuuu, đăng nhập lại bằng yếu tố thứ hai, rồi mở lại Mastermind.\n';
+
 export async function mastermindRequest(
   request: Request,
   env: MastermindEnvironment,
@@ -99,41 +108,53 @@ export async function mastermindRequest(
   const mount =
     url.protocol === 'https:' ? resolveAppBase(url, mastermindMount) : null;
   if (!mount) return secure(new Response('Forbidden', { status: 403 }));
-  const email = await verifyAccessEmail(request, env, now);
-  if (!email) {
-    return request.method === 'GET' && url.pathname === '/'
-      ? secure(
-          new Response(null, { status: 303, headers: { Location: '/login' } })
-        )
-      : secure(new Response('Forbidden', { status: 403 }));
-  }
-  // Login and its callback precede the path gate: a grantee needs them to get
-  // a session. A grantee always returns to the Fleet page.
-  const ownerEmail = isOwnerEmail(env, email);
-  const returnPath = (raw: string | null) =>
-    ownerEmail ? safeNextPath(raw) : fleetReturnPath(safeNextPath(raw));
+  // The verified Tuturuuu session is the only identity; no request header
+  // names the user. Login and its callback come first, so anyone can start a
+  // sign-in, and only a session the Worker accepts is issued.
+  const isOwner = (subject: string) => ownerIds(env).includes(subject);
   if (request.method === 'GET' && url.pathname === '/login') {
+    // A signed-in grantee returns only to the Fleet page; the callback below
+    // applies the same rule to the subject Web verifies.
+    const next = safeNextPath(url.searchParams.get('nextUrl') ?? '/en');
+    const signedIn = sessionSubject(request, env, now);
     return secure(
-      loginRedirect(returnPath(url.searchParams.get('nextUrl') ?? '/en'))
+      loginRedirect(
+        signedIn && !isOwner(signedIn) ? fleetReturnPath(next) : next
+      )
     );
   }
   if (request.method === 'GET' && url.pathname === '/verify-token') {
+    // The login state must match this browser's, and a malformed token never
+    // reaches Web.
+    const next = consumeLoginState(request, url.searchParams.get('nextUrl'));
     const token = url.searchParams.get('token');
-    const session = token
-      ? await exchangeHandoff(token, env, email, now)
-      : null;
-    if (!session) return secure(new Response('Forbidden', { status: 403 }));
+    const session =
+      next && isHandoffToken(token)
+        ? await exchangeHandoff(token, env, now)
+        : null;
+    if (!next || !session) {
+      return secure(
+        new Response('Forbidden', {
+          status: 403,
+          headers: { 'Set-Cookie': CLEAR_LOGIN_STATE },
+        })
+      );
+    }
+    // A grantee always returns to the Fleet page.
     const headers = new Headers({
-      Location: returnPath(url.searchParams.get('nextUrl')),
+      Location: isOwner(session.userId) ? next : fleetReturnPath(next),
     });
+    headers.append('Set-Cookie', CLEAR_LOGIN_STATE);
     for (const cookie of sessionCookies(session))
       headers.append('Set-Cookie', cookie);
     return secure(new Response(null, { status: 303, headers }));
   }
 
-  // A Fleet grantee reaches Fleet paths only; nothing else does session work.
+  // A non-owner session reaches Fleet paths only: anything else is 403
+  // before any refresh, permission call or render.
   const fleetPath = isFleetPath(request.method, url, mount.basePath);
-  if (!ownerEmail && !fleetPath) {
+  const subject = sessionSubject(request, env, now);
+  if (subject && !isOwner(subject) && !fleetPath) {
     return secure(new Response('Forbidden', { status: 403 }));
   }
 
@@ -142,7 +163,7 @@ export async function mastermindRequest(
   let issued: string[] = [];
   if (!owner) {
     // An expired access session rotates its refresh credential inline.
-    const session = await refreshSession(request, env, email, now);
+    const session = await refreshSession(request, env, now);
     if (session) {
       admitted = withSessionCookie(request, session);
       owner = await authenticate(admitted, env, now, fleetPath);
@@ -152,12 +173,28 @@ export async function mastermindRequest(
   if (owner === 'forbidden') {
     return secure(new Response('Forbidden', { status: 403 }));
   }
+  if (owner === 'mfa') {
+    // Refresh would carry the stale proof forward, so drop the session and
+    // let the next visit sign in with a fresh second-factor check.
+    const headers = new Headers({
+      'Content-Type': 'text/plain; charset=utf-8',
+    });
+    for (const cookie of clearedSessionCookies())
+      headers.append('Set-Cookie', cookie);
+    return secure(new Response(MFA_REQUIRED, { status: 403, headers }));
+  }
   if (!owner) {
+    if (request.method === 'GET' && url.pathname === '/') {
+      return secure(
+        new Response(null, { status: 303, headers: { Location: '/login' } })
+      );
+    }
     const navigation =
       request.method === 'GET' &&
       request.headers.get('Sec-Fetch-Mode') === 'navigate';
+    const next = safeNextPath(`${url.pathname}${url.search}`);
     return navigation
-      ? secure(loginRedirect(returnPath(`${url.pathname}${url.search}`)))
+      ? secure(loginRedirect(fleetPath ? fleetReturnPath(next) : next))
       : secure(new Response('Forbidden', { status: 403 }));
   }
   if (!admitsMethod(request, url, mount)) {

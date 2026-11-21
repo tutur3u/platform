@@ -690,13 +690,13 @@ test('Mastermind publishes only its sealed artifact from the gated deploy job', 
   const secrets = jobs.deploy.steps.find((step) => step.id === 'secrets');
   assert.match(secrets.run, /workers\/scripts\/tuturuuu-mastermind\/secrets/);
   for (const name of [
-    'CF_ACCESS_TEAM_DOMAIN',
-    'CF_ACCESS_AUD',
     'MASTERMIND_OWNER_EMAIL',
     'OWNER_IDS',
     'TUTURUUU_APP_COORDINATION_SECRET',
   ])
     assert.match(secrets.run, new RegExp(name));
+  // The Worker is its own gate; no Cloudflare Access secret is required.
+  assert.doesNotMatch(secrets.run, /CF_ACCESS_/);
   assert.match(secrets.run, /missing required secret names/);
   assert.match(secrets.run, /exists=false/);
   assert.doesNotMatch(secrets.run, /bun x --no-install/);

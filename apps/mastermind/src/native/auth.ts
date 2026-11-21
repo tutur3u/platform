@@ -1,12 +1,14 @@
-import { verifyAppSessionRequestWithToken } from '@tuturuuu/auth/app-session-core';
+import {
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  verifyAppSessionRefreshToken,
+  verifyAppSessionRequestWithToken,
+} from '@tuturuuu/auth/app-session-core';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { isMfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { hasLiveFleetGrant, hasLiveRootAccess } from './permission';
 
 export interface MastermindEnvironment {
   ASSETS?: AssetsBinding;
-  CF_ACCESS_TEAM_DOMAIN?: string;
-  CF_ACCESS_AUD?: string;
   MASTERMIND_OWNER_EMAIL?: string;
   OWNER_IDS?: string;
   TUTURUUU_APP_COORDINATION_SECRET?: string;
@@ -17,8 +19,6 @@ export function assertMastermindEnvironment(env: MastermindEnvironment): void {
     throw new Error('Mastermind requires production mode');
   }
   const required = [
-    env.CF_ACCESS_TEAM_DOMAIN,
-    env.CF_ACCESS_AUD,
     env.MASTERMIND_OWNER_EMAIL,
     env.OWNER_IDS,
     env.TUTURUUU_APP_COORDINATION_SECRET,
@@ -28,27 +28,16 @@ export function assertMastermindEnvironment(env: MastermindEnvironment): void {
   }
 }
 
-// Keep jose's cache and cooldown alive across requests within this isolate.
-const accessKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
-function accessKeys(issuer: URL) {
-  let keys = accessKeySets.get(issuer.origin);
-  if (!keys) {
-    keys = createRemoteJWKSet(new URL('/cdn-cgi/access/certs', issuer), {
-      cooldownDuration: 300_000,
-      cacheMaxAge: 600_000,
-      timeoutDuration: 5_000,
-    });
-    if (accessKeySets.size >= 8) accessKeySets.clear();
-    accessKeySets.set(issuer.origin, keys);
-  }
-  return keys;
-}
+/** An owner's second-factor check admits for at most a day. */
+export const OWNER_MFA_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export type Owner = {
   id: string;
   email: string;
   token: string;
   expiresAt: number;
+  /** The session carries Web's MFA proof, verified within the last day. */
+  mfa: boolean;
 };
 
 /**
@@ -80,63 +69,20 @@ export function getSatelliteAppSessionUser(
     !claims.sub
   )
     return null;
+  // Refresh carries the proof forward, so its age, not the session's, bounds
+  // how long one second-factor check admits the owner.
+  const mfa =
+    isMfaSessionProof(claims.mfa) &&
+    claims.mfa.verifiedAt * 1000 <= now &&
+    now - claims.mfa.verifiedAt * 1000 <= OWNER_MFA_MAX_AGE_MS &&
+    (claims.mfa.expiresAt === undefined || claims.mfa.expiresAt * 1000 > now);
   return {
     id: claims.sub,
     email: claims.email,
     token,
     expiresAt: claims.exp * 1000,
+    mfa,
   };
-}
-
-/**
- * The Cloudflare Access identity: the email of a verified
- * `Cf-Access-Jwt-Assertion` on the dedicated HTTPS host, or null. The Access
- * policy decides who reaches the Worker; `authenticate` decides what each
- * identity may open.
- */
-export async function verifyAccessEmail(
-  request: Request,
-  env: MastermindEnvironment,
-  now = Date.now()
-): Promise<string | null> {
-  try {
-    const url = new URL(request.url);
-    // Never trust forwarded host headers to turn a preview into the canonical host.
-    if (url.protocol !== 'https:' || url.hostname !== 'mastermind.tuturuuu.com')
-      return null;
-    const token = request.headers.get('Cf-Access-Jwt-Assertion');
-    if (
-      !token ||
-      !env.CF_ACCESS_TEAM_DOMAIN ||
-      !env.CF_ACCESS_AUD ||
-      !env.MASTERMIND_OWNER_EMAIL
-    )
-      return null;
-    const issuer = new URL(`https://${env.CF_ACCESS_TEAM_DOMAIN}`);
-    if (
-      !issuer.hostname.endsWith('.cloudflareaccess.com') ||
-      issuer.host !== env.CF_ACCESS_TEAM_DOMAIN
-    )
-      return null;
-    const keys = accessKeys(issuer);
-    const { payload } = await jwtVerify(token, keys, {
-      algorithms: ['RS256'],
-      issuer: issuer.origin,
-      audience: env.CF_ACCESS_AUD,
-      requiredClaims: ['exp', 'iat', 'email'],
-      currentDate: new Date(now),
-    });
-    if (
-      typeof payload.email !== 'string' ||
-      !payload.email ||
-      typeof payload.iat !== 'number' ||
-      payload.iat * 1000 > now
-    )
-      return null;
-    return payload.email;
-  } catch {
-    return null;
-  }
 }
 
 /** The allowlisted owner ids; missing or empty admits nobody. */
@@ -147,37 +93,63 @@ export function ownerIds(env: MastermindEnvironment) {
     .filter(Boolean);
 }
 
-/** The owner's Access email admits only the allowlisted owner ids. */
 export function isOwnerEmail(env: MastermindEnvironment, email: string) {
-  return email === env.MASTERMIND_OWNER_EMAIL;
+  return !!env.MASTERMIND_OWNER_EMAIL && email === env.MASTERMIND_OWNER_EMAIL;
 }
 
 /**
- * The session must belong to the Access identity. The owner's email needs an
- * allowlisted id and live root `manage_mastermind`, as before Fleet access.
- * Any other email needs a Fleet path, a non-owner id and a live non-Owner
- * Fleet grant, checked on every request without a memo. `forbidden` marks a valid session that this path
- * does not admit, so the caller answers 403 instead of sending it to login.
+ * The subject of the request's own session, from local signature checks only
+ * (the access session, else the refresh credential), so a path gate can run
+ * before any refresh or permission call. Null when neither verifies.
+ */
+export function sessionSubject(
+  request: Request,
+  env: MastermindEnvironment,
+  now = Date.now()
+): string | null {
+  const secret = env.TUTURUUU_APP_COORDINATION_SECRET?.trim();
+  if (!secret) return null;
+  const access = getSatelliteAppSessionUser('mastermind', request, env, now);
+  if (access) return access.id;
+  for (const part of (request.headers.get('cookie') ?? '').split(';')) {
+    const [key, ...value] = part.trim().split('=');
+    if (key !== APP_SESSION_REFRESH_COOKIE_NAME) continue;
+    const refresh = verifyAppSessionRefreshToken(value.join('='), {
+      secret,
+      targetApp: 'mastermind',
+      now: new Date(now),
+    });
+    return refresh.ok ? refresh.claims.sub : null;
+  }
+  return null;
+}
+
+/**
+ * The verified Tuturuuu session is the only identity. An owner id needs the
+ * owner email, an MFA (aal2) proof and live root `manage_mastermind`; it never
+ * takes the grantee path. Any other subject needs a Fleet path and a live
+ * non-Owner Fleet grant, checked on every request without a memo.
+ * `forbidden` marks a valid session this path does not admit and `mfa` an
+ * owner session without MFA, so the caller answers 403 instead of sending it
+ * to login again. Null means no valid session.
  */
 export async function authenticate(
   request: Request,
   env: MastermindEnvironment,
   now = Date.now(),
   fleetPath = false
-): Promise<Admitted | 'forbidden' | null> {
+): Promise<Admitted | 'forbidden' | 'mfa' | null> {
   try {
-    const email = await verifyAccessEmail(request, env, now);
-    if (!email) return null;
     const user = getSatelliteAppSessionUser('mastermind', request, env, now);
-    if (!user || user.email !== email) return null;
-    if (isOwnerEmail(env, email)) {
-      if (!ownerIds(env).includes(user.id)) return null;
+    if (!user) return null;
+    if (ownerIds(env).includes(user.id)) {
+      if (!isOwnerEmail(env, user.email)) return 'forbidden';
+      if (!user.mfa) return 'mfa';
       return (await hasLiveRootAccess(user))
         ? { ...user, role: 'owner' }
-        : null;
+        : 'forbidden';
     }
-    // An owner id never takes the grantee path, whatever its Access email.
-    if (!fleetPath || ownerIds(env).includes(user.id)) return 'forbidden';
+    if (!fleetPath) return 'forbidden';
     return (await hasLiveFleetGrant(user.token))
       ? { ...user, role: 'fleet' }
       : 'forbidden';

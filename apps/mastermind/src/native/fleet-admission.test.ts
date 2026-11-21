@@ -5,8 +5,7 @@ import {
   createAppSessionToken,
   createAppSessionTokenPair,
 } from '@tuturuuu/auth/app-session-core';
-import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Admitted, MastermindEnvironment } from './auth';
 import { currentFleetActor, currentOwner, withOwner } from './context';
 import {
@@ -21,20 +20,13 @@ const owner = { id: 'owner', email: 'owner@example.invalid' };
 const grantee = { id: 'grantee', email: 'ops@example.invalid' };
 const secret = randomBytes(48).toString('hex');
 const host = 'https://mastermind.tuturuuu.com';
-let keys: Awaited<ReturnType<typeof generateKeyPair>>;
 let env: MastermindEnvironment;
-let team = 0;
 const rootFetch = vi.fn<typeof fetch>();
 const grantFetch = vi.fn<typeof fetch>();
 const web = vi.fn<typeof fetch>();
 
-beforeAll(async () => {
-  keys = await generateKeyPair('RS256', { extractable: true });
-});
 beforeEach(() => {
   env = {
-    CF_ACCESS_TEAM_DOMAIN: `fleet-${++team}.cloudflareaccess.com`,
-    CF_ACCESS_AUD: 'fixture',
     MASTERMIND_OWNER_EMAIL: owner.email,
     OWNER_IDS: owner.id,
     TUTURUUU_APP_COORDINATION_SECRET: secret,
@@ -46,10 +38,6 @@ beforeEach(() => {
     'fetch',
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input instanceof Request ? input.url : String(input);
-      if (url.endsWith('/cdn-cgi/access/certs'))
-        return Response.json({
-          keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'k' }],
-        });
       if (url === 'https://tuturuuu.com/api/v1/mastermind/access')
         return rootFetch(input, init);
       if (url === 'https://tuturuuu.com/api/v1/fleet/access')
@@ -73,14 +61,11 @@ const live = (enabled = true, stopped = false) =>
       : { enabled, tier: null, projects: [], capabilities: [], stopped }
   );
 
-const access = (email: string) =>
-  new SignJWT({ email })
-    .setProtectedHeader({ alg: 'RS256', kid: 'k' })
-    .setIssuer(`https://${env.CF_ACCESS_TEAM_DOMAIN}`)
-    .setAudience('fixture')
-    .setIssuedAt(Math.floor(now / 1000) - 1)
-    .setExpirationTime(Math.floor(now / 1000) + 120)
-    .sign(keys.privateKey);
+/** An MFA (aal2) proof as Web carries it into the app session. */
+const mfa = {
+  sessionId: 'web-session',
+  verifiedAt: Math.floor(now / 1000) - 60,
+};
 
 const session = (user: { id: string; email: string }) =>
   createAppSessionToken(
@@ -89,6 +74,7 @@ const session = (user: { id: string; email: string }) =>
       userId: user.id,
       email: user.email,
       expiresInSeconds: 300,
+      mfa,
     },
     { secret, now: new Date(now - 1000) }
   ).token;
@@ -98,12 +84,10 @@ async function call(
   {
     method = 'GET',
     as = grantee,
-    accessEmail = as.email,
     headers = {},
   }: {
     method?: string;
     as?: { id: string; email: string };
-    accessEmail?: string;
     headers?: Record<string, string>;
   } = {}
 ) {
@@ -112,7 +96,6 @@ async function call(
     new Request(`${host}${path}`, {
       method,
       headers: {
-        'Cf-Access-Jwt-Assertion': await access(accessEmail),
         cookie: `tuturuuu_app_session=${session(as)}`,
         ...headers,
       },
@@ -210,20 +193,29 @@ test('a revoked, stopped or unverifiable grant denies the next request', async (
   }
 });
 
-test('the session must belong to the verified Access identity', async () => {
-  const other = { id: 'other', email: 'other@example.invalid' };
-  for (const attempt of [
-    { as: other, accessEmail: grantee.email },
-    { as: grantee, accessEmail: other.email },
-    { as: owner, accessEmail: grantee.email },
-    { as: grantee, accessEmail: owner.email },
-  ]) {
-    expect(await call('/en/fleet-access', attempt)).toMatchObject({
-      status: 403,
-      roles: [],
-    });
+test('forged Access headers are ignored: the session alone is the identity', async () => {
+  const forged = {
+    'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+    'Cf-Access-Authenticated-User-Email': owner.email,
+  };
+  for (const path of ['/en', '/_serverFn/answer']) {
+    expect(
+      await call(path, { headers: { ...forged, ...sameOrigin } })
+    ).toMatchObject({ status: 403, roles: [] });
   }
-  expect(grantFetch).not.toHaveBeenCalled();
+  expect(await call('/en/fleet-access', { headers: forged })).toMatchObject({
+    status: 200,
+    roles: ['fleet'],
+  });
+  expect(rootFetch).not.toHaveBeenCalled();
+  const anonymous = await mastermindRequest(
+    new Request(`${host}/en`, { headers: forged }),
+    env,
+    () => new Response('rendered'),
+    now
+  );
+  expect(anonymous.status).toBe(403);
+  expect(grantFetch).toHaveBeenCalledTimes(1);
 });
 
 test('an owner id under another email is never a grantee', async () => {
@@ -252,7 +244,7 @@ test('the Owner tier never admits the grantee path', async () => {
     roles: [],
   });
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, grantee.email, now)).toBeNull();
+  expect(await exchangeHandoff('t', env, now)).toBeNull();
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
   expect(
     await refreshSession(
@@ -262,7 +254,6 @@ test('the Owner tier never admits the grantee path', async () => {
         },
       }),
       env,
-      grantee.email,
       now
     )
   ).toBeNull();
@@ -271,7 +262,7 @@ test('the Owner tier never admits the grantee path', async () => {
 test('an owner id cannot get a session under another email', async () => {
   env.OWNER_IDS = `${owner.id},${grantee.id}`;
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, grantee.email, now)).toBeNull();
+  expect(await exchangeHandoff('t', env, now)).toBeNull();
   expect(grantFetch).not.toHaveBeenCalled();
   expect(
     await refreshSession(
@@ -281,7 +272,6 @@ test('an owner id cannot get a session under another email', async () => {
         },
       }),
       env,
-      grantee.email,
       now
     )
   ).toBeNull();
@@ -292,18 +282,22 @@ test('a grantee login and callback return only to the Fleet page', async () => {
   const returnOf = async (path: string, as = grantee) => {
     const response = await mastermindRequest(
       new Request(`${host}${path}`, {
-        headers: { 'Cf-Access-Jwt-Assertion': await access(as.email) },
+        headers: { cookie: `tuturuuu_app_session=${session(as)}` },
       }),
       env,
       () => new Response('unreachable'),
       now
     );
     const location = response.headers.get('Location') ?? '';
-    return location.startsWith('https://tuturuuu.com/login')
-      ? new URL(
-          new URL(location).searchParams.get('returnUrl') ?? ''
-        ).searchParams.get('nextUrl')
-      : location;
+    if (!location.startsWith('https://tuturuuu.com/login')) return location;
+    const next = new URL(
+      new URL(
+        new URL(location).searchParams.get('returnUrl') ?? ''
+      ).searchParams.get('nextUrl') ?? '',
+      host
+    );
+    next.searchParams.delete('mm_state');
+    return `${next.pathname}${next.search}`;
   };
   expect(await returnOf('/login?nextUrl=%2Fen')).toBe('/en/fleet-access');
   expect(await returnOf('/login?nextUrl=%2F_serverFn%2Fanswer')).toBe(
@@ -316,9 +310,16 @@ test('a grantee login and callback return only to the Fleet page', async () => {
   expect(await returnOf('/login?nextUrl=%2Fvi', owner)).toBe('/vi');
 
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await returnOf('/verify-token?token=t&nextUrl=%2Fen')).toBe(
-    '/en/fleet-access'
+  const callback = await mastermindRequest(
+    new Request(
+      `${host}/verify-token?token=${'b'.repeat(64)}&nextUrl=${encodeURIComponent('/en?mm_state=s')}`,
+      { headers: { cookie: '__Host-mastermind_login_state=s' } }
+    ),
+    env,
+    () => new Response('unreachable'),
+    now
   );
+  expect(callback.headers.get('Location')).toBe('/en/fleet-access');
 });
 
 test('a grantee may use only GET for the page and assets', async () => {
@@ -354,7 +355,7 @@ test('the owner is unchanged and never falls back to a Fleet grant', async () =>
 });
 
 test('a grantee context has a Fleet actor and no owner identity', () => {
-  const user = { ...grantee, token: 't', expiresAt: now + 1000 };
+  const user = { ...grantee, token: 't', expiresAt: now + 1000, mfa: true };
   const request = new Request(`${host}/en/fleet-access`);
   withOwner(request, { ...user, role: 'fleet' }, () => {
     expect(currentFleetActor().id).toBe(grantee.id);
@@ -418,12 +419,12 @@ const pair = (user: { id: string; email: string }) => {
 
 test('a grantee session is issued and rotated only with a live grant', async () => {
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, grantee.email, now)).toMatchObject({
+  expect(await exchangeHandoff('t', env, now)).toMatchObject({
     userId: grantee.id,
   });
   grantFetch.mockImplementationOnce(async () => live(false));
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, grantee.email, now)).toBeNull();
+  expect(await exchangeHandoff('t', env, now)).toBeNull();
 
   const refreshing = (user: { id: string; email: string }) =>
     new Request(`${host}/en/fleet-access`, {
@@ -433,12 +434,15 @@ test('a grantee session is issued and rotated only with a live grant', async () 
     });
   web.mockClear();
   const other = { id: 'other', email: 'other@example.invalid' };
-  expect(
-    await refreshSession(refreshing(other), env, grantee.email, now)
-  ).toBeNull();
-  expect(web).not.toHaveBeenCalled();
+  // Renewing one subject never yields a session for another.
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(
-    await refreshSession(refreshing(grantee), env, grantee.email, now)
-  ).toMatchObject({ userId: grantee.id });
+  expect(await refreshSession(refreshing(other), env, now)).toBeNull();
+  // A revoked grant ends the next refresh.
+  grantFetch.mockImplementationOnce(async () => live(false));
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(await refreshSession(refreshing(grantee), env, now)).toBeNull();
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(await refreshSession(refreshing(grantee), env, now)).toMatchObject({
+    userId: grantee.id,
+  });
 });

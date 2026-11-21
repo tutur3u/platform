@@ -1,9 +1,8 @@
-import { randomBytes } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
-import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { MastermindEnvironment, Owner } from './auth';
 import { createDataClients, createOwnerMemo } from './clients';
 import { mastermindRequest } from './request';
@@ -11,36 +10,24 @@ import { mastermindRequest } from './request';
 const now = Date.now();
 const email = 'owner@example.invalid';
 const secret = randomBytes(48).toString('hex');
-let keys: Awaited<ReturnType<typeof generateKeyPair>>;
 let env: MastermindEnvironment;
-beforeAll(async () => {
-  keys = await generateKeyPair('RS256', { extractable: true });
-});
-let team = 0;
-const jwksFetch = vi.fn<typeof fetch>();
 const permissionFetch = vi.fn<typeof fetch>();
-beforeEach(async () => {
+const otherFetch = vi.fn<typeof fetch>();
+beforeEach(() => {
   env = {
-    CF_ACCESS_TEAM_DOMAIN: `fixture-${++team}.cloudflareaccess.com`,
-    CF_ACCESS_AUD: 'fixture',
     MASTERMIND_OWNER_EMAIL: email,
     OWNER_IDS: 'owner',
     TUTURUUU_APP_COORDINATION_SECRET: secret,
   };
-  jwksFetch.mockReset();
-  jwksFetch.mockImplementation(async () =>
-    Response.json({
-      keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
-    })
-  );
   permissionFetch.mockReset();
   permissionFetch.mockImplementation(async () =>
     Response.json({ enabled: true })
   );
+  otherFetch.mockReset();
   vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) =>
     String(input) === 'https://tuturuuu.com/api/v1/mastermind/access'
       ? permissionFetch(input, init)
-      : jwksFetch(input, init)
+      : otherFetch(input, init)
   );
 });
 afterEach(() => {
@@ -48,74 +35,82 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function access(
+const seconds = (at: number) => Math.floor(at / 1000);
+/** An MFA (aal2) proof as Web carries it into the app session. */
+const mfaProof = (at = now, expiresAt?: number) => ({
+  sessionId: 'web-session',
+  verifiedAt: seconds(at) - 60,
+  ...(expiresAt === undefined ? {} : { expiresAt }),
+});
+function session(
   options: {
-    email?: string;
-    exp?: number;
-    aud?: string;
-    iss?: string;
-    kid?: string;
-    key?: CryptoKey;
+    app?: string;
+    ttl?: number;
+    userId?: string;
     at?: number;
+    mail?: string;
+    mfa?: ReturnType<typeof mfaProof> | null;
   } = {}
 ) {
-  return new SignJWT({ email: options.email ?? email })
-    .setProtectedHeader({ alg: 'RS256', kid: options.kid ?? 'fixture' })
-    .setIssuer(options.iss ?? `https://${env.CF_ACCESS_TEAM_DOMAIN}`)
-    .setAudience(options.aud ?? 'fixture')
-    .setIssuedAt(Math.floor((options.at ?? now) / 1000) - 1)
-    .setExpirationTime(
-      options.exp ?? Math.floor((options.at ?? now) / 1000) + 120
-    )
-    .sign(options.key ?? keys.privateKey);
-}
-function session(app = 'mastermind', ttl = 300, userId = 'owner', at = now) {
+  const at = options.at ?? now;
   return createAppSessionToken(
-    { targetApp: app, userId, email, expiresInSeconds: ttl },
+    {
+      targetApp: options.app ?? 'mastermind',
+      userId: options.userId ?? 'owner',
+      email: options.mail ?? email,
+      expiresInSeconds: options.ttl ?? 300,
+      ...(options.mfa === null ? {} : { mfa: options.mfa ?? mfaProof(at) }),
+    },
     { secret, now: new Date(at - 1000) }
   ).token;
 }
+const owner = (extra: Record<string, string> = {}) => ({
+  Authorization: `Bearer ${session()}`,
+  ...extra,
+});
 const denied = [
-  'no Access header',
+  'no session',
+  'forged Access headers only',
   'wrong email',
-  'forged email header',
-  'expired JWT',
+  'no MFA',
+  'expired MFA',
+  'MFA over a day old',
+  'expired session',
   'preview host',
   'plaintext HTTP',
   'apex path',
   'workers.dev host',
-  'no session',
   'no permission',
   'wrong app',
   'long session',
-  'wrong audience',
-  'wrong issuer',
   'invalid signature',
   'missing config',
-  'unknown kid',
-  'JWKS fetch failure',
 ] as const;
 test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
-  let jwt = await access({
-    kid: kind === 'unknown kid' ? 'unknown' : 'fixture',
-    email: kind === 'wrong email' ? 'other@example.invalid' : email,
-    exp: kind === 'expired JWT' ? Math.floor(now / 1000) - 1 : undefined,
-    aud: kind === 'wrong audience' ? 'other' : undefined,
-    iss:
-      kind === 'wrong issuer'
-        ? 'https://other.cloudflareaccess.com'
-        : undefined,
+  let token = session({
+    app: kind === 'wrong app' ? 'mail' : 'mastermind',
+    ttl: kind === 'long session' ? 3600 : 300,
+    mail: kind === 'wrong email' ? 'other@example.invalid' : email,
+    mfa:
+      kind === 'no MFA'
+        ? null
+        : kind === 'expired MFA'
+          ? mfaProof(now, seconds(now) - 1)
+          : kind === 'MFA over a day old'
+            ? mfaProof(now - 24 * 60 * 60 * 1000)
+            : undefined,
+    at: kind === 'expired session' ? now - 600_000 : now,
   });
-  if (kind === 'invalid signature') jwt = `${jwt.slice(0, -12)}AAAAAAAAAAAA`;
-  const headers = new Headers({
-    'Cf-Access-Jwt-Assertion': jwt,
-    cookie: `tuturuuu_app_session=${session(kind === 'wrong app' ? 'mail' : 'mastermind', kind === 'long session' ? 3600 : 300)}`,
-  });
-  if (kind === 'no Access header' || kind === 'forged email header')
-    headers.delete('Cf-Access-Jwt-Assertion');
-  if (kind === 'forged email header')
+  if (kind === 'invalid signature')
+    token = `${token.slice(0, -12)}AAAAAAAAAAAA`;
+  const headers = new Headers({ Authorization: `Bearer ${token}` });
+  if (kind === 'no session' || kind === 'forged Access headers only')
+    headers.delete('Authorization');
+  if (kind === 'forged Access headers only') {
+    // Access headers are never authority, valid-looking or not.
+    headers.set('Cf-Access-Jwt-Assertion', 'eyJhbGciOiJSUzI1NiJ9.e30.sig');
     headers.set('Cf-Access-Authenticated-User-Email', email);
-  if (kind === 'no session') headers.delete('cookie');
+  }
   const host =
     kind === 'preview host'
       ? 'preview.mastermind.tuturuuu.com'
@@ -123,8 +118,6 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
         ? 'mastermind.account.workers.dev'
         : 'mastermind.tuturuuu.com';
   const protocol = kind === 'plaintext HTTP' ? 'http:' : 'https:';
-  if (kind === 'JWKS fetch failure')
-    jwksFetch.mockRejectedValue(new Error('JWKS unavailable'));
   let reads = 0;
   const response = await mastermindRequest(
     new Request(
@@ -136,7 +129,8 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
     {
       ...env,
       OWNER_IDS: kind === 'no permission' ? '' : env.OWNER_IDS,
-      CF_ACCESS_AUD: kind === 'missing config' ? undefined : env.CF_ACCESS_AUD,
+      TUTURUUU_APP_COORDINATION_SECRET:
+        kind === 'missing config' ? undefined : secret,
     },
     async () => {
       reads++;
@@ -147,15 +141,56 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
   expect(response.status).toBe(403);
   expect(reads).toBe(0);
   expect(permissionFetch).not.toHaveBeenCalled();
+  expect(otherFetch).not.toHaveBeenCalled();
   expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });
+test('an owner session without MFA gets the MFA notice, not a login loop', async () => {
+  const response = await mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/en', {
+      headers: {
+        Authorization: `Bearer ${session({ mfa: null })}`,
+        'Sec-Fetch-Mode': 'navigate',
+      },
+    }),
+    env,
+    () => new Response('private'),
+    now
+  );
+  expect(response.status).toBe(403);
+  expect(response.headers.get('Location')).toBeNull();
+  expect(response.headers.getSetCookie()).toEqual([
+    'tuturuuu_app_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+    'tuturuuu_app_session_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+  ]);
+  expect(await response.text()).toMatch(/multi-factor authentication/);
+});
+test('an MFA proof without verifiedAt never admits the owner', async () => {
+  // Web's signer refuses such a proof, so hand-sign a session that carries one.
+  const [header, payload] = session().slice('ttr_app_'.length).split('.');
+  const claims = JSON.parse(Buffer.from(payload ?? '', 'base64url').toString());
+  delete claims.mfa.verifiedAt;
+  const content = `${header}.${Buffer.from(JSON.stringify(claims)).toString('base64url')}`;
+  const token = `ttr_app_${content}.${createHmac('sha256', secret).update(content).digest('base64url')}`;
+  let reads = 0;
+  const response = await mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/en', {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    env,
+    () => {
+      reads++;
+      return new Response('private');
+    },
+    now
+  );
+  // Shared verification rejects the malformed proof, so no session exists.
+  expect(response.status).toBe(403);
+  expect(reads).toBe(0);
+  expect(permissionFetch).not.toHaveBeenCalled();
+});
 test('valid owner -> 200; permission revocation is immediate even with warm memo', async () => {
-  const headers = {
-    'Cf-Access-Jwt-Assertion': await access(),
-    Authorization: `Bearer ${session()}`,
-  };
   const request = new Request('https://mastermind.tuturuuu.com/vi', {
-    headers,
+    headers: owner(),
   });
   let reads = 0;
   const memo = createOwnerMemo<string>(() => now);
@@ -191,22 +226,23 @@ test('valid owner -> 200; permission revocation is immediate even with warm memo
 test('memo expires at 60s, is per owner and per instance, and respects session expiry', () => {
   let clock = now;
   const memo = createOwnerMemo<string>(() => clock);
-  const owner: Owner = {
+  const user: Owner = {
     id: 'owner',
     email,
     token: '',
     expiresAt: now + 300_000,
+    mfa: true,
   };
-  memo.set(owner, 'data');
-  expect(memo.get({ ...owner, id: 'other' })).toBeUndefined();
-  expect(createOwnerMemo().get(owner)).toBeUndefined();
+  memo.set(user, 'data');
+  expect(memo.get({ ...user, id: 'other' })).toBeUndefined();
+  expect(createOwnerMemo().get(user)).toBeUndefined();
   clock = now + 59_999;
-  expect(memo.get(owner)).toBe('data');
+  expect(memo.get(user)).toBe('data');
   clock++;
-  expect(memo.get(owner)).toBeUndefined();
-  memo.set({ ...owner, expiresAt: clock + 1 }, 'short');
+  expect(memo.get(user)).toBeUndefined();
+  memo.set({ ...user, expiresAt: clock + 1 }, 'short');
   clock++;
-  expect(memo.get(owner)).toBeUndefined();
+  expect(memo.get(user)).toBeUndefined();
 });
 test('org API client forwards only the user session and never follows redirects', async () => {
   const original = globalThis.fetch;
@@ -218,7 +254,13 @@ test('org API client forwards only the user session and never follows redirects'
   try {
     await createDataClients(
       {},
-      { id: 'owner', email, token: 'user-fixture', expiresAt: now + 1000 }
+      {
+        id: 'owner',
+        email,
+        token: 'user-fixture',
+        expiresAt: now + 1000,
+        mfa: true,
+      }
     ).orgLinks('root');
     expect(captured?.headers.get('Authorization')).toBe('Bearer user-fixture');
     expect(captured?.redirect).toBe('manual');
@@ -233,6 +275,7 @@ test('data clients refuse redirect responses without reading the target', async 
     email,
     token: 'user-fixture',
     expiresAt: now + 1000,
+    mfa: true,
   };
   const redirected = () =>
     new Response(null, {
@@ -285,87 +328,9 @@ test('app tree contains no privileged database key names', () => {
   scan(root);
 });
 
-test('rotated key is refused during cooldown and accepted after JWKS refetch', async () => {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(now);
-  let reads = 0;
-  const render = async () => {
-    reads++;
-    return new Response('owner');
-  };
-  const oldRequest = new Request('https://mastermind.tuturuuu.com/en', {
-    headers: {
-      'Cf-Access-Jwt-Assertion': await access(),
-      Authorization: `Bearer ${session()}`,
-    },
-  });
-  expect((await mastermindRequest(oldRequest, env, render, now)).status).toBe(
-    200
-  );
-  expect(jwksFetch).toHaveBeenCalledTimes(1);
-  expect(String(jwksFetch.mock.calls[0]?.[0])).toBe(
-    `https://${env.CF_ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`
-  );
-  const rotated = await generateKeyPair('RS256', { extractable: true });
-  jwksFetch.mockImplementation(async () =>
-    Response.json({
-      keys: [{ ...(await exportJWK(rotated.publicKey)), kid: 'rotated' }],
-    })
-  );
-  async function rotatedRequest(at: number) {
-    return new Request('https://mastermind.tuturuuu.com/en', {
-      headers: {
-        'Cf-Access-Jwt-Assertion': await access({
-          kid: 'rotated',
-          key: rotated.privateKey,
-          at,
-        }),
-        Authorization: `Bearer ${session('mastermind', 300, 'owner', at)}`,
-      },
-    });
-  }
-  expect(
-    (await mastermindRequest(await rotatedRequest(now), env, render, now))
-      .status
-  ).toBe(403);
-  expect(jwksFetch).toHaveBeenCalledTimes(1);
-  expect(reads).toBe(1);
-  const beforeCooldown = now + 299_999;
-  vi.setSystemTime(beforeCooldown);
-  expect(
-    (
-      await mastermindRequest(
-        await rotatedRequest(beforeCooldown),
-        env,
-        render,
-        beforeCooldown
-      )
-    ).status
-  ).toBe(403);
-  expect(jwksFetch).toHaveBeenCalledTimes(1);
-  expect(reads).toBe(1);
-  const afterCooldown = now + 300_001;
-  vi.setSystemTime(afterCooldown);
-  expect(
-    (
-      await mastermindRequest(
-        await rotatedRequest(afterCooldown),
-        env,
-        render,
-        afterCooldown
-      )
-    ).status
-  ).toBe(200);
-  expect(jwksFetch).toHaveBeenCalledTimes(2);
-  expect(reads).toBe(2);
-});
-
 test('live permission revocation denies the next request with unchanged env and warm memo', async () => {
   const request = new Request('https://mastermind.tuturuuu.com/en', {
-    headers: {
-      'Cf-Access-Jwt-Assertion': await access(),
-      Authorization: `Bearer ${session()}`,
-    },
+    headers: owner(),
   });
   const memo = createOwnerMemo<string>(() => now);
   let reads = 0;
@@ -404,10 +369,7 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
     });
     const render = vi.fn(async () => new Response('private'));
     const request = new Request('https://mastermind.tuturuuu.com/en', {
-      headers: {
-        'Cf-Access-Jwt-Assertion': await access(),
-        Authorization: `Bearer ${session()}`,
-      },
+      headers: owner(),
     });
     expect((await mastermindRequest(request, env, render, now)).status).toBe(
       403
@@ -416,10 +378,7 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
   }
 );
 test('only same-origin server-function POSTs pass the method gate', async () => {
-  const base = {
-    'Cf-Access-Jwt-Assertion': await access(),
-    Authorization: `Bearer ${session()}`,
-  };
+  const base = owner();
   const attempt = async (
     path: string,
     method: string,
