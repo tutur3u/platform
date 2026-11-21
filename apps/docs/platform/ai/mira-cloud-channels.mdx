@@ -469,12 +469,15 @@ replay or redirect one.
   verifies with both versions during a bounded overlap, then removes the old
   one; revocation removes it immediately and fails closed. Both paths are
   rehearsed before launch and audited.
-- **Admission records:** for every verified event the signer issues an
-  admission record, signed with the signer's admission key, that binds the
-  event tuple, the content hash, the destination conversation object name
-  and workspace, and the issue time. The conversation object verifies it
-  with the signer's public key before ingesting, so the router cannot
-  fabricate an event or retarget one to another destination.
+- **Admission records:** for every verified event the signer signs, with
+  its admission key, the entire canonical normalized event (every field the
+  runtime decides on: channel, account, event id, sender, conversation and
+  type, addressing flags, timestamps and content hash) together with the
+  destination conversation object name, workspace and issue time. The
+  conversation object verifies the signature with the signer's public key
+  and checks the destination and workspace against its own before
+  ingesting, so the router cannot fabricate, alter (including substituting
+  the sender for the same destination) or retarget an event.
 - **Logging:** neither the signers nor the router log or trace raw headers,
   bodies, signatures or proofs. Invocation logs and tail consumers are off
   for the signers; errors carry codes only. Redaction is covered by tests in
@@ -522,7 +525,9 @@ replay or redirect one.
   mutually exclusive for the same event; `registry.recall` may coexist with
   either. There is no standalone observe operation: observations travel in
   the write bundle. Queue work is keyed by the same
-  `(channel, account, event)` tuple. The write is a single
+  `(channel, account, event)` tuple. Personal-session recall is outside this
+  ledger: its one-recall-per-event cap is kept by the registry separately
+  and never consumes a Fleet or registry-write slot. The write is a single
   bundle of every observation and memory derived from that event, committed
   atomically by the registry and consumed through its own replay wrapper; a
   retry with the same input hash returns the original receipt, and a
@@ -577,13 +582,15 @@ Registration prerequisites:
    - shadow performs zero Fleet effects; partial cutover, mixed versions and
      rollback with in-flight work are rehearsed, including a paused sender,
      a stale Web replica, clock skew, fence failover, delayed provider
-     completion, lost provider receipts and an M4 returning after its token
-     expired, in both directions;
+     completion, lost provider receipts, an M4 returning after its token
+     expired and an M4 returning after it redeemed a token, in both
+     directions;
    - admission refuses any mismatch between the bearer's desk, the verifying
      key's desk and credential version, the claims and the live desk-owner
      row;
-   - conversation objects reject router submissions that are fabricated or
-     retargeted to another destination;
+   - conversation objects reject router submissions that are fabricated,
+     retargeted to another destination, or altered for the same
+     destination (including a substituted sender);
    - the two signers cannot reach each other's credentials, provider secret
      rotation and revocation work, and no raw headers, bodies or proofs
      appear in logs or traces;
@@ -850,12 +857,16 @@ with the first deployable slice.
    2. Reconcile every started send and issued token from provider receipts
       (message ids, delivery or status events). Promotion is blocked while
       any started send could still take effect. The operator may clear an
-      unresolved send only with evidence of both: the old sender cannot
-      start (its desk credentials are revoked or its process is proven
-      stopped, on top of the fence refusing further redemptions), and no
-      outstanding provider request can still land (a provider receipt, or
-      the provider's idempotency window or the sender's hard request
-      timeout plus acceptance margin has elapsed). If
+      unresolved send only with evidence of both:
+      - **the sender cannot reach the provider:** a verified stop of the
+        sending process, or a provider-side send fence (the provider
+        session or token that sender uses is revoked or rotated, or the
+        provider revokes it). Revoking Fleet desk credentials alone is not
+        enough, because it does not cut provider access;
+      - **the request cannot still land:** a terminal provider receipt, or
+        an acceptance bound the provider itself documents. Our own
+        timeouts and elapsed idempotency windows do not count.
+      If
       reconciliation does not finish within 15 minutes, the default is to
       abort: the current owner resumes under a fresh generation and the
       unresolved send stays marked uncertain for the operator, so a channel
