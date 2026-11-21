@@ -15,7 +15,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: unknown[]) => mocks.getPermissions(...args),
 }));
 
-import { isClientForwardingHeader } from '../../../../gateway/src/forwarding-headers';
 import {
   authorizeMiraOperator,
   MIRA_OPERATOR_ACTION_HEADER,
@@ -104,7 +103,16 @@ describe('authorizeMiraOperator', () => {
     expect(admitted.ok).toBe(true);
   });
 
-  it('uses an intent header the apex gateway forwards to mounted apps', () => {
-    expect(isClientForwardingHeader(MIRA_OPERATOR_ACTION_HEADER)).toBe(false);
+  it('accepts the app-session bearer the Admin proxy attaches', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      permissions(['admin', 'operate_mira_channels'])
+    );
+    const result = await authorizeMiraOperator(
+      new Request('https://admin.test/api', {
+        headers: { authorization: 'Bearer ttr_app_fixture' },
+      })
+    );
+    expect(result.ok).toBe(true);
+    expect(mocks.resolveActor).toHaveBeenCalled();
   });
 });

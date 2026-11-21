@@ -1,4 +1,5 @@
 import 'server-only';
+import { getBearerAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import type { MiraRpcClient } from '@tuturuuu/internal-api/mira-channels-rpc';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -49,15 +50,21 @@ export function hasSameOriginWriteIntent(request: Request) {
 
 /**
  * Operator routes run only on the Admin session (the Admin proxy enforces MFA
- * assurance). Bearer and scheduled callers are refused before any lookup, and
- * the caller needs root admin plus the explicit-grant operator permission,
- * which creators, admin and default permissions never imply.
+ * assurance). The only bearer accepted is an app-session token, which the
+ * Admin proxy attaches for the cookie session and which
+ * resolveSatelliteRequestActor verifies for the Admin app; API keys, cron
+ * secrets and any other bearer are refused before any lookup. The caller
+ * needs root admin plus the explicit-grant operator permission, which
+ * creators, admin and default permissions never imply.
  */
 export async function authorizeMiraOperator(
   request: Request,
   { write = false }: { write?: boolean } = {}
 ) {
-  if (request.headers.has('authorization')) {
+  if (
+    request.headers.has('authorization') &&
+    !getBearerAppCoordinationToken(request)
+  ) {
     return {
       ok: false as const,
       response: miraJson({ error: 'unauthorized' }, 401),

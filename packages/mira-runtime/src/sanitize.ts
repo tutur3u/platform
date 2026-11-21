@@ -1,7 +1,7 @@
 const MASS_MENTION = /@(everyone|here)\b/gi;
 const DISCORD_ROLE_OR_USER = /<@[!&]?\d+>/g;
 // Bounded quantifiers keep the match linear on long unclosed `![` runs.
-const REFERENCE_IMAGE = /!\[([^\]\n]{0,1000})\]\[[^\]\n]{0,1000}\]/g;
+const REFERENCE_IMAGE = /!\[([^\][\n]{0,1000})\]\[[^\][\n]{0,1000}\]/g;
 // A `<` that could still open a tag, comment or declaration after stripping.
 const TAG_OPENER = /<(?=[a-z/!?])/gi;
 // Whatever image syntax survives is broken so it cannot form an image.
@@ -11,7 +11,7 @@ const ZERO_WIDTH_SPACE = '\u200b';
 // characters. An alt text that does not close in time is not treated as an
 // image (its `![` is broken below); a destination that does not close in time
 // is dropped to the end of the line.
-const MAX_ALT_SCAN = 1_000;
+const MAX_ALT_SCAN = 200;
 const MAX_DESTINATION_SCAN = 4_096;
 const MAX_TAG_PASSES = 4;
 
@@ -176,7 +176,9 @@ export function sanitizeOutboundText(text: string): string {
     (_match, alt: string) => alt.trim()
   );
   return (
-    stripHtmlTagsUntilStable(stripReferenceDefinitions(withoutImages))
+    // Tags go first so a tag cannot hide a reference definition; blanking
+    // definition lines afterwards cannot join text into a new tag.
+    stripReferenceDefinitions(stripHtmlTagsUntilStable(withoutImages))
       // Whatever could still open a tag after the bounded passes is broken, so
       // the output never contains a tag and sanitizing it again is a no-op.
       .replace(TAG_OPENER, `<${ZERO_WIDTH_SPACE}`)

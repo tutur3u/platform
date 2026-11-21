@@ -87,6 +87,8 @@ describe('mounted app ingress', () => {
       headers.set('authorization', 'Bearer fixture-only');
       headers.set('cookie', 'fixture_session=1');
       headers.set('x-keep', 'yes');
+      // Admin operator writes carry this intent header through the mount.
+      headers.set('x-mira-operator-action', '1');
       const bytes = new Uint8Array(size).map((_, index) => index % 251);
       const init: RequestInit & { duplex: 'half' } = {
         method: 'POST',
@@ -118,6 +120,7 @@ describe('mounted app ingress', () => {
           );
           expect(incoming.headers.get('cookie')).toBe('fixture_session=1');
           expect(incoming.headers.get('x-keep')).toBe('yes');
+          expect(incoming.headers.get('x-mira-operator-action')).toBe('1');
           const received = new Uint8Array(await incoming.arrayBuffer());
           expect(received.byteLength).toBe(bytes.byteLength);
           expect(received.every((byte, index) => byte === bytes[index])).toBe(

