@@ -1,0 +1,144 @@
+---
+title: Mira managed pricing
+description: Plan, metering, entitlement and cost-of-goods model for the managed multi-tenant Mira channel product.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+**Status:** proposal for the owner and billing owners. Prices are not in the
+catalog until they approve them. Runtime design is in
+[Mira cloud channels](/platform/ai/mira-cloud-channels).
+
+## Plan shape
+
+Mira managed is a **workspace add-on billed per seat**, not a renamed personal
+plan. The personal catalog (`d301a-personal-v1`) already uses the name Pro for
+a $19.99 personal plan, and the approved workspace prices list Pro at $19 a
+month;
+a $100–$200 Mira tier under the same name would collide in checkout, receipts
+and entitlements.
+
+| Add-on | Price per seat per month | Preset | Included per seat (pooled across the workspace) | Channels per workspace |
+| --- | --- | --- | --- | --- |
+| Mira Business | $99 | `fast` (quality available, counted ×8) | 4,000 replies, 20,000 triaged messages | 3 |
+| Mira Business Plus | $199 | `quality` | 6,000 quality replies or 48,000 fast replies, 60,000 triaged messages | 10, plus bring-your-own Discord bot |
+
+- **Seat:** a workspace member who can operate Mira (configure, receive
+  escalations, reply as a human from the Tuturuuu chat mirror). People who
+  only message Mira on a channel are not seats.
+- **Requires:** an active workspace plan; the add-on attaches to it.
+- **Annual:** ten months' price, matching the existing catalog convention.
+- **BYOK:** both add-ons accept the tenant's own OpenAI, Anthropic or Google
+  key. Replies on BYOK do not draw down the reply quota; channel count, triage
+  volume and fair-use rate limits still apply. No price discount, because
+  infrastructure, support and channel onboarding costs remain.
+
+## Metering
+
+Settled per turn by the tenant object and flushed to `mira_usage_daily`
+through the work Queue.
+
+| Meter | Unit | Used for |
+| --- | --- | --- |
+| `mira.reply` | replied turn, weighted by preset (fast 1, quality 8) | quota and overage |
+| `mira.triage` | triaged inbound message | quota and abuse signal |
+| `mira.tokens` | input, cached input and output tokens per model | cost and margin reporting |
+| `mira.channel` | connected channel-day | channel limit |
+| `mira.whatsapp_service` | delivered WhatsApp service message per number | informational; Meta bills the tenant's WhatsApp Business Account directly after its free tier |
+
+Managed-key usage is also recorded in the existing AI credits ledger so one
+source reports workspace AI spend.
+
+## Quotas, overage and throttling
+
+- At 80 % of the pooled reply quota the workspace's Mira managers are
+  notified.
+- At 100 %, the tenant's choice applies: **throttle** (default; replies fall
+  back to the `fast` preset, then to "a person will get back to you" with
+  escalation) or **overage** at $8 per 1,000 weighted replies up to the
+  tenant's monthly overage cap.
+- The tenant's daily spend cap and the durable stop fence apply regardless of
+  plan headroom.
+
+## Entitlements
+
+`mira_tenants.plan_snapshot` holds the add-on, seat count, quotas and period,
+refreshed from the billing provider readback (never client checkout data).
+The tenant object checks it before every turn:
+
+| Entitlement | Business | Business Plus |
+| --- | --- | --- |
+| Discord shared bot, WhatsApp Cloud, Zalo OA / Bot | yes | yes |
+| Bring-your-own Discord bot | no | yes |
+| Quality preset | counted ×8 | default |
+| Knowledge sources | 50 documents | 500 documents |
+| Per-person rules | yes | yes |
+| Analytics retention | 30 days | 13 months |
+| Support | standard | priority, 99.9 % SLA credit |
+
+Loss of the add-on (cancel, failed payment past grace) sets the tenant stop
+fence; config and history are kept for 30 days for reactivation.
+
+## Cost of goods
+
+### Assumptions
+
+A **turn** is one replied message. Input averages 3,000 tokens of which 2,000
+are a cached stable prefix; output averages 150 tokens. Triage uses about
+600 input and 20 output tokens on the cheap tier. Cloudflare operations per
+inbound message: one ingress request, three object requests, about ten SQLite
+row writes and one Queue message with three operations.
+
+Prompt-cache hits are assumed on 60 % of turns (low-traffic tenants miss the
+cache window), with cache writes at the provider's write multiplier, and a 30 %
+token allowance for newer tokenizers. List prices per million tokens (input /
+cached input / output), checked 2026-11-21; re-verify before catalog approval,
+because providers change them (Gemini 3.8 Flash doubles on 2027-01-01):
+
+| Tier | Model | Price |
+| --- | --- | --- |
+| Fast | Claude Haiku 5.5 | $0.10 / $0.01 / $0.50 |
+| Fast | gpt-6-luna | $0.10 / $0.01 / $0.50 |
+| Fast | Gemini 3.5 Flash-Lite | $0.30 / $0.03 / $2.50 |
+| Quality | Claude Sonnet 5.5 | $2.00 / $0.10 / $10.00 |
+| Quality | gpt-6.2-sol | $2.00 / $0.10 / $10.00 |
+| Quality | Gemini 3.1 Pro | $2.00 / $0.20 / $12.00 |
+
+### Per-unit cost
+
+| Unit | Cost |
+| --- | --- |
+| Fast reply (Haiku 5.5 or gpt-6-luna) | about $0.0004 |
+| Quality reply (Sonnet 5.5 or gpt-6.2-sol) | about $0.0075 |
+| Triage | about $0.0001 |
+| Cloudflare per inbound message | about $0.00002 |
+| Shared Discord gateway, per shard | about $4 per month, spread across tenants |
+| WhatsApp and Zalo provider charges | billed by the provider to the tenant |
+
+### Per tenant per month (one seat)
+
+| Profile | Volume | LLM | Cloudflare | Payment fees | Total COGS | Price | Gross margin |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Business, typical | 1,500 fast replies, 8,000 triaged | $1.40 | $0.20 | $4.40 | about $6.00 | $99 | about 94 % |
+| Business, at quota | 4,000 fast replies, 20,000 triaged | $3.60 | $0.50 | $4.40 | about $8.50 | $99 | about 91 % |
+| Business Plus, typical | 2,500 quality replies, 20,000 triaged | $20.75 | $0.50 | $8.40 | about $29.70 | $199 | about 85 % |
+| Business Plus, at quota | 6,000 quality replies, 60,000 triaged | $51.00 | $1.50 | $8.40 | about $61 | $199 | about 69 % |
+
+Payment fees assume about 4 % plus $0.40 per charge. Support, Meta and Zalo
+onboarding, and on-call are fixed costs outside COGS. Overage at $8 per 1,000
+weighted replies is more than eight times the model cost of a weighted reply
+on either preset, so overage never erodes margin.
+
+### Tuturuuu's own Mira
+
+The internal tenant at today's volume and at ten times that volume is
+estimated in the [Mira cloud channels cost model](/platform/ai/mira-cloud-channels#cost-model).
+
+## Open decisions
+
+1. Product name and whether Business Plus is $199 or $149.
+2. Throttle versus overage as the default at quota.
+3. Whether BYOK replies should be unmetered or carry a platform fee per
+   thousand replies.
+4. Seat definition with the billing owners and the `packages/payment-core`
+   catalog shape for a workspace add-on.

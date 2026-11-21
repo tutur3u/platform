@@ -1,0 +1,619 @@
+---
+title: Mira cloud channels
+description: Design for running Mira's Discord, WhatsApp and Zalo connectors and responder as a multi-tenant Cloudflare service configured from Tuturuuu.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+**Status:** design proposal. No code ships until the
+[open decisions](#open-decisions) are settled and an independent security and
+privacy review approves this page. Pricing and cost of goods are in
+[Mira managed pricing](/platform/ai/mira-managed-pricing).
+
+Mira runs as a managed, multi-tenant product: each Tuturuuu workspace that
+enables Mira is a **tenant** with its own channels, persona, rules, people,
+memory, keys, budgets and logs. Tuturuuu's own Mira is tenant #1 and uses the
+same runtime as every paying tenant, with one documented exception (personal
+account connectors, see [per-channel decisions](#per-channel-decisions)).
+
+## Scope and default
+
+- **Scope:** inbound watchers, the responder loop and outbound delivery for
+  Discord, WhatsApp and Zalo; tenant self-serve setup in the workspace; the
+  operator view at `tuturuuu.com/admin/<wsId>/mira/channels`; usage metering and
+  entitlements.
+- **Default:** off. A channel replies only after its tenant enables Mira, the
+  workspace holds the Mira entitlement, the channel is connected and passed
+  the sandbox test, and every stop fence is open.
+- **Builds on:** the apps/web [AI agent deployment](/platform/ai/ai-agent-deployment)
+  module (Chat SDK adapters, external chat mirror, identity mapping and tool
+  allowlist) and the [Omni-channel Chat SDK](/platform/ai/omni-channel-chat-sdk)
+  boundary. The cloud runtime replaces the apps/web webhook loop and the
+  self-hosted watchers; it keeps their data contracts.
+- **Exceptions:** personal-account WhatsApp and Zalo automation is limited to
+  the root (internal) workspace.
+
+## Architecture
+
+```txt
+ Discord Gateway ──► DiscordGatewayDO (outbound WebSocket, per bot)
+ Discord HTTP    ─┐
+ WhatsApp Cloud  ─┼─► mira-ingress Worker ── verify ── route ──► ConversationDO
+ Zalo OA / Bot   ─┘   (signature, tenant lookup, rate limit)     (per conversation:
+ Personal session ──► SessionContainer (internal tenant only) ─┘  ledger, order,
+                                                                   lock, reply)
+                                                                       │
+                     TenantDO (per workspace: config snapshot, ◄───────┤
+                     budget ledger, stop fence, quotas)                │
+                                                                       ▼
+                     LLM provider (OpenAI | Anthropic | Google) ◄── AI SDK
+                                                                       │
+                     mira-work Queue ──► mirror, memory writes, usage settlement,
+                                         media copy, metrics export
+```
+
+All components live in one new Worker app, `apps/mira-channels`, configured with
+`cf/config` like `apps/chat-realtime`. Portable logic (event normalization,
+ledger rules, triage policy, prompt assembly, budget arithmetic) lives in a
+framework-free package, `packages/mira-runtime`, with no `cloudflare:*`,
+Next.js or request-global imports. The Worker injects storage, secrets, clock
+and fetch.
+
+### Components
+
+| Component | Primitive | Responsibility |
+| --- | --- | --- |
+| `mira-ingress` | Worker `fetch` | Verifies provider signatures, resolves the tenant channel from the provider account, applies ingress rate limits, normalizes to `InboundEvent`, forwards to the conversation object and acknowledges the provider. Holds no tenant secrets beyond the verification keys it needs. |
+| `DiscordGatewayDO` | Durable Object | Holds one outbound Gateway WebSocket per Discord application (and per shard when sharded). Heartbeats, resumes and identifies inside Discord's session budget. Forwards `MESSAGE_CREATE` events for linked guilds and DMs to ingress routing. |
+| `ConversationDO` | Durable Object, SQLite | One per tenant conversation. Replay ledger, ordering, burst coalescing, the per-conversation reply lock, rolling context, outbound send records and the shadow send-claim. Runs the responder from an alarm. |
+| `TenantDO` | Durable Object, SQLite | One per tenant workspace. Versioned config snapshot, spend and token ledger with reservations, per-person rate limits, quiet hours, the tenant and channel stop fences. |
+| `SessionContainer` | Cloudflare Container | Internal tenant only. Runs a personal-account library that needs a long-lived Node process. Forwards events to ingress and executes sends the conversation object authorizes. |
+| `mira-work` | Queue + consumer | Off-critical-path work: Tuturuuu chat mirror, People & memory writes, usage settlement to Postgres, media copy to Drive, people snapshot invalidation, metrics export. |
+
+### Object identity and tenant isolation
+
+Durable Object names are built only on the server from resolved identifiers:
+
+```txt
+ConversationDO  mira:conv:v1:<workspaceId>:<channelId>:<conversationKey>
+TenantDO        mira:tenant:v1:<workspaceId>
+```
+
+`conversationKey` is a keyed hash of the provider account and provider
+conversation id. Every object stores its `workspaceId` on first use and rejects
+any request whose resolved tenant differs. A conversation object never receives
+another tenant's config, keys, people snapshot or history. Secrets and leases
+are fetched per workspace and held only in the owning object's instance
+memory; module-scope caches of secrets, leases, provider clients or people
+snapshots are forbidden, because objects of different tenants can share an
+isolate.
+
+### Channel binding
+
+Routing by provider account is only as safe as the step that binds that
+account to a tenant. A provider signature proves the event came from the
+provider, not which tenant it belongs to. Therefore:
+
+- `(provider, provider_account_id)` is unique across all tenants. Re-binding
+  requires the current tenant to unbind first; both steps are audited.
+- WhatsApp numbers bind only from the Embedded Signup code exchange, after
+  checking that the returned business account owns the `phone_number_id`.
+- Discord guilds bind only from the OAuth install callback, with a signed
+  single-use `state` tied to the workspace and actor, and a check that the
+  installer holds `MANAGE_GUILD` in that guild.
+- Zalo OAs bind only from the OAuth callback for that OA; Zalo bots bind from a
+  token whose `getMe` identity is recorded.
+- **Shared Discord bot DMs have no tenant.** By default a DM to the shared bot
+  gets a fixed reply that names no tenant and spends no tenant budget. A DM
+  routes to a tenant only through an explicit link the user starts from that
+  tenant's guild (a button that records the user, guild and tenant).
+
+## Per-channel decisions
+
+### Discord
+
+**Decision:** official bot. Two hosting modes, both cloud-only:
+
+- **Shared Mira bot (default):** one Tuturuuu-owned Discord application that
+  tenants install to their guild with an OAuth2 invite. One `DiscordGatewayDO`
+  per shard carries every tenant guild; the guild maps to the tenant through
+  the existing `discord_integrations` binding.
+- **Bring-your-own bot (Pro option):** the tenant supplies its own application
+  (custom name and avatar). One gateway object per application.
+
+Gateway is required because message events are not delivered over HTTP. The
+Interactions webhook (slash commands, buttons, the setup test) runs in the
+ingress Worker; it acknowledges within Discord's three-second window and
+defers when the responder needs longer.
+
+The bot reads messages that mention it, replies in threads and DMs, and needs
+no privileged message-content intent for that. Passive reading of every guild
+message (for watch rules) needs the privileged intent, which a shared bot can
+hold only after Discord verification; until then passive watch is available
+only on bring-your-own bots.
+
+The WebSocket Hibernation API covers sockets a Durable Object accepts, not
+outbound client sockets, so a gateway object stays resident while connected.
+That costs duration for one object per shard, not per tenant, on the shared
+bot. A watchdog alarm reconnects an evicted object; it runs only while the
+application's connection lease is enabled and stops rearming when the lease
+is revoked, the stop fence is set or the session budget is exhausted.
+
+Discord allows 1,000 session starts (identifies) per application per day and
+resets the bot token when that is exceeded, so the gateway object keeps a
+durable identify counter, prefers resume (which does not count), and stops
+reconnecting at 50 % of the daily budget. Gateway sends stay under 120 per
+minute per connection. DMs arrive only on shard 0. REST calls share the 50
+requests per second global limit per bot; interaction responses are exempt.
+
+**Risk:** low. User-account automation (self-bots) is prohibited by Discord and
+is not offered.
+
+### WhatsApp
+
+**Decision:** paying tenants use only the official **WhatsApp Business Cloud
+API**. Tuturuuu onboards as a Meta Tech Provider and offers Embedded Signup so a
+tenant connects its own WhatsApp Business Account and number in the wizard.
+Webhooks arrive at the ingress Worker, signed with the Tuturuuu app secret, and
+route by `phone_number_id` to the tenant channel.
+
+Constraints the product surfaces honestly:
+
+- Free-form replies are allowed only inside the 24-hour customer service
+  window that a user message opens. Outside it, the tenant needs approved
+  templates. Mira replies only inside the window and escalates to a human
+  otherwise.
+- Meta bills per delivered message. Service replies are free for the first
+  1,000 per phone number per month and charged after that; templates are
+  charged by category and market. Under the Tech Provider model the tenant's
+  own payment method on its WhatsApp Business Account pays Meta directly, so
+  these charges are not Tuturuuu cost of goods. The usage view shows the
+  tenant's service-message count against the free tier.
+- Embedded Signup admits 10 new business accounts per rolling seven days
+  until Tuturuuu completes Meta's verification steps (200 after). Onboarding is
+  throttled to that limit.
+- Meta's policy limits WhatsApp Business assistants to the business's own
+  purpose; general-purpose AI assistants are not allowed. The tenant persona is
+  framed as that business's assistant, and the wizard states this rule.
+- The Cloud API does not stream message edits. Mira sends the typing indicator
+  immediately, then the reply as one message, or as paragraph-sized parts for
+  long answers.
+- The Groups API requires an Official Business Account and caps groups at
+  eight participants, so Mira treats WhatsApp as one-to-one first and offers
+  groups only to eligible accounts.
+
+**Internal tenant:** the owner's personal account runs the current unofficial
+Web-client automation. It moves off the M4 Mac into a `SessionContainer` with
+the same library, the session blob sealed in the vault, and every limit below.
+Moving that number to the Cloud API would remove it from the consumer app, so
+it stays personal until the owner chooses a business number.
+
+**Risk:** personal-account automation breaks WhatsApp's terms and can get the
+number banned. Material; the owner decides whether the internal desk keeps it.
+
+### Zalo
+
+**Decision:** paying tenants use official routes only:
+
+- **Zalo Official Account API** for businesses with a verified OA on a tier that
+  includes OpenAPI access (the tenant pays Zalo for the OA tier). OAuth v4 with
+  PKCE for OA access tokens; the tenant object refreshes them using the
+  returned `expires_in`. Each new single-use refresh token is written back to
+  the vault by compare-and-swap before the old one is discarded; a failed
+  write stops the channel and asks the tenant to reconnect, rather than
+  losing the only valid token. Signed webhooks into ingress. Consultation replies are
+  free within Zalo's interaction window; reported per-user reply quotas inside
+  that window must be confirmed against Zalo's official documentation before
+  the OA route is offered, because a low quota would cap conversational use.
+- **Zalo Bot platform** for tenants without an OA: a bot token, a webhook
+  checked through the `X-Bot-Api-Secret-Token` header, and `sendChatAction`
+  for typing. In groups the bot answers only when mentioned. The apps/web
+  module already supports this mode.
+
+**Internal tenant:** the owner's personal account keeps the `zca-js` route
+inside a `SessionContainer`, because a Zalo Web listener is a long-lived Node
+WebSocket process with one active listener per account.
+
+**Risk:** `zca-js` is unofficial automation and can trigger account locks or
+bans. Material; the owner decides for the internal desk.
+
+### Personal-account controls (internal tenant only)
+
+- One container per personal account, `max_instances = 1`, with a session
+  lease in the tenant object so two runtimes never listen at once.
+- Cloudflare Containers have no always-on guarantee and an ephemeral disk:
+  an instance can stop on deploy rollouts or host maintenance and starts again
+  from the image. Library auth state (the WhatsApp multi-file state is about
+  850 small keys that change during normal use) is therefore stored in the
+  owning Durable Object's SQLite, encrypted with a per-tenant data key,
+  written in batches, and restored on start. The data key is wrapped by the
+  versioned key-encryption key described in [secrets](#secrets) and rotated
+  with it; only that tenant's session object unwraps it, in instance memory.
+  The vault holds the long-lived root credential. Restarts are counted,
+  because frequent re-logins from new addresses raise ban risk; above a daily
+  restart budget the channel stops and pages the owner. Falling back to the M4
+  receiver means revoking the container's session lease first and granting
+  the lease to the M4, so two listeners never run on one account.
+- Human-like pacing: per-conversation send spacing, a per-day outbound cap,
+  no unsolicited first messages, no bulk sends, quiet hours honored.
+- The Zalo cookie session is sealed in the vault and written back by
+  compare-and-swap when the library refreshes it. Session material never
+  appears in container logs or on the container's disk outside the process's
+  working memory.
+- Reconnect with capped exponential backoff and a daily reconnect budget;
+  repeated login failure or a lock signal stops the channel and pages the
+  owner instead of retrying.
+- The M4 receiver remains the rollback path until the owner retires it.
+
+## Responder pipeline
+
+### Ingress to reply
+
+1. **Verify and route** (ingress): check the provider signature, drop
+   non-message events, resolve the tenant channel, rate-limit by provider
+   account and sender, then call `ConversationDO.ingest(event)`.
+2. **Record** (conversation object): insert the provider event id into the
+   ledger inside one SQLite transaction. A duplicate returns the stored
+   outcome and does nothing else. The provider gets its acknowledgement only
+   after the record commits, so a crash before commit is redelivered by the
+   provider rather than lost.
+3. **Coalesce:** a short burst window (default 700 ms, tunable per channel,
+   zero for a single message in a DM) merges rapid messages from one sender
+   into one turn.
+4. **Gate:** check the global, tenant and channel stop fences, entitlement,
+   quiet hours, per-person rules and budget (a reservation against the
+   tenant object). A closed gate records the reason and, when the rules say
+   so, tags or escalates instead of replying.
+5. **Triage** (group conversations and watch rules only): a cheap model with
+   structured output decides `ignore | reply | tag_owner | escalate` and the
+   reply tier. Direct messages from people with a reply rule skip triage.
+6. **Respond:** the alarm handler builds the prompt, signals typing, streams
+   the model output through the AI SDK and delivers it (see
+   [streaming](#streaming-per-channel)).
+7. **Settle:** record the outbound send, release the unused reservation, and
+   enqueue mirror, memory and usage work.
+
+The responder runs in a conversation object alarm instead of a Queue consumer,
+because an alarm fires immediately on the object that already holds the
+conversation state and lock; a Queue hop adds batching delay to the critical
+path. Queues carry everything that can finish after the reply. Every queue
+has a dead-letter queue with a consumer and a bounded `max_retries`, because
+Cloudflare deletes messages that exhaust retries when no dead-letter queue is
+set.
+
+### Exactly-once boundaries
+
+- **Inbound:** at-least-once delivery from providers, deduplicated by the
+  ledger key `(channel, provider account, provider event id)`.
+- **Outbound:** at-most-once. Before calling a provider send, the object
+  writes `send_started` with a deterministic idempotency key. Discord sends
+  carry it as an enforced nonce. WhatsApp and Zalo have no send idempotency, so
+  a send whose outcome is unknown after a crash is marked `uncertain`, never
+  retried automatically, and shown to the operator. This guarantees no double
+  send; the rare uncertain case is surfaced instead of silently resent.
+- **Alarm retries:** each turn has a bounded attempt budget (default 3) and an
+  age limit (default 10 minutes, then escalate). Attempts persist in SQLite and
+  do not reset on restart. A completed or abandoned turn never reschedules.
+  Each object has one multiplexed alarm (coalescing, responder, token refresh
+  and watchdog deadlines in one table). The handler catches every error and
+  records the attempt itself, so Cloudflare's automatic alarm retry never adds
+  attempts outside the budget. The tenant token-refresh deadline is cleared
+  while the tenant is stopped or disabled.
+- **Replay horizon:** ledger keys are stored apart from conversation context
+  and kept for at least the longest provider redelivery horizon (seven days
+  for Meta). Events whose provider timestamp is older than the turn age limit
+  are recorded and never answered. Discord interaction timestamps and Zalo
+  event timestamps are checked against a five-minute window.
+
+### Models and keys
+
+- **Providers:** OpenAI, Anthropic and Google through `@ai-sdk/openai`,
+  `@ai-sdk/anthropic` and `@ai-sdk/google`. A provider instance is created
+  per tenant call with the key from the tenant's lease, so a key never
+  crosses tenants or persists beyond the lease.
+- **Key modes:** `managed` (Tuturuuu keys, metered through AI credits) or
+  `byok` (the tenant's own key in its vault environment). Selected per tenant,
+  overridable per channel.
+- **Presets:** `fast` (cheap tier, short replies, triage on the same tier) and
+  `quality` (frontier tier for the reply, cheap tier for triage). The tenant
+  picks a preset or an explicit model from the [model catalog](/platform/ai/model-catalog).
+- **Prompt caching:** prompts are assembled stable-prefix first: system
+  persona, tool schemas and tenant knowledge, then the person snapshot, then
+  the conversation. Anthropic calls set cache breakpoints after the prefix and
+  after the person snapshot; OpenAI calls set a per-tenant `promptCacheKey`;
+  Gemini relies on implicit prefix caching. Cache hit ratio is a tracked metric.
+- **Token budgets:** per-turn input ceiling (history is trimmed and
+  summarized beyond it), per-turn output cap from the preset, and the shared
+  output cap rules in [usage accounting guards](/platform/features/usage-accounting-guards).
+
+### Spend caps and the durable stop fence
+
+The tenant object keeps a ledger per day and per billing month:
+
+- A turn reserves its worst-case cost (input estimate plus output cap at the
+  model's price) before calling the model, and settles to actual usage after.
+  Missing prices fail closed.
+- When a reservation would exceed the tenant's daily cap, monthly cap or plan
+  quota, the turn does not run; the channel replies with the configured
+  fallback (or stays silent) and the tenant is notified once per period.
+- Stop fences, checked before every model call, every send and every
+  reschedule, including inside racing callbacks:
+  1. Global: the `MIRA_CHANNELS_STOPPED` Worker secret, flipped without a deploy.
+     A durable global fence object, polled by every resident object at least
+     every 30 seconds, backs the secret so a stop reaches running gateway
+     objects and containers without a restart.
+  2. Tenant: a durable set of stop reasons, each with an owner: `tenant`
+     (kill switch), `operator` (abuse suspension), `billing` (entitlement
+     loss) and `cap` (spend cap, cleared by the next period or a raised cap).
+     The fence is closed while any reason remains. A resume clears only the
+     reasons its caller owns, so a tenant manager cannot lift an operator or
+     billing stop. Each change bumps the tenant generation.
+  3. Channel: the channel's persisted reason set and generation, with the
+     same ownership rule.
+- A stop ends resident work as well as new work: the gateway object drops the
+  tenant's guilds from forwarding (or closes the socket for a stopped
+  bring-your-own bot or a global stop), the session container stops its
+  listener, and every Queue and dead-letter consumer checks the fences
+  before acting.
+- A stop does not delete pending turns; they are kept for resume and expire
+  by age.
+
+### Streaming per channel
+
+| Channel | First visible signal | Delivery |
+| --- | --- | --- |
+| Discord | Typing indicator at gate pass | Post after the first sentence, then edit at most once per second until done |
+| WhatsApp Cloud | Typing indicator with read receipt | One message, or paragraph parts for long replies |
+| Zalo OA / Bot | Typing action where supported | One message, or paragraph parts |
+| Personal sessions | Library typing event | One message, paced |
+
+Model output is sanitized before every send: Discord messages carry
+`allowed_mentions` with no parsed mentions (reply-to only) and suppressed
+embeds; markdown image links are removed and bare links are not unfurled on
+every channel, so injected output cannot ping crowds or leak context through
+crafted preview URLs.
+
+### Memory and people
+
+The responder reads people and memory only from the People & memory service
+on tuturuuu.com, through a service principal minted per tenant workspace with
+`people:recall` and `memories:write`:
+
+- `POST /api/v1/people/recall` returns the person, a versioned snapshot
+  (profile, reply/tag/escalate rules, consent) and recent or high-salience
+  memories. Unknown senders return no person and store nothing.
+- The conversation object caches the snapshot with its `version` and
+  `consent_version` for at most five minutes. Invalidation events
+  `{workspace_id, person_id, version, consent_version, kind}` arrive on the
+  work Queue; `revoke` and `delete` purge the cache immediately.
+- In group conversations, recall uses only the sender's group-safe snapshot
+  (rules and display profile, no private memories), because everyone in the
+  group reads the reply. Memory writes from group messages require that
+  person's consent for group capture.
+- Live semantic recall is an asynchronous enrichment: if it returns within the
+  latency budget it joins the prompt, otherwise the turn proceeds with the
+  snapshot.
+- Memory writes go through the Queue with idempotency key
+  `(channel, provider_message_id)` and provenance; the service enforces consent
+  and deletion fences and the consumer records created, duplicate or rejected
+  truthfully. Recalled content is untrusted context, never instructions.
+
+### Fleet access desks
+
+For the internal tenant, `mira-ingress` becomes the trusted ingress for the
+[Fleet access](/platform/features/fleet-access) desks (Fleet Slice 4). Each
+cloud desk has its own desk id, bearer and Ed25519 key. They are held only by
+a separate `mira-fleet-signer` Worker, reached from ingress by service
+binding, never by the multi-tenant ingress Worker, an object or a Queue
+payload. The signer resolves the channel and account itself and signs only for
+its allowlist of internal-tenant `(channel, account)` pairs, never for values
+the caller supplies. The cloud desk is not
+registered in `FLEET_DESKS` while it observes; cutover swaps the M4 desk entry
+for the cloud entry per channel and account in one change, and rollback is the
+reverse swap. Evidence is minted only for verified private one-to-one
+conversations, never for an expired provider event, and stop and revocation are
+checked before every reply and submission.
+
+## Configuration
+
+### Data model
+
+Postgres tables in the `private` schema, reached only by server-owned RPCs
+from apps/web and the Worker. The Worker connects through Hyperdrive as a
+dedicated least-privilege role with `EXECUTE` on the Mira RPCs and no table
+grants; RLS does not apply to that role, so every RPC checks its workspace
+argument against the stored channel binding.
+
+| Table | Holds |
+| --- | --- |
+| `mira_tenants` | workspace id, enabled, plan entitlement snapshot, key mode, preset, caps, stop generation |
+| `mira_channels` | tenant, channel kind, connection mode, provider account id, status, health, config version |
+| `mira_channel_secrets_ref` | vault environment and variable names per channel; never values |
+| `mira_personas` | system prompt, tone, knowledge source refs, escalation contacts, versioned |
+| `mira_rules` | per-person and per-group rules: reply, tag owner, escalate, mute; quiet hours |
+| `mira_usage_daily` | settled messages, tokens (input, cached, output), cost, per tenant, channel, model and day |
+| `mira_audit_events` | append-only config, connect, stop, resume, export and delete events |
+
+Every Admin save increments the tenant `config_version` and pushes the new
+snapshot to the tenant object; the object also pulls on cold start and when
+it sees a newer version on a conversation call. Existing `AI_AGENT_REGISTRY`
+workspace-secret entries migrate into these tables per channel.
+
+### Secrets
+
+Connector tokens, the WhatsApp system user token, Zalo OAuth tokens, personal
+session blobs and BYOK model keys live in a per-tenant `mira-connectors`
+environment of the secrets vault, granted to the `mira-channels` workload
+principal. That environment is labelled server-readable. The Worker reads
+values with a one-hour lease bound to the workload, workspace and environment,
+keeps them only in memory, and writes refreshed session blobs back by
+compare-and-swap. Until the vault workload tier ships, the same interface is
+served by an envelope-encrypted server-custody store whose key-encryption key
+is a Worker secret (never stored in Postgres), versioned so rotation re-wraps
+tenant keys without downtime. Every lease names a workspace, and the vault
+checks it against the channel binding before releasing a value. A failing
+BYOK key stops the tenant's replies with a visible error; it never falls back
+to managed keys. Values never appear in logs, metrics, Queue payloads, error
+messages or API responses; provider and AI SDK errors are redacted before
+`console.*`.
+
+### Surfaces
+
+- **Tenant self-serve** (workspace settings, entitlement-gated): the setup
+  wizard, channel list, persona, rules, quiet hours, model and keys, caps,
+  usage, health, export and delete.
+- **Operator view** (`/admin/<wsId>/mira/channels` and
+  `/mira/channels/<channel>` in apps/infrastructure, under Fleet and
+  Mastermind): every tenant's health, latency, cost, errors and abuse signals,
+  operator suspension and the global stop. It shows no message content;
+  uncertain-send and error records show metadata only. Content access needs
+  an audited break-glass step.
+- **API:** typed routes under `apps/web/src/app/api/v1/workspaces/[wsId]/mira/**`
+  with zod contracts and clients in `packages/internal-api`. Reads require
+  workspace membership with the Mira view permission; writes, connects, caps,
+  kill switches and deletes require the Mira manage permission and are
+  enforced in the route. Kill switches write first and confirm by readback;
+  the UI never shows optimistic success. Secret fields are write-only and show
+  only connected state and timestamp.
+
+### Setup wizard
+
+Target: first reply in under ten minutes.
+
+1. **Channel:** Discord invite (shared bot) or BYO token; WhatsApp Embedded
+   Signup; Zalo OA OAuth or Zalo Bot token.
+2. **Persona:** name, purpose, tone, instructions; optional knowledge sources
+   (workspace documents and URLs ingested through the existing memory and
+   Drive paths).
+3. **People and rules:** default reply policy, per-person and group rules,
+   quiet hours, escalation contact.
+4. **Model:** preset or explicit model; managed or BYO key.
+5. **Sandbox:** a simulated conversation through the real pipeline with sends
+   captured instead of delivered, then a live round trip to the tenant's own
+   account.
+6. **Go live:** enable, with caps prefilled from the plan.
+
+## Observability
+
+Each turn writes one Workers Analytics Engine data point (tenant index; blobs
+for channel, model, preset, outcome; doubles for timings, tokens and cost) and
+no message content.
+
+| Signal | Measure | Target |
+| --- | --- | --- |
+| Ingress acknowledgement | provider request to response | p95 under 150 ms |
+| First visible signal | provider event time to typing indicator | p95 under 500 ms |
+| First token | provider event time to first model token, `fast` preset | p50 under 900 ms, p95 under 2 s |
+| First content delivered | provider event time to first sent message, `fast` preset | p50 under 1.8 s, p95 under 4 s |
+| Cost per message | settled cost per replied turn | tracked per tenant and preset |
+| Errors | failed turns, uncertain sends, provider 4xx/5xx, reconnects | uncertain sends under 0.01 % |
+| Saturation | alarm backlog, Queue depth and age, gateway session budget | alert on growth |
+
+These feed the observability lane's golden-signal views and Mastermind; the
+operator view reads them per tenant and the tenant view reads only its own.
+The SLA target for paying tenants is 99.9 % monthly availability of the
+ingress and responder, excluding provider outages.
+
+## Cost model
+
+Per-unit costs and assumptions are in
+[Mira managed pricing](/platform/ai/mira-managed-pricing#cost-of-goods).
+The internal tenant's volume over the seven days to 2026-11-21 was about 80
+inbound messages a day (Zalo about 51, mostly groups; Discord about 27; WhatsApp
+under 5) and about 60 replies a day. Monthly: about 2,500 triaged messages and
+1,800 replies.
+
+| Item | Today's volume | 10× volume |
+| --- | --- | --- |
+| Replies, `quality` preset | 1,800, about $13.50 | 18,000, about $135 |
+| Triaged messages | 2,500, about $0.25 | 25,000, about $2.50 |
+| Workers, Durable Objects, Queues, Analytics Engine | under $0.10 | about $1 |
+| Discord gateway object | about $4 | about $4 |
+| Two personal-session containers, `basic` class, running all month | about $16 | about $16 |
+| Total | about $34 | about $160 |
+| Workers Paid base | $5, shared with other Workers | $5 |
+
+Billable work is bounded per wake: one turn per alarm, at most three
+attempts per turn, one gateway object per shard with a daily identify budget,
+and a capped number of Queue retries before the dead-letter queue. The
+runaway-work acceptance evidence (operation counts in normal and failure
+cases, stop-versus-reschedule tests and the hosted stop procedure) is recorded
+in the [Cloudflare adoption guidance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+with the first deployable slice.
+
+## Threat model
+
+| Threat | Control |
+| --- | --- |
+| Malicious tenant reads another tenant's data | Server-built object names, stored tenant check in every object, per-workspace leases and principals, private tables reached only by RPCs that check the workspace against the stored channel binding (the Worker role has no table grants), no shared conversation state |
+| Prompt injection from inbound messages or recalled memory | Inbound text and memory are data in the prompt, never instructions; tool allowlist per tenant; writes require a mapped Tuturuuu user with the needed permission; Fleet quotes never reach execution |
+| Spoofed webhooks | Provider signature checks (Meta `X-Hub-Signature-256`, Zalo event signature, Discord Ed25519), tenant resolved from the verified provider account, not from the URL alone |
+| Denial of wallet on managed keys | Reservations before model calls, daily and monthly caps, plan quotas, per-person and per-conversation rate limits, global and tenant stop fences |
+| A tenant spams through Tuturuuu | Official-route rules (service window, no cold outreach), outbound rate limits, abuse signals in the operator view, operator suspension; a shared Discord bot abuser is cut off per guild |
+| Credential theft | Vault environment per tenant, one-hour leases, no secrets in logs or payloads, rotation without deploy |
+| Media and knowledge fetch SSRF | Media: exact provider media hosts only; the WhatsApp bearer is sent only to the Meta media host and never forwarded on a redirect. Knowledge URLs: DNS resolved and private, link-local and metadata addresses blocked, every redirect hop re-checked, size and time bounds, on a fetch path that carries no secrets |
+| One tenant damages the shared Meta app or shared Discord bot | Templates only from tenant-approved, Meta-approved templates triggered by a person; a tenant is auto-suspended (operator reason) when Meta lowers its quality rating or flags it; caps and rate limits apply to BYOK and triage as well |
+| Personal-session third parties | Container drops conversations outside the allowlist before forwarding; sends require a signed single-use command from the owning conversation object; container egress limited to the provider and ingress |
+| Double send across runtimes | Single send owner per channel, authenticated send-claim during cutover (see [migration](#migration)), at-most-once outbound |
+| Personal-account ban | Internal tenant only, pacing and caps, session lease, stop on lock signal |
+
+## Data lifecycle
+
+- **Retention:** conversation context in objects is capped at the last 50
+  turns and 30 days; the Tuturuuu chat mirror follows workspace retention.
+- **Export:** a tenant exports its config, rules, usage and mirrored
+  conversations as a workspace data export.
+- **Delete:** disabling Mira stops all channels; deleting it revokes the
+  service principal and vault grant, deletes tenant and conversation objects'
+  storage, purges mirror rows and asks People & memory to apply its deletion
+  fences. A per-person delete request propagates through the same fences and
+  purges, within 24 hours, conversation-object context (indexed by a keyed
+  sender hash), shadow drafts, uncertain-send records and mirror rows.
+  Provider-side retention is outside Tuturuuu's control and is stated in the
+  tenant data processing terms.
+- **Model providers:** managed keys use each provider's zero-retention or
+  no-training data settings where offered; the BYOK screen states that the
+  tenant's own provider agreement applies.
+- **Audit:** every config change, connect, stop, resume, export and delete is
+  in `mira_audit_events`.
+
+## Migration
+
+1. **Foundation:** tables, API contracts, operator view (read-only), Worker
+   skeleton with all three stop fences and the ledger; deployed with every
+   channel off.
+2. **Shadow per channel (internal tenant):** the cloud runtime ingests the
+   same events as the M4 receivers and drafts replies without sending. Drafts
+   and latencies are compared with the M4 replies. Drafts live only in the
+   conversation object's SQLite, readable by the owner through the operator
+   view's break-glass path, and are deleted after 14 days.
+3. **Cutover per channel:** the tenant object switches the channel's send
+   owner from `m4` to `cloud` at a fence time. During the switch window both
+   runtimes claim before replying; the first claim wins and the other
+   runtime drops its reply. The M4 claims through a dedicated internal route
+   that verifies a request signed by a key held only on the M4, with a
+   timestamp and nonce. Claims are accepted only for internal-workspace
+   channels while the switch window is open, are keyed by the ledger tuple
+   (so a coalesced turn is claimed as a whole), expire after ten minutes,
+   and are audited.
+   After the window closes the route answers "not owner". Fleet desks swap
+   in the same change.
+4. **Rollback:** switch the send owner back; the M4 receivers keep running
+   observe-only until the owner retires them.
+5. **Order:** Discord first (official, lowest risk), then Zalo, then WhatsApp.
+6. **Paying tenants:** open after the internal tenant has run each official
+   route for a full week within latency and error targets.
+
+The M4 receivers need one change for cutover: call send-claim before every
+reply while the switch window is open.
+
+## Open decisions
+
+1. Personal-account WhatsApp and Zalo for the internal desk: keep on a
+   container, keep on the M4, or retire in favor of official numbers. If kept,
+   the owner also decides the notice given to contacts in allowlisted
+   personal conversations whose messages reach LLM providers.
+2. Personal-account mode for paying tenants: recommended never.
+3. Plan naming and price point; see [Mira managed pricing](/platform/ai/mira-managed-pricing).
+4. Meta Tech Provider onboarding and Zalo developer verification for
+   Tuturuuu as the platform operator.
