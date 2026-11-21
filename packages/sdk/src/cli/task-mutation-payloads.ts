@@ -7,7 +7,10 @@ export function getPayload(flags: Record<string, FlagValue>) {
 }
 
 export function getTaskUpdatePayload(flags: Record<string, FlagValue>) {
-  const payload = { ...getPayload(flags), ...getTaskFleetFlags(flags) };
+  const payload: Record<string, unknown> = {
+    ...getPayload(flags),
+    ...getTaskFleetFlags(flags),
+  };
   const listId = getFlag(flags, 'list') || getFlag(flags, 'list-id');
 
   if (listId && payload.list_id === undefined) {
