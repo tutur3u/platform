@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import type UserNavClient from '@tuturuuu/satellite/user-nav-client';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
-import { createElement as h, type ReactNode } from 'react';
+import { type ComponentProps, createElement as h, type ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MailWorkspaceView } from './mail-workspace-view';
 import { useMeetMailWorkspaceScope } from '../app/[locale]/(dashboard)/[wsId]/meet-mail-workspace-scope';
@@ -19,7 +20,19 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/en/personal/inbox' }));
 vi.mock('@tuturuuu/satellite/sidebar-context', () => ({
   SidebarProvider: ({ children }: { children?: ReactNode }) => children,
 }));
-vi.mock('@tuturuuu/satellite/user-nav-client', () => ({ default: () => null }));
+vi.mock('@tuturuuu/satellite/user-nav-client', async () => {
+  const { SatelliteUserMenu } =
+    await import('@tuturuuu/ui/custom/satellite-user-menu');
+  return {
+    default: ({ user, hideMetadata }: ComponentProps<typeof UserNavClient>) =>
+      h(SatelliteUserMenu, {
+        name: user?.display_name ?? '',
+        email: user?.email,
+        hideMetadata,
+        children: null,
+      }),
+  };
+});
 vi.mock('./notification-popover', () => ({ default: () => null }));
 vi.mock('@tuturuuu/supabase/next/realtime-log-provider', () => ({
   RealtimeLogProvider: ({
@@ -42,12 +55,24 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('../app/[locale]/(dashboard)/[wsId]/structure', () => ({
   Structure: (props: {
     children?: ReactNode;
+    actions: ReactNode;
+    userPopover: ReactNode;
+    defaultCollapsed: boolean;
     wsId: string;
     personalOrWsId: string;
     links: { href: string }[];
   }) => {
     observed.structure(props);
-    return h('div', null, props.children);
+    return h(
+      'div',
+      null,
+      h(
+        'aside',
+        { 'aria-label': 'Workspace account' },
+        props.defaultCollapsed ? props.userPopover : props.actions
+      ),
+      props.children
+    );
   },
 }));
 // Keep the real native view, MailWorkspace, source/actor providers and UUID adapter.
@@ -137,5 +162,30 @@ it.each([true, false])(
     );
     expect(observed.realtime).toHaveBeenCalledWith(wsId);
     expect(observed.identity).not.toHaveBeenCalled();
+  }
+);
+
+it.each([false, true])(
+  'shows account metadata only in the expanded footer (collapsed=%s)',
+  (defaultCollapsed) => {
+    const name = 'Jamie Example';
+    const email = 'jamie@example.test';
+    render(
+      h(MailWorkspaceView, {
+        workspace: {
+          ...model,
+          defaultCollapsed,
+          profile: { id: actorId, display_name: name, email },
+        },
+        locale: 'en',
+      }),
+      { wrapper: withNuqsTestingAdapter({ searchParams: {}, hasMemory: true }) }
+    );
+    const footer = screen.getByRole('complementary', {
+      name: 'Workspace account',
+    });
+    const trigger = within(footer).getByRole('button');
+    expect(trigger.textContent?.includes(name)).toBe(!defaultCollapsed);
+    expect(trigger.textContent?.includes(email)).toBe(!defaultCollapsed);
   }
 );

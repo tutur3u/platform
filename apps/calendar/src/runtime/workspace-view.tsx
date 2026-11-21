@@ -63,7 +63,9 @@ export function WorkspaceView({
               ]}
               actions={
                 <div className="flex w-full items-center gap-1">
-                  <div className="flex-1">{userPopover}</div>
+                  <div className="min-w-0 flex-1">
+                    <UserNavClient user={model.profile} locale={locale} />
+                  </div>
                   {notifications}
                 </div>
               }
