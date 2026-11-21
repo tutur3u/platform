@@ -8,7 +8,9 @@
     "./polar/next": "./src/polar/next/index.ts",
     "./polar/*": "./src/polar/*.ts",
     "./apple-server-verifier": "./src/apple-server-verifier.ts",
-    "./apple-root-certificates": "./src/apple-root-certificates.ts"
+    "./apple-root-certificates": "./src/apple-root-certificates.ts",
+    "./play-server-verifier": "./src/play-server-verifier.ts",
+    "./play-rtdn": "./src/play-rtdn.ts"
   },
   "scripts": {
     "test": "vitest run"
