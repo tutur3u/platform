@@ -126,8 +126,12 @@ describe('buildMiraContext memory metering', () => {
       userId: 'user-1',
       wsId: 'workspace-1',
     });
-    expect(lazy.contextString).toContain('- units: Prefers metric units');
-    expect(eager.contextString).toContain('- units: Prefers metric units');
+    for (const context of [lazy, eager]) {
+      expect(context.contextString).toContain('untrusted recalled context');
+      expect(context.contextString).toContain(
+        JSON.stringify([{ key: 'units', value: 'Prefers metric units' }])
+      );
+    }
   });
 
   it('respects disabled memory consent without metering when the turn needs memory', async () => {

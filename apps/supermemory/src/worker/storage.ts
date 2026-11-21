@@ -15,7 +15,7 @@ type Operation<T extends Command['operation']> = Extract<
 
 const NOT_FOUND = { status: 404, body: { error: 'not_found' } };
 const CONFLICT = { status: 409, body: { error: 'revision_conflict' } };
-const MAX_CANDIDATES = 400;
+const MAX_CANDIDATES = 500;
 
 function visible(sql: MemoryDatabase, caller: Caller) {
   return sql`
@@ -190,7 +190,7 @@ async function listMemories(
       and ${visible(sql, caller)}
       and status = 'done'
     order by updated_at ${direction}, id
-    limit ${Math.min(body.limit * 3, MAX_CANDIDATES)}
+    limit ${Math.min(body.limit * 3, 1000)}
   `;
   return {
     body: {
@@ -232,6 +232,7 @@ async function searchMemories(
       from vector_ranks v full join keyword_ranks k using (id)
     )
     select m.id, m.content as chunk, m.content as memory, m.metadata,
+      m.worker_revision::text as revision,
       m.updated_at as "updatedAt", r.score::float8 as similarity
     from ranked r join public.memories m on m.id = r.id
     order by r.score desc, m.updated_at desc, m.id

@@ -1,5 +1,10 @@
-import { getAiMemoryConfig } from './config';
-import type { AiEditableMemory, AiMemoryConfig } from './types';
+import { createHash } from 'node:crypto';
+import { getAiMemoryConfig, getMemoryWorkerOrigin } from './config';
+import type {
+  AiEditableMemory,
+  AiMemoryConfig,
+  AiMemoryWriteReceipt,
+} from './types';
 
 type RequestOptions = {
   timeout?: number;
@@ -36,6 +41,8 @@ type ForgetMemoryPayload = {
   containerTag: string;
   id: string;
   reason: string;
+  revision?: string;
+  replacement?: AiMemoryWriteReceipt['replacement'];
 };
 
 export type MemoryEditScopePayload = {
@@ -52,36 +59,92 @@ export class AiMemoryServiceHttpError extends Error {
   }
 }
 
+export class AiMemoryWriteRejectedError extends Error {}
+
 let cachedClient: AiMemoryServiceClient | null = null;
 let cachedSignature: string | null = null;
 
 function configSignature(config: AiMemoryConfig) {
-  return [config.apiKey, config.baseUrl ?? ''].join('|');
+  return JSON.stringify([
+    config.apiKey,
+    config.baseUrl,
+    config.timeoutMs,
+    config.transport,
+  ]);
 }
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/u, '');
 }
 
+function workerCustomId(payload: AddMemoryPayload) {
+  const source =
+    typeof payload.metadata.legacyMemoryId === 'string'
+      ? ['legacy', payload.metadata.legacyMemoryId]
+      : [
+          'content',
+          payload.content,
+          Object.keys(payload.metadata)
+            .sort()
+            .map((key) => [key, payload.metadata[key]]),
+        ];
+  return `assistant.${createHash('sha256')
+    .update(JSON.stringify([payload.containerTag, payload.customId, source]))
+    .digest('hex')}`;
+}
+
 export class AiMemoryServiceClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly worker: boolean;
 
   constructor(config: AiMemoryConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = trimTrailingSlash(
-      config.baseUrl ?? 'http://supermemory:8787'
-    );
     this.timeoutMs = config.timeoutMs;
+    this.worker = config.transport === 'cloudflare-worker';
+    if (this.worker) {
+      const origin = getMemoryWorkerOrigin(config.baseUrl);
+      if (!origin) throw new Error('Invalid AI Memory Worker origin');
+      this.baseUrl = origin;
+    } else {
+      this.baseUrl = trimTrailingSlash(
+        config.baseUrl ?? 'http://supermemory:8787'
+      );
+    }
   }
 
-  async add(payload: AddMemoryPayload, options?: RequestOptions) {
-    return this.post<{ id: string; status: string }>(
-      '/v1/memories',
-      payload,
-      options
-    );
+  async add(
+    payload: AddMemoryPayload,
+    options?: RequestOptions
+  ): Promise<AiMemoryWriteReceipt> {
+    const customId = this.worker ? workerCustomId(payload) : payload.customId;
+    const response = await this.post<{
+      id: string;
+      status: string;
+      revision?: string;
+    }>('/v1/memories', { ...payload, customId }, options);
+    if (!this.worker) return response;
+    if (response?.status === 'forgotten') {
+      throw new AiMemoryWriteRejectedError(
+        'This memory identity was forgotten'
+      );
+    }
+    if (
+      response?.status !== 'done' ||
+      typeof response.id !== 'string' ||
+      !response.id ||
+      typeof response.revision !== 'string' ||
+      !/^[1-9][0-9]{0,18}$/.test(response.revision)
+    )
+      throw new AiMemoryWriteRejectedError(
+        'AI Memory Worker returned an invalid add receipt'
+      );
+    return {
+      id: response.id,
+      status: response.status,
+      replacement: { customId, revision: response.revision },
+    };
   }
 
   async searchMemories(
@@ -94,6 +157,7 @@ export class AiMemoryServiceClient {
         id: string;
         memory?: string;
         metadata?: Record<string, unknown> | null;
+        revision?: string;
         similarity?: number;
         updatedAt?: string;
       }>;
@@ -161,6 +225,7 @@ export class AiMemoryServiceClient {
           'Content-Type': 'application/json',
         },
         method: 'POST',
+        ...(this.worker ? { redirect: 'error' } : {}),
         signal: controller.signal,
       });
 

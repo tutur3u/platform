@@ -196,6 +196,37 @@ const mergeArgs = {
   newValue: 'merged value',
 };
 
+it('passes the confirmed Worker replacement fence when forgetting originals', async () => {
+  vi.clearAllMocks();
+  const replacement = { customId: 'assistant.replacement', revision: '5' };
+  memoryMocks.rememberAiMemory.mockResolvedValue({
+    ok: true,
+    value: { id: 'memory-new', status: 'done', replacement },
+  });
+  memoryMocks.forgetAiMemory.mockResolvedValue({
+    ok: true,
+    value: { forgotten: true, id: 'memory-old' },
+  });
+  await expect(
+    executeMergeMemories(mergeArgs, createContext())
+  ).resolves.toMatchObject({
+    success: true,
+  });
+  expect(memoryMocks.forgetAiMemory).toHaveBeenCalledWith(
+    expect.objectContaining({ replacement })
+  );
+});
+
+it('refuses an oversized merge before remembering or forgetting anything', async () => {
+  vi.clearAllMocks();
+  const keysToDelete = Array.from({ length: 21 }, (_, index) => `old-${index}`);
+  await expect(
+    executeMergeMemories({ ...mergeArgs, keysToDelete }, createContext())
+  ).resolves.toEqual({ error: 'Merge at most 20 memories at a time' });
+  expect(memoryMocks.rememberAiMemory).not.toHaveBeenCalled();
+  expect(memoryMocks.forgetAiMemory).not.toHaveBeenCalled();
+});
+
 it.each([
   { ok: true, skipped: true, reason: 'service_timeout', value: null },
   { ok: true, value: { id: 'replacement', status: 'queued' } },

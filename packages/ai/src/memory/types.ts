@@ -55,10 +55,18 @@ export type AiMemorySettings = {
 
 export type AiMemoryConfig = {
   apiKey: string;
-  baseUrl?: string;
   enabled: boolean;
   failOpen: boolean;
   timeoutMs: number;
+} & (
+  | { transport?: undefined; baseUrl?: string }
+  | { transport: 'cloudflare-worker'; baseUrl: string }
+);
+
+export type AiMemoryWriteReceipt = {
+  id: string;
+  status: string;
+  replacement?: { customId: string; revision: string };
 };
 
 export type AiMemoryResult<T> =
@@ -70,6 +78,7 @@ export type AiMemorySearchResult = {
   id: string;
   key?: string | null;
   metadata: AiMemoryMetadata | null;
+  revision?: string;
   score: number;
   updatedAt: string;
   value: string;

@@ -17,10 +17,12 @@ locale, timezone, conversation, and workspace metadata on each write.
 
 Default recall is cross-product within that `user + workspace` container. Use
 metadata filters only when a route needs a narrower product or surface view.
+Mira treats recalled text as untrusted background and uses the current request
+and verified permissions to determine what actions it can take.
 
 ## Runtime
 
-The Cloudflare Memory Worker is shipped dark. It uses the existing memory
+The Cloudflare Memory Worker starts disabled. It uses the existing memory
 database and schema through the cache-disabled `MEMORY_DB` Hyperdrive binding.
 Query caching must stay disabled to preserve read-after-write and read-after-
 purge behavior. The checked-in Worker has no public route and
@@ -36,6 +38,19 @@ below. The legacy writer must be paused during Worker operation. Legacy
 assistant records remain readable and editable by scoped ID. Their original
 custom IDs can be ambiguous, so Worker custom-ID reconciliation applies to
 rows written through the Worker.
+
+The shared assistant client selects the Worker only with
+`MEMORY_ASSISTANT_WORKER_ENABLED=true`. Set
+`MEMORY_ASSISTANT_WORKER_URL` to the private HTTPS origin and supply the
+assistant credential on the server. An enabled flag with missing Worker
+configuration leaves memory unavailable. With the flag off, existing legacy
+configuration still selects the retained sidecar.
+
+The assistant qualifies Worker custom IDs by user/workspace container and
+source. Distinct content from a reused source can still create distinct
+memories. Backfill writes use the original legacy record identity. Assistant
+writes succeed only with a committed Worker revision. A forgotten identity stays
+deleted and the assistant reports the write as failed.
 
 ### Worker mutation receipts
 
@@ -79,8 +94,8 @@ holding its lock completes. Turning off the Worker flag prevents new database
 connections. Stop the calling feature as well to stop its metered embedding
 requests. Recovery requires explicit operator admission.
 
-The Worker caps requests at 256 KiB, list/search results at 100, search candidates
-at 400, and purge batches at 50. It has no background continuation and performs
+The Worker caps requests at 256 KiB, list/search results at 500, search candidates
+at 500, list candidates at 1,000, and purge batches at 50. It has no background continuation and performs
 no automatic retries or embeddings. The disposable Postgres test in
 `apps/supermemory/src/worker/postgres.test.ts` exercises operation counts and
 stop behavior through the actual handler using a least-privilege runtime login
@@ -242,6 +257,11 @@ result includes its replacement ID/key, confirmed deleted keys, and retained
 keys. Retry only retained keys; never claim the whole merge completed when
 any deletion remains unconfirmed. Duplicate source keys are processed once,
 and the replacement key is never deleted.
+
+The Worker checks the replacement's committed custom ID and revision and the
+original's observed revision in the same transaction as forget. A missing
+revision or a conflict keeps the original in the retained result. A single
+merge accepts up to 20 source keys and does no work above that limit.
 
 This rule applies to Mira's existing user/workspace memory tool. It does not
 admit background consolidation or combine Meet's separately opted-in private

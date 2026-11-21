@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun src/server.js"
+    "start": "bun src/server.js",
+    "test": "vitest run --config vitest.config.ts",
+    "type-check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@tuturuuu/ai": "workspace:*",

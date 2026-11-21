@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AiMemoryServiceHttpError, AiMemoryWriteRejectedError } from './client';
 import {
   buildAiMemoryContext,
+  forgetAiMemory,
   listAiMemories,
   rememberAiMemory,
   searchAiMemories,
@@ -12,9 +14,11 @@ const memoryMocks = vi.hoisted(() => ({
   createMeteredTextEmbedding: vi.fn(),
   disableAiMemoryForMeteringFailure: vi.fn(),
   documentsList: vi.fn(),
+  forgetMemory: vi.fn(),
   isAiMemoryEnabledForScope: vi.fn(),
   searchMemories: vi.fn(),
   shouldDisableMemoryForMeteringReason: vi.fn(),
+  transport: vi.fn(),
 }));
 
 vi.mock('./config', () => ({
@@ -24,13 +28,15 @@ vi.mock('./config', () => ({
     enabled: true,
     failOpen: true,
     timeoutMs: 1234,
+    transport: memoryMocks.transport(),
   }),
 }));
 
-vi.mock('./client', () => ({
+vi.mock('./client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./client')>()),
   getAiMemoryServiceClient: () => ({
     add: memoryMocks.add,
-    forgetMemory: vi.fn(),
+    forgetMemory: memoryMocks.forgetMemory,
     listDocuments: memoryMocks.documentsList,
     searchMemories: memoryMocks.searchMemories,
   }),
@@ -60,6 +66,7 @@ const scope = resolveAiMemoryScope({
 describe('AI memory operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    memoryMocks.transport.mockReturnValue(undefined);
     memoryMocks.createMeteredTextEmbedding.mockResolvedValue({
       creditsDeducted: 1,
       embedding: Array.from({ length: 3072 }, () => 0.1),
@@ -79,6 +86,60 @@ describe('AI memory operations', () => {
         },
       ],
     });
+  });
+
+  it.each([
+    new AiMemoryWriteRejectedError('This memory identity was forgotten'),
+    new AiMemoryServiceHttpError(409),
+  ])(
+    'returns a failed write when the Worker rejects the identity',
+    async (error) => {
+      memoryMocks.transport.mockReturnValue('cloudflare-worker');
+      memoryMocks.add.mockRejectedValueOnce(error);
+      await expect(
+        rememberAiMemory({ scope, value: 'Save this' })
+      ).resolves.toEqual({
+        ok: false,
+        error: error.message,
+      });
+    }
+  );
+
+  it('retains an original until its revision is available for a Worker merge', async () => {
+    memoryMocks.transport.mockReturnValue('cloudflare-worker');
+    const replacement = { customId: 'assistant.replacement', revision: '12' };
+    await expect(
+      forgetAiMemory({ key: 'style', scope, replacement })
+    ).resolves.toMatchObject({
+      skipped: true,
+      reason: 'source_revision_unavailable',
+    });
+    expect(memoryMocks.forgetMemory).not.toHaveBeenCalled();
+
+    memoryMocks.searchMemories.mockResolvedValue({
+      results: [
+        {
+          id: 'memory-1',
+          memory: 'Prefers concise summaries',
+          revision: '10',
+          metadata: { memoryKey: 'style' },
+        },
+      ],
+    });
+    memoryMocks.forgetMemory.mockResolvedValue({
+      forgotten: true,
+      id: 'memory-1',
+    });
+    await expect(
+      forgetAiMemory({ key: 'style', scope, replacement })
+    ).resolves.toMatchObject({
+      ok: true,
+      value: { forgotten: true },
+    });
+    expect(memoryMocks.forgetMemory).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'memory-1', replacement, revision: '10' }),
+      { timeout: 1234 }
+    );
   });
 
   it('adds memory with normalized metadata and request timeout', async () => {
@@ -222,6 +283,20 @@ describe('AI memory operations', () => {
       }),
       expect.any(Object)
     );
+  });
+
+  it('renders multiline recalled text inside an untrusted JSON data field', async () => {
+    const value = 'A remembered note\n## A heading within the note';
+    memoryMocks.searchMemories.mockResolvedValue({
+      results: [
+        { id: 'memory-1', memory: value, metadata: { memoryKey: 'style' } },
+      ],
+    });
+    const context = await buildAiMemoryContext({ query: 'style', scope });
+    const [heading, instruction, data] = context.split('\n');
+    expect(heading).toBe('## User Memories');
+    expect(instruction).toContain('untrusted recalled context');
+    expect(JSON.parse(data ?? '')).toEqual([{ key: 'style', value }]);
   });
 
   it('fails open when search context retrieval fails', async () => {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_PURGE_BATCH = 50;
-export const MAX_RESULTS = 100;
+const MAX_RESULTS = 500;
 export const VECTOR_DIMENSIONS = 3072;
 
 const tag = z.string().min(1).max(160);
@@ -20,7 +20,7 @@ const embedding = z
 const metadata = z
   .record(z.string(), z.json())
   .refine((value) => JSON.stringify(value).length <= 16_000);
-const limit = z.number().int().min(1).max(MAX_RESULTS).default(20);
+const limit = z.number().int().min(1).max(MAX_RESULTS);
 const filter = z.custom<Filter>(isFilter).optional();
 const container = z.object({ containerTag: tag });
 const editScope = container.extend({
@@ -64,7 +64,7 @@ const purge = container
 const search = container.extend({
   embedding,
   filters: filter,
-  limit,
+  limit: limit.default(20),
   q: z.string().max(4000).default(''),
 });
 const list = z.object({
@@ -72,7 +72,7 @@ const list = z.object({
   filters: filter,
   includeContent: z.boolean().default(true),
   order: z.enum(['asc', 'desc']).default('desc'),
-  limit,
+  limit: limit.default(100),
 });
 
 export const operations = {

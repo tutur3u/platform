@@ -6,6 +6,7 @@ import {
   searchAiMemories,
 } from '../../memory';
 import {
+  MAX_MEMORY_MERGE_SOURCES,
   MIRA_MEMORY_CATEGORIES,
   type MiraMemoryCategory,
 } from '../definitions/memory';
@@ -225,7 +226,7 @@ export async function executeMergeMemories(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
-  const keysToDelete = args.keysToDelete as string[];
+  const keysToDelete = args.keysToDelete;
   const newKey = args.newKey as string;
   const newValue = args.newValue as string;
   const { category: newCategory, error: categoryError } = parseMemoryCategory(
@@ -244,8 +245,17 @@ export async function executeMergeMemories(
     };
   }
 
-  if (!keysToDelete || keysToDelete.length === 0) {
+  if (
+    !Array.isArray(keysToDelete) ||
+    keysToDelete.length === 0 ||
+    !keysToDelete.every((key): key is string => typeof key === 'string')
+  ) {
     return { error: 'No keys provided to delete' };
+  }
+  if (keysToDelete.length > MAX_MEMORY_MERGE_SOURCES) {
+    return {
+      error: `Merge at most ${MAX_MEMORY_MERGE_SOURCES} memories at a time`,
+    };
   }
 
   const scope = resolveMiraMemoryScope(ctx);
@@ -283,7 +293,14 @@ export async function executeMergeMemories(
 
   const results = await Promise.allSettled(
     sourceKeys.map((key) =>
-      forgetAiMemory({ key, reason: `Merged into ${newKey}`, scope })
+      forgetAiMemory({
+        key,
+        reason: `Merged into ${newKey}`,
+        scope,
+        ...(rememberResult.value?.replacement
+          ? { replacement: rememberResult.value.replacement }
+          : {}),
+      })
     )
   );
   const deletedKeys: string[] = [];
