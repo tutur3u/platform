@@ -1,5 +1,7 @@
 const assert = require('node:assert/strict');
 const { spawnSync, execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
@@ -463,4 +465,33 @@ test('the blast-radius lock runs on every full PR run and fails the aggregate', 
       1,
       `blast-radius ${status}`
     );
+});
+
+test('the blast-radius sparse checkout can run its test', (t) => {
+  const patterns = workflow.jobs['blast-radius'].steps[0].with[
+    'sparse-checkout'
+  ]
+    .trim()
+    .split('\n')
+    .map((line) => line.trim());
+  for (const file of [
+    '/scripts/ci/ci-plan.mjs',
+    '/scripts/ci/ci-plan-catalog.json',
+  ])
+    assert.ok(patterns.includes(file), file);
+  const root = path.resolve(__dirname, '../..');
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'pr-blast-sparse-'));
+  t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+  for (const pattern of patterns) {
+    const relative = pattern.replace(/^\//u, '');
+    const source = path.join(root, relative);
+    const destination = path.join(temporary, relative);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.cpSync(source, destination, { recursive: true });
+  }
+  execFileSync(
+    process.execPath,
+    ['--test', 'scripts/ci/pr-blast-radius.test.mjs'],
+    { cwd: temporary, encoding: 'utf8', timeout: 120000, stdio: 'pipe' }
+  );
 });

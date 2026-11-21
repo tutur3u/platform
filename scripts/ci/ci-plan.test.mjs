@@ -152,6 +152,24 @@ test('docs run for an app or packages/utils in the closure', () => {
   }
 });
 
+test('any package.json runs docs even when the package has no app dependents', () => {
+  const isolated = new Map([...dependents, ['packages/games', new Set()]]);
+  const manifest = buildPlan({
+    files: ['packages/games/package.json'],
+    graph: graph(isolated, names),
+    ownership,
+  });
+  assert.equal(manifest.uncertain, false);
+  assert.equal(manifest.docs.run, true);
+  const source = buildPlan({
+    files: ['packages/games/src/index.ts'],
+    graph: graph(isolated, names),
+    ownership,
+  });
+  assert.equal(source.uncertain, false);
+  assert.equal(source.docs.run, false);
+});
+
 test('an unsafe package name keeps the full type-check filter', () => {
   const result = buildPlan({
     files: ['apps/web/src/page.tsx'],

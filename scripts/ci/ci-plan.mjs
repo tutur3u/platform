@@ -248,6 +248,7 @@ export function buildPlan({ files, graph, extraEdges = {}, ownership = {} }) {
       (file) =>
         isShardDocumentation(file) ||
         file.startsWith('apps/docs/') ||
+        /(^|\/)package\.json$/u.test(file) ||
         /(^|\/)page\.tsx$/u.test(file) ||
         /(^|\/)sitemap\.[a-z]+$/u.test(file) ||
         /(^|\/)robots\.[a-z]+$/u.test(file)
@@ -295,7 +296,9 @@ export function buildPlan({ files, graph, extraEdges = {}, ownership = {} }) {
     },
     docs: {
       run: docs,
-      reason: docs ? reason : 'no docs or public route file changed',
+      reason: docs
+        ? reason
+        : 'no docs, public route, or package manifest changed',
     },
     cloudflare: { run: cloudflareRun, skip: cloudflareSkip, reason },
     vercel: {

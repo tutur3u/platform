@@ -1,8 +1,8 @@
 name: Affected app gate
 description: >-
-  Decide whether an app's heavy jobs should run. Pull requests and pushes to
-  main skip when the diff plan is certain and the app is absent. Every other
-  event, an uncertain plan, and any error resolve to run=true.
+  Decide whether an app's heavy jobs should run. Pull requests skip when the
+  diff plan is certain and the app is absent. Pushes to main deploy the full
+  set. Every other event, an uncertain plan, and any error resolve to run=true.
 inputs:
   app:
     description: >-

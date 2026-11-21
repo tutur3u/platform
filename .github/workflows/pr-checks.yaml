@@ -214,6 +214,8 @@ jobs:
             /scripts/ci/pr-blast-radius.test.mjs
             /scripts/ci/affected-gate.mjs
             /scripts/ci/affected-apps.mjs
+            /scripts/ci/ci-plan.mjs
+            /scripts/ci/ci-plan-catalog.json
       - name: Lock app-local workflow selection
         run: node --test scripts/ci/pr-blast-radius.test.mjs
 
