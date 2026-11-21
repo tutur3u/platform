@@ -52,6 +52,7 @@ export function sampleReceiver(
   let bytes = 0;
   let rttMs: number | null = null;
   let availableKbps: number | null = null;
+  let freezesMeasured = true;
   const finite = (value: unknown) =>
     typeof value === 'number' && Number.isFinite(value) && value >= 0
       ? value
@@ -75,6 +76,7 @@ export function sampleReceiver(
     )
       continue;
     seen.add(stat.id);
+    if (finite(stat.freezeCount) === null) freezesMeasured = false;
     const now: Counters = {
       lost: finite(stat.packetsLost) ?? 0,
       received: finite(stat.packetsReceived) ?? 0,
@@ -97,6 +99,7 @@ export function sampleReceiver(
     rttMs,
     availableKbps,
     receivedKbps: elapsedMs > 0 && packets > 0 ? (bytes * 8) / elapsedMs : null,
+    freezesMeasured: freezesMeasured && seen.size > 0,
   };
 }
 

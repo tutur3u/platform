@@ -99,6 +99,7 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
         smallMode,
         visibility: policy.visibility,
         intervalMs: Math.min(600_000, Math.max(1000, now - since)),
+        freezesMeasured: !!receiver?.freezesMeasured,
         cameraHeight: round(sender?.cameraHeight),
         cameraFps: round(sender?.cameraFps),
         screenHeight: round(sender?.screenHeight),

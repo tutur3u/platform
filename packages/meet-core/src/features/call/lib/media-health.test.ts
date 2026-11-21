@@ -398,6 +398,7 @@ describe('media quality recorder', () => {
       smallMode: true,
       visibility: 'visible',
       intervalMs: 4000,
+      freezesMeasured: false,
       cameraHeight: null,
       cameraFps: null,
       screenHeight: null,

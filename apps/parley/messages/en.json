@@ -4263,6 +4263,7 @@
       "media_freezes_per_minute": "Freezes per device-minute",
       "media_layers": "Camera layers high / mid / low",
       "media_camera_reporters": "Devices measuring cameras",
+      "media_freeze_reporters": "Devices measuring freezes",
       "media_over_entitlement": "Over plan limits",
       "media_limited_devices": "Limited devices",
       "media_limited_counts": "CPU {cpu} · audio-only {audioOnly} · hidden {hidden} · thumbnails {thumbnails}",

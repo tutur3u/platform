@@ -60,6 +60,35 @@ describe('stream entitlement clamping', () => {
     expect(layers.every((layer) => layer.maxFramerate === 24)).toBe(true);
   });
 
+  it('budgets unset layers before scaling to the aggregate cap', () => {
+    const layers = clampToStreamCap(
+      [{ maxBitrate: 900_000 }, {}, { maxBitrate: 300_000 }],
+      free.camera,
+      720
+    );
+    const total = layers.reduce(
+      (sum, layer) => sum + (layer.maxBitrate ?? 0),
+      0
+    );
+    expect(total).toBeLessThanOrEqual(900_000);
+    expect(layers.every((layer) => (layer.maxBitrate ?? 0) > 0)).toBe(true);
+  });
+
+  it('keeps simulcast layers distinct when a large capture is downscaled', () => {
+    const layers = clampToStreamCap(
+      [
+        { scaleResolutionDownBy: 1 },
+        { scaleResolutionDownBy: 2 },
+        { scaleResolutionDownBy: 4 },
+      ],
+      free.camera,
+      2160
+    );
+    expect(layers.map((layer) => layer.scaleResolutionDownBy)).toEqual([
+      3, 6, 12,
+    ]);
+  });
+
   it('never raises an adaptive limit', () => {
     const [encoding] = clampToStreamCap(
       [{ maxBitrate: 200_000, maxFramerate: 8, scaleResolutionDownBy: 4 }],

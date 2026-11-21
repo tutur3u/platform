@@ -245,21 +245,35 @@ Ceilings never raise a limit that network or CPU adaptation already lowered,
 and thumbnail mode still applies. Higher ceilings mainly benefit a spotlit
 camera or a shared screen.
 
-The SFU cannot enforce per-track resolution or bitrate, so enforcement beyond
-the client is detection:
+These are signed caps that the client applies, and the server only advises.
+The SFU cannot enforce per-track resolution or bitrate. Beyond the client, the
+room server detects drift:
 
-- Each media health report carries the largest active camera and screen send
-  height and frame rate.
-- The room server compares them with the signed ceilings, allowing 5% plus
-  16 px of height and 3 fps.
+- Each media health report carries the send rate and the largest active camera
+  and screen send height and frame rate.
+- The room server compares them with the signed ceilings. It allows 5% plus
+  16 px of height, 3 fps, and a quarter of bitrate overshoot above the camera,
+  screen and audio allowance.
 - A publisher over its ceilings is counted under **Over plan limits** in room
   media health.
-- When a publisher first drifts over, it receives `stream.limits`, so an honest
-  client clamps again.
+- When a publisher first drifts over, the reporting socket receives
+  `stream.limits` as a reply, so an honest client clamps again. That reply
+  needs no extra durable write.
 
 A modified client can still send more than its plan, and misreport its stats.
-Detecting that would need SFU-side per-track caps, which Cloudflare Realtime
+Stopping that would need SFU-side per-track caps, which Cloudflare Realtime
 does not offer.
+
+The automatic budget uses the same targets on every plan: up to 1.4 Mbps and
+24 fps for a spotlit camera, and 1.8 Mbps at 15 fps for a screen share. Paid
+ceilings make room above those targets. A participant reaches them through the
+stream quality picker. The camera captures at 720p.
+
+The plan applies only to the web call for now. Mobile join tokens carry the
+free ceilings, and the native publisher does not yet apply them.
+
+The participant's plan is looked up alongside the host's meeting duration.
+The lookup is bounded to two seconds and falls back to free.
 
 ## Media health diagnostics
 
@@ -299,7 +313,9 @@ Participants who can manage the room see an anonymous room aggregate under
 without participant management:
 
 - Send and receive p50/p95.
-- Devices measuring cameras. Freezes and receive rates count only these.
+- Devices measuring cameras, which the receive rates count.
+- Devices measuring freezes: those whose browser also reports freeze counters.
+  The freeze rate counts only these.
 - Devices over plan limits.
 - Loss and round-trip p95.
 - Freezes per device-minute.

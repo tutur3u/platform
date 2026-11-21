@@ -5,6 +5,7 @@ import {
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
   meetRealtimeTokenPayloadSchema,
+  isMeetStatelessSfuOutcome,
   summarizeRoomMediaQuality,
 } from './index';
 import type { MeetMediaQualitySample } from './room-media-quality';
@@ -83,6 +84,8 @@ describe('stream tiers', () => {
       true
     );
     expect(exceedsMeetStreamEntitlement({ cameraFps: 30 }, free)).toBe(true);
+    expect(exceedsMeetStreamEntitlement({ sendKbps: 3000 }, free)).toBe(false);
+    expect(exceedsMeetStreamEntitlement({ sendKbps: 4000 }, free)).toBe(true);
     expect(
       exceedsMeetStreamEntitlement(
         { screenHeight: 1440, screenFps: 60 },
@@ -131,22 +134,19 @@ describe('room enforcement', () => {
       now,
       message: { type: 'media.quality', sample },
     });
-    expect(first.direct).toEqual([
-      {
-        userId: token.userId,
-        message: {
-          type: 'stream.limits',
-          limits: meetStreamEntitlement('free'),
-        },
-      },
+    // The correction is a reply, so it never forces a durable write.
+    expect(first.direct).toEqual([]);
+    expect(first.reply).toEqual([
+      { type: 'stream.limits', limits: meetStreamEntitlement('free') },
     ]);
+    expect(isMeetStatelessSfuOutcome(state, first)).toBe(true);
     state = first.state;
     const second = applyMeetRoomCommand(state, {
       token,
       now,
       message: { type: 'media.quality', sample },
     });
-    expect(second.direct).toEqual([]);
+    expect(second.reply).toEqual([]);
     expect(
       summarizeRoomMediaQuality(second.state.mediaQuality, Date.parse(now))
         .overEntitlement

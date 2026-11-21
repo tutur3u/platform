@@ -4504,6 +4504,7 @@
       "media_device_busy": "The device could not start. Check whether another app is using it, then try again.",
       "media_error_code": "Diagnostic code: {code}",
       "media_failed": "Could not start or transmit media. Try again, or leave and rejoin the call.",
+      "media_freeze_reporters": "Devices measuring freezes",
       "media_freezes_per_minute": "Freezes per device-minute",
       "media_layers": "Camera layers high / mid / low",
       "media_limited_counts": "CPU {cpu} · audio-only {audioOnly} · hidden {hidden} · thumbnails {thumbnails}",

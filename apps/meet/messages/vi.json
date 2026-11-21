@@ -4504,6 +4504,7 @@
       "media_device_busy": "Không thể khởi động thiết bị. Hãy kiểm tra xem ứng dụng khác có đang sử dụng thiết bị không rồi thử lại.",
       "media_error_code": "Mã chẩn đoán: {code}",
       "media_failed": "Không thể khởi động hoặc truyền âm thanh, hình ảnh. Hãy thử lại hoặc rời và tham gia lại cuộc gọi.",
+      "media_freeze_reporters": "Thiết bị đang đo đứng hình",
       "media_freezes_per_minute": "Số lần đứng hình mỗi thiết bị-phút",
       "media_layers": "Lớp camera cao / vừa / thấp",
       "media_limited_counts": "CPU {cpu} · chỉ âm thanh {audioOnly} · ẩn tab {hidden} · ảnh thu nhỏ {thumbnails}",

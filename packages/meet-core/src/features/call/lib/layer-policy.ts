@@ -56,6 +56,8 @@ export type ReceiverSample = {
   availableKbps: number | null;
   /** Video bitrate actually received this interval. */
   receivedKbps: number | null;
+  /** Whether every sampled camera reported a freeze counter. */
+  freezesMeasured?: boolean;
 };
 
 export type ReceiverGovernor = {

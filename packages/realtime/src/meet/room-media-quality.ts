@@ -28,6 +28,8 @@ export const meetMediaQualitySampleSchema = z.object({
   cameraFps: z.number().min(0).max(240).nullable().optional(),
   screenHeight: z.number().int().min(0).max(4320).nullable().optional(),
   screenFps: z.number().min(0).max(240).nullable().optional(),
+  /** Whether the browser reported freeze counters for measured cameras. */
+  freezesMeasured: z.boolean().optional(),
 });
 export type MeetMediaQualitySample = z.infer<
   typeof meetMediaQualitySampleSchema
@@ -86,16 +88,18 @@ export function summarizeRoomMediaQuality(
   const live = Object.values(quality ?? {}).filter(
     (entry) => now - entry.at < STALE_MS
   );
-  // Freezes count only over devices that measured cameras this interval, so
-  // devices without camera telemetry never dilute the rate.
+  // Receive rates count devices that measured cameras; freezes count only
+  // those whose browser also reported freeze counters, so neither is diluted.
   const measured = live.filter((entry) => entry.recvVideoKbps !== null);
+  const frozenCoverage = measured.filter((entry) => entry.freezesMeasured);
   const minutes =
-    measured.reduce((sum, entry) => sum + entry.intervalMs, 0) / 60_000;
+    frozenCoverage.reduce((sum, entry) => sum + entry.intervalMs, 0) / 60_000;
   const total = (pick: (entry: MeetMediaQualitySample) => number) =>
     live.reduce((sum, entry) => sum + pick(entry), 0);
   return {
     reporters: live.length,
     cameraReporters: measured.length,
+    freezeReporters: frozenCoverage.length,
     sendKbps: distribution(live.map((entry) => entry.sendKbps)),
     recvVideoKbps: distribution(live.map((entry) => entry.recvVideoKbps)),
     rttMs: distribution(live.map((entry) => entry.rttMs)),
@@ -103,7 +107,8 @@ export function summarizeRoomMediaQuality(
     sendLoss: distribution(live.map((entry) => entry.sendLoss)),
     freezesPerMinute:
       minutes > 0
-        ? measured.reduce((sum, entry) => sum + entry.freezes, 0) / minutes
+        ? frozenCoverage.reduce((sum, entry) => sum + entry.freezes, 0) /
+          minutes
         : null,
     layers: {
       high: total((entry) => entry.layers.high),

@@ -27,31 +27,38 @@ export function clampToStreamCap(
   cap: MeetStreamCap | undefined,
   captureHeight: number | null | undefined
 ): RTCRtpEncodingParameters[] {
-  if (!cap) return encodings;
+  if (!cap || !encodings.length) return encodings;
   const capBps = cap.maxBitrateKbps * 1000;
-  const total = encodings.reduce(
-    (sum, encoding) => sum + (encoding.maxBitrate ?? 0),
-    0
+  // Unset layers get an even share before the total is scaled, so mixed
+  // inputs can never exceed the aggregate cap.
+  const budgeted = encodings.map(
+    (encoding) => encoding.maxBitrate ?? Math.floor(capBps / encodings.length)
   );
+  const total = budgeted.reduce((sum, bitrate) => sum + bitrate, 0);
   const factor = total > capBps ? capBps / total : 1;
   const minimumScale =
     captureHeight && captureHeight > cap.maxHeight
       ? captureHeight / cap.maxHeight
       : 1;
-  return encodings.map((encoding) => ({
+  // Each layer reaches the height cap, but layers that would collapse onto
+  // the same size keep their original spacing.
+  let previous: { original: number; scaled: number } | null = null;
+  const scales = encodings.map((encoding) => {
+    const original = encoding.scaleResolutionDownBy ?? 1;
+    let scaled = Math.max(original, minimumScale);
+    if (previous && original > previous.original && scaled <= previous.scaled)
+      scaled = previous.scaled * (original / previous.original);
+    previous = { original, scaled };
+    return scaled;
+  });
+  return encodings.map((encoding, index) => ({
     ...encoding,
-    maxBitrate:
-      encoding.maxBitrate === undefined
-        ? Math.floor(capBps / encodings.length)
-        : Math.max(1, Math.floor(encoding.maxBitrate * factor)),
+    maxBitrate: Math.max(1, Math.floor(budgeted[index]! * factor)),
     maxFramerate: Math.min(
       encoding.maxFramerate ?? cap.maxFrameRate,
       cap.maxFrameRate
     ),
-    scaleResolutionDownBy: Math.max(
-      encoding.scaleResolutionDownBy ?? 1,
-      minimumScale
-    ),
+    scaleResolutionDownBy: scales[index]!,
   }));
 }
 

@@ -33,6 +33,7 @@ const sample: MeetMediaQualitySample = {
   smallMode: true,
   visibility: 'visible',
   intervalMs: 30_000,
+  freezesMeasured: true,
 };
 
 function token(n: number, role: 'host' | 'speaker') {
@@ -251,9 +252,17 @@ describe('freeze rate coverage', () => {
       { ...sample, freezes: 0, recvVideoKbps: null },
       0
     );
+    // Receives video but its browser reports no freeze counter.
+    quality = applyMediaQualityReport(
+      quality,
+      'c',
+      { ...sample, freezes: 0, freezesMeasured: false },
+      0
+    );
     const summary = summarizeRoomMediaQuality(quality, 1000);
-    expect(summary.reporters).toBe(2);
-    expect(summary.cameraReporters).toBe(1);
+    expect(summary.reporters).toBe(3);
+    expect(summary.cameraReporters).toBe(2);
+    expect(summary.freezeReporters).toBe(1);
     expect(summary.freezesPerMinute).toBe(6);
   });
 });

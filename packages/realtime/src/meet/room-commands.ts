@@ -246,7 +246,8 @@ function dispatchMeetRoomCommand(
       if (!state.presence[userId]) return denied(state, 'awaiting_admission');
       {
         // Send stats over the signed entitlement are flagged for managers and
-        // the publisher is told its limits again when it first drifts.
+        // the reporting socket is told its limits again when it first
+        // drifts. Advisory: the SFU offers no per-track caps to enforce.
         const entitlement = resolveMeetStreamEntitlement(token.limits.stream);
         const over = exceedsMeetStreamEntitlement(message.sample, entitlement);
         const wasOver = !!state.mediaQuality?.[userId]?.overEntitlement;
@@ -262,14 +263,7 @@ function dispatchMeetRoomCommand(
             ),
           },
           over && !wasOver
-            ? {
-                direct: [
-                  {
-                    userId,
-                    message: { type: 'stream.limits', limits: entitlement },
-                  },
-                ],
-              }
+            ? { reply: [{ type: 'stream.limits', limits: entitlement }] }
             : {}
         );
       }

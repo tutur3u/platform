@@ -414,6 +414,7 @@ export function isMeetStatelessSfuOutcome(
     (reply) =>
       (reply.type === 'sfu.response' && reply.action === 'sfu.tracks.update') ||
       reply.type === 'media.quality.summary' ||
+      reply.type === 'stream.limits' ||
       reply.type === 'error'
   );
 }

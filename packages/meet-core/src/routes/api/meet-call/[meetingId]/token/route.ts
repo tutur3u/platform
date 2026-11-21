@@ -52,20 +52,23 @@ export async function POST(
     const { user, meeting, isHost, admission, displayName, avatarUrl, guest } =
       resolved;
     const classRole = await resolveMeetClassRole(resolved);
+    // Both plan lookups run together; the participant's is bounded.
+    const [maxRoomDurationSeconds, streamTier] = await Promise.all([
+      getHostMeetingDurationSeconds(meeting.creator_id),
+      guest ? ('free' as const) : getParticipantStreamTier(user.id),
+    ]);
     const session = await getMeetCallSession({
       guest,
       coHost: classRole.coHost,
       participantKind: classRole.participantKind,
-      maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
-        meeting.creator_id
-      ),
+      maxRoomDurationSeconds,
       deviceId,
       displayName,
       avatarUrl,
       isHost,
       admission,
       meetingId: meeting.id,
-      streamTier: guest ? 'free' : await getParticipantStreamTier(user.id),
+      streamTier,
       userId: user.id,
       wsId: meeting.ws_id,
     });

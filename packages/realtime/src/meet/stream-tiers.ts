@@ -71,16 +71,20 @@ export const MEET_STREAM_FRAME_RATES = [5, 15, 30, 60] as const;
 
 /** Reported send dimensions, as measured from outbound video stats. */
 export type MeetStreamReport = {
+  sendKbps?: number | null;
   cameraHeight?: number | null;
   cameraFps?: number | null;
   screenHeight?: number | null;
   screenFps?: number | null;
 };
 
+/** Speech and screen audio allowance on top of the video ceilings. */
+const AUDIO_ALLOWANCE_KBPS = 160;
+
 /**
- * Whether reported send stats stay within an entitlement, allowing for
- * encoder rounding and frame-rate jitter. Reports are client-measured, so
- * this flags drift rather than proving compliance.
+ * Whether reported send stats exceed an entitlement, allowing for encoder
+ * rounding, frame-rate jitter and a quarter of bitrate overshoot. Reports are
+ * client-measured, so this flags drift rather than proving compliance.
  */
 export function exceedsMeetStreamEntitlement(
   report: MeetStreamReport,
@@ -93,8 +97,14 @@ export function exceedsMeetStreamEntitlement(
   ) =>
     (height ?? 0) > cap.maxHeight * 1.05 + 16 ||
     (fps ?? 0) > cap.maxFrameRate + 3;
+  const bitrateCeiling =
+    (entitlement.camera.maxBitrateKbps +
+      entitlement.screen.maxBitrateKbps +
+      AUDIO_ALLOWANCE_KBPS) *
+    1.25;
   return (
     over(report.cameraHeight, report.cameraFps, entitlement.camera) ||
-    over(report.screenHeight, report.screenFps, entitlement.screen)
+    over(report.screenHeight, report.screenFps, entitlement.screen) ||
+    (report.sendKbps ?? 0) > bitrateCeiling
   );
 }

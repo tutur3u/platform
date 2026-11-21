@@ -18,16 +18,29 @@ export async function getHostMeetingDurationSeconds(hostId: string) {
   }
 }
 
+const PARTICIPANT_TIER_TIMEOUT_MS = 2000;
+
 /**
  * Stream quality follows the participant's own plan. A failed lookup falls
  * back to the free tier rather than blocking the join.
  */
 export async function getParticipantStreamTier(
-  accountId: string
+  accountId: string,
+  timeoutMs = PARTICIPANT_TIER_TIMEOUT_MS
 ): Promise<MeetStreamTier> {
+  // Bounded: a slow plan lookup degrades quality, never the join.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<MeetStreamTier>((resolve) => {
+    timer = setTimeout(() => resolve('free'), timeoutMs);
+  });
   try {
-    return meetStreamTierForProduct(await getHostMeetingTier(accountId));
+    return await Promise.race([
+      getHostMeetingTier(accountId).then(meetStreamTierForProduct),
+      timeout,
+    ]);
   } catch {
     return 'free';
+  } finally {
+    clearTimeout(timer);
   }
 }

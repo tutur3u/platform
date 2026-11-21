@@ -52,6 +52,8 @@ export function RoomMediaHealth({
           <dd className="text-right tabular-nums">{data.reporters}</dd>
           <dt>{t('media_camera_reporters')}</dt>
           <dd className="text-right tabular-nums">{data.cameraReporters}</dd>
+          <dt>{t('media_freeze_reporters')}</dt>
+          <dd className="text-right tabular-nums">{data.freezeReporters}</dd>
           <dt>{t('media_send_rate')}</dt>
           <dd className="text-right tabular-nums">{kbps(data.sendKbps)}</dd>
           <dt>{t('media_receive_rate')}</dt>
