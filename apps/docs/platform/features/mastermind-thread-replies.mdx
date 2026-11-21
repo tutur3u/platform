@@ -302,6 +302,77 @@ answers refused, read markers) and `apps/mastermind-store/src/bridge.test.ts` (t
 offline, the right machine only, a large answer, timeout, the stop fence,
 nothing stored).
 
+### Clients
+
+Screens do not call these routes by hand. Each surface has one typed data
+layer, and every body is checked against the contract before it is shown.
+
+| Surface | Module | What it gives a screen |
+| --- | --- | --- |
+| Web and Workers | `@tuturuuu/internal-api/mastermind-threads` | One function per route. Each resolves to `{ ok, data }` or `{ ok: false, error, status }` with a closed `error` (`machine_offline`, `timeout`, `mfa_required`, ...); nothing throws. |
+| Mastermind web | `apps/mastermind/src/fleet/thread-cache.ts`, `thread-reply.ts` | The on-device list cache and the state of one reply. |
+| Mobile | `apps/mobile/lib/features/mastermind/fleet/data/fleet_thread_*.dart`, `cubit/fleet_thread_reply_cubit.dart` | Models, `FleetThreadSource`, the on-device list cache and the reply cubit. |
+
+- **On-device list cache.** Product decision (owner, 21 Nov 2026): the last
+  thread list is cached on the device, encrypted, and nowhere else, so the
+  list renders at once and shows its age while the machine is offline. The
+  cache holds the first 50 threads of the 6 lists saved last (a list is a
+  machine with at most one project and one state; searches and history are
+  not cached), each with the time it was saved, which the screen shows as
+  the list's age. It is sealed with AES-256-GCM and bound to the signed-in
+  account. In a browser the key is a non-extractable `CryptoKey` in
+  IndexedDB: a copy of the database opens nowhere else, but any script
+  running on the Mastermind origin can use the key, so the cache is no
+  defence against script injection there. On a phone the key lives in the
+  device keystore and the sealed file in the app cache directory.
+- **One account at a time.** A list is returned only to the account that is
+  still signed in when the read finishes, also when the account changed
+  while the read waited. Clearing takes the account to erase, so a sign-out
+  clears the account that signed out, whoever is signed in when it runs.
+  The in-memory cache used off phones keeps a separate set of lists per
+  account, with the same limits.
+- **When storage fails.** No cache call throws. While a keystore, database
+  or cache directory cannot be reached, a read finds nothing cached and a
+  write saves nothing, so what is stored stays as it is. A record that is
+  damaged, oversized, sealed for another account or whose key is gone reads
+  as empty and is removed. One cached list that does not fit the contract
+  is dropped; the others stay.
+- **One reply, one key.** A reply gets its idempotency key when it is first
+  sent and keeps it through every retry, a second-factor step-up included.
+  `needs_mfa` means the session's proof is too old for a reply, whatever its
+  age: the owner verifies again and the same reply is sent again, text and
+  key kept. Offline, timeout, rate limit, unavailable and an unreadable
+  answer can be retried under the same key; a refusal, a reply the machine
+  refused and an expired reply cannot. Sending the same text again while
+  its reply can still be resent is that reply again, not a new one; other
+  text is a new reply.
+- **A reply held for the machine.** While a reply is `sent` the composer
+  sends nothing else. Its receipt is read again when the owner socket
+  delivers a `receipt` frame for it, and on `retry()`, which is the way
+  forward when no frame arrives. Resetting the composer does not withdraw
+  the reply: it stays in the outbox and is delivered when the machine takes
+  it.
+- **Delivery states shown.** `sent` (held for the machine), `delivered`
+  with `steered`, `started` or `queued`, and `failed` or `expired`.
+
+Regression coverage: `packages/internal-api/src/mastermind-threads.test.ts`
+(queries, bodies, refusals as states, misshaped bodies refused, change
+notices on the live read, any project id on a thread),
+`apps/web/src/app/api/v1/mastermind/fleet/fleet-threads.test.ts` (each
+route's answer fits the typed client),
+`apps/mastermind/src/fleet/thread-cache.test.ts` and
+`apps/mobile/test/features/mastermind/fleet/fleet_thread_cache_test.dart`
+(nothing readable at rest, per-account binding, an account change during a
+read, clearing one account on a cache two accounts used, storage that
+cannot be reached neither removed nor replaced, damaged records, one
+unreadable list among good ones, limits, values read back from another
+realm), `apps/mastermind/src/fleet/thread-reply.test.ts`
+and `fleet_thread_reply_cubit_test.dart` (the same key through a step-up, a
+retry and the same text sent again, one reply at a time, a held reply read
+again on retry and left in the outbox by a reset, a failing listener, the
+delivery states),
+`fleet_thread_repository_test.dart` (queries, parsing, refusals).
+
 ### Bridge daemon
 
 `scripts/mastermind-fleet/bridge.mjs` runs under launchd as

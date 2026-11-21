@@ -5,6 +5,12 @@ import {
   hkdfSync,
   randomBytes,
 } from 'node:crypto';
+import {
+  fleetThreadMachinesSchema,
+  fleetThreadMessagesSchema,
+  fleetThreadPageSchema,
+  fleetThreadProjectsSchema,
+} from '@tuturuuu/internal-api/mastermind-threads';
 import { MastermindBridgeError } from '@tuturuuu/utils/mastermind-store/bridge-client';
 import {
   BRIDGE_RPC_KEY_INFO,
@@ -421,6 +427,8 @@ describe('projects and thread filters', () => {
       'machineId=skr-m4&projectId=p1&state=failed&include=ownerReply'
     );
     expect(status).toBe(200);
+    // The typed client accepts what the route answers.
+    expect(fleetThreadPageSchema.safeParse(body).success).toBe(true);
     expect(body.threads[0].lastOwnerReplyAt).toBe('2026-11-21T04:30:00.000Z');
     expect(openArgs(mocks.sent[0] as Sent)).toEqual({
       limit: 50,
@@ -480,6 +488,7 @@ describe('projects and thread filters', () => {
     expect([status, body]).toEqual([200, { machineId: 'skr-m4', ...data }]);
     // Neither an answer nor a refusal may be kept by a cache on the way.
     expect(cache).toBe('private, no-store');
+    expect(fleetThreadProjectsSchema.safeParse(body).success).toBe(true);
     const sent = mocks.sent[0] as Sent;
     expect(sent.request.kind).toBe('projects');
     expect(openArgs(sent)).toEqual({});
@@ -543,6 +552,7 @@ describe('thread history and machines', () => {
       earlierPosition: 29,
     });
     expect(body.messages).toHaveLength(2);
+    expect(fleetThreadMessagesSchema.safeParse(body).success).toBe(true);
     const sent = mocks.sent[0] as Sent;
     expect(sent.request.kind).toBe('transcript');
     // The id reaches the machine exactly as the thread is named, `%3A` included.
@@ -575,13 +585,15 @@ describe('thread history and machines', () => {
         ],
       },
     };
-    expect((await machines('machineId=skr-m4')).body).toEqual({
+    const listed = (await machines('machineId=skr-m4')).body;
+    expect(listed).toEqual({
       machineId: 'skr-m4',
       machines: [
         { label: 'This machine', reachable: true },
         { environmentId: 'env-2', label: 'MacStudio1', reachable: false },
       ],
     });
+    expect(fleetThreadMachinesSchema.safeParse(listed).success).toBe(true);
     expect((mocks.sent[0] as Sent).request.kind).toBe('machines');
     expect((await machines('')).status).toBe(422);
   });
