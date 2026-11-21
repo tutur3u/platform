@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 827,
+    "total": 831,
     "categories": {
-      "api": 628,
+      "api": 632,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 815 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 819 }
   },
   "routes": [
     {
@@ -2640,6 +2640,38 @@
     {
       "pattern": "/api/v1/fleet/digest",
       "source": "apps/web/src/app/api/v1/fleet/digest/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/identity/confirm",
+      "source": "apps/web/src/app/api/v1/fleet/identity/confirm/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/identity/link-codes",
+      "source": "apps/web/src/app/api/v1/fleet/identity/link-codes/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/identity/verify",
+      "source": "apps/web/src/app/api/v1/fleet/identity/verify/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/intents",
+      "source": "apps/web/src/app/api/v1/fleet/intents/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

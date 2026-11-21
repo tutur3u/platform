@@ -1,6 +1,6 @@
 ---
-title: Fleet access and digest
-description: Live Fleet access, project-scoped digest reads, and machine publishing.
+title: Fleet access
+description: Live Fleet grants, project digests, intent receipts, and desk identity linking.
 updatedAt: "2026-11-21"
 audience: developers
 ---
@@ -74,3 +74,98 @@ snapshot older than the stored snapshot, or different content at the same
 timestamp, receives `409`. Invalid documents, unapproved labels, and unknown
 projects receive `400`. Excess body bytes receive `413`. Unavailable storage
 or invalid publisher configuration returns `503`.
+
+## Submit and read intents
+
+`POST /api/v1/fleet/intents` accepts a signed-in Tuturuuu web session cookie, a
+Mastermind access session with `internal-app:session`, or a desk request with signed
+event evidence. The `platform` audience is read-only. Send
+`Content-Type: application/json` with `{ kind, payload, quote? }`. Bodies
+are limited to 4 KiB. Each payload includes a `projectKey`. Targeted requests
+also include a catalog `targetKey`, with the same syntax as a project key.
+
+| Kind | Target catalog group | Additional payload fields |
+| --- | --- | --- |
+| `status_question` | Project only | `topic` of `status`, `readiness`, or `timeline` |
+| `comment` | `lane` | Display text in the top-level `quote` |
+| `priority.set` | `lane` | `priority` of `low`, `normal`, `high`, or `urgent` |
+| `approve.item` | `readiness_item` | |
+| `work.create` | `repository_path` | `template` of `investigation`, `maintenance`, or `regression_fix` |
+| `work.redirect` | `thread` | `objective` of `investigate`, `verify`, or `prepare_review` |
+| `lane.pause` | `lane` | |
+| `approve.deploy` | `deployment` | `environment` of `staging` or `production`, and a 40-character lowercase hex `commitSha` |
+| `approve.production_change` | `production_change` | `environment` of `production` and a 40-character lowercase hex `commitSha` |
+
+Catalog operators store target aliases under the corresponding group in
+`private.fleet_projects.target_mapping`, mapping each alias to a lowercase
+UUID. Each alias must uniquely identify one target within its group across
+the entire catalog. The server binds the resolved ID, parameters, kind and
+owning project version to the action hash. A project mismatch, missing target
+or ambiguous alias is denied. The release intent kinds file requests for approval.
+
+The optional `quote` is capped at 1,000 characters and required for comments.
+The server scrubs recognizable sensitive values and stores the result separately
+as display text. Keep credentials and private data out of submitted quotes.
+A successful response is `201 {"id":"<intent UUID>"}`.
+Denied requests return `403`, event replays and stale mappings return `409`,
+and exhausted quotas return `429`. Invalid JSON or unknown fields return `400`.
+
+`GET /api/v1/fleet/intents` accepts the same human sessions as the access
+endpoint. It returns the caller's own receipts for currently authorized
+projects, newest first, with `id`, `kind`, `state` and `createdAt`. The `intents`
+array contains up to 50 entries. Pass `nextBefore` as `?before=<intent UUID>`
+for the next page when present. Disabled or stopped access returns `403`.
+
+## Link a private desk conversation
+
+1. A signed-in user with live Fleet access sends `{}` to
+   `POST /api/v1/fleet/identity/link-codes`. The `201` response contains
+   `code` and `expiresIn: 600`. Issuing a new code invalidates the account's
+   current code or pending link.
+2. The user sends the code in an approved one-to-one conversation. The desk
+   sends `{ code }` to `POST /api/v1/fleet/identity/verify` with signed event
+   evidence. It shows the returned `linkId` and `confirmationCode` to the
+   sender in the same conversation.
+3. The same signed-in user sends `{ linkId, confirmationCode, preview: true }`
+   to `POST /api/v1/fleet/identity/confirm` within the original ten-minute
+   window to read the pending `channel` and configured `accountLabel` with
+   `linked: false`. Sending `{ linkId, confirmationCode }` to the same route
+   confirms the link and returns the channel and label with `linked: true`.
+   Neither response exposes provider sender or conversation identifiers.
+   A sender can link to one user per provider account. Desk events resolve
+   to that user only in the linked conversation and while their grant is live.
+
+### Desk and ingress credentials
+
+Set `FLEET_DESKS` on Web to a JSON object keyed by desk ID. Each entry contains
+`channel` (`whatsapp`, `zalo`, or `discord`), the provider `account`, a
+user-facing `accountLabel` of 1–80 characters, `tokenSha256` (hex SHA-256 of the full bearer token), and `ingressPublicKey`
+(an Ed25519 public key in PEM format). The desk bearer format is
+`ttr_fleet_desk_<desk-id>.<32 random bytes in unpadded base64url>`. Issue one
+token per desk. Replace its verifier to rotate it or remove the desk entry
+to revoke it. Store the signing key only at ingress and the bearer token
+only with its desk.
+
+Trusted ingress validates the provider event, its original freshness, account,
+sender and approved private conversation before constructing the authorized
+request body and issuing proof. It applies the freshness check again on provider
+redelivery and never issues fresh proof for an expired provider event. Send the UTF-8 JSON claims as
+unpadded base64url in `X-Fleet-Event`. Sign the ASCII string
+`fleet-event-v1.<encoded claims>` with Ed25519 and send the unpadded base64url
+signature in `X-Fleet-Event-Signature`. The claims are:
+
+- `version` of `1`, `channel`, `account`, `sender`, `conversation` and
+  `conversationType` of `private_1_to_1`.
+- The provider's `eventId`, the allowed `operation` (`identity.verify` or
+  `intent.submit`), and `inputSha256` (the lowercase hex SHA-256 of the exact
+  HTTP JSON body bytes).
+- `issuedAt`, Unix time in milliseconds. Evidence permits up to 30 seconds
+  of future clock skew and expires after five minutes.
+
+The API consumes the event ID once per channel and provider account across
+both operations. Replay fingerprints have a 90-day retention horizon from
+consumption. Signed proof and bearer credentials are required together.
+`FLEET_IDENTITY_HMAC_KEY` is 32 random bytes in lowercase hex, stored on Web
+only. It namespaces stored sender and conversation fingerprints by provider
+and account. Preserve the key across deployments. Rotating it requires
+coordinating retirement and re-linking of existing identities.

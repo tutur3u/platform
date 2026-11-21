@@ -14,6 +14,10 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/mastermind/push-events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/push-events/route.ts) |
+| `/api/v1/meet/plans/[planId]/availability` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/availability/route.ts) |
+| `/api/v1/meet/plans/[planId]/finalization` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/finalization/route.ts) |
+| `/api/v1/meet/plans/[planId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/route.ts) |
 | `/api/v1/meet/plans` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/route.ts) |
 | `/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/preview/%5Bport%5D/%5B%5B...path%5D%5D/route.ts) |
 | `/api/v1/meetings/[meetingId]/collaboration` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/route.ts) |
@@ -190,9 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-chat/sync` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-chat/sync/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]` | DELETE, GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/%5BassetId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/%5BassetId%5D/webgl/%5B...assetPath%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/process` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/import-jobs/%5BjobId%5D/process/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/import-jobs/%5BjobId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/assets/import-jobs` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/import-jobs/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/assets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -163,3 +163,10 @@ export function publishFleetDigest(
     body: JSON.stringify(section),
   });
 }
+
+export {
+  type FleetIntentInput,
+  type FleetIntentReceipt,
+  fleetIntentInputSchema,
+  fleetIntentReceiptSchema,
+} from './fleet-intents';

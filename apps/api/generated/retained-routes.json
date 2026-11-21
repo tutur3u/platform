@@ -1510,6 +1510,46 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/fleet/identity/confirm",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/identity/confirm/route.ts",
+    "sourceSha256": "7e354da94af848c3c44dcd876ff7508b49278b4cea204bf04e16abed97b152a3",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/identity/link-codes",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/identity/link-codes/route.ts",
+    "sourceSha256": "f51031dc3762d53b0dbc4f321fc706917e08212fe83b2f236245dc3beb289253",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/identity/verify",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/identity/verify/route.ts",
+    "sourceSha256": "5d7e6cbec084f8eacdc102a385c9bd3f0f14bbe7c9c3684918db861d6af31736",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/intents",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/intents/route.ts",
+    "sourceSha256": "df3ec465f2be94813b5ddbc33202b1b707e6d6c603cc9889dd1bb3ffeddb8812",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained",
     "sideEffects": "unknown",
     "shadow": "never",

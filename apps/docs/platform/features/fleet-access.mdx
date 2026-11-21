@@ -7,7 +7,8 @@ audience: developers
 
 **Status:** [Slice 0](#transitional-slice-0) is the transitional desk rule. Slice 1
 defines the database foundation. Slice 2 adds the [Fleet API](/reference/api-reference/fleet-access)
-for live access, digest publishing and scoped reads. Production application and
+for live access, digest publishing and scoped reads. Slice 3 adds intent
+submission, requester receipts and desk identity linking. Production application and
 later slices need the approvals in the [implementation plan](#implementation-plan).
 
 Fleet access lets named teammates (for example an operations lead) read the
@@ -246,7 +247,9 @@ transitions and audit writes atomically.
 | `fleet_projects`              | catalog: key, en/vi names, default risk, target resolution    |
 | `fleet_access_grants`         | person, tier, capabilities, caps, expiry, status, generation  |
 | `fleet_access_grant_projects` | grant to project keys                                         |
-| `fleet_channel_identities`    | channel, keyed sender hash, verified time                     |
+| `fleet_channel_identities`    | provider account, keyed sender and conversation fingerprints |
+| `fleet_identity_link_codes`   | one expiring code or pending confirmation per account         |
+| `fleet_provider_events`       | consumed event fingerprints and consumption time by account  |
 | `fleet_intents`               | kind, typed payload, risk, action hash, state, lease, receipts |
 | `fleet_intent_quotes`         | redacted quote, 90-day retention                              |
 | `fleet_audit_events`          | append-only events with reason codes                          |
@@ -274,13 +277,25 @@ The Observer API uses service-role-only definer functions. It binds read actors
 to verified Tuturuuu sessions and checks live grants, stop state and project
 scope before reading digest rows.
 
-Slice 3 write routes must exclude the `platform` app-session audience used by
-CLI access tokens.
+Slice 3 binds submissions to the signed-in web user, a Mastermind app-session
+user, or a desk event verified against a separate trusted ingress key.
+The platform CLI audience can read its own receipts. The desk's event
+fingerprint, linked actor lookup and intent admission share one database
+transaction. Authoritative target aliases resolve across the project catalog,
+and the resolved action hash excludes the display quote.
 
-Slice 3 must bind and consume verified provider event evidence before any desk
-receives a credential that can reach the submission function. Quote readers
-must filter on `expires_at` from their first release. The Slice 5 consumer lane
-owns the Cloudflare job that purges expired quotes.
+Link codes expire after ten minutes and a signed-in account must confirm the
+pending link with proof returned in the verified private conversation. The page
+can preview the pending provider and account label before confirming. A fresh
+code or an expired confirmation attempt clears pending identity fingerprints.
+Authenticated desk-event refusals without a linked actor carry a channel and
+reason in the append-only audit log.
+
+Keep replay fingerprints for 90 days from `consumed_at`. Trusted ingress
+must enforce provider-event freshness, including when it signs a redelivered
+event. The Slice 5 Cloudflare retention job owns purge of expired link codes,
+expired quotes and event fingerprints past the 90-day horizon. Quote readers
+must filter on `expires_at` from their first release.
 
 ## Implementation plan
 
@@ -291,7 +306,7 @@ owns the Cloudflare job that purges expired quotes.
 | 2     | Observer reads: `GET /api/v1/fleet/access`, digest publish and scoped read, `@tuturuuu/internal-api` client | Web API (Codex) | 1 |
 | 3     | Pending submissions: `POST /api/v1/fleet/intents`, identity linking, event binding            | Web API (Codex)              | 2 |
 | 4     | Mira desks move to the API; Slice 0 retired                                                   | Mira desk host (Codex)       | 3 and 5 acceptance |
-| 5     | Dry-run consumer and quote purge: claims, leases, generations, receipts and retention on Cloudflare | Orchestrator          | 3 |
+| 5     | Dry-run consumer: claims, leases, generations, receipts and Fleet retention on Cloudflare | Orchestrator          | 3 |
 | 6     | Mastermind web Fleet area and admission change (en and vi)                                    | Design (Claude Opus)         | 2, release approval |
 | 7     | Mastermind mobile Fleet view                                                                  | Mobile design (Claude Opus)  | 2 |
 | 8     | Steerer: live dispatch for low and medium risk                                                | Orchestrator, then Owner grant | replay, revocation-race, isolation and web/mobile admission tests |
@@ -316,8 +331,12 @@ Each slice links its coverage here when it lands:
   The [digest SQL tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-observer-digest.sql)
   cover actual project filtering, revoked and expired grants, stop, label
   approvals and snapshot ordering.
-- Slice 3 covers cross-project target denial, action-hash binding, replay
-  rejection and quote isolation.
+- Slice 3 covers write audience restrictions, strict payload schemas, desk
+  signature, input binding and freshness, one-time events and codes, signed-in
+  preview and confirmation, refusal audit, target scope, receipt reads,
+  revocation, quota, quote isolation and digest JSON types.
+  See [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts)
+  and [fleet-intent-admission.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-intent-admission.sql).
 - Slice 5: consumer tests for lease expiry, stale generations, idempotent
   claims and the stop fence.
 - Slice 4: desk tests for unlinked senders, group chats, injected instructions

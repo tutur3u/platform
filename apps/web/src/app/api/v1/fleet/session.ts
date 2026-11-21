@@ -1,3 +1,4 @@
+import { getBearerAppCoordinationToken } from '@tuturuuu/utils/app-coordination-token';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 
@@ -9,18 +10,29 @@ export function fleetJson(data: unknown, status = 200) {
 }
 
 export function withFleetSession(
-  handler: (actorId: string) => Promise<NextResponse>
+  handler: (actorId: string, request: NextRequest) => Promise<NextResponse>,
+  targetApp: 'mastermind' | ['platform', 'mastermind'] = [
+    'platform',
+    'mastermind',
+  ]
 ) {
   const authenticated = withSessionAuth(
-    (_request, { user }) => handler(user.id),
+    (request, { user }) => handler(user.id, request),
     {
-      allowAppSessionAuth: { targetApp: ['platform', 'mastermind'] },
-      preferSupabaseSessionAuth: true,
+      allowAppSessionAuth: { targetApp },
+      preferSupabaseSessionAuth: targetApp !== 'mastermind',
     }
   );
 
   return async (request: NextRequest) => {
     await connection();
+    if (
+      targetApp === 'mastermind' &&
+      request.headers.has('authorization') &&
+      !getBearerAppCoordinationToken(request)
+    ) {
+      return fleetJson({ error: 'unauthorized' }, 401);
+    }
     const response = await authenticated(request);
     response.headers.set('Cache-Control', 'private, no-store');
     return response;
