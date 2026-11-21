@@ -263,7 +263,7 @@ describe('freeze rate coverage', () => {
     quality = applyMediaQualityReport(
       quality,
       'c',
-      { ...sample, freezes: 0, freezesMeasured: false },
+      { ...sample, freezes: 0, freezesMeasured: false, freezeMeasuredMs: 0 },
       0
     );
     const summary = summarizeRoomMediaQuality(quality, 1000);

@@ -117,7 +117,8 @@ last report interval, shown as **Devices measuring cameras**. It computes the
 freeze rate only over those whose browser also reported freeze counters, shown
 as **Devices measuring freezes**. It divides by the time each device actually
 measured, so a device that measured for only part of an interval cannot dilute
-the rate. A device
+the rate. A device's measured freeze time still counts when its final receive
+reading in that interval was missing. A device
 measures nothing in these cases:
 
 - `layerSwitching` is off.
