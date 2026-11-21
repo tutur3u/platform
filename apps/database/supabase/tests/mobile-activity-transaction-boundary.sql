@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(10);
+select plan(11);
 
 select ok(to_regprocedure('public.get_wallet_transactions_with_permissions(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],text,text,timestamp with time zone,timestamp with time zone,text,text,integer,integer,timestamp with time zone,timestamp with time zone,boolean)') is null,
   'old default overload removed');
@@ -24,6 +24,11 @@ insert into public.workspace_role_members(role_id,user_id) values
 insert into public.workspace_role_permissions(ws_id,role_id,permission,enabled) values
  ('40000000-0000-0000-0000-000000000010','40000000-0000-0000-0000-000000000011','manage_finance',true),
  ('40000000-0000-0000-0000-000000000010','40000000-0000-0000-0000-000000000011','view_transactions',true);
+insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+values
+ ('40000000-0000-0000-0000-000000000010', 'admin', 'MEMBER', false),
+ ('40000000-0000-0000-0000-000000000010', 'view_confidential_amount', 'MEMBER', false)
+on conflict (ws_id, permission, member_type) do update set enabled = excluded.enabled;
 set local role service_role;
 insert into private.workspace_wallets(id,ws_id,name,type,currency) values
  ('40000000-0000-0000-0000-000000000012','40000000-0000-0000-0000-000000000010','Synthetic boundary wallet','STANDARD','USD');
@@ -32,6 +37,11 @@ insert into public.wallet_transactions(id,wallet_id,amount,created_at,taken_at,p
  ('40000000-0000-0000-0000-000000000102','40000000-0000-0000-0000-000000000012',2,'2026-09-01','2026-08-01','40000000-0000-0000-0000-000000000001'),
  ('40000000-0000-0000-0000-000000000103','40000000-0000-0000-0000-000000000012',3,'2026-09-01','2026-08-01','40000000-0000-0000-0000-000000000001');
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000001',true);
+select ok(not has_workspace_permission(
+ '40000000-0000-0000-0000-000000000010',
+ '40000000-0000-0000-0000-000000000001',
+ 'view_confidential_amount'
+), 'pagination actor lacks the confidential amount permission');
 create temporary table first_page as select * from get_wallet_transactions_with_permissions(
  p_ws_id=>'40000000-0000-0000-0000-000000000010',p_creator_ids=>array['40000000-0000-0000-0000-000000000001'::uuid],
  p_order_by=>'created_at',p_limit=>1,p_created_at_until=>'2026-09-02');

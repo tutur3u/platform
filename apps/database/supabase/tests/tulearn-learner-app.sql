@@ -1,6 +1,8 @@
 begin;
 
-select plan(26);
+select plan(27);
+
+\ir helpers/account-required-mfa-policy.inc
 
 select has_table('public', 'tulearn_parent_student_links', 'parent student links table exists');
 select has_table('public', 'tulearn_parent_invites', 'parent invites table exists');
@@ -30,8 +32,20 @@ select policies_are(
   array[
     'Learners can view own Tulearn state',
     'Learners can insert own Tulearn state',
-    'Learners can update own Tulearn state'
+    'Learners can update own Tulearn state',
+    'account_required_mfa'
   ]
+);
+
+select ok(
+  (
+    select pg_temp.is_canonical_account_mfa_policy(policy_row)
+    from pg_policies policy_row
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname = 'account_required_mfa'
+  ),
+  'learner state retains the canonical restrictive MFA gate'
 );
 
 select isnt_empty(
@@ -42,7 +56,7 @@ select isnt_empty(
       and tablename = 'tulearn_learner_state'
       and policyname = 'Learners can view own Tulearn state'
       and qual like '%workspace_members%'
-      and qual like '%auth.uid() = user_id%'
+      and qual like '%( SELECT auth.uid() AS uid) = user_id%'
   $$,
   'learner state select policy requires user ownership and workspace membership'
 );
@@ -56,7 +70,7 @@ select isnt_empty(
       and policyname = 'Learners can insert own Tulearn state'
       and with_check like '%workspace_members%'
       and with_check like '%selected_workspace_id%'
-      and with_check like '%auth.uid() = user_id%'
+      and with_check like '%( SELECT auth.uid() AS uid) = user_id%'
   $$,
   'learner state insert policy requires owned rows, workspace membership, and selected workspace access'
 );
@@ -69,7 +83,7 @@ select isnt_empty(
       and tablename = 'tulearn_learner_state'
       and policyname = 'Learners can update own Tulearn state'
       and qual like '%workspace_members%'
-      and qual like '%auth.uid() = user_id%'
+      and qual like '%( SELECT auth.uid() AS uid) = user_id%'
   $$,
   'learner state update policy requires existing row workspace membership'
 );
@@ -83,7 +97,7 @@ select isnt_empty(
       and policyname = 'Learners can update own Tulearn state'
       and with_check like '%workspace_members%'
       and with_check like '%selected_workspace_id%'
-      and with_check like '%auth.uid() = user_id%'
+      and with_check like '%( SELECT auth.uid() AS uid) = user_id%'
   $$,
   'learner state update policy requires selected workspace access'
 );
@@ -99,7 +113,7 @@ select isnt_empty(
         'Learners can update own Tulearn state'
       )
       and with_check like '%selected_wm.ws_id = tulearn_learner_state.selected_workspace_id%'
-      and with_check like '%selected_wm.user_id = auth.uid()%'
+      and with_check like '%selected_wm.user_id = ( SELECT auth.uid() AS uid)%'
   $$,
   'learner state selected workspace checks are bound to the authenticated user'
 );
