@@ -38,6 +38,7 @@ function ParticipantTileImpl({
   resumePlaybackLabel,
   handRaised,
   floating = false,
+  presenceOnly = false,
   isSelf,
   isSpeaking,
   participant,
@@ -60,6 +61,8 @@ function ParticipantTileImpl({
   handRaised?: boolean;
   /** Compact chrome for the floating self-preview: no per-tile controls. */
   floating?: boolean;
+  /** Presence-only rooms have no media, so mute and receive badges stay hidden. */
+  presenceOnly?: boolean;
   isSelf?: boolean;
   isSpeaking?: boolean;
   participant: MeetRealtimePresence;
@@ -287,7 +290,7 @@ function ParticipantTileImpl({
           {floating ? t('you') : participant.displayName}
           {isSelf && !floating ? ` · ${t('you')}` : ''}
         </span>
-        {!isSelf && (
+        {!isSelf && !presenceOnly && (
           <MediaReceivingStatus
             audio={readiness.receivingAudio}
             video={presentingVideo || readiness.receivingVideo}
@@ -299,12 +302,14 @@ function ParticipantTileImpl({
             }
           />
         )}
-        {miraActive && kind === 'camera' && (
+        {miraActive && kind === 'camera' && !presenceOnly && (
           <MiraAudioStatus participant={participant} />
         )}
-        {!participant.media.audioEnabled && kind === 'camera' && (
-          <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
-        )}
+        {!presenceOnly &&
+          !participant.media.audioEnabled &&
+          kind === 'camera' && (
+            <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
+          )}
         {onMute &&
           !isSelf &&
           kind === 'camera' &&
@@ -420,6 +425,7 @@ export const ParticipantTile = memo(
     a.handRaised === b.handRaised &&
     a.isSelf === b.isSelf &&
     a.floating === b.floating &&
+    a.presenceOnly === b.presenceOnly &&
     a.isSpeaking === b.isSpeaking &&
     a.stream === b.stream &&
     a.className === b.className &&

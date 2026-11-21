@@ -76,6 +76,42 @@ it('does not duplicate the mute icon with a disabled host action', () => {
   ).not.toContain('Mute Peer');
 });
 
+it('shows a muted badge when a camera has audio off', () => {
+  const html = renderTile({
+    participant: {
+      ...participant,
+      media: { ...participant.media, audioEnabled: false },
+    },
+    isSelf: true,
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(html).toContain('aria-label="Muted"');
+});
+
+it('hides mute and receive badges in a presence-only room', () => {
+  const quiet = {
+    ...participant,
+    media: { ...participant.media, audioEnabled: false, videoEnabled: true },
+  };
+  const present = renderTile({
+    participant: quiet,
+    presenceOnly: true,
+    handRaised: true,
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(present).not.toContain('aria-label="Muted"');
+  expect(present).not.toContain('Waiting for media');
+  expect(present).not.toContain('Receiving video');
+  expect(present).toContain('Peer');
+  expect(present).toContain('Hand raised');
+  const media = renderTile({
+    participant: quiet,
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(media).toContain('aria-label="Muted"');
+  expect(media).toContain('Waiting for media');
+});
+
 it('uses theme-aware name bar colors on avatar tiles', () => {
   const html = renderTile({ participant, resumePlaybackLabel: 'Play audio' });
   expect(html).toContain('from-background/90');

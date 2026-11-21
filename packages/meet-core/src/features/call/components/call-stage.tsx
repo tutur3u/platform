@@ -262,6 +262,7 @@ export function CallStage({
       participant={tile.participant}
       stream={tile.stream}
       isSelf={tile.participant.userId === room.state.selfUserId}
+      presenceOnly={room.state.settings.transport === 'presence'}
       handRaised={room.state.stage.raisedHandUserIds.includes(
         tile.participant.userId
       )}

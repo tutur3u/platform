@@ -78,6 +78,7 @@ export function ParticipantsPanel({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
+  const presenceOnly = settings?.transport === 'presence';
   const [search, setSearch] = useState('');
   const query = participants.length > 8 ? search.trim().toLowerCase() : '';
   const raised = new Set(raisedHandUserIds);
@@ -228,11 +229,13 @@ export function ParticipantsPanel({
                     </span>
                   ) : null}
                 </span>
-                {miraActive && <MiraAudioStatus participant={participant} />}
+                {miraActive && !presenceOnly && (
+                  <MiraAudioStatus participant={participant} />
+                )}
                 {raisedHandUserIds.includes(participant.userId) ? (
                   <Hand className="size-3.5 shrink-0 text-dynamic-orange" />
                 ) : null}
-                {participant.media.audioEnabled ? null : (
+                {presenceOnly || participant.media.audioEnabled ? null : (
                   <span
                     title={t('microphone_muted')}
                     className="grid size-7 shrink-0 place-items-center text-muted-foreground"

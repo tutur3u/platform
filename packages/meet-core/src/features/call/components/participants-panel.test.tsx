@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -41,4 +42,40 @@ it('keeps the join request glyph outside the accordion chevron rotation', () => 
   expect(trigger.getAttribute('aria-expanded')).toBe('true');
   fireEvent.click(trigger);
   expect(trigger.getAttribute('aria-expanded')).toBe('false');
+});
+
+it('hides the microphone badge in a presence-only room and keeps the name', () => {
+  const person = {
+    userId: 'self',
+    displayName: 'Ada',
+    media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+  } as MeetRealtimePresence;
+  const props = {
+    approved: [],
+    canManage: false,
+    onDecideAdmission: vi.fn(),
+    onForget: vi.fn(),
+    onMute: vi.fn(),
+    onRemove: vi.fn(),
+    onShareNotes: vi.fn(),
+    participants: [person],
+    raisedHandUserIds: ['self'],
+    selfUserId: 'self',
+    shareNotes: false,
+    waiting: [],
+  };
+  const { rerender } = render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantsPanel {...props} settings={{ transport: 'media' }} />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByText('Ada')).toBeTruthy();
+  expect(screen.getByText('Microphone muted')).toBeTruthy();
+  rerender(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantsPanel {...props} settings={{ transport: 'presence' }} />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByText('Ada')).toBeTruthy();
+  expect(screen.queryByText('Microphone muted')).toBeNull();
 });
