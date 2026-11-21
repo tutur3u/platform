@@ -24,6 +24,7 @@
   "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
     "packages/users-core"
   ],
+  "apps/mail/src/app/[locale]/(dashboard)/[wsId]/": ["packages/ui"],
   "apps/marketing/": ["apps/gateway"],
   "apps/meet-realtime/src/": [
     "apps/meet",
