@@ -3,7 +3,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(19);
+select plan(21);
+
+\ir helpers/account-required-mfa-policy.inc
 
 select ok(
   exists (
@@ -39,10 +41,28 @@ select policies_are(
     'Managers can create task relationships',
     'Managers can delete task relationships',
     'Managers can update task relationships',
-    'Users can view task relationships in their workspaces'
+    'Users can view task relationships in their workspaces',
+    'account_required_mfa'
   ],
   'task relationships expose one read and three permissioned write policies'
 );
+
+select ok(
+  (
+    select pg_temp.is_canonical_account_mfa_policy(policy_row)
+    from pg_policies policy_row
+    where schemaname = 'public'
+      and tablename = 'task_relationships'
+      and policyname = 'account_required_mfa'
+  ),
+  'task_relationships retains the canonical restrictive MFA gate'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.tasks', 'SELECT'),
+  'clients lack direct SELECT on the server-owned parent relation'
+);
+
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
@@ -123,6 +143,32 @@ values
   ('00000000-0000-4000-8000-00000000f403', 'Alternate Target', '00000000-0000-4000-8000-00000000f302', '00000000-0000-4000-8000-00000000f202', '00000000-0000-4000-8000-00000000f903'),
   ('00000000-0000-4000-8000-00000000f404', 'Foreign Task', '00000000-0000-4000-8000-00000000f303', '00000000-0000-4000-8000-00000000f203', '00000000-0000-4000-8000-00000000f903')
 on conflict (id) do nothing;
+
+-- Limit parent visibility to the synthetic rows in both workspaces so
+-- the link policies enforce containment independently of parent access.
+grant select on public.tasks, public.task_lists, public.workspace_boards to authenticated;
+create policy fixture_parent_lookup on public.tasks
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000f401',
+  '00000000-0000-4000-8000-00000000f402',
+  '00000000-0000-4000-8000-00000000f403',
+  '00000000-0000-4000-8000-00000000f404'
+]::uuid[]));
+create policy fixture_parent_lookup on public.task_lists
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000f301',
+  '00000000-0000-4000-8000-00000000f302',
+  '00000000-0000-4000-8000-00000000f303'
+]::uuid[]));
+create policy fixture_parent_lookup on public.workspace_boards
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000f201',
+  '00000000-0000-4000-8000-00000000f202',
+  '00000000-0000-4000-8000-00000000f203'
+]::uuid[]));
 
 set local role service_role;
 insert into public.task_relationships (source_task_id, target_task_id, type)

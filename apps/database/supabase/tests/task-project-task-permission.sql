@@ -3,7 +3,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(19);
+select plan(21);
+
+\ir helpers/account-required-mfa-policy.inc
 
 select ok(
   exists (
@@ -33,9 +35,26 @@ select policies_are(
     'Managers can delete task project links',
     'Managers can insert task project links',
     'Managers can update task project links',
-    'Users can view task project tasks in their workspaces'
+    'Users can view task project tasks in their workspaces',
+    'account_required_mfa'
   ],
   'task-project links expose one read and three permissioned write policies'
+);
+
+select ok(
+  (
+    select pg_temp.is_canonical_account_mfa_policy(policy_row)
+    from pg_policies policy_row
+    where schemaname = 'public'
+      and tablename = 'task_project_tasks'
+      and policyname = 'account_required_mfa'
+  ),
+  'task_project_tasks retains the canonical restrictive MFA gate'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.task_projects', 'SELECT'),
+  'clients lack direct SELECT on the server-owned parent relation'
 );
 
 select ok(
@@ -136,9 +155,45 @@ values
   ('00000000-0000-4000-8000-00000000e503', '00000000-0000-4000-8000-00000000e102', 'Foreign Project', '00000000-0000-4000-8000-00000000e903')
 on conflict (id) do nothing;
 
+-- Limit parent visibility to the synthetic rows in both workspaces so
+-- the link policies enforce containment independently of parent access.
+grant select on public.task_projects, public.tasks, public.task_lists, public.workspace_boards to authenticated;
+create policy fixture_parent_lookup on public.task_projects
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000e501',
+  '00000000-0000-4000-8000-00000000e502',
+  '00000000-0000-4000-8000-00000000e503'
+]::uuid[]));
+create policy fixture_parent_lookup on public.tasks
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000e401',
+  '00000000-0000-4000-8000-00000000e402',
+  '00000000-0000-4000-8000-00000000e403'
+]::uuid[]));
+create policy fixture_parent_lookup on public.task_lists
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000e301',
+  '00000000-0000-4000-8000-00000000e302'
+]::uuid[]));
+create policy fixture_parent_lookup on public.workspace_boards
+for select to authenticated
+using (id = any (array[
+  '00000000-0000-4000-8000-00000000e201',
+  '00000000-0000-4000-8000-00000000e202'
+]::uuid[]));
+-- The ticket-key suite covers these triggers. Run the policy probes
+-- independently so every positive and negative reaches the retained RLS.
+alter table public.task_project_tasks disable trigger assign_project_ticket_number;
+alter table public.task_project_tasks disable trigger protect_project_ticket_identity;
+-- A numbered row lets unlink return the complete composite record.
+alter table public.task_project_tasks alter column ticket_number set default 2;
+
 set local role service_role;
-insert into public.task_project_tasks (task_id, project_id)
-values ('00000000-0000-4000-8000-00000000e401', '00000000-0000-4000-8000-00000000e501');
+insert into public.task_project_tasks (task_id, project_id, ticket_number)
+values ('00000000-0000-4000-8000-00000000e401', '00000000-0000-4000-8000-00000000e501', 1);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000e902', true);
