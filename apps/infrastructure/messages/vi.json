@@ -14340,6 +14340,25 @@
         "data_json_string_values": "JSON data phải là một object có toàn bộ giá trị là chuỗi.",
         "target_required": "Hãy nhập user, device, hoặc token, hoặc bật chế độ broadcast.",
         "user_id_invalid": "User ID phải là UUID hợp lệ."
+      },
+      "latency": {
+        "title": "Độ trễ gửi thông báo đẩy (24 giờ)",
+        "error": "Hiện không thể tải độ trễ.",
+        "empty": "Không có thông báo đẩy tức thời nào được chấp nhận trong 24 giờ qua.",
+        "channel": "Kênh",
+        "sent": "Đã gửi",
+        "max": "Tối đa",
+        "channels": {
+          "mail": "Thư",
+          "chat": "Trò chuyện",
+          "tasks": "Công việc",
+          "time_tracking": "Theo dõi thời gian",
+          "meet": "Họp",
+          "finance": "Tài chính",
+          "workspace": "Không gian làm việc",
+          "account": "Tài khoản",
+          "other": "Khác"
+        }
       }
     },
     "push-notifications": "Thông báo đẩy",

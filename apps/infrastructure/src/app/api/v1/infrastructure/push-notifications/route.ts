@@ -4,6 +4,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
+import { loadPushLatency } from '@/lib/notifications/push-latency';
 
 type PushDeviceCoverage = Record<
   'development' | 'staging' | 'production',
@@ -116,6 +117,7 @@ export async function GET() {
     failedBatches,
     recentDevicesResult,
     recentBatchesResult,
+    latency,
   ] = await Promise.all([
     countRows(sbAdmin, 'notification_push_devices'),
     countRows(sbAdmin, 'notification_push_devices', (query) =>
@@ -197,6 +199,7 @@ export async function GET() {
       .eq('channel', 'push')
       .order('created_at', { ascending: false })
       .limit(12),
+    loadPushLatency(sbAdmin, now),
   ]);
 
   if (recentDevicesResult.error) {
@@ -242,6 +245,7 @@ export async function GET() {
         ios: stagingIosDevices,
       },
     } satisfies PushDeviceCoverage,
+    latency,
     recentBatches,
     recentDevices: recentDevices.map((device) => ({
       ...device,

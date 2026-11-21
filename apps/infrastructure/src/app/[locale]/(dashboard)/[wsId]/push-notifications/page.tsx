@@ -11,6 +11,8 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
+import { loadPushLatency } from '@/lib/notifications/push-latency';
+import { PushLatencyCard } from './push-latency-card';
 import { PushTestForm } from './push-test-form';
 
 export const metadata: Metadata = {
@@ -54,17 +56,12 @@ type PushDeviceCoverage = Record<
 >;
 
 function maskToken(token: string) {
-  if (token.length <= 16) {
-    return token;
-  }
-
+  if (token.length <= 16) return token;
   return `${token.slice(0, 8)}...${token.slice(-8)}`;
 }
 
 function formatDateTime(locale: string, value: string | null) {
-  if (!value) {
-    return '—';
-  }
+  if (!value) return '—';
 
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
@@ -356,10 +353,11 @@ export default async function InfrastructurePushNotificationsPage({
   const canManagePush = !permissions.withoutPermission(
     'manage_workspace_roles'
   );
-  const [rawT, firebaseConfig, dashboard] = await Promise.all([
+  const [rawT, firebaseConfig, dashboard, latency] = await Promise.all([
     getTranslations('settings-account.push-notification-dashboard' as never),
     Promise.resolve(getFirebaseMessagingConfigurationStatus()),
     getPushDashboardData(),
+    createAdminClient().then((sbAdmin) => loadPushLatency(sbAdmin)),
   ]);
   const t = (key: string, values?: Record<string, unknown>) =>
     rawT(key as never, values as never);
@@ -432,6 +430,8 @@ export default async function InfrastructurePushNotificationsPage({
           </CardContent>
         </Card>
       </div>
+
+      <PushLatencyCard latency={latency} locale={locale} t={t} />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <Card>

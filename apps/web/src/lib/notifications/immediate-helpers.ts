@@ -181,7 +181,9 @@ export async function markDeliveryLogsSent(sbAdmin: any, logIds: string[]) {
     return;
   }
 
+  // Provider acceptance clears an error left by an earlier failed attempt.
   const patch = {
+    error_message: null,
     status: 'sent',
     sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
