@@ -760,9 +760,11 @@ they move with the Admin app unchanged. Operator routes are registered as
 `ADMIN` in the Admin route inventory and tenant routes in the web inventory.
 The dedicated Mira operator permission is granted to nobody by default; root
 admin alone is not enough. Operator routes rely on the Admin session (MFA
-assurance) and accept no scheduled caller. The only bearer they accept is the
-app-session token the Admin proxy attaches for that session, verified for the
-Admin app; API keys, cron secrets and other bearers are refused.
+assurance) and accept no scheduled caller. The Admin proxy refuses any
+client `Authorization` header on these paths, so the session refresh and its
+MFA, sign-out and ban checks always run, and the only bearer a route sees is
+the app-session token that refresh attaches; the route also refuses API keys,
+cron secrets and every other bearer.
 
 ### Setup wizard
 

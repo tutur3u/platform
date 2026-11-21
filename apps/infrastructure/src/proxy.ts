@@ -42,6 +42,7 @@ import {
 const intlMiddleware = createIntlMiddleware(routing);
 const ADMIN_BASE_PATH = getAppBasePath('infra');
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const MIRA_OPERATOR_API_PREFIX = '/api/v1/infrastructure/mira/';
 const LOCALE_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
   path: '/',
@@ -144,6 +145,16 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     // The apex admits only a verified coordination bearer without cookies; a
     // provider JWT there would skip the provider-only session and MFA checks.
     if (mounted && refusesMountedAuthorization(request)) {
+      return mountedAuthorizationRefusal();
+    }
+    // Mira operator routes take only the Admin cookie session. A client
+    // Authorization header would skip the session refresh and its MFA,
+    // sign-out and ban checks, so the only bearer these routes ever see is the
+    // one the refresh below attaches.
+    if (
+      request.nextUrl.pathname.startsWith(MIRA_OPERATOR_API_PREFIX) &&
+      request.headers.has('authorization')
+    ) {
       return mountedAuthorizationRefusal();
     }
     const hasBearerApiSession = mounted

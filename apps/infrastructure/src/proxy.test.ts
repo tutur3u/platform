@@ -458,6 +458,45 @@ describe('Infra proxy', () => {
     });
   });
 
+  it('refuses client Authorization on Mira operator routes before any session work', async () => {
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+    for (const [url, basePath] of [
+      [
+        'https://infra.tuturuuu.localhost/api/v1/infrastructure/mira/global-stop',
+        '',
+      ],
+      [
+        'https://tuturuuu.com/admin/api/v1/infrastructure/mira/tenants',
+        '/admin',
+      ],
+    ] as const) {
+      const response = await proxy(
+        new NextRequest(url, {
+          method: 'POST',
+          headers: { authorization: 'Bearer ttr_app_a.b.c' },
+          ...(basePath ? { nextConfig: { basePath } } : {}),
+        })
+      );
+      expect(response.status).toBe(401);
+    }
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the cookie session for Mira operator routes off the mount', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
+    const request = new NextRequest(
+      'https://infra.tuturuuu.localhost/api/v1/infrastructure/mira/global-stop'
+    );
+    await proxy(request);
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'infra',
+    });
+  });
+
   it('guards local auth API routes without refreshing an app session first', async () => {
     const guardResponse = NextResponse.json(
       { error: 'Payload Too Large' },
