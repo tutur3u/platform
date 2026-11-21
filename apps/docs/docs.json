@@ -368,6 +368,7 @@
                   "platform/architecture/httponly-session-cookie",
                   "platform/architecture/secrets-vault",
                   "platform/architecture/secrets-vault-delivery",
+                  "platform/architecture/tuturuuu-session",
                   "platform/architecture/satellite-apps",
                   "platform/architecture/one-origin-super-app",
                   "platform/architecture/one-origin-security",
