@@ -69,4 +69,27 @@ describe('one origin trust mechanism', () => {
       })
     ).toBe('198.51.100.20');
   });
+
+  it('keeps a Cloudflare egress peer on the Vercel fallback until a valid proof names the visitor', () => {
+    // Behind the apex gateway, Vercel sees a Cloudflare egress address.
+    const egress = '104.22.222.49';
+    const viaGateway = (proof?: string) =>
+      new Headers({
+        ...(proof ? { [CLOUDFLARE_ORIGIN_AUTH_HEADER]: proof } : {}),
+        'cf-connecting-ip': '203.0.113.99',
+        'x-vercel-forwarded-for': egress,
+        'x-forwarded-for': egress,
+      });
+    expect(resolveClientIp(viaGateway(), config)).toBe(egress);
+    expect(isAuthenticatedCloudflareOrigin(viaGateway(), config)).toBe(false);
+    const forged = createOriginClientIpProof({
+      ip: '203.0.113.99',
+      secret: 'other-synthetic-origin-secret-at-least-32',
+    });
+    if (!forged) throw new Error('Invalid fixture');
+    expect(resolveClientIp(viaGateway(forged), config)).toBe(egress);
+    const proof = createOriginClientIpProof({ ip: '203.0.113.42', secret });
+    if (!proof) throw new Error('Invalid fixture');
+    expect(resolveClientIp(viaGateway(proof), config)).toBe('203.0.113.42');
+  });
 });

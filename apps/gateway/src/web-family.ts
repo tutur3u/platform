@@ -1,5 +1,6 @@
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { type Manifest, splitLocale, type WebFamily } from './manifest';
+import { originAuthProof, withOriginAuth } from './origin-ip-proof';
 import type { Env, ServiceBinding } from './worker';
 
 /**
@@ -134,12 +135,14 @@ export function webFamilyTarget(
 /**
  * The request a family Worker receives: same method, body, redirect mode and
  * query; client forwarding headers removed; the public host and scheme stated
- * by the gateway. Cookies, authorization and `cf-connecting-ip` pass through.
+ * by the gateway. Cookies, authorization and `cf-connecting-ip` pass through;
+ * `proof` is the gateway's signed visitor IP, the only one the family sees.
  */
 export function familyRequest(
   request: Request,
   path: string,
-  publicHost: string
+  publicHost: string,
+  proof: string | null = null
 ) {
   const target = new URL(request.url);
   target.pathname = path;
@@ -150,6 +153,7 @@ export function familyRequest(
   outgoing.headers.set('x-forwarded-host', publicHost);
   outgoing.headers.set('x-forwarded-proto', 'https');
   outgoing.headers.set(HOP_HEADER, '1');
+  withOriginAuth(outgoing.headers, proof);
   return outgoing;
 }
 
@@ -178,7 +182,12 @@ export async function dispatchWebFamily(
   let response: Response;
   try {
     response = await target.binding.fetch(
-      familyRequest(request, target.path, env.PUBLIC_HOST as string)
+      familyRequest(
+        request,
+        target.path,
+        env.PUBLIC_HOST as string,
+        await originAuthProof(request, env)
+      )
     );
   } catch {
     return new Response('gateway family unreachable', {

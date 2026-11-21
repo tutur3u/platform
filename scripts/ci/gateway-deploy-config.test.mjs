@@ -57,8 +57,13 @@ const liveOrigins = ['WEB_ORIGIN', 'MARKETING_ORIGIN'].map((name) => ({
   name,
   text: env[name],
 }));
-const live = [
+// Every deploy requires the committed secret names on the live Worker.
+const liveBase = [
   ...liveOrigins,
+  { type: 'secret_text', name: 'TRUSTED_PROXY_ORIGIN_SECRET' },
+];
+const live = [
+  ...liveBase,
   {
     type: 'plain_text',
     name: 'GATEWAY_MOUNTED_PATHS',
@@ -145,7 +150,7 @@ test('admits committed mount paths and bindings alongside live ones', () => {
   const config = deployConfig(
     withTools,
     [
-      ...liveOrigins,
+      ...liveBase,
       {
         type: 'plain_text',
         name: 'GATEWAY_MOUNTED_PATHS',
@@ -179,7 +184,7 @@ test('treats the live default production environment as the committed binding', 
   const config = deployConfig(
     withTools,
     [
-      ...liveOrigins,
+      ...liveBase,
       {
         type: 'service',
         name: 'MOUNT_TOOLS',
@@ -202,7 +207,7 @@ test('refuses to change a live service claimed by the committed config', () => {
       deployConfig(
         withTools,
         [
-          ...liveOrigins,
+          ...liveBase,
           { type: 'service', name: 'MOUNT_TOOLS', service: 'other-worker' },
         ],
         families,
@@ -243,13 +248,13 @@ test('the committed family table activates only public-docs', () => {
 
 test('a flagged family that is not activated is refused', () => {
   assert.throws(
-    () => deployConfig(base, liveOrigins, inactiveFamilies, env),
+    () => deployConfig(base, liveBase, inactiveFamilies, env),
     /not activated/u
   );
 });
 
 test('an empty flag list binds no family and routes nothing to one', () => {
-  const config = deployConfig(base, liveOrigins, families, {
+  const config = deployConfig(base, liveBase, families, {
     ...env,
     GATEWAY_WEB_FAMILIES: '',
   });
@@ -263,7 +268,7 @@ test('an empty flag list binds no family and routes nothing to one', () => {
 test('refuses held or unknown families, bad origins and unknown binding types', () => {
   assert.throws(
     () =>
-      deployConfig(base, liveOrigins, families, {
+      deployConfig(base, liveBase, families, {
         ...env,
         GATEWAY_WEB_FAMILIES: 'dashboard-core',
       }),
@@ -271,19 +276,19 @@ test('refuses held or unknown families, bad origins and unknown binding types', 
   );
   assert.throws(
     () =>
-      deployConfig(base, liveOrigins, families, {
+      deployConfig(base, liveBase, families, {
         ...env,
         GATEWAY_WEB_FAMILIES: 'nope',
       }),
     /not an enabled family/u
   );
   assert.throws(
-    () => deployConfig(base, liveOrigins, families, { ...env, WEB_ORIGIN: '' }),
+    () => deployConfig(base, liveBase, families, { ...env, WEB_ORIGIN: '' }),
     /https origin/u
   );
   assert.throws(
     () =>
-      deployConfig(base, liveOrigins, families, {
+      deployConfig(base, liveBase, families, {
         ...env,
         MARKETING_ORIGIN: 'http://x.example',
       }),
@@ -314,6 +319,23 @@ test('names bindings and parses the flag list', () => {
   ]);
   assert.deepEqual(requiredSecrets({}), []);
   assert.deepEqual(requiredSecrets({ secrets: { required: ['A'] } }), ['A']);
+});
+
+test('requires the committed gateway secret names on the live Worker', () => {
+  assert.deepEqual(requiredSecrets(base), ['TRUSTED_PROXY_ORIGIN_SECRET']);
+  for (const bindings of [
+    live.filter((binding) => binding.name !== 'TRUSTED_PROXY_ORIGIN_SECRET'),
+    live.map((binding) =>
+      binding.name === 'TRUSTED_PROXY_ORIGIN_SECRET'
+        ? { type: 'plain_text', name: binding.name, text: '' }
+        : binding
+    ),
+  ]) {
+    assert.throws(() => deployConfig(base, bindings, families, env), {
+      message:
+        'Live gateway secret TRUSTED_PROXY_ORIGIN_SECRET is missing; set it before deploying.',
+    });
+  }
 });
 
 test('refuses changed, missing, or ambiguous live origins by name only', () => {

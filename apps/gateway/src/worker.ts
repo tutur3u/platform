@@ -8,6 +8,7 @@ import {
   withBypass,
 } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
+import { originProofFor, withOriginAuth } from './origin-ip-proof';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
@@ -77,6 +78,12 @@ export interface Env {
   GATEWAY_ACCEPTANCE_HOST?: string;
   /** Worker secret: Vercel protection bypass for the staging WEB_ORIGIN. */
   VERCEL_PROTECTION_BYPASS?: string;
+  /**
+   * Worker secret (at least 32 characters) shared with Web's
+   * `TRUSTED_PROXY=cloudflare-origin`: signs the visitor's `cf-connecting-ip`
+   * into `x-tuturuuu-origin-auth` on WEB_ORIGIN and web family requests.
+   */
+  TRUSTED_PROXY_ORIGIN_SECRET?: string;
   [name: string]: string | ServiceBinding | undefined;
 }
 
@@ -228,12 +235,15 @@ const FORWARDED_PROTO = 'x-forwarded-proto';
  * The origin request. Client-supplied X-Forwarded-Host/-Proto never reach the
  * origin: the gateway states the public host itself, so an origin that trusts
  * these headers (the marketing Worker) builds public URLs, never spoofed ones.
+ * A client-sent origin proof never passes; only the gateway's own reaches
+ * WEB_ORIGIN.
  */
 function originRequest(
   request: Request,
   origin: URL,
   publicHost: string | undefined,
-  bypass?: string
+  bypass: string | undefined,
+  proof: string | null
 ) {
   const incoming = new URL(request.url);
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
@@ -241,6 +251,7 @@ function originRequest(
   outgoing.headers.set(HOP_HEADER, '1');
   // Client-supplied bypass headers never pass; only the Worker secret does.
   withBypass(outgoing.headers, bypass);
+  withOriginAuth(outgoing.headers, proof);
   outgoing.headers.delete(FORWARDED_HOST);
   outgoing.headers.delete(FORWARDED_PROTO);
   if (publicHost) {
@@ -392,7 +403,8 @@ async function proxy(
         request,
         origin,
         env.PUBLIC_HOST,
-        bypassSecretFor(request, env, origin)
+        bypassSecretFor(request, env, origin),
+        await originProofFor(request, env, origin)
       ),
       NO_FOLLOW
     );
@@ -440,12 +452,19 @@ export function createHandler(deps: HandlerDeps) {
     options: { respectOriginCacheControl: boolean },
     publicHost: string | undefined,
     isPage: boolean,
-    bypass: string | undefined
+    bypass: string | undefined,
+    env: Env
   ) {
     try {
       let response = withPublicLink(
         await fetch(
-          originRequest(request, origin, publicHost, bypass),
+          originRequest(
+            request,
+            origin,
+            publicHost,
+            bypass,
+            await originProofFor(request, env, origin)
+          ),
           NO_FOLLOW
         ),
         origin,
@@ -567,7 +586,8 @@ export function createHandler(deps: HandlerDeps) {
           options,
           env.PUBLIC_HOST,
           isPage,
-          bypassSecretFor(request, env, origin)
+          bypassSecretFor(request, env, origin),
+          env
         );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
@@ -585,7 +605,8 @@ export function createHandler(deps: HandlerDeps) {
             request,
             origin,
             env.PUBLIC_HOST,
-            bypassSecretFor(request, env, origin)
+            bypassSecretFor(request, env, origin),
+            await originProofFor(request, env, origin)
           ),
           NO_FOLLOW
         ),

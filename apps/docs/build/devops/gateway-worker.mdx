@@ -1,7 +1,7 @@
 ---
 title: "Gateway Worker"
 description: "Cloudflare Worker in front of tuturuuu.com: route manifest, public-page cache, rollback flag, cutover packet and smoke checks."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
@@ -58,8 +58,11 @@ requests they match.
 | `GATEWAY_MODE` | variable | `active` or `passthrough` (rollback flag). |
 | `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL` | variable | `true` honours origin `no-store`/`private`. |
 | `GATEWAY_WEB_FAMILIES` | variable | Comma-separated web family ids served by their `WEB_FAMILY_<ID>` binding. Default empty. |
+| `TRUSTED_PROXY_ORIGIN_SECRET` | secret, required | At least 32 characters; signs the visitor IP for Web (see [Visitor IP for Web](#visitor-ip-for-web)). Equal to Web's value. |
 
-No secrets are used. The Vercel origin hostname has to accept requests for its
+`wrangler.jsonc` lists required secret names under `secrets.required`; the CI
+deploy config (`scripts/ci/gateway-deploy-config.mjs`) refuses to deploy when
+the live Worker lacks one. The Vercel origin hostname has to accept requests for its
 own host; a custom origin hostname such as `origin.tuturuuu.com` must be added
 as a domain on the Vercel web project before cutover.
 
@@ -102,6 +105,61 @@ the origin when `--origin` is given.
    Cloudflare dashboard. Traffic returns to the unchanged Vercel deployment.
 3. No purge is needed: cache entries expire within 65 minutes and are
    never read in `passthrough` mode.
+
+## Visitor IP for Web
+
+Every request the gateway sends to Vercel arrives from a Cloudflare egress
+address, so Web in `TRUSTED_PROXY=vercel` mode would rate-limit and block one
+shared address for every visitor behind it. The gateway therefore signs the
+visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
+`TRUSTED_PROXY=cloudflare-origin`
+(`packages/utils/src/abuse-protection/client-ip.ts`).
+
+- **Proof:** `hmac-v1;<unix seconds>;<ip>;<hex HMAC-SHA256>`, valid for 60
+  seconds. `apps/gateway/src/origin-ip-proof.ts` signs with Web Crypto and
+  matches `createOriginClientIpProof` in
+  `packages/utils/src/abuse-protection/origin-ip-proof.ts` byte for byte; its
+  test cross-checks both and verifies gateway proofs with the utils verifier.
+- **Source address:** only the edge-set `cf-connecting-ip` of the incoming
+  request. A client-sent `x-tuturuuu-origin-auth`, `X-Forwarded-For`,
+  `X-Real-IP` or `True-Client-IP` never changes the signed address, and a
+  client-sent proof never reaches any origin.
+- **Recipients:** `WEB_ORIGIN` (cached-page misses, refreshes, bypass and
+  passthrough requests) and web family Workers (`WEB_FAMILY_*`). The Marketing
+  origin and mounted apps (`MOUNT_*`) never receive it; none of them runs
+  `cloudflare-origin`. Web family Workers run `TRUSTED_PROXY=cloudflare` and
+  read `cf-connecting-ip` directly, so the proof there only keeps both paths
+  alike.
+- **Missing key:** without a secret of at least 32 characters, or without a
+  valid `cf-connecting-ip`, the header is omitted and the isolate logs one
+  warning (no value). Web then falls back to Vercel headers, which name the
+  Cloudflare egress address.
+
+Configuration, by name only:
+
+| Where | Name | Value |
+| --- | --- | --- |
+| Gateway Worker (`tuturuuu-gateway`) | `TRUSTED_PROXY_ORIGIN_SECRET` | Worker secret, at least 32 random characters |
+| Vercel Web project (Production) | `TRUSTED_PROXY` | `cloudflare-origin` |
+| Vercel Web project (Production) | `TRUSTED_PROXY_ORIGIN_SECRET` | The same value as the gateway secret |
+
+Enable in this order: put the gateway secret
+(`bunx wrangler secret put TRUSTED_PROXY_ORIGIN_SECRET --name tuturuuu-gateway`),
+deploy the gateway, set both Vercel variables and redeploy Web. Confirm in Web
+logs that rate-limit and block keys show visitor addresses, not Cloudflare
+ranges.
+
+**Rotation.** Web verifies one key, so change both ends back to back: put the
+new gateway secret, then set Web's `TRUSTED_PROXY_ORIGIN_SECRET` and redeploy
+Web. Until Web serves the new value, proofs fail and Web resolves through the
+Vercel fallback (the egress address); it never trusts an unverified
+`cf-connecting-ip`. Other holders of the same origin secret, such as the
+[standalone API](/build/devops/standalone-api) forwarder, rotate with it.
+
+**Rollback.** Set Web's `TRUSTED_PROXY` back to `vercel` and redeploy Web; the
+gateway header is then ignored. Deleting the gateway secret also stops the
+header, but CI gateway deploys refuse to run until it is restored or removed
+from `secrets.required`.
 
 ## Local checks
 

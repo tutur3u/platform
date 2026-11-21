@@ -250,8 +250,8 @@ figure is an **estimate, not measured**. Treat it as a gate:
   The trusted-proxy resolver (`packages/utils/src/abuse-protection/client-ip.ts`,
   `TRUSTED_PROXY`) switches Web to `cloudflare-origin`, which trusts
   `cf-connecting-ip` only on requests that carry the Cloudflare-injected origin
-  secret (see
-  [Cloudflare in front of Web](/build/devops/adaptive-abuse-rate-limits#cloudflare-in-front-of-web)).
+  secret or the gateway's signed visitor-IP proof (see
+  [Visitor IP for Web](/build/devops/gateway-worker#visitor-ip-for-web)).
   Otherwise rate-limit buckets collapse to a few edge IPs, or `cf-connecting-ip`
   becomes spoofable by anyone who reaches Vercel directly.
 - **Origin access is a separate gate.** Vercel's Verified Proxy is **not** an

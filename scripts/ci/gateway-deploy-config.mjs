@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 //   overrides must match live.
 // - service bindings: keep live and committed bindings and add flagged web
 //   families;
-// - secrets: not written here; a version upload inherits them.
+// - secrets: not written here; a version upload inherits them. Every name in
+//   the committed `secrets.required` must already be a live secret.
 // Any other live binding type stops the deploy instead of being dropped.
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -148,6 +149,13 @@ export function deployConfig(base, liveBindings, families, env) {
     if (secrets.has(name)) {
       throw new Error(
         `${name} is a live gateway secret; delete it before deploying it as a variable.`
+      );
+    }
+  }
+  for (const name of requiredSecrets(base)) {
+    if (!secrets.has(name)) {
+      throw new Error(
+        `Live gateway secret ${name} is missing; set it before deploying.`
       );
     }
   }

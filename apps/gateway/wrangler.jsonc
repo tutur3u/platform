@@ -46,6 +46,11 @@
     // GATEWAY_MODE=passthrough disables every family.
     "GATEWAY_WEB_FAMILIES": "",
   },
+  // Worker secrets the deploy requires on the live gateway (names only; values
+  // are set with `wrangler secret put`). TRUSTED_PROXY_ORIGIN_SECRET signs the
+  // visitor IP for Web's TRUSTED_PROXY=cloudflare-origin and must equal Web's
+  // TRUSTED_PROXY_ORIGIN_SECRET.
+  "secrets": { "required": ["TRUSTED_PROXY_ORIGIN_SECRET"] },
   // One service binding per mounted app, added at that app's cutover. Learn's
   // nested paths are zone routes on tuturuuu-learn; the gateway mount covers
   // the bare path with a query string, which a zone route cannot match. Nova

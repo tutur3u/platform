@@ -184,7 +184,7 @@ test('the gated cf upload verifies merged bindings and serving secrets', () => {
             name: 'MARKETING_ORIGIN',
             text: 'https://marketing.example',
           },
-          { type: 'secret_text', name: 'GATEWAY_SECRET' },
+          { type: 'secret_text', name: 'TRUSTED_PROXY_ORIGIN_SECRET' },
         ],
       },
     })
@@ -233,18 +233,21 @@ test('the gated cf upload verifies merged bindings and serving secrets', () => {
       () => upload([]),
       /GATEWAY_MODE: expected plain_text, got missing/
     );
-    const wire = Object.entries(uploadedEnv).map(([name, binding]) => ({
-      type: 'plain_text',
-      name,
-      text: binding.value,
-    }));
+    // Record the injected bindings as the version readback names them.
+    const wire = Object.entries(uploadedEnv).map(([name, binding]) =>
+      binding.type === 'worker'
+        ? { type: 'service', name, service: binding.worker }
+        : { type: 'plain_text', name, text: binding.value }
+    );
     assert.throws(
       () => upload(wire),
-      /GATEWAY_SECRET: serving secret missing from upload/
+      /TRUSTED_PROXY_ORIGIN_SECRET: serving secret missing from upload/
     );
     assert.equal(
-      upload([...wire, { type: 'secret_text', name: 'GATEWAY_SECRET' }])
-        .versionId,
+      upload([
+        ...wire,
+        { type: 'secret_text', name: 'TRUSTED_PROXY_ORIGIN_SECRET' },
+      ]).versionId,
       V2
     );
     assert.equal(

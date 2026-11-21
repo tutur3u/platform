@@ -16,6 +16,10 @@
         "type": "plain_text",
         "name": "GATEWAY_MOUNTED_PATHS",
         "text": ""
+      },
+      {
+        "type": "secret_text",
+        "name": "TRUSTED_PROXY_ORIGIN_SECRET"
       }
     ]
   }
