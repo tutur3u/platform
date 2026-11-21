@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 const mocks = vi.hoisted(() => ({
   sessionUser: vi.fn(),
+  legacyPlans: vi.fn(),
   currentUser: vi.fn(),
   invitation: vi.fn(),
   workspaceContext: vi.fn(),
@@ -65,7 +66,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   }),
 }));
 vi.mock('@tuturuuu/ui/legacy/meet/page', () => ({
-  getMeetTogetherPlansData: vi.fn(),
+  getMeetTogetherPlansData: mocks.legacyPlans,
 }));
 vi.mock('@tuturuuu/utils/meet-hosting', () => ({
   canVerifiedAccountHostMeeting: mocks.canHost,
@@ -429,6 +430,30 @@ describe('workspace pages', () => {
     await expect(
       loadPageModel(`/workspace/meetings/${meetingId}`)
     ).rejects.toThrow('permissions down');
+  });
+});
+
+describe('Meet entry', () => {
+  it('renders the anonymous plans landing without consulting the legacy loader', async () => {
+    signIn(null);
+    const plans = { data: [], totalCount: 0, user: null };
+    mocks.legacyPlans.mockResolvedValue(plans);
+
+    await expect(loadPageModel('/?page=2')).resolves.toMatchObject({
+      kind: 'public-plans',
+      paging: { page: 2, pageSize: 9 },
+      plans,
+    });
+    expect(mocks.legacyPlans).not.toHaveBeenCalled();
+  });
+
+  it('sends a signed-in visitor directly to their personal meetings', async () => {
+    signIn('member');
+
+    await expect(loadPageModel('/')).rejects.toEqual({
+      redirect: '/personal/meetings',
+    });
+    expect(mocks.legacyPlans).not.toHaveBeenCalled();
   });
 });
 

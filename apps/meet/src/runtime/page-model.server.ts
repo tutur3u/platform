@@ -449,7 +449,7 @@ async function loadResolvedPageModel(url: URL) {
       kind: 'public-plans' as const,
       meta: { ...common.meta, indexable: true },
       paging,
-      plans: await plansModel(paging),
+      plans: { data: [], totalCount: 0, user: null },
     };
   }
   const workspaceId = segments[0];

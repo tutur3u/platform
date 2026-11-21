@@ -40,6 +40,12 @@ repeated query parameters; the focused route tests cover the excluded applicatio
 and Meet Together paths. Build and browser acceptance remain separate from that
 matcher test.
 
+The operational Meet root serves the public landing to anonymous visitors without
+loading workspace plans. Signed-in visitors go to personal meetings. The Meet
+page-model regression tests cover both entry paths. When profiling the first
+visit, track Worker response time separately from first contentful paint and
+repeat the run with the same browser profile to check asset reuse.
+
 ## Choose the meeting surface
 
 | Surface | Purpose | Details |
