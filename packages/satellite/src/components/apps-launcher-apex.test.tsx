@@ -1,5 +1,5 @@
 // @vitest-environment-options {"url":"https://tuturuuu.com/personal"}
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
@@ -54,3 +54,41 @@ it.each([
     ).toBe(true);
   }
 );
+
+it('registers only current-tab public Tools document prefetch while open', async () => {
+  vi.stubEnv('NODE_ENV', 'production');
+  vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'tools,apps,mail,meet');
+  const readRules = () =>
+    document.head.querySelector('script[data-slot="apps-launcher-prefetch"]');
+
+  renderAppsLauncherDialog();
+  expect(readRules()).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'This tab' }));
+  const script = readRules();
+  expect(script?.getAttribute('type')).toBe('speculationrules');
+  const rules = JSON.parse(script?.textContent ?? '{}');
+  const selector =
+    'a[data-app-slug="tools"][role="option"][href="https://tuturuuu.com/tools?source=sidebar-apps"]:not([target])';
+  expect(rules).toEqual({
+    prefetch: [
+      {
+        source: 'document',
+        where: { selector_matches: selector },
+        eagerness: 'moderate',
+      },
+    ],
+  });
+  expect([...document.querySelectorAll(selector)]).toEqual([
+    screen.getByRole('option', { name: 'Tools' }),
+  ]);
+  expect(
+    screen
+      .getByRole('option', { name: 'Tools' })
+      .hasAttribute('data-router-link')
+  ).toBe(false);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(readRules()).toBeNull();
+});

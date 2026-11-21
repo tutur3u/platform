@@ -8,6 +8,7 @@ import type {
 } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
 import { getAppLauncherIcon } from './apps-launcher-icons';
+import { PUBLIC_TOOLS_LAUNCHER_URL } from './apps-launcher-prefetch';
 import type { AppsLauncherHighlight } from './apps-launcher-search';
 import type { AppsLauncherEntry } from './apps-launcher-view';
 
@@ -65,8 +66,9 @@ function OptionLink({
   };
 
   const usesApexDocument =
-    href.startsWith('https://tuturuuu.com/') &&
-    ['platform', 'meet', 'mail', 'calendar'].includes(entry.app.slug);
+    (href.startsWith('https://tuturuuu.com/') &&
+      ['platform', 'meet', 'mail', 'calendar'].includes(entry.app.slug)) ||
+    (entry.app.slug === 'tools' && href === PUBLIC_TOOLS_LAUNCHER_URL);
   if (linkComponent && !usesApexDocument) {
     const LinkComponent = linkComponent as ComponentType<OptionLinkProps>;
     return <LinkComponent {...props}>{children}</LinkComponent>;

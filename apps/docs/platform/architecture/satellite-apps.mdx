@@ -84,6 +84,14 @@ origin. The stylesheet respects reduced-motion preferences. This changes how
 navigation is presented, while the destination still loads through its own
 Worker and session checks.
 
+The apex launcher can prefetch the public Tools entry when configured to open
+in the current tab. Chromium uses hover or pointerdown to trigger the rule.
+The Tools apex root GET selects the display language for the response without
+writing a locale cookie. Explicit locale redirects still save the preference.
+Apps and protected destinations stay outside the rule. Release the cookie-free
+Tools entry first and verify the apex prefetch reaches it without a cookie write
+before releasing the launcher change.
+
 The apps serve separate documents and build their assets independently. When
 measuring a switch, capture the whole document redirect chain, transferred
 JavaScript and CSS, and first contentful paint. Repeat the same journey in the

@@ -16,6 +16,7 @@ import {
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { type ElementType, useRef, useState } from 'react';
+import { useAppsLauncherPrefetch } from './apps-launcher-prefetch';
 import { AppsLauncherCatalog } from './apps-launcher-catalog';
 import {
   AppsLauncherOpenModeMenu,
@@ -61,6 +62,7 @@ export function AppsLauncherCoreDialog({
   t,
 }: AppsLauncherCoreDialogProps) {
   const [openMode, setOpenMode] = useAppsLauncherOpenMode();
+  useAppsLauncherPrefetch(open && openMode === 'current-tab');
   const { favorites, toggleFavorite } = useAppsLauncherFavorites();
   const { recent, recordRecent } = useAppsLauncherRecent();
   const [query, setQuery] = useState('');
