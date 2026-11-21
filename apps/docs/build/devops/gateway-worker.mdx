@@ -353,6 +353,34 @@ while the deployment reaches the edge. Roll back on an unexpected response
 or if that interval expires. Start the post-deploy watch after both the app
 and gateway have converged.
 
+### Legacy subdomain redirect
+
+Once `tuturuuu.com/<app>` passes its smoke, the app's legacy hostname
+(`<app>.tuturuuu.com`) moves to the `tuturuuu-apex-redirect` Worker
+(`apps/gateway/wrangler.subdomain-redirect.jsonc`, entry
+`src/subdomain-redirect-worker.ts`). Attach the hostname the same way the app
+holds it: reassign its zone route `<app>.tuturuuu.com/*`, or update its Worker
+custom domain to the redirect Worker. Capture the prior attachment first.
+
+- Bind the app Worker as `APP_<APP>` (`APP_TASKS`). A hostname without a
+  binding answers `404`.
+- `SUBDOMAIN_REDIRECT_APPS` lists the apps whose navigations (`GET`/`HEAD`
+  with `Sec-Fetch-Mode: navigate`, or `Accept: text/html` without Fetch
+  Metadata) answer `301` to `https://tuturuuu.com/<app><path><query>`. The
+  subdomain root maps to the bare mount.
+- Everything else reaches the app Worker unchanged through its binding:
+  fetches, mutations, `/api`, `/assets`, `/.well-known`, `/_serverFn`,
+  `/serwist` and `verify-token`, so open tabs, API clients, uploads and auth
+  return URLs on the subdomain keep working.
+- An unlisted app is served through its binding without redirecting, so the
+  hostname can be attached before the redirect is switched on.
+
+Rollback: remove the app from `SUBDOMAIN_REDIRECT_APPS`, or reattach the
+hostname to the app Worker from the capture. Browsers keep a `301` they have
+already followed, so a rollback only affects visitors who have not been
+redirected yet; the mount must stay served. Regression coverage lives in
+`apps/gateway/src/subdomain-redirect.test.ts`.
+
 ### Hosted rollback status on 2026-11-20
 
 Cloudflare showed gateway version `220f3461-0a83-42b1-ab79-ce45bd126e41`

@@ -1,0 +1,19 @@
+{
+  // Legacy-subdomain Worker: once an app is served at tuturuuu.com/<app>, its
+  // <app>.tuturuuu.com zone route or custom domain is attached here. Listed
+  // apps' navigations answer 301 to the mount; everything else reaches the app
+  // Worker through APP_<APP> unchanged. Reattaching the hostname to the app
+  // Worker is the rollback. See apps/docs/build/devops/gateway-worker.mdx.
+  "name": "tuturuuu-apex-redirect",
+  "main": "src/subdomain-redirect-worker.ts",
+  "compatibility_date": "2026-09-28",
+  "workers_dev": false,
+  "preview_urls": false,
+  "limits": { "cpu_ms": 10 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.01 },
+  "vars": {
+    "SHARED_HOST": "tuturuuu.com",
+    "SUBDOMAIN_REDIRECT_APPS": "",
+  },
+  "services": [{ "binding": "APP_TASKS", "service": "tuturuuu-tasks" }],
+}
