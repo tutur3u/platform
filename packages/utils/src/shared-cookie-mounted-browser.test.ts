@@ -62,3 +62,34 @@ describe('browser cookies in a mounted app', () => {
     expect(browserMountedAppBase()).toBe('');
   });
 });
+
+describe('mounted base without the head script', () => {
+  function withScript(src: string) {
+    const script = document.createElement('script');
+    script.src = src;
+    document.head.append(script);
+    return () => script.remove();
+  }
+
+  it('reads the base from the document’s own mounted script URL', () => {
+    const remove = withScript('https://tuturuuu.com/tasks/assets/index-abc.js');
+    try {
+      expect(browserMountedAppBase()).toBe('/tasks');
+    } finally {
+      remove();
+    }
+  });
+
+  it.each([
+    'https://tuturuuu.com/_next/static/chunks/main.js',
+    'https://tuturuuu.com/assets/index-abc.js',
+    'https://cdn.example/tasks/assets/index-abc.js',
+  ])('stays at the root for %s', (src) => {
+    const remove = withScript(src);
+    try {
+      expect(browserMountedAppBase()).toBe('');
+    } finally {
+      remove();
+    }
+  });
+});

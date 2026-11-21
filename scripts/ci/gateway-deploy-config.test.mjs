@@ -125,7 +125,7 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   assert.equal(config.name, 'tuturuuu-gateway');
   assert.equal(
     config.vars.GATEWAY_MOUNTED_PATHS,
-    '/learn,/nova,/nova/*,/learn/*'
+    '/learn,/nova,/nova/*,/admin,/admin/*,/learn/*'
   );
   assert.equal(config.vars.WEB_ORIGIN, 'https://web.example.vercel.app');
   assert.equal(
@@ -136,6 +136,7 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   assert.equal(config.vars.GATEWAY_MODE, 'active');
   assert.equal(config.vars.GATEWAY_ACCEPTANCE_BYPASS_SECRET, undefined);
   assert.deepEqual(config.services, [
+    { binding: 'MOUNT_ADMIN', service: 'tuturuuu-infrastructure' },
     { binding: 'MOUNT_LEARN', service: 'tuturuuu-learn' },
     { binding: 'MOUNT_NOVA', service: 'tuturuuu-nova' },
     { binding: 'WEB_FAMILY_PUBLIC_DOCS', service: 'tuturuuu-web-public-docs' },

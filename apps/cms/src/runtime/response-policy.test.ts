@@ -98,7 +98,8 @@ describe('CMS response policy', () => {
       "script-src 'nonce-fixture'; object-src 'none'; frame-ancestors 'none'"
     );
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
-    expect(appConfig.csp).toBeUndefined();
+    // The nonce script policy is enforced by the bridge (withDocumentSecurity).
+    expect(appConfig.csp).toBeTypeOf('function');
   });
   it('rewrites each CSP policy without dropping its sandbox', async () => {
     const response = await decorate('/', {

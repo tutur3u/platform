@@ -320,24 +320,33 @@ const APP_BASE_GLOBAL = '__tuturuuuAppBase';
 
 /** A mount base: one or more lowercase path segments, e.g. `/lms/learn`. */
 const MOUNT_BASE = /^(?:\/[a-z0-9][a-z0-9-]*)+$/u;
-/** A mounted build's chunk URL: `<base>/assets/<file>`. */
+/** A mounted build's script URL: `<base>/assets/<file>`. */
 const MOUNTED_CHUNK = /^((?:\/[a-z0-9][a-z0-9-]*)+)\/assets\//u;
 
-function chunkBase() {
-  try {
-    const chunk = new URL(import.meta.url);
-    if (chunk.origin !== globalThis.location?.origin) return '';
-    return MOUNTED_CHUNK.exec(chunk.pathname)?.[1] ?? '';
-  } catch {
-    return '';
+/**
+ * The base the document's own same-origin scripts are served under: a
+ * mounted build loads `<base>/assets/...`, Web loads `/_next/...` and a
+ * subdomain root `/assets/...`, neither of which match.
+ */
+function scriptBase() {
+  for (const script of document.querySelectorAll<HTMLScriptElement>(
+    'script[src]'
+  )) {
+    try {
+      const url = new URL(script.src, document.baseURI);
+      if (url.origin !== globalThis.location?.origin) continue;
+      const base = MOUNTED_CHUNK.exec(url.pathname)?.[1];
+      if (base) return base;
+    } catch {}
   }
+  return '';
 }
 
 /**
  * In the browser, the base of an app mounted under a path of a shared origin
  * (`/tasks` on `tuturuuu.com/tasks`). It comes from the Start bridge head
- * global, or, when that script did not run, from this module's own chunk URL
- * (`/tasks/assets/...`), so a mounted document never falls back to the shared
+ * global, or, when that script did not run, from the document's own script
+ * URLs (`/tasks/assets/...`), so a mounted document never falls back to the shared
  * cookie scope. Empty at a subdomain root, in apps without the bridge, and on
  * the server.
  */
@@ -349,7 +358,7 @@ export function browserMountedAppBase(): string {
     const base = declared.replace(/\/+$/u, '');
     if (MOUNT_BASE.test(base)) return base;
   }
-  return chunkBase();
+  return scriptBase();
 }
 
 /**
