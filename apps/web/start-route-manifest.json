@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 863,
+    "total": 874,
     "categories": {
-      "api": 663,
+      "api": 674,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 851 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 862 }
   },
   "routes": [
     {
@@ -2742,6 +2742,54 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/fleet/owner/access",
+      "source": "apps/web/src/app/api/v1/fleet/owner/access/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/owner/control",
+      "source": "apps/web/src/app/api/v1/fleet/owner/control/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/owner/display-values",
+      "source": "apps/web/src/app/api/v1/fleet/owner/display-values/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/owner/grants/revoke",
+      "source": "apps/web/src/app/api/v1/fleet/owner/grants/revoke/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/owner/grants",
+      "source": "apps/web/src/app/api/v1/fleet/owner/grants/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/fleet/owner/projects",
+      "source": "apps/web/src/app/api/v1/fleet/owner/projects/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained",
       "source": "apps/web/src/app/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained/route.ts",
       "category": "api",
@@ -3006,8 +3054,48 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/mastermind/fleet/bridge/ticket",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/bridge/ticket/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/mastermind/fleet/decisions/[decisionId]/answer",
       "source": "apps/web/src/app/api/v1/mastermind/fleet/decisions/[decisionId]/answer/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/live",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/live/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/live/ticket",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/live/ticket/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/replies/[replyId]",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/replies/[replyId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/replies",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/replies/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

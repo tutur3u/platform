@@ -1620,6 +1620,66 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/fleet/owner/access",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/access/route.ts",
+    "sourceSha256": "39b9f32e980eb558d536795c4066f0b0b2de64796ac8983c9ad9e8a547b21b38",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/owner/control",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/control/route.ts",
+    "sourceSha256": "87f2d44251384a4b76d20f3ff612ad839b0f70540a2c3f2531f95254da16d79b",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/owner/display-values",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/display-values/route.ts",
+    "sourceSha256": "86642fac8455f11bbe42f4549cab0c4f242735c453ea3c60ca7cdb065c7f946e",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/owner/grants/revoke",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/grants/revoke/route.ts",
+    "sourceSha256": "060bc37774f2716aa21739271f56a3234b3fbb1847e379289a0f4add2763b6cd",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/owner/grants",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/grants/route.ts",
+    "sourceSha256": "baac784b6677f19ed702b1890993d0e53ca160787b71251d6ca23fae01739972",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/fleet/owner/projects",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/owner/projects/route.ts",
+    "sourceSha256": "42eded047b7e8be3cc5a8272428699142b26558a1599843ea6669d7a06be5151",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -1950,11 +2010,61 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/mastermind/fleet/bridge/ticket",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/bridge/ticket/route.ts",
+    "sourceSha256": "ab994caaf33bf3536cab379161261e0d196fca9a80e2d43bb1be88aa7e8a5f70",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/mastermind/fleet/decisions/{decisionId}/answer",
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/decisions/[decisionId]/answer/route.ts",
     "sourceSha256": "2420cc4b8ce57ff3577084c47cdc51f1f7c24d9d0b879009e9748206af00af9f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/live",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/live/route.ts",
+    "sourceSha256": "d712e08cb1f56fc9ca26b6b8a23e0d64ccd36bb71ca63c77bd803d18a9cff95a",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/live/ticket",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/live/ticket/route.ts",
+    "sourceSha256": "c199dd441fd28e0c8d8da1cb3b25761bbd14c69327418eb3933ee0a590996ceb",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/replies/{replyId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/replies/[replyId]/route.ts",
+    "sourceSha256": "e73c9ca01dd947b6fda2f5fc1aff5b6d5203408d10d5926b4ba389272b638dba",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/replies",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/replies/route.ts",
+    "sourceSha256": "fb900bfae6a3997ae8e00391b428689c15c704b940d81da7d64d629017db3e58",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2344,7 +2454,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/people/events/route.ts",
-    "sourceSha256": "a729fac7de2adbe755b32b5d2a0f6141c7e7731de18e7e0069c044b082e02ddf",
+    "sourceSha256": "d6af2f72f9a30a6c5b769bdead820f91dda8e03e8b9b9f064d954b5a5ffed847",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

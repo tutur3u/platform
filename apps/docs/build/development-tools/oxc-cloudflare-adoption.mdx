@@ -423,6 +423,10 @@ rows, charges a durable daily write budget before running a batch, deletes at
 most 20 expired rows per write, and holds a durable operator stop fence. Its
 cost envelope and regressions are in the
 [Mastermind store runbook](/build/devops/mastermind-store).
+Its fleet bridge Durable Object holds hibernatable WebSockets with no alarms,
+charges a durable daily operation budget, caps the outbox, tickets and reply
+rates, and stops behind the same operator fence; see
+[Fleet bridge](/build/devops/mastermind-store#fleet-bridge).
 
 The deploy coordinator Worker (`apps/deploy-coordinator`) schedules nothing:
 lease lapses and queue expiry are applied lazily at the start of each call. Its

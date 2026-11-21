@@ -912,6 +912,36 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/fleet/owner/access"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/owner/control"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/owner/display-values"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/owner/grants/revoke"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/owner/grants"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/owner/projects"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/inquiries/[id]/media-urls"
     },
     {
@@ -1017,7 +1047,32 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/bridge/ticket"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/mastermind/fleet/decisions/[decisionId]/answer"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/live"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/live/ticket"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/replies/[replyId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/replies"
     },
     {
       "family": "api-core",

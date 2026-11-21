@@ -3,7 +3,9 @@ import { bindings, defineConfig, exports } from 'cf/config';
 // Mastermind store: one SQLite Durable Object holding the live fleet
 // snapshot, owner answers and push-event claims for apps/web. Authenticated
 // RPC only; workers.dev and preview URLs stay off, and the owner attaches the
-// custom hostname and secrets at publication. No alarms, crons or queues.
+// custom hostname and secrets at publication. A second SQLite Durable Object,
+// the fleet bridge, holds the orchestrator machine's hibernatable WebSocket
+// and the outbox of undelivered thread replies. No alarms, crons or queues.
 export default defineConfig({
   accountId: 'e8912e2867beecc673d171907bf09649',
   worker: {
@@ -28,9 +30,16 @@ export default defineConfig({
         worker: 'tuturuuu-mastermind-store',
         exportName: 'MastermindStore',
       }),
+      // Fleet bridge: billable operations (tickets, replies, pokes) per UTC day.
+      MASTERMIND_BRIDGE_DAILY_OPS: bindings.text('20000'),
+      MASTERMIND_BRIDGE: bindings.durableObject({
+        worker: 'tuturuuu-mastermind-store',
+        exportName: 'FleetBridge',
+      }),
     },
     exports: {
       MastermindStore: exports.durableObject({ storage: 'sqlite' }),
+      FleetBridge: exports.durableObject({ storage: 'sqlite' }),
     },
   },
 });

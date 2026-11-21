@@ -48,6 +48,7 @@ jobs:
             and .workersDev == false
             and .previewUrls == false
             and .exports.MastermindStore.storage == "sqlite"
+            and .exports.FleetBridge.storage == "sqlite"
             and .env.MASTERMIND_STORE_TOKENS.type == "secret"
             and .env.MASTERMIND_STORE_OPERATOR_TOKEN.type == "secret"' \
             workers/default/worker.config.json

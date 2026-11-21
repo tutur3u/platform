@@ -1,7 +1,7 @@
 ---
 title: Mastermind store Worker
 description: The Cloudflare Durable Object that holds the live fleet snapshot, owner answers and Mastermind push-event claims, with its billing bounds, stop fence and deployment steps.
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-21"
 ---
 
 `apps/mastermind-store` is a Cloudflare Worker in front of one SQLite Durable
@@ -66,6 +66,72 @@ bounded cleanup, the fence) and `src/worker.test.ts` (the emitted Worker in
 workerd: auth and rotation, oversize and bad ops, the budget, the fence across
 a restart, cached reads).
 
+## Fleet bridge
+
+A second SQLite Durable Object in the same Worker, `FleetBridge`
+(`src/bridge.ts`, `src/bridge-engine.ts`, routes in `src/bridge-routes.ts`),
+is the push channel for [Mastermind thread replies](/platform/features/mastermind-thread-replies#fleet-bridge).
+It holds the orchestrator machine's hibernatable WebSocket, an outbox of
+undelivered replies, the reply records and the newest change notice per
+topic. Protocol: `packages/utils/src/mastermind-store/bridge-protocol.ts`;
+client: `bridge-client.ts`.
+
+| Route | Auth | Purpose |
+| --- | --- | --- |
+| `POST /v1/bridge/ticket` | service token | Single-use, 60-second ticket for a machine or an owner socket. |
+| `GET /v1/bridge/connect` | ticket as the second WebSocket subprotocol | The socket. Machines speak a closed frame set; owner sockets only listen. |
+| `POST /v1/bridge/send` | service token | Store one signed reply, push it, wait up to 2.5 s for the acknowledgement. |
+| `GET /v1/bridge/receipt?id=` | service token | A reply's receipt. |
+| `GET /v1/bridge/live` | service token | Machine presence and pokes. |
+
+Bounds and stop fence:
+
+- No alarms or self-scheduling. Sockets use the WebSocket Hibernation API and
+  `ping` is answered by `setWebSocketAutoResponse`, so an idle connection
+  wakes nothing and bills no duration. While idle the machine daemon sends
+  nothing else but one replay request every ten minutes (144 a day, each
+  charged as one operation).
+- One socket per machine (a newer one retires the older) and at most 8 owner
+  sockets. Every message a socket sends is counted before it is parsed, and
+  a socket past its limit is retired: 300 a minute for a machine (a full
+  outbox is 200 acknowledgements), 10 a minute for an owner socket, which has
+  nothing to say. Frames are capped at 32 KiB and unknown frames are dropped.
+  An acknowledgement must verify (Ed25519) under the key stored with its
+  reply, or it is dropped and the reply stays pending.
+- Tickets, stored replies, accepted pokes and outbox replays (`hello`, served
+  at most once per 10 seconds per socket) are charged durably against
+  `MASTERMIND_BRIDGE_DAILY_OPS` (default 20,000 per UTC day) before they run
+  and refused past it with `budget` (429). Acknowledgements are counted
+  against it but never refused, since the delivery already happened. A retry
+  of a stored reply, receipts and `live` reads are not charged.
+- At most 200 undelivered replies, 16 live tickets, 6 replies per thread per
+  minute and 60 per hour; an undelivered reply expires after 24 hours and is
+  never sent late. Expiry and the 90-day record retention run at most 20 rows
+  per write.
+- `POST /v1/fence` stops the store and the bridge together: the bridge then
+  refuses tickets, sends, replays and pokes, and retires every socket. A
+  machine that keeps retrying backs off to one ticket request a minute, and a
+  refused ticket charges nothing.
+- The reply text reaches the Worker only as ciphertext, with a keyed digest
+  for the record; the Worker holds no key for either. It holds only the
+  public half of the machine's acknowledgement key, so it can refuse a
+  forged outcome but cannot produce one, and Web verifies each outcome again.
+
+Cost envelope at normal load: one machine socket, a few owner sockets, a
+handful of replies a day (one replay or push and one acknowledgement each)
+and a few hundred pokes. The failure cases are capped by the daily operation budget
+(work the bridge does) and the per-socket message limit (wake-ups a socket
+can cause).
+Billed usage is verified from the account after publication.
+
+Regressions: `src/bridge-engine.test.ts` and `src/bridge.test.ts` (the
+emitted Worker in workerd, with real WebSockets).
+
+Publication: `FleetBridge` is a new Durable Object class, declared in
+`cloudflare.config.ts` beside `MastermindStore`; the artifact workflow
+asserts both SQLite exports. Deploy the Worker before Web starts calling the
+bridge routes, then install the machine daemon.
+
 ## Web configuration
 
 | Variable | Where | Purpose |
@@ -75,6 +141,8 @@ a restart, cached reads).
 | `MASTERMIND_STORE_TOKENS` | Worker secret | Comma-separated service tokens; two during rotation. |
 | `MASTERMIND_STORE_OPERATOR_TOKEN` | Worker secret | Fence and status only. |
 | `MASTERMIND_STORE_DAILY_WRITE_BUDGET` | Worker text | Daily write cap; invalid values make every call answer 503. |
+| `MASTERMIND_BRIDGE_DAILY_OPS` | Worker text | Daily cap on billable bridge operations; invalid values make the bridge answer 503. |
+| `MASTERMIND_REPLY_MFA_MAX_AGE_SECONDS` | Web | How recent the second-factor proof for a thread reply must be (default 1800). |
 
 Without `MASTERMIND_STORE_URL` and `MASTERMIND_STORE_TOKEN`, Web falls back to
 a legacy Upstash REST client when one is configured, and otherwise answers 503

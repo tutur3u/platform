@@ -27,7 +27,12 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/mastermind/access` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/access/route.ts) |
 | `/api/v1/mastermind/fleet/alerts` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/alerts/route.ts) |
 | `/api/v1/mastermind/fleet/answers` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/answers/route.ts) |
+| `/api/v1/mastermind/fleet/bridge/ticket` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/bridge/ticket/route.ts) |
 | `/api/v1/mastermind/fleet/decisions/[decisionId]/answer` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/decisions/%5BdecisionId%5D/answer/route.ts) |
+| `/api/v1/mastermind/fleet/live` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/live/route.ts) |
+| `/api/v1/mastermind/fleet/live/ticket` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/live/ticket/route.ts) |
+| `/api/v1/mastermind/fleet/replies/[replyId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/replies/%5BreplyId%5D/route.ts) |
+| `/api/v1/mastermind/fleet/replies` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/replies/route.ts) |
 | `/api/v1/mastermind/fleet/state` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/state/route.ts) |
 | `/api/v1/mastermind/fleet/usage` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/usage/route.ts) |
 | `/api/v1/mastermind/push-events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/push-events/route.ts) |
@@ -189,10 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/full` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/full/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows/clear` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/clear/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows` | DELETE, GET, HEAD, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows/sync` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/sync/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/route.ts) |
-| `/api/v1/workspaces/[wsId]/deleted` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/deleted/route.ts) |
-| `/api/v1/workspaces/[wsId]/documents/[documentId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/%5BdocumentId%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

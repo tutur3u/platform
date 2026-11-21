@@ -37,20 +37,19 @@ existing thread.
   sent, and with its receipt once it lands. Every decision and write happens
   under one lock file and re-reads the journal, so two processes cannot both
   claim an id. A retry returns the recorded receipt and sends nothing. A
-  retry of a send that never reported back is sent again under the same
-  bearer, where T3 itself recognises the id (measured: one delivery). Under
-  a new bearer it first waits out a 60-second window (`steer_in_flight`),
-  then looks for the message in the thread's timeline (T3 derives the
-  message id from the request id; up to 500 newest items) and sends only
-  when it is not there. `iris-ask` uses `iris-ask:answer:<id>` for owner
-  answers.
+  retry of a send that never reported back (a timeout, a crash) first looks
+  for the message in the thread's timeline (T3 derives the message id from
+  the request id; up to 500 newest items) and sends only when it is not
+  there. If that earlier attempt ran under another bearer, the retry also
+  waits out a 60-second window first (`steer_in_flight`). `iris-ask` uses
+  `iris-ask:answer:<id>` for owner answers.
 - **Known limit.** T3 does not show a steer it has accepted but not yet
   injected (the target is in the middle of a tool call), neither in the
-  timeline nor in the queue. If a send is cut off before it reports back, the
-  bearer then changes, and the retry comes while that first copy is still
-  waiting, the message arrives twice. The same holds if the first copy has
-  scrolled past the 500 newest timeline items. The helper accepts that over
-  losing an owner message.
+  timeline nor in the queue. A retry in that window is sent again with the
+  same request id: under the same bearer T3 recognises it and delivers once
+  (measured); under a new bearer it arrives twice. The same holds if the
+  first copy has scrolled past the 500 newest timeline items. The helper
+  accepts that over losing an owner message.
 - **Sign-in** (`scripts/mastermind-fleet/t3-mcp.mjs`). The local `/mcp`
   endpoint refuses `t3 auth session issue` bearers; it accepts only an MCP
   client session from T3's OAuth endpoints (`/oauth/mcp/register`,
@@ -102,7 +101,143 @@ revoked and never sent to another endpoint, the code taken only from the
 helper's own redirect path and state, the private origin-bound token cache,
 symlink and FIFO refusal, one re-sign-in on 401, one `auto` call with the
 idempotency key, a retry that never sends twice even after a new sign-in, an
-interrupted send resolved from the timeline (including a later page), two
+interrupted send resolved from the timeline under the same or another
+bearer (including a later page), two
 processes unable to claim one request id, no send when the journal is locked
 or cannot be written, promotion of a queued message, a truthful `queued` receipt, closed
 error codes and input validation before any call.
+
+## Fleet bridge
+
+The push path that carries an owner reply from Mastermind to its thread in
+about a second, in place of the publisher's 15-second poll.
+
+```text
+owner tap -> Web POST /api/v1/mastermind/fleet/replies
+          -> store Worker FleetBridge (outbox + WebSocket)
+          -> bridge daemon on the orchestrator Mac
+          -> t3-steer.mjs -> T3 thread
+          <- ack: delivered (steered | started | queued) or failed
+```
+
+- **Who may post or read.** Only the fleet owner (`isFleetOwner`: the owner
+  allowlist plus the root Mastermind permission) on every owner route:
+  replies, receipts, live state and the owner ticket. The machine's ticket
+  route is not an owner route; it takes the publisher's signed request.
+- **Second factor, for posting.** `POST /replies` first asks the platform's
+  account check (`checkRequiredAccountMfa`) about exactly the user and
+  credential the route admitted, so a recovery, a removed factor, a banned
+  account or a proof issued for someone else refuses the reply on that very
+  request. On top of that the session that sends the reply must carry a
+  second-factor proof at most 30 minutes old by default
+  (`MASTERMIND_REPLY_MFA_MAX_AGE_SECONDS`, 60 seconds to 12 hours). An app
+  session carries the proof inside its signed token; a browser session
+  carries it in its own verified claims. Without it the route answers 401
+  `mfa_required` with `maxAgeSeconds`, and the client runs the existing
+  Tuturuuu MFA flow and retries with the same Idempotency-Key. Reading a
+  receipt or live state needs the owner but no fresh proof: neither returns
+  reply text.
+- **What Web seals and signs.** The text is encrypted for the machine
+  (AES-256-GCM, bound to the reply id and machine) with a key derived from
+  the fleet publisher secret, and recorded as a keyed digest (HMAC-SHA-256),
+  not a plain hash that guesses could be tested against. Web then signs the
+  reply id, machine, environment, thread, actor, issue and expiry times and
+  that digest. The first signed line is `mastermind-fleet-reply-v1`, so the
+  signature fits no publisher route and no publisher signature fits a reply.
+  The store Worker never holds the secret: it relays and keeps ciphertext
+  only, and cannot forge, alter or read a reply.
+- **What the machine checks** (`scripts/mastermind-fleet/bridge-core.mjs`).
+  The signature in constant time, that the reply is addressed to this
+  machine, that it is in date (at most 24 hours, five minutes of clock skew),
+  that the sealed text opens and matches the signed digest, that the id was
+  not settled before (the ledger answers a replay with its first receipt and
+  sends nothing), and a local limit of 6 per thread per minute and 60 per
+  hour. Then it steers with `mm-reply:<id>` as the request id. T3 only
+  accepts an existing thread, and the frame set is closed: there is no
+  command, attachment or new-thread frame.
+- **Receipts.** `sent` (stored, waiting for the machine), `delivered` with
+  `steered`, `started` or `queued`, `failed` with a closed code
+  (`bad_signature`, `expired`, `unknown_thread`, `rate_limited`,
+  `thread_refused`, `unavailable`) or `expired`. The machine signs each
+  `delivered` or `failed` outcome with an Ed25519 key derived from the fleet
+  secret. Web hands the store the public half with the reply, so the store
+  drops an acknowledgement that does not verify and keeps the reply pending
+  for the real machine; Web verifies the signature again, under the key it
+  derives itself, before it reports the outcome. So neither the store nor
+  anyone holding its token can make a reply look delivered, or make the
+  bridge drop one. The POST waits up to 2.5 seconds for the
+  machine, so the usual answer already says `steered`.
+  `GET /api/v1/mastermind/fleet/replies/<id>` reads it later. Receipts on
+  the owner socket come straight from the store: treat them as a signal to
+  read the receipt route, not as the verified state.
+- **Offline machine.** The reply stays in the bridge outbox for 24 hours (at
+  most 200 pending) and is replayed in order, 50 per `hello`, when the
+  machine connects; after a full batch the daemon asks for the next one.
+  When the local T3 server is down the daemon leaves the reply in the outbox
+  and asks again every 15 seconds for 10 minutes before it reports
+  `unavailable`.
+- **Audit.** Each reply leaves a record in the bridge (who, when, machine,
+  environment, thread, keyed digest of the text, outcome; kept 90 days; the
+  sealed text is dropped once the reply settles) and a line in
+  `~/.local/share/fleet-sync/bridge-replies.jsonl` on the machine. Web logs
+  the same fields with the session id. None of them contains the text.
+- **Live notices.** The same socket carries pokes: a topic from a closed set
+  (`state`, `usage`, `status`, `threads`), a revision and a time, never
+  content. A publisher calls `sendPoke` (`scripts/mastermind-fleet/poke.mjs`);
+  owner clients read them from `GET /api/v1/mastermind/fleet/live` or a
+  listen-only owner socket (`POST /api/v1/mastermind/fleet/live/ticket`) and
+  refetch the topic through its own owner route.
+
+### Bridge daemon
+
+`scripts/mastermind-fleet/bridge.mjs` runs under launchd as
+`com.tuturuuu.mastermind-fleet-bridge` (`KeepAlive`, `ThrottleInterval` 10),
+as `node bridge.mjs --origin https://tuturuuu.com` from
+`~/.local/share/fleet-sync/bin/`, next to the publisher and with the same
+`publisher-secret` and `config.json`. Each connection needs a single-use,
+60-second ticket from `POST /api/v1/mastermind/fleet/bridge/ticket`, signed
+like every publisher request; the ticket travels as the second WebSocket
+subprotocol, never in the address. Reconnects back off with jitter, from
+about a second up to a minute, and reset after a connection held for 30
+seconds. An idle connection sends pings, which the bridge answers without
+waking, and one `hello` every ten minutes as a safety net for a lost push or
+a refused replay (144 a day). Beyond that the daemon says `hello` on connect
+and while a reply is waiting for the local T3 server or the last replay came
+back full. It logs counts and closed codes
+only.
+
+Install: copy `bridge.mjs`, `bridge-core.mjs`, `poke.mjs`, `private-files.mjs`,
+`t3-mcp.mjs` and `t3-steer.mjs` from `main` into the bin folder, add the
+launchd plist, then `launchctl bootstrap gui/$(id -u) <plist>`. Install only
+after Web and the store Worker from the same commit are deployed. Rollback:
+`launchctl bootout gui/$(id -u)/com.tuturuuu.mastermind-fleet-bridge` and
+remove the plist; replies then stay `sent` and expire, and the publisher's
+answer poll is unaffected. The operator stop fence of the store Worker stops
+the bridge too (see [Mastermind store](/build/devops/mastermind-store#fleet-bridge)).
+
+### Regression coverage
+
+`apps/mastermind-store/src/bridge-engine.test.ts` (idempotent enqueue,
+conflicting reuse of a key including another environment, acknowledgement
+only from the addressed machine with its signature kept verbatim, outbox
+order and expiry, per-thread and hourly limits, the daily operation budget
+including charged replays and counted acknowledgements, the stop fence,
+single-use tickets, poke revisions, retention),
+`apps/mastermind-store/src/bridge.test.ts` (the emitted Worker in workerd:
+ticket admission, push and acknowledgement inside the wait, offline replay
+once, one replay per interval, a socket flooding any kind of message
+retired, a forged acknowledgement leaving the reply pending for the real
+one, an unsigned acknowledgement and a plain-text reply dropped, one socket per machine,
+owner fan-out with listen-only owner sockets, the fence, the budget,
+malformed sends),
+`apps/web/src/app/api/v1/mastermind/fleet/fleet-bridge.test.ts` (owner only,
+the account check asked for the admitted principal and credential and its
+refusals honoured, the second-factor window on both session kinds, the
+sealed and signed envelope, delivered or failed only with the machine's
+signature, closed errors, the audit line without text, signed and once-only
+ticket requests) and `scripts/mastermind-fleet/bridge.test.mjs` and `bridge-daemon.test.mjs` (protocol
+parity with Web, signature, sealed text, addressee and lifetime checks,
+replay from the ledger across a restart, closed refusal codes, the retry
+window, the local limit, pokes, ticket signing, the socket loop, an idle
+connection that only pings and makes its ten-minute safety request, a full
+replay batch followed by another request and bounded backoff).

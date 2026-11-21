@@ -14,6 +14,11 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows` | DELETE, GET, HEAD, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/route.ts) |
+| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows/sync` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/sync/route.ts) |
+| `/api/v1/workspaces/[wsId]/datasets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/route.ts) |
+| `/api/v1/workspaces/[wsId]/deleted` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/deleted/route.ts) |
+| `/api/v1/workspaces/[wsId]/documents/[documentId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/%5BdocumentId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/documents` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/documents/route.ts) |
 | `/api/v1/workspaces/[wsId]/domains/[domainId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/domains/[domainId]/verify` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/domains/%5BdomainId%5D/verify/route.ts) |
@@ -189,10 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/storage/rollout-state` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/rollout-state/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/share` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/share/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/upload/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/upload-url/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/[templateId]/background-url` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/background-url/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/[templateId]` | DELETE, GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/[templateId]/shares` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/shares/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/[templateId]/use` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/use/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

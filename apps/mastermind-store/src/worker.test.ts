@@ -50,6 +50,7 @@ function runtime(
     compatibilityDate: '2026-07-01',
     durableObjects: {
       MASTERMIND_STORE: { className: 'MastermindStore', useSQLite: true },
+      MASTERMIND_BRIDGE: { className: 'FleetBridge', useSQLite: true },
     },
     bindings: {
       MASTERMIND_STORE_TOKENS: options.tokens ?? `${TOKEN},${NEXT}`,
