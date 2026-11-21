@@ -154,7 +154,11 @@ const get = async (
   ).GET(new NextRequest(url), {
     params: Promise.resolve({}),
   } as never);
-  return { status: response.status, body: await response.json() };
+  return {
+    status: response.status,
+    body: await response.json(),
+    cache: response.headers.get('cache-control'),
+  };
 };
 const threads = (query: string) =>
   get(import('./threads/route'), `${BASE}?${query}`);
@@ -162,6 +166,8 @@ const messages = (query: string) =>
   get(import('./threads/messages/route'), `${BASE}/messages?${query}`);
 const machines = (query: string) =>
   get(import('./threads/machines/route'), `${BASE}/machines?${query}`);
+const projects = (query: string) =>
+  get(import('./threads/projects/route'), `${BASE}/projects?${query}`);
 
 beforeEach(() => {
   vi.stubEnv('MASTERMIND_FLEET_PUBLISHER_SECRET', SECRET);
@@ -226,6 +232,7 @@ describe('GET /api/v1/mastermind/fleet/threads', () => {
   it('admits only the fleet owner, and only while the account check allows', async () => {
     mocks.user = { id: STRANGER };
     expect((await threads('machineId=skr-m4')).status).toBe(403);
+    expect((await projects('machineId=skr-m4')).status).toBe(403);
     mocks.user = { id: OWNER };
     mocks.granted = [];
     expect((await threads('machineId=skr-m4')).status).toBe(403);
@@ -237,7 +244,7 @@ describe('GET /api/v1/mastermind/fleet/threads', () => {
       [{ status: 'unavailable' }, 503, 'unavailable'],
     ] as const) {
       mocks.account = account;
-      for (const read of [threads, messages, machines]) {
+      for (const read of [threads, messages, machines, projects]) {
         const refused = await read(`machineId=skr-m4&threadId=${THREAD}`);
         expect([refused.status, refused.body]).toEqual([status, { error }]);
       }
@@ -256,6 +263,10 @@ describe('GET /api/v1/mastermind/fleet/threads', () => {
       'machineId=skr-m4&limit=0',
       'machineId=skr-m4&limit=51',
       `machineId=skr-m4&q=${'x'.repeat(101)}`,
+      'machineId=skr-m4&projectId=bad%20id',
+      `machineId=skr-m4&projectId=${'p'.repeat(401)}`,
+      'machineId=skr-m4&state=done',
+      'machineId=skr-m4&include=everything',
     ])
       expect((await threads(query)).body).toEqual({ error: 'invalid_query' });
     expect(mocks.sent).toHaveLength(0);
@@ -393,6 +404,107 @@ describe('GET /api/v1/mastermind/fleet/threads', () => {
     mocks.store = null;
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect((await threads('machineId=skr-m4')).status).toBe(200);
+  });
+});
+
+describe('projects and thread filters', () => {
+  it('seals the project, state and owner-reply filters and returns the reply times', async () => {
+    mocks.answer = {
+      ok: true,
+      data: {
+        threads: [thread({ lastOwnerReplyAt: '2026-11-21T04:30:00.000Z' })],
+        nextCursor: null,
+        total: 1,
+      },
+    };
+    const { status, body } = await threads(
+      'machineId=skr-m4&projectId=p1&state=failed&include=ownerReply'
+    );
+    expect(status).toBe(200);
+    expect(body.threads[0].lastOwnerReplyAt).toBe('2026-11-21T04:30:00.000Z');
+    expect(openArgs(mocks.sent[0] as Sent)).toEqual({
+      limit: 50,
+      projectId: 'p1',
+      state: 'failed',
+      ownerReply: true,
+    });
+    // Threads in no project, on the bridge machine.
+    await threads('machineId=skr-m4&projectId=none');
+    expect(openArgs(mocks.sent[1] as Sent)).toEqual({
+      limit: 50,
+      projectId: 'none',
+    });
+  });
+
+  it('filters a linked machine by project and state, without asking it for reply times', async () => {
+    await threads(
+      'machineId=skr-m4&environmentId=env-2&projectId=p1&state=running&include=ownerReply'
+    );
+    expect(openArgs(mocks.sent[0] as Sent)).toEqual({
+      environmentId: 'env-2',
+      limit: 50,
+      projectId: 'p1',
+      state: 'running',
+    });
+    // "In no project" cannot be asked of a linked machine.
+    const none = await threads(
+      'machineId=skr-m4&environmentId=env-2&projectId=none'
+    );
+    expect([none.status, none.body]).toEqual([
+      422,
+      { error: 'unsupported_for_linked_machine' },
+    ]);
+    expect(mocks.sent).toHaveLength(1);
+  });
+
+  it('returns the projects of the bridge machine with a count per state', async () => {
+    const counts = { running: 1, waiting: 0, failed: 2, idle: 40 };
+    const data = {
+      projects: [
+        {
+          projectId: 'p1',
+          project: 'Platform',
+          threadCount: 43,
+          counts,
+          latestUpdatedAt: '2026-11-21T05:00:00.000Z',
+        },
+      ],
+      unassigned: {
+        threadCount: 0,
+        counts: { running: 0, waiting: 0, failed: 0, idle: 0 },
+      },
+      total: 1,
+    };
+    mocks.answer = { ok: true, data };
+    const { status, body, cache } = await projects('machineId=skr-m4');
+    expect([status, body]).toEqual([200, { machineId: 'skr-m4', ...data }]);
+    // Neither an answer nor a refusal may be kept by a cache on the way.
+    expect(cache).toBe('private, no-store');
+    const sent = mocks.sent[0] as Sent;
+    expect(sent.request.kind).toBe('projects');
+    expect(openArgs(sent)).toEqual({});
+
+    // Only the bridge machine is grouped, and only a well-formed machine id is asked.
+    const linked = await projects('machineId=skr-m4&environmentId=env-2');
+    expect([linked.status, linked.body, linked.cache]).toEqual([
+      422,
+      { error: 'unsupported_for_linked_machine' },
+      'private, no-store',
+    ]);
+    expect((await projects('machineId=../x')).body).toEqual({
+      error: 'invalid_query',
+    });
+    expect(mocks.sent).toHaveLength(1);
+
+    // An answer that is not a project list is refused, not passed on.
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mocks.answer = {
+      ok: true,
+      data: { ...data, projects: [{ projectId: 'p1' }] },
+    };
+    expect((await projects('machineId=skr-m4')).status).toBe(502);
+    mocks.answer = { ok: false, code: 'unavailable' };
+    expect((await projects('machineId=skr-m4')).status).toBe(503);
   });
 });
 

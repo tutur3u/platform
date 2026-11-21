@@ -10,6 +10,7 @@ import { FLEET_NO_STORE, fleetError } from './http';
 export const MACHINE_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/u;
 export const ENVIRONMENT_ID = /^\w[\w-]{0,99}$/u;
 export const THREAD_ID = /^[\w:%.][\w:%.-]{0,399}$/u;
+export const PROJECT_ID = /^[\w:%.-]{1,400}$/u;
 
 /**
  * Admission for every thread read: the fleet owner, and an account the

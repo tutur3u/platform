@@ -1,11 +1,4 @@
 import assert from 'node:assert/strict';
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  hkdfSync,
-  randomBytes,
-} from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import {
@@ -25,90 +18,14 @@ import {
   rpcSigningString,
   verifyRequest,
 } from './bridge-rpc.mjs';
+import {
+  ask,
+  deps,
+  openAnswer,
+  requestFrame,
+  THREAD,
+} from './bridge-rpc-test-fixture.mjs';
 import { NOW, SECRET, uuid } from './bridge-test-fixture.mjs';
-
-const THREAD = 'thread:project:mcp%3Aabc:1234';
-const key = (secret = SECRET) =>
-  Buffer.from(
-    hkdfSync('sha256', secret, Buffer.alloc(0), BRIDGE_RPC_KEY_INFO, 32)
-  );
-
-/** A read request sealed and signed the way Web does it (apps/web/.../bridge-rpc.ts). */
-function requestFrame(kind, args = {}, over = {}, secret = SECRET) {
-  const base = {
-    id: uuid(1),
-    machineId: 'skr-m4',
-    kind,
-    issuedAt: NOW - 1000,
-    expiresAt: NOW + 20_000,
-    ...over,
-  };
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key(secret), iv);
-  cipher.setAAD(
-    Buffer.from(bridgeRpcSealContext('req', base.id, base.machineId))
-  );
-  const data = Buffer.concat([
-    cipher.update(JSON.stringify(args), 'utf8'),
-    cipher.final(),
-    cipher.getAuthTag(),
-  ]);
-  const request = {
-    ...base,
-    box: { iv: iv.toString('base64url'), data: data.toString('base64url') },
-  };
-  return {
-    v: 1,
-    t: 'req',
-    request,
-    sig: createHmac('sha256', secret)
-      .update(bridgeRpcSigningString(request))
-      .digest('hex'),
-  };
-}
-
-/** Opens a `res` frame the way Web does. */
-function openAnswer(frame, request, secret = SECRET) {
-  const data = Buffer.from(frame.box.data, 'base64url');
-  const decipher = createDecipheriv(
-    'aes-256-gcm',
-    key(secret),
-    Buffer.from(frame.box.iv, 'base64url')
-  );
-  decipher.setAAD(
-    Buffer.from(bridgeRpcSealContext('res', request.id, request.machineId))
-  );
-  decipher.setAuthTag(data.subarray(data.length - 16));
-  return JSON.parse(
-    Buffer.concat([
-      decipher.update(data.subarray(0, data.length - 16)),
-      decipher.final(),
-    ]).toString('utf8')
-  );
-}
-
-const deps = (tools) => {
-  const calls = [];
-  return {
-    calls,
-    secret: SECRET,
-    machineId: 'skr-m4',
-    now: () => NOW,
-    call: async (name, args) => {
-      calls.push({ name, args });
-      const tool = tools[name];
-      if (!tool) throw Object.assign(new Error('x'), { code: 't3_tool_error' });
-      return tool(args);
-    },
-  };
-};
-
-const ask = async (kind, args, tools, over) => {
-  const frame = requestFrame(kind, args, over);
-  const d = deps(tools);
-  const res = await handleRequest(frame, d);
-  return { res, calls: d.calls, answer: res && openAnswer(res, frame.request) };
-};
 
 test('matches the Web protocol: labels, signed bytes and sealing contexts', () => {
   assert.equal(RPC_DOMAIN, BRIDGE_RPC_DOMAIN);

@@ -199,13 +199,42 @@ orchestrator Mac on demand; while it is not connected the routes answer 503
 | Route | Returns |
 | --- | --- |
 | `GET /api/v1/mastermind/fleet/threads/machines?machineId=` | The bridge machine and up to 31 machines linked to it, each with whether it answers. |
-| `GET /api/v1/mastermind/fleet/threads?machineId=&environmentId=&q=&cursor=&limit=` | A page of up to 50 threads, newest first, optionally filtered by title: id, title, project, state (`running`, `waiting`, `failed`, `idle`), last update, item count and, when known, how many items the owner has seen. |
+| `GET /api/v1/mastermind/fleet/threads/projects?machineId=` | The projects of the bridge machine that have live threads, the one touched last first (at most 200, with `total`): id, name, thread count, a count per state and last update; then the same counts for threads in no project (`unassigned`). |
+| `GET /api/v1/mastermind/fleet/threads?machineId=&environmentId=&q=&projectId=&state=&include=&cursor=&limit=` | A page of up to 50 threads, newest first, optionally filtered by title, project and state: id, title, project, state (`running`, `waiting`, `failed`, `idle`), last update, item count and, when known, how many items the owner has seen. |
 | `GET /api/v1/mastermind/fleet/threads/messages?machineId=&environmentId=&threadId=&before=&limit=` | A page of up to 30 user and assistant messages, oldest first, with `earlierPosition` to page back. |
 | `POST /api/v1/mastermind/fleet/threads/read` | Records how many items of a thread the owner has seen. |
 
 - **Who may read.** The fleet owner, on an account the platform's
-  second-factor policy still accepts (`checkRequiredAccountMfa`), for all
-  four routes. Reads do not need the fresh proof a reply needs.
+  second-factor policy still accepts (`checkRequiredAccountMfa`), for every
+  route in the table. Reads do not need the fresh proof a reply needs.
+- **Grouping and filters.** `projectId` keeps one project's threads and
+  `projectId=none` those in no project; `state` keeps one of the four
+  states; `total` and `nextCursor` count the filtered threads. A state is
+  the newest run's status: `preparing`, `queued`, `starting` and `running`
+  are `running`, `waiting` and `failed` are themselves, everything else is
+  `idle`.
+- **Threads in no project.** T3 files a thread that belongs to no project
+  under its own scratch project (titled "No project", rooted at
+  `~/.t3/scratch`). Mastermind reports those threads as `unassigned`: the
+  scratch project is left out of `projects` and of `total`, its threads
+  carry no `projectId` or `project`, and `projectId=none` lists them.
+- **When the owner last wrote.** `include=ownerReply` adds
+  `lastOwnerReplyAt` to each thread the owner has written in: the later of
+  a message the owner wrote in T3 and a reply delivered through this bridge.
+  A message the owner wrote is one T3 marks as created by the user: typed,
+  or given as the answer to a question the thread asked. A scheduled task, a
+  notification, a delegated result and T3's own prompt to resume a run after
+  a usage limit do not count, and neither does imported history, which is
+  not the owner being active in the thread. It is looked for among the
+  thread's 400 newest user messages. Bridge replies are taken from
+  the bridge's own ledger of delivered replies, never from the shape of a
+  message id, so a message an agent sends does not count however it is
+  named.
+- **Bridge machine only.** The project list, `projectId=none` and
+  `lastOwnerReplyAt` exist for the bridge machine only. For a linked machine
+  the first two answer 422 `unsupported_for_linked_machine` and the third is
+  left out; `projectId` and `state` filter a linked machine through T3's own
+  list filters, where the scratch project is a project like any other.
 - **End to end.** Web seals the arguments of each read and signs the request
   (first signed line `mastermind-fleet-rpc-v1`, valid for 30 seconds); the
   machine verifies it, checks the type and range of every argument, and
@@ -217,11 +246,15 @@ orchestrator Mac on demand; while it is not connected the routes answer 503
 - **Where the answer comes from.** A read of the bridge machine itself is
   answered from T3's own projection database, opened read-only the way the
   publisher opens it (`scripts/mastermind-fleet/bridge-local.mjs`): the list,
-  title search and history take milliseconds there, where T3's list tool
+  title search, project grouping and history take milliseconds there, where T3's list tool
   takes seconds on a machine with ten thousand threads. The database is
   opened read-only with a half-second busy wait, and a database that is
   busy, missing or not in the expected shape answers `unavailable` rather
-  than a partial list. The list of machines, and any read of a linked
+  than a partial list. The reads that look up rows per thread (grouping by
+  project, the state filter, owner-reply times) first check that an index
+  covering the rows they read exists, and answer `unavailable` without it: a statement
+  cannot be interrupted once it runs, and without the index it would hold
+  the bridge for minutes. The list of machines, and any read of a linked
   machine, go through the T3 MCP read tools
   (`t3_environment_links`, `t3_project_list`, `t3_thread_list`,
   `t3_thread_read`) and takes a few seconds. No write tool is reachable from
@@ -250,14 +283,22 @@ toward an unverifiable request, argument types and ranges, each read's
 closed answer shape, read tools only, a local read without any T3 call, the
 page size cap, closed failure codes, an answer that opens only for its own
 request), `bridge-local.test.mjs` (order, state, literal search, paging back
-through history, deleted and archived threads, linked machines), a busy,
+through history, deleted and archived threads, linked machines, grouping by
+project with the 200 cap, the scratch project as threads in no project, the
+project and state filters, the state filter agreeing with the state shown
+for every run status, owner-reply times from typed messages and the reply
+ledger only, the 400-message window, a missing index refused),
+`bridge-rpc-projects.test.mjs` (projects from the database only and for
+this machine only, filters passed to a local read and mapped to T3's
+filters for a linked machine, argument checks), a busy,
 missing or unexpected database answering `unavailable`,
 `transcript-scrub.test.mjs` (the credential corpus, ordinary text left
 alone, bounded scanning of a huge message),
 `apps/web/src/app/api/v1/mastermind/fleet/fleet-threads.test.ts` (owner and
-account admission on all four routes, sealed and signed arguments, malformed
-queries, the machine states, forged, reflected or misshaped answers refused,
-read markers) and `apps/mastermind-store/src/bridge.test.ts` (the relay:
+account admission on every read route, sealed and signed arguments,
+malformed queries, the project, state and owner-reply filters, what a linked
+machine does not support, the machine states, forged, reflected or misshaped
+answers refused, read markers) and `apps/mastermind-store/src/bridge.test.ts` (the relay:
 offline, the right machine only, a large answer, timeout, the stop fence,
 nothing stored).
 

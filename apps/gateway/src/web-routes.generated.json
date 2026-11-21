@@ -1077,6 +1077,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/review-assets/[assetId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/mastermind/fleet/state"
     },
     {
@@ -1088,6 +1093,11 @@
       "family": "api-core",
       "localized": false,
       "pattern": "/api/v1/mastermind/fleet/threads/messages"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/threads/projects"
     },
     {
       "family": "api-core",

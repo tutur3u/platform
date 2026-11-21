@@ -349,7 +349,12 @@ export const bridgeLiveResponseSchema = z.union([
 ]);
 
 /** What the owner may read from a machine; a closed set. */
-export const BRIDGE_RPC_KINDS = ['machines', 'threads', 'transcript'] as const;
+export const BRIDGE_RPC_KINDS = [
+  'machines',
+  'projects',
+  'threads',
+  'transcript',
+] as const;
 export type BridgeRpcKind = (typeof BRIDGE_RPC_KINDS)[number];
 
 /**
@@ -427,8 +432,23 @@ export const bridgeThreadSchema = z.object({
   state: z.enum(bridgeThreadStates),
   updatedAt: z.string().max(40),
   itemCount: z.number().int().min(0),
+  /** When the owner last wrote in the thread; only when asked for and known. */
+  lastOwnerReplyAt: z.string().max(40).optional(),
 });
 export type BridgeThread = z.infer<typeof bridgeThreadSchema>;
+
+/** The `projectId` that asks for threads in no project. */
+export const BRIDGE_NO_PROJECT = 'none';
+const projectId = z.string().regex(/^[\w:%.-]{1,400}$/u);
+const threadCounts = z.object({
+  threadCount: z.number().int().min(0),
+  counts: z.object({
+    running: z.number().int().min(0),
+    waiting: z.number().int().min(0),
+    failed: z.number().int().min(0),
+    idle: z.number().int().min(0),
+  }),
+});
 
 /** What each read returns, after Web opens the sealed answer. */
 export const bridgeRpcAnswerSchemas = {
@@ -442,6 +462,20 @@ export const bridgeRpcAnswerSchemas = {
         })
       )
       .max(32),
+  }),
+  projects: z.object({
+    projects: z
+      .array(
+        threadCounts.extend({
+          projectId,
+          project: z.string().max(200),
+          latestUpdatedAt: z.string().max(40),
+        })
+      )
+      .max(200),
+    unassigned: threadCounts,
+    /** All projects with live threads, of which `projects` holds the newest. */
+    total: z.number().int().min(0),
   }),
   threads: z.object({
     threads: z.array(bridgeThreadSchema).max(100),
@@ -468,12 +502,17 @@ export const bridgeRpcAnswerSchemas = {
 /** Arguments of each read, validated by Web before sealing and by the machine after opening. */
 export const bridgeRpcArgsSchemas = {
   machines: z.object({}).strict(),
+  projects: z.object({}).strict(),
   threads: z
     .object({
       environmentId: environmentId.optional(),
       query: z.string().trim().min(1).max(100).optional(),
       cursor: z.number().int().min(0).max(100_000).optional(),
       limit: z.number().int().min(1).max(50).default(50),
+      /** One project's threads, or `BRIDGE_NO_PROJECT` for those in none. */
+      projectId: projectId.optional(),
+      state: z.enum(bridgeThreadStates).optional(),
+      ownerReply: z.boolean().optional(),
     })
     .strict(),
   transcript: z

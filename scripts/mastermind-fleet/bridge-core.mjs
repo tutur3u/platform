@@ -226,6 +226,20 @@ export function createLedger(file) {
           count++;
       return count;
     },
+    /** When a reply was last delivered into a thread of this machine itself. */
+    lastDelivered(threadId) {
+      let latest;
+      for (const row of settled.values())
+        if (
+          row.state === 'delivered' &&
+          row.threadId === threadId &&
+          row.environmentId === undefined &&
+          typeof row.at === 'string' &&
+          (latest === undefined || row.at > latest)
+        )
+          latest = row.at;
+      return latest;
+    },
     record(row) {
       appendPrivateLine(file, JSON.stringify(row));
       settled.set(row.id, row);

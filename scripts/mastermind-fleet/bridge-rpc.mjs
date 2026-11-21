@@ -13,7 +13,7 @@ import {
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
-import { localReads, threadState } from './bridge-local.mjs';
+import { localReads, NO_PROJECT, threadState } from './bridge-local.mjs';
 import { fleetText } from './scrub.mjs';
 
 export { threadState };
@@ -39,7 +39,25 @@ const ENVIRONMENT_ID = /^\w[\w-]{0,99}$/;
 const SIGNATURE = /^[0-9a-f]{64}$/;
 const SEAL_IV = /^[\w-]{16}$/;
 const SEAL_DATA = /^[\w-]{23,22000}$/;
-const KINDS = new Set(['machines', 'threads', 'transcript']);
+const PROJECT_ID = /^[\w:%.-]{1,400}$/;
+const KINDS = new Set(['machines', 'projects', 'threads', 'transcript']);
+const STATES = new Set(['running', 'waiting', 'failed', 'idle']);
+/** T3's run statuses, grouped into the states the owner filters by. */
+const T3_STATUSES = [
+  'idle',
+  'preparing',
+  'queued',
+  'starting',
+  'running',
+  'waiting',
+  'completed',
+  'interrupted',
+  'failed',
+  'cancelled',
+  'rolled_back',
+];
+const statusesOf = (state) =>
+  T3_STATUSES.filter((status) => threadState(status) === state);
 const REQUEST_KEYS = new Set([
   'id',
   'machineId',
@@ -285,10 +303,15 @@ const READS = {
       : 50;
     const query =
       typeof args.query === 'string' ? args.query.trim().slice(0, 100) : '';
+    // T3 lists one project or all of them; it has no filter for "in none".
+    if (args.projectId === NO_PROJECT) throw new BadRequest();
     const [listed, projects] = await Promise.all([
       call('t3_thread_list', {
         ...target(args),
-        allProjects: true,
+        ...(args.projectId
+          ? { projectId: args.projectId }
+          : { allProjects: true }),
+        ...(args.state ? { statuses: statusesOf(args.state) } : {}),
         limit,
         ...(Number.isInteger(args.cursor) && args.cursor >= 0
           ? { cursor: args.cursor }
@@ -378,9 +401,10 @@ const clamp = (value, fallback, max) =>
   Number.isInteger(value) ? Math.min(Math.max(value, 1), max) : fallback;
 
 /** A read of this machine itself, answered from its own database. */
-function readLocally(kind, args, db) {
-  const reads = localReads(db, { scrub: scrubTranscriptText });
+function readLocally(kind, args, db, local) {
+  const reads = localReads(db, { scrub: scrubTranscriptText, ...local });
   if (kind === 'machines') return reads.machines();
+  if (kind === 'projects') return reads.projects();
   if (kind === 'threads') {
     const query =
       typeof args.query === 'string' ? args.query.trim().slice(0, 100) : '';
@@ -389,6 +413,9 @@ function readLocally(kind, args, db) {
       cursor:
         Number.isInteger(args.cursor) && args.cursor >= 0 ? args.cursor : 0,
       limit: clamp(args.limit, 50, 50),
+      ...(args.projectId ? { projectId: args.projectId } : {}),
+      ...(args.state ? { state: args.state } : {}),
+      ownerReply: args.ownerReply === true,
     });
   }
   if (!THREAD_ID.test(String(args.threadId ?? ''))) throw new BadRequest();
@@ -423,11 +450,18 @@ function validArgs(kind, args) {
   )
     return false;
   if (kind === 'machines') return true;
+  // Projects are grouped from this machine's own database only.
+  if (kind === 'projects') return args.environmentId === undefined;
   if (!optionalInt(args.limit, 50)) return false;
   if (kind === 'threads')
     return (
       optionalInt(args.cursor, MAX_CURSOR) &&
-      (args.query === undefined || typeof args.query === 'string')
+      (args.query === undefined || typeof args.query === 'string') &&
+      (args.projectId === undefined ||
+        (typeof args.projectId === 'string' &&
+          PROJECT_ID.test(args.projectId))) &&
+      (args.state === undefined || STATES.has(args.state)) &&
+      (args.ownerReply === undefined || typeof args.ownerReply === 'boolean')
     );
   return (
     typeof args.threadId === 'string' &&
@@ -438,16 +472,25 @@ function validArgs(kind, args) {
 
 /**
  * Handles one `req` frame and returns the sealed `res` frame, or null for a
- * frame that is not a valid request for this machine. Threads and history of
- * this machine are answered from `openDatabase()` (T3's projection database,
- * read-only); a read of a linked machine, and the list of machines, go
- * through `call(name, args)`, an open T3 MCP session's tool call, with read
- * tools only. A database that cannot be opened, is busy or does not have the
+ * frame that is not a valid request for this machine. Threads, projects and
+ * history of this machine are answered from `openDatabase()` (T3's projection
+ * database, read-only); a read of a linked machine, and the list of machines,
+ * go through `call(name, args)`, an open T3 MCP session's tool call, with
+ * read tools only. A linked machine's threads carry no owner-reply time.
+ * `scratchRoot` and `bridgeReplyAt` are passed on to the local reads. A database that cannot be opened, is busy or does not have the
  * expected tables answers `unavailable`, like any other failed read.
  */
 export async function handleRequest(
   frame,
-  { secret, machineId, call, openDatabase, now = Date.now }
+  {
+    secret,
+    machineId,
+    call,
+    openDatabase,
+    scratchRoot,
+    bridgeReplyAt,
+    now = Date.now,
+  }
 ) {
   const verified = verifyRequest(frame, { secret, machineId, now: now() });
   if (!verified) return null;
@@ -458,7 +501,10 @@ export async function handleRequest(
     const fromDatabase = () => {
       const db = openDatabase();
       try {
-        return readLocally(request.kind, args, db);
+        return readLocally(request.kind, args, db, {
+          scratchRoot,
+          bridgeReplyAt,
+        });
       } finally {
         db.close();
       }
@@ -473,6 +519,8 @@ export async function handleRequest(
       });
     } else if (args.environmentId === undefined && openDatabase) {
       data = fromDatabase();
+    } else if (request.kind === 'projects') {
+      throw new Error('projects are read from the database only');
     } else {
       data = await READS[request.kind](call, args);
     }

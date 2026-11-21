@@ -57,7 +57,21 @@ export function bridgePaths(home = os.homedir()) {
     ...base,
     ledgerFile: path.join(base.root, 'bridge-replies.jsonl'),
     pokesDir: pokesDir(home),
+    scratchRoot: scratchRoot(home),
   };
+}
+
+/**
+ * The folder of T3's scratch project, where it keeps threads that belong to
+ * no project. T3 records it resolved, so it is resolved the same way here.
+ */
+export function scratchRoot(home = os.homedir()) {
+  const folder = path.join(home, '.t3/scratch');
+  try {
+    return fs.realpathSync(folder);
+  } catch {
+    return path.resolve(folder);
+  }
 }
 
 /** Full jitter: a wait between half and all of the current step. */
@@ -348,6 +362,8 @@ async function main() {
           secret,
           machineId,
           call,
+          scratchRoot: paths.scratchRoot,
+          bridgeReplyAt: (threadId) => ledger.lastDelivered(threadId),
           openDatabase: () => {
             // Read-only, and a short wait when T3 holds the database, so a
             // read fails as unavailable instead of stalling replies.
