@@ -200,7 +200,18 @@ export function assertEntryShape(value: unknown): asserts value is SignedEntry {
   count(b.seq, 'seq', 1);
   bytes(b.prev_hash, 32, 'prev_hash');
   count(b.issued_at, 'issued_at');
-  const kind = (b.payload as { kind?: unknown } | null)?.kind;
+  if (
+    b.payload === null ||
+    typeof b.payload !== 'object' ||
+    Object.getPrototypeOf(b.payload) !== Object.prototype
+  ) {
+    malformed('payload');
+  }
+  const kindDescriptor = Object.getOwnPropertyDescriptor(b.payload, 'kind');
+  const kind =
+    kindDescriptor && 'value' in kindDescriptor
+      ? kindDescriptor.value
+      : undefined;
   if (kind === 'owner_set') {
     const p = record(
       b.payload,

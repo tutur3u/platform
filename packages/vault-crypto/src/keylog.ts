@@ -16,6 +16,7 @@ import {
   type SignedGenesis,
   type WrapDigest,
 } from './keylog-types';
+import { list } from './schema';
 import { verifyObject } from './signing';
 
 export * from './keylog-types';
@@ -37,6 +38,11 @@ export function entryHash(signed: SignedEntry): Uint8Array {
   return sha256(contextBytes('entry-hash', plain(signed)));
 }
 
+/** The signed identifier of an EDK, so a client can check the key it unwrapped. */
+export function edkId(edk: Uint8Array): Uint8Array {
+  return sha256(contextBytes('edk-id', { edk })).subarray(0, 16);
+}
+
 /** Signature lists are sorted by key with no duplicates, so the chained hash is canonical. */
 export function sortSignatures(
   list: readonly EntrySignature[]
@@ -48,11 +54,20 @@ export type RoleChange = {
   readonly seq: number;
   readonly role: Role;
   readonly signingKey: Uint8Array;
+  readonly encryptionKey: Uint8Array;
 };
+
+export type StampedWrap = { readonly digest: Uint8Array; readonly seq: number };
 
 export type EnvironmentEpoch = EpochDescriptor & {
   readonly seq: number;
+  /** Wraps authorised at or before the sequence this view was taken at. */
   readonly wrapIndex: ReadonlyMap<string, Uint8Array>;
+};
+
+type StoredEpoch = EpochDescriptor & {
+  readonly seq: number;
+  readonly wraps_by_key: Map<string, StampedWrap>;
 };
 
 export type Managers = {
@@ -75,12 +90,14 @@ export type KeyLogState = {
     userId: string,
     seq: number
   ) => RoleChange | null;
-  /** The epoch in force after entry `seq` (the current epoch by default). */
+  /** The epoch in force after entry `seq` (the head by default), with wraps authorised by then. */
   readonly epochAt: (env: string, seq?: number) => EnvironmentEpoch | null;
   readonly environments: () => string[];
 };
 
-const DECRYPTS: Record<Role, { normal: boolean; sensitive: boolean }> = {
+export const DECRYPTS: Readonly<
+  Record<Role, { readonly normal: boolean; readonly sensitive: boolean }>
+> = {
   none: { normal: false, sensitive: false },
   viewer: { normal: false, sensitive: false },
   writer: { normal: false, sensitive: false },
@@ -99,7 +116,7 @@ function fail(message: string): never {
   throw new VaultCryptoError('bad_signature', message);
 }
 
-const keyHex = (p: PartyKey) => toHex(p.signing_key);
+const hex = (k: Uint8Array) => toHex(k);
 
 /**
  * Every listed signature must be by a distinct authorised key, in key order,
@@ -113,10 +130,10 @@ function countSigners(
   const object = plain(body);
   let previous = '';
   for (const { key, signature } of list) {
-    const hex = toHex(key);
-    if (hex <= previous)
+    const k = hex(key);
+    if (k <= previous)
       fail('Signatures must be sorted by key without duplicates');
-    previous = hex;
+    previous = k;
     if (!authorised.some((p) => equalBytes(p.signing_key, key)))
       fail('Signature by an unauthorised key');
     if (!verifyObject(key, 'key-log', object, signature))
@@ -126,7 +143,7 @@ function countSigners(
 }
 
 function checkPartySet(parties: readonly PartyKey[]) {
-  if (new Set(parties.map(keyHex)).size !== parties.length)
+  if (new Set(parties.map((p) => hex(p.signing_key))).size !== parties.length)
     fail('Duplicate key');
   if (new Set(parties.map((p) => p.user_id)).size !== parties.length)
     fail('Duplicate user');
@@ -144,25 +161,18 @@ function checkOwners(owners: readonly PartyKey[], threshold: number) {
   }
 }
 
-function addWraps(
-  wraps: readonly WrapDigest[],
-  epoch: number,
-  into: Map<string, Uint8Array>
-) {
-  for (const w of wraps) {
-    if (w.epoch !== epoch) fail('Wrap for another epoch');
-    const k = wrapKey(w);
-    if (into.has(k)) fail('Duplicate wrap');
-    into.set(k, w.digest);
-  }
-}
-
 /**
- * Replays a key log from genesis against the pinned `vault_id`. Owner and
- * admin set changes need `threshold` owner signatures; other entries need one
- * owner or admin signature. A key removed from the owner or admin set loses
- * every authority it held, including member roles, and any change that removes
- * decryption access must carry the next epoch for each affected environment.
+ * Replays a key log from genesis against the pinned `vault_id`.
+ *
+ * - Owner and admin set changes need `threshold` owner signatures; other
+ *   entries need one owner or admin signature.
+ * - Each user ID is bound to one signing key across every role. Binding a new
+ *   key to a user revokes every grant held under the old key, and a key can
+ *   never be bound to two users.
+ * - A key removed from the owner or admin set loses every authority it held.
+ * - Any change that removes decryption access, or replaces a key that could
+ *   decrypt, must carry the next epoch for each affected environment, with
+ *   key identifiers and public keys never used before.
  */
 export function verifyKeyLog(
   genesis: unknown,
@@ -184,7 +194,10 @@ export function verifyKeyLog(
     { seq: 0, owners: g.owners, threshold: g.threshold, admins: [] },
   ];
   const roles = new Map<string, Map<string, RoleChange[]>>();
-  const epochs = new Map<string, EnvironmentEpoch[]>();
+  const epochs = new Map<string, StoredEpoch[]>();
+  const usedEpochKeys = new Set<string>();
+  const userKey = new Map<string, string>();
+  const keyUser = new Map<string, string>();
   let headHash = genesisHash(genesis);
   let issuedAt = g.issued_at;
 
@@ -197,6 +210,38 @@ export function verifyKeyLog(
     roles.set(env, byUser);
   };
 
+  /** Binds user→key; returns envs where a replaced key held decryption access. */
+  const bind = (user: string, key: Uint8Array, seq: number): string[] => {
+    const k = hex(key);
+    const owner = keyUser.get(k);
+    if (owner !== undefined && owner !== user)
+      fail('A key cannot be bound to two users');
+    const previous = userKey.get(user);
+    if (previous === undefined || previous === k) {
+      userKey.set(user, k);
+      keyUser.set(k, user);
+      return [];
+    }
+    userKey.set(user, k);
+    keyUser.set(k, user);
+    return revokeKey(previous, seq);
+  };
+
+  /** Ends every member grant held under `key`; returns envs where it could decrypt. */
+  const revokeKey = (key: string, seq: number): string[] => {
+    const affected: string[] = [];
+    for (const [env, byUser] of roles) {
+      for (const [user, changes] of byUser) {
+        const last = changes.at(-1);
+        if (last && last.role !== 'none' && hex(last.signingKey) === key) {
+          if (DECRYPTS[last.role].normal) affected.push(env);
+          setRole(env, user, { ...last, seq, role: 'none' });
+        }
+      }
+    }
+    return affected;
+  };
+
   const applyEpoch = (d: EpochDescriptor, seq: number) => {
     const history = epochs.get(d.env) ?? [];
     const previous = history.at(-1);
@@ -204,9 +249,13 @@ export function verifyKeyLog(
       fail('Epochs must advance by one');
     if ((d.epoch === 1) !== (d.history === null))
       fail('History wraps are required after epoch 1');
-    const wrapIndex = new Map<string, Uint8Array>();
-    addWraps(d.wraps, d.epoch, wrapIndex);
-    epochs.set(d.env, [...history, { ...d, seq, wrapIndex }]);
+    for (const k of [d.edk_id, d.intake_key, d.esk_key].map(hex)) {
+      if (usedEpochKeys.has(k)) fail('Epoch keys must be fresh');
+      usedEpochKeys.add(k);
+    }
+    const wraps = new Map<string, StampedWrap>();
+    addWraps(d.wraps, d.epoch, seq, wraps);
+    epochs.set(d.env, [...history, { ...d, seq, wraps_by_key: wraps }]);
   };
 
   const requireRotation = (
@@ -226,7 +275,7 @@ export function verifyKeyLog(
     for (const d of next) applyEpoch(d, seq);
   };
 
-  entries.forEach((entry, i) => {
+  list(entries, 'entries', Number.MAX_SAFE_INTEGER).forEach((entry, i) => {
     assertEntryShape(entry);
     const b = entry.body;
     if (
@@ -247,37 +296,26 @@ export function verifyKeyLog(
       const threshold = p.kind === 'owner_set' ? p.threshold : m.threshold;
       checkOwners(owners, threshold);
       // A key removed from the owner set also leaves the admin set.
-      const ownerKeys = new Set(owners.map(keyHex));
-      const removedOwners = new Set(
-        m.owners.map(keyHex).filter((k) => !ownerKeys.has(k))
-      );
+      const ownerKeys = new Set(owners.map((o) => hex(o.signing_key)));
+      const removedOwners = m.owners
+        .filter((o) => !ownerKeys.has(hex(o.signing_key)))
+        .map((o) => hex(o.signing_key));
       const admins =
         p.kind === 'admin_set'
           ? p.admins
-          : m.admins.filter((a) => !removedOwners.has(keyHex(a)));
-      const after = new Set([...owners, ...admins].map(keyHex));
-      const removed = new Set(
-        [...m.owners, ...m.admins].map(keyHex).filter((k) => !after.has(k))
-      );
+          : m.admins.filter((a) => !removedOwners.includes(hex(a.signing_key)));
       checkPartySet(admins);
-      for (const [env, byUser] of roles) {
-        for (const [user, changes] of byUser) {
-          const last = changes.at(-1);
-          if (
-            last &&
-            last.role !== 'none' &&
-            removed.has(toHex(last.signingKey))
-          ) {
-            setRole(env, user, {
-              seq: b.seq,
-              role: 'none',
-              signingKey: last.signingKey,
-            });
-          }
-        }
-      }
+      const after = new Set(
+        [...owners, ...admins].map((x) => hex(x.signing_key))
+      );
+      const removed = [
+        ...new Set([...m.owners, ...m.admins].map((x) => hex(x.signing_key))),
+      ].filter((k) => !after.has(k));
+      for (const party of [...owners, ...admins])
+        bind(party.user_id, party.signing_key, b.seq);
+      for (const k of removed) revokeKey(k, b.seq);
       requireRotation(
-        removed.size > 0 ? [...epochs.keys()] : [],
+        removed.length > 0 ? [...epochs.keys()] : [],
         p.next_epochs,
         b.seq
       );
@@ -286,27 +324,42 @@ export function verifyKeyLog(
       if (countSigners(b, entry.signatures, [...m.owners, ...m.admins]) < 1)
         fail('Missing admin signature');
       if (p.kind === 'member_role') {
-        const before = DECRYPTS[latestRole(p.env, p.user_id)?.role ?? 'none'];
+        const prior = latestRole(p.env, p.user_id);
+        const manager = [...m.owners, ...m.admins].find(
+          (x) => x.user_id === p.user_id
+        );
+        if (manager && !equalBytes(manager.signing_key, p.signing_key)) {
+          fail('Identity is bound to another key');
+        }
+        const affected = bind(p.user_id, p.signing_key, b.seq);
+        const before = prior ? DECRYPTS[prior.role] : DECRYPTS.none;
         const after = DECRYPTS[p.role];
         const loses =
           (before.normal && !after.normal) ||
           (before.sensitive && !after.sensitive);
+        const keyChanged =
+          prior !== null &&
+          before.normal &&
+          (!equalBytes(prior.signingKey, p.signing_key) ||
+            !equalBytes(prior.encryptionKey, p.encryption_key));
         setRole(p.env, p.user_id, {
           seq: b.seq,
           role: p.role,
           signingKey: p.signing_key,
+          encryptionKey: p.encryption_key,
         });
-        requireRotation(loses ? [p.env] : [], p.next_epochs, b.seq);
+        requireRotation(
+          [...affected, ...(loses || keyChanged ? [p.env] : [])],
+          p.next_epochs,
+          b.seq
+        );
       } else if (p.kind === 'epoch') {
         applyEpoch(p.descriptor, b.seq);
       } else {
-        const history = epochs.get(p.env);
-        const latest = history?.at(-1);
-        if (!history || !latest || latest.epoch !== p.epoch)
+        const latest = epochs.get(p.env)?.at(-1);
+        if (!latest || latest.epoch !== p.epoch)
           fail('Wraps must target the current epoch');
-        const wrapIndex = new Map(latest.wrapIndex);
-        addWraps(p.wraps, p.epoch, wrapIndex);
-        history[history.length - 1] = { ...latest, wrapIndex };
+        addWraps(p.wraps, p.epoch, b.seq, latest.wraps_by_key);
       }
     }
     headHash = entryHash(entry);
@@ -331,7 +384,31 @@ export function verifyKeyLog(
     managersAt: (seq) => lastAt(managers, seq) as Managers,
     roleAt: (env, userId, seq) =>
       lastAt(roles.get(env)?.get(userId) ?? [], seq),
-    epochAt: (env, seq = headSeq) => lastAt(epochs.get(env) ?? [], seq),
+    epochAt: (env, seq = headSeq) => {
+      const e = lastAt(epochs.get(env) ?? [], seq);
+      if (!e) return null;
+      const { wraps_by_key, ...descriptor } = e;
+      const wrapIndex = new Map(
+        [...wraps_by_key]
+          .filter(([, w]) => w.seq <= seq)
+          .map(([k, w]) => [k, w.digest] as const)
+      );
+      return { ...descriptor, wrapIndex };
+    },
     environments: () => [...epochs.keys()],
   };
+}
+
+function addWraps(
+  wraps: readonly WrapDigest[],
+  epoch: number,
+  seq: number,
+  into: Map<string, StampedWrap>
+) {
+  for (const w of wraps) {
+    if (w.epoch !== epoch) fail('Wrap for another epoch');
+    const k = wrapKey(w);
+    if (into.has(k)) fail('Duplicate wrap');
+    into.set(k, { digest: w.digest, seq });
+  }
 }

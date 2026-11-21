@@ -37,14 +37,16 @@ const role = (
   next_epochs: next,
 });
 
-/** seq 1 epoch 1; 2 writer=writer; 3 env-admin=admin; 4 writer=viewer; 5 epoch 2. */
-function log() {
+/** seq 1 epoch 1; 2 writer=writer; 3 env-admin=admin; 4 writer=viewer; 5 epoch 2; 6 epoch 3 when `third`. */
+function log(third = false) {
   const l = new LogBuilder(makeGenesis([owner], 1));
   l.append({ kind: 'epoch', descriptor: descriptor('prod', 1) }, [owner]);
   l.append(role(writer, 'writer'), [owner]);
   l.append(role(envAdmin, 'admin'), [owner]);
   l.append(role(writer, 'viewer'), [owner]);
   l.append({ kind: 'epoch', descriptor: descriptor('prod', 2) }, [owner]);
+  if (third)
+    l.append({ kind: 'epoch', descriptor: descriptor('prod', 3) }, [owner]);
   return { l, state: verifyKeyLog(l.genesis, l.entries, l.pinned) };
 }
 
@@ -93,6 +95,7 @@ function reencrypt(
         writer_id: o.record.writer_id,
         signature: o.signature,
         plaintext_unchanged: true,
+        sensitivity_change: false,
       },
       ...extra,
     })
@@ -168,11 +171,11 @@ describe('historical record verification', () => {
 
 describe('re-encryption provenance', () => {
   it('accepts admin attestations through a chain of ancestors', () => {
-    const { l, state } = log();
+    const { l, state } = log(true);
     const original = signRecord(writer.pair.secretKey, rec(l));
     const first = reencrypt(l, envAdmin, original);
     expect(() => verifyRecord(first, state, ancestry(original))).not.toThrow();
-    const second = reencrypt(l, owner, first, { epoch: 3, auth_seq: 5 });
+    const second = reencrypt(l, owner, first, { auth_seq: 6 });
     expect(() =>
       verifyRecord(second, state, ancestry(original, first))
     ).not.toThrow();
@@ -213,7 +216,51 @@ describe('re-encryption provenance', () => {
         state,
         ancestry(original)
       )
+    ).toThrow(/epoch/);
+  });
+
+  it('allows a sensitivity change only as an explicit transition and preserves the type', () => {
+    const { l, state } = log();
+    const original = signRecord(writer.pair.secretKey, rec(l));
+    const sealed = (change: boolean, extra: Partial<VersionRecord> = {}) =>
+      reencrypt(l, envAdmin, original, {
+        sensitive: true,
+        cipher: 'hpke-esk',
+        source: {
+          record_hash: recordHash(original),
+          writer_id: 'writer',
+          signature: original.signature,
+          plaintext_unchanged: true,
+          sensitivity_change: change,
+        },
+        ...extra,
+      });
+    expect(() =>
+      verifyRecord(sealed(true), state, ancestry(original))
+    ).not.toThrow();
+    expect(() =>
+      verifyRecord(sealed(false), state, ancestry(original))
     ).toThrow(/mismatch/);
+    const retyped = reencrypt(l, envAdmin, original, { type: 'variable' });
+    expect(() => verifyRecord(retyped, state, ancestry(original))).toThrow(
+      /mismatch/
+    );
+  });
+});
+
+describe('continuous authority on append', () => {
+  it('rejects a record signed before a revoke-then-regrant with the same key', () => {
+    const l = new LogBuilder(makeGenesis([owner], 1));
+    l.append({ kind: 'epoch', descriptor: descriptor('prod', 1) }, [owner]);
+    l.append(role(writer, 'writer'), [owner]);
+    l.append(role(writer, 'viewer'), [owner]);
+    l.append(role(writer, 'writer'), [owner]);
+    const state = verifyKeyLog(l.genesis, l.entries, l.pinned);
+    const early = signRecord(writer.pair.secretKey, rec(l, { auth_seq: 2 }));
+    expect(() => verifyRecord(early, state)).not.toThrow();
+    expect(() => verifyAppend(early, state, null)).toThrow(/revoked/);
+    const late = signRecord(writer.pair.secretKey, rec(l, { auth_seq: 4 }));
+    expect(() => verifyAppend(late, state, null)).not.toThrow();
   });
 });
 
@@ -245,7 +292,7 @@ describe('append validation', () => {
       /extend/
     );
     expect(() => verifyAppend(next({ epoch: 1 }), state, head)).toThrow(
-      /current epoch/
+      /epoch/
     );
     expect(() =>
       verifyAppend(signRecord(writer.pair.secretKey, rec(l)), state, null)

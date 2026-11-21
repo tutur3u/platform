@@ -27,13 +27,15 @@ export type Cipher = (typeof CIPHERS)[number];
 /**
  * Re-encryption into a new epoch keeps the original record's hash and
  * signature, and an admin attests the plaintext is unchanged, so a consumer
- * verifies both signatures.
+ * verifies both signatures. `sensitivity_change` is true exactly when the
+ * re-encryption marks the variable sensitive or clears that flag.
  */
 export type ReencryptionSource = {
   readonly record_hash: Uint8Array;
   readonly writer_id: string;
   readonly signature: Uint8Array;
   readonly plaintext_unchanged: true;
+  readonly sensitivity_change: boolean;
 };
 
 /** One signed version of one variable. Tombstones carry no ciphertext. */
@@ -121,13 +123,20 @@ export function validateRecord(value: unknown): asserts value is VersionRecord {
   if (r.source !== null) {
     const s = record(
       r.source,
-      ['record_hash', 'writer_id', 'signature', 'plaintext_unchanged'],
+      [
+        'record_hash',
+        'writer_id',
+        'signature',
+        'plaintext_unchanged',
+        'sensitivity_change',
+      ],
       'source'
     );
     bytes(s.record_hash, 32, 'source');
     text(s.writer_id, 'source');
     bytes(s.signature, 64, 'source');
     if (s.plaintext_unchanged !== true) malformed('source');
+    bool(s.sensitivity_change, 'source');
     if (tombstone) invalid('A tombstone is not a re-encryption');
   }
 }
@@ -188,25 +197,24 @@ export function authorityAt(
   };
 }
 
-function verifyOne(signed: SignedRecord, state: KeyLogState): VersionRecord {
-  validateRecord(signed.record);
-  const r = signed.record;
+function verifyOne(signed: unknown, state: KeyLogState): VersionRecord {
+  const wrapper = record(signed, ['record', 'signature'], 'signed record');
+  validateRecord(wrapper.record);
+  const r = wrapper.record;
+  const signature = bytes(wrapper.signature, 64, 'signature');
   if (
     r.deployment !== state.deployment ||
     !equalBytes(r.vault_id, state.vaultId)
   )
     fail('Record for another vault');
-  bytes(signed.signature, 64, 'signature');
   const authority = authorityAt(state, r.writer_id, r.env, r.auth_seq);
   if (!authority?.canWrite || (r.source !== null && !authority.canAttest)) {
     fail('Writer not authorised at auth_seq');
   }
-  assertSignature(
-    authority.signingKey,
-    'record',
-    recordObject(r),
-    signed.signature
-  );
+  assertSignature(authority.signingKey, 'record', recordObject(r), signature);
+  if (state.epochAt(r.env, r.auth_seq)?.epoch !== r.epoch) {
+    fail('Record epoch is not the epoch in force at auth_seq');
+  }
   return r;
 }
 
@@ -233,7 +241,8 @@ export function verifyRecord(
       o.env !== current.env ||
       o.variable_id !== current.variable_id ||
       o.name !== current.name ||
-      o.sensitive !== current.sensitive ||
+      o.type !== current.type ||
+      (o.sensitive !== current.sensitive) !== source.sensitivity_change ||
       o.writer_id !== source.writer_id ||
       !equalBytes(original.signature, source.signature) ||
       o.epoch >= current.epoch ||
@@ -259,19 +268,25 @@ export function verifyAppend(
 ): void {
   verifyRecord(signed, state, ancestry);
   const r = signed.record;
-  const now = authorityAt(state, r.writer_id, r.env, state.headSeq);
-  if (
-    !now?.canWrite ||
-    !equalBytes(
-      now.signingKey,
-      authorityAt(state, r.writer_id, r.env, r.auth_seq)?.signingKey ??
-        new Uint8Array()
-    )
-  ) {
-    fail('Writer authority revoked since auth_seq');
+  // Authority must be continuous from auth_seq to the head with the same key,
+  // so a revoke-then-regrant cannot admit a record signed before revocation.
+  const signedWith = authorityAt(
+    state,
+    r.writer_id,
+    r.env,
+    r.auth_seq
+  )?.signingKey;
+  for (let seq = r.auth_seq; seq <= state.headSeq; seq++) {
+    const at = authorityAt(state, r.writer_id, r.env, seq);
+    if (
+      !at?.canWrite ||
+      (r.source !== null && !at.canAttest) ||
+      !signedWith ||
+      !equalBytes(at.signingKey, signedWith)
+    ) {
+      fail('Writer authority revoked since auth_seq');
+    }
   }
-  if (r.source !== null && !now.canAttest)
-    fail('Writer authority revoked since auth_seq');
   const epoch = state.epochAt(r.env);
   if (!epoch || epoch.epoch !== r.epoch)
     fail('Record must use the current epoch');

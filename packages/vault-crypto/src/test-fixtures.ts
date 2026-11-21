@@ -11,6 +11,8 @@ import {
   sortSignatures,
   vaultIdOf,
 } from './keylog';
+import { utf8 } from './bytes';
+import { sha256 } from './kdf';
 import {
   generateSigningKeyPair,
   type SigningKeyPair,
@@ -95,6 +97,10 @@ export class LogBuilder {
   }
 }
 
+const fresh = (env: string, n: number, label: string, length: number) =>
+  sha256(utf8(`${env}/${n}/${label}`)).slice(0, length);
+
+/** Epoch descriptors with distinct key material per environment and epoch. */
 export function descriptor(
   env: string,
   n: number,
@@ -103,9 +109,9 @@ export function descriptor(
   return {
     env,
     epoch: n,
-    edk_id: new Uint8Array(16).fill(n),
-    intake_key: new Uint8Array(32).fill(2),
-    esk_key: new Uint8Array(32).fill(3),
+    edk_id: fresh(env, n, 'edk', 16),
+    intake_key: fresh(env, n, 'intake', 32),
+    esk_key: fresh(env, n, 'esk', 32),
     pin_allowed: false,
     wraps: fps.map((f) => ({
       recipient_fp: new Uint8Array(32).fill(f),
@@ -117,8 +123,8 @@ export function descriptor(
       n === 1
         ? null
         : {
-            normal: new Uint8Array(32).fill(7),
-            sensitive: new Uint8Array(32).fill(8),
+            normal: fresh(env, n, 'hn', 32),
+            sensitive: fresh(env, n, 'hs', 32),
           },
   };
 }

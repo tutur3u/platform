@@ -9,6 +9,7 @@ export function malformed(what: string): never {
   throw new VaultCryptoError('unsupported_format', `Malformed ${what}`);
 }
 
+/** A plain data object whose own properties are exactly `keys`, all enumerable values. */
 export function record(
   value: unknown,
   keys: readonly string[],
@@ -22,12 +23,19 @@ export function record(
   ) {
     malformed(what);
   }
-  const actual = Object.keys(value);
+  const proto = Object.getPrototypeOf(value);
   if (
-    actual.length !== keys.length ||
-    !keys.every((k) => Object.hasOwn(value, k))
+    (proto !== Object.prototype && proto !== null) ||
+    Object.getOwnPropertySymbols(value).length > 0
   ) {
     malformed(what);
+  }
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const names = Object.keys(descriptors);
+  if (names.length !== keys.length || !keys.every((k) => names.includes(k)))
+    malformed(what);
+  for (const d of Object.values(descriptors)) {
+    if (!d.enumerable || !('value' in d)) malformed(what);
   }
   return value as Record<string, unknown>;
 }
@@ -77,7 +85,22 @@ export function oneOf<T extends string>(
   return value as T;
 }
 
+/** A dense plain array with no extra properties. */
 export function list(value: unknown, what: string, max = 1024): unknown[] {
-  if (!Array.isArray(value) || value.length > max) malformed(what);
+  if (
+    !Array.isArray(value) ||
+    Object.getPrototypeOf(value) !== Array.prototype ||
+    value.length > max
+  ) {
+    malformed(what);
+  }
+  if (
+    Object.getOwnPropertySymbols(value).length > 0 ||
+    Object.getOwnPropertyNames(value).length !== value.length + 1
+  ) {
+    malformed(what);
+  }
+  for (let i = 0; i < value.length; i++)
+    if (!Object.hasOwn(value, i)) malformed(what);
   return value;
 }

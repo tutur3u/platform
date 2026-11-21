@@ -28,6 +28,7 @@ export const PURPOSES = [
   'entry-hash',
   'snapshot-leaf',
   'attestation',
+  'edk-id',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];

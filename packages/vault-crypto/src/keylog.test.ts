@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { concatBytes, randomBytes } from './bytes';
 import { sha256 } from './kdf';
 import {
+  edkId,
   type EntryPayload,
   type EpochDescriptor,
   verifyKeyLog,
@@ -330,6 +331,145 @@ describe('RFC 9162 Merkle proofs', () => {
   it('hashes the empty tree as SHA-256 of nothing', () => {
     expect(Buffer.from(treeRoot([])).toString('hex')).toBe(
       'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+    );
+  });
+});
+
+describe('fresh keys, identity binding and wrap history', () => {
+  it('rejects an epoch that reuses earlier key material', () => {
+    const log = twoOwnerLog();
+    log.append(epoch('prod', 1), [carol]);
+    log.append(
+      {
+        kind: 'epoch',
+        descriptor: {
+          ...descriptor('prod', 2),
+          intake_key: descriptor('prod', 1).intake_key,
+        },
+      },
+      [carol]
+    );
+    expect(() => replay(log)).toThrow(/fresh/);
+    const esk = twoOwnerLog();
+    esk.append(epoch('prod', 1), [carol]);
+    esk.append(
+      {
+        kind: 'epoch',
+        descriptor: {
+          ...descriptor('prod', 2),
+          esk_key: descriptor('prod', 1).esk_key,
+        },
+      },
+      [carol]
+    );
+    expect(() => replay(esk)).toThrow(/fresh/);
+  });
+
+  it('requires rotation when a decrypting member key is replaced', () => {
+    const base = () => {
+      const log = twoOwnerLog();
+      log.append(epoch('prod', 1), [carol]);
+      log.append(member('prod', dave, 'reader'), [carol]);
+      return log;
+    };
+    const newEnc = base();
+    newEnc.append(
+      {
+        ...member('prod', dave, 'reader'),
+        encryption_key: new Uint8Array(32).fill(9),
+      } as EntryPayload,
+      [carol]
+    );
+    expect(() => replay(newEnc)).toThrow(/next epoch/);
+    const ok = base();
+    ok.append(
+      {
+        ...member('prod', dave, 'reader', [descriptor('prod', 2)]),
+        encryption_key: new Uint8Array(32).fill(9),
+      } as EntryPayload,
+      [carol]
+    );
+    expect(replay(ok).epochAt('prod')?.epoch).toBe(2);
+  });
+
+  it('binds one key per user across roles and revokes grants under a replaced key', () => {
+    const shadow = party('carol');
+    const log = twoOwnerLog();
+    log.append(member('prod', shadow, 'writer'), [carol]);
+    expect(() => replay(log)).toThrow(/another key/);
+    const memberOnly = twoOwnerLog();
+    memberOnly.append(member('prod', dave, 'writer'), [carol]);
+    memberOnly.append(member('dev', party('dave'), 'writer'), [carol]);
+    expect(replay(memberOnly).roleAt('prod', 'dave', 3)?.role).toBe('none');
+    const reused = twoOwnerLog();
+    reused.append(
+      {
+        ...member('prod', dave, 'writer'),
+        signing_key: carol.signing_key,
+      } as EntryPayload,
+      [carol]
+    );
+    expect(() => replay(reused)).toThrow(/two users/);
+  });
+
+  it('shows wrap additions only from their own sequence', () => {
+    const log = twoOwnerLog();
+    log.append(epoch('prod', 1), [carol]);
+    log.append(
+      {
+        kind: 'wrap_addition',
+        env: 'prod',
+        epoch: 1,
+        wraps: [
+          {
+            recipient_fp: new Uint8Array(32).fill(5),
+            key_kind: 'esk',
+            epoch: 1,
+            digest: new Uint8Array(32).fill(6),
+          },
+        ],
+      },
+      [carol]
+    );
+    const state = replay(log);
+    expect(state.epochAt('prod', 2)?.wrapIndex.size).toBe(1);
+    expect(state.epochAt('prod', 3)?.wrapIndex.size).toBe(2);
+  });
+
+  it('identifies an EDK by its signed identifier', () => {
+    const edk = randomBytes(32);
+    expect(edkId(edk)).toEqual(edkId(edk.slice()));
+    expect(edkId(edk)).not.toEqual(edkId(randomBytes(32)));
+  });
+});
+
+describe('wire shape hardening', () => {
+  it('rejects symbol, hidden and accessor properties and sparse lists', () => {
+    const log = twoOwnerLog();
+    const entry = log.entries[0]!;
+    const withSymbol = { ...entry, [Symbol('x')]: 1 };
+    expect(() => verifyKeyLog(log.genesis, [withSymbol], log.pinned)).toThrow(
+      /Malformed/
+    );
+    const hidden = { ...entry };
+    Object.defineProperty(hidden, 'extra', { value: 1, enumerable: false });
+    expect(() => verifyKeyLog(log.genesis, [hidden], log.pinned)).toThrow(
+      /Malformed/
+    );
+    const accessor = {
+      body: entry.body,
+      get signatures() {
+        return entry.signatures;
+      },
+    };
+    expect(() => verifyKeyLog(log.genesis, [accessor], log.pinned)).toThrow(
+      /Malformed/
+    );
+    const sparse = new Array(1);
+    expect(() => verifyKeyLog(log.genesis, sparse, log.pinned)).toThrow();
+    const sparseSigs = { ...entry, signatures: new Array(1) };
+    expect(() => verifyKeyLog(log.genesis, [sparseSigs], log.pinned)).toThrow(
+      /Malformed/
     );
   });
 });
