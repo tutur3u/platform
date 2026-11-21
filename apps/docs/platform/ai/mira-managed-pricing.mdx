@@ -19,17 +19,16 @@ invoice or entitlement path sells them. Runtime design is in
 | **At quota, managed keys charge overage.** Usage past the pooled quota is billed as metered overage instead of stopping. | Managed-key replies of every paying tenant. | Overage on; the tenant's daily and monthly spend caps and the durable stop fence remain the hard ceiling the tenant sets. | A tenant may pick throttle instead; a reached cap still sets the `cap` stop. |
 | **BYOK carries a small platform fee.** | Replies answered with the tenant's own OpenAI, Anthropic or Google key. | Fee per BYOK reply, metered with the other usage. | BYOK replies never draw down the managed reply quota. |
 
-Proposed amounts for the owner to confirm, metered in integer micro-USD per
-settled turn:
+Approved amounts, metered in integer micro-USD per settled turn:
 
-| Charge | Proposed rate | Micro-USD per unit |
+| Charge | Rate | Micro-USD per unit |
 | --- | --- | --- |
 | Managed overage | $8 per 1,000 weighted replies | 8,000 per weighted reply |
 | BYOK platform fee | $1 per 1,000 BYOK replies | 1,000 per BYOK reply |
 
-Until the owner confirms them, the runtime records the meters and the cost in
-micro-USD (`mira_usage_daily.cost_micro_usd` and `weighted_replies`) and
-bills nothing.
+Billing stays off until the catalog slice ships; until then the runtime
+records the meters and the cost in micro-USD
+(`mira_usage_daily.cost_micro_usd` and `weighted_replies`) and bills nothing.
 
 ## Plan shape
 
@@ -159,7 +158,9 @@ estimated in the [Mira cloud channels cost model](/platform/ai/mira-cloud-channe
 
 ## Open decisions
 
-1. Confirm the managed overage rate and the BYOK platform fee in
-   [decisions](#decisions).
+1. Price of personal-account mode for opted-in paying tenants, including the
+   per-account `SessionContainer` (about $8 per account per month on the
+   `basic` class); see
+   [personal opt-in](/platform/ai/mira-cloud-channels#personal-account-opt-in-paying-tenants).
 2. Seat definition with the billing owners and the `packages/payment-core`
    catalog shape for a workspace add-on.

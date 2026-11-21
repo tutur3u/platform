@@ -14,8 +14,9 @@ are in [Mira managed pricing](/platform/ai/mira-managed-pricing).
 Mira runs as a managed, multi-tenant product: each Tuturuuu workspace that
 enables Mira is a **tenant** with its own channels, persona, rules, people,
 memory, keys, budgets and logs. Tuturuuu's own Mira is tenant #1 and uses the
-same runtime as every paying tenant, with one documented exception (personal
-account connectors, see [per-channel decisions](#per-channel-decisions)).
+same runtime as every paying tenant, with one documented exception: its
+personal WhatsApp and Zalo sessions are hosted on the Mac desk host (see
+[decisions](#decisions)).
 
 ## Scope and default
 
@@ -31,21 +32,25 @@ account connectors, see [per-channel decisions](#per-channel-decisions)).
   allowlist) and the [Omni-channel Chat SDK](/platform/ai/omni-channel-chat-sdk)
   boundary. The cloud runtime replaces the apps/web webhook loop and the
   self-hosted watchers; it keeps their data contracts.
-- **Exceptions:** personal-account WhatsApp and Zalo automation is limited to
-  the root (internal) workspace and runs on the Mac desk host, never in the
-  cloud (see [decisions](#decisions)).
+- **Exceptions:** personal-account WhatsApp and Zalo automation runs only for
+  the root (internal) workspace on the Mac desk host, and for paying tenants
+  that opt in once the [personal opt-in](#personal-account-opt-in-paying-tenants)
+  slice ships (see [decisions](#decisions)).
 
 ## Decisions
 
 | Decision | Scope | Default | Exceptions |
 | --- | --- | --- | --- |
-| **Personal accounts stay on the Mac.** Mira's internal personal WhatsApp and Zalo accounts keep running on the Mac desk host. | Internal tenant personal sessions. The cloud runtime serves only official channels (Discord bot, WhatsApp Business Cloud, Zalo OA and Bot) for every tenant, including the internal one. | Host-side personal sessions get only the reduced registry projection, and that projection is off until the registry's personal-session setting is turned on. | None: no `SessionContainer` is deployed and the cloud connect route refuses `personal` mode. |
+| **Personal accounts stay on the Mac.** Mira's internal personal WhatsApp and Zalo accounts keep running on the Mac desk host. | Internal tenant personal sessions. The cloud runtime serves official channels (Discord bot, WhatsApp Business Cloud, Zalo OA and Bot) for every tenant, including the internal one, plus opted-in paying tenants' personal sessions (next row). | Host-side personal sessions get only the reduced registry projection, and that projection is off until the registry's personal-session setting is turned on. | No `SessionContainer` serves the internal tenant, and the cloud connect route refuses `personal` mode until the personal opt-in slice ships for paying tenants. |
+| **Paying tenants may opt in to personal-account mode.** A tenant can connect its own personal WhatsApp or Zalo account after an explicit, recorded acknowledgement of the terms-of-service and ban risk. | Personal WhatsApp and Zalo accounts of paying tenants, through the [personal opt-in](#personal-account-opt-in-paying-tenants) design. | Off. Nothing is enabled until the slice is built and independently reviewed; then a tenant stays off until a Mira manager opts in. | The Tuturuuu owner's per-tenant personal block overrides any opt-in, and the tenant cannot clear it. The internal tenant keeps its Mac-hosted sessions. |
 | **Meta and Zalo platform onboarding is deferred.** Tuturuuu is not onboarded as a Meta Tech Provider and has not completed Zalo OA developer verification. | WhatsApp Business Cloud (Embedded Signup) and Zalo OA connects for every tenant. | A well-formed connect answers `connect_unavailable` until a proof verifier is wired for its channel kind. The WhatsApp verifier and the Zalo OA path are not built until the onboarding is revisited, so a Zalo verifier that ships for Zalo Bot refuses `official` proofs with `invalid_proof`. | Discord (shared or bring-your-own bot) and Zalo Bot need no platform onboarding; their connects open when their proof verifiers ship. |
 
 Regression coverage: `packages/internal-api/src/mira-channels.test.ts` (personal
 connects are refused) and `apps/web/src/lib/mira-channels/service.test.ts`;
-the database already refuses `personal` channels outside the root workspace
-(`apps/database/supabase/tests/mira-channel-tenants.sql`).
+the database refuses `personal` channels outside the root workspace
+(`apps/database/supabase/tests/mira-channel-tenants.sql`). The personal opt-in
+slice keeps the refusal tests for tenants without current consent and adds its
+acceptance suite (migration step 7.5).
 
 ## Architecture
 
@@ -54,7 +59,7 @@ the database already refuses `personal` channels outside the root workspace
  Discord HTTP    ─┐
  WhatsApp Cloud  ─┼─► mira-tenant-signer | mira-fleet-signer (own routes) ─► mira-router ─► ConversationDO
  Zalo OA / Bot   ─┘   (signature, tenant lookup, rate limit)     (per conversation:
- Personal session ──► SessionContainer (internal tenant only) ─┘  ledger, order,
+ Personal session ──► SessionContainer (opted-in tenants) ─────┘  ledger, order,
                                                                    lock, reply)
                                                                        │
                      TenantDO (per workspace: config snapshot, ◄───────┤
@@ -83,7 +88,7 @@ and fetch.
 | `DiscordGatewayDO` | Durable Object | Holds one outbound Gateway WebSocket per Discord application (and per shard when sharded). Heartbeats, resumes and identifies inside Discord's session budget. Runs inside the signer domain that owns the application, which treats its authenticated session as native verification, and forwards `MESSAGE_CREATE` events for linked guilds and DMs to the router. |
 | `ConversationDO` | Durable Object, SQLite | One per tenant conversation. Replay ledger, ordering, burst coalescing, the per-conversation reply lock, rolling context, outbound send records and the owner-generation check before every send. Runs the responder from an alarm. |
 | `TenantDO` | Durable Object, SQLite | One per tenant workspace. Versioned config snapshot, spend and token ledger with reservations, per-person rate limits, quiet hours, the tenant and channel stop fences. |
-| `SessionContainer` | Cloudflare Container | Internal tenant only. Runs a personal-account library that needs a long-lived Node process. Forwards signed connector envelopes to its domain's signer and executes only sends the owner fence dispatches. |
+| `SessionContainer` | Cloudflare Container | Opted-in paying tenants only (see [personal opt-in](#personal-account-opt-in-paying-tenants)); the internal tenant's personal sessions stay on the Mac desk host. Runs a personal-account library that needs a long-lived Node process. Forwards signed connector envelopes to its domain's signer and executes only sends the owner fence dispatches. |
 | `mira-work` | Queue + consumer | Off-critical-path work: Tuturuuu chat mirror, People & memory writes, usage settlement to Postgres, media copy to Drive, people snapshot invalidation, metrics export. |
 
 ### Object identity and tenant isolation
@@ -245,12 +250,131 @@ process with one active listener per account.
 **Risk:** `zca-js` is unofficial automation and can trigger account locks or
 bans. Material; the owner decides for the internal desk.
 
-### Personal-account controls (internal tenant only)
+### Personal-account opt-in (paying tenants)
 
-Personal sessions run on the Mac desk host. The container controls below
-describe the cloud option that was not chosen and stay as its reference; the
-pacing, lease, sealed-session, reconnect and stop rules apply to the Mac host
-as written.
+Personal-account automation breaks WhatsApp's and Zalo's terms and can get the
+account locked or banned, so a paying tenant uses it only after an explicit,
+recorded opt-in. The design below is not built; the connect route and the
+database refuse `personal` channels outside the root workspace until it ships.
+
+- **Acknowledgement text:** `private.mira_personal_ack_versions` holds each
+  version's canonical text per locale with its SHA-256, unique on
+  `(version, locale)` with `locale` limited to `en` and `vi`. Text rows are
+  inserted only by an owner or migration session and stay unpublished.
+  `private.mira_personal_ack_publications` holds one row per published
+  version (version, actor, note, time), written only by the publish RPC. That
+  RPC needs the Mira operator permission, a required note and compare-and-swap
+  on the current version, refuses unless both locales exist, and runs the
+  propagation below. The current version is the one in the newest publish
+  row. Publishing halts every opted-in tenant's personal channels until a
+  manager accepts the new text. Both tables have no update or delete grants
+  and triggers reject update, delete and truncate, so a published text never
+  changes. The setup wizard shows the current text before any personal
+  connect; the accept RPC takes only the version and locale and computes the
+  hash itself, never accepting text or a hash from the client. It refuses any
+  version that is not current. Draft v1:
+  - EN: "Personal-account automation breaks WhatsApp's and Zalo's terms of
+    service. The account can be locked or banned permanently, and Tuturuuu
+    cannot restore it. Messages in connected personal chats are sent to the AI
+    provider Mira uses. You are responsible for telling your contacts that an
+    AI will read and reply to their messages. Only use an account you accept
+    the risk of losing."
+  - VI: "Việc tự động hóa tài khoản cá nhân vi phạm điều khoản dịch vụ của
+    WhatsApp và Zalo. Tài khoản có thể bị khóa hoặc cấm vĩnh viễn và Tuturuuu
+    không thể khôi phục tài khoản đó. Tin nhắn trong các cuộc trò chuyện cá
+    nhân đã kết nối sẽ được gửi đến nhà cung cấp AI mà Mira sử dụng. Bạn có
+    trách nhiệm thông báo cho những người liên hệ của bạn rằng AI sẽ đọc và trả
+    lời tin nhắn của họ. Chỉ sử dụng tài khoản mà bạn chấp nhận rủi ro bị mất."
+- **Personal state:** `private.mira_personal_state` holds one row per
+  workspace that ever opted in or was blocked: the personal block, the
+  personal generation and the time Mira was deleted, if it was. It has no
+  foreign key to workspaces or tenants and no delete path except the
+  retention purge below, so deleting and re-enabling Mira cannot reset it.
+- **Opt-in record:** `private.mira_personal_optins` holds one row per
+  acceptance or revocation: workspace, kind, actor and time, plus the
+  acknowledgement version, locale and server-computed SHA-256 for an
+  acceptance (null for a revocation; the actor is null for a server-written
+  one). It has no update or delete grants
+  and a trigger rejects update, delete and truncate. `ws_id` has no foreign
+  key to workspaces, so rows outlive the workspace as consent evidence. The
+  only delete path is the retention purge, run by an owner session that sets
+  a transaction-local purge flag. The trigger admits it only for a row whose
+  superseding row for the same workspace is past the audit retention period,
+  or that was created at or before the workspace's Mira deletion time in
+  `private.mira_personal_state` once that time is past the period, and never
+  for an existing workspace's newest row. A later deletion overwrites the
+  deletion time. The state row goes with the workspace's last opt-in row.
+  Only a Mira manager of a workspace with an active paid Mira entitlement,
+  whose session is at MFA
+  assurance level 2 verified within the last 15 minutes on the server, can
+  accept; a manager without enrolled MFA is refused. A Mira manager revokes
+  with an MFA assurance level 2 session, with no freshness window and no
+  entitlement; the revocation that deletion appends is written by the server.
+- **Consent is derived, not a stop reason:** a tenant has current consent
+  while its newest opt-in row is an acceptance of the current version, its
+  paid entitlement is active and Mira has not been deleted since that
+  acceptance. No tenant, operator or system stop reason stands in for
+  consent, so clearing a stop never resumes a channel without it.
+- **Personal block:** the Tuturuuu owner's per-tenant block, set or cleared
+  from the Admin operator view (Mira operator permission, a required note,
+  compare-and-swap, audit). It lives in `private.mira_personal_state`, not in
+  a stop reason and not in the `tenant` stop reason (kill switch). Neither a
+  new acceptance, a revocation, clearing any stop reason nor deleting and
+  re-enabling Mira clears it, and clearing it does not clear an abuse
+  suspension.
+- **Propagation:** accepting, revoking, setting or clearing the personal
+  block, deleting Mira and publishing a version bump the personal generation
+  in `private.mira_personal_state`, write first, push the new state
+  synchronously to `TenantDO` and confirm by readback. Publishing bumps the
+  generation of every workspace that has any opt-in row and pushes and
+  confirms only for tenants with Mira enabled; the rest load the state on
+  cold start. Accept and publish serialize on one lock
+  (accept holds it shared, publish exclusive), so an acceptance cannot slip
+  past a concurrent publish. Entitlement loss reaches the runtime through the
+  `billing` tenant stop (fence 2), and `TenantDO` also revalidates consent
+  against Postgres at least every five minutes, failing closed when it
+  cannot. Lease grant, lease renewal, every recall, every model call and
+  every send check consent and the personal block against that generation
+  and fail closed when the state is stale or unknown. Losing consent or
+  setting the block ends the session leases and stops the listener the way a
+  stop does, so no contact's message is taken in after the lapse.
+- **Default off, enforced in the database:** a trigger on every insert of a
+  `personal` channel outside the root workspace, and on any update that makes
+  one live or rebinds it (connection mode, workspace, a non-null account or
+  credentials, or clearing a stop), refuses the row unless the tenant has
+  current consent and no personal block. Any such change is checked even when
+  the same update also sets a stop. An update that changes nothing else and
+  only sets a stop, disables, marks the channel unbound or clears its account
+  or credentials to null is always allowed, so revocation and the personal
+  block can stop their own channels. The trigger takes `FOR SHARE` on the
+  workspace's `private.mira_personal_state` row before reading consent, and
+  the accept, revoke, block, publish and delete paths update that row (its
+  personal generation), so under READ COMMITTED the trigger waits for them
+  and under REPEATABLE READ or SERIALIZABLE it fails with `40001` instead of
+  reading stale consent. It replaces the root-only check constraint.
+- **Revocation:** commits at once and takes effect through derived consent.
+  A durable, idempotent purge with bounded retries then revokes the connector
+  keys, deletes the owning objects' auth-state rows and the wrapped per-tenant
+  data key, purges the sealed session material from the vault and, as a best
+  effort, logs the device out at the provider. The revoke readback reports the
+  purge status, and the purge counts as complete only when no restorable
+  session material remains.
+- **People registry:** personal sessions get only the reduced projection: no
+  memories, briefs, registry writes or Fleet operations, and only while the
+  registry's personal-session setting is on, which is off by default.
+- **Runtime:** a paying tenant's personal account runs in its own
+  `SessionContainer` under the controls below. It has no fallback host; the
+  Mac desk host serves only the internal tenant.
+- **Pricing:** personal mode is not part of either plan yet; its price and the
+  container cost are an open decision on the
+  [pricing page](/platform/ai/mira-managed-pricing#open-decisions).
+
+### Personal-account controls
+
+The internal tenant's personal sessions run on the Mac desk host; a paying
+tenant's opted-in sessions run in a `SessionContainer`. The container rules
+below apply to those containers, and the pacing, lease, sealed-session,
+reconnect and stop rules apply to both hosts.
 
 - One container per personal account, `max_instances = 1`, with a session
   lease in the tenant object so two runtimes never listen at once.
@@ -264,9 +388,9 @@ as written.
   with it; only that tenant's session object unwraps it, in instance memory.
   The vault holds the long-lived root credential. Restarts are counted,
   because frequent re-logins from new addresses raise ban risk; above a daily
-  restart budget the channel stops and pages the owner. Falling back to the M4
-  receiver means revoking the container's session lease first and granting
-  the lease to the M4, so two listeners never run on one account.
+  restart budget the channel stops and pages the tenant's Mira managers and the
+  Tuturuuu operator. Paying-tenant containers have no fallback host; the
+  internal tenant's sessions run only on the Mac desk host.
 - Human-like pacing: per-conversation send spacing, a per-day outbound cap,
   no unsolicited first messages, no bulk sends, quiet hours honored.
 - The Zalo cookie session is sealed in the vault and written back by
@@ -275,8 +399,7 @@ as written.
   working memory.
 - Reconnect with capped exponential backoff and a daily reconnect budget;
   repeated login failure or a lock signal stops the channel and pages the
-  owner instead of retrying.
-- The M4 receiver remains the rollback path until the owner retires it.
+  tenant's Mira managers and the Tuturuuu operator instead of retrying.
 
 ## Responder pipeline
 
@@ -386,6 +509,9 @@ The tenant object keeps a ledger per day and per billing month:
      billing stop. Each change bumps the tenant generation.
   3. Channel: the channel's persisted reason set and generation, with the
      same ownership rule.
+  4. Personal channels also need current consent and no personal block,
+     checked at the same points (see
+     [personal opt-in](#personal-account-opt-in-paying-tenants)).
 - A stop ends resident work as well as new work: the gateway object drops the
   tenant's guilds from forwarding (or closes the socket for a stopped
   bring-your-own bot or a global stop), the session container stops its
@@ -643,6 +769,10 @@ argument against the stored channel binding.
 | `mira_usage_daily` | settled messages, tokens (input, cached, output), cost, per tenant, channel, model and day |
 | `mira_usage_receipts` | settlement receipt ids, so Queue redelivery never counts usage twice; pruned on Cloudflare after a retention window longer than Queue redelivery |
 | `mira_audit_events` | append-only config, connect, stop, resume, export and delete events |
+| `mira_personal_ack_versions` | personal opt-in acknowledgement texts per version and locale with their SHA-256 (insert-only; see [personal opt-in](#personal-account-opt-in-paying-tenants)) |
+| `mira_personal_ack_publications` | one insert-only row per published acknowledgement version; the newest is current |
+| `mira_personal_optins` | append-only personal opt-in acceptances and revocations |
+| `mira_personal_state` | per-workspace personal block, personal generation and Mira deletion time; survives deleting Mira |
 
 Every Admin save increments the tenant `config_version` and pushes the new
 snapshot to the tenant object; the object also pulls on cold start and when
@@ -680,7 +810,8 @@ messages or API responses; provider and AI SDK errors are redacted before
 - **Operator view** (`/admin/<wsId>/mira/channels` and
   `/mira/channels/<channel>` in apps/infrastructure, under Fleet and
   Mastermind): every tenant's health, latency, cost, errors and abuse signals,
-  operator suspension and the global stop. It shows no message content;
+  operator suspension, the personal block, acknowledgement version publishing
+  and the global stop. It shows no message content;
   uncertain-send and error records show metadata only. Content access needs
   an audited break-glass step.
 - **Tenant API:** typed routes under `apps/web/src/app/api/v1/workspaces/[wsId]/mira/**`
@@ -693,7 +824,8 @@ messages or API responses; provider and AI SDK errors are redacted before
   `apps/infrastructure/src/app/api/v1/infrastructure/mira/**`, gated by
   root-workspace admin plus a dedicated Mira operator permission in the route
   (the same pattern as the abuse-intelligence routes). It serves cross-tenant
-  health and cost reads, operator suspension and the global stop. It never
+  health and cost reads, operator suspension, the personal block,
+  acknowledgement version publishing and the global stop. It never
   reuses tenant routes, so tenant membership checks stay unwidened.
 - **Writes on both surfaces:** kill switches write first and confirm by readback;
   the UI never shows optimistic success. Secret fields are write-only and show
@@ -825,7 +957,7 @@ under 5) and about 60 replies a day. Monthly: about 2,500 triaged messages and
 | Triaged messages | 2,500, about $0.25 | 25,000, about $2.50 |
 | Workers, Durable Objects, Queues, Analytics Engine | under $0.10 | about $1 |
 | Discord gateway object | about $4 | about $4 |
-| Personal-session containers (not deployed; personal sessions stay on the Mac) | $0 | $0 |
+| Personal-session containers (the internal tenant's sessions stay on the Mac; opted-in paying tenants add about $8 per account per month on the `basic` class; their price is an open decision) | $0 | $0 |
 | Total | about $18 | about $144 |
 | Workers Paid base | $5, shared with other Workers | $5 |
 
@@ -851,7 +983,7 @@ with the first deployable slice.
 | One tenant damages the shared Meta app or shared Discord bot | Templates only from tenant-approved, Meta-approved templates triggered by a person; a tenant is auto-suspended (operator reason) when Meta lowers its quality rating or flags it; caps and rate limits apply to BYOK and triage as well |
 | Personal-session third parties | Container drops conversations outside the allowlist before forwarding; sends require a signed single-use command from the owning conversation object; container egress limited to the provider and its signer |
 | Double send across runtimes | One owner generation per `(channel, account)`, enforced at Web admission and at the final send or edit boundary (see [migration](#migration)), at-most-once outbound |
-| Personal-account ban | Internal tenant only, pacing and caps, session lease, stop on lock signal |
+| Personal-account ban | Internal tenant and explicitly opted-in paying tenants only, recorded risk acknowledgement, owner personal block per tenant, pacing and caps, session lease, stop on lock signal |
 
 ## Data lifecycle
 
@@ -859,20 +991,40 @@ with the first deployable slice.
   turns and 30 days; the Tuturuuu chat mirror follows workspace retention.
 - **Export:** a tenant exports its config, rules, usage and mirrored
   conversations as a workspace data export.
-- **Delete:** disabling Mira stops all channels; deleting it revokes the
-  service principal and vault grant, purges the vault variables named by the
-  channel secret references before the tenant rows are removed, deletes tenant and conversation objects'
-  storage, purges mirror rows and asks People & memory to apply its deletion
-  fences. A per-person delete request propagates through the same fences and
-  purges, within 24 hours, conversation-object context (indexed by a keyed
-  sender hash), shadow drafts, uncertain-send records and mirror rows.
-  Provider-side retention is outside Tuturuuu's control and is stated in the
-  tenant data processing terms.
+- **Delete:** disabling Mira stops all channels. For a workspace with a
+  personal state or opt-in row, deleting Mira first upserts the state row,
+  appends a server-written personal revocation, records the deletion time,
+  bumps the personal generation and runs the personal revocation purge.
+  Deleting the workspace itself cascades to the tenant rows, so a
+  `BEFORE DELETE` row trigger on `mira_tenants` covers it. It makes the same
+  database writes (state upsert, revocation row, deletion time, generation
+  bump) and, in the same transaction, writes a durable purge job that
+  captures the channel ids, secret-reference names and session objects
+  before the cascade removes them. A bounded, idempotent Cloudflare consumer
+  runs that job and records its purge status. The runtime stops when the
+  job's push lands or at its next consent revalidation, within five minutes.
+  The trigger is a no-op when the Mira delete path set its transaction-local
+  deletion flag, so a Mira delete appends exactly one revocation. The purge
+  job runs for every deleted tenant, also covering official-channel vault
+  secrets. Deletion then revokes
+  the service principal and vault grant, purges the vault variables named by
+  the channel secret references before the tenant rows are removed (on the
+  workspace-delete path, from the names the purge job captured), deletes
+  tenant and conversation objects' storage, purges mirror rows and asks People
+  & memory to apply its deletion fences. A per-person delete request
+  propagates through the same fences and purges, within 24 hours,
+  conversation-object context (indexed by a keyed sender hash), shadow
+  drafts, uncertain-send records and mirror rows. Provider-side retention is
+  outside Tuturuuu's control and is stated in the tenant data processing
+  terms.
 - **Model providers:** managed keys use each provider's zero-retention or
   no-training data settings where offered; the BYOK screen states that the
   tenant's own provider agreement applies.
 - **Audit:** every config change, connect, stop, resume, export and delete is
-  in `mira_audit_events`.
+  in `mira_audit_events`, and so is every personal opt-in, revocation,
+  version publish and personal block change. `private.mira_personal_optins`
+  rows are consent evidence and survive deleting Mira for the audit retention
+  period.
 
 ## Migration
 
@@ -940,6 +1092,33 @@ with the first deployable slice.
    and WhatsApp follow once their platform onboarding completes.
 6. **Paying tenants:** open after the internal tenant has run each official
    route for a full week within latency and error targets.
+7. **Personal opt-in (paying tenants):** a separate slice, built in this
+   order and enabled only after independent security and privacy review:
+   1. Database: the acknowledgement-version, publication, opt-in and
+      personal-state tables with their reject and retention-purge triggers,
+      the accept, revoke and publish RPCs, the per-tenant personal block, the
+      deletion path's revocation, and the bind trigger that replaces the
+      root-only `personal` constraint.
+   2. APIs: tenant opt-in, revoke and status routes; the operator
+      personal-block and version-publish routes; the connect route accepting
+      `personal` for a tenant with current consent (and their API contract
+      rows); all with readback and audit.
+   3. Setup wizard: the versioned EN and VI acknowledgement and the
+      personal connect flow.
+   4. Runtime: per-account `SessionContainer` hosting with the
+      personal-account controls and the reduced registry projection.
+   5. Acceptance: opt-in; re-acknowledgement on a version bump; revocation
+      with no restorable session material left; revocation and the personal
+      block stopping their own channels; the personal block versus opt-in and
+      stop clears; deleting and re-enabling Mira, and deleting the workspace,
+      keeping the personal block, purging session material and requiring a
+      fresh acceptance; the retention purge keeping consent evidence newer than
+      a past deletion; bind racing revoke; publish racing
+      accept; halt on stale state and resume only on current consent; refusal
+      at a stale or missing AAL2; rejected update, delete and truncate on the
+      acknowledgement, publication and opt-in tables; a client-supplied hash
+      ignored; accepting a version that is not current refused; and refusal
+      of every registry write and Fleet operation from personal sessions.
 
 The M4 receivers need one change for cutover: obtain a one-shot dispatch
 token from the owner fence for their `(channel, account)`, redeem it online
@@ -948,6 +1127,6 @@ report each result back to the fence.
 
 ## Open decisions
 
-1. Personal-account mode for paying tenants: recommended never. The notice
-   given to contacts in allowlisted personal conversations whose messages
-   reach LLM providers is decided with it.
+Owner decisions are recorded in [decisions](#decisions). The price of
+personal-account mode is open on the
+[pricing page](/platform/ai/mira-managed-pricing#open-decisions).
