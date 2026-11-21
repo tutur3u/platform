@@ -88,7 +88,9 @@ it('keeps the self tile in the grid unless the caller hides it', () => {
 it('sizes every tile to the measured stage, including the self tile', () => {
   const resize = stubStageSize(1000, 600);
   const { container } = renderRoom({ selfInGrid: true });
-  expect(screen.getByTestId('me:camera').className).not.toContain('w-(--tile-w)');
+  expect(screen.getByTestId('me:camera').className).not.toContain(
+    'w-(--tile-w)'
+  );
   resize();
   expect(screen.getByTestId('me:camera').className).toContain('w-(--tile-w)');
   expect(screen.getByTestId('you:camera').className).toContain('w-(--tile-w)');

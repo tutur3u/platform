@@ -1,12 +1,8 @@
 import { expect, it } from 'vitest';
 import { fitTileGrid } from './stage-grid-fit';
 
-const fit = (
-  count: number,
-  width: number,
-  height: number,
-  minWidth = 0
-) => fitTileGrid({ count, width, height, gap: 12, minWidth });
+const fit = (count: number, width: number, height: number, minWidth = 0) =>
+  fitTileGrid({ count, width, height, gap: 12, minWidth });
 
 it('fills a wide stage with one large tile for a single participant', () => {
   expect(fit(1, 1600, 800)).toMatchObject({

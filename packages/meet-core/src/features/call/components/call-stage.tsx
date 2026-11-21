@@ -428,10 +428,7 @@ export function CallStage({
                 compact ? 'gap-2' : 'gap-3',
                 fit.scroll ? 'content-start' : 'content-center'
               )
-            : cn(
-                'grid gap-3',
-                compact && 'flex gap-2 lg:flex-col'
-              ),
+            : cn('grid gap-3', compact && 'flex gap-2 lg:flex-col'),
           !compact &&
             spotlight &&
             (sidebar
