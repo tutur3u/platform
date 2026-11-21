@@ -2,8 +2,11 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(63);
+-- Accounts are created by the auth server role, which seeds platform roles through create_user_profile.
+set local role supabase_auth_admin;
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
+reset role;
 insert into public.users (id) values ('00000000-0000-4000-8000-000000009901') on conflict do nothing;
 insert into auth.mfa_factors (id,user_id,factor_type,status,created_at,updated_at) values ('00000000-0000-4000-8000-000000009904','00000000-0000-4000-8000-000000009901','totp','verified',to_timestamp(1),to_timestamp(1));
 insert into auth.sessions(id,user_id,factor_id,aal,created_at) values ('00000000-0000-4000-8000-000000009903','00000000-0000-4000-8000-000000009901','00000000-0000-4000-8000-000000009904','aal2',to_timestamp(1));
