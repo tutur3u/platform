@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Smartphone,
   Users,
+  Wallet,
   Zap,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -57,10 +58,12 @@ function href(wsId: string, path = '') {
 
 function getTopLevelNavigation({
   canManageInternalAccounts,
+  canViewCosts,
   t,
   wsId,
 }: {
   canManageInternalAccounts: boolean;
+  canViewCosts: boolean;
   t: Translator;
   wsId: string;
 }): (NavLink | null)[] {
@@ -111,6 +114,16 @@ function getTopLevelNavigation({
           icon: icon(Activity),
           title: t('infrastructure-tabs.monitoring_observability'),
         },
+        // Costs needs finance access as well, like its page and API.
+        ...(canViewCosts
+          ? [
+              {
+                href: href(wsId, '/costs'),
+                icon: icon(Wallet),
+                title: t('infrastructure-tabs.costs'),
+              },
+            ]
+          : []),
         {
           href: href(wsId, '/monitoring/resources'),
           icon: icon(Server),
@@ -416,14 +429,17 @@ function getTopLevelNavigation({
 
 export async function getNavigationLinks({
   canManageInternalAccounts = false,
+  canViewCosts = false,
   personalOrWsId,
 }: {
   canManageInternalAccounts?: boolean;
+  canViewCosts?: boolean;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
   return getTopLevelNavigation({
     canManageInternalAccounts,
+    canViewCosts,
     t,
     wsId: personalOrWsId,
   });

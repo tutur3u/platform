@@ -143,6 +143,7 @@ vi.mock('./structure', () => ({
 function allowInfrastructurePermission() {
   return {
     containsPermission: vi.fn(() => true),
+    membershipType: 'MEMBER',
     withoutPermission: vi.fn(() => false),
   };
 }
@@ -247,6 +248,7 @@ describe('Infrastructure dashboard layout', () => {
       expect(screen.getByText('dashboard child')).toBeInTheDocument();
       expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
         canManageInternalAccounts: true,
+        canViewCosts: true,
         personalOrWsId: 'internal',
       });
     }

@@ -112,6 +112,10 @@ export default async function Layout({ children, params }: LayoutProps) {
             canManageInternalAccounts: permissions.containsPermission(
               'manage_internal_accounts' as PermissionId
             ),
+            canViewCosts:
+              permissions.membershipType === 'MEMBER' &&
+              permissions.containsPermission('view_infrastructure') &&
+              permissions.containsPermission('view_finance_stats'),
             personalOrWsId: workspaceSlug,
           })}
           notificationPopover={<NotificationPopover userId={user.id} />}

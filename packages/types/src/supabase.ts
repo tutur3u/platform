@@ -26424,6 +26424,14 @@ export type Database = {
           provider: string;
         }[];
       };
+      get_provider_cost_complete_days: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          account_id: string;
+          days: string[];
+          provider: string;
+        }[];
+      };
       get_provider_cost_daily: {
         Args: { p_from: string; p_to: string };
         Returns: {
@@ -26467,6 +26475,18 @@ export type Database = {
         Returns: string;
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_root_provider_invoice_postings: {
+        Args: { p_from: string };
+        Returns: {
+          account_id: string;
+          amount_usd: number;
+          app_id: string;
+          issued_on: string;
+          provider: string;
+          reference: string;
+          transaction_id: string;
+        }[];
+      };
       get_task_board_list_task_counts: {
         Args: { p_board_id: string };
         Returns: {

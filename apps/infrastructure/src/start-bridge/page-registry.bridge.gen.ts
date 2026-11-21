@@ -20,6 +20,7 @@ export const pages = [
   { pattern: "/[wsId]/changelog/[id]", file: "src/app/[locale]/(dashboard)/[wsId]/changelog/[id]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/changelog/new", file: "src/app/[locale]/(dashboard)/[wsId]/changelog/new/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/changelog", file: "src/app/[locale]/(dashboard)/[wsId]/changelog/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/costs", file: "src/app/[locale]/(dashboard)/[wsId]/costs/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/cron/whitelist/domains", file: "src/app/[locale]/(dashboard)/[wsId]/cron/whitelist/domains/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/deployments", file: "src/app/[locale]/(dashboard)/[wsId]/deployments/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/desktop-deployment", file: "src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx", defaults: { "locale": "en" } },

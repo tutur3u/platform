@@ -16,6 +16,7 @@
 {"file":"[locale]/(dashboard)/[wsId]/changelog/[id]/page.tsx","path":"/[wsId]/changelog/[id]","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/changelog/new/page.tsx","path":"/[wsId]/changelog/new","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/changelog/page.tsx","path":"/[wsId]/changelog","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"[locale]/(dashboard)/[wsId]/costs/page.tsx","path":"/[wsId]/costs","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/cron/whitelist/domains/page.tsx","path":"/[wsId]/cron/whitelist/domains","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/deployments/page.tsx","path":"/[wsId]/deployments","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx","path":"/[wsId]/desktop-deployment","methods":[{"method":"GET","classification":"ADMIN"}]}
@@ -130,6 +131,7 @@
 {"file":"api/v1/infrastructure/class-packages/route.ts","path":"/api/v1/infrastructure/class-packages","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/class-scores/route.ts","path":"/api/v1/infrastructure/class-scores","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/classes/route.ts","path":"/api/v1/infrastructure/classes","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/costs/route.ts","path":"/api/v1/infrastructure/costs","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/coupons/route.ts","path":"/api/v1/infrastructure/coupons","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts","path":"/api/v1/infrastructure/cron/whitelist/domain/[domain]","methods":[{"method":"PUT","classification":"ADMIN"},{"method":"DELETE","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/cron/whitelist/domains/route.ts","path":"/api/v1/infrastructure/cron/whitelist/domains","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}

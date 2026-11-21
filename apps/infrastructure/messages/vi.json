@@ -9243,6 +9243,7 @@
     "backups": "Sao lưu",
     "blocked_ips": "IP bị chặn",
     "changelog": "Nhật ký thay đổi",
+    "costs": "Chi phí",
     "desktop_deployment": "Triển khai máy tính",
     "devboxes": "Devbox",
     "email_audit": "Nhật ký email",
@@ -24444,6 +24445,75 @@
         "title": "Tiếp tục {subject}?",
         "description": "Các lượt triển khai đang chờ có thể nhận làn trở lại."
       }
+    }
+  },
+  "infrastructure-costs": {
+    "anomalies": {
+      "daily_spike": "{provider} tính phí {billed} vào {day}, so với mức thường là {baseline} mỗi ngày.",
+      "month_growth": "{provider} dự kiến đạt {forecast} tháng này, tăng từ {previous} tháng trước.",
+      "title": "Bất thường"
+    },
+    "breakdown": {
+      "app": "Ứng dụng",
+      "empty": "Không có khoản phí nào trong kỳ này.",
+      "environment": "Môi trường",
+      "forecast": "Dự báo",
+      "partial": "một phần",
+      "previous_month": "Tháng trước",
+      "provider": "Nhà cung cấp",
+      "title": "Phân bổ chi phí",
+      "to_date": "Từ đầu tháng"
+    },
+    "coverage": {
+      "collected": "Đã thu thập {days, plural, other {# ngày}}, lần cuối {when}",
+      "exhausted": "{days, plural, other {# ngày}} vượt ngân sách",
+      "missing": "Chưa thu thập: {providers}",
+      "pending": "Đã bắt đầu thu thập",
+      "title": "Độ phủ dữ liệu"
+    },
+    "empty": {
+      "description": "Bật trình thu thập chi phí nhà cung cấp hoặc nhập hóa đơn nhà cung cấp đã duyệt để xem chi phí tại đây.",
+      "title": "Chưa có dữ liệu chi phí"
+    },
+    "invoices": {
+      "amount": "Số tiền",
+      "app": "Ứng dụng",
+      "empty": "Không có hóa đơn nhà cung cấp đã duyệt trong kỳ này.",
+      "finance": "Tài chính",
+      "issued": "Ngày phát hành",
+      "open_transaction": "Mở giao dịch",
+      "provider": "Nhà cung cấp",
+      "title": "Hóa đơn nhà cung cấp",
+      "unposted": "Chưa ghi sổ"
+    },
+    "load_error": "Không thể tải chi phí.",
+    "recorded": {
+      "amount": "Số tiền",
+      "app": "Ứng dụng",
+      "month": "Tháng",
+      "provider": "Nhà cung cấp",
+      "service": "Dịch vụ",
+      "title": "Chi phí nhà cung cấp đã ghi nhận"
+    },
+    "retry": "Thử lại",
+    "section_unavailable": "Phần này hiện không khả dụng.",
+    "summary": {
+      "basis": "Khoản phí do nhà cung cấp báo cáo cho {month}, tạm tính cho đến khi đối soát hóa đơn.",
+      "forecast": "Dự báo tháng này",
+      "incomplete": "Các tổng đánh dấu một phần chỉ tính các ngày đã thu thập.",
+      "label": "Tóm tắt chi phí",
+      "not_measured": "Chưa đo",
+      "partial": "(một phần)",
+      "per_active_user": "Chi phí mỗi người dùng hoạt động hằng tháng (ước tính)",
+      "previous_month": "Tháng trước",
+      "to_date": "Từ đầu tháng",
+      "verification_unavailable": "Không thể xác minh độ phủ thu thập, nên các tổng chưa được đo."
+    },
+    "title": "Chi phí",
+    "trend": {
+      "empty": "Chưa thu thập khoản phí hằng ngày nào.",
+      "label": "Chi phí đã tính hằng ngày theo nhà cung cấp, đơn vị đô la Mỹ",
+      "title": "Chi phí hằng ngày theo nhà cung cấp"
     }
   }
 }

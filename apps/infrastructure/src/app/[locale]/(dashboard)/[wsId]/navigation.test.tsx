@@ -119,6 +119,17 @@ describe('Infrastructure navigation', () => {
     );
   });
 
+  it('only shows costs to viewers with finance access', async () => {
+    const { getNavigationLinks } = await import('./navigation');
+    const hrefs = async (canViewCosts: boolean) =>
+      flattenLinks(
+        await getNavigationLinks({ canViewCosts, personalOrWsId: 'internal' })
+      ).map((link) => link.href);
+
+    expect(await hrefs(true)).toContain('/internal/costs');
+    expect(await hrefs(false)).not.toContain('/internal/costs');
+  });
+
   it('uses translation keys for navigation titles and card descriptions', async () => {
     const { getInfrastructureNavigationCards, getNavigationLinks } =
       await import('./navigation');

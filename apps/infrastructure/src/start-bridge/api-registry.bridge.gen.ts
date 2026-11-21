@@ -73,6 +73,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/infrastructure/class-packages", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/class-packages/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/class-scores", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/class-scores/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/classes", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/classes/route'), ["GET"]) },
+  { pattern: "/api/v1/infrastructure/costs", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/costs/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/coupons", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/coupons/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/cron/whitelist/domain/[domain]", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/cron/whitelist/domain/[domain]/route'), ["PUT","DELETE"]) },
   { pattern: "/api/v1/infrastructure/cron/whitelist/domains", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/cron/whitelist/domains/route'), ["GET","POST"]) },

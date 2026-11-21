@@ -5,7 +5,7 @@ route pattern and an exact uppercase HTTP method. Every unmatched pair is ADMIN.
 Callers must resolve the canonical route before classification; this function is
 not a URL parser or an authorization middleware.
 
-`route-inventory.jsonl` enumerates 323 actual page/route source files and 434
+`route-inventory.jsonl` enumerates 325 actual page/route source files and 436
 method entries using the existing Start bridge classifier and exported-method
 parser. The enumeration test compares APIs with the emitted bridge registry and
 checks that every exception resolves to a source handler. There are five

@@ -146,6 +146,61 @@ source exist. A future source with paginated, billed requests (AWS Cost
 Explorer bills each page) also caps its pages per day and marks the day
 exhausted when the cap is reached.
 
+## Admin Costs page
+
+Admin → Monitoring → Costs (`/[wsId]/costs` in `apps/infrastructure`) needs
+both `view_infrastructure` and `view_finance_stats`, the same pair as the
+invoice summary on Observability. Its data comes from
+`GET /api/v1/infrastructure/costs`; each source loads independently, so an
+unavailable source shows as unavailable instead of as zero.
+
+| Section | Source and rule |
+| --- | --- |
+| Summary | Billed month to date, forecast and last month for the UTC month of the request; spend per monthly active user (an estimate, below) |
+| Anomalies | A provider's last complete day billed above 3× the median of its collected days among the previous 14 (and at least $1), or a forecast above 1.5× last month (and at least $5 more) when last month and this month so far are fully collected |
+| Daily spend | Billed charges per provider per day |
+| Breakdown | Last month, month to date and forecast per provider, app and environment |
+| Provider invoices | Reviewed root-workspace invoices from `private.get_root_provider_invoice_postings`, each linked to the Finance transaction it posted to, or marked not posted |
+| Recorded provider costs | Run-level costs apps record in `private.external_provider_costs` |
+| Data coverage | Collected days, budget-exhausted days and inventory providers without a collector |
+
+One request timestamp fixes the reporting month (the UTC month containing
+it) and the data cutoff (the last complete UTC day), so on the first of a
+month the page forecasts the new month from zero elapsed days.
+`private.get_provider_cost_complete_days` lists completed collection days
+per account. A provider-day counts as complete only when every account the
+provider has collected completed it; a complete day without charge rows is a
+measured zero, and any other day is missing, not zero. Daily rows are read
+in pages of 1,000; more than 20,000 rows marks the source unavailable rather
+than showing a truncated total.
+
+Each summary total is checked against completed days for its own period:
+month to date, last month, and the forecast's inputs (month to date, the
+run-rate window, and any last-month amount it carries forward). A total
+with an uncollected day is labeled partial. With no verified collection at
+all, for example when only invoices exist, the totals read "Not measured"
+instead of $0.
+
+Services are classified once per provider and service, so every breakdown
+tab rolls up the same forecast. A service charged on at least three of the
+last 14 days is variable: its average over the collected days of the last
+seven is extrapolated to the rest of the month, using charges from complete
+days only, and the forecast is marked partial when any of those seven days
+was not collected. Other services are fixed charges (plan fees, seats),
+projected per service, app and environment: once charged this month they
+keep their month-to-date amount, even when a credit nets it to zero, and
+before that they use last month's amount. A closed month forecasts its actuals. The rules
+live in `apps/infrastructure/src/lib/admin-costs/trends.ts`.
+
+Spend per monthly active user divides collected billed spend over the last
+30 complete UTC days by `get_mau_count`, which counts users active in the 30
+days up to the request, including the current day. The windows differ by
+that day and only collected providers count, so the page labels it an
+estimate.
+
+The Costs navigation item appears only to root members with both
+permissions, matching the page and API.
+
 ## Unit economics denominators
 
 | Unit | Denominator source |

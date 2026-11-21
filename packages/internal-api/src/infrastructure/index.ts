@@ -3,6 +3,7 @@ export * from './ai';
 export * from './apps';
 export * from './auth-recovery';
 export * from './blocked-ips';
+export * from './costs';
 export * from './cron';
 export * from './deployments';
 export * from './desktop';

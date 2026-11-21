@@ -67,6 +67,7 @@ export const appApiPatterns = [
   "/api/v1/infrastructure/class-packages",
   "/api/v1/infrastructure/class-scores",
   "/api/v1/infrastructure/classes",
+  "/api/v1/infrastructure/costs",
   "/api/v1/infrastructure/coupons",
   "/api/v1/infrastructure/cron/whitelist/domain/[domain]",
   "/api/v1/infrastructure/cron/whitelist/domains",

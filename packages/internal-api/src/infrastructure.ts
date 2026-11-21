@@ -4,6 +4,7 @@ export * from './infrastructure/ai';
 export * from './infrastructure/apps';
 export * from './infrastructure/auth-recovery';
 export * from './infrastructure/blocked-ips';
+export * from './infrastructure/costs';
 export * from './infrastructure/cron';
 export * from './infrastructure/deployments';
 export * from './infrastructure/desktop';

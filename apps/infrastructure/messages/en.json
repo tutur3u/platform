@@ -9243,6 +9243,7 @@
     "backups": "Backups",
     "blocked_ips": "Blocked IPs",
     "changelog": "Changelog",
+    "costs": "Costs",
     "desktop_deployment": "Desktop deployment",
     "devboxes": "Devboxes",
     "email_audit": "Email Audit",
@@ -24444,6 +24445,75 @@
         "title": "Resume {subject}?",
         "description": "Queued deployments may claim the lane again."
       }
+    }
+  },
+  "infrastructure-costs": {
+    "anomalies": {
+      "daily_spike": "{provider} billed {billed} on {day}, against a typical {baseline} a day.",
+      "month_growth": "{provider} is on track for {forecast} this month, up from {previous} last month.",
+      "title": "Anomalies"
+    },
+    "breakdown": {
+      "app": "App",
+      "empty": "No charges in this period.",
+      "environment": "Environment",
+      "forecast": "Forecast",
+      "partial": "partial",
+      "previous_month": "Last month",
+      "provider": "Provider",
+      "title": "Spend breakdown",
+      "to_date": "Month to date"
+    },
+    "coverage": {
+      "collected": "{days, plural, one {# day} other {# days}} collected, last {when}",
+      "exhausted": "{days, plural, one {# day} other {# days}} over budget",
+      "missing": "Not collected yet: {providers}",
+      "pending": "Collection started",
+      "title": "Data coverage"
+    },
+    "empty": {
+      "description": "Enable the provider cost collector or import a reviewed provider invoice to see spend here.",
+      "title": "No cost data yet"
+    },
+    "invoices": {
+      "amount": "Amount",
+      "app": "App",
+      "empty": "No reviewed provider invoices in this period.",
+      "finance": "Finance",
+      "issued": "Issued",
+      "open_transaction": "Open transaction",
+      "provider": "Provider",
+      "title": "Provider invoices",
+      "unposted": "Not posted"
+    },
+    "load_error": "Costs could not be loaded.",
+    "recorded": {
+      "amount": "Amount",
+      "app": "App",
+      "month": "Month",
+      "provider": "Provider",
+      "service": "Service",
+      "title": "Recorded provider costs"
+    },
+    "retry": "Retry",
+    "section_unavailable": "This section is unavailable right now.",
+    "summary": {
+      "basis": "Provider-reported charges for {month}, provisional until the invoice is reconciled.",
+      "forecast": "Forecast this month",
+      "incomplete": "Totals marked partial cover only the days collected so far.",
+      "label": "Spend summary",
+      "not_measured": "Not measured",
+      "partial": "(partial)",
+      "per_active_user": "Spend per monthly active user (estimate)",
+      "previous_month": "Last month",
+      "to_date": "Month to date",
+      "verification_unavailable": "Collection coverage could not be verified, so totals are not measured."
+    },
+    "title": "Costs",
+    "trend": {
+      "empty": "No daily charges collected yet.",
+      "label": "Daily billed spend by provider, in US dollars",
+      "title": "Daily spend by provider"
     }
   }
 }
