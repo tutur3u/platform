@@ -7254,8 +7254,8 @@
     "coming_soon": "Coming soon",
     "description": "Beta apps for your phone, tablet, and computer. Your workspace stays in sync everywhere.",
     "details": "Install details",
-    "download": "Download",
-    "download_for": "Download for {platform}",
+    "download_beta": "Download beta",
+    "download_for": "Download beta for {platform}",
     "get_app": "Get the app",
     "invite_only": "Invitation only",
     "ios": {
@@ -7268,12 +7268,14 @@
     },
     "join_beta": "Join beta",
     "linux": {
+      "installation": "Open the .deb with your package manager to install Tuturuuu and its dependencies.",
       "name": "Linux",
-      "requirements": "Ubuntu 24.04 or later · Intel / AMD 64-bit · .deb"
+      "requirements": "Ubuntu {version} or later · Intel / AMD 64-bit · .deb"
     },
     "macos": {
+      "installation": "Open the .dmg and drag Tuturuuu into Applications.",
       "name": "macOS",
-      "requirements": "macOS 12 or later · Apple silicon and Intel"
+      "requirements": "macOS {version} or later · Apple silicon and Intel"
     },
     "mobile_changelog": "Mobile changelog",
     "mobile_invite": "The beta may require an invitation. Use the Apple or Google account you gave us for early access.",
@@ -7303,10 +7305,12 @@
       "title": "Use Tuturuuu in your browser"
     },
     "windows": {
-      "installation": "Windows beta installers may be unsigned. Check the release notes and SHA-256 checksum. If SmartScreen warns, choose More info, then Run anyway only if you trust the download and Windows offers that option. If your device blocks it, use the web app.",
-      "legacy_update": "Installed a Windows beta before 21 November 2026? It reports version 1.0.0 and does not update itself, so install this download once to get updates again.",
+      "installation": "Check the release notes and SHA-256 checksum before running the installer. If your device blocks installation, use the web app.",
+      "legacy_update": "Windows betas installed before 21 November 2026 report version 1.0.0 and require a manual update.",
+      "may_be_unsigned": "Windows beta installers may be unsigned.",
       "name": "Windows",
-      "requirements": "Windows 10 or later · Intel / AMD 64-bit"
+      "requirements": "Windows {version} or later · Intel / AMD 64-bit",
+      "unsigned": "This Windows beta installer is unsigned. SmartScreen may warn you."
     }
   },
   "devbox-control": {

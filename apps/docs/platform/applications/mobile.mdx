@@ -283,7 +283,13 @@ account changes, pending recovery, keyboard/dock clearance and enlarged text.
 ## Desktop beta downloads
 
 The same Flutter app ships through the [desktop beta channel](/build/devops/desktop-beta-distribution)
-for Windows x64, macOS, and Linux. The 2026-10-22 policy permits unsigned Windows
+for Windows x64, macOS on Apple silicon and Intel, and Ubuntu x64. The
+[download page](https://tuturuuu.com/download) shows each available beta with
+installation details and a SHA-256 checksum. A platform without an available
+installer shows **Coming soon**, and the web app remains available. The download
+states are covered by `build-download-options.test.ts` in the Web download route.
+
+The 2026-10-22 policy permits unsigned Windows
 direct-download installers when both signing secrets are absent. The download
 page and release notes disclose SmartScreen warnings and checksum verification.
 Configured signing failures block the Windows package. macOS still requires

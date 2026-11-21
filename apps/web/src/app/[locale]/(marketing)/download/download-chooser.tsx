@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useSyncExternalStore } from 'react';
 import {
+  type DesktopArchitecture,
   DOWNLOAD_PLATFORMS,
   type DownloadPlatform,
   isMobilePlatform,
@@ -40,11 +41,13 @@ function readClientPlatform(detected: DownloadPlatform) {
 // swaps content without moving the layout.
 export function DownloadChooser({
   detected,
+  architecture,
   options,
   labels,
   qrUrl,
 }: {
   detected: DownloadPlatform;
+  architecture: DesktopArchitecture;
   options: Record<DownloadPlatform, DownloadOption>;
   labels: DownloadLabels;
   qrUrl: string;
@@ -57,7 +60,12 @@ export function DownloadChooser({
   const available = DOWNLOAD_PLATFORMS.filter(
     (item) => options[item].action !== null
   );
-  const primary = resolvePrimaryPlatform(platform, available);
+  const primary = resolvePrimaryPlatform(
+    platform,
+    available,
+    architecture,
+    options[platform].architecture
+  );
   const showQr = !isMobilePlatform(platform);
 
   return (

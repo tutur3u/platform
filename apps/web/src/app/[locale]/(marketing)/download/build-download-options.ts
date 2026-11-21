@@ -4,7 +4,7 @@ import type {
   BetaReleaseStatus,
   BetaReleaseStatuses,
 } from '@/lib/app-release-status';
-import type { DesktopRelease } from '@/lib/desktop-downloads';
+import { DESKTOP_PACKAGES, type DesktopRelease } from '@/lib/desktop-downloads';
 import {
   type DownloadPlatform,
   parseDesktopTag,
@@ -143,25 +143,37 @@ export async function buildDownloadContent(
       name,
       title: t('primary_title', { platform: name }),
       beta: Boolean(download),
-      requirements: t(`${platform}.requirements`),
+      requirements: t(`${platform}.requirements`, {
+        version: download?.minimumOs ?? DESKTOP_PACKAGES[platform].minimumOs,
+      }),
+      architecture: download?.architecture,
       meta: download
         ? [
             desktopVersionLabel(download.tag),
             t('size', { size: Math.ceil(download.size / 1024 / 1024) }),
           ]
-        : [t('coming_soon')],
+        : [],
       action: download
         ? {
             href: download.url,
             label: t('download_for', { platform: name }),
-            shortLabel: t('download'),
+            shortLabel: t('download_beta'),
             external: false,
           }
         : null,
-      note:
-        download && platform === 'windows'
-          ? `${t('windows.legacy_update')} ${t('windows.installation')}`
-          : undefined,
+      note: download
+        ? platform === 'windows'
+          ? [
+              t(
+                download.unsigned
+                  ? 'windows.unsigned'
+                  : 'windows.may_be_unsigned'
+              ),
+              t('windows.installation'),
+              t('windows.legacy_update'),
+            ].join(' ')
+          : t(`${platform}.installation`)
+        : undefined,
       releaseNotes: download
         ? {
             href: download.releaseUrl,

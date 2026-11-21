@@ -20,9 +20,9 @@ export default async function DownloadPage() {
   const t = await getTranslations('desktop_download');
 
   return (
-    <main className="relative isolate mx-auto w-full max-w-5xl px-4 py-12 sm:px-8 lg:py-20">
+    <main className="relative isolate w-full">
       <HeroAtmosphere />
-      <div className="relative">
+      <div className="relative mx-auto w-full max-w-5xl px-4 py-12 sm:px-8 lg:py-20">
         <h1 className="text-balance font-display font-semibold text-4xl tracking-tight sm:text-5xl">
           {t('title')}
         </h1>

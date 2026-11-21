@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DESKTOP_ASSETS,
+  DESKTOP_PACKAGES,
   findDesktopRelease,
   parseDesktopRelease,
 } from './desktop-downloads';
@@ -13,7 +13,7 @@ function release() {
     draft: false,
     prerelease: true,
     html_url: `${base}/tag/${tag}`,
-    assets: Object.values(DESKTOP_ASSETS).map((name) => ({
+    assets: Object.values(DESKTOP_PACKAGES).map(({ name }) => ({
       name,
       state: 'uploaded',
       size: 12345,
@@ -24,6 +24,32 @@ function release() {
 }
 
 describe('public desktop downloads', () => {
+  it('describes the installers and labels explicitly unsigned Windows builds', () => {
+    const manifest = parseDesktopRelease({
+      ...release(),
+      body: '## Known issues\n\n- Windows packages are UNSIGNED for now. SmartScreen may warn.',
+    });
+    expect(manifest?.downloads).toMatchObject([
+      {
+        platform: 'windows',
+        architecture: 'x64',
+        minimumOs: '10',
+        unsigned: true,
+      },
+      {
+        platform: 'macos',
+        architecture: 'universal',
+        minimumOs: '12',
+        unsigned: false,
+      },
+      {
+        platform: 'linux',
+        architecture: 'x64',
+        minimumOs: '24.04',
+        unsigned: false,
+      },
+    ]);
+  });
   it('selects a complete release with provider checksums', () => {
     expect(parseDesktopRelease(release())?.downloads).toHaveLength(3);
     expect(

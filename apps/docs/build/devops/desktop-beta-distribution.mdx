@@ -10,11 +10,13 @@ plus verified desktop packages from GitHub Releases. Every distribution is beta
 and may not be production-ready. Mobile users may need an invitation using their
 Apple or Google account; installing TestFlight alone does not grant access.
 
-The page leads with one recommended download for the visitor's platform,
-detected from the request user agent (iPadOS desktop agents are corrected on
-the client), and lists every other platform compactly. Desktop visitors also
-get a QR code to the same page, which then leads with their phone's store. A
-desktop OS without a published package falls back to opening the web app.
+The page recommends a download using the request's operating system and the
+architecture when the browser exposes it. iPadOS desktop agents are corrected
+on the client. The macOS DMG supports Apple silicon and Intel. Windows and Linux
+offer x64 installers. If the browser hides its architecture or reports one
+other than x64, the page recommends the web app and keeps the x64 installer
+in the platform list. Desktop visitors can scan the QR code to open the same
+page on their phone.
 Versions are never guessed: desktop versions and checksums come from the cached
 GitHub Releases parse, and mobile store links come from the
 `MOBILE_*_STORE_URL` root workspace configs. The mobile version shown is the
@@ -25,10 +27,12 @@ package id; while the Android app is in closed testing
 (`ANDROID_PUBLICLY_LISTED` in `apps/web/src/lib/download-platform.ts`), they
 point at the `play.google.com/apps/testing/<package>` opt-in page because the
 public details page returns 404. Without a policy, Android shows that testing
-link without a version and iOS offers an early-access request. Desktop rows
-keep the checksum, release notes and Windows SmartScreen note in a collapsed
-details section. Platform rules are covered by
-`apps/web/src/lib/download-platform.test.ts`.
+link without a version and iOS offers an early-access request. Desktop cards
+include localized installation instructions, requirements, checksum and release
+notes. Windows shows a SmartScreen warning for releases marked unsigned. The
+platform rules and available and missing card states are covered by
+`apps/web/src/lib/download-platform.test.ts` and
+`apps/web/src/app/[locale]/(marketing)/download/build-download-options.test.ts`.
 
 ## Release workflow
 
@@ -218,11 +222,23 @@ identity mismatch leaves publication blocked. The actual publisher's mocked-CLI
 `node --test scripts/desktop-deployment/publish.test.mjs`; no release is written
 by those tests.
 
-The download page caches public release metadata for five minutes and sends
-package downloads directly to GitHub's CDN. It validates the exact repository,
-tag format, filenames, uploaded state, positive sizes, and GitHub SHA-256 digests.
-Each platform uses its latest verified release independently. Unavailable platforms show an honest unavailable state with a web-app
-alternative; they never produce guessed download URLs.
+The site reads up to 100 recent GitHub releases and uses the newest valid
+desktop package per platform. If the list misses a platform, the site also
+checks the tag for the version and build in the public desktop beta status.
+This lookup can recover a package from a release that has aged out of the list.
+Both requests share a five-second deadline and send a User-Agent header required
+by GitHub. The requests use the public API without a token. Downloads link
+directly to GitHub.
+
+The site validates the repository, tag, filenames, uploaded state, positive
+sizes, and GitHub SHA-256 digests. It offers a download only when GitHub returns
+a matching asset. Platforms without one show **Coming soon**, with the web app
+available as an alternative. All results refresh after five minutes to keep
+partial releases and upstream failures within the public request budget. When withdrawing an
+asset, verify the public page again after the cache refresh and confirm the old
+asset URL stops serving the file. Asset and cache behavior are covered by
+`apps/web/src/lib/desktop-downloads.test.ts` and
+`apps/web/src/lib/desktop-downloads.server.test.ts`.
 
 ## Verification
 

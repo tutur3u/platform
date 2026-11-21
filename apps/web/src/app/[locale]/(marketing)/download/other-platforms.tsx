@@ -34,12 +34,10 @@ export function OtherPlatforms({
               </h3>
               {option.beta && <Badge variant="secondary">{labels.beta}</Badge>}
             </div>
-            <p className="mt-3 text-muted-foreground text-xs">
-              {option.meta.join(' · ')}
-            </p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {option.requirements}
-            </p>
+            <div className="mt-3 space-y-1 text-muted-foreground text-xs">
+              {option.meta.length > 0 && <p>{option.meta.join(' · ')}</p>}
+              <p>{option.requirements}</p>
+            </div>
             <RowDetails option={option} labels={labels} />
             <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-4">
               {option.action ? (

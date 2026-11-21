@@ -1,13 +1,31 @@
 export const DESKTOP_REPOSITORY = 'tutur3u/platform';
-export const DESKTOP_ASSETS = {
-  windows: 'Tuturuuu-windows-x64-setup.exe',
-  macos: 'Tuturuuu-macos-universal.dmg',
-  linux: 'Tuturuuu-linux-x64.deb',
+export const DESKTOP_PLATFORMS = ['windows', 'macos', 'linux'] as const;
+export const DESKTOP_PACKAGES = {
+  windows: {
+    name: 'Tuturuuu-windows-x64-setup.exe',
+    architecture: 'x64',
+    minimumOs: '10',
+  },
+  macos: {
+    name: 'Tuturuuu-macos-universal.dmg',
+    architecture: 'universal',
+    minimumOs: '12',
+  },
+  linux: {
+    name: 'Tuturuuu-linux-x64.deb',
+    architecture: 'x64',
+    minimumOs: '24.04',
+  },
 } as const;
 
-export type DesktopPlatform = keyof typeof DESKTOP_ASSETS;
+export type DesktopPlatform = (typeof DESKTOP_PLATFORMS)[number];
+export type DesktopPackageArchitecture =
+  (typeof DESKTOP_PACKAGES)[DesktopPlatform]['architecture'];
 export type DesktopDownload = {
   platform: DesktopPlatform;
+  architecture: DesktopPackageArchitecture;
+  minimumOs: string;
+  unsigned: boolean;
   tag: string;
   releaseUrl: string;
   url: string;
@@ -29,7 +47,7 @@ const object = (value: unknown): Record<string, unknown> | null =>
     : null;
 
 // Never turn arbitrary provider data into a redirect or download link. The
-// release workflow publishes its selected asset set only after all selected OSes pass.
+// release workflow publishes only packages that pass their platform checks.
 export function parseDesktopRelease(value: unknown): DesktopRelease | null {
   const release = object(value);
   if (
@@ -44,7 +62,8 @@ export function parseDesktopRelease(value: unknown): DesktopRelease | null {
   const base = `https://github.com/${DESKTOP_REPOSITORY}/releases`;
   if (release.html_url !== `${base}/tag/${tag}`) return null;
   const downloads: DesktopDownload[] = [];
-  for (const [platform, name] of Object.entries(DESKTOP_ASSETS)) {
+  for (const platform of DESKTOP_PLATFORMS) {
+    const { name, architecture, minimumOs } = DESKTOP_PACKAGES[platform];
     const matches = release.assets
       .map(object)
       .filter((asset) => asset?.name === name);
@@ -63,7 +82,13 @@ export function parseDesktopRelease(value: unknown): DesktopRelease | null {
     )
       return null;
     downloads.push({
-      platform: platform as DesktopPlatform,
+      platform,
+      architecture,
+      minimumOs,
+      unsigned:
+        platform === 'windows' &&
+        typeof release.body === 'string' &&
+        /^- Windows packages are UNSIGNED for now\./m.test(release.body),
       tag,
       releaseUrl: `${base}/tag/${tag}`,
       url,

@@ -5,21 +5,28 @@ import { siteConfig } from '@/constants/configs';
 import { defaultLocale } from '@/i18n/routing';
 import { getBetaReleaseStatuses } from '@/lib/app-release-status.server';
 import { getDesktopRelease } from '@/lib/desktop-downloads.server';
-import { detectPlatform } from '@/lib/download-platform';
+import {
+  detectDesktopArchitecture,
+  detectPlatform,
+  DOWNLOAD_PLATFORMS,
+} from '@/lib/download-platform';
 import { getMobileStoreListings } from '@/lib/mobile-store-listings.server';
 import { buildDownloadContent } from './build-download-options';
 import { DownloadChooser } from './download-chooser';
 
 export async function DownloadRuntime() {
   await connection();
-  const [requestHeaders, locale, desktop, mobile, betaStatus] =
-    await Promise.all([
-      headers(),
-      getLocale(),
-      getDesktopRelease(),
-      getMobileStoreListings(),
-      getBetaReleaseStatuses(),
-    ]);
+  const [requestHeaders, locale, mobile, betaStatus] = await Promise.all([
+    headers(),
+    getLocale(),
+    getMobileStoreListings(),
+    getBetaReleaseStatuses(),
+  ]);
+  const desktop = await getDesktopRelease(
+    betaStatus.desktop?.version,
+    betaStatus.desktop?.build
+  );
+  const userAgent = requestHeaders.get('user-agent');
   const { labels, options } = await buildDownloadContent(
     desktop,
     mobile,
@@ -34,7 +41,12 @@ export async function DownloadRuntime() {
 
   return (
     <DownloadChooser
-      detected={detectPlatform(requestHeaders.get('user-agent'))}
+      detected={detectPlatform(userAgent)}
+      architecture={detectDesktopArchitecture(
+        userAgent,
+        requestHeaders.get('sec-ch-ua-arch'),
+        requestHeaders.get('sec-ch-ua-bitness')
+      )}
       options={options}
       labels={labels}
       qrUrl={qrUrl}
@@ -50,9 +62,9 @@ export function DownloadSkeleton() {
       <div className="mt-10 h-[19rem] animate-pulse rounded-3xl border border-border/70 bg-muted/40 sm:h-[20rem]" />
       <div className="mt-12 h-5 w-32 rounded bg-muted/60" />
       <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 5 }, (_, index) => (
+        {DOWNLOAD_PLATFORMS.slice(0, -1).map((platform) => (
           <li
-            key={`platform-skeleton-${index}`}
+            key={platform}
             className="h-44 animate-pulse rounded-2xl border border-border/70 bg-muted/40"
           />
         ))}

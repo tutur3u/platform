@@ -1,3 +1,4 @@
+import type { DesktopPackageArchitecture } from '@/lib/desktop-downloads';
 import type { DownloadPlatform } from '@/lib/download-platform';
 
 export type DownloadAction = {
@@ -19,6 +20,7 @@ export type DownloadOption = {
   meta: string[];
   requirements: string;
   action: DownloadAction | null;
+  architecture?: DesktopPackageArchitecture;
   // Beta channel opt-in, offered beside a public store listing.
   betaAction?: DownloadAction;
   note?: string;

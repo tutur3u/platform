@@ -1,6 +1,8 @@
 // Platform selection for the public download page. Pure and framework-free so
 // the server (user agent) and client (refinement) agree on the same rules.
 
+import type { DesktopPackageArchitecture } from './desktop-downloads';
+
 export const DOWNLOAD_PLATFORMS = [
   'ios',
   'android',
@@ -41,6 +43,27 @@ export function detectPlatform(userAgent: string | null | undefined) {
   return 'web';
 }
 
+export type DesktopArchitecture = 'arm64' | 'x64' | 'other' | null;
+
+export function detectDesktopArchitecture(
+  userAgent: string | null,
+  archHint: string | null,
+  bitnessHint: string | null
+): DesktopArchitecture {
+  const ua = userAgent ?? '';
+  if (archHint === '"arm"' && bitnessHint === '"64"') return 'arm64';
+  if (archHint === '"x86"' && bitnessHint === '"64"') return 'x64';
+  if (bitnessHint === '"32"') return 'other';
+  if (/\b(?:aarch64|arm64)\b/i.test(ua)) return 'arm64';
+  // Chromium's reduced Windows and Linux agents can report x64 on other
+  // architectures. Only use that token when the agent exposes real details.
+  if (/\bChrome\/\d+\.0\.0\.0\b/i.test(ua) && /Windows NT|Linux/i.test(ua))
+    return null;
+  if (/\b(?:x86_64|x64|Win64|WOW64|amd64)\b/i.test(ua)) return 'x64';
+  if (/\b(?:i[3-6]86|armv[5-8]l?)\b/i.test(ua)) return 'other';
+  return null;
+}
+
 export type ClientPlatformHints = {
   maxTouchPoints?: number;
   uaPlatform?: string;
@@ -74,9 +97,16 @@ export function isMobilePlatform(platform: DownloadPlatform) {
 
 export function resolvePrimaryPlatform(
   detected: DownloadPlatform,
-  available: readonly DownloadPlatform[]
+  available: readonly DownloadPlatform[],
+  architecture: DesktopArchitecture = null,
+  packageArchitecture?: DesktopPackageArchitecture
 ): DownloadPlatform {
-  return available.includes(detected) ? detected : 'web';
+  const compatible =
+    !packageArchitecture ||
+    architecture === 'x64' ||
+    (packageArchitecture === 'universal' &&
+      (architecture === null || architecture === 'arm64'));
+  return compatible && available.includes(detected) ? detected : 'web';
 }
 
 const SEMVER = /^\d+\.\d+\.\d+$/;

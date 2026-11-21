@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   desktopDisplayVersion,
+  detectDesktopArchitecture,
   detectPlatform,
   parseDesktopTag,
   parseReleaseVersion,
@@ -42,6 +43,43 @@ describe('download platform detection', () => {
   it('falls back to the browser when no build exists', () => {
     expect(resolvePrimaryPlatform('linux', ['ios', 'web'])).toBe('web');
     expect(resolvePrimaryPlatform('ios', ['ios', 'web'])).toBe('ios');
+  });
+
+  it('recommends a package only when the known architecture can use it', () => {
+    const available = ['macos', 'windows', 'linux', 'web'] as const;
+    expect(detectDesktopArchitecture('Linux aarch64', null, null)).toBe(
+      'arm64'
+    );
+    expect(detectDesktopArchitecture('Win64; x64', '"arm"', '"64"')).toBe(
+      'arm64'
+    );
+    expect(detectDesktopArchitecture('Win64; x64', null, null)).toBe('x64');
+    expect(detectDesktopArchitecture('Linux i686', null, null)).toBe('other');
+    expect(resolvePrimaryPlatform('linux', available, 'arm64', 'x64')).toBe(
+      'web'
+    );
+    expect(resolvePrimaryPlatform('windows', available, 'x64', 'x64')).toBe(
+      'windows'
+    );
+    expect(
+      resolvePrimaryPlatform('macos', available, 'arm64', 'universal')
+    ).toBe('macos');
+    expect(resolvePrimaryPlatform('windows', available, null, 'x64')).toBe(
+      'web'
+    );
+    expect(resolvePrimaryPlatform('macos', available, null, 'universal')).toBe(
+      'macos'
+    );
+  });
+
+  it('does not infer x64 from reduced Chromium user agents', () => {
+    const windows =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0.0.0';
+    const linux = 'Mozilla/5.0 (X11; Linux x86_64) Chrome/140.0.0.0';
+    expect(detectDesktopArchitecture(windows, null, null)).toBeNull();
+    expect(detectDesktopArchitecture(linux, null, null)).toBeNull();
+    expect(detectDesktopArchitecture(windows, '"x86"', '"64"')).toBe('x64');
+    expect(detectDesktopArchitecture(windows, '"arm"', '"64"')).toBe('arm64');
   });
 });
 
