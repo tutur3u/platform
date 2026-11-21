@@ -15,5 +15,8 @@
     "SHARED_HOST": "tuturuuu.com",
     "SUBDOMAIN_REDIRECT_APPS": "",
   },
-  "services": [{ "binding": "APP_TASKS", "service": "tuturuuu-tasks" }],
+  "services": [
+    { "binding": "APP_TASKS", "service": "tuturuuu-tasks" },
+    { "binding": "APP_APPS", "service": "tuturuuu-apps" },
+  ],
 }
