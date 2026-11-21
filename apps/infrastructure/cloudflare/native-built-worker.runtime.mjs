@@ -399,6 +399,12 @@ test(
             /frame-ancestors 'none'/u,
             `${where}: CSP frame-ancestors`
           );
+          if (probe.kind === 'page')
+            assert.match(
+              headers['content-security-policy'] ?? '',
+              /(?:^|;\s*)script-src [^;]*'nonce-[A-Za-z0-9+/=]+'[^;]*'strict-dynamic'/u,
+              `${where}: enforced nonce script CSP`
+            );
         }
         assert.ok(executed > 0, 'no response-policy probe ran');
       }
