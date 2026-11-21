@@ -1,0 +1,196 @@
+import { describe, expect, it, vi } from 'vitest';
+import {
+  removeExternalProjectTeamMember,
+  WORKSPACE_CREATOR_PROTECTED,
+} from './team-member-removal';
+
+const WS = 'workspace-1';
+const CREATOR = '11111111-1111-4111-8111-111111111111';
+const MEMBER = '22222222-2222-4222-8222-222222222222';
+
+type Filter = [op: string, column: string, value: unknown];
+
+/** An admin client that records every statement it is asked to run. */
+function createAccess(
+  workspace:
+    | { creator_id: string | null }
+    | null
+    | { error: { code: string } } = { creator_id: CREATOR }
+) {
+  const statements: { filters: Filter[]; op: string; table: string }[] = [];
+
+  const chain = (table: string, op: string) => {
+    const statement = { filters: [] as Filter[], op, table };
+    statements.push(statement);
+    const result = () => {
+      if (table === 'workspaces')
+        return workspace && 'error' in workspace
+          ? { data: null, error: workspace.error }
+          : { data: workspace, error: null };
+      if (table === 'workspace_members_and_invites')
+        return { data: [{ id: 'invited-user' }], error: null };
+      return { error: null };
+    };
+    const query: Record<string, unknown> = {};
+    for (const filter of ['eq', 'in'])
+      query[filter] = (column: string, value: unknown) => {
+        statement.filters.push([filter, column, value]);
+        return query;
+      };
+    query.maybeSingle = async () => result();
+    query.then = (resolve: (value: unknown) => unknown) =>
+      Promise.resolve(result()).then(resolve);
+    return query;
+  };
+
+  const admin = {
+    from: (table: string) => ({
+      delete: () => chain(table, 'delete'),
+      select: () => chain(table, 'select'),
+    }),
+  };
+
+  return {
+    access: { admin, normalizedWorkspaceId: WS, user: { id: 'actor-1' } },
+    deletes: () =>
+      statements
+        .filter((statement) => statement.op === 'delete')
+        .map(({ filters, table }) => ({ filters, table })),
+  };
+}
+
+const remove = (
+  access: ReturnType<typeof createAccess>['access'],
+  query: string
+) =>
+  removeExternalProjectTeamMember({
+    access: access as never,
+    request: new Request(`http://localhost/access?${query}`, {
+      method: 'DELETE',
+    }),
+  });
+
+describe('removing a CMS team member', () => {
+  it('never removes the workspace creator, whatever the id casing or padding', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    for (const id of [CREATOR, CREATOR.toUpperCase(), `%20${CREATOR}%20`]) {
+      const { access, deletes } = createAccess();
+      const response = await remove(access, `id=${id}`);
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        code: WORKSPACE_CREATOR_PROTECTED,
+        message: 'The workspace creator cannot be removed',
+      });
+      expect(deletes()).toEqual([]);
+    }
+
+    // An email on the same request does not get an invitation cancelled either.
+    const { access, deletes } = createAccess();
+    const response = await remove(access, `id=${CREATOR}&email=a@example.com`);
+    expect(response.status).toBe(403);
+    expect(deletes()).toEqual([]);
+    error.mockRestore();
+  });
+
+  it('removes nothing when the creator cannot be read', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    for (const workspace of [
+      null,
+      { creator_id: null },
+      { error: { code: 'PGRST301' } },
+    ]) {
+      const { access, deletes } = createAccess(workspace);
+      const response = await remove(access, `id=${MEMBER}`);
+
+      expect(response.status).toBe(500);
+      expect(deletes()).toEqual([]);
+    }
+
+    expect(error).toHaveBeenCalledTimes(3);
+    error.mockRestore();
+  });
+
+  it('removes another member and their invitation in this workspace only', async () => {
+    const { access, deletes } = createAccess();
+    const response = await remove(access, `id=${MEMBER}`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+      workspace_deleted: false,
+    });
+    expect(deletes()).toEqual([
+      {
+        filters: [
+          ['eq', 'ws_id', WS],
+          ['eq', 'user_id', MEMBER],
+        ],
+        table: 'workspace_invites',
+      },
+      {
+        filters: [
+          ['eq', 'ws_id', WS],
+          ['eq', 'user_id', MEMBER],
+        ],
+        table: 'workspace_members',
+      },
+    ]);
+  });
+
+  it('cancels an invitation by email without touching a membership', async () => {
+    const { access, deletes } = createAccess();
+    const response = await remove(access, 'email=invited@example.com');
+
+    expect(response.status).toBe(200);
+    expect(deletes()).toEqual([
+      {
+        filters: [
+          ['eq', 'ws_id', WS],
+          ['in', 'user_id', ['invited-user']],
+        ],
+        table: 'workspace_invites',
+      },
+      {
+        filters: [
+          ['eq', 'ws_id', WS],
+          ['eq', 'email', 'invited@example.com'],
+        ],
+        table: 'workspace_email_invites',
+      },
+    ]);
+  });
+
+  it('accepts only the canonical uuid spelling, so no other spelling of the creator gets through', async () => {
+    const hex = CREATOR.replaceAll('-', '');
+    const spellings = [
+      hex,
+      `{${CREATOR}}`,
+      `%7B${CREATOR}%7D`,
+      hex.match(/.{4}/g)?.join('-') ?? '',
+      `urn:uuid:${CREATOR}`,
+      'not-a-uuid',
+    ];
+
+    for (const id of spellings) {
+      const { access, deletes } = createAccess();
+      const response = await remove(access, `id=${id}`);
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Invalid member identifier',
+      });
+      expect(deletes()).toEqual([]);
+    }
+  });
+
+  it('asks for an identifier', async () => {
+    const { access, deletes } = createAccess();
+    const response = await remove(access, 'id=%20');
+
+    expect(response.status).toBe(400);
+    expect(deletes()).toEqual([]);
+  });
+});

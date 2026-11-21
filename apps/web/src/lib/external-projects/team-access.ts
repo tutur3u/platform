@@ -24,6 +24,7 @@ export {
   inviteExternalProjectTeamMembers,
   updateExternalProjectTeamInvitationRoles,
 } from './team-invitations';
+export { removeExternalProjectTeamMember } from './team-member-removal';
 export {
   addExternalProjectRoleMembers,
   listExternalProjectRoleMembers,
@@ -156,101 +157,6 @@ export async function listExternalProjectTeamMembers({
   });
 
   return attachExternalProjectInvitationRoles({ access, members });
-}
-
-export async function removeExternalProjectTeamMember({
-  access,
-  request,
-}: {
-  access: ExternalProjectTeamAccess;
-  request: Request;
-}) {
-  const searchParams = new URL(request.url).searchParams;
-  const userId = searchParams.get('id');
-  const userEmail = searchParams.get('email')?.trim() || null;
-
-  if (!userId && !userEmail) {
-    return NextResponse.json(
-      { message: 'Missing member identifier' },
-      { status: 400 }
-    );
-  }
-
-  let inviteUserIds: string[] = [];
-
-  if (userEmail) {
-    const { data, error } = await access.admin
-      .from('workspace_members_and_invites')
-      .select('id')
-      .eq('ws_id', access.normalizedWorkspaceId)
-      .eq('email', userEmail);
-
-    if (error) {
-      console.error('Error resolving CMS team invite identities', {
-        error,
-        wsId: access.normalizedWorkspaceId,
-      });
-      return NextResponse.json(
-        { message: 'Error removing team member' },
-        { status: 500 }
-      );
-    }
-
-    inviteUserIds = (data ?? [])
-      .map((row) => row.id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
-  }
-
-  const inviteQuery = userId
-    ? access.admin
-        .from('workspace_invites')
-        .delete()
-        .eq('ws_id', access.normalizedWorkspaceId)
-        .eq('user_id', userId)
-    : inviteUserIds.length > 0
-      ? access.admin
-          .from('workspace_invites')
-          .delete()
-          .eq('ws_id', access.normalizedWorkspaceId)
-          .in('user_id', inviteUserIds)
-      : { error: undefined };
-
-  const emailInviteQuery = userEmail
-    ? access.admin
-        .from('workspace_email_invites')
-        .delete()
-        .eq('ws_id', access.normalizedWorkspaceId)
-        .eq('email', userEmail)
-    : { error: undefined };
-
-  const memberQuery = userId
-    ? access.admin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', access.normalizedWorkspaceId)
-        .eq('user_id', userId)
-    : { error: undefined };
-
-  const [inviteResult, emailInviteResult, memberResult] = await Promise.all([
-    inviteQuery,
-    emailInviteQuery,
-    memberQuery,
-  ]);
-
-  if (inviteResult.error || emailInviteResult.error || memberResult.error) {
-    console.error('Error removing CMS team member', {
-      emailInviteError: emailInviteResult.error,
-      inviteError: inviteResult.error,
-      memberError: memberResult.error,
-      wsId: access.normalizedWorkspaceId,
-    });
-    return NextResponse.json(
-      { message: 'Error removing team member' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success', workspace_deleted: false });
 }
 
 export async function listExternalProjectTeamRoles(
