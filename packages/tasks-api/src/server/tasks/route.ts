@@ -1057,7 +1057,7 @@ export async function handleTaskRouteGET(
               .from('tasks')
               .select(
                 withTaskFleetColumns(
-                  selectedColumns,
+                  selectedColumns as string,
                   includeFleetFields && !forTimeTracking
                 )
               )
@@ -1108,7 +1108,7 @@ export async function handleTaskRouteGET(
         .from('tasks')
         .select(
           withTaskFleetColumns(
-            selectedColumns,
+            selectedColumns as string,
             includeFleetFields && !forTimeTracking
           ),
           includeCount ? { count: 'exact' } : undefined

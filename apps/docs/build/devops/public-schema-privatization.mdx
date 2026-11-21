@@ -354,9 +354,9 @@ Tables: `tasks`, `task_*`, `workspace_boards`, `board_template*`,
 `workspace_break_types`, `habit_*`, `workspace_habit*`,
 `workspace_calendar_*`, `workspace_cron_*`, `calendar_event_colors`.
 
-- The held board-sprint migrations create `task_sprint_reports` (recorded under
-  `typesAhead`) and any other sprint table in `private`; the sprint routes
-  read them through `.schema('private')`. The guard fails a `public` creation.
+- The held board-sprint migrations create `task_sprint_reports` and any other
+  sprint table in `private`, and the sprint routes must read them through
+  `.schema('private')`. The guard fails a `public` creation.
 - Largest code surface (`apps/tasks`, `packages/tasks-api`, `packages/tasks-ui`,
   `apps/calendar`, `apps/track`). Browser modules in `apps/tasks` and
   `packages/tasks-ui` move to internal-api first.
@@ -439,9 +439,9 @@ Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
     "workspaces": { "kind": "table", "wave": 8 }
   },
   "typesAhead": {
-    "task_sprint_reports": {
+    "example_relation": {
       "wave": 6,
-      "owner": "tasks board sprints",
+      "owner": "owning feature",
       "reason": "Typed ahead of its migration",
       "evidence": "Absent from the replay and the production readback"
     }
@@ -544,14 +544,9 @@ on catalog fixtures and fail-closed output parsing.
 
 ### Replay findings
 
-The first full replay matched the allowlist except for three findings, all
-resolved in the allowlist:
-
-- `workspace_external_project_page_versions` is created in `public` by
-  `20261109010100` and is missing from the committed types.
-- `task_sprint_reports` is declared in the types and has no migration. The
-  production readback confirms it is absent there too, so it is recorded
-  under `typesAhead`.
+- The full replay and the production catalog readback dated 2026-11-17
+  contain no public `task_sprint_reports` relation. The generated types omit
+  it, so `typesAhead` is empty.
 - `supabase_admin` default ACLs in `public` grant `anon` and
   `authenticated` on tables, sequences and functions; the owner is exempt
   pending the hosted catalog result.

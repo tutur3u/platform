@@ -10,8 +10,9 @@ import type {
 import type { Database } from '@tuturuuu/types';
 import { z } from 'zod';
 
-// Until typegen runs on a database with 20261109010100 applied, these are the
-// page-version table and publish RPC from that migration.
+// The page-version table and RPCs from 20261109010100, typed with the route's
+// page shapes. The generated Insert requires `version_number`, which the
+// insert trigger assigns, so this projection replaces the generated table.
 export type PageVersionRow = {
   created_at: string;
   created_by: string | null;
@@ -29,7 +30,10 @@ export type PageVersionRow = {
 type Public = Database['public'];
 type PageVersionsDatabase = Omit<Database, 'public'> & {
   public: Omit<Public, 'Tables' | 'Functions'> & {
-    Tables: Public['Tables'] & {
+    Tables: Omit<
+      Public['Tables'],
+      'workspace_external_project_page_versions'
+    > & {
       workspace_external_project_page_versions: {
         Insert: Pick<PageVersionRow, 'data' | 'entry_id' | 'ws_id'> &
           Partial<PageVersionRow>;

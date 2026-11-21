@@ -9,7 +9,7 @@ export const fullSprintFixtures = [
 
 const retainedBarrierSources = {
   'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/_lib.ts':
-    '7d06cbe344c1f84ca3a5bfc19464c8e811474debf702ddc048ece9e27fc830e9',
+    'e0276a55e3d8798c57017aa2df6ebf6fce29f26f75db5e2db8247abb863541c7',
   'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/release-barrier.test.ts':
     '8977c1f6671a8504918d803c4a91777ff944bcdac0951d449aae6533a075e5c7',
 };

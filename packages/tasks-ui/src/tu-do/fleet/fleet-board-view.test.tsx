@@ -66,7 +66,13 @@ const tasks = [
   {
     ...task('t7', 'N-165: Fleet board card face', 'live', 'status: running'),
     external_key: 'N-165',
-    relationship_summary: { blocked_by_count: 2 },
+    relationship_summary: {
+      parent_task_id: null,
+      child_count: 0,
+      blocked_by_count: 2,
+      blocking_count: 0,
+      related_count: 0,
+    },
   } as Task,
   {
     ...task(
@@ -75,7 +81,13 @@ const tasks = [
       'done',
       'status: done\nblocked_by: Old export'
     ),
-    relationship_summary: { blocked_by_count: 1 },
+    relationship_summary: {
+      parent_task_id: null,
+      child_count: 0,
+      blocked_by_count: 1,
+      blocking_count: 0,
+      related_count: 0,
+    },
   } as Task,
   {
     ...task('t9', 'Stuck without a reason', 'live', 'owner: cora'),

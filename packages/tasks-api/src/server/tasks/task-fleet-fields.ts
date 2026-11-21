@@ -46,20 +46,24 @@ export type TaskFleetRow = FleetFields & { updated_at: string | null };
 
 type Public = Database['public'];
 type Tasks = Public['Tables']['tasks'];
-type FleetDatabase = Database & {
-  public: {
-    Tables: {
-      tasks: {
-        Row: Tasks['Row'] & TaskFleetRow;
-        Insert: Tasks['Insert'] & Partial<FleetFields>;
-        Update: Tasks['Update'] & Partial<FleetFields>;
+// Columns the generated types already declare keep their generated write types,
+// so a generated `tasks` Insert or Update stays assignable; Zod validates the
+// JSON shapes at the route boundary.
+type WithFleetWrites<Write> = Write & Partial<Omit<FleetFields, keyof Write>>;
+
+type FleetDatabase = Omit<Database, 'public'> & {
+  public: Omit<Public, 'Tables'> & {
+    Tables: Omit<Public['Tables'], 'tasks'> & {
+      tasks: Omit<Tasks, 'Insert' | 'Row' | 'Update'> & {
+        Row: Omit<Tasks['Row'], keyof TaskFleetRow> & TaskFleetRow;
+        Insert: WithFleetWrites<Tasks['Insert']>;
+        Update: WithFleetWrites<Tasks['Update']>;
       };
     };
   };
 };
 
-// The migration supplies these columns. Use the schema projection until typegen
-// can run against a migrated database.
+// Reads narrow the generated JSON fleet columns to their validated shapes.
 export function taskFleetClient(client: TypedSupabaseClient) {
   return client as unknown as SupabaseClient<FleetDatabase>;
 }
@@ -88,8 +92,17 @@ export function taskFleetFieldsUnavailable() {
   );
 }
 
-export function withTaskFleetColumns(columns: string, enabled: boolean) {
-  return enabled ? `${columns},${taskFleetSelect}` : columns;
+// A literal select stays a parseable literal typed with the fleet columns.
+// Rows are cast to the task read models, and a database without the columns
+// is queried again with `enabled` false, so absent fields read as undefined.
+// A `string` select stays `string`, for callers that cast their rows.
+export function withTaskFleetColumns<Columns extends string>(
+  columns: Columns,
+  enabled: boolean
+) {
+  return (
+    enabled ? `${columns},${taskFleetSelect}` : columns
+  ) as string extends Columns ? string : `${Columns},${typeof taskFleetSelect}`;
 }
 
 export function serializeTaskFleetFields(task: Partial<TaskFleetRow>) {

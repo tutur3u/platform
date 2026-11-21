@@ -22,6 +22,11 @@ const schedulingTask = {
   description: 'Keep every field',
   description_yjs_state: [1, 2],
   display_number: 7,
+  needs_user: null,
+  needs_user_reason: null,
+  task_resources: null,
+  updated_at: null,
+  virtual_assignees: null,
   embedding: [0.1, 0.2],
   end_date: null,
   estimation_points: 3,
@@ -56,15 +61,14 @@ describe('native page transport boundaries', () => {
   );
   it.each([() => 'hidden', Number.POSITIVE_INFINITY, Symbol('fts')])(
     'rejects an unsupported search vector before transport',
-    (fts) =>
-      expect(() =>
-        schedulingTaskTransport({ ...schedulingTask, fts })
-      ).toThrow()
+    (fts) => {
+      const task = { ...schedulingTask, fts };
+      expect(() => schedulingTaskTransport(task)).toThrow();
+    }
   );
   it('keeps the embedding guard active in the canonical task adapter', () => {
-    expect(() =>
-      schedulingTaskTransport({ ...schedulingTask, embedding: () => 1 })
-    ).toThrow();
+    const task = { ...schedulingTask, embedding: () => 1 };
+    expect(() => schedulingTaskTransport(task)).toThrow();
   });
   it('preserves boards data, query identity, timing and status through hydration', () => {
     const client = new QueryClient();

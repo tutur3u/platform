@@ -351,14 +351,7 @@
   },
   "platformObjects": {},
   "clientViewExceptions": {},
-  "typesAhead": {
-    "task_sprint_reports": {
-      "wave": 6,
-      "owner": "tasks board sprints",
-      "reason": "The generated types declare it ahead of the board sprints migration; the sprints route treats it as unavailable until that migration lands.",
-      "evidence": "Absent from the full migration replay and from the production public catalog readback (query sha256 7bb8e507, 2026-11-17)."
-    }
-  },
+  "typesAhead": {},
   "functions": {
     "enforced": false,
     "names": {}

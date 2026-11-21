@@ -85,7 +85,7 @@ export async function notifyNewFleetDecision(
     );
     if (!claimed) return;
 
-    const admin = await deadline.run(() =>
+    const admin = await deadline.run(async () =>
       createAdminClient({ noCookie: true })
     );
     const result = await deliverMastermindPushEvent({

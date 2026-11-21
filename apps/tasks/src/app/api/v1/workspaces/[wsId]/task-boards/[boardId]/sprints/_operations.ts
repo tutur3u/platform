@@ -2,6 +2,7 @@ import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { heldBoardSprintClient } from './_held-sprint-schema';
 import {
   boardCyclesNotEnabledResponse,
   goalResultSchema,
@@ -56,11 +57,14 @@ export async function updateBoardSprintLength({
     ) {
       return boardCyclesNotEnabledResponse();
     }
-    const { error } = await access.sbAdmin.rpc('set_board_sprint_length', {
-      p_actor_id: access.user.id,
-      p_board_id: access.boardId,
-      p_weeks: body.sprint_length_weeks as number,
-    });
+    const { error } = await heldBoardSprintClient(access.sbAdmin).rpc(
+      'set_board_sprint_length',
+      {
+        p_actor_id: access.user.id,
+        p_board_id: access.boardId,
+        p_weeks: body.sprint_length_weeks as number,
+      }
+    );
     if (error) {
       return sprintRpcErrorResponse(error, 'Failed to update sprint length');
     }
@@ -78,14 +82,13 @@ export async function updateBoardSprintLength({
 
 export async function addBoardSprint({ access }: SprintOperationContext) {
   try {
-    const { data: added, error } = await access.sbAdmin.rpc(
-      'add_board_sprint',
-      {
-        p_actor_id: access.user.id,
-        p_board_id: access.boardId,
-        p_ws_id: access.wsId,
-      }
-    );
+    const { data: added, error } = await heldBoardSprintClient(
+      access.sbAdmin
+    ).rpc('add_board_sprint', {
+      p_actor_id: access.user.id,
+      p_board_id: access.boardId,
+      p_ws_id: access.wsId,
+    });
     if (error) {
       return sprintRpcErrorResponse(error, 'Failed to add sprint');
     }
@@ -136,7 +139,7 @@ export async function updateBoardSprint({
       );
     }
 
-    const { error } = await access.sbAdmin
+    const { error } = await heldBoardSprintClient(access.sbAdmin)
       .from('task_cycles')
       .update({
         ...(body.goal !== undefined ? { goal: body.goal || null } : {}),
@@ -178,12 +181,15 @@ export async function removeBoardSprint({
     );
     if (existing.error) return existing.error;
 
-    const { error } = await access.sbAdmin.rpc('remove_board_sprint', {
-      p_actor_id: access.user.id,
-      p_board_id: access.boardId,
-      p_cycle_id: sprintId,
-      p_ws_id: access.wsId,
-    });
+    const { error } = await heldBoardSprintClient(access.sbAdmin).rpc(
+      'remove_board_sprint',
+      {
+        p_actor_id: access.user.id,
+        p_board_id: access.boardId,
+        p_cycle_id: sprintId,
+        p_ws_id: access.wsId,
+      }
+    );
     if (error) {
       return sprintRpcErrorResponse(error, 'Failed to remove sprint');
     }
@@ -212,10 +218,13 @@ export async function startBoardSprint({
     );
     if (existing.error) return existing.error;
 
-    const { error } = await access.sbAdmin.rpc('start_board_sprint', {
-      p_actor_id: access.user.id,
-      p_cycle_id: sprintId,
-    });
+    const { error } = await heldBoardSprintClient(access.sbAdmin).rpc(
+      'start_board_sprint',
+      {
+        p_actor_id: access.user.id,
+        p_cycle_id: sprintId,
+      }
+    );
     if (error) {
       return sprintRpcErrorResponse(error, 'Failed to start sprint');
     }
@@ -254,15 +263,14 @@ export async function endBoardSprint({
     );
     if (existing.error) return existing.error;
 
-    const { data: report, error } = await access.sbAdmin.rpc(
-      'end_board_sprint',
-      {
-        p_actor_id: access.user.id,
-        p_cycle_id: sprintId,
-        p_decisions: body.decisions,
-        p_goal_result: body.goal_result ?? undefined,
-      }
-    );
+    const { data: report, error } = await heldBoardSprintClient(
+      access.sbAdmin
+    ).rpc('end_board_sprint', {
+      p_actor_id: access.user.id,
+      p_cycle_id: sprintId,
+      p_decisions: body.decisions,
+      p_goal_result: body.goal_result ?? undefined,
+    });
     if (error) {
       return sprintRpcErrorResponse(error, 'Failed to end sprint');
     }
@@ -297,7 +305,7 @@ export async function moveBoardSprintTasks({
   try {
     const sprintId = sprintIdSchema.parse(params.sprintId);
     const body = moveTasksSchema.parse(await request.json());
-    const { data, error } = await access.sbAdmin.rpc(
+    const { data, error } = await heldBoardSprintClient(access.sbAdmin).rpc(
       'move_tasks_to_board_sprint',
       {
         p_board_id: access.boardId,
@@ -325,7 +333,7 @@ export async function unplanBoardSprintTasks({
 }: SprintOperationContext) {
   try {
     const body = unplanTasksSchema.parse(await request.json());
-    const { data, error } = await access.sbAdmin.rpc(
+    const { data, error } = await heldBoardSprintClient(access.sbAdmin).rpc(
       'move_tasks_to_board_sprint',
       {
         p_board_id: access.boardId,

@@ -395,7 +395,7 @@ export async function verifyWorkspaceDomain(
         cloudflare_custom_hostname_id: hostname.id,
         ownership_status: 'verified',
         ssl_status: hostname.ssl?.status?.slice(0, 50) ?? null,
-        dns_records: customHostnameDnsRecords(hostname) as Json,
+        dns_records: customHostnameDnsRecords(hostname),
       });
       ready = hostname.status === 'active' && hostname.ssl?.status === 'active';
       if (ready && !row.cloudflare_worker_route_id) {

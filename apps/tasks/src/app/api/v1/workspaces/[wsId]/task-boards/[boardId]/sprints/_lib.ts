@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
 import { requireBoardAccess } from '../lists/access';
+import { heldBoardSprintClient } from './_held-sprint-schema';
 
 export const TASK_BOARD_SPRINT_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'tasks'],
@@ -266,10 +267,10 @@ async function listUnplannedTaskIds(
   sbAdmin: TypedSupabaseClient,
   { boardId, wsId }: { boardId: string; wsId: string }
 ): Promise<{ data: string[] | null; error: SprintQueryError | null }> {
-  const { data, error } = await sbAdmin.rpc('list_board_unplanned_task_ids', {
-    p_board_id: boardId,
-    p_ws_id: wsId,
-  });
+  const { data, error } = await heldBoardSprintClient(sbAdmin).rpc(
+    'list_board_unplanned_task_ids',
+    { p_board_id: boardId, p_ws_id: wsId }
+  );
   if (error) return { data: null, error };
   return { data: (data ?? []) as string[], error: null };
 }
@@ -302,20 +303,24 @@ export async function loadEnabledBoardSprints({
   const cyclesEnabled = readWorkspaceBoardCyclesEnabled(sbAdmin, wsId).catch(
     () => false
   );
+  const heldSprints = heldBoardSprintClient(sbAdmin);
   const [boardResult, sprintsResult, reportsResult, unplannedResult] =
     await Promise.all([
-      sbAdmin
+      heldSprints
         .from('workspace_boards')
         .select('sprint_length_weeks')
         .eq('id', boardId)
         .maybeSingle(),
-      sbAdmin
+      heldSprints
         .from('task_cycles')
         .select(SPRINT_SELECT)
         .eq('board_id', boardId)
         .not('deleted', 'is', true)
         .order('sequence_number', { ascending: true }),
-      sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
+      heldSprints
+        .from('task_sprint_reports')
+        .select('*')
+        .eq('board_id', boardId),
       listUnplannedTaskIds(sbAdmin, { boardId, wsId }),
     ]);
 
@@ -364,7 +369,7 @@ export async function requireBoardSprint(
   | { error: NextResponse; sprint?: never }
   | { error?: never; sprint: { id: string; status: string | null } }
 > {
-  const { data, error } = await sbAdmin
+  const { data, error } = await heldBoardSprintClient(sbAdmin)
     .from('task_cycles')
     .select('id, status')
     .eq('id', sprintId)

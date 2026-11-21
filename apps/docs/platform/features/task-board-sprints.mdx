@@ -30,12 +30,15 @@ separately admitted sprint schema.
 Admitting the held sprint migrations must create `task_sprint_reports`, and
 any other new sprint table, in the `private` schema, and the sprint routes must
 read and write it through `.schema('private')` on an authorized admin client.
-The generated types declare `task_sprint_reports` in `public` ahead of its
-migration; it is recorded under `typesAhead` in
-`apps/database/public-schema-allowlist.json`, and `public-schema-guard.yaml`
-fails if the migration creates it in `public`. Remove that entry when the types
-are regenerated. See
+`public-schema-guard.yaml` fails if the migration creates it in `public`. See
 [public schema privatization](/build/devops/public-schema-privatization#guard-no-new-public-relations).
+
+`@tuturuuu/types` is generated from the retained migration chain, so it has no
+sprint columns, `task_sprint_reports` or sprint RPCs. The sprint routes type
+those surfaces through the hand-written
+`apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/_held-sprint-schema.ts`.
+That module changes types only. Delete it when the held migrations are admitted
+and the types are regenerated from them.
 
 A sprint is a task cycle with a `board_id`. A board has at most five open
 sprints: one running and the sprints planned after it. The earliest planned

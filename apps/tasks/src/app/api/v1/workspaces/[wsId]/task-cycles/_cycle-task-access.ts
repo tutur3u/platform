@@ -121,7 +121,9 @@ export async function assertCycleInWorkspace(
     return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
   }
 
-  if (cycle.board_id != null) {
+  // `board_id` exists only with the held sprint schema; the generated types
+  // omit it, and `select('*')` returns no such field without that schema.
+  if ((cycle as { board_id?: string | null }).board_id != null) {
     return boardSprintRefused();
   }
 
