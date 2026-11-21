@@ -19324,4 +19324,202 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
     return '$cancelled duplicates · $quota after quota · $recovered retried OK';
   }
+
+  @override
+  String get mastermindShipLiveCheckNow => 'Check now';
+
+  @override
+  String get mastermindShipLiveChecking => 'Checking sources';
+
+  @override
+  String mastermindShipLiveCheckedAgo(String age) {
+    return 'Checked $age ago';
+  }
+
+  @override
+  String mastermindShipLiveSources(String count) {
+    return '$count sources';
+  }
+
+  @override
+  String get mastermindShipLiveFilterAll => 'All';
+
+  @override
+  String mastermindShipLiveFilterWaiting(String count) {
+    return 'Waiting $count';
+  }
+
+  @override
+  String mastermindShipLiveFilterFailing(String count) {
+    return 'Failing $count';
+  }
+
+  @override
+  String mastermindShipLiveFilterDoubtful(String count) {
+    return 'Stale $count';
+  }
+
+  @override
+  String get mastermindShipLiveGroupPlatform => 'Tuturuuu platform';
+
+  @override
+  String get mastermindShipLiveGroupMobile => 'Mobile';
+
+  @override
+  String get mastermindShipLiveGroupUpskii => 'Upskii';
+
+  @override
+  String get mastermindShipLiveGroupMasteryAi => 'Mastery AI';
+
+  @override
+  String get mastermindShipLiveGroupPktm => 'PKTM';
+
+  @override
+  String get mastermindShipLiveProduction => 'Prod';
+
+  @override
+  String get mastermindShipLiveStaging => 'Staging';
+
+  @override
+  String get mastermindShipLiveNotLive => 'Not live yet';
+
+  @override
+  String get mastermindShipLiveUnknown => 'Unknown';
+
+  @override
+  String get mastermindShipLiveNoStaging => 'None';
+
+  @override
+  String get mastermindShipLiveDeployOk => 'Deployed';
+
+  @override
+  String get mastermindShipLiveDeployFailed => 'Deploy failed';
+
+  @override
+  String get mastermindShipLiveDeployRunning => 'Deploying';
+
+  @override
+  String get mastermindShipLiveCiSuccess => 'CI passed';
+
+  @override
+  String get mastermindShipLiveCiFailure => 'CI failed';
+
+  @override
+  String get mastermindShipLiveCiPending => 'CI running';
+
+  @override
+  String get mastermindShipLiveCiNone => 'CI unknown';
+
+  @override
+  String mastermindShipLiveIct(String time) {
+    return '$time ICT';
+  }
+
+  @override
+  String mastermindShipLiveWorkerRuns(String sha) {
+    return 'Worker runs $sha';
+  }
+
+  @override
+  String get mastermindShipLivePendingUnknown => 'Waiting: unknown';
+
+  @override
+  String get mastermindShipLiveUpToDate => 'Up to date';
+
+  @override
+  String mastermindShipLivePendingCommits(String count, String age) {
+    return '$count commits waiting, oldest $age';
+  }
+
+  @override
+  String mastermindShipLivePendingCount(String count) {
+    return '$count commits waiting';
+  }
+
+  @override
+  String get mastermindShipLiveFreshNever => 'never';
+
+  @override
+  String mastermindShipLiveFreshStale(String age) {
+    return '$age, stale';
+  }
+
+  @override
+  String get mastermindShipLiveFreshPartial => 'partial';
+
+  @override
+  String get mastermindShipLiveChipsGithub => 'Deploys · CI';
+
+  @override
+  String get mastermindShipLiveChipsCloudflare => 'Workers';
+
+  @override
+  String get mastermindShipLiveNotConfigured => 'Source not configured';
+
+  @override
+  String mastermindShipLivePartial(String sources) {
+    return '$sources unavailable. Affected rows say Partial.';
+  }
+
+  @override
+  String get mastermindShipLiveErrorTitle => 'No source reachable';
+
+  @override
+  String mastermindShipLiveErrorBody(String time) {
+    return 'Last good check $time ICT. Rows are hidden, not shown as current.';
+  }
+
+  @override
+  String get mastermindShipLiveErrorNever => 'No source has answered yet. Rows are hidden, not shown as current.';
+
+  @override
+  String get mastermindShipLiveTryAgain => 'Try again';
+
+  @override
+  String mastermindShipLiveViewStale(String time) {
+    return 'View the $time snapshot, marked stale';
+  }
+
+  @override
+  String get mastermindShipLiveEmptyTitle => 'No ship check has run yet';
+
+  @override
+  String get mastermindShipLiveEmptyBody => 'The collector writes the first snapshot within two minutes of being enabled. Check now runs it immediately.';
+
+  @override
+  String get mastermindShipLiveCheckDone => 'Checked just now';
+
+  @override
+  String mastermindShipLiveCheckLimited(String seconds) {
+    return 'Checked moments ago. Try again in $seconds s.';
+  }
+
+  @override
+  String get mastermindShipLiveCheckStopped => 'The collector is stopped.';
+
+  @override
+  String get mastermindShipLiveCheckUnconfigured => 'Check now is not configured.';
+
+  @override
+  String get mastermindShipLiveCheckFailed => 'The check did not finish. Rows keep their last stamps.';
+
+  @override
+  String get mastermindShipLiveCheckDisabled => 'The collector is not enabled yet.';
+
+  @override
+  String get mastermindShipLiveLoadTitle => 'Ship data is unavailable';
+
+  @override
+  String get mastermindShipLiveLoadBody => 'The last read failed. Rows are hidden rather than shown as current.';
+
+  @override
+  String get mastermindShipLiveViewLast => 'View the last snapshot, marked stale';
+
+  @override
+  String mastermindShipLiveSplit(String percent) {
+    return '$percent% of traffic';
+  }
+
+  @override
+  String get mastermindShipLiveLoadStaleBody => 'The last read failed. The last snapshot is shown, marked stale.';
 }

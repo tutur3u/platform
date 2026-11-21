@@ -9615,5 +9615,169 @@
         "type": "int"
       }
     }
-  }
+  },
+  "mastermindShipLiveCheckNow": "Check now",
+  "mastermindShipLiveChecking": "Checking sources",
+  "mastermindShipLiveCheckedAgo": "Checked {age} ago",
+  "@mastermindShipLiveCheckedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveSources": "{count} sources",
+  "@mastermindShipLiveSources": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveFilterAll": "All",
+  "mastermindShipLiveFilterWaiting": "Waiting {count}",
+  "@mastermindShipLiveFilterWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveFilterFailing": "Failing {count}",
+  "@mastermindShipLiveFilterFailing": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveFilterDoubtful": "Stale {count}",
+  "@mastermindShipLiveFilterDoubtful": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveGroupPlatform": "Tuturuuu platform",
+  "mastermindShipLiveGroupMobile": "Mobile",
+  "mastermindShipLiveGroupUpskii": "Upskii",
+  "mastermindShipLiveGroupMasteryAi": "Mastery AI",
+  "mastermindShipLiveGroupPktm": "PKTM",
+  "mastermindShipLiveProduction": "Prod",
+  "mastermindShipLiveStaging": "Staging",
+  "mastermindShipLiveNotLive": "Not live yet",
+  "mastermindShipLiveUnknown": "Unknown",
+  "mastermindShipLiveNoStaging": "None",
+  "mastermindShipLiveDeployOk": "Deployed",
+  "mastermindShipLiveDeployFailed": "Deploy failed",
+  "mastermindShipLiveDeployRunning": "Deploying",
+  "mastermindShipLiveCiSuccess": "CI passed",
+  "mastermindShipLiveCiFailure": "CI failed",
+  "mastermindShipLiveCiPending": "CI running",
+  "mastermindShipLiveCiNone": "CI unknown",
+  "mastermindShipLiveIct": "{time} ICT",
+  "@mastermindShipLiveIct": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveWorkerRuns": "Worker runs {sha}",
+  "@mastermindShipLiveWorkerRuns": {
+    "placeholders": {
+      "sha": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLivePendingUnknown": "Waiting: unknown",
+  "mastermindShipLiveUpToDate": "Up to date",
+  "mastermindShipLivePendingCommits": "{count} commits waiting, oldest {age}",
+  "@mastermindShipLivePendingCommits": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLivePendingCount": "{count} commits waiting",
+  "@mastermindShipLivePendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveFreshNever": "never",
+  "mastermindShipLiveFreshStale": "{age}, stale",
+  "@mastermindShipLiveFreshStale": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveFreshPartial": "partial",
+  "mastermindShipLiveChipsGithub": "Deploys · CI",
+  "mastermindShipLiveChipsCloudflare": "Workers",
+  "mastermindShipLiveNotConfigured": "Source not configured",
+  "mastermindShipLivePartial": "{sources} unavailable. Affected rows say Partial.",
+  "@mastermindShipLivePartial": {
+    "placeholders": {
+      "sources": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveErrorTitle": "No source reachable",
+  "mastermindShipLiveErrorBody": "Last good check {time} ICT. Rows are hidden, not shown as current.",
+  "@mastermindShipLiveErrorBody": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveErrorNever": "No source has answered yet. Rows are hidden, not shown as current.",
+  "mastermindShipLiveTryAgain": "Try again",
+  "mastermindShipLiveViewStale": "View the {time} snapshot, marked stale",
+  "@mastermindShipLiveViewStale": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveEmptyTitle": "No ship check has run yet",
+  "mastermindShipLiveEmptyBody": "The collector writes the first snapshot within two minutes of being enabled. Check now runs it immediately.",
+  "mastermindShipLiveCheckDone": "Checked just now",
+  "mastermindShipLiveCheckLimited": "Checked moments ago. Try again in {seconds} s.",
+  "@mastermindShipLiveCheckLimited": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveCheckStopped": "The collector is stopped.",
+  "mastermindShipLiveCheckUnconfigured": "Check now is not configured.",
+  "mastermindShipLiveCheckFailed": "The check did not finish. Rows keep their last stamps.",
+  "mastermindShipLiveCheckDisabled": "The collector is not enabled yet.",
+  "mastermindShipLiveLoadTitle": "Ship data is unavailable",
+  "mastermindShipLiveLoadBody": "The last read failed. Rows are hidden rather than shown as current.",
+  "mastermindShipLiveViewLast": "View the last snapshot, marked stale",
+  "mastermindShipLiveSplit": "{percent}% of traffic",
+  "@mastermindShipLiveSplit": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindShipLiveLoadStaleBody": "The last read failed. The last snapshot is shown, marked stale."
 }

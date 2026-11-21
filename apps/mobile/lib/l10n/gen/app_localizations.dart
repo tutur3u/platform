@@ -35484,6 +35484,342 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{cancelled} duplicates · {quota} after quota · {recovered} retried OK'**
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered);
+
+  /// No description provided for @mastermindShipLiveCheckNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now'**
+  String get mastermindShipLiveCheckNow;
+
+  /// No description provided for @mastermindShipLiveChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking sources'**
+  String get mastermindShipLiveChecking;
+
+  /// No description provided for @mastermindShipLiveCheckedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {age} ago'**
+  String mastermindShipLiveCheckedAgo(String age);
+
+  /// No description provided for @mastermindShipLiveSources.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sources'**
+  String mastermindShipLiveSources(String count);
+
+  /// No description provided for @mastermindShipLiveFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mastermindShipLiveFilterAll;
+
+  /// No description provided for @mastermindShipLiveFilterWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting {count}'**
+  String mastermindShipLiveFilterWaiting(String count);
+
+  /// No description provided for @mastermindShipLiveFilterFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'Failing {count}'**
+  String mastermindShipLiveFilterFailing(String count);
+
+  /// No description provided for @mastermindShipLiveFilterDoubtful.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale {count}'**
+  String mastermindShipLiveFilterDoubtful(String count);
+
+  /// No description provided for @mastermindShipLiveGroupPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu platform'**
+  String get mastermindShipLiveGroupPlatform;
+
+  /// No description provided for @mastermindShipLiveGroupMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get mastermindShipLiveGroupMobile;
+
+  /// No description provided for @mastermindShipLiveGroupUpskii.
+  ///
+  /// In en, this message translates to:
+  /// **'Upskii'**
+  String get mastermindShipLiveGroupUpskii;
+
+  /// No description provided for @mastermindShipLiveGroupMasteryAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastery AI'**
+  String get mastermindShipLiveGroupMasteryAi;
+
+  /// No description provided for @mastermindShipLiveGroupPktm.
+  ///
+  /// In en, this message translates to:
+  /// **'PKTM'**
+  String get mastermindShipLiveGroupPktm;
+
+  /// No description provided for @mastermindShipLiveProduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Prod'**
+  String get mastermindShipLiveProduction;
+
+  /// No description provided for @mastermindShipLiveStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging'**
+  String get mastermindShipLiveStaging;
+
+  /// No description provided for @mastermindShipLiveNotLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Not live yet'**
+  String get mastermindShipLiveNotLive;
+
+  /// No description provided for @mastermindShipLiveUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get mastermindShipLiveUnknown;
+
+  /// No description provided for @mastermindShipLiveNoStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get mastermindShipLiveNoStaging;
+
+  /// No description provided for @mastermindShipLiveDeployOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Deployed'**
+  String get mastermindShipLiveDeployOk;
+
+  /// No description provided for @mastermindShipLiveDeployFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy failed'**
+  String get mastermindShipLiveDeployFailed;
+
+  /// No description provided for @mastermindShipLiveDeployRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploying'**
+  String get mastermindShipLiveDeployRunning;
+
+  /// No description provided for @mastermindShipLiveCiSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'CI passed'**
+  String get mastermindShipLiveCiSuccess;
+
+  /// No description provided for @mastermindShipLiveCiFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'CI failed'**
+  String get mastermindShipLiveCiFailure;
+
+  /// No description provided for @mastermindShipLiveCiPending.
+  ///
+  /// In en, this message translates to:
+  /// **'CI running'**
+  String get mastermindShipLiveCiPending;
+
+  /// No description provided for @mastermindShipLiveCiNone.
+  ///
+  /// In en, this message translates to:
+  /// **'CI unknown'**
+  String get mastermindShipLiveCiNone;
+
+  /// No description provided for @mastermindShipLiveIct.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} ICT'**
+  String mastermindShipLiveIct(String time);
+
+  /// No description provided for @mastermindShipLiveWorkerRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker runs {sha}'**
+  String mastermindShipLiveWorkerRuns(String sha);
+
+  /// No description provided for @mastermindShipLivePendingUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting: unknown'**
+  String get mastermindShipLivePendingUnknown;
+
+  /// No description provided for @mastermindShipLiveUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get mastermindShipLiveUpToDate;
+
+  /// No description provided for @mastermindShipLivePendingCommits.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} commits waiting, oldest {age}'**
+  String mastermindShipLivePendingCommits(String count, String age);
+
+  /// No description provided for @mastermindShipLivePendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} commits waiting'**
+  String mastermindShipLivePendingCount(String count);
+
+  /// No description provided for @mastermindShipLiveFreshNever.
+  ///
+  /// In en, this message translates to:
+  /// **'never'**
+  String get mastermindShipLiveFreshNever;
+
+  /// No description provided for @mastermindShipLiveFreshStale.
+  ///
+  /// In en, this message translates to:
+  /// **'{age}, stale'**
+  String mastermindShipLiveFreshStale(String age);
+
+  /// No description provided for @mastermindShipLiveFreshPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'partial'**
+  String get mastermindShipLiveFreshPartial;
+
+  /// No description provided for @mastermindShipLiveChipsGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploys · CI'**
+  String get mastermindShipLiveChipsGithub;
+
+  /// No description provided for @mastermindShipLiveChipsCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers'**
+  String get mastermindShipLiveChipsCloudflare;
+
+  /// No description provided for @mastermindShipLiveNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Source not configured'**
+  String get mastermindShipLiveNotConfigured;
+
+  /// No description provided for @mastermindShipLivePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'{sources} unavailable. Affected rows say Partial.'**
+  String mastermindShipLivePartial(String sources);
+
+  /// No description provided for @mastermindShipLiveErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No source reachable'**
+  String get mastermindShipLiveErrorTitle;
+
+  /// No description provided for @mastermindShipLiveErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Last good check {time} ICT. Rows are hidden, not shown as current.'**
+  String mastermindShipLiveErrorBody(String time);
+
+  /// No description provided for @mastermindShipLiveErrorNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No source has answered yet. Rows are hidden, not shown as current.'**
+  String get mastermindShipLiveErrorNever;
+
+  /// No description provided for @mastermindShipLiveTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get mastermindShipLiveTryAgain;
+
+  /// No description provided for @mastermindShipLiveViewStale.
+  ///
+  /// In en, this message translates to:
+  /// **'View the {time} snapshot, marked stale'**
+  String mastermindShipLiveViewStale(String time);
+
+  /// No description provided for @mastermindShipLiveEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No ship check has run yet'**
+  String get mastermindShipLiveEmptyTitle;
+
+  /// No description provided for @mastermindShipLiveEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The collector writes the first snapshot within two minutes of being enabled. Check now runs it immediately.'**
+  String get mastermindShipLiveEmptyBody;
+
+  /// No description provided for @mastermindShipLiveCheckDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked just now'**
+  String get mastermindShipLiveCheckDone;
+
+  /// No description provided for @mastermindShipLiveCheckLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked moments ago. Try again in {seconds} s.'**
+  String mastermindShipLiveCheckLimited(String seconds);
+
+  /// No description provided for @mastermindShipLiveCheckStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'The collector is stopped.'**
+  String get mastermindShipLiveCheckStopped;
+
+  /// No description provided for @mastermindShipLiveCheckUnconfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Check now is not configured.'**
+  String get mastermindShipLiveCheckUnconfigured;
+
+  /// No description provided for @mastermindShipLiveCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The check did not finish. Rows keep their last stamps.'**
+  String get mastermindShipLiveCheckFailed;
+
+  /// No description provided for @mastermindShipLiveCheckDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'The collector is not enabled yet.'**
+  String get mastermindShipLiveCheckDisabled;
+
+  /// No description provided for @mastermindShipLiveLoadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ship data is unavailable'**
+  String get mastermindShipLiveLoadTitle;
+
+  /// No description provided for @mastermindShipLiveLoadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The last read failed. Rows are hidden rather than shown as current.'**
+  String get mastermindShipLiveLoadBody;
+
+  /// No description provided for @mastermindShipLiveViewLast.
+  ///
+  /// In en, this message translates to:
+  /// **'View the last snapshot, marked stale'**
+  String get mastermindShipLiveViewLast;
+
+  /// No description provided for @mastermindShipLiveSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of traffic'**
+  String mastermindShipLiveSplit(String percent);
+
+  /// No description provided for @mastermindShipLiveLoadStaleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The last read failed. The last snapshot is shown, marked stale.'**
+  String get mastermindShipLiveLoadStaleBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

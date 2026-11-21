@@ -15,7 +15,6 @@ import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart'
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/features/mastermind/view/mastermind_sources_sheet.dart';
-import 'package:mobile/features/mastermind/view/ship/mastermind_ship_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 
@@ -81,7 +80,6 @@ void main() {
     ('Home', const MastermindHomePage()),
     ('Inbox', const MastermindInboxPage()),
     ('Work', const MastermindWorkPage()),
-    ('Ship', const MastermindShipPage()),
     ('Insights', const MastermindInsightsPage()),
     (
       'Ask detail',
@@ -154,12 +152,6 @@ void main() {
           expect(tester.takeException(), isNull);
         case 'Work':
           expect(find.text('[Atlas] Mastermind'), findsOneWidget);
-        case 'Ship':
-          // Nothing observed yet: one row, the reasons one tap away.
-          expect(find.text('Not tracked yet'), findsOneWidget);
-          await tester.tap(find.text('Not tracked yet'));
-          await tester.pumpAndSettle();
-          expect(find.textContaining('Not connected'), findsWidgets);
         case 'Insights':
           expect(
             find.textContaining('Out of service / unreadable'),

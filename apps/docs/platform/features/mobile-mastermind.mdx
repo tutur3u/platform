@@ -6,8 +6,9 @@ audience: users
 ---
 
 Mastermind is an internal fleet overview. Today, Inbox and Work read the live
-fleet snapshot from Web (see Fleet sync); Ship and Insights still read the
-sanitized snapshot from the Mastermind hub Worker. This page records the
+fleet snapshot from Web (see Fleet sync); Ship reads the ship collector (see
+Ship); Insights still reads the sanitized snapshot from the Mastermind hub
+Worker. This page records the
 product rules of the shell entry and every tab.
 
 ## Fleet sync
@@ -1216,54 +1217,56 @@ and product, area and kind chips. State is always a glyph and a word.
 
 ## Ship
 
-`/mastermind/ship` is read-only. It lists, under the freshness strip:
+Ship answers, per app: what is live in production and staging, whether CI
+passed on that exact SHA, and how much is waiting on the branch. It is the same
+screen on Mastermind web (`/en/ship`, a sidebar entry) and on the phone (the
+"Phát hành" tab), read-only apart from **Check now**.
 
-- **Environments by product.** A product with a failing environment (deploy or
-  CI `failure` or `error`) comes first, then the rest by most recent release,
-  then by name. Each product is one compact card. Its header row carries the
-  name, "Live 2 h ago" with the age basis (left out when the age is null, never
-  "Unknown" or 0) and, when failing, a destructive glyph and a "Failing" badge.
-  Production comes before staging. An environment row shows deploy and CI as a
-  glyph and a word, and its own `freshness` as a chip only when it is not fresh
-  (it never follows the snapshot's age). Then come the version and the commit id
-  (monospace, with a 44-pt copy button; it is a public commit id), and one muted
-  line with the subject, "Released 2 h ago" and "Checked 30 min ago" measured
-  from the snapshot time. The absolute GMT+7 release and check times and the
-  evidence label are in the row's semantics label. A reading the hub did not
-  publish is left out, while one it could not read keeps its reason, for
-  example "Deploy Not connected · Last checked 19:22". The publisher's stand-in
-  subject for a commit it will not send is shown as the localized label
-  "Withheld, open on Mac", muted with an info glyph and the tooltip "Details
-  stay on the Mac". A failing environment on Home opens Ship on its product, and
-  its row carries a chevron like the release rows.
-- **Not tracked yet.** A product with no release age whose every environment has
-  deploy, CI, freshness and evidence `unknown` and no release time, version or
-  commit id gets no card. All such products share one final "Not tracked yet"
-  row that names them ("Product A, Product B"). Tapping it lists each with the hub's
-  reason ("Not connected · Last checked 19:22") or "No deployments observed".
-  The row is hidden while a product filter is on, and these products get no
-  filter pill.
-- **CI now.** `observability.ci[]`, queued and running per repository. A null
-  count reads "Unavailable", never 0.
-- **Release cadence.** Most recent production release first; a product with none
-  reads "No production release observed" and sits last. The caption carries the
-  row count, and the list shows five rows with "Show all N" for the rest.
-- **Pull requests and merges.** From `observability.delivery`: the latest open
-  pull request count and merge-to-live median per product, and "At least N
-  production releases observed" (a lower bound). A null count reads
-  "Unavailable"; a delivery source with no coverage says so once and shows no
-  numbers. Nothing on this tab opens a pull request, merges or syncs anything.
-  The schema carries no separate sync record, so production sync is only
-  visible as the release age and cadence above.
-- **Product filter in the URL.** One horizontally scrolling pill bar (All, then
-  the tracked products in list order, failing ones marked with a warning glyph)
-  appears while two or more tracked products are present. It never wraps and
-  writes `?product=<product>` with `go`. A product the snapshot lacks
-  is shown unfiltered at once and removed from the URL after the frame, but
-  only while Ship is the top route: a rewrite is a `go`, so one that fired under
-  an open route would drop it. External deep links open the tab root.
+**Source.** The [ship collector](/build/devops/mastermind-ship-collector), a
+Cron Control job, writes one snapshot every two minutes; Web serves it
+owner-only at `GET /api/v1/mastermind/fleet/ship`. **Check now** (`POST
+.../ship/check`) runs the collector at once, at most once per 30 seconds
+across the schedule and every owner client; a refused check says how long to
+wait. Web polls the snapshot every 30 seconds and the phone while it is in the
+foreground. The hub snapshot is not a Ship source.
 
-Ship shows no security rows, ids or digests.
+**Apps.** Web, Calendar, Contacts, Meet, Mail and Mastermind (Tuturuuu
+platform), iOS/Android (Mobile, from the store release deployment), Upskii
+and the other apps tracked outside this repository, each in its own product
+group. An app whose repository is
+not configured shows "Source not configured" rather than being hidden.
+
+**Rows.** Each environment shows the active Cloudflare Worker version (or the
+deployment environment when there is no Worker), the short SHA, the deploy
+time in ICT, the newest deploy attempt (Deployed, Deploy failed, Deploying)
+and the CI state of that SHA (passed, failed, running, unknown). A Worker
+running a different SHA from the deployment record adds "Worker runs
+<sha>". An app with staging but no production record reads "Not in
+production yet". "Waiting to ship" counts the commits on the branch that touch
+the app's paths and are newer than the live production commit, with the
+oldest one's age; a full page reads "100+".
+
+**Freshness.** No row is ever shown as silently cached. Each row is Checked
+(with the age of its oldest working source's confirmation), Partial (one of
+its sources failed; the source is named, and the age comes from the working
+sources, or from the last confirmation when none works), Stale (that age is
+past six minutes) or Unknown, and names its sources ("Deploys · CI",
+"Workers"). Each GitHub repository is its own source. A source strip (web)
+or line (phone) shows every source with its age, failure or backoff. When one
+source fails a Partial banner names it. When every configured source fails,
+rows are hidden behind an error banner with the last good check time, Try
+again, and an explicit option to view that snapshot marked stale. A failed
+read of the snapshot itself hides the rows the same way. Check now reports
+checked, rate-limited (with the wait), stopped, not enabled, not configured
+or failed; the read after it skips Web's few-second cache. Home's Ship rows
+open the tab. Before the
+collector has run, Ship says so instead of showing rows.
+
+**Summary (web).** Live in production, commits waiting with the oldest app,
+CI failing on a live SHA, and stale or unknown rows. The phone shows the same
+counts as filter pills (All, Waiting, Failing, Stale).
+
+Ship shows no tokens, commit messages or author identities.
 
 ## Insights
 
@@ -1341,7 +1344,9 @@ Delivery sections arrive later and reuse the table route below).
   a child lane; an item uses its real title or first ask line. Models shorten
   to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
   reported". Coverage: `presentation/display_names_test.dart`.
-- **No bare unknown.** Scope: Home now, Ship and Insights next. Default: a
+- **No bare unknown.** Scope: Home now, Insights next. Ship is an exception:
+  an environment with no record reads "Unknown" beside its row's freshness and
+  named sources (see Ship). Default: a
   missing, blank or "unknown" reading renders a muted `—` (`ReportedText`)
   announced as "Not reported" plus the hub's reason; the word "unknown" never
   stands alone. Coverage: `view/mastermind_home_v1_test.dart`,
@@ -1501,11 +1506,6 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   the snapshot is removed from the URL too, and valid filters are kept.
 - `mastermind_lane_page_test.dart` (detail, gone, updated) and
   `work_model_test.dart`.
-- `mastermind_ship_page_test.dart`: failure-first grouping, production before
-  staging, withheld subject, per-environment freshness independent of the
-  snapshot, "Unavailable" instead of 0, cadence order, pull requests and merges,
-  redaction, whole-section states, the product filter in the URL, dock
-  clearance.
 - `mastermind_insights_page_test.dart`: pool urgency order, one verdict per
   pool, the reserve note behind its info button, unread windows as a dash, GMT+7
   resets, credits copy, quota and forecasts, coverage handling, the chart table
@@ -1514,12 +1514,15 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   no-pacing shape, the Table action above the plot with a 44-pt target, the
   legend of drawn series, the plot's summary label, the quota cap and the Forge
   v1 fixture (a reason per window, no bare "unknown").
-- `mastermind_ship_compact_test.dart`: the "Not tracked yet" row (collapse,
-  order, expansion), the filter bar (tracked products only, failing marked, one
-  row), the cadence cap and the Forge v1 fixture (every product untracked,
-  reasons on expand).
-- `mastermind_home_links_test.dart`: Home Ship rows and the Usage link open the
-  real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
+- Ship: `apps/mastermind/src/ship/model.test.ts` and `ship-page.test.tsx`
+  (freshness kinds, stats, groups, partial and all-down states, the stale
+  opt-in, Check now and its rate limit, Vietnamese),
+  `apps/mobile/test/features/mastermind/ship/ship_live_test.dart` (strict
+  parsing, freshness, rows, hidden rows on outage, Try again), and the
+  collector and route tests listed in the
+  [collector runbook](/build/devops/mastermind-ship-collector#bounds-and-stop-fence).
+- `mastermind_home_links_test.dart`: Home Ship rows open the live Ship tab and
+  the Usage link opens Insights. `presentation/ship_usage_model_test.dart`: the Ship and Usage
   models and chart ids.
 - `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
   the root workspace, server answer and configured-source matrix (the entry
@@ -1540,8 +1543,6 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   the same Insights (one state created, Work still beneath it); both fail
   without the shell's chart-table pop rule, because the mini-app parent
   fallback's `go` rebuilds Insights and flattens the stack.
-  `mastermind_ship_url_test.dart`: a product filter with no chip shows the whole
-  list and rewrites the URL once, and not while another route is on top.
 
 The registered-destination smoke test builds every `/mastermind/**` route
 through the production router.

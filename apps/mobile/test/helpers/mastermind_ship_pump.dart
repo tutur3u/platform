@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
-import 'package:mobile/features/mastermind/view/ship/mastermind_ship_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 import 'helpers.dart';
@@ -56,28 +55,12 @@ Future<MastermindViewHarness> _pump(
   return harness;
 }
 
-Future<MastermindViewHarness> pumpShip(
+/// Pumps the production tab routes over [json] with [router] at its start.
+Future<MastermindViewHarness> pumpMastermindRoute(
   WidgetTester tester,
   Map<String, dynamic> json, {
-  GoRouter? router,
-  TestAccess access = TestAccess.enabled,
-  FakeHubSource? source,
-  Size size = const Size(430, 4000),
-  double dockClearance = 0,
-  Locale locale = const Locale('en'),
-  double textScale = 1,
-}) => _pump(
-  tester,
-  json,
-  const MastermindShipPage(),
-  router: router,
-  access: access,
-  source: source,
-  size: size,
-  dockClearance: dockClearance,
-  locale: locale,
-  textScale: textScale,
-);
+  required GoRouter router,
+}) => _pump(tester, json, const SizedBox.shrink(), router: router);
 
 Future<MastermindViewHarness> pumpInsights(
   WidgetTester tester,

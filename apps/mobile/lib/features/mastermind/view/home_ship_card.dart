@@ -59,12 +59,12 @@ class HomeShipCard extends StatelessWidget {
             ]),
             trailing: large ? null : _needsAttention(l10n),
             // Opens Ship on this product, where its environments are listed.
-            onTap: () => context.go(shipLocation(product: row.product)),
+            onTap: () => context.go(shipLocation()),
           ),
         for (final release in model.releases)
           AppGroupedRow(
             showChevron: true,
-            onTap: () => context.go(shipLocation(product: release.product)),
+            onTap: () => context.go(shipLocation()),
             title: Text(MastermindLabels.releaseProduct(release.product)),
             subtitle: _stacked([
               if (shared == null && release.ageBasis != AgeBasis.unknown)

@@ -19101,4 +19101,202 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
     return '$cancelled trùng lặp · $quota sau hạn mức · $recovered chạy lại đạt';
   }
+
+  @override
+  String get mastermindShipLiveCheckNow => 'Kiểm tra ngay';
+
+  @override
+  String get mastermindShipLiveChecking => 'Đang kiểm tra nguồn';
+
+  @override
+  String mastermindShipLiveCheckedAgo(String age) {
+    return 'Đã kiểm tra $age trước';
+  }
+
+  @override
+  String mastermindShipLiveSources(String count) {
+    return '$count nguồn';
+  }
+
+  @override
+  String get mastermindShipLiveFilterAll => 'Tất cả';
+
+  @override
+  String mastermindShipLiveFilterWaiting(String count) {
+    return 'Chờ $count';
+  }
+
+  @override
+  String mastermindShipLiveFilterFailing(String count) {
+    return 'Lỗi $count';
+  }
+
+  @override
+  String mastermindShipLiveFilterDoubtful(String count) {
+    return 'Cũ $count';
+  }
+
+  @override
+  String get mastermindShipLiveGroupPlatform => 'Nền tảng Tuturuuu';
+
+  @override
+  String get mastermindShipLiveGroupMobile => 'Di động';
+
+  @override
+  String get mastermindShipLiveGroupUpskii => 'Upskii';
+
+  @override
+  String get mastermindShipLiveGroupMasteryAi => 'Mastery AI';
+
+  @override
+  String get mastermindShipLiveGroupPktm => 'PKTM';
+
+  @override
+  String get mastermindShipLiveProduction => 'Prod';
+
+  @override
+  String get mastermindShipLiveStaging => 'Staging';
+
+  @override
+  String get mastermindShipLiveNotLive => 'Chưa chạy';
+
+  @override
+  String get mastermindShipLiveUnknown => 'Chưa rõ';
+
+  @override
+  String get mastermindShipLiveNoStaging => 'Không có';
+
+  @override
+  String get mastermindShipLiveDeployOk => 'Đã triển khai';
+
+  @override
+  String get mastermindShipLiveDeployFailed => 'Triển khai lỗi';
+
+  @override
+  String get mastermindShipLiveDeployRunning => 'Đang triển khai';
+
+  @override
+  String get mastermindShipLiveCiSuccess => 'CI đạt';
+
+  @override
+  String get mastermindShipLiveCiFailure => 'CI lỗi';
+
+  @override
+  String get mastermindShipLiveCiPending => 'CI đang chạy';
+
+  @override
+  String get mastermindShipLiveCiNone => 'Chưa rõ CI';
+
+  @override
+  String mastermindShipLiveIct(String time) {
+    return '$time ICT';
+  }
+
+  @override
+  String mastermindShipLiveWorkerRuns(String sha) {
+    return 'Worker đang chạy $sha';
+  }
+
+  @override
+  String get mastermindShipLivePendingUnknown => 'Chờ: chưa rõ';
+
+  @override
+  String get mastermindShipLiveUpToDate => 'Đã cập nhật';
+
+  @override
+  String mastermindShipLivePendingCommits(String count, String age) {
+    return '$count commit đang chờ, cũ nhất $age';
+  }
+
+  @override
+  String mastermindShipLivePendingCount(String count) {
+    return '$count commit đang chờ';
+  }
+
+  @override
+  String get mastermindShipLiveFreshNever => 'chưa';
+
+  @override
+  String mastermindShipLiveFreshStale(String age) {
+    return '$age, cũ';
+  }
+
+  @override
+  String get mastermindShipLiveFreshPartial => 'một phần';
+
+  @override
+  String get mastermindShipLiveChipsGithub => 'Triển khai · CI';
+
+  @override
+  String get mastermindShipLiveChipsCloudflare => 'Workers';
+
+  @override
+  String get mastermindShipLiveNotConfigured => 'Chưa cấu hình nguồn';
+
+  @override
+  String mastermindShipLivePartial(String sources) {
+    return 'Thiếu dữ liệu $sources. Các dòng liên quan ghi Một phần.';
+  }
+
+  @override
+  String get mastermindShipLiveErrorTitle => 'Không nguồn nào kết nối được';
+
+  @override
+  String mastermindShipLiveErrorBody(String time) {
+    return 'Lần kiểm tra tốt gần nhất $time ICT. Các dòng được ẩn, không hiển thị như hiện tại.';
+  }
+
+  @override
+  String get mastermindShipLiveErrorNever => 'Chưa nguồn nào phản hồi. Các dòng được ẩn, không hiển thị như hiện tại.';
+
+  @override
+  String get mastermindShipLiveTryAgain => 'Thử lại';
+
+  @override
+  String mastermindShipLiveViewStale(String time) {
+    return 'Xem bản lúc $time, có đánh dấu cũ';
+  }
+
+  @override
+  String get mastermindShipLiveEmptyTitle => 'Chưa có lần kiểm tra nào';
+
+  @override
+  String get mastermindShipLiveEmptyBody => 'Bộ thu thập ghi bản đầu tiên trong vòng hai phút sau khi được bật. Kiểm tra ngay sẽ chạy ngay lập tức.';
+
+  @override
+  String get mastermindShipLiveCheckDone => 'Vừa kiểm tra xong';
+
+  @override
+  String mastermindShipLiveCheckLimited(String seconds) {
+    return 'Vừa kiểm tra xong. Thử lại sau $seconds giây.';
+  }
+
+  @override
+  String get mastermindShipLiveCheckStopped => 'Bộ thu thập đang dừng.';
+
+  @override
+  String get mastermindShipLiveCheckUnconfigured => 'Chưa cấu hình Kiểm tra ngay.';
+
+  @override
+  String get mastermindShipLiveCheckFailed => 'Lần kiểm tra chưa xong. Các dòng giữ thời điểm cũ.';
+
+  @override
+  String get mastermindShipLiveCheckDisabled => 'Bộ thu thập chưa được bật.';
+
+  @override
+  String get mastermindShipLiveLoadTitle => 'Không có dữ liệu Phát hành';
+
+  @override
+  String get mastermindShipLiveLoadBody => 'Lần đọc gần nhất thất bại. Các dòng được ẩn thay vì hiển thị như hiện tại.';
+
+  @override
+  String get mastermindShipLiveViewLast => 'Xem bản gần nhất, có đánh dấu cũ';
+
+  @override
+  String mastermindShipLiveSplit(String percent) {
+    return '$percent% lưu lượng';
+  }
+
+  @override
+  String get mastermindShipLiveLoadStaleBody => 'Lần đọc gần nhất thất bại. Đang hiển thị bản gần nhất, có đánh dấu cũ.';
 }

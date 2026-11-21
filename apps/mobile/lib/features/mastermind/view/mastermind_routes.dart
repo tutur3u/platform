@@ -10,12 +10,12 @@ import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/iris/view/iris_devices_page.dart';
 import 'package:mobile/features/mastermind/machines/machine_detail.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
-import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/projects/projects_location.dart';
 import 'package:mobile/features/mastermind/projects/view/project_thread_page.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_page.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/ship/ship_page.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/threads/threads_location.dart';
@@ -23,7 +23,6 @@ import 'package:mobile/features/mastermind/view/inbox/mastermind_decision_page.d
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_chart_table_page.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
-import 'package:mobile/features/mastermind/view/ship/mastermind_ship_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 
 /// Tab routes other than Home, which the app registry owns at
@@ -123,16 +122,8 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindShip,
-    builder: (context, state) {
-      final router = GoRouter.of(context);
-      return MastermindShipPage(
-        initialProduct: releaseProductFromQuery(
-          state.uri.queryParameters['product'],
-        ),
-        // The product filter lives in the URL, so a Home row can link to it.
-        onProduct: (product) => router.go(shipLocation(product: product)),
-      );
-    },
+    // The live ship collector; a `?product=` from older links is ignored.
+    builder: (context, state) => const ShipLivePage(),
   ),
   GoRoute(
     path: Routes.mastermindInsights,

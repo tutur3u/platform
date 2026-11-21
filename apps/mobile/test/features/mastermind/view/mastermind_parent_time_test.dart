@@ -2,7 +2,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
-import 'package:mobile/features/mastermind/view/ship/ship_environment_tile.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 
 import '../../../helpers/helpers.dart';
@@ -53,49 +52,6 @@ void main() {
     await tester.pump(MastermindClock.period);
     expect(find.bySemanticsLabel(RegExp('7 minutes ago')), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('2 minutes ago')), findsNothing);
-    handle.dispose();
-  });
-
-  testWidgets('ship parent spoken release and checked ages tick', (
-    tester,
-  ) async {
-    final handle = tester.ensureSemantics();
-    final json = MastermindSnapshotBuilder.defaults().toJson();
-    final environment =
-        (json['environments'] as List).first as Map<String, dynamic>;
-    environment['age_seconds'] = 0;
-    environment['observed_at'] = '2026-01-31T17:30:00+00:00';
-    final snapshot = parsedSnapshot(json);
-    var now = snapshot.generatedAt.add(const Duration(minutes: 2));
-    await tester.pumpApp(
-      MastermindClockScope(
-        now: () => now,
-        child: ShipEnvironmentTile(
-          row: snapshot.environments.first,
-          asOf: snapshot.generatedAt,
-        ),
-      ),
-    );
-    final parent = find.bySemanticsLabel(RegExp('Released.*Checked'));
-    expect(parent, findsOneWidget);
-    expect(
-      tester.getSemantics(parent).label,
-      contains('Released 2 minutes ago'),
-    );
-    expect(
-      tester.getSemantics(parent).label,
-      contains('Checked 2 minutes ago'),
-    );
-    now = now.add(const Duration(minutes: 5));
-    await tester.pump(MastermindClock.period);
-    expect(
-      tester.getSemantics(parent).label,
-      contains('Released 7 minutes ago'),
-    );
-    expect(
-      tester.getSemantics(parent).label,
-      contains('Checked 7 minutes ago'),
-    );
     handle.dispose();
   });
 }
