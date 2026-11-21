@@ -485,18 +485,15 @@ code {
     padding: 28px;
   }
 }
-/* Docked roadmap: the filter row shares the logo pill and only it scrolls.
+/* Docked roadmap: the filter row shares the logo bar and only it scrolls.
    Workshop pages are always compact and have no filter row, so they keep
-   the shell's menu, language switch and theme toggle. */
+   the shell's menu and its language and theme control. */
 .roadmap:not(.workshop)[data-nav-compact] #navbar-content > div:last-child,
-.roadmap:not(.workshop)[data-nav-compact]
-  #navbar-content
-  > div:nth-child(2)
-  > div {
+.roadmap:not(.workshop)[data-nav-compact] #navbar-menu {
   display: none;
 }
 /* The brand name is the logo link's accessible name (the logo image is
-   decorative), so the docked pill hides it visually, never from screen
+   decorative), so the docked bar hides it visually, never from screen
    readers. */
 .roadmap:not(.workshop)[data-nav-compact] #navbar-content a > span {
   position: absolute;
@@ -512,8 +509,8 @@ code {
 .roadmap[data-nav-compact] .sticky-bar {
   position: fixed;
   top: 12px;
-  left: max(60px, calc((100vw - 1280px) / 2 + 48px));
-  right: max(20px, calc((100vw - 1280px) / 2 + 8px));
+  left: max(64px, calc((100vw - 1280px) / 2 + 52px));
+  right: max(28px, calc((100vw - 1280px) / 2 + 16px));
   height: 36px;
   z-index: 51;
   display: flex;

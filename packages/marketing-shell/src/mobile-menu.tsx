@@ -1,13 +1,11 @@
 'use client';
 
-import { MenuIcon } from '@tuturuuu/icons/lucide-static';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import {
   Sheet,
   SheetContent,
@@ -15,15 +13,21 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import type { MarketingLocale, Translate } from './i18n';
+import { MobileMenuTrigger } from './mobile-menu-trigger';
+import { PreferenceOptions } from './nav-preferences';
+import { navPrimary } from './nav-styles';
 import { type NavItem, navigation } from './navigation';
-import { MARKETING_PRODUCT_GROUPS } from './products';
+import { MARKETING_PRODUCT_GROUPS, MARKETING_PRODUCT_ICONS } from './products';
 
+/** 44px rows: comfortable touch targets in one rhythm. */
 const rowClass =
-  'rounded-lg px-4 py-2.5 text-sm transition-all hover:bg-accent active:bg-accent/80';
+  'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring';
+const sectionTrigger =
+  'min-h-11 items-center rounded-lg px-3 py-0 font-medium text-sm hover:bg-accent hover:no-underline data-[state=open]:bg-accent/60';
 
-/** Mobile navigation sheet (ported from apps/marketing). */
+/** Mobile navigation sheet: links, product groups, preferences and the CTA. */
 export function MobileMenu({
   initiallyOpen = false,
   t,
@@ -43,117 +47,129 @@ export function MobileMenu({
 }) {
   const [open, setOpen] = useState(initiallyOpen);
   const close = () => setOpen(false);
+  // The sheet is hidden from md up, but a modal Radix sheet would still
+  // block the page. Close it when the viewport widens, including when the
+  // chunk finishes loading after a resize.
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const sync = () => {
+      if (desktop.matches) setOpen(false);
+    };
+    sync();
+    desktop.addEventListener('change', sync);
+    return () => desktop.removeEventListener('change', sync);
+  }, []);
   const { categories } = navigation(t);
   const main = categories.find((c) => c.title === 'main')?.items ?? [];
   const resources =
     categories.find((c) => c.title === 'resources')?.items ?? [];
   const site = (href: string) =>
     href.startsWith('/') ? `${siteUrl}${href}` : href;
-  const link = (item: NavItem, className: string) => (
-    <a
-      className={cn(
-        'transition-opacity duration-200',
-        pathname === item.href ? 'opacity-100' : 'opacity-60 hover:opacity-100',
-        className
-      )}
-      href={site(item.href)}
-      key={item.href}
-      onClick={close}
-      {...(item.external
-        ? { target: '_blank', rel: 'noopener noreferrer' }
-        : {})}
-    >
-      <span className="flex items-center gap-2">
-        {item.icon}
-        {item.label}
-      </span>
-    </a>
-  );
+  const link = (item: NavItem, nested = false, icon?: ReactNode) => {
+    const current = pathname === item.href;
+    return (
+      <a
+        aria-current={current ? 'page' : undefined}
+        className={cn(
+          rowClass,
+          // Top-level links read as primary; section items are secondary.
+          nested ? 'text-muted-foreground' : 'font-medium text-foreground',
+          current && 'bg-accent text-accent-foreground'
+        )}
+        href={site(item.href)}
+        key={item.href}
+        onClick={close}
+        {...(item.external
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
+      >
+        {(icon ?? item.icon) ? (
+          <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+            {icon ?? item.icon}
+          </span>
+        ) : null}
+        <span className="min-w-0 truncate">{item.label}</span>
+      </a>
+    );
+  };
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
-        aria-label={t('common.main_navigation')}
-        className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80"
-      >
-        <MenuIcon className="h-5 w-5" />
+      <SheetTrigger asChild>
+        <MobileMenuTrigger t={t} />
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="max-h-dvh w-full gap-0 border-l p-0 md:hidden"
+        className="max-h-dvh w-full gap-0 p-0 sm:max-w-sm md:hidden"
       >
         <SheetTitle className="sr-only">
           {t('common.main_navigation')}
         </SheetTitle>
-        <div className="flex h-full flex-col overflow-hidden">
-          <div className="flex items-center gap-3 border-b px-6 py-6">
-            <a
-              className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-foreground px-4 font-medium text-background text-sm"
-              href={signInHref}
-              onClick={close}
-            >
-              {t('common.get-started')}
-            </a>
-            {onLocaleChange ? (
-              <button
-                className="h-10 rounded-lg border px-3 font-medium text-sm uppercase"
-                onClick={() => onLocaleChange(locale === 'en' ? 'vi' : 'en')}
-                type="button"
-              >
-                {locale === 'en' ? 'vi' : 'en'}
-              </button>
-            ) : null}
-            <ThemeToggle forceDisplay />
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <div className="flex flex-col py-6">
-              <div className="mb-4 grid gap-2 px-4 font-medium">
-                {main.map((item) => link(item, rowClass))}
-              </div>
-              <Accordion type="multiple" className="space-y-3">
-                <AccordionItem value="products" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent data-[state=open]:bg-accent/50">
-                    <span className="font-mono-ui text-[0.68rem] uppercase tracking-[0.18em]">
-                      {t('common.products')}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
-                    <div className="grid gap-4 px-2">
-                      {MARKETING_PRODUCT_GROUPS.map((group) => (
-                        <div key={group.key}>
-                          <div className="mb-1 px-4 font-mono-ui text-[0.58rem] text-foreground/35 uppercase tracking-[0.2em]">
-                            {t(`marketing-nav.groups.${group.key}`)}
-                          </div>
-                          {group.items.map((product) =>
-                            link(
-                              {
-                                href: product.href,
-                                label: t(
-                                  `marketing-nav.products.${product.key}.label`
-                                ),
-                              },
-                              rowClass
-                            )
-                          )}
-                        </div>
-                      ))}
+        <nav
+          aria-label={t('common.main_navigation')}
+          // Clears the sheet's close button.
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-12 pb-3"
+        >
+          <div className="grid gap-0.5">{main.map((item) => link(item))}</div>
+          <Accordion
+            className="mt-2 grid gap-0.5 border-t pt-2"
+            type="multiple"
+          >
+            <AccordionItem className="border-none" value="products">
+              <AccordionTrigger className={sectionTrigger}>
+                {t('common.products')}
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-2">
+                <div className="grid gap-3">
+                  {MARKETING_PRODUCT_GROUPS.map((group) => (
+                    <div key={group.key}>
+                      <div className="px-3 pt-2 pb-1 font-medium text-muted-foreground text-xs">
+                        {t(`marketing-nav.groups.${group.key}`)}
+                      </div>
+                      {group.items.map((product) => {
+                        const Icon = MARKETING_PRODUCT_ICONS[product.key];
+                        return link(
+                          {
+                            href: product.href,
+                            label: t(
+                              `marketing-nav.products.${product.key}.label`
+                            ),
+                          },
+                          true,
+                          Icon ? (
+                            <Icon className={cn('size-4', product.accent)} />
+                          ) : undefined
+                        );
+                      })}
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="resources" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent data-[state=open]:bg-accent/50">
-                    <span className="font-mono-ui text-[0.68rem] uppercase tracking-[0.18em]">
-                      {t('common.resources')}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
-                    <div className="grid gap-2 px-2">
-                      {resources.map((item) => link(item, rowClass))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem className="border-none" value="resources">
+              <AccordionTrigger className={sectionTrigger}>
+                {t('common.resources')}
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-2">
+                <div className="grid gap-0.5">
+                  {resources.map((item) => link(item, true))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </nav>
+        <div className="grid shrink-0 gap-4 border-t px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <PreferenceOptions
+            locale={locale}
+            onLocaleChange={onLocaleChange}
+            t={t}
+          />
+          <a
+            className={cn(navPrimary, 'h-11 w-full rounded-lg')}
+            href={signInHref}
+            onClick={close}
+          >
+            {t('common.get-started')}
+          </a>
         </div>
       </SheetContent>
     </Sheet>

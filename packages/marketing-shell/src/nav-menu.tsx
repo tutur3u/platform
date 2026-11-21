@@ -3,13 +3,10 @@ import { cn } from '@tuturuuu/utils/format';
 import type { Translate } from './i18n';
 import { type NavMenu, NavMenuBar } from './nav-dropdown';
 import { navigation } from './navigation';
+import { navGhost } from './nav-styles';
 import { MARKETING_PRODUCT_GROUPS, MARKETING_PRODUCT_ICONS } from './products';
 
-const linkClassName = cn(
-  'inline-flex h-9 items-center rounded-lg px-3 font-medium text-foreground/70 text-sm transition-colors',
-  'hover:bg-foreground/5 hover:text-foreground',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-);
+const linkClassName = navGhost;
 
 /** Desktop Products / Resources mega-menus plus primary links. */
 export function MarketingNavMenu({

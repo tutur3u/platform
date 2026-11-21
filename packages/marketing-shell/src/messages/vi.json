@@ -1,6 +1,11 @@
 {
   "common": {
     "switch_language_to": "chuyển sang",
+    "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống",
     "products": "Các sản phẩm",
     "resources": "Tài nguyên",
     "main_navigation": "Điều hướng chính",

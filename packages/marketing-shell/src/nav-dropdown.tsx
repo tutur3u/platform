@@ -2,6 +2,7 @@
 
 import { useStaticMarketingMotion } from './use-static-motion';
 import { cn } from '@tuturuuu/utils/format';
+import { navGhost } from './nav-styles';
 import {
   type ReactNode,
   useCallback,
@@ -122,12 +123,7 @@ export function NavMenuBar({
           <button
             aria-controls={`nav-sheet-${menu.id}`}
             aria-expanded={active}
-            className={cn(
-              'inline-flex h-9 items-center gap-1 rounded-lg px-3 font-medium text-sm transition-colors',
-              'text-foreground/70 hover:bg-foreground/5 hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active && 'bg-foreground/5 text-foreground'
-            )}
+            className={cn(navGhost, 'gap-1 pr-2.5')}
             key={menu.id}
             onClick={() => setOpenId(active ? null : menu.id)}
             onFocus={() => {
@@ -151,7 +147,10 @@ export function NavMenuBar({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className={active ? 'rotate-180' : undefined}
+              className={cn(
+                'text-muted-foreground transition-transform motion-reduce:transition-none',
+                active && 'rotate-180'
+              )}
             >
               <path d="m6 9 6 6 6-6" />
             </svg>
@@ -177,7 +176,7 @@ export function NavMenuBar({
         }}
       >
         <div
-          className="overflow-hidden rounded-2xl border border-foreground/10 bg-popover text-popover-foreground shadow-foreground/5 shadow-xl motion-reduce:transition-none"
+          className="overflow-hidden rounded-2xl bg-popover text-popover-foreground shadow-foreground/5 shadow-xl ring-1 ring-border motion-reduce:transition-none"
           style={{
             height: sheet.height || 'auto',
             transition: staticMotion ? undefined : `height 0.32s ${EASE}`,

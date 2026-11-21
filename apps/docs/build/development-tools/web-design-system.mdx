@@ -128,6 +128,13 @@ variables; do not hardcode a second radius.
   Triggers stretch to the track's height, so a taller list (`h-10`, `h-12`)
   keeps the same padding above and below a trigger as at its sides.
 - The Flutter dock and segmented control follow the same rule (Mobile).
+- The marketing navbar (`@tuturuuu/marketing-shell`) is a floating bar:
+  `#navbar-content` carries `data-slot="floating-bar"`, and every control
+  (links, menu triggers, the language and theme control, the call to action)
+  uses the shared `navControl` shape from `nav-styles.ts`. Its scrolled
+  surface is a ring plus background, so it appears without moving the
+  layout. Language and theme share one disclosure of native radio groups,
+  also used in the mobile sheet. `shell.test.tsx` covers the contract.
 
 Regression coverage: `packages/ui/src/components/ui/floating-bar.test.tsx`
 (tokens, component and converted surfaces) and

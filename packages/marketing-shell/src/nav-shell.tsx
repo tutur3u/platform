@@ -9,21 +9,20 @@ interface MarketingNavShellProps {
   menu: ReactNode;
   actions: ReactNode;
   /**
-   * `overlay` floats the pill over a full-bleed page (marketing routes).
+   * `overlay` floats the bar over a full-bleed page (marketing routes).
    * `column` pins it to the top of a scrolling column that is not the
    * viewport — the docs shell, where the sidebar owns the left edge.
    */
   placement?: 'overlay' | 'column';
-  /** Shorter pill (pt-2 + h-11). The page docks its own bar in the space freed. */
+  /** Shorter bar (pt-2 + h-11). The page docks its own bar in the space freed. */
   compact?: boolean;
 }
 
 /**
- * Floating pill navbar for marketing routes.
- *
- * Replaces the old approach of imperatively adding/removing classes on
- * `#navbar-content` from a sibling component: the scroll state now lives in
- * React and is applied where it is read.
+ * Floating capsule navbar for marketing routes. It is transparent at the top
+ * of the page and gains a surface, ring and (on capable desktops) a backdrop
+ * blur once the page scrolls; compact and column bars always have one. The
+ * scroll state lives in React and is applied where it is read.
  */
 export function MarketingNavShell({
   logo,
@@ -56,6 +55,8 @@ export function MarketingNavShell({
     };
   }, []);
 
+  const surfaced = scrolled || compact || placement === 'column';
+
   return (
     <header
       className={cn(
@@ -71,36 +72,41 @@ export function MarketingNavShell({
     >
       <div
         className={cn(
-          // overflow-visible so the Products/Resources panels can escape the pill
-          'relative mx-auto flex max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-300 sm:px-4',
+          // A floating-bar capsule: padding, control height and both radii
+          // come from the floating-bar tokens. overflow-visible lets the
+          // Products/Resources and preference panels escape the bar.
+          'relative mx-auto flex max-w-7xl items-center justify-between gap-(--bar-gap) overflow-visible rounded-(--radius-bar) px-(--bar-padding)',
+          'transition-[background-color,box-shadow] duration-200 motion-reduce:transition-none',
           compact ? 'h-11' : 'h-14',
-          scrolled || compact || placement === 'column'
+          // 56px bar = 36px controls + 10px padding; compact keeps the 32px +
+          // 6px defaults (44px).
+          !compact && '[--bar-control-height:2.25rem] [--bar-padding:0.625rem]',
+          // The outline is a ring, never a border, so it appears on scroll
+          // without moving anything.
+          surfaced
             ? cn(
-                'border border-foreground/10 bg-background/95 shadow-foreground/5 shadow-lg',
-                !staticMotion && 'backdrop-blur-xl'
+                'shadow-foreground/5 shadow-md ring-1 ring-border',
+                staticMotion
+                  ? 'bg-background'
+                  : 'bg-background/80 backdrop-blur-xl'
               )
-            : 'border border-transparent bg-transparent'
+            : 'ring-1 ring-transparent'
         )}
+        data-scrolled={surfaced ? '' : undefined}
+        data-slot="floating-bar"
         id="navbar-content"
       >
-        {/* Lit top edge, only once the bar has a surface to light */}
-        <div
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-foreground/25 to-transparent transition-opacity duration-500',
-            scrolled || compact || placement === 'column'
-              ? 'opacity-100'
-              : 'opacity-0'
-          )}
-        />
-
-        <div className="flex min-w-0 items-center gap-6">
+        <div className="flex min-w-0 items-center gap-2 lg:gap-4">
           {logo}
-          {/* Mirrors the mobile <Menu /> breakpoint so navigation is never absent */}
-          <div className="hidden md:block">{menu}</div>
+          {/* Mirrors the mobile menu breakpoint so navigation is never absent */}
+          <div className="hidden md:block" id="navbar-menu">
+            {menu}
+          </div>
         </div>
 
-        <div className="flex flex-none items-center gap-1.5">{actions}</div>
+        <div className="flex flex-none items-center gap-(--bar-gap)">
+          {actions}
+        </div>
       </div>
     </header>
   );

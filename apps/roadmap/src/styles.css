@@ -17,7 +17,6 @@
 @source '../../../packages/ui/src/components/ui/sheet.tsx';
 @source '../../../packages/ui/src/components/ui/accordion.tsx';
 @source '../../../packages/ui/src/components/ui/button.tsx';
-@source '../../../packages/ui/src/components/ui/custom/theme-toggle.tsx';
 /* The design-system surfaces of the redesigned page: its own components and
    the shared primitives they compose. */
 @source '../../../packages/roadmap-core/src/components/ds';

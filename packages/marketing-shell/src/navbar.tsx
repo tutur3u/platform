@@ -1,14 +1,16 @@
 import type { MarketingLocale, Translate } from './i18n';
 import type { ReactNode } from 'react';
+import { cn } from '@tuturuuu/utils/format';
 import { MarketingActions } from './nav-actions';
 import { MarketingNavMenu } from './nav-menu';
 import { MarketingNavShell } from './nav-shell';
+import { navControl } from './nav-styles';
 import type { ShellImage, ShellLink } from './types';
 
 const Anchor: ShellLink = (props) => <a {...props} />;
 const Img: ShellImage = ({ alt, ...props }) => <img alt={alt} {...props} />;
 
-/** The marketing pill navbar shared by every marketing page. */
+/** The marketing navbar shared by every marketing page. */
 export function MarketingNavbar({
   actions,
   brandHref,
@@ -41,17 +43,16 @@ export function MarketingNavbar({
       compact={navCompact}
       logo={
         <LinkComponent
-          className="flex flex-none items-center gap-2 transition-opacity hover:opacity-80"
+          className={cn(
+            navControl,
+            'gap-2 pr-2 pl-1.5 text-foreground hover:bg-accent'
+          )}
           href={brandHref ?? `${siteUrl}/home`}
         >
           {/* Decorative: the brand name beside it is the link's text. */}
           <ImageComponent
             alt=""
-            className={
-              navCompact
-                ? 'h-7 w-7'
-                : 'h-8 w-8 transition-transform hover:scale-105'
-            }
+            className={navCompact ? 'size-6' : 'size-7'}
             height={32}
             src={logoSrc}
             width={32}
@@ -62,8 +63,8 @@ export function MarketingNavbar({
                 ? // Visually hidden on small screens but still the
                   // link's accessible name, since the logo is decorative
                   // (bold only once shown, so phones skip that font file).
-                  'sr-only text-lg md:not-sr-only md:inline md:font-bold'
-                : 'font-bold text-2xl'
+                  'sr-only text-base md:not-sr-only md:inline md:font-semibold'
+                : 'font-semibold text-lg tracking-tight'
             }
           >
             Tuturuuu
