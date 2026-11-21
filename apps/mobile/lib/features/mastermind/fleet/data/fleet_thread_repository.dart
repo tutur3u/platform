@@ -116,8 +116,10 @@ abstract interface class FleetThreadSource {
     int? limit,
   });
 
-  /// Records that the owner has seen [itemCount] items of a thread.
-  Future<void> markRead({
+  /// Records that the owner has seen [itemCount] items of a thread. False
+  /// when Web did not save it (it lost a race with another marker): the list
+  /// keeps its unread count until a later call saves.
+  Future<bool> markRead({
     required String machineId,
     required String threadId,
     required int itemCount,
@@ -220,19 +222,22 @@ class FleetThreadRepository implements FleetThreadSource {
   );
 
   @override
-  Future<void> markRead({
+  Future<bool> markRead({
     required String machineId,
     required String threadId,
     required int itemCount,
     String? environmentId,
   }) async {
     try {
-      await _api.postJson(path('threads/read'), {
+      final json = await _api.postJson(path('threads/read'), {
         'machineId': machineId,
         'environmentId': ?environmentId,
         'threadId': threadId,
         'itemCount': itemCount,
       });
+      final saved = json['saved'];
+      if (saved is! bool) throw const FormatException('Invalid fleet marker');
+      return saved;
     } on Object catch (error) {
       throw FleetThreadException.from(error);
     }

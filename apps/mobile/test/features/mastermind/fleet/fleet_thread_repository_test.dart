@@ -237,12 +237,13 @@ void main() {
     when(
       () => api.postJson(any(), any()),
     ).thenAnswer((_) async => {'saved': true});
-    await repository.markRead(
+    final marker = repository.markRead(
       machineId: 'skr-m4',
       environmentId: 'env-2',
       threadId: _thread,
       itemCount: 12,
     );
+    expect(await marker, isTrue);
     expect(verify(() => api.postJson(captureAny(), captureAny())).captured, [
       '/api/v1/mastermind/fleet/threads/read',
       {
@@ -252,6 +253,30 @@ void main() {
         'itemCount': 12,
       },
     ]);
+  });
+
+  test('says when a read marker was not saved', () async {
+    Future<bool> mark() => repository.markRead(
+      machineId: 'skr-m4',
+      threadId: _thread,
+      itemCount: 12,
+    );
+    // Web lost a race with another marker: the badge must stay.
+    when(
+      () => api.postJson(any(), any()),
+    ).thenAnswer((_) async => {'saved': false});
+    expect(await mark(), isFalse);
+    when(() => api.postJson(any(), any())).thenAnswer((_) async => {});
+    await expectLater(
+      mark(),
+      throwsA(
+        isA<FleetThreadException>().having(
+          (e) => e.failure,
+          'failure',
+          FleetThreadFailure.unreadable,
+        ),
+      ),
+    );
   });
 
   test('turns every refusal into a closed state', () async {

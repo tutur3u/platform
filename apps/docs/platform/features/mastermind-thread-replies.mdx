@@ -311,7 +311,7 @@ layer, and every body is checked against the contract before it is shown.
 | --- | --- | --- |
 | Web and Workers | `@tuturuuu/internal-api/mastermind-threads` | One function per route. Each resolves to `{ ok, data }` or `{ ok: false, error, status }` with a closed `error` (`machine_offline`, `timeout`, `mfa_required`, ...); nothing throws. |
 | Mastermind web | `apps/mastermind/src/fleet/thread-cache.ts`, `thread-reply.ts` | The on-device list cache and the state of one reply. |
-| Mobile | `apps/mobile/lib/features/mastermind/fleet/data/fleet_thread_*.dart`, `cubit/fleet_thread_reply_cubit.dart` | Models, `FleetThreadSource`, the on-device list cache and the reply cubit. |
+| Mobile | `apps/mobile/lib/features/mastermind/fleet/data/fleet_thread_*.dart`, `fleet_reply_step_up.dart`, `cubit/fleet_thread_reply_cubit.dart` | Models, `FleetThreadSource`, the on-device list cache, the reply cubit and the second-factor step-up for a reply. |
 
 - **On-device list cache.** Product decision (owner, 21 Nov 2026): the last
   thread list is cached on the device, encrypted, and nowhere else, so the
@@ -346,6 +346,17 @@ layer, and every body is checked against the contract before it is shown.
   refused and an expired reply cannot. Sending the same text again while
   its reply can still be resent is that reply again, not a new one; other
   text is a new reply.
+- **Step-up on a phone.** The app's own routing asks for a second factor
+  only when the account's sign-in policy requires one, which a session that
+  verified earlier already satisfies; a reply needs a proof made within the
+  reply window. `FleetReplyStepUp` therefore verifies anew on every call,
+  whatever assurance the session holds: with the device's own authenticator
+  after a device unlock, or with a six-digit code from an authenticator app.
+  It leaves the signed-in screen where it is, and the composer then retries
+  the same reply.
+- **Read markers.** Marking a thread read answers whether Web saved the
+  marker. It is not saved when it lost a race with another marker; the list
+  keeps its unread count until a later call saves.
 - **A reply held for the machine.** While a reply is `sent` the composer
   sends nothing else. Its receipt is read again when the owner socket
   delivers a `receipt` frame for it, and on `retry()`, which is the way
@@ -371,7 +382,9 @@ and `fleet_thread_reply_cubit_test.dart` (the same key through a step-up, a
 retry and the same text sent again, one reply at a time, a held reply read
 again on retry and left in the outbox by a reset, a failing listener, the
 delivery states),
-`fleet_thread_repository_test.dart` (queries, parsing, refusals).
+`fleet_thread_repository_test.dart` (queries, parsing, refusals, an unsaved
+read marker), `fleet_reply_step_up_test.dart` (a new verification on every
+call, the device authenticator, a dismissed unlock, a refused code).
 
 ### Bridge daemon
 
