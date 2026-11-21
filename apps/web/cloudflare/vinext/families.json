@@ -205,7 +205,7 @@
       "exact": [],
       "prefix": [],
       "exclude": [],
-      "activated": false
+      "activated": true
     }
   ],
   "nodeOnly": []
