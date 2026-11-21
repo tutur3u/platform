@@ -757,6 +757,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/auth/mobile/client-credential"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/auth/mobile/password-login"
     },
     {
@@ -2328,6 +2333,16 @@
       "family": "api-core",
       "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links/[linkId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/meetings/[meetingId]/short-links"
     },
     {
       "family": "api-core",
