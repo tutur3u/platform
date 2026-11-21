@@ -104,23 +104,26 @@ function decodeUnreserved(part: string) {
 /**
  * The family that owns `pathname`: its asset prefix, else the most specific
  * route pattern (static over dynamic over catch-all, with or without a
- * leading locale for localized routes), else the fallback family.
- * Framework paths, doubled slashes and backslashes go to the fallback, whose
- * build owns none of the other families' routes.
+ * leading locale for localized routes), else the fallback family. Framework
+ * endpoints, doubled slashes and backslashes go to the fallback, whose build
+ * owns none of the other families' routes. Null for assets no vinext family
+ * builds: unprefixed `/_next/static/*` (emitted only by pages rendered
+ * elsewhere) and another builder's `/_f/<id>/*`, which keep their own route.
  */
 export function routeFamily(
   pathname: string,
   locales: string[],
   table: WebRouteTable = webRouteTable
-): string {
+): string | null {
   const lowered = pathname.toLowerCase();
   for (const family of table.families) {
     if (lowered.startsWith(`${family.assetPrefix.toLowerCase()}/`)) {
       return family.id;
     }
   }
-  // Framework endpoints (image optimizer, unprefixed assets) and
-  // non-canonical paths go to the fallback family.
+  if (lowered.startsWith('/_next/static/') || lowered.startsWith('/_f/')) {
+    return null;
+  }
   if (/^\/_(?:next|vinext)\//u.test(lowered) || /\/\/|\\/u.test(pathname)) {
     return table.fallback;
   }
@@ -168,7 +171,7 @@ export function vinextFamilyTarget(
   const url = new URL(request.url);
   if (!env.PUBLIC_HOST || url.host !== env.PUBLIC_HOST) return null;
   const id = routeFamily(url.pathname, locales, table);
-  if (!flaggedFamilies(env).has(id)) return null;
+  if (id === null || !flaggedFamilies(env).has(id)) return null;
   const family = table.families.find((candidate) => candidate.id === id);
   const binding = family
     ? (env as unknown as Record<string, unknown>)[family.binding]

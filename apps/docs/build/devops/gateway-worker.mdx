@@ -441,8 +441,11 @@ route entries and `apps/web/cloudflare/vinext/families.json` by
   `[param]` over `[...rest]` over `[[...rest]]`), with an optional leading
   locale for localized routes. Unlisted paths under a family's prefixes stay
   with that family (an unknown first segment is a workspace slug, so it goes
-  to `dashboard`). Framework paths (`/_next/*`, `/_vinext/*`), doubled slashes
-  and backslashes go to the catch-all family `web-rest`.
+  to `dashboard`). Framework endpoints (`/_next/image`, `/_vinext/*`),
+  doubled slashes and backslashes go to the catch-all family `web-rest`.
+  Unprefixed `/_next/static/*` and `/_f/<id>/` paths of non-vinext builders
+  never reach a vinext family: only pages rendered elsewhere emit them, so they
+  keep their own route.
 - `api-ops` owns the former deny list, including the ChatGPT credential
   routes; nothing is pinned to `WEB_ORIGIN` by path.
 - Each page family serves its own client assets under `/_f/<id>/`. The path

@@ -94,12 +94,22 @@ describe('vinext route table', () => {
   it('keeps framework and non-canonical paths on the catch-all', () => {
     for (const path of [
       '/_next/image',
-      '/_next/static/chunks/a.js',
       '/_vinext/image',
       '//api/cron',
       '/api\\cron',
     ]) {
       expect(route(path), path).toBe('web-rest');
+    }
+  });
+
+  it('leaves assets that no vinext family builds with their own route', () => {
+    for (const path of [
+      '/_next/static/chunks/a.js',
+      '/_next/static/css/app.css',
+      '/_f/public-docs/_next/static/chunks/a.js',
+      '/_f/unknown/x.js',
+    ]) {
+      expect(route(path), path).toBeNull();
     }
   });
 
@@ -191,6 +201,13 @@ describe('vinext family dispatch', () => {
     expect(calls.map((entry) => entry.path)).toContain(
       '/_f/public-auth/_next/static/chunks/a.js'
     );
+  });
+
+  it('leaves unprefixed Next assets with the origin that renders their pages', async () => {
+    const { web, calls, call } = setup(ALL);
+    await call('/_next/static/chunks/app.js');
+    expect(calls).toHaveLength(0);
+    expect(web).toHaveBeenCalledOnce();
   });
 
   it('routes only the flagged API families and leaves the rest on WEB_ORIGIN', async () => {
