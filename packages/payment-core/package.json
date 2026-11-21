@@ -22,7 +22,8 @@
     "./subscription-helper": "./src/subscription-helper.ts",
     "./polar-price": "./src/polar-price.ts",
     "./self-serve-products": "./src/self-serve-products.ts",
-    "./public-prices": "./src/public-prices.ts"
+    "./public-prices": "./src/public-prices.ts",
+    "./versioned-pricing-catalog": "./src/versioned-pricing-catalog.ts"
   },
   "license": "MIT",
   "scripts": {
