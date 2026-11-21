@@ -114,7 +114,25 @@ and a one-day refresh credential. The resolver and `createAppSessionTokenPair`
 both apply it, so no `APP_COORDINATION_SESSION_POLICY` value can loosen it.
 `mastermind` is not in `ALL_SATELLITE_APP_SESSION_TARGETS`: its session opens
 only the routes that name it (`/api/v1/mastermind/access`, fleet state and
-answers). Signing out of Access or Web ends the next refresh.
+answers). `OWNER_ONLY_INTERNAL_APPS` (`@tuturuuu/utils/owner-only-apps`) keeps
+it out of the credentialed accounts CORS origins and API cost identity. The
+database audience `private.cross_app_internal_app_names()` lists it
+(migration `20261121123000_mastermind_cross_app_token_audience`).
+
+**Worker-only redemption.** Web's verify and refresh routes redeem a
+`mastermind` handoff token or refresh credential only with the
+`x-tuturuuu-app-redeem-proof` header: an HMAC-SHA256 of the target and the
+credential under the coordination secret (`@tuturuuu/auth/app-redeem-proof`;
+any current or next secret verifies). Only the Worker and Web hold that
+secret, so a handoff URL copied from history or logs, or a refresh cookie
+lifted from the browser, mints nothing elsewhere. The Worker also rejects a
+refresh credential that lives longer than a day.
+
+**Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
+Web's root Mastermind permission denies the next request and every refresh.
+Ending the Access session stops the Worker, the only party that can redeem
+the refresh credential. An access session already issued stays valid at the
+Web fleet routes until it expires, at most 300 seconds.
 
 ## Data boundaries and memo
 
@@ -181,9 +199,11 @@ asserts that a plaintext HTTP owner request returns 403 with zero reads.
 
 ## No apex path hosting
 
-Mastermind is served only on `mastermind.tuturuuu.com`; the gateway answers
-`tuturuuu.com/mastermind` and its children with a plain 302 to it (path
-suffix and query kept, no proxying), and the build is pinned to the root
+Mastermind is served only on `mastermind.tuturuuu.com`. With
+`GATEWAY_MASTERMIND_REDIRECT=1`, which the release owner sets on the gateway
+once the host passes acceptance, the gateway answers `tuturuuu.com/mastermind`
+and its children with a plain 302 to it (path suffix and query kept, no
+proxying, also in passthrough mode). The build is pinned to the root
 (`basePath: ''`). Mounting it on the shared `tuturuuu.com` origin was
 reviewed and rejected, because nothing can bind the caller there:
 
@@ -213,18 +233,63 @@ worker never answers the mount; `CF_Authorization` is `Path=/mastermind`,
 are per host; the app-visible cookies hold no Web, app or Supabase session;
 and owner removal is immediate.
 
-## Publication remains held
+## Production release
 
-`workers_dev:false`, `preview_urls:false`, no routes, no deploy job and the
-`mastermind` publication policy hold production. Deleting that entry fails closed.
-No DNS or Access application is provisioned by the source.
+`productionPublicationPolicy.mastermind` admits the `tuturuuu-mastermind`
+Worker for `mastermind.tuturuuu.com` only; `workers_dev` and preview URLs
+stay off and the source declares no routes. A production sync that touches
+the app (or the shared fleet contract) calls `mastermind-cloudflare.yaml` on
+the `production` ref:
 
-Before the dedicated host goes live require exact-commit CI, sealed
-original/restored Worker acceptance on the dedicated hostname, staging behind
-Access with session issuance and refresh, a real-browser smoke that loads,
-refreshes and answers through the compiled server functions, MFA and live
-permission acceptance, C1 minimum-field serialization and revocation tests,
-approved sanitized publisher samples, security design and implementation
-reviews, Access/DNS approval and a gated release. Record immutable deployment
-and routing rollback.
+1. `artifact` builds once, seals the archive and runs the emitted-Worker
+   acceptance for that exact commit.
+2. `production-policy` evaluates the publication policy; deleting or
+   holding the entry stops every later write.
+3. `deploy` (GitHub environment `mastermind-production`, secret
+   `MASTERMIND_CLOUDFLARE_API_TOKEN`) restores and re-verifies the sealed
+   archive, converts it to cf Build Output without rebuilding and requires the
+   Worker secret names `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`,
+   `MASTERMIND_OWNER_EMAIL`, `OWNER_IDS` and `TUTURUUU_APP_COORDINATION_SECRET`.
+   Holding the deploy slot, it publishes only when the run's commit is still
+   the `production` head, so a rerun of an older run publishes nothing. It
+   captures the serving version, uploads the new one, records its id, checks
+   the head again, and moves traffic only while the captured version still
+   serves; a run overtaken during upload leaves its version without traffic. The first
+   release creates the Worker, which answers 503 until its secrets exist.
+4. With `MASTERMIND_HOST_ATTACHED=true` and `MASTERMIND_ACCESS_TEAM_DOMAIN`
+   set, every probed path (`/`, the locales, `/login`, `/verify-token`, a
+   server function, an asset, `/api/build-info`) must answer an anonymous
+   request with a 302 to that team's Access login for this host. After any
+   failure the captured version is assigned back only while this run's own
+   version is serving. Receipts are kept for 30 days. A deployment marker is
+   recorded only for an existing, configured Worker whose host check passed;
+   the owner's signed-in acceptance on the live host stays a manual gate.
+
+The planner calls the workflow (`deploy-mastermind-cloudflare`) when a
+production sync changes its inputs, and looks up its marker like the other
+Cloudflare targets. Until the first marker exists, release explicitly with
+`gh workflow run mastermind-cloudflare.yaml --ref production`.
+
+Traffic changes are serialized by the deploy concurrency group, and each
+assignment re-reads the serving version first (`--expect-current`). Run a
+manual assignment only while no release run is in progress, so an operator
+change and a workflow rollback never race.
+
+Manual rollback is one step:
+`node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-mastermind --version <previous version id>`
+with the version from the run's `mastermind-release-*` receipt.
+
+Provisioned outside the source, by name: the Access self-hosted application
+for `mastermind.tuturuuu.com` (owner-only email policy, 24-hour session,
+`HttpOnly` cookie; its AUD is `CF_ACCESS_AUD`), the Worker custom domain
+`mastermind.tuturuuu.com` (DNS), the five Worker secrets, the
+`mastermind-production` environment with `MASTERMIND_CLOUDFLARE_API_TOKEN`,
+the variables `MASTERMIND_HOST_ATTACHED` and `MASTERMIND_ACCESS_TEAM_DOMAIN`
+and, on the gateway,
+`GATEWAY_MASTERMIND_REDIRECT`. The account's Access identity provider is
+one-time PIN; a Google identity provider needs its own OAuth client.
+
+A real-browser smoke that loads, refreshes and answers through the compiled
+server functions, MFA and live permission acceptance, and the revocation
+checks run on the live host before the gateway redirect is enabled.
 Follow the [native Start runbook](/build/devops/native-start-migration).

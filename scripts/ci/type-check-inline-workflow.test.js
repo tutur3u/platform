@@ -180,6 +180,7 @@ function fixture(
     'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/tasks-production-inputs.ts',
+    'scripts/ci/mastermind-production-target.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/overflow-notes-ci.js',
     'scripts/ci/check-workflow-config.ts',
@@ -246,6 +247,7 @@ function fixture(
         'mobile-build-selection.ts',
         'production-test-only-paths.ts',
         'tasks-production-inputs.ts',
+        'mastermind-production-target.ts',
         'workspace-dependency-closure.ts',
       ].includes(missingHelper)
     );
@@ -411,6 +413,7 @@ for (const missingHelper of [
   'mobile-build-selection.ts',
   'production-test-only-paths.ts',
   'tasks-production-inputs.ts',
+  'mastermind-production-target.ts',
   'workspace-dependency-closure.ts',
 ]) {
   test(`missing real ${missingHelper} stops preflight with its import diagnostic`, () => {

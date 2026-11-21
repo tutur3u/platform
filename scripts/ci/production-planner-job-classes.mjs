@@ -28,6 +28,7 @@ const independentApps = [
   'deploy-apps-native',
   'deploy-meet-cloudflare',
   'deploy-parley-cloudflare',
+  'deploy-mastermind-cloudflare',
   'deploy-apps',
   'deploy-ai',
   'deploy-calendar',

@@ -208,8 +208,10 @@ export const productionPublicationPolicy = {
     surfaces: ['frontend'],
   },
   mastermind: {
-    state: 'held',
-    reason: 'held for wave-2 cutover: Mastermind security review required',
+    state: 'admitted',
+    reason:
+      'Mastermind sealed artifact to tuturuuu-mastermind for mastermind.tuturuuu.com only, behind Access, with one-step version rollback',
+    surfaces: ['frontend'],
   },
   meet: {
     state: 'admitted',

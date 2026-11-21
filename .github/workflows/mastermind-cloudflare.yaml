@@ -218,3 +218,208 @@ jobs:
         env:
           CI: 'true'
         run: bun run test:runtime
+  production-policy:
+    needs: affected-gate
+    if: (github.ref == 'refs/heads/production' && needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - id: policy
+        run: node scripts/ci/production-publication-policy.ts mastermind-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
+  # Publishes the sealed artifact this run built and accepted, for
+  # mastermind.tuturuuu.com only. A new version takes traffic only while the
+  # captured serving version is still serving; any later failure restores it.
+  deploy:
+    needs: [artifact, production-policy]
+    if: (github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      deployments: write
+      actions: read
+    environment: mastermind-production
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      MASTERMIND_SOURCE_SHA: ${{ github.sha }}
+      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      CF_SEND_TELEMETRY: 'false'
+      WRANGLER_SEND_METRICS: 'false'
+    concurrency:
+      group: mastermind-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify immutable checkout identity
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Install frozen dependencies without lifecycle scripts
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: mastermind-cutover-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/mastermind-cutover
+      - name: Restore and verify the sealed exact-source artifact
+        run: |
+          python3 scripts/ci/mastermind-native-artifact.py restore apps/mastermind --archive "$RUNNER_TEMP/mastermind-cutover/mastermind-native.tar.gz" --receipt "$RUNNER_TEMP/mastermind-native-artifact.json"
+          python3 scripts/ci/mastermind-native-artifact.py verify apps/mastermind --receipt "$RUNNER_TEMP/mastermind-native-artifact.json"
+      - name: Locate the restored emitted config
+        id: output
+        run: python3 scripts/ci/mastermind-native-artifact.py config apps/mastermind
+      - name: Convert to cf Build Output without rebuilding
+        run: node scripts/ci/void-cf-output.mjs --config "${{ steps.output.outputs.config }}" --out "$RUNNER_TEMP/mastermind-cf" --sha "$SOURCE_SHA"
+      - name: Require the Worker runtime secret names
+        id: secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
+        working-directory: apps/mastermind
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
+          if bun x --no-install wrangler secret list --name tuturuuu-mastermind --format json > "$RUNNER_TEMP/mastermind-secrets.json" 2> "$RUNNER_TEMP/mastermind-secrets.err"; then
+            jq -e --argjson required '["CF_ACCESS_TEAM_DOMAIN","CF_ACCESS_AUD","MASTERMIND_OWNER_EMAIL","OWNER_IDS","TUTURUUU_APP_COORDINATION_SECRET"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/mastermind-secrets.json" > /dev/null
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          elif grep -qi 'not found\|10007' "$RUNNER_TEMP/mastermind-secrets.err"; then
+            # First release: the Worker does not exist yet and fails closed
+            # with 503 until its secrets are set.
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          else
+            cat "$RUNNER_TEMP/mastermind-secrets.err"
+            exit 1
+          fi
+      # A rerun keeps its original ref and SHA; only the current production
+      # head may publish, checked after this job holds the deploy slot.
+      - name: Admit only the current production head
+        id: admission
+        run: |
+          head=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/production | cut -f1)
+          test -n "$head" || { echo 'Cannot read the production head'; exit 1; }
+          if [ "$head" = "$SOURCE_SHA" ]; then
+            echo 'superseded=false' >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SOURCE_SHA is superseded by production $head; nothing is published"
+            echo 'superseded=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Capture the serving version for rollback
+        if: steps.admission.outputs.superseded == 'false' && steps.secrets.outputs.exists == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/void-cf-publisher.mjs capture --worker tuturuuu-mastermind --out "$RUNNER_TEMP/mastermind-rollback.json"
+      - name: Publish the exact artifact
+        id: publish
+        if: steps.admission.outputs.superseded == 'false'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
+          EXISTS: ${{ steps.secrets.outputs.exists }}
+        run: |
+          # Production can advance while this job captures and uploads; the
+          # head is checked again right before traffic moves.
+          still_head() {
+            [ "$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/production | cut -f1)" = "$SOURCE_SHA" ]
+          }
+          if [ "$EXISTS" = true ]; then
+            baseline=$(jq -er .versionId "$RUNNER_TEMP/mastermind-rollback.json")
+            node scripts/ci/void-cf-publisher.mjs publish --build "$RUNNER_TEMP/mastermind-cf" --worker tuturuuu-mastermind --message "$SOURCE_SHA" > "$RUNNER_TEMP/mastermind-publish.json"
+            version=$(jq -er .versionId "$RUNNER_TEMP/mastermind-publish.json")
+            # Recorded before traffic moves, so a timed-out assignment can be
+            # reconciled against the serving version.
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            if ! still_head; then
+              echo "::notice::production advanced past $SOURCE_SHA; version $version stays without traffic"
+              exit 0
+            fi
+            node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-mastermind --version "$version" --expect-current "$baseline" > "$RUNNER_TEMP/mastermind-assign.json"
+          else
+            # First release of a Worker that does not exist yet: the same cf
+            # CLI creates it from the identical Build Output.
+            node scripts/ci/void-cf-publisher.mjs dry-run --build "$RUNNER_TEMP/mastermind-cf"
+            if ! still_head; then
+              echo "::notice::production advanced past $SOURCE_SHA; nothing is created"
+              exit 0
+            fi
+            node --input-type=module -e "
+              import { execFileSync } from 'node:child_process';
+              import { cfCommand } from './scripts/ci/void-cf-publisher.mjs';
+              const [command, prefix] = cfCommand();
+              execFileSync(command, [...prefix, 'deploy', '--prebuilt', '--mode', 'production', '--no-provision', '--message', process.env.SOURCE_SHA], { cwd: process.env.RUNNER_TEMP + '/mastermind-cf', stdio: 'inherit' });
+            "
+          fi
+          echo 'assigned=true' >> "$GITHUB_OUTPUT"
+      - name: Verify the whole host is served through Access
+        id: access
+        if: steps.publish.outputs.assigned == 'true' && vars.MASTERMIND_HOST_ATTACHED == 'true'
+        env:
+          TEAM: ${{ vars.MASTERMIND_ACCESS_TEAM_DOMAIN }}
+        run: |
+          # Every path, without an Access session, must redirect to this
+          # team's login for this host; any other answer means some path can
+          # reach the Worker without Access.
+          test -n "$TEAM" || { echo 'Missing MASTERMIND_ACCESS_TEAM_DOMAIN'; exit 1; }
+          expected="https://$TEAM/cdn-cgi/access/login/mastermind.tuturuuu.com"
+          for path in / /en /vi /login /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
+            result=$(curl --silent --show-error --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --output /dev/null --write-out '%{http_code} %{redirect_url}' "https://mastermind.tuturuuu.com$path")
+            status=${result%% *}
+            location=${result#* }
+            case "$location" in "$expected"|"$expected?"*) matched=true ;; *) matched=false ;; esac
+            if [ "$status" != 302 ] || [ "$matched" != true ]; then
+              echo "::error::$path answered $status $location; expected 302 to $expected"
+              exit 1
+            fi
+          done
+      # Restores the captured baseline only when this run's own version is
+      # serving; a version an operator moved to after capture is left alone.
+      - name: Restore the previous version after a failed release
+        if: (failure() || cancelled()) && steps.publish.outputs.version != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
+          VERSION: ${{ steps.publish.outputs.version }}
+        run: |
+          baseline=$(jq -er .versionId "$RUNNER_TEMP/mastermind-rollback.json")
+          node scripts/ci/void-cf-publisher.mjs capture --worker tuturuuu-mastermind --out "$RUNNER_TEMP/mastermind-serving.json"
+          serving=$(jq -er .versionId "$RUNNER_TEMP/mastermind-serving.json")
+          if [ "$serving" != "$VERSION" ]; then
+            echo "::warning::serving $serving is not this run's $VERSION; no rollback"
+            exit 0
+          fi
+          node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-mastermind --version "$baseline" --expect-current "$VERSION"
+      - name: Retain release and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mastermind-release-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/mastermind-rollback.json
+            ${{ runner.temp }}/mastermind-publish.json
+            ${{ runner.temp }}/mastermind-assign.json
+            ${{ runner.temp }}/mastermind-serving.json
+          retention-days: 30
+          if-no-files-found: warn
+      # A marker means an existing, configured Worker passed the host check;
+      # a first release or an unattached host records none.
+      - name: Record successful Cloudflare deployment
+        if: steps.publish.outputs.assigned == 'true' && steps.secrets.outputs.exists == 'true' && steps.access.outcome == 'success'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ env.SOURCE_SHA }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: mastermind-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

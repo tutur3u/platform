@@ -55,7 +55,10 @@ const COLAB_OIDC_PLANNER_CONTRACT = '8bbb84a2ff0c72db5127a2ff2f8c8943a530c697';
 // This planner also publishes the deployment coordinator as an independent
 // app and grants id-token: write to every caller whose deploy job reports to
 // it. Platform proof is unchanged.
-const CURRENT_PLANNER_CONTRACT = '5dcdb368b1e7ac00cbadfa4c846436462acb10e5';
+const COORDINATOR_PLANNER_CONTRACT = '5dcdb368b1e7ac00cbadfa4c846436462acb10e5';
+// This planner also calls the Mastermind Cloudflare workflow as an independent
+// app. Platform proof is unchanged.
+const CURRENT_PLANNER_CONTRACT = '8b03f981c42a334644322fca9a421cd01be2505a';
 
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
@@ -81,6 +84,7 @@ const PRODUCTION_PLATFORM = {
         POST_RETIREMENT_PLANNER_CONTRACT,
         SUPERSEDED_SKIP_PLANNER_CONTRACT,
         COLAB_OIDC_PLANNER_CONTRACT,
+        COORDINATOR_PLANNER_CONTRACT,
         CURRENT_PLANNER_CONTRACT,
       ],
     ],

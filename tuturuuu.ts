@@ -1,5 +1,6 @@
 import { getMobileBuildDecision } from './scripts/ci/mobile-build-selection.ts';
 import { isVerifiedProductionTestPath } from './scripts/ci/production-test-only-paths.ts';
+import { mastermindProductionTarget } from './scripts/ci/mastermind-production-target.ts';
 import { tasksProductionInputs } from './scripts/ci/tasks-production-inputs.ts';
 import { buildWorkspaceDependencyClosure } from './scripts/ci/workspace-dependency-closure.ts';
 import { ci } from './tuturuuu.ci.ts';
@@ -357,6 +358,7 @@ export const cloudflareProductionTargets = [
     packageName: '@tuturuuu/parley',
     productionWorkflow: 'parley-cloudflare.yaml',
   },
+  mastermindProductionTarget,
 ] as const;
 
 const globalVercelAffectingPaths = new Set([
@@ -389,6 +391,7 @@ const databaseMigrationAffectingPaths = new Set([
   'scripts/ci/github-deployment-markers.ts',
   'scripts/ci/record-deployment-marker.ts',
   'scripts/ci/production-test-only-paths.ts',
+  'scripts/ci/mastermind-production-target.ts',
   'scripts/ci/tasks-production-inputs.ts',
   'scripts/ci/workspace-dependency-closure.ts',
   'scripts/ci/resolve-changed-files-core.ts',

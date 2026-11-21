@@ -202,6 +202,16 @@ jobs:
       id-token: write
     secrets: inherit
 
+  deploy-mastermind-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'mastermind-cloudflare.yaml')
+    uses: ./.github/workflows/mastermind-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    secrets: inherit
+
   deploy-apps:
     needs: [plan, deploy-platform]
     if: >-

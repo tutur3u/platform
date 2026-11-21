@@ -86,7 +86,7 @@ const heldPolicy = Object.fromEntries(
 const heldReason = /held for wave-\d cutover/;
 
 const hasPublicationCommand = (publicationStepCommand) =>
-  /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)/.test(
+  /vercel (?:pull|build|deploy)|wrangler (?:deploy|secret)|void-cf-publisher\.mjs (?:publish|assign)|'deploy', '--prebuilt'|cf deploy --prebuilt/.test(
     publicationStepCommand
   );
 
@@ -131,6 +131,7 @@ function fixture(t, policy) {
     'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/tasks-production-inputs.ts',
+    'scripts/ci/mastermind-production-target.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/resolve-production-vercel-targets.ts',
     'scripts/ci/resolve-changed-files-core.ts',
@@ -452,7 +453,7 @@ test('Workspace admission opens only its route-free seal workflow and adds no pu
     jobs['workspace-cutover-artifact'].if,
     /github\.event_name == 'workflow_dispatch'/
   );
-  for (const app of ['shortener', 'mastermind'])
+  for (const app of ['shortener'])
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'
@@ -469,7 +470,7 @@ test('Git admission opens its route-free upload and adds no Cloudflare publisher
     publicationWrites(jobs).map(([name]) => name),
     []
   );
-  for (const app of ['shortener', 'mastermind'])
+  for (const app of ['shortener'])
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'
@@ -488,6 +489,7 @@ const publishers = [
       job: 'Deploy-Production',
     })),
   { workflow: 'meet-cloudflare.yaml', job: 'deploy' },
+  { workflow: 'mastermind-cloudflare.yaml', job: 'deploy' },
 ];
 for (const { workflow, job } of publishers) {
   test(`${workflow}: every production write depends on the early shared policy gate`, (t) => {
@@ -618,7 +620,7 @@ for (const app of ['calendar', 'mail', 'apps']) {
   });
 }
 
-test('Mastermind has qualification jobs only and no production publisher', () => {
+test('Mastermind publishes only its sealed artifact from the gated deploy job', () => {
   assert.equal(
     existsSync(
       join(repoRoot, '.github/workflows/vercel-production-mastermind.yaml')
@@ -626,8 +628,21 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
     false
   );
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
-  assert.deepEqual(Object.keys(jobs), ['affected-gate', 'artifact']);
+  assert.deepEqual(Object.keys(jobs), [
+    'affected-gate',
+    'artifact',
+    'production-policy',
+    'deploy',
+  ]);
   assert.match(jobs.artifact.env.MASTERMIND_SOURCE_SHA, /github\.sha/);
+  assert.deepEqual(jobs.deploy.needs, ['artifact', 'production-policy']);
+  assert.equal(jobs.deploy.environment, 'mastermind-production');
+  assert.equal(jobs.deploy.env.SOURCE_SHA, '${{ github.sha }}');
+  // The artifact job never writes to a provider.
+  assert.deepEqual(
+    publicationWrites(jobs).map(([name]) => name),
+    ['deploy']
+  );
 });
 
 test('the production app deny-list holds exactly the listed apps and never web', () => {
