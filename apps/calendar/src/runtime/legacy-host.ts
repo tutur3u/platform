@@ -2,10 +2,11 @@ import type { AppMountConfig } from '@tuturuuu/start-bridge/mounts';
 import { calendarMounts } from './calendar-mount';
 import { isCalendarStagingArtifact } from './deployment-profile';
 import { calendarOneOriginMode } from './one-origin';
+import { publicAssets } from './public-assets';
 
 /** Keep API and in-flight provider/auth handoffs on their original host. */
 const LEGACY_HOST_SERVED_PATHS =
-  /^\/(?:api(?:\/|$)|_fn(?:\/|$)|_calendar\/functions(?:\/|$)|(?:(?:en|vi)\/)?verify-token\/?$)/u;
+  /^\/(?:api(?:\/|$)|_fn(?:\/|$)|_calendar\/functions(?:\/|$)|assets\/|(?:(?:en|vi)\/)?verify-token\/?$)/u;
 const LEGACY_SERVICE_WORKER_PATH = '/serwist/sw.js';
 
 /**
@@ -58,7 +59,11 @@ export function legacyHostResponse(
   const mountHost = mounts.mountHosts?.[0];
   const basePath = mounts.basePath;
   if (!mountHost || !basePath || !isLegacyHost(url, mounts)) return null;
-  if (LEGACY_HOST_SERVED_PATHS.test(url.pathname)) return null;
+  if (
+    LEGACY_HOST_SERVED_PATHS.test(url.pathname) ||
+    publicAssets.has(url.pathname)
+  )
+    return null;
   if (url.pathname === LEGACY_SERVICE_WORKER_PATH) {
     return new Response(LEGACY_SERVICE_WORKER_SOURCE, {
       status: 200,

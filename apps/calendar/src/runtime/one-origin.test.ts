@@ -130,6 +130,22 @@ describe('Calendar one-origin activation', () => {
     expect(serviceWorker.headers.get('cache-control')).toBe('no-store');
   });
 
+  it.each(['/assets/verify-token.js', '/favicon.ico'])(
+    'serves the legacy verifier asset %s on its own origin after activation',
+    async (path) => {
+      asset.mockResolvedValueOnce(new Response('asset-bytes'));
+      const response = await handleCalendarRequest(
+        new Request(`https://calendar.tuturuuu.com${path}`),
+        workerEnv('on'),
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get('location')).toBeNull();
+      expect(await response.text()).toBe('asset-bytes');
+    }
+  );
+
   it('on keeps registered callback paths on the subdomain and fences their apex copies', async () => {
     const response = await handleCalendarRequest(
       new Request(

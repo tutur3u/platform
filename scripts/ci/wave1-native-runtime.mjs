@@ -126,26 +126,34 @@ async function runRuntimeAcceptance() {
     // Storefront serves its root host and redirects its aliases to it.
     if (app === 'storefront' && environment === 'production')
       hosts.splice(0, hosts.length, ...storefrontRuntimeHosts(receipt.profile));
-    for (const host of hosts) {
+    const targets = hosts.map((host) => ({ host, calendarOn: false }));
+    if (calendarShadow)
+      targets.push({ host: calendarShadow.host, calendarOn: true });
+    for (const { host, calendarOn } of targets) {
       let worker;
       try {
         worker = await unstable_startWorker({
           config: join(scratch, 'dist/wave1/wrangler.json'),
           envFiles: [join(scratch, 'empty.env')],
           sendMetrics: false,
-          bindings: Object.fromEntries(
-            receipt.profile.secrets.map((name) => [
-              name,
-              {
-                type: 'secret_text',
-                value:
-                  name === 'NEXT_PUBLIC_SUPABASE_URL'
-                    ? 'https://wave1-runtime.supabase.invalid'
-                    : (access?.bindings[name] ??
-                      'wave1_disposable_fixture_only'),
-              },
-            ])
-          ),
+          bindings: {
+            ...Object.fromEntries(
+              receipt.profile.secrets.map((name) => [
+                name,
+                {
+                  type: 'secret_text',
+                  value:
+                    name === 'NEXT_PUBLIC_SUPABASE_URL'
+                      ? 'https://wave1-runtime.supabase.invalid'
+                      : (access?.bindings[name] ??
+                        'wave1_disposable_fixture_only'),
+                },
+              ])
+            ),
+            ...(calendarOn
+              ? { TTR_ONE_ORIGIN_CALENDAR: { type: 'plain_text', value: 'on' } }
+              : {}),
+          },
           build: { bundle: false, processEntrypoint: false },
           dev: {
             remote: false,
@@ -189,6 +197,30 @@ async function runRuntimeAcceptance() {
             },
             redirect: 'manual',
           });
+        if (calendarOn) {
+          const path = '/vi/personal?view=week&tag=1&tag=2';
+          const navigation = await fetchWorker(path);
+          assert.equal(navigation.status, 301);
+          assert.equal(
+            navigation.headers.get('location'),
+            `https://tuturuuu.com/calendar${path}`
+          );
+          const completion = await fetchWorker('/vi/verify-token');
+          assert.equal(completion.status, 200);
+          const html = await completion.text();
+          const module = /<script\b[^>]*src="(\/assets\/[^"]+\.js)"/u.exec(
+            html
+          )?.[1];
+          assert.ok(
+            module,
+            'Legacy verifier hydration asset is absent in on mode'
+          );
+          const asset = await fetchWorker(module);
+          assert.equal(asset.status, 200);
+          assert.match(asset.headers.get('content-type') ?? '', /javascript/u);
+          await asset.body?.cancel();
+          continue;
+        }
         if (host === foreignHost) {
           for (const path of ['/api/build-info', '/en/personal', '/']) {
             const refused = await fetchWorker(path);
