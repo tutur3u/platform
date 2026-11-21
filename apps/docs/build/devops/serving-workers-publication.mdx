@@ -78,6 +78,16 @@ artifact, retained 90 days, including the `rollbackVersion` that served before.
   Routes, custom domains, schedules and the gateway are never changed by this
   flow.
 
+## Activation
+
+Every enabled run publishes each admitted app whose live build differs from
+the pinned production SHA, so any regression in that SHA ships with it. Before
+setting `SERVING_WORKERS_PUBLICATION=enabled`, confirm the pinned production SHA
+has no known regression for an admitted app, for example by smoking each app's
+candidate from that SHA at 0%. While a pinned production SHA carries a known
+regression, keep the variable unset or move that app to `held` in
+`productionPublicationPolicy` until a fixed SHA is pinned.
+
 ## Credentials
 
 `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` is an environment secret on
