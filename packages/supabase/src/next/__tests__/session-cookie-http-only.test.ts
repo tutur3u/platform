@@ -6,6 +6,7 @@ import {
   createAccountSwitchAuth,
 } from '../account-switch-auth';
 import {
+  getHostOnlyCookieClearHeadersForNames,
   getSupabaseCookieOptions,
   isSupabaseSessionCookieHttpOnly,
 } from '../common';
@@ -189,5 +190,30 @@ describe('next/server cookie mirror', () => {
 
     expect(headers.some((h) => h.startsWith('sb-test-auth-token='))).toBe(true);
     for (const header of headers) expect(header).not.toMatch(/HttpOnly/iu);
+  });
+});
+
+describe('host-only clear header serializer', () => {
+  const scope = { path: '/', sameSite: 'lax' as const, secure: true };
+
+  it('keeps the current bytes when httpOnly is not set', () => {
+    expect(
+      getHostOnlyCookieClearHeadersForNames(['sb-test-auth-token'], scope)
+    ).toEqual([
+      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure',
+    ]);
+  });
+
+  it('appends HttpOnly from the flagged cookie options', () => {
+    vi.stubEnv('TUTURUUU_SESSION_COOKIE_HTTP_ONLY', '1');
+    const options = getSupabaseCookieOptions(
+      SUPABASE_URL,
+      'https://tasks.tuturuuu.com'
+    );
+    expect(
+      getHostOnlyCookieClearHeadersForNames(['sb-test-auth-token'], options)
+    ).toEqual([
+      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure; HttpOnly',
+    ]);
   });
 });

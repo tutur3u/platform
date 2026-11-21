@@ -71,7 +71,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     // Use challengeAndVerify for single-step verification
-    const { data, error } = await supabase.auth.mfa.challengeAndVerify({
+    const { error } = await supabase.auth.mfa.challengeAndVerify({
       factorId,
       code: code.toString().trim(),
     });
@@ -89,10 +89,13 @@ export async function POST(request: Request, { params }: Params) {
     await clearMFAVerifyFailures(ipAddress);
     await clearMFAVerifySubjectFailures(subject);
 
-    return NextResponse.json({
-      message: 'Factor verified successfully',
-      data,
-    });
+    // The verified session is written to the HttpOnly-capable session cookie
+    // by the server client. The body never carries the token pair, so page
+    // script cannot read it.
+    return NextResponse.json(
+      { message: 'Factor verified successfully' },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   } catch (error) {
     console.error('Error verifying factor:', error);
     return NextResponse.json(

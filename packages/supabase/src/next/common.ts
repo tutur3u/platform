@@ -18,7 +18,7 @@ const NEXT_PUBLIC_ENV_PREFIX = 'NEXT_PUBLIC';
 const LOCAL_E2E_DEFAULT_SUPABASE_URL = 'http://127.0.0.1:8001';
 type HostOnlyCookieClearHeaderOptions = Pick<
   CookieOptions,
-  'path' | 'sameSite' | 'secure'
+  'httpOnly' | 'path' | 'sameSite' | 'secure'
 >;
 type HostOnlyCookieClearHeaderInput = string | HostOnlyCookieClearHeaderOptions;
 
@@ -228,6 +228,7 @@ function getHostOnlyCookieClearAttributes(
 ) {
   if (typeof optionsOrPath === 'string') {
     return {
+      httpOnly: false,
       path: getSafeCookiePath(optionsOrPath),
       sameSite: null,
       secure: false,
@@ -235,6 +236,7 @@ function getHostOnlyCookieClearAttributes(
   }
 
   return {
+    httpOnly: optionsOrPath.httpOnly === true,
     path: getSafeCookiePath(optionsOrPath.path),
     sameSite: formatSameSiteCookieAttribute(optionsOrPath.sameSite),
     secure: optionsOrPath.secure === true,
@@ -259,6 +261,7 @@ export function getHostOnlyCookieClearHeadersForNames(
       attributes.path,
       attributes.sameSite ?? '',
       attributes.secure ? 'secure' : '',
+      attributes.httpOnly ? 'httponly' : '',
     ].join('\0');
 
     if (seen.has(key)) {
@@ -278,6 +281,10 @@ export function getHostOnlyCookieClearHeadersForNames(
 
     if (attributes.secure) {
       cookieAttributes.push('Secure');
+    }
+
+    if (attributes.httpOnly) {
+      cookieAttributes.push('HttpOnly');
     }
 
     headers.push(`${name}=; ${cookieAttributes.join('; ')}`);

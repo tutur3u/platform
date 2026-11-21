@@ -146,6 +146,26 @@ describe.each(routes)('MFA $name per-account limit', ({ call, authCall }) => {
     expect(mocks.clearMFAVerifySubjectFailures).toHaveBeenCalledWith(subject);
   });
 
+  it('never returns the verified session tokens to the browser', async () => {
+    authCall().mockResolvedValue({
+      data: {
+        access_token: 'synthetic-access',
+        refresh_token: 'synthetic-refresh',
+        token_type: 'bearer',
+        user: { id: USER_ID },
+      },
+      error: null,
+    });
+
+    const response = await call();
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(body).not.toMatch(/access_token|refresh_token|synthetic-/u);
+    expect(JSON.parse(body)).toEqual({ message: expect.any(String) });
+  });
+
   it('waits for the failure counter and returns a fixed message', async () => {
     let finishWrite: () => void = () => {};
     mocks.recordMFAVerifyFailure.mockReturnValue(

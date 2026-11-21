@@ -12,10 +12,11 @@ the `sb-<ref>-auth-token*` cookie becomes `HttpOnly`, so no script on any
 access or refresh token. The product rule is listed in
 [Shared session](/platform/architecture/shared-session#who-can-read-the-session).
 
-**Status:** Slice 1 in review; the flip is held. Security finding `APEX-SESSION-COOKIE` is open. Release
-authority record `RA-20261121-1145-APEX-SESSION-COOKIE` accepts enforced CSP
-plus Trusted Types as an interim control until 2026-12-05. This design removes
-the root cause.
+**Status:** Slices 1 and 2 are implemented with the flag off. The flip is
+held. Security finding `APEX-SESSION-COOKIE` is open. Release authority record
+`RA-20261121-1145-APEX-SESSION-COOKIE` accepts enforced CSP plus Trusted Types
+as an interim control until 2026-12-05. This design removes the root cause.
+Landing a slice does not authorize enabling the flag or admitting a mount.
 
 ## Problem
 
@@ -85,11 +86,15 @@ without project JWT-signing material, which Tuturuuu does not hold.
 - **No in-place upgrade marker.** `@supabase/ssr` writes a chunk only when its
   value changes, and a `Cookie` header carries no attributes. So no server can
   prove that an existing shared cookie is `HttpOnly`. A request-snapshot
-  re-emit could also race a later refresh, switch or logout. Existing readable
-  cookies become `HttpOnly` on their next refresh (at most one access-token
-  lifetime). The flip waits for a migration design that Web owns: a versioned
-  `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a stale
-  response from restoring a superseded session.
+  re-emit could also race a later refresh, switch or logout. Readable cookies
+  written before the flip have no upper bound on how long they stay readable:
+  an idle browser may never refresh, and an unchanged chunk is skipped even
+  during a write. The flip waits for a migration design that Web owns: a
+  versioned `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a
+  stale response from restoring a superseded session.
+- The host-only clear header serializer (`getHostOnlyCookieClearHeadersForNames`)
+  appends `HttpOnly` when the cookie options carry it, and keeps its current
+  bytes otherwise.
 
 ## Flags and rollout
 
@@ -108,13 +113,16 @@ flips for every writer at once.
    clear writes, carry `HttpOnly` when the flag is on, with tests for each
    adapter and re-emitter. The output is unchanged while the flag is off.
 2. **Slice 2, close token-returning browser routes.** These leak tokens today
-   whatever the cookie attributes, so they ship first.
+   whatever the cookie attributes, so they ship first. Implemented:
    - The TOTP challenge verify and factor verify handlers return allowlisted,
      token-free bodies.
    - QR-login polling and the QA mint endpoint deliver tokens only to explicit
      native or machine callers. They reject browser requests before consuming
      a challenge or minting a token.
-   - Each has a negative route test.
+   - Each has a negative route test: `mfa-verify-subject-limit.test.ts`,
+     `qr-login.test.ts` (with a native-poller control) and the QA admin
+     `route.test.ts`. The Web and Workspace `LoginQrCard` components, which no
+     page mounts, would need a server-set cookie before they could be used.
 3. **Slice 3, shared identity.** `RealtimeLogProvider` (mounted in 12 apps) and
    the `getUser`-only call sites in `packages/ui` and `packages/tasks-ui` read
    identity from `/api/v1/realtime/session` or an existing internal-api user
@@ -145,17 +153,33 @@ flips for every writer at once.
      expired sessions and app-only logout.
 6. **Per app.** Turn on `server` mode for the app and verify login, refresh,
    realtime and storage on staging.
-7. **Flip.** Wait for every hold below to clear. Then set
+7. **Flip.** Wait for every gate in the next section to clear. Then set
    `TUTURUUU_SESSION_COOKIE_HTTP_ONLY=1` on every server writer of the shared
    domain (Web and each subdomain app): staging first, then production.
-8. **Rollback.** Prefer rolling back an app's `server` mode while the cookie
-   stays `HttpOnly`. Unsetting the server flag is the last resort, because new
-   writes become readable again.
+8. **Rollback.** An app in `cookie` mode cannot authenticate in the browser
+   once the shared cookie is `HttpOnly`. Roll an app back to an earlier release
+   that is still in `server` mode, keeping the cookie `HttpOnly`. Unsetting the
+   server flag makes new writes script-readable, so it needs an explicit
+   decision from the security release authority.
 
-## Holds before the flip and apex admission
+## Gates before the flip and apex admission
 
-These come from the independent security design review, and each needs its own
-fix and tests:
+These gates come from the independent security reviews. Each needs its own fix
+and tests before `TUTURUUU_SESSION_COOKIE_HTTP_ONLY` is enabled anywhere or an
+app is admitted to the shared origin:
+
+- **Token-returning browser routes closed** (slice 2 above).
+- **Browser auth routes** meet every rule in slice 5: same-origin proof
+  without a session, OAuth, PKCE and WebAuthn binding, detached notes
+  verification, allowlisted `private, no-store` responses, preserved MFA
+  assurance and rate limits.
+- **Every app in `server` mode**, with old tabs and cached assets accounted
+  for. A deployment must outlast the asset cache before the flip, and a client
+  still in `cookie` mode must fail closed to a reload rather than a logout loop.
+- **Account-switch clears both scopes.** Next keys response cookies by name,
+  so in `clearAccountSwitchSession` and the switch install, the host-only
+  tombstone replaces the shared-domain tombstone. The final response must carry
+  both deletions for each stale name, with a test asserting both headers.
 
 - **Mounted guard on every mount.** The access-token-only request view and the
   Supabase `Set-Cookie` filter apply today only to mounts that opt into
@@ -170,11 +194,18 @@ fix and tests:
   caller-selected target and returns a credential in JSON. The CLI verifier
   issues Tuturuuu access and refresh credentials. Reserve CLI issuance for the
   dedicated flow, bind redemption to the initiating CLI, and test that a
-  generic browser handoff cannot produce a CLI credential.
+  generic browser handoff cannot produce a CLI credential. Ordinary cross-app
+  handoff tokens stay portable by design: single use, at most 60 s, for a
+  known or enabled registered app (see
+  [Shared session](/platform/architecture/shared-session#credentials-minted-from-a-signed-in-session)).
+  Page script that obtains one can redeem it elsewhere within that window, so
+  the "no off-device use" claim covers Supabase tokens only.
 - **Migration.** The versioned cookie migration in Server changes.
 - **Bundle-level inventory.** Check the transitive client graph and emitted
   assets, including relative and direct SDK imports. auth-js reads cookies
   itself and can broadcast sessions between tabs.
+- **Emitted-Worker acceptance.** On staging, verify forced chunked cookies,
+  scopes, expiry and flag-off bytes through the emitted Workers.
 
 ## Verification
 

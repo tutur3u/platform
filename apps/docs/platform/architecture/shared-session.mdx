@@ -34,7 +34,7 @@ English and Vietnamese.
 | Rule | Default | Status |
 | --- | --- | --- |
 | The session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`; page script cannot read it | Applies to every browser session | Planned (Stage A, see [HttpOnly session cookie](/platform/architecture/httponly-session-cookie)) |
-| No auth endpoint returns a raw access or refresh token to a browser request; only native clients (no `Origin`, no Fetch Metadata) receive token pairs | Always | Enforced: `lib/auth/password.test.ts`, `lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts` |
+| No auth endpoint returns a raw access or refresh token to a browser request; only native clients (no `Origin`, no Fetch Metadata) receive token pairs | Always | Enforced for password, OTP, TOTP verify, QR-login polling and the QA session mint: `lib/auth/password.test.ts`, `lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts`, `legacy-api-routes/auth/mfa/totp/mfa-verify-subject-limit.test.ts`, `lib/auth/qr-login.test.ts`, `app/api/v1/admin/qa/test-users/route.test.ts`. Not yet covered: Tuturuuu CLI and handoff credentials (see [HttpOnly session cookie](/platform/architecture/httponly-session-cookie#gates-before-the-flip-and-apex-admission)) |
 | No endpoint exports the session or its cookies as JSON | Always | Enforced (`/api/auth/me/session` removed) |
 | Browser code never holds a session token in Web Storage, IndexedDB or the Cache API | Always | Planned (browser-surface guard) |
 

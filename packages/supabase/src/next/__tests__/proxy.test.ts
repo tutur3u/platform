@@ -436,7 +436,11 @@ describe('Supabase Proxy', () => {
 
     const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
     cookieHandler.getAll();
-    for (const [, , options] of nextResponseMocks.cookieSet.mock.calls)
+    const writes = nextResponseMocks.cookieSet.mock.calls;
+    expect(writes.map(([name]) => name)).toEqual(
+      expect.arrayContaining(['sb-127-auth-token', 'sb-host-auth-token'])
+    );
+    for (const [, , options] of writes)
       expect(options).not.toHaveProperty('httpOnly');
   });
 

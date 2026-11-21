@@ -21,6 +21,10 @@ import {
 } from '@tuturuuu/utils/constants';
 import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import { z } from 'zod';
+import {
+  isBrowserRequest,
+  refuseMobileSessionForBrowser,
+} from '@/lib/auth/browser-request';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isTrustedAuthenticator } from './device-mfa/registry';
 
@@ -410,6 +414,13 @@ export async function pollQrLoginChallenge(
       },
       status: 200,
     };
+  }
+
+  // An approved challenge is redeemed for a raw session token pair, which only
+  // native clients may hold. Refuse a browser poll before consuming the
+  // challenge, so a page cannot take the session and the native poller keeps it.
+  if (isBrowserRequest(context.headers)) {
+    return refuseMobileSessionForBrowser(context.endpoint);
   }
 
   const consumed = await consumeApprovedChallenge(row);

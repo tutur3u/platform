@@ -385,6 +385,66 @@ describe('QR login helpers', () => {
     });
   });
 
+  it('refuses an approved challenge to a browser poll before consuming it', async () => {
+    const { pollQrLoginChallenge } = await import('./qr-login');
+    const approved = {
+      approval_metadata: {},
+      approved_at: new Date().toISOString(),
+      approver_device_id: 'device-1',
+      approver_email: 'synthetic@example.com',
+      approver_platform: 'ios',
+      approver_user_id: '00000000-0000-4000-8000-00000000000a',
+      consumed_at: null,
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      id: 'challenge-1',
+      request_metadata: {},
+      secret_hash: 'hash',
+      status: 'approved',
+      updated_at: new Date().toISOString(),
+    };
+    const loadBuilder = createMaybeSingleBuilder(approved);
+    const consumeBuilder = createMaybeSingleBuilder({
+      ...approved,
+      status: 'consumed',
+    });
+    const poll = (headers: Headers) =>
+      pollQrLoginChallenge(
+        { challengeId: 'challenge-1', secret: 'secret-token' },
+        {
+          endpoint: '/api/v1/auth/qr-login/challenges/[challengeId]',
+          headers,
+        }
+      );
+
+    mocks.adminClient.from.mockReturnValueOnce(loadBuilder);
+    const browser = await poll(
+      new Headers({
+        origin: 'https://tuturuuu.com',
+        'sec-fetch-site': 'same-origin',
+      })
+    );
+
+    expect(browser.status).toBe(403);
+    expect(browser.body).toMatchObject({
+      code: 'MOBILE_SESSION_BROWSER_REFUSED',
+    });
+    expect(JSON.stringify(browser.body)).not.toMatch(
+      /access_token|refresh_token/u
+    );
+    expect(mocks.adminClient.from).toHaveBeenCalledTimes(1);
+    expect(loadBuilder.update).not.toHaveBeenCalled();
+    expect(mocks.adminClient.auth.admin.generateLink).not.toHaveBeenCalled();
+
+    // Negative control: the native poller (no Origin, no Fetch Metadata)
+    // still reaches consumption.
+    mocks.adminClient.from
+      .mockReturnValueOnce(createMaybeSingleBuilder(approved))
+      .mockReturnValueOnce(consumeBuilder);
+    await poll(new Headers());
+    expect(consumeBuilder.update).toHaveBeenCalled();
+  });
+
   it('records authenticated approval for pending challenges', async () => {
     const { approveQrLoginChallenge } = await import('./qr-login');
     const pending = {

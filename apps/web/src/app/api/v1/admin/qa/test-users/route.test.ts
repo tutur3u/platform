@@ -84,6 +84,29 @@ describe('QA test user admin routes', () => {
     expect(mocks.mint).not.toHaveBeenCalled();
   });
 
+  it('refuses a browser session mint before authorization or minting', async () => {
+    const browser = new Request(
+      `https://tuturuuu.com/api/v1/admin/qa/test-users/${userId}/session`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: 'https://tuturuuu.com',
+          'sec-fetch-site': 'same-origin',
+        },
+        body: '{}',
+      }
+    );
+    const response = await SESSION(browser, params(userId));
+    expect(response.status).toBe(403);
+    expect(response.headers.get('cache-control')).toMatch(/no-store/u);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'MOBILE_SESSION_BROWSER_REFUSED',
+    });
+    expect(mocks.access).not.toHaveBeenCalled();
+    expect(mocks.mint).not.toHaveBeenCalled();
+  });
+
   it('validates create input and never caches the credential response', async () => {
     expect((await POST(json('', { count: 1 }))).status).toBe(400);
     const text = new Request('https://tuturuuu.com/x', {

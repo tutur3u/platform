@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     // Verify the challenge with the provided code
-    const { data, error } = await supabase.auth.mfa.verify({
+    const { error } = await supabase.auth.mfa.verify({
       factorId,
       challengeId,
       code: code.toString().trim(),
@@ -85,10 +85,13 @@ export async function POST(request: Request) {
     await clearMFAVerifyFailures(ipAddress);
     await clearMFAVerifySubjectFailures(subject);
 
-    return NextResponse.json({
-      message: 'Challenge verified successfully',
-      data,
-    });
+    // The verified session is written to the HttpOnly-capable session cookie
+    // by the server client. The body never carries the token pair, so page
+    // script cannot read it.
+    return NextResponse.json(
+      { message: 'Challenge verified successfully' },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   } catch (error) {
     console.error('Error verifying challenge:', error);
     return NextResponse.json(
