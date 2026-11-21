@@ -16,9 +16,19 @@ export const APP_BASE_GLOBAL = '__tuturuuuAppBase';
 type Resolver = () => string | undefined;
 type BaseGlobal = { [APP_BASE_GLOBAL]?: Resolver | string };
 
-/** Server hook: the request context registers a per-request resolver. */
+/**
+ * Server hook: a request context registers a per-request resolver. Several
+ * contexts can coexist in one Worker (an app's own request store and the
+ * bridge store), so a resolver that has no answer for the current request
+ * defers to the one installed before it instead of replacing it.
+ */
 export function installAppBaseResolver(resolver: Resolver) {
-  (globalThis as BaseGlobal)[APP_BASE_GLOBAL] = resolver;
+  const global = globalThis as BaseGlobal;
+  const previous = global[APP_BASE_GLOBAL];
+  const fallback = typeof previous === 'function' ? previous : undefined;
+  global[APP_BASE_GLOBAL] = fallback
+    ? () => resolver() ?? fallback()
+    : resolver;
 }
 
 function buildTimeBase(): string {

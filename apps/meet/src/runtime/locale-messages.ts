@@ -36,8 +36,29 @@ export function localeMessagesPreload(locale: string) {
 }
 
 const clientCache = new Map<string, MessagesThenable>();
+const failures = new Map<string, number>();
 
-function fetchLocaleMessages(locale: string): MessagesThenable {
+/** Fetch attempts per locale before the failure stays until reload. */
+export const LOCALE_MESSAGES_MAX_ATTEMPTS = 3;
+
+/**
+ * Backoff before a failed locale may be fetched again. Until it elapses the
+ * rejected thenable stays cached, so a re-render surfaces the error to the
+ * route error boundary instead of starting another request.
+ */
+export function localeMessagesRetryDelay(failure: number) {
+  return 1000 * 2 ** (failure - 1);
+}
+
+export function resetLocaleMessagesCache() {
+  clientCache.clear();
+  failures.clear();
+}
+
+export function fetchLocaleMessages(
+  locale: string,
+  schedule: (run: () => void, ms: number) => unknown = setTimeout
+): MessagesThenable {
   const cached = clientCache.get(locale);
   if (cached) return cached;
   const thenable: MessagesThenable = fetch(localeMessagesUrl(locale), {
@@ -48,13 +69,19 @@ function fetchLocaleMessages(locale: string): MessagesThenable {
     const messages = (await response.json()) as AbstractIntlMessages;
     thenable.status = 'fulfilled';
     thenable.value = messages;
+    failures.delete(locale);
     return messages;
   });
   thenable.status = 'pending';
   thenable.catch((reason: unknown) => {
     thenable.status = 'rejected';
     thenable.reason = reason;
-    clientCache.delete(locale);
+    const failure = (failures.get(locale) ?? 0) + 1;
+    failures.set(locale, failure);
+    if (failure >= LOCALE_MESSAGES_MAX_ATTEMPTS) return;
+    schedule(() => {
+      if (clientCache.get(locale) === thenable) clientCache.delete(locale);
+    }, localeMessagesRetryDelay(failure));
   });
   clientCache.set(locale, thenable);
   return thenable;

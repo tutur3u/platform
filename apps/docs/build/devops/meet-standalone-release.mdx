@@ -225,7 +225,9 @@ document traffic.
 2. Probe both frontend build-info URLs. Require HTTP 200, `app: meet`, the
    exact `commitHash`, production identity fields, `Cache-Control: no-store`,
    and `X-Gateway-Cache: MOUNT` on the apex response. Capture the response
-   headers and serving version IDs together. Check the bare path, the
+   headers and serving version IDs together. A signed-in apex document must
+   hand the browser `globalThis.__tuturuuuAppBase="/meet"`; an empty base sends
+   the locale bundle and other runtime assets to the apex root. Check the bare path, the
    Vietnamese landing, route links, fingerprinted assets and fonts, and a
    server function requested by browser navigation. Compare cache headers on
    static assets and on a signed-in response.
