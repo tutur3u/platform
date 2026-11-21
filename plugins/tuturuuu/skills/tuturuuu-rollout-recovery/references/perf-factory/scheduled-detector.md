@@ -26,6 +26,13 @@ Setup:
    `tmp/perf-factory/dispatcher.log` and continue to step 3 (do not notify; the
    daily agent-log review picks up repeats). Never print or store
    `CLOUDFLARE_*` values.
+   Then run
+   `node scripts/perf/perf-observability-alerts.mjs --out tmp/perf-factory/detections/<UTC stamp>-slo.json`
+   for firing SLO burn alerts from Admin. It reads `PERF_FACTORY_ADMIN_ORIGIN`
+   and `PERF_FACTORY_ADMIN_TOKEN` by name; exit 2 is handled like the
+   detector's. Its records carry `source: "observability-slo"` and empty
+   `suspects`; fill them by running the detector's `rerun` for the record's
+   `worker` before intake.
 2. Intake. For each regression record, look for an open `perf:` task for the
    same app and metric whose start is within 6 hours. If one exists, append the
    new record to its `history`; otherwise create a task in **Queued** with the

@@ -42,6 +42,7 @@
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/analytics/page.tsx","path":"/[wsId]/monitoring/analytics","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/cron/page.tsx","path":"/[wsId]/monitoring/cron","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/deployments/page.tsx","path":"/[wsId]/monitoring/deployments","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"[locale]/(dashboard)/[wsId]/monitoring/health/page.tsx","path":"/[wsId]/monitoring/health","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/logs/page.tsx","path":"/[wsId]/monitoring/logs","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/observability/page.tsx","path":"/[wsId]/monitoring/observability","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/page.tsx","path":"/[wsId]/monitoring","methods":[{"method":"GET","classification":"ADMIN"}]}
@@ -246,6 +247,7 @@
 {"file":"api/v1/infrastructure/monitoring/stress-tests/[runId]/abort/route.ts","path":"/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/monitoring/stress-tests/[runId]/route.ts","path":"/api/v1/infrastructure/monitoring/stress-tests/[runId]","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/monitoring/stress-tests/route.ts","path":"/api/v1/infrastructure/monitoring/stress-tests","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/observability/alerts/route.ts","path":"/api/v1/infrastructure/observability/alerts","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/observability/analytics/route.ts","path":"/api/v1/infrastructure/observability/analytics","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/observability/cron-runs/route.ts","path":"/api/v1/infrastructure/observability/cron-runs","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/observability/deployments/route.ts","path":"/api/v1/infrastructure/observability/deployments","methods":[{"method":"GET","classification":"ADMIN"}]}

@@ -182,6 +182,7 @@ export const appApiPatterns = [
   "/api/v1/infrastructure/monitoring/stress-tests",
   "/api/v1/infrastructure/monitoring/stress-tests/[runId]",
   "/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort",
+  "/api/v1/infrastructure/observability/alerts",
   "/api/v1/infrastructure/observability/analytics",
   "/api/v1/infrastructure/observability/cron-runs",
   "/api/v1/infrastructure/observability/deployments",

@@ -188,6 +188,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort/route'), ["POST"]) },
   { pattern: "/api/v1/infrastructure/monitoring/stress-tests/[runId]", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/monitoring/stress-tests/[runId]/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/monitoring/stress-tests", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/monitoring/stress-tests/route'), ["GET","POST"]) },
+  { pattern: "/api/v1/infrastructure/observability/alerts", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/observability/alerts/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/observability/analytics", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/observability/analytics/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/observability/cron-runs", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/observability/cron-runs/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/observability/deployments", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/observability/deployments/route'), ["GET"]) },
