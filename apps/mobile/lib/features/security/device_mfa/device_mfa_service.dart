@@ -192,7 +192,16 @@ class DeviceMfaService {
   }
 
   /// Fresh local verification precedes each approval, even for an AAL2 session.
-  Future<void> verify({required String reason}) async {
+  Future<void> verify({required String reason}) =>
+      _verifyUnlocked(reason, always: false);
+
+  /// Verifies this device's factor with the provider even when the session
+  /// already holds a second factor, for an action that needs a proof made
+  /// just before it.
+  Future<void> verifyAnew({required String reason}) =>
+      _verifyUnlocked(reason, always: true);
+
+  Future<void> _verifyUnlocked(String reason, {required bool always}) async {
     final userId = _userId;
     await _unlock(userId, reason);
     final credential = await _store.read(userId);
@@ -202,8 +211,9 @@ class DeviceMfaService {
         'Register this device as an authenticator first',
       );
     }
-    if (_client.auth.mfa.getAuthenticatorAssuranceLevel().currentLevel !=
-        AuthenticatorAssuranceLevels.aal2) {
+    if (always ||
+        _client.auth.mfa.getAuthenticatorAssuranceLevel().currentLevel !=
+            AuthenticatorAssuranceLevels.aal2) {
       await _verify(credential);
     }
     _checkUser(userId);

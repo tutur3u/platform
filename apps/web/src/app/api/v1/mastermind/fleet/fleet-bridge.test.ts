@@ -86,8 +86,14 @@ vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
     return Promise.resolve(mocks.account);
   },
 }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
+vi.mock('@tuturuuu/supabase/next/server', async () => ({
   createAdminClient: async () => ({}),
+  // The real predicate, so the tests read the credential as production does.
+  getBearerAccessToken: (
+    await vi.importActual<typeof import('@tuturuuu/supabase/next/server')>(
+      '@tuturuuu/supabase/next/server'
+    )
+  ).getBearerAccessToken,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({

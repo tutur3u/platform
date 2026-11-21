@@ -26,22 +26,22 @@ class FleetReplyStepUp {
   FleetReplyStepUp({required AuthRepository auth, DeviceMfaService? device})
     : this.using(
         verifyCode: (code) async => (await auth.verifyMfaCode(code)).success,
-        deviceCode: (reason) =>
-            (device ?? DeviceMfaService()).code(reason: reason),
+        verifyDevice: (reason) =>
+            (device ?? DeviceMfaService()).verifyAnew(reason: reason),
         deviceRegistered: () => (device ?? DeviceMfaService()).isRegistered(),
       );
 
   /// The three things it needs, for a caller that has them in another form.
   FleetReplyStepUp.using({
     required Future<bool> Function(String code) verifyCode,
-    required Future<String> Function(String reason) deviceCode,
+    required Future<void> Function(String reason) verifyDevice,
     required Future<bool> Function() deviceRegistered,
   }) : _verifyCode = verifyCode,
-       _deviceCode = deviceCode,
+       _verifyDevice = verifyDevice,
        _deviceRegistered = deviceRegistered;
 
   final Future<bool> Function(String code) _verifyCode;
-  final Future<String> Function(String reason) _deviceCode;
+  final Future<void> Function(String reason) _verifyDevice;
   final Future<bool> Function() _deviceRegistered;
 
   static final _sixDigits = RegExp(r'^\d{6}$');
@@ -56,12 +56,12 @@ class FleetReplyStepUp {
     }
   }
 
-  /// Verifies with this device's own authenticator, after a device unlock
-  /// shown with [reason].
+  /// Verifies this device's own factor, and only that one, after a device
+  /// unlock shown with [reason].
   Future<FleetStepUpResult> withDevice({required String reason}) async {
-    final String code;
     try {
-      code = await _deviceCode(reason);
+      await _verifyDevice(reason);
+      return FleetStepUpResult.verified;
     } on AuthException catch (error) {
       return error.code == 'device_verification_cancelled'
           ? FleetStepUpResult.cancelled
@@ -69,20 +69,14 @@ class FleetReplyStepUp {
     } on Object {
       return FleetStepUpResult.failed;
     }
-    return await _verify(code);
   }
 
   /// Verifies with a six-digit code from the owner's authenticator app.
-  Future<FleetStepUpResult> withCode(String code) {
+  Future<FleetStepUpResult> withCode(String code) async {
     final digits = code.trim();
-    return _sixDigits.hasMatch(digits)
-        ? _verify(digits)
-        : Future.value(FleetStepUpResult.failed);
-  }
-
-  Future<FleetStepUpResult> _verify(String code) async {
+    if (!_sixDigits.hasMatch(digits)) return FleetStepUpResult.failed;
     try {
-      return await _verifyCode(code)
+      return await _verifyCode(digits)
           ? FleetStepUpResult.verified
           : FleetStepUpResult.failed;
     } on Object {

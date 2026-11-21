@@ -10,7 +10,10 @@ import {
   verify,
 } from 'node:crypto';
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session-core';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  getBearerAccessToken,
+} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   configuredMastermindBridge,
@@ -63,12 +66,40 @@ export { isFreshMfaProof };
 
 export type ClaimsReader = {
   auth: {
-    getClaims: () => Promise<{
+    getClaims: (jwt?: string) => Promise<{
       data: { claims: Record<string, unknown> } | null;
       error: unknown;
     }>;
+    getUser: (jwt?: string) => Promise<unknown>;
   };
 };
+
+/**
+ * The route's client, reading claims from the credential this request
+ * carried. A client built from a bearer token holds no session, so asked for
+ * its claims it has none; the bearer is therefore named, and verified, when
+ * the claims are read. Only the token the client was built from is named:
+ * an Authorization value the client did not authenticate with (another
+ * scheme spelling, say, beside a cookie session) could carry another
+ * session's proof, and is never read. A cookie session is read as it is. An
+ * app session token is not a provider token and is never read this way.
+ */
+function credentialClient(
+  request: Pick<NextRequest, 'headers'>,
+  supabase: ClaimsReader
+): ClaimsReader {
+  const bearer = getBearerAccessToken(request);
+  const jwt = bearer && !bearer.startsWith('ttr_app_') ? bearer : undefined;
+  if (!jwt) return supabase;
+  return {
+    auth: {
+      getClaims: () => supabase.auth.getClaims(jwt),
+      // The client already sends this bearer, which is how the route
+      // itself resolved the user.
+      getUser: () => supabase.auth.getUser(),
+    },
+  };
+}
 
 export type ReplyAssurance =
   | { status: 'allowed'; proof: MfaSessionProof }
@@ -93,11 +124,11 @@ export async function replyAssurance(
   nowSeconds = Math.floor(Date.now() / 1000)
 ): Promise<ReplyAssurance> {
   const appToken = getAppSessionTokenFromRequest(request) ?? undefined;
+  const client = credentialClient(request, principal.supabase);
   const account = await checkRequiredAccountMfa(
     request,
     {
-      createUserClient: async () =>
-        principal.supabase as unknown as TypedSupabaseClient,
+      createUserClient: async () => client as unknown as TypedSupabaseClient,
       createAdminClient: async () =>
         (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
       nowSeconds: () => nowSeconds,
@@ -112,7 +143,7 @@ export async function replyAssurance(
     // An account without the required-MFA policy: the platform check did not
     // need a proof, this route still does. Same principal, verified claims.
     try {
-      const claims = await principal.supabase.auth.getClaims();
+      const claims = await client.auth.getClaims();
       if (
         !claims.error &&
         claims.data &&
@@ -139,11 +170,11 @@ export async function readAssurance(
   nowSeconds = Math.floor(Date.now() / 1000)
 ): Promise<'allowed' | 'required' | 'unavailable'> {
   const appToken = getAppSessionTokenFromRequest(request) ?? undefined;
+  const client = credentialClient(request, principal.supabase);
   const account = await checkRequiredAccountMfa(
     request,
     {
-      createUserClient: async () =>
-        principal.supabase as unknown as TypedSupabaseClient,
+      createUserClient: async () => client as unknown as TypedSupabaseClient,
       createAdminClient: async () =>
         (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
       nowSeconds: () => nowSeconds,

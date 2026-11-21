@@ -118,6 +118,54 @@ void main() {
       );
     },
   );
+  test('verifies this device factor with the provider on an AAL2 session when '
+      'asked to verify anew', () async {
+    when(() => mfa.getAuthenticatorAssuranceLevel()).thenReturn(
+      const AuthMFAGetAuthenticatorAssuranceLevelResponse(
+        currentLevel: AuthenticatorAssuranceLevels.aal2,
+        nextLevel: AuthenticatorAssuranceLevels.aal2,
+        currentAuthenticationMethods: [],
+      ),
+    );
+    when(
+      () => mfa.challengeAndVerify(
+        factorId: any(named: 'factorId'),
+        code: any(named: 'code'),
+      ),
+    ).thenAnswer((_) async => _Verified());
+    await service.verifyAnew(reason: 'reply');
+    verify(() => local.authenticate(reason: 'reply')).called(1);
+    // Only this device's factor is challenged, with its own code.
+    final sent = verify(
+      () => mfa.challengeAndVerify(
+        factorId: captureAny(named: 'factorId'),
+        code: captureAny(named: 'code'),
+      ),
+    )..called(1);
+    expect(sent.captured.first, 'factor-1');
+    expect(sent.captured.last, matches(RegExp(r'^[0-9]{6}\b')));
+
+    // A dismissed unlock verifies nothing.
+    when(
+      () => local.authenticate(reason: any(named: 'reason')),
+    ).thenAnswer((_) async => false);
+    await expectLater(
+      service.verifyAnew(reason: 'reply'),
+      throwsA(
+        isA<AuthException>().having(
+          (e) => e.code,
+          'code',
+          'device_verification_cancelled',
+        ),
+      ),
+    );
+    verifyNever(
+      () => mfa.challengeAndVerify(
+        factorId: any(named: 'factorId'),
+        code: any(named: 'code'),
+      ),
+    );
+  });
   test(
     're-enrollment discards only a confirmed remotely revoked factor',
     () async {

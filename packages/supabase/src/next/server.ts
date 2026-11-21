@@ -224,7 +224,13 @@ function hasCookieNamed(cookieHeader: string | null, name: string) {
   });
 }
 
-function getBearerAccessToken(request: Pick<Request, 'headers'>) {
+/**
+ * The access token a request client is built from: an Authorization header
+ * that starts with exactly `Bearer `. Code that reads the same credential by
+ * name (to verify its claims, say) uses this, so that it can never read a
+ * header value the client itself did not authenticate with.
+ */
+export function getBearerAccessToken(request: Pick<Request, 'headers'>) {
   const authHeader =
     request.headers.get('authorization') ??
     request.headers.get('Authorization');

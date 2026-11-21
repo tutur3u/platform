@@ -350,10 +350,13 @@ layer, and every body is checked against the contract before it is shown.
   only when the account's sign-in policy requires one, which a session that
   verified earlier already satisfies; a reply needs a proof made within the
   reply window. `FleetReplyStepUp` therefore verifies anew on every call,
-  whatever assurance the session holds: with the device's own authenticator
-  after a device unlock, or with a six-digit code from an authenticator app.
-  It leaves the signed-in screen where it is, and the composer then retries
-  the same reply.
+  whatever assurance the session holds: with the device's own factor, and
+  only that one, after a device unlock, or with a six-digit code from an
+  authenticator app. It leaves the signed-in screen where it is. Once it
+  reports `verified`, `FleetThreadReplyCubit.retry()` sends the same reply.
+  Web reads the new proof from the bearer the app sends with it, and only
+  from the token the request was authenticated with: any other
+  Authorization value is never read.
 - **Step-up on the web.** Mastermind's `/login?mfa=fresh` sends the owner
   through the central sign-in asking for a second factor verified within the
   last 30 seconds
@@ -369,8 +372,8 @@ layer, and every body is checked against the contract before it is shown.
   signed-in owner's reply. `createThreadReply` resumes that pair in
   `needs_mfa`, and `retry()` sends that text under the same key.
 - **Read markers.** Marking a thread read answers whether Web saved the
-  marker. It is not saved when it lost a race with another marker; the list
-  keeps its unread count until a later call saves.
+  marker. It is not saved when it lost a race with another marker, so a list
+  can keep its unread count until a later call saves.
 - **A reply held for the machine.** While a reply is `sent` the composer
   sends nothing else. Its receipt is read again when the owner socket
   delivers a `receipt` frame for it, and on `retry()`, which is the way
@@ -398,7 +401,11 @@ again on retry and left in the outbox by a reset, a failing listener, the
 delivery states),
 `fleet_thread_repository_test.dart` (queries, parsing, refusals, an unsaved
 read marker), `fleet_reply_step_up_test.dart` (a new verification on every
-call, the device authenticator, a dismissed unlock, a refused code),
+call, the device factor alone, a dismissed unlock, a refused code),
+`apps/web/src/app/api/v1/mastermind/fleet/fleet-assurance.test.ts` (the
+proof read from a phone's bearer and from a browser session, a stale or
+foreign proof refused, a header the client did not authenticate with
+never read, an app session token never read as a provider token),
 `apps/mastermind/src/native/session.test.ts` (the step-up sign-in asks for
 a 30-second proof and builds the same return URL),
 `apps/mastermind/src/fleet/thread-reply-pending.test.ts` (a waiting reply

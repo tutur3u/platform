@@ -25,8 +25,14 @@ vi.mock('@/lib/api-auth', () => ({
     async (request: Request, context?: { params?: unknown }) =>
       handler(request, { user: mocks.user }, await context?.params),
 }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
+vi.mock('@tuturuuu/supabase/next/server', async () => ({
   createAdminClient: async () => ({}),
+  // The real predicate, so the tests read the credential as production does.
+  getBearerAccessToken: (
+    await vi.importActual<typeof import('@tuturuuu/supabase/next/server')>(
+      '@tuturuuu/supabase/next/server'
+    )
+  ).getBearerAccessToken,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({

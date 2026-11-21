@@ -8,14 +8,14 @@ void main() {
   late bool accept;
 
   FleetReplyStepUp stepUp({
-    Future<String> Function(String reason)? deviceCode,
+    Future<void> Function(String reason)? verifyDevice,
     Future<bool> Function()? deviceRegistered,
   }) => FleetReplyStepUp.using(
     verifyCode: (code) async {
       verified.add(code);
       return accept;
     },
-    deviceCode: deviceCode ?? (_) async => '123456',
+    verifyDevice: verifyDevice ?? (_) async {},
     deviceRegistered: deviceRegistered ?? () async => true,
   );
 
@@ -46,7 +46,7 @@ void main() {
     expect(await stepUp().withCode('654321'), FleetStepUpResult.failed);
     final broken = FleetReplyStepUp.using(
       verifyCode: (_) async => throw const AuthException('network'),
-      deviceCode: (_) async => '123456',
+      verifyDevice: (_) async => throw const AuthException('network'),
       deviceRegistered: () async => true,
     );
     expect(await broken.withCode('654321'), FleetStepUpResult.failed);
@@ -56,25 +56,26 @@ void main() {
     );
   });
 
-  test('verifies with the device authenticator after its unlock', () async {
+  test('verifies with the device factor alone, after its unlock', () async {
     final reasons = <String>[];
-    final device = stepUp(
-      deviceCode: (reason) async {
-        reasons.add(reason);
-        return '112233';
-      },
-    );
+    final device = stepUp(verifyDevice: (reason) async => reasons.add(reason));
     expect(
       await device.withDevice(reason: 'Send reply'),
       FleetStepUpResult.verified,
     );
-    expect(reasons, ['Send reply']);
-    expect(verified, ['112233']);
+    expect(
+      await device.withDevice(reason: 'Again'),
+      FleetStepUpResult.verified,
+    );
+    // Each call verifies the device again, and no typed-code check runs,
+    // which would try every enrolled authenticator in turn.
+    expect(reasons, ['Send reply', 'Again']);
+    expect(verified, isEmpty);
   });
 
   test('tells a dismissed unlock from a device that cannot verify', () async {
     final cancelled = stepUp(
-      deviceCode: (_) async => throw const AuthException(
+      verifyDevice: (_) async => throw const AuthException(
         'Device verification cancelled',
         code: 'device_verification_cancelled',
       ),
@@ -84,8 +85,9 @@ void main() {
       FleetStepUpResult.cancelled,
     );
     final unregistered = stepUp(
-      deviceCode: (_) async =>
-          throw const AuthException('Device not registered'),
+      verifyDevice: (_) async => throw const AuthException(
+        'Register this device as an authenticator first',
+      ),
       deviceRegistered: () async => false,
     );
     expect(
@@ -93,7 +95,6 @@ void main() {
       FleetStepUpResult.failed,
     );
     expect(await unregistered.deviceRegistered(), isFalse);
-    expect(verified, isEmpty);
     // Local storage that cannot be read is a device that is not registered.
     final unreadable = stepUp(
       deviceRegistered: () async => throw StateError('storage'),
