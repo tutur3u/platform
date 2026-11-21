@@ -12,6 +12,10 @@ type SenderReading = {
   loss: number | null;
   cpuLimited: boolean;
   sendLayers: number;
+  cameraHeight?: number | null;
+  cameraFps?: number | null;
+  screenHeight?: number | null;
+  screenFps?: number | null;
 };
 
 /**
@@ -95,6 +99,10 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
         smallMode,
         visibility: policy.visibility,
         intervalMs: Math.min(600_000, Math.max(1000, now - since)),
+        cameraHeight: round(sender?.cameraHeight),
+        cameraFps: round(sender?.cameraFps),
+        screenHeight: round(sender?.screenHeight),
+        screenFps: round(sender?.screenFps),
       };
       freezes = 0;
       since = now;

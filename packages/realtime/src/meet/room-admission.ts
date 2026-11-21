@@ -1,4 +1,5 @@
 import { MEET_MEDIA_CAPABILITIES } from './simulcast-layers';
+import { resolveMeetStreamEntitlement } from './stream-tiers';
 import {
   attendanceIdentity,
   attendancePatch,
@@ -244,6 +245,7 @@ function buildReady(
       maxViewers: state.budget?.maxViewers ?? token.limits.maxViewers,
     },
     mediaCapabilities: [...MEET_MEDIA_CAPABILITIES],
+    streamLimits: resolveMeetStreamEntitlement(token.limits.stream),
     mode: token.mode,
     role: token.role,
     roomId: token.roomId,

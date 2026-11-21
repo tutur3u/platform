@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-duration', () => ({
   getHostMeetingDurationSeconds: mocks.duration,
+  getParticipantStreamTier: async () => 'paid',
 }));
 vi.mock('@tuturuuu/utils/meet-classroom-policy', async (importOriginal) => ({
   ...(await importOriginal<
@@ -125,6 +126,13 @@ it('keeps the host out of the lobby', async () => {
   expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({
     admission: 'open',
     role: 'host',
+    // Stream ceilings follow the participant's own plan, signed in.
+    limits: expect.objectContaining({
+      stream: expect.objectContaining({
+        tier: 'paid',
+        screen: expect.objectContaining({ maxHeight: 1440 }),
+      }),
+    }),
   });
 });
 

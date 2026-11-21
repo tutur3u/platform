@@ -7,6 +7,8 @@ import {
   type MeetRealtimeAdmission,
   type MeetRealtimeRole,
   meetRealtimeTokenPayloadSchema,
+  meetStreamEntitlement,
+  type MeetStreamTier,
 } from '@tuturuuu/realtime/meet';
 import { MEET_CLASSROOM_TOOLS_SCOPE } from '@tuturuuu/realtime/meet/classroom-tools-schema';
 import { signMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
@@ -55,6 +57,7 @@ export async function getMeetCallSession({
   participantKind,
   isHost,
   meetingId,
+  streamTier = 'free',
   userId,
   wsId,
 }: {
@@ -74,6 +77,8 @@ export async function getMeetCallSession({
   participantKind?: 'member' | 'guest';
   isHost: boolean;
   meetingId: string;
+  /** From the participant's own plan; guests and unknown plans get free. */
+  streamTier?: MeetStreamTier;
   userId: string;
   wsId: string;
 }) {
@@ -93,6 +98,7 @@ export async function getMeetCallSession({
     limits: {
       maxRoomDurationSeconds,
       ...capacity,
+      stream: meetStreamEntitlement(guest ? 'free' : streamTier),
       video: {
         defaultCameraEnabled: false,
         maxFrameRate: 24,

@@ -4262,6 +4262,8 @@
       "media_rtt_p95": "Round-trip time p95",
       "media_freezes_per_minute": "Freezes per device-minute",
       "media_layers": "Camera layers high / mid / low",
+      "media_camera_reporters": "Devices measuring cameras",
+      "media_over_entitlement": "Over plan limits",
       "media_limited_devices": "Limited devices",
       "media_limited_counts": "CPU {cpu} · audio-only {audioOnly} · hidden {hidden} · thumbnails {thumbnails}",
       "thumbnail_mode_hint": "Cameras outside the spotlight use low resolution. Audio and screen share stay sharp.",

@@ -47,6 +47,10 @@ import {
   applyMediaQualityReport,
   summarizeRoomMediaQuality,
 } from './room-media-quality';
+import {
+  exceedsMeetStreamEntitlement,
+  resolveMeetStreamEntitlement,
+} from './stream-tiers';
 import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
 
 export function applyMeetRoomCommand(
@@ -240,15 +244,35 @@ function dispatchMeetRoomCommand(
 
     case 'media.quality':
       if (!state.presence[userId]) return denied(state, 'awaiting_admission');
-      return outcome({
-        ...state,
-        mediaQuality: applyMediaQualityReport(
-          state.mediaQuality,
-          userId,
-          message.sample,
-          Date.parse(now)
-        ),
-      });
+      {
+        // Send stats over the signed entitlement are flagged for managers and
+        // the publisher is told its limits again when it first drifts.
+        const entitlement = resolveMeetStreamEntitlement(token.limits.stream);
+        const over = exceedsMeetStreamEntitlement(message.sample, entitlement);
+        const wasOver = !!state.mediaQuality?.[userId]?.overEntitlement;
+        return outcome(
+          {
+            ...state,
+            mediaQuality: applyMediaQualityReport(
+              state.mediaQuality,
+              userId,
+              message.sample,
+              Date.parse(now),
+              over
+            ),
+          },
+          over && !wasOver
+            ? {
+                direct: [
+                  {
+                    userId,
+                    message: { type: 'stream.limits', limits: entitlement },
+                  },
+                ],
+              }
+            : {}
+        );
+      }
 
     case 'media.quality.read':
       if (!state.presence[userId] || !canMeetRealtimeManageParticipants(token))

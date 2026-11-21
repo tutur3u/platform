@@ -50,6 +50,8 @@ export function RoomMediaHealth({
         <dl className="grid grid-cols-2 gap-2 text-xs">
           <dt>{t('reporting_devices')}</dt>
           <dd className="text-right tabular-nums">{data.reporters}</dd>
+          <dt>{t('media_camera_reporters')}</dt>
+          <dd className="text-right tabular-nums">{data.cameraReporters}</dd>
           <dt>{t('media_send_rate')}</dt>
           <dd className="text-right tabular-nums">{kbps(data.sendKbps)}</dd>
           <dt>{t('media_receive_rate')}</dt>
@@ -70,6 +72,8 @@ export function RoomMediaHealth({
           <dd className="text-right tabular-nums">
             {data.layers.high} / {data.layers.mid} / {data.layers.low}
           </dd>
+          <dt>{t('media_over_entitlement')}</dt>
+          <dd className="text-right tabular-nums">{data.overEntitlement}</dd>
           <dt>{t('media_limited_devices')}</dt>
           <dd className="text-right tabular-nums">
             {t('media_limited_counts', {

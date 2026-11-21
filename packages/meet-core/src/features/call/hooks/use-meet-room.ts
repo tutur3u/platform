@@ -366,7 +366,8 @@ export function useMeetRoom({
             source,
             plan.kind,
             Object.keys(stateRef.current.participants).length,
-            publishedCameraRids(stateRef.current.mediaCapabilities)
+            publishedCameraRids(stateRef.current.mediaCapabilities),
+            stateRef.current.streamLimits
           );
           sendersRef.current.set(plan.trackName, transceiver.sender);
           added.push({ plan, transceiver });

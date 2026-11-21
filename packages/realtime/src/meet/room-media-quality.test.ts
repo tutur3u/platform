@@ -236,3 +236,24 @@ describe('media quality admission', () => {
     expect(isMeetStatelessSfuOutcome(state, denied)).toBe(true);
   });
 });
+
+describe('freeze rate coverage', () => {
+  it('divides freezes only by devices that measured cameras', () => {
+    let quality = applyMediaQualityReport(
+      undefined,
+      'a',
+      { ...sample, freezes: 3 },
+      0
+    );
+    quality = applyMediaQualityReport(
+      quality,
+      'b',
+      { ...sample, freezes: 0, recvVideoKbps: null },
+      0
+    );
+    const summary = summarizeRoomMediaQuality(quality, 1000);
+    expect(summary.reporters).toBe(2);
+    expect(summary.cameraReporters).toBe(1);
+    expect(summary.freezesPerMinute).toBe(6);
+  });
+});

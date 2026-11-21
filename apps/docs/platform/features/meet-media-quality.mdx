@@ -216,6 +216,51 @@ Recovery needs ten clean samples. That run doubles, up to 80 samples, when the
 limit returns within a minute of recovering, and it resets after ten quiet
 minutes.
 
+## Stream quality by plan
+
+Each participant's stream ceilings follow their own account plan:
+
+| Plan | Camera | Screen share |
+| --- | --- | --- |
+| Free, including guests | 720p · 24 fps · 0.9 Mbps | 720p · 15 fps · 1.8 Mbps |
+| Plus, Pro and Enterprise | 1080p · 30 fps · 2.5 Mbps | 1440p · 60 fps · 6 Mbps |
+
+The table is `MEET_STREAM_TIERS` in `packages/realtime/src/meet/stream-tiers.ts`.
+Free allows HD resolution at a low frame rate.
+
+The server resolves the plan when it issues the join token and signs the
+ceilings into the token. A failed plan lookup falls back to free, and a guest
+is always free. A token whose ceilings were altered fails signature
+verification and is refused. The room server echoes the signed ceilings in
+`ready` as `streamLimits`, and clients take them only from there.
+
+The publisher clamps every encoding to its ceiling, from the first offer
+onwards:
+
+- A larger capture is downscaled to the height cap.
+- Total bitrate is scaled down proportionally across simulcast layers.
+- Frame rate is capped.
+
+Ceilings never raise a limit that network or CPU adaptation already lowered,
+and thumbnail mode still applies. Higher ceilings mainly benefit a spotlit
+camera or a shared screen.
+
+The SFU cannot enforce per-track resolution or bitrate, so enforcement beyond
+the client is detection:
+
+- Each media health report carries the largest active camera and screen send
+  height and frame rate.
+- The room server compares them with the signed ceilings, allowing 5% plus
+  16 px of height and 3 fps.
+- A publisher over its ceilings is counted under **Over plan limits** in room
+  media health.
+- When a publisher first drifts over, it receives `stream.limits`, so an honest
+  client clamps again.
+
+A modified client can still send more than its plan, and misreport its stats.
+Detecting that would need SFU-side per-track caps, which Cloudflare Realtime
+does not offer.
+
 ## Media health diagnostics
 
 Every device sends a `media.quality` report to the room every 30 seconds. It
@@ -254,6 +299,8 @@ Participants who can manage the room see an anonymous room aggregate under
 without participant management:
 
 - Send and receive p50/p95.
+- Devices measuring cameras. Freezes and receive rates count only these.
+- Devices over plan limits.
 - Loss and round-trip p95.
 - Freezes per device-minute.
 - Layer counts.
@@ -299,6 +346,8 @@ Denied or unreadable storage falls back to the shipped defaults.
 - `media-policy.test.ts`
 - `media-health.test.ts`
 - `packages/realtime/src/meet/room-media-quality.test.ts`
+- `packages/realtime/src/meet/stream-tiers.test.ts`
+- `stream-entitlement.test.ts`
 - `subscriber-layers.test.tsx`
 - `negotiation.test.ts`
 - `sender-profile.test.ts`

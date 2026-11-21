@@ -77,7 +77,7 @@ Run these scenes for at least five minutes each:
 
 Every 30 seconds, the host records from **Room media health**:
 
-- Reporting devices.
+- Reporting devices and devices measuring cameras.
 - Send and receive rate, p50 and p95.
 - Packet loss p95 and round-trip time p95.
 - Freezes per device-minute.
@@ -111,16 +111,24 @@ after their last measurement.
   limitation reasons. In any other setup, `false` is missing evidence rather
   than a pass, and so is a missing reading.
 
-The freeze and receive-rate criteria need fresh camera readings. Receive-side
-camera telemetry is off on devices with `layerSwitching` disabled, or when the
-room server lacks `layer-update`. Those devices report no receive rate and zero
-freezes, yet the room's freeze rate still divides by their reporting time.
+The freeze and receive-rate criteria need fresh camera readings. Room media
+health computes both only over devices that measured cameras in their last
+report interval, and shows that count as **Devices measuring cameras**. A device
+measures nothing in these cases:
 
-A room-wide freeze rate can pass only when no device in the room has camera
-telemetry off. That means no `layerSwitching` cohort, and `layer-update` must be
-advertised. Otherwise, sum freezes and measured minutes from each measured
-device's `globalThis.__meetMediaStats` samples, and record the unmeasured
-cohort separately as missing evidence.
+- `layerSwitching` is off.
+- The room server lacks `layer-update`.
+- The device is hidden or audio-only.
+- The device has no camera feed.
+
+Freeze counts come from the browser's `freezeCount`, which Chromium reports. On
+other browsers, treat freezes as unmeasured.
+
+Score a scene only when **Devices measuring cameras** covers every Chromium
+device expected to be watching cameras in that scene. Otherwise, record the
+uncovered devices as missing evidence. Do not sum polled
+`globalThis.__meetMediaStats` values: it is a latest-reading view, not a
+sample log.
 
 ## After the session
 

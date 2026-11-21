@@ -21,6 +21,7 @@ export {
 export * from './room-presence-diff';
 export * from './simulcast-layers';
 export * from './room-media-quality';
+export * from './stream-tiers';
 export { retainRoomChat } from './chat-retention';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';

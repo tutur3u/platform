@@ -398,6 +398,10 @@ describe('media quality recorder', () => {
       smallMode: true,
       visibility: 'visible',
       intervalMs: 4000,
+      cameraHeight: null,
+      cameraFps: null,
+      screenHeight: null,
+      screenFps: null,
     });
     expect(
       recorder.take({

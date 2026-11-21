@@ -23,6 +23,11 @@ export const meetMediaQualitySampleSchema = z.object({
   smallMode: z.boolean(),
   visibility: z.enum(['visible', 'dimmed', 'background']),
   intervalMs: z.number().int().min(1000).max(600_000),
+  // Largest active send dimensions, for entitlement checks.
+  cameraHeight: z.number().int().min(0).max(4320).nullable().optional(),
+  cameraFps: z.number().min(0).max(240).nullable().optional(),
+  screenHeight: z.number().int().min(0).max(4320).nullable().optional(),
+  screenFps: z.number().min(0).max(240).nullable().optional(),
 });
 export type MeetMediaQualitySample = z.infer<
   typeof meetMediaQualitySampleSchema
@@ -30,7 +35,7 @@ export type MeetMediaQualitySample = z.infer<
 
 export type RoomMediaQuality = Record<
   string,
-  MeetMediaQualitySample & { at: number }
+  MeetMediaQualitySample & { at: number; overEntitlement?: boolean }
 >;
 
 /** Reports a device may send per minute; clients send one every 30 s. */
@@ -46,7 +51,8 @@ export function applyMediaQualityReport(
   quality: RoomMediaQuality | undefined,
   userId: string,
   sample: MeetMediaQualitySample,
-  now: number
+  now: number,
+  overEntitlement = false
 ): RoomMediaQuality {
   const next: RoomMediaQuality = {};
   for (const [id, entry] of Object.entries(quality ?? {}))
@@ -56,7 +62,7 @@ export function applyMediaQualityReport(
     const oldest = ids.sort((a, b) => next[a]!.at - next[b]!.at)[0]!;
     delete next[oldest];
   }
-  next[userId] = { ...sample, at: now };
+  next[userId] = { ...sample, at: now, overEntitlement };
   return next;
 }
 
@@ -80,19 +86,25 @@ export function summarizeRoomMediaQuality(
   const live = Object.values(quality ?? {}).filter(
     (entry) => now - entry.at < STALE_MS
   );
+  // Freezes count only over devices that measured cameras this interval, so
+  // devices without camera telemetry never dilute the rate.
+  const measured = live.filter((entry) => entry.recvVideoKbps !== null);
   const minutes =
-    live.reduce((sum, entry) => sum + entry.intervalMs, 0) / 60_000;
+    measured.reduce((sum, entry) => sum + entry.intervalMs, 0) / 60_000;
   const total = (pick: (entry: MeetMediaQualitySample) => number) =>
     live.reduce((sum, entry) => sum + pick(entry), 0);
   return {
     reporters: live.length,
+    cameraReporters: measured.length,
     sendKbps: distribution(live.map((entry) => entry.sendKbps)),
     recvVideoKbps: distribution(live.map((entry) => entry.recvVideoKbps)),
     rttMs: distribution(live.map((entry) => entry.rttMs)),
     recvLoss: distribution(live.map((entry) => entry.recvLoss)),
     sendLoss: distribution(live.map((entry) => entry.sendLoss)),
     freezesPerMinute:
-      minutes > 0 ? total((entry) => entry.freezes) / minutes : null,
+      minutes > 0
+        ? measured.reduce((sum, entry) => sum + entry.freezes, 0) / minutes
+        : null,
     layers: {
       high: total((entry) => entry.layers.high),
       mid: total((entry) => entry.layers.mid),
@@ -102,6 +114,7 @@ export function summarizeRoomMediaQuality(
     audioOnly: live.filter((entry) => entry.audioOnly).length,
     smallMode: live.filter((entry) => entry.smallMode).length,
     hidden: live.filter((entry) => entry.visibility !== 'visible').length,
+    overEntitlement: live.filter((entry) => entry.overEntitlement).length,
   };
 }
 export type MeetRoomMediaQualitySummary = ReturnType<

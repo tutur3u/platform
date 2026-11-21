@@ -10,6 +10,7 @@ import type {
   MeetRealtimeStageState,
   MeetRealtimeWaitingParticipant,
   MeetRoomSettings,
+  MeetStreamEntitlement,
   ClassTimer,
 } from '@tuturuuu/realtime/meet';
 import {
@@ -56,6 +57,8 @@ export interface CallState {
   classViewersAvailable?: boolean;
   /** Media protocol features the room server advertised on join. */
   mediaCapabilities?: readonly string[];
+  /** Signed stream ceilings for this participant's plan. */
+  streamLimits?: MeetStreamEntitlement;
   ended: boolean;
   canManageParticipants?: boolean;
   recentSpeakerIds?: string[];
@@ -167,6 +170,7 @@ export function reduceCallState(
         maxParticipants: message.limits?.maxParticipants,
         classViewersAvailable: message.classViewersAvailable,
         mediaCapabilities: message.mediaCapabilities ?? [],
+        streamLimits: message.streamLimits,
         error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(
@@ -195,6 +199,9 @@ export function reduceCallState(
         selfUserId: message.userId,
         stage: message.stage,
       };
+
+    case 'stream.limits':
+      return { ...state, streamLimits: message.limits };
 
     case 'presence': {
       if (state.ended || (state.roomId && state.roomId !== message.roomId))

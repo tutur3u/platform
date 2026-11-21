@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MEET_CAMERA_RID_VALUES } from './simulcast-layers';
+import { meetStreamEntitlementSchema } from './stream-tiers';
 
 export const meetRealtimeRoleSchema = z.enum(['host', 'speaker', 'viewer']);
 export const meetRealtimeRoomModeSchema = z.enum(['call', 'webinar', 'stream']);
@@ -96,6 +97,8 @@ export const meetRoomLimitsSchema = z
     maxParticipants: z.number().int().min(1).max(100).optional(),
     maxPublishers: z.number().int().min(1).max(128).default(8),
     maxViewers: z.number().int().min(1).max(10_000).default(96),
+    /** Signed per-participant stream ceilings; absent means the free tier. */
+    stream: meetStreamEntitlementSchema.optional(),
     video: meetVideoLimitsSchema,
   })
   .default(DEFAULT_ROOM_LIMITS);

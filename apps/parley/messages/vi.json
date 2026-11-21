@@ -4262,6 +4262,8 @@
       "media_rtt_p95": "Độ trễ khứ hồi p95",
       "media_freezes_per_minute": "Số lần đứng hình mỗi thiết bị-phút",
       "media_layers": "Lớp camera cao / vừa / thấp",
+      "media_camera_reporters": "Thiết bị đang đo camera",
+      "media_over_entitlement": "Vượt giới hạn gói",
       "media_limited_devices": "Thiết bị bị giới hạn",
       "media_limited_counts": "CPU {cpu} · chỉ âm thanh {audioOnly} · ẩn tab {hidden} · ảnh thu nhỏ {thumbnails}",
       "thumbnail_mode_hint": "Camera ngoài khung chính dùng độ phân giải thấp. Âm thanh và chia sẻ màn hình vẫn sắc nét.",

@@ -5,6 +5,7 @@ import {
   meetMediaQualitySampleSchema,
 } from './room-media-quality';
 import type { MeetCameraRid, MeetMediaCapability } from './simulcast-layers';
+import type { MeetStreamEntitlement } from './stream-tiers';
 import {
   cloudflareSfuSessionDescriptionSchema,
   cloudflareSfuTrackSchema,
@@ -282,6 +283,8 @@ export type MeetRealtimeServerMessage =
       stage: MeetRealtimeStageState;
       type: 'ready';
       mediaCapabilities?: MeetMediaCapability[];
+      /** This participant's signed stream ceilings. */
+      streamLimits?: MeetStreamEntitlement;
       resumed?: boolean;
       tracks?: MeetRealtimeRoomTrack[];
       userId: string;
@@ -385,6 +388,11 @@ export type MeetRealtimeServerMessage =
       requestId?: string;
       summary: MeetRoomMediaQualitySummary;
       type: 'media.quality.summary';
+    }
+  | {
+      /** Sent when reported stats exceed the entitlement: clamp to it. */
+      limits: MeetStreamEntitlement;
+      type: 'stream.limits';
     }
   | {
       error: string;

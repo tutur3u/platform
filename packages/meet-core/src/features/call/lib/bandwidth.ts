@@ -2,6 +2,7 @@ import {
   LEGACY_MEET_CAMERA_RIDS,
   MEET_CAMERA_RIDS,
   type MeetRealtimeTrackKind,
+  type MeetStreamEntitlement,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useRef } from 'react';
 import type { CallState } from './call-state';
@@ -17,6 +18,11 @@ import {
 import { readMeetMediaFlags } from './media-flags';
 import { type MediaPolicy, resolveSmallMode } from './media-policy';
 import type { MediaQualityRecorder } from './media-quality';
+import {
+  captureHeight,
+  clampToStreamCap,
+  streamCapFor,
+} from './stream-entitlement';
 
 export type BandwidthMode = 'auto' | 'saver' | 'quality';
 type Audience = {
@@ -208,6 +214,7 @@ export function watchSenderBandwidth({
   hasAudience,
   audience = () => ({}),
   recorder,
+  streamLimits,
 }: {
   readPeer: () => RTCPeerConnection | null;
   readSenders: () => Map<string, RTCRtpSender>;
@@ -215,6 +222,8 @@ export function watchSenderBandwidth({
   hasAudience: () => boolean;
   audience?: () => Audience;
   recorder?: Pick<MediaQualityRecorder, 'recordSender'>;
+  /** Signed stream ceilings; absent means the free tier. */
+  streamLimits?: () => MeetStreamEntitlement | undefined;
 }) {
   let active = true;
   let running = false;
@@ -257,7 +266,48 @@ export function watchSenderBandwidth({
         )
       );
       let micMeasured = false;
+      // Largest active send dimensions per publication kind, by MID.
+      const kindByMid = new Map(
+        (pc.getTransceivers?.() ?? []).flatMap((transceiver) => {
+          const name = [...readSenders()].find(
+            ([, sender]) => sender === transceiver.sender
+          )?.[0];
+          return transceiver.mid && name
+            ? [
+                [
+                  transceiver.mid,
+                  name.endsWith('-screen') ? 'screen' : 'camera',
+                ],
+              ]
+            : [];
+        })
+      );
+      const dims = {
+        cameraHeight: null as number | null,
+        cameraFps: null as number | null,
+        screenHeight: null as number | null,
+        screenFps: null as number | null,
+      };
       for (const stat of (await pc.getStats()).values()) {
+        if (
+          stat.type === 'outbound-rtp' &&
+          stat.kind === 'video' &&
+          stat.active !== false
+        ) {
+          const kind = kindByMid.get(stat.mid);
+          const height = Number.isFinite(stat.frameHeight)
+            ? stat.frameHeight
+            : null;
+          const fps = Number.isFinite(stat.framesPerSecond)
+            ? stat.framesPerSecond
+            : null;
+          if (kind === 'camera' || kind === 'screen') {
+            const h = `${kind}Height` as const;
+            const f = `${kind}Fps` as const;
+            if (height !== null) dims[h] = Math.max(dims[h] ?? 0, height);
+            if (fps !== null) dims[f] = Math.max(dims[f] ?? 0, fps);
+          }
+        }
         if (stat.type === 'outbound-rtp' && Number.isFinite(stat.bytesSent))
           bytesSent += stat.bytesSent;
         if (
@@ -373,16 +423,20 @@ export function watchSenderBandwidth({
         // Screens keep text legible by giving up frame rate before resolution.
         if (kind === 'screen')
           parameters.degradationPreference = 'maintain-resolution';
-        const target = planSenderEncodings(
-          kind,
-          currentMode,
-          network,
-          room,
-          hasAudience(),
-          parameters.encodings,
-          videos,
-          suspended,
-          cpu.limited
+        const target = clampToStreamCap(
+          planSenderEncodings(
+            kind,
+            currentMode,
+            network,
+            room,
+            hasAudience(),
+            parameters.encodings,
+            videos,
+            suspended,
+            cpu.limited
+          ),
+          streamCapFor(streamLimits?.(), kind),
+          captureHeight(sender.track)
         );
         if (kind === 'video')
           sendLayers = target.filter((encoding) => encoding.active).length;
@@ -411,6 +465,7 @@ export function watchSenderBandwidth({
           loss: network.loss,
           cpuLimited: cpu.limited,
           sendLayers,
+          ...dims,
         });
     } catch {
       // Transient stats errors leave the existing sender running.
@@ -451,6 +506,7 @@ export function useAdaptiveSenderBandwidth({
       mode: () => mode.current,
       hasAudience: () => Object.keys(state.current.participants).length > 1,
       recorder: policy?.quality,
+      streamLimits: () => state.current.streamLimits,
       audience: () => ({
         participants: Object.keys(state.current.participants).length,
         visibleTiles: stage.current?.cameraUserIds.length,
@@ -490,20 +546,28 @@ export function addLocalTransceiver(
   source: MediaStreamTrack,
   kind: MeetRealtimeTrackKind,
   count: number,
-  rids: readonly string[] = MEET_CAMERA_RIDS
+  rids: readonly string[] = MEET_CAMERA_RIDS,
+  limits?: MeetStreamEntitlement
 ) {
   source.contentHint = contentHintFor(kind);
+  // Encoders start within the signed ceiling, before the first watcher pass.
+  const capped = (encodings: RTCRtpEncodingParameters[]) =>
+    clampToStreamCap(
+      encodings,
+      streamCapFor(limits, kind),
+      captureHeight(source)
+    );
   let transceiver: RTCRtpTransceiver;
   try {
     transceiver = pc.addTransceiver(source, {
       direction: 'sendonly',
-      sendEncodings: initialSendEncodings(kind, count, true, rids),
+      sendEncodings: capped(initialSendEncodings(kind, count, true, rids)),
     });
   } catch (error) {
     if (kind !== 'video') throw error;
     transceiver = pc.addTransceiver(source, {
       direction: 'sendonly',
-      sendEncodings: initialSendEncodings(kind, count, false),
+      sendEncodings: capped(initialSendEncodings(kind, count, false)),
     });
   }
   return transceiver;

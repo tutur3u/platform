@@ -6,7 +6,10 @@ import { getMeetCallSession } from '@tuturuuu/meet-core/features/call/lib/call-s
 import { resolveMeetClassRole } from '@tuturuuu/meet-core/features/call/server/class-role';
 import { getMeetGuestCallAccess } from '@tuturuuu/meet-core/features/call/lib/guest-access';
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
-import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
+import {
+  getHostMeetingDurationSeconds,
+  getParticipantStreamTier,
+} from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
 import { z } from 'zod';
 
 export async function POST(
@@ -62,6 +65,7 @@ export async function POST(
       isHost,
       admission,
       meetingId: meeting.id,
+      streamTier: guest ? 'free' : await getParticipantStreamTier(user.id),
       userId: user.id,
       wsId: meeting.ws_id,
     });
