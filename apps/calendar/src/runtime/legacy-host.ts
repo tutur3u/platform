@@ -61,7 +61,7 @@ export function legacyHostResponse(
   if (!mountHost || !basePath || !isLegacyHost(url, mounts)) return null;
   if (
     LEGACY_HOST_SERVED_PATHS.test(url.pathname) ||
-    publicAssets.has(url.pathname)
+    (url.pathname !== '/offline.html' && publicAssets.has(url.pathname))
   )
     return null;
   if (url.pathname === LEGACY_SERVICE_WORKER_PATH) {
