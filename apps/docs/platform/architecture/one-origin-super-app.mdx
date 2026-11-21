@@ -406,19 +406,24 @@ replaces the 307.
 
 ## Same-origin wins
 
-- **Speculation Rules.** The launcher and shell links emit
-  `<script type="speculationrules">` with `prerender` at `moderate` eagerness (hover
-  or pointerdown) for `/<app>/` entry points. Today a cross-origin prerender needs
-  the target to opt into credentialed prerender. Same-origin works by default, with
-  cookies. Apps must defer side effects (camera, realtime connect, analytics) until
-  `document.prerendering` is false. Bound the cost: Chrome caps `moderate`
-  prerenders, and each prerender is a real SSR request to a billable Worker. Use
-  `prefetch` for long lists.
-- **Cross-document View Transitions.** `@view-transition { navigation: auto; }` only
-  animates **same-origin** navigations, and cross-origin switches can never use it.
-  Shared `view-transition-name`s on the satellite shell (sidebar, top bar, app
-  switcher) make the shell look persistent while the content swaps. Honor
-  `prefers-reduced-motion`.
+- **Document prefetch.** The launcher currently uses ordinary navigation.
+  Cloudflare Speed Brain advertises `/cdn-cgi/speculation` and rejects
+  prefetches on Worker routes. Tools and Roadmap returned 503 for
+  `Sec-Purpose: prefetch` at the edge before Worker routing. The zone
+  setting is `speed_brain` under Speed → Settings → Content Optimization.
+  Before enabling launcher prefetch, verify the exact public destination
+  accepts same-origin GET prefetch using the ordinary rate-limit bucket,
+  with existing authorization and no `Set-Cookie` on speculative responses.
+  [Cloudflare Speed Brain](https://developers.cloudflare.com/speed/optimization/content/speed-brain/)
+- **Cross-document transitions.** Web, Meet, Mail, and Calendar opt in through
+  their document stylesheets. In a supporting browser, a same-tab launcher
+  navigation can cross-fade when both loaded documents opt in and the user has
+  no reduced-motion preference.
+- **Shared assets.** Keep assets owned by their apps. In the public Meet,
+  Tools, and Marketing sample, the only duplicate was an 8,380-byte React
+  module served separately by Tools and Marketing. That saving did not justify
+  a shared asset supplier that would need to retain digests across independent
+  deploys and rollbacks. Each app can cache its own fingerprinted assets.
 - **No cross-app CORS or proxy hop.** Mounted apps call `/api/*` on Web directly with
   the shared session. Meet and Mail no longer forward central API calls through their
   Worker or a Vercel rewrite. The cross-app token handoff disappears for signed-in
