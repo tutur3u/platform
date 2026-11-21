@@ -108,6 +108,12 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/members/batch-invite` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/members/batch-invite/route.ts) |
 | `/api/v1/workspaces/[wsId]/members` | DELETE, GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/members/route.ts) |
 | `/api/v1/workspaces/[wsId]/Mention` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/Mention/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira/channels/[channel]/connect` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/channels/%5Bchannel%5D/connect/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira/channels/[channel]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/channels/%5Bchannel%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira/settings` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/settings/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira/stop` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/stop/route.ts) |
+| `/api/v1/workspaces/[wsId]/mira/usage` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mira/usage/route.ts) |
 | `/api/v1/workspaces/[wsId]/mobile/module-flags` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mobile/module-flags/route.ts) |
 | `/api/v1/workspaces/[wsId]/mobile-activity` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/mobile-activity/route.ts) |
 | `/api/v1/workspaces/[wsId]/newsletter/approval` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/newsletter/approval/route.ts) |
@@ -188,11 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/topic-announcements/schedule` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/schedule/route.ts) |
 | `/api/v1/workspaces/[wsId]/tutoring/export` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/export/route.ts) |
 | `/api/v1/workspaces/[wsId]/tutoring/payroll` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/payroll/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/policy` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/policy/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/queue` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/mark/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/message-preview/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/sessions/[id]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/tutoring/sessions` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

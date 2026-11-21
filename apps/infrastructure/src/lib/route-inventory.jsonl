@@ -37,6 +37,7 @@
 {"file":"[locale]/(dashboard)/[wsId]/holidays/page.tsx","path":"/[wsId]/holidays","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/internal-accounts/page.tsx","path":"/[wsId]/internal-accounts","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/migrations/page.tsx","path":"/[wsId]/migrations","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"[locale]/(dashboard)/[wsId]/mira/channels/page.tsx","path":"/[wsId]/mira/channels","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/mobile-deployment/page.tsx","path":"/[wsId]/mobile-deployment","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/mobile-versions/page.tsx","path":"/[wsId]/mobile-versions","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/monitoring/analytics/page.tsx","path":"/[wsId]/monitoring/analytics","methods":[{"method":"GET","classification":"ADMIN"}]}
@@ -228,6 +229,10 @@
 {"file":"api/v1/infrastructure/migrate/workspace-users/route.ts","path":"/api/v1/infrastructure/migrate/workspace-users","methods":[{"method":"GET","classification":"ADMIN"},{"method":"PUT","classification":"ADMIN"},{"method":"PATCH","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts","path":"/api/v1/infrastructure/migrate/workspace-wallet-transfers","methods":[{"method":"GET","classification":"ADMIN"},{"method":"PUT","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/migrate/workspace-wallets/route.ts","path":"/api/v1/infrastructure/migrate/workspace-wallets","methods":[{"method":"GET","classification":"ADMIN"},{"method":"PUT","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/mira/audit/route.ts","path":"/api/v1/infrastructure/mira/audit","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/mira/global-stop/route.ts","path":"/api/v1/infrastructure/mira/global-stop","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/mira/tenants/[wsId]/stop/route.ts","path":"/api/v1/infrastructure/mira/tenants/[wsId]/stop","methods":[{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/mira/tenants/route.ts","path":"/api/v1/infrastructure/mira/tenants","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/mobile-versions/route.ts","path":"/api/v1/infrastructure/mobile-versions","methods":[{"method":"GET","classification":"ADMIN"},{"method":"PUT","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/monitoring/blue-green/deployment-pin/route.ts","path":"/api/v1/infrastructure/monitoring/blue-green/deployment-pin","methods":[{"method":"POST","classification":"ADMIN"},{"method":"DELETE","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/monitoring/blue-green/deployment-revert/route.ts","path":"/api/v1/infrastructure/monitoring/blue-green/deployment-revert","methods":[{"method":"POST","classification":"ADMIN"}]}

@@ -112,6 +112,11 @@ export default async function Layout({ children, params }: LayoutProps) {
             canManageInternalAccounts: permissions.containsPermission(
               'manage_internal_accounts' as PermissionId
             ),
+            canOperateMira:
+              permissions.containsPermission('admin') &&
+              permissions.containsPermission(
+                'operate_mira_channels' as PermissionId
+              ),
             canViewCosts:
               permissions.membershipType === 'MEMBER' &&
               permissions.containsPermission('view_infrastructure') &&

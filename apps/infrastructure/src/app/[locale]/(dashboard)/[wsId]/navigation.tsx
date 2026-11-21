@@ -59,11 +59,13 @@ function href(wsId: string, path = '') {
 
 function getTopLevelNavigation({
   canManageInternalAccounts,
+  canOperateMira,
   canViewCosts,
   t,
   wsId,
 }: {
   canManageInternalAccounts: boolean;
+  canOperateMira: boolean;
   canViewCosts: boolean;
   t: Translator;
   wsId: string;
@@ -310,6 +312,17 @@ function getTopLevelNavigation({
           icon: icon(Bot),
           title: t('infrastructure-tabs.ai_agents'),
         },
+        // Mira channels needs root admin and the explicit operator grant.
+        ...(canOperateMira
+          ? [
+              {
+                aliases: [href(wsId, '/mira/channels/*')],
+                href: href(wsId, '/mira/channels'),
+                icon: icon(MessageSquare),
+                title: t('infrastructure-tabs.mira_channels'),
+              },
+            ]
+          : []),
         {
           href: href(wsId, '/ai-credits'),
           icon: icon(Zap),
@@ -435,16 +448,19 @@ function getTopLevelNavigation({
 
 export async function getNavigationLinks({
   canManageInternalAccounts = false,
+  canOperateMira = false,
   canViewCosts = false,
   personalOrWsId,
 }: {
   canManageInternalAccounts?: boolean;
+  canOperateMira?: boolean;
   canViewCosts?: boolean;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
   return getTopLevelNavigation({
     canManageInternalAccounts,
+    canOperateMira,
     canViewCosts,
     t,
     wsId: personalOrWsId,

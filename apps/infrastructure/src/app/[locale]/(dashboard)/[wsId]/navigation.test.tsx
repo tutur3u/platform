@@ -131,6 +131,17 @@ describe('Infrastructure navigation', () => {
     expect(await hrefs(false)).not.toContain('/internal/costs');
   });
 
+  it('only shows Mira channels to holders of the operator grant', async () => {
+    const { getNavigationLinks } = await import('./navigation');
+    const hrefs = async (canOperateMira: boolean) =>
+      flattenLinks(
+        await getNavigationLinks({ canOperateMira, personalOrWsId: 'internal' })
+      ).map((link) => link.href);
+
+    expect(await hrefs(true)).toContain('/internal/mira/channels');
+    expect(await hrefs(false)).not.toContain('/internal/mira/channels');
+  });
+
   it('uses translation keys for navigation titles and card descriptions', async () => {
     const { getInfrastructureNavigationCards, getNavigationLinks } =
       await import('./navigation');

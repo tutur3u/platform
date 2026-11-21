@@ -9294,7 +9294,8 @@
     "users": "Users",
     "workspaces": "Workspaces",
     "deployments": "Deployments",
-    "monitoring_health": "Health"
+    "monitoring_health": "Health",
+    "mira_channels": "Mira channels"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -24688,5 +24689,48 @@
     },
     "runs_unavailable": "The collection log could not be read.",
     "deploys_unavailable": "Deploys unavailable"
+  },
+  "mira-channels": {
+    "title": "Mira channels",
+    "load_failed": "Could not load. Retrying automatically.",
+    "global_stop": "Global stop",
+    "stopped": "Stopped",
+    "running": "Running",
+    "generation": "Generation {generation}",
+    "tenants": "Tenants",
+    "audit": "Audit",
+    "workspace": "Workspace",
+    "state": "State",
+    "channels": "Channels",
+    "channel_counts": "{total} bound, {stopped} stopped",
+    "last_error": "Last error",
+    "errors_7d": "Errors (7d)",
+    "p95_first_token": "p95 first token",
+    "cost_7d": "Cost (7d)",
+    "replies_7d": "Replies (7d)",
+    "metrics_unavailable": "Unavailable",
+    "milliseconds": "{value} ms",
+    "empty_tenants": "No tenants yet",
+    "empty_audit": "No audit events yet",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "none": "None",
+    "time": "Time",
+    "actor": "Actor",
+    "action": "Action",
+    "generation_change": "Generation",
+    "note": "Note",
+    "reasons": {
+      "tenant": "Tenant stop",
+      "operator": "Operator stop",
+      "billing": "Billing stop",
+      "cap": "Spend cap"
+    },
+    "actors": {
+      "tenant_manager": "Tenant manager",
+      "operator": "Operator",
+      "billing": "Billing",
+      "system": "System"
+    }
   }
 }

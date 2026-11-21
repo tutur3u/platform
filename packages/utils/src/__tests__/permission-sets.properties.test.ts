@@ -21,6 +21,7 @@ const permissionId = fc.oneof(
     'admin',
     'manage_subscription',
     'manage_mastermind',
+    'operate_mira_channels',
     'manage_workspace_roles',
     'manage_workspace_members',
     'view_users_private_info',

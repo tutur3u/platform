@@ -4630,6 +4630,66 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/mira/channels/{channel}/connect",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/channels/[channel]/connect/route.ts",
+    "sourceSha256": "1b47457ffa30a0f027cbfc670e18a195bb0e31ab76c7785890e4a52e10112b34",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/mira/channels/{channel}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/channels/[channel]/route.ts",
+    "sourceSha256": "f53b554b862577ca064a26979a93adff1f757bfc52ee1da4d29973bf691c68c5",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/mira",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/route.ts",
+    "sourceSha256": "bae9c79bb3c385c0ca7eab6ae17b56ac74bda150795549e959adffc195482bbf",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/mira/settings",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/settings/route.ts",
+    "sourceSha256": "f862e768cdd58178898135ab993e3d5dcb9e7348c2a914f968b7ae04816e5ff8",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/mira/stop",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/stop/route.ts",
+    "sourceSha256": "8b3afbdf6a62527818b4a62ff3342cf45022e887df801c097d79c5e24b0cf08f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/mira/usage",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/mira/usage/route.ts",
+    "sourceSha256": "95d3d1cfac5e76857183ad0ea9286a7d4a714aa083f27cb99ed65350c6da4876",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/mobile-activity",
     "sideEffects": "unknown",
     "shadow": "never",

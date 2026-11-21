@@ -4,9 +4,11 @@ import { isAdminImpliedPermission } from './creator-grant-permissions';
 
 // Only the audited root-workspace singleton role can grant these permissions.
 // Workspace creators, `admin` and default permissions never imply them; see
-// apps/docs/platform/features/mobile-mastermind.mdx.
+// apps/docs/platform/features/mobile-mastermind.mdx and
+// apps/docs/platform/ai/mira-cloud-channels.mdx.
 export const EXPLICIT_GRANT_PERMISSIONS = [
   'manage_mastermind',
+  'operate_mira_channels',
 ] as const satisfies readonly PermissionId[];
 
 export function isExplicitGrantPermission(permission: string): boolean {

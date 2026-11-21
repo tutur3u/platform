@@ -5,10 +5,11 @@ updatedAt: "2026-11-21"
 audience: developers
 ---
 
-**Status:** design proposal. No code ships until the
-[open decisions](#open-decisions) are settled and an independent security and
-privacy review approves this page. Pricing and cost of goods are in
-[Mira managed pricing](/platform/ai/mira-managed-pricing).
+**Status:** foundation in progress. The tables, RPCs, tenant and operator
+APIs and the read-only operator view ship with every channel off; no channel
+replies until the runtime slices pass their gates. Remaining
+[open decisions](#open-decisions) are listed below. Pricing and cost of goods
+are in [Mira managed pricing](/platform/ai/mira-managed-pricing).
 
 Mira runs as a managed, multi-tenant product: each Tuturuuu workspace that
 enables Mira is a **tenant** with its own channels, persona, rules, people,
@@ -31,7 +32,19 @@ account connectors, see [per-channel decisions](#per-channel-decisions)).
   boundary. The cloud runtime replaces the apps/web webhook loop and the
   self-hosted watchers; it keeps their data contracts.
 - **Exceptions:** personal-account WhatsApp and Zalo automation is limited to
-  the root (internal) workspace.
+  the root (internal) workspace and runs on the Mac desk host, never in the
+  cloud (see [decisions](#decisions)).
+
+## Decisions
+
+| Decision | Scope | Default | Exceptions |
+| --- | --- | --- | --- |
+| **Personal accounts stay on the Mac.** Mira's internal personal WhatsApp and Zalo accounts keep running on the Mac desk host. | Internal tenant personal sessions. The cloud runtime serves only official channels (Discord bot, WhatsApp Business Cloud, Zalo OA and Bot) for every tenant, including the internal one. | Host-side personal sessions get only the reduced registry projection, and that projection is off until the registry's personal-session setting is turned on. | None: no `SessionContainer` is deployed and the cloud connect route refuses `personal` mode. |
+
+Regression coverage: `packages/internal-api/src/mira-channels.test.ts` (personal
+connects are refused) and `apps/web/src/lib/mira-channels/service.test.ts`;
+the database already refuses `personal` channels outside the root workspace
+(`apps/database/supabase/tests/mira-channel-tenants.sql`).
 
 ## Architecture
 
@@ -193,11 +206,10 @@ Constraints the product surfaces honestly:
   eight participants, so Mira treats WhatsApp as one-to-one first and offers
   groups only to eligible accounts.
 
-**Internal tenant:** the owner's personal account runs the current unofficial
-Web-client automation. It moves off the M4 Mac into a `SessionContainer` with
-the same library, the session blob sealed in the vault, and every limit below.
-Moving that number to the Cloud API would remove it from the consumer app, so
-it stays personal until the owner chooses a business number.
+**Internal tenant:** the owner's personal account keeps the current unofficial
+Web-client automation on the Mac desk host, with every limit below. Moving
+that number to the Cloud API would remove it from the consumer app, so it
+stays personal until the owner chooses a business number.
 
 **Risk:** personal-account automation breaks WhatsApp's terms and can get the
 number banned. Material; the owner decides whether the internal desk keeps it.
@@ -221,14 +233,19 @@ number banned. Material; the owner decides whether the internal desk keeps it.
   for typing. In groups the bot answers only when mentioned. The apps/web
   module already supports this mode.
 
-**Internal tenant:** the owner's personal account keeps the `zca-js` route
-inside a `SessionContainer`, because a Zalo Web listener is a long-lived Node
-WebSocket process with one active listener per account.
+**Internal tenant:** the owner's personal account keeps the `zca-js` route on
+the Mac desk host, because a Zalo Web listener is a long-lived Node WebSocket
+process with one active listener per account.
 
 **Risk:** `zca-js` is unofficial automation and can trigger account locks or
 bans. Material; the owner decides for the internal desk.
 
 ### Personal-account controls (internal tenant only)
+
+Personal sessions run on the Mac desk host. The container controls below
+describe the cloud option that was not chosen and stay as its reference; the
+pacing, lease, sealed-session, reconnect and stop rules apply to the Mac host
+as written.
 
 - One container per personal account, `max_instances = 1`, with a session
   lease in the tenant object so two runtimes never listen at once.
@@ -690,11 +707,11 @@ HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,
 | --- | --- | --- | --- |
 | `GET /workspaces/:wsId/mira` | Mira view | none | tenant settings, persona, bound channels with secret names and connected times, stop reasons and generations, `configVersion` |
 | `PATCH /workspaces/:wsId/mira/settings` | Mira manage | `{ expectedConfigVersion, settings }` with `enabled`, `keyMode`, `preset`, `modelId`, `neverSilent`, `quietHours`, `dailyCapMicroUsd`, `monthlyCapMicroUsd` | `{ configVersion }` |
-| `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped, expectedGeneration? }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
-| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof (Embedded Signup code, OAuth callback state, bot token) | `{ channelId }`; failures return only `invalid_proof`, `expired_state` or `already_bound`, never provider text, and proof is never echoed or logged |
-| `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set |
-| `GET /workspaces/:wsId/mira/usage` | Mira view | `?from&to` (at most 400 days) | daily usage per channel and model |
-| `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, `lastErrorAt`, seven-day cost (micro-USD) and replies, plus seven-day error count and p95 first-token latency merged from Analytics Engine in one batched query |
+| `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped, expectedGeneration }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
+| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof per kind and mode (Embedded Signup code, OAuth callback state, bot token); `personal` mode is refused | `{ channelId }`; failures return only `invalid_proof`, `expired_state` or `already_bound`, never provider text, and proof is never echoed or logged. `connect_unavailable` (503) while no verifier is wired for the kind |
+| `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set; `vault_unavailable` (503) while the channel names vault secrets that cannot be purged first |
+| `GET /workspaces/:wsId/mira/usage` | Mira view | `?from&to` (at most 400 days; defaults to the last 30 days) | daily usage per channel and model, money in micro-USD |
+| `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, `lastErrorAt`, seven-day cost (micro-USD) and replies, plus seven-day error count and p95 first-token latency merged from Analytics Engine in one batched query; `metrics.status` is `unavailable` until the channel Worker emits them |
 | `POST /infrastructure/mira/tenants/:wsId/stop` | root admin + Mira operator | `{ channelId?, stopped, expectedGeneration, note }`; the reason is always `operator`; `note` is required, at most 500 characters | `{ stopReasons, stopGeneration }`, confirmed by a readback |
 | `GET /infrastructure/mira/global-stop` | root admin + Mira operator | none | `{ stopped, generation, updatedAt, updatedBy }` |
 | `POST /infrastructure/mira/global-stop` | root admin + Mira operator | `{ stopped, expectedGeneration, note }` | the same shape as the read, confirmed by a readback |
@@ -702,6 +719,26 @@ HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,
 
 Billing adjusts caps through the same settings RPC with the `billing`
 authority from its own server path; no HTTP route exposes that authority.
+
+Permissions: Mira manage is `manage_ai_agents` and Mira view is
+`view_ai_usage` (manage implies view), the permissions of the AI agent
+deployment module the runtime builds on. The Mira operator permission is
+`operate_mira_channels`, an explicit-grant permission (`EXPLICIT_GRANT_PERMISSIONS`
+in `@tuturuuu/utils`): workspace creators, `admin` and default permissions
+never imply it, the role editor cannot grant it, and database triggers refuse
+it as a default permission, outside the root workspace, and for any API
+session that enables it on a role or adds a member to a role holding it. A
+grant runs on a database-owner session that sets
+`tuturuuu.mira_operator_grant = 'owner'` for the transaction. The Admin
+navigation shows Mira channels only to root admins holding it.
+
+The channel route segment is one dynamic segment named `[channel]`: it holds
+the channel kind under `connect` and the channel id on `DELETE`. Server code
+reaches the RPCs through `@tuturuuu/internal-api/mira-channels-rpc`, which
+parses every RPC result with the contract schemas and reports failures only
+as typed codes. Unbinding purges the channel's named vault variables before
+the unbind RPC runs; provider proof verifiers and the vault purger are wired
+with the channel Worker and the vault workload tier.
 
 Stop semantics: `stopped: false` clears only the caller's own reason (a
 tenant clears `tenant`, an operator clears `operator`); other owners' reasons
@@ -774,8 +811,8 @@ under 5) and about 60 replies a day. Monthly: about 2,500 triaged messages and
 | Triaged messages | 2,500, about $0.25 | 25,000, about $2.50 |
 | Workers, Durable Objects, Queues, Analytics Engine | under $0.10 | about $1 |
 | Discord gateway object | about $4 | about $4 |
-| Two personal-session containers, `basic` class, running all month | about $16 | about $16 |
-| Total | about $34 | about $160 |
+| Personal-session containers (not deployed; personal sessions stay on the Mac) | $0 | $0 |
+| Total | about $18 | about $144 |
 | Workers Paid base | $5, shared with other Workers | $5 |
 
 Billable work is bounded per wake: one turn per alarm, at most three
@@ -896,11 +933,8 @@ report each result back to the fence.
 
 ## Open decisions
 
-1. Personal-account WhatsApp and Zalo for the internal desk: keep on a
-   container, keep on the M4, or retire in favor of official numbers. If kept,
-   the owner also decides the notice given to contacts in allowlisted
-   personal conversations whose messages reach LLM providers.
-2. Personal-account mode for paying tenants: recommended never.
-3. Plan naming and price point; see [Mira managed pricing](/platform/ai/mira-managed-pricing).
-4. Meta Tech Provider onboarding and Zalo developer verification for
+1. Personal-account mode for paying tenants: recommended never. The notice
+   given to contacts in allowlisted personal conversations whose messages
+   reach LLM providers is decided with it.
+2. Meta Tech Provider onboarding and Zalo developer verification for
    Tuturuuu as the platform operator.

@@ -248,6 +248,7 @@ describe('Infrastructure dashboard layout', () => {
       expect(screen.getByText('dashboard child')).toBeInTheDocument();
       expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
         canManageInternalAccounts: true,
+        canOperateMira: true,
         canViewCosts: true,
         personalOrWsId: 'internal',
       });

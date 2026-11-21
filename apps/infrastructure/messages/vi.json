@@ -9294,7 +9294,8 @@
     "users": "Người dùng",
     "workspaces": "Không gian làm việc",
     "deployments": "Triển khai",
-    "monitoring_health": "Tình trạng"
+    "monitoring_health": "Tình trạng",
+    "mira_channels": "Kênh Mira"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
@@ -24688,5 +24689,48 @@
     },
     "runs_unavailable": "Không đọc được nhật ký thu thập.",
     "deploys_unavailable": "Không có dữ liệu triển khai"
+  },
+  "mira-channels": {
+    "title": "Kênh Mira",
+    "load_failed": "Không tải được. Đang tự động thử lại.",
+    "global_stop": "Dừng toàn hệ thống",
+    "stopped": "Đã dừng",
+    "running": "Đang chạy",
+    "generation": "Thế hệ {generation}",
+    "tenants": "Khách thuê",
+    "audit": "Nhật ký kiểm tra",
+    "workspace": "Không gian làm việc",
+    "state": "Trạng thái",
+    "channels": "Kênh",
+    "channel_counts": "{total} đã liên kết, {stopped} đã dừng",
+    "last_error": "Lỗi gần nhất",
+    "errors_7d": "Lỗi (7 ngày)",
+    "p95_first_token": "p95 token đầu tiên",
+    "cost_7d": "Chi phí (7 ngày)",
+    "replies_7d": "Phản hồi (7 ngày)",
+    "metrics_unavailable": "Không khả dụng",
+    "milliseconds": "{value} ms",
+    "empty_tenants": "Chưa có khách thuê",
+    "empty_audit": "Chưa có sự kiện kiểm tra",
+    "enabled": "Đã bật",
+    "disabled": "Đã tắt",
+    "none": "Không có",
+    "time": "Thời gian",
+    "actor": "Người thực hiện",
+    "action": "Hành động",
+    "generation_change": "Thế hệ",
+    "note": "Ghi chú",
+    "reasons": {
+      "tenant": "Khách thuê dừng",
+      "operator": "Nhà vận hành dừng",
+      "billing": "Dừng do thanh toán",
+      "cap": "Giới hạn chi tiêu"
+    },
+    "actors": {
+      "tenant_manager": "Quản lý khách thuê",
+      "operator": "Nhà vận hành",
+      "billing": "Thanh toán",
+      "system": "Hệ thống"
+    }
   }
 }

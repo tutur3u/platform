@@ -12,6 +12,10 @@ const infrastructureRoutes = [
   'apps/infrastructure/src/app/api/workspaces/route.ts',
   'apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts',
   'apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts',
+  'apps/infrastructure/src/app/api/v1/infrastructure/mira/tenants/route.ts',
+  'apps/infrastructure/src/app/api/v1/infrastructure/mira/tenants/[wsId]/stop/route.ts',
+  'apps/infrastructure/src/app/api/v1/infrastructure/mira/global-stop/route.ts',
+  'apps/infrastructure/src/app/api/v1/infrastructure/mira/audit/route.ts',
 ];
 
 const retiredWebRoutes = [
@@ -19,6 +23,10 @@ const retiredWebRoutes = [
   'apps/web/src/app/api/v1/internal/holidays/route.ts',
   'apps/web/src/app/api/v1/internal/holidays/[holidayId]/route.ts',
   'apps/web/src/app/api/v1/internal/holidays/bulk/route.ts',
+  // Mira operator routes are Admin-only; tenant routes never widen to them.
+  'apps/web/src/app/api/v1/infrastructure/mira/tenants/route.ts',
+  'apps/web/src/app/api/v1/infrastructure/mira/global-stop/route.ts',
+  'apps/web/src/legacy-api-routes/v1/infrastructure/mira/tenants/route.ts',
 ];
 
 describe('infrastructure API ownership', () => {
