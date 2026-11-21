@@ -38,13 +38,15 @@ with synthetic secrets and no network egress: build identity, root host, apex re
 unknown paths, and the signed-out redirect through the app-owned
 `cloudflare/auth-redirect.runtime.mjs` fixture (8 checks).
 
-The app proxy admits anonymous `GET`/`HEAD /api/build-info` without an app-session
-refresh, so deployment verification gets `200` instead of `401`.
+The app proxy skips the app-session refresh for `GET`/`HEAD /api/build-info`
+and passes credentials through unchanged, but the route itself is protected:
+an anonymous request gets `401` JSON, and a signed-in root admin gets the build
+identity.
 
 ## Smoke checks after the route is attached
 
 ```bash
-curl -sI https://infrastructure.tuturuuu.com/api/build-info   # 200, JSON, no-store
+curl -sI https://infrastructure.tuturuuu.com/api/build-info   # 401 JSON when anonymous
 curl -sI https://infrastructure.tuturuuu.com/                 # 307 to /login for a signed-out client
 curl -sI https://infrastructure.tuturuuu.com/login            # renders, no 5xx
 curl -sI https://tuturuuu.com/infrastructure        # 404 (root-only app)

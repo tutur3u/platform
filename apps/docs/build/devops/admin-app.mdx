@@ -80,6 +80,27 @@ Revealing Vercel values can require a step-up `vercel login`; a human runs it.
 A missing optional secret degrades only its own page (for example, Deployments
 reports the coordinator as unavailable).
 
+## Smoke checks
+
+```bash
+curl -sI https://tuturuuu.com/admin                    # 307 to /admin/login?next=%2F
+curl -sI https://tuturuuu.com/admin/login              # 307 to Web /login with the /admin verify-token return
+curl -sI https://tuturuuu.com/admin/api/build-info     # 401 JSON when anonymous (protected route)
+```
+
+Every `/admin` response carries the enforced policy
+`script-src 'self' 'nonce-…' 'strict-dynamic'; object-src 'none'; base-uri 'self'; require-trusted-types-for 'script'; trusted-types default; frame-ancestors 'none'`.
+The only cookie Admin sets on the mount is `NEXT_LOCALE` with `Path=/admin`.
+Setting `TTR_CSP_ADMIN=report` on the Worker moves Trusted Types to a
+report-only policy without a rebuild.
+
+## Cutover receipt (2026-11-21)
+
+| Worker | Version | Source | Rollback version |
+| --- | --- | --- | --- |
+| `tuturuuu-infrastructure` | `5ed24f1d-6c45-4f12-ac1b-d41624282368` | `36411ab8fb1c66b9bc43a231f7addafdfd4d61d6` | `6b451924-fb31-450d-b188-d960c8c790be` |
+| `tuturuuu-gateway` | `57f12582-206d-4196-b6ab-2b463726a04d` | serving module of `fc59b682` plus `MOUNT_ADMIN` and `/admin,/admin/*` | `fc59b682-2a15-48c7-939e-c9cbc05cd4cb` |
+
 ## Rollback
 
 - Admin Worker: `void-cf-publisher.mjs assign --version <previous> --expect-current <new>`.
