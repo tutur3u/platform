@@ -332,7 +332,8 @@ jobs:
         run: python3 scripts/ci/nova-native-artifact.py config apps/nova
       - name: Write the production wrangler config
         run: |
-          node --input-type=module <<'JS'
+          # The shared TypeScript protocol uses extensionless relative imports.
+          bun run - <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
           import { ABUSE_GUARD_FAMILIES } from './packages/utils/src/abuse-guard/protocol.ts';
           const path = 'apps/nova/dist/server/wrangler.json';
