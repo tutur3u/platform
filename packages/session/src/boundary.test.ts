@@ -111,12 +111,16 @@ function runtimeGraph() {
     .map(([, target]) => resolve(PACKAGE_DIR, target));
   const seen = new Set<string>();
   const external: Array<{ file: string } & ModuleImport> = [];
+  const dynamic: Array<{ file: string } & ModuleImport> = [];
   const queue = [...entries];
   while (queue.length > 0) {
     const file = queue.pop() as string;
     if (seen.has(file)) continue;
     seen.add(file);
     for (const entry of moduleImports(file)) {
+      // Dynamic edges are recorded before resolution, relative or not.
+      if (entry.dynamic)
+        dynamic.push({ file: relative(PACKAGE_DIR, file), ...entry });
       if (entry.specifier.startsWith('.')) {
         queue.push(resolveRelative(file, entry.specifier));
       } else {
@@ -124,7 +128,7 @@ function runtimeGraph() {
       }
     }
   }
-  return { files: [...seen], external };
+  return { files: [...seen], external, dynamic };
 }
 
 describe('portable entry points', () => {
@@ -135,6 +139,10 @@ describe('portable entry points', () => {
       expect(file).not.toMatch(/(\.test\.ts|testing\.ts)$/);
     }
     expect(graph.files.length).toBeGreaterThan(3);
+  });
+
+  it('contain no dynamic import or require edge, relative or external', () => {
+    expect(graph.dynamic).toEqual([]);
   });
 
   it('import only the allowlisted external packages, type-only, and nothing dynamic', () => {
@@ -236,7 +244,7 @@ describe('test issuer', () => {
     ).toBe(false);
   });
 
-  it('is imported only from test files anywhere in the repository', () => {
+  it('has no tracked non-test importer among apps and packages files whose text matches the testing prefilter', () => {
     const candidates = candidateImporters();
     // The package's own tests import the issuer, so an empty scan means it is broken.
     expect(candidates).toContain('packages/session/src/verify.test.ts');

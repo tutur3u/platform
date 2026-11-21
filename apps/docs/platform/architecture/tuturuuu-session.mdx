@@ -307,10 +307,16 @@ Portable entry points have no framework or Cloudflare runtime imports, no
 request globals, no implicit network fetch and no signing keys. A boundary test
 parses the module graph reachable from every entry point and enforces it.
 An ephemeral-key test issuer lives in `packages/session/src/testing.ts`. It is
-not a package entry point, it refuses to run outside a Vitest process, and the
-boundary test fails if any tracked non-test source in `apps` or `packages`
-imports it. Only the verifier can mark an object as a verified assertion, and
-`principalFromAssertion` accepts nothing else. Supabase and Better Auth code live only in the session service.
+not a package entry point, and creating an issuer requires `VITEST=true`. The
+boundary test parses every tracked JavaScript and TypeScript file in `apps` and
+`packages` whose text matches a `testing` specifier prefilter, and fails if a
+non-test file among them imports the issuer. Escaped or computed specifiers can
+miss that prefilter. The `VITEST` check guards against accidental use and is not
+a security boundary; isolation comes from keeping the issuer out of every entry
+point and from verifiers trusting only configured keys. Only the verifier can mark an object as a verified assertion, and
+`principalFromAssertion` accepts nothing else.
+
+Supabase and Better Auth code live only in the session service.
 
 ### Trusted ingress
 
@@ -438,7 +444,7 @@ rejection.
 | `ttr+s2s` | Worker to Worker over HTTP | 5 min | `service:<name>` |
 | `ttr+realtime` | Browser, one topic | ≤ 60 s for channels, ≤ 10 min for meet and chat joins | `realtime:<service>` plus a `topic` claim |
 | `ttr+access` | Mobile, CLI, external app | 5 min | The resource server, `https://tuturuuu.com/api`. The client is `azp` |
-| `ttr+stepup` | A Worker that must check a step-up offline, such as the secrets vault share service | ≤ 5 min | `service:<name>`. Carries `act` (the action), `nonce` (the caller's single-use nonce), `sid`, `gen`, `amr` and `auth_time`. The receiving service enforces single use of `jti` and `nonce` until `exp` |
+| `ttr+stepup` | A Worker that must check a step-up offline, such as the secrets vault share service | ≤ 5 min | `service:<name>`. Carries `act` (the action), `nonce` (the caller's single-use nonce), `sid`, `gen`, `amr` and `auth_time`. The receiving service enforces single use of `jti` and `nonce` until `exp`. Registered `act` values: `vault.unlock`, `vault.pin-eval` |
 
 Refresh tokens are never JWTs. They are opaque, single-use secrets stored as
 HMACs in the session row and rotated on every use. Reusing a rotated refresh
