@@ -114,8 +114,7 @@ async function loadWorkerNow(app, result) {
       target = resolve(parent.identifier, '..', `${specifier}.ts`);
     if (target) return loadModule(target);
     const values = { ...mocks };
-    if (specifier === '../start-bridge.config')
-      values.default = { mounts: {} };
+    if (specifier === '../start-bridge.config') values.default = { mounts: {} };
     if (specifier === '@tuturuuu/start-bridge/start/app-config') {
       values.CSP_REPORT_PATH = '/api/csp-report';
       values.collectDocumentSecurityReport = () =>
