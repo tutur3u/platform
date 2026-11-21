@@ -1,12 +1,11 @@
 'use client';
 
-import { X } from '@tuturuuu/icons';
+import { MessageSquare, Users } from '@tuturuuu/icons';
 import type {
   MeetApprovedParticipant,
   MeetRealtimePresence,
   MeetRealtimeWaitingParticipant,
 } from '@tuturuuu/realtime/meet';
-import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useSyncExternalStore } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
@@ -16,6 +15,7 @@ import type { CallPanel } from './control-bar';
 import { ConversationPanel } from './conversation-panel';
 import { ParticipantsPanel } from './participants-panel';
 import { ResizableCallPanel } from './resizable-call-panel';
+import { CallPanelHeader } from '../tools/tool-ui';
 
 export function SidePanel({
   roomFeedback,
@@ -80,32 +80,19 @@ export function SidePanel({
   );
   const actions = room ?? controls?.actions;
   const settings = room?.state.settings ?? controls?.settings;
+  const title =
+    panel === 'chat'
+      ? t('chat')
+      : t('participants', { count: participants.length });
 
   return (
-    <ResizableCallPanel
-      label={
-        panel === 'chat'
-          ? t('chat')
-          : t('participants', { count: participants.length })
-      }
-    >
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
-        <h2 className="font-medium text-sm">
-          {panel === 'chat'
-            ? t('chat')
-            : t('participants', { count: participants.length })}
-        </h2>
-        <Button
-          aria-label={t('close_panel')}
-          className="size-8 shrink-0 pointer-coarse:size-11"
-          onClick={onClose}
-          size="icon"
-          type="button"
-          variant="ghost"
-        >
-          <X className="size-4" />
-        </Button>
-      </header>
+    <ResizableCallPanel label={title}>
+      <CallPanelHeader
+        icon={panel === 'chat' ? MessageSquare : Users}
+        title={title}
+        closeLabel={t('close_panel')}
+        onClose={onClose}
+      />
 
       {panel === 'chat' ? (
         <ConversationPanel

@@ -5,7 +5,6 @@ import {
   CheckSquare,
   ExternalLink,
   LockKeyhole,
-  X,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -20,8 +19,10 @@ import {
   personalToolsApi,
   personalToolsFailureKeepsSnapshot,
 } from '../lib/personal-tools';
-import { ControlButton } from './control-bar';
+import { CallPanelHeader } from '../tools/tool-ui';
 import { ResizableCallPanel } from './resizable-call-panel';
+
+type CalendarEvent = NonNullable<PersonalToolsSnapshot['events']>[number];
 
 export function PersonalToolsPanel({
   accountId,
@@ -61,16 +62,18 @@ export function PersonalToolsPanel({
     });
   return (
     <ResizableCallPanel label={t('title')}>
-      <header className="flex items-center justify-between px-4 py-3">
-        <div>
-          <h2 className="font-medium text-sm">{t('title')}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
+      <CallPanelHeader
+        icon={CalendarDays}
+        title={t('title')}
+        subtitle={
+          <>
             <LockKeyhole className="size-3" />
             {t('private')}
-          </p>
-        </div>
-        <ControlButton icon={X} label={t('close')} onClick={onClose} />
-      </header>
+          </>
+        }
+        closeLabel={t('close')}
+        onClose={onClose}
+      />
       {query.isPending ? (
         <p role="status" className="p-4 text-muted-foreground text-sm">
           {t('loading')}
@@ -82,7 +85,7 @@ export function PersonalToolsPanel({
       ) : (
         <Tabs
           defaultValue="tasks"
-          className="flex min-h-0 flex-1 flex-col px-4 pb-4"
+          className="flex min-h-0 flex-1 flex-col gap-3 p-4"
         >
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="tasks">
@@ -97,17 +100,17 @@ export function PersonalToolsPanel({
           <TabsContent value="tasks" className="min-h-0 overflow-auto">
             <Button
               asChild
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="my-2 w-full justify-between"
+              className="mb-3 h-8 gap-1.5 rounded-full px-3.5"
             >
               <a
                 href={openApp('tasks')}
                 target="_blank"
                 rel="noopener noreferrer"
               >
+                <ExternalLink className="size-4" />
                 {t('open_tasks')}
-                <ExternalLink className="size-3.5" />
               </a>
             </Button>
             {data.tasksStatus === 'stale' && (
@@ -140,17 +143,17 @@ export function PersonalToolsPanel({
           <TabsContent value="calendar" className="min-h-0 overflow-auto">
             <Button
               asChild
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="my-2 w-full justify-between"
+              className="mb-3 h-8 gap-1.5 rounded-full px-3.5"
             >
               <a
                 href={openApp('calendar')}
                 target="_blank"
                 rel="noopener noreferrer"
               >
+                <ExternalLink className="size-4" />
                 {t('open_calendar')}
-                <ExternalLink className="size-3.5" />
               </a>
             </Button>
             {data.calendarStatus === 'stale' && (
@@ -168,7 +171,7 @@ export function PersonalToolsPanel({
               </p>
             ) : (
               <ul className="space-y-1">
-                {data.events.map((event) => (
+                {data.events.map((event: CalendarEvent) => (
                   <li key={event.id} className="rounded-lg px-2 py-3">
                     <p className="break-words text-sm">
                       {event.is_encrypted

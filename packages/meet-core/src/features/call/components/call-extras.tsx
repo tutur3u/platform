@@ -1,5 +1,16 @@
 'use client';
-import { LayoutGrid, Smile, Sparkles } from '@tuturuuu/icons';
+import {
+  Ban,
+  Contrast,
+  Focus,
+  LayoutDashboard,
+  LayoutGrid,
+  PanelRight,
+  Smile,
+  Snowflake,
+  Sparkles,
+  Sun,
+} from '@tuturuuu/icons';
 import type { MeetReaction } from '@tuturuuu/realtime/meet';
 import {
   Accordion,
@@ -21,6 +32,20 @@ export const REACTION_GLYPHS: Record<MeetReaction, string> = {
   wow: '😮',
   celebrate: '🎉',
 };
+const LAYOUT_ICONS = {
+  auto: LayoutDashboard,
+  grid: LayoutGrid,
+  spotlight: Focus,
+  sidebar: PanelRight,
+} as const;
+const FILTER_ICONS = {
+  none: Ban,
+  warm: Sun,
+  cool: Snowflake,
+  mono: Contrast,
+} as const;
+const optionClass = 'h-9 justify-start gap-2 rounded-full px-3.5';
+
 export function CallExtras({
   layout,
   setLayout,
@@ -52,13 +77,13 @@ export function CallExtras({
           <span className="flex-1 text-left">{t('reactions')}</span>
         </AccordionTrigger>
         <AccordionContent>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-2">
             {(Object.keys(REACTION_GLYPHS) as MeetReaction[]).map(
               (reaction) => (
                 <Button
                   key={reaction}
                   variant="ghost"
-                  className="min-h-11 text-xl"
+                  className="min-h-11 rounded-full text-xl"
                   aria-label={t(`reaction_${reaction}`)}
                   onClick={() => react(reaction)}
                 >
@@ -79,16 +104,21 @@ export function CallExtras({
         <AccordionContent>
           <div className="grid grid-cols-2 gap-2">
             {(['auto', 'grid', 'spotlight', 'sidebar'] as const).map(
-              (value) => (
-                <Button
-                  key={value}
-                  variant={layout === value ? 'secondary' : 'outline'}
-                  aria-pressed={layout === value}
-                  onClick={() => setLayout(value)}
-                >
-                  {t(`layout_${value}`)}
-                </Button>
-              )
+              (value) => {
+                const Icon = LAYOUT_ICONS[value];
+                return (
+                  <Button
+                    key={value}
+                    variant={layout === value ? 'secondary' : 'outline'}
+                    className={optionClass}
+                    aria-pressed={layout === value}
+                    onClick={() => setLayout(value)}
+                  >
+                    <Icon className="size-4" />
+                    {t(`layout_${value}`)}
+                  </Button>
+                );
+              }
             )}
           </div>
         </AccordionContent>
@@ -100,20 +130,24 @@ export function CallExtras({
           </span>
           <span className="flex-1 text-left">{t('camera_effects')}</span>
         </AccordionTrigger>
-        <AccordionContent className="space-y-3">
-          <p className="text-muted-foreground text-xs">{t('effects_hint')}</p>
+        <AccordionContent className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             {(['none', 'warm', 'cool', 'mono'] satisfies CameraFilter[]).map(
-              (filter) => (
-                <Button
-                  key={filter}
-                  variant={look.filter === filter ? 'secondary' : 'outline'}
-                  aria-pressed={look.filter === filter}
-                  onClick={() => updateLook({ ...look, filter })}
-                >
-                  {t(`filter_${filter}`)}
-                </Button>
-              )
+              (filter) => {
+                const Icon = FILTER_ICONS[filter];
+                return (
+                  <Button
+                    key={filter}
+                    variant={look.filter === filter ? 'secondary' : 'outline'}
+                    className={optionClass}
+                    aria-pressed={look.filter === filter}
+                    onClick={() => updateLook({ ...look, filter })}
+                  >
+                    <Icon className="size-4" />
+                    {t(`filter_${filter}`)}
+                  </Button>
+                );
+              }
             )}
           </div>
           <div className="space-y-2">

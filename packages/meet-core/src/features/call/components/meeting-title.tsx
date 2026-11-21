@@ -1,11 +1,10 @@
 'use client';
-import { Pencil } from '@tuturuuu/icons';
+import { Check, Circle, Leaf, Loader2, Pencil, X } from '@tuturuuu/icons';
 import { updateMeetCallTitle } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -59,10 +58,9 @@ export function MeetingTitle({
               </button>
             </DialogTrigger>
           </MeetingActionHint>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>{t('edit_title')}</DialogTitle>
-              <DialogDescription>{t('edit_title_hint')}</DialogDescription>
             </DialogHeader>
             <form
               className="space-y-4"
@@ -85,25 +83,38 @@ export function MeetingTitle({
                 }
               }}
             >
-              <Label htmlFor={id}>{t('meeting_title')}</Label>
-              <Input
-                id={id}
-                autoFocus
-                maxLength={255}
-                value={draft}
-                disabled={busy}
-                onChange={(event) => setDraft(event.target.value)}
-              />
+              <div className="grid gap-2">
+                <Label htmlFor={id}>{t('meeting_title')}</Label>
+                <Input
+                  id={id}
+                  autoFocus
+                  maxLength={255}
+                  value={draft}
+                  disabled={busy}
+                  onChange={(event) => setDraft(event.target.value)}
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
+                  className="rounded-full"
                   disabled={busy}
                   onClick={() => setOpen(false)}
                 >
+                  <X className="size-4" />
                   {t('cancel')}
                 </Button>
-                <Button type="submit" disabled={busy || !draft.trim()}>
+                <Button
+                  type="submit"
+                  className="rounded-full"
+                  disabled={busy || !draft.trim()}
+                >
+                  {busy ? (
+                    <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+                  ) : (
+                    <Check className="size-4" />
+                  )}
                   {t(busy ? 'saving_title' : 'save_title')}
                 </Button>
               </div>
@@ -114,5 +125,39 @@ export function MeetingTitle({
         <h1 className="truncate font-medium text-sm">{title}</h1>
       )}
     </div>
+  );
+}
+
+/** Quiet status chips beside the title: solo mode and live recording. */
+export function MeetingStatus({
+  solo,
+  recording,
+}: {
+  solo: boolean;
+  recording: boolean;
+}) {
+  const t = useTranslations('meet.call');
+  return (
+    <>
+      {solo && (
+        <MeetingActionHint label={t('solo_mode')}>
+          <output
+            aria-label={t('solo_mode')}
+            className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          >
+            <Leaf className="size-4" />
+          </output>
+        </MeetingActionHint>
+      )}
+      {recording && (
+        <output
+          aria-live="polite"
+          className="flex h-8 items-center gap-1.5 rounded-full bg-destructive/10 px-3 text-destructive text-xs"
+        >
+          <Circle className="size-2 fill-current motion-safe:animate-pulse" />
+          {t('recording')}
+        </output>
+      )}
+    </>
   );
 }

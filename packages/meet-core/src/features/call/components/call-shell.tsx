@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Circle, Leaf, Users } from '@tuturuuu/icons';
+import { Users } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
@@ -45,11 +45,10 @@ import {
   AccountGatedPersonalDrawer,
   accountGatedCollaboration,
 } from './call-account-gates';
-import { FloatingSelfCamera } from './floating-self-camera';
 import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { MeetingActionHint } from './meeting-action-hint';
-import { MeetingTitle } from './meeting-title';
+import { MeetingStatus, MeetingTitle } from './meeting-title';
 import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
@@ -60,6 +59,7 @@ import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
+import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
 
 type Device = 'microphone' | 'camera' | 'screen';
 function CallShellContent({
@@ -114,7 +114,7 @@ function CallShellContent({
   );
   const [documentOpen, setShowDocument] = useState(false);
   const [drawer, setDrawer] = useState<
-    CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer
+    CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer | ToolDrawer
   >(null);
   const chatOpen = drawer === 'chat' || drawer === 'feedback';
   const panel = chatOpen ? 'chat' : drawer === 'participants' ? drawer : null;
@@ -221,10 +221,6 @@ function CallShellContent({
     : false;
   const others = useMemo(() => selectOthers(state), [state]);
   const participants = self ? [self, ...others] : others;
-  const stageHasFeeds =
-    others.length > 0 || !!state.liveAssistant || !!room.screenStream;
-  const selfFloating =
-    !!self && (stageHasFeeds || showProgramming || showDocument);
   const backHref = leaveHref.includes('/meetings/')
     ? `${leaveHref.split('/meetings/')[0]}/meetings`
     : '/';
@@ -294,18 +290,29 @@ function CallShellContent({
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
   const lifecycle = selectCallLifecycle(state, joined);
+  const liveTools = MEETING_APP === 'meet' && lifecycle === 'live' && inCall;
+  const tools = useMeetTools<ActivityDrawer>({
+    drawer,
+    onDrawer: setDrawer,
+    meetingId,
+    accountId,
+    requiresAccount,
+    canManage,
+    enabled: liveTools,
+    available: roomTools.canUse,
+  });
   const activities = useCallActivities({
     requiresAccount,
     meetingId,
     accountId,
-    enabled: MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
-    showTools: roomTools.canUse,
+    enabled: liveTools,
+    showTools: false,
     formsEnabled,
     formsTurnstileSiteKey,
     formsAccess: { canManage, canReadWorkspace },
     classroomToolsEnabled,
     drawer,
-    onDrawer: setDrawer,
+    onDrawer: tools.route,
   });
   if (lifecycle === 'error')
     return (
@@ -367,37 +374,22 @@ function CallShellContent({
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-2">
         <MeetingTitle
           meetingId={meetingId}
           title={room.state.title ?? meetingName}
           canManage={canManage}
           onSaved={room.renameMeeting}
         />
-        {participants.length === 1 && !state.liveAssistant && (
-          <MeetingActionHint label={t('solo_hint')}>
-            <output
-              aria-label={t('solo_mode')}
-              className="inline-flex size-8 items-center justify-center text-muted-foreground"
-            >
-              <Leaf className="size-4" />
-            </output>
-          </MeetingActionHint>
-        )}
-        {state.recording.state === 'recording' && (
-          <output
-            aria-live="polite"
-            className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-1 text-destructive text-xs"
-          >
-            <Circle className="size-2 fill-current motion-safe:animate-pulse" />
-            {t('recording')}
-          </output>
-        )}
+        <MeetingStatus
+          solo={participants.length === 1 && !state.liveAssistant}
+          recording={state.recording.state === 'recording'}
+        />
         <CallTopBarConnection
           status={room.connectionStatus}
           onRetry={retryConnection}
         />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
           <RoomAssistantAudio
             room={room}
             audioSuppressed={sharedAudio.shared}
@@ -511,31 +503,23 @@ function CallShellContent({
               }
             )}
             stage={
-              !stageHasFeeds && selfFloating ? null : (
-                <CallStage
-                  hideSelfCamera={selfFloating}
-                  onChat={askMira}
-                  audioSuppressed={sharedAudio.shared}
-                  outputDeviceId={outputDeviceId}
-                  room={room}
-                  layout={layout}
-                  compact={showProgramming || showDocument}
-                  focus={focus}
-                  onFocus={focusFeed}
-                />
-              )
+              <CallStage
+                selfInGrid
+                onChat={askMira}
+                audioSuppressed={sharedAudio.shared}
+                outputDeviceId={outputDeviceId}
+                room={room}
+                layout={layout}
+                compact={showProgramming || showDocument}
+                focus={focus}
+                onFocus={focusFeed}
+              />
             }
           />
-          {selfFloating && self && (
-            <FloatingSelfCamera
-              participant={self}
-              stream={room.localStream}
-              handRaised={isHandRaised(state, self.userId)}
-            />
-          )}
           <ReactionOverlay state={state} />
         </main>
         {activities.panel}
+        {tools.panel}
         <AccountGatedPersonalDrawer
           open={roomTools.canUse && drawer === 'personal'}
           requiresAccount={requiresAccount}
@@ -584,6 +568,8 @@ function CallShellContent({
       </div>
       <ControlBar
         activePanel={panel}
+        tools={tools.hub}
+        toolsMenu={tools.menu}
         liveActivity={activities.liveControl}
         cameraOn={room.media.videoEnabled}
         micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}

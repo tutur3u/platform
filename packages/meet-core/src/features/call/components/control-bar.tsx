@@ -35,6 +35,25 @@ export type CallPanel = 'chat' | 'participants' | null;
 
 const CloseCallOverflow = createContext<(() => void) | null>(null);
 
+/** One shape for every round call control: top bar, bottom bar and tools hub. */
+export const controlButtonClass =
+  'relative size-11 shrink-0 rounded-full border border-border bg-background text-foreground hover:bg-accent data-[state=open]:bg-accent';
+
+/** Renders ControlButtons as labelled menu rows that close the menu on use. */
+export function ControlMenuScope({
+  onClose,
+  children,
+}: {
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <CloseCallOverflow.Provider value={onClose}>
+      {children}
+    </CloseCallOverflow.Provider>
+  );
+}
+
 export function ControlButton({
   active,
   danger,
@@ -64,14 +83,18 @@ export function ControlButton({
       disabled={busy || locked}
       aria-pressed={active}
       className={cn(
-        'relative',
         closeOverflow
-          ? 'h-auto min-h-11 w-full justify-start gap-3 whitespace-normal rounded-md px-3 py-2 text-left'
-          : 'size-11 shrink-0 rounded-full',
+          ? 'relative h-auto min-h-11 w-full justify-start gap-3 whitespace-normal rounded-lg px-3 py-2 text-left'
+          : controlButtonClass,
+        danger &&
+          !closeOverflow &&
+          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
         // Google Meet's convention: a lit control means the device is OFF.
-        !danger && active && 'bg-foreground/15 hover:bg-foreground/20',
+        !danger &&
+          active &&
+          'border-transparent bg-foreground/15 hover:bg-foreground/20',
         attention &&
-          'bg-dynamic-orange/20 text-dynamic-orange ring-2 ring-dynamic-orange/60 hover:bg-dynamic-orange/30'
+          'border-transparent bg-dynamic-orange/20 text-dynamic-orange ring-2 ring-dynamic-orange/60 hover:bg-dynamic-orange/30'
       )}
       onClick={() => {
         onClick();
@@ -115,6 +138,8 @@ const noRoomControls = () => undefined;
 
 export function ControlBar({
   activePanel,
+  tools,
+  toolsMenu,
   mediaLocks,
   extraControls,
   liveActivity,
@@ -138,6 +163,10 @@ export function ControlBar({
   viewer = false,
 }: {
   activePanel: CallPanel;
+  /** Tools hub trigger, shown in the bar on wider screens. */
+  tools?: ReactNode;
+  /** Tool rows for the phone overflow menu. */
+  toolsMenu?: ReactNode;
   mediaLocks?: { audio: boolean; video: boolean; screen: boolean };
   extraControls?: ReactNode;
   liveActivity?: ReactNode;
@@ -193,7 +222,7 @@ export function ControlBar({
     <div
       role="group"
       aria-label={t('control_bar')}
-      className="flex flex-nowrap items-center justify-center gap-1 border-t bg-background/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-2 sm:px-4"
+      className="flex flex-nowrap items-center justify-center gap-1.5 border-t bg-background/95 px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-3 sm:px-4"
     >
       <ControlButton
         active={!micOn}
@@ -246,6 +275,7 @@ export function ControlBar({
       />
 
       {liveActivity && <div className="hidden sm:block">{liveActivity}</div>}
+      {tools && <div className="hidden sm:block">{tools}</div>}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -254,7 +284,7 @@ export function ControlBar({
                 aria-label={t(
                   liveActivity ? 'more_actions_activity' : 'more_actions'
                 )}
-                className="relative size-11 shrink-0 rounded-full data-[state=open]:bg-accent"
+                className={controlButtonClass}
                 size="icon"
                 type="button"
                 variant="ghost"
@@ -273,12 +303,15 @@ export function ControlBar({
         </Tooltip>
         <PopoverContent
           aria-label={t('more_actions')}
-          className="flex max-h-[min(26rem,70dvh)] w-72 max-w-[calc(100vw-1rem)] flex-col gap-1 overflow-y-auto p-2"
+          className="flex max-h-[min(28rem,70dvh)] w-72 max-w-[calc(100vw-1rem)] flex-col gap-1 overflow-y-auto p-2"
           side="top"
           sideOffset={8}
         >
           <CloseCallOverflow.Provider value={() => setMoreOpen(false)}>
             <div className="sm:hidden">{shareScreen}</div>
+            {toolsMenu && (
+              <div className="flex flex-col gap-1 sm:hidden">{toolsMenu}</div>
+            )}
             <ControlButton
               active={handRaised}
               attention={handRaised}
@@ -300,10 +333,7 @@ export function ControlBar({
           </CloseCallOverflow.Provider>
         </PopoverContent>
       </Popover>
-      <div
-        aria-hidden="true"
-        className="mx-1 hidden h-6 w-px bg-border sm:block"
-      />
+      <div aria-hidden="true" className="hidden h-6 w-px bg-border sm:block" />
 
       <ControlButton
         danger
