@@ -18346,12 +18346,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String mastermindFleetAccessGenerated(String time) {
-    return 'Tạo $time';
+    return 'Tạo lúc $time';
   }
 
   @override
   String mastermindFleetAccessReceived(String time) {
-    return 'Nhận $time';
+    return 'Nhận lúc $time';
   }
 
   @override
@@ -18390,7 +18390,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFleetAccessBlockerDependency => 'Phụ thuộc';
 
   @override
-  String get mastermindFleetAccessBlockerReview => 'Đánh giá';
+  String get mastermindFleetAccessBlockerReview => 'Chờ duyệt mã';
 
   @override
   String get mastermindFleetAccessBlockerCi => 'CI';
@@ -18402,7 +18402,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFleetAccessBlockerReleaseHold => 'Tạm giữ phát hành';
 
   @override
-  String get mastermindFleetAccessBlockerCapacity => 'Năng lực';
+  String get mastermindFleetAccessBlockerCapacity => 'Công suất';
 
   @override
   String get mastermindFleetAccessBlockerIncident => 'Sự cố';
@@ -18667,4 +18667,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessApprovalsUnavailable => 'Ứng dụng chưa hỗ trợ phê duyệt';
+
+  @override
+  String get mastermindFleetAccessNeedsOwnerApproval => 'Cần chủ sở hữu duyệt';
+
+  @override
+  String get mastermindFleetAccessSentForOwnerApproval => 'Đã gửi chủ sở hữu duyệt.';
+
+  @override
+  String get mastermindFleetAccessDiscardTitle => 'Bỏ yêu cầu này?';
+
+  @override
+  String get mastermindFleetAccessDiscard => 'Bỏ';
+
+  @override
+  String get mastermindFleetAccessKeepEditing => 'Tiếp tục sửa';
 }

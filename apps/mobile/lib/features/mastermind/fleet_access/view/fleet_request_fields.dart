@@ -1,4 +1,7 @@
+import 'dart:ui' show SemanticsValidationResult;
+
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_models.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_intent_draft.dart';
@@ -14,6 +17,7 @@ class FleetRequestFields extends StatefulWidget {
     required this.projects,
     required this.errors,
     required this.onChanged,
+    this.needsOwnerApproval = false,
     this.enabled = true,
     super.key,
   });
@@ -28,6 +32,10 @@ class FleetRequestFields extends StatefulWidget {
   final void Function(FleetIntentDraft Function(FleetIntentDraft draft) change)
   onChanged;
   final bool enabled;
+
+  /// The chosen kind goes to the owner for approval instead of running on
+  /// this grant.
+  final bool needsOwnerApproval;
 
   @override
   State<FleetRequestFields> createState() => _FleetRequestFieldsState();
@@ -74,16 +82,22 @@ class _FleetRequestFieldsState extends State<FleetRequestFields> {
       spacing: AppSpacing.xs,
       children: [
         Text(label, style: tokens.typography.small),
-        AppSelect<T>(
-          key: ValueKey('fleet-access-field-${field?.name ?? 'kind'}'),
-          title: label,
-          placeholder: context.l10n.mastermindFleetAccessChoose,
-          value: value,
-          options: [
-            for (final v in values)
-              AppSelectOption(value: v, label: labelOf(v)),
-          ],
-          onChanged: widget.enabled ? onChanged : null,
+        Semantics(
+          validationResult: error == null
+              ? SemanticsValidationResult.none
+              : SemanticsValidationResult.invalid,
+          hint: error,
+          child: AppSelect<T>(
+            key: ValueKey('fleet-access-field-${field?.name ?? 'kind'}'),
+            title: label,
+            placeholder: context.l10n.mastermindFleetAccessChoose,
+            value: value,
+            options: [
+              for (final v in values)
+                AppSelectOption(value: v, label: labelOf(v)),
+            ],
+            onChanged: widget.enabled ? onChanged : null,
+          ),
         ),
         if (error != null)
           Text(
@@ -113,6 +127,7 @@ class _FleetRequestFieldsState extends State<FleetRequestFields> {
           labelOf: (k) => k.label(l10n),
           onChanged: (k) => widget.onChanged((d) => d.copyWith(kind: k)),
         ),
+        if (widget.needsOwnerApproval) const _OwnerApprovalNote(),
         _select<String>(
           field: FleetDraftField.project,
           label: l10n.mastermindFleetAccessFieldProject,
@@ -133,6 +148,8 @@ class _FleetRequestFieldsState extends State<FleetRequestFields> {
         if (fields.contains(FleetDraftField.target))
           AppTextField(
             key: const ValueKey('fleet-access-field-target'),
+            autocorrect: false,
+            enableSuggestions: false,
             controller: _target,
             enabled: widget.enabled,
             label: l10n.mastermindFleetAccessFieldTarget,
@@ -180,6 +197,8 @@ class _FleetRequestFieldsState extends State<FleetRequestFields> {
         if (fields.contains(FleetDraftField.commitSha))
           AppTextField(
             key: const ValueKey('fleet-access-field-commit'),
+            autocorrect: false,
+            enableSuggestions: false,
             controller: _commit,
             enabled: widget.enabled,
             label: l10n.mastermindFleetAccessFieldCommit,
@@ -199,6 +218,37 @@ class _FleetRequestFieldsState extends State<FleetRequestFields> {
           onChanged: (v) => widget.onChanged((d) => d.copyWith(quote: v)),
         ),
       ],
+    );
+  }
+}
+
+class _OwnerApprovalNote extends StatelessWidget {
+  const _OwnerApprovalNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final label = context.l10n.mastermindFleetAccessNeedsOwnerApproval;
+    final color = AppTone.warning.foreground(tokens.colorScheme);
+    // Announced when the kind changes to one the owner must approve.
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: label,
+      excludeSemantics: true,
+      child: Row(
+        key: const ValueKey('fleet-access-owner-approval'),
+        spacing: AppSpacing.xs,
+        children: [
+          Icon(LucideIcons.userCheck, size: 16, color: color),
+          Expanded(
+            child: Text(
+              label,
+              style: tokens.typography.small.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

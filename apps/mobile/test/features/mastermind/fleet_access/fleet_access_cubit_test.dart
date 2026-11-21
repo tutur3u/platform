@@ -116,8 +116,23 @@ void main() {
         redirect(const FleetAccessState(status: FleetAccessStatus.loaded)),
         isTrue,
       );
+      // A check that could not finish stays for a retry; a refusal leaves.
       expect(
-        redirect(const FleetAccessState(status: FleetAccessStatus.error)),
+        redirect(
+          const FleetAccessState(
+            status: FleetAccessStatus.error,
+            failure: FleetAccessFailure.unavailable,
+          ),
+        ),
+        isFalse,
+      );
+      expect(
+        redirect(
+          const FleetAccessState(
+            status: FleetAccessStatus.error,
+            failure: FleetAccessFailure.forbidden,
+          ),
+        ),
         isTrue,
       );
       expect(

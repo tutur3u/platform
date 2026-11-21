@@ -18,15 +18,10 @@ bool isFleetAccessLocation(String location) =>
     Routes.normalizeLocation(location) == Routes.mastermindFleetAccess;
 
 /// Holds the route while the Fleet access check has not answered (the page
-/// starts it), then sends anyone it does not admit to the Apps hub. Only the
-/// Fleet answer counts here, never the owner-only Mastermind gate.
+/// starts it) or could not finish (the page offers a retry), and sends a
+/// refused account to the Apps hub. Only the Fleet answer counts here, never
+/// the owner-only Mastermind gate.
 bool shouldRedirectDisabledFleetAccessRoute(
   String matchedLocation,
   FleetAccessState accessState,
-) =>
-    isFleetAccessLocation(matchedLocation) &&
-    switch (accessState.status) {
-      FleetAccessStatus.initial || FleetAccessStatus.loading => false,
-      FleetAccessStatus.error => true,
-      FleetAccessStatus.loaded => !accessState.access.enabled,
-    };
+) => isFleetAccessLocation(matchedLocation) && accessState.denied;

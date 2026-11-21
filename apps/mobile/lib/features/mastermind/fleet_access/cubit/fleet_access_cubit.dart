@@ -9,16 +9,27 @@ final class FleetAccessState extends Equatable {
   const FleetAccessState({
     this.status = FleetAccessStatus.initial,
     this.access = const FleetAccess.disabled(),
+    this.failure,
   });
 
   final FleetAccessStatus status;
   final FleetAccess access;
 
+  /// Why the last check failed, while [status] is error.
+  final FleetAccessFailure? failure;
+
+  /// The server refused this account, as opposed to a check that could not
+  /// finish.
+  bool get denied =>
+      (status == FleetAccessStatus.loaded && !access.enabled) ||
+      (status == FleetAccessStatus.error &&
+          failure == FleetAccessFailure.forbidden);
+
   /// Whether the Fleet view and its entry points show.
   bool get visible => status == FleetAccessStatus.loaded && access.enabled;
 
   @override
-  List<Object?> get props => [status, access];
+  List<Object?> get props => [status, access, failure];
 }
 
 /// Cosmetic discovery gate for the Fleet view; it grants nothing.
@@ -63,7 +74,7 @@ final class FleetAccessCubit extends Cubit<FleetAccessState> {
           failure != FleetAccessFailure.forbidden) {
         return;
       }
-      emit(const FleetAccessState(status: FleetAccessStatus.error));
+      emit(FleetAccessState(status: FleetAccessStatus.error, failure: failure));
     }
   }
 

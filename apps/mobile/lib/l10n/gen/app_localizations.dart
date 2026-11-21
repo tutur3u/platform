@@ -34366,7 +34366,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindFleetAccessFieldKind.
   ///
   /// In en, this message translates to:
-  /// **'Request'**
+  /// **'Request type'**
   String get mastermindFleetAccessFieldKind;
 
   /// No description provided for @mastermindFleetAccessFieldProject.
@@ -34728,6 +34728,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Approvals aren\'t available in the app yet'**
   String get mastermindFleetAccessApprovalsUnavailable;
+
+  /// No description provided for @mastermindFleetAccessNeedsOwnerApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Owner approval'**
+  String get mastermindFleetAccessNeedsOwnerApproval;
+
+  /// No description provided for @mastermindFleetAccessSentForOwnerApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent for Owner approval.'**
+  String get mastermindFleetAccessSentForOwnerApproval;
+
+  /// No description provided for @mastermindFleetAccessDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this request?'**
+  String get mastermindFleetAccessDiscardTitle;
+
+  /// No description provided for @mastermindFleetAccessDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get mastermindFleetAccessDiscard;
+
+  /// No description provided for @mastermindFleetAccessKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get mastermindFleetAccessKeepEditing;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

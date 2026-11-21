@@ -11,13 +11,13 @@ import 'package:mobile/features/mastermind/fleet_access/view/fleet_request_field
 import 'package:mobile/l10n/l10n.dart';
 
 /// Opens the typed request form full screen above the shell, so neither the
-/// dock nor the shell top bar sits over it. Resolves true once sent.
-Future<bool?> showFleetRequestForm(
+/// dock nor the shell top bar sits over it. Resolves to the sent request.
+Future<FleetIntentDraft?> showFleetRequestForm(
   BuildContext context, {
   required FleetAccess access,
   required Future<void> Function(FleetIntentDraft draft) submit,
-}) => Navigator.of(context, rootNavigator: true).push<bool>(
-  MaterialPageRoute<bool>(
+}) => Navigator.of(context, rootNavigator: true).push<FleetIntentDraft>(
+  MaterialPageRoute<FleetIntentDraft>(
     fullscreenDialog: true,
     builder: (_) => FleetRequestFormPage(access: access, submit: submit),
   ),
@@ -45,12 +45,13 @@ class _FleetRequestFormPageState extends State<FleetRequestFormPage> {
     for (final kind in FleetIntentKind.values)
       if (kind.offeredBy(widget.access)) kind,
   ];
-  late FleetIntentDraft _draft = FleetIntentDraft(
+  late final FleetIntentDraft _initial = FleetIntentDraft(
     kind: _kinds.firstOrNull ?? FleetIntentKind.statusQuestion,
     projectKey: widget.access.projects.length == 1
         ? widget.access.projects.single
         : null,
   );
+  late FleetIntentDraft _draft = _initial;
   bool _attempted = false;
   bool _sending = false;
   FleetAccessFailure? _failure;
@@ -70,7 +71,7 @@ class _FleetRequestFormPageState extends State<FleetRequestFormPage> {
     });
     try {
       await widget.submit(_draft);
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) Navigator.of(context).pop(_draft);
     } on FleetAccessException catch (error) {
       if (mounted) {
         setState(() {
@@ -81,6 +82,19 @@ class _FleetRequestFormPageState extends State<FleetRequestFormPage> {
     }
   }
 
+  /// A filled form asks before it is thrown away.
+  Future<void> _confirmDiscard() async {
+    final l10n = context.l10n;
+    final discard = await showAppConfirmDialog(
+      context: context,
+      title: l10n.mastermindFleetAccessDiscardTitle,
+      confirmLabel: l10n.mastermindFleetAccessDiscard,
+      cancelLabel: l10n.mastermindFleetAccessKeepEditing,
+      destructive: true,
+    );
+    if (discard && mounted) Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
@@ -89,7 +103,10 @@ class _FleetRequestFormPageState extends State<FleetRequestFormPage> {
         ? _draft.validate()
         : const <FleetDraftField, FleetDraftError>{};
     return PopScope(
-      canPop: !_sending,
+      canPop: !_sending && _draft == _initial,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_sending) unawaited(_confirmDiscard());
+      },
       child: Scaffold(
         backgroundColor: tokens.colorScheme.background,
         body: SafeArea(
@@ -148,6 +165,8 @@ class _FleetRequestFormPageState extends State<FleetRequestFormPage> {
                               draft: _draft,
                               kinds: _kinds,
                               projects: widget.access.projects,
+                              needsOwnerApproval: _draft.kind
+                                  .needsOwnerApproval(widget.access),
                               errors: errors,
                               enabled: !_sending,
                               onChanged: _update,

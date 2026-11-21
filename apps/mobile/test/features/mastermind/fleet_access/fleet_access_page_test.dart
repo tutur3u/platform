@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsValidationResult;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,9 @@ import 'package:mobile/features/mastermind/fleet_access/data/fleet_intent_draft.
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_page.dart';
+import 'package:mobile/features/mastermind/today_more/mastermind_today_more.dart';
+import 'package:mobile/features/mastermind/today_more/mastermind_today_more_item.dart';
+import 'package:mobile/features/mastermind/today_more/mastermind_today_more_items.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
 import '../../../helpers/pump_app.dart';
@@ -43,41 +48,67 @@ void main() {
 
   group('entry visibility', () {
     late ShellChromeActionsCubit chrome;
+    late List<String> opened;
 
-    setUp(() => chrome = ShellChromeActionsCubit());
+    setUp(() {
+      chrome = ShellChromeActionsCubit();
+      opened = [];
+    });
     tearDown(() => chrome.close());
 
-    Future<void> pumpEntry(WidgetTester tester) => pump(
+    Future<void> pumpMenu(
+      WidgetTester tester, {
+      List<MastermindTodayMoreItem> items = mastermindTodayMoreItems,
+    }) => pump(
       tester,
       BlocProvider<ShellChromeActionsCubit>.value(
         value: chrome,
-        child: const FleetAccessTodayAction(),
+        child: MastermindTodayMoreMenu(
+          items: items,
+          open: (_, route) => opened.add(route),
+        ),
       ),
     );
 
-    Iterable<String> todayActions() => chrome.state
-        .resolveForLocation(Routes.mastermind)
-        .map((action) => action.id);
+    List<ShellActionSpec> todayActions() =>
+        chrome.state.resolveForLocation(Routes.mastermind);
 
-    testWidgets('hidden while disabled', (tester) async {
+    testWidgets('Today has no More menu while Fleet access is disabled', (
+      tester,
+    ) async {
       source.accessAnswers
         ..clear()
         ..add(const FleetAccess.disabled());
-      await pumpEntry(tester);
+      await pumpMenu(tester);
       expect(source.accessCalls, 1);
       expect(todayActions(), isEmpty);
     });
 
-    testWidgets('shown on Today while enabled, gone once revoked', (
+    testWidgets('Fleet access is the first More item while enabled', (
+      tester,
+    ) async {
+      await pumpMenu(tester);
+      expect(todayActions().map((a) => a.id), ['mastermind-today-more']);
+      expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
+
+      todayActions().single.onPressed!();
+      await tester.pumpAndSettle();
+      expect(find.text('More'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('mastermind-today-more-fleet-access')),
+      );
+      await tester.pumpAndSettle();
+      expect(opened, [Routes.mastermindFleetAccess]);
+    });
+
+    testWidgets('a revoke mid-session drops the item and the menu', (
       tester,
     ) async {
       source.accessAnswers
         ..clear()
         ..addAll([observerAccess, const FleetAccess.disabled()]);
-      await pumpEntry(tester);
-      expect(todayActions(), ['mastermind-fleet-access']);
-      expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
-
+      await pumpMenu(tester);
+      expect(todayActions(), hasLength(1));
       await access.handleForbidden();
       await tester.pumpAndSettle();
       expect(todayActions(), isEmpty);
@@ -87,8 +118,48 @@ void main() {
       source.accessAnswers
         ..clear()
         ..add(fleetApiError(503));
-      await pumpEntry(tester);
+      await pumpMenu(tester);
       expect(todayActions(), isEmpty);
+    });
+
+    testWidgets('another item is one more list entry', (tester) async {
+      source.accessAnswers
+        ..clear()
+        ..add(const FleetAccess.disabled());
+      await pumpMenu(
+        tester,
+        items: [
+          fleetAccessTodayMoreItem,
+          MastermindTodayMoreItem(
+            id: 'people',
+            label: (_) => 'People',
+            icon: Icons.people_outline,
+            route: '/mastermind/people',
+          ),
+        ],
+      );
+      todayActions().single.onPressed!();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('mastermind-today-more-fleet-access')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('mastermind-today-more-people')),
+      );
+      await tester.pumpAndSettle();
+      expect(opened, ['/mastermind/people']);
+    });
+
+    testWidgets('an account switch asks again for the new account', (
+      tester,
+    ) async {
+      await pumpMenu(tester);
+      expect(source.accessCalls, 1);
+      access.reset();
+      await tester.pumpAndSettle();
+      expect(source.accessCalls, 2);
+      expect(todayActions(), hasLength(1));
     });
 
     testWidgets('the Requests entry follows the same answer', (tester) async {
@@ -290,9 +361,88 @@ void main() {
       });
       expect(find.byType(FleetAccessPage), findsOneWidget);
       expect(find.text('Waiting for approval'), findsOneWidget);
+      // An Observer files a priority change as a request for the owner.
+      expect(find.text('Sent for Owner approval.'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('marks a kind the owner must approve, at the selector', (
+      tester,
+    ) async {
+      await openForm(tester);
+      final note = find.byKey(const ValueKey('fleet-access-owner-approval'));
+      // An Observer asks directly.
+      expect(note, findsNothing);
+      await choose(tester, 'kind', 'Set priority');
+      expect(note, findsOneWidget);
+      expect(
+        tester.getSemantics(note.first),
+        matchesSemantics(label: 'Needs Owner approval', isLiveRegion: true),
+      );
+    });
+
+    testWidgets('a request this grant runs itself confirms plainly', (
+      tester,
+    ) async {
+      await openForm(tester);
+      await choose(tester, 'topic', 'Timeline');
+      await tester.tap(find.byKey(const ValueKey('fleet-access-submit')));
+      await tester.pumpAndSettle();
       expect(find.text('Request sent'), findsOneWidget);
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('closing a filled form asks first; an empty one just closes', (
+      tester,
+    ) async {
+      await openForm(tester);
+      await tester.tap(find.byTooltip('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FleetAccessPage), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('fleet-access-new-request')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('fleet-access-field-quote')),
+        'Ship it',
+      );
+      await tester.pump();
+      await tester.tap(find.byTooltip('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Discard this request?'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ship it'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FleetAccessPage), findsOneWidget);
+      expect(source.submitted, isEmpty);
+    });
+
+    testWidgets('a missing choice is part of the select semantics', (
+      tester,
+    ) async {
+      await openForm(tester);
+      await tester.tap(find.byKey(const ValueKey('fleet-access-submit')));
+      await tester.pumpAndSettle();
+      final semantics = tester.getSemantics(
+        find
+            .ancestor(
+              of: find.byKey(const ValueKey('fleet-access-field-topic')),
+              matching: find.byType(Semantics),
+            )
+            .first,
+      );
+      expect(semantics.getSemanticsData().hint, 'Required');
+      expect(
+        semantics.getSemanticsData().validationResult,
+        SemanticsValidationResult.invalid,
+      );
     });
 
     testWidgets('a refusal stays on the form with its reason', (tester) async {
@@ -309,6 +459,63 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(FleetAccessPage), findsNothing);
+    });
+  });
+
+  group('shell and layout', () {
+    testWidgets('a cold link that cannot check access offers a retry', (
+      tester,
+    ) async {
+      source.accessAnswers
+        ..clear()
+        ..addAll([fleetApiError(503), observerAccess]);
+      await pump(tester, FleetAccessPage(now: now));
+      expect(find.text("Can't reach Fleet"), findsOneWidget);
+      expect(access.state.denied, isFalse);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Release train'), findsOneWidget);
+    });
+
+    testWidgets('without Mastermind access the dock drops its tabs', (
+      tester,
+    ) async {
+      final chrome = ShellChromeActionsCubit();
+      addTearDown(chrome.close);
+      await pump(
+        tester,
+        BlocProvider<ShellChromeActionsCubit>.value(
+          value: chrome,
+          child: FleetAccessPage(now: now),
+        ),
+      );
+      expect(
+        chrome.state.actionGroupForLocation(Routes.mastermindFleetAccess),
+        isNotNull,
+      );
+      expect(chrome.state.actionGroupForLocation(Routes.mastermind), isNull);
+    });
+
+    testWidgets('four segments fit at 320 pt with 2x text', (tester) async {
+      source.accessAnswers
+        ..clear()
+        ..add(operatorAccess);
+      tester.view.physicalSize = const Size(320, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpApp(
+        BlocProvider<FleetAccessCubit>.value(
+          value: access,
+          child: Scaffold(body: FleetAccessPage(now: now)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      for (final label in ['Status', 'Requests', 'Chat link', 'Approvals']) {
+        expect(find.text(label), findsOneWidget);
+      }
     });
   });
 

@@ -9217,7 +9217,7 @@
   "mastermindFleetAccessSubmit": "Send request",
   "mastermindFleetAccessSubmitted": "Request sent",
   "mastermindFleetAccessChoose": "Choose",
-  "mastermindFleetAccessFieldKind": "Request",
+  "mastermindFleetAccessFieldKind": "Request type",
   "mastermindFleetAccessFieldProject": "Project",
   "mastermindFleetAccessFieldTopic": "Topic",
   "mastermindFleetAccessFieldTarget": "Target",
@@ -9301,5 +9301,10 @@
       }
     }
   },
-  "mastermindFleetAccessApprovalsUnavailable": "Approvals aren't available in the app yet"
+  "mastermindFleetAccessApprovalsUnavailable": "Approvals aren't available in the app yet",
+  "mastermindFleetAccessNeedsOwnerApproval": "Needs Owner approval",
+  "mastermindFleetAccessSentForOwnerApproval": "Sent for Owner approval.",
+  "mastermindFleetAccessDiscardTitle": "Discard this request?",
+  "mastermindFleetAccessDiscard": "Discard",
+  "mastermindFleetAccessKeepEditing": "Keep editing"
 }

@@ -292,6 +292,11 @@ enum FleetIntentKind implements FleetWireValue {
   bool offeredBy(FleetAccess access) =>
       access.can(capability) ||
       (this != statusQuestion && access.can('intent.request'));
+
+  /// Offered only as a request for the owner, who must approve the exact
+  /// action before anything runs.
+  bool needsOwnerApproval(FleetAccess access) =>
+      offeredBy(access) && !access.can(capability);
 }
 
 /// A requester receipt from `GET /api/v1/fleet/intents`.

@@ -206,12 +206,14 @@ nothing; the API enforces every rule.
   with the title "Fleet access" ("Quyền truy cập đội máy") and no dock tab.
   `?view=requests`, `?view=link` and `?view=approvals` open a segment, and
   the app link `/mastermind/fleet-access/requests` (or `link`, `approvals`)
-  opens the same segment. Today's navbar action and Inbox's Requests row
-  appear only while Fleet access is admitted. The code lives in
+  opens the same segment. No Mastermind screen links to the view, so the
+  route and the app link are its only entries. Without Mastermind access the
+  dock keeps Back and drops the Mastermind tabs. The code lives in
   `apps/mobile/lib/features/mastermind/fleet_access/`.
 - **Gate:** only `GET /api/v1/fleet/access` decides. The route is held on a
-  skeleton while the check runs, then redirected to the Apps hub when the
-  answer is disabled, stopped or failed. The owner-only Mastermind gate does
+  skeleton while the check runs and redirected to the Apps hub when the
+  answer is disabled or stopped, or the check is refused. A check that cannot
+  finish shows a retry. The owner-only Mastermind gate does
   not apply to it. The answer is never stored, so there is no offline
   fallback. A 403 from any Fleet call, an app resume and pull to refresh
   re-check it, and logout or an account switch forgets it.
@@ -221,9 +223,12 @@ nothing; the API enforces every rule.
 - **Requests:** the person's own receipts, newest first, with their typed
   state and Show older. New request opens a full-screen form above the shell.
   It offers the kinds the grant files directly or as `intent.request`, the
-  grant's projects, and only the enumerated fields the kind sends. Target
-  keys and commit SHAs are checked against the API syntax before sending.
-  A refusal stays on the form with a fixed category message.
+  grant's projects, and only the enumerated fields the kind sends. A kind the
+  grant files only as `intent.request` is marked "Needs Owner approval", and
+  sending it confirms "Sent for Owner approval." Target keys and commit SHAs
+  are checked against the API syntax before sending. Closing a filled form
+  asks before discarding it, and a refusal stays on the form with a fixed
+  category message.
 - **Link chat:** take a code (Copy, ten-minute countdown, a new code once it
   expires), send it to Mira in a private chat, paste the link ID and
   confirmation code Mira replies with, check the channel and desk account,

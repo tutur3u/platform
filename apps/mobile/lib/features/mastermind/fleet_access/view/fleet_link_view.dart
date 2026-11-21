@@ -162,6 +162,8 @@ class _IssuedState extends State<_Issued> {
               ),
               AppTextField(
                 key: const ValueKey('fleet-access-link-id'),
+                autocorrect: false,
+                enableSuggestions: false,
                 controller: _linkId,
                 enabled: !busy,
                 label: l10n.mastermindFleetAccessLinkIdField,
@@ -170,6 +172,8 @@ class _IssuedState extends State<_Issued> {
               ),
               AppTextField(
                 key: const ValueKey('fleet-access-link-confirmation'),
+                autocorrect: false,
+                enableSuggestions: false,
                 controller: _confirmation,
                 enabled: !busy,
                 label: l10n.mastermindFleetAccessLinkConfirmationField,

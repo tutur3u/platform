@@ -34,13 +34,15 @@ class FleetRequestsView extends StatelessWidget {
       access: access,
       submit: cubit.submit,
     );
-    if (sent == true && context.mounted) {
-      showAppToast(
-        context,
-        message: context.l10n.mastermindFleetAccessSubmitted,
-        variant: AppAlertVariant.success,
-      );
-    }
+    if (sent == null || !context.mounted) return;
+    final l10n = context.l10n;
+    showAppToast(
+      context,
+      message: sent.kind.needsOwnerApproval(access)
+          ? l10n.mastermindFleetAccessSentForOwnerApproval
+          : l10n.mastermindFleetAccessSubmitted,
+      variant: AppAlertVariant.success,
+    );
   }
 
   @override

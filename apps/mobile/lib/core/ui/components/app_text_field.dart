@@ -35,6 +35,8 @@ class AppTextField extends StatelessWidget {
     this.inputFormatters,
     this.autofillHints,
     this.obscureText = false,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
     this.autofocus = false,
     this.enabled = true,
     this.readOnly = false,
@@ -74,6 +76,10 @@ class AppTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final List<TextInputFormatter>? inputFormatters;
   final Iterable<String>? autofillHints;
+
+  /// Off for codes and identifiers, which a correction would break.
+  final bool autocorrect;
+  final bool enableSuggestions;
   final bool obscureText;
   final bool autofocus;
   final bool enabled;
@@ -124,6 +130,8 @@ class AppTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       autofillHints: autofillHints,
       obscureText: obscureText,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       autofocus: autofocus,
       enabled: enabled,
       readOnly: readOnly,

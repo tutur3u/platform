@@ -18701,7 +18701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFleetAccessChoose => 'Choose';
 
   @override
-  String get mastermindFleetAccessFieldKind => 'Request';
+  String get mastermindFleetAccessFieldKind => 'Request type';
 
   @override
   String get mastermindFleetAccessFieldProject => 'Project';
@@ -18888,4 +18888,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessApprovalsUnavailable => 'Approvals aren\'t available in the app yet';
+
+  @override
+  String get mastermindFleetAccessNeedsOwnerApproval => 'Needs Owner approval';
+
+  @override
+  String get mastermindFleetAccessSentForOwnerApproval => 'Sent for Owner approval.';
+
+  @override
+  String get mastermindFleetAccessDiscardTitle => 'Discard this request?';
+
+  @override
+  String get mastermindFleetAccessDiscard => 'Discard';
+
+  @override
+  String get mastermindFleetAccessKeepEditing => 'Keep editing';
 }
