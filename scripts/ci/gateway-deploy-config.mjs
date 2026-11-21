@@ -325,7 +325,17 @@ export async function captureGatewaySettings(request = gatewayRequest) {
     );
   }
   await assertServingGateway(serving, request);
-  return { success: true, result: { ...serving, bindings } };
+  // The version message records the build commit (`gateway <sha> ...`);
+  // gateway-no-downgrade.mjs reads it to refuse replacing a newer gateway.
+  const message = version.annotations?.['workers/message'];
+  return {
+    success: true,
+    result: {
+      ...serving,
+      message: typeof message === 'string' ? message : null,
+      bindings,
+    },
+  };
 }
 
 async function main([command, ...args]) {

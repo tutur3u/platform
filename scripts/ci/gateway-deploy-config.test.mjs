@@ -95,12 +95,17 @@ test('captures only the settings of the gateway version at 100% traffic', async 
     requests.push(resource);
     if (resource === '/deployments') return deployments;
     assert.equal(resource, `/versions/${serving}`);
-    return { id: serving, resources: { bindings: live } };
+    return {
+      id: serving,
+      annotations: { 'workers/message': `gateway ${'a'.repeat(40)}` },
+      resources: { bindings: live },
+    };
   };
   const snapshot = await captureGatewaySettings(request);
   assert.deepEqual(snapshot.result, {
     deploymentId,
     versionId: serving,
+    message: `gateway ${'a'.repeat(40)}`,
     bindings: live,
   });
   assert.deepEqual(requests, [

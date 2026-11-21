@@ -84,6 +84,16 @@ reads and versions `tuturuuu-gateway`:
    bindings, or deploy environment. The pre-write log shows family IDs and the
    presence of these settings without exposing origin or bypass values.
 
+   The gateway is also deployed from newer `main` commits, so the job never
+   downgrades it: `scripts/ci/gateway-no-downgrade.mjs` reads the build commit
+   from the serving version's `gateway <sha>` message and compares it with the
+   job's commit through the GitHub compare API. It uploads and deploys only when
+   the live gateway is an ancestor. A live gateway on the same commit, a
+   descendant, a diverged or unknown commit skips the upload and deploy with a
+   notice. An unparseable message also skips unless a `workflow_dispatch` run
+   sets `gateway-force-unparseable`. Even after the guard passes, CI moves
+   gateway traffic only when `GATEWAY_CF_VERSION_UPLOAD_LIVE` is `true`.
+
 Turning a family on: set its Worker secrets (names in `<family>.env.json`),
 mark it `"activated": true` in `families.json` in a reviewed commit, add its id
 to `GATEWAY_WEB_FAMILIES`, and rerun the gateway job. The gateway deploy refuses

@@ -16,6 +16,8 @@ on:
       - 'scripts/ci/gateway-deploy-config.mjs'
       - 'scripts/ci/gateway-cf-publication.mjs'
       - 'scripts/ci/gateway-cf-traffic.mjs'
+      - 'scripts/ci/gateway-no-downgrade.mjs'
+      - 'scripts/ci/verify-cloudflare-web-production.mjs'
       - 'scripts/ci/void-cf-publisher.mjs'
       - 'scripts/ci/fixtures/gateway-settings-fixture.json'
       - 'tuturuuu.ci.ts'
@@ -36,6 +38,11 @@ on:
         required: false
         default: ''
         type: string
+      gateway-force-unparseable:
+        description: 'Deploy the gateway even when the serving version message has no build commit'
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: read
 # One run per commit; production deploys queue instead of cancelling.
@@ -343,7 +350,7 @@ jobs:
           node-version: 24
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/gateway test
-      - run: node --test scripts/ci/gateway-deploy-config.test.mjs
+      - run: node --test scripts/ci/gateway-deploy-config.test.mjs scripts/ci/gateway-no-downgrade.test.mjs
       - name: Capture the gateway version serving traffic
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
@@ -351,6 +358,15 @@ jobs:
           node scripts/ci/gateway-deploy-config.mjs capture "$RUNNER_TEMP/gateway-settings.json"
           # Names and types only in the log; values stay in the file.
           jq -r '.result.bindings[] | "\(.type) \(.name)"' "$RUNNER_TEMP/gateway-settings.json"
+      # The gateway is also deployed from newer main commits. Never replace a
+      # live gateway built from this commit or a descendant of it.
+      - name: Refuse to downgrade the live gateway
+        id: no-downgrade
+        env:
+          TARGET_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GATEWAY_FORCE_UNPARSEABLE: ${{ github.event_name == 'workflow_dispatch' && inputs['gateway-force-unparseable'] && 'true' || 'false' }}
+        run: node scripts/ci/gateway-no-downgrade.mjs "$RUNNER_TEMP/gateway-settings.json"
       # A flagged family must have its Worker and every secret name its config
       # requires before the gateway sends traffic to it.
       - name: Verify flagged family Workers and secret names
@@ -387,7 +403,7 @@ jobs:
           node scripts/ci/gateway-cf-publication.mjs rehearse \
             "$RUNNER_TEMP/gateway-settings.json"
       - name: Upload the gateway version (cf prebuilt, version-only at 0%)
-        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
+        if: steps.no-downgrade.outputs.deploy == 'true' && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
         env:
           GATEWAY_CF_VERSION_UPLOAD_LIVE: 'true'
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
@@ -402,7 +418,7 @@ jobs:
           echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
           echo "Uploaded gateway version $version via cf workers versions create --prebuilt (0% traffic until deploy step)."
       - name: Upload the gateway version (Wrangler publisher fallback)
-        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'
+        if: steps.no-downgrade.outputs.deploy == 'true' && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'
         working-directory: apps/gateway
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
@@ -413,7 +429,9 @@ jobs:
           version=$(grep -oE 'Worker Version ID: [0-9a-f-]{36}' "$RUNNER_TEMP/gateway-upload.txt" | awk '{print $4}')
           test -n "$version" || { echo "::error::no version id in the upload output"; exit 1; }
           echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
+      # CI moves gateway traffic only when GATEWAY_CF_VERSION_UPLOAD_LIVE is set.
       - name: Deploy gateway traffic with cf
+        if: steps.no-downgrade.outputs.deploy == 'true' && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
