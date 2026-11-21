@@ -143,16 +143,25 @@ export async function getTaskScheduleBatch(
   };
   const ids = [...new Set(taskIds)].sort();
   const client = getTaskApiClient(options);
+  const chunks: string[][] = [];
   for (let offset = 0; offset < ids.length; offset += 100) {
-    const chunk = await client.json<TaskScheduleBatchResponse>(
-      `/api/v1/workspaces/${encodePathSegment(wsId)}/tasks/schedule-batch`,
-      {
-        method: 'GET',
-        cache: 'no-store',
-        signal,
-        query: { taskIds: ids.slice(offset, offset + 100).join(','), personal },
-      }
-    );
+    chunks.push(ids.slice(offset, offset + 100));
+  }
+  // The route caps each read at 100 ids; independent chunks load together.
+  const responses = await Promise.all(
+    chunks.map((chunk) =>
+      client.json<TaskScheduleBatchResponse>(
+        `/api/v1/workspaces/${encodePathSegment(wsId)}/tasks/schedule-batch`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+          signal,
+          query: { taskIds: chunk.join(','), personal },
+        }
+      )
+    )
+  );
+  for (const chunk of responses) {
     Object.assign(result.minutesByTaskId, chunk.minutesByTaskId);
     Object.assign(result.settingsByTaskId, chunk.settingsByTaskId);
   }

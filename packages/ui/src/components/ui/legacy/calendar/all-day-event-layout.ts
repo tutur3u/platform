@@ -12,7 +12,24 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+/** Rows the collapsed all-day lane may use, including its "+N" row. */
 export const MAX_EVENTS_DISPLAY = 2;
+
+/**
+ * Event rows a day shows in the all-day lane. A collapsed day that overflows
+ * keeps its last row for the "+N" toggle, so the lane never grows past
+ * MAX_EVENTS_DISPLAY rows until a day is expanded.
+ */
+export function allDayVisibleRows(total: number, expanded: boolean) {
+  const overflows = total > MAX_EVENTS_DISPLAY;
+  const events = expanded || !overflows ? total : MAX_EVENTS_DISPLAY - 1;
+  return {
+    events,
+    hidden: total - events,
+    /** Rows including the toggle row ("+N" collapsed, "show less" expanded). */
+    rows: overflows ? events + 1 : events,
+  };
+}
 function getZonedDay(date: Date, _zone?: string) {
   return dayjs(date).startOf('day');
 }
@@ -304,13 +321,11 @@ export function calculateAllDayEventLayout(
   eventsByDay.forEach((dayEvents, dayIndex) => {
     const dateKey = calendarDayKey(visibleDates[dayIndex]!);
 
-    const shouldShowAll = dayEvents.length === MAX_EVENTS_DISPLAY + 1;
-    const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
-    const visibleCount = isExpanded
-      ? dayEvents.length
-      : Math.min(dayEvents.length, MAX_EVENTS_DISPLAY);
-
-    maxVisibleEventsPerDay = Math.max(maxVisibleEventsPerDay, visibleCount);
+    const { rows } = allDayVisibleRows(
+      dayEvents.length,
+      expandedDates.includes(dateKey)
+    );
+    maxVisibleEventsPerDay = Math.max(maxVisibleEventsPerDay, rows);
   });
 
   return {

@@ -7,6 +7,7 @@ import { calendarEventStyle } from '@tuturuuu/utils/calendar-event-colors';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import timezone from 'dayjs/plugin/timezone';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -16,6 +17,7 @@ import {
 import {
   calculateAllDayEventLayout,
   type EventSpan,
+  allDayVisibleRows,
   MAX_EVENTS_DISPLAY,
 } from './all-day-event-layout';
 import { MIN_COLUMN_WIDTH } from './config';
@@ -63,6 +65,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     preservePastEventOpacity,
   } = useCalendar();
   const { allDayEvents } = useCalendarSync();
+  const t = useTranslations('calendar');
   const now = useCalendarClock();
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
@@ -442,12 +445,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             const dateKey = calendarDayKey(date);
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
-            const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
-            const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
-            const hiddenCount =
-              !isExpanded && !shouldShowAll
-                ? Math.max(0, dateEvents.length - MAX_EVENTS_DISPLAY)
-                : 0;
+            const isExpanded = expandedDates.includes(dateKey);
+            const { events: visibleCount, hidden: hiddenCount } =
+              allDayVisibleRows(dateEvents.length, isExpanded);
 
             const isDropTarget =
               dragState.isDragging && dragState.targetDateIndex === dateIndex;
@@ -461,48 +461,34 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   'group flex h-full flex-col justify-start border-l transition-colors duration-200 last:border-r',
                   isDropTarget &&
                     !isOriginalColumn &&
-                    'border-blue-300 bg-blue-100 dark:border-blue-700 dark:bg-blue-900/30',
-                  isOriginalColumn &&
-                    'border-red-300 bg-red-100 dark:border-red-700 dark:bg-red-900/30',
+                    'border-dynamic-blue/40 bg-dynamic-blue/10',
+                  isOriginalColumn && 'border-dynamic-red/40 bg-dynamic-red/10',
                   !dragState.isDragging && 'hover:bg-muted/20'
                 )}
               >
-                {/* Show/hide expansion button */}
-                {hiddenCount > 0 && (
-                  <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
+                {(hiddenCount > 0 ||
+                  (isExpanded && dateEvents.length > MAX_EVENTS_DISPLAY)) && (
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    className="absolute z-10 flex h-6 items-center justify-center gap-1 rounded-sm px-2 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
-                      position: 'absolute',
-                      top: `${locationTopOffset + MAX_EVENTS_DISPLAY * 1.7}rem`,
+                      top: `${locationTopOffset + visibleCount * 1.6 + 0.25}rem`,
                       left: `${(dateIndex * 100) / visibleDates.length}%`,
                       width: `${100 / visibleDates.length}%`,
-                      zIndex: 10,
                     }}
                   >
-                    <ChevronDown className="mr-1 h-3 w-3" />
-                    {hiddenCount} more
-                  </div>
+                    {isExpanded ? (
+                      <ChevronUp className="size-3" />
+                    ) : (
+                      <ChevronDown className="size-3" />
+                    )}
+                    {isExpanded
+                      ? t('all_day_show_less')
+                      : t('all_day_more', { count: hiddenCount })}
+                  </button>
                 )}
-
-                {isExpanded &&
-                  !shouldShowAll &&
-                  dateEvents.length > MAX_EVENTS_DISPLAY && (
-                    <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
-                      onClick={() => toggleDateExpansion(dateKey)}
-                      style={{
-                        position: 'absolute',
-                        top: `${locationTopOffset + dateEvents.length * 1.7}rem`,
-                        left: `${(dateIndex * 100) / visibleDates.length}%`,
-                        width: `${100 / visibleDates.length}%`,
-                        zIndex: 10,
-                      }}
-                    >
-                      <ChevronUp className="mr-1 h-3 w-3" />
-                      Show less
-                    </div>
-                  )}
               </div>
             );
           })}
@@ -515,7 +501,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             <div
               className={cn(
                 'absolute rounded-sm border-2 border-dashed transition-all duration-150',
-                'border-blue-400 bg-blue-100/60 dark:border-blue-600 dark:bg-blue-900/30',
+                'border-dynamic-blue/50 bg-dynamic-blue/10',
                 'pointer-events-none'
               )}
               style={{
@@ -551,13 +537,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
             const dateKey = calendarDayKey(date);
 
-            const dateEvents = getUniqueEventsForDate(dateIndex);
-            const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
-            const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
-            const visibleCount = isExpanded
-              ? dateEvents.length
-              : Math.min(dateEvents.length, MAX_EVENTS_DISPLAY);
-
+            const { events: visibleCount } = allDayVisibleRows(
+              getUniqueEventsForDate(dateIndex).length,
+              expandedDates.includes(dateKey)
+            );
             return eventRow >= visibleCount;
           });
 

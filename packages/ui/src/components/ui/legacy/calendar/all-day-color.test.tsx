@@ -34,6 +34,7 @@ vi.mock('./settings/settings-context', () => ({
   }),
 }));
 vi.mock('./location-timeline', () => ({ LocationTimeline: () => null }));
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
 import { AllDayEventBar } from './all-day-event-bar';
 

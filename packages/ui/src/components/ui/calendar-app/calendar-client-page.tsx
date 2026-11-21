@@ -74,7 +74,7 @@ export function CalendarClientPage({
   );
 
   return (
-    <div className="w-full min-w-0 overflow-hidden">
+    <div className="w-full min-w-0 flex-1 overflow-hidden">
       {needsCalendarGate && (
         <RequireWorkspaceTimezoneDialog
           wsId={workspace.id}

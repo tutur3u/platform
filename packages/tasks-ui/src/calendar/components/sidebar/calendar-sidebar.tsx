@@ -17,6 +17,12 @@ import TimeTracker from '../time-tracker';
 const SIDEBAR_COLLAPSED_KEY = 'calendar-sidebar-collapsed';
 /** The plan panel sits beside the grid from this width; below it, a sheet. */
 const INLINE_PANEL_QUERY = '(min-width: 1280px)';
+/**
+ * Radix wraps scroll content in a `display: table` box that grows with its
+ * widest child; forcing it to a block keeps cards inside the panel width.
+ */
+const PANEL_SCROLL_CLASS =
+  'h-full min-w-0 [&_[data-radix-scroll-area-viewport]>div]:block! [&_[data-radix-scroll-area-viewport]>div]:min-w-0! [&_[data-radix-scroll-area-viewport]>div]:max-w-full';
 
 interface CalendarSidebarProps {
   wsId: string;
@@ -39,7 +45,10 @@ function PlanPanelBody({
 }: PanelBodyProps) {
   const t = useTranslations('calendar.plan_panel');
   return (
-    <Tabs defaultValue="tasks" className="flex min-h-0 flex-1 flex-col gap-2">
+    <Tabs
+      defaultValue="tasks"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-2"
+    >
       <TabsList className="mx-3 grid h-8 grid-cols-2">
         <TabsTrigger value="tasks" className="gap-1.5 text-xs">
           {t('tasks')}
@@ -54,7 +63,7 @@ function PlanPanelBody({
         </TabsTrigger>
       </TabsList>
       <TabsContent value="tasks" className="mt-0 min-h-0 flex-1">
-        <ScrollArea className="h-full">
+        <ScrollArea className={PANEL_SCROLL_CLASS}>
           <div className="px-3 pb-3">
             <PriorityView
               wsId={wsId}
@@ -66,7 +75,7 @@ function PlanPanelBody({
         </ScrollArea>
       </TabsContent>
       <TabsContent value="habits" className="mt-0 min-h-0 flex-1">
-        <ScrollArea className="h-full">
+        <ScrollArea className={PANEL_SCROLL_CLASS}>
           <div className="px-3 pb-3">
             <HabitsPanel wsId={wsId} onEventCreated={onEventCreated} />
           </div>
@@ -166,7 +175,7 @@ export function CalendarSidebar({
       {!isCollapsed && (
         <aside
           aria-label={t('title')}
-          className="ml-2 hidden h-full w-70 shrink-0 flex-col border-border border-l bg-background xl:flex 2xl:w-80"
+          className="ml-2 hidden h-full w-72 min-w-0 shrink-0 flex-col overflow-hidden border-border border-l bg-background xl:flex 2xl:w-80"
         >
           <PlanPanelHeader
             title={<h2 className="font-medium text-sm">{t('title')}</h2>}
@@ -191,7 +200,7 @@ export function CalendarSidebar({
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent
           side="right"
-          className="flex w-80 flex-col gap-0 p-0 sm:max-w-80"
+          className="flex w-full max-w-80 flex-col gap-0 overflow-hidden p-0 sm:max-w-80"
         >
           <PlanPanelHeader
             title={

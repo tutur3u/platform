@@ -6,6 +6,10 @@ import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
+/**
+ * Current-time marker: a faint rule across every visible day and a solid
+ * line with a dot on today's column.
+ */
 export const TimeIndicatorLine = ({
   columnIndex,
   columnsCount,
@@ -17,28 +21,28 @@ export const TimeIndicatorLine = ({
   const tz = settings?.timezone?.timezone;
   const now = dayjs(useCalendarClock());
   const nowTz = tz && tz !== 'auto' ? now.tz(tz) : now;
-  const hours = nowTz.hour();
-  const minutes = nowTz.minute();
-  const seconds = nowTz.second();
-
-  // Calculate total hours with decimal for precise positioning
-  const totalHours = hours + minutes / 60 + seconds / 3600;
+  const totalHours = nowTz.hour() + nowTz.minute() / 60 + nowTz.second() / 3600;
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[2px] bg-red-400 shadow-md"
+      aria-hidden
+      data-testid="calendar-now-indicator"
+      className="pointer-events-none absolute inset-x-0 top-0 z-10"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT}px)`,
         transition: 'transform 0.3s ease-out',
-        left: `${(columnIndex / columnsCount) * 100}%`,
-        width: `calc(${(1 / columnsCount) * 100}% - 0.5rem)`,
       }}
     >
-      {/* Left dot */}
-      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
-
-      {/* Right dot */}
-      {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" /> */}
+      <div className="absolute inset-x-0 -top-px h-px bg-dynamic-red/40" />
+      <div
+        className="absolute -top-px h-0.5 bg-dynamic-red"
+        style={{
+          left: `${(columnIndex / columnsCount) * 100}%`,
+          width: `${(1 / columnsCount) * 100}%`,
+        }}
+      >
+        <div className="absolute -top-1 -left-1 size-2.5 rounded-full bg-dynamic-red ring-2 ring-background" />
+      </div>
     </div>
   );
 };

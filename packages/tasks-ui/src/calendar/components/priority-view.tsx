@@ -1,6 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import type { LucideIcon } from '@tuturuuu/icons';
 import {
   Briefcase,
@@ -26,10 +25,8 @@ import {
   listWorkspaceTasks,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
-import { getTaskScheduleBatch } from '@tuturuuu/internal-api/tasks-scheduling';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -44,7 +41,7 @@ import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
-import { visibleTaskScheduleSnapshot } from './task-schedule-snapshot';
+import { useTaskScheduleBatch } from './use-task-schedule-batch';
 
 // Priority labels (matching task-properties-section.tsx)
 const PRIORITY_LABELS: Record<TaskPriority, string> = {
@@ -226,53 +223,20 @@ export default function PriorityView({
   // Quick task dialog state
   const [quickTaskDialogOpen, setQuickTaskDialogOpen] = useState(false);
 
-  // Fetch task schedule settings + scheduled minutes in one batched query.
-  // Important: schedule settings are stored per-user, so `allTasks` may not include them.
-  const tasksToFetchSchedule = useMemo(
-    () => combinedTasks.filter((t) => !t.closed_at),
+  // Schedule settings are stored per user, so `allTasks` may not include them.
+  const scheduleTaskIds = useMemo(
+    () => combinedTasks.filter((t) => !t.closed_at).map((t) => t.id),
     [combinedTasks]
   );
-
-  const actor = useWorkspaceActor();
   const {
-    data: scheduleSnapshot,
-    error: scheduleError,
-    isLoading: isLoadingScheduleBatch,
-    isFetching: isFetchingScheduleBatch,
-  } = useQuery({
-    queryKey: [
-      'task-schedule-batch',
-      actor?.actorId,
-      wsId,
-      tasksToFetchSchedule
-        .map((t) => t.id)
-        .sort()
-        .join(','),
-      isPersonalWorkspace ? 'personal' : 'workspace',
-    ],
-    queryFn: async ({ signal }) => {
-      actor?.assertActive();
-      const result = await getTaskScheduleBatch(
-        wsId,
-        tasksToFetchSchedule.map((t) => t.id),
-        isPersonalWorkspace,
-        signal
-      );
-      actor?.assertActive();
-      return result;
-    },
-    staleTime: 30000,
-    refetchOnWindowFocus: true,
-    enabled: !!actor && tasksToFetchSchedule.length > 0,
+    isLoading: isScheduleBatchLoading,
+    minutesByTaskId: scheduledMinutesMap,
+    settingsByTaskId: scheduleSettingsByTaskId,
+  } = useTaskScheduleBatch({
+    wsId,
+    taskIds: scheduleTaskIds,
+    isPersonalWorkspace,
   });
-
-  const scheduleBatch = visibleTaskScheduleSnapshot(
-    scheduleSnapshot,
-    scheduleError
-  );
-
-  const scheduledMinutesMap = scheduleBatch?.minutesByTaskId ?? {};
-  const scheduleSettingsByTaskId = scheduleBatch?.settingsByTaskId ?? {};
 
   const toggleGroup = (priorityKey: string) => {
     setCollapsedGroups((prev) => {
@@ -529,9 +493,9 @@ export default function PriorityView({
   return (
     <div className="w-full space-y-3 overflow-hidden">
       {/* Header with Search and Add Task */}
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <div
-          className={`relative flex-1 overflow-hidden rounded-lg border transition-all duration-200 ${
+          className={`relative min-w-0 flex-1 overflow-hidden rounded-lg border transition-all duration-200 ${
             isSearchFocused
               ? 'border-primary bg-background ring-1 ring-primary/20'
               : 'border-border bg-background/50 hover:bg-background/80'
@@ -668,8 +632,7 @@ export default function PriorityView({
                       const autoSchedule =
                         scheduleSettings?.auto_schedule ?? task.auto_schedule;
                       const isScheduleInfoLoading =
-                        (isLoadingScheduleBatch || isFetchingScheduleBatch) &&
-                        !hasLoadedScheduleSettings;
+                        isScheduleBatchLoading && !hasLoadedScheduleSettings;
                       // Use task completion status for visual styling
                       const isCompleted = !!task.closed_at;
 
