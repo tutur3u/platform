@@ -200,7 +200,7 @@ test(
             port: target.port,
             path,
             headers: { host },
-            // Wrangler uses a self-signed certificate for this loopback listener.
+            // The loopback listener uses a self-signed certificate.
             rejectUnauthorized: false,
           },
           (response) => {
