@@ -331,9 +331,11 @@ describe('upcoming legal changes', () => {
         const effectiveDate =
           kind === 'acceptable-use' || kind === 'community-guidelines'
             ? '2026-02-06'
-            : kind === 'privacy' || kind === 'terms' || kind === 'subprocessors'
-              ? '2026-11-12'
-              : '2026-08-15';
+            : kind === 'privacy'
+              ? '2026-11-21'
+              : kind === 'terms' || kind === 'subprocessors'
+                ? '2026-11-12'
+                : '2026-08-15';
         expect(page.querySelector('time')?.dateTime).toBe(effectiveDate);
       }
     });

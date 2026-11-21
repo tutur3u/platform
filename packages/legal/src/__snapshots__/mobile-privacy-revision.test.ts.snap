@@ -88,6 +88,13 @@ Users should normally contact their workspace administrator first for customer-c
       "tone": "blue",
     },
     {
+      "content": "When you connect a Gmail account, Tuturuuu Mail accesses your Gmail messages, labels and drafts through the Gmail API to show, organize and send your mail at your direction. Tuturuuu's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements. We do not use Gmail data for advertising, do not sell it, and do not use it to train generalized AI/ML models. Connection credentials are encrypted at rest. You can disconnect at any time in Mail settings or at https://myaccount.google.com/permissions, after which we stop accessing your account and delete the stored tokens.",
+      "icon": "lock",
+      "id": "mail-google-user-data",
+      "title": "Google user data in Tuturuuu Mail",
+      "tone": "green",
+    },
+    {
       "content": "**Push notifications.** If you sign in and turn on push notifications, your device is registered with Google Firebase Cloud Messaging and Firebase Installations so we can deliver notifications. This sends a push token and an installation identifier to Google; we link the push token to your account on our servers so we can send you notifications, and Google delivers the notification content to your device. It happens only after you sign in and turn on push, and it does not depend on your analytics choice. Before you sign in, the app does not contact Firebase. You can turn push off in the app or in your device settings.
 
 **Analytics and crash reports.** Firebase Analytics and Crashlytics are off until you choose Allow. If you do not allow, no analytics or crash data is sent. If you allow, we receive app and device identifiers (including a Firebase installation identifier), usage events, crash reports and device and operating-system information to understand how the app is used and to fix crashes. Google keeps this data for at most two months at the user level; we have turned off Google's advertising and data-sharing features for it. You can change your choice at any time in Settings > Preferences > Privacy > Share analytics and crash reports; when you turn it off, collection stops and unsent crash reports are deleted. Test builds do not collect.",
@@ -208,6 +215,13 @@ Với nội dung do khách hàng kiểm soát, người dùng thường nên li�
       "id": "meet-ai-retention",
       "title": "Giới hạn lưu giữ và xóa dữ liệu Meet",
       "tone": "blue",
+    },
+    {
+      "content": "Khi bạn kết nối một tài khoản Gmail, Tuturuuu Mail truy cập thư, nhãn và thư nháp Gmail của bạn qua Gmail API để hiển thị, sắp xếp và gửi thư theo chỉ dẫn của bạn. Việc Tuturuuu sử dụng và chuyển giao thông tin nhận được từ Google API tuân thủ Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), bao gồm các yêu cầu Limited Use. Chúng tôi không dùng dữ liệu Gmail cho quảng cáo, không bán dữ liệu này và không dùng dữ liệu này để huấn luyện các mô hình AI/ML tổng quát. Thông tin xác thực của kết nối được mã hóa khi lưu trữ. Bạn có thể ngắt kết nối bất cứ lúc nào trong phần cài đặt Mail hoặc tại https://myaccount.google.com/permissions; sau đó chúng tôi ngừng truy cập tài khoản của bạn và xóa các token đã lưu.",
+      "icon": "lock",
+      "id": "mail-google-user-data",
+      "title": "Dữ liệu người dùng Google trong Tuturuuu Mail",
+      "tone": "green",
     },
     {
       "content": "**Thông báo đẩy.** Nếu bạn đăng nhập và bật thông báo đẩy, thiết bị của bạn được đăng ký với Google Firebase Cloud Messaging và Firebase Installations để chúng tôi gửi thông báo. Việc này gửi mã thông báo đẩy và mã định danh bản cài đặt đến Google; chúng tôi gắn mã thông báo đẩy với tài khoản của bạn trên máy chủ của chúng tôi để gửi thông báo cho bạn, và Google chuyển nội dung thông báo đến thiết bị của bạn. Chỉ xảy ra sau khi bạn đăng nhập và bật thông báo đẩy, và không phụ thuộc vào lựa chọn phân tích của bạn. Trước khi đăng nhập, ứng dụng không kết nối đến Firebase. Bạn có thể tắt thông báo đẩy trong ứng dụng hoặc trong cài đặt thiết bị.

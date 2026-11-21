@@ -1,5 +1,5 @@
+import { proposeCanonicalLegalPublication } from './canonical-publication';
 import { getEffectiveCommunityPolicy } from './effective-community';
-import { proposeMeetAiLegalPublication } from './meet-ai-revision-2026-11-12';
 import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 const EFFECTIVE_DATE = '2026-08-15';
 const PUBLISHED_DATE = '2026-07-27';
@@ -693,7 +693,7 @@ export function getLegalDocument(
 ): LegalDocument {
   if (kind === 'acceptable-use' || kind === 'community-guidelines')
     return getEffectiveCommunityPolicy(kind, locale);
-  return proposeMeetAiLegalPublication(
+  return proposeCanonicalLegalPublication(
     LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind]
   );
 }

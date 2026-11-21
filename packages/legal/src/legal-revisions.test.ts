@@ -49,13 +49,13 @@ const hashes = {
 } as const;
 const meetPublicationHashes = {
   en: {
-    privacy: '1c1f7426e19c5d5be1fd01f861cf3310e166987538f7b5163d7d4af6981c11bc',
+    privacy: 'c6fa4d0d0e90fcd4635f9ea3c6138b9cef691c3ef66615606934854a6c94072a',
     terms: 'ea66220bcf79da35a338f9b2f01deffee031e7dcb82d62042423e73d8d54b038',
     subprocessors:
       '84bd25819c73538963defa626719bf1ee00e79d9f42ee1017f86fd287a392af4',
   },
   vi: {
-    privacy: '95c55d6edf986eb6e82767f8429c27b9a5d7204ac538b964ff3327e243e458d0',
+    privacy: '3956121e0a80f90e5d1a440e89b2e8b32786856459e2ef5b7523ce8177c8ed9a',
     terms: '4a854bc70815c268a0b3bfdc7dd1cdf44a3a31debe682776f72fea604283f837',
     subprocessors:
       '122ba105e557b937aa0b2777c7abd0341a54948dd3f6fcdf9daacc5488961a29',
@@ -92,9 +92,10 @@ describe('effective legal publications', () => {
       it(`${locale}/${kind} consumes the proposed dated Meet publication`, () => {
         const baseline = LEGAL_DOCUMENTS[locale][kind];
         const document = getLegalDocument(kind, locale);
-        expect(document.effectiveDate).toBe('2026-11-12');
-        expect(document.publishedDate).toBe('2026-11-12');
-        expect(document.version).toBe('2026-11-12');
+        const date = kind === 'privacy' ? '2026-11-21' : '2026-11-12';
+        expect(document.effectiveDate).toBe(date);
+        expect(document.publishedDate).toBe(date);
+        expect(document.version).toBe(date);
         expect(document.reviewRequired).toBe(true);
         expect(document.footer).toBe(baseline.footer);
         expect(document.summaryRows).toEqual(baseline.summaryRows);
@@ -104,7 +105,11 @@ describe('effective legal publications', () => {
         const additions = document.sections.slice(baseline.sections.length);
         expect(additions.length).toBeGreaterThan(0);
         expect(
-          additions.every((section) => section.id?.startsWith('meet-ai-'))
+          additions.every(
+            (section) =>
+              section.id?.startsWith('meet-ai-') ||
+              (kind === 'privacy' && section.id === 'mail-google-user-data')
+          )
         ).toBe(true);
         const text = JSON.stringify({
           effectiveDate: document.effectiveDate,
