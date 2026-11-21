@@ -10,7 +10,7 @@ import {
   type MastermindEnvironment,
   verifyAccessEmail,
 } from './auth';
-import { isFleetPath } from './fleet-admission';
+import { fleetReturnPath, isFleetPath } from './fleet-admission';
 import {
   exchangeHandoff,
   loginRedirect,
@@ -107,8 +107,15 @@ export async function mastermindRequest(
         )
       : secure(new Response('Forbidden', { status: 403 }));
   }
+  // Login and its callback precede the path gate: a grantee needs them to get
+  // a session. A grantee always returns to the Fleet page.
+  const ownerEmail = isOwnerEmail(env, email);
+  const returnPath = (raw: string | null) =>
+    ownerEmail ? safeNextPath(raw) : fleetReturnPath(safeNextPath(raw));
   if (request.method === 'GET' && url.pathname === '/login') {
-    return secure(loginRedirect(url.searchParams.get('nextUrl') ?? '/en'));
+    return secure(
+      loginRedirect(returnPath(url.searchParams.get('nextUrl') ?? '/en'))
+    );
   }
   if (request.method === 'GET' && url.pathname === '/verify-token') {
     const token = url.searchParams.get('token');
@@ -117,7 +124,7 @@ export async function mastermindRequest(
       : null;
     if (!session) return secure(new Response('Forbidden', { status: 403 }));
     const headers = new Headers({
-      Location: safeNextPath(url.searchParams.get('nextUrl')),
+      Location: returnPath(url.searchParams.get('nextUrl')),
     });
     for (const cookie of sessionCookies(session))
       headers.append('Set-Cookie', cookie);
@@ -126,7 +133,7 @@ export async function mastermindRequest(
 
   // A Fleet grantee reaches Fleet paths only; nothing else does session work.
   const fleetPath = isFleetPath(request.method, url, mount.basePath);
-  if (!isOwnerEmail(env, email) && !fleetPath) {
+  if (!ownerEmail && !fleetPath) {
     return secure(new Response('Forbidden', { status: 403 }));
   }
 
@@ -150,7 +157,7 @@ export async function mastermindRequest(
       request.method === 'GET' &&
       request.headers.get('Sec-Fetch-Mode') === 'navigate';
     return navigation
-      ? secure(loginRedirect(`${url.pathname}${url.search}`))
+      ? secure(loginRedirect(returnPath(`${url.pathname}${url.search}`)))
       : secure(new Response('Forbidden', { status: 403 }));
   }
   if (!admitsMethod(request, url, mount)) {

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { fleetResponseFixture } from '../src/fleet/fleet-fixture.ts';
+import { createFleetGrantee } from './fleet-admission.acceptance-cases.mjs';
 
 /** Every <script> in the document must carry the response's CSP nonce. */
 function assertNonceHydration(response, html) {
@@ -83,6 +84,18 @@ test(
       content +
       '.' +
       createHmac('sha256', secret).update(content).digest('base64url');
+    const grantee = createFleetGrantee({
+      app,
+      secret,
+      accessFor: (granteeEmail) =>
+        new SignJWT({ email: granteeEmail })
+          .setProtectedHeader({ alg: 'RS256', kid: 'fixture' })
+          .setIssuer('https://fixture.cloudflareaccess.com')
+          .setAudience('fixture')
+          .setIssuedAt(seconds)
+          .setExpirationTime(seconds + 300)
+          .sign(keys.privateKey),
+    });
     const plain = (value) => ({ type: 'plain_text', value });
     const require = createRequire(join(app, 'package.json'));
     let rootAccess = true;
@@ -151,6 +164,8 @@ test(
             );
             return Response.json(fleetResponseFixture(Date.now()));
           }
+          const fleet = grantee.serve(request);
+          if (fleet) return fleet;
           throw new Error('Application data reads forbidden');
         },
       },
@@ -247,6 +262,11 @@ test(
     );
     assert.equal(crossSite.status, 405);
     assert.equal(fleetReads, 2);
+    await grantee.verify(worker, {
+      ownerHeaders: headers,
+      ownerStateReads: () => fleetReads,
+      ownerChecks: () => permissionReads,
+    });
     const readsBeforeRevocation = permissionReads;
     rootAccess = false;
     assert.equal(

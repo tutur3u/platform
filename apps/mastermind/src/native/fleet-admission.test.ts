@@ -226,14 +226,115 @@ test('the session must belong to the verified Access identity', async () => {
   expect(grantFetch).not.toHaveBeenCalled();
 });
 
-test('an owner id under another email stays Fleet-only', async () => {
+test('an owner id under another email is never a grantee', async () => {
   env.OWNER_IDS = `${owner.id},${grantee.id}`;
-  expect((await call('/en')).status).toBe(403);
-  expect(await call('/en/fleet-access')).toMatchObject({
-    status: 200,
-    roles: ['fleet'],
-  });
+  for (const path of ['/en', '/en/fleet-access']) {
+    expect(await call(path)).toMatchObject({ status: 403, roles: [] });
+  }
   expect(rootFetch).not.toHaveBeenCalled();
+  expect(grantFetch).not.toHaveBeenCalled();
+});
+
+/** `GET /api/v1/fleet/access` for the configured Owner: no grant row. */
+const ownerAnswer = () =>
+  Response.json({
+    enabled: true,
+    tier: 'owner',
+    projects: ['web'],
+    capabilities: ['status.read', 'ask', 'access.grant', 'fleet.stop'],
+    stopped: false,
+  });
+
+test('the Owner tier never admits the grantee path', async () => {
+  grantFetch.mockImplementation(async () => ownerAnswer());
+  expect(await call('/en/fleet-access')).toMatchObject({
+    status: 403,
+    roles: [],
+  });
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(await exchangeHandoff('t', env, grantee.email, now)).toBeNull();
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(
+    await refreshSession(
+      new Request(`${host}/en/fleet-access`, {
+        headers: {
+          cookie: `tuturuuu_app_session_refresh=${pair(grantee).appSessionRefreshToken}`,
+        },
+      }),
+      env,
+      grantee.email,
+      now
+    )
+  ).toBeNull();
+});
+
+test('an owner id cannot get a session under another email', async () => {
+  env.OWNER_IDS = `${owner.id},${grantee.id}`;
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(await exchangeHandoff('t', env, grantee.email, now)).toBeNull();
+  expect(grantFetch).not.toHaveBeenCalled();
+  expect(
+    await refreshSession(
+      new Request(`${host}/en/fleet-access`, {
+        headers: {
+          cookie: `tuturuuu_app_session_refresh=${pair(grantee).appSessionRefreshToken}`,
+        },
+      }),
+      env,
+      grantee.email,
+      now
+    )
+  ).toBeNull();
+  expect(web).toHaveBeenCalledTimes(1);
+});
+
+test('a grantee login and callback return only to the Fleet page', async () => {
+  const returnOf = async (path: string, as = grantee) => {
+    const response = await mastermindRequest(
+      new Request(`${host}${path}`, {
+        headers: { 'Cf-Access-Jwt-Assertion': await access(as.email) },
+      }),
+      env,
+      () => new Response('unreachable'),
+      now
+    );
+    const location = response.headers.get('Location') ?? '';
+    return location.startsWith('https://tuturuuu.com/login')
+      ? new URL(
+          new URL(location).searchParams.get('returnUrl') ?? ''
+        ).searchParams.get('nextUrl')
+      : location;
+  };
+  expect(await returnOf('/login?nextUrl=%2Fen')).toBe('/en/fleet-access');
+  expect(await returnOf('/login?nextUrl=%2F_serverFn%2Fanswer')).toBe(
+    '/en/fleet-access'
+  );
+  expect(
+    await returnOf('/login?nextUrl=%2Fvi%2Ffleet-access%3Ftab%3Dlink')
+  ).toBe('/vi/fleet-access?tab=link');
+  expect(await returnOf('/login')).toBe('/en/fleet-access');
+  expect(await returnOf('/login?nextUrl=%2Fvi', owner)).toBe('/vi');
+
+  web.mockResolvedValueOnce(Response.json(pair(grantee)));
+  expect(await returnOf('/verify-token?token=t&nextUrl=%2Fen')).toBe(
+    '/en/fleet-access'
+  );
+});
+
+test('a grantee may use only GET for the page and assets', async () => {
+  for (const [path, method] of [
+    ['/en/fleet-access', 'HEAD'],
+    ['/assets/index.js', 'HEAD'],
+    ['/assets/index.js', 'POST'],
+    ['/_serverFn/fleet-access.fleetDigestFn', 'PUT'],
+    ['/_serverFn/fleet-access.fleetDigestFn', 'HEAD'],
+  ] as const) {
+    expect(await call(path, { method, headers: sameOrigin })).toMatchObject({
+      status: 403,
+      roles: [],
+    });
+  }
+  expect(grantFetch).not.toHaveBeenCalled();
 });
 
 test('the owner is unchanged and never falls back to a Fleet grant', async () => {
@@ -265,15 +366,28 @@ test('a grantee context has a Fleet actor and no owner identity', () => {
   });
 });
 
+// The compiler passes a root-relative filename and `<name>_createServerFn_handler`.
 test('only the Fleet API module gets readable server-function IDs', () => {
-  const file = '/build/apps/mastermind/src/fleet-access/api.ts';
+  const file = 'src/fleet-access/api.ts';
+  const handler = (name: string) => `${name}_createServerFn_handler`;
+  for (const name of FLEET_SERVER_FUNCTIONS) {
+    expect(
+      fleetServerFunctionId({ filename: file, functionName: handler(name) })
+    ).toBe(`fleet-access.${name}`);
+  }
   expect(
-    fleetServerFunctionId({ filename: file, functionName: 'fleetDigestFn' })
+    fleetServerFunctionId({
+      filename: 'src\\fleet-access\\api.ts',
+      functionName: handler('fleetDigestFn'),
+    })
   ).toBe('fleet-access.fleetDigestFn');
   for (const [filename, functionName] of [
-    [file, 'loadFleet'],
-    ['/build/apps/mastermind/src/fleet/server.ts', 'fleetDigestFn'],
-    ['/build/apps/mastermind/src/fleet-access/api.ts.bak', 'fleetDigestFn'],
+    [file, handler('loadFleet')],
+    [file, 'fleetDigestFn'],
+    [file, handler('fleetDigestFn_1')],
+    ['src/fleet/server.ts', handler('fleetDigestFn')],
+    ['apps/mastermind/src/fleet-access/api.ts', handler('fleetDigestFn')],
+    ['src/fleet-access/api.ts.bak', handler('fleetDigestFn')],
   ] as const) {
     expect(fleetServerFunctionId({ filename, functionName })).toBeUndefined();
   }

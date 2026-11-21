@@ -69,7 +69,10 @@ export interface IssuedSession {
   refreshExpiresAt: Date;
 }
 
-/** The owner's email admits only owner ids; another email, only itself. */
+/**
+ * The owner's email admits only owner ids. Another email admits only itself,
+ * and never an owner id.
+ */
 function mayHoldSession(
   env: MastermindEnvironment,
   email: string,
@@ -77,7 +80,7 @@ function mayHoldSession(
 ) {
   return isOwnerEmail(env, email)
     ? ownerIds(env).includes(claims.sub)
-    : claims.email === email;
+    : claims.email === email && !ownerIds(env).includes(claims.sub);
 }
 
 /**

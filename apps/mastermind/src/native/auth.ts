@@ -155,8 +155,8 @@ export function isOwnerEmail(env: MastermindEnvironment, email: string) {
 /**
  * The session must belong to the Access identity. The owner's email needs an
  * allowlisted id and live root `manage_mastermind`, as before Fleet access.
- * Any other email needs a Fleet path and a live Fleet grant, checked on every
- * request without a memo. `forbidden` marks a valid session that this path
+ * Any other email needs a Fleet path, a non-owner id and a live non-Owner
+ * Fleet grant, checked on every request without a memo. `forbidden` marks a valid session that this path
  * does not admit, so the caller answers 403 instead of sending it to login.
  */
 export async function authenticate(
@@ -176,7 +176,8 @@ export async function authenticate(
         ? { ...user, role: 'owner' }
         : null;
     }
-    if (!fleetPath) return 'forbidden';
+    // An owner id never takes the grantee path, whatever its Access email.
+    if (!fleetPath || ownerIds(env).includes(user.id)) return 'forbidden';
     return (await hasLiveFleetGrant(user.token))
       ? { ...user, role: 'fleet' }
       : 'forbidden';
