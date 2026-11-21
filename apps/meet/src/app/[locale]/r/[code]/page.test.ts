@@ -31,6 +31,7 @@ vi.mock(
   '@tuturuuu/meet-core/features/call/components/meeting-public-invite',
   () => ({
     MeetingPublicInvite: () => null,
+    AccountRequiredInvite: () => null,
   })
 );
 vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/room-access', () => ({
@@ -79,6 +80,7 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
 }));
 
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
+import { AccountRequiredInvite } from '@tuturuuu/meet-core/features/call/components/meeting-public-invite';
 import RoomPage from './page';
 
 const id = '00000000-0000-4000-8000-000000000001';
@@ -154,9 +156,9 @@ it.each(['en', 'vi'])(
       new MeetCallAccessError(401, 'Sign in to join')
     );
     const target = `${locale === 'en' ? '' : '/vi'}/r/${code}`;
-    await expect(
-      RoomPage({ params: Promise.resolve({ code, locale }) })
-    ).rejects.toThrow(`redirect:/login?next=${encodeURIComponent(target)}`);
+    const page = await RoomPage({ params: Promise.resolve({ code, locale }) });
+    expect(page.type).toBe(AccountRequiredInvite);
+    expect(page.props.returnTo).toBe(target);
   }
 );
 

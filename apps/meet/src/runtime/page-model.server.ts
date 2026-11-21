@@ -148,9 +148,7 @@ async function roomModel(code: string, locale: string, url: URL) {
             return { guestJoin: { meetingId, siteKey }, returnTo, info };
           }
           if (info) return { publicInvite: info, returnTo, info };
-          throw redirect({
-            href: `/login?next=${encodeURIComponent(returnTo)}`,
-          });
+          return { accountRequired: true as const, returnTo };
         }
         if (error.status === 403 || error.status === 404) throw notFound();
       }
@@ -170,6 +168,13 @@ async function roomModel(code: string, locale: string, url: URL) {
   if ('publicInvite' in access) {
     const { info, ...invite } = access;
     return { kind: 'public-invite' as const, ...invite, meta: roomMeta(info) };
+  }
+  if ('accountRequired' in access) {
+    return {
+      kind: 'account-required' as const,
+      returnTo: access.returnTo,
+      meta: roomMeta(null),
+    };
   }
   const [info, policy, classroomToolsEnabled] = await Promise.all([
     infoPromise,

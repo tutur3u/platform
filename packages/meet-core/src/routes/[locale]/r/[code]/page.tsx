@@ -2,7 +2,10 @@ import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-end
 import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
-import { MeetingPublicInvite } from '@tuturuuu/meet-core/features/call/components/meeting-public-invite';
+import {
+  AccountRequiredInvite,
+  MeetingPublicInvite,
+} from '@tuturuuu/meet-core/features/call/components/meeting-public-invite';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
 import {
   getMeetCallAccess,
@@ -22,7 +25,7 @@ import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 
@@ -84,7 +87,7 @@ export default async function RoomPage({
               returnTo: invite,
             };
           if (info) return { publicInvite: info, returnTo: invite };
-          redirect(`/login?next=${encodeURIComponent(invite)}`);
+          return { accountRequired: invite };
         }
         if (error.status === 403 || error.status === 404) notFound();
       }
@@ -107,6 +110,8 @@ export default async function RoomPage({
         returnTo={access.returnTo}
       />
     );
+  if ('accountRequired' in access)
+    return <AccountRequiredInvite returnTo={access.accountRequired} />;
   const {
     user,
     meeting,

@@ -6,14 +6,17 @@ import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-vi
 import { useTranslations } from 'next-intl';
 import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
 import type { MeetPageModel } from './page-model.server';
-import { MeetingPublicInvite } from './public-invite-view';
+import {
+  AccountRequiredInvite,
+  MeetingPublicInvite,
+} from './public-invite-view';
 
 export function RoomView({
   model,
 }: {
   model: Extract<
     MeetPageModel,
-    { kind: 'room' | 'public-invite' | 'guest-join' }
+    { kind: 'room' | 'public-invite' | 'guest-join' | 'account-required' }
   >;
 }) {
   const t = useTranslations('meet.call');
@@ -33,6 +36,8 @@ export function RoomView({
         returnTo={model.returnTo}
       />
     );
+  if (model.kind === 'account-required')
+    return <AccountRequiredInvite returnTo={model.returnTo} />;
   const { access, policy } = model;
   const { meeting, user, isHost, canReadWorkspace, workspaceSlug } = access;
   const requiresAccount = 'guest' in access && access.guest === true;

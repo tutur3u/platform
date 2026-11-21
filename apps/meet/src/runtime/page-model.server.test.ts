@@ -205,12 +205,20 @@ describe('room page', () => {
     });
   });
 
-  it('sends a signed-out visitor to login when the preview is private', async () => {
+  it('shows a generic sign-in document when the preview is private', async () => {
     signIn(null);
     mocks.policy.mockResolvedValue({ ...hostPolicy, settings: {} });
-    await expect(loadPageModel(`/r/${code}`)).rejects.toEqual({
-      redirect: `/login?next=${encodeURIComponent(`/r/${code}`)}`,
+    const model = await loadPageModel(`/r/${code}`);
+    expect(model).toMatchObject({
+      kind: 'account-required',
+      returnTo: `/r/${code}`,
+      meta: {
+        title: 'meet.public.meta_title',
+        description: 'meet.public.meta_private',
+        indexable: false,
+      },
     });
+    expect(JSON.stringify(model)).not.toContain('Weekly sync');
   });
 
   it('holds a signed-in guest in the lobby with their own policy', async () => {
@@ -530,9 +538,13 @@ describe('anonymous guest join', () => {
       signIn(null);
       mocks.policy.mockResolvedValue(guestHostPolicy);
       mocks.canHost.mockResolvedValue(false);
-      await expect(loadPageModel(`/r/${code}`)).rejects.toEqual({
-        redirect: `/login?next=${encodeURIComponent(`/r/${code}`)}`,
+      const model = await loadPageModel(`/r/${code}`);
+      expect(model).toMatchObject({
+        kind: 'account-required',
+        returnTo: `/r/${code}`,
+        meta: { title: 'meet.public.meta_title', indexable: false },
       });
+      expect(JSON.stringify(model)).not.toContain('Weekly sync');
     } finally {
       vi.unstubAllEnvs();
     }
