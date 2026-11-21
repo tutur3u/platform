@@ -6,6 +6,8 @@
     "start": "bun src/server.js"
   },
   "dependencies": {
-    "postgres": "^3.4.9"
+    "@tuturuuu/ai": "workspace:*",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.7"
   }
 }

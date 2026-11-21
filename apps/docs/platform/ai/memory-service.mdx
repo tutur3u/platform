@@ -20,6 +20,73 @@ metadata filters only when a route needs a narrower product or surface view.
 
 ## Runtime
 
+The Cloudflare Memory Worker is shipped dark. It uses the existing memory
+database and schema through the cache-disabled `MEMORY_DB` Hyperdrive binding.
+Query caching must stay disabled to preserve read-after-write and read-after-
+purge behavior. The checked-in Worker has no public route and
+`MEMORY_WORKER_ENABLED=false`. The hosting owner supplies the existing database
+origin, a private ingress, and distinct `MEMORY_ASSISTANT_CALLER_SECRET` and
+`MEMORY_PEOPLE_CALLER_SECRET` credentials. The runtime login inherits
+`memory_worker_runtime` and has no operator or database owner membership.
+
+The Worker derives the caller from its credential and authorizes the entire
+request before opening the database. The assistant uses the existing
+`tuturuuu.user.*.workspace.*` containers. People uses the People registry policy
+below. The legacy writer must be paused during Worker operation. Legacy
+assistant records remain readable and editable by scoped ID. Their original
+custom IDs can be ambiguous, so Worker custom-ID reconciliation applies to
+rows written through the Worker.
+
+### Worker mutation receipts
+
+Worker requests use POST and carry an exact container tag. An add with a
+previously committed custom ID in the same tag returns the existing ID, status,
+and revision. Another tag using the same caller's custom ID gets a conflict.
+`/v1/memories/read-by-custom-id` returns the row's revision and a separate
+`snapshotRevision`. `/v1/documents/list` returns the caller-wide snapshot as
+`revision`. Treat both revision fields as opaque decimal strings.
+
+`/v1/memories/purge` takes `containerTag`, an expected snapshot revision, and
+a UUID `requestId`. It can erase the tag or select up to 50 custom IDs in it.
+Assistant callers can also select a literal custom-ID prefix in the tag. A tag
+erase retires that tag. An ID erase retires only the selected identities. A
+purge atomically commits physical deletion, retirement, and a receipt with no
+memory content or provenance metadata.
+
+An unknown outcome can be reconciled by repeating the exact request with the
+same request ID. If a tag erase returns `complete: false` with more rows to
+process, use its returned revision and a fresh request ID for the next batch.
+On a revision conflict, reread the snapshot before selecting the next batch.
+Retained IDs require reconciliation before reporting completion. Replacement
+purge or forget checks the replacement's committed custom ID and revision.
+Explicit privacy erasure can proceed without a replacement.
+
+### Worker schema and stop controls
+
+The dedicated memory database uses
+`apps/supermemory/db/001_schema.sql` followed by
+`apps/supermemory/db/002_worker.sql`. This database has its own migration history.
+Validate 002 on a disposable pgvector database with 001 and legacy rows already
+present. Preserve the old rows and duplicate legacy custom IDs. Apply the
+reviewed migration through the owning database lane before binding the Worker.
+
+Each caller starts stopped with zero budget. An operator supplies a finite
+request budget and opens that caller's admission row. A stop changes the
+persisted epoch. The Worker charges one unit before starting its data transaction,
+rechecks the epoch under lock, and keeps the charge when a data operation fails.
+Setting the admission row to stopped fences queued work after any transaction
+holding its lock completes. Turning off the Worker flag prevents new database
+connections. Stop the calling feature as well to stop its metered embedding
+requests. Recovery requires explicit operator admission.
+
+The Worker caps requests at 256 KiB, list/search results at 100, search candidates
+at 400, and purge batches at 50. It has no background continuation and performs
+no automatic retries or embeddings. The disposable Postgres test in
+`apps/supermemory/src/worker/postgres.test.ts` exercises operation counts and
+stop behavior through the actual handler using a least-privilege runtime login
+and a separate fixture admin. Run the Worker tests with
+`vitest run --config apps/supermemory/vitest.config.ts`.
+
 Use `withAiMemory` for AI SDK calls when the route has a user and workspace.
 Use `ingestAiMemoryEvent`, `buildAiMemoryContext`, and the Mira-compatible tool
 executors for explicit memory reads and writes.

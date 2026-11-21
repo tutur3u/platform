@@ -2010,7 +2010,9 @@
     "apps/supermemory": {
       "name": "@tuturuuu/supermemory",
       "dependencies": {
+        "@tuturuuu/ai": "workspace:*",
         "postgres": "^3.4.9",
+        "zod": "^4.6.7",
       },
     },
     "apps/tanstack-web": {

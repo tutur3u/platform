@@ -1,0 +1,10 @@
+{
+  "name": "tuturuuu-memory",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-08-04",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "MEMORY_WORKER_ENABLED": "false",
+  },
+}
