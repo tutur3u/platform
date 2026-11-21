@@ -588,6 +588,28 @@ describe('mounted Mail handoff return', () => {
     }
   );
 
+  it.each(['/not-available', '/en/not-available', '/vi/not-available'])(
+    'serves the public %s page on the mount without the session gate',
+    async (path) => {
+      const response = await proxy(mounted(path));
+      expect(response.status).not.toBe(307);
+      expect(response.headers.get('location')).toBeNull();
+      expect(mocks.resolveMountedSession).not.toHaveBeenCalled();
+      expect(response.headers.getSetCookie()).not.toContainEqual(
+        expect.stringMatching(/^sb-|Domain=/u)
+      );
+    }
+  );
+
+  it.each(['/not-available/x', '/not-available/', '/vi/not-available/inbox'])(
+    'keeps the session gate on %s',
+    async (path) => {
+      const response = await proxy(mounted(path));
+      expect(mocks.resolveMountedSession).toHaveBeenCalled();
+      expect(response.status).toBe(307);
+    }
+  );
+
   it('returns the assurance service failure on a mounted page', async () => {
     mocks.resolveMountedSession.mockResolvedValue({
       ok: false,

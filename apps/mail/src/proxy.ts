@@ -39,13 +39,18 @@ import {
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { mailAttachmentUploadPayloadPolicy } from './lib/mail/attachment-upload-policy';
 
+const NOT_AVAILABLE_PATHS = [
+  '/not-available',
+  ...supportedLocales.map((locale) => `/${locale}/not-available`),
+];
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
   '/login',
   ...supportedLocales.map((locale) => `/${locale}/login`),
-  '/not-available',
-  ...supportedLocales.map((locale) => `/${locale}/not-available`),
+  ...NOT_AVAILABLE_PATHS,
 ];
+/** Public on both hosts; the mount's shared-session gate never applies. */
+const MOUNTED_PUBLIC_PAGES = new Set(NOT_AVAILABLE_PATHS);
 
 const authProxy = createCentralizedAuthProxy({
   canonicalOrigins: [BASE_URL],
@@ -191,7 +196,11 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     return verifyTokenResponse;
   }
 
-  const authRes = mounted ? await mountedAuth.auth(req) : await authProxy(req);
+  const authRes = mounted
+    ? MOUNTED_PUBLIC_PAGES.has(req.nextUrl.pathname)
+      ? NextResponse.next()
+      : await mountedAuth.auth(req)
+    : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   if (authRes.headers.has('Location')) {
