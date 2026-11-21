@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_blocked_sheet.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
@@ -39,7 +40,11 @@ Widget _app(
 void main() {
   final l10n = AppLocalizationsEn();
 
-  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+  for (final platform in [
+    TargetPlatform.iOS,
+    TargetPlatform.macOS,
+    TargetPlatform.android,
+  ]) {
     for (final reason in AssistantLiveBlockReason.values) {
       testWidgets('${reason.code} on ${platform.name}: copy and one primary', (
         tester,
@@ -59,20 +64,16 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final ios = platform == TargetPlatform.iOS;
-        final title = switch (reason) {
-          AssistantLiveBlockReason.planRequired when ios =>
-            l10n.assistantLiveBlockedIosPlanTitle,
-          AssistantLiveBlockReason.creditsExhausted when ios =>
-            l10n.assistantLiveBlockedIosCreditsTitle,
-          _ => eligibility.title(l10n),
-        };
-        final body = ios && reason == AssistantLiveBlockReason.planRequired
-            ? l10n.assistantLiveBlockedIosPlanBody
-            : eligibility.body(l10n, now: DateTime(2026, 11, 20, 9));
+        final apple = isAppleStorePlatform(platform);
+        final title = eligibility.title(l10n, platform: platform);
+        final body = eligibility.body(
+          l10n,
+          now: DateTime(2026, 11, 20, 9),
+          platform: platform,
+        );
         expect(find.text(title), findsOneWidget);
         expect(find.text(body), findsOneWidget);
-        if (ios && title != eligibility.title(l10n)) {
+        if (apple && title != eligibility.title(l10n)) {
           expect(find.text(eligibility.title(l10n)), findsNothing);
         }
         expect(
@@ -92,7 +93,8 @@ void main() {
           expect(closed, 1);
           return;
         }
-        // iOS never offers purchase; limits, roles and pauses never upsell.
+        // Apple store builds never offer purchase; limits, roles and pauses
+        // never upsell.
         expect(
           find.byKey(const ValueKey('live-blocked-open-billing')),
           findsNothing,

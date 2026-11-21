@@ -17159,6 +17159,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveFailureCredits => 'Không đủ tín dụng AI cho Live. Hãy nạp thêm hoặc đổi nguồn tín dụng.';
 
   @override
+  String get assistantLiveFailureCreditsNoTopUp => 'Không đủ tín dụng AI cho Live. Hãy đổi nguồn tín dụng.';
+
+  @override
   String get assistantLiveFailureNotAllowed => 'Gói của không gian làm việc này chưa bao gồm Live.';
 
   @override
@@ -17853,6 +17856,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantLiveBlockedIosCreditsTitle => 'Không đủ tín dụng để dùng Live';
+
+  @override
+  String get assistantLiveBlockedIosPlanShort => 'Không khả dụng với quyền truy cập hiện tại';
 
   @override
   String get financeInterestAnnualRatePlaceholder => 'Ví dụ: 4,5';

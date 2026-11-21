@@ -32119,6 +32119,12 @@ abstract class AppLocalizations {
   /// **'Not enough AI credits for Live. Top up or switch the credit source.'**
   String get assistantLiveFailureCredits;
 
+  /// No description provided for @assistantLiveFailureCreditsNoTopUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough AI credits for Live. Switch the credit source.'**
+  String get assistantLiveFailureCreditsNoTopUp;
+
   /// No description provided for @assistantLiveFailureNotAllowed.
   ///
   /// In en, this message translates to:
@@ -33324,6 +33330,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insufficient credits for Live'**
   String get assistantLiveBlockedIosCreditsTitle;
+
+  /// No description provided for @assistantLiveBlockedIosPlanShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable with your current access'**
+  String get assistantLiveBlockedIosPlanShort;
 
   /// No description provided for @financeInterestAnnualRatePlaceholder.
   ///

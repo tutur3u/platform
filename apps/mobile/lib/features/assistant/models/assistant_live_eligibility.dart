@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/l10n/gen/app_localizations.dart';
 
@@ -124,33 +126,52 @@ class AssistantLiveEligibility extends Equatable {
 
 /// Copy for one refusal: a short entry-point line, a sheet title and body.
 extension AssistantLiveBlockCopy on AssistantLiveEligibility {
-  String shortReason(AppLocalizations l10n) => switch (reason) {
-    AssistantLiveBlockReason.planRequired => l10n.assistantLiveBlockedPlanShort,
-    AssistantLiveBlockReason.creditsExhausted =>
-      l10n.assistantLiveBlockedCreditsShort,
-    AssistantLiveBlockReason.limitReached =>
-      l10n.assistantLiveBlockedLimitShort,
-    AssistantLiveBlockReason.roleNotAllowed =>
-      l10n.assistantLiveBlockedRoleShort,
-    AssistantLiveBlockReason.paused ||
-    null => l10n.assistantLiveBlockedPausedShort,
-  };
+  /// Apple store builds sell nothing, so [platform] (default: the running
+  /// one) selects copy that reports access without steering to a purchase.
+  String shortReason(AppLocalizations l10n, {TargetPlatform? platform}) =>
+      switch (reason) {
+        AssistantLiveBlockReason.planRequired =>
+          isAppleStorePlatform(platform)
+              ? l10n.assistantLiveBlockedIosPlanShort
+              : l10n.assistantLiveBlockedPlanShort,
+        AssistantLiveBlockReason.creditsExhausted =>
+          l10n.assistantLiveBlockedCreditsShort,
+        AssistantLiveBlockReason.limitReached =>
+          l10n.assistantLiveBlockedLimitShort,
+        AssistantLiveBlockReason.roleNotAllowed =>
+          l10n.assistantLiveBlockedRoleShort,
+        AssistantLiveBlockReason.paused ||
+        null => l10n.assistantLiveBlockedPausedShort,
+      };
 
-  String title(AppLocalizations l10n) => switch (reason) {
-    AssistantLiveBlockReason.planRequired => l10n.assistantLiveBlockedPlanTitle,
-    AssistantLiveBlockReason.creditsExhausted =>
-      l10n.assistantLiveBlockedCreditsTitle,
-    AssistantLiveBlockReason.limitReached =>
-      l10n.assistantLiveBlockedLimitTitle,
-    AssistantLiveBlockReason.roleNotAllowed =>
-      l10n.assistantLiveBlockedRoleTitle,
-    AssistantLiveBlockReason.paused ||
-    null => l10n.assistantLiveBlockedPausedTitle,
-  };
+  String title(AppLocalizations l10n, {TargetPlatform? platform}) =>
+      switch (reason) {
+        AssistantLiveBlockReason.planRequired =>
+          isAppleStorePlatform(platform)
+              ? l10n.assistantLiveBlockedIosPlanTitle
+              : l10n.assistantLiveBlockedPlanTitle,
+        AssistantLiveBlockReason.creditsExhausted =>
+          isAppleStorePlatform(platform)
+              ? l10n.assistantLiveBlockedIosCreditsTitle
+              : l10n.assistantLiveBlockedCreditsTitle,
+        AssistantLiveBlockReason.limitReached =>
+          l10n.assistantLiveBlockedLimitTitle,
+        AssistantLiveBlockReason.roleNotAllowed =>
+          l10n.assistantLiveBlockedRoleTitle,
+        AssistantLiveBlockReason.paused ||
+        null => l10n.assistantLiveBlockedPausedTitle,
+      };
 
-  String body(AppLocalizations l10n, {DateTime? now}) {
+  String body(
+    AppLocalizations l10n, {
+    DateTime? now,
+    TargetPlatform? platform,
+  }) {
     switch (reason) {
       case AssistantLiveBlockReason.planRequired:
+        if (isAppleStorePlatform(platform)) {
+          return l10n.assistantLiveBlockedIosPlanBody;
+        }
         return l10n.assistantLiveBlockedPlanBody(
           plans.map(_planName).join(', '),
         );

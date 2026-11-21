@@ -17368,6 +17368,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveFailureCredits => 'Not enough AI credits for Live. Top up or switch the credit source.';
 
   @override
+  String get assistantLiveFailureCreditsNoTopUp => 'Not enough AI credits for Live. Switch the credit source.';
+
+  @override
   String get assistantLiveFailureNotAllowed => 'Live isn\'t included in this workspace\'s plan.';
 
   @override
@@ -18068,6 +18071,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantLiveBlockedIosCreditsTitle => 'Insufficient credits for Live';
+
+  @override
+  String get assistantLiveBlockedIosPlanShort => 'Unavailable with your current access';
 
   @override
   String get financeInterestAnnualRatePlaceholder => 'e.g. 4.5';

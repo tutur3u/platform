@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
@@ -189,25 +191,31 @@ AssistantLiveUiState deriveAssistantLiveUiState({
 }
 
 /// Use the same bounded, localized error in the Live stage and chat summary.
-String assistantLiveErrorLabel(AppLocalizations l10n, String error) =>
-    switch (error) {
-      'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
-      'live_audio_unavailable' => l10n.assistantAudioUnavailable,
-      'live_reconnect_exhausted' => l10n.assistantLiveReconnectExhausted,
-      AssistantLiveFailure.paused => l10n.assistantLiveFailurePaused,
-      AssistantLiveFailure.dailyLimit => l10n.assistantLiveFailureDailyLimit,
-      AssistantLiveFailure.busy => l10n.assistantLiveFailureBusy,
-      AssistantLiveFailure.credits => l10n.assistantLiveFailureCredits,
-      AssistantLiveFailure.notAllowed => l10n.assistantLiveFailureNotAllowed,
-      AssistantLiveFailure.signedOut => l10n.assistantLiveFailureSignedOut,
-      AssistantLiveFailure.offline => l10n.assistantLiveFailureOffline,
-      AssistantLiveFailure.timeout => l10n.assistantLiveFailureTimeout,
-      AssistantLiveFailure.server => l10n.assistantLiveFailureServer,
-      AssistantLiveFailure.dropped => l10n.assistantLiveFailureDropped,
-      AssistantLiveFailure.microphonePermission =>
-        l10n.assistantLiveFailureMicrophone,
-      AssistantLiveFailure.cameraPermission => l10n.assistantLiveFailureCamera,
-      AssistantLiveFailure.noWorkspace => l10n.assistantLiveFailureNoWorkspace,
-      AssistantLiveFailure.unknown => l10n.assistantLiveFailureUnknown,
-      _ => l10n.assistantLiveDescriptionError,
-    };
+String assistantLiveErrorLabel(
+  AppLocalizations l10n,
+  String error, {
+  TargetPlatform? platform,
+}) => switch (error) {
+  'microphone_unavailable' => l10n.assistantMicrophoneUnavailable,
+  'live_audio_unavailable' => l10n.assistantAudioUnavailable,
+  'live_reconnect_exhausted' => l10n.assistantLiveReconnectExhausted,
+  AssistantLiveFailure.paused => l10n.assistantLiveFailurePaused,
+  AssistantLiveFailure.dailyLimit => l10n.assistantLiveFailureDailyLimit,
+  AssistantLiveFailure.busy => l10n.assistantLiveFailureBusy,
+  AssistantLiveFailure.credits =>
+    isAppleStorePlatform(platform)
+        ? l10n.assistantLiveFailureCreditsNoTopUp
+        : l10n.assistantLiveFailureCredits,
+  AssistantLiveFailure.notAllowed => l10n.assistantLiveFailureNotAllowed,
+  AssistantLiveFailure.signedOut => l10n.assistantLiveFailureSignedOut,
+  AssistantLiveFailure.offline => l10n.assistantLiveFailureOffline,
+  AssistantLiveFailure.timeout => l10n.assistantLiveFailureTimeout,
+  AssistantLiveFailure.server => l10n.assistantLiveFailureServer,
+  AssistantLiveFailure.dropped => l10n.assistantLiveFailureDropped,
+  AssistantLiveFailure.microphonePermission =>
+    l10n.assistantLiveFailureMicrophone,
+  AssistantLiveFailure.cameraPermission => l10n.assistantLiveFailureCamera,
+  AssistantLiveFailure.noWorkspace => l10n.assistantLiveFailureNoWorkspace,
+  AssistantLiveFailure.unknown => l10n.assistantLiveFailureUnknown,
+  _ => l10n.assistantLiveDescriptionError,
+};

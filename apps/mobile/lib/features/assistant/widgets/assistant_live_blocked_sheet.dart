@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
@@ -15,8 +16,8 @@ Uri assistantLiveBillingUri(String wsId) => Uri(
 
 /// Why Live cannot start, with one primary action and "Not now".
 ///
-/// iOS shows eligibility information. Android may open billing through
-/// [onOpenBilling].
+/// Apple store builds (iOS, macOS) show eligibility information only. Android
+/// may open billing through [onOpenBilling].
 class AssistantLiveBlockedSheet extends StatelessWidget {
   const AssistantLiveBlockedSheet({
     required this.eligibility,
@@ -48,20 +49,11 @@ class AssistantLiveBlockedSheet extends StatelessWidget {
     };
     final targetPlatform = platform ?? defaultTargetPlatform;
     final android = targetPlatform == TargetPlatform.android;
-    final ios = targetPlatform == TargetPlatform.iOS;
+    final apple = isAppleStorePlatform(targetPlatform);
     final openBilling = billingReason && android ? onOpenBilling : null;
-    final manageOnWeb = billingReason && !ios && openBilling == null;
-    final title = switch (eligibility.reason) {
-      AssistantLiveBlockReason.planRequired when ios =>
-        l10n.assistantLiveBlockedIosPlanTitle,
-      AssistantLiveBlockReason.creditsExhausted when ios =>
-        l10n.assistantLiveBlockedIosCreditsTitle,
-      _ => eligibility.title(l10n),
-    };
-    final body =
-        ios && eligibility.reason == AssistantLiveBlockReason.planRequired
-        ? l10n.assistantLiveBlockedIosPlanBody
-        : eligibility.body(l10n, now: now);
+    final manageOnWeb = billingReason && !apple && openBilling == null;
+    final title = eligibility.title(l10n, platform: targetPlatform);
+    final body = eligibility.body(l10n, now: now, platform: targetPlatform);
     return AppSheetScaffold(
       key: ValueKey('live-blocked-${eligibility.reason?.code ?? 'paused'}'),
       title: title,
