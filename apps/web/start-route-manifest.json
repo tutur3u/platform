@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 862,
+    "total": 863,
     "categories": {
-      "api": 662,
+      "api": 663,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 850 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 851 }
   },
   "routes": [
     {
@@ -3312,6 +3312,14 @@
     {
       "pattern": "/api/v1/people/changes",
       "source": "apps/web/src/app/api/v1/people/changes/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/people/events",
+      "source": "apps/web/src/app/api/v1/people/events/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

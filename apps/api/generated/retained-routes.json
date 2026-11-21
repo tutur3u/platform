@@ -2340,11 +2340,21 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/people/events",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/people/events/route.ts",
+    "sourceSha256": "a729fac7de2adbe755b32b5d2a0f6141c7e7731de18e7e0069c044b082e02ddf",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/people/recall",
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/people/recall/route.ts",
-    "sourceSha256": "700e26c97123e790d41da74cb7344b5a318816690aa74988f7ca70e6f840268b",
+    "sourceSha256": "d96650a4bf6265b950abe8fad17b41f4b8b33c0f858b8aa21f2e2f25ac6d119f",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

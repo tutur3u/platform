@@ -1212,6 +1212,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/people/events"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/people/recall"
     },
     {
