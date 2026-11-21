@@ -462,10 +462,17 @@ test('binds activated vinext families and refuses held ones', () => {
   }
   assert.throws(
     () =>
-      deployConfig(base, live, merged, {
-        ...env,
-        GATEWAY_WEB_FAMILIES: 'api-ops,dashboard',
-      }),
+      deployConfig(
+        base,
+        live,
+        gatewayFamilies(families, {
+          ...vinext,
+          families: vinext.families.map((family) =>
+            family.id === 'dashboard' ? { ...family, activated: false } : family
+          ),
+        }),
+        { ...env, GATEWAY_WEB_FAMILIES: 'api-ops,dashboard' }
+      ),
     /not activated/
   );
   const enabledOpenNext = families.families.find((family) => family.enabled);
