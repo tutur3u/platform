@@ -504,7 +504,7 @@
     "sideEffects": "writes",
     "shadow": "never",
     "source": "apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts",
-    "sourceSha256": "8aeaeae48bc7f7712147c5cb8dbc8a74f7c9dbb4ae3ed9bcf78cf30c6560e55c",
+    "sourceSha256": "e07fa739f1baa52a1c7fd35f53126d4a4f241e75f79cbda975c06bab97984aaa",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -690,6 +690,46 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/admin/qa/test-users/{userId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/qa/test-users/[userId]/route.ts",
+    "sourceSha256": "f0f59c5ede881331bbd9278532d9e718036e979834a1d4c02bf3ec42ed588968",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/qa/test-users/{userId}/session",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/qa/test-users/[userId]/session/route.ts",
+    "sourceSha256": "612f301dfb0640e792d6de2a79e0517ccada8c55ab81e6fbdcc557cd44e1a5e7",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/qa/test-users/cleanup",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/qa/test-users/cleanup/route.ts",
+    "sourceSha256": "1f4e7edbc746d5dc3e7a09b36fe562e05795a095fdadd369de3033346df43675",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/qa/test-users",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/qa/test-users/route.ts",
+    "sourceSha256": "d024dd1c738cc9869322fbdabec3846cfc4e27a2dd7f1e794fc268920f99e2ba",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/ai/chats/{chatId}",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -734,7 +774,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
-    "sourceSha256": "3736b7675550a02ab7c5bf332142dfb7565723510d95d21237df205ef19944ce",
+    "sourceSha256": "eb7dfc895e4db25e5472df1e4f23a0a8a896e29d1dfac026937eb9e49f74d24d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1614,7 +1654,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/live/token/route.ts",
-    "sourceSha256": "726e427f43d52a9ddc63078fa2171cba382849e6a47947439cf4bf49da9ad557",
+    "sourceSha256": "a52b2b3dc2cfe5d896d7c537c8cfde21ffbe116f69c2ff8605ba5ab4556c405b",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1674,7 +1714,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/state/route.ts",
-    "sourceSha256": "f08fa30d3144f6a5842245200aecda8f0b90d3caa49f5d81243b3dd077a1b53a",
+    "sourceSha256": "0fad49dab28f15d0a5e3f37e56c3b7dc92f7895797052169e43b2e11ff9655a2",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2034,7 +2074,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/platform/users/[userId]/roles/route.ts",
-    "sourceSha256": "17e44e35f840ebb71a05d180ea9c905d6de3c6507f261ee40eb8405db87e9d70",
+    "sourceSha256": "0fd3fd0837bb07d362e5b33dffb96960367b4970f32788b43dedb067b0161c15",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3414,7 +3454,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/quiz-attempts/route.ts",
-    "sourceSha256": "e5c6abd02761409d3843ebafc7773658759d298c0c3278e07ce51db6064fc630",
+    "sourceSha256": "2d97836987621865e2134563b3005b7f65e58d2bbcbfb68dd9b24a206f9c3619",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4184,7 +4224,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/assistant/personal/route.ts",
-    "sourceSha256": "056cab3807ee519e6646ad31b64447f10196f7b61fe6bf14203d723cf042be29",
+    "sourceSha256": "79f5312f25663f64d913a63b5d23f11c9ee52d9515f4d3a764f210b758b4464c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4224,7 +4264,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
-    "sourceSha256": "85fdb8079e3ae26e6fe999aaef645a5fd85a975815b1b7725ff1c9b46a0a4032",
+    "sourceSha256": "1a3f80c73e73c92ce6a63fd1b91e945af2406ab35a37d96943da5ef1465df3ad",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4615,6 +4655,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
     "sourceSha256": "5099c989d37fc5f93c0154a964289baad0723eb995d2cdeacded92f74e93bc70",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/settings/mira-audience",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/mira-audience/route.ts",
+    "sourceSha256": "736f206dc579e49d0e061bc529aa21d53dc656e0c0b5fc73868d6571e2e782fc",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
