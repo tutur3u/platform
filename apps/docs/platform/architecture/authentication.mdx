@@ -106,7 +106,9 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   default), with Apple, GitHub and staff Microsoft behind "More sign-in
   options". The method used last on the device (localStorage, a per-device
   convenience, written for OAuth only once the provider start succeeds)
-  fills the first slot with a "Last used" badge, so a returning staff member
+  fills the first slot, marked by a primary border tint and a history icon at
+  the button edge (named "Last used" for assistive technology), so the label
+  never moves; a returning staff member
   who signed in with Microsoft sees it without opening the disclosure. The
   slots are keyed by position, so a remembered method fills a slot in place
   after hydration and the step never changes height. The email step holds

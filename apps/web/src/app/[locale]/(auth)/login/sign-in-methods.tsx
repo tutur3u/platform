@@ -3,9 +3,9 @@
 import {
   ChevronDownIcon,
   Fingerprint,
+  History,
   Mail,
 } from '@tuturuuu/icons/lucide-static';
-import { Badge } from '@tuturuuu/ui/badge';
 import {
   Collapsible,
   CollapsibleContent,
@@ -77,6 +77,9 @@ export function SignInMethods({
     <div className="space-y-2" key={method}>
       <SocialLoginButton
         autoFocus={autoFocus}
+        // The last-used mark is a border tint and an edge icon, so the
+        // centred label never moves when it appears after hydration.
+        className={method === lastUsed ? 'border-primary/50' : undefined}
         disabled={disabled}
         icon={<MethodIcon method={method} />}
         onClick={() => onChoose(method)}
@@ -84,10 +87,11 @@ export function SignInMethods({
         {t(METHOD_LABEL_KEYS[method])}
         {method === lastUsed ? (
           <>
-            <span className="sr-only">, </span>
-            <Badge className="ml-2" variant="secondary">
-              {t('login.last_used')}
-            </Badge>
+            <span className="sr-only">, {t('login.last_used')}</span>
+            <History
+              aria-hidden
+              className="absolute right-4 size-4 text-muted-foreground"
+            />
           </>
         ) : null}
       </SocialLoginButton>

@@ -21,7 +21,9 @@ export function SocialLoginButton({
       type={type}
       variant={variant}
       className={cn(
-        'group relative h-12 w-full rounded-2xl border-border bg-background font-medium transition-colors hover:bg-muted/40',
+        // px-12 keeps fixed lanes for the left provider icon and a right-edge mark,
+        // so a long or translated label truncates instead of meeting them.
+        'group relative h-12 w-full rounded-2xl border-border bg-background px-12 font-medium transition-colors hover:bg-muted/40',
         className
       )}
       {...props}
@@ -29,7 +31,7 @@ export function SocialLoginButton({
       <div className="absolute left-4 flex items-center justify-center text-foreground">
         {icon}
       </div>
-      <span>{children}</span>
+      <span className="min-w-0 truncate">{children}</span>
     </Button>
   );
 }
