@@ -570,8 +570,8 @@ need ingress evidence. That reuses the Fleet access event contract in
   - **Switch:** `personal_sessions_enabled` on the control row is false by
     default, and a missing row counts as false. Only the owner changes it, and
     a change bumps the generation. Every personal recall rechecks it together
-    with the stop flag. Turning it off ends the projection on the next request,
-    and the check drops any cached personal fills.
+    with the stop flag. Turning it off ends the projection on the next request
+    after the change commits, and the check drops any cached personal fills.
   - **Audit:** an event records the principal, channel, binding, purpose and
     reason. A confirmed hit also stores the identity UUID; any other outcome
     stores an HMAC under the audit key. Every outcome writes the same shape, with
@@ -833,7 +833,9 @@ A slice ships only when its gates pass:
     - the audit shape on every outcome;
     - the switch false by default and when the row is missing, owner-only,
       bumping the generation, rechecked with the stop flag, and ending the
-      projection on the request that turns it off;
+      projection on the next request after the change commits;
+    - a personal fill never reused for another event, and recall rows kept for
+      at least the 5-minute evidence window;
     - no read or fill of the full-recall cache, and full-recall callers never
       reading the personal namespace.
   - A live account binding checked at signing and at verification.
