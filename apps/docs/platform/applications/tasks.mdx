@@ -34,6 +34,44 @@ When validating this integration, check both locales, personal and team workspac
 links, board/task detail return paths, and mobile navigation with the sidebar
 closed. Mutations continue through the existing protected product APIs.
 
+## Board task loading
+
+List, Timeline and Fleet open with one board task page. Use **Load more** to
+add the next page. Kanban loads its columns independently and uses the
+board-wide pager when a filter or sort needs tasks beyond the loaded columns.
+Local search and sorting include the loaded tasks from all pages. Keep loading
+to include the rest of the board, including matches by labels, projects and
+assignees. Exact ticket searches also resolve retained keys on the server.
+List view enables **Select all** once all pages for the current view have
+loaded. Individual task selection is available as soon as rows appear.
+
+### Performance budget
+
+| Budget | Limit | Regression coverage |
+| --- | --- | --- |
+| Task rows per board cursor response | 50 (one extra lookahead row read) | `packages/tasks-api/src/server/tasks/board-task-pagination.test.ts` |
+| Requests on opening List, Timeline or Fleet | 1, then 1 per **Load more** | `packages/tasks-ui/src/tu-do/shared/__tests__/use-board-task-source.test.tsx` |
+| Task rows per server-filtered request | 200 (the route's limit cap) | `packages/tasks-ui/src/tu-do/shared/__tests__/use-board-task-source.test.tsx` |
+| Mounted rows in the initial List window | 60 for a 500-row table | `packages/ui/src/hooks/use-table-row-virtualizer.test.tsx` |
+
+Request cost of opening List view on a 1,000-task board:
+
+| Loader | Requests before first rows | Task rows returned |
+| --- | --- | --- |
+| Draining every 200-row offset page (baseline) | 5 | 1,000, up to 2,000 on a personal board whose pages also carry assigned external tasks |
+| Board cursor | 1 | 50 (51 read) |
+
+The board cursor (`cursor=start`) walks the board's own tasks newest first
+with a `created_at` and ID keyset. A personal workspace board continues with
+the actor's placements and then their assigned external tasks; those stages
+are refused outside a personal workspace, check that the board belongs to
+that workspace, and keep the source workspace membership checks. One **Load
+more** steps over up to three continuation pages that filter to no tasks. A cursor
+cannot be combined with search, filters, counts or offsets. Explicit source
+scope filters and ticket searches use the sorted, offset-paged source query and
+load every matching page. Hide empty lists and auto-collapse wait for every
+board page, because a partly loaded board cannot show that a list is empty.
+
 ## My Tasks and Kanban on mobile
 
 My Tasks groups assigned work into **Overdue**, **Today**, **Upcoming** and

@@ -11,6 +11,8 @@ export interface ListWorkspaceTasksOptions {
   identifier?: string;
   limit?: number;
   offset?: number;
+  cursor?: string;
+  signal?: AbortSignal;
   labelIds?: string[];
   assigneeIds?: string[];
   projectIds?: string[];

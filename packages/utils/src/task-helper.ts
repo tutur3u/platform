@@ -4,6 +4,7 @@ export * from './task-helper/board';
 export * from './task-helper/bulk-actions';
 export * from './task-helper/bulk-list-move';
 export * from './task-helper/optimistic-task-cache';
+export * from './task-helper/board-task-query-cache';
 export * from './task-helper/personal-external-staging';
 export * from './task-helper/recycle-bin';
 export * from './task-helper/relationships';

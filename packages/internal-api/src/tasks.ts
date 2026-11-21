@@ -392,11 +392,11 @@ export interface WorkspaceTaskListCount {
   list_id: string;
   count: number;
 }
-
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
   count?: number;
   listCounts?: WorkspaceTaskListCount[];
+  nextCursor?: string | null;
   pagination?: {
     hasNextPage: boolean;
     hasPreviousPage: boolean;
@@ -407,7 +407,6 @@ export interface WorkspaceTasksResponse {
     total: number;
   };
 }
-
 export interface WorkspaceTaskSearchResult {
   archived?: boolean | null;
   assignees?: {
@@ -1601,8 +1600,7 @@ export async function listWorkspaceTasks(
   options?: ListWorkspaceTasksOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getTaskApiClient(clientOptions);
-  return client.json<WorkspaceTasksResponse>(
+  return getTaskApiClient(clientOptions).json<WorkspaceTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
     {
       query: {
@@ -1616,6 +1614,7 @@ export async function listWorkspaceTasks(
         identifier: options?.identifier,
         limit: options?.limit,
         offset: options?.offset,
+        cursor: options?.cursor,
         labelIds: joinQueryList(options?.labelIds),
         assigneeIds: joinQueryList(options?.assigneeIds),
         projectIds: joinQueryList(options?.projectIds),
@@ -1648,6 +1647,7 @@ export async function listWorkspaceTasks(
       },
       cache: 'no-store',
       credentials: 'include',
+      signal: options?.signal,
     }
   );
 }

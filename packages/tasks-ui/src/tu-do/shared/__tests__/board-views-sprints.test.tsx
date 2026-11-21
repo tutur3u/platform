@@ -205,7 +205,10 @@ describe('BoardViews sprints', () => {
     window.localStorage.clear();
     window.history.replaceState({}, '', '/');
     listWorkspaceTasksMock.mockReset();
-    listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
+    listWorkspaceTasksMock.mockResolvedValue({
+      tasks: mockTasks,
+      nextCursor: null,
+    });
     listBoardSprintsMock.mockReset();
     listBoardSprintsMock.mockResolvedValue({
       schemaAvailable: true,

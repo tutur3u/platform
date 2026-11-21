@@ -30,6 +30,7 @@ import {
   getPersonalPlacementDropTask,
   hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
+  restoreBoardTaskDropPreview,
   setBoardTaskCache,
 } from './task-drag-cache';
 import {
@@ -339,7 +340,7 @@ export function useKanbanDnd({
     }) => {
       const dragSession = dragSessionMetricsRef.current;
       const height =
-        dragSession?.activeTaskId === activeTask.id
+        dragSession !== null && dragSession.activeTaskId === activeTask.id
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
@@ -368,7 +369,8 @@ export function useKanbanDnd({
           });
 
       if (
-        dragSession?.activeTaskId === activeTask.id &&
+        dragSession !== null &&
+        dragSession.activeTaskId === activeTask.id &&
         dragSession.sourceListId === preview.listId &&
         dragSession.sourceInsertionIndex === preview.insertionIndex
       ) {
@@ -392,7 +394,7 @@ export function useKanbanDnd({
     }) => {
       const dragSession = dragSessionMetricsRef.current;
       const height =
-        dragSession?.activeTaskId === activeTask.id
+        dragSession !== null && dragSession.activeTaskId === activeTask.id
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
@@ -413,7 +415,8 @@ export function useKanbanDnd({
       });
 
       if (
-        dragSession?.activeTaskId === activeTask.id &&
+        dragSession !== null &&
+        dragSession.activeTaskId === activeTask.id &&
         dragSession.sourceListId === preview.listId &&
         dragSession.sourceInsertionIndex === preview.insertionIndex
       ) {
@@ -1125,21 +1128,11 @@ export function useKanbanDnd({
           }
         }
 
-        for (const [
-          queryKey,
-          previousFullTasks,
-        ] of optimisticDropPreview.previousFullTaskEntries) {
-          const currentFullTasks = queryClient.getQueryData<Task[]>(queryKey);
-          if (
-            hasTaskLocalMutationAt(
-              currentFullTasks,
-              activeTaskForDrop.id,
-              optimisticDropPreview.localMutationAt
-            )
-          ) {
-            queryClient.setQueryData(queryKey, previousFullTasks);
-          }
-        }
+        restoreBoardTaskDropPreview(
+          queryClient,
+          activeTaskForDrop.id,
+          optimisticDropPreview
+        );
       };
 
       let newSortKey: number | null;

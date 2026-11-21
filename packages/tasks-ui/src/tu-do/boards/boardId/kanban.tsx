@@ -71,6 +71,7 @@ interface Props {
   lists: TaskList[];
   isLoading: boolean;
   isSearchError?: boolean;
+  hasUnloadedTasks?: boolean;
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
@@ -103,6 +104,7 @@ export function KanbanBoard({
   lists,
   isLoading,
   isSearchError = false,
+  hasUnloadedTasks = false,
   disableSort = false,
   listStatusFilter = 'all',
   filters,
@@ -429,7 +431,7 @@ export function KanbanBoard({
     shouldShowTaskSearchEmpty({
       query: filters?.searchQuery,
       taskCount: tasks.length,
-      pending: false,
+      pending: hasUnloadedTasks,
       failed: isSearchError,
     })
   ) {

@@ -1,3 +1,8 @@
+import {
+  getBoardTaskQueries,
+  setBoardTaskQueries,
+  setBoardTaskQuery,
+} from '@tuturuuu/utils/task-helper/board-task-query-cache';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
@@ -214,7 +219,7 @@ export function getTaskFromVisibleCaches({
   // tasks carry their source workspace metadata only on that projection; a
   // previously opened task-detail cache can otherwise route mutations to the
   // personal workspace instead of the task's source workspace.
-  const boardTaskEntries = queryClient.getQueriesData<Task[]>({
+  const boardTaskEntries = getBoardTaskQueries(queryClient, {
     predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
   });
   for (const [, tasks] of boardTaskEntries) {
@@ -250,7 +255,8 @@ export function patchTasksInVisibleCaches({
   const taskIdSet = new Set(taskIds);
   if (taskIdSet.size === 0) return;
 
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     {
       predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
     },
@@ -423,7 +429,7 @@ export function snapshotVisibleTaskCaches(
   const taskIdSet = new Set(taskIds);
 
   return {
-    boardTaskEntries: queryClient.getQueriesData<Task[]>({
+    boardTaskEntries: getBoardTaskQueries(queryClient, {
       predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
     }),
     taskEntries: queryClient.getQueriesData<Task>({
@@ -446,7 +452,7 @@ export function restoreVisibleTaskCaches(
   snapshot: VisibleTaskCacheSnapshot
 ) {
   for (const [queryKey, data] of snapshot.boardTaskEntries) {
-    queryClient.setQueryData(queryKey, data);
+    setBoardTaskQuery(queryClient, queryKey, data);
   }
 
   for (const [queryKey, data] of snapshot.taskEntries) {
@@ -479,7 +485,7 @@ export function restoreTasksFromVisibleCacheSnapshot({
   if (taskIdSet.size === 0) return;
 
   for (const [queryKey, previousTasks] of snapshot.boardTaskEntries) {
-    queryClient.setQueryData<Task[]>(queryKey, (currentTasks) =>
+    setBoardTaskQuery(queryClient, queryKey, (currentTasks) =>
       restoreTaskArrayFromSnapshot(currentTasks, previousTasks, taskIdSet)
     );
   }

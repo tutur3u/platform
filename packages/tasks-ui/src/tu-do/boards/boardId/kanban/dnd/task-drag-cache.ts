@@ -1,3 +1,9 @@
+import {
+  getBoardTaskQueries,
+  getBoardTaskQuery,
+  setBoardTaskQueries,
+  setBoardTaskQuery,
+} from '@tuturuuu/utils/task-helper/board-task-query-cache';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -312,7 +318,7 @@ export function applyTaskDropPreviewToCache({
 }) {
   if (!boardId) return null;
 
-  const previousFullTaskEntries = queryClient.getQueriesData<Task[]>({
+  const previousFullTaskEntries = getBoardTaskQueries(queryClient, {
     queryKey: ['tasks-full', boardId],
   });
 
@@ -353,7 +359,7 @@ export function applyTaskDropPreviewToCache({
     });
 
     if (previewFullTasks.tasks) {
-      queryClient.setQueryData(queryKey, previewFullTasks.tasks);
+      setBoardTaskQuery(queryClient, queryKey, previewFullTasks.tasks);
     }
   }
 
@@ -404,7 +410,8 @@ export function setBoardTaskCache(
     mergeTaskIntoBoardTaskCache(old, nextTask)
   );
 
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     { queryKey: ['tasks-full', boardId] },
     (old) => mergeTaskIntoBoardTaskCache(old, nextTask)
   );
@@ -432,4 +439,17 @@ export function mergePersonalPlacementMutationTask(
     is_personal_external_default: isStagingTarget,
     _localMutationAt: nextTask._localMutationAt,
   } as Task & { _localMutationAt: number };
+}
+
+export function restoreBoardTaskDropPreview(
+  queryClient: QueryClient,
+  taskId: string,
+  preview: NonNullable<ReturnType<typeof applyTaskDropPreviewToCache>>
+) {
+  for (const [queryKey, tasks] of preview.previousFullTaskEntries) {
+    const current = getBoardTaskQuery(queryClient, queryKey);
+    if (hasTaskLocalMutationAt(current, taskId, preview.localMutationAt)) {
+      setBoardTaskQuery(queryClient, queryKey, tasks);
+    }
+  }
 }

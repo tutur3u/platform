@@ -96,6 +96,7 @@ interface Props {
   canUseBoardAssignees?: boolean;
   assigneeMemberSource?: TaskCardAssigneeMemberSource;
   preserveTaskOrder?: boolean;
+  hasUnloadedTasks?: boolean;
   searchQuery?: string;
   weekStartsOn?: 0 | 1 | 6;
   readOnly?: boolean;
@@ -347,6 +348,7 @@ function InteractiveListView({
   canUseBoardAssignees,
   assigneeMemberSource,
   preserveTaskOrder = false,
+  hasUnloadedTasks = false,
   searchQuery,
   weekStartsOn = 0,
 }: Props) {
@@ -492,14 +494,6 @@ function InteractiveListView({
     );
   }
 
-  function handleSelectAll(checked: boolean) {
-    if (checked) {
-      setSelectedTasks(new Set(sortedTasks.map((task) => task.id)));
-    } else {
-      setSelectedTasks(new Set());
-    }
-  }
-
   function handleSelectTask(taskId: string, checked: boolean) {
     const newSelected = new Set(selectedTasks);
     if (checked) {
@@ -509,7 +503,6 @@ function InteractiveListView({
     }
     setSelectedTasks(newSelected);
   }
-
   function openTaskFromRow(task: Task) {
     void openTaskById(
       task.id,
@@ -619,8 +612,15 @@ function InteractiveListView({
                             sortedTasks.length > 0
                           }
                           onCheckedChange={(checked) =>
-                            handleSelectAll(!!checked)
+                            setSelectedTasks(
+                              new Set(
+                                checked
+                                  ? sortedTasks.map((task) => task.id)
+                                  : []
+                              )
+                            )
                           }
+                          disabled={hasUnloadedTasks}
                           aria-label={tc('select_all_tasks')}
                           className={cn(
                             TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,

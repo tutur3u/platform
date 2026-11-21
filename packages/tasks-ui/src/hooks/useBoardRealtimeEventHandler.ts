@@ -1,3 +1,4 @@
+import { setBoardTaskQueries } from '@tuturuuu/utils/task-helper/board-task-query-cache';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -126,7 +127,8 @@ function updateBoardTaskCaches(
   queryClient.setQueryData<Task[]>(['tasks', boardId], updater);
   queryClient.setQueryData<Task[]>(['tasks-full', boardId], updater);
   queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', boardId] }, updater);
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     { queryKey: ['tasks-full', boardId] },
     updater
   );

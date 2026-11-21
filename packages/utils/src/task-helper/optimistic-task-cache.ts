@@ -1,3 +1,7 @@
+import {
+  getBoardTaskQueries,
+  setBoardTaskQueries,
+} from './board-task-query-cache';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
@@ -25,7 +29,7 @@ function getOptimisticTopSortKey(
   boardId: string,
   optimisticTask: Task
 ) {
-  const cachedTaskSets = queryClient.getQueriesData<Task[]>({
+  const cachedTaskSets = getBoardTaskQueries(queryClient, {
     predicate: ({ queryKey }) =>
       (queryKey[0] === 'tasks' || queryKey[0] === 'tasks-full') &&
       queryKey[1] === boardId,
@@ -61,7 +65,8 @@ function updateOptimisticTaskCaches(
   updater: (tasks: Task[] | undefined) => Task[] | undefined
 ) {
   queryClient.setQueryData<Task[]>(['tasks', boardId], updater);
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     { queryKey: ['tasks-full', boardId] },
     updater
   );

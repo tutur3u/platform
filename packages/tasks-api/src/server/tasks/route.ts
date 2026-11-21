@@ -1,17 +1,7 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, TaskActorRpcArgs } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import {
-  PERSONAL_WORKSPACE_SLUG,
-  ROOT_WORKSPACE_ID,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
 import {
   getPersonalExternalStagingBoardId,
   getPersonalExternalStagingListId,
@@ -23,10 +13,7 @@ import {
   isTaskBoardCompletedStatus,
   isTaskBoardResolvedStatus,
 } from '@tuturuuu/utils/task-list-status';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CreateTaskSchema } from './create-task-schema';
@@ -46,6 +33,12 @@ import {
   loadTaskCapacityWarnings,
   parseTaskCapacityViolation,
 } from '../capacity';
+import {
+  BOARD_TASK_PAGE_SIZE,
+  boardTaskSeekFilter,
+  parseBoardTaskCursor,
+  takeBoardTaskPage,
+} from './board-task-cursor';
 import { resolveCreateTaskSortKey } from './create-sort-key';
 import { insertWorkspaceTask } from './insert-workspace-task';
 import { generateTaskEmbedding } from './generate-task-embedding';
@@ -61,11 +54,18 @@ import {
   loadTaskSourceFilterIds,
   type TaskSourceScope,
 } from './load-task-source-filter-ids';
+import { loadTaskSourceFilterListCounts } from './load-task-source-filter-list-counts';
 import { loadTicketIdentifierTaskIds } from './load-ticket-identifier-task-ids';
 import {
   applyPersonalTaskMetadata,
   loadPersonalTaskMetadata,
 } from './personal-overlays';
+import {
+  normalizeRouteWorkspaceId,
+  resolveSupabaseTaskRouteAuth,
+  type TaskRouteAuthContext,
+} from './route-auth';
+export type { TaskRouteAuthContext } from './route-auth';
 import {
   fullSelect,
   fullSelectAssignedToMe,
@@ -196,11 +196,6 @@ const TASK_LIST_STATUSES = new Set<ExternalSourceStatus>([
 type PersonalTaskBoardExternalCountRow = {
   list_id: string | null;
   task_count: number | null;
-};
-
-type TaskSourceFilterListCountRow = {
-  list_id: string | null;
-  total_count: number | string | null;
 };
 
 type TaskRouteLogContext = Record<string, unknown>;
@@ -619,173 +614,6 @@ function applyPersonalPlacement(
   );
 }
 
-async function loadTaskSourceFilterListCounts({
-  sbAdmin,
-  userId,
-  workspaceId,
-  boardId,
-  listId,
-  sourceScope,
-  sourceWorkspaceIds,
-  sourceBoardIds,
-  listStatuses,
-  searchQuery,
-  parsedIdentifier,
-  assignedToMe,
-  completedMode,
-  closedMode,
-  includeArchivedBoards,
-  includeDeletedMode,
-  hasDueDate,
-  labelIds,
-  assigneeIds,
-  projectIds,
-  priorities,
-  estimationMin,
-  estimationMax,
-  dueDateFrom,
-  dueDateTo,
-  includeUnassigned,
-}: {
-  sbAdmin: TypedSupabaseClient;
-  userId: string;
-  workspaceId: string;
-  boardId: string | null;
-  listId: string | null;
-  sourceScope: TaskSourceScope;
-  sourceWorkspaceIds: string[];
-  sourceBoardIds: string[];
-  listStatuses: ExternalSourceStatus[];
-  searchQuery?: string;
-  parsedIdentifier: ReturnType<typeof parseTaskIdentifierQuery> | null;
-  assignedToMe: boolean;
-  completedMode: string | null;
-  closedMode: string | null;
-  includeArchivedBoards: boolean;
-  includeDeletedMode: 'all' | 'none' | 'only';
-  hasDueDate: boolean;
-  labelIds: string[];
-  assigneeIds: string[];
-  projectIds: string[];
-  priorities: string[];
-  estimationMin: number | null;
-  estimationMax: number | null;
-  dueDateFrom: string | null;
-  dueDateTo: string | null;
-  includeUnassigned: boolean;
-}) {
-  const { data, error } = await sbAdmin
-    .schema('private')
-    .rpc('count_task_source_filter_lists', {
-      p_actor_id: userId,
-      p_workspace_id: workspaceId,
-      p_board_id: boardId ?? undefined,
-      p_list_id: listId ?? undefined,
-      p_source_scope: sourceScope,
-      p_source_workspace_ids: sourceWorkspaceIds,
-      p_source_board_ids: sourceBoardIds,
-      p_list_statuses: listStatuses,
-      p_search: searchQuery ?? undefined,
-      p_display_number: parsedIdentifier?.displayNumber ?? undefined,
-      p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? undefined,
-      p_assigned_to_me: assignedToMe,
-      p_completed_mode: completedMode ?? undefined,
-      p_closed_mode: closedMode ?? undefined,
-      p_include_archived_boards: includeArchivedBoards,
-      p_include_deleted: includeDeletedMode,
-      p_has_due_date: hasDueDate,
-      p_label_ids: labelIds.length > 0 ? labelIds : undefined,
-      p_assignee_ids: assigneeIds.length > 0 ? assigneeIds : undefined,
-      p_project_ids: projectIds.length > 0 ? projectIds : undefined,
-      p_priorities: priorities.length > 0 ? priorities : undefined,
-      p_estimation_min: estimationMin ?? undefined,
-      p_estimation_max: estimationMax ?? undefined,
-      p_due_date_from: dueDateFrom ?? undefined,
-      p_due_date_to: dueDateTo ?? undefined,
-      p_include_unassigned: includeUnassigned,
-    });
-
-  if (error) {
-    throw new Error('TASK_SOURCE_FILTER_COUNTS_RPC_FAILED', { cause: error });
-  }
-
-  return ((data ?? []) as TaskSourceFilterListCountRow[]).flatMap((row) => {
-    if (!row.list_id) return [];
-    const count = Number(row.total_count ?? 0);
-    return [
-      {
-        list_id: row.list_id,
-        count: Number.isFinite(count) ? count : 0,
-      },
-    ];
-  });
-}
-
-export type TaskRouteAuthContext = {
-  appSession?: boolean;
-  supabase: TypedSupabaseClient;
-  user: SupabaseUser;
-};
-
-type LegacyTaskRouteAuth =
-  | { auth: TaskRouteAuthContext; response?: never }
-  | { auth?: never; response: NextResponse };
-
-async function resolveSupabaseTaskRouteAuth(
-  request: NextRequest
-): Promise<LegacyTaskRouteAuth> {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return { auth: { appSession: false, supabase, user } };
-}
-
-async function normalizeRouteWorkspaceId({
-  appSession,
-  supabase,
-  userId,
-  wsId,
-}: {
-  appSession: boolean;
-  supabase: TypedSupabaseClient;
-  userId: string;
-  wsId: string;
-}) {
-  if (!appSession) {
-    return normalizeWorkspaceId(wsId, supabase);
-  }
-
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) {
-    return ROOT_WORKSPACE_ID;
-  }
-
-  if (wsId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id, type)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', userId)
-      .eq('workspace_members.type', 'MEMBER')
-      .maybeSingle();
-
-    if (error || !workspace?.id) {
-      throw new Error('Personal workspace not found');
-    }
-
-    return workspace.id;
-  }
-
-  return normalizeWorkspaceId(wsId, supabase);
-}
-
 export async function handleTaskRouteGET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> },
@@ -846,7 +674,7 @@ export async function handleTaskRouteGET(
 
     const limitParam = url.searchParams.get('limit');
     const parsedLimit = Number.parseInt(limitParam ?? '', 10);
-    const limit =
+    let limit =
       limitParam === '0'
         ? 0
         : Number.isFinite(parsedLimit) && parsedLimit > 0
@@ -940,14 +768,43 @@ export async function handleTaskRouteGET(
       : null;
     const sourceTasksDisabled = Boolean(virtualStagingBoardId);
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
+    const rawCursor = url.searchParams.get('cursor');
     const shouldUseTaskFilterRpc =
       !sourceFilterHasEmptySelection &&
       !sourceTasksDisabled &&
       !forTimeTracking &&
       ((!!parsedIdentifier?.ticketPrefix && !isGuestBoardAccess) ||
-        sourceScope !== 'all_visible' ||
+        (sourceScope !== 'all_visible' && rawCursor === null) ||
         hasRpcOnlyTaskFilters ||
         includeListCounts);
+    const cursor =
+      rawCursor === null ? undefined : parseBoardTaskCursor(rawCursor);
+    if (
+      rawCursor !== null &&
+      (!cursor ||
+        !boardId ||
+        !z.guid().safeParse(boardId).success ||
+        listId ||
+        limit === 0 ||
+        includeCount ||
+        includeListCounts ||
+        forTimeTracking ||
+        url.searchParams.has('offset') ||
+        isExternalSourceScope(sourceScope) ||
+        shouldUseTaskFilterRpc ||
+        searchQuery ||
+        identifierQuery ||
+        assignedToMe ||
+        sourceWorkspaceIds.length > 0 ||
+        sourceBoardIds.length > 0)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid board task cursor request' },
+        { status: 400 }
+      );
+    }
+    if (cursor) limit = Math.min(limit, BOARD_TASK_PAGE_SIZE);
+    let nextCursor: string | null = null;
     const taskRouteLogContext = {
       boardId,
       closedMode,
@@ -1006,6 +863,39 @@ export async function handleTaskRouteGET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const cursorIncludesPersonalTasks =
+      isPersonalWorkspace && memberCheck.ok && sourceScope === 'all_visible';
+    if (
+      cursor &&
+      (cursor.stage === 'placed' || cursor.stage === 'assigned') &&
+      !cursorIncludesPersonalTasks
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid board task cursor' },
+        { status: 400 }
+      );
+    }
+    if (
+      boardId &&
+      cursorIncludesPersonalTasks &&
+      cursor &&
+      cursor.stage !== 'board'
+    ) {
+      // External tasks are projected only onto a board that exists in this
+      // personal workspace.
+      const { data: board, error } = await sbAdmin
+        .from('workspace_boards')
+        .select('id')
+        .eq('id', boardId)
+        .eq('ws_id', normalizedWorkspaceId)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error)
+        throw new Error('Failed to verify personal board', { cause: error });
+      if (!board)
+        return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+    }
+
     const ticketIdentifierTaskIds =
       parsedIdentifier?.ticketPrefix &&
       (isPersonalWorkspace || forTimeTracking || isGuestBoardAccess)
@@ -1213,7 +1103,7 @@ export async function handleTaskRouteGET(
       }
     }
 
-    if (!loadedViaSourceFilterRpc) {
+    if (!loadedViaSourceFilterRpc && (!cursor || cursor.stage === 'board')) {
       let query = taskFleetClient(sbAdmin)
         .from('tasks')
         .select(
@@ -1310,10 +1200,18 @@ export async function handleTaskRouteGET(
         }
       }
 
-      const queryResult = await query
-        .order('sort_key', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+      const queryResult =
+        cursor?.stage === 'board'
+          ? await (
+              cursor.after ? query.or(boardTaskSeekFilter(cursor.after)) : query
+            )
+              .order('created_at', { ascending: false, nullsFirst: false })
+              .order('id')
+              .limit(limit + 1)
+          : await query
+              .order('sort_key', { ascending: true, nullsFirst: false })
+              .order('created_at', { ascending: false })
+              .range(offset, offset + limit - 1);
 
       const { data, error, count } = queryResult as unknown as {
         data: TaskRecord[] | null;
@@ -1332,8 +1230,19 @@ export async function handleTaskRouteGET(
         throw new Error('TASKS_QUERY_FAILED');
       }
 
-      sourceTasks = (data?.map(normalizeTask) ??
-        []) as unknown as NormalizedRouteTask[];
+      const rows =
+        cursor?.stage === 'board'
+          ? takeBoardTaskPage(
+              (data ?? []) as (TaskRecord & { created_at?: string | null })[],
+              limit,
+              (row) => `board~${row.id}~${row.created_at ?? 'null'}`,
+              cursorIncludesPersonalTasks ? 'placed' : undefined
+            )
+          : { page: data ?? [], nextCursor: null };
+      nextCursor = rows.nextCursor;
+      sourceTasks = rows.page.map(
+        normalizeTask
+      ) as unknown as NormalizedRouteTask[];
       sourceTaskCount = count ?? sourceTasks.length;
     }
     let externalTasks: NormalizedRouteTask[] = [];
@@ -1344,6 +1253,7 @@ export async function handleTaskRouteGET(
       memberCheck.ok &&
       !forTimeTracking &&
       sourceScope === 'all_visible' &&
+      (!cursor || cursor.stage === 'placed' || cursor.stage === 'assigned') &&
       (boardId || listId || virtualStagingBoardId)
     ) {
       const targetPersonalBoardId = virtualStagingBoardId ?? boardId;
@@ -1357,16 +1267,17 @@ export async function handleTaskRouteGET(
       externalTaskCount = personalExternalTaskCountOverride ?? 0;
       let placements: PersonalTaskPlacementRow[] = [];
 
-      let placementQuery = targetPersonalBoardId
-        ? sbAdmin
-            .from('task_user_overrides')
-            .select(
-              'task_id, personal_board_id, personal_list_id, personal_sort_key, personal_added_at, personal_placed_at',
-              includeCount ? { count: 'exact' } : undefined
-            )
-            .eq('user_id', user.id)
-            .eq('personal_board_id', targetPersonalBoardId)
-        : null;
+      let placementQuery =
+        targetPersonalBoardId && cursor?.stage !== 'assigned'
+          ? sbAdmin
+              .from('task_user_overrides')
+              .select(
+                'task_id, personal_board_id, personal_list_id, personal_sort_key, personal_added_at, personal_placed_at',
+                includeCount ? { count: 'exact' } : undefined
+              )
+              .eq('user_id', user.id)
+              .eq('personal_board_id', targetPersonalBoardId)
+          : null;
 
       if (placementQuery) {
         if (virtualStagingBoardId) {
@@ -1375,17 +1286,21 @@ export async function handleTaskRouteGET(
           placementQuery = placementQuery.eq('personal_list_id', listId);
         }
 
-        placementQuery = placementQuery
-          .order('personal_sort_key', {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order('personal_added_at', { ascending: true });
+        if (!cursor) {
+          placementQuery = placementQuery
+            .order('personal_sort_key', { ascending: true, nullsFirst: false })
+            .order('personal_added_at', { ascending: true });
+        }
 
         if (listId && !virtualStagingBoardId && !sortBy) {
           placementQuery = placementQuery.range(offset, offset + limit - 1);
         }
 
+        if (cursor?.stage === 'placed') {
+          if (cursor.after)
+            placementQuery = placementQuery.gt('task_id', cursor.after);
+          placementQuery = placementQuery.order('task_id').limit(limit + 1);
+        }
         const placementResult = await placementQuery;
 
         if (placementResult.error) {
@@ -1402,6 +1317,16 @@ export async function handleTaskRouteGET(
 
         placements =
           (placementResult.data as PersonalTaskPlacementRow[] | null) ?? [];
+        if (cursor?.stage === 'placed') {
+          const rows = takeBoardTaskPage(
+            placements,
+            limit,
+            (row) => `placed~${row.task_id}`,
+            'assigned'
+          );
+          placements = rows.page;
+          nextCursor = rows.nextCursor;
+        }
         if (personalExternalTaskCountOverride === null) {
           externalTaskCount += placementResult.count ?? placements.length;
         }
@@ -1606,7 +1531,9 @@ export async function handleTaskRouteGET(
       }
 
       const shouldLoadDefaultExternalTasks =
-        !!targetPersonalBoardId && (!listId || !!virtualStagingBoardId);
+        !!targetPersonalBoardId &&
+        (!listId || !!virtualStagingBoardId) &&
+        (!cursor || cursor.stage === 'assigned');
 
       if (shouldLoadDefaultExternalTasks && targetPersonalBoardId) {
         let defaultExternalQuery = taskFleetClient(sbAdmin)
@@ -1731,32 +1658,42 @@ export async function handleTaskRouteGET(
           }
         }
 
-        switch (externalSortBy) {
-          case 'created-asc':
-            defaultExternalQuery = defaultExternalQuery.order('created_at', {
-              ascending: true,
-            });
-            break;
-          case 'due-asc':
-            defaultExternalQuery = defaultExternalQuery
-              .order('end_date', { ascending: true, nullsFirst: false })
-              .order('created_at', { ascending: false });
-            break;
-          case 'name-asc':
-            defaultExternalQuery = defaultExternalQuery
-              .order('name', { ascending: true })
-              .order('created_at', { ascending: false });
-            break;
-          default:
-            defaultExternalQuery = defaultExternalQuery.order('created_at', {
-              ascending: false,
-            });
-            break;
-        }
+        if (!cursor)
+          switch (externalSortBy) {
+            case 'created-asc':
+              defaultExternalQuery = defaultExternalQuery.order('created_at', {
+                ascending: true,
+              });
+              break;
+            case 'due-asc':
+              defaultExternalQuery = defaultExternalQuery
+                .order('end_date', { ascending: true, nullsFirst: false })
+                .order('created_at', { ascending: false });
+              break;
+            case 'name-asc':
+              defaultExternalQuery = defaultExternalQuery
+                .order('name', { ascending: true })
+                .order('created_at', { ascending: false });
+              break;
+            default:
+              defaultExternalQuery = defaultExternalQuery.order('created_at', {
+                ascending: false,
+              });
+              break;
+          }
 
-        const defaultExternalResult = sortBy
-          ? await defaultExternalQuery
-          : await defaultExternalQuery.range(0, offset + limit - 1);
+        const defaultExternalResult =
+          cursor?.stage === 'assigned'
+            ? await (
+                cursor.after
+                  ? defaultExternalQuery.gt('id', cursor.after)
+                  : defaultExternalQuery
+              )
+                .order('id')
+                .limit(limit + 1)
+            : sortBy
+              ? await defaultExternalQuery
+              : await defaultExternalQuery.range(0, offset + limit - 1);
 
         if (defaultExternalResult.error) {
           if (
@@ -1775,9 +1712,38 @@ export async function handleTaskRouteGET(
           );
         }
 
-        const defaultExternalRecords = (
-          (defaultExternalResult.data as TaskRecord[] | null) ?? []
-        ).filter((record) => !placedOnThisBoardTaskIds.has(record.id));
+        let defaultExternalRecords =
+          (defaultExternalResult.data as TaskRecord[] | null) ?? [];
+        if (cursor?.stage === 'assigned') {
+          const rows = takeBoardTaskPage(
+            defaultExternalRecords,
+            limit,
+            (row) => `assigned~${row.id}`
+          );
+          defaultExternalRecords = rows.page;
+          nextCursor = rows.nextCursor;
+          if (rows.page.length) {
+            const { data, error } = await sbAdmin
+              .from('task_user_overrides')
+              .select('task_id')
+              .eq('user_id', user.id)
+              .eq('personal_board_id', targetPersonalBoardId)
+              .in(
+                'task_id',
+                rows.page.map((row) => row.id)
+              );
+            if (error)
+              throw new Error('Failed to check personal task placements', {
+                cause: error,
+              });
+            placedOnThisBoardTaskIds = new Set(
+              (data ?? []).map((row) => row.task_id)
+            );
+          }
+        }
+        defaultExternalRecords = defaultExternalRecords.filter(
+          (record) => !placedOnThisBoardTaskIds.has(record.id)
+        );
 
         const sourceWorkspaceIds = defaultExternalRecords
           .map((task) => getTaskSourceLocation(task).board?.ws_id)
@@ -1943,6 +1909,7 @@ export async function handleTaskRouteGET(
 
     return NextResponse.json({
       tasks: tasksWithRelationshipSummary,
+      ...(cursor ? { nextCursor } : {}),
       ...(includeCount ? { count: sourceTaskCount + externalTaskCount } : {}),
       ...(includeListCounts ? { listCounts } : {}),
     });

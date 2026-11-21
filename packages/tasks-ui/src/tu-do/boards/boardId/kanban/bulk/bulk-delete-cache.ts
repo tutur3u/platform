@@ -1,5 +1,6 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { setBoardTaskQuery } from '@tuturuuu/utils/task-helper/board-task-query-cache';
 import type {
   BulkTaskWorkspaceGroup,
   snapshotBoardTaskCaches,
@@ -55,7 +56,7 @@ export function reinsertSnapshotTasks(
     if (!previous || restored.length === 0) continue;
     const order = new Map(previous.map((task, index) => [task.id, index]));
 
-    queryClient.setQueryData<Task[]>(queryKey, (old) => {
+    setBoardTaskQuery(queryClient, queryKey, (old) => {
       if (!old) return old;
       const present = new Set(old.map((task) => task.id));
       const merged = [

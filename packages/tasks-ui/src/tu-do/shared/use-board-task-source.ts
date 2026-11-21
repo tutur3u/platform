@@ -1,11 +1,18 @@
 'use client';
 
 import {
+  infiniteQueryOptions,
+  isCancelledError,
   keepPreviousData,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
+import {
+  listWorkspaceTasks,
+  type ListWorkspaceTasksOptions,
+  type WorkspaceTasksResponse,
+} from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -14,7 +21,8 @@ import {
   parseTaskIdentifierQuery,
   type UnprioritizedPosition,
 } from '@tuturuuu/utils/task-helper';
-import { useCallback, useMemo } from 'react';
+import type { BoardTaskPage } from '@tuturuuu/utils/task-helper/board-task-query-cache';
+import { useMemo } from 'react';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import type { ListStatusFilter } from '../shared/board-header';
 import { getListStatusesForFilter } from './board-header/board-filter-state';
@@ -31,10 +39,12 @@ import { useProgressiveLoader } from './progressive-loader-context';
 
 /**
  * The tasks a board view shows and the list counts behind its filters.
- * Filters, search and sort on the board's own tasks run in the browser over
- * one unfiltered copy (or the board cache once every list is loaded). The
- * server resolves full ticket IDs and matches tasks in other source scopes.
+ * Local filters sort and match the loaded board pages. The server resolves
+ * retained ticket keys and matches tasks in other source scopes.
  */
+/** Empty continuation pages one Load more may step over. */
+const MAX_EMPTY_PAGE_HOPS = 3;
+
 export function useBoardTaskSource({
   autoCollapseEmptyTaskLists,
   board,
@@ -96,7 +106,7 @@ export function useBoardTaskSource({
     ? parseTaskIdentifierQuery(filters.searchQuery)?.ticketPrefix
     : null;
   const filterOnServer =
-    !localTaskState && (sourceScope !== 'all_visible' || Boolean(ticketSearch));
+    !localTaskState && (isExternalSourceScope || Boolean(ticketSearch));
   const { pagination } = useProgressiveLoader();
   // Every list's pages, a personal board's external tasks included, are in
   // the board cache, so it holds every task.
@@ -172,90 +182,109 @@ export function useBoardTaskSource({
     () => JSON.stringify({ boardCopy: true, listStatusFilter }),
     [listStatusFilter]
   );
-  const fullTasksKey = filterOnServer ? taskFilterKey : boardCopyKey;
+  const pageScope =
+    sourceScope === 'current_board' ? 'current_board' : 'all_visible';
   const shouldEagerLoadTasks =
     currentView === 'list' ||
     currentView === 'timeline' ||
     currentView === 'fleet' ||
-    (hasServerTaskQuery && (filterOnServer || !boardLoaded));
-  const fetchBoardTasks = useCallback(
-    () =>
+    (currentView === 'kanban' &&
+      hasServerTaskQuery &&
+      (filterOnServer || !boardLoaded));
+  const pageOptions = infiniteQueryOptions({
+    queryKey: [
+      'tasks-full',
+      board.id,
+      'pages',
+      effectiveWorkspaceId,
+      boardCopyKey,
+      pageScope,
+    ],
+    initialPageParam: 'start',
+    queryFn: async ({ pageParam, signal }): Promise<BoardTaskPage> => {
+      // Personal continuations can filter a whole page away (tasks already
+      // placed, or in a workspace the actor left). Step over a bounded number
+      // of empty pages so Load more always shows a change when one exists.
+      let cursor: string | null = pageParam;
+      for (let hop = 0; cursor && hop <= MAX_EMPTY_PAGE_HOPS; hop++) {
+        const { tasks, nextCursor }: WorkspaceTasksResponse =
+          await listWorkspaceTasks(effectiveWorkspaceId, {
+            sourceScope: pageScope,
+            boardId: board.id,
+            cursor,
+            includeRelationshipSummary: false,
+            listStatuses: listStatusesForQuery,
+            signal,
+          });
+        if (nextCursor === undefined)
+          throw new Error('Missing board task continuation');
+        if (tasks.length > 0 || !nextCursor) return { tasks, nextCursor };
+        cursor = nextCursor;
+      }
+      return { tasks: [], nextCursor: cursor };
+    },
+    getNextPageParam: (page) => page.nextCursor,
+    refetchOnMount: false,
+    staleTime: 5 * 60_000,
+  });
+  const useBoardPages =
+    !localTaskState && !filterOnServer && !boardLoaded && shouldEagerLoadTasks;
+  const pages = useInfiniteQuery({ ...pageOptions, enabled: useBoardPages });
+  const serverTasks = useQuery({
+    queryKey: [
+      'tasks-full',
+      board.id,
+      'source-filter',
+      effectiveWorkspaceId,
+      taskFilterKey,
+    ],
+    enabled: shouldEagerLoadTasks && filterOnServer,
+    queryFn: () =>
       listBoardTasksForSearch(effectiveWorkspaceId, {
-        ...(filterOnServer ? taskQueryOptions : {}),
+        ...taskQueryOptions,
         boardId: board.id,
         includeRelationshipSummary: false,
         listStatuses: listStatusesForQuery,
         limit: 200,
       }),
-    [
-      board.id,
-      effectiveWorkspaceId,
-      filterOnServer,
-      listStatusesForQuery,
-      taskQueryOptions,
-    ]
-  );
-
-  const primeFullTaskCache = useCallback(
-    (nextView: ViewType) => {
-      if (localTaskState) return;
-      if (!['list', 'timeline', 'fleet'].includes(nextView)) return;
-
-      void queryClient.prefetchQuery({
-        queryKey: ['tasks-full', board.id, fullTasksKey],
-        queryFn: fetchBoardTasks,
-        staleTime: 5 * 60_000,
-      });
-    },
-    [board.id, fetchBoardTasks, fullTasksKey, localTaskState, queryClient]
-  );
-
-  // Fetch the unfiltered copy as soon as a filter looks likely, so the
-  // first filter, search or sort usually finds it already loaded.
-  const prefetchBoardCopy = useCallback(() => {
-    if (localTaskState || filterOnServer || boardLoaded) return;
-    void queryClient.prefetchQuery({
-      queryKey: ['tasks-full', board.id, boardCopyKey],
-      queryFn: fetchBoardTasks,
-      staleTime: 5 * 60_000,
-    });
-  }, [
-    board.id,
-    boardCopyKey,
-    boardLoaded,
-    fetchBoardTasks,
-    filterOnServer,
-    localTaskState,
-    queryClient,
-  ]);
-
-  const {
-    data: fullTasks = [],
-    isFetching: isFullTasksFetching,
-    isPending: isFullTasksPending,
-    isLoading: isFullTasksLoading,
-    isSuccess: isFullTasksSuccess,
-    isError: isFullTasksError,
-  } = useQuery({
-    queryKey: ['tasks-full', board.id, fullTasksKey],
-    enabled: !localTaskState && shouldEagerLoadTasks,
-    queryFn: fetchBoardTasks,
     // A server-filtered result stays on screen until the next one lands.
-    placeholderData: filterOnServer ? keepPreviousData : undefined,
-    refetchOnMount: false,
-    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
-
-  // The browser holds every task of the board: the board cache with all its
-  // pages, or the unfiltered copy. Until then, list counts come from the server.
+  const fullTasks = useMemo(() => {
+    if (filterOnServer) return serverTasks.data ?? [];
+    if (!useBoardPages || !pages.data) return [];
+    return [
+      ...new Map(
+        pages.data.pages.flatMap((page) =>
+          page.tasks.map((task) => [task.id, task] as const)
+        )
+      ).values(),
+    ];
+  }, [filterOnServer, pages.data, serverTasks.data, useBoardPages]);
   const baseComplete =
     localTaskState ||
     boardLoaded ||
-    (!filterOnServer && shouldEagerLoadTasks && isFullTasksSuccess);
-  // While the unfiltered copy is on its way, its counts follow from it.
-  const countsOnServer =
+    (!filterOnServer &&
+      useBoardPages &&
+      Boolean(pages.data) &&
+      !pages.hasNextPage);
+  const activeQuery = filterOnServer ? serverTasks : pages;
+  const activeQueryEnabled =
     !localTaskState &&
-    (filterOnServer || (!baseComplete && !shouldEagerLoadTasks));
+    (useBoardPages || (shouldEagerLoadTasks && filterOnServer));
+  const hasMore = useBoardPages && pages.hasNextPage;
+  const loadingMore = useBoardPages && pages.isFetchingNextPage;
+  // Optimistic edits cancel in-flight task reads; that is not a failure.
+  const pageFailed =
+    activeQueryEnabled &&
+    activeQuery.isError &&
+    !isCancelledError(activeQuery.error);
+  // Exact cross-scope counts keep columns visible while their rows are paged.
+  // Local search also matches client-side metadata, so partial counts cannot
+  // establish that a list has zero matches.
+  const countsOnServer =
+    !localTaskState && (filterOnServer || (!baseComplete && !useBoardPages));
   const countsEnabled =
     countsOnServer &&
     Boolean(
@@ -266,7 +295,12 @@ export function useBoardTaskSource({
     isFetching: isFilteredListCountsFetching,
     isPending: isFilteredListCountsPending,
   } = useQuery({
-    queryKey: ['task-list-counts', board.id, taskFilterKey],
+    queryKey: [
+      'task-list-counts',
+      board.id,
+      effectiveWorkspaceId,
+      taskFilterKey,
+    ],
     enabled: countsEnabled,
     queryFn: () =>
       listBoardTaskCountsForSearch(effectiveWorkspaceId, {
@@ -285,11 +319,11 @@ export function useBoardTaskSource({
   const localBaseTasks = useMemo(() => {
     if (localTaskState || filterOnServer || fullTasks.length === 0)
       return tasks;
-    if (boardLoaded || !shouldEagerLoadTasks) return tasks;
+    if (boardLoaded || !useBoardPages) return tasks;
     const merged = new Map(fullTasks.map((task) => [task.id, task] as const));
     for (const task of tasks) {
       const copy = merged.get(task.id);
-      merged.set(task.id, copy ? ({ ...task, ...copy } as Task) : task);
+      merged.set(task.id, copy ? ({ ...copy, ...task } as Task) : task);
     }
     return [...merged.values()];
   }, [
@@ -297,19 +331,21 @@ export function useBoardTaskSource({
     filterOnServer,
     fullTasks,
     localTaskState,
-    shouldEagerLoadTasks,
+    useBoardPages,
     tasks,
   ]);
   const locallyFilteredTasks = useMemo(
     () =>
       sortLocalTasks(
-        localBaseTasks.filter((task) =>
-          taskMatchesLocalFilters(
-            task,
-            filters,
-            currentUserId,
-            board.ticket_prefix
-          )
+        localBaseTasks.filter(
+          (task) =>
+            (sourceScope !== 'current_board' || !task.is_personal_external) &&
+            taskMatchesLocalFilters(
+              task,
+              filters,
+              currentUserId,
+              board.ticket_prefix
+            )
         ),
         filters.sortBy,
         unprioritizedPosition
@@ -319,6 +355,7 @@ export function useBoardTaskSource({
       currentUserId,
       filters,
       localBaseTasks,
+      sourceScope,
       unprioritizedPosition,
     ]
   );
@@ -362,27 +399,41 @@ export function useBoardTaskSource({
   ]);
 
   return {
-    // Board cache plus the copy: what a search can find, loaded or not.
     baseTasks: localBaseTasks,
     filterOnServer,
     hasTaskFilters,
     isExternalSourceScope,
-    isFullTasksError,
-    isFullTasksLoading,
-    isSearching: isFullTasksFetching || isFilteredListCountsFetching,
+    isFullTasksError:
+      activeQueryEnabled && activeQuery.isError && !activeQuery.data,
+    isFullTasksLoading: activeQueryEnabled && activeQuery.isLoading,
+    isSearching:
+      (activeQueryEnabled && activeQuery.isFetching) ||
+      isFilteredListCountsFetching,
     listCounts: countsOnServer ? filteredListCounts : localListCounts,
-    // Filtering over the board's unfiltered copy needs no more pages.
-    pagesCovered: !localTaskState && !filterOnServer && shouldEagerLoadTasks,
-    prefetchBoardCopy,
-    primeFullTaskCache,
-    // The first tasks and counts the board waits for have landed.
+    pagesCovered: useBoardPages || filterOnServer,
+    // Use the first page for filter intent without loading a board in the
+    // background while the user is on a separate surface.
+    prefetchBoardCopy: () => {
+      if (!localTaskState && !filterOnServer && !boardLoaded)
+        void queryClient.prefetchInfiniteQuery(pageOptions);
+    },
+    pagination:
+      activeQueryEnabled && (hasMore || loadingMore || pageFailed)
+        ? {
+            hasMore,
+            pending: loadingMore,
+            failed: pageFailed,
+            loadMore: () => {
+              if (loadingMore || activeQuery.isFetching) return;
+              if (hasMore) void pages.fetchNextPage({ cancelRefetch: false });
+              else if (pageFailed)
+                void activeQuery.refetch({ cancelRefetch: false });
+            },
+          }
+        : null,
     ready:
-      (!shouldEagerLoadTasks || !isFullTasksPending) &&
-      ((!hasTaskFilters &&
-        !filters.hideEmptyTaskLists &&
-        !autoCollapseEmptyTaskLists) ||
-        !countsEnabled ||
-        !isFilteredListCountsPending),
+      (!activeQueryEnabled || !activeQuery.isPending) &&
+      (!countsEnabled || !isFilteredListCountsPending),
     sourceTasks,
   };
 }

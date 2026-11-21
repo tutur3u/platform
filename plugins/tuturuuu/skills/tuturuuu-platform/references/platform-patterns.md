@@ -1713,3 +1713,12 @@ store installation belongs in the server adapter. Preserve the legacy `/core`
 installer export. Run request-context graph and store-boundary tests after
 changes. Client provenance qualification is opt-in and requires real emitted
 artifact CI evidence; unit hook tests alone cannot establish client isolation.
+
+### Board task page caches
+
+Board-wide task views use an infinite query under `tasks-full`. The same query
+prefix also contains array-backed sprint and ticket queries. Use the task
+cache adapter in `packages/utils/src/task-helper/board-task-query-cache.ts`
+for writes and rollbacks across the prefix so task edits preserve cursor
+state. Keep the route's 50-row response budget and the List view's bounded
+initial render covered by the Tasks performance tests.

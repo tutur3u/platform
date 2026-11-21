@@ -257,7 +257,10 @@ describe('BoardViews', () => {
     loadListPageMock.mockReset();
     progressivePagination = {};
     listWorkspaceTasksMock.mockReset();
-    listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
+    listWorkspaceTasksMock.mockResolvedValue({
+      tasks: mockTasks,
+      nextCursor: null,
+    });
     getUserConfigMock.mockReset();
     getUserConfigMock.mockResolvedValue({ value: null });
     getUserWorkspaceConfigMock.mockReset();
@@ -1015,11 +1018,9 @@ describe('BoardViews', () => {
     });
   });
 
-  it('eagerly fetches the full board task set when switching to list view', async () => {
+  it('fetches the first board task page when switching to list view', async () => {
     renderBoardViews();
-
     expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
-
     await act(async () => {
       boardHeaderProps?.onViewChange('list');
     });
@@ -1072,9 +1073,7 @@ describe('BoardViews', () => {
       listCounts: [{ count: 1, list_id: 'list-1' }],
       tasks: mockTasks,
     });
-
     renderBoardViews();
-
     await waitFor(() => {
       expect(boardHeaderProps?.filters.hideEmptyTaskLists).toBe(true);
       expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
@@ -1131,19 +1130,17 @@ describe('BoardViews', () => {
     expect(listViewProps?.preserveTaskOrder).toBe(true);
   });
 
-  it('eagerly fetches the full board task set when switching to timeline view', async () => {
+  it('fetches the first board task page when switching to timeline view', async () => {
     renderBoardViews();
-
     await act(async () => {
       boardHeaderProps?.onViewChange('timeline');
     });
-
     await waitFor(() => {
       expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('restores a persisted timeline view before interaction and primes the full task cache', async () => {
+  it('restores a persisted timeline view before interaction and fetches the first task page', async () => {
     window.localStorage.setItem(
       getBoardConfigKey(mockBoard.id),
       JSON.stringify({

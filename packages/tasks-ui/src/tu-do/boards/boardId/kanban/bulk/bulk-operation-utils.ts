@@ -1,3 +1,8 @@
+import {
+  getBoardTaskQueries,
+  setBoardTaskQueries,
+  setBoardTaskQuery,
+} from '@tuturuuu/utils/task-helper/board-task-query-cache';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import {
   type BulkWorkspaceTaskOperation,
@@ -47,7 +52,7 @@ function getTaskMutationWorkspaceId(
 
 export function getCachedBoardTasks(queryClient: QueryClient, boardId: string) {
   const tasks = queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
-  const fullTaskEntries = queryClient.getQueriesData<Task[]>({
+  const fullTaskEntries = getBoardTaskQueries(queryClient, {
     queryKey: ['tasks-full', boardId],
   });
   const byId = new Map<string, CachedTaskWithWorkspace>();
@@ -205,7 +210,7 @@ export function snapshotBoardTaskCaches(
 ): BoardTaskCacheSnapshot {
   return {
     previousTasks: queryClient.getQueryData<Task[]>(['tasks', boardId]),
-    previousFullTasks: queryClient.getQueriesData<Task[]>({
+    previousFullTasks: getBoardTaskQueries(queryClient, {
       queryKey: ['tasks-full', boardId],
     }),
   };
@@ -219,7 +224,7 @@ export function restoreBoardTaskCaches(
   queryClient.setQueryData(['tasks', boardId], snapshot.previousTasks);
 
   for (const [queryKey, tasks] of snapshot.previousFullTasks) {
-    queryClient.setQueryData(queryKey, tasks);
+    setBoardTaskQuery(queryClient, queryKey, tasks);
   }
 }
 
@@ -229,7 +234,8 @@ export function updateBoardTaskCaches(
   updater: (old: Task[] | undefined) => Task[] | undefined
 ) {
   queryClient.setQueryData(['tasks', boardId], updater);
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     { queryKey: ['tasks-full', boardId] },
     updater
   );

@@ -56,6 +56,7 @@ import { useBoardHeaderData } from './board-header/use-board-header-data';
 import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import { sortLocalTasks } from './board-task-filtering';
+import { BoardTaskPageFrame } from './board-task-page-frame';
 import { BoardPanelFrame, KanbanPresentation } from './kanban-presentation';
 import { MyTasksBoardPanel } from './my-tasks-board-panel';
 import {
@@ -229,8 +230,8 @@ export function BoardViews({
     isSearching,
     listCounts,
     pagesCovered,
+    pagination,
     prefetchBoardCopy,
-    primeFullTaskCache,
     ready: taskSourceReady,
     sourceTasks,
   } = useBoardTaskSource({
@@ -252,7 +253,6 @@ export function BoardViews({
     (nextView: ViewType) => {
       if (!viewIsEnabled(nextView)) return;
       setCurrentView(nextView);
-      primeFullTaskCache(nextView);
       if (!localTaskState) {
         updateUserWorkspaceConfig.mutate({
           configId: TASK_LAST_BOARD_VIEW_CONFIG_ID,
@@ -282,7 +282,6 @@ export function BoardViews({
     [
       effectiveWorkspaceId,
       localTaskState,
-      primeFullTaskCache,
       updateUserWorkspaceConfig,
       viewIsEnabled,
     ]
@@ -513,11 +512,9 @@ export function BoardViews({
     wsId: effectiveWorkspaceId,
   });
 
-  // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
     let tasks = filteredTasks;
 
-    // Apply overrides
     if (Object.keys(taskOverrides).length) {
       tasks = tasks.map((t) => {
         const o = taskOverrides[t.id];
@@ -526,7 +523,6 @@ export function BoardViews({
     }
 
     tasks = tasks.filter((task) => !task.deleted_at);
-    // Sprint boards show the running sprint, else the one being planned.
     const showsOnBoard = boardSprints.showsOnBoard;
     if (showsOnBoard) tasks = tasks.filter(showsOnBoard);
 
@@ -566,7 +562,6 @@ export function BoardViews({
     if (!targetList) return;
     createTask(board.id, targetList.id, selectableLists, filters);
   };
-  // Pills count what the board shows: the current sprint, when sprints are on.
   const headerTasks = useMemo(() => {
     const showsOnBoard = boardSprints.showsOnBoard;
     return showsOnBoard ? tasks.filter(showsOnBoard) : tasks;
@@ -602,8 +597,6 @@ export function BoardViews({
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
-            // Matches among the loaded tasks show while the board's copy
-            // loads; the skeleton is only for a search with none yet.
             isLoading={
               !localTaskState &&
               !!filters.searchQuery?.trim() &&
@@ -611,6 +604,7 @@ export function BoardViews({
               (filterOnServer || effectiveTasks.length === 0)
             }
             isSearchError={!localTaskState && isFullTasksError}
+            hasUnloadedTasks={pagination?.hasMore}
             disableSort={!!filters.sortBy}
             onFiltersChange={setFilters}
             listStatusFilter={listStatusFilter}
@@ -661,6 +655,9 @@ export function BoardViews({
             canUseBoardAssignees={boardAssigneesEnabled}
             assigneeMemberSource={assigneeMemberSource}
             preserveTaskOrder={!!filters.sortBy}
+            hasUnloadedTasks={Boolean(
+              pagination?.hasMore || pagination?.pending || pagination?.failed
+            )}
             searchQuery={filters.searchQuery}
             readOnly={readOnly}
           />
@@ -738,7 +735,6 @@ export function BoardViews({
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
             planActive={sprintSurface.planActive}
             planTabs={sprintSurface.planTabs}
-            // The empty board shows the same matches as its action.
             onFilterIntent={prefetchBoardCopy}
             searchExtra={
               effectiveTasks.length ? sprintSurface.searchExtra : undefined
@@ -748,7 +744,11 @@ export function BoardViews({
         }
         initialLayoutReady={initialKanbanLayoutReady}
       >
-        {sprintSurface.planView ?? renderView()}
+        {sprintSurface.planView ?? (
+          <BoardTaskPageFrame paging={pagination}>
+            {renderView()}
+          </BoardTaskPageFrame>
+        )}
       </KanbanPresentation>
       {sprintSurface.summaryDialog}
       {showIdleBottomIsland ? idleBottomIsland : null}

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { getPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper';
@@ -13,7 +13,12 @@ import { useBoardTaskSource } from '../use-board-task-source';
 const mocks = vi.hoisted(() => ({
   counts: vi.fn(),
   copy: vi.fn(),
+  page: vi.fn(),
   pagination: {} as Record<string, ListPaginationState>,
+}));
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  listWorkspaceTasks: mocks.page,
 }));
 
 vi.mock('../board-task-search', async (importOriginal) => ({
@@ -42,10 +47,12 @@ const other = task('task-2', 'list-2', 'Other work');
 
 function renderSource({
   filters,
+  view = 'kanban',
   personal = false,
   tasks = [shown],
 }: {
   filters: Partial<TaskFilters>;
+  view?: 'kanban' | 'list';
   personal?: boolean;
   tasks?: Task[];
 }) {
@@ -60,7 +67,7 @@ function renderSource({
       useBoardTaskSource({
         autoCollapseEmptyTaskLists: false,
         board: { id: 'board-1', ticket_prefix: null },
-        currentView: 'kanban',
+        currentView: view,
         effectiveWorkspaceId: 'ws-1',
         filters: { ...DEFAULT_BOARD_FILTERS, ...props.filters },
         listStatusFilter: 'all',
@@ -81,7 +88,7 @@ describe('useBoardTaskSource', () => {
   });
 
   it('filters one unfiltered copy of the board in the browser', async () => {
-    mocks.copy.mockResolvedValue([shown, other]);
+    mocks.page.mockResolvedValue({ tasks: [shown, other], nextCursor: null });
     const { result, rerender } = renderSource({
       filters: { searchQuery: 'TIMELINE' },
     });
@@ -93,8 +100,8 @@ describe('useBoardTaskSource', () => {
       ])
     );
     expect(result.current.sourceTasks.map((t) => t.id)).toEqual(['task-1']);
-    expect(mocks.copy).toHaveBeenCalledTimes(1);
-    expect(mocks.copy.mock.calls[0]?.[1]).not.toHaveProperty('q');
+    expect(mocks.page).toHaveBeenCalledTimes(1);
+    expect(mocks.page.mock.calls[0]?.[1]).not.toHaveProperty('q');
     expect(mocks.counts).not.toHaveBeenCalled();
 
     // A new search and a sort need no request.
@@ -102,7 +109,53 @@ describe('useBoardTaskSource', () => {
     await waitFor(() =>
       expect(result.current.sourceTasks.map((t) => t.id)).toEqual(['task-2'])
     );
-    expect(mocks.copy).toHaveBeenCalledTimes(1);
+    expect(mocks.page).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads 50 of 1,000 tasks initially and fetches another page on demand', async () => {
+    const fixture = Array.from({ length: 1_000 }, (_, index) =>
+      task(`task-${index}`, 'list-1', `Task ${index}`)
+    );
+    mocks.page
+      .mockResolvedValueOnce({
+        tasks: fixture.slice(0, 50),
+        nextCursor: 'next',
+      })
+      .mockResolvedValueOnce({
+        tasks: fixture.slice(50, 100),
+        nextCursor: 'more',
+      });
+    const { result } = renderSource({ filters: {}, tasks: [], view: 'list' });
+    await waitFor(() => expect(result.current.sourceTasks).toHaveLength(50));
+    expect(mocks.page).toHaveBeenCalledTimes(1);
+    expect(mocks.page).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({ cursor: 'start' })
+    );
+
+    act(() => result.current.pagination?.loadMore());
+    await waitFor(() => expect(result.current.sourceTasks).toHaveLength(100));
+    expect(mocks.page).toHaveBeenCalledTimes(2);
+    expect(mocks.page).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({ cursor: 'next' })
+    );
+  });
+
+  it('steps over continuation pages that filter to no tasks', async () => {
+    mocks.page
+      .mockResolvedValueOnce({ tasks: [], nextCursor: 'placed~start' })
+      .mockResolvedValueOnce({ tasks: [], nextCursor: 'assigned~start' })
+      .mockResolvedValueOnce({ tasks: [shown], nextCursor: null });
+    const { result } = renderSource({ filters: {}, tasks: [], view: 'list' });
+
+    await waitFor(() => expect(result.current.sourceTasks).toEqual([shown]));
+    expect(mocks.page.mock.calls.map(([, options]) => options.cursor)).toEqual([
+      'start',
+      'placed~start',
+      'assigned~start',
+    ]);
+    expect(result.current.pagination).toBeNull();
   });
 
   it('searches the loaded board cache without a request', async () => {
@@ -136,8 +189,29 @@ describe('useBoardTaskSource', () => {
     );
     expect(mocks.copy).toHaveBeenCalledWith(
       'ws-1',
-      expect.objectContaining({ boardId: 'board-1', q: 'OLD-12' })
+      expect.objectContaining({ boardId: 'board-1', limit: 200, q: 'OLD-12' })
     );
+    expect(mocks.page).not.toHaveBeenCalled();
+  });
+
+  it('pages an explicit source scope through the server in 200-row requests', async () => {
+    mocks.copy.mockResolvedValue([shown]);
+    mocks.counts.mockResolvedValue([{ count: 1, list_id: 'list-1' }]);
+    const { result } = renderSource({
+      filters: { sourceScope: 'external_current_workspace' },
+      view: 'list',
+    });
+
+    await waitFor(() => expect(result.current.sourceTasks).toEqual([shown]));
+    expect(mocks.copy).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        boardId: 'board-1',
+        limit: 200,
+        sourceScope: 'external_current_workspace',
+      })
+    );
+    expect(mocks.page).not.toHaveBeenCalled();
   });
 
   it('loads the copy while a personal board has external pages to go', async () => {
@@ -148,7 +222,10 @@ describe('useBoardTaskSource', () => {
       'list-2': loaded,
       [stagingId]: { ...loaded, hasMore: true },
     };
-    mocks.copy.mockResolvedValue([shown, external]);
+    mocks.page.mockResolvedValue({
+      tasks: [shown, external],
+      nextCursor: null,
+    });
     const { result } = renderSource({
       filters: { searchQuery: 'timeline' },
       personal: true,

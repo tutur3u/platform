@@ -43,7 +43,7 @@ describe('useTableRowVirtualizer', () => {
     expect(screen.getByText('Row 0')).toBeTruthy();
     expect(screen.queryByText('Row 499')).toBeNull();
     expect(rendered).toBeGreaterThanOrEqual(20);
-    expect(rendered).toBeLessThan(500);
+    expect(rendered).toBeLessThanOrEqual(60);
     expect(screen.getByTestId('top').style.height).toBe('0px');
     expect(
       Number.parseInt(screen.getByTestId('bottom').style.height, 10)

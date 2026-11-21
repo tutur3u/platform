@@ -1,4 +1,9 @@
 import {
+  getBoardTaskQueries,
+  setBoardTaskQueries,
+  setBoardTaskQuery,
+} from '../task-helper/board-task-query-cache';
+import {
   type QueryClient,
   type QueryKey,
   useMutation,
@@ -95,7 +100,8 @@ function setReorderedTaskCache(
 ) {
   queryClient.setQueryData(['tasks', boardId], updater);
 
-  queryClient.setQueriesData<Task[]>(
+  setBoardTaskQueries(
+    queryClient,
     { queryKey: ['tasks-full', boardId] },
     updater
   );
@@ -163,7 +169,7 @@ export function useReorderTask(boardId: string, wsId: string) {
         'tasks',
         boardId,
       ]);
-      const previousFullTaskEntries = queryClient.getQueriesData<Task[]>({
+      const previousFullTaskEntries = getBoardTaskQueries(queryClient, {
         queryKey: ['tasks-full', boardId],
       });
 
@@ -231,7 +237,7 @@ export function useReorderTask(boardId: string, wsId: string) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       for (const [queryKey, tasks] of context?.previousFullTaskEntries ?? []) {
-        queryClient.setQueryData(queryKey, tasks);
+        setBoardTaskQuery(queryClient, queryKey, tasks);
       }
 
       console.error('Failed to reorder task:', err);
