@@ -10936,6 +10936,56 @@
       }
     }
   },
+  "marketing-integrations": {
+    "all_statuses": "Tất cả trạng thái",
+    "categories": {
+      "calendar": "Lịch",
+      "chat": "Nhắn tin",
+      "contacts": "Danh bạ",
+      "development": "Phát triển phần mềm",
+      "files": "Lưu trữ tệp",
+      "mail": "Email",
+      "productivity": "Năng suất",
+      "projects": "Quản lý dự án"
+    },
+    "description": "Tìm các dịch vụ có thể kết nối với Tuturuuu.",
+    "empty": "Không có dịch vụ tích hợp phù hợp với từ khóa và bộ lọc.",
+    "filter": "Lọc theo trạng thái",
+    "groups": {
+      "google": "Google",
+      "microsoft": "Microsoft",
+      "other": "Nhà cung cấp khác"
+    },
+    "manage": "Quản lý",
+    "manage_integration": "Quản lý {name}",
+    "names": {
+      "discord": "Nhắn tin qua Discord",
+      "github": "GitHub",
+      "gmail": "Gmail",
+      "google_calendar": "Lịch Google",
+      "google_contacts": "Danh bạ Google",
+      "google_drive": "Google Drive",
+      "google_workspace": "Google Workspace",
+      "jira": "Jira",
+      "linear": "Linear",
+      "microsoft_365": "Microsoft 365",
+      "microsoft_contacts": "Danh bạ Microsoft 365",
+      "notion": "Notion",
+      "onedrive": "OneDrive",
+      "outlook_calendar": "Lịch Outlook",
+      "outlook_mail": "Thư Outlook",
+      "slack": "Slack",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo"
+    },
+    "search": "Tìm dịch vụ tích hợp",
+    "statuses": {
+      "available": "Có sẵn",
+      "coming_soon": "Sắp ra mắt",
+      "early_access": "Thử nghiệm nội bộ"
+    },
+    "title": "Tích hợp"
+  },
   "marketing-models": {
     "all_providers": "Tất cả nhà cung cấp",
     "all_tags": "Tất cả thẻ",

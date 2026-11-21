@@ -64,6 +64,7 @@ export async function loadMailWorkspace(id: string) {
     }),
     actorId: user.id,
     notificationWebAppUrl: resolveNotificationWebAppUrl(),
+    canConnectAccounts: isStaff && Boolean(workspace.personal),
     connectedByDefault: !isStaff,
     profile: await getSatelliteCurrentUser('mail'),
     behavior,

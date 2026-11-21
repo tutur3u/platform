@@ -962,11 +962,11 @@ button opens the connected composer through `?compose=1` while connected.
 
 Settings → Accounts (tab key `source`, so `mailSettingsTab=source` links keep
 working) lists managed mailboxes with a Mailbox settings shortcut, and connected
-accounts with Connect Gmail, Connect Outlook and Disconnect with the existing
-confirmation. The picker's Manage accounts entry opens it. The connected pane
-keeps search, refresh, compose, list and reader only. Roles, group policy,
-personal-workspace-only connection, disconnect semantics and the default source
-are unchanged, and no new default is persisted. `mail-source-selection.test.ts`,
+accounts with Disconnect and its confirmation. Verified staff in their personal
+workspace also see Connect Gmail and Connect Outlook. The picker's Manage
+accounts entry opens this tab. The connected pane keeps search, refresh, compose,
+list and reader only. Roles, group policy, disconnect semantics and the default
+source stay the same, and preferences for the default source are not persisted. `mail-source-selection.test.ts`,
 `mailbox-groups.test.ts` and `mail-account-messages.test.ts` cover the URL,
 folder and grouping rules and the English and Vietnamese copy.
 
@@ -1382,10 +1382,11 @@ at the exact boundary; this bounds request intake, not automatic draining or spe
 
 ## Personal Gmail and Outlook accounts
 
-Mail also offers **Connected accounts** in a personal workspace. Any authenticated
-Tuturuuu user with access to that personal workspace may connect Gmail or Outlook;
-managed Tuturuuu mailboxes retain their existing staff/reviewer and mailbox-role
-checks. Connections belong to the authorizing user, not to workspace members or
+Mail offers **Connected accounts** in a personal workspace. New Gmail and Outlook
+connections and reconnects are in [internal early access](/platform/features/integrations-catalog)
+for verified Tuturuuu staff. Existing connected accounts keep their workspace and
+account ownership checks. Managed Tuturuuu mailboxes keep their staff, reviewer,
+and mailbox-role checks. Connections belong to the authorizing user, not to workspace members or
 shared mailbox delegates. Account discovery and every provider operation bind both
 user and workspace before decrypting credentials.
 

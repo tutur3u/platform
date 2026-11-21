@@ -27,6 +27,7 @@ describe('reserved workspace handles', () => {
       'apps',
       'roadmap',
       'design',
+      'integrations',
     ]) {
       expect(isReservedWorkspaceHandle(handle)).toBe(true);
     }

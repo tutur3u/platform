@@ -550,6 +550,7 @@
     "connected_disconnect_confirm": "Ngắt kết nối tài khoản này? Thư vẫn được giữ trong hộp thư của nhà cung cấp.",
     "connected_draft_saved": "Đã lưu thư nháp trong hộp thư của nhà cung cấp.",
     "connected_edit_draft": "Chỉnh sửa thư nháp",
+    "connected_coming_soon": "Tính năng kết nối tài khoản mới sắp ra mắt.",
     "connected_empty": "Kết nối hộp thư Gmail hoặc Outlook để đọc và gửi thư tại đây.",
     "connected_forward_attachments": "{count} tệp đính kèm gốc sẽ được chuyển tiếp.",
     "connected_google": "Kết nối Gmail",

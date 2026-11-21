@@ -122,23 +122,39 @@ describe('Mail staff domain', () => {
   });
 
   it.each([
-    ['staff@tuturuuu.com', true],
-    ['staff@xwf.tuturuuu.com', false],
-  ])('grants staff Mail access only to exact-domain %s', async (email, ok) => {
-    const user = {
-      id: 'staff-1',
-      email,
-      email_confirmed_at: '2026-01-01',
-      identities: [{ provider: 'email', identity_data: {} }],
-    };
-    mocks.resolveUser.mockResolvedValue({ authError: null, user });
-    vi.mocked(createAdminClient).mockResolvedValue({
-      auth: {
-        admin: { getUserById: async () => ({ data: { user }, error: null }) },
-      },
-    } as unknown as Awaited<ReturnType<typeof createAdminClient>>);
-    const result = await resolveMailRouteContext(request, 'personal');
-    expect(result.ok).toBe(ok);
-    if (!result.ok) expect(result.response.status).toBe(403);
-  });
+    ['staff@tuturuuu.com', '2026-01-01', true],
+    ['staff@example.com', '2026-01-01', false],
+    ['staff@tuturuuu.com.evil.com', '2026-01-01', false],
+    ['staff@xwf.tuturuuu.com', '2026-01-01', false],
+    ['staff@tuturuuu.com', null, false],
+  ])(
+    'resolves connect access from current verified Auth for %s (%s)',
+    async (email, verifiedAt, isStaff) => {
+      const user = {
+        id: 'staff-1',
+        email,
+        email_confirmed_at: verifiedAt,
+        identities: [{ provider: 'email', identity_data: {} }],
+      };
+      // Session email alone cannot grant staff access.
+      mocks.resolveUser.mockResolvedValue({
+        authError: null,
+        user: { ...user, email: 'staff@tuturuuu.com' },
+      });
+      vi.mocked(createAdminClient).mockResolvedValue({
+        auth: {
+          admin: { getUserById: async () => ({ data: { user }, error: null }) },
+        },
+      } as unknown as Awaited<ReturnType<typeof createAdminClient>>);
+      const connected = await resolveMailRouteContext(
+        request,
+        'personal',
+        true
+      );
+      expect(connected).toMatchObject({ ok: true, isStaff });
+      const managed = await resolveMailRouteContext(request, 'personal');
+      expect(managed.ok).toBe(isStaff);
+      if (!managed.ok) expect(managed.response.status).toBe(403);
+    }
+  );
 });

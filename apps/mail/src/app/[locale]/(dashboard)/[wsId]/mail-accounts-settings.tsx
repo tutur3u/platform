@@ -15,6 +15,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useState } from 'react';
+import { useCanConnectMailAccounts } from '@/components/mail-actor-provider';
 import { useConnectedMailAccounts } from './connected-mail-accounts';
 import {
   AccountSkeleton,
@@ -93,6 +94,7 @@ function ConnectedAccountsSection({
 }) {
   const t = useTranslations('mail');
   const cache = useQueryClient();
+  const canConnect = useCanConnectMailAccounts();
   const { cacheScope, query } = useConnectedMailAccounts(workspaceId);
   const [, setAccountParam] = useQueryState('account', parseAsString);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -162,7 +164,7 @@ function ConnectedAccountsSection({
       ) : null}
       {view.kind === 'ready' && view.accounts.length === 0 ? (
         <SettingsSectionMessage icon={<Mail className="size-4 shrink-0" />}>
-          {t('connected_empty')}
+          {t(canConnect ? 'connected_empty' : 'connected_coming_soon')}
         </SettingsSectionMessage>
       ) : null}
       {view.kind === 'ready'
@@ -196,36 +198,38 @@ function ConnectedAccountsSection({
           {actionError.message}
         </SettingsSectionMessage>
       ) : null}
-      <SettingsSectionFooter className="justify-start bg-muted/40">
-        <Button
-          disabled={connecting}
-          onClick={() => connect.mutate('google')}
-          variant="outline"
-        >
-          {connecting ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-4" />
-          )}
-          {t('connected_google')}
-        </Button>
-        <Button
-          disabled={connecting}
-          onClick={() => connect.mutate('microsoft')}
-          variant="outline"
-        >
-          <Plus className="size-4" />
-          {t('connected_microsoft')}
-        </Button>
-        {connecting ? (
-          <span
-            className="self-center text-muted-foreground text-sm"
-            role="status"
+      {canConnect && (
+        <SettingsSectionFooter className="justify-start bg-muted/40">
+          <Button
+            disabled={connecting}
+            onClick={() => connect.mutate('google')}
+            variant="outline"
           >
-            {t('connecting_provider')}
-          </span>
-        ) : null}
-      </SettingsSectionFooter>
+            {connecting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            {t('connected_google')}
+          </Button>
+          <Button
+            disabled={connecting}
+            onClick={() => connect.mutate('microsoft')}
+            variant="outline"
+          >
+            <Plus className="size-4" />
+            {t('connected_microsoft')}
+          </Button>
+          {connecting ? (
+            <span
+              className="self-center text-muted-foreground text-sm"
+              role="status"
+            >
+              {t('connecting_provider')}
+            </span>
+          ) : null}
+        </SettingsSectionFooter>
+      )}
     </SettingsSection>
   );
 }

@@ -36,6 +36,7 @@ const workspace = {
   workspaceSlug: 'personal',
   profile: null,
   notificationWebAppUrl: 'https://tuturuuu.com',
+  canConnectAccounts: false,
   connectedByDefault: false,
   behavior: 'expanded',
   behaviorUpdatedAt: null,

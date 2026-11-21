@@ -15,6 +15,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
+import { useCanConnectMailAccounts } from '@/components/mail-actor-provider';
 import type { MeetMailPlainDraft } from '@tuturuuu/utils/meet-mail-handoff';
 import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
 import { ConnectedMailCompose } from './connected-mail-compose';
@@ -46,6 +47,7 @@ export function ConnectedMailClient({
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
+  const canConnect = useCanConnectMailAccounts();
   const cache = useQueryClient();
   const [requestedAccountId] = useQueryState('account');
   const [composeParam, setComposeParam] = useQueryState('compose');
@@ -137,7 +139,9 @@ export function ConnectedMailClient({
         </p>
       ) : null}
       {!account && !accounts.isLoading ? (
-        <p className="text-muted-foreground">{t('connected_empty')}</p>
+        <p className="text-muted-foreground">
+          {t(canConnect ? 'connected_empty' : 'connected_coming_soon')}
+        </p>
       ) : null}
       <MeetMailHandoffPreview
         workspaceId={workspaceId}

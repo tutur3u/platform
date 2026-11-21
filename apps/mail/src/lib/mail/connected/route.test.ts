@@ -46,8 +46,8 @@ vi.mock('./send', () => ({
 vi.mock('./oauth', () => ({ startOAuth: mocks.connect }));
 
 import { seal } from './crypto';
-import { connectedMailRoute } from './route';
 import { GOOGLE_REVOKE_URL } from './revoke';
+import { connectedMailRoute } from './route';
 
 const accountId = '3b83b485-f740-4e43-9966-a9a63b792a9c';
 const origin = 'https://mail.example.test';
@@ -61,6 +61,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({
     ok: true,
+    isStaff: false,
     context: { user: { id: 'owner' }, normalizedWsId: 'personal-id' },
   });
   mocks.account.mockResolvedValue({ id: accountId });
@@ -90,6 +91,35 @@ describe('connected mail API boundaries', () => {
     expect(mocks.auth).not.toHaveBeenCalled();
     expect(mocks.connect).not.toHaveBeenCalled();
   });
+  it.each(['google', 'microsoft'])(
+    'only starts %s OAuth for verified staff',
+    async (provider) => {
+      const ctx = {
+        user: { id: 'owner' },
+        normalizedWsId: 'personal-workspace',
+      };
+      const send = () =>
+        connectedMailRoute(
+          request('POST', JSON.stringify({ provider })),
+          'personal',
+          ['connect']
+        );
+      expect((await send()).status).toBe(403);
+      expect(mocks.connect).not.toHaveBeenCalled();
+
+      mocks.auth.mockResolvedValue({ ok: true, isStaff: true, context: ctx });
+      mocks.connect.mockResolvedValue(
+        Response.json({ authUrl: 'https://provider.example.test' })
+      );
+      expect((await send()).status).toBe(200);
+      expect(mocks.connect).toHaveBeenCalledWith(
+        ctx,
+        provider,
+        expect.any(NextRequest)
+      );
+    }
+  );
+
   it('propagates authorization denial before provider reads', async () => {
     mocks.auth.mockResolvedValue({
       ok: false,

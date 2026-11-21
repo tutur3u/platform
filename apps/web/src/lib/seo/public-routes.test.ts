@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { APP_PUBLIC_PATHS } from '@/constants/public_paths';
+import { APP_PUBLIC_PATHS, PUBLIC_EXACT_PATHS } from '@/constants/public_paths';
 import { getPublicLocalizedPath, PUBLIC_SEO_ROUTES } from './public-routes';
 
 describe('public SEO routes', () => {
@@ -25,9 +25,10 @@ describe('public SEO routes', () => {
         // __tests__/proxy.test.ts, including the otherwise unlisted /vi path.
         if (pathname === '/') continue;
         expect(
-          APP_PUBLIC_PATHS.some(
-            (prefix) => url === prefix || url.startsWith(`${prefix}/`)
-          ),
+          PUBLIC_EXACT_PATHS.has(pathname) ||
+            APP_PUBLIC_PATHS.some(
+              (prefix) => url === prefix || url.startsWith(`${prefix}/`)
+            ),
           url
         ).toBe(true);
       }

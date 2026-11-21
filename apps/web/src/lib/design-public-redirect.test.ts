@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 import {
   DESIGN_REDIRECT_CACHE_CONTROL,
+  designAuthOptions,
   designRedirectPath,
   designRedirectResponse,
   isDesignPublicPath,
@@ -22,6 +23,25 @@ describe('design public paths', () => {
     expect(isDesignPublicPath('/designer')).toBe(false);
     expect(isDesignPublicPath('/ui')).toBe(false);
   });
+});
+
+describe('integrations catalog public paths', () => {
+  it.each(['/integrations', '/en/integrations', '/vi/integrations'])(
+    'admits %s without admitting workspace child paths or neighboring handles',
+    (pathname) => {
+      const options = designAuthOptions(
+        'https://tuturuuu.com',
+        () => false,
+        []
+      );
+      expect(options.isPublicPath(pathname)).toBe(true);
+      expect(options.isPublicPath(`${pathname}/settings`)).toBe(false);
+      expect(options.isPublicPath(`${pathname}-team/tasks`)).toBe(false);
+      expect(
+        options.publicPaths.some((prefix) => pathname.startsWith(prefix))
+      ).toBe(false);
+    }
+  );
 });
 
 describe('legacy ui redirects', () => {

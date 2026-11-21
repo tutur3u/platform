@@ -42,6 +42,9 @@ export async function connectedMailRoute(
       segments.length === 1 &&
       request.method === 'POST'
     ) {
+      if (!resolved.isStaff)
+        throw new ConnectedMailError(403, 'connected_mail_staff_required');
+
       const body = await parseConnectedBody(
         request,
         z.object({ provider: z.enum(['google', 'microsoft']) })

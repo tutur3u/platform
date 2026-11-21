@@ -50,6 +50,7 @@ export const KNOWN_ROOT_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'download',
   'facebook-mockup',
   'games',
+  'integrations',
   'invite',
   'legal',
   'login',

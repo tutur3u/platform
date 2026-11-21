@@ -1,5 +1,9 @@
 import { supportedLocales } from '@/i18n/routing';
 
+export const PUBLIC_EXACT_PATHS: ReadonlySet<string> = new Set([
+  '/integrations',
+]);
+
 export const APP_PUBLIC_PATHS = [
   '/account/delete',
   '/invite',

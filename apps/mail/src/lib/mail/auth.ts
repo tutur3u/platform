@@ -8,8 +8,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import {
+  getVerifiedAuthUser,
+  type SupabaseUser,
+} from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import {
@@ -68,6 +70,15 @@ export async function resolveMailAuth(
   };
 }
 
+export async function hasVerifiedMailStaffAccess(userId: string) {
+  return isVerifiedTuturuuuStaffSession(
+    await getVerifiedAuthUser(
+      await createAdminClient({ noCookie: true }),
+      userId
+    )
+  );
+}
+
 export async function resolveMailRouteContext(
   request: NextRequest,
   wsId: string,
@@ -76,6 +87,7 @@ export async function resolveMailRouteContext(
   | {
       ok: true;
       context: MailRouteContext;
+      isStaff: boolean;
     }
   | {
       ok: false;
@@ -88,13 +100,7 @@ export async function resolveMailRouteContext(
     return { ok: false, response: auth.response };
   }
 
-  const isStaff = isVerifiedTuturuuuStaffSession(
-    auth.user &&
-      (await getVerifiedAuthUser(
-        await createAdminClient({ noCookie: true }),
-        auth.user.id
-      ))
-  );
+  const isStaff = await hasVerifiedMailStaffAccess(auth.user.id);
   let managedMailbox = false;
   if (!connectedAccount && !isStaff) {
     try {
@@ -177,6 +183,7 @@ export async function resolveMailRouteContext(
 
   return {
     ok: true,
+    isStaff,
     context: {
       normalizedWsId,
       supabase: auth.supabase,

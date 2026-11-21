@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { type Locale, supportedLocales } from '@/i18n/routing';
 
 import { PUBLIC_PATHS } from '@/constants/common';
+import { PUBLIC_EXACT_PATHS } from '@/constants/public_paths';
 import { isRoadmapPublicPath } from './roadmap-public-proxy';
 
 const DESIGN_SEGMENT = 'design';
@@ -22,6 +23,10 @@ export function pathnameWithoutLocale(pathname: string): string {
   const pathSegments = hasLocale ? segments.slice(1) : segments;
 
   return pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+}
+
+export function isExactPublicAppPath(pathname: string): boolean {
+  return PUBLIC_EXACT_PATHS.has(pathnameWithoutLocale(pathname));
 }
 
 /** `/design` and `/design/*` only. `/design-private` stays private. */
@@ -94,7 +99,9 @@ export function designAuthOptions(
       (path) => !isRoadmapPublicPath(path) && !isDesignPublicPath(path)
     ),
     isPublicPath: (pathname: string) =>
-      isPublicPath(pathname) || isDesignPublicPath(pathname),
+      isPublicPath(pathname) ||
+      isDesignPublicPath(pathname) ||
+      isExactPublicAppPath(pathname),
     skipApiRoutes: true,
   };
 }

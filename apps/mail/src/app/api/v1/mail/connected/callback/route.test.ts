@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), finish: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
+  finish: vi.fn(),
+  staff: vi.fn(),
+}));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
   connection: vi.fn(),
 }));
-vi.mock('@/lib/mail/auth', () => ({ resolveMailAuth: mocks.auth }));
+vi.mock('@/lib/mail/auth', () => ({
+  hasVerifiedMailStaffAccess: mocks.staff,
+  resolveMailAuth: mocks.auth,
+}));
 vi.mock('@/lib/mail/connected/oauth', () => ({ finishOAuth: mocks.finish }));
 
 import { ConnectedMailError } from '@/lib/mail/connected/config';
@@ -15,12 +22,24 @@ import { GET } from './route';
 const request = new NextRequest(
   'https://mail.example.test/api/v1/mail/connected/callback'
 );
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.staff.mockResolvedValue(true);
+});
 it('does not consume OAuth state for an unauthenticated callback', async () => {
   mocks.auth.mockResolvedValue({
     response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
   });
   expect((await GET(request)).status).toBe(401);
+  expect(mocks.finish).not.toHaveBeenCalled();
+});
+it('rejects a callback after the actor loses staff access before consuming state', async () => {
+  mocks.auth.mockResolvedValue({
+    user: { id: 'owner', email: 'staff@tuturuuu.com' },
+  });
+  mocks.staff.mockResolvedValue(false);
+  expect((await GET(request)).status).toBe(403);
+  expect(mocks.staff).toHaveBeenCalledWith('owner');
   expect(mocks.finish).not.toHaveBeenCalled();
 });
 it('passes only the authenticated actor identity to OAuth completion', async () => {

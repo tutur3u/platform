@@ -83,6 +83,9 @@ describe('vinext route table', () => {
     expect(route('/')).toBe('public-auth');
     expect(route('/en')).toBe('public-auth');
     expect(route('/cite')).toBe('web-rest');
+    expect(route('/integrations')).toBe('web-rest');
+    expect(route('/vi/integrations')).toBe('web-rest');
+    expect(route('/vi/integrations/settings')).toBe('dashboard');
     expect(route('/personal')).toBe('dashboard');
     expect(route('/vi/personal/settings')).toBe('dashboard');
     expect(route('/personal/tasks')).toBe('dashboard-apps');

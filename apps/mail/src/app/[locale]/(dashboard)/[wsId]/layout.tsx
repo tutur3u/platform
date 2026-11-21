@@ -92,7 +92,10 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <MailSourceProvider connectedByDefault={!isStaff}>
-      <MailActorProvider actorId={user.id}>
+      <MailActorProvider
+        actorId={user.id}
+        canConnectAccounts={isStaff && Boolean(workspace.personal)}
+      >
         <SidebarProvider
           initialBehavior={sidebarBehavior}
           initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}

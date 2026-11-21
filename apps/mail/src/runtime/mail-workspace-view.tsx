@@ -12,8 +12,8 @@ import { MailSourceProvider } from '../app/[locale]/(dashboard)/[wsId]/mail-sour
 import { MailWorkspace } from '../app/[locale]/(dashboard)/[wsId]/mail-workspace';
 import { Structure } from '../app/[locale]/(dashboard)/[wsId]/structure';
 import { MailActorProvider } from '../components/mail-actor-provider';
-import { MailContentSkeleton } from './mail-workspace-skeleton';
 import type { loadMailWorkspace } from './mail-workspace-model.server';
+import { MailContentSkeleton } from './mail-workspace-skeleton';
 import NotificationPopover from './notification-popover';
 
 type Workspace = Extract<
@@ -62,7 +62,10 @@ export function MailWorkspaceView({
   });
   return (
     <MailSourceProvider connectedByDefault={model.connectedByDefault}>
-      <MailActorProvider actorId={actorId}>
+      <MailActorProvider
+        actorId={actorId}
+        canConnectAccounts={model.canConnectAccounts}
+      >
         <SidebarProvider
           initialBehavior={model.behavior}
           initialBehaviorUpdatedAt={model.behaviorUpdatedAt}

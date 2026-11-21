@@ -118,6 +118,7 @@ export const MARKETING_CLIENT_MESSAGE_NAMESPACES = [
   'invite',
   'landing',
   'logout',
+  'marketing-integrations',
   'marketing-models',
   // The legacy Meet Together UI on /meet renders client components.
   'meet-together',

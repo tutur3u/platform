@@ -4,9 +4,9 @@ import type UserNavClient from '@tuturuuu/satellite/user-nav-client';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { type ComponentProps, createElement as h, type ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { MailWorkspaceView } from './mail-workspace-view';
 import { useMeetMailWorkspaceScope } from '../app/[locale]/(dashboard)/[wsId]/meet-mail-workspace-scope';
 import { useMailActor } from '../components/mail-actor-provider';
+import { MailWorkspaceView } from './mail-workspace-view';
 
 const observed = vi.hoisted(() => ({
   structure: vi.fn(),
@@ -103,6 +103,7 @@ const model = {
   workspaceSlug: 'personal',
   profile: null,
   notificationWebAppUrl: 'https://tuturuuu.com',
+  canConnectAccounts: false,
   connectedByDefault: true,
   behavior: 'expanded',
   behaviorUpdatedAt: null,
@@ -138,7 +139,9 @@ it.each([true, false])(
         workspace: { ...model, connectedByDefault },
         locale: 'en',
       }),
-      { wrapper: withNuqsTestingAdapter({ searchParams: {}, hasMemory: true }) }
+      {
+        wrapper: withNuqsTestingAdapter({ searchParams: {}, hasMemory: true }),
+      }
     );
     const client = screen.getByRole('status');
     expect(client.getAttribute('data-client')).toBe(
@@ -180,7 +183,9 @@ it.each([false, true])(
         },
         locale: 'en',
       }),
-      { wrapper: withNuqsTestingAdapter({ searchParams: {}, hasMemory: true }) }
+      {
+        wrapper: withNuqsTestingAdapter({ searchParams: {}, hasMemory: true }),
+      }
     );
     const footer = screen.getByRole('complementary', {
       name: 'Workspace account',

@@ -43,6 +43,7 @@ export const RESERVED_WORKSPACE_HANDLES: readonly string[] = [
   'git',
   'hive',
   'infrastructure',
+  'integrations',
   'inventory',
   'learn',
   'lettin',

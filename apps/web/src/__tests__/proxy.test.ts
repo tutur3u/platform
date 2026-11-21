@@ -1750,31 +1750,28 @@ describe('web proxy api handling', () => {
     expect(adminFrom).not.toHaveBeenCalled();
   });
 
-  it('denies guest dashboard routes without mapped permissions', async () => {
-    const adminFrom = vi.fn();
-    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
-      ok: true,
-      membershipType: 'GUEST',
-    });
-    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.createAdminClient.mockResolvedValue({
-      from: adminFrom,
-    });
+  it.each([
+    '/11111111-1111-4111-8111-111111111111/unknown',
+    '/vi/integrations/unknown',
+  ])(
+    'denies guest access to %s without mapped permissions',
+    async (pathname) => {
+      mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+        ok: true,
+        membershipType: 'GUEST',
+      });
+      mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest(`http://localhost${pathname}`)
+      );
 
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      new NextRequest(
-        'http://localhost/11111111-1111-4111-8111-111111111111/unknown'
-      )
-    );
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
-    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
-      '/11111111-1111-4111-8111-111111111111/unknown'
-    );
-    expect(adminFrom).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(404);
+      expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+      expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(pathname);
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    }
+  );
 
   it('allows guest dashboard routes when the mapped guest default is enabled', async () => {
     const defaultPermissionsBuilder = {

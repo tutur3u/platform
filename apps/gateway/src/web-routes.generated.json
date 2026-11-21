@@ -1202,6 +1202,16 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/people/changes"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/people/recall"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/platform/users/[userId]/roles"
     },
     {
@@ -4178,6 +4188,11 @@
       "family": "web-rest",
       "localized": true,
       "pattern": "/docs"
+    },
+    {
+      "family": "web-rest",
+      "localized": true,
+      "pattern": "/integrations"
     },
     {
       "family": "web-rest",

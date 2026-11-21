@@ -479,17 +479,6 @@ function handlePublicMarketingRedirectRoute(
   return null;
 }
 
-function isWorkspaceHomeRedirectCandidate(
-  workspaceSlug: string | undefined
-): workspaceSlug is string {
-  if (!workspaceSlug) {
-    return false;
-  }
-
-  const pathname = `/${workspaceSlug}`;
-  return !PUBLIC_PATHS.includes(pathname);
-}
-
 async function hasWorkspaceEmailRateLimitOverrides(
   pathname: string
 ): Promise<boolean> {
@@ -956,7 +945,7 @@ async function guardGuestWorkspaceRoute({
     pathSegments.length <= workspaceIndex + 1 ||
     workspaceSlug.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
     workspaceSlug.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX) ||
-    !isWorkspaceHomeRedirectCandidate(workspaceSlug)
+    PUBLIC_PATHS.includes(`/${workspaceSlug}`)
   ) {
     return null;
   }
@@ -1295,7 +1284,11 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
       return handleLocaleWithAuthCookies(req, authRes);
     }
 
-    if (isWorkspaceHomeRedirectCandidate(workspaceSlug)) {
+    if (
+      workspaceSlug &&
+      !PUBLIC_PATHS.includes(`/${workspaceSlug}`) &&
+      !designPublic.isExactPublicAppPath(`/${workspaceSlug}`)
+    ) {
       try {
         const supabase = await createClient();
         const { user } = await resolveAuthenticatedSessionUser(supabase);

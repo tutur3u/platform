@@ -550,6 +550,7 @@
     "connected_disconnect_confirm": "Disconnect this account? Your provider messages will remain in your mailbox.",
     "connected_draft_saved": "Draft saved in your provider mailbox.",
     "connected_edit_draft": "Edit draft",
+    "connected_coming_soon": "New connections are coming soon.",
     "connected_empty": "Connect your Gmail or Outlook mailbox to read and send mail here.",
     "connected_forward_attachments": "{count} original attachments will be forwarded.",
     "connected_google": "Connect Gmail",
