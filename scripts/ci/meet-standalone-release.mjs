@@ -21,6 +21,35 @@ const exactWorkflows = ['security-checks.yaml', 'meet-cloudflare.yaml'];
 // Repository-wide checks also accept a green run on a nearby main commit
 // when Meet's workspace closure is identical (release-relevant-ci.mjs).
 const sharedWorkflows = EQUIVALENT_WORKFLOWS;
+
+/**
+ * Release-authority risk acceptances for repository-wide workflows that are
+ * red only outside Meet's closure. Each names its authority record, the exact
+ * source, the covered shared workflows and an expiry. Meet's own and the
+ * security workflows are never covered, and the covered run must have
+ * executed and failed on the exact source.
+ */
+export const RELEASE_EXCEPTIONS = [];
+
+export function releaseException(
+  source,
+  workflow,
+  now,
+  exceptions = RELEASE_EXCEPTIONS
+) {
+  if (!sharedWorkflows.includes(workflow)) return undefined;
+  return exceptions.find(
+    (exception) =>
+      typeof exception.id === 'string' &&
+      exception.id.length > 0 &&
+      SHA.test(exception.source ?? '') &&
+      exception.source === source &&
+      Array.isArray(exception.workflows) &&
+      exception.workflows.includes(workflow) &&
+      Number.isFinite(Date.parse(exception.expires)) &&
+      Date.parse(exception.expires) > now
+  );
+}
 // At most this many equivalent commits have their run's jobs read.
 const MAX_EXECUTION_READS = 3;
 // A page of 40 main workflow runs is about 0.5 MiB and grows with run
@@ -119,9 +148,10 @@ export function admissionOutputs(result) {
   return `superseded=${result.guardCode === 'MEET_RELEASE_SUPERSEDED'}\n${live}`;
 }
 
-export function admitWorkflowRuns(payload, source, currentRun) {
+/** The newest main push or dispatch run of a workflow on the exact source. */
+export function latestWorkflowRun(payload, source, currentRun) {
   if (!Array.isArray(payload?.workflow_runs)) stop('MEET_RELEASE_CI_RESPONSE');
-  const runs = payload.workflow_runs
+  return payload.workflow_runs
     .filter(
       (run) =>
         run.head_sha === source &&
@@ -133,8 +163,11 @@ export function admitWorkflowRuns(payload, source, currentRun) {
     )
     .sort(
       (a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt
-    );
-  const latest = runs[0];
+    )[0];
+}
+
+export function admitWorkflowRuns(payload, source, currentRun) {
+  const latest = latestWorkflowRun(payload, source, currentRun);
   if (
     !latest ||
     latest.status !== 'completed' ||
@@ -165,6 +198,8 @@ export async function admitRelease({
   env = process.env,
   run = execFileSync,
   fetcher = fetch,
+  now = Date.now,
+  exceptions = RELEASE_EXCEPTIONS,
   receipt = (value) => {
     if (env.RUNNER_TEMP)
       writeFileSync(
@@ -296,7 +331,34 @@ export async function admitRelease({
         checks[workflow] = { ...admitted, equivalentSha: sha, distance };
         break;
       }
-      if (!checks[workflow]) stop('MEET_RELEASE_CI_NOT_GREEN');
+      if (checks[workflow]) continue;
+      const exception = releaseException(
+        env.SOURCE_SHA,
+        workflow,
+        now(),
+        exceptions
+      );
+      if (!exception) stop('MEET_RELEASE_CI_NOT_GREEN');
+      const covered = latestWorkflowRun(
+        await readJson(
+          runsUrl(workflow, `head_sha=${env.SOURCE_SHA}&per_page=100`),
+          env.GH_TOKEN,
+          fetcher
+        ),
+        env.SOURCE_SHA,
+        env.GITHUB_RUN_ID
+      );
+      // Only a run that executed and failed is covered; cancelled, skipped or
+      // unstarted runs prove nothing about the tests.
+      if (covered?.status !== 'completed' || covered.conclusion !== 'failure')
+        stop('MEET_RELEASE_CI_NOT_GREEN');
+      checks[workflow] = {
+        id: covered.id,
+        attempt: covered.run_attempt,
+        conclusion: covered.conclusion,
+        exception: exception.id,
+        expires: exception.expires,
+      };
     }
     const result = {
       guardCode: 'MEET_RELEASE_ADMITTED',

@@ -647,7 +647,16 @@ jobs:
         id: admission
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci/meet-standalone-release.mjs
+          POLICY_SHA: ${{ github.sha }}
+        # Admission policy comes from main's dispatch head, as in the policy job,
+        # so a pinned source cannot carry its own release rules.
+        run: |
+          policy="$RUNNER_TEMP/meet-release-policy"
+          mkdir -p "$policy"
+          for file in meet-standalone-release.mjs release-relevant-ci.mjs; do
+            git show "$POLICY_SHA:scripts/ci/$file" > "$policy/$file"
+          done
+          node "$policy/meet-standalone-release.mjs"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         if: steps.admission.outputs.superseded != 'true'
         with: { name: "meet-realtime-worker-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}/meet-realtime-worker" }

@@ -82,3 +82,19 @@ test('a release dispatch publishes its pinned main source', () => {
       `${job} checks out the source`
     );
 });
+
+test("deploy admission runs the release policy from main's dispatch head", () => {
+  const admit = workflow.jobs.deploy.steps.find(
+    (item) => item.id === 'admission'
+  );
+  assert.equal(admit.env.POLICY_SHA, '${{ github.sha }}');
+  assert.match(
+    admit.run,
+    /git show "\$POLICY_SHA:scripts\/ci\/\$file" > "\$policy\/\$file"/
+  );
+  assert.match(
+    admit.run,
+    /for file in meet-standalone-release\.mjs release-relevant-ci\.mjs; do/
+  );
+  assert.match(admit.run, /node "\$policy\/meet-standalone-release\.mjs"/);
+});

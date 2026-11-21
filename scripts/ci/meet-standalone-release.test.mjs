@@ -15,6 +15,7 @@ import test from 'node:test';
 import {
   admissionOutputs,
   admitRelease,
+  releaseException,
   MAX_READ_BYTES,
   admitWorkflowRuns,
   bindProductionIntent,
@@ -566,4 +567,121 @@ test("the policy job admits a pinned main ancestor from main's head checkout", a
       }),
       /MEET_RELEASE_(CHECKOUT|SOURCE)/
     );
+});
+
+const RA = {
+  id: 'RA-TEST-1',
+  source,
+  workflows: ['turbo-unit-tests.yaml'],
+  expires: '2026-11-22T16:59:00Z',
+};
+const before = Date.parse('2026-11-21T06:00:00Z');
+
+function exceptionScenario({
+  unitRun = { ...green, conclusion: 'failure' },
+} = {}) {
+  const run = (_bin, args) => {
+    if (args[0] === 'rev-parse') return source;
+    if (args[0] === 'ls-tree') return 'apps/meet\n';
+    if (args[0] === 'show') return JSON.stringify({ name: '@tuturuuu/meet' });
+    return '';
+  };
+  const fetcher = async (url) => {
+    const parsed = new URL(url);
+    let body = metadata;
+    if (parsed.origin === 'https://api.github.com') {
+      if (parsed.pathname.includes('/turbo-unit-tests.yaml/'))
+        body = {
+          workflow_runs:
+            parsed.searchParams.get('status') === 'success' ? [] : [unitRun],
+        };
+      else body = { workflow_runs: [green] };
+    }
+    return { ok: true, text: async () => JSON.stringify(body) };
+  };
+  return { run, fetcher };
+}
+
+test('a recorded risk acceptance admits only its shared workflow on its exact source', async () => {
+  const { run, fetcher } = exceptionScenario();
+  const receipts = [];
+  await assert.rejects(
+    admitRelease({
+      env,
+      run,
+      fetcher,
+      now: () => before,
+      exceptions: [],
+      receipt: () => {},
+    }),
+    /MEET_RELEASE_CI_NOT_GREEN/
+  );
+  await admitRelease({
+    env,
+    run,
+    fetcher,
+    now: () => before,
+    exceptions: [RA],
+    receipt: (value) => receipts.push(value),
+  });
+  const admitted = receipts.at(-1);
+  assert.equal(admitted.guardCode, 'MEET_RELEASE_ADMITTED');
+  assert.equal(admitted.checks['turbo-unit-tests.yaml'].exception, 'RA-TEST-1');
+  assert.equal(admitted.checks['turbo-unit-tests.yaml'].conclusion, 'failure');
+  for (const exceptions of [
+    [{ ...RA, expires: '2026-11-21T05:00:00Z' }],
+    [{ ...RA, source: live }],
+    [{ ...RA, workflows: ['type-check.yaml'] }],
+  ])
+    await assert.rejects(
+      admitRelease({
+        env,
+        run,
+        fetcher,
+        now: () => before,
+        exceptions,
+        receipt: () => {},
+      }),
+      /MEET_RELEASE_CI_NOT_GREEN/
+    );
+});
+
+test('a risk acceptance never covers an unfinished run or a Meet or security workflow', async () => {
+  for (const unitRun of [
+    { ...green, status: 'in_progress', conclusion: null },
+    { ...green, conclusion: 'cancelled' },
+    { ...green, conclusion: 'skipped' },
+    { ...green, conclusion: 'startup_failure' },
+  ]) {
+    const scenario = exceptionScenario({ unitRun });
+    await assert.rejects(
+      admitRelease({
+        env,
+        ...scenario,
+        now: () => before,
+        exceptions: [RA],
+        receipt: () => {},
+      }),
+      /MEET_RELEASE_CI_NOT_GREEN/
+    );
+  }
+  for (const record of [
+    { ...RA, id: '' },
+    { ...RA, workflows: 'turbo-unit-tests.yaml' },
+  ])
+    assert.equal(
+      releaseException(source, 'turbo-unit-tests.yaml', before, [record]),
+      undefined
+    );
+  for (const workflow of ['meet-cloudflare.yaml', 'security-checks.yaml'])
+    assert.equal(
+      releaseException(source, workflow, before, [
+        { ...RA, workflows: [workflow] },
+      ]),
+      undefined
+    );
+  assert.equal(
+    releaseException(source, 'turbo-unit-tests.yaml', before, [RA]),
+    RA
+  );
 });
