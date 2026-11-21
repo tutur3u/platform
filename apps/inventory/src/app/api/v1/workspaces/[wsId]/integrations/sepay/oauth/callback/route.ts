@@ -108,7 +108,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
   }
 
-  const verifiedState = verifySepayOauthState({
+  const verifiedState = await verifySepayOauthState({
     expectedState:
       request.cookies.get(getSepayOauthStateCookieName(wsId))?.value ?? null,
     state,

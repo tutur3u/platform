@@ -1,9 +1,10 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { getSepayWebhookAuthSecret } from './sepay';
 
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
 const SEPAY_OAUTH_STATE_COOKIE_PREFIX = 'sepay_oauth_state_';
 const SEPAY_OAUTH_STATE_VERSION = 1;
+const stateEncoder = new TextEncoder();
 
 type SepayOauthStatePayload = {
   expiresAt: number;
@@ -30,12 +31,18 @@ function getSepayOauthStateSigningSecret() {
   );
 }
 
-function signSepayOauthStatePayload(payload: string) {
-  const secret = getSepayOauthStateSigningSecret();
-  if (!secret?.trim()) {
+function importSepayOauthStateKey(usage: 'sign' | 'verify') {
+  const signingKey = getSepayOauthStateSigningSecret();
+  if (!signingKey?.trim()) {
     throw new Error('Missing SePay OAuth state signing secret');
   }
-  return createHmac('sha256', secret).update(payload).digest('base64url');
+  return crypto.subtle.importKey(
+    'raw',
+    stateEncoder.encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    [usage]
+  );
 }
 
 function encodeSepayOauthStatePayload(payload: SepayOauthStatePayload) {
@@ -101,21 +108,29 @@ export function getSepayOauthStateMaxAgeSeconds(ttlMs?: number) {
   return Math.max(1, Math.ceil((ttlMs ?? DEFAULT_STATE_TTL_MS) / 1000));
 }
 
-export function createSepayOauthState(input: { ttlMs?: number; wsId: string }) {
+export async function createSepayOauthState(input: {
+  ttlMs?: number;
+  wsId: string;
+}) {
   const payload = encodeSepayOauthStatePayload({
     expiresAt: Date.now() + (input.ttlMs ?? DEFAULT_STATE_TTL_MS),
     nonce: randomBytes(32).toString('base64url'),
     version: SEPAY_OAUTH_STATE_VERSION,
     wsId: input.wsId,
   });
-  const signature = signSepayOauthStatePayload(payload);
+  const key = await importSepayOauthStateKey('sign');
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    stateEncoder.encode(payload)
+  );
 
   return {
-    state: `${payload}.${signature}`,
+    state: `${payload}.${Buffer.from(signature).toString('base64url')}`,
   };
 }
 
-export function verifySepayOauthState(input: {
+export async function verifySepayOauthState(input: {
   expectedState: string | null | undefined;
   state: string;
   wsId: string;
@@ -133,14 +148,21 @@ export function verifySepayOauthState(input: {
     return { ok: false as const };
   }
 
-  let expectedSignature: string;
-  try {
-    expectedSignature = signSepayOauthStatePayload(payload);
-  } catch {
+  const mac = Buffer.from(signature, 'base64url');
+  if (mac.toString('base64url') !== signature) {
     return { ok: false as const };
   }
 
-  if (!safeEquals(signature, expectedSignature)) {
+  try {
+    const key = await importSepayOauthStateKey('verify');
+    const valid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      mac,
+      stateEncoder.encode(payload)
+    );
+    if (!valid) return { ok: false as const };
+  } catch {
     return { ok: false as const };
   }
 

@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const callbackUrl = buildSepayOauthCallbackUrl(access.wsId);
   const callbackPath = new URL(callbackUrl).pathname;
-  const oauthState = createSepayOauthState({ wsId: access.wsId });
+  const oauthState = await createSepayOauthState({ wsId: access.wsId });
   const authorizeUrl = buildSepayOauthAuthorizeUrl({
     authorizeUrl: env.authorizeUrl,
     clientId: env.clientId,
