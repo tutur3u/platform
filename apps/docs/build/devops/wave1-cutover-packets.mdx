@@ -1,12 +1,12 @@
 ---
 title: "Wave-1 cutover packets: Calendar, Mail, Apps, Finance, Meet, Roadmap"
-description: "Per-app Worker identity, routes, bindings, build command, Vercel rollback target and smoke commands for the wave-1 Cloudflare cutover."
+description: "Per-app Worker identity, routes, bindings, build commands, rollback and smoke checks for the wave-1 Cloudflare cutover."
 updatedAt: "2026-11-17"
 audience: developers
 ---
 
-Each packet is what the release operator needs to flip one app from Vercel to its
-native Cloudflare Worker, and to flip it back. Provider writes (DNS, routes,
+Each packet covers an app's cutover to its native Cloudflare Worker and recovery
+after activation. Provider writes (DNS, routes,
 custom domains, aliases, deployments) stay with the release operator; the source
 only produces the sealed Worker bytes. Secret values never appear here, only names.
 
@@ -64,10 +64,12 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   artifact for an operator cf publication ([D74 runbook](/build/devops/d74-cutover-runbooks),
   step 4). Tasks now has a production publisher (`tasks-cloudflare.yaml`); Track
   has none and needs no environment.
-- Rollback: Vercel can no longer redeploy `calendar`, `mail` or `apps` from `main`. Their build
-  command now emits a native Worker and Vercel fails with `NEXT_OUTPUT_DIR_MISSING`, so the
-  rollback target is the retained READY deployment below, restored by moving the alias.
-  Never delete these deployments until a full release cycle has run on the Worker.
+- For Calendar, Mail and Apps, record the currently assigned Worker version and
+  its production smoke results before assigning a candidate. Restore a previously
+  verified Cloudflare version with `assign --worker <worker> --version <previous>
+  --expect-current <regressing>` while keeping the active routes in place. If the
+  version check fails, capture the live deployment again and reconcile ownership.
+  If the app has no previously verified Cloudflare version, publish a targeted fix.
 - Smoke, after the flip, per host `<host>`:
 
   ```sh
@@ -102,7 +104,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` only; no database, KV, R2 or queue |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`) |
-| Vercel rollback | `dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2` (`calendar-2zv7iqdve-tuturuuu.vercel.app`, READY, aliased to `calendar.tuturuuu.com`) |
+| Rollback | Previous `tuturuuu-calendar` version verified on the canonical host |
 
 The Calendar cutover keeps `calendar.tuturuuu.com` as the public app origin and
 uses the existing registered Google and Microsoft callbacks on that subdomain.
@@ -119,7 +121,12 @@ verifying both apex callback URIs with their providers.
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_R2_ACCOUNT_ID`, `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, `MAIL_CLOUDFLARE_ACCOUNT_ID`, `MAIL_CLOUDFLARE_API_TOKEN`, `MAIL_CLOUDFLARE_INGEST_SECRET` |
 | Resources | Existing R2 bucket `tuturuuu-mail` (retained); the email-routing Worker (`wrangler.email-routing.jsonc`) is a separate deployment and is not touched by this cutover |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=mail` from `production` (environment `wave1-mail-production`) |
-| Vercel rollback | `dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3` (`mail-4qk3m6sdv-tuturuuu.vercel.app`, READY, aliased to `mail.tuturuuu.com`) |
+| Rollback | Previous `tuturuuu-mail` version verified on the canonical host |
+
+Qualify each inbound webhook before moving its route to the Mail Worker.
+Verify the sender's actual request path and authentication, and verify delivery
+through the new path. Check the other webhook and leave mail delivery DNS records
+in place while changing one route.
 
 ## Apps
 
@@ -131,7 +138,7 @@ verifying both apex callback URIs with their providers.
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
-| Vercel rollback | `dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS` (`apps-mlvxr7mpd-tuturuuu.vercel.app`, READY, aliased to `apps.tuturuuu.com`) |
+| Rollback | Previous verified `tuturuuu-apps` version. Revert a gateway-only regression on the gateway. |
 
 The sealed production profile is checked on the canonical host and at
 `/apps` on the apex. Original and archive-restored checks verify the rendered

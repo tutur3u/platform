@@ -35,7 +35,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 5. Smoke the Worker on its own hostname before any route change: `node scripts/cutover-smoke.mjs <app> https://<worker-hostname>`. An artifact with `workers_dev` and `preview_urls` off has no such hostname; smoke it on the private acceptance host its packet names, or stop and ask the release authority for one, before step 6.
 6. Attach the route or custom domain for the host (proxied, in front of the still-valid Vercel origin where possible). Proxied DNS flips happen only after the smoke in step 5 passes.
 7. Re-run the smoke on the public host and watch for 5 minutes: no 5xx, login renders, entry route as expected.
-8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login: remove the route or repoint the DNS record to the Vercel pin. Never rebuild on the rollback path. No data or migration is involved.
+8. Rollback on any 5xx above 1% for 5 minutes, a wrong redirect or a broken login. Calendar, Mail and Apps keep their active routes and use the [verified Cloudflare version rollback](/build/devops/wave1-cutover-packets#common). For the other packets that list a Vercel pin, remove the route or repoint the DNS record to that pin. No data or migration is involved.
 
 ### Pre-seal doctor
 
@@ -213,7 +213,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Worker | `tuturuuu-calendar` |
 | Hosts | calendar.tuturuuu.com |
 | Artifact | wave1-native-production.yaml, input app=calendar, environment wave1-calendar-production; `node scripts/ci/wave1-native-artifact.mjs prepare calendar production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
-| Vercel rollback pin | dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2 |
+| Rollback | [Previous verified Cloudflare version](/build/devops/wave1-cutover-packets#calendar) |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
@@ -225,11 +225,10 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Worker | `tuturuuu-mail` |
 | Hosts | mail.tuturuuu.com |
 | Artifact | wave1-native-production.yaml, input app=mail, environment wave1-mail-production; `node scripts/ci/wave1-native-artifact.mjs prepare mail production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
-| Vercel rollback pin | dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3 |
+| Rollback | [Previous verified Cloudflare version](/build/devops/wave1-cutover-packets#mail) |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs mail https://mail.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
-| Note | Vercel cannot rebuild mail from main; the Cloudflare cutover is the only way forward. |
 
 ## 13. apps
 
@@ -238,7 +237,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Worker | `tuturuuu-apps` |
 | Hosts | apps.tuturuuu.com |
 | Artifact | wave1-native-production.yaml, input app=apps, environment wave1-apps-production; `node scripts/ci/wave1-native-artifact.mjs prepare apps production <sha>`, then its runtime and verify steps (never plain `build:cloudflare`) |
-| Vercel rollback pin | dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS |
+| Rollback | [Previous verified Cloudflare version](/build/devops/wave1-cutover-packets#apps) |
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs apps https://apps.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
