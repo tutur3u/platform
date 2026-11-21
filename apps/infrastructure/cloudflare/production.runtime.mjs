@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 
 import { inspectServerArtifact } from './server-artifact.mjs';
 
@@ -45,18 +46,25 @@ test(
     await cp(join(app, 'dist'), join(scratch, 'dist'), { recursive: true });
     await writeFile(join(scratch, 'empty.env'), '');
     const egress = [];
-    const worker = await require('wrangler').unstable_startWorker({
+    const registry = join(scratch, 'registry');
+    const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
+    const worker = await sdk.unstable_startWorker({
       config: join(scratch, relative(app, configPath)),
       envFiles: [join(scratch, 'empty.env')],
       sendMetrics: false,
-      bindings: Object.fromEntries(
-        Object.entries({
-          NEXT_PUBLIC_SUPABASE_URL: 'https://synthetic.supabase.invalid',
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_synthetic_only',
-          SUPABASE_SECRET_KEY: 'synthetic-server-key',
-          TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-coordination-key',
-        }).map(([name, value]) => [name, { type: 'secret_text', value }])
-      ),
+      bindings: {
+        ...guardBindings,
+        ...Object.fromEntries(
+          Object.entries({
+            NEXT_PUBLIC_SUPABASE_URL: 'https://synthetic.supabase.invalid',
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+              'sb_publishable_synthetic_only',
+            SUPABASE_SECRET_KEY: 'synthetic-server-key',
+            TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-coordination-key',
+          }).map(([name, value]) => [name, { type: 'secret_text', value }])
+        ),
+      },
       build: { bundle: false, processEntrypoint: false },
       dev: {
         remote: false,
@@ -66,7 +74,7 @@ test(
         liveReload: false,
         generateTypes: false,
         enableContainers: false,
-        registry: join(scratch, 'registry'),
+        registry,
         server: { hostname: '127.0.0.1', port: 0 },
         origin: { secure: true },
         inferOriginFromRoutes: false,
@@ -129,7 +137,12 @@ test(
       'tuturuuu.com'
     );
     assert.equal(mountLogin.status, 307);
-    const centralLogin = new URL(mountLogin.headers.location);
+    // The central login answers with a same-origin relative Location.
+    const centralLogin = new URL(
+      mountLogin.headers.location,
+      'https://tuturuuu.com/admin/login'
+    );
+    assert.equal(centralLogin.origin, 'https://tuturuuu.com');
     const callback = new URL(centralLogin.searchParams.get('returnUrl'));
     assert.equal(centralLogin.pathname, '/login');
     assert.equal(callback.origin, 'https://tuturuuu.com');

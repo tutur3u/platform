@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 
 const app = 'infrastructure';
 const require = createRequire(import.meta.url);
@@ -30,16 +31,21 @@ test(
       TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-coordination-key',
       INTERNAL_WEB_API_ORIGIN: 'https://central.invalid',
     };
-    const worker = await require('wrangler').unstable_startWorker({
+    const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
+    const worker = await sdk.unstable_startWorker({
       config: configPath,
       envFiles: [envFile],
       sendMetrics: false,
-      bindings: Object.fromEntries(
-        Object.entries(values).map(([name, value]) => [
-          name,
-          { type: 'plain_text', value },
-        ])
-      ),
+      bindings: {
+        ...guardBindings,
+        ...Object.fromEntries(
+          Object.entries(values).map(([name, value]) => [
+            name,
+            { type: 'plain_text', value },
+          ])
+        ),
+      },
       build: { bundle: false, processEntrypoint: false },
       dev: {
         remote: false,

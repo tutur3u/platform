@@ -12,7 +12,19 @@ export default defineConfig({
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
-    vars: { TUTURUUU_NOINDEX: '1' },
+    vars: {
+      TUTURUUU_NOINDEX: '1',
+      ABUSE_GUARD_FAMILIES: 'proxy,ratelimit,integrity',
+    },
+    // Abuse-guard, rate-limit and native-integrity state; no staging guard
+    // Worker exists, so every profile binds the shared one.
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

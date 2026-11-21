@@ -17,6 +17,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
@@ -305,16 +306,21 @@ test(
       // production legacy-host redirect has its own coverage.
       TUTURUUU_LEGACY_HOST_REDIRECT: '0',
     };
-    const worker = await require('wrangler').unstable_startWorker({
+    const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
+    const worker = await sdk.unstable_startWorker({
       config: pointer,
       envFiles: [envFile],
       sendMetrics: false,
-      bindings: Object.fromEntries(
-        Object.entries(values).map(([key, value]) => [
-          key,
-          { type: 'plain_text', value },
-        ])
-      ),
+      bindings: {
+        ...guardBindings,
+        ...Object.fromEntries(
+          Object.entries(values).map(([key, value]) => [
+            key,
+            { type: 'plain_text', value },
+          ])
+        ),
+      },
       build: { bundle: false, processEntrypoint: false },
       dev: {
         remote: false,

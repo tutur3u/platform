@@ -18,6 +18,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import {
   FIXTURE,
   mountedPath,
@@ -144,11 +145,13 @@ test(
     // Every outbound request is denied and recorded; nothing leaves the host.
     const egress = [];
     const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, staged.registry);
     const worker = await sdk.unstable_startWorker({
       config: staged.configPath,
       envFiles: [staged.envFile],
       sendMetrics: false,
       bindings: {
+        ...guardBindings,
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',

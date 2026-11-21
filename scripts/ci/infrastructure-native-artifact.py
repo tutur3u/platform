@@ -13,6 +13,16 @@ PRODUCTION_WORKER = "tuturuuu-infrastructure"
 PUBLIC_FILES = (
     "robots.txt",
 )
+# No staging abuse-guard Worker exists in source: every profile binds the
+# shared guard, the only service binding an Infrastructure artifact may carry.
+SERVICES = [
+    {
+        "binding": "ABUSE_GUARD",
+        "service": "tuturuuu-abuse-guard",
+        "entrypoint": "AbuseGuardEntrypoint",
+    },
+]
+ABUSE_GUARD_FAMILIES = "proxy,ratelimit,integrity"
 
 
 def load(profile="staging"):
@@ -28,8 +38,13 @@ def load(profile="staging"):
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
+        "vars": {"TUTURUUU_NOINDEX": "1", "ABUSE_GUARD_FAMILIES": ABUSE_GUARD_FAMILIES},
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": WORKER,
+        "services": SERVICES,
+    }
     module.RECEIPT = "infrastructure-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     if profile == "production":
@@ -44,6 +59,7 @@ def load(profile="staging"):
                 "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
                 "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
                 "TUTURUUU_LEGACY_HOST_REDIRECT": "1",
+                "ABUSE_GUARD_FAMILIES": ABUSE_GUARD_FAMILIES,
             },
         }
         module.NORMALIZED_DEFAULTS = {

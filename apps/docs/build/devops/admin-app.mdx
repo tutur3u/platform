@@ -63,6 +63,17 @@ permissions.
    `Cache-Control: private, no-store`. `/api/build-info` keeps answering on the
    subdomain. Staging artifacts never redirect.
 
+Admin binds the shared abuse guard (`ABUSE_GUARD` → `tuturuuu-abuse-guard`,
+entrypoint `AbuseGuardEntrypoint`) with `ABUSE_GUARD_FAMILIES=proxy,ratelimit,integrity`
+and the Web `ABUSE_GUARD_KEY_PEPPER`. The guard covers Admin's `proxy` traffic
+(`src/proxy.ts` → `guardApiProxyRequest`), so stopping or resuming the `proxy`
+family applies to Admin as it does to Web; while the family is stopped, Admin
+keeps per-instance proxy windows rather than no limit. `ratelimit` and
+`integrity` are assigned for the shared names only: Admin's own session and API
+limiter (`src/lib/rate-limit.ts`) stays on Upstash with its in-memory fallback,
+and the rate-limit pages read Upstash with `SCAN`, which the guard store does
+not implement.
+
 Mounted apps follow the apex isolation rules: app-owned cookies use
 `Path=/admin`, and no service worker is registered over `/`.
 
@@ -80,6 +91,7 @@ committed.
 | `CRON_SECRET`, `TUTURUUU_AZURE_TENANT_ID` | Vercel (project) |
 | `CLOUDFLARE_COORDINATION_URL`, `CLOUDFLARE_COORDINATION_TOKEN` | Vercel (project; the token is sensitive and comes from custody) |
 | `DEPLOY_COORDINATOR_ORIGIN`, `DEPLOY_COORDINATOR_OPERATOR_TOKEN` | Vercel (project; the token is sensitive and comes from custody) |
+| `ABUSE_GUARD_KEY_PEPPER` | The Web Worker secret; must equal the Web value |
 
 Revealing Vercel values can require a step-up `vercel login`; a human runs it.
 A missing optional secret degrades only its own page (for example, Deployments

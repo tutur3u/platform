@@ -14,6 +14,7 @@ import { config as proxyConfig, proxy } from '../src/proxy';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import { configureInfrastructureAbuseGuard } from '../src/runtime/abuse-guard';
 import {
   legacyHostRedirectEnabled,
   legacyHostResponse,
@@ -83,6 +84,7 @@ export default {
     ) => {
       let response: Response;
       try {
+        configureInfrastructureAbuseGuard(env);
         // In production the subdomain only redirects to the apex mount.
         response =
           (legacyHostRedirectEnabled(env)
