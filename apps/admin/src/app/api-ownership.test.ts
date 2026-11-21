@@ -5,17 +5,17 @@ import { describe, expect, it } from 'vitest';
 const repoRoot = resolve(import.meta.dirname, '../../../..');
 
 const infrastructureRoutes = [
-  'apps/infrastructure/src/app/api/ai/translate/route.ts',
-  'apps/infrastructure/src/app/api/v1/internal/holidays/route.ts',
-  'apps/infrastructure/src/app/api/v1/internal/holidays/[holidayId]/route.ts',
-  'apps/infrastructure/src/app/api/v1/internal/holidays/bulk/route.ts',
-  'apps/infrastructure/src/app/api/workspaces/route.ts',
-  'apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts',
-  'apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts',
-  'apps/infrastructure/src/app/api/v1/infrastructure/mira/tenants/route.ts',
-  'apps/infrastructure/src/app/api/v1/infrastructure/mira/tenants/[wsId]/stop/route.ts',
-  'apps/infrastructure/src/app/api/v1/infrastructure/mira/global-stop/route.ts',
-  'apps/infrastructure/src/app/api/v1/infrastructure/mira/audit/route.ts',
+  'apps/admin/src/app/api/ai/translate/route.ts',
+  'apps/admin/src/app/api/v1/internal/holidays/route.ts',
+  'apps/admin/src/app/api/v1/internal/holidays/[holidayId]/route.ts',
+  'apps/admin/src/app/api/v1/internal/holidays/bulk/route.ts',
+  'apps/admin/src/app/api/workspaces/route.ts',
+  'apps/admin/src/app/api/workspaces/[wsId]/secrets/route.ts',
+  'apps/admin/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts',
+  'apps/admin/src/app/api/v1/infrastructure/mira/tenants/route.ts',
+  'apps/admin/src/app/api/v1/infrastructure/mira/tenants/[wsId]/stop/route.ts',
+  'apps/admin/src/app/api/v1/infrastructure/mira/global-stop/route.ts',
+  'apps/admin/src/app/api/v1/infrastructure/mira/audit/route.ts',
 ];
 
 const retiredWebRoutes = [

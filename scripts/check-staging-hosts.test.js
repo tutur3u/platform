@@ -206,7 +206,7 @@ test('check reports violations outside apps, packages and scripts', (t) => {
 });
 
 const MANAGED_PROJECT_FILES = [
-  'apps/infrastructure/src/lib/infrastructure/projects.ts',
+  'apps/admin/src/lib/infrastructure/projects.ts',
   'apps/web/src/lib/infrastructure/project-model.ts',
   'scripts/watch-blue-green/projects.js',
 ];

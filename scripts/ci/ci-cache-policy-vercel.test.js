@@ -22,7 +22,7 @@ const activeVercelProjects = {
   finance: '@tuturuuu/finance',
   forms: '@tuturuuu/forms',
   git: '@tuturuuu/git',
-  infrastructure: '@tuturuuu/infrastructure',
+  infrastructure: '@tuturuuu/admin',
   inventory: '@tuturuuu/inventory',
   learn: '@tuturuuu/learn',
   mail: '@tuturuuu/mail',
@@ -47,7 +47,8 @@ test('all 27 active Vercel projects preserve their exact Turbo build recipes', (
   assert.equal(Object.keys(activeVercelProjects).length, 27);
 
   for (const [project, workspace] of Object.entries(activeVercelProjects)) {
-    const appDirectory = project === 'platform' ? 'web' : project;
+    const appDirectory =
+      { platform: 'web', infrastructure: 'admin' }[project] ?? project;
     const config = JSON.parse(
       fs.readFileSync(
         path.join(repoRoot, 'apps', appDirectory, 'vercel.json'),

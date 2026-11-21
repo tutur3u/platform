@@ -132,7 +132,7 @@ function findViolations(root = REPO_ROOT) {
           ? authorizesWithCookieClient(source)
           : hasDirectCookieResolver || hasLocalCookieResolver) &&
         !(
-          appName === 'infrastructure' &&
+          appName === 'admin' &&
           isRoute &&
           COOKIE_CLIENT_CALL_PATTERN.test(source)
         )

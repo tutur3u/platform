@@ -41,7 +41,7 @@ const PENDING = new Map([
   ['apps/coordination/wrangler.publish.jsonc', 'caller check pending'],
   ['apps/devbox-control/cloudflare.config.ts', 'caller check pending'],
   ['apps/devbox-control/wrangler.publish.jsonc', 'caller check pending'],
-  ['apps/infrastructure/void.config.ts', 'preview_urls unset'],
+  ['apps/admin/void.config.ts', 'preview_urls unset'],
   ['apps/learn/void.config.ts', 'workers_dev enabled'],
   ['apps/mail/void.config.ts', 'preview_urls unset'],
   ['apps/marketing/void.config.ts', 'workers_dev enabled'],

@@ -3,7 +3,7 @@
   "scope": "Registered satellite routes; the main Web manifest remains authoritative for live Web/Rust migration.",
   "routes": [
     {
-      "id": "api:/api/v1/admin/account-benefits:apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
+      "id": "api:/api/v1/admin/account-benefits:apps/admin/src/app/api/v1/admin/account-benefits/route.ts",
       "kind": "api",
       "methods": [
         "GET",
@@ -11,41 +11,41 @@
         "DELETE"
       ],
       "routePath": "/api/v1/admin/account-benefits",
-      "sourceFile": "apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
+      "sourceFile": "apps/admin/src/app/api/v1/admin/account-benefits/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/desktop-deployment:apps/infrastructure/src/app/api/v1/desktop-deployment/route.ts",
+      "id": "api:/api/v1/desktop-deployment:apps/admin/src/app/api/v1/desktop-deployment/route.ts",
       "kind": "api",
       "methods": [
         "GET",
         "POST"
       ],
       "routePath": "/api/v1/desktop-deployment",
-      "sourceFile": "apps/infrastructure/src/app/api/v1/desktop-deployment/route.ts",
+      "sourceFile": "apps/admin/src/app/api/v1/desktop-deployment/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/desktop-deployment/bundle:apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts",
+      "id": "api:/api/v1/desktop-deployment/bundle:apps/admin/src/app/api/v1/desktop-deployment/bundle/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/desktop-deployment/bundle",
-      "sourceFile": "apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts",
+      "sourceFile": "apps/admin/src/app/api/v1/desktop-deployment/bundle/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/desktop-deployment/resources:apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts",
+      "id": "api:/api/v1/desktop-deployment/resources:apps/admin/src/app/api/v1/desktop-deployment/resources/route.ts",
       "kind": "api",
       "methods": [
         "POST"
       ],
       "routePath": "/api/v1/desktop-deployment/resources",
-      "sourceFile": "apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts",
+      "sourceFile": "apps/admin/src/app/api/v1/desktop-deployment/resources/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -121,20 +121,20 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
+      "id": "page:/:locale/:wsId/account-benefits:apps/admin/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/:wsId/account-benefits",
-      "sourceFile": "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
+      "sourceFile": "apps/admin/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/desktop-deployment:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx",
+      "id": "page:/:locale/:wsId/desktop-deployment:apps/admin/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/:wsId/desktop-deployment",
-      "sourceFile": "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx",
+      "sourceFile": "apps/admin/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },

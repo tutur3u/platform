@@ -8,6 +8,7 @@ import path from 'node:path';
 import { GENERATED_MARKER, RUNTIME } from './contract.mjs';
 import { RUNTIME_GATE } from './runtime-outcome.mjs';
 import { defaultMounts, pascal } from './templates.mjs';
+import { appDirectory } from './app-directory.mjs';
 
 export const NATIVE_TEMPLATE = '.github/workflows/native-start-app.yaml';
 /**
@@ -90,8 +91,9 @@ export function callerWorkflow({
   hasTestScript,
 }) {
   const App = pascal(app);
+  const directory = appDirectory(app);
   const paths = [
-    `apps/${app}/**`,
+    `apps/${directory}/**`,
     ...closure.map((dir) => `${dir}/**`),
     helperPath(app),
     callerPath(app),
@@ -159,7 +161,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/affected-gate
         with:
-          app: ${app}
+          app: ${directory}
   check-ci:
     needs: affected-gate
     if: \${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
@@ -177,7 +179,7 @@ jobs:
     permissions:
       contents: read
     with:
-      app: ${app}
+      app: ${app}${directory === app ? '' : `\n      app-dir: apps/${directory}`}
       package: ${quote(packageName)}
       artifact-script: ${helperPath(app)}
       env-interface: ${App}GeneratedEnv
@@ -191,7 +193,7 @@ jobs:
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
-        ${formatPaths.map((entry) => `apps/${app}/${entry}`).join(' ')}
+        ${formatPaths.map((entry) => `apps/${directory}/${entry}`).join(' ')}
 `;
 }
 

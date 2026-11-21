@@ -285,7 +285,7 @@ export async function run({ root, status, metadata, sourceSha }) {
     'bun',
     [
       '--conditions=react-server',
-      'apps/infrastructure/e2e/fixtures/employee-profile-route-runtime.ts',
+      'apps/admin/e2e/fixtures/employee-profile-route-runtime.ts',
     ],
     {
       cwd: root,

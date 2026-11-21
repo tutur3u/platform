@@ -75,7 +75,7 @@ const reviewCategories = [
     patterns: [
       /^apps\/(?:abuse-guard|mastermind-store|ops-hub|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
-      /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
+      /^apps\/(?:web|admin)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,
       /(?:^|\/)wrangler\.(?:toml|jsonc?)$/u,
     ],
@@ -99,7 +99,7 @@ const reviewCategories = [
       /^apps\/[^/]+\/src\/app\/api\/cron\//u,
       /^apps\/web\/src\/legacy-api-routes\/cron\//u,
       /(?:^|\/)(?:[^/]*[-_])?cron(?:[-_][^/]*)?\.(?:c|m)?[jt]s$/u,
-      /^apps\/infrastructure\/src\/app\/api\/v1\/infrastructure\/post-email-queue\//u,
+      /^apps\/admin\/src\/app\/api\/v1\/infrastructure\/post-email-queue\//u,
     ],
   },
   {

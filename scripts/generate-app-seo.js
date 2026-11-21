@@ -128,13 +128,19 @@ function sitemap(config) {
 // web app's publication-aware metadata routes, so no static file is generated
 // here (a static robots.txt would also drop the sitemap line).
 const APEX_METADATA_APPS = new Set(['web', 'marketing']);
+const APP_DIRECTORIES = require('./app-directories.json');
+
+/** The app's directory under apps/, which can differ from its policy key. */
+function appDir(app) {
+  return `apps/${APP_DIRECTORIES[app] ?? app}`;
+}
 
 function outputs() {
   const files = new Map();
   for (const [app, config] of Object.entries(policy)) {
     validateConfig(app, config);
     if (APEX_METADATA_APPS.has(app)) continue;
-    const base = `apps/${app}/public`;
+    const base = `${appDir(app)}/public`;
     const sitemapLine = config.publicPaths.length
       ? `\nSitemap: ${config.origin}/sitemap.xml\n`
       : '';
@@ -160,7 +166,7 @@ function generate({ check = false, root = ROOT } = {}) {
   // A private app must not retain an old public sitemap when its policy changes.
   // Only this generator's exact static sitemap paths are owned here.
   for (const app of Object.keys(policy)) {
-    const file = `apps/${app}/public/sitemap.xml`;
+    const file = `${appDir(app)}/public/sitemap.xml`;
     if (expected.has(file) || !fs.existsSync(path.join(root, file))) continue;
     stale.push(file);
     if (!check) fs.unlinkSync(path.join(root, file));

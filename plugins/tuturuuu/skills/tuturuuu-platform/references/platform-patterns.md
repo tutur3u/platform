@@ -314,7 +314,7 @@ and its focused regression coverage before adding a reason or changing middlewar
 - **Never copy the multi-account vault into another app.**
   `apps/web/src/lib/auth/multi-account` (device cookies, encrypted Supabase
   sessions, the account-switch handover) belongs to the app that serves
-  `/api/v1/auth/accounts/*`, which is only `apps/web`. `apps/infrastructure`
+  `/api/v1/auth/accounts/*`, which is only `apps/web`. `apps/admin`
   carried a byte-for-byte copy with no consumers: nothing imported it, so
   nothing tested it and nothing broke when it drifted — it was hand-synced once
   during a cross-app change and then missed two production auth fixes while
@@ -563,7 +563,7 @@ Rules:
   405 for unsupported methods before fallback rewrites. Route only the Web-owned
   subtree through `beforeFiles`; verify its zero-segment base and descendants with
   installed Next path matchers, while preserving local siblings. Infrastructure's
-  employee routing regression in `apps/infrastructure/next.config.test.ts` covers
+  employee routing regression in `apps/admin/next.config.test.ts` covers
   this case. For external collection rewrites, use an exact collection rule plus
   nonempty `:path+` descendants. Also test the deployment converter: an empty
   `:path*` backreference can leave a trailing slash that produces a same-path

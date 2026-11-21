@@ -348,7 +348,7 @@ page shows an unconfigured state and the routes make no outbound call.
 | `GET /api/v1/infrastructure/deployments/:project` | viewer | catalog, then the three environment snapshots |
 | `POST /api/v1/infrastructure/deployments/:project/:environment` | operator | the one action in the body |
 
-The server client (`apps/infrastructure/src/lib/infrastructure/deploy-coordinator.ts`)
+The server client (`apps/admin/src/lib/infrastructure/deploy-coordinator.ts`)
 sends the operator token and the signed-in user id as `X-Deploy-Actor`, and maps
 records to the dashboard shapes in `@tuturuuu/internal-api/infrastructure`
 without grant attempt ids or idempotency material. Environment reads are exempt

@@ -62,7 +62,7 @@ Declaration locations for these 8 current Vercel schedules (web's five run on Cr
 
 | Source | Jobs |
 | --- | --- |
-| `apps/infrastructure/vercel.json:14-31` | `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts`, `infrastructure-sync-trust-cache`, `calendar-provider-sync`, `calendar-smart-schedule` |
+| `apps/admin/vercel.json:14-31` | `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts`, `infrastructure-sync-trust-cache`, `calendar-provider-sync`, `calendar-smart-schedule` |
 | `apps/inventory/vercel.json:8-9` | `inventory-checkout-expiry` |
 | `apps/pay/vercel.json:14-15` | `pay-products` |
 | `apps/tasks/vercel.json:8-9` | `tasks-cleanup-media` |
@@ -73,17 +73,17 @@ Per-job declaration lines and current cadences:
 | --- | --- | --- |
 | `tasks-cleanup-media` | `apps/tasks/vercel.json:8-9` | Vercel Cron, `17 3 * * *` |
 | `pay-products` | `apps/pay/vercel.json:14-15` | Vercel Cron, `0 */12 * * *` |
-| `calendar-smart-schedule` | `apps/infrastructure/vercel.json:30-31` | Vercel Cron, `0 */6 * * *` |
-| `infrastructure-sync-trust-cache` | `apps/infrastructure/vercel.json:22-23` | Vercel Cron, `*/10 * * * *` |
+| `calendar-smart-schedule` | `apps/admin/vercel.json:30-31` | Vercel Cron, `0 */6 * * *` |
+| `infrastructure-sync-trust-cache` | `apps/admin/vercel.json:22-23` | Vercel Cron, `*/10 * * * *` |
 | `web-notification-batches` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
 | `web-report-automation` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
 | `web-topic-announcements` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
-| `calendar-provider-sync` | `apps/infrastructure/vercel.json:26-27` | Vercel Cron gateway, `*/15 * * * *` |
+| `calendar-provider-sync` | `apps/admin/vercel.json:26-27` | Vercel Cron gateway, `*/15 * * * *` |
 | `web-post-email-queue` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/30 * * * *` |
 | `inventory-checkout-expiry` | `apps/inventory/vercel.json:8-9` | Vercel Cron, `*/5 * * * *` |
 | `web-deadline-reminders` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/5 * * * *` |
-| `infrastructure-docker-recovery-alerts` | `apps/infrastructure/vercel.json:18-19` | Vercel Cron, `*/5 * * * *` |
-| `infrastructure-sample-resources` | `apps/infrastructure/vercel.json:14-15` | Vercel Cron, `* * * * *` |
+| `infrastructure-docker-recovery-alerts` | `apps/admin/vercel.json:18-19` | Vercel Cron, `*/5 * * * *` |
+| `infrastructure-sample-resources` | `apps/admin/vercel.json:14-15` | Vercel Cron, `* * * * *` |
 
 The Web cron catalog lists deadline reminders every four hours, but the deployed
 Vercel entry runs every five minutes. Preserve the live cadence; do not run
@@ -151,8 +151,8 @@ durable schedules:
 | Work | Source | Current trigger |
 | --- | --- | --- |
 | Teach AI feedback generation | `apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/ai-feedback/route.ts:248` | After submission response |
-| Infrastructure Polar product sync | `apps/infrastructure/src/lib/inventory/commerce/polar-product-sync.ts:509` | Webhook/request continuation |
-| Zalo personal-channel phone sync | `apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts:346` | After request response |
+| Infrastructure Polar product sync | `apps/admin/src/lib/inventory/commerce/polar-product-sync.ts:509` | Webhook/request continuation |
+| Zalo personal-channel phone sync | `apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts:346` | After request response |
 | Inventory-core Polar product sync | `packages/inventory-core/src/lib/inventory/commerce/polar-product-sync-webhooks.ts:128` | Product webhook continuation |
 | Workspace invitation acceptance | `apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts:107` | After invite response |
 | Workspace invitation decline | `apps/web/src/legacy-api-routes/workspaces/[wsId]/decline-invite/route.ts:95` | After invite response |
@@ -236,7 +236,7 @@ Exact GitHub schedule declarations:
 ## Schedule catalogs and empty owners
 
 `apps/web/cron.config.json:6-60` and
-`apps/infrastructure/cron.config.json:6-36` are source catalogs consumed by
+`apps/admin/cron.config.json:6-36` are source catalogs consumed by
 schedule generation and monitoring. They are not all current triggers: the Web
 deadline-reminder catalog says every four hours while Vercel runs every five
 minutes; Calendar gateway entries have `vercel: false`; the immediate-notification

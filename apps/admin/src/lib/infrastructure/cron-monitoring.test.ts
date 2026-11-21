@@ -105,9 +105,7 @@ describe('readCronMonitoringSnapshot', () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cron-monitoring-'));
 
     try {
-      writeCronConfig(
-        path.join(tempDir, 'apps', 'infrastructure', 'cron.config.json')
-      );
+      writeCronConfig(path.join(tempDir, 'apps', 'admin', 'cron.config.json'));
       process.chdir(tempDir);
 
       const snapshot = readCronMonitoringSnapshot();
@@ -125,7 +123,7 @@ describe('readCronMonitoringSnapshot', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'cron-monitoring-app-cwd-')
     );
-    const appDir = path.join(tempDir, 'apps', 'infrastructure');
+    const appDir = path.join(tempDir, 'apps', 'admin');
 
     try {
       writeCronConfig(path.join(appDir, 'cron.config.json'));

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { auditCalendarGatewayFirewall } from '../apps/infrastructure/src/lib/mobile-calendar/firewall-policy';
+import { auditCalendarGatewayFirewall } from '../apps/admin/src/lib/mobile-calendar/firewall-policy';
 
 // Read-only: consume a privately saved Vercel firewall config, never print credentials.
 try {

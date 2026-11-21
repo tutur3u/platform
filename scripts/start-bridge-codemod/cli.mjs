@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { createBunCodegen } from './codegen.mjs';
 import { unifiedDiff } from './diff.mjs';
 import { createOxcFormatter, pendingWrites, planConversion } from './plan.mjs';
+import { appDirectory } from './app-directory.mjs';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -143,7 +144,7 @@ export function main(
   if (args.apply && !blocked) {
     applyPlan(repoRoot, plan);
     io.stdout.write(
-      `applied ${pending.length} file change(s) and ${plan.commands.length} command(s) to apps/${plan.app}\n`
+      `applied ${pending.length} file change(s) and ${plan.commands.length} command(s) to apps/${appDirectory(plan.app)}\n`
     );
   } else if (!args.apply)
     io.stdout.write(

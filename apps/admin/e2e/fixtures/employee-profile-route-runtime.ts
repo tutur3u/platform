@@ -163,10 +163,10 @@ async function main() {
           'turbo:local',
           'run',
           'build',
-          '--filter=@tuturuuu/infrastructure^...',
+          '--filter=@tuturuuu/admin^...',
           '--concurrency=1',
         ],
-        ['run', '--cwd', 'apps/infrastructure', 'build'],
+        ['run', '--cwd', 'apps/admin', 'build'],
       ]) {
         const remaining = deadline - Date.now();
         assert.ok(remaining > 0);

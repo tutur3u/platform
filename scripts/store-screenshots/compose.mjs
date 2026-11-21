@@ -54,8 +54,7 @@ const REPO_ROOT = path.resolve(
 async function loadChromium() {
   const candidates = [
     pathToFileURL(path.join(REPO_ROOT, 'package.json')).href,
-    pathToFileURL(path.join(REPO_ROOT, 'apps/infrastructure/package.json'))
-      .href,
+    pathToFileURL(path.join(REPO_ROOT, 'apps/admin/package.json')).href,
     pathToFileURL(path.join(REPO_ROOT, 'apps/contacts/package.json')).href,
   ];
   for (const from of candidates) {

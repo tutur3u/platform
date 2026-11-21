@@ -58,6 +58,7 @@ import {
   effectiveWorkerConfig,
   workerConfigProblems,
 } from './worker-config.mjs';
+import { appDirectory } from './app-directory.mjs';
 
 export const DEFAULT_SERVER_ONLY = [
   '@tuturuuu/satellite/auth',
@@ -127,7 +128,8 @@ function devPort(manifest) {
 }
 
 function defaultLocale(repoRoot, app) {
-  const source = read(repoRoot, `apps/${app}/src/i18n/routing.ts`) ?? '';
+  const source =
+    read(repoRoot, `apps/${appDirectory(app)}/src/i18n/routing.ts`) ?? '';
   return /defaultLocale\s*=\s*['"]([a-z-]+)['"]/u.exec(source)?.[1] ?? 'en';
 }
 
@@ -167,7 +169,7 @@ const NATIVE_FORMAT_PATHS = [
 
 export function planConversion(repoRoot, app, options = {}) {
   if (!APP_ID.test(app)) throw new Error(`Invalid app id: ${app}`);
-  const appPath = `apps/${app}`;
+  const appPath = `apps/${appDirectory(app)}`;
   const appRoot = path.join(repoRoot, appPath);
   const inventory = inventoryApp(repoRoot, app);
   const manifestSource = read(repoRoot, `${appPath}/package.json`);

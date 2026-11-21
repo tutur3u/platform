@@ -74,31 +74,31 @@ const sourceFiles = [
     '64bb6a8e1971581d05cef42e22228406013ff2bbce3dd3f743e73783b60bde1d',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-creation-database-readiness.ts',
+    'apps/admin/src/lib/internal-accounts/employee-creation-database-readiness.ts',
     '88b85a8023dbe9872a5128573783a3e1cc40b3812cb692d908c92a79b8c40bd5',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-creation-sql.ts',
+    'apps/admin/src/lib/internal-accounts/employee-creation-sql.ts',
     '39c56ba036678f09f3ecb3ab9dc743eaa8c1eca4d401d72cad493e1397e57d72',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-fixed-sql-process.ts',
+    'apps/admin/src/lib/internal-accounts/employee-fixed-sql-process.ts',
     '2d298f1cb08eb75c0de0151099e7e65328a6fd83217a620ce732fb74a465112f',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-fixed-sql-protocol.d.mts',
+    'apps/admin/src/lib/internal-accounts/employee-fixed-sql-protocol.d.mts',
     '34dca79959964bdaf7836407246d124c2287503bb4639e11781dcc12725f39ca',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-fixed-sql-protocol.mjs',
+    'apps/admin/src/lib/internal-accounts/employee-fixed-sql-protocol.mjs',
     '34dca79959964bdaf7836407246d124c2287503bb4639e11781dcc12725f39ca',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-fixed-sql-worker.mjs',
+    'apps/admin/src/lib/internal-accounts/employee-fixed-sql-worker.mjs',
     '0941b9ae78012c823e4e4492c1d40e1534390fa649760531d901138b8f0e7d2e',
   ],
   [
-    'apps/infrastructure/src/lib/internal-accounts/employee-sql-catalog-readiness.ts',
+    'apps/admin/src/lib/internal-accounts/employee-sql-catalog-readiness.ts',
     '4a5470f7ca244858286cd02f9d1b69d844f5cf209d4bca4d2af1121ab3295edf',
   ],
   [

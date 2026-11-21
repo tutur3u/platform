@@ -1372,1015 +1372,1015 @@
     "digest": "12b2df3d59d7a58729883fb002abd70624ae682c19c28abfc04a9fd31329164f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/ai/translate/route.ts",
+    "file": "apps/admin/src/app/api/ai/translate/route.ts",
     "digest": "62c12af7355b62f9f914f208229b28d7828b9391163db27c690fe325e8b72a08"
   },
   {
-    "file": "apps/infrastructure/src/app/api/auth/logout/route.ts",
+    "file": "apps/admin/src/app/api/auth/logout/route.ts",
     "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/auth/refresh-app-session/route.ts",
+    "file": "apps/admin/src/app/api/auth/refresh-app-session/route.ts",
     "digest": "1ea3f6458cdcc14a790fb8adc386780c5c13c376b47313f41a9367bf19823bc2"
   },
   {
-    "file": "apps/infrastructure/src/app/api/auth/verify-app-token/route.ts",
+    "file": "apps/admin/src/app/api/auth/verify-app-token/route.ts",
     "digest": "9a177e25c0b3331416456f3768bee2fc9c7993e408d033e20a9b3c21170d3c80"
   },
   {
-    "file": "apps/infrastructure/src/app/api/build-info/route.ts",
+    "file": "apps/admin/src/app/api/build-info/route.ts",
     "digest": "1c47df936ca8e5499fdb4da9753a6a307c055b4fe8e695e234251b864a76d9fd"
   },
   {
-    "file": "apps/infrastructure/src/app/api/cron/calendar/[job]/route.ts",
+    "file": "apps/admin/src/app/api/cron/calendar/[job]/route.ts",
     "digest": "d295abf145432b2532c5cc7fb468077e8ac93b7d15124862dd6d14d6136b09bf"
   },
   {
-    "file": "apps/infrastructure/src/app/api/cron/infrastructure/docker-recovery-alerts/route.ts",
+    "file": "apps/admin/src/app/api/cron/infrastructure/docker-recovery-alerts/route.ts",
     "digest": "018c53c60a11c31579461c789d7db44777d0ad3813eb25356119f8e4e4977e35"
   },
   {
-    "file": "apps/infrastructure/src/app/api/cron/infrastructure/sample-resources/route.ts",
+    "file": "apps/admin/src/app/api/cron/infrastructure/sample-resources/route.ts",
     "digest": "2d1e6ee82059dcb9d877c80547315eb833691077f1b5c7df4b65762fab521fb6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/cron/infrastructure/sync-trust-cache/route.ts",
+    "file": "apps/admin/src/app/api/cron/infrastructure/sync-trust-cache/route.ts",
     "digest": "497a8a00272cfafb252a7d2ebac99aeceec448a163ce3b2d49e4cabf4cf2d443"
   },
   {
-    "file": "apps/infrastructure/src/app/api/parley/references/[id]/route.ts",
+    "file": "apps/admin/src/app/api/parley/references/[id]/route.ts",
     "digest": "0c6e90e70d4810814f7a6c1d9c094736ea86651b7325467c1f21d91947939724"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/account-benefits/route.ts",
     "digest": "cff577e36689bd70b557df6af95b4da0981eb626a8c259f93ca918bf58f4b7dc"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/allocations/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/allocations/route.ts",
     "digest": "b1b990c873e39ffddaa865d3e048e81f35574f276cfd2f71186e3ff26810c828"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/balances/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/balances/route.ts",
     "digest": "91ebb886b733f5444b3e69a4221f0f8039a31b76600cf377e5f60e01fed58422"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/entity-detail/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/entity-detail/route.ts",
     "digest": "d8c6f567caf08af65f54cf2c97f1c00f208b929ef6eaabc60f9cac45c5fe2808"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/features/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/features/route.ts",
     "digest": "f2d914e842615fcbafa861c88105d47e738eb6e7add04c1d7609b99102fcc8f4"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/models/facets/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/models/facets/route.ts",
     "digest": "e118221cbb94e593959c4a94e1cb875778b77dbf3dd8889f164170269b5d95b7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/models/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/models/route.ts",
     "digest": "d4a28cdf6c407b9e58d06737096aa2fe3ddaad56efab868b716abbeda2c6176e"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/overview/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/overview/route.ts",
     "digest": "770f7c0f678e94dfbb2bffd18c327643ea10d1ddc9b881259328c2066f9146ed"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/sync-models/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/sync-models/route.ts",
     "digest": "1c72e0ae764efb7d3ff17b983d68ee755426efc39c7101ea740315503ce1df82"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/transactions/route.ts",
+    "file": "apps/admin/src/app/api/v1/admin/ai-credits/transactions/route.ts",
     "digest": "4b8967ebf20ce047596d6096cc12afe06a1cd986f1a70cc8d91010f2972a3b02"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts",
+    "file": "apps/admin/src/app/api/v1/desktop-deployment/bundle/route.ts",
     "digest": "2f2e3bcc3e565d1cb9aa0c6445dc2528d71e172a770d490781a61cfbbdfa33da"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts",
+    "file": "apps/admin/src/app/api/v1/desktop-deployment/resources/route.ts",
     "digest": "60497170a4089b9be6a10e1c5ba0888c2f2ff0aa9b5c6643032cbad681202d0d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/desktop-deployment/route.ts",
+    "file": "apps/admin/src/app/api/v1/desktop-deployment/route.ts",
     "digest": "89843214e32a38a629e7902d937a269e3d3eb85f8f20cd8886799e5a9a79c3cc"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/abuse-events/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/abuse-events/route.ts",
     "digest": "4eebabc9179270e57b2cfd049828dc2eb6738f7df0ea2126f6d060f95066fdb0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/abuse-intelligence/overrides/[overrideId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/abuse-intelligence/overrides/[overrideId]/route.ts",
     "digest": "3df7d7a45974947ef3dd9854b4634b5fcef31168f3e096bf838bf0a1e46ddc72"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/abuse-intelligence/route.ts",
     "digest": "fd8fd455cb475005dd7dea2ea14a8eb5b08ca811f70982588334b716a181e1fe"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/secrets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/secrets/route.ts",
     "digest": "f2e56cbb841ef7c64a61736dce15688632f44b9d94375aacfb59aae09d5ff999"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/qr-login/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/qr-login/route.ts",
     "digest": "166c15c4ba1cd2f9b62ad95e40139a2c022347ad406e126225b0cb346e845904"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts",
     "digest": "9e11f6aeb466e77d55b9df6f802cd88841c73d162489a579406f51a258b56f5a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/deploy/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/deploy/route.ts",
     "digest": "f024d6aece098b27122e3e595c0e78f0eb540f70277e03149e99ee6015a902d7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/pause/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/pause/route.ts",
     "digest": "207f268e9d17fce5f2b52d9cab4f987e94e51a4095cbf6da423125e54942d682"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/test/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/test/route.ts",
     "digest": "8fb562e5d2bd33f7309c0927988ceab11bfdc6d143d46047a90d954c476bea2d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/chat-integrations/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/chat-integrations/route.ts",
     "digest": "5b83f68c6ef61352d5d106baa43b0e973e39685f9b619c4706054ada146a4e72"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config/route.ts",
     "digest": "7a5e651b57ae4ef089e38fa9e736152f29e650d007e9c5f71fa1cf89e0e1228a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/draft/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/draft/route.ts",
     "digest": "52c35c69688489d6aaa8c3d14e0f178c3a42e128af5447b0cf6b1fed93e91bea"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/messages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/messages/route.ts",
     "digest": "34c51c07c019f2e6bdd165177a30d7736854e59d336ac623356bf8485f081af8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/send/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/send/route.ts",
     "digest": "5f8b7c1579d8633466c728ae872f6bc510ad3c404efbd98c7e16768ade512aca"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/sync/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/external-threads/[threadId]/sync/route.ts",
     "digest": "00283a63d535dce6d020da964d6008803ddf63ee611180e53bbea0f7c940e007"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/external-threads/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/external-threads/route.ts",
     "digest": "d894d052af6a81b10d4d2706ff43ed1d18a0fa79622cbf60efab69dc9346472e"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/identities/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/identities/route.ts",
     "digest": "a08a66e190f283e816fd3b53dbc2307c25f89cad5435eaba3ce80151c9d25160"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai-agents/route.ts",
     "digest": "b3afa8b7e9652631e44fee810b2f00f0ea9d4b1f8085cf209f78ce35af7d832c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/models/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/models/route.ts",
     "digest": "65759cb3c1024c479e01312e9f47dbbabccb9f191e99ab3847fecc16879f3aa0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/stt/modal/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/stt/modal/route.ts",
     "digest": "dcb856fb7d2e65dfa4b1f53dfcdb738395173ea3c7485b029a487161b36fb86f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/studio/workspaces/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/studio/workspaces/route.ts",
     "digest": "c638dfe049198f3dcce7ce1bf435311b996a016132970c2a217b0ca20fd2b3d6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts",
     "digest": "b0f612485cfb994e5f9085081f379dab6c3edc468618ad632834eeca3357f726"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts",
     "digest": "18da93ec29be989999d98bb7962f110dbba4d6d6c495a79b94d30b4d7693a298"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts",
     "digest": "d9b2c321e2a7a4578be2ce96eecceaf373371b9d6b8320f5054d2757de044807"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts",
     "digest": "ad1540defbe6f98026f22e6fa74ffa6c5327bdce337f0610a38c8fa1b588c549"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/app-coordination/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/app-coordination/route.ts",
     "digest": "71a0ffb9eb8480d9ceffa897139789064dd0ec1a7c0503a673254749ca36fc48"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/[overrideId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/auth-recovery/[overrideId]/route.ts",
     "digest": "3f38289a53da0828ff7193b4bb2cb00f5649e41b093896bf303df314dd64dfa5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/[overrideId]/send-email/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/auth-recovery/[overrideId]/send-email/route.ts",
     "digest": "2f3388c98ce6a28680e68e6c8e186d61e0bb902f39b1d2d4f617d8a85d4b5ee3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/auth-recovery/route.ts",
     "digest": "51d99848a94f51d7f8ccc904bd118b082f141d8419dca5053bdecb1a2b3dd177"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/balancer/runs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/balancer/runs/route.ts",
     "digest": "ae78d6c80db8057cc1a949d465cc3d9215dee4a22f371adddc17de5b7809d62d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/bill-coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/bill-coupons/route.ts",
     "digest": "14ee4dec4c6332eefd9bc330e6a278fd2c8e4e6723b0a61b0c47e133f6e1498f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/bill-packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/bill-packages/route.ts",
     "digest": "b0bd51259e1ebc97f610fe567a3caf2bb85c5fe280837c91d961f6953b7616b7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/bills/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/bills/route.ts",
     "digest": "b88859c7e93279b4fbc294b5884b9096efac3064e990224396f9d41667992456"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/blocked-ips/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/blocked-ips/route.ts",
     "digest": "9e4e88be7f3eaca74e9835a0c844d7bb7abb2506a6fe4ba4a0e68ee9370a966f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts",
     "digest": "10207d7cb5682e114ca983a8cbc47fbc0356fd6010b61afb0000e6cc5f43db98"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/changelog/[id]/route.ts",
     "digest": "2073c9f0f4eceb61ebbf51e55914aed03a777a485d77190027560ab1eba5b3a3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/changelog/route.ts",
     "digest": "13ad0efabd6b3d5bebd0f2ed6080a2f7fbca1df388e68023241546dcdf228d9e"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts",
     "digest": "9de9c9746c00a0d34ccdde785bdc9e26f17eb5ac239e88552dfadfb9ec3e2952"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/upload/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/changelog/upload/route.ts",
     "digest": "21a291fe25730f8e51d0700aaa0102c0576534187e5ccd63f7e8236b682c4ff5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-attendance/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/class-attendance/route.ts",
     "digest": "aee6a194bfd8404da528d44cd302180831c499abcb06b07496fecfa8d143b34f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-members/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/class-members/route.ts",
     "digest": "4a0d4c00a7da784d3710747fd383f0443ae47758b22cb4bad8005f58dc41603f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/class-packages/route.ts",
     "digest": "aafb092025214aa7a754464aec4a4e38c8a153102a476757fceb9fefeb3f3c66"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-scores/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/class-scores/route.ts",
     "digest": "c34b6455a79823c6d99155ffe04465e45b7b19b673d841dd1ec95ae011fbfedf"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/classes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/classes/route.ts",
     "digest": "6d3de09289856b5c247edf5e53ea64f0b9ec69d435c4fc33cc4e51e0b696fde4"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/coupons/route.ts",
     "digest": "f1025dc9aec16687da95ab765d491c16830382a7030dc4b1c6297ffcdb97359d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts",
     "digest": "a67fac36263c1291528ab9e62c6cd145ff9e1ba15e1a18e4d8ec47009c263e81"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts",
     "digest": "23e95e380f5f19bbdf9965ecbfa51cdbfc082232266426c0357a26fc79b3f568"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/[project]/[environment]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/deployments/[project]/[environment]/route.ts",
     "digest": "df6235568c3ed9d7aabf2544e7dbb70c2e3092d5258ffb5c7f3ad6ea04d8a01a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/[project]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/deployments/[project]/route.ts",
     "digest": "ea0d6c60c2bcd7c5af2c2794c01e24283d008899a1bb3b32fd44666a8b39e8fc"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/deployments/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/deployments/route.ts",
     "digest": "010d11c1ee3db16a81f3c600b2a5624e4cc7d3f8fc63d267fca3350d4b63fa59"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/devboxes/route.ts",
     "digest": "9936b84cc77c0eac838fac06b014f72c8d3b156938b06d3e3574a17bf3f83b75"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/[runnerId]/drain/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/devboxes/runners/[runnerId]/drain/route.ts",
     "digest": "0d6ef2df22dfa405cd4d7247aa94891571dc4c30b536644c506da96be86c32a8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/[runnerId]/features/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/devboxes/runners/[runnerId]/features/route.ts",
     "digest": "b642910730d8387b73e34967a8bee4d6a2bc057788d59fa95d2de3f1e9063fc9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/route.ts",
     "digest": "d96b15eff6651b6253af888d1921027c29122c6cc461fea3a054432007fac2e7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
     "digest": "fbe6a9aa531e589110301fede1bbaf9a74c16281a775fe6bc28b9bad58dcbfa0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/email-blacklist/route.ts",
     "digest": "b9c1d9516fabe8a64cd405686c0a95621e3f15356c33f17fc1d3ffddc88664bb"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/entity-creation-limits/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/entity-creation-limits/route.ts",
     "digest": "c5d9573ceb174d27f0bb890f8d462f3f75c11b12f4b9ad98d5438b3960ab8132"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/external-apps/[appId]/secrets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/external-apps/[appId]/secrets/route.ts",
     "digest": "12e5bb2396bce7339c42db1594578e7247d2e41bae76c91d6aed97f014498db6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/external-apps/managed-cron-approval/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/external-apps/managed-cron-approval/route.ts",
     "digest": "e6406a171e5f13703bf0237b8674fd7d0747b82c6e901da0bd4ae0ff2e4a9738"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/external-apps/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/external-apps/route.ts",
     "digest": "b53d15c1d57414b7be848d0bf28a29e5c710db2359833977892ba2ec3d1ccca3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/feature-flags/audit/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/feature-flags/audit/route.ts",
     "digest": "66c799b3b301531d2fdf008f008ad5719edd94d5f39900eebd88e1ae4728aa82"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/feature-flags/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/feature-flags/route.ts",
     "digest": "5fbf8872a32e0e6664774a803b042883636790cc019a6f18ad7e049193243207"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/auto-pickup/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/auto-pickup/route.ts",
     "digest": "1c20197245162bad4a3b517c8b9370c2c28e7927c780e9e4bba04e56573ba139"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/clients/[clientId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/clients/[clientId]/route.ts",
     "digest": "1854b07af8483f475c1adec752a139e651a490d40d783b82651e41b116ddeed2"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/clients/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/clients/route.ts",
     "digest": "72bcded8b4e0a6b89b427a19d3d5f7f0fd1ca90cfec93ab2ceeea40712d6dd18"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/installation-token/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/installation-token/route.ts",
     "digest": "bac73a80fa390b1cdd578127f25922b3bdd01aa147171b446a2851672042af60"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/route.ts",
     "digest": "d3fb1c440969a299fc482d677d339f76858890b57975fa262a376cf38c2627d3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/test/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/github-bot/test/route.ts",
     "digest": "6e98fdd3ad1265320df3d6c9db1d1149ccec625c29a2d1bbfa810c88b43e93c9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/internal-accounts/[userId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/internal-accounts/[userId]/route.ts",
     "digest": "0c8d46d238b1011bea85da6d14c7af8ee9cf40bbdc6ff472879d239494a88d6f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/internal-accounts/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/internal-accounts/route.ts",
     "digest": "c50f8a39869a7ad7b815d5f5df745568edcc2201fdecb2102609baca6614bde2"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/languages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/languages/route.ts",
     "digest": "9c7666dbceced99bbeb367b3689fd63d618d63a52a7adef88f3cc1c4c64b7408"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/lessons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/lessons/route.ts",
     "digest": "3a0396d086222552a7154329ce2dc14c1608753c96f2f0fc9be33f61173358bc"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts",
     "digest": "8b7066bb5f42de51b4bf22fedbe3cea857748dff49a69927e0f6a827e7c16bdd"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts",
     "digest": "5aed5a4791dd74232504396cfd78c5d39bbf0a9b9725bbfd200078191bb54744"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/bills/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/bills/route.ts",
     "digest": "03110e0fa620967c0693f93d29a63d0a0ab6a2b9eb5a062c796c4a40c52318fd"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts",
     "digest": "2e232e071e27d24642f69c9f8838f554701fca6c81b2d26a54c075a67b481495"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/class-members/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/class-members/route.ts",
     "digest": "c6d89136466249ad990fe32c6e289f04ae7dd1d302b94bc9ce0056b5625d354f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/class-packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/class-packages/route.ts",
     "digest": "d1ead47f8d067fc648df981496af6d19fe2bc89fec7b6d2eda7a79070e3b8be4"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/class-scores/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/class-scores/route.ts",
     "digest": "c143451e775a93524783470cc4afbf79e3277f6819f8bd7e0ee3f7174a5b32f5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts",
     "digest": "c77c6251a13275890f9767765909190ee9963ed287912432556f04560446b538"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/classes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/classes/route.ts",
     "digest": "9886c2a47cde9c072c85cd12c9e8070928ae1b004b17a03dc9138d7c2fb11b34"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/coupons/route.ts",
     "digest": "4b7d594c2efd1d6860f7155754b42869d43c905721bac1f0f5e712386daf0c61"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts",
     "digest": "818e8a6d981b56eab2c9901551fc74ba6f439fa87210c7973d88371eb8389fbb"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
     "digest": "5aed8cc16749d5ac137d155e29998f48bd5a2926b269fee5f4bb1004b15cba5a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts",
     "digest": "61657205e8c20d84f76d1a39fac538d653513f0241ba6ae08bf10e256dba7a27"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts",
     "digest": "9b6d86ad4b2768e107163f117bc25f1bb64ad3f52eadd4c323ffdf99c68be289"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
     "digest": "f2fc93631c3d9e5438a5e81f76829901bf0c6b06c6abf5464897076f7c4ccea9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
     "digest": "82add55986b0354434ee17f43174ae950678c3bde8f0bcb1cec57f2836e1ca0c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
     "digest": "00f95ed24b18c7471dfef91a97cd8b65a57233b95a41e7c96a1ea8c6f90cfdc2"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
     "digest": "1f59232c07a779c2d08499483fa44cff64d8757570013bb0e154ca4a2fdcd4c9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts",
     "digest": "344851bd66f5abf39282233373728a8487256a4f28699409bb82e6c3df756778"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts",
     "digest": "72ba8e21c00ce7fca426d9c9ee1a4579f88421d403f6783d3560199bd9cf316f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts",
     "digest": "92c32e52f82d64540287322cb2286174d9619f6c2863d225d056b1a100f8fd55"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts",
     "digest": "dbb7abc8225ffa86a6ae8695de49272a93ee13d432cc6576888d1701ef0c6ce1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts",
     "digest": "d75057359d97dd3c11b939c2377350407565bb8c7a649a198435b5e8ef8248a3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts",
     "digest": "1f3623859aa168437f460c2ae4bddce9268e8d55f2dc896b98c44c9fa8c4a6a0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts",
     "digest": "ec2baa27849ef2134eaac74c05106dbceb84e477aba7d99d497f795b8013a432"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/lessons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/lessons/route.ts",
     "digest": "817d25c4520f77801e1c5ff99eaedbadd661c9845efc2183e9c19820f0b8d140"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts",
     "digest": "a1e73f827899048117d3e17895ff579510d8d06e0cd4bc7eeb2589a2a75aea86"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/packages/route.ts",
     "digest": "e3314dd6a0d11b9dcd2e6768dcb15916eba096d5b70f3b4e15f736c1c26afef5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts",
     "digest": "bc9e2ba532f26fa8b5fcf8de677bf9ad44c2a004c3ab2a0986e2b77b07b470a6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts",
     "digest": "ddb55697f26b42404cd9a53214bf50fbce200919b56dc48e6b7eb313eee38453"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/product-categories/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/product-categories/route.ts",
     "digest": "2427b73c99d1a433f9dc32df232194b4e1583921422ee45d4f6a8101643d0669"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/product-prices/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/product-prices/route.ts",
     "digest": "102d34ccfabbc246c399feae95b71a1b7a7df9ae300e02f1d8dafa995bd865cb"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/product-units/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/product-units/route.ts",
     "digest": "26284e60dd73b5fd056b769efeec85abad9999084763308ea634e50f4e97b2ce"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/roles/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/roles/route.ts",
     "digest": "4a8af94862143a8c8df986d6f2cfa579a3bed425a7dd942a4c3d61bc177262e1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/score-names/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/score-names/route.ts",
     "digest": "30a0a30e21c957800e7920aa78d8ca3457c911f32d1a9f9b98cbd41c7725943d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts",
     "digest": "bf679f42138f15d1daee09ed39c8958e4f966a09b627bf69f3944ae8b1b0c83a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts",
     "digest": "733f367b0d74efacebff3882baa157c34adb75b79b6ef42181b6d530b221c806"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts",
     "digest": "c43176251ad88f8b2067e4bd75d9b358ee900ca9d49f65fca0e2b537419d189f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts",
     "digest": "bf0f8b41bb933dc1f0b9a4d2fe70d6c25e0a9a8f6d1746e7c40898883adf8858"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts",
     "digest": "65b20c5150244106e04acb03642ee06332c53b1cba90bc208d62dc4327d3d298"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts",
     "digest": "a54e47e1e7778dc970914e374873276feafb59c9781dfcbbf1495f46c4e29bea"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts",
     "digest": "418965fe5b79159eb9f658224d3d73217b6af243045e884cc58bfaae29c19cf4"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-roles/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-roles/route.ts",
     "digest": "0b47157c3a6caec4cac21ce347ef33e36373f0c7a0351da3b50ad6e1c0d839a5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts",
     "digest": "2d13d51563526b6b2b7f07983d51c6691de1a6e3fecbecb65eddac7f29818f8b"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/users/route.ts",
     "digest": "4d868a27f9a07f237bbc5495d9d4f745b6c0980a427be33522c25e48901d792f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts",
     "digest": "be0db1ea1b02a4948f18d2cee35880044120750be72a73144bf81b418a81364f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts",
     "digest": "fa775d84dd7b53b5efe0555b349af5fcb8699496678cf8a6165d55bd20c3ab87"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts",
     "digest": "f2f58f2bc0444877291ac8783e71c86a305383b673f518b28534034c124ee9c1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/wallets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/wallets/route.ts",
     "digest": "7fff8e8bcd02da38f98c6ca049d83581a9e55e6237838bd04f74afb769917ea5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/warehouses/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/warehouses/route.ts",
     "digest": "fe9606a1b7afcfe1fcd507e1f2e655ca3c08ac6d820d0f648ede708f3db25f4d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts",
     "digest": "cee10e1eb147ec5e2589e54d01bd587527916ded2921864a0523ced0cebb501d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts",
     "digest": "4e1b1fbd1162792f2f18800cfbb8758b7be467c2027daa37367ed1d09688e3f8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts",
     "digest": "cf25d26ead02d01f168935390539cb9f355e6f9a0531296e192a7d054141dae9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts",
     "digest": "eae570b854ed7b4723edc9f10244ff7038469bc49c6871de0c86db34215ae7c5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts",
     "digest": "95dfd5a4e2bfabc84af84720371e4b3480b4220fbc7e6479f03c85f556320b66"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts",
     "digest": "1c9b33a995afac880fa96b0a8b2df00835b0fc18c85f53e4b07688a61ed094aa"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts",
     "digest": "e49e018a6fc9b3a234db7806c7e91c2f525d3a3d0d4d7b695ebd3439d4a99f0e"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts",
     "digest": "6fcb6ee65ff42ebcd9635f34d67361f91cb6d502570a13543a7ad3139f2261a9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts",
     "digest": "70d851dcf6881aa65cfc8386c3aac57730b7d6462524909f3fe7a00f8d3de0a4"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts",
     "digest": "97e42afefa5d83890220574e510534aee3bb307fbadb7a9460df639edd4dee11"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts",
     "digest": "3f369e5795c5bcdf32eeb09f8bfdeb34362db35f73efcc59c14079bd4db290c1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts",
     "digest": "a977f6e6693203a7781dfc850747651a292b3928bfee1047da9b495370ed022b"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts",
     "digest": "ba85bcd88088245e4d8dbc4fd3f5aefbb7a6508eae0459d47de586c7da63e80d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts",
     "digest": "663f8981866522ec4af9c40444190a89c8cd79fe5468a39fe439588d39f2b567"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts",
     "digest": "db3be31028469d9af9de8ee0c9a561602dba6171a54a06c72c374275a2d777ba"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts",
     "digest": "185b42be8417e1deebeb5b5c91041e218d8cffd0e40e0a088add7b74569cf1c8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts",
     "digest": "572794ed3cd9061b8116ea16b63e51d882ac91d3456177ecad40bfeb8656398e"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/mobile-versions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/mobile-versions/route.ts",
     "digest": "6c882531dad545cfeff3b755da15352e4d4478c8ab20a52a804ce3e4cd9dd319"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/deployment-pin/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/deployment-pin/route.ts",
     "digest": "41e4f54f736a489e4c176e2fa46d281c2ab541c84f278ef04292cb4b84b41ed3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/deployment-revert/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/deployment-revert/route.ts",
     "digest": "704106f777f97c430a3ddd391c86097d159ea72fb8f1554b919f623df5e1bd23"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/instant-rollout/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/instant-rollout/route.ts",
     "digest": "437810c1d81e5259dc09bf641921225ecadc41f72870263fb98be5ad214b6d21"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/recovery-settings/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/recovery-settings/route.ts",
     "digest": "d5303d67267c6eba7622f03fa4ea9e36c1e1fe1906ceaf081751f2271e56b40b"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/requests/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/requests/route.ts",
     "digest": "e512fc30efecd5fc250f18178faf427514db3d149b0fa71760e64c762196d0dd"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/route.ts",
     "digest": "50cd5d7c15e805264991af5718ca2b8cd0f0b0fe24e630002ea89e75b19299f1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/watcher-logs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/watcher-logs/route.ts",
     "digest": "1e1d2e6f88733a9d5e9deb4f13b0d2f6ca3c68f7ad26ffce231172d6bd7bcee8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/blue-green/watcher-recovery/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/blue-green/watcher-recovery/route.ts",
     "digest": "14c809d86788c34557a0738d8966a757f2eecd9160285a8df8d80709684818d9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/control/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/control/route.ts",
     "digest": "eae3ea1f05542764b6731010ad929654328f56fdb991897655fcd17316e1d427"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/executions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/executions/route.ts",
     "digest": "e44c09d5e26afbfee631bf8c58471c6640da01d3159cab6ea49bf739da6e24e5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/managed/job/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/managed/job/route.ts",
     "digest": "5ff69888bdea9e989fd5fa415f4efef200522a9a590d4d480dac030c7d246f04"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/managed/run/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/managed/run/route.ts",
     "digest": "067b2432a80a7335270a9c8d221ea56e967b6290605f00c1dfefee3cce31c424"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/route.ts",
     "digest": "3d1b895a87fd4c49e69b967a7d7248b86691a78570bbf16044818ab3e10042bd"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/run/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/run/route.ts",
     "digest": "dbdaab76f895fe4e13863465a95e06db1395d3374d087302ae7f2bc9b28ef7f1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/cron/runner-recovery/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/cron/runner-recovery/route.ts",
     "digest": "d9c8f932692be04995f1edcc42c30e62418888c18ebf6cb4ea981fb29906834c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/stress-tests/[runId]/abort/route.ts",
     "digest": "ab61156ad2ebac2d7779dfd1afa3534df0190227b12420b2e08deb1ab3214d24"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/stress-tests/[runId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/stress-tests/[runId]/route.ts",
     "digest": "7e5f1c723eff0ddf83d0e04213499e8227177effde8408455fef56f776bba40b"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/monitoring/stress-tests/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/monitoring/stress-tests/route.ts",
     "digest": "7a71080de460953f962f2091a00604f3c0e1472b3648cf62aa245b7e936e1f96"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/analytics/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/analytics/route.ts",
     "digest": "6aa4a0862feae594bb7d68791fcfbfb0b40c5c4fcb05edd7740edd0d3df15962"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/cron-runs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/cron-runs/route.ts",
     "digest": "829a07f565fb8fce1467c037398bf386826d97a06ca0adfd057d52f8573614fb"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/deployments/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/deployments/route.ts",
     "digest": "9cc5204f22be59f2293084e43dd9fab974f1b49438b22f0766ee547aae125d18"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/logs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/logs/route.ts",
     "digest": "bbe592a20fb6d7d7f9c6a958d15642ddf7447b8af4ee955771fd65cd75c9fbd8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/overview/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/overview/route.ts",
     "digest": "2019ac05ca1f3376a8db63b0f75e78bb49c63155e0264cc7c193baa879d1d116"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/requests/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/requests/route.ts",
     "digest": "6e2ba87ca62efc0d950497a8f2ffc558ba5121c5dd1bf67be0124ab2a5789bea"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/observability/resources/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/observability/resources/route.ts",
     "digest": "fc110db884dcb24601d4fa8f30b6a589fbb302ef231d75edb8ab2dbe678399e9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/otp-limits/reset/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/otp-limits/reset/route.ts",
     "digest": "a8d27268b9cd42f66ced7aeee286c74c58b8ae0aee606872f3b525642a59fd90"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/package-stock-changes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/package-stock-changes/route.ts",
     "digest": "e2ab41e4be8aeec59e8ccfe1c96a205bc4926196e0e09ee4088c47d4fc77fcb0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/packages/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/packages/route.ts",
     "digest": "b31f9bf42cb1b08bcab0b23be19e9de229edf96a125c76fc8be4a1707a1a32e2"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/payment-methods/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/payment-methods/route.ts",
     "digest": "c0d201430f560e76aecea3db7aeea6abe2250c66805a12d3ffddcd6526b587e6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/policy-notice/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/policy-notice/route.ts",
     "digest": "2bf32f709a59f33dbb181c28be0ffb1edef4640d18a2dd24a686d06d6711ce95"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/post-email-queue/route.ts",
     "digest": "75d1f74e65fcb0ba28ab18fe8a81075e4b127569c4f6a0a4029a9d6696f68a7a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/run-now/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/post-email-queue/run-now/route.ts",
     "digest": "0ca3b9b6382e92b0be3aea8dadbcc4c6fe10f1f427f6d65b3763f9ededa4a7d8"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/product-categories/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/product-categories/route.ts",
     "digest": "2b5df146b9300f08b8cd94df4b2ce717157c8c966ce56fee1d78c5b762c416c5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/product-prices/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/product-prices/route.ts",
     "digest": "d1b299fd398bc47b3ae2bce7ff2216eae05ef3e1cc633fbe7786ef2d5cc34cb7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/product-units/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/product-units/route.ts",
     "digest": "fbe2d411c002b88279a78e7e1820bb5423c6a893a9bd84a5fcfeb29619099125"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/[projectId]/deploy/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/projects/[projectId]/deploy/route.ts",
     "digest": "197decdaefef088b7cb3814d68c95c4645c2f867e2d26ddb4e798d59928a8c5a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/[projectId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/projects/[projectId]/route.ts",
     "digest": "5eea3aa58d87a18668b677df5b25e95c889b175e766368c3dcef6e6390f0e126"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/[projectId]/sync/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/projects/[projectId]/sync/route.ts",
     "digest": "b7fbaeabb4eca54237f8a08eba3d8ca1ac86edd53bb9aebab47174cc832d2493"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/projects/route.ts",
     "digest": "e62221d4d405364645f48bc07ffe94da5232c5f37f4c71f702b634ff0c5bf2ba"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/push-notifications/test/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/push-notifications/test/route.ts",
     "digest": "55ce7a4a8d1a12a62f5284534e07d020946a81c080fc1e9ec667234e941ebe0c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limit-appeals/[appealId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limit-appeals/[appealId]/route.ts",
     "digest": "5e6d5c36f5dc392ac345707caf50f89b9a7b40b766006aa0ea79a45307e6d9d1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limit-appeals/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limit-appeals/route.ts",
     "digest": "0534e5a0eebb81d76d9443acdbc794b7ee2273ab6c9c689edb70a23b1a3904e0"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limit-subjects/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limit-subjects/route.ts",
     "digest": "2e39203c19fdaac9837b225cef75c12a888c1d8f69327504aa64b22c6fe774e1"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limits/live-usage/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limits/live-usage/route.ts",
     "digest": "71a5f5339572113f5bcabe44a5731a12511687f7400fd68ed6c82a16a0051fba"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limits/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limits/route.ts",
     "digest": "a83f09dca7cd5ad7ce55d9a7c0d573afe741b53301f59345190592e15d2c5860"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limits/rules/[ruleId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limits/rules/[ruleId]/route.ts",
     "digest": "f4d147a87245feedfff7261e9b75e3f06d569628dc1b9950223b8d5ab96e41a5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limits/workspace-secrets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/rate-limits/workspace-secrets/route.ts",
     "digest": "2e4c4998f880727c42928d23d782482ed264861464ebe01fc70de5d9ffc23a20"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/review-accounts/[userId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/review-accounts/[userId]/route.ts",
     "digest": "9b1ac50d9b2a56bc2db8d5bf18767f82839b36468a689423e14dc265af38a3fb"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/review-accounts/apple-review/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/review-accounts/apple-review/route.ts",
     "digest": "0d4fa2dc2c14507fb66441623de3982bf4af509528f39c5122651ef206a9b0ea"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/review-accounts/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/review-accounts/route.ts",
     "digest": "e7343c7a1a4bb1198d890513c9d229fa01f5821bb036a3ee953d364a5ea7b2b3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/roles/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/roles/route.ts",
     "digest": "26fa4e81f978501c574871064c276e09fccad23b2514fa831f9bfc9a355b1a55"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/score-names/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/score-names/route.ts",
     "digest": "e14dd869c21012c909e3fbebf2b1adeea4bd535b2504cab7a6449de95442a5ef"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/sidebar/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/sidebar/route.ts",
     "digest": "9156380333a7c1b6837b1f1cb4ed9ca89d824d18d7242280dd9e63eac9da80df"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/sidebar/sizes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/sidebar/sizes/route.ts",
     "digest": "eb090e662b9d32c70b465a730131b90d6f7407f16a5d5676c4a5e0c479d8b67c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/student-feedbacks/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/student-feedbacks/route.ts",
     "digest": "4866676c80eef4ef136a270b26f62b4c2a6f61a7c04273f346947920747e323a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts",
     "digest": "f91d064dd17665a5cf2f66b0e82f9fcc6f53b351cb84226a169aad8ef3923aac"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/timezones/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/timezones/route.ts",
     "digest": "7e7dc36a3a7f725057a2fc5c16588c08318704c57bec73c2525368ab993a7e57"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/transaction-categories/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/transaction-categories/route.ts",
     "digest": "61af1ae6f7db9c23a21236ea86efb335eaa3dc55d1fefdd134f3eac940a75ef7"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-coupons/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/user-coupons/route.ts",
     "digest": "ef9d1db714870e8fd985b25495f86d4da5aa470be9931db018affa05db031334"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts",
     "digest": "f26beb7e76ef521e42e4c9550c2937b625cc205dfb443e9a4a7f78d3c1c412b5"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-monthly-reports/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/user-monthly-reports/route.ts",
     "digest": "6c63f13f5372da4d9ac1be4bd2cd5e7a6cfd32cd2005a2fc7483818e8ef11307"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-status-changes/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/user-status-changes/route.ts",
     "digest": "a7f6d29acc0786dfb0010e762561547d500f47ea8d078e093a2db43db2cdb43a"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/users/fields/types/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/users/fields/types/route.ts",
     "digest": "95da352e81d0d07038b3b936935c52b70361b2359186b4313f69302e42726197"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/users/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/users/route.ts",
     "digest": "009d0b1143792e0deefb00851f7f89d823a0462a011928b0bb602b2203b16a14"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/wallet-transactions/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/wallet-transactions/route.ts",
     "digest": "b9a38ab21bd4bd524c24e946d9795b43cd82519e089bb481d075dfa3f7412561"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/wallets/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/wallets/route.ts",
     "digest": "c0d201430f560e76aecea3db7aeea6abe2250c66805a12d3ffddcd6526b587e6"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/warehouses/route.ts",
+    "file": "apps/admin/src/app/api/v1/infrastructure/warehouses/route.ts",
     "digest": "3552755ca8e1140513c3c9a38c08fbdb064488e1174c25622b2bd6c281f7fb11"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/internal/holidays/[holidayId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/internal/holidays/[holidayId]/route.ts",
     "digest": "d4b07c617f740b456d9ffeaa7ca32baf2415c070d12c29afd8444ed1f2f27a28"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/internal/holidays/bulk/route.ts",
+    "file": "apps/admin/src/app/api/v1/internal/holidays/bulk/route.ts",
     "digest": "2caf0154b1fd275e5ad2dea1ecf93dd12bdaa210d2a3103d901e6e6f8bfb95b9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/internal/holidays/route.ts",
+    "file": "apps/admin/src/app/api/v1/internal/holidays/route.ts",
     "digest": "4744a9bd7ab6718ea89316a3870f1c6a9dde9dad60623f741493998b2ebdbf7c"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-calendar/[...path]/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-calendar/[...path]/route.ts",
     "digest": "80670723e0589abdc58f92b67f858c64dec563e03458e7eeecd59dca94e5a436"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/activate/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/activate/route.ts",
     "digest": "619a69273febae16004f421dc281750e6f9c4d9452a89ee152449706c238ebe9"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/bundle/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/bundle/route.ts",
     "digest": "5a6e48765c779ae29a56d737c9dbf0f588087fca7cb75338f539f440b0f26095"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/env-export/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/env-export/route.ts",
     "digest": "542b3491fe64683f7251bedb8ce05693c0b71fb89bc4c010cf2b17a0f4a6d0d3"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/files/[kind]/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/files/[kind]/route.ts",
     "digest": "448513cc9569dff9cfa6cd0a76a6ff2c18e58c777ec54757144d18d1800f0c29"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/rollback/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/rollback/route.ts",
     "digest": "cd59bff50fbab992e4301a63be9db9c19dfc01ac46835f8afa9fc91f2a517d32"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/route.ts",
     "digest": "287ce17960831df5c0bb7f05ead8f51e03e9efe29081e5de30b5b18a9596a66f"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/tokens/[tokenId]/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/tokens/[tokenId]/route.ts",
     "digest": "28397102457d2c4fb7e11394e5c14c8d35a175fb7ad95ff7892a039166165117"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/mobile-deployment/tokens/route.ts",
+    "file": "apps/admin/src/app/api/v1/mobile-deployment/tokens/route.ts",
     "digest": "1f7f346d952047386cb1011befd50933dc2a2e01703b717842e7005438c62738"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/ops-hub/[...path]/route.ts",
+    "file": "apps/admin/src/app/api/v1/ops-hub/[...path]/route.ts",
     "digest": "cdd6fbcac0bfc3be8ff63d8a6ae90ad0a3237705fab851a71df3b634dd0ca005"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
     "digest": "ff6c755755a1bf458e878154c4a040ec674698db6939eb1af33d4a9b53626a20"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/avatar/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/avatar/route.ts",
     "digest": "703aa18783f479cf53ebd919fa46f6cfd71c38b0c0c290249a9365c26301c63d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
     "digest": "68e0109ecd2851807c3ced7d3e7d10268eee963a8698a83b002b75108e44327d"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/infrastructure/realtime/analytics/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/infrastructure/realtime/analytics/route.ts",
     "digest": "ebd0589d99cc4d8a4ae6053f66c66b8d2809000cd645ec3ae583ae8e80216f77"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/infrastructure/realtime/analytics/summary/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/infrastructure/realtime/analytics/summary/route.ts",
     "digest": "20039293294a757d5183d21afd5910c6a0bd3170cca8233063d549d7d4eed172"
   },
   {
-    "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts",
+    "file": "apps/admin/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts",
     "digest": "ab07404e1e8d6d6a4174276dd101edf700138c076ead67e586ba68c10b0b7948"
   },
   {
-    "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/route.ts",
+    "file": "apps/admin/src/app/api/workspaces/[wsId]/route.ts",
     "digest": "61b97158d992baf39cfb347f43098e4c4792830e0b8af1cfb2d3f5e1445bc678"
   },
   {
-    "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts",
+    "file": "apps/admin/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts",
     "digest": "a03b2e962c40b705ae39f3c6d69f24862d992c9cb1b0bfe51373d72a495feeed"
   },
   {
-    "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts",
+    "file": "apps/admin/src/app/api/workspaces/[wsId]/secrets/route.ts",
     "digest": "f7d68892b7f3ee63fe4df99b1d6382c68b0b4153e1e68a3e383ba4c9aec0ee48"
   },
   {
-    "file": "apps/infrastructure/src/app/api/workspaces/route.ts",
+    "file": "apps/admin/src/app/api/workspaces/route.ts",
     "digest": "ef594c724d2869ca2ea128252044973c7b32c7c28e8625c850065d8abe2c2f05"
   },
   {

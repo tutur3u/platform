@@ -9,7 +9,7 @@ test('mode all selects all six programming apps', () => {
   assert.deepEqual(PROGRAMMING_APPS, [
     'web',
     'learn',
-    'infrastructure',
+    'admin',
     'mail',
     'contacts',
     'tasks',

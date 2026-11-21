@@ -1004,7 +1004,7 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
-    "apps/infrastructure/.gitignore": {
+    "apps/admin/.gitignore": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
@@ -1014,7 +1014,7 @@
       },
       "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
     },
-    "apps/infrastructure/cloudflare/auth-redirect.runtime.mjs": {
+    "apps/admin/cloudflare/auth-redirect.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
@@ -1024,7 +1024,7 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
-    "apps/infrastructure/cloudflare/build-info-admin.runtime.mjs": {
+    "apps/admin/cloudflare/build-info-admin.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
@@ -1034,7 +1034,7 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
-    "apps/infrastructure/cloudflare/native-built-worker.runtime.mjs": {
+    "apps/admin/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
@@ -1044,7 +1044,7 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
-    "apps/infrastructure/cloudflare/production.runtime.mjs": {
+    "apps/admin/cloudflare/production.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
@@ -1054,7 +1054,7 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
-    "apps/infrastructure/package.json": {
+    "apps/admin/package.json": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",

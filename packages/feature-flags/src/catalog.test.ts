@@ -10,7 +10,7 @@ const repoFileExists = (path: string) =>
   existsSync(new URL(`../../../${path}`, import.meta.url));
 
 const INFRA_SECRETS =
-  'apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts';
+  'apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts';
 const SECRET_ALIASES: Record<string, string> = {
   ENABLE_TOPIC_ANNOUNCEMENTS: 'TOPIC_ANNOUNCEMENTS_SECRET',
 };
@@ -51,7 +51,7 @@ function infraFeatureBooleans() {
     source.indexOf('];', source.indexOf('// Feature Flags'))
   );
   const topicSecret = /TOPIC_ANNOUNCEMENTS_SECRET = '([A-Z_]+)'/.exec(
-    repoFile('apps/infrastructure/src/lib/topic-announcements.ts')
+    repoFile('apps/admin/src/lib/topic-announcements.ts')
   )?.[1];
   return [
     ...section.matchAll(
@@ -142,7 +142,7 @@ describe('feature flag catalog', () => {
 
   it('covers every non-secret mobile build feature setting', () => {
     const constants = repoFile(
-      'apps/infrastructure/src/lib/mobile-deployment/constants.ts'
+      'apps/admin/src/lib/mobile-deployment/constants.ts'
     );
     const nonSecret = constants.slice(
       constants.indexOf('MOBILE_DEPLOYMENT_NON_SECRET_NAMES'),

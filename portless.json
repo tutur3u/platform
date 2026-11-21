@@ -32,7 +32,7 @@
       "name": "finance.tuturuuu",
       "script": "dev:app"
     },
-    "apps/infrastructure": {
+    "apps/admin": {
       "name": "infra.tuturuuu",
       "script": "dev:app"
     },

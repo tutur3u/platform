@@ -32,7 +32,7 @@
 **/auth.ts                         @vhpx
 **/*-auth.ts                       @vhpx
 /apps/web/src/lib/devboxes/        @vhpx
-/apps/infrastructure/src/lib/devboxes/ @vhpx
+/apps/admin/src/lib/devboxes/ @vhpx
 **/*crypto*.ts                     @vhpx
 **/webhooks.ts                     @vhpx
 **/email-unsubscribe.ts            @vhpx
@@ -62,9 +62,9 @@
 # Scheduled jobs authenticated by the cron secret
 /apps/*/src/app/api/cron/          @vhpx
 /apps/web/src/legacy-api-routes/cron/ @vhpx
-/apps/infrastructure/src/lib/mobile-calendar/cron-gateway.ts @vhpx
-/apps/infrastructure/src/lib/post-email-queue-cron.ts @vhpx
-/apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/run-now/ @vhpx
+/apps/admin/src/lib/mobile-calendar/cron-gateway.ts @vhpx
+/apps/admin/src/lib/post-email-queue-cron.ts @vhpx
+/apps/admin/src/app/api/v1/infrastructure/post-email-queue/run-now/ @vhpx
 /apps/cron-control/                @vhpx
 
 # Inbound webhooks and their verifiers

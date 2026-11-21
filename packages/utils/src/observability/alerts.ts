@@ -1,5 +1,5 @@
 // Framework-free shaping of SLO burn alerts, shared by Admin
-// (apps/infrastructure), the Perf Factory intake and Mastermind fleet sync
+// (apps/admin), the Perf Factory intake and Mastermind fleet sync
 // (apps/web). Input is rows in the private.list_observability_alerts shape;
 // anything malformed, including an unparseable start time, is dropped.
 

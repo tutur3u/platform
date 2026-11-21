@@ -808,7 +808,7 @@ messages or API responses; provider and AI SDK errors are redacted before
   wizard, channel list, persona, rules, quiet hours, model and keys, caps,
   usage, health, export and delete.
 - **Operator view** (`/admin/<wsId>/mira/channels` and
-  `/mira/channels/<channel>` in apps/infrastructure, under Fleet and
+  `/mira/channels/<channel>` in apps/admin, under Fleet and
   Mastermind): every tenant's health, latency, cost, errors and abuse signals,
   operator suspension, the personal block, acknowledgement version publishing
   and the global stop. It shows no message content;
@@ -821,7 +821,7 @@ messages or API responses; provider and AI SDK errors are redacted before
   Mira manage permission and are enforced in the route. Tenant routes accept
   only the `tenant` stop reason and reject `operator`, `billing` and `cap`.
 - **Operator API:** a separate root-scoped surface under
-  `apps/infrastructure/src/app/api/v1/infrastructure/mira/**`, gated by
+  `apps/admin/src/app/api/v1/infrastructure/mira/**`, gated by
   root-workspace admin plus a dedicated Mira operator permission in the route
   (the same pattern as the abuse-intelligence routes). It serves cross-tenant
   health and cost reads, operator suspension, the personal block,
@@ -834,7 +834,7 @@ messages or API responses; provider and AI SDK errors are redacted before
 ### API contract
 
 Tenant routes live under `apps/web/src/app/api/v1/workspaces/[wsId]/mira`;
-operator routes under `apps/infrastructure/src/app/api/v1/infrastructure/mira`.
+operator routes under `apps/admin/src/app/api/v1/infrastructure/mira`.
 Both validate bodies with zod schemas exported from `packages/internal-api`,
 call only the `private.mira_*` RPCs, and return the RPC error code mapped to
 HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,

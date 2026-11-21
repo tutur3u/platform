@@ -10,7 +10,7 @@ const targets = {
     '@tuturuuu/web',
     '@tuturuuu/tasks',
     '@tuturuuu/tasks-ui',
-    '@tuturuuu/infrastructure',
+    '@tuturuuu/admin',
   ],
 };
 

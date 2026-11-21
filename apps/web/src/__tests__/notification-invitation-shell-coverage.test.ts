@@ -100,7 +100,7 @@ describe('notification and invitation shell coverage', () => {
     'apps/finance/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
     'apps/forms/src/app/[locale]/[wsId]/layout.tsx',
     'apps/git/src/app/[locale]/-/[wsId]/layout.tsx',
-    'apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/admin/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
     'apps/inventory/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
     'apps/mail/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
     'apps/meet/src/app/[locale]/[wsId]/layout.tsx',

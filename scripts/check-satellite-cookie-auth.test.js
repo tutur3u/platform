@@ -114,28 +114,12 @@ test('flags cookie auth hidden in an API helper or shared library', () => {
     const supabase = await createClient(request);
     const { user } = await resolveAuthenticatedSessionUser(supabase);
   `;
-  writeFile(root, 'apps/infrastructure/src/app/api/v1/thing/auth.ts', source);
-  writeFile(root, 'apps/infrastructure/src/lib/thing/authorization.ts', source);
+  writeFile(root, 'apps/admin/src/app/api/v1/thing/auth.ts', source);
+  writeFile(root, 'apps/admin/src/lib/thing/authorization.ts', source);
 
   assert.deepEqual(findViolations(root), [
-    path.join(
-      'apps',
-      'infrastructure',
-      'src',
-      'app',
-      'api',
-      'v1',
-      'thing',
-      'auth.ts'
-    ),
-    path.join(
-      'apps',
-      'infrastructure',
-      'src',
-      'lib',
-      'thing',
-      'authorization.ts'
-    ),
+    path.join('apps', 'admin', 'src', 'app', 'api', 'v1', 'thing', 'auth.ts'),
+    path.join('apps', 'admin', 'src', 'lib', 'thing', 'authorization.ts'),
   ]);
 });
 
@@ -175,21 +159,12 @@ test('flags Infrastructure routes that query directly with a cookie client', () 
   const root = createTempRepo();
   writeFile(
     root,
-    'apps/infrastructure/src/app/api/v1/thing/route.ts',
+    'apps/admin/src/app/api/v1/thing/route.ts',
     "const supabase = await createClient(); await supabase.from('things').select('*');"
   );
 
   assert.deepEqual(findViolations(root), [
-    path.join(
-      'apps',
-      'infrastructure',
-      'src',
-      'app',
-      'api',
-      'v1',
-      'thing',
-      'route.ts'
-    ),
+    path.join('apps', 'admin', 'src', 'app', 'api', 'v1', 'thing', 'route.ts'),
   ]);
 });
 

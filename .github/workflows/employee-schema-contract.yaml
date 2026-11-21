@@ -235,7 +235,7 @@ jobs:
       - name: Typecheck authenticated Infrastructure profile fixture
         if: inputs.include_profile_route == true
         working-directory: source
-        run: bun x tsc --noEmit -p apps/infrastructure/e2e/fixtures/tsconfig.employee-profile-route.json
+        run: bun x tsc --noEmit -p apps/admin/e2e/fixtures/tsconfig.employee-profile-route.json
       - name: Verify strict TAP and receipt gates
         run: node --test apps/database/scripts/employee-managed-profile-qualification.test.mjs apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/employee-schema-tap.test.mjs apps/database/scripts/employee-retained-mailbox-schema.test.mjs apps/database/scripts/employee-schema-workflow.test.mjs
       - name: Verify Google destination packet source

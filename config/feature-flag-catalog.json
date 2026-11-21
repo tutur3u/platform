@@ -706,7 +706,7 @@
       "apps": ["web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/api-keys/page.tsx"
       ],
       "defaults": {
@@ -728,7 +728,7 @@
       "apps": ["cms", "web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/cms/src/features/cms-studio/constants.ts",
         "apps/web/src/lib/external-projects/constants.ts",
         "packages/storage-core/src/lib/external-projects/constants.ts"
@@ -752,7 +752,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -773,7 +773,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -794,7 +794,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -815,7 +815,7 @@
       "apps": ["contacts", "web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/lib/topic-announcements.ts",
+        "apps/admin/src/lib/topic-announcements.ts",
         "apps/contacts/src/lib/topic-announcements-access.ts",
         "apps/web/src/lib/topic-announcement-send-admission.ts",
         "packages/utils/src/topic-announcements.ts"
@@ -839,7 +839,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -860,7 +860,7 @@
       "apps": ["web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/web/src/app/[locale]/(dashboard)/[wsId]/link-shortener/layout.tsx"
       ],
       "defaults": {
@@ -882,7 +882,7 @@
       "apps": ["calendar", "tasks", "web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/calendar/src/lib/habits/constants.ts",
         "apps/tasks/src/lib/habits/constants.ts",
         "apps/web/src/lib/habits/constants.ts"
@@ -906,7 +906,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "packages/inventory-core/src/lib/inventory/access.ts"
       ],
       "defaults": {
@@ -928,7 +928,7 @@
       "apps": ["web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/categories/finance.tsx"
       ],
       "defaults": {
@@ -950,7 +950,7 @@
       "apps": ["web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "packages/finance-core/src/fee-lock/constants.ts"
       ],
       "defaults": {
@@ -972,8 +972,8 @@
       "apps": ["infrastructure", "web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
-        "apps/infrastructure/src/lib/post-email-queue/enqueue-access.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/lib/post-email-queue/enqueue-access.ts",
         "apps/web/src/lib/post-email-queue/enqueue-access.ts"
       ],
       "defaults": {
@@ -995,7 +995,7 @@
       "apps": ["contacts", "web"],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts",
         "apps/contacts/src/app/[locale]/[wsId]/reports/report-email-gate-control.tsx",
         "apps/web/src/lib/user-report-automation/access.ts"
       ],
@@ -1018,7 +1018,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -1039,7 +1039,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -1060,7 +1060,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -1081,7 +1081,7 @@
       "apps": [],
       "appsComplete": false,
       "sources": [
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -1102,7 +1102,7 @@
       "apps": ["mobile"],
       "appsComplete": true,
       "sources": [
-        "apps/infrastructure/src/lib/mobile-deployment/constants.ts",
+        "apps/admin/src/lib/mobile-deployment/constants.ts",
         "apps/mobile/lib/core/config/env.dart"
       ],
       "defaults": {
@@ -1124,7 +1124,7 @@
       "apps": ["mobile"],
       "appsComplete": true,
       "sources": [
-        "apps/infrastructure/src/lib/mobile-deployment/constants.ts",
+        "apps/admin/src/lib/mobile-deployment/constants.ts",
         "apps/mobile/lib/core/config/env.dart"
       ],
       "defaults": {
@@ -1170,7 +1170,7 @@
       "sources": [
         "packages/utils/src/feature-flags/data.ts",
         "apps/web/src/lib/personal-journal/flag.ts",
-        "apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
+        "apps/admin/src/app/[locale]/(dashboard)/[wsId]/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,

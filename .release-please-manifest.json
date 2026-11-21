@@ -11,7 +11,7 @@
   "apps/finance": "0.36.0",
   "apps/hive": "0.27.0",
   "apps/hive-realtime": "0.13.1",
-  "apps/infrastructure": "0.39.0",
+  "apps/admin": "0.39.0",
   "apps/inventory": "0.38.0",
   "apps/learn": "0.33.0",
   "apps/mail": "0.32.0",

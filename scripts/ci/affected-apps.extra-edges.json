@@ -14,7 +14,7 @@
   "apps/cron-control/src/processors/chat-realtime-revocations.ts": [
     "apps/chat-realtime"
   ],
-  "apps/database/": ["apps/infrastructure", "packages/feature-flags"],
+  "apps/database/": ["apps/admin", "packages/feature-flags"],
   "apps/database/scripts/": ["apps/web"],
   "apps/database/supabase/": ["packages/utils"],
   "apps/database/supabase/migrations/": ["apps/web", "packages/meet-core"],
@@ -28,8 +28,8 @@
   "apps/forms/start-bridge.config": ["apps/learn"],
   "apps/gateway/src/": ["apps/web"],
   "apps/git/start-bridge.config": ["apps/learn"],
-  "apps/infrastructure/e2e/fixtures/": ["apps/database"],
-  "apps/infrastructure/src/lib/mobile-calendar/": ["apps/calendar"],
+  "apps/admin/e2e/fixtures/": ["apps/database"],
+  "apps/admin/src/lib/mobile-calendar/": ["apps/calendar"],
   "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
     "packages/users-core"
   ],
@@ -61,7 +61,7 @@
   "apps/web/": [
     "apps/cron-control",
     "apps/database",
-    "apps/infrastructure",
+    "apps/admin",
     "packages/offline",
     "packages/sdk"
   ],
@@ -79,7 +79,7 @@
   ],
   "packages/inventory-core/": ["apps/database"],
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
-    "apps/infrastructure"
+    "apps/admin"
   ],
   "packages/meet-core/src/features/call/components/": ["packages/ui"],
   "packages/meet-core/src/features/call/server/forms-extended/": ["apps/forms"],

@@ -7,7 +7,7 @@ audience: developers
 
 The platform admin surface is served at `https://tuturuuu.com/admin` by the
 `tuturuuu-infrastructure` Cloudflare Worker behind the apex gateway (binding
-`MOUNT_ADMIN`). The source lives in `apps/infrastructure` and moves to
+`MOUNT_ADMIN`). The source lives in `apps/admin` and moves to
 `apps/admin` once the mount is live; `infrastructure.tuturuuu.com` then redirects
 (301) to `tuturuuu.com/admin`.
 

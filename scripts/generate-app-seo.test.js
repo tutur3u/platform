@@ -153,6 +153,12 @@ test('rejects noncanonical hosts, private routes, duplicate paths and oversized 
 // Apps intentionally left out of the policy (no sitemap, robots or public host
 // advertised) until their access hardening is live. Keep this list short.
 const UNLISTED_APPS = new Set(['playground']);
+// Policy keys for apps whose directory differs from the key.
+const POLICY_KEY_BY_DIRECTORY = Object.fromEntries(
+  Object.entries(require('./app-directories.json'))
+    .filter(([key]) => key !== '$comment')
+    .map(([key, directory]) => [directory, key])
+);
 
 test('registers every Next app so new apps cannot silently miss sitemap policy', () => {
   for (const entry of fs.readdirSync(path.join(root, 'apps'), {
@@ -164,7 +170,10 @@ test('registers every Next app so new apps cannot silently miss sitemap policy',
     const config = JSON.parse(fs.readFileSync(manifest, 'utf8'));
     if (config.dependencies?.next || config.devDependencies?.next)
       assert.ok(
-        Object.hasOwn(policy, entry.name),
+        Object.hasOwn(
+          policy,
+          POLICY_KEY_BY_DIRECTORY[entry.name] ?? entry.name
+        ),
         `Missing SEO policy for ${entry.name}`
       );
   }

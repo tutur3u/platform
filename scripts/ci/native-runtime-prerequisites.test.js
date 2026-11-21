@@ -134,9 +134,10 @@ test('both native jobs retain bounded setup and mandatory runtime acceptance', (
     assert.equal(setup['timeout-minutes'], 10);
     assert.equal(setup.if, "env.RUNTIME_SETUP_COMMAND != ''");
     assert.equal(setup.with.command, expression('env.RUNTIME_SETUP_COMMAND'));
+    // An empty app-dir resolves to apps/<app>.
     assert.equal(
       setup.with['working-directory'],
-      `apps/${expression('inputs.app')}`
+      expression("inputs.app-dir || format('apps/{0}', inputs.app)")
     );
     assert.equal(setup['continue-on-error'], undefined);
     const runtime = job.steps[setupIndex + 1];

@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '../..');
 const load = import('./mail-calendar-tasks-affected.ts');
 const manifest = (name, dependencies = []) => ({
   name: `@tuturuuu/${name}`,
-  path: `${['mail', 'calendar', 'tasks', 'web', 'infrastructure'].includes(name) ? 'apps' : 'packages'}/${name}`,
+  path: `${['mail', 'calendar', 'tasks', 'web', 'admin'].includes(name) ? 'apps' : 'packages'}/${name}`,
   dependencies: dependencies.map((dep) => `@tuturuuu/${dep}`),
 });
 const manifests = [
@@ -18,7 +18,7 @@ const manifests = [
   manifest('tasks', ['tasks-ui']),
   manifest('web', ['shared']),
   manifest('calendar', ['calendar-lib']),
-  manifest('infrastructure', ['gateway']),
+  manifest('admin', ['gateway']),
   manifest('gateway'),
   manifest('tasks-ui', ['shared']),
   manifest('auth', ['shared']),
@@ -300,7 +300,7 @@ test('required skill and docs prose does not invalidate unrelated app builds', a
 
 test('Calendar diagnostics retain the directly imported infrastructure gateway and its dependencies', async () => {
   for (const file of [
-    'apps/infrastructure/src/lib/mobile-calendar/gateway.ts',
+    'apps/admin/src/lib/mobile-calendar/gateway.ts',
     'packages/gateway/index.ts',
   ]) {
     assert.deepEqual(await decision(['apps/mail/src/index.ts', file]), {

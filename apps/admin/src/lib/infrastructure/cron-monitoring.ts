@@ -76,7 +76,7 @@ function resolveCronConfigPath() {
     path.join(
       /*turbopackIgnore: true*/ process.cwd(),
       'apps',
-      'infrastructure',
+      'admin',
       'cron.config.json'
     ),
     path.join(/*turbopackIgnore: true*/ process.cwd(), 'cron.config.json'),
@@ -89,7 +89,7 @@ function resolveCronConfigPath() {
     path.join(
       /*turbopackIgnore: true*/ process.cwd(),
       'apps',
-      'infrastructure',
+      'admin',
       'cron.config.json'
     )
   );

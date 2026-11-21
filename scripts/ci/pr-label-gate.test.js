@@ -118,7 +118,7 @@ const PROTECTED_TRIGGERS = {
   'chat-cloudflare.yaml': '4c7010c51cef2ee2',
   'drive-cloudflare-artifact.yaml': '0a3cc2c97958f5cd',
   'hive-cloudflare.yaml': '170330c93275beda',
-  'infrastructure-cloudflare.yaml': '8b74315dfe557569',
+  'infrastructure-cloudflare.yaml': '792b96e4ad05ab76',
   'learn-cloudflare.yaml': 'c1dc547df2674fca',
   'lms-cloudflare.yaml': '38a3fd2a909cdb83',
   'marketing-cloudflare.yaml': '975602b8f7271cbc',

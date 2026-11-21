@@ -120,10 +120,10 @@ export const vercelWorkflowTargets = [
   },
   {
     app: 'infrastructure',
-    appPath: 'apps/infrastructure',
+    appPath: 'apps/admin',
     buildInfoApp: 'infrastructure',
     framework: 'next',
-    packageName: '@tuturuuu/infrastructure',
+    packageName: '@tuturuuu/admin',
     previewWorkflow: 'vercel-preview-infrastructure.yaml',
     productionWorkflow: 'vercel-production-infrastructure.yaml',
   },

@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(import.meta.dirname, '../../../..');
 const whitelistPages = [
-  'apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/ai/whitelist/emails/page.tsx',
-  'apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/ai/whitelist/domains/page.tsx',
+  'apps/admin/src/app/[locale]/(dashboard)/[wsId]/ai/whitelist/emails/page.tsx',
+  'apps/admin/src/app/[locale]/(dashboard)/[wsId]/ai/whitelist/domains/page.tsx',
 ];
 
 describe('AI whitelist request rendering', () => {

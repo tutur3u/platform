@@ -53,12 +53,12 @@ test('security-sensitive paths require review by category', () => {
       'inbound-webhooks',
     ],
     [
-      'apps/infrastructure/src/lib/inventory/commerce/square/webhooks.ts',
+      'apps/admin/src/lib/inventory/commerce/square/webhooks.ts',
       'inbound-webhooks',
     ],
     ['apps/web/src/lib/sepay-client.ts', 'payments'],
     ['apps/calendar/src/app/api/cron/sync/route.ts', 'scheduled-jobs'],
-    ['apps/infrastructure/src/lib/post-email-queue-cron.ts', 'scheduled-jobs'],
+    ['apps/admin/src/lib/post-email-queue-cron.ts', 'scheduled-jobs'],
     ['apps/mail/src/lib/mail/inbound/parse.ts', 'inbound-webhooks'],
     ['packages/utils/src/required-mfa-policy.ts', 'auth'],
     ['apps/web/src/lib/oidc-provider.ts', 'auth'],
@@ -68,7 +68,7 @@ test('security-sensitive paths require review by category', () => {
     ['apps/web/src/lib/api-auth.ts', 'auth'],
     ['packages/sdk/src/platform-sdk-auth.ts', 'auth'],
     ['apps/web/src/lib/devboxes/agent-auth.ts', 'runner-sandbox'],
-    ['apps/infrastructure/src/lib/devboxes/claims.ts', 'runner-sandbox'],
+    ['apps/admin/src/lib/devboxes/claims.ts', 'runner-sandbox'],
   ]) {
     assert.ok(
       categoriesOf([filePath]).includes(category),

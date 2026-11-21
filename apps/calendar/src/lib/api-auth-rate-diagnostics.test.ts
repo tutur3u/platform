@@ -66,7 +66,7 @@ vi.mock('./infrastructure/log-drain', () => ({
 }));
 vi.mock('./rate-limit', () => ({ checkRateLimit: mocks.rate }));
 
-import { forwardCalendarRequest } from '../../../infrastructure/src/lib/mobile-calendar/gateway';
+import { forwardCalendarRequest } from '../../../admin/src/lib/mobile-calendar/gateway';
 import { GET, PATCH } from '../app/api/v1/users/calendar-settings/route';
 import { withSessionAuth } from './api-auth';
 

@@ -2,6 +2,13 @@ const fs = require('node:fs');
 const { atomicWriteFileSync, readOptionalFileSync } = require('./safe-fs');
 const path = require('node:path');
 const { PAUSED_APP_DIRECTORIES } = require('./paused-runtimes.js');
+const APP_DIRECTORIES = require('./app-directories.json');
+/** Policy keys by directory name, for apps whose directory differs from the key. */
+const POLICY_KEY_BY_DIRECTORY = Object.fromEntries(
+  Object.entries(APP_DIRECTORIES)
+    .filter(([key]) => key !== '$comment')
+    .map(([key, directory]) => [directory, key])
+);
 
 const ROOT = path.resolve(__dirname, '..');
 const GENERATED = 'reference/repository';
@@ -368,7 +375,7 @@ function outputs(root = ROOT) {
         )
       );
     }
-    const indexPolicy = policy[app.name];
+    const indexPolicy = policy[POLICY_KEY_BY_DIRECTORY[app.name] ?? app.name];
     catalogRows.push(
       `| ${sourceLink(`apps/${app.name}`, app.name)} | ${app.next ? 'Next.js' : app.name === 'mobile' ? 'Flutter' : app.name === 'backend' ? 'Rust migration' : app.name === 'tanstack-web' ? 'TanStack migration' : 'Service/support'} | ${indexPolicy ? (indexPolicy.publicPaths.length || indexPolicy.publicPatterns.length || app.name === 'web' || app.name === 'marketing' ? 'Explicit public pages; private routes noindex' : 'Private: noindex') : 'See owning runtime'} | ${references.join(', ')} |`
     );

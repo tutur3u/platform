@@ -8,7 +8,7 @@
  * `apps/web` is the only app that serves `/api/v1/auth/accounts/*`, so it is the
  * only app that should carry that code.
  *
- * `apps/infrastructure` used to hold a byte-for-byte copy of it with no
+ * `apps/admin` used to hold a byte-for-byte copy of it with no
  * consumers. Nothing imported it, so nothing tested it and nothing failed when
  * it drifted: it was hand-synced once during a cross-app change and then missed
  * two production bug fixes outright, all while looking like live auth code.

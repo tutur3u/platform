@@ -184,7 +184,7 @@ test('app-only changes run only that app', () => {
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      changedFiles: ['apps/admin/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-preview-infrastructure.yaml',
     },
@@ -192,7 +192,7 @@ test('app-only changes run only that app', () => {
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      changedFiles: ['apps/admin/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-production-infrastructure.yaml',
     },
@@ -200,7 +200,7 @@ test('app-only changes run only that app', () => {
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      changedFiles: ['apps/admin/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-preview-calendar.yaml',
     },

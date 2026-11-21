@@ -2210,7 +2210,7 @@
       "executions_title": "Lần Chạy Gần Đây",
       "failure_streak": "{count} lần lỗi",
       "jobs_count": "{enabled}/{total} đang bật",
-      "jobs_description": "Lịch chạy lấy từ apps/infrastructure/cron.config.json và được đồng bộ sang Vercel.",
+      "jobs_description": "Lịch chạy lấy từ apps/admin/cron.config.json và được đồng bộ sang Vercel.",
       "jobs_title": "Job Đã Đăng Ký",
       "last_run": "Lần Chạy Cuối",
       "next_run": "Lần Chạy Kế Tiếp",

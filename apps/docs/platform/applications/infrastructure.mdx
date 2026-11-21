@@ -5,7 +5,7 @@ updatedAt: '2026-10-25'
 audience: users
 ---
 
-Infrastructure (`infrastructure.tuturuuu.com`, `apps/infrastructure`) is the
+Infrastructure (`infrastructure.tuturuuu.com`, `apps/admin`) is the
 privileged operational console. It exposes workspace/account controls,
 monitoring, configuration, and selected provider gateways. The existence of a
 console route never bypasses its operator eligibility and permission checks.
@@ -270,7 +270,7 @@ an empty 405 before Web can handle it.
 
 The local internal-account list and legacy UUID PATCH remain in Infrastructure;
 address-migration endpoints retain their existing Web fallback. The installed
-Next matchers in `apps/infrastructure/next.config.test.ts` cover these boundaries.
+Next matchers in `apps/admin/next.config.test.ts` cover these boundaries.
 Routing checks do not establish downstream readiness: require the exact-commit
 Infrastructure CI build and an authorized production recheck after deployment.
 
@@ -425,7 +425,7 @@ and offers manual entry in Create, row reset and reset-any-account forms; passwo
 never enter recovery storage. The directory defaults to active, verified accounts;
 **Include disabled accounts** changes only the existing active filter. A disabled
 row grants no restoration eligibility. See the
-[mounted regression tests](https://github.com/tutur3u/platform/tree/main/apps/infrastructure/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/internal-accounts):
+[mounted regression tests](https://github.com/tutur3u/platform/tree/main/apps/admin/src/app/%5Blocale%5D/%28dashboard%29/%5BwsId%5D/internal-accounts):
 `employee-creation-dialog.test.tsx`, `temporary-password-field.test.tsx` and
 `internal-accounts-client.test.tsx`.
 
@@ -787,13 +787,13 @@ or root membership alone does not grant platform administration.
 These rules apply to the Infrastructure app, including direct API requests and
 server-action calls. Existing CLI identity support for devbox reads is retained;
 it still requires the viewer permission. Regression coverage lives in
-`apps/infrastructure/src/lib/platform-admin-boundaries.test.ts`.
+`apps/admin/src/lib/platform-admin-boundaries.test.ts`.
 
 Entity-limit reads and all four entity-limit server actions additionally require
 root-workspace `MEMBER` membership. Root guests are denied even when guest-default
 permissions grant the corresponding read or mutation permission. This preserves
 the previous membership fence without changing other administration endpoints.
-Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.
+Regression coverage: `apps/admin/src/lib/entity-limit-membership.test.ts`.
 
 
 ## Dedicated infrastructure cron authorization
@@ -809,7 +809,7 @@ primary secret disables authorization. Responses contain only an `ok` status,
 including job failures; caught error payloads are excluded from logs.
 Calendar cron routes remain outside this dedicated exception allowlist.
 
-Regression coverage: `apps/infrastructure/src/lib/infrastructure-cron-auth.test.ts`
+Regression coverage: `apps/admin/src/lib/infrastructure-cron-auth.test.ts`
 executes the actual handlers with fixture job suppliers; the colocated Docker
 recovery tests cover email delivery and persisted incident watermarks.
 
@@ -823,7 +823,7 @@ session exists. Eligible requests retain the build payload and no-store headers.
 The app name and platform version make this an ADMIN diagnostic surface. This
 rule applies to Infrastructure; other apps retain their owning access contracts.
 
-Regression coverage: `apps/infrastructure/src/app/api/build-info/route.test.ts`
+Regression coverage: `apps/admin/src/app/api/build-info/route.test.ts`
 executes the handler, ADMIN helper and metadata factory with fixture suppliers.
 
 ## Prelogin logout
@@ -835,5 +835,5 @@ cookie deletion; GET returns 405 with Allow POST and no cookie effects. Successf
 logout retains shared app-session and Supabase cookie deletion. Browser responses
 redirect to relative `/login`; JSON clients receive `{ success: true }`.
 Cross-app trusted origins do not grant this prelogin exception. Handler-effect
-coverage is in `apps/infrastructure/src/app/api/auth/logout/route.test.ts`;
+coverage is in `apps/admin/src/app/api/auth/logout/route.test.ts`;
 router dispatch and hosted runtime acceptance require separate validation.

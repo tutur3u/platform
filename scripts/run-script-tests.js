@@ -22,7 +22,7 @@ const DEFAULT_SUPPLEMENTAL_PATHS = [
   'apps/database/scripts/verify-declarative-parity.test.mjs',
   'apps/hive/maintenance/prepare-tunnel.test.mjs',
   'apps/hive/maintenance/worker.test.mjs',
-  'apps/infrastructure/cloudflare/server-artifact.test.mjs',
+  'apps/admin/cloudflare/server-artifact.test.mjs',
   'plugins/tuturuuu/skills/tuturuuu-pr-merge-sync/scripts/watchers.test.mjs',
 ];
 

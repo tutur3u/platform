@@ -39,7 +39,7 @@
     "landing.pricing.tiers.plus.features",
     "landing.pricing.tiers.pro.features"
   ],
-  "apps/infrastructure/messages/en.json": [
+  "apps/admin/messages/en.json": [
     "landing.ai.mira.prompts",
     "landing.pricing.payAsYouGo.features",
     "landing.pricing.tiers.enterprise.features",

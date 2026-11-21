@@ -56,11 +56,11 @@ class InfrastructureArtifactTest(unittest.TestCase):
     def test_profile_is_consumed_before_shared_modes(self):
         for mode in ("config", "seal", "pack"):
             shared = Mock()
-            with patch.object(sys, "argv", [str(SCRIPT), "--profile", "production", mode, "apps/infrastructure"]), patch.object(wrapper, "load", return_value=shared) as load:
+            with patch.object(sys, "argv", [str(SCRIPT), "--profile", "production", mode, "apps/admin"]), patch.object(wrapper, "load", return_value=shared) as load:
                 wrapper.main()
                 load.assert_called_once_with("production")
                 shared.main.assert_called_once_with()
-                self.assertEqual(sys.argv, [str(SCRIPT), mode, "apps/infrastructure"])
+                self.assertEqual(sys.argv, [str(SCRIPT), mode, "apps/admin"])
 
     def test_profile_flag_is_not_a_mode(self):
         env = dict(os.environ)
@@ -68,7 +68,7 @@ class InfrastructureArtifactTest(unittest.TestCase):
         env.pop("INFRASTRUCTURE_SOURCE_SHA", None)
         env["GITHUB_OUTPUT"] = os.devnull
         flagged = subprocess.run(
-            [sys.executable, str(SCRIPT), "--profile", "production", "config", "apps/infrastructure"],
+            [sys.executable, str(SCRIPT), "--profile", "production", "config", "apps/admin"],
             env=env,
             capture_output=True,
             text=True,
@@ -76,7 +76,7 @@ class InfrastructureArtifactTest(unittest.TestCase):
         self.assertNotIn("invalid choice", flagged.stderr)
         self.assertNotEqual(flagged.returncode, 0)
         positional = subprocess.run(
-            [sys.executable, str(SCRIPT), "production", "config", "apps/infrastructure"],
+            [sys.executable, str(SCRIPT), "production", "config", "apps/admin"],
             env=env,
             capture_output=True,
             text=True,

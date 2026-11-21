@@ -1,0 +1,4 @@
+{
+  "$comment": "App keys whose directory under apps/ differs from the key. Runtime identities (mounts, build info, internal-app auth, SEO policy) keep the key; CI tooling resolves the directory here.",
+  "infrastructure": "admin"
+}

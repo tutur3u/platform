@@ -253,7 +253,7 @@ to mean a first-party session, so external registrations may use neither:
   under a `*` grant or a registration saved before these checks.
 
 Both save paths (`POST /api/v1/admin/external-apps` in `apps/web` and
-`POST /api/v1/infrastructure/external-apps` in `apps/infrastructure`) apply the
+`POST /api/v1/infrastructure/external-apps` in `apps/admin`) apply the
 same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
 `packages/utils/src/external-app-registry-policy.test.ts` and
 `external-apps-bearer-ttl.test.ts` in both apps.

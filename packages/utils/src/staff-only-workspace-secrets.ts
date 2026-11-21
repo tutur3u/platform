@@ -1,6 +1,6 @@
 /**
  * THE staff-only workspace secrets (MANAGED_CRON_ENABLED, ENABLE_BOARD_CYCLES,
- * ENABLE_FEE_LOCK): apps/web and apps/infrastructure require a verified staff
+ * ENABLE_FEE_LOCK): apps/web and apps/admin require a verified staff
  * session, and public.guard_workspace_reserved_secrets() rejects them from API
  * roles. A test keeps that trigger's array equal to this list.
  */

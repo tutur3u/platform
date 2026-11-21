@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [web, learn, infrastructure, mail, contacts, tasks]
+        app: [web, learn, admin, mail, contacts, tasks]
     env:
       MAIL_DEPLOYMENT_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid

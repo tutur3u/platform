@@ -27,7 +27,7 @@ delivery plan.
 | Vercel apps (`apps/web` and the satellites still enabled for `vercel-production-*` in `tuturuuu.ci.ts`) | Nothing reads Vercel metrics, and Speed Insights and `@vercel/analytics` render `null` (`packages/vercel`). | Gap |
 | Supabase (Postgres, PostgREST, Auth) | Nothing reads the Supabase metrics endpoint or Management API metrics. | Gap |
 | GitHub Actions durations and queue times | `scripts/ci/ci-daily-sample.js` samples them by hand into a skill reference. `scripts/perf/perf-deploy-failures.mjs` lists failed production runs. | Not retained |
-| Deploy markers | Deploy coordinator Durable Objects (`apps/deploy-coordinator`, read in Admin through `apps/infrastructure/src/lib/infrastructure/deploy-coordinator.ts`), Worker deployment and version annotations (read by the detector), GitHub Deployments (`vercel-production-platform` gates Supabase production). | Not correlated with signals |
+| Deploy markers | Deploy coordinator Durable Objects (`apps/deploy-coordinator`, read in Admin through `apps/admin/src/lib/infrastructure/deploy-coordinator.ts`), Worker deployment and version annotations (read by the detector), GitHub Deployments (`vercel-production-platform` gates Supabase production). | Not correlated with signals |
 | Request, cron and usage history | The Postgres log drain (`requests`, `log_events`, `cron_runs`, `usage_events`, `deployments`) behind Admin → Monitoring. It belongs to the Docker web runtime, which is inactive. | Stale |
 | Cron Control runs | `CronLedger` Durable Object in `apps/cron-control`, with stop/resume operator routes. | Live, not in Admin |
 

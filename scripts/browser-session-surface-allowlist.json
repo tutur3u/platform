@@ -5,13 +5,13 @@
     "apps/forms/src/features/forms/response-copy-email.ts",
     "apps/forms/src/lib/forms-permissions.ts",
     "apps/hive/src/lib/api-auth.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/changelog/utils.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
-    "apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
-    "apps/infrastructure/src/lib/api-auth.ts",
+    "apps/admin/src/app/api/v1/infrastructure/changelog/utils.ts",
+    "apps/admin/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts",
+    "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts",
+    "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts",
+    "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts",
+    "apps/admin/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts",
+    "apps/admin/src/lib/api-auth.ts",
     "apps/inventory/src/lib/api-auth.ts",
     "apps/learn/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/vocabulary/route.ts",
     "apps/learn/src/lib/api-auth.ts",
@@ -170,19 +170,19 @@
       "reason": "Calendar provider (Google/Microsoft) OAuth tokens, stored and used server-side; not a Tuturuuu session"
     },
     {
-      "file": "apps/infrastructure/src/lib/auth/otp.ts",
+      "file": "apps/admin/src/lib/auth/otp.ts",
       "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
     },
     {
-      "file": "apps/infrastructure/src/lib/auth/password.ts",
+      "file": "apps/admin/src/lib/auth/password.ts",
       "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
     },
     {
-      "file": "apps/infrastructure/src/lib/auth/qr-login.ts",
+      "file": "apps/admin/src/lib/auth/qr-login.ts",
       "reason": "Unrouted copy of the Web auth services; retire with the Infrastructure auth cleanup"
     },
     {
-      "file": "apps/infrastructure/src/lib/inventory/commerce/square/client.ts",
+      "file": "apps/admin/src/lib/inventory/commerce/square/client.ts",
       "reason": "Payment provider OAuth tokens, stored and used server-side"
     },
     {

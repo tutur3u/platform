@@ -18,7 +18,7 @@ const targetApps = [
   ['forms', '@tuturuuu/forms'],
   ['git', '@tuturuuu/git'],
   ['inventory', '@tuturuuu/inventory'],
-  ['infrastructure', '@tuturuuu/infrastructure'],
+  ['infrastructure', '@tuturuuu/admin'],
   ['storefront', '@tuturuuu/storefront'],
   ['mail', '@tuturuuu/mail'],
   ['meet', '@tuturuuu/meet'],

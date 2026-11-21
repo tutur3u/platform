@@ -43,7 +43,7 @@ test('parseArgs recognizes dry-run and optional cache scopes', () => {
 
 test('assertSafeTarget only allows known dev cache directories', () => {
   assert.doesNotThrow(() => assertSafeTarget('apps/web/.next/dev'));
-  assert.doesNotThrow(() => assertSafeTarget('apps/infrastructure/.next/dev'));
+  assert.doesNotThrow(() => assertSafeTarget('apps/admin/.next/dev'));
   assert.doesNotThrow(() => assertSafeTarget('.turbo/cache'));
   assert.throws(() => assertSafeTarget('apps/web/.next'), /unsafe target/);
   assert.throws(
@@ -65,14 +65,14 @@ test('resolveTargets can discover all existing app Next dev caches', () => {
     dirs: [
       '/repo/apps',
       '/repo/apps/web/.next/dev',
-      '/repo/apps/infrastructure/.next/dev',
+      '/repo/apps/admin/.next/dev',
     ],
-    entries: ['web', 'infrastructure', 'calendar'],
+    entries: ['web', 'admin', 'calendar'],
   });
 
   assert.deepEqual(
     resolveTargets({ allNextDev: true }, { fsImpl, rootDir: '/repo' }),
-    ['apps/infrastructure/.next/dev', 'apps/web/.next/dev']
+    ['apps/admin/.next/dev', 'apps/web/.next/dev']
   );
 });
 

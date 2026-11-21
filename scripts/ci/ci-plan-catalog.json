@@ -400,13 +400,13 @@
     "scripts/start-bridge-codemod/runtime-outcome.mjs",
     "scripts/start-bridge-codemod/worker-config.mjs"
   ],
-  "infrastructure": [
+  "admin": [
     ".github/actions/run-with-turbo-remote-cache/action.yml",
     ".github/actions/setup-bun-with-retry/action.yml",
     ".github/workflows/infrastructure-cloudflare.yaml",
     ".github/workflows/native-start-app.yaml",
-    "apps/infrastructure/",
-    "apps/infrastructure/**",
+    "apps/admin/",
+    "apps/admin/**",
     "apps/ops-hub/**",
     "packages/ai/**",
     "packages/apis/**",

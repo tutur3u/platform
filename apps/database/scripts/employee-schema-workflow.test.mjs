@@ -453,7 +453,7 @@ test('authenticated profile PATCH is optional and owns its separate source compi
   assert.match(compiler, /^ {8}working-directory: source$/mu);
   assert.match(
     compiler,
-    /tsc --noEmit -p apps\/infrastructure\/e2e\/fixtures\/tsconfig.employee-profile-route.json/u
+    /tsc --noEmit -p apps\/admin\/e2e\/fixtures\/tsconfig.employee-profile-route.json/u
   );
   const gate = namedStep('Verify authenticated profile route receipt gates');
   assert.doesNotMatch(gate, /working-directory:/u);

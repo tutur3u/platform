@@ -2210,7 +2210,7 @@
       "executions_title": "Recent Executions",
       "failure_streak": "{count} failed",
       "jobs_count": "{enabled}/{total} enabled",
-      "jobs_description": "Schedules are sourced from apps/infrastructure/cron.config.json and synced to Vercel.",
+      "jobs_description": "Schedules are sourced from apps/admin/cron.config.json and synced to Vercel.",
       "jobs_title": "Registered Jobs",
       "last_run": "Last Run",
       "next_run": "Next Run",

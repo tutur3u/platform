@@ -10,6 +10,7 @@ import {
   NEUTRAL_SPECIFIERS,
   SHIMMED_SPECIFIERS,
 } from './contract.mjs';
+import { appDirectory } from './app-directory.mjs';
 
 const ROUTE_FILE = /(?:^|\/)(route|page)\.(?:[cm]?[jt]sx?)$/u;
 const SPECIAL_FILE =
@@ -204,9 +205,9 @@ export function loadShimmedSpecifiers(repoRoot, fsImpl = fs) {
 /** Full inventory for `apps/<app>`; `appDir` is relative to the app root. */
 export function inventoryApp(repoRoot, app, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
-  const appRoot = path.join(repoRoot, 'apps', app);
+  const appRoot = path.join(repoRoot, 'apps', appDirectory(app));
   if (!fsImpl.existsSync(path.join(appRoot, 'package.json')))
-    throw new Error(`apps/${app}: no package.json`);
+    throw new Error(`apps/${appDirectory(app)}: no package.json`);
   const appDir = options.appDir ?? 'src/app';
   const appDirRoot = path.join(appRoot, appDir);
   const files = walk(appDirRoot, appDirRoot, fsImpl);

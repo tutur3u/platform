@@ -40,35 +40,35 @@ const LEGACY_OWNERS = Object.freeze([
   // Vercel Cron definitions (scheduler owner). Wave 1 moves the schedule into
   // apps/cron-control behind default-off flags; processors move afterwards.
   vercelCron(
-    'apps/infrastructure',
+    'apps/admin',
     '/api/cron/infrastructure/sample-resources',
     '* * * * *',
     TARGETS.cronTrigger,
     'Cron Control job infrastructure-sample-resources; then decide retirement because the sampler reads the retired Docker host snapshot.'
   ),
   vercelCron(
-    'apps/infrastructure',
+    'apps/admin',
     '/api/cron/infrastructure/docker-recovery-alerts',
     '*/5 * * * *',
     TARGETS.cronTrigger,
     'Cron Control job infrastructure-docker-recovery-alerts; retirement candidate once alert purpose is confirmed (Docker runner is retired).'
   ),
   vercelCron(
-    'apps/infrastructure',
+    'apps/admin',
     '/api/cron/infrastructure/sync-trust-cache',
     '*/10 * * * *',
     TARGETS.cronTrigger,
     'Cron Control job infrastructure-sync-trust-cache; later a Worker processor writing the trust cache directly.'
   ),
   vercelCron(
-    'apps/infrastructure',
+    'apps/admin',
     '/api/cron/calendar/provider-sync',
     '*/15 * * * *',
     TARGETS.cronTrigger,
     'Cron Control job calendar-provider-sync through the Infrastructure gateway; later a Queue consumer per workspace sync.'
   ),
   vercelCron(
-    'apps/infrastructure',
+    'apps/admin',
     '/api/cron/calendar/smart-schedule',
     '0 */6 * * *',
     TARGETS.cronTrigger,
@@ -123,8 +123,8 @@ const LEGACY_OWNERS = Object.freeze([
     ['calendar-smart-schedule', '0 */6 * * *'],
   ].map(([id, schedule]) =>
     entry(
-      `cron-catalog:apps/infrastructure:${id}:${schedule}`,
-      'apps/infrastructure',
+      `cron-catalog:apps/admin:${id}:${schedule}`,
+      'apps/admin',
       TARGETS.cronTrigger,
       'Replace the catalog entry with the Cron Control job definition once its Cloudflare cutover completes.'
     )
@@ -190,11 +190,11 @@ const LEGACY_OWNERS = Object.freeze([
   // Next.js after() continuations: background work with no durable owner.
   ...[
     [
-      'apps/infrastructure/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts',
+      'apps/admin/src/app/api/v1/infrastructure/ai-agents/[agentId]/channels/[channelId]/zalo-personal/route.ts',
       TARGETS.queueConsumer,
     ],
     [
-      'apps/infrastructure/src/lib/inventory/commerce/polar-product-sync.ts',
+      'apps/admin/src/lib/inventory/commerce/polar-product-sync.ts',
       TARGETS.queueConsumer,
     ],
     [
@@ -242,10 +242,10 @@ const LEGACY_OWNERS = Object.freeze([
     ['apps/calendar', 'calendar/provider-sync'],
     ['apps/calendar', 'calendar/smart-schedule'],
     ['apps/hive', 'hive/simulate', TARGETS.retire],
-    ['apps/infrastructure', 'calendar/[job]'],
-    ['apps/infrastructure', 'infrastructure/docker-recovery-alerts'],
-    ['apps/infrastructure', 'infrastructure/sample-resources'],
-    ['apps/infrastructure', 'infrastructure/sync-trust-cache'],
+    ['apps/admin', 'calendar/[job]'],
+    ['apps/admin', 'infrastructure/docker-recovery-alerts'],
+    ['apps/admin', 'infrastructure/sample-resources'],
+    ['apps/admin', 'infrastructure/sync-trust-cache'],
     ['apps/inventory', 'inventory/checkout-expiry', TARGETS.workerProcessor],
     ['apps/inventory', 'inventory/polar-product-sync'],
     ['apps/pay', 'payment/orders'],

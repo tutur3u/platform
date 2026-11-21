@@ -85,7 +85,7 @@ jobs:
           APP: ${{ matrix.app }}
         run: |
           case "$APP" in
-            web|learn|infrastructure|mail|contacts|tasks) echo "Building @tuturuuu/$APP" ;;
+            web|learn|admin|mail|contacts|tasks) echo "Building @tuturuuu/$APP" ;;
             *) echo "::error::Unexpected app: $APP"; exit 1 ;;
           esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

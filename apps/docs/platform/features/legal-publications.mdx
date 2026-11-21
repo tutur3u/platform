@@ -166,7 +166,7 @@ sender; Reply-To is `legal@tuturuuu.com`.
   unknown-outcome rate crosses its threshold (defaults 2%, 0.1% and 2%, measured
   over at least 100 attempts, a fixed value that requests cannot change).
 
-The template is `apps/infrastructure/src/lib/policy-notice/template.ts`. It carries
+The template is `apps/admin/src/lib/policy-notice/template.ts`. It carries
 Cora's final v4 wording, with inline styles only, no images and the phone number as
 plain text. Regression coverage:
 `template.test.ts` (the SES provider's own sanitizer, Reply-To, the links allowlist,

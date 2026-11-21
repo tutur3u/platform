@@ -21,7 +21,7 @@ const LINT_IGNORED = /\.(md|mdx|yml|yaml|html|toml|inc)$/iu;
 export const BUILD_APPS = [
   'web',
   'learn',
-  'infrastructure',
+  'admin',
   'mail',
   'contacts',
   'tasks',

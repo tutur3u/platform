@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       [
-        'apps/infrastructure/**',
+        'apps/admin/**',
         'apps/ops-hub/**',
         'packages/ai/**',
         'packages/apis/**',
@@ -67,7 +67,7 @@ on:
     branches: [main]
     paths:
       [
-        'apps/infrastructure/**',
+        'apps/admin/**',
         'apps/ops-hub/**',
         'packages/ai/**',
         'packages/apis/**',
@@ -164,7 +164,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/affected-gate
         with:
-          app: infrastructure
+          app: admin
   check-ci:
     needs: affected-gate
     if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
@@ -183,7 +183,8 @@ jobs:
       contents: read
     with:
       app: infrastructure
-      package: '@tuturuuu/infrastructure'
+      app-dir: apps/admin
+      package: '@tuturuuu/admin'
       artifact-script: scripts/ci/infrastructure-native-artifact.py
       env-interface: InfrastructureGeneratedEnv
       worker-environment-type: InfrastructureEnvironment
@@ -196,7 +197,7 @@ jobs:
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
-        apps/infrastructure/src/start-bridge apps/infrastructure/src/routes apps/infrastructure/src/router.tsx apps/infrastructure/src/start.ts apps/infrastructure/cloudflare apps/infrastructure/vite.config.mts apps/infrastructure/void.config.ts apps/infrastructure/tsconfig.json apps/infrastructure/package.json apps/infrastructure/start-bridge.routes.json
+        apps/admin/src/start-bridge apps/admin/src/routes apps/admin/src/router.tsx apps/admin/src/start.ts apps/admin/cloudflare apps/admin/vite.config.mts apps/admin/void.config.ts apps/admin/tsconfig.json apps/admin/package.json apps/admin/start-bridge.routes.json
 
   infrastructure-cutover-artifact:
     needs: [check-ci, affected-gate]
@@ -235,22 +236,22 @@ jobs:
       - name: Build shared dependencies
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run build --filter="@tuturuuu/infrastructure^..." --concurrency=2
+          command: bun turbo:local run build --filter="@tuturuuu/admin^..." --concurrency=2
           token: ''
           team: ''
       - name: Build the Start Worker
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: cd apps/infrastructure && bun run build:cloudflare
+          command: cd apps/admin && bun run build:cloudflare
           token: ''
           team: ''
       - name: Qualify the staging output before rewriting
-        run: python3 scripts/ci/infrastructure-native-artifact.py config apps/infrastructure
+        run: python3 scripts/ci/infrastructure-native-artifact.py config apps/admin
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
-          const path = 'apps/infrastructure/dist/server/wrangler.json';
+          const path = 'apps/admin/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
           c.topLevelName = 'tuturuuu-infrastructure';
           c.name = 'tuturuuu-infrastructure';
@@ -268,19 +269,19 @@ jobs:
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
           JS
-          test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').name")" = tuturuuu-infrastructure
-          test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').workers_dev")" = false
-          test "$(node -p "require('./apps/infrastructure/dist/server/wrangler.json').preview_urls")" = false
-          test -f apps/infrastructure/dist/server/index.mjs
-          test -d apps/infrastructure/dist/client
+          test "$(node -p "require('./apps/admin/dist/server/wrangler.json').name")" = tuturuuu-infrastructure
+          test "$(node -p "require('./apps/admin/dist/server/wrangler.json').workers_dev")" = false
+          test "$(node -p "require('./apps/admin/dist/server/wrangler.json').preview_urls")" = false
+          test -f apps/admin/dist/server/index.mjs
+          test -d apps/admin/dist/client
       - name: Validate, seal and pack the final production output
         env:
           INFRASTRUCTURE_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production config apps/infrastructure
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production seal apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json"
-          python3 scripts/ci/infrastructure-native-artifact.py --profile production pack apps/infrastructure --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json" --archive "$RUNNER_TEMP/infrastructure-production-artifact.tar.gz"
+          python3 scripts/ci/infrastructure-native-artifact.py --profile production config apps/admin
+          python3 scripts/ci/infrastructure-native-artifact.py --profile production seal apps/admin --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json"
+          python3 scripts/ci/infrastructure-native-artifact.py --profile production pack apps/admin --receipt "$RUNNER_TEMP/infrastructure-production-artifact.json" --archive "$RUNNER_TEMP/infrastructure-production-artifact.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: infrastructure-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}

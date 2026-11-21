@@ -43,11 +43,11 @@ test('hosted Calendar jobs have exactly one owner and keep Docker execution', ()
   } = require('./web-crons.js');
   const read = (file) =>
     JSON.parse(readFileSync(join(__dirname, '..', file), 'utf8'));
-  const infra = read('apps/infrastructure/vercel.json').crons;
+  const infra = read('apps/admin/vercel.json').crons;
   const calendar = read('apps/calendar/vercel.json').crons ?? [];
   const web = normalizeCronConfig(read('apps/web/cron.config.json'));
   const generatedWeb = getVercelCronsFromConfig(web);
-  const monitored = read('apps/infrastructure/cron.config.json').jobs;
+  const monitored = read('apps/admin/cron.config.json').jobs;
   for (const [name, schedule] of [
     ['provider-sync', '*/15 * * * *'],
     ['smart-schedule', '0 */6 * * *'],

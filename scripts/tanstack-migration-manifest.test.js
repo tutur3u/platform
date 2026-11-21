@@ -602,7 +602,7 @@ test('route overrides allow documented accepted removals outside web inventory',
       [
         removedRouteId,
         {
-          note: 'Moved to apps/infrastructure during infrastructure app extraction.',
+          note: 'Moved to apps/admin during infrastructure app extraction.',
           status: 'accepted-removal',
           targetOwner: 'infrastructure-app',
         },

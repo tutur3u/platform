@@ -1,7 +1,7 @@
 begin;
 
 -- Server-owned RPCs for Mira channels. Callers (apps/web tenant routes, the
--- apps/infrastructure operator routes and the channel Worker) authorize the
+-- apps/admin operator routes and the channel Worker) authorize the
 -- actor first; every RPC still checks that the channel belongs to the
 -- workspace argument, so a wrong workspace never reaches another tenant.
 

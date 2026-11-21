@@ -10,12 +10,12 @@
       "targetOwner": "tanstack-start",
       "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
     },
-    "api:/api/v1/admin/account-benefits:apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts": {
+    "api:/api/v1/admin/account-benefits:apps/admin/src/app/api/v1/admin/account-benefits/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Infrastructure owns service-only account benefit administration; preserve root MEMBER and manage-roles/manage-secrets authorization when porting to Rust."
     },
-    "page:/:locale/:wsId/account-benefits:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx": {
+    "page:/:locale/:wsId/account-benefits:apps/admin/src/app/[locale]/(dashboard)/[wsId]/account-benefits/page.tsx": {
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Satellite hosted programming, benefits or native collaboration surface. Reuse shared Internal API data contracts when migrating this page to TanStack Start."
@@ -85,22 +85,22 @@
       "targetOwner": "tanstack-start",
       "note": "Meet detail preserves verified satellite actor, joined workspace and workspace-scoped meeting before concurrent room-policy and permission reads. Keep ended-room shortcut and permission-gated Calendar lookup when migrating."
     },
-    "api:/api/v1/desktop-deployment:apps/infrastructure/src/app/api/v1/desktop-deployment/route.ts": {
+    "api:/api/v1/desktop-deployment:apps/admin/src/app/api/v1/desktop-deployment/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Infrastructure private desktop signing administration: preserve explicit root MEMBER plus desktop-vault permission, exact same-origin mutations, bounded upload bytes, safe metadata projections and revision-fenced service RPCs. Delivery remains disabled."
     },
-    "api:/api/v1/desktop-deployment/resources:apps/infrastructure/src/app/api/v1/desktop-deployment/resources/route.ts": {
+    "api:/api/v1/desktop-deployment/resources:apps/admin/src/app/api/v1/desktop-deployment/resources/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Infrastructure private desktop signing administration: preserve explicit root MEMBER plus desktop-vault permission, exact same-origin mutations, bounded upload bytes, safe metadata projections and revision-fenced service RPCs. Delivery remains disabled."
     },
-    "page:/:locale/:wsId/desktop-deployment:apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx": {
+    "page:/:locale/:wsId/desktop-deployment:apps/admin/src/app/[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx": {
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Infrastructure desktop status plus permission-gated private signing UI. Preserve canonical root redirects, registered satellite actor, explicit MEMBER membership, separate desktop-vault permission, actor-scoped client state, no credential SSR/readback and disabled vault delivery."
     },
-    "api:/api/v1/desktop-deployment/bundle:apps/infrastructure/src/app/api/v1/desktop-deployment/bundle/route.ts": {
+    "api:/api/v1/desktop-deployment/bundle:apps/admin/src/app/api/v1/desktop-deployment/bundle/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Protected desktop signing machine endpoint: preserve default-off global and per-platform admission, separate exact signed desktop OIDC before service access, hashed version/platform token, one-use run/attempt/SHA lease and fresh-material/final revocation checks. Linux/Store/mobile trust never admitted."

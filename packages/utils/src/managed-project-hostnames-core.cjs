@@ -1,4 +1,4 @@
-// Shared by apps/web, apps/infrastructure and scripts/watch-blue-green, which
+// Shared by apps/web, apps/admin and scripts/watch-blue-green, which
 // is plain Node and cannot import TypeScript; keep this file dependency-free.
 
 /** Platform cookie zones; managed projects may not claim them or any subdomain. */

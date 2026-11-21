@@ -12,7 +12,7 @@ team that owns the account. Credentials are referenced by environment variable
 name only.
 
 The reconciliation rules that turn this evidence into Admin numbers live in
-`apps/infrastructure/src/lib/admin-costs/README.md`. Reviewed invoices land in
+`apps/admin/src/lib/admin-costs/README.md`. Reviewed invoices land in
 `private.external_provider_invoices`. A root-workspace invoice whose provider,
 account and app have a Finance destination in
 `private.usage_finance_destinations` posts to that expense category through
@@ -148,7 +148,7 @@ exhausted when the cap is reached.
 
 ## Admin Costs page
 
-Admin → Monitoring → Costs (`/[wsId]/costs` in `apps/infrastructure`) needs
+Admin → Monitoring → Costs (`/[wsId]/costs` in `apps/admin`) needs
 both `view_infrastructure` and `view_finance_stats`, the same pair as the
 invoice summary on Observability. Its data comes from
 `GET /api/v1/infrastructure/costs`; each source loads independently, so an
@@ -190,7 +190,7 @@ was not collected. Other services are fixed charges (plan fees, seats),
 projected per service, app and environment: once charged this month they
 keep their month-to-date amount, even when a credit nets it to zero, and
 before that they use last month's amount. A closed month forecasts its actuals. The rules
-live in `apps/infrastructure/src/lib/admin-costs/trends.ts`.
+live in `apps/admin/src/lib/admin-costs/trends.ts`.
 
 Spend per monthly active user divides collected billed spend over the last
 30 complete UTC days by `get_mau_count`, which counts users active in the 30

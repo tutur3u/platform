@@ -667,7 +667,7 @@ non-JSON upstream responses are rejected; mutations are never automatically retr
 Authenticated requests preserve `x-tuturuuu-offline-download` and
 `x-tuturuuu-turnstile-token` when supplied, so Calendar applies the same bulk-read
 protection and verification flow. Ordinary reads stay unmarked. Regression coverage
-lives in `apps/infrastructure/src/lib/mobile-calendar/gateway.test.ts`.
+lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts`.
 
 The server credential is stored as a versioned encrypted envelope in the root
 workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data
@@ -1155,7 +1155,7 @@ must verify every serving replica and fallback, using exact deployment identitie
 | Calendar | Marked reads forwarded by Infrastructure, plus direct marked Calendar reads. |
 
 This serving map follows `core/config/api_origins.dart` in mobile, each app's
-`proxy.ts`, and `apps/infrastructure/src/lib/mobile-calendar/gateway.ts`.
+`proxy.ts`, and `apps/admin/src/lib/mobile-calendar/gateway.ts`.
 Infrastructure forwards the bulk marker and Turnstile token to Calendar. Both
 hops enforce the guard and need shared Redis clearance, so Calendar can reuse
 the verified clearance without submitting the one-use Turnstile token again.

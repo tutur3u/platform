@@ -9,9 +9,14 @@ on:
   workflow_call:
     inputs:
       app:
-        description: Directory under apps/ (e.g. shortener)
+        description: App key (e.g. shortener); also the directory under apps/ unless app-dir is set
         type: string
         required: true
+      app-dir:
+        description: App directory when it differs from apps/<app> (e.g. apps/admin for the infrastructure key)
+        type: string
+        required: false
+        default: ''
       package:
         description: Workspace package name (e.g. @tuturuuu/shortener)
         type: string
@@ -82,7 +87,7 @@ jobs:
     timeout-minutes: 30
     env:
       APP: ${{ inputs.app }}
-      APP_DIR: apps/${{ inputs.app }}
+      APP_DIR: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
       APP_PACKAGE: ${{ inputs.package }}
       ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
       ENV_INTERFACE: ${{ inputs.env-interface }}
@@ -170,7 +175,7 @@ jobs:
       - name: Reject unregistered App Router routes and pages
         run: bun packages/start-bridge/src/codegen/cli.ts check "$APP_DIR"
       - name: Unit tests
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         run: bash -c "$UNIT_COMMAND"
       - name: Check owning source formatting
         run: |
@@ -213,7 +218,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Generate emitted binding types outside the frozen source
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         env:
           EMITTED_CONFIG: ${{ steps.output.outputs.config }}
         run: bun x --no-install wrangler types --config "$EMITTED_CONFIG" --env-interface "$ENV_INTERFACE" --include-runtime=false "$RUNNER_TEMP/native-env.d.ts"
@@ -231,7 +236,7 @@ jobs:
           trap 'rm -f "$config"' EXIT
           bun x --no-install tsc --project "$config"
       - name: Qualify the emitted exact-artifact Wrangler adapter without publication
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         env:
           EMITTED_CONFIG: ${{ steps.output.outputs.config }}
         run: bun x --no-install wrangler deploy --dry-run --config "$EMITTED_CONFIG" --outdir "$RUNNER_TEMP/native-dry-run"
@@ -242,11 +247,11 @@ jobs:
         timeout-minutes: 10
         uses: ./.github/actions/install-native-runtime-prerequisites
         with:
-          working-directory: apps/${{ inputs.app }}
+          working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
           command: ${{ env.RUNTIME_SETUP_COMMAND }}
       - name: Exercise emitted runtime contracts in workerd
         timeout-minutes: 4
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         env:
           CI: "true"
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
@@ -267,7 +272,7 @@ jobs:
     timeout-minutes: 15
     env:
       APP: ${{ inputs.app }}
-      APP_DIR: apps/${{ inputs.app }}
+      APP_DIR: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
       ARTIFACT_SCRIPT: ${{ inputs.artifact-script }}
       RUNTIME_COMMAND: ${{ inputs.runtime-command }}
       RUNTIME_SETUP_COMMAND: ${{ inputs.runtime-setup-command }}
@@ -319,7 +324,7 @@ jobs:
         id: output
         run: python3 "$ARTIFACT_SCRIPT" config "$APP_DIR"
       - name: Recheck the Wrangler adapter on restored bytes without publication
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         env:
           EMITTED_CONFIG: ${{ steps.output.outputs.config }}
         run: bun x --no-install wrangler deploy --dry-run --config "$EMITTED_CONFIG" --outdir "$RUNNER_TEMP/native-restored-dry-run"
@@ -328,11 +333,11 @@ jobs:
         timeout-minutes: 10
         uses: ./.github/actions/install-native-runtime-prerequisites
         with:
-          working-directory: apps/${{ inputs.app }}
+          working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
           command: ${{ env.RUNTIME_SETUP_COMMAND }}
       - name: Repeat emitted runtime acceptance on restored output
         timeout-minutes: 4
-        working-directory: apps/${{ inputs.app }}
+        working-directory: ${{ inputs.app-dir || format('apps/{0}', inputs.app) }}
         env:
           CI: "true"
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}

@@ -330,14 +330,14 @@ test('the unchanged foundation profile still reports exactly its original172 con
 test('authenticated Infrastructure profile fixture composes the real runtime without importing PATCH or mocked authentication', () => {
   const runtime = readFileSync(
     new URL(
-      '../../infrastructure/e2e/fixtures/employee-profile-route-runtime.ts',
+      '../../admin/e2e/fixtures/employee-profile-route-runtime.ts',
       import.meta.url
     ),
     'utf8'
   );
   const cases = readFileSync(
     new URL(
-      '../../infrastructure/e2e/fixtures/employee-profile-route-cases.ts',
+      '../../admin/e2e/fixtures/employee-profile-route-cases.ts',
       import.meta.url
     ),
     'utf8'
@@ -346,7 +346,7 @@ test('authenticated Infrastructure profile fixture composes the real runtime wit
     new URL('./verify-employee-schema-contract.mjs', import.meta.url),
     'utf8'
   );
-  assert.match(runtime, /--filter=@tuturuuu\/infrastructure\^/u);
+  assert.match(runtime, /--filter=@tuturuuu\/admin\^/u);
   assert.match(runtime, /completeBuild\('bun'/u);
   assert.match(runtime, /method: 'PATCH'/u);
   assert.match(runtime, /response.status === 401/u);

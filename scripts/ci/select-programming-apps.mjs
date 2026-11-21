@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 export const PROGRAMMING_APPS = [
   'web',
   'learn',
-  'infrastructure',
+  'admin',
   'mail',
   'contacts',
   'tasks',
