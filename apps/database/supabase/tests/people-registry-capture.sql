@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(32);
 
 -- Grants.
 select ok(not exists (
@@ -132,6 +132,14 @@ select is(pg_temp.people('Hoa') + (select count(*) from private.people_channel_i
     where lookup_hash = decode(repeat('d1', 32), 'hex')), 1::bigint, 'a suppressed sender writes nothing');
 select ok(exists (select 1 from private.people_audit_events
     where action = 'capture.propose' and reason_code = 'refused_suppressed'), 'suppression refusals are audited');
+insert into private.people_suppressions (ws_id, token, key_version)
+  values ('af100000-0000-4000-8000-000000000001', decode(repeat('77', 32), 'hex'), 1);
+select is(pg_temp.write('evt-retired', jsonb_set(pg_temp.item('f1'), '{capture,checks}',
+    jsonb_build_array(repeat('5f', 32), repeat('77', 32))), 'f1') ->> 'reason', 'suppressed',
+  'a suppression stored under a retired key pair still fences the sender');
+select throws_ok($$select pg_temp.write('evt-display-number',
+  jsonb_set(pg_temp.item('e1'), '{capture,display}', '10'), 'e1')$$, '22023', null,
+  'a display value must be a hex string');
 
 -- Malformed capture material is refused before the event is consumed.
 select throws_ok($$select pg_temp.write('evt-bad-person',

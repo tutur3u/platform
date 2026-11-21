@@ -67,7 +67,8 @@ as $$
       )
       and (p_item #> '{capture,checks}') @> jsonb_build_array(p_item #>> '{capture,suppression,token}')
       and (jsonb_typeof(p_item #> '{capture,display}') = 'null'
-        or (coalesce(p_item #>> '{capture,display}', '') ~ '^([0-9a-f]{2})+$'
+        or (jsonb_typeof(p_item #> '{capture,display}') = 'string'
+          and coalesce(p_item #>> '{capture,display}', '') ~ '^([0-9a-f]{2})+$'
           and length(p_item #>> '{capture,display}') <= 2048))
     )), false);
 $$;
@@ -76,7 +77,9 @@ revoke all on function private.people_valid_capture(jsonb, jsonb) from public, a
 -- Proposes an unknown sender as a new person. Returns `proposed` or
 -- `duplicate` after writing, or a refusal (`unknown_sender`,
 -- `consent_required`, `suppressed`) before any write. Proposals for one
--- sender are serialised by a transaction lock on its lookup hash.
+-- sender are serialised by transaction locks on every lookup hash it carries,
+-- taken in hash order, so proposals made under different key versions during
+-- a rotation still exclude each other.
 -- tuturuuu: no-grant (internal)
 create function private.people_propose_sender(
   p_ws uuid, p_principal uuid, p_channel private.people_channel, p_account text, p_sender_lookups jsonb,
@@ -92,6 +95,7 @@ declare
   v_identity uuid;
   v_lookup bytea;
   v_checks bytea[];
+  v_hash text;
 begin
   perform 1 from private.people_registry_control c
     where c.ws_id = p_ws and c.capture_enabled and not c.stopped;
@@ -107,8 +111,12 @@ begin
   end if;
 
   v_lookup := decode(v_capture #>> '{lookup,hash}', 'hex');
-  perform pg_advisory_xact_lock(hashtextextended(p_ws::text || ':' || p_channel::text || ':' || p_account
-    || ':' || encode(v_lookup, 'hex'), 0));
+  for v_hash in
+    select distinct e ->> 'hash' from jsonb_array_elements(p_sender_lookups) e order by 1
+  loop
+    perform pg_advisory_xact_lock(hashtextextended(p_ws::text || ':' || p_channel::text || ':' || p_account
+      || ':' || v_hash, 0));
+  end loop;
   select array_agg(decode(c #>> '{}', 'hex')) into v_checks
     from jsonb_array_elements(v_capture -> 'checks') c;
   if exists (

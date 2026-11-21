@@ -12,6 +12,7 @@ import {
   newWorkspaceKeys,
   suppressionToken,
   unwrapWorkspaceKey,
+  wrapWorkspaceKey,
 } from '@/lib/people-registry/keys';
 import {
   canonicalRequestBytes,
@@ -526,5 +527,74 @@ describe('people registry machine routes', () => {
     expect(
       rpc.mock.calls.filter(([fn]) => fn === 'people_machine_capture_keys')
     ).toHaveLength(1);
+  });
+
+  it('covers every lookup and suppression version in the capture checks', async () => {
+    const rotated = (purpose: 'sender_lookup' | 'suppression') =>
+      wrapWorkspaceKey(wsId, purpose, 2, randomBytes(32));
+    const lookups = [
+      { ...lookupKeys()[0], current: false },
+      {
+        purpose: 'sender_lookup',
+        version: 2,
+        wrappedKey: rotated('sender_lookup'),
+        current: true,
+      },
+      lookupKeys()[1],
+    ];
+    const capture = [
+      captureKeys()[0],
+      { ...captureKeys()[1], current: false },
+      {
+        purpose: 'suppression',
+        version: 2,
+        wrappedKey: rotated('suppression'),
+        current: true,
+      },
+    ];
+    let item: Record<string, unknown> = {};
+    registry('responder', {
+      people_machine_lookup_keys: () => lookups,
+      people_machine_capture_keys: () => capture,
+      people_write_event: (args) => {
+        item = (args.p_items as Record<string, unknown>[])[0] ?? {};
+        return { reason: 'ok', items: [] };
+      },
+    });
+    await writeEvent(
+      signedRequest('/api/v1/people/events', {
+        body: JSON.stringify({
+          items: [{ type: 'observe_sender', label: 'Hoa' }],
+        }),
+        event: writeEvidence,
+      })
+    );
+    const unwrap = (key: unknown) =>
+      unwrapWorkspaceKey(wsId, key as Parameters<typeof unwrapWorkspaceKey>[1]);
+    const senderHashes = lookups
+      .filter((key) => key?.purpose === 'sender_lookup')
+      .map((key) =>
+        lookupHash(unwrap(key), {
+          wsId,
+          channel: 'zalo',
+          account: 'acct-1',
+          externalId: 'sender-1',
+        })
+      );
+    const expected = senderHashes.flatMap((hash) =>
+      capture
+        .filter((key) => key?.purpose === 'suppression')
+        .map((key) => suppressionToken(unwrap(key), wsId, hash).toString('hex'))
+    );
+    const material = item.capture as {
+      lookup: { version: number };
+      suppression: { version: number; token: string };
+      checks: string[];
+    };
+    expect(material.lookup.version).toBe(2);
+    expect(material.suppression.version).toBe(2);
+    expect(material.checks).toHaveLength(4);
+    expect([...material.checks].sort()).toEqual([...expected].sort());
+    expect(material.checks).toContain(material.suppression.token);
   });
 });
