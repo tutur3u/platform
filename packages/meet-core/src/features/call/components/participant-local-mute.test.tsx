@@ -86,6 +86,7 @@ it.each(['camera', 'screen'] as const)(
       state: {
         participants: { peer: participant },
         selfUserId: 'self',
+        settings: { transport: 'media' },
         stage: { raisedHandUserIds: [] },
       },
       remoteMedia: {

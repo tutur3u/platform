@@ -56,6 +56,7 @@ function room() {
     state: {
       participants: { peer: participant },
       selfUserId: 'self',
+      settings: { transport: 'media' },
       stage: { raisedHandUserIds: [] },
     },
     remoteMedia: { peer: { audio: track } },
