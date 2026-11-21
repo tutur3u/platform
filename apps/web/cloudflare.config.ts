@@ -21,7 +21,7 @@ const runtimeVariables = [
 export default defineConfig({
   worker: defineWorker({
     name: family ? `tuturuuu-web-vinext-${family}` : 'tuturuuu-web-vinext',
-    entrypoint: 'vinext/server/fetch-handler',
+    entrypoint: './cloudflare/vinext/worker-entry.ts',
     compatibilityDate: '2026-11-21',
     compatibilityFlags: ['nodejs_compat'],
     workersDev: false,

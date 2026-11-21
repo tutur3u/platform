@@ -144,6 +144,19 @@ The hosted Workers do not set `TUTURUUU_DEPLOYMENT_MODE` or
 the bucket. `scripts/chatgpt-connect.ts` writes only the filesystem store, so
 nothing populates the R2 store yet.
 
+## Worker runtime behavior
+
+- `cloudflare/vinext/worker-entry.ts` is the Worker entrypoint. Before vinext
+  loads, it installs `cloudflare/vinext/workers-fetch.ts`, because workerd's
+  fetch rejects every `cache` mode except `no-store` ("Unsupported cache
+  mode"). vinext keeps its own handling of `cache`, `next.revalidate` and
+  `next.tags`, and the network fetch drops the mode workerd rejects.
+  `bun run --cwd apps/web test:vinext:runtime` checks this in workerd.
+- Workers send no User-Agent on subrequests, and the proxy answers 400 to a
+  sessionless API request without one. `@tuturuuu/internal-api` therefore
+  sends `User-Agent: tuturuuu-<service>/1.0` on server requests that set none,
+  with the service from `TUTURUUU_SERVICE_NAME`.
+
 ## Local check
 
 After a build, `vp preview --config vite.vinext.config.ts --configLoader runner`

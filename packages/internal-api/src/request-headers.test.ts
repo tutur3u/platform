@@ -1,13 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mergeHeaders } from './request-headers';
+import { firstPartyUserAgent, mergeHeaders } from './request-headers';
 
 describe('internal API request identity', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
 
   it('identifies server requests when the runtime supplies no user agent', () => {
     vi.stubGlobal('window', undefined);
+    vi.stubEnv('TUTURUUU_SERVICE_NAME', 'web-vinext-api-core');
     const headers = mergeHeaders({ authorization: 'Bearer test-credential' });
-    expect(headers.get('user-agent')).toBe('Tuturuuu-Internal-API/1.0');
+    expect(headers.get('user-agent')).toBe('tuturuuu-web-vinext-api-core/1.0');
     expect(headers.get('authorization')).toBe('Bearer test-credential');
     expect(headers.get('accept')).toBe('application/json');
   });
@@ -25,5 +29,10 @@ describe('internal API request identity', () => {
   it('leaves user-agent management to the browser', () => {
     vi.stubGlobal('window', {});
     expect(mergeHeaders().has('user-agent')).toBe(false);
+  });
+
+  it('names the service in a header-safe agent', () => {
+    expect(firstPartyUserAgent(undefined)).toBe('tuturuuu-internal-api/1.0');
+    expect(firstPartyUserAgent(' Web Mail\n')).toBe('tuturuuu-web-mail/1.0');
   });
 });
