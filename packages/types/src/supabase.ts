@@ -17567,6 +17567,28 @@ export type Database = {
           },
         ];
       };
+      provider_cost_budgets: {
+        Row: {
+          monthly_limit_usd: number;
+          provider: string;
+          updated_at: string;
+          warn_ratio: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          monthly_limit_usd: number;
+          provider: string;
+          updated_at?: string;
+          warn_ratio?: number;
+        };
+        Update: {
+          monthly_limit_usd?: number;
+          provider?: string;
+          updated_at?: string;
+          warn_ratio?: number;
+        };
+        Relationships: [];
+      };
       provider_cost_collection_days: {
         Row: {
           account_id: string;
@@ -18064,6 +18086,28 @@ export type Database = {
         Update: {
           category?: string;
           value?: string;
+        };
+        Relationships: [];
+      };
+      root_operator_alerts: {
+        Row: {
+          dedupe_key: string;
+          kind: string;
+          recipients: number;
+          sent_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          dedupe_key: string;
+          kind: string;
+          recipients: number;
+          sent_at?: string;
+        };
+        Update: {
+          dedupe_key?: string;
+          kind?: string;
+          recipients?: number;
+          sent_at?: string;
         };
         Relationships: [];
       };
@@ -25138,6 +25182,10 @@ export type Database = {
         Args: { p_limit?: number };
         Returns: Json;
       };
+      dispatch_provider_cost_budget_alerts: {
+        Args: { p_as_of: string };
+        Returns: number;
+      };
       edit_inventory_priced_product: {
         Args: {
           p_context: Json;
@@ -26412,6 +26460,15 @@ export type Database = {
         }[];
       };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
+      get_provider_cost_budgets: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          monthly_limit_usd: number;
+          provider: string;
+          updated_at: string;
+          warn_ratio: number;
+        }[];
+      };
       get_provider_cost_collection_status: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -28379,6 +28436,18 @@ export type Database = {
           rejected_count: number;
         }[];
       };
+      send_root_operator_alert: {
+        Args: {
+          p_data: Json;
+          p_dedupe_key: string;
+          p_description: string;
+          p_kind: string;
+          p_permissions: string[];
+          p_priority: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+        };
+        Returns: number;
+      };
       set_devbox_require_reported_execution_mode: {
         Args: { p_enabled: boolean; p_force?: boolean };
         Returns: Json;
@@ -28423,6 +28492,14 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      set_provider_cost_budget: {
+        Args: {
+          p_monthly_limit_usd: number;
+          p_provider: string;
+          p_warn_ratio?: number;
+        };
+        Returns: undefined;
       };
       set_wallet_checkpoint_review: {
         Args: {

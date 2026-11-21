@@ -123,6 +123,7 @@ export async function collectProviderCosts(
 ): Promise<ProcessorResult> {
   const detail = {
     days: 0,
+    budget_alerts: 0,
     exhausted_days: 0,
     failed_days: 0,
     lines: 0,
@@ -250,7 +251,40 @@ export async function collectProviderCosts(
       detail.lines += write.value;
     }
   }
-  if (detail.failed_days === 0 && detail.exhausted_days === 0)
+  // Budget alerts run on whatever was collected, once per run. A failure
+  // here degrades the run; the next run evaluates again and the database
+  // sends each month and level at most once.
+  if (!(await withinDeadline(context, context.fence)))
+    return { detail, outcome: 'stopped' };
+  let alertFailed = false;
+  let alerts: PrivateRpcResult;
+  try {
+    alerts = await postPrivateRpc(
+      context,
+      'dispatch_provider_cost_budget_alerts',
+      { p_as_of: utcDay(context.now(), -1) }
+    );
+  } catch {
+    // The dispatch may have committed; its outcome cannot be confirmed.
+    return { detail, outcome: 'unknown' };
+  }
+  // A gateway or server error can arrive after the dispatch committed, so
+  // only a client-side rejection is a confirmed failure.
+  if (alerts.kind === 'http' && (alerts.status >= 500 || alerts.status === 408))
+    return { detail, outcome: 'unknown' };
+  if (alerts.kind === 'http') alertFailed = true;
+  else if (
+    alerts.kind === 'ok' &&
+    typeof alerts.value === 'number' &&
+    Number.isInteger(alerts.value) &&
+    alerts.value >= 0
+  )
+    detail.budget_alerts = alerts.value;
+  else return { detail, outcome: 'unknown' };
+  if (alertFailed)
+    console.error('Provider cost budget alerts failed', { category: 'alerts' });
+
+  if (detail.failed_days === 0 && detail.exhausted_days === 0 && !alertFailed)
     return { detail, outcome: 'ok' };
   // Exhausted days are recorded terminal states, so they degrade the run
   // for operators without counting as an unrecorded failure. A failed day
@@ -258,6 +292,8 @@ export async function collectProviderCosts(
   return {
     detail,
     outcome:
-      detail.days > 0 || detail.exhausted_days > 0 ? 'degraded' : 'failed',
+      detail.failed_days > 0 && detail.days === 0 && detail.exhausted_days === 0
+        ? 'failed'
+        : 'degraded',
   };
 }

@@ -83,6 +83,7 @@ it('collects nothing and succeeds when no collector credential is set', async ()
   const { calls, context } = harness();
   await expect(collectProviderCosts(context)).resolves.toEqual({
     detail: {
+      budget_alerts: 0,
       days: 0,
       exhausted_days: 0,
       failed_days: 0,
@@ -186,6 +187,7 @@ it('collects the restated days plus one backfill day, bounded per source', async
   expect(writes[1]?.body?.p_lines).toEqual([]);
   expect(result).toEqual({
     detail: {
+      budget_alerts: 0,
       days: 3,
       exhausted_days: 0,
       failed_days: 0,
@@ -268,6 +270,7 @@ it('claims each day before calling its provider', async () => {
     'claim_provider_cost_day',
     'provider',
     'record_provider_cost_day',
+    'dispatch_provider_cost_budget_alerts',
   ]);
 });
 
@@ -451,7 +454,7 @@ it('reports a provider failure without writing and degrades when partial', async
 });
 
 it('fails when every day write is rejected', async () => {
-  const { context } = harness({ recordStatus: 500 });
+  const { context } = harness({ recordStatus: 400 });
   await expect(
     collectProviderCosts(context, [githubSource('tutur3u', 'token')])
   ).resolves.toMatchObject({ outcome: 'failed' });
@@ -607,3 +610,58 @@ it('fails only the day whose claim is rejected', async () => {
     outcome: 'degraded',
   });
 });
+
+it('evaluates budget alerts for the last complete day after collecting', async () => {
+  const { context } = harness({ plan: ['2026-11-20'] });
+  const fetch = context.fetch;
+  let asOf: unknown;
+  context.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (!String(input).endsWith('/dispatch_provider_cost_budget_alerts'))
+      return fetch(input, init);
+    asOf = JSON.parse(String(init?.body)).p_as_of;
+    return Response.json(2);
+  }) as typeof fetch;
+  const result = await collectProviderCosts(context, [
+    githubSource('tutur3u', 'token'),
+  ]);
+  expect(asOf).toBe('2026-11-20');
+  expect(result).toMatchObject({ detail: { budget_alerts: 2 }, outcome: 'ok' });
+});
+
+it('degrades the run when budget alerts fail', async () => {
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const { context } = harness({ plan: ['2026-11-20'] });
+  const fetch = context.fetch;
+  context.fetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
+    String(input).endsWith('/dispatch_provider_cost_budget_alerts')
+      ? new Response('no', { status: 400 })
+      : fetch(input, init)) as typeof fetch;
+  const result = await collectProviderCosts(context, [
+    githubSource('tutur3u', 'token'),
+  ]);
+  expect(result).toMatchObject({ detail: { days: 1 }, outcome: 'degraded' });
+  expect(errors).toHaveBeenCalledWith('Provider cost budget alerts failed', {
+    category: 'alerts',
+  });
+  errors.mockRestore();
+});
+
+it.each([
+  ['an unreadable body', () => new Response('not json')],
+  ['a lost response', () => Promise.reject(new TypeError('network'))],
+  ['a gateway error', () => new Response('bad gateway', { status: 502 })],
+  ['a gateway timeout', () => new Response('timeout', { status: 504 })],
+])(
+  'reports an unconfirmed budget dispatch with %s as unknown',
+  async (_label, reply) => {
+    const { context } = harness({ plan: ['2026-11-20'] });
+    const fetch = context.fetch;
+    context.fetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).endsWith('/dispatch_provider_cost_budget_alerts')
+        ? reply()
+        : fetch(input, init)) as typeof fetch;
+    await expect(
+      collectProviderCosts(context, [githubSource('tutur3u', 'token')])
+    ).resolves.toMatchObject({ outcome: 'unknown' });
+  }
+);

@@ -201,6 +201,49 @@ estimate.
 The Costs navigation item appears only to root members with both
 permissions, matching the page and API.
 
+## Budget alerts
+
+Monthly budgets live in `private.provider_cost_budgets`, one row per
+provider (`github`, `vercel`, `cloudflare`) or `total` for every collected
+provider. With no rows, nothing alerts. Set or clear a budget with
+`private.set_provider_cost_budget(provider, monthly_limit_usd, warn_ratio)`
+(service role only); a null limit clears it, and `warn_ratio` defaults to 0.8.
+
+After collecting, each `provider-cost-collection` run calls
+`private.dispatch_provider_cost_budget_alerts` for the last complete UTC day.
+For each budget it projects the billed month to date linearly over the month
+and alerts once per month and level. On the first two days of a month, when
+the collector can still restate the previous month, that month is evaluated
+again through its last day so a late charge still raises its alert:
+
+| Level | Condition | Priority |
+| --- | --- | --- |
+| `forecast` | The projection reaches `warn_ratio` of the limit | High |
+| `exceeded` | The billed month to date reaches the limit | Urgent |
+
+A client-side rejection degrades the run and the next run evaluates again;
+a server or gateway error, or a response that cannot be read, may follow a
+committed dispatch, so it ends the run as `unknown`. Dispatches take a
+transaction lock, so overlapping runs evaluate one at a time.
+
+Alerts go through `private.send_root_operator_alert`, the shared sender for
+platform operator alerts. It records each dedupe key once in
+`private.root_operator_alerts`, then calls `public.create_notification` for
+up to 50 root workspace members holding every required permission (budgets
+require `view_finance_stats` and `view_infrastructure`, the same pair as the
+Costs page). Recipients get the web inbox, email and push according to their
+notification preferences; the existing `web-notification-batches` job
+delivers email and push. Only created notifications count. When none is
+created, because no member qualifies or every recipient has turned off all
+channels, the key is released and a later run can deliver it. Notifications
+carry the provider, month, level and amounts but no link: the inbox, push and
+email surfaces do not yet route this kind to the Costs page.
+
+Mastermind and Mira have no server-side path for these alerts. Mastermind
+push events carry only inbox item IDs from the fleet hub, and Mira's
+proactive execution is inactive, so both are left for a later sender behind
+the same function.
+
 ## Unit economics denominators
 
 | Unit | Denominator source |
