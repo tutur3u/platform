@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  appRouteEntries,
   DEFAULT_APP_DIR,
-  familyOwns,
   inSubtree,
   loadFamilies,
   PROBE_ENTRIES,
@@ -13,40 +13,50 @@ import { loadVinextFamilies, planVinextPrune } from './prune';
 
 const { config } = loadVinextFamilies();
 const { deny } = loadFamilies().config;
+const plans = config.families
+  .filter((family) => family.enabled)
+  .map((family) => planVinextPrune(family.id));
+
+function isNodeOnly(rel: string) {
+  const routePath = routePathFor(rel);
+  return (
+    routePath !== null &&
+    config.nodeOnly.some((entry) => inSubtree(routePath, entry))
+  );
+}
 
 describe('vinext route families', () => {
-  it('excludes every sharp entry from every family', () => {
-    for (const family of config.families) {
-      for (const entry of config.sharpExclude) {
-        expect(familyOwns(family, deny, entry)).toBe(false);
-      }
-    }
-  });
-
-  it('assigns each app route entry to at most one family', () => {
-    const plans = config.families
-      .filter((family) => family.enabled)
-      .map((family) => planVinextPrune(family.id));
-    const owners = new Map<string, string>();
+  it('assigns every routable entry except Node-only ones to exactly one family', () => {
+    const owners = new Map<string, string[]>();
     for (const plan of plans) {
       for (const rel of plan.keep) {
         if (PROBE_ENTRIES.includes(rel)) continue;
-        expect(owners.get(rel), rel).toBeUndefined();
-        owners.set(rel, plan.family);
+        owners.set(rel, [...(owners.get(rel) ?? []), plan.family]);
+      }
+    }
+    for (const rel of appRouteEntries()) {
+      if (PROBE_ENTRIES.includes(rel) || routePathFor(rel) === null) continue;
+      expect(owners.get(rel) ?? [], rel).toHaveLength(isNodeOnly(rel) ? 0 : 1);
+    }
+  });
+
+  it('keeps the global deny list in api-ops only', () => {
+    for (const plan of plans) {
+      for (const rel of plan.keep) {
+        if (PROBE_ENTRIES.includes(rel)) continue;
+        const routePath = routePathFor(rel) as string;
+        const denied = deny.some((entry) => inSubtree(routePath, entry));
+        expect(denied, `${plan.family}: ${rel}`).toBe(
+          plan.family === 'api-ops'
+        );
       }
     }
   });
 
-  it('keeps the globally denied API paths out of api-core', () => {
-    const plan = planVinextPrune('api-core');
-    for (const rel of plan.keep) {
-      const routePath = routePathFor(rel);
-      expect(routePath).not.toBeNull();
-      expect(
-        deny.some((entry) => inSubtree(routePath as string, entry)),
-        rel
-      ).toBe(false);
-    }
+  it('serves the sharp image routes from api-core', () => {
+    const { keep } = planVinextPrune('api-core');
+    expect(keep).toContain('api/v1/users/me/avatar/upload/route.ts');
+    expect(keep).toContain('api/v1/product-feedback/route.ts');
   });
 
   it('keeps the localized sign-in and landing pages in public-auth', () => {

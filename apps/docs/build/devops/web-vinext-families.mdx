@@ -1,0 +1,83 @@
+---
+title: "Web vinext Workers"
+description: "apps/web built with vinext on Vite+ as route-family Cloudflare Workers: families, build, checks, bindings and known gaps."
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+`apps/web` also builds with [vinext](https://github.com/cloudflare/vinext),
+a Vite+ implementation of the Next.js API, into route-free Cloudflare Workers
+named `tuturuuu-web-vinext-<family>`. The gateway reaches them through service
+bindings (see [Gateway Worker](/build/devops/gateway-worker)). The Next.js
+build is unchanged: `next.config.ts` and `vite.vinext.config.ts` both build
+their config from `next-config.web.ts`, and `next.config.test.ts` checks that
+the two agree.
+
+## Why families
+
+The whole app is 17.3 MiB gzip as one Worker (`cf deploy --dry-run`), over the
+10 MiB upload limit. `apps/web/cloudflare/vinext/families.json` splits it:
+
+| Family | Owns |
+| --- | --- |
+| `api-core` | `/api/**` except the OpenNext global deny list |
+| `api-ops` | The OpenNext global deny list (crons, devboxes, infrastructure, account switching, immediate notifications) |
+| `public-auth` | `[locale]` sign-in and auth pages, the landing page and marketing pages outside the public docs family |
+| `dashboard` | `[locale]/[wsId]/**` |
+| `web-rest` | Every other route entry |
+
+`nodeOnly` lists entries that still need Node-only APIs. No family owns them:
+the ChatGPT file store (`src/lib/chatgpt/storage.ts`) keeps state with
+`node:fs/promises` under the home directory. `families.test.ts` checks that
+every other route entry has exactly one family and that only `api-ops` owns
+denied paths.
+
+## Building a family
+
+Builds run in a disposable checkout, because they delete unowned routes and
+upgrade React to 19.3.1, which vinext requires. The monorepo keeps its React
+pin.
+
+```bash
+git worktree add --detach <dir> <sha> && cd <dir> && bun install
+printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
+NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=... \
+  bash apps/web/cloudflare/vinext/build-family.sh api-core
+```
+
+`build-family.sh` builds the workspace packages, prunes with
+`cloudflare/vinext/prune.ts`, runs `vp build --config vite.vinext.config.ts`,
+runs `cf deploy --dry-run --prebuilt`, then
+`scripts/ci/web-vinext-bundle-check.mjs`. The check fails when any emitted
+module carries the real Redis client or the upload exceeds the 9.5 MiB family
+budget. Its result is in `apps/web/cloudflare/vinext/<family>.check.json`.
+
+## Runtime bindings
+
+`apps/web/cloudflare.config.ts` declares the Worker (`workersDev` and
+`previewUrls` off, no routes):
+
+- `ABUSE_GUARD` service binding to `tuturuuu-abuse-guard`
+  (`AbuseGuardEntrypoint`) for proxy, rate-limit and native-integrity state.
+  `@upstash/redis` is aliased to `cloudflare/opennext/redis-unavailable.ts`.
+- `IMAGES` (Cloudflare Images) behind `ImageTransformer` for profile media,
+  feedback images and external project assets. Animated input is flattened
+  to one frame. A profile upload makes at most six transformations.
+- Secret names only for Supabase, app coordination and the abuse-guard
+  pepper. `@opennextjs/cloudflare` resolves to
+  `cloudflare/vinext/cloudflare-context.ts`, which reads `cloudflare:workers`.
+
+## Local check
+
+After a build, `vp preview --config vite.vinext.config.ts --configLoader runner`
+serves the Worker in workerd. Put disposable values in `apps/web/.dev.vars`
+(gitignored). Delete it afterwards.
+
+## Known gaps
+
+- `cacheComponents` is partial in vinext: `"use cache"` pages render and reuse
+  results in memory, but no CDN or data cache adapter is configured, so pages
+  answer `Cache-Control: private, no-store`.
+- `next/image` is served unoptimized.
+- The 4 external rewrites to infrastructure and calendar forward credential
+  headers, matching Next.js.

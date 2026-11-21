@@ -282,6 +282,7 @@
                   "build/devops/turbo-remote-cache",
                   "build/devops/gateway-worker",
                   "build/devops/web-opennext-families",
+                  "build/devops/web-vinext-families",
                   "build/devops/cutover-smoke-harness",
                   "build/devops/marketing-start-void",
                   "build/devops/background-work-inventory",

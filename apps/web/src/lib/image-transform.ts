@@ -26,13 +26,19 @@ export interface ImageTransformer {
   decode(input: Buffer, options: ImageDecodeOptions): DecodedImage;
 }
 
-/** Worker entrypoints supply an Images adapter; Node retains sharp. */
+/** Workers use the IMAGES binding (Cloudflare Images); Node retains sharp. */
 export async function getImageTransformer(
   adapter?: ImageTransformer
 ): Promise<ImageTransformer> {
   if (adapter) return adapter;
   if (isWorkerRuntime()) {
-    throw new Error('Worker image transformer is not configured');
+    const transformer = await (
+      await import('./image-transform.workers')
+    ).workerImageTransformer();
+    if (!transformer) {
+      throw new Error('Worker image transformer is not configured');
+    }
+    return transformer;
   }
   return (await import('./image-transform.node')).sharpImageTransformer;
 }

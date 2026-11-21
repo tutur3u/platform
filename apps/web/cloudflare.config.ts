@@ -33,6 +33,9 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      // Cloudflare Images for the ImageTransformer (profile media, feedback
+      // images, external project assets).
+      IMAGES: bindings.images(),
       // Abuse-guard, rate-limit and native-integrity state (no Redis client).
       ABUSE_GUARD: bindings.worker({
         worker: 'tuturuuu-abuse-guard',

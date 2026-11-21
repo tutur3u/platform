@@ -28,11 +28,23 @@ import {
 export interface VinextFamily extends OpenNextFamily {
   /** Owns every entry no other enabled family owns. */
   rest?: boolean;
+  /** Owns the OpenNext global deny list, which every other family excludes. */
+  ownsDenied?: boolean;
 }
 
 export interface VinextFamilies {
-  sharpExclude: string[];
+  /** Entries that still need Node-only APIs; no family owns them. */
+  nodeOnly: string[];
   families: VinextFamily[];
+}
+
+/** Whether `family` owns `routePath` on its own terms, ignoring `rest`. */
+function ownsDirectly(family: VinextFamily, deny: string[], routePath: string) {
+  if (!family.ownsDenied) return familyOwns(family, deny, routePath);
+  return (
+    deny.some((entry) => inSubtree(routePath, entry)) &&
+    !family.exclude.some((entry) => inSubtree(routePath, entry))
+  );
 }
 
 export function loadVinextFamilies(appDir = DEFAULT_APP_DIR) {
@@ -62,12 +74,11 @@ export function planVinextPrune(
     (candidate) => candidate.enabled && !candidate.rest && candidate !== family
   );
   const owns = (routePath: string) => {
-    if (!family.rest) return familyOwns(family, deny, routePath);
-    if (deny.some((entry) => inSubtree(routePath, entry))) return false;
-    if (config.sharpExclude.some((entry) => inSubtree(routePath, entry))) {
+    if (config.nodeOnly.some((entry) => inSubtree(routePath, entry))) {
       return false;
     }
-    return !others.some((other) => familyOwns(other, deny, routePath));
+    if (!family.rest) return ownsDirectly(family, deny, routePath);
+    return !others.some((other) => ownsDirectly(other, deny, routePath));
   };
   const keep: string[] = [];
   const remove: string[] = [];

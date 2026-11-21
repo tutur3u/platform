@@ -1,13 +1,5 @@
 {
-  "note": "Route families for apps/web vinext Worker builds. Ownership uses the OpenNext family rules (cloudflare/opennext/prune.ts) and its global deny list; sharpExclude lists API entries whose import closure reaches sharp, which Workers cannot load. A `rest` family owns every entry no other enabled family owns, except denied and sharp entries.",
-  "sharpExclude": [
-    "/api/v1/product-feedback",
-    "/api/v1/users/me/avatar/upload",
-    "/api/v1/users/me/banner/upload",
-    "/api/v1/workspaces/[wsId]/external-projects/assets",
-    "/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/feedbacks",
-    "/api/v1/workspaces/[wsId]/users/feedbacks"
-  ],
+  "note": "Route families for apps/web vinext Worker builds. Ownership uses the OpenNext family rules (cloudflare/opennext/prune.ts). api-ops owns the OpenNext global deny list; every other family excludes it. nodeOnly lists entries that still need Node-only APIs and so have no Worker home yet. A `rest` family owns every entry no other enabled family owns, except nodeOnly entries.",
   "families": [
     {
       "id": "api-core",
@@ -20,14 +12,21 @@
       "wrangler": null,
       "exact": [],
       "prefix": ["/api/"],
-      "exclude": [
-        "/api/v1/product-feedback",
-        "/api/v1/users/me/avatar/upload",
-        "/api/v1/users/me/banner/upload",
-        "/api/v1/workspaces/[wsId]/external-projects/assets",
-        "/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/feedbacks",
-        "/api/v1/workspaces/[wsId]/users/feedbacks"
-      ]
+      "exclude": []
+    },
+    {
+      "id": "api-ops",
+      "worker": "tuturuuu-web-vinext-api-ops",
+      "kind": "api",
+      "enabled": true,
+      "held": null,
+      "localized": false,
+      "ownsDenied": true,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [],
+      "prefix": [],
+      "exclude": ["/api/ai/chatgpt", "/api/v1/users/chatgpt"]
     },
     {
       "id": "public-auth",
@@ -154,5 +153,6 @@
       "prefix": [],
       "exclude": []
     }
-  ]
+  ],
+  "nodeOnly": ["/api/ai/chatgpt", "/api/v1/users/chatgpt"]
 }
