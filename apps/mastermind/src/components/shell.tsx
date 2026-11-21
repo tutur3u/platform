@@ -57,6 +57,7 @@ export const NAV: readonly NavEntry[] = [
     label: 'nav.fleetAccess',
     icon: Users,
     to: '/$locale/fleet-access',
+    scopes: ['owner', 'fleet'],
   },
   { id: 'activity', label: 'nav.activity', icon: Activity },
   { id: 'approvals', label: 'nav.approvals', icon: ShieldCheck },

@@ -27,10 +27,29 @@ const api = vi.hoisted(() => ({
   confirmFleetLinkFn: vi.fn(),
 }));
 vi.mock('./api', () => api);
-// The shell's navigation links need a router; its contract is tested there.
+// The shell's navigation links need a router; navFor is tested in
+// shell-nav.test.ts. These stand-ins expose the scope and header actions.
 vi.mock('../components/shell', () => ({
-  Shell: ({ children }: { children: ReactNode }) => <>{children}</>,
-  Preferences: () => null,
+  Shell: ({ scope, children }: { scope: string; children: ReactNode }) => (
+    <div data-testid="shell" data-scope={scope}>
+      {children}
+    </div>
+  ),
+  PageHeader: ({
+    title,
+    subtitle,
+    actions = <span data-testid="preferences" />,
+  }: {
+    title: ReactNode;
+    subtitle?: ReactNode;
+    actions?: ReactNode;
+  }) => (
+    <header>
+      <h1>{title}</h1>
+      {subtitle ? <p>{subtitle}</p> : null}
+      {actions}
+    </header>
+  ),
 }));
 
 const t = en.fleetAccess;
@@ -83,6 +102,22 @@ describe('Fleet access page', () => {
       t.tabs.link,
     ]);
     expect(screen.getByText(t.tier.observer)).toBeTruthy();
+  });
+
+  it('scopes the shell to the Owner or Fleet and shows Preferences to every tier', () => {
+    show(live(fixtures.owner));
+    expect(screen.getByTestId('shell').dataset.scope).toBe('owner');
+    expect(screen.getByText(t.tier.owner)).toBeTruthy();
+    expect(screen.getByTestId('preferences')).toBeTruthy();
+    for (const access of [fixtures.observer, fixtures.steerer]) {
+      cleanup();
+      show(live(access));
+      expect(screen.getByTestId('shell').dataset.scope).toBe('fleet');
+      expect(screen.getByTestId('preferences')).toBeTruthy();
+    }
+    cleanup();
+    show({ kind: 'denied' });
+    expect(screen.getByTestId('shell').dataset.scope).toBe('fleet');
   });
 
   it('falls back to the first tab for one the caller cannot open', () => {

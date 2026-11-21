@@ -8,9 +8,9 @@ describe('navFor', () => {
   });
 
   it('shows fleet grantees only the entries that opt in', () => {
-    expect(navFor('fleet')).toEqual([]);
+    expect(navFor('fleet').map((entry) => entry.id)).toEqual(['fleet-access']);
     const entries: NavEntry[] = [
-      ...NAV,
+      ...NAV.filter((entry) => entry.id !== 'fleet-access'),
       {
         id: 'shared',
         label: 'nav.inbox',
@@ -21,7 +21,7 @@ describe('navFor', () => {
     expect(navFor('fleet', entries).map((entry) => entry.id)).toEqual([
       'shared',
     ]);
-    expect(navFor('owner', entries)).toHaveLength(NAV.length + 1);
+    expect(navFor('owner', entries)).toHaveLength(NAV.length);
   });
 
   it('hides a fleet-only entry from owners', () => {

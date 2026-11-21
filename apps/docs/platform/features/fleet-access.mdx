@@ -176,7 +176,9 @@ returns, and the API still decides every read and write:
   revocation, caps, fleet stop and the audit log) stay hidden until their APIs
   exist.
 
-A disabled, stopped or revoked grant shows no tabs. A read refused mid-session
+The Mastermind shell shows a grantee only the Fleet access entry, and the
+Owner keeps the full navigation. Every tier gets the language and theme
+controls. A disabled, stopped or revoked grant shows no tabs. A read refused mid-session
 asks the person to reload. Server functions call the Fleet API with the
 caller's short-lived Mastermind session and validate every response against
 the `@tuturuuu/internal-api/fleet` schemas.

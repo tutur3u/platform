@@ -1,9 +1,8 @@
 import type { FleetAccess } from '@tuturuuu/internal-api/fleet';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { ReactNode } from 'react';
 import { SectionMessage } from '../components/section';
-import { Preferences, Shell } from '../components/shell';
+import { PageHeader, Shell } from '../components/shell';
 import { AskTab } from './ask-tab';
 import { LinkIdentityTab } from './link-identity-tab';
 import { type FleetTab, type LiveFleetAccess, visibleTabs } from './model';
@@ -34,19 +33,17 @@ export function FleetAccessPage({ access, tab, onTabChange }: Props) {
   const { t } = useFleetText();
   const gate = gateOf(access);
   return (
-    <Shell footer={null}>
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-lg border bg-foreground/5 p-3 sm:p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-bold text-2xl">{t.title}</h1>
-          {gate.kind === 'live' && (
-            <Badge variant="secondary">{t.tier[gate.access.tier]}</Badge>
-          )}
-        </div>
-        {/* Preferences links to the owner-only command center. */}
-        {gate.kind === 'live' && gate.access.tier === 'owner' && (
-          <Preferences />
-        )}
-      </header>
+    // The Owner keeps the full navigation; everyone else sees Fleet entries.
+    <Shell
+      scope={
+        gate.kind === 'live' && gate.access.tier === 'owner' ? 'owner' : 'fleet'
+      }
+      footer={null}
+    >
+      <PageHeader
+        title={t.title}
+        subtitle={gate.kind === 'live' ? t.tier[gate.access.tier] : undefined}
+      />
       {gate.kind === 'live' ? (
         <LiveTabs access={gate.access} tab={tab} onTabChange={onTabChange} />
       ) : (
