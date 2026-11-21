@@ -13,7 +13,7 @@ vi.mock('@/app/[locale]/(auth)/login/login-view.server', () => ({
     providerHint: null,
     returnApp: null,
     savedAccounts: [],
-    session: { avatarUrl: null, name: 'Person' },
+    session: { avatarUrl: null, id: 'user-1', name: 'Person' },
   }),
 }));
 

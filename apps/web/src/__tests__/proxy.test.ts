@@ -1159,7 +1159,7 @@ describe('web proxy api handling', () => {
     expect(response).toBeInstanceOf(NextResponse);
   });
 
-  it('serves localized login shells without auth middleware or session lookups', async () => {
+  it('keeps signed-in localized login shells private without session lookups', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       createSessionRequest(
@@ -1168,19 +1168,16 @@ describe('web proxy api handling', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('Cache-Control')).toBe(
-      'public, max-age=0, must-revalidate'
-    );
-    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(
-      'public, max-age=86400, stale-while-revalidate=604800'
-    );
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('CDN-Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('no-store');
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
     expect(response.headers.get('Set-Cookie')).toBeNull();
     expect(mocks.authProxy).not.toHaveBeenCalled();
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
-  it('serves localized add-account shells through the same cacheable fast path', async () => {
+  it('serves signed-in add-account shells through the same private fast path', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       createSessionRequest(
@@ -1189,9 +1186,7 @@ describe('web proxy api handling', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('CDN-Cache-Control')).toBe(
-      'public, max-age=86400, stale-while-revalidate=604800'
-    );
+    expect(response.headers.get('CDN-Cache-Control')).toBe('no-store');
     expect(mocks.authProxy).not.toHaveBeenCalled();
     expect(mocks.createClient).not.toHaveBeenCalled();
   });

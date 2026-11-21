@@ -115,7 +115,7 @@ describe('resolveLoginView', () => {
     }
   });
 
-  it('carries only the session name and avatar', async () => {
+  it('carries only the session id, name and avatar', async () => {
     mocks.getUser.mockResolvedValue({
       data: {
         user: {
@@ -133,10 +133,10 @@ describe('resolveLoginView', () => {
 
     expect(view.session).toEqual({
       avatarUrl: 'https://cdn.example/p.png',
+      id: 'user-1',
       name: 'Person Example',
     });
     expect(JSON.stringify(view)).not.toContain('active@example.com');
-    expect(JSON.stringify(view)).not.toContain('user-1');
   });
 
   it('marks unreadable saved accounts as unknown rather than empty', async () => {

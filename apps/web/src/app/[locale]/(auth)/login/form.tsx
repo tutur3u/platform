@@ -348,6 +348,7 @@ export default function LoginForm({
     null
   );
   const {
+    focusedCanContinue,
     focusedPending,
     focusedSignIn,
     focusedStep,
@@ -1580,7 +1581,7 @@ export default function LoginForm({
     return (
       <FocusedSignInCard
         appName={initialView?.returnApp?.name ?? returnAppName}
-        canContinue={initialized && user !== null}
+        canContinue={focusedCanContinue}
         continuing={
           focusedContinueClicked && (confirmingReturn || redirectingAfterAuth)
         }

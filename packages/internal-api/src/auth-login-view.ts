@@ -9,7 +9,8 @@ export interface LoginViewResponse {
   returnApp: { id: string; name: string } | null;
   /** Null when the device's saved accounts could not be read. */
   savedAccounts: WebAccountSummary[] | null;
-  session: { avatarUrl: string | null; name: string | null } | null;
+  /** The id binds the displayed account to the browser session. */
+  session: { avatarUrl: string | null; id: string; name: string | null } | null;
 }
 
 export interface LoginViewQuery {

@@ -52,6 +52,10 @@ import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getFormsAppOrigin } from './lib/forms-app-url';
+import {
+  applyAuthShellCacheHeaders,
+  CACHEABLE_AUTH_SHELL_PATHS,
+} from './lib/auth-shell-cache';
 import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
@@ -163,10 +167,6 @@ const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
 ] as const;
 const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
 const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
-const CACHEABLE_AUTH_SHELL_PATHS = new Set(['/add-account', '/login']);
-const AUTH_SHELL_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
-const AUTH_SHELL_CDN_CACHE_CONTROL =
-  'public, max-age=86400, stale-while-revalidate=604800';
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -250,18 +250,6 @@ function isCacheableAuthShellPath(pathname: string): boolean {
   return CACHEABLE_AUTH_SHELL_PATHS.has(pathnameWithoutLocale);
 }
 
-function applyCacheableAuthShellHeaders(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', AUTH_SHELL_BROWSER_CACHE_CONTROL);
-  response.headers.set('CDN-Cache-Control', AUTH_SHELL_CDN_CACHE_CONTROL);
-  response.headers.set(
-    'Vercel-CDN-Cache-Control',
-    AUTH_SHELL_CDN_CACHE_CONTROL
-  );
-  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-
-  return response;
-}
-
 function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
   if (!isCacheableAuthShellPath(req.nextUrl.pathname)) {
     return null;
@@ -270,7 +258,7 @@ function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
   const { locale } = getLocaleAwarePathname(req.nextUrl.pathname);
   const response = locale ? NextResponse.next() : handleLocale({ req });
 
-  return applyCacheableAuthShellHeaders(response);
+  return applyAuthShellCacheHeaders(req, response);
 }
 
 function redirectToPath(req: NextRequest, pathname: string) {

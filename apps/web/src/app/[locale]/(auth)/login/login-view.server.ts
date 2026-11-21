@@ -28,6 +28,7 @@ async function readSession(): Promise<LoginViewResponse['session']> {
     const metadata = user.user_metadata ?? {};
 
     return {
+      id: user.id,
       avatarUrl:
         readString(profile?.avatar_url) ??
         readString(metadata.avatar_url) ??

@@ -108,7 +108,7 @@ describe('LoginForm focused external sign-in', () => {
       initialView: view({
         hasSession: true,
         savedAccounts: [savedAccount],
-        session: { avatarUrl: null, name: 'Person Example' },
+        session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
       }),
     });
 
@@ -137,7 +137,7 @@ describe('LoginForm focused external sign-in', () => {
       initialView: view({
         hasSession: true,
         savedAccounts: [savedAccount],
-        session: { avatarUrl: null, name: 'Person Example' },
+        session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
       }),
     });
     await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
@@ -202,5 +202,23 @@ describe('LoginForm focused external sign-in', () => {
     expect(
       screen.queryByText('login.continuing_with_provider')
     ).not.toBeInTheDocument();
+  });
+
+  it('hands over to the regular confirmation when the browser is another account', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: 'other@example.com', id: 'user-2' } },
+    });
+
+    renderLoginFormSearch(search, {
+      initialView: view({
+        hasSession: true,
+        session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
+      }),
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByText('Person Example')).not.toBeInTheDocument()
+    );
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
   });
 });

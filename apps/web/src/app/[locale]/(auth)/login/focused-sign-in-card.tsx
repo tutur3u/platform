@@ -15,13 +15,16 @@ import {
 } from './internal-app-account-confirmation-parts';
 import type { FocusedSignInStep } from './login-view';
 
-/** Every step shares this frame, so switching steps never shifts layout. */
+/**
+ * Every step shares this fixed-height frame, so switching steps never
+ * shifts layout; a long saved-account list scrolls inside it.
+ */
 function FocusedFrame({ children }: { children: ReactNode }) {
   return (
     <ConfirmationCard>
       <div
         aria-live="polite"
-        className="flex min-h-64 flex-col justify-center gap-6"
+        className="flex h-80 flex-col justify-center gap-6 overflow-hidden"
       >
         {children}
       </div>
@@ -106,14 +109,16 @@ export function FocusedSignInCard({
         <h2 className="text-center font-semibold text-xl tracking-tight">
           {t('login.choose_account_title')}
         </h2>
-        <StoredAccountSwitchList
-          accounts={savedAccounts}
-          disabled={busy}
-          fallbackAccountName={t('login.unknown_account')}
-          onSwitchAccount={onSwitchAccount}
-          separatorLabel={null}
-          switchingAccountId={switchingAccountId}
-        />
+        <div className="min-h-0 overflow-y-auto">
+          <StoredAccountSwitchList
+            accounts={savedAccounts}
+            disabled={busy}
+            fallbackAccountName={t('login.unknown_account')}
+            onSwitchAccount={onSwitchAccount}
+            separatorLabel={null}
+            switchingAccountId={switchingAccountId}
+          />
+        </div>
         <Button
           className="h-11 w-full rounded-2xl"
           disabled={busy}

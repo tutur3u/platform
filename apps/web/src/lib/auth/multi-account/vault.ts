@@ -326,7 +326,9 @@ export async function peekWebAccounts(
 export async function listWebAccounts(
   request: Pick<Request, 'headers' | 'url'>
 ): Promise<WebAccountsResponse> {
-  const device = await resolveDevice(request, { create: false });
+  // Listing is a read: bumping last_seen_at here would race the switch's
+  // compare-and-set when the list refetches on focus right before a click.
+  const device = await resolveDevice(request, { create: false, touch: false });
   return listAccountsForDevice(device);
 }
 

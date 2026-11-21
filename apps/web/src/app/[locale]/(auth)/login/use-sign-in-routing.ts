@@ -50,10 +50,15 @@ export function useSignInRouting({
   const hasKnownSession = initialized
     ? user !== null
     : Boolean(initialView?.hasSession);
-  const focusedSignIn = isFocusedExternalSignIn(
-    initialView,
-    isMultiAccountLogin
-  );
+  // The card names the server's session; once the browser session is known
+  // it must be that same account, or the regular confirmation takes over.
+  const focusedSessionMatches =
+    !initialized || !user || user.id === initialView?.session?.id;
+  const focusedSignIn =
+    focusedSessionMatches &&
+    isFocusedExternalSignIn(initialView, isMultiAccountLogin);
+  const focusedCanContinue =
+    initialized && user !== null && user.id === initialView?.session?.id;
   const focusedPending =
     Boolean(loginView?.pending) &&
     mayBeFocusedExternalSignIn({
@@ -93,6 +98,7 @@ export function useSignInRouting({
 
   return {
     anotherAccountRequested,
+    focusedCanContinue,
     focusedPending,
     focusedSignIn,
     focusedStep,
