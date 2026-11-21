@@ -57,7 +57,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "ai": "^7.0.148",
     "cron-parser": "^5.10.2",
     "cronstrue": "^3.37.0",

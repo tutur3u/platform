@@ -55,7 +55,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.12.1",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.4.0",

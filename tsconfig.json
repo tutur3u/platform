@@ -14,7 +14,6 @@
     { "path": "./packages/types" },
     { "path": "./packages/ui" },
     { "path": "./packages/utils" },
-    { "path": "./packages/vercel" },
     { "path": "./apps/calendar" },
     { "path": "./apps/finance" },
     { "path": "./apps/nova" },

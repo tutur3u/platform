@@ -36,7 +36,6 @@
     "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "next": "^16.4.0",
     "next-intl": "^4.14.9",
     "nuqs": "^2.10.2",

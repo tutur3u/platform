@@ -57,7 +57,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
     "date-fns": "^4.4.0",

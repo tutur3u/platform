@@ -30,13 +30,15 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // with a reviewed push, schedule or manual trigger change.
 // 4122fb86 dropped cf-wrangler-publication path filters from coordination and
 // devbox-control workflows; app sources and cf parity paths are unchanged.
+// Removing the deleted packages/vercel workspace dropped its path filter from
+// fifteen satellite Cloudflare workflows; no other trigger input changed.
 // CodeQL push and pull_request runs share one security-sensitive path list;
 // the nightly security-checks.yaml schedule is the complete scan.
 const PROTECTED_TRIGGERS = {
-  'rewise-cloudflare.yaml': '45c4db71ea52982a',
+  'rewise-cloudflare.yaml': 'dcf35ec256ec440b',
   'git-cloudflare.yaml': '518ca2530d7a63ef',
   'external-cloudflare.yaml': '0a3cc2c97958f5cd',
-  'ai-cloudflare.yaml': '2b1f1ae8795d0216',
+  'ai-cloudflare.yaml': 'd0c778175155574e',
   'api-cloudflare.yaml': '2610097053ef1dfd',
   'api-worker.yaml': '058d68d5d261d527',
   'app-builds-affected.yaml': 'fcb6485f818aa571',
@@ -44,7 +46,7 @@ const PROTECTED_TRIGGERS = {
   'oxc-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
-  'cms-cloudflare.yaml': 'c43009624296a37c',
+  'cms-cloudflare.yaml': '71315cfd789e4150',
   'cms-renderer.yaml': '94c592fa21fb7888',
   'codeql.yml': '18bb4fc8f0bc2cef',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
@@ -64,11 +66,11 @@ const PROTECTED_TRIGGERS = {
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
   // Finance also watches its owning input-cache action; other trigger fields stay fixed.
-  'finance-cloudflare.yaml': 'fabf7d45e110e58d',
+  'finance-cloudflare.yaml': 'a3040abd943a2f59',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
   'gateway-cloudflare.yaml': '115ed9d5a84c7391',
   'i18n-check.yaml': '78c7f5ff99020ac9',
-  'inventory-cloudflare.yaml': '56aef454e313add1',
+  'inventory-cloudflare.yaml': 'bfed38cfa78d596b',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
   'mail-calendar-tasks-builds.yaml': '456e0c09daa44fe7',
@@ -83,7 +85,7 @@ const PROTECTED_TRIGGERS = {
   'mobile-build-windows.yaml': 'ff0b86edd5297973',
   // Add only the checksum-pinned native input action to push/PR paths.
   'mobile.yaml': 'ed6d793aecbe7293',
-  'nova-cloudflare.yaml': 'a2d9cd99b1329afe',
+  'nova-cloudflare.yaml': '5e9ce3c6b686961b',
   'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
   'pay-cloudflare.yaml': 'a31b0975203c9817',
@@ -100,13 +102,13 @@ const PROTECTED_TRIGGERS = {
   'shortener-cloudflare.yaml': '91506e88fa4e6dd8',
   'sso-persistence-contract.yaml': '939d2042696cddd9',
   'status-api-cloudflare.yaml': '4bdf044f41e1c76f',
-  'storefront-cloudflare.yaml': '1e3b010d7a0ce910',
+  'storefront-cloudflare.yaml': '6ebe647c0642378a',
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
   'task-board-database-contract.yaml': '0a3cc2c97958f5cd',
   'time-tracker-control-contract.yaml': '25ad429ead647fb8',
-  'tools-cloudflare.yaml': '9fcd0d791395cdd0',
+  'tools-cloudflare.yaml': '0aa3bb23bcef775a',
   'topic-delivery-foundation-contract.yaml': '6880af5bb579ac39',
-  'track-cloudflare.yaml': 'f354cac2984f6165',
+  'track-cloudflare.yaml': '720b202ce2c58683',
   'tsrs-shadow.yaml': '0b7a9bf95294a1fd',
   'turbo-cache-cloudflare.yaml': 'c8aeb63fcad4a92e',
   'turbo-unit-tests.yaml': 'e94a048af91d2cc0',
@@ -115,16 +117,16 @@ const PROTECTED_TRIGGERS = {
   'type-check.yaml': '47acd08d33c6cf4c',
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
   'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
-  'chat-cloudflare.yaml': '4c7010c51cef2ee2',
+  'chat-cloudflare.yaml': 'faba2bbf82ebc297',
   'drive-cloudflare-artifact.yaml': '0a3cc2c97958f5cd',
-  'hive-cloudflare.yaml': '170330c93275beda',
-  'infrastructure-cloudflare.yaml': '792b96e4ad05ab76',
-  'learn-cloudflare.yaml': 'c1dc547df2674fca',
+  'hive-cloudflare.yaml': 'f9998285a28d2e39',
+  'infrastructure-cloudflare.yaml': 'd95a9dfc1ca804ed',
+  'learn-cloudflare.yaml': '2fdf149abff044ee',
   'lms-cloudflare.yaml': '38a3fd2a909cdb83',
   'marketing-cloudflare.yaml': '975602b8f7271cbc',
-  'mind-cloudflare.yaml': '188b2dc67dc86f60',
+  'mind-cloudflare.yaml': '72e9629135c6a13c',
   'teach-cloudflare.yaml': 'b37341dc49021b0b',
-  'workspace-cloudflare.yaml': '659081e2b1855001',
+  'workspace-cloudflare.yaml': '9708b26510aea8f6',
 };
 
 const EXTRA_PROTECTED_INPUTS = {

@@ -121,7 +121,6 @@ These names resolve on the public npm registry. The SDK package is `tuturuuu` (`
 | `@tuturuuu/cloudflare` | `packages/cloudflare` |
 | `@tuturuuu/devbox` | `packages/devbox` |
 | `@tuturuuu/realtime` | `packages/realtime` |
-| `@tuturuuu/vercel` | `packages/vercel` |
 | `@tuturuuu/games` | `packages/games` |
 | `@tuturuuu/masonry` | `packages/masonry` |
 | `@tuturuuu/offline` | `packages/offline` |

@@ -51,7 +51,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "cookies-next": "^6.1.1",
     "date-fns": "^4.4.0",
     "dayjs": "^1.11.23",

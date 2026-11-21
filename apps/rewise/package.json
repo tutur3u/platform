@@ -51,7 +51,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.12.1",
     "cookies-next": "^6.1.1",
     "date-fns": "^4.4.0",

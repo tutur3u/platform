@@ -175,7 +175,6 @@ const BLUE_GREEN_HIVE_BUILD_PATHS = Object.freeze([
   'packages/types/',
   'packages/ui/',
   'packages/utils/',
-  'packages/vercel/',
 ]);
 const BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS = Object.freeze([
   'apps/hive-realtime/',

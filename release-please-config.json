@@ -363,10 +363,6 @@
       "component": "utils",
       "package-name": "@tuturuuu/utils"
     },
-    "packages/vercel": {
-      "component": "vercel",
-      "package-name": "@tuturuuu/vercel"
-    },
     "packages/workflows": {
       "component": "workflows",
       "package-name": "@tuturuuu/workflows"

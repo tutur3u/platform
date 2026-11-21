@@ -168,8 +168,6 @@ services:
       - platform-web-users-ui-dist:/workspace/packages/users-ui/dist
       - platform-web-utils-node_modules:/workspace/packages/utils/node_modules
       - platform-web-utils-dist:/workspace/packages/utils/dist
-      - platform-web-vercel-node_modules:/workspace/packages/vercel/node_modules
-      - platform-web-vercel-dist:/workspace/packages/vercel/dist
       - platform-web-workflows-node_modules:/workspace/packages/workflows/node_modules
       - platform-web-workflows-dist:/workspace/packages/workflows/dist
     depends_on:
@@ -572,7 +570,5 @@ volumes:
   platform-web-users-ui-dist:
   platform-web-utils-node_modules:
   platform-web-utils-dist:
-  platform-web-vercel-node_modules:
-  platform-web-vercel-dist:
   platform-web-workflows-node_modules:
   platform-web-workflows-dist:

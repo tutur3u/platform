@@ -28,10 +28,6 @@ vi.mock('@tuturuuu/utils/format', () => ({ cn: () => '' }));
 vi.mock('@tuturuuu/utils/i18n-root-locale', () => ({
   resolveRootLocale: async () => 'en',
 }));
-vi.mock('@tuturuuu/vercel', () => ({
-  VercelAnalytics: () => null,
-  VercelInsights: () => null,
-}));
 vi.mock('next/root-params', () => ({ locale: async () => 'en' }));
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,

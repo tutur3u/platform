@@ -22,7 +22,6 @@ const nextConfig = createTuturuuuNextConfig({
     '@tuturuuu/types',
     '@tuturuuu/ui',
     '@tuturuuu/utils',
-    '@tuturuuu/vercel',
   ],
   images: {
     remotePatterns: [

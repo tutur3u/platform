@@ -127,7 +127,6 @@ COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
-COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.

@@ -31,7 +31,6 @@ export const bridge = startBridgePreset(
     basePath: '',
     appRoot: import.meta.url,
     app: 'calendar',
-    inertVercel: true,
     serverFnBase: CALENDAR_FUNCTION_BASE,
     shims: [
       'next/headers',

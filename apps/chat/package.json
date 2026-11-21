@@ -51,7 +51,6 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/vercel": "workspace:*",
     "negotiator": "^1.1.0",
     "next": "^16.4.0",
     "next-intl": "^4.14.9",
