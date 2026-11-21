@@ -61,7 +61,8 @@ number.
 - Managers browse and edit records: people, identity proposals and
   decisions, facts, rules and relationships. Owner-only actions are those
   that change authority, consent or retention: managers, bindings, flags,
-  principals, consent records, deletion, erasure and lifting a suppression.
+  principals, consent records, merges, deletion, erasure and lifting a
+  suppression.
 
 This is a registry table, not a `workspace_role_permissions` value, so no role,
 wildcard or default permission can reach it.
@@ -365,7 +366,9 @@ through every derivation. They are never instructions.
   audience. The default audience is the origin conversation only. Recall for
   conversation C returns only records whose audience includes C. Shared
   membership in two chats never widens the audience. A wider audience, the
-  owner's DM included, needs an explicit manager grant on that record. A
+  owner's DM included, needs an explicit grant on that record by a manager.
+  That grant is a record edit, not a consent change, and it never widens what
+  the subject's consent allows. A
   derived brief includes a source only when that source's audience includes the
   brief's conversation and its subject's consent covers the use. A group record
   that names several people needs usable consent from every named subject. An
@@ -437,7 +440,8 @@ Duplicate detection runs within one workspace. It matches on lookup hashes,
 the linked contact and the linked account, then on normalised label
 similarity, which only produces a proposal.
 
-A merge needs a manager and cannot cross workspaces:
+A merge is owner-only, because it rewrites consent and moves suppressions, and
+it cannot cross workspaces:
 
 - Consent: the result takes the most restrictive state per store. Two
   conflicting grants with different scopes block the merge until the owner
@@ -446,7 +450,7 @@ A merge needs a manager and cannot cross workspaces:
   under the merge rule above. The source container is purged only after every
   copy is confirmed.
 - Identities, facts, rules, relationships, memberships and suppressions move
-  with their provenance. Conflicting facts or rules keep both until the owner
+  with their provenance. Conflicting facts or rules keep both until a manager
   chooses.
 - The merged person becomes `merged`, with `merged_into` set. Its old ID
   resolves to the survivor for managers only.
@@ -552,14 +556,17 @@ need ingress evidence. That reuses the Fleet access event contract in
     refusal code. Response timing is padded so outcomes are indistinguishable.
     A semantic query is not accepted. Each personal session has a low recall
     cap, applied before any lookup. Each inbound event gets one recall,
-    recorded in `people_personal_recalls`.
+    recorded in `people_personal_recalls` after the freshness check passes.
+    Those rows are kept for at least the 5-minute evidence window, so a
+    replay inside the window is refused.
   - **No side effects:** `registry.write` (and so observation, capture and
     membership) is refused on the session class before any person, consent,
     capture, suppression or membership lookup. Neither a personal recall nor
     that refusal calls `fleet_consume_registry_event`, increments the event's
     attempt counter, emits a change event or bumps a version. It takes no
     `if_version`, never returns `not_modified`, and uses a cache namespace that
-    full-recall callers never read or write.
+    full-recall callers never read or write. A personal fill is served only for
+    the event whose live recall produced it, and never reused.
   - **Switch:** `personal_sessions_enabled` on the control row is false by
     default, and a missing row counts as false. Only the owner changes it, and
     a change bumps the generation. Every personal recall rechecks it together
@@ -627,7 +634,6 @@ always gated by a live check. This section describes full recall. Personal
 sessions never use `if_version` or `not_modified`. Their fills live in a separate
 namespace that full-recall callers never read or write, and the switch check
 drops them.
-
 
 - Every reply starts with `recall` and `if_version`. The server checks the
   principal, evidence, status, consent and suppression live, and returns either
@@ -698,9 +704,10 @@ All strings ship in English and Vietnamese.
 | `ttr people relate <from> <kind> <to>`                | add a relationship                                      |
 | `ttr people fact set <id> <key> <value> --rev`        | revision-checked fact edit                              |
 | `ttr people rules set <scope> <rule> <value> [--expires]` | set rules                                           |
-| `ttr people consent set <subject> <store> <state> --basis` | record consent                                     |
-| `ttr people merge <from> <into>` / `duplicates`       | dedup                                                   |
-| `ttr people forget <id> [--erase]` / `memory forget <id>` | fenced deletion with confirmed and retained receipts |
+| `ttr people consent set <subject> <store> <state> --basis` | record consent (owner)                             |
+| `ttr people merge <from> <into>` / `duplicates`       | dedup (merge: owner)                                    |
+| `ttr people forget <id> [--erase]` / `memory forget <id>` | fenced deletion with confirmed and retained receipts (person deletion and erasure: owner) |
+| `ttr people managers` / `bindings` / `flags`          | manage managers, channel bindings and switches (owner)  |
 | `ttr people principal register` / `revoke`            | manage machine principals (owner, step-up)              |
 | `ttr people import plan` / `run` / `verify` / `retire` | migrate local stores                                  |
 
@@ -725,8 +732,8 @@ originals until the copy is confirmed.
 | Legacy contact links (pronouns, address forms, reply flags) | facts and person rules                                              |
 | Person profiles                                  | facts and person memories                                                      |
 | Per-chat memory digests                          | conversations and conversation memories by kind and status                    |
-| Per-chat standing rules                          | staged rule proposals for owner review                                         |
-| Desk-wide rules                                  | staged channel default rule proposals for owner review                         |
+| Per-chat standing rules                          | staged rule proposals for manager review                                       |
+| Desk-wide rules                                  | staged channel default rule proposals for manager review                       |
 | Commitments                                      | `commitment` memories with due and done times                                  |
 | Consolidation archive and audit                  | ledger rows in state `superseded`, and audit events                            |
 | Pending person proposals                         | identities in link state `proposed`                                            |
@@ -810,8 +817,8 @@ A slice ships only when its gates pass:
     with tests that an active manager can edit records but cannot perform them.
   - Serialised generations.
   - Proof that `people_registry_definer` has no Fleet table privileges and
-    reaches Fleet only through `fleet_consume_registry_event` and
-    `fleet_list_user_channel_identities`.
+    reaches Fleet only through `fleet_consume_registry_event`,
+    `fleet_list_user_channel_identities` and `fleet_is_owner`.
 - **Slice 2:**
   - Personal-session tests:
     - no memories, briefs, pronouns, routing or schedule rules, IDs or
@@ -819,13 +826,14 @@ A slice ships only when its gates pass:
     - a delivery decision without policy;
     - identical bodies and padded timing for hit, miss, off, denied,
       suppressed and deleted;
-    - the cap applied before lookup, and one recall per event;
+    - the cap applied before lookup, and one recall per event, recorded in
+      `people_personal_recalls` after the freshness check;
     - no observation, capture or write, no replay wrapper call, no attempt
       increment, no change event, and no `if_version` or `not_modified`;
     - the audit shape on every outcome;
     - the switch false by default and when the row is missing, owner-only,
-      bumping the generation, and ending the projection on the request that
-      turns it off;
+      bumping the generation, rechecked with the stop flag, and ending the
+      projection on the request that turns it off;
     - no read or fill of the full-recall cache, and full-recall callers never
       reading the personal namespace.
   - A live account binding checked at signing and at verification.
