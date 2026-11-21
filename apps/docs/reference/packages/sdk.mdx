@@ -189,6 +189,10 @@ ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --dur
 ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
 ```
 
+`ttr people` manages the people registry for its owner and managers. It reads
+external IDs from a hidden prompt or standard input and masks display values
+in output; see [people registry CLI](/platform/features/people-registry#cli).
+
 `ttr login` opens the browser and creates a Tuturuuu-managed CLI app-session
 JWT pair through `apps/web`. The terminal and browser confirmation page show the
 signed-in account email when the web session exposes it. The CLI stores that

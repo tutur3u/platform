@@ -8,6 +8,7 @@ const embeddedPackages = new Set(['@tuturuuu/internal-api', '@tuturuuu/utils']);
 const portableEntries = new Set([
   '@tuturuuu/internal-api/client',
   '@tuturuuu/internal-api/external-projects',
+  '@tuturuuu/internal-api/people-registry',
   '@tuturuuu/internal-api/product-feedback',
   '@tuturuuu/internal-api/task-history',
   '@tuturuuu/internal-api/tasks',
@@ -25,6 +26,7 @@ const portableFiles = new Set([
   'internal-api/internal-api-error.ts',
   'internal-api/internal-api-url.ts',
   'internal-api/origin-policy.ts',
+  'internal-api/people-registry.ts',
   'internal-api/product-feedback.ts',
   'internal-api/profile-banner.ts',
   'internal-api/profile-media-optimize.ts',

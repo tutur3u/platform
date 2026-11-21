@@ -61,7 +61,7 @@ import {
 } from './config';
 import { isDelegatedCommand, runDelegatedCommand } from './delegated-commands';
 import { runDevboxCommandWithSession } from './devbox-session';
-import { runDomainsCommand, runExternalCommand } from './external-admin';
+import { adminCommands, runExternalCommand } from './admin-groups';
 import { getClient, runAccountGroup } from './account-group';
 import { runHostCommand } from './host-command';
 import { runFeedbackCli } from './feedback';
@@ -2040,8 +2040,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
   const workspaceId = getWorkspaceId(config, flags);
 
-  if (group === 'external' || group === 'domains') {
-    await (group === 'domains' ? runDomainsCommand : runExternalCommand)({
+  if (group === 'external' || group === 'domains' || group === 'people') {
+    await (adminCommands[group] ?? runExternalCommand)({
       client,
       flags,
       json,

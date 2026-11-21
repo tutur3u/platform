@@ -792,6 +792,13 @@ All strings ship in English and Vietnamese.
 | `ttr people principal register` / `revoke`            | manage machine principals (owner, step-up)              |
 | `ttr people import plan` / `run` / `verify` / `retire` | migrate local stores                                  |
 
+The CLI implements `ls`, `search`, `show`, `status`, `add`, `link`,
+`confirm` / `reject`, `relate`, `fact set` / `fact rm`, person-scope
+`rules set` / `rules rm`, `consent set` and `flags` (in
+`packages/sdk/src/cli/people.ts`). The other rows need their manager routes
+first. Routes that require a fresh tuturuuu.com sign-in, such as enabling the
+registry and registering principals, refuse the CLI session.
+
 Every command takes `--workspace` and `--json`. Raw identifiers such as phone
 numbers or provider IDs are never command-line arguments. `ttr people link`
 reads the external ID from a hidden prompt or from standard input, so it never

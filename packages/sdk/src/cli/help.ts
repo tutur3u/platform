@@ -12,7 +12,7 @@ import { getGlobalHelp } from './help-global';
 import { upgradeHelp } from './help-upgrade';
 import { resourcesHelp } from './resources';
 
-import { externalAdminHelp, isExternalHelp } from './external-admin';
+import { adminHelp, isAdminHelp } from './admin-groups';
 import { accountsHelp } from './accounts';
 
 export { getGlobalHelp } from './help-global';
@@ -744,7 +744,7 @@ export function getHelpOutput(
   if (group === 'resources') return resourcesHelp();
   if (group === 'accounts' || group === 'qa')
     return accountsHelp(group, action, subaction);
-  if (isExternalHelp(group, action)) return externalAdminHelp(group);
+  if (isAdminHelp(group, action)) return adminHelp(group);
   if (!group) {
     return getGlobalHelp();
   }
