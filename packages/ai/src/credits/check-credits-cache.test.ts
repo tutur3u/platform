@@ -327,6 +327,13 @@ describe('AI credit Redis snapshot cache', () => {
     await expect(
       recordUnbilledAiCharge({ ...charge, wsId: 'workspace-1' })
     ).resolves.toBe(false);
+    await expect(
+      recordUnbilledAiCharge({
+        ...charge,
+        wsId: 'workspace-1',
+        chatMessageId: 'message-1',
+      })
+    ).resolves.toBe(false);
     expect(mocks.rpc).not.toHaveBeenCalled();
 
     mocks.createAdminClient.mockRejectedValueOnce(new Error('unavailable'));
@@ -334,6 +341,7 @@ describe('AI credit Redis snapshot cache', () => {
       recordUnbilledAiCharge({
         ...charge,
         wsId: 'workspace-1',
+        userId: 'user-1',
         chatMessageId: 'message-1',
       })
     ).resolves.toBe(false);
@@ -344,6 +352,7 @@ describe('AI credit Redis snapshot cache', () => {
       recordUnbilledAiCharge({
         ...charge,
         wsId: 'workspace-1',
+        userId: 'user-1',
         chatMessageId: 'message-1',
       })
     ).resolves.toBe(false);

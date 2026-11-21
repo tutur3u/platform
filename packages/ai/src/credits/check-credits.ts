@@ -221,21 +221,23 @@ export async function deductAiCredits(
 export async function recordUnbilledAiCharge(
   params: DeductCreditsParams & { errorCode?: string | null }
 ): Promise<boolean> {
-  if (!params.wsId || !params.chatMessageId) return false;
+  // A charge is attributed to its user: settling one without a user would
+  // bill the workspace wallet instead. The caller logs a false result.
+  if (!params.wsId || !params.chatMessageId || !params.userId) return false;
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
     const pricingUsage = toLegacyTokenPricing(params);
     const { data, error } = await sbAdmin.rpc('record_unbilled_ai_charge', {
       p_chat_message_id: params.chatMessageId,
       p_ws_id: params.wsId,
-      p_user_id: params.userId ?? null,
+      p_user_id: params.userId,
       p_model_id: resolveGatewayModelId(params.modelId),
       p_feature: params.feature,
       p_input_tokens: pricingUsage.inputTokens,
       p_output_tokens: pricingUsage.outputTokens,
       p_reasoning_tokens: pricingUsage.reasoningTokens,
       p_search_count: params.searchCount ?? 0,
-      p_error_code: params.errorCode ?? null,
+      ...(params.errorCode ? { p_error_code: params.errorCode } : {}),
     });
     return !error && data === true;
   } catch {
