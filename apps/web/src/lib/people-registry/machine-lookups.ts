@@ -21,6 +21,7 @@ export type PeopleLookup = { version: number; hash: string };
 export type PeopleEvidenceLookups = {
   sender: PeopleLookup[];
   conversation: PeopleLookup[];
+  senderCurrent: PeopleLookup;
   conversationCurrent: PeopleLookup;
 };
 
@@ -53,12 +54,14 @@ export async function deriveEvidenceLookups(
       }));
   const sender = hashes('sender_lookup', evidence.sender);
   const conversation = hashes('conversation_lookup', evidence.conversation);
+  const senderCurrent = sender.find((entry) => entry.current);
   const current = conversation.find((entry) => entry.current);
-  if (!sender.length || !current) return null;
+  if (!senderCurrent || !current) return null;
   const strip = ({ version, hash }: PeopleLookup) => ({ version, hash });
   return {
     sender: sender.map(strip),
     conversation: conversation.map(strip),
+    senderCurrent: strip(senderCurrent),
     conversationCurrent: strip(current),
   };
 }

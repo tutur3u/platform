@@ -10,6 +10,7 @@ import { PEOPLE_EVENT_DOMAIN } from '@/lib/people-registry/ingress-event';
 import {
   lookupHash,
   newWorkspaceKeys,
+  suppressionToken,
   unwrapWorkspaceKey,
 } from '@/lib/people-registry/keys';
 import {
@@ -428,5 +429,102 @@ describe('people registry machine routes', () => {
     expect(rpc.mock.calls.map(([fn]) => fn)).not.toContain(
       'people_write_event'
     );
+  });
+
+  const captureKeys = () => [
+    {
+      purpose: 'display',
+      version: 1,
+      wrappedKey: keys.display,
+      current: true,
+    },
+    {
+      purpose: 'suppression',
+      version: 1,
+      wrappedKey: keys.suppression,
+      current: true,
+    },
+  ];
+
+  it('derives capture material for a labelled observation while capture is on', async () => {
+    let item: Record<string, unknown> = {};
+    registry('responder', {
+      people_machine_lookup_keys: lookupKeys,
+      people_machine_capture_keys: captureKeys,
+      people_write_event: (args) => {
+        item = (args.p_items as Record<string, unknown>[])[0] ?? {};
+        return {
+          reason: 'ok',
+          items: [{ type: 'observe_sender', result: 'proposed' }],
+        };
+      },
+    });
+    const body = JSON.stringify({
+      items: [{ type: 'observe_sender', label: 'Hoa' }],
+    });
+    const response = await writeEvent(
+      signedRequest('/api/v1/people/events', { body, event: writeEvidence })
+    );
+    expect(response.status).toBe(200);
+    const sender = lookupHash(
+      unwrapWorkspaceKey(
+        wsId,
+        lookupKeys()[0] as Parameters<typeof unwrapWorkspaceKey>[1]
+      ),
+      { wsId, channel: 'zalo', account: 'acct-1', externalId: 'sender-1' }
+    );
+    const capture = item.capture as {
+      personId: string;
+      lookup: unknown;
+      suppression: { version: number; token: string };
+      checks: string[];
+      display: string;
+    };
+    expect(item).toMatchObject({ type: 'observe_sender', label: 'Hoa' });
+    expect(capture.personId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+    expect(capture.lookup).toEqual({
+      version: 1,
+      hash: sender.toString('hex'),
+    });
+    expect(capture.suppression.token).toBe(
+      suppressionToken(
+        unwrapWorkspaceKey(
+          wsId,
+          captureKeys()[1] as Parameters<typeof unwrapWorkspaceKey>[1]
+        ),
+        wsId,
+        sender
+      ).toString('hex')
+    );
+    expect(capture.checks).toContain(capture.suppression.token);
+    expect(capture.display).toMatch(/^([0-9a-f]{2})+$/);
+    expect(JSON.stringify(item)).not.toContain('sender-1');
+  });
+
+  it('sends no capture material while capture is off or without a label', async () => {
+    const items: Record<string, unknown>[] = [];
+    registry('responder', {
+      people_machine_lookup_keys: lookupKeys,
+      people_machine_capture_keys: () => [],
+      people_write_event: (args) => {
+        items.push((args.p_items as Record<string, unknown>[])[0] ?? {});
+        return { reason: 'unknown_sender' };
+      },
+    });
+    for (const body of [
+      JSON.stringify({ items: [{ type: 'observe_sender', label: 'Hoa' }] }),
+      observe,
+    ]) {
+      const response = await writeEvent(
+        signedRequest('/api/v1/people/events', { body, event: writeEvidence })
+      );
+      expect(response.status).toBe(422);
+    }
+    expect(items.every((entry) => !('capture' in entry))).toBe(true);
+    expect(
+      rpc.mock.calls.filter(([fn]) => fn === 'people_machine_capture_keys')
+    ).toHaveLength(1);
   });
 });

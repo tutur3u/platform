@@ -6,17 +6,25 @@ import {
   parseMachineBody,
   withPeopleMachine,
 } from '@/lib/people-registry/machine';
+import { deriveCaptureMaterial } from '@/lib/people-registry/machine-capture';
 import { deriveEvidenceLookups } from '@/lib/people-registry/machine-lookups';
 import { sha256Hex } from '@/lib/people-registry/request-signature';
 
 // The write bundle for one provider event. The person and conversation come
 // from the signed ingress evidence; the body names what to record. A retry of
-// the same body returns the original receipt. See
+// the same body returns the original receipt. A labelled observation of an
+// unknown sender proposes a new person when capture allows it; the capture
+// material is derived here and never comes from the caller. See
 // apps/docs/platform/features/people-registry.mdx#service-routes.
 
 const bodySchema = z.strictObject({
   items: z
-    .array(z.strictObject({ type: z.literal('observe_sender') }))
+    .array(
+      z.strictObject({
+        type: z.literal('observe_sender'),
+        label: z.string().trim().min(1).max(200).optional(),
+      })
+    )
     .length(1),
 });
 const receiptSchema = z.object({
@@ -32,6 +40,7 @@ const refusals: Record<string, number> = {
   unknown_sender: 422,
   consent_required: 422,
   deleting: 409,
+  suppressed: 409,
 };
 
 export const POST = withPeopleMachine(
@@ -55,6 +64,19 @@ export const POST = withPeopleMachine(
       throw error;
     }
     if (!lookups) return machineJson({ error: 'registry_unavailable' }, 503);
+    const resolved = lookups;
+    const items = await Promise.all(
+      input.items.map(async (item) => {
+        if (!item.label) return item;
+        const capture = await deriveCaptureMaterial(
+          rpc,
+          principal,
+          evidence,
+          resolved
+        );
+        return capture ? { ...item, capture } : item;
+      })
+    );
 
     const written = await rpc('people_write_event', {
       p_ws: principal.wsId,
@@ -69,7 +91,7 @@ export const POST = withPeopleMachine(
       p_sender_lookups: lookups.sender,
       p_conversation_lookups: lookups.conversation,
       p_conversation_current: lookups.conversationCurrent,
-      p_items: input.items,
+      p_items: items,
     });
     if (written.error)
       return machineJson({ error: 'registry_unavailable' }, 503);

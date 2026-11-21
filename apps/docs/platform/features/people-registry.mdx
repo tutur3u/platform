@@ -659,26 +659,36 @@ recall requires only the signature and returns the reduced projection.
   does not own.
 - `POST /api/v1/people/events` — the event's write bundle, body
   `{items: [...]}`. The route accepts one item kind:
-  - `observe_sender` records that a confirmed person spoke in the
-    conversation named by the evidence. It creates the conversation under the
-    current lookup key when it is new, records the membership, and marks an
-    `asserted` identity as `desk_observed`. It needs a confirmed sender
-    identity and a profile consent that is not `denied`, `revoked` or
-    `expired`.
+  - `observe_sender` (with an optional `label`) records that a confirmed
+    person spoke in the conversation named by the evidence. It creates the
+    conversation under the current lookup key when it is new, records the
+    membership, and marks an `asserted` identity as `desk_observed`. It needs
+    a confirmed sender identity and a profile consent that is not `denied`,
+    `revoked` or `expired`.
+  - For an unknown sender, a labelled `observe_sender` proposes a new person
+    when capture is on and the owner granted capture consent for that
+    conversation. The server derives the capture material: a new person ID,
+    the sender's current lookup hash, suppression tokens for every lookup and
+    suppression key version, and the encrypted display value. The proposal
+    is a person with every store at `unknown`, a `proposed` identity marked
+    `desk_observed` with evidence `desk_capture`, and a membership. A
+    suppressed sender is refused, and a sender with any existing identity
+    (proposed, confirmed or rejected) is a `duplicate`. A proposal is never
+    recalled until a manager confirms it. Proposals for one sender are
+    serialised by a transaction lock on its lookup hash.
 
-  The capture proposal for an unknown sender (capture on, capture consent
-  granted, suppression checked) and `memories` items
-  (`{text, kind, status?, due_at?, target: person | conversation}`, through the
-  memory service namespace in slice 3) are not accepted by this route; unknown
-  item kinds and fields are refused. The response is one receipt per item,
-  either `created` or `duplicate`, or the whole bundle is refused with one
-  reason: `unknown_sender`, `consent_required`, `deleting`, `scope_denied` or
+  `memories` items (`{text, kind, status?, due_at?, target: person |
+  conversation}`, through the memory service namespace in slice 3) are not
+  accepted by this route; unknown item kinds and fields are refused. The
+  response is one receipt per item, `created`, `proposed` or `duplicate`, or
+  the whole bundle is refused with one reason: `unknown_sender`,
+  `consent_required`, `suppressed`, `deleting`, `scope_denied` or
   `event_consumed`. Every check runs before any write. The outcome, accepted
   or refused, is stored as a receipt keyed by the event, so a retry with the
   same body returns the original receipt marked `replayed`, and a different
   body for a consumed event is refused. A receipt outlives the Fleet purge of
-  its provider event, and receipts have no retention job yet. A memory edit with a stale revision is
-  a manager action and returns `revision_conflict`.
+  its provider event, and receipts have no retention job yet. A memory edit
+  with a stale revision is a manager action and returns `revision_conflict`.
 - `GET /api/v1/people/changes?after={cursor}&limit={1-500}` — drain principals
   only. The response is `{events, next}`. The cursor is a per-workspace
   sequence allocated under a row lock held until commit, so a cursor never
@@ -1001,6 +1011,11 @@ Each slice links its coverage here when it lands.
     covers observation, membership and desk-observed verification, replayed
     and conflicting receipts, the registry write slot excluding Fleet, refused
     bundles writing nothing, and unbound, desk and cross-tenant refusals.
+  - [people-registry-capture.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry-capture.sql)
+    covers capture off, conversation capture consent, proposals, duplicates
+    for proposed and rejected senders, suppression, proposals staying out of
+    recall, and malformed capture material refused before the event is
+    consumed.
   - The [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/people/route.test.ts)
     cover hashed lookups (raw sender IDs never reach the database),
     `not_modified`, refusal mapping and the change feed cursor.
