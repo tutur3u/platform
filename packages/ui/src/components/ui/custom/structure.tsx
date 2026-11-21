@@ -334,6 +334,7 @@ export function Structure({
             {header && <div className="mb-4 hidden md:block">{header}</div>}
             <div
               data-slot="structure-content"
+              data-content-full-bleed={contentFullBleed ? 'true' : undefined}
               className={cn(
                 'safe-bottom relative w-full',
                 contentFullBleed

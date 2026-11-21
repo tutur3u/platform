@@ -172,9 +172,25 @@
   }
 
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
-    :where([data-slot="structure-content"]) {
+    :where(
+      [data-slot="structure-content"]:not([data-content-full-bleed="true"])
+    ) {
     padding-inline: var(--sorbet-gutter);
     padding-bottom: var(--sorbet-content-bottom-clearance);
+  }
+
+  /*
+    Full-height shells still cancel the legacy p-2 (-m-2) on mobile; when the
+    shell gutter is 16px they must pull back the full gutter, not 8px.
+  */
+  :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
+    :where(
+      [data-slot="structure-content"]:not([data-content-full-bleed="true"])
+        > [class~="-m-2"]
+    ) {
+    margin-inline: calc(-1 * var(--sorbet-gutter));
+    width: calc(100% + 2 * var(--sorbet-gutter));
+    max-width: none;
   }
 
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
