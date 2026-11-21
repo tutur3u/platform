@@ -145,4 +145,4 @@ export {
   sortLeaves,
   verifyAttestation,
 } from './snapshot';
-export { assertCanonicalX25519 } from './x25519';
+export { assertCanonicalX25519, dhClass } from './x25519';

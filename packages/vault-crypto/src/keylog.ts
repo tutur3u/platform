@@ -18,7 +18,7 @@ import {
 } from './keylog-types';
 import { list } from './schema';
 import { verifyObject } from './signing';
-import { assertCanonicalX25519 } from './x25519';
+import { assertCanonicalX25519, dhClass } from './x25519';
 
 export * from './keylog-types';
 
@@ -274,9 +274,12 @@ export function verifyKeyLog(
       fail('Epochs must advance by one');
     if ((d.epoch === 1) !== (d.history === null))
       fail('History wraps are required after epoch 1');
-    assertCanonicalX25519(d.intake_key, 'intake key');
-    assertCanonicalX25519(d.esk_key, 'ESK');
-    for (const k of [d.edk_id, d.intake_key, d.esk_key].map(hex)) {
+    const fresh = [
+      `edk:${hex(d.edk_id)}`,
+      `dh:${hex(dhClass(d.intake_key, 'intake key'))}`,
+      `dh:${hex(dhClass(d.esk_key, 'ESK'))}`,
+    ];
+    for (const k of fresh) {
       if (usedEpochKeys.has(k)) fail('Epoch keys must be fresh');
       usedEpochKeys.add(k);
     }
