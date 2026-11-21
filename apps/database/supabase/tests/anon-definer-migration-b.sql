@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(116);
+select plan(120);
 
 create function pg_temp.adb_id(n integer) returns uuid
 language sql immutable
@@ -84,9 +84,12 @@ select ok(
 
 -- guarded = false: the SQL wrapper relies on the get_category_breakdown
 -- overload it calls (its by-name call is itself ambiguous today).
-create temporary table adb_finance(target regprocedure, label text, call_sql text, guarded boolean) on commit drop;
+create temporary table adb_finance(
+  target regprocedure, label text, call_sql text, guarded boolean, server_only boolean
+) on commit drop;
 insert into adb_finance
-select sig::regprocedure, sig, call_sql, guarded
+select sig::regprocedure, sig, call_sql, guarded,
+  sig ~ '^public[.]get_(daily|weekly|monthly)_invoice_totals[(]'
 from (values
   ('public.get_daily_invoice_totals(uuid,integer,uuid[],uuid[],date,date)',
    format('select * from public.get_daily_invoice_totals(%L::uuid)', pg_temp.adb_id(10)), true),
@@ -179,9 +182,9 @@ from adb_service_only;
 select ok(
   not has_function_privilege('anon', target, 'execute')
     and not pg_temp.adb_public_execute(target)
-    and has_function_privilege('authenticated', target, 'execute')
+    and (has_function_privilege('authenticated', target, 'execute') = (not server_only))
     and has_function_privilege('service_role', target, 'execute'),
-  'authenticated and service_role only: ' || label
+  case when server_only then 'service_role only: ' else 'authenticated and service_role only: ' end || label
 )
 from adb_finance;
 
@@ -222,12 +225,14 @@ reset role;
 -- member with finance view permissions (8 + 5)
 set local role authenticated;
 select set_config('request.jwt.claims', format('{"role":"authenticated","sub":"%s"}', pg_temp.adb_id(2)), true);
-select lives_ok(call_sql, 'permitted member allowed: ' || label)
+select case when server_only
+  then throws_ok(call_sql, '42501', null, 'permitted member must use the invoice route: ' || label)
+  else lives_ok(call_sql, 'permitted member allowed: ' || label)
+end
 from adb_finance where guarded;
-select is(
-  (select count(*) from public.get_daily_invoice_totals(pg_temp.adb_id(10))),
-  14::bigint,
-  'permitted member reads 14 daily invoice periods for the wallet'
+select ok(
+  public.has_workspace_permission(pg_temp.adb_id(10), pg_temp.adb_id(2), 'view_invoices'),
+  'the permitted viewer holds invoice permission at the route boundary'
 );
 select is(
   (select sum(total) from public.adb_category_breakdown_6(pg_temp.adb_id(10))),
@@ -259,9 +264,11 @@ select throws_ok(
 );
 reset role;
 
--- service_role keeps the server paths (6 + 4)
+-- service_role keeps the server paths (6 + 4 + 4)
 set local role service_role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select lives_ok(call_sql, 'service_role can use server-only invoice totals: ' || label)
+from adb_finance where server_only;
 select lives_ok(call_sql, 'service_role allowed: ' || label)
 from adb_service_only
 where label in (

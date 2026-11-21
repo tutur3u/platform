@@ -111,6 +111,11 @@ CREATE TEMP TABLE definer_execute_expected (
 -- 20261029040800 makes invoice totals server-only and adds finance triggers;
 -- 20261029050300 and 20261029100400 add workspace-reference trigger guards.
 INSERT INTO definer_execute_expected VALUES
+  ('public.can_edit_workspace_external_projects(uuid,uuid)', true, true),
+  ('public.enforce_workspace_document_hierarchy()', false, true),
+  ('public.is_nova_role_manager()', true, true),
+  ('public.publish_external_project_entry(uuid,text,uuid,uuid,timestamptz,timestamptz,uuid,jsonb,jsonb)', false, true),
+  ('public.publish_workspace_external_project_page_version(uuid,uuid,uuid)', true, true),
   ('public.enforce_task_cycle_task_workspace()', false, true),
   ('public.prevent_task_cycle_workspace_change()', false, true),
   ('public.enforce_time_tracking_session_category_workspace()', false, true),
@@ -585,10 +590,9 @@ SELECT is((SELECT count(*)::integer FROM definer_execute_expected e
   WHERE to_regprocedure(e.signature) IS NULL
     OR e.service_role IS DISTINCT FROM has_function_privilege('service_role', to_regprocedure(e.signature), 'EXECUTE')),
   0, 'service_role EXECUTE matches the reviewed A/C expectations outside B');
--- Public definers created by later migrations are service-only RPCs. Each
--- owning migration lists its signatures here.
-CREATE TEMP TABLE definer_added_later (signature text PRIMARY KEY);
-INSERT INTO definer_added_later VALUES
+-- The retained workspace-cycle schema keeps board-sprint entry points closed.
+CREATE TEMP TABLE held_board_sprint_definers (signature text PRIMARY KEY);
+INSERT INTO held_board_sprint_definers VALUES
   -- apps/database/supabase/migrations/20261101100000_board_sprints.sql
   ('public.set_board_sprint_length(uuid,smallint,uuid)'),
   ('public.start_board_sprint(uuid,uuid)'),
@@ -598,7 +602,14 @@ INSERT INTO definer_added_later VALUES
   -- apps/database/supabase/migrations/20261105082000_board_sprint_horizon.sql
   ('public.add_board_sprint(uuid,uuid,uuid)'),
   ('public.remove_board_sprint(uuid,uuid,uuid,uuid)'),
-  ('public.list_board_unplanned_task_ids(uuid,uuid)'),
+  ('public.list_board_unplanned_task_ids(uuid,uuid)');
+SELECT is((SELECT count(*)::integer FROM held_board_sprint_definers
+  WHERE to_regprocedure(signature) IS NOT NULL),
+  0, 'held board-sprint RPCs are absent from the retained schema');
+-- Public definers created by later migrations are service-only RPCs. Each
+-- owning migration lists its signatures here.
+CREATE TEMP TABLE definer_added_later (signature text PRIMARY KEY);
+INSERT INTO definer_added_later VALUES
   ('public.reserve_workspace_usage(uuid,text,uuid,bigint,timestamptz)'),
   ('public.settle_workspace_usage(uuid,uuid,bigint)'),
   ('public.release_expired_workspace_usage(uuid,uuid,text)'),
