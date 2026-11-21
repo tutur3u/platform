@@ -4,7 +4,7 @@ import { signedInLoaderTiming } from './signed-in-loader-timing';
 const url = 'https://tuturuuu.com/calendar/personal';
 const qaDocumentHeaders = {
   'sec-fetch-dest': 'document',
-  'x-tuturuuu-qa-timing': '1',
+  'tuturuuu-qa-timing': '1',
 };
 
 describe('signed-in loader timing', () => {
@@ -37,7 +37,7 @@ describe('signed-in loader timing', () => {
   it.each<RequestInit>([
     { method: 'POST', headers: qaDocumentHeaders },
     { headers: { 'sec-fetch-dest': 'document' } },
-    { headers: { 'x-tuturuuu-qa-timing': '1', 'sec-fetch-dest': 'empty' } },
+    { headers: { 'tuturuuu-qa-timing': '1', 'sec-fetch-dest': 'empty' } },
   ])('records no timing outside an opted-in document GET', async (init) => {
     const headers = new Headers();
     const timing = signedInLoaderTiming(new Request(url, init), headers);

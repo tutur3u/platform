@@ -51,7 +51,7 @@ export function signedInLoaderTiming(
     !responseHeaders ||
     request?.method !== 'GET' ||
     request.headers.get('sec-fetch-dest') !== 'document' ||
-    request.headers.get('x-tuturuuu-qa-timing') !== '1'
+    request.headers.get('tuturuuu-qa-timing') !== '1'
   )
     return inactive;
 

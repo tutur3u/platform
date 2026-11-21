@@ -107,7 +107,7 @@ describe('Mail page authorization and projections', () => {
     const url = `https://mail.tuturuuu.com/${tenant}/inbox`;
     const responseHeaders = new Headers();
     const request = new Request(url, {
-      headers: { 'sec-fetch-dest': 'document', 'x-tuturuuu-qa-timing': '1' },
+      headers: { 'sec-fetch-dest': 'document', 'tuturuuu-qa-timing': '1' },
     });
 
     const run = (headers: Headers) =>
