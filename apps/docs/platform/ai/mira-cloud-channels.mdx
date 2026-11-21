@@ -648,16 +648,35 @@ HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,
 | --- | --- | --- | --- |
 | `GET /workspaces/:wsId/mira` | Mira view | none | tenant settings, persona, bound channels with secret names and connected times, stop reasons and generations, `configVersion` |
 | `PATCH /workspaces/:wsId/mira/settings` | Mira manage | `{ expectedConfigVersion, settings }` with `enabled`, `keyMode`, `preset`, `modelId`, `neverSilent`, `quietHours`, `dailyCapMicroUsd`, `monthlyCapMicroUsd` | `{ configVersion }` |
-| `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
-| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof (Embedded Signup code, OAuth callback state, bot token) | `{ channelId }` |
+| `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped, expectedGeneration? }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
+| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof (Embedded Signup code, OAuth callback state, bot token) | `{ channelId }`; failures return only `invalid_proof`, `expired_state` or `already_bound`, never provider text, and proof is never echoed or logged |
 | `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set |
 | `GET /workspaces/:wsId/mira/usage` | Mira view | `?from&to` (at most 400 days) | daily usage per channel and model |
-| `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, seven-day cost and replies |
-| `POST /infrastructure/mira/tenants/:wsId/stop` | root admin + Mira operator | `{ channelId?, stopped }`; the reason is always `operator` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
-| `POST /infrastructure/mira/global-stop` | root admin + Mira operator | `{ stopped }` | global fence state and generation, confirmed by a readback |
+| `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, `lastErrorAt`, seven-day cost (micro-USD) and replies, plus seven-day error count and p95 first-token latency merged from Analytics Engine in one batched query |
+| `POST /infrastructure/mira/tenants/:wsId/stop` | root admin + Mira operator | `{ channelId?, stopped, expectedGeneration, note }`; the reason is always `operator`; `note` is required, at most 500 characters | `{ stopReasons, stopGeneration }`, confirmed by a readback |
+| `GET /infrastructure/mira/global-stop` | root admin + Mira operator | none | `{ stopped, generation, updatedAt, updatedBy }` |
+| `POST /infrastructure/mira/global-stop` | root admin + Mira operator | `{ stopped, expectedGeneration, note }` | the same shape as the read, confirmed by a readback |
+| `GET /infrastructure/mira/audit` | root admin + Mira operator | `?wsId&before&limit` (limit at most 100) | audit rows: actor, workspace, channel, action, reason, old and new generation, note |
 
 Billing adjusts caps through the same settings RPC with the `billing`
 authority from its own server path; no HTTP route exposes that authority.
+
+Stop semantics: `stopped: false` clears only the caller's own reason (a
+tenant clears `tenant`, an operator clears `operator`); other owners' reasons
+stay set and are listed in the response. A stale `expectedGeneration`
+returns 409, so two operators acting at once cannot silently undo each
+other. Every stop change, tenant or operator, writes an audit row; operator
+changes carry their note. The global fence row is the source the channel
+Worker's fence object reads.
+
+Operator routes are served at `tuturuuu.com/admin/api/v1/infrastructure/mira/**`.
+Their client in `packages/internal-api` builds URLs from the Admin app base
+path, never a fixed host, and the route sources keep app-relative imports so
+they move with the Admin app unchanged. Operator routes are registered as
+`ADMIN` in the Admin route inventory and tenant routes in the web inventory.
+The dedicated Mira operator permission is granted to nobody by default; root
+admin alone is not enough. Operator routes rely on the Admin session (MFA
+assurance) and accept no bearer or scheduled caller.
 
 ### Setup wizard
 
