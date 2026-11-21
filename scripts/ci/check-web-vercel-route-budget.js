@@ -1,7 +1,7 @@
 const { appendFileSync, readFileSync } = require('node:fs');
 
-const maxRoutes = 1948;
-const warningRoutes = 1900;
+const maxRoutes = 2000;
+const warningRoutes = 1960;
 const platformLimit = 2048;
 const outputPath = process.argv[2] ?? '.vercel/output/config.json';
 const { routes } = JSON.parse(readFileSync(outputPath, 'utf8'));

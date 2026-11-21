@@ -256,8 +256,10 @@ The helper pins the SHA-256 verified from the registry manifest index for
 ## Web Vercel route budget
 
 The Web preview and production workflows count routing rules in
-`.vercel/output/config.json` after the Vercel build. The maximum is 1,948,
-leaving 100 rules below Vercel’s deployment limit. The count appears in the
+`.vercel/output/config.json` after the Vercel build. The maximum is 2,000,
+leaving 48 rules below Vercel’s deployment limit. Web production is served from
+Cloudflare; the Vercel build remains only as the legacy platform deploy and
+marker, so do not grow toward the limit. The count appears in the
 **Check Web route budget** step. Treat the **Route (app)** listing as a source
 inventory because one Next.js endpoint can produce several routing rules.
 

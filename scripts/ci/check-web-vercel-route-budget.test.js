@@ -12,8 +12,8 @@ test('checks the route count in the Vercel build output', (t) => {
   const script = join(__dirname, 'check-web-vercel-route-budget.js');
 
   for (const [count, exit] of [
-    [1948, 0],
-    [1949, 1],
+    [2000, 0],
+    [2001, 1],
   ]) {
     writeFileSync(
       output,
