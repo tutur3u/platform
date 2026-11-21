@@ -665,7 +665,8 @@ Stop semantics: `stopped: false` clears only the caller's own reason (a
 tenant clears `tenant`, an operator clears `operator`); other owners' reasons
 stay set and are listed in the response. A stale `expectedGeneration`
 returns 409, so two operators acting at once cannot silently undo each
-other. Every stop change, tenant or operator, writes an audit row; operator
+other. Tenant and operator routes always send `expectedGeneration`; the RPC
+accepts its absence only for system callers. Every stop change, tenant or operator, writes an audit row; operator
 changes carry their note. The global fence row is the source the channel
 Worker's fence object reads.
 
