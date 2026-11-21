@@ -7,6 +7,32 @@ module.exports = [
   ...require('./sql-grant-guard-verified-findings-meet'),
   ...require('./sql-grant-guard-verified-findings-qa'),
   {
+    path: 'apps/database/supabase/migrations/20261121091000_add_task_fleet_fields.sql',
+    line: 45,
+    rule: 'function-acl',
+    fileDigest:
+      '7e143c9839102cb17dcf898c344ea4a2ad7c1fb944c993c7a610895ed2de49b4',
+    digest: 'bb8d6ff19a504965db1d829f6012fc58e152980870adaf739ef1f4a54f3e5e1b',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261121095911_restrict_task_fleet_function_execute.sql',
+    reason:
+      'The follow-up revokes direct EXECUTE from PUBLIC and all API roles. The task row trigger is the only caller.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261121091000_add_task_fleet_fields.sql',
+    line: 64,
+    rule: 'function-acl',
+    fileDigest:
+      '7e143c9839102cb17dcf898c344ea4a2ad7c1fb944c993c7a610895ed2de49b4',
+    digest: 'b3bfc992c001a89f7017c288f60face5fce677dbe7ea6a06da4243d503b467ac',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261121095911_restrict_task_fleet_function_execute.sql',
+    reason:
+      'The follow-up revokes the default and client ACLs and explicitly restores authenticated and service-role EXECUTE on the SECURITY INVOKER RPC.',
+  },
+  {
     path: 'apps/database/supabase/migrations/20261030112010_workspace_delete_fk_cascade_guard.sql',
     line: 2,
     rule: 'dynamic-sql-review',

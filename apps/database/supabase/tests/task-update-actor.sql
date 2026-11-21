@@ -3,7 +3,28 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(5);
+select plan(7);
+
+select is(
+  (select count(*)::int from pg_roles
+    where rolname in ('anon', 'authenticated', 'service_role')
+      and has_function_privilege(oid, 'public.touch_task_updated_at()', 'EXECUTE')),
+  0,
+  'API roles cannot execute the task trigger function directly'
+);
+
+select ok(
+  (select bool_and(
+    has_function_privilege(
+      oid,
+      'public.update_task_with_relations(uuid,jsonb,uuid[],boolean,uuid[],boolean,uuid[],boolean,uuid)',
+      'EXECUTE'
+    ) = (rolname <> 'anon')
+  ) from pg_roles
+    where rolname in ('anon', 'authenticated', 'service_role')
+  ),
+  'only authenticated and service-role API callers can execute the task RPC'
+);
 
 insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-0000000e6201', 'task-fleet-owner@example.test'),
