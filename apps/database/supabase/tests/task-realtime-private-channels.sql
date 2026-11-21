@@ -46,6 +46,12 @@ select ok(
 
 set local session_replication_role = replica;
 
+insert into auth.users (id, raw_app_meta_data)
+select ('00000000-0000-4000-8000-' || lpad('a00' || fixture_user::text, 12, '0'))::uuid,
+  '{}'::jsonb
+from generate_series(1, 5) as fixture_user
+on conflict (id) do nothing;
+
 insert into public.users (id, display_name)
 values
   ('00000000-0000-4000-8000-00000000a001', 'Realtime Member'),
@@ -79,12 +85,13 @@ values (
 )
 on conflict (ws_id, user_id) do nothing;
 
-insert into public.workspace_boards (id, name, ws_id, creator_id)
+insert into public.workspace_boards (id, name, ws_id, creator_id, ticket_prefix)
 values (
   '00000000-0000-4000-8000-00000000c001',
   'Realtime Board',
   '00000000-0000-4000-8000-00000000b001',
-  '00000000-0000-4000-8000-00000000a005'
+  '00000000-0000-4000-8000-00000000a005',
+  'TASKRT'
 )
 on conflict (id) do nothing;
 
@@ -213,6 +220,7 @@ select ok(
 );
 
 set local role authenticated;
+select set_config('request.jwt.claim.role', 'authenticated', true);
 
 select set_config(
   'request.jwt.claim.sub',

@@ -380,6 +380,17 @@ select ok(
             (proc_row.proname in ('merge_workspace_users', 'merge_workspace_users_phase1', 'merge_workspace_users_phase1d')
               and proc_row.prosrc like '%private.user_group_posts%'
               and proc_row.prosrc like '%private.user_group_post_logs%')
+            or (
+              proc_row.proname = 'merge_workspace_users'
+              and proc_row.prosrc like '%private.merge_workspace_users_for_actor(_source_id, _target_id, _ws_id, auth.uid())%'
+              and exists (
+                select 1 from pg_proc implementation
+                where implementation.oid = to_regprocedure('private.merge_workspace_users_for_actor(uuid,uuid,uuid,uuid)')
+                  and coalesce(implementation.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+                  and implementation.prosrc like '%private.user_group_posts%'
+                  and implementation.prosrc like '%private.user_group_post_logs%'
+              )
+            )
             -- Batch wrappers delegate to the helper that keeps the private path.
             or (proc_row.proname = 'merge_workspace_users_phase1d_batch'
               and proc_row.prosrc like '%public.merge_workspace_users_batch_update(%')

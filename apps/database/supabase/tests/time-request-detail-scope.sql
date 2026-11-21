@@ -7,9 +7,9 @@ insert into public.users (id, display_name) values ('00000000-0000-4000-8000-000
 insert into public.workspaces (id, name, creator_id, personal) values
  ('00000000-0000-4000-8000-00000000b3b1', 'Request workspace', '00000000-0000-4000-8000-00000000a3b0', false),
  ('00000000-0000-4000-8000-00000000b3b2', 'Other workspace', '00000000-0000-4000-8000-00000000a3b0', false);
-insert into public.workspace_boards (id, ws_id, name) values
- ('00000000-0000-4000-8000-00000000c3b1', '00000000-0000-4000-8000-00000000b3b1', 'Request board'),
- ('00000000-0000-4000-8000-00000000c3b2', '00000000-0000-4000-8000-00000000b3b2', 'Other board');
+insert into public.workspace_boards (id, ws_id, name, ticket_prefix) values
+ ('00000000-0000-4000-8000-00000000c3b1', '00000000-0000-4000-8000-00000000b3b1', 'Request board', 'REQUEST'),
+ ('00000000-0000-4000-8000-00000000c3b2', '00000000-0000-4000-8000-00000000b3b2', 'Other board', 'OTHER');
 insert into public.task_lists (id, board_id, name) values
  ('00000000-0000-4000-8000-00000000d3b1', '00000000-0000-4000-8000-00000000c3b1', 'Request list'),
  ('00000000-0000-4000-8000-00000000d3b2', '00000000-0000-4000-8000-00000000c3b2', 'Other list');

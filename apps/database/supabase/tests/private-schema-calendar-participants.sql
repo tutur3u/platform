@@ -211,10 +211,22 @@ select ok(
     select bool_and(
       coalesce(proconfig, '{}') @> array['search_path=public, private, pg_temp']
       or (coalesce(proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
-        and prosrc like '%private.calendar_event_virtual_participants%')
+        and (
+          prosrc like '%private.calendar_event_virtual_participants%'
+          or (
+            oid = 'public.merge_workspace_users(uuid,uuid,uuid)'::regprocedure
+            and prosrc like '%private.merge_workspace_users_for_actor(_source_id, _target_id, _ws_id, auth.uid())%'
+            and exists (
+              select 1 from pg_proc implementation
+              where implementation.oid = to_regprocedure('private.merge_workspace_users_for_actor(uuid,uuid,uuid,uuid)')
+                and coalesce(implementation.proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+                and implementation.prosrc like '%private.calendar_event_virtual_participants%'
+            )
+          )
+        ))
     )
     from (
-      select proconfig, prosrc
+      select oid, proconfig, prosrc
       from pg_proc
       where oid in (
         'public.merge_workspace_users(uuid,uuid,uuid)'::regprocedure,

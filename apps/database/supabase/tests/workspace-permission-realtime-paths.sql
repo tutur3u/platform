@@ -82,12 +82,13 @@ values (
 )
 on conflict (ws_id, user_id) do nothing;
 
-insert into public.workspace_boards (id, name, ws_id, creator_id)
+insert into public.workspace_boards (id, name, ws_id, creator_id, ticket_prefix)
 values (
   '9c7302b1-0000-4000-8000-00000000c001',
   'Realtime Board',
   '9c7302b1-0000-4000-8000-00000000b001',
-  '9c7302b1-0000-4000-8000-00000000a005'
+  '9c7302b1-0000-4000-8000-00000000a005',
+  'WORKRT'
 )
 on conflict (id) do nothing;
 
