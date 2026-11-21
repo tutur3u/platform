@@ -449,8 +449,12 @@ refreshes normally expiring access tokens.
 Each affected account appears with its status and one recovery action. A
 confirmed expired or revoked Google credential offers **Reconnect Google**.
 A missing OAuth configuration or an unidentified failure offers a retry.
-The status service logs the failed read category and database error code
-without returning database details to the browser.
+The status endpoint verifies workspace membership before reading server-owned
+sync history. If a status section is unavailable, the response retains the
+sections that succeeded, and the Accounts tab keeps each account's own provider
+status and recovery action. The foreground poll waits for a complete status
+before starting sync. The service logs the failed read category and database
+error code, while the browser receives only the unavailable section names.
 
 Calendar Settings loads Hours and Category Colors through the shared typed
 client. Under the apex mount, the client targets `/calendar/api/` for these

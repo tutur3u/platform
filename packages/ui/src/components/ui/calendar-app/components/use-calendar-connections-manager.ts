@@ -524,7 +524,8 @@ export function useCalendarConnectionsManager(wsId: string) {
     syncStatusQuery.error,
     providerCalendarsQuery.error,
   ];
-  const syncStatusError = statusErrors.some(Boolean);
+  const queryErrored = statusErrors.some(Boolean);
+  const partialStatus = !!syncStatusData?.unavailable?.length;
   const statusCheckFailure = statusErrors.some(
     (error) =>
       error &&
@@ -532,7 +533,8 @@ export function useCalendarConnectionsManager(wsId: string) {
       (error.status === 401 || error.status === 403)
   )
     ? 'session'
-    : statusErrors.some((error) => error && !(error instanceof TypeError))
+    : partialStatus ||
+        statusErrors.some((error) => error && !(error instanceof TypeError))
       ? 'server'
       : 'network';
   const retryStatusMutation = useMutation({
@@ -549,6 +551,7 @@ export function useCalendarConnectionsManager(wsId: string) {
       return (
         accountsResult.isError ||
         statusResult.isError ||
+        !!statusResult.data?.unavailable?.length ||
         providerResult?.isError === true ||
         Object.values(providers ?? {}).some(({ state }) =>
           isCalendarAccountStatusRetryable(state)
@@ -559,7 +562,7 @@ export function useCalendarConnectionsManager(wsId: string) {
   const retrySyncStatus = retryStatusMutation.mutate;
   const syncStatus = deriveCalendarSyncStatus({
     status: syncStatusData,
-    queryErrored: syncStatusError,
+    queryErrored,
     accountsLoaded: accountsQuery.isSuccess,
     accounts,
     needsReconnectAccounts,
@@ -607,7 +610,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     setShowCreateCalendarDialog,
     showCreateCalendarDialog,
     syncHealth,
-    syncStatusError,
+    syncStatusError: queryErrored || partialStatus,
     retrySyncStatus,
     isRetryingSyncStatus: retryStatusMutation.isPending,
     showSyncStatusSupport:

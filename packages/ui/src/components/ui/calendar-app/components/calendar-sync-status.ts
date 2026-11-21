@@ -1,4 +1,7 @@
-import type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
+import type {
+  CalendarProviderAccountState,
+  CalendarSyncStatusResponse,
+} from '@tuturuuu/internal-api/calendar';
 
 export type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
 
@@ -90,6 +93,7 @@ export interface CalendarSyncStatusInput {
   status?: {
     health: CalendarSyncHealthInput;
     failedCalendars?: CalendarSyncFailedCalendar[];
+    unavailable?: CalendarSyncStatusResponse['unavailable'];
   };
   /** Whether any request the status depends on failed, including accounts. */
   queryErrored: boolean;
@@ -192,7 +196,7 @@ export function deriveCalendarSyncStatus(
   const syncing = !!(input.syncMutation.isPending || health?.currentlyRunning);
   const accounts = reconnectAccounts(input);
 
-  if (input.queryErrored) {
+  if (input.queryErrored || input.status?.unavailable?.length) {
     return {
       kind: 'status_error',
       accounts,

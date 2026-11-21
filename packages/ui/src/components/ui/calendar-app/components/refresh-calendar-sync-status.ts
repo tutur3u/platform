@@ -28,6 +28,7 @@ function observeSyncCompletion(
   wsId: string,
   status: CalendarSyncStatusResponse
 ) {
+  if (status.unavailable?.includes('dashboard')) return false;
   let workspaces = observedHealth.get(client);
   if (!workspaces) {
     workspaces = new Map();
@@ -97,6 +98,7 @@ export async function refreshCalendarSyncStatus(
   const recentFailure =
     health.state === 'degraded' && now - lastFailure < SYNC_INTERVAL_MS * 2;
   if (
+    status.unavailable?.length ||
     !focusManager.isFocused() ||
     !onlineManager.isOnline() ||
     (typeof document !== 'undefined' &&

@@ -66,6 +66,29 @@ afterEach(() => {
 });
 
 describe('automatic provider synchronization', () => {
+  it('keeps partial status available without syncing or treating missing history as a completed run', async () => {
+    status.health = {
+      ...status.health,
+      state: 'syncing',
+      currentlyRunning: true,
+    };
+    await refreshCalendarSyncStatus(client, 'ws');
+    client.setQueryData(['provider-calendar-list', 'ws'], []);
+    status.health = {
+      ...status.health,
+      state: 'degraded',
+      reason: 'status_unavailable',
+      currentlyRunning: false,
+    };
+    status.unavailable = ['dashboard'];
+
+    expect(await refreshCalendarSyncStatus(client, 'ws')).toEqual(status);
+    expect(sync).not.toHaveBeenCalled();
+    expect(
+      client.getQueryState(['provider-calendar-list', 'ws'])?.isInvalidated
+    ).toBe(false);
+  });
+
   it('imports stale calendars and refreshes every loaded event range without touching other workspaces', async () => {
     client.setQueryData(['databaseCalendarEvents', 'ws', 'week'], []);
     client.setQueryData(['databaseCalendarEvents', 'ws', 'month'], []);

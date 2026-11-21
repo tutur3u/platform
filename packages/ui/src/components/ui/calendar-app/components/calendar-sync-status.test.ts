@@ -58,6 +58,24 @@ const degraded = (reason: string) =>
   input({ status: { health: health({ state: 'degraded', reason }) } });
 
 describe('deriveCalendarSyncStatus kinds', () => {
+  it('keeps a confirmed account recovery action when sync history is unavailable', () => {
+    const connected = { ...google, id: 'working-account' };
+    const status = deriveCalendarSyncStatus(
+      input({
+        status: {
+          health: health({ state: 'degraded', reason: 'status_unavailable' }),
+          unavailable: ['dashboard'],
+        },
+        accounts: [google, connected],
+        providerAccountStatuses: {
+          [google.id]: { state: 'reconnect_required' },
+          [connected.id]: { state: 'connected' },
+        },
+      })
+    );
+    expect(status).toMatchObject({ kind: 'status_error', accounts: [google] });
+  });
+
   it.each<[string, CalendarSyncStatusInput, CalendarSyncStatusKind]>([
     ['no response yet', input({ status: undefined }), 'loading'],
     [

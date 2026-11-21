@@ -95,6 +95,7 @@ export interface CalendarSyncStatusResponse {
   health: CalendarSyncHealth;
   accountsSummary: { total: number; google: number; microsoft: number };
   connectionsSummary: { total: number; enabled: number };
+  unavailable?: Array<'accounts' | 'connections' | 'dashboard'>;
 }
 
 export interface CalendarSyncResult {
