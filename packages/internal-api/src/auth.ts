@@ -4,6 +4,8 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+export * from './auth-login-view';
+
 const JSON_CONTENT_HEADERS = { 'Content-Type': 'application/json' };
 
 export type InternalOtpClient = 'mobile' | 'tulearn' | 'web';

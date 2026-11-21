@@ -220,11 +220,14 @@ async function resolveDevice(
   const db = await getPrivateDb();
 
   for (const credential of credentials) {
-    const { data } = await db
+    const { data, error } = await db
       .from('web_account_devices')
       .select('id, secret_hash, active_user_id, revoked_at')
       .eq('id', credential.deviceId)
       .maybeSingle();
+    // A read-only lookup reports an unreadable device instead of treating it
+    // as one without saved accounts.
+    if (error && options.touch === false) throw new Error(error.message);
     const row = data as DeviceRow | null;
 
     if (

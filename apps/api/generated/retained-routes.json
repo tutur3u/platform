@@ -1080,6 +1080,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/auth/login-view",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/auth/login-view/route.ts",
+    "sourceSha256": "792fa9689525ff16d98882e0e0112e3cdb268b14178ac3a111d263c2375cd0a3",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/auth/mfa/devices",
     "sideEffects": "unknown",
     "shadow": "never",

@@ -8,7 +8,11 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { DEV_MODE } from '@/constants/env';
-import type { InitialLoginView } from './login-view';
+import {
+  isFocusedExternalSignIn,
+  mayBeFocusedExternalSignIn,
+} from './login-view';
+import { useLoginView } from './use-login-view';
 
 const LoginForm = lazy(() => import('./form'));
 
@@ -25,7 +29,6 @@ export type LoginRuntimeSupabaseConfig = {
 
 type LoginContentProps = {
   authCallbackRedirect?: (url: string) => void;
-  initialView?: InitialLoginView;
   localE2EAuthBypass: boolean;
   runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
 };
@@ -135,7 +138,6 @@ function LoginFormFallback() {
 
 export function LoginContent({
   authCallbackRedirect,
-  initialView,
   localE2EAuthBypass,
   runtimeSupabaseConfig,
 }: LoginContentProps) {
@@ -154,15 +156,18 @@ export function LoginContent({
         ) ?? null)
       : DOMAINS.TUTURUUU;
   }, [returnUrl]);
-  // A server-confirmed session holds the sign-in form back until the browser
-  // finishes routing it, so the form never flashes before a redirect or the
-  // account confirmation. A server-confirmed absence renders it at once.
-  const deferAuthSurfaceUntilSessionCheck = initialView
-    ? initialView.hasSession && !multiAccount
-    : Boolean(
-        returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
-      );
+  const deferAuthSurfaceUntilSessionCheck = Boolean(
+    returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
+  );
   const tuturuuuDomain = DOMAINS.TUTURUUU;
+  const loginView = useLoginView();
+  const provider = searchParams.get('provider');
+  const focusedAppName = isFocusedExternalSignIn(loginView.data, multiAccount)
+    ? (loginView.data?.returnApp?.name ?? null)
+    : null;
+  const focusedPending =
+    loginView.pending &&
+    mayBeFocusedExternalSignIn({ multiAccount, provider, returnUrl });
 
   useEffect(() => {
     if (!callbackCode) {
@@ -189,7 +194,21 @@ export function LoginContent({
       <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
         <div className="fade-in-0 slide-in-from-bottom-4 w-full animate-in duration-300">
           <div className="mb-8 text-center">
-            {isPartnerDomain ? (
+            {focusedAppName || focusedPending ? (
+              <div className="space-y-4">
+                <div>{renderLogo(tuturuuuDomain)}</div>
+                {focusedAppName ? (
+                  <h1 className="text-balance font-bold text-3xl tracking-tight">
+                    {t('login.sign_in_to_continue_to', { app: focusedAppName })}
+                  </h1>
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="mx-auto h-9 w-72 max-w-full animate-pulse rounded-full bg-muted"
+                  />
+                )}
+              </div>
+            ) : isPartnerDomain ? (
               <div className="space-y-4">
                 {usesTuturuuuLogo ? (
                   <div className="flex flex-col items-center justify-center gap-3">
@@ -239,7 +258,7 @@ export function LoginContent({
                   deferAuthSurfaceUntilSessionCheck={
                     deferAuthSurfaceUntilSessionCheck
                   }
-                  initialView={initialView}
+                  loginView={loginView}
                   localE2EAuthBypass={localE2EAuthBypass}
                   runtimeSupabaseConfig={runtimeSupabaseConfig}
                 />

@@ -43,19 +43,29 @@ Customer sign-in supports configured OAuth providers. Staff sign-in has a separa
 Scope: the Web `/login` page, including requests from registered external
 apps and internal satellites (`/login?provider=google&returnUrl=…`).
 
-- The server resolves the initial view before the browser runs: whether a
-  Tuturuuu session exists, the accounts saved on this device and an allowed
-  `provider` hint (`google`, `apple`, `github`). The view carries no identity
-  of the active session and nothing token-shaped.
-- A `provider` hint is advisory. It starts the provider automatically only
-  when there is no session and no saved account on the device. With saved
-  accounts, a provider hint or a cross-app return shows the saved-account
-  chooser first; "Use another account" is the only path to the hinted
-  provider. An existing session goes to the account confirmation for an
-  external or confirmation-requested return, never to the provider.
-- A server-confirmed session holds the sign-in form back behind a loading
-  state until the browser routes it, so the form never flashes before a
-  redirect or confirmation.
+- The login HTML is a cacheable shell and never carries a visitor's
+  identity. When a request has a provider hint or an absolute `returnUrl`,
+  the page reads its view from `GET /api/v1/auth/login-view` (private,
+  `no-store`): whether a session exists with only its name and avatar, the
+  device's saved accounts (id, email, name and avatar only, read without
+  touching the device row), an allowed hint (`google`, `apple`, `github`)
+  and the return app, named only when the external-app registry matches its
+  origin and callback path.
+- **Focused external sign-in.** A hint plus a registered external return app
+  shows one fixed-size card with one decision per step and no other
+  providers or email form:
+  - a session: "Continue to <app>" as that account, or "Use another
+    account", which signs out locally and starts the hinted provider;
+  - saved accounts and no session: one-tap saved accounts, or "Use another
+    account";
+  - neither: the hinted provider starts at once, with a manual button only
+    as a fallback.
+  The header reads "Sign in to continue to <app>". While the view loads, a
+  skeleton of the same size holds the card and header.
+- Elsewhere a hint is advisory: it starts the provider automatically only
+  with no session and a device known to have no saved account. With saved
+  accounts, a hint or a cross-app return shows the saved-account chooser
+  first. Unknown saved accounts (view pending or failed) never auto-start.
 - The return target survives the provider round trip: `returnUrl` and a
   well-formed S256 `code_challenge` pair travel through `/api/auth/callback`
   only for a registry-validated return target. An unregistered target falls
@@ -64,16 +74,18 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the MFA step-up once and mints again. A second refusal, a mint failure,
   unavailable assurance or a stalled step shows the retry card instead of the
   home page.
+- Turnstile renders in a fixed 300 by 65 slot, so the form does not shift
+  when the widget loads.
 
 Exceptions: `multiAccount=true` (add-account) never shows the chooser and
-never starts a provider without a click, and Microsoft (`azure`) is never
-started from a hint. When the server cannot read the saved accounts, the
-browser's list decides before any provider starts. The server render reads
-the vault without touching the device row, so it cannot race an account
-switch, and it sends only each saved account's id, email, name and avatar.
+never starts a provider without a click, and "Use another account" applies
+only to the provider and return it was chosen for. Microsoft (`azure`) is
+never started from a hint.
 
-Coverage: `apps/web/src/app/[locale]/(auth)/login/form-saved-account-chooser.test.tsx`,
-`login-view.test.ts`, `login-view.server.test.ts`, `form-mfa-step-up.test.tsx`,
+Coverage: `apps/web/src/app/[locale]/(auth)/login/form-focused-sign-in.test.tsx`,
+`form-saved-account-chooser.test.tsx`, `login-view.test.ts`,
+`login-view.server.test.ts`, `form-mfa-step-up.test.tsx`, `page.test.tsx`,
+`apps/web/src/app/api/v1/auth/login-view/route.test.ts`,
 `apps/web/src/app/api/auth/callback/route-pkce.test.ts` and
 `apps/web/src/lib/auth/oauth-callback-url.test.ts`.
 

@@ -25,7 +25,9 @@ function view(overrides: Partial<InitialLoginView> = {}): InitialLoginView {
   return {
     hasSession: false,
     providerHint: 'google',
+    returnApp: null,
     savedAccounts: [savedAccount],
+    session: null,
     ...overrides,
   };
 }
@@ -136,15 +138,30 @@ describe('LoginForm saved-account chooser', () => {
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
   });
 
-  it('falls back to the client list when the server could not read saved accounts', async () => {
+  it('waits for a click when the saved accounts could not be read', async () => {
     renderLoginFormSearch('?provider=google', {
       initialView: view({ savedAccounts: null }),
     });
 
-    await waitFor(() => {
-      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
-        expect.objectContaining({ provider: 'google' })
-      );
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('does not carry "Use another account" into an add-account request', async () => {
+    const rendered = renderLoginFormSearch(edufestSearch, {
+      initialView: view(),
     });
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    mocks.signInWithOAuth.mockClear();
+    mocks.searchParams = new URLSearchParams(
+      `?provider=github&multiAccount=true`
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'login.use_another_account' })
+    );
+    rendered.rerender();
+
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
   });
 });

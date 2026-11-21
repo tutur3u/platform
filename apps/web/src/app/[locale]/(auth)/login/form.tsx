@@ -70,12 +70,8 @@ import {
 } from '@/lib/auth/oauth-providers';
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
-import {
-  canAutoStartProvider,
-  type InitialLoginView,
-  readProviderHint,
-  shouldOfferSavedAccountChooser,
-} from './login-view';
+import type { LoginViewState } from './use-login-view';
+import { useSignInRouting } from './use-sign-in-routing';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import {
   classifyCrossAppHandoff,
@@ -110,6 +106,10 @@ import {
   SocialLogoMask,
   TurnstileLoadingFallback,
 } from './login-form-parts';
+import {
+  FocusedSignInCard,
+  FocusedSignInSkeleton,
+} from './focused-sign-in-card';
 import { SavedAccountChooser } from './saved-account-chooser';
 import { SocialLoginButton } from './social-login-button';
 import {
@@ -172,8 +172,8 @@ interface ReturnUrlValidationFailure {
 
 type LoginFormProps = {
   deferAuthSurfaceUntilSessionCheck?: boolean;
-  /** Server-resolved view; absent in harnesses that render the form alone. */
-  initialView?: InitialLoginView;
+  /** Private per-visitor view; absent where the form renders alone. */
+  loginView?: LoginViewState;
   localE2EAuthBypass?: boolean;
   runtimeSupabaseConfig?: {
     supabasePublishableKey: string;
@@ -183,7 +183,7 @@ type LoginFormProps = {
 
 export default function LoginForm({
   deferAuthSurfaceUntilSessionCheck = false,
-  initialView,
+  loginView,
   localE2EAuthBypass: runtimeLocalE2EAuthBypass = false,
   runtimeSupabaseConfig = null,
 }: LoginFormProps) {
@@ -341,43 +341,31 @@ export default function LoginForm({
     string | null
   >(null);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [focusedContinueClicked, setFocusedContinueClicked] = useState(false);
   const [returnUrlValidationFailure, setReturnUrlValidationFailure] =
     useState<ReturnUrlValidationFailure | null>(null);
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
     null
   );
-  const [savedAccountChoiceDismissed, setSavedAccountChoiceDismissed] =
-    useState(false);
-  const providerHint =
-    initialView?.providerHint ?? readProviderHint(searchParams.get('provider'));
-  // The server list paints the chooser first. When the server could not
-  // read it, the client list decides, and until then the saved accounts are
-  // unknown so a provider redirect never races them.
-  const knownSavedAccounts =
-    initialView?.savedAccounts ??
-    (accountSwitcherInitialized ? accounts : null);
-  const savedAccounts = knownSavedAccounts ?? [];
-  const hasKnownSession = initialized
-    ? user !== null
-    : Boolean(initialView?.hasSession);
-  const isMultiAccountLogin = searchParams.get('multiAccount') === 'true';
-  const showSavedAccountChooser = shouldOfferSavedAccountChooser({
-    dismissed: savedAccountChoiceDismissed,
-    hasCrossAppReturn: Boolean(returnUrl && !localReturnPath),
-    hasSession: hasKnownSession,
-    multiAccount: isMultiAccountLogin,
+  const {
+    focusedPending,
+    focusedSignIn,
+    focusedStep,
+    hasKnownSession,
+    initialView,
+    providerAutoStartAllowed,
     providerHint,
+    requestAnotherAccount,
     savedAccounts,
+    showSavedAccountChooser,
+  } = useSignInRouting({
+    initialized,
+    localReturnPath,
+    loginView,
+    returnUrl,
+    searchParams,
+    user,
   });
-  const providerAutoStartAllowed =
-    !showSavedAccountChooser &&
-    (savedAccountChoiceDismissed ||
-      canAutoStartProvider({
-        hasSession: hasKnownSession,
-        multiAccount: isMultiAccountLogin,
-        providerHint,
-        savedAccounts: knownSavedAccounts,
-      }));
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
@@ -598,18 +586,22 @@ export default function LoginForm({
     [captchaRetry, passwordForm, t]
   );
 
+  // The widget mounts empty and grows once its script loads; a fixed slot of
+  // its rendered size (300 x 65) keeps the form from shifting.
   const renderTurnstile = (siteKey: string) => (
-    <Suspense fallback={<TurnstileLoadingFallback />}>
-      <Turnstile
-        ref={captchaRefPassword}
-        siteKey={siteKey}
-        options={SAFARI_SAFE_TURNSTILE_OPTIONS}
-        onSuccess={handleCaptchaSuccess}
-        onExpire={() => setCaptchaToken(undefined)}
-        onError={handleCaptchaError}
-        onTimeout={captchaRetry.onTimeout}
-      />
-    </Suspense>
+    <div className="flex h-[65px] w-[300px] max-w-full items-center justify-center overflow-hidden">
+      <Suspense fallback={<TurnstileLoadingFallback />}>
+        <Turnstile
+          ref={captchaRefPassword}
+          siteKey={siteKey}
+          options={SAFARI_SAFE_TURNSTILE_OPTIONS}
+          onSuccess={handleCaptchaSuccess}
+          onExpire={() => setCaptchaToken(undefined)}
+          onError={handleCaptchaError}
+          onTimeout={captchaRetry.onTimeout}
+        />
+      </Suspense>
+    </div>
   );
 
   const needsMFA = useCallback(
@@ -1333,11 +1325,12 @@ export default function LoginForm({
   );
   useAutoOAuthLogin(
     providerHint,
-    initialized &&
-      readyForAuth &&
+    providerAutoStartAllowed &&
       !requiresMFA &&
       !user &&
-      providerAutoStartAllowed,
+      // A focused sign-in starts at once from the server view; elsewhere the
+      // browser's own session check runs first.
+      (focusedSignIn || (initialized && readyForAuth)),
     handleOAuthLogin
   );
 
@@ -1581,6 +1574,40 @@ export default function LoginForm({
     requiresMFA,
   ]);
 
+  if (focusedPending) return <FocusedSignInSkeleton />;
+
+  if (focusedSignIn && !activeReturnUrlFailure && !requiresMFA) {
+    return (
+      <FocusedSignInCard
+        appName={initialView?.returnApp?.name ?? returnAppName}
+        canContinue={initialized && user !== null}
+        continuing={
+          focusedContinueClicked && (confirmingReturn || redirectingAfterAuth)
+        }
+        onContinue={() => {
+          setFocusedContinueClicked(true);
+          void continueToInternalApp();
+        }}
+        onStartProvider={() =>
+          providerHint && void handleOAuthLogin(providerHint)
+        }
+        onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
+        onUseAnotherAccount={() => {
+          requestAnotherAccount();
+          if (hasKnownSession) void handleUseAnotherAccount();
+        }}
+        providerName={
+          getAuthOAuthProviderOptions(providerHint ?? 'google').name
+        }
+        savedAccounts={savedAccounts}
+        session={initialView?.session ?? null}
+        startingProvider={loading}
+        step={focusedStep}
+        switchingAccountId={switchingAccountId}
+      />
+    );
+  }
+
   if (!canRenderAuthSurface && (!returnUrl || localReturnPath)) {
     return (
       <RedirectingAfterAuthCard label={t('account_switcher.redirecting')} />
@@ -1668,7 +1695,7 @@ export default function LoginForm({
         accounts={savedAccounts}
         appName={returnUrl && !localReturnPath ? returnAppName : null}
         onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
-        onUseAnotherAccount={() => setSavedAccountChoiceDismissed(true)}
+        onUseAnotherAccount={requestAnotherAccount}
         switchingAccountId={switchingAccountId}
       />
     );

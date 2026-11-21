@@ -214,6 +214,7 @@ export function renderLoginFormSearch(
   options: {
     deferAuthSurfaceUntilSessionCheck?: boolean;
     initialView?: InitialLoginView;
+    loginViewPending?: boolean;
     origin?: string;
   } = {}
 ) {
@@ -236,7 +237,14 @@ export function renderLoginFormSearch(
         deferAuthSurfaceUntilSessionCheck={
           options.deferAuthSurfaceUntilSessionCheck
         }
-        initialView={options.initialView}
+        loginView={
+          options.initialView || options.loginViewPending
+            ? {
+                data: options.initialView,
+                pending: Boolean(options.loginViewPending),
+              }
+            : undefined
+        }
       />
     </QueryClientProvider>
   );

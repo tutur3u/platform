@@ -1,34 +1,52 @@
+import type { LoginViewResponse } from '@tuturuuu/internal-api/auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
+import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
+import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { matchesRegisteredCallbackPath } from '@/lib/auth/cross-app-pkce';
 import { peekWebAccounts } from '@/lib/auth/multi-account/vault';
-import { type InitialLoginView, readProviderHint } from './login-view';
+import { readProviderHint } from './login-view';
 
-type LoginSearchParams = Record<string, string | string[] | undefined>;
+type RequestLike = Pick<Request, 'headers' | 'url'>;
 
-function firstValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-async function readHasSession() {
+async function readSession(): Promise<LoginViewResponse['session']> {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    return Boolean(user);
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('display_name, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
+    const metadata = user.user_metadata ?? {};
+
+    return {
+      avatarUrl:
+        readString(profile?.avatar_url) ??
+        readString(metadata.avatar_url) ??
+        readString(metadata.picture),
+      name:
+        readString(profile?.display_name) ??
+        readString(metadata.full_name) ??
+        readString(metadata.name),
+    };
   } catch {
-    return false;
+    return null;
   }
 }
 
-async function readSavedAccounts(): Promise<InitialLoginView['savedAccounts']> {
+async function readSavedAccounts(
+  request: RequestLike
+): Promise<LoginViewResponse['savedAccounts']> {
   try {
-    const requestHeaders = await headers();
-    const host = requestHeaders.get('host') ?? 'localhost';
-    const { accounts } = await peekWebAccounts({
-      headers: requestHeaders,
-      url: `https://${host}/login`,
-    });
+    const { accounts } = await peekWebAccounts(request);
     // Only what the chooser renders; navigation history stays server-side.
     return accounts.map((account) => ({
       email: account.email,
@@ -50,22 +68,58 @@ async function readSavedAccounts(): Promise<InitialLoginView['savedAccounts']> {
   }
 }
 
+/** Decodes only an encoded outer URL, as the cross-app return route does. */
+function decodeOuterReturnUrl(returnUrl: string) {
+  if (!/^https?%3a/i.test(returnUrl)) return returnUrl;
+  try {
+    return decodeURIComponent(returnUrl);
+  } catch {
+    return returnUrl;
+  }
+}
+
 /**
- * Resolves the login view on the server so the first paint already matches
- * the request. The session read is the single seam a provider-agnostic
- * principal lookup replaces.
+ * Only a registry-validated external app (origin and callback path) names
+ * the return target; a label in the query never does.
  */
-export async function resolveInitialLoginView(
-  searchParams: LoginSearchParams
-): Promise<InitialLoginView> {
-  const [hasSession, savedAccounts] = await Promise.all([
-    readHasSession(),
-    readSavedAccounts(),
+async function readReturnApp(
+  returnUrl: string | null
+): Promise<LoginViewResponse['returnApp']> {
+  if (!returnUrl || returnUrl.length > MAX_URL_LENGTH) return null;
+
+  try {
+    const decoded = decodeOuterReturnUrl(returnUrl);
+    const app = await getExternalAppByReturnUrl(decoded);
+    if (!app || !matchesRegisteredCallbackPath(decoded, app.callbackPaths)) {
+      return null;
+    }
+    return { id: app.id, name: app.displayName };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolves the login view for the browser through a private, no-store
+ * route, so the cacheable login shell never carries a visitor's identity.
+ * The session read is the single seam a provider-agnostic principal lookup
+ * replaces.
+ */
+export async function resolveLoginView(
+  request: RequestLike
+): Promise<LoginViewResponse> {
+  const params = new URL(request.url).searchParams;
+  const [session, savedAccounts, returnApp] = await Promise.all([
+    readSession(),
+    readSavedAccounts(request),
+    readReturnApp(params.get('returnUrl')),
   ]);
 
   return {
-    hasSession,
-    providerHint: readProviderHint(firstValue(searchParams.provider)),
+    hasSession: session !== null,
+    providerHint: readProviderHint(params.get('provider')),
+    returnApp,
     savedAccounts,
+    session,
   };
 }
