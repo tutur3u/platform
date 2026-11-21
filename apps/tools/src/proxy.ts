@@ -72,7 +72,26 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     return canonicalLocaleRedirect;
   }
 
-  return intlMiddleware(request);
+  const response = intlMiddleware(request);
+  if (
+    request.method === 'GET' &&
+    request.nextUrl.origin === 'https://tuturuuu.com' &&
+    request.nextUrl.basePath === '/tools' &&
+    request.nextUrl.pathname === '/' &&
+    response.cookies.getAll().length === 1 &&
+    response.cookies.has(LOCALE_COOKIE_NAME)
+  ) {
+    // The public entry detects locale for this response without storing it.
+    const headers = new Headers(response.headers);
+    headers.delete('set-cookie');
+    headers.delete('x-middleware-set-cookie');
+    return new NextResponse(response.body, {
+      headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+  return response;
 }
 
 export const proxy = withSecureLocaleCookie(handleProxy, () => BASE_URL);
