@@ -31,7 +31,12 @@ export function appBaseHeadScript(
  * `createStart({ serverFns: { fetch } })`: sends compiled server-function
  * URLs (`/_serverFn/...`) through the mounted base in the browser.
  */
-export const bridgeServerFnFetch: typeof fetch = (input, init) => {
+// Cast, not annotated: runtimes that add members to `fetch` (Bun's
+// `preconnect`) would otherwise reject a plain function.
+export const bridgeServerFnFetch = ((
+  input: RequestInfo | URL,
+  init?: RequestInit
+) => {
   if (typeof input === 'string') return fetch(withAppBase(input), init);
   if (input instanceof URL) {
     const url = new URL(input);
@@ -39,7 +44,7 @@ export const bridgeServerFnFetch: typeof fetch = (input, init) => {
     return fetch(url, init);
   }
   return fetch(input, init);
-};
+}) as typeof fetch;
 
 /**
  * Head script that registers the document's Trusted Types `default` policy.

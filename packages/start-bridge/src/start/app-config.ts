@@ -2,8 +2,9 @@ import { defaultContentSecurityPolicy } from '../core/csp';
 import { secureBridgeDocument } from '../core/document-security';
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import {
-  isolateMountedRequest,
-  reduceMountedSessionRequest,
+  isolateMountedCookieHeader,
+  type MountIsolationConfig,
+  reduceMountedSessionCookieHeader,
   scopeMountedResponseCookies,
   stripMountedSupabaseWrites,
 } from '../core/mount-isolation';
@@ -113,6 +114,22 @@ function mountedBase<Env>(
 }
 
 /**
+ * A body-less copy of a mounted request with the mount's cookie view: an
+ * isolated mount's own cookies, or the baseline reduction. The body may
+ * already have been read by the time responses are wrapped.
+ */
+function reducedView(request: Request, isolation?: MountIsolationConfig) {
+  const headers = new Headers(request.headers);
+  const raw = headers.get('cookie');
+  const cookie = isolation
+    ? isolateMountedCookieHeader(raw, isolation)
+    : reduceMountedSessionCookieHeader(raw);
+  if (cookie === null) headers.delete('cookie');
+  else headers.set('cookie', cookie);
+  return new Request(request.url, { method: request.method, headers });
+}
+
+/**
  * Declares an app's Worker options. `wrapResponse` runs after the bridge, so
  * on a mount it receives the reduced request and its result is guarded again:
  * whatever it adds, a mounted response never writes the Supabase or
@@ -126,29 +143,33 @@ export function defineBridgeAppConfig<Env = unknown>(
   if (!wrap) return config;
   return {
     ...config,
-    async wrapResponse(response, context) {
+    wrapResponse(response, context) {
       const mount = mountedBase(context, config.mounts);
       if (!mount) return wrap(response, context);
-      const request = mount.isolation
-        ? isolateMountedRequest(context.request, mount.isolation)
-        : reduceMountedSessionRequest(context.request);
-      const wrapped = await wrap(response, { ...context, request });
       const appPath =
         new URL(context.request.url).pathname.slice(mount.basePath.length) ||
         '/';
       const logout = isMountedLogoutPath(appPath);
-      const guarded = stripMountedSupabaseWrites(
-        stripMountedSessionWrites(wrapped),
-        logout
-      );
-      return mount.isolation
-        ? scopeMountedResponseCookies(
-            guarded,
-            mount.basePath,
-            mount.isolation,
-            logout
-          )
-        : guarded;
+      const guard = (wrapped: Response) => {
+        const guarded = stripMountedSupabaseWrites(
+          stripMountedSessionWrites(wrapped),
+          logout
+        );
+        return mount.isolation
+          ? scopeMountedResponseCookies(
+              guarded,
+              mount.basePath,
+              mount.isolation,
+              logout
+            )
+          : guarded;
+      };
+      const wrapped = wrap(response, {
+        ...context,
+        request: reducedView(context.request, mount.isolation),
+      });
+      // A synchronous wrapper stays synchronous.
+      return wrapped instanceof Promise ? wrapped.then(guard) : guard(wrapped);
     },
   };
 }
