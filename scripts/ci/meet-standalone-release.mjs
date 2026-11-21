@@ -65,7 +65,7 @@ export const RELEASE_EXCEPTIONS = [
     workflows: ['turbo-unit-tests.yaml'],
     expires: '2026-11-22T16:59:00Z',
     followUp:
-      'Root 6143, 6145-6148, 6287, 6592, 7002, 7012; utils commercial-comparison; Mail HSTS 6778. Wrangler ratchet 6292 is fixed and is not waived. Any other Test failure is outside this grant.',
+      'Root 6143, 6145-6148, 6287, 6592, 7002, 7012; utils commercial-comparison; Mail HSTS 6778. CLI publish-count ratchet 6292 is fixed and is not waived. Any other Test failure is outside this grant.',
   },
 ];
 
