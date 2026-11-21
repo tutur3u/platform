@@ -19120,7 +19120,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindProjectsUnassigned => 'Unassigned';
 
   @override
-  String get mastermindProjectsLoadMore => 'Load 50 more';
+  String mastermindProjectsLoadMore(int count) {
+    return 'Load $count more';
+  }
 
   @override
   String get mastermindProjectsLoadingThreads => 'Loading threads';
@@ -19324,6 +19326,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
     return '$cancelled duplicates · $quota after quota · $recovered retried OK';
   }
+
+  @override
+  String get mastermindProjectsWriteAnother => 'Write another';
+
+  @override
+  String get mastermindProjectsStillDelivers => 'This reply still delivers when the machine takes it';
+
+  @override
+  String get mastermindProjectsAllThreads => 'All threads';
+
+  @override
+  String get mastermindProjectsCheckAgain => 'Check again';
 
   @override
   String get mastermindShipLiveCheckNow => 'Check now';

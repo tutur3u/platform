@@ -7,11 +7,13 @@ import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/projects/cubit/projects_cubit.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_id_store.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_live.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_controls.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_list_view.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
@@ -24,6 +26,7 @@ class ProjectsPage extends StatelessWidget {
   const ProjectsPage({
     this.initialState,
     this.repository,
+    this.ids,
     this.live = true,
     this.now,
     super.key,
@@ -31,6 +34,9 @@ class ProjectsPage extends StatelessWidget {
 
   final ProjectThreadState? initialState;
   final ProjectsRepository? repository;
+
+  /// Where the offline view's ids are kept; the runtime's store by default.
+  final ProjectsIdStore? ids;
 
   /// Listens to the owner socket for `threads` pokes.
   final bool live;
@@ -61,11 +67,17 @@ class _ProjectsBody extends StatefulWidget {
 class _ProjectsBodyState extends State<_ProjectsBody>
     with WidgetsBindingObserver {
   late final ProjectsRepository _repository =
-      widget.page.repository ?? sharedProjectsRepository();
+      widget.page.repository ??
+      sharedProjectsRepository(
+        cache: context.read<MastermindRuntime?>()?.threadCache,
+        userId: context.read<MastermindRuntime?>()?.userId,
+      );
   late final ProjectsCubit _cubit = ProjectsCubit(
     repository: _repository,
     initialFilter: widget.page.initialState,
     clock: widget.page.now,
+    ids: widget.page.ids ?? context.read<MastermindRuntime?>()?.projectIds,
+    userId: context.read<MastermindRuntime?>()?.userId,
   );
   StreamSubscription<Object?>? _frames;
   final _search = TextEditingController();

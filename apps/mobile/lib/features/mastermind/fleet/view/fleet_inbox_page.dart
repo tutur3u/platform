@@ -21,6 +21,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_snooze.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_undelivered_row.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
+import 'package:mobile/features/mastermind/projects/view/projects_inbox_action.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -246,6 +247,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
       slivers: [
         SliverList.list(
           children: [
+            const ProjectsInboxAction(),
             FleetFreshnessLine(state: state, now: widget.now),
             FleetInboxLaneSwitch(
               lane: _lane,

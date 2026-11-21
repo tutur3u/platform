@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/mastermind/projects/cubit/thread_state.dart';
-import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/thread_models.dart';
-import 'package:mobile/features/mastermind/projects/view/projects_labels.dart';
-import 'package:mobile/features/mastermind/projects/view/reply_receipt_line.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// A transcript message. User-role messages sit on the right, assistant
@@ -27,67 +23,11 @@ class ThreadMessageBubble extends StatelessWidget {
         if (message.truncated)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: _Muted(l10n.mastermindProjectsTruncated, italic: true),
-          ),
-      ],
-    );
-  }
-}
-
-/// A reply posted from this screen, with its receipt line.
-class PostedReplyBubble extends StatelessWidget {
-  const PostedReplyBubble({
-    required this.reply,
-    required this.onRetry,
-    required this.onSignIn,
-    super.key,
-  });
-
-  final PostedReply reply;
-  final VoidCallback onRetry;
-
-  /// Starts the app's MFA step-up after a 401 `mfa_required`.
-  final VoidCallback onSignIn;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final failure = reply.failure;
-    return ThreadBubbleFrame(
-      user: true,
-      time: reply.at,
-      children: [
-        Text(reply.text),
-        const SizedBox(height: 6),
-        ReplyReceiptLine(phase: reply.phase),
-        if (failure != null) ...[
-          const SizedBox(height: 4),
-          _Muted(failure.message(l10n)),
-        ],
-        if (reply.retryable)
-          if (switch (failure) {
-                ProjectsFailureKind.mfaRequired => (
-                  l10n.mastermindProjectsSignInAgain,
-                  onSignIn,
-                ),
-                // Only a transport failure can succeed by sending again.
-                ProjectsFailureKind.unavailable ||
-                ProjectsFailureKind.timeout ||
-                ProjectsFailureKind.machineOffline ||
-                null => (l10n.commonRetry, onRetry),
-                _ => null,
-              }
-              case (final label, final onPressed))
-            Align(
-              alignment: Alignment.centerRight,
-              child: AppButton(
-                variant: AppButtonVariant.ghost,
-                density: AppButtonDensity.compact,
-                size: AppButtonSize.small,
-                onPressed: onPressed,
-                child: Text(label),
-              ),
+            child: ThreadMutedText(
+              l10n.mastermindProjectsTruncated,
+              italic: true,
             ),
+          ),
       ],
     );
   }
@@ -143,7 +83,7 @@ class ThreadBubbleFrame extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
-            child: _Muted(at),
+            child: ThreadMutedText(at),
           ),
         ],
       ),
@@ -182,8 +122,9 @@ class RedactedText extends StatelessWidget {
   }
 }
 
-class _Muted extends StatelessWidget {
-  const _Muted(this.text, {this.italic = false});
+/// Small muted text under and inside bubbles.
+class ThreadMutedText extends StatelessWidget {
+  const ThreadMutedText(this.text, {this.italic = false, super.key});
 
   final String text;
   final bool italic;

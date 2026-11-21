@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/mastermind/projects/cubit/thread_state.dart';
 import 'package:mobile/features/mastermind/projects/data/fixture_projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/projects_location.dart';
 import 'package:mobile/features/mastermind/projects/view/project_thread_page.dart';
+import 'package:mobile/features/mastermind/projects/view/projects_labels.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_page.dart';
 import 'package:mobile/features/mastermind/projects/view/reply_receipt_line.dart';
-import 'package:mobile/features/mastermind/projects/view/thread_bubbles.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -201,34 +200,40 @@ void main() {
     }
   });
 
-  testWidgets('mfa_required offers Sign in again, not Retry', (tester) async {
-    var signIns = 0;
-    Widget bubble(ProjectsFailureKind failure) => PostedReplyBubble(
-      reply: PostedReply(
-        localId: 'l1',
-        text: 'Ship it',
-        idempotencyKey: 'k',
-        at: _now,
-        sending: false,
-        failure: failure,
+  testWidgets('needs MFA offers Sign in again; Send again delivers', (
+    tester,
+  ) async {
+    final bridge = (await repository.machines()).first;
+    await tester.pumpApp(
+      ProjectThreadPage(
+        machine: bridge,
+        threadId: 'p_tuturuuu_0',
+        repository: repository,
+        live: false,
       ),
-      onRetry: () {},
-      onSignIn: () => signIns++,
     );
-    await tester.pumpApp(bubble(ProjectsFailureKind.mfaRequired));
     await tester.pumpAndSettle();
+    repository.failNext = ProjectsFailureKind.mfaRequired;
+    final field = find.byKey(const ValueKey('projects-composer-field')).last;
+    final send = find.byKey(const ValueKey('projects-composer-send'));
+    await tester.enterText(field, 'Ship it');
+    await tester.pump();
+    await tester.tap(send);
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in again'), findsOneWidget);
+    expect(find.text('Verify this device with MFA to reply'), findsOneWidget);
     expect(find.text('Retry'), findsNothing);
-    await tester.tap(find.text('Sign in again'));
-    expect(signIns, 1);
-
-    await tester.pumpApp(bubble(ProjectsFailureKind.unavailable));
+    expect(find.text('Not delivered'), findsNothing);
+    // The text stays for the resend under the same key.
+    await tester.tap(send);
     await tester.pumpAndSettle();
-    expect(find.text('Retry'), findsOneWidget);
-
-    await tester.pumpApp(bubble(ProjectsFailureKind.forbidden));
-    await tester.pumpAndSettle();
-    expect(find.text('Retry'), findsNothing);
-    expect(find.text('Sign in again'), findsNothing);
+    expect(find.text('Sent'), findsOneWidget);
+    expect(find.text('Write another'), findsOneWidget);
+    expect(find.text('Check again'), findsOneWidget);
+    expect(
+      find.text('This reply still delivers when the machine takes it'),
+      findsOneWidget,
+    );
   });
 
   test('projectsLocation keeps the Work path', () {

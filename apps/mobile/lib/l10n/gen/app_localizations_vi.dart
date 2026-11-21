@@ -18897,7 +18897,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindProjectsUnassigned => 'Chưa gán dự án';
 
   @override
-  String get mastermindProjectsLoadMore => 'Tải thêm 50';
+  String mastermindProjectsLoadMore(int count) {
+    return 'Tải thêm $count';
+  }
 
   @override
   String get mastermindProjectsLoadingThreads => 'Đang tải luồng';
@@ -19101,6 +19103,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered) {
     return '$cancelled trùng lặp · $quota sau hạn mức · $recovered chạy lại đạt';
   }
+
+  @override
+  String get mastermindProjectsWriteAnother => 'Viết tin khác';
+
+  @override
+  String get mastermindProjectsStillDelivers => 'Tin này vẫn được gửi khi máy nhận';
+
+  @override
+  String get mastermindProjectsAllThreads => 'Mọi luồng';
+
+  @override
+  String get mastermindProjectsCheckAgain => 'Kiểm tra lại';
 
   @override
   String get mastermindShipLiveCheckNow => 'Kiểm tra ngay';

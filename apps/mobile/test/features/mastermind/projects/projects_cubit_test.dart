@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/projects/cubit/projects_cubit.dart';
 import 'package:mobile/features/mastermind/projects/data/fixture_projects_repository.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_id_store.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 
@@ -11,6 +12,7 @@ void main() {
   late ProjectsCubit cubit;
 
   setUp(() {
+    resetSharedProjectsRepository();
     repository = FixtureProjectsRepository(
       now: _now,
       linkedLatency: Duration.zero,
@@ -188,7 +190,10 @@ void main() {
     repository.failNext = ProjectsFailureKind.timeout;
     await cubit.setFilter(ProjectThreadState.waiting);
     expect(cubit.state.filter, isNull);
-    expect(cubit.state.groups, same(groups));
+    expect(
+      cubit.state.groups['p_tuturuuu']!.threads,
+      groups['p_tuturuuu']!.threads,
+    );
     expect(cubit.state.failure, ProjectsFailureKind.timeout);
   });
 
@@ -199,7 +204,7 @@ void main() {
     repository.failNext = ProjectsFailureKind.machineOffline;
     await cubit.setSearch('bridge');
     expect(cubit.state.search, 'calendar');
-    expect(cubit.state.flat, same(shown));
+    expect(cubit.state.flat.threads, shown.threads);
     expect(cubit.state.stale, isTrue);
   });
 
@@ -265,6 +270,122 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'offline with nothing in memory shows the cached list and its time',
+    () async {
+      await cubit.load();
+      await cubit.selectMachine(cubit.state.machines[1]);
+      expect(cubit.state.flat.threads, isNotEmpty);
+
+      final cold = ProjectsCubit(repository: repository, clock: () => _now);
+      addTearDown(cold.close);
+      await cold.load();
+      repository.failNext = ProjectsFailureKind.machineOffline;
+      await cold.selectMachine(cold.state.machines[1]);
+      expect(cold.state.status, ProjectsStatus.ready);
+      expect(cold.state.flat.threads, cubit.state.flat.threads);
+      expect(cold.state.failure, ProjectsFailureKind.machineOffline);
+      expect(cold.state.stale, isTrue);
+      expect(cold.state.fetchedAt, _now);
+    },
+  );
+
+  test('a rollback never leaves a restored slice loading', () async {
+    final refusing = _RefusesFilters(now: _now);
+    final c = ProjectsCubit(repository: refusing);
+    addTearDown(c.close);
+    await c.load();
+    await c.selectMachine(c.state.machines[1]);
+    final more = c.loadMoreFlat();
+    expect(c.state.flat.loading, isTrue);
+    await c.setFilter(ProjectThreadState.running);
+    expect(c.state.filter, isNull);
+    expect(c.state.flat.loading, isFalse);
+    await more;
+    expect(c.state.flat.loading, isFalse);
+  });
+
+  test(
+    'a cold open offline uses the remembered machines and cached groups',
+    () async {
+      await cubit.load();
+      expect(cubit.state.groups['p_tuturuuu']!.threads, isNotEmpty);
+
+      repository.offline = true;
+      final cold = ProjectsCubit(repository: repository, clock: () => _now);
+      addTearDown(cold.close);
+      await cold.load();
+      expect(cold.state.machines, cubit.state.machines);
+      expect(cold.state.status, ProjectsStatus.ready);
+      expect(cold.state.flatMode, isFalse);
+      expect(
+        cold.state.groups['p_tuturuuu']!.threads,
+        cubit.state.groups['p_tuturuuu']!.threads,
+      );
+      expect(cold.state.stale, isTrue);
+    },
+  );
+
+  test('offline with nothing remembered is a failure state', () async {
+    repository.offline = true;
+    await cubit.load();
+    expect(cubit.state.status, ProjectsStatus.failed);
+    expect(cubit.state.failure, ProjectsFailureKind.machineOffline);
+  });
+
+  test('after a restart, stored ids find the cached groups offline', () async {
+    final ids = MemoryProjectsIdStore();
+    final warm = ProjectsCubit(repository: repository, ids: ids);
+    addTearDown(warm.close);
+    await warm.load();
+    await Future<void>.delayed(Duration.zero);
+    final stored = await ids.read('');
+    expect(stored!.machineId, FixtureProjectsRepository.bridgeId);
+    expect(stored.environmentIds, ['env_m4', 'env_build']);
+    expect(stored.projectIds, ['p_tuturuuu']);
+
+    // A restart forgets the session; only the ids and the cache remain.
+    resetSharedProjectsRepository();
+    repository.offline = true;
+    final cold = ProjectsCubit(
+      repository: repository,
+      ids: ids,
+      clock: () => _now,
+    );
+    addTearDown(cold.close);
+    await cold.load();
+    expect(cold.state.machines.map((m) => m.environmentId), [
+      null,
+      'env_m4',
+      'env_build',
+    ]);
+    expect(cold.state.status, ProjectsStatus.ready);
+    expect(cold.state.stale, isTrue);
+    final group = cold.state.overview!.groups.single;
+    // The header's name comes from the cached rows.
+    expect(group.project, 'tuturuuu');
+    expect(
+      cold.state.groups['p_tuturuuu']!.threads,
+      warm.state.groups['p_tuturuuu']!.threads,
+    );
+  });
+}
+
+/// Refuses every state-filtered read as offline.
+class _RefusesFilters extends FixtureProjectsRepository {
+  _RefusesFilters({super.now}) : super(linkedLatency: Duration.zero);
+
+  @override
+  Future<ThreadListPage> threads(
+    ProjectsMachine machine,
+    ProjectThreadQuery query,
+  ) {
+    if (query.state != null) {
+      throw const ProjectsException(ProjectsFailureKind.machineOffline);
+    }
+    return super.threads(machine, query);
+  }
 }
 
 /// Records the search of every flat read.
@@ -300,6 +421,7 @@ class _NoProjects implements ProjectsRepository {
     switch (invocation.memberName) {
       #machines => _inner.machines,
       #threads => _inner.threads,
+      #cachedThreads => _inner.cachedThreads,
       #markRead => _inner.markRead,
       #seenMarks => () => _inner.seenMarks,
       _ => throw UnimplementedError('${invocation.memberName}'),

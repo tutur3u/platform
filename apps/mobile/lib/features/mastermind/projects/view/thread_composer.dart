@@ -1,47 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/mastermind/projects/cubit/thread_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The pill composer that floats above the dock. Text only, up to
-/// [ThreadCubit.maxReplyLength] characters; the reply is steered into the
-/// running turn or starts an idle thread.
+/// [fleetReplyMaxChars] characters; the reply is steered into the running
+/// turn or starts an idle thread. The page owns [controller], so the text
+/// stays for a resend under the same key until a reply is taken.
 class ThreadComposer extends StatefulWidget {
-  const ThreadComposer({required this.onSend, super.key});
+  const ThreadComposer({
+    required this.controller,
+    required this.onSend,
+    this.enabled = true,
+    super.key,
+  });
 
-  /// Returns whether the text was taken; the field clears only then.
-  final bool Function(String text) onSend;
+  final TextEditingController controller;
+  final ValueChanged<String> onSend;
+
+  /// False while a reply is being sent or held for the machine.
+  final bool enabled;
 
   @override
   State<ThreadComposer> createState() => _ThreadComposerState();
 }
 
 class _ThreadComposerState extends State<ThreadComposer> {
-  final _controller = TextEditingController();
+  TextEditingController get _controller => widget.controller;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() {}));
+    _controller.addListener(_changed);
+  }
+
+  @override
+  void didUpdateWidget(covariant ThreadComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_changed);
+      widget.controller.addListener(_changed);
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.removeListener(_changed);
     super.dispose();
   }
 
-  void _send() {
-    if (widget.onSend(_controller.text)) _controller.clear();
-  }
+  void _changed() => setState(() {});
+
+  void _send() => widget.onSend(_controller.text);
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final colors = AppTokens.of(context).colorScheme;
     final text = _controller.text.trim();
-    final tooLong = text.length > ThreadCubit.maxReplyLength;
+    final tooLong = text.length > fleetReplyMaxChars;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,7 +107,9 @@ class _ThreadComposerState extends State<ThreadComposer> {
                   tooltip: l10n.mastermindProjectsSend,
                   variant: AppButtonVariant.primary,
                   shape: AppButtonShape.circle,
-                  onPressed: text.isEmpty || tooLong ? null : _send,
+                  onPressed: !widget.enabled || text.isEmpty || tooLong
+                      ? null
+                      : _send,
                 ),
               ],
             ),

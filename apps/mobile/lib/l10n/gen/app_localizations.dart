@@ -35128,8 +35128,8 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindProjectsLoadMore.
   ///
   /// In en, this message translates to:
-  /// **'Load 50 more'**
-  String get mastermindProjectsLoadMore;
+  /// **'Load {count} more'**
+  String mastermindProjectsLoadMore(int count);
 
   /// No description provided for @mastermindProjectsLoadingThreads.
   ///
@@ -35484,6 +35484,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{cancelled} duplicates · {quota} after quota · {recovered} retried OK'**
   String mastermindFleetRecoveredBreakdown(int cancelled, int quota, int recovered);
+
+  /// No description provided for @mastermindProjectsWriteAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Write another'**
+  String get mastermindProjectsWriteAnother;
+
+  /// No description provided for @mastermindProjectsStillDelivers.
+  ///
+  /// In en, this message translates to:
+  /// **'This reply still delivers when the machine takes it'**
+  String get mastermindProjectsStillDelivers;
+
+  /// No description provided for @mastermindProjectsAllThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'All threads'**
+  String get mastermindProjectsAllThreads;
+
+  /// No description provided for @mastermindProjectsCheckAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get mastermindProjectsCheckAgain;
 
   /// No description provided for @mastermindShipLiveCheckNow.
   ///

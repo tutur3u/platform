@@ -9450,7 +9450,14 @@
   "mastermindProjectsThisMachine": "This machine",
   "mastermindProjectsSearch": "Search threads",
   "mastermindProjectsUnassigned": "Unassigned",
-  "mastermindProjectsLoadMore": "Load 50 more",
+  "mastermindProjectsLoadMore": "Load {count} more",
+  "@mastermindProjectsLoadMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mastermindProjectsLoadingThreads": "Loading threads",
   "mastermindProjectsNew": "new",
   "mastermindProjectsUnread": "{count} unread",
@@ -9616,6 +9623,10 @@
       }
     }
   },
+  "mastermindProjectsWriteAnother": "Write another",
+  "mastermindProjectsStillDelivers": "This reply still delivers when the machine takes it",
+  "mastermindProjectsAllThreads": "All threads",
+  "mastermindProjectsCheckAgain": "Check again",
   "mastermindShipLiveCheckNow": "Check now",
   "mastermindShipLiveChecking": "Checking sources",
   "mastermindShipLiveCheckedAgo": "Checked {age} ago",

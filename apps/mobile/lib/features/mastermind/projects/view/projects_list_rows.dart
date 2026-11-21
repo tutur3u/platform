@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/projects/cubit/projects_state.dart';
@@ -71,7 +73,7 @@ class ProjectsListFooter extends StatelessWidget {
         onTap: onLoadMore,
         child: _FooterRow(
           child: Text(
-            l10n.mastermindProjectsLoadMore,
+            l10n.mastermindProjectsLoadMore(_nextPageSize(slice)),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colors.primary,
               fontWeight: FontWeight.w700,
@@ -87,6 +89,12 @@ class ProjectsListFooter extends StatelessWidget {
     }
     return const SizedBox.shrink();
   }
+}
+
+/// How many rows the next page brings: up to 50, from the filtered total.
+int _nextPageSize(ThreadListSlice slice) {
+  final left = slice.total - slice.threads.length;
+  return left > 0 ? math.min(50, left) : 50;
 }
 
 class _FooterRow extends StatelessWidget {

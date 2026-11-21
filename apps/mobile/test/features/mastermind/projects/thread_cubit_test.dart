@@ -18,14 +18,11 @@ void main() {
     bridge = (await repository.machines()).first;
   });
 
-  var keys = 0;
   ThreadCubit cubitFor(String threadId) {
     final cubit = ThreadCubit(
       repository: repository,
       machine: bridge,
       threadId: threadId,
-      newKey: () => '00000000-0000-4000-8000-00000000000${++keys}',
-      clock: () => _now,
     );
     addTearDown(cubit.close);
     return cubit;
@@ -63,60 +60,6 @@ void main() {
     await cubit.load();
     expect(cubit.state.status, ThreadStatus.failed);
     expect(cubit.state.failure, ProjectsFailureKind.notFound);
-  });
-
-  test('a reply goes Sending, Sent, then Steered on a receipt hint', () async {
-    final cubit = cubitFor('p_tuturuuu_0');
-    await cubit.load();
-    expect(cubit.send('Keep going'), isTrue);
-    expect(cubit.state.replies.single.phase, ReplyPhase.sending);
-    await settle();
-    expect(cubit.state.replies.single.phase, ReplyPhase.sent);
-    await cubit.refreshReceipts();
-    expect(cubit.state.replies.single.phase, ReplyPhase.steered);
-  });
-
-  test(
-    'an idle thread starts, a waiting one queues, a failed one fails',
-    () async {
-      for (final (id, phase) in [
-        ('p_tuturuuu_2', ReplyPhase.started),
-        ('p_tuturuuu_1', ReplyPhase.queued),
-        ('p_tuturuuu_5', ReplyPhase.failed),
-      ]) {
-        final cubit = cubitFor(id)..send('Next');
-        await settle();
-        await cubit.refreshReceipts();
-        expect(cubit.state.replies.single.phase, phase, reason: id);
-        expect(cubit.state.replies.single.retryable, isFalse);
-      }
-    },
-  );
-
-  test(
-    'a failed POST is Not delivered and retries under the same key',
-    () async {
-      final cubit = cubitFor('p_tuturuuu_0');
-      repository.failNext = ProjectsFailureKind.mfaRequired;
-      cubit.send('Ship it');
-      await settle();
-      final failed = cubit.state.replies.single;
-      expect(failed.phase, ReplyPhase.failed);
-      expect(failed.failure, ProjectsFailureKind.mfaRequired);
-      expect(failed.retryable, isTrue);
-
-      await cubit.retry(failed.localId);
-      final sent = cubit.state.replies.single;
-      expect(sent.phase, ReplyPhase.sent);
-      expect(sent.receipt!.id, failed.idempotencyKey);
-    },
-  );
-
-  test('empty and over-long replies are refused', () {
-    final cubit = cubitFor('p_tuturuuu_0');
-    expect(cubit.send('   '), isFalse);
-    expect(cubit.send('x' * (ThreadCubit.maxReplyLength + 1)), isFalse);
-    expect(cubit.state.replies, isEmpty);
   });
 
   test('a stale load and a stale earlier page never apply', () async {

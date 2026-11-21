@@ -3,10 +3,15 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/mastermind/projects/cubit/projects_state.dart';
 import 'package:mobile/features/mastermind/projects/cubit/slice_ops.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_id_store.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_memory.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 
 export 'package:mobile/features/mastermind/projects/cubit/projects_state.dart';
+
+part 'projects_offline.dart';
+part 'projects_paging.dart';
 
 /// The Projects list. Every read is a snapshot taken on entry, resume, pull
 /// to refresh or a live `threads` poke; the cubit never polls.
@@ -19,7 +24,11 @@ class ProjectsCubit extends Cubit<ProjectsState> {
     required ProjectsRepository repository,
     ProjectThreadState? initialFilter,
     DateTime Function()? clock,
+    ProjectsIdStore? ids,
+    String? Function()? userId,
   }) : _repository = repository,
+       _ids = ids,
+       _userId = userId ?? _noAccount,
        _clock = clock ?? DateTime.now,
        super(ProjectsState(filter: initialFilter)) {
     _seen = repository.seenMarks.listen(_applySeen);
@@ -32,6 +41,14 @@ class ProjectsCubit extends Cubit<ProjectsState> {
 
   final ProjectsRepository _repository;
   final DateTime Function() _clock;
+  final ProjectsIdStore? _ids;
+
+  /// The signed-in account. Each read captures it when it starts and keeps
+  /// what it learned (session memory, stored ids) only while that account
+  /// is still signed in.
+  final String? Function() _userId;
+  static String? _noAccount() => '';
+  Future<void> _idsWrite = Future.value();
   late final StreamSubscription<ThreadSeenMark> _seen;
   int _generation = 0;
   bool _seeded = false;
@@ -58,15 +75,32 @@ class ProjectsCubit extends Cubit<ProjectsState> {
 
   Future<void> load() async {
     if (state.machines.isEmpty) {
+      final owner = _userId();
+      List<ProjectsMachine> machines;
       try {
-        final machines = await _repository.machines();
-        if (isClosed) return;
-        final machine = state.machine ?? machines.firstOrNull;
-        emit(state.copyWith(machines: machines, machine: machine));
+        machines = await _repository.machines();
+        if (!_signedIn(owner)) return;
+        ProjectsMemory.shared.rememberMachines(owner, machines);
+        _rememberMachines(owner, machines);
       } on ProjectsException catch (error) {
-        if (!isClosed) _fail(error.kind);
-        return;
+        if (!_signedIn(owner)) return;
+        // Offline, the machines read last still name the cached lists.
+        final remembered =
+            ProjectsMemory.shared.machinesFor(owner) ??
+            (error.kind == ProjectsFailureKind.machineOffline
+                ? await _machinesFromIds(owner)
+                : null);
+        if (!_signedIn(owner)) return;
+        if (error.kind != ProjectsFailureKind.machineOffline ||
+            remembered == null) {
+          if (!isClosed) _fail(error.kind);
+          return;
+        }
+        machines = remembered;
       }
+      if (isClosed) return;
+      final machine = state.machine ?? machines.firstOrNull;
+      emit(state.copyWith(machines: machines, machine: machine));
     }
     await refresh();
   }
@@ -83,6 +117,11 @@ class ProjectsCubit extends Cubit<ProjectsState> {
     try {
       await _readView(generation);
     } on ProjectsException catch (error) {
+      if (_stale(generation)) return;
+      if (error.kind == ProjectsFailureKind.machineOffline &&
+          await _showCached(generation)) {
+        return;
+      }
       if (!_stale(generation)) _fail(error.kind);
     }
   }
@@ -99,6 +138,7 @@ class ProjectsCubit extends Cubit<ProjectsState> {
       await _readFirstFlat(generation);
       return;
     }
+    final owner = _userId();
     final ProjectsOverview overview;
     try {
       overview = await _repository.projects(machine);
@@ -113,7 +153,8 @@ class ProjectsCubit extends Cubit<ProjectsState> {
       await _readFirstFlat(generation);
       return;
     }
-    if (_stale(generation)) return;
+    if (_stale(generation) || !_signedIn(owner)) return;
+    ProjectsMemory.shared.rememberOverview(owner, machine, overview);
     final expanded = _seeded
         ? state.expanded
         : {
@@ -243,7 +284,8 @@ class ProjectsCubit extends Cubit<ProjectsState> {
   );
 
   /// Puts back the filter, search and lists from before a change whose read
-  /// failed, with the failure shown over them.
+  /// failed, with the failure shown over them. No restored slice is left
+  /// loading: the reads that set it are gone.
   void _rollback(ProjectsState previous, ProjectsFailureKind kind) => emit(
     previous.copyWith(
       failure: () => kind,
@@ -252,6 +294,11 @@ class ProjectsCubit extends Cubit<ProjectsState> {
           : ProjectsStatus.failed,
       busy: false,
       rollbacks: state.rollbacks + 1,
+      flat: previous.flat.copyWith(loading: false),
+      groups: {
+        for (final MapEntry(:key, :value) in previous.groups.entries)
+          key: value.copyWith(loading: false),
+      },
     ),
   );
 
@@ -296,73 +343,25 @@ class ProjectsCubit extends Cubit<ProjectsState> {
     return filter == null || group.counts.of(filter) > 0;
   }
 
-  Future<void> _loadGroup(
-    int generation,
-    String projectId, {
-    required bool reset,
-  }) async {
-    final machine = state.machine;
-    if (machine == null || machine.linked) return;
-    // A reset keeps the rows on screen until the fresh page replaces them.
-    final current = state.groups[projectId] ?? const ThreadListSlice();
-    _putGroup(projectId, current.copyWith(loading: true, failure: () => null));
-    try {
-      final page = await _repository.threads(
-        machine,
-        ProjectThreadQuery(
-          projectId: projectId,
-          state: state.filter,
-          cursor: reset ? null : current.nextCursor,
-        ),
-      );
-      if (_stale(generation)) return;
-      _putGroup(
-        projectId,
-        (reset ? const ThreadListSlice() : current).append(page),
-      );
-    } on ProjectsException catch (error) {
-      if (_stale(generation)) return;
-      _putGroup(
-        projectId,
-        current.copyWith(loading: false, failure: () => error.kind),
-      );
-    }
-  }
+  /// For the part files, which cannot call the protected `emit`.
+  void _set(ProjectsState next) => emit(next);
 
-  Future<void> _loadFlat(int generation, {required bool reset}) async {
-    final machine = state.machine;
-    if (machine == null) return;
-    final current = state.flat;
-    emit(
-      state.copyWith(
-        flat: current.copyWith(loading: true, failure: () => null),
-      ),
-    );
-    try {
-      final search = state.search;
-      final page = await _repository.threads(
-        machine,
-        ProjectThreadQuery(
-          state: state.filter,
-          search: search.isEmpty ? null : search,
-          cursor: reset ? null : current.nextCursor,
-        ),
-      );
-      if (_stale(generation)) return;
-      emit(
-        state.copyWith(
-          status: ProjectsStatus.ready,
-          failure: () => null,
-          fetchedAt: reset ? () => page.cachedAt ?? _clock().toUtc() : null,
-          busy: false,
-          flat: (reset ? const ThreadListSlice() : current).append(page),
-        ),
-      );
-    } on ProjectsException catch (error) {
-      if (_stale(generation)) return;
-      emit(state.copyWith(flat: state.flat.copyWith(loading: false)));
-      _fail(error.kind);
-    }
+  /// Whether [owner], captured when a read started, is still the
+  /// signed-in account of an open cubit.
+  bool _signedIn(String? owner) => !isClosed && owner == _userId();
+
+  /// Updates [owner]'s stored ids one write at a time.
+  void _writeIds(
+    String? owner,
+    ProjectsIds Function(ProjectsIds? known) update,
+  ) {
+    final store = _ids;
+    if (store == null || owner == null) return;
+    _idsWrite = _idsWrite
+        .then((_) async {
+          await store.write(owner, update(await store.read(owner)));
+        })
+        .catchError((Object _) {});
   }
 
   void _putGroup(String projectId, ThreadListSlice slice) =>

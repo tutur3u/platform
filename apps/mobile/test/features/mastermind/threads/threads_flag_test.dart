@@ -51,7 +51,7 @@ void main() {
   final live = ProjectsLive.shared;
   final repository = createProjectsRepository;
   setUp(() {
-    createProjectsRepository = FixtureProjectsRepository.new;
+    createProjectsRepository = ({cache, userId}) => FixtureProjectsRepository();
     ProjectsLive.shared = ProjectsLive((_) => (start: () {}, stop: () {}));
   });
   tearDown(() {

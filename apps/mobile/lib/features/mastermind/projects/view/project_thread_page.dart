@@ -3,22 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_thread_reply_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_owner_live.dart';
 import 'package:mobile/features/mastermind/projects/cubit/thread_cubit.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_live.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
-import 'package:mobile/features/mastermind/projects/view/projects_labels.dart';
-import 'package:mobile/features/mastermind/projects/view/thread_badges.dart';
-import 'package:mobile/features/mastermind/projects/view/thread_bubbles.dart';
+import 'package:mobile/features/mastermind/projects/view/posted_reply_bubble.dart';
+import 'package:mobile/features/mastermind/projects/view/project_thread_transcript.dart';
 import 'package:mobile/features/mastermind/projects/view/thread_composer.dart';
+import 'package:mobile/features/mastermind/projects/view/thread_replies.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
-import 'package:mobile/l10n/l10n.dart';
 
 /// `/mastermind/work/thread/:threadId`: one thread's recent messages and a
 /// steered composer above the dock. The dock's Back returns to Projects.
@@ -41,11 +41,27 @@ class ProjectThreadPage extends StatefulWidget {
 }
 
 class _ProjectThreadPageState extends State<ProjectThreadPage> {
+  late final ProjectsRepository _repository =
+      widget.repository ??
+      sharedProjectsRepository(
+        cache: context.read<MastermindRuntime?>()?.threadCache,
+        userId: context.read<MastermindRuntime?>()?.userId,
+      );
   late final ThreadCubit _cubit = ThreadCubit(
-    repository: widget.repository ?? sharedProjectsRepository(),
+    repository: _repository,
     machine: widget.machine,
     threadId: widget.threadId,
   );
+  late final ThreadReplies _replies = ThreadReplies(
+    create: () => FleetThreadReplyCubit(
+      source: _repository.replySource,
+      machineId: widget.machine.machineId,
+      threadId: widget.threadId,
+      environmentId: widget.machine.environmentId,
+    ),
+    onPhase: _onReply,
+  );
+  final _draft = TextEditingController();
   StreamSubscription<FleetOwnerFrame>? _frames;
 
   @override
@@ -59,12 +75,22 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
   }
 
   void _onFrame(FleetOwnerFrame frame) {
-    if (frame.kind == FleetOwnerFrameKind.receipt) {
-      unawaited(_cubit.refreshReceipts());
-    } else if (isThreadsPoke(frame, widget.machine.machineId)) {
-      unawaited(_cubit.load());
-      unawaited(_cubit.refreshReceipts());
+    final threads = isThreadsPoke(frame, widget.machine.machineId);
+    if (threads) unawaited(_cubit.load());
+    if (threads || frame.kind == FleetOwnerFrameKind.receipt) {
+      _replies.checkHeld();
     }
+  }
+
+  /// The composer's reply, held or taken, clears the field; one that failed
+  /// keeps its text, so Send resends it under the same key.
+  void _onReply(FleetReplyStatus status, {required bool current}) {
+    if (current &&
+        (status.phase == FleetReplyPhase.sent ||
+            status.phase == FleetReplyPhase.delivered)) {
+      _draft.clear();
+    }
+    if (status.phase == FleetReplyPhase.delivered) unawaited(_cubit.load());
   }
 
   @override
@@ -72,6 +98,8 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
     unawaited(_frames?.cancel());
     if (widget.live) ProjectsLive.shared.release(this);
     unawaited(_cubit.close());
+    _replies.dispose();
+    _draft.dispose();
     super.dispose();
   }
 
@@ -91,121 +119,63 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final composerBottom =
         (keyboard > padding.bottom ? keyboard : padding.bottom) + AppSpacing.sm;
-    return BlocBuilder<ThreadCubit, ThreadState>(
-      bloc: _cubit,
-      builder: (context, state) => Stack(
-        children: [
-          ShellChromeActions(
-            ownerId: 'mastermind-project-thread',
-            locations: {location},
-            onBack: _back,
-          ),
-          if (state.thread case final thread?)
-            ShellTitleOverride(
+    return ListenableBuilder(
+      listenable: _replies,
+      builder: (context, _) => BlocBuilder<ThreadCubit, ThreadState>(
+        bloc: _cubit,
+        builder: (context, state) => Stack(
+          children: [
+            ShellChromeActions(
               ownerId: 'mastermind-project-thread',
               locations: {location},
-              title: thread.title,
-              showLeadingBrand: false,
+              onBack: _back,
             ),
-          MediaQuery.removePadding(
-            context: context,
-            removeBottom: true,
-            child: _Transcript(
-              state: state,
-              cubit: _cubit,
-              machine: widget.machine,
-              bottomGap: composerBottom + 64,
+            if (state.thread case final thread?)
+              ShellTitleOverride(
+                ownerId: 'mastermind-project-thread',
+                locations: {location},
+                title: thread.title,
+                showLeadingBrand: false,
+              ),
+            MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: ProjectThreadTranscript(
+                state: state,
+                cubit: _cubit,
+                machine: widget.machine,
+                bottomGap: composerBottom + 64,
+                replies: [
+                  for (final reply in _replies.replies)
+                    BlocBuilder<FleetThreadReplyCubit, FleetReplyStatus>(
+                      bloc: reply,
+                      builder: (context, status) => PostedReplyBubble(
+                        status: status,
+                        onRetry: () => unawaited(reply.retry()),
+                        onSignIn: () => unawaited(
+                          context.read<AuthCubit?>()?.refreshAccountAssurance(),
+                        ),
+                        onWriteAnother: _replies.isCurrent(reply)
+                            ? _replies.writeAnother
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          Positioned(
-            left: AppSpacing.md,
-            right: AppSpacing.md,
-            bottom: composerBottom,
-            child: ThreadComposer(onSend: _cubit.send),
-          ),
-        ],
+            Positioned(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              bottom: composerBottom,
+              child: ThreadComposer(
+                controller: _draft,
+                enabled: _replies.composerEnabled,
+                onSend: _replies.send,
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _Transcript extends StatelessWidget {
-  const _Transcript({
-    required this.state,
-    required this.cubit,
-    required this.machine,
-    required this.bottomGap,
-  });
-
-  final ThreadState state;
-  final ThreadCubit cubit;
-  final ProjectsMachine machine;
-  final double bottomGap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final failure = state.failure;
-    if (state.status == ThreadStatus.failed && failure != null) {
-      return Center(
-        child: AppStateMessage.inline(
-          icon: LucideIcons.cloudOff,
-          tone: AppTone.warning,
-          title: failure.message(l10n),
-          actionLabel: l10n.commonRetry,
-          onAction: () => unawaited(cubit.load()),
-        ),
-      );
-    }
-    final thread = state.thread;
-    // Newest at the bottom: the list is reversed so it opens there.
-    final items = <Widget>[
-      if (thread != null) ThreadBadges(thread: thread, machine: machine),
-      if (state.hasEarlier)
-        Center(
-          child: AppButton(
-            key: const ValueKey('projects-load-earlier'),
-            variant: AppButtonVariant.ghost,
-            size: AppButtonSize.small,
-            loading: state.loadingEarlier,
-            onPressed: () => unawaited(cubit.loadEarlier()),
-            child: Text(l10n.mastermindProjectsLoadEarlier),
-          ),
-        ),
-      for (final message in state.messages)
-        ThreadMessageBubble(
-          key: ValueKey('projects-message-${message.position}'),
-          message: message,
-        ),
-      for (final reply in state.replies)
-        PostedReplyBubble(
-          key: ValueKey('projects-reply-${reply.localId}'),
-          reply: reply,
-          onRetry: () => unawaited(cubit.retry(reply.localId)),
-          onSignIn: () =>
-              unawaited(context.read<AuthCubit?>()?.refreshAccountAssurance()),
-        ),
-      if (failure != null && thread != null)
-        Text(
-          failure.message(l10n),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-    ].reversed.toList();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final insets = AppPageInsets.of(
-          context,
-          width: constraints.maxWidth,
-          consumeBottomClearance: false,
-        );
-        return ListView(
-          reverse: true,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: insets.copyWith(bottom: bottomGap),
-          children: items,
-        );
-      },
     );
   }
 }

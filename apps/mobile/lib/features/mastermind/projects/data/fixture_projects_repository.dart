@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_repository.dart';
+import 'package:mobile/features/mastermind/projects/data/fixture_reply_source.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/thread_models.dart';
@@ -19,10 +21,44 @@ class FixtureProjectsRepository implements ProjectsRepository {
   /// Failure to throw from the next read, then cleared.
   ProjectsFailureKind? failNext;
 
+  /// Every read fails with `machine_offline` while set.
+  bool offline = false;
+
   /// Every `projects` and `threads` read, for tests.
   final List<String> calls = [];
 
-  final Map<String, ReplyReceipt> _replies = {};
+  /// First pages of unsearched lists, as the device cache keeps them.
+  final Map<String, ThreadListPage> _firstPages = {};
+
+  @override
+  late final FleetThreadSource replySource = FixtureReplySource(
+    stateOf: (threadId) => _anyThread(threadId)?.state,
+    takeFailure: () {
+      final failure = failNext;
+      failNext = null;
+      return failure;
+    },
+    now: _now,
+  );
+
+  @override
+  Future<ThreadListPage?> cachedThreads(
+    ProjectsMachine machine,
+    ProjectThreadQuery query,
+  ) async {
+    if (clipProjectsSearch(query.search) != null) return null;
+    final page = _firstPages[_listKey(machine, query)];
+    if (page == null) return null;
+    return ThreadListPage(
+      threads: page.threads,
+      total: page.total,
+      nextCursor: page.nextCursor,
+      cachedAt: _now,
+    );
+  }
+
+  String _listKey(ProjectsMachine machine, ProjectThreadQuery query) =>
+      '${machine.key}|${query.projectId ?? ''}|${query.state?.name ?? ''}';
   final Map<String, int> _seenCounts = {};
   final _seen = StreamController<ThreadSeenMark>.broadcast();
 
@@ -133,7 +169,7 @@ class FixtureProjectsRepository implements ProjectsRepository {
     final start = query.cursor ?? 0;
     final end = (start + query.limit).clamp(0, filtered.length);
     final seenKey = machine.key;
-    return ThreadListPage(
+    final page = ThreadListPage(
       threads: [
         for (final t in filtered.sublist(start.clamp(0, filtered.length), end))
           switch (_seenCounts['$seenKey|${t.threadId}']) {
@@ -144,6 +180,10 @@ class FixtureProjectsRepository implements ProjectsRepository {
       total: filtered.length,
       nextCursor: end < filtered.length ? end : null,
     );
+    if (q.isEmpty && query.cursor == null) {
+      _firstPages[_listKey(machine, query)] = page;
+    }
+    return page;
   }
 
   @override
@@ -188,49 +228,6 @@ class FixtureProjectsRepository implements ProjectsRepository {
   }
 
   @override
-  Future<ReplyReceipt> reply(
-    ProjectsMachine machine, {
-    required String threadId,
-    required String text,
-    required String idempotencyKey,
-  }) async {
-    _maybeFail();
-    // Web uses the Idempotency-Key as the reply id.
-    final existing = _replies[idempotencyKey];
-    if (existing != null) return existing;
-    final id = idempotencyKey;
-    return _replies[id] = ReplyReceipt.fromJson({
-      'id': id,
-      'machineId': machine.machineId,
-      'threadId': threadId,
-      'state': 'sent',
-      'createdAt': _now.toIso8601String(),
-    });
-  }
-
-  @override
-  Future<ReplyReceipt?> receipt(ProjectsMachine machine, String replyId) async {
-    final sent = _replies[replyId];
-    if (sent == null) return null;
-    final thread = _find(machine, sent.threadId);
-    final delivery = switch (thread?.state) {
-      ProjectThreadState.waiting => 'queued',
-      ProjectThreadState.idle => 'started',
-      _ => 'steered',
-    };
-    return _replies[replyId] = ReplyReceipt.fromJson({
-      'id': replyId,
-      'threadId': sent.threadId,
-      'state': thread?.state == ProjectThreadState.failed
-          ? 'failed'
-          : 'delivered',
-      'delivery': delivery,
-      'createdAt': sent.createdAt.toIso8601String(),
-      'settledAt': _now.toIso8601String(),
-    });
-  }
-
-  @override
   Future<bool> markRead(
     ProjectsMachine machine, {
     required String threadId,
@@ -247,11 +244,29 @@ class FixtureProjectsRepository implements ProjectsRepository {
   }
 
   void _maybeFail() {
+    if (offline) {
+      throw const ProjectsException(ProjectsFailureKind.machineOffline);
+    }
     final failure = failNext;
     if (failure == null) return;
     failNext = null;
     throw ProjectsException(failure);
   }
+
+  /// A thread on any fixture machine.
+  ProjectThread? _anyThread(String threadId) => [
+    for (final (id, _, _) in _projectSizes) ..._bridgeThreads(id),
+    ..._bridgeThreads('none'),
+    for (final env in const ['env_m4', 'env_build'])
+      ..._linkedThreads(
+        ProjectsMachine(
+          machineId: bridgeId,
+          label: '',
+          reachable: true,
+          environmentId: env,
+        ),
+      ),
+  ].where((t) => t.threadId == threadId).firstOrNull;
 
   ProjectThread? _find(ProjectsMachine machine, String threadId) {
     final pool = machine.linked

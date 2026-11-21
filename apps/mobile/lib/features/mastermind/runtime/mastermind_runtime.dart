@@ -19,6 +19,7 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_fetch_clock_store.da
 import 'package:mobile/features/mastermind/fleet/data/fleet_outbox_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_cache.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_repository.dart';
 import 'package:mobile/features/mastermind/iris/data/http_iris_relay.dart';
@@ -26,6 +27,7 @@ import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay_factory.dart';
 import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_id_store.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/hub_reply_transport.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
@@ -50,6 +52,9 @@ final class MastermindRuntime {
     this.askDetails,
     IrisRelay? iris,
     this.irisTrust,
+    this.threadCache,
+    this.projectIds,
+    this.userId,
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
     FleetOutboxStore? fleetOutboxStore,
@@ -151,6 +156,9 @@ final class MastermindRuntime {
       fleetSnoozeStore: PrefsFleetSnoozeStore(userId: userId),
       fleetOutboxStore: createFleetOutboxStore(userId: userId),
       fleetFetchClockStore: PrefsFleetFetchClockStore(userId: userId),
+      threadCache: createFleetThreadCache(userId: userId),
+      projectIds: const PrefsProjectsIdStore(),
+      userId: userId,
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
       mastermindPushes: mastermindPushes,
     );
@@ -194,6 +202,17 @@ final class MastermindRuntime {
   /// the app leaves the foreground, and its key and enrolment go with the
   /// account on logout or account switch.
   final IrisDeviceTrust? irisTrust;
+
+  /// The owner's last thread lists on this device, for the offline view;
+  /// cleared for the account that signs out.
+  final FleetThreadCache? threadCache;
+
+  /// The ids that find [threadCache]'s lists after a restart; cleared with
+  /// it.
+  final ProjectsIdStore? projectIds;
+
+  /// The signed-in account, read live; null while signed out.
+  final String? Function()? userId;
 
   /// The live fleet snapshot behind Today, Inbox and Work. Created on first
   /// use so a runtime that never shows a fleet tab opens no API client.

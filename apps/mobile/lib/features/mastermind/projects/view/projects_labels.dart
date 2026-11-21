@@ -1,5 +1,6 @@
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/features/mastermind/projects/cubit/thread_state.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_thread_reply_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -41,6 +42,26 @@ extension ProjectsFailureView on ProjectsFailureKind {
     ProjectsFailureKind.unavailable => l10n.mastermindProjectsErrorUnavailable,
   };
 }
+
+/// What the receipt line under a posted reply says.
+enum ReplyPhase { sending, sent, steered, started, queued, delivered, failed }
+
+/// The receipt line for [status]; null while nothing is being sent and
+/// while it waits for an MFA check.
+ReplyPhase? replyPhaseOf(FleetReplyStatus status) => switch (status.phase) {
+  FleetReplyPhase.idle => null,
+  FleetReplyPhase.sending => ReplyPhase.sending,
+  FleetReplyPhase.sent => ReplyPhase.sent,
+  FleetReplyPhase.delivered => switch (status.reply?.delivery) {
+    FleetReplyDelivery.steered => ReplyPhase.steered,
+    FleetReplyDelivery.started => ReplyPhase.started,
+    FleetReplyDelivery.queued => ReplyPhase.queued,
+    null => ReplyPhase.delivered,
+  },
+  // Not a delivery state: the bubble shows the MFA message and its action.
+  FleetReplyPhase.needsMfa => null,
+  FleetReplyPhase.failed => ReplyPhase.failed,
+};
 
 extension ReplyPhaseView on ReplyPhase {
   String label(AppLocalizations l10n) => switch (this) {

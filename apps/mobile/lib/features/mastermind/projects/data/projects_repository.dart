@@ -1,5 +1,8 @@
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_cache.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/fixture_projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/http_projects_repository.dart';
+import 'package:mobile/features/mastermind/projects/data/projects_memory.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/thread_models.dart';
 
@@ -48,6 +51,27 @@ String? clipProjectsSearch(String? raw) {
       : trimmed.substring(0, maxProjectsSearchLength).trim();
 }
 
+/// A fleet thread failure as the category this screen shows.
+ProjectsFailureKind projectsFailureOf(FleetThreadException error) =>
+    switch (error.failure) {
+      FleetThreadFailure.machineOffline => ProjectsFailureKind.machineOffline,
+      FleetThreadFailure.timeout => ProjectsFailureKind.timeout,
+      FleetThreadFailure.unknownThread => ProjectsFailureKind.notFound,
+      FleetThreadFailure.rateLimited => ProjectsFailureKind.rateLimited,
+      FleetThreadFailure.mfaRequired => ProjectsFailureKind.mfaRequired,
+      FleetThreadFailure.forbidden ||
+      FleetThreadFailure.challenged => ProjectsFailureKind.forbidden,
+      FleetThreadFailure.rejected => switch (error.code) {
+        'invalid_query' => ProjectsFailureKind.invalid,
+        'unsupported_for_linked_machine' =>
+          ProjectsFailureKind.unsupportedForLinkedMachine,
+        _ => ProjectsFailureKind.unavailable,
+      },
+      FleetThreadFailure.conflict ||
+      FleetThreadFailure.unavailable ||
+      FleetThreadFailure.unreadable => ProjectsFailureKind.unavailable,
+    };
+
 class ProjectsException implements Exception {
   const ProjectsException(this.kind);
 
@@ -79,6 +103,13 @@ abstract interface class ProjectsRepository {
     ProjectThreadQuery query,
   );
 
+  /// The first page of this unsearched list as it was last read on this
+  /// device, with its `cachedAt`; null when none is kept.
+  Future<ThreadListPage?> cachedThreads(
+    ProjectsMachine machine,
+    ProjectThreadQuery query,
+  );
+
   /// GET /threads/messages: the newest page first, oldest message first
   /// within it; [before] pages back.
   Future<ThreadTranscript> messages(
@@ -97,31 +128,35 @@ abstract interface class ProjectsRepository {
 
   Stream<ThreadSeenMark> get seenMarks;
 
-  /// POST /replies under [idempotencyKey]; a retry sends the same key.
-  Future<ReplyReceipt> reply(
-    ProjectsMachine machine, {
-    required String threadId,
-    required String text,
-    required String idempotencyKey,
-  });
-
-  /// GET /replies/{id} after a live receipt hint; null when it is unknown.
-  Future<ReplyReceipt?> receipt(ProjectsMachine machine, String replyId);
+  /// Where `FleetThreadReplyCubit` sends replies and reads receipts.
+  FleetThreadSource get replySource;
 }
 
 const _fixtureBuild = bool.fromEnvironment('MASTERMIND_FIXTURE');
 
 /// The single place the Projects screen gets its repository. Fixture builds
-/// read fixtures; every other build reads Web.
-ProjectsRepository Function() createProjectsRepository = () =>
-    _fixtureBuild ? FixtureProjectsRepository() : HttpProjectsRepository();
+/// read fixtures; every other build reads Web, keeping first pages in the
+/// given cache for the offline view.
+ProjectsRepository Function({
+  FleetThreadCache? cache,
+  String? Function()? userId,
+})
+createProjectsRepository = ({cache, userId}) => _fixtureBuild
+    ? FixtureProjectsRepository()
+    : HttpProjectsRepository(cache: cache, userId: userId);
 
 ProjectsRepository? _shared;
 
 /// One repository for the Projects list and its pushed threads, so a thread
 /// marked read clears the badge on the list behind it.
-ProjectsRepository sharedProjectsRepository() =>
-    _shared ??= createProjectsRepository();
+ProjectsRepository sharedProjectsRepository({
+  FleetThreadCache? cache,
+  String? Function()? userId,
+}) => _shared ??= createProjectsRepository(cache: cache, userId: userId);
 
-/// Drops the shared repository, for tests and account switches.
-void resetSharedProjectsRepository() => _shared = null;
+/// Drops the shared repository and what this session remembered, for tests
+/// and account changes.
+void resetSharedProjectsRepository() {
+  _shared = null;
+  ProjectsMemory.shared.clear();
+}

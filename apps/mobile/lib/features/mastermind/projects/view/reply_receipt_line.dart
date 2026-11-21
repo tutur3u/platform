@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/mastermind/projects/cubit/thread_state.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_labels.dart';
 import 'package:mobile/l10n/l10n.dart';
 
