@@ -52,6 +52,20 @@ test('merged deploy config preserves gateway merge parity', () => {
     });
     assert.equal(config.name, 'tuturuuu-gateway');
     assert.ok(readFileSync(out, 'utf8').includes('tuturuuu-gateway'));
+    // Rehearsal and publication admit the same vinext families as `write`.
+    const vinext = writeMergedDeployConfig(settingsPath, out, {
+      GATEWAY_WEB_FAMILIES: 'api-core,dashboard',
+      WEB_ORIGIN: 'https://web.example.vercel.app',
+      MARKETING_ORIGIN: 'https://marketing.example.workers.dev',
+    });
+    assert.equal(vinext.vars.GATEWAY_WEB_FAMILIES, 'api-core,dashboard');
+    assert.deepEqual(
+      vinext.services.find(({ binding }) => binding === 'WEB_FAMILY_API_CORE'),
+      {
+        binding: 'WEB_FAMILY_API_CORE',
+        service: 'tuturuuu-web-vinext-api-core',
+      }
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

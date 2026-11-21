@@ -24,13 +24,21 @@ import {
   RetryableDeployError,
   serveGatewayVersion,
 } from './gateway-cf-traffic.mjs';
-import { deployConfig, readJsonc } from './gateway-deploy-config.mjs';
+import {
+  deployConfig,
+  gatewayFamilies,
+  readJsonc,
+} from './gateway-deploy-config.mjs';
 import { readBack, verifyVersion } from './void-cf-publisher.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const GATEWAY = resolve(ROOT, 'apps/gateway');
 const BASE_CONFIG = resolve(ROOT, 'apps/gateway/wrangler.jsonc');
 const FAMILIES = resolve(ROOT, 'apps/web/cloudflare/opennext/families.json');
+const VINEXT_FAMILIES = resolve(
+  ROOT,
+  'apps/web/cloudflare/vinext/families.json'
+);
 /** The gateway's pinned cf; disposable copies sit outside the workspace. */
 const GATEWAY_CF = join(GATEWAY, 'node_modules/.bin/cf');
 const WORKER_CONFIG = `${BUILD_OUTPUT_PREFIX}workers/default/worker.config.json`;
@@ -105,7 +113,11 @@ export function writeMergedDeployConfig(
   const config = deployConfig(
     readJsonc(BASE_CONFIG),
     settings.result.bindings,
-    JSON.parse(readFileSync(FAMILIES, 'utf8')),
+    // The same OpenNext + vinext family table `write` admits.
+    gatewayFamilies(
+      JSON.parse(readFileSync(FAMILIES, 'utf8')),
+      JSON.parse(readFileSync(VINEXT_FAMILIES, 'utf8'))
+    ),
     env
   );
   writeFileSync(outPath, `${JSON.stringify(config, null, 2)}\n`);
