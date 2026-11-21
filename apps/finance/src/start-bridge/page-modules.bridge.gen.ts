@@ -19,6 +19,13 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/bill-splits/[[...target]]/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/bill-splits/[[...target]]/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/budgets/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/budgets/page'),
     layouts: [

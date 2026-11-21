@@ -31,6 +31,22 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
+      // Resolve workspace source for build-free Finance tests.
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../../packages/internal-api/src'),
+      },
+      {
+        find: '@tuturuuu/supabase/next',
+        replacement: resolve(__dirname, '../../packages/supabase/src/next'),
+      },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
       // Node unit tests do not run with Next's react-server condition.
       // This marker replacement is test-only; runtime imports stay guarded.
       {
