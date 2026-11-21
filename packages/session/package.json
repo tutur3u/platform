@@ -10,7 +10,8 @@
     "./provider": "./src/provider.ts",
     "./tokens": "./src/tokens.ts",
     "./stepup": "./src/stepup.ts",
-    "./device": "./src/device.ts"
+    "./device": "./src/device.ts",
+    "./control": "./src/control.ts"
   },
   "license": "MIT",
   "scripts": {

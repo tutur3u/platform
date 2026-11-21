@@ -236,6 +236,12 @@ address inside Cloudflare's ranges, exactly as `cloudflareWorkerZone` in
 rejects the platform's own zone; a client outside those ranges cannot choose
 its class or bucket by sending the header.
 
+The host compiles the published ranges once with `compileCloudflareRanges`,
+which reports every entry that does not parse in `invalid`. Each
+classification also reports `droppedRanges`, the compiled ranges that were
+malformed when copied; an address such a range would have covered is classed
+`public`. The host alerts on any `invalid` entry or nonzero `droppedRanges`.
+
 Prefixes come from the fully expanded address, matching the IP identity rules
 on the rollout page:
 
@@ -412,7 +418,10 @@ acceptance respects Mail's live constraints:
   entry with two live versions passes only when both bundles hold the key.
   A live gateway version binding a mount absent from the identity registry
   artifact, an artifact naming a gateway version without traffic, and an
-  artifact with a lower `registryVersion` each fail the class. A tick capped
+  artifact with a lower `registryVersion` each fail the class. A version's
+  traffic `percentage` may be fractional (Cloudflare allows 0.01 to 100): the
+  version and deployment texts read it as a canonical decimal in `(0, 100]`,
+  while every other control input accepts only safe integers. A tick capped
   at 40 calls completes only the classes it finished, and a `429` leaves
   every stored census unchanged. A cold isolate with a snapshot whose census
   is 300 seconds old mints, 301 seconds old does not, and a missing, bad-MAC

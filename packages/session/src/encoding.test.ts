@@ -44,6 +44,60 @@ describe('strict JSON', () => {
   });
 });
 
+describe('strict JSON number policies', () => {
+  const decimal = (text: string) => parseStrictJson(text, 8, 'finiteDecimal');
+
+  it.each(['12.5', '1.5', '0.25', '-3.75'])(
+    'keeps safe integers by default and rejects %s',
+    (text) => {
+      expect(parseStrictJson(text)).toBeUndefined();
+      expect(parseStrictJson(`{"exp":${text}}`)).toBeUndefined();
+    }
+  );
+
+  it.each([
+    ['12.5', 12.5],
+    ['0.01', 0.01],
+    ['0.5', 0.5],
+    ['100', 100],
+    ['0', 0],
+    ['-2.25', -2.25],
+    ['9007199254740993.5', undefined],
+  ])('reads canonical decimal %s', (text, value) => {
+    expect(decimal(text)).toBe(value);
+  });
+
+  it.each([
+    '12.50',
+    '1.0',
+    '1.',
+    '.5',
+    '01.5',
+    '00',
+    '-0',
+    '-0.0',
+    '1e2',
+    '1E2',
+    '1.5e1',
+    '+1',
+    'NaN',
+    'Infinity',
+    '-Infinity',
+    '0.1000000000000000000001',
+    '0.0000001',
+    '1000000000000000000000',
+  ])('rejects non-canonical decimal %j', (text) => {
+    expect(decimal(text)).toBeUndefined();
+  });
+
+  it('applies the policy at every depth', () => {
+    expect(decimal('{"v":[{"percentage":12.5}]}')).toEqual({
+      v: [{ percentage: 12.5 }],
+    });
+    expect(decimal('{"v":[{"percentage":12.50}]}')).toBeUndefined();
+  });
+});
+
 it('compares bytes in constant time and by length', () => {
   expect(
     constantTimeEqual(new Uint8Array([1, 2]), new Uint8Array([1, 2]))

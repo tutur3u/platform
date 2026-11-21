@@ -62,12 +62,36 @@ export type JsonValue =
 class StrictJsonError extends Error {}
 
 /**
+ * How `parseStrictJson` reads numbers.
+ *
+ * - `safeInteger`: canonical safe integers only: no fraction, exponent or
+ *   `-0`, so a claim can never round into an accepted value.
+ * - `finiteDecimal`: canonical decimal notation, for API fields such as a
+ *   traffic percentage that may be fractional. No exponent, NaN or Infinity;
+ *   no leading zero except `0.x`; no trailing dot. The literal must be the
+ *   shortest round-trip spelling of the number it parses to, so `12.50`,
+ *   `1.0`, `-0`, digits past double precision and magnitudes that JavaScript
+ *   spells with an exponent (below 1e-6 or from 1e21) fail.
+ */
+export type StrictJsonNumbers = 'safeInteger' | 'finiteDecimal';
+
+const SAFE_INTEGER_LITERAL = /^(?:true|false|null|-?(?:0|[1-9]\d{0,15}))/;
+const DECIMAL_LITERAL = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?)/;
+
+/**
  * Parses the JSON subset used by session tokens. It rejects duplicate member
  * names at any depth (`JSON.parse` keeps the last one, which would let a token
  * carry two values for one claim), returns objects without a prototype, and
- * accepts only canonical safe-integer numbers.
+ * reads numbers by `numbers`, which defaults to canonical safe integers.
+ * Values nest at most `maxDepth` containers below the root; tokens keep the
+ * default of 8, and API bodies read by the control modules pass a deeper
+ * bound.
  */
-export function parseStrictJson(text: string): JsonValue | undefined {
+export function parseStrictJson(
+  text: string,
+  maxDepth = 8,
+  numbers: StrictJsonNumbers = 'safeInteger'
+): JsonValue | undefined {
   let position = 0;
 
   const fail = (): never => {
@@ -98,7 +122,7 @@ export function parseStrictJson(text: string): JsonValue | undefined {
     return fail();
   };
   const readValue = (depth: number): JsonValue => {
-    if (depth > 8) fail();
+    if (depth > maxDepth) fail();
     skipWhitespace();
     const char = text[position];
     if (char === '{') {
@@ -155,18 +179,23 @@ export function parseStrictJson(text: string): JsonValue | undefined {
       }
     }
     if (char === '"') return readString();
-    // Numbers are restricted to canonical safe integers: no fraction,
-    // exponent or `-0`, so a claim can never round into an accepted value.
-    const literal = /^(?:true|false|null|-?(?:0|[1-9]\d{0,15}))/.exec(
-      text.slice(position)
-    );
+    const literal = (
+      numbers === 'finiteDecimal' ? DECIMAL_LITERAL : SAFE_INTEGER_LITERAL
+    ).exec(text.slice(position));
     if (!literal) return fail();
-    position += literal[0].length;
+    const token = literal[0];
+    position += token.length;
     const next = text[position];
     if (next !== undefined && /[0-9.eE+-]/.test(next)) fail();
-    if (literal[0] === '-0') fail();
-    const parsed = JSON.parse(literal[0]) as JsonValue;
-    if (typeof parsed === 'number' && !Number.isSafeInteger(parsed)) fail();
+    if (token === '-0') fail();
+    const parsed = JSON.parse(token) as JsonValue;
+    if (typeof parsed === 'number') {
+      const canonical =
+        numbers === 'finiteDecimal'
+          ? Number.isFinite(parsed) && String(parsed) === token
+          : Number.isSafeInteger(parsed);
+      if (!canonical) fail();
+    }
     return parsed;
   };
 

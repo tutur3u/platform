@@ -107,6 +107,7 @@ function resolveRelative(from: string, specifier: string): string {
 const TOKENS_ENTRY = './tokens';
 const STEPUP_ENTRY = './stepup';
 const DEVICE_ENTRY = './device';
+const CONTROL_ENTRY = './control';
 const TOKENS_MODULE = /^src\/tokens(\.ts|\/)/;
 /** The only `./tokens` modules `./stepup` may reach: verification, no signing. */
 const STEPUP_TOKEN_MODULES = [
@@ -178,11 +179,24 @@ const STEPUP_SUBTLE = /crypto\.subtle\.(?!verify\(|digest\()/;
  * hasher port.
  */
 const DEVICE_SUBTLE = /crypto\.subtle\.(?!verify\(|digest\()/;
+/**
+ * `./control`: Ed25519 verification of the key guard list against the pinned
+ * public keys, which it imports for verification only. It never signs,
+ * hashes or generates keys.
+ */
+const CONTROL_SUBTLE = /crypto\.subtle\.(?!verify\(|importKey\()/;
 const SUBTLE_RULES = new Map([
   [TOKENS_ENTRY, TOKENS_SUBTLE],
   [STEPUP_ENTRY, STEPUP_SUBTLE],
   [DEVICE_ENTRY, DEVICE_SUBTLE],
+  [CONTROL_ENTRY, CONTROL_SUBTLE],
 ]);
+/** The only package modules outside `src/control` that `./control` reaches. */
+const CONTROL_SHARED_MODULES = [
+  'src/encoding.ts',
+  'src/expiry.ts',
+  'src/token-core.ts',
+];
 
 describe('portable entry points', () => {
   const graph = runtimeGraph();
@@ -244,6 +258,37 @@ describe('portable entry points', () => {
     ).toEqual([]);
   });
 
+  it('expose ./control as an entry point', () => {
+    expect(packageJson.exports).toHaveProperty(
+      CONTROL_ENTRY,
+      './src/control.ts'
+    );
+  });
+
+  it('./control reaches only its own modules and the shared encoders', () => {
+    const files = graphFrom(['./src/control.ts']).files.map((file) =>
+      relative(PACKAGE_DIR, file)
+    );
+    expect(
+      files
+        .filter((file) => file !== 'src/control.ts')
+        .filter((file) => !file.startsWith('src/control/'))
+        .sort()
+    ).toEqual(CONTROL_SHARED_MODULES);
+  });
+
+  it('./control imports its public keys for verification only', () => {
+    for (const file of graphFrom(['./src/control.ts']).files) {
+      const source = readFileSync(file, 'utf8');
+      expect(source).not.toMatch(/subtle\.sign\(/);
+      expect(source).not.toMatch(/\bmintToken\b/);
+      for (const call of source.matchAll(/importKey\(([^;]*?)\)/gs)) {
+        expect(call[1]).toMatch(/\['verify'\]/);
+        expect(call[1]).toMatch(/\bfalse\b/);
+      }
+    }
+  });
+
   it('./stepup reaches only the verification modules of ./tokens', () => {
     const files = graphFrom(['./src/stepup.ts']).files.map((file) =>
       relative(PACKAGE_DIR, file)
@@ -278,10 +323,12 @@ describe('portable entry points', () => {
     const tokens = await import('./tokens');
     const verify = await import('./verify');
     const stepup = await import('./stepup');
+    const control = await import('./control');
     for (const exported of [
       ...Object.keys(tokens),
       ...Object.keys(verify),
       ...Object.keys(stepup),
+      ...Object.keys(control),
     ]) {
       expect(exported).not.toMatch(/bare|fake|test/i);
     }
