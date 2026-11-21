@@ -30,6 +30,8 @@ export const meetMediaQualitySampleSchema = z.object({
   screenFps: z.number().min(0).max(240).nullable().optional(),
   /** Whether the browser reported freeze counters for measured cameras. */
   freezesMeasured: z.boolean().optional(),
+  /** Time within the interval that freeze counters actually covered. */
+  freezeMeasuredMs: z.number().int().min(0).max(600_000).optional(),
 });
 export type MeetMediaQualitySample = z.infer<
   typeof meetMediaQualitySampleSchema
@@ -91,9 +93,17 @@ export function summarizeRoomMediaQuality(
   // Receive rates count devices that measured cameras; freezes count only
   // those whose browser also reported freeze counters, so neither is diluted.
   const measured = live.filter((entry) => entry.recvVideoKbps !== null);
-  const frozenCoverage = measured.filter((entry) => entry.freezesMeasured);
+  const frozenCoverage = measured.filter(
+    (entry) => entry.freezesMeasured && (entry.freezeMeasuredMs ?? 0) > 0
+  );
+  // The denominator is measured time, not the report interval, so a device
+  // that measured for a few seconds cannot dilute the rate.
   const minutes =
-    frozenCoverage.reduce((sum, entry) => sum + entry.intervalMs, 0) / 60_000;
+    frozenCoverage.reduce(
+      (sum, entry) =>
+        sum + Math.min(entry.freezeMeasuredMs ?? 0, entry.intervalMs),
+      0
+    ) / 60_000;
   const total = (pick: (entry: MeetMediaQualitySample) => number) =>
     live.reduce((sum, entry) => sum + pick(entry), 0);
   return {

@@ -115,7 +115,9 @@ The freeze and receive-rate criteria need fresh camera readings. Room media
 health computes receive rates only over devices that measured cameras in their
 last report interval, shown as **Devices measuring cameras**. It computes the
 freeze rate only over those whose browser also reported freeze counters, shown
-as **Devices measuring freezes**. A device
+as **Devices measuring freezes**. It divides by the time each device actually
+measured, so a device that measured for only part of an interval cannot dilute
+the rate. A device
 measures nothing in these cases:
 
 - `layerSwitching` is off.

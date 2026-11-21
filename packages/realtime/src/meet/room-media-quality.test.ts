@@ -34,6 +34,7 @@ const sample: MeetMediaQualitySample = {
   visibility: 'visible',
   intervalMs: 30_000,
   freezesMeasured: true,
+  freezeMeasuredMs: 30_000,
 };
 
 function token(n: number, role: 'host' | 'speaker') {
@@ -264,5 +265,19 @@ describe('freeze rate coverage', () => {
     expect(summary.cameraReporters).toBe(2);
     expect(summary.freezeReporters).toBe(1);
     expect(summary.freezesPerMinute).toBe(6);
+  });
+
+  it('divides by measured time when a device measured part of its interval', () => {
+    let quality = {};
+    for (let n = 0; n < 10; n++)
+      quality = applyMediaQualityReport(
+        quality,
+        `d${n}`,
+        { ...sample, freezes: 1, freezeMeasuredMs: 6000 },
+        0
+      );
+    const summary = summarizeRoomMediaQuality(quality, 1000);
+    expect(summary.freezeReporters).toBe(10);
+    expect(summary.freezesPerMinute).toBeCloseTo(10);
   });
 });

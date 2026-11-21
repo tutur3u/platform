@@ -58,6 +58,8 @@ export type ReceiverSample = {
   receivedKbps: number | null;
   /** Whether every sampled camera reported a freeze counter. */
   freezesMeasured?: boolean;
+  /** Interval this sample's deltas cover, when it has a baseline. */
+  measuredMs?: number;
 };
 
 export type ReceiverGovernor = {

@@ -265,9 +265,13 @@ Stopping that would need SFU-side per-track caps, which Cloudflare Realtime
 does not offer.
 
 The automatic budget uses the same targets on every plan: up to 1.4 Mbps and
-24 fps for a spotlit camera, and 1.8 Mbps at 15 fps for a screen share. Paid
-ceilings make room above those targets. A participant reaches them through the
-stream quality picker. The camera captures at 720p.
+24 fps for a spotlit camera, and 1.8 Mbps at 15 fps for a screen share. In the
+current release, a paid plan therefore changes only the screen-share height
+limit. A paid screen share is sent at its captured size up to 1440p, while a
+free one is downscaled to 720p. The higher paid frame rates and bitrates are
+headroom for an upcoming stream quality picker, and are not reached
+automatically. The camera requests a 720p capture, an `ideal` constraint that
+the browser may not meet.
 
 The plan applies only to the web call for now. Mobile join tokens carry the
 free ceilings, and the native publisher does not yet apply them.
@@ -315,7 +319,8 @@ without participant management:
 - Send and receive p50/p95.
 - Devices measuring cameras, which the receive rates count.
 - Devices measuring freezes: those whose browser also reports freeze counters.
-  The freeze rate counts only these.
+  The freeze rate counts only these, and divides by the time each device
+  actually measured, not by its report interval.
 - Devices over plan limits.
 - Loss and round-trip p95.
 - Freezes per device-minute.

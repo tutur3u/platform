@@ -100,6 +100,7 @@ export function sampleReceiver(
     availableKbps,
     receivedKbps: elapsedMs > 0 && packets > 0 ? (bytes * 8) / elapsedMs : null,
     freezesMeasured: freezesMeasured && seen.size > 0,
+    measuredMs: elapsedMs > 0 && packets > 0 ? elapsedMs : 0,
   };
 }
 

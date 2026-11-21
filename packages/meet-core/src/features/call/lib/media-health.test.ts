@@ -373,6 +373,8 @@ describe('media quality recorder', () => {
         rttMs: 40,
         availableKbps: null,
         receivedKbps: 1500,
+        freezesMeasured: true,
+        measuredMs: 2000,
       },
       ['high', 'low', 'low'],
       true
@@ -398,7 +400,8 @@ describe('media quality recorder', () => {
       smallMode: true,
       visibility: 'visible',
       intervalMs: 4000,
-      freezesMeasured: false,
+      freezesMeasured: true,
+      freezeMeasuredMs: 2000,
       cameraHeight: null,
       cameraFps: null,
       screenHeight: null,

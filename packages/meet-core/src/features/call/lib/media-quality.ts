@@ -39,6 +39,7 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
   let receiverAt = -Infinity;
   let layers: Record<MeetVideoLayer, number> = { high: 0, mid: 0, low: 0 };
   let freezes = 0;
+  let freezeMeasuredMs = 0;
   let smallMode = false;
   let since = clock();
   const none = () => ({ high: 0, mid: 0, low: 0 });
@@ -75,7 +76,12 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
       // last reading.
       receiver = sample;
       receiverAt = clock();
-      if (sample) freezes += sample.freezes;
+      // Freezes and the time they cover accrue only from samples whose
+      // browser reported freeze counters, so the rate uses measured time.
+      if (sample?.freezesMeasured) {
+        freezes += sample.freezes;
+        freezeMeasuredMs += sample.measuredMs ?? 0;
+      }
       layers = none();
       for (const layer of requested) layers[layer]++;
       publish();
@@ -99,13 +105,15 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
         smallMode,
         visibility: policy.visibility,
         intervalMs: Math.min(600_000, Math.max(1000, now - since)),
-        freezesMeasured: !!receiver?.freezesMeasured,
+        freezesMeasured: freezeMeasuredMs > 0,
+        freezeMeasuredMs: Math.min(600_000, Math.round(freezeMeasuredMs)),
         cameraHeight: round(sender?.cameraHeight),
         cameraFps: round(sender?.cameraFps),
         screenHeight: round(sender?.screenHeight),
         screenFps: round(sender?.screenFps),
       };
       freezes = 0;
+      freezeMeasuredMs = 0;
       since = now;
       return sample;
     },
