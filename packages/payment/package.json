@@ -6,17 +6,26 @@
     "./polar": "./src/polar/index.ts",
     "./polar/checkout/embed": "./src/polar/checkout/embed.ts",
     "./polar/next": "./src/polar/next/index.ts",
-    "./polar/*": "./src/polar/*.ts"
+    "./polar/*": "./src/polar/*.ts",
+    "./apple-server-verifier": "./src/apple-server-verifier.ts",
+    "./apple-root-certificates": "./src/apple-root-certificates.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "3.1.0",
     "@polar-sh/checkout": "^0.4.1",
     "@polar-sh/nextjs": "^0.9.6",
-    "@polar-sh/sdk": "0.49.0"
+    "@polar-sh/sdk": "0.49.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.6.5",
     "next": "^16.4.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
   },
   "packageManager": "bun@1.4.4"
 }
