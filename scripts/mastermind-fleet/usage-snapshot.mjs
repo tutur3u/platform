@@ -103,8 +103,7 @@ export function usageCollector({
     });
 
     const snapshot = { v: 1, generatedAt: now.toISOString(), machines };
-    const body = JSON.stringify(snapshot);
-    let bytes = Buffer.byteLength(body);
+    let bytes = Buffer.byteLength(JSON.stringify(snapshot));
     // Remove oldest accounting rows first. Account identity and quotas
     // remain whole. Every trimmed machine reports partial accounting.
     while (bytes > BYTE_LIMIT) {
@@ -115,9 +114,11 @@ export function usageCollector({
         )
         .at(0);
       if (!oldest) throw new Error('usage_body_too_large');
-      bytes -= Buffer.byteLength(JSON.stringify(oldest.buckets.pop()));
+      const removed = oldest.buckets.pop();
+      bytes -= Buffer.byteLength(JSON.stringify(removed));
+      if (oldest.buckets.length > 0) bytes -= 1; // Trailing array separator.
+      bytes += 'partial'.length - oldest.accounting.kind.length;
       oldest.accounting.kind = 'partial';
-      body = JSON.stringify(snapshot);
     }
     const fingerprint = machines.map(({ quota, accounting, ...machine }) => ({
       ...machine,

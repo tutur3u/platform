@@ -67,3 +67,42 @@ test('charges a shared physical usage source once and keeps source identity priv
     /private-physical|bucketSourceIds|fixture-bearer|\/fixture/
   );
 });
+
+test('trims oldest UTF-8 accounting buckets to the byte budget and keeps quotas', async () => {
+  const now = new Date('2026-11-21T12:00:00.000Z');
+  const id = 'm4';
+  const quota = { kind: 'complete', observedAt: now.toISOString() };
+  const accounts = [{ id: 'fixture-account', instance: 'Work' }];
+  const buckets = Array.from({ length: 384 }, (_, i) => ({
+    day: i === 0 ? '2026-11-21' : '2026-11-20',
+    provider: 'codex',
+    model: `${i}-${'ệ'.repeat(80)}`,
+    costUsd: 2,
+    uncachedInputTokens: 20,
+    cachedInputTokens: 8,
+    cacheCreationTokens: 0,
+    outputTokens: 6,
+    unpricedRecords: 0,
+  }));
+  const collect = usageCollector({
+    root: '/fixture',
+    configs: [{ id, environmentId: id, origin: 'http://127.0.0.1:3773' }],
+    readSecret: () => 'fixture-bearer',
+    now,
+    collect: async () => ({
+      quota,
+      accounts,
+      buckets,
+      accounting: { kind: 'complete', observedAt: now.toISOString() },
+    }),
+  });
+
+  const { body } = await collect([{ id, label: 'M4' }]);
+  const [machine] = JSON.parse(body).machines;
+  assert.ok(Buffer.byteLength(body) <= 92 * 1024);
+  assert.deepEqual(machine.quota, quota);
+  assert.deepEqual(machine.accounts, accounts);
+  assert.equal(machine.accounting.kind, 'partial');
+  assert.ok(machine.buckets.length > 0 && machine.buckets.length < 384);
+  assert.equal(machine.buckets[0].day, '2026-11-21');
+});
