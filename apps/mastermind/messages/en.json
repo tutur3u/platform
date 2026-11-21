@@ -160,9 +160,9 @@
       "expiresLabel": "Expires"
     },
     "fleet": {
-    "outcomes": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
-    "outcomesMissing": "Today’s outcomes unavailable",
-    "outcomesPartial": "Partial coverage",
+      "outcomes": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
+      "outcomesMissing": "Today’s outcomes unavailable",
+      "outcomesPartial": "Partial coverage",
       "main": "Main",
       "production": "Production",
       "migrations": "Migrations",

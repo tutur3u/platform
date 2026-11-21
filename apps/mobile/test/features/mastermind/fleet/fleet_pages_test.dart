@@ -6,6 +6,7 @@ import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_page.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_machines_panel.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_today_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
 
@@ -119,7 +120,21 @@ void main() {
     expect(find.text('Working'), findsOneWidget);
     expect(find.text('1 of 3'), findsOneWidget);
     expect(find.text('Ship fleet sync to production?'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Macbook M3'), 200);
+    await tester.scrollUntilVisible(
+      find.descendant(
+        of: find.byType(FleetMachinesPanel),
+        matching: find.text('Macbook M3'),
+      ),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
+      ),
+    );
     expect(find.text('Offline'), findsWidgets);
     expect(find.text('3 active lanes'), findsNothing);
     expect(find.text('5 active lanes'), findsOneWidget);

@@ -160,9 +160,9 @@
       "expiresLabel": "Hết hạn"
     },
     "fleet": {
-    "outcomes": "{real} lần lỗi · {quotaRecovered} lần hết hạn mức đã tự phục hồi · {quotaUnrecovered} lần hết hạn mức chưa tự phục hồi · {unclassified} chưa phân loại",
-    "outcomesMissing": "Chưa có kết quả hôm nay",
-    "outcomesPartial": "Dữ liệu một phần",
+      "outcomes": "{real} lần lỗi · {quotaRecovered} lần hết hạn mức đã tự phục hồi · {quotaUnrecovered} lần hết hạn mức chưa tự phục hồi · {unclassified} chưa phân loại",
+      "outcomesMissing": "Chưa có kết quả hôm nay",
+      "outcomesPartial": "Dữ liệu một phần",
       "main": "Main",
       "production": "Production",
       "migrations": "Migration",

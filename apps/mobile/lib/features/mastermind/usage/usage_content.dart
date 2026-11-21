@@ -268,14 +268,17 @@ class _UsageWindow extends StatelessWidget {
     final l10n = context.l10n;
     final used = window?.usedPercent;
     final reset = window?.resetsAt;
+    final quota = used == null
+        ? l10n.mastermindUsageMissing
+        : NumberFormat.percentPattern(l10n.localeName).format(used / 100);
+    final resetDate = reset == null ? null : Gmt7.date(reset, l10n.localeName);
+    final resetTime = reset == null
+        ? null
+        : DateFormat('HH:mm:ss', l10n.localeName).format(Gmt7.wallTime(reset));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          used == null
-              ? '$label · ${l10n.mastermindUsageMissing}'
-              : '$label · ${NumberFormat.percentPattern(l10n.localeName).format(used / 100)}',
-        ),
+        Text('$label · $quota'),
         if (used != null) ...[
           const SizedBox(height: AppSpacing.xs),
           AppMeter(value: used / 100, semanticLabel: label),
@@ -284,11 +287,11 @@ class _UsageWindow extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             [
-              '${Gmt7.date(reset, l10n.localeName)} '
-                  "${DateFormat('HH:mm:ss', l10n.localeName).format(Gmt7.wallTime(reset))} ICT",
-              reset.isAfter(now)
-                  ? fleetCountdown(l10n, reset.difference(now))
-                  : l10n.mastermindUsageAwaitingRefresh,
+              '$resetDate $resetTime ICT',
+              if (reset.isAfter(now))
+                fleetCountdown(l10n, reset.difference(now))
+              else
+                l10n.mastermindUsageAwaitingRefresh,
             ].join(' · '),
           ),
         ],

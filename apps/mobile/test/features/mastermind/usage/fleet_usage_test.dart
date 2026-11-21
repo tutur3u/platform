@@ -117,7 +117,7 @@ void main() {
         builder: (context) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             padding: const EdgeInsets.only(bottom: 120),
-            textScaler: TextScaler.linear(2),
+            textScaler: const TextScaler.linear(2),
           ),
           child: Localizations.override(
             context: context,

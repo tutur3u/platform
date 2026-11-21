@@ -241,7 +241,7 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   }
   if (
     bytes > budget &&
-    fitted.machines.some((machine) => machine.todayOutcomes)
+    fitted.machines?.some((machine) => machine.todayOutcomes)
   ) {
     fitted = {
       ...fitted,

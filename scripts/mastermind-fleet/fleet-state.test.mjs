@@ -108,7 +108,7 @@ test('counts lanes on every linked machine under its own slug', () => {
   assert.deepEqual(
     state.machines.map((m) => [m.id, m.status, m.lastSeenAt]),
     [
-      ['skr-m4', 'online', undefined],
+      ['skr-m4', 'online', NOW.toISOString()],
       ['macstudio1', 'online', NOW.toISOString()],
       ['skora-macbook-m3-pro', 'online', NOW.toISOString()],
     ]

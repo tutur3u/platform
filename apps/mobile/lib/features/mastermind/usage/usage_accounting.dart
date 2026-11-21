@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
@@ -59,7 +58,8 @@ class _UsageAccountingState extends State<UsageAccounting> {
           account?.email ??
           (account == null
               ? l10n.mastermindUsageUnattributed
-              : '${row.machine.label} · ${account.provider} · ${account.instance}');
+              : '${row.machine.label} · ${account.provider} · '
+                    '${account.instance}');
       final key = account?.email == null
           ? (null, account == null ? null : row.machine.id, account?.id)
           : (account?.email, null, null);
@@ -135,7 +135,8 @@ class _UsageAccountingState extends State<UsageAccounting> {
                                 DataCell(Text(row.bucket.day)),
                                 DataCell(
                                   Text(
-                                    '${row.bucket.provider} · ${row.bucket.model}',
+                                    '${row.bucket.provider} · '
+                                    '${row.bucket.model}',
                                   ),
                                 ),
                                 DataCell(Text(count.format(row.bucket.input))),
