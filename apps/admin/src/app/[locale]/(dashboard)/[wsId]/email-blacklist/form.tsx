@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@tuturuuu/ui/button';
@@ -133,7 +134,7 @@ export default function EmailBlacklistForm({
 
       const method = data?.id ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await mountedFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -23,7 +24,7 @@ export default function FeaturesTab() {
   const { data: features, isLoading } = useQuery<FeatureAccess[]>({
     queryKey: ['admin', 'ai-credits', 'features'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/admin/ai-credits/features');
+      const res = await mountedFetch('/api/v1/admin/ai-credits/features');
       if (!res.ok) throw new Error('Failed to fetch features');
       return res.json();
     },
@@ -31,7 +32,7 @@ export default function FeaturesTab() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const res = await fetch('/api/v1/admin/ai-credits/features', {
+      const res = await mountedFetch('/api/v1/admin/ai-credits/features', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, enabled }),

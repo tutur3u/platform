@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import {
   type InfiniteData,
@@ -72,7 +73,7 @@ async function fetchAdminModelsPage({
   if (query) params.set('q', query);
   if (ids?.length) params.set('ids', ids.join(','));
 
-  const res = await fetch(`/api/v1/admin/ai-credits/models?${params}`, {
+  const res = await mountedFetch(`/api/v1/admin/ai-credits/models?${params}`, {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('Failed to fetch models');

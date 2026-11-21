@@ -1,3 +1,5 @@
+import { mountedFetch } from '@/lib/mounted-api';
+
 /**
  * Default Tuturuuu API path (v2)
  */
@@ -97,7 +99,7 @@ export async function fetchFromTuturuuu({
 }: TuturuuuFetchOptions): Promise<Response> {
   const url = buildProxyUrl({ path, wsId, apiEndpoint, queryString });
 
-  return fetch(url, {
+  return mountedFetch(url, {
     headers: {
       'Content-Type': 'application/json',
       'X-Tuturuuu-Api-Key': apiKey,

@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import {
@@ -41,7 +42,7 @@ export default function TimezoneEditDialog({
   const setOpen = setExternalOpen ?? setInternalOpen;
 
   const handleSubmit = async (values: z.infer<typeof ApiConfigFormSchema>) => {
-    const res = await fetch('/api/v1/infrastructure/timezones', {
+    const res = await mountedFetch('/api/v1/infrastructure/timezones', {
       method: data.value ? 'PUT' : 'POST',
       body: JSON.stringify(values),
     });

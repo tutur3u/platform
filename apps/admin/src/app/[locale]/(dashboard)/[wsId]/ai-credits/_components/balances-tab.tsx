@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -70,7 +71,7 @@ export default function BalancesTab() {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (search) params.set('search', search);
       if (scopeFilter !== 'all') params.set('scope', scopeFilter);
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/v1/admin/ai-credits/balances?${params.toString()}`
       );
       if (!res.ok) throw new Error('Failed to fetch balances');
@@ -86,7 +87,7 @@ export default function BalancesTab() {
       balance_id: string;
       amount: number;
     }) => {
-      const res = await fetch('/api/v1/admin/ai-credits/balances', {
+      const res = await mountedFetch('/api/v1/admin/ai-credits/balances', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ balance_id, amount }),

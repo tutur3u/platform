@@ -12,6 +12,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { appApiPath } from '@/lib/mounted-api';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 
 export default async function ParleyAdministration({
@@ -115,7 +116,10 @@ export default async function ParleyAdministration({
         <ul className="list-inside list-disc text-sm">
           {references.data?.map((r) => (
             <li key={r.id}>
-              <a className="underline" href={`/api/parley/references/${r.id}`}>
+              <a
+                className="underline"
+                href={appApiPath(`/api/parley/references/${r.id}`)}
+              >
                 {r.filename}
               </a>
             </li>

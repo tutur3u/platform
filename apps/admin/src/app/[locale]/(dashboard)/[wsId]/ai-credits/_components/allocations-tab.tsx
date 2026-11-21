@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
@@ -17,7 +18,7 @@ export default function AllocationsTab() {
   const { data: allocations, isLoading } = useQuery<Allocation[]>({
     queryKey: ['admin', 'ai-credits', 'allocations'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/admin/ai-credits/allocations', {
+      const res = await mountedFetch('/api/v1/admin/ai-credits/allocations', {
         cache: 'no-store',
       });
       if (!res.ok) throw new Error('Failed to fetch allocations');
@@ -27,7 +28,7 @@ export default function AllocationsTab() {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<Allocation> & { id: string }) => {
-      const res = await fetch('/api/v1/admin/ai-credits/allocations', {
+      const res = await mountedFetch('/api/v1/admin/ai-credits/allocations', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Plus, Trash2, Upload } from '@tuturuuu/icons';
@@ -62,7 +63,7 @@ export default function HolidaysPage() {
     queryKey: ['holidays', selectedYear],
     queryFn: async () => {
       const params = selectedYear !== 'all' ? `?year=${selectedYear}` : '';
-      const res = await fetch(`/api/v1/internal/holidays${params}`);
+      const res = await mountedFetch(`/api/v1/internal/holidays${params}`);
       if (!res.ok) throw new Error('Failed to fetch holidays');
       return res.json() as Promise<VietnameseHoliday[]>;
     },
@@ -71,7 +72,7 @@ export default function HolidaysPage() {
   // Create holiday mutation
   const createMutation = useMutation({
     mutationFn: async (data: { date: string; name: string }) => {
-      const res = await fetch('/api/v1/internal/holidays', {
+      const res = await mountedFetch('/api/v1/internal/holidays', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -103,7 +104,7 @@ export default function HolidaysPage() {
       id: string;
       data: { date?: string; name?: string };
     }) => {
-      const res = await fetch(`/api/v1/internal/holidays/${id}`, {
+      const res = await mountedFetch(`/api/v1/internal/holidays/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -127,7 +128,7 @@ export default function HolidaysPage() {
   // Delete holiday mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/v1/internal/holidays/${id}`, {
+      const res = await mountedFetch(`/api/v1/internal/holidays/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -152,7 +153,7 @@ export default function HolidaysPage() {
       holidays: { date: string; name: string }[];
       replaceExisting: boolean;
     }) => {
-      const res = await fetch('/api/v1/internal/holidays/bulk', {
+      const res = await mountedFetch('/api/v1/internal/holidays/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

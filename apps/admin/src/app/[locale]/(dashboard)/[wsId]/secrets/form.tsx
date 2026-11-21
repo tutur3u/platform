@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation } from '@tanstack/react-query';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
@@ -128,7 +129,7 @@ export default function SecretForm({
         return;
       }
 
-      const res = await fetch(
+      const res = await mountedFetch(
         payload.id
           ? `/api/workspaces/${wsId}/secrets/${payload.id}`
           : `/api/workspaces/${wsId}/secrets`,

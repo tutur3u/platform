@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -121,7 +122,7 @@ export default function TransactionsTab() {
       if (typeFilter !== 'all') params.set('transaction_type', typeFilter);
       if (featureFilter) params.set('feature', featureFilter);
       if (modelFilter) params.set('model_id', modelFilter);
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/v1/admin/ai-credits/transactions?${params.toString()}`,
         { cache: 'no-store' }
       );
@@ -138,7 +139,7 @@ export default function TransactionsTab() {
         if (selectedEntity?.wsId) params.set('ws_id', selectedEntity.wsId);
         if (selectedEntity?.userId)
           params.set('user_id', selectedEntity.userId);
-        const res = await fetch(
+        const res = await mountedFetch(
           `/api/v1/admin/ai-credits/entity-detail?${params.toString()}`,
           { cache: 'no-store' }
         );

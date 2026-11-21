@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Ellipsis } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -57,7 +58,7 @@ export function EmailBlacklistRowActions({
 
     setIsDeleting(true);
     try {
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/v1/infrastructure/email-blacklist/${entry.id}`,
         {
           method: 'DELETE',

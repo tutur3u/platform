@@ -1,29 +1,41 @@
-import { createAppBaseResolver } from '@tuturuuu/start-bridge/start/app-base';
-import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
-import { afterEach, expect, it, vi } from 'vitest';
-import { appApiPatterns } from '../start-bridge/api-patterns.bridge.gen';
-import { centralFirst } from '../start-bridge/central-first';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiFetch } from './api-fetch';
 
-afterEach(() => vi.unstubAllGlobals());
+const baseGlobal = globalThis as { __tuturuuuAppBase?: string };
 
-it('uses the mounted Infrastructure API for local requests and preserves Web requests', async () => {
-  vi.stubGlobal('window', {});
-  vi.stubGlobal('__tuturuuuAppBase', '/infra');
-  const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({}));
-  vi.stubGlobal('fetch', fetch);
-  const unregister = registerDefaultAppBaseResolver(
-    createAppBaseResolver(appApiPatterns, centralFirst),
-    { app: 'infrastructure' }
-  );
-  try {
-    await apiFetch('/api/v1/admin/ai-credits/models?query=fast');
-    await apiFetch('/api/v1/users/me/profile');
-    expect(fetch.mock.calls.map(([path]) => path)).toEqual([
-      '/infra/api/v1/admin/ai-credits/models?query=fast',
-      '/api/v1/users/me/profile',
-    ]);
-  } finally {
-    unregister();
-  }
+afterEach(() => {
+  delete baseGlobal.__tuturuuuAppBase;
+  vi.unstubAllGlobals();
+});
+
+describe('apiFetch mount resolution', () => {
+  it('prefixes an owned string path and still parses JSON', async () => {
+    baseGlobal.__tuturuuuAppBase = '/admin';
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ models: [] }), { status: 200 })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(apiFetch('/api/v1/admin/ai-credits/models')).resolves.toEqual({
+      models: [],
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/admin/api/v1/admin/ai-credits/models',
+      undefined
+    );
+  });
+
+  it('leaves a Web passthrough string at the root', async () => {
+    baseGlobal.__tuturuuuAppBase = '/admin';
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await apiFetch('/api/workspaces/invitations');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/workspaces/invitations',
+      undefined
+    );
+  });
 });

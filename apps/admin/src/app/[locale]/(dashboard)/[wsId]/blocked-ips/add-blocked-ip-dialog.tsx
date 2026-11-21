@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -67,18 +68,21 @@ export default function AddBlockedIPDialog() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/v1/infrastructure/blocked-ips', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ip_address: ipAddress.trim(),
-          reason,
-          block_level: parseInt(blockLevel, 10),
-          notes: notes.trim() || undefined,
-        }),
-      });
+      const response = await mountedFetch(
+        '/api/v1/infrastructure/blocked-ips',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ip_address: ipAddress.trim(),
+            reason,
+            block_level: parseInt(blockLevel, 10),
+            notes: notes.trim() || undefined,
+          }),
+        }
+      );
 
       const data = await response.json();
 

@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -76,7 +77,7 @@ export function RealtimeAnalyticsClient({
         queryParams.set('channelId', filters.channelId);
       }
 
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/workspaces/${wsId}/infrastructure/realtime/analytics?${queryParams}`,
         { cache: 'no-store' }
       );
@@ -185,7 +186,7 @@ export function RealtimeAnalyticsClient({
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces-list', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/workspaces`, {
+      const response = await mountedFetch(`/api/workspaces`, {
         cache: 'no-store',
       });
       if (!response.ok) return [];
@@ -235,7 +236,7 @@ export function RealtimeAnalyticsClient({
         queryParams.set('channelId', filters.channelId);
       }
 
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/workspaces/${wsId}/infrastructure/realtime/analytics/summary?${queryParams}`,
         { cache: 'no-store' }
       );

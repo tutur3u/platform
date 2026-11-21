@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Download, Filter, RefreshCw, Search, X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -47,7 +48,7 @@ export default function SyncFilters({ wsId, totalCount }: Props) {
 
   const handleExport = async (format: 'csv' | 'json') => {
     try {
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/workspaces/${wsId}/calendar-sync/export?format=${format}`,
         {
           method: 'GET',

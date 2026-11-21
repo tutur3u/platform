@@ -1,4 +1,4 @@
-import { internalApiClient } from '@tuturuuu/internal-api/client';
+import { appApiPath } from '@/lib/mounted-api';
 
 export class HttpError extends Error {
   constructor(
@@ -14,10 +14,8 @@ export async function apiFetch<T>(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<T> {
-  const response =
-    typeof input === 'string' && input.startsWith('/api/')
-      ? await internalApiClient.fetch(input, init)
-      : await fetch(input, init);
+  const target = typeof input === 'string' ? appApiPath(input) : input;
+  const response = await fetch(target, init);
 
   if (!response.ok) {
     let message = response.statusText || `HTTP ${response.status}`;

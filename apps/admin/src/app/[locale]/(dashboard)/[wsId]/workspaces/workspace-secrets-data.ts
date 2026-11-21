@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
@@ -15,7 +16,7 @@ export function useWorkspaceSecrets(workspaceId: string) {
   return useQuery({
     queryKey: workspaceSecretsQueryKey(workspaceId),
     queryFn: async () => {
-      const res = await fetch(`/api/workspaces/${workspaceId}/secrets`, {
+      const res = await mountedFetch(`/api/workspaces/${workspaceId}/secrets`, {
         cache: 'no-store',
       });
 
@@ -37,7 +38,7 @@ export function useDeleteWorkspaceSecret(workspaceId: string) {
 
   return useMutation({
     mutationFn: async (secret: WorkspaceSecret) => {
-      const res = await fetch(
+      const res = await mountedFetch(
         `/api/workspaces/${workspaceId}/secrets/${secret.id}`,
         {
           method: 'DELETE',
@@ -83,7 +84,7 @@ export function useUpsertWorkspaceSecret(workspaceId: string) {
       name: string;
       value: string;
     }) => {
-      const res = await fetch(
+      const res = await mountedFetch(
         id
           ? `/api/workspaces/${workspaceId}/secrets/${id}`
           : `/api/workspaces/${workspaceId}/secrets`,

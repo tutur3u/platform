@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -10,13 +11,16 @@ export default function OtpLimitResetClient() {
   const t = useTranslations('otp-limit-resets');
 
   const handleSubmit = async (values: OtpLimitResetFormValues) => {
-    const response = await fetch('/api/v1/infrastructure/otp-limits/reset', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(values),
-    });
+    const response = await mountedFetch(
+      '/api/v1/infrastructure/otp-limits/reset',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      }
+    );
 
     const payload = (await response.json().catch(() => null)) as {
       message?: string;

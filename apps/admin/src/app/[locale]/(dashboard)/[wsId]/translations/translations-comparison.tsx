@@ -1,5 +1,5 @@
 'use client';
-
+import { mountedFetch } from '@/lib/mounted-api';
 import {
   AlertCircle,
   BarChart3,
@@ -367,7 +367,7 @@ export default function TranslationsComparison({
         setStreamingContent('');
 
         await new Promise<void>((resolve, reject) => {
-          const response = fetch('/api/ai/translate', {
+          const response = mountedFetch('/api/ai/translate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

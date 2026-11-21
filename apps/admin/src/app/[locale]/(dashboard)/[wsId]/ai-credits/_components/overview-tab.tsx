@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Coins, TrendingDown, Users } from '@tuturuuu/icons';
@@ -51,7 +52,7 @@ export default function OverviewTab() {
     {
       queryKey: ['admin', 'ai-credits', 'overview'],
       queryFn: async () => {
-        const res = await fetch('/api/v1/admin/ai-credits/overview', {
+        const res = await mountedFetch('/api/v1/admin/ai-credits/overview', {
           cache: 'no-store',
         });
         if (!res.ok) throw new Error('Failed to fetch overview');
@@ -65,7 +66,7 @@ export default function OverviewTab() {
   }>({
     queryKey: ['admin', 'ai-credits', 'transactions', { page: 1, limit: 10 }],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await mountedFetch(
         '/api/v1/admin/ai-credits/transactions?page=1&limit=10',
         { cache: 'no-store' }
       );

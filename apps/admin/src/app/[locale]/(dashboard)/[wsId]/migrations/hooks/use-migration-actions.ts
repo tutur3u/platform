@@ -1,5 +1,5 @@
 'use client';
-
+import { mountedFetch } from '@/lib/mounted-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback } from 'react';
 import {
@@ -111,7 +111,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
       const MAX_429_RETRIES = 8;
 
-      let res = await fetch(fetchUrl, { headers });
+      let res = await mountedFetch(fetchUrl, { headers });
       let data = (await res.json()) as Record<string, unknown>;
       let retries = 0;
 
@@ -124,7 +124,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         await new Promise((resolve) =>
           setTimeout(resolve, retryAfterSec * 1000)
         );
-        res = await fetch(fetchUrl, { headers });
+        res = await mountedFetch(fetchUrl, { headers });
         data = (await res.json()) as Record<string, unknown>;
       }
 
@@ -301,7 +301,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
           try {
             while (offset < maxFetch) {
-              const res = await fetch(
+              const res = await mountedFetch(
                 `${internalFetchUrl}?ws_id=${targetWorkspaceId}&offset=${offset}&limit=${batchSize}`
               );
               console.log(
@@ -523,7 +523,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
               `[${module}] Ensuring ${userIds.size} platform users exist...`
             );
             try {
-              const res = await fetch(
+              const res = await mountedFetch(
                 '/api/v1/infrastructure/migrate/ensure-platform-users',
                 {
                   method: 'POST',
@@ -627,7 +627,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
 
             while (!chunkSynced) {
               try {
-                const res = await fetch(
+                const res = await mountedFetch(
                   internalPath.replace('[wsId]', targetWorkspaceId),
                   {
                     method: 'PUT',

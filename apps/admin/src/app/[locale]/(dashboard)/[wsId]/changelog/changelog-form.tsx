@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import type { JSONContent } from '@tiptap/react';
 import {
@@ -148,10 +149,13 @@ export function ChangelogForm({
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('/api/v1/infrastructure/changelog/upload', {
-      method: 'POST',
-      body: formData,
-    });
+    const response = await mountedFetch(
+      '/api/v1/infrastructure/changelog/upload',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -196,7 +200,7 @@ export function ChangelogForm({
 
       if (isEditing && initialData?.id) {
         // Update existing entry
-        response = await fetch(
+        response = await mountedFetch(
           `/api/v1/infrastructure/changelog/${initialData.id}`,
           {
             method: 'PUT',
@@ -206,7 +210,7 @@ export function ChangelogForm({
         );
       } else {
         // Create new entry
-        response = await fetch('/api/v1/infrastructure/changelog', {
+        response = await mountedFetch('/api/v1/infrastructure/changelog', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -222,7 +226,7 @@ export function ChangelogForm({
 
       // If publish flag is set, publish the entry
       if (publish) {
-        const publishResponse = await fetch(
+        const publishResponse = await mountedFetch(
           `/api/v1/infrastructure/changelog/${savedEntry.id}/publish`,
           {
             method: 'POST',
@@ -262,7 +266,7 @@ export function ChangelogForm({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/infrastructure/changelog/${initialData.id}/publish`,
         {
           method: 'POST',
@@ -302,7 +306,7 @@ export function ChangelogForm({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/infrastructure/changelog/${initialData.id}`,
         {
           method: 'DELETE',

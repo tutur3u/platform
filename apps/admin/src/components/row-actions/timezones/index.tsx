@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Ellipsis } from '@tuturuuu/icons';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
@@ -28,7 +29,7 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   const timezone = row.original;
 
   const syncTimezone = async () => {
-    const res = await fetch(`/api/v1/infrastructure/timezones`, {
+    const res = await mountedFetch(`/api/v1/infrastructure/timezones`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,9 +57,12 @@ export function TimezoneRowActions({ row }: TimezoneRowActionsProps) {
   };
 
   const deleteTimezone = async () => {
-    const res = await fetch(`/api/v1/infrastructure/timezones/${timezone.id}`, {
-      method: 'DELETE',
-    });
+    const res = await mountedFetch(
+      `/api/v1/infrastructure/timezones/${timezone.id}`,
+      {
+        method: 'DELETE',
+      }
+    );
 
     if (res.ok) {
       router.refresh();
