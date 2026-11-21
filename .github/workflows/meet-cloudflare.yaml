@@ -756,7 +756,8 @@ jobs:
         timeout-minutes: 5
         env:
           MEET_PREVIOUS_LIVE_SHA: ${{ steps.admission.outputs.live }}
-        run: node scripts/ci/verify-meet-build-info.js
+        # The served build must be the published source, not main's dispatch head.
+        run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-build-info.js
       - name: Verify authenticated realtime and SFU behavior
         if: steps.admission.outputs.superseded != 'true'
         env:

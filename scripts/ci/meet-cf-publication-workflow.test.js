@@ -98,3 +98,11 @@ test("deploy admission runs the release policy from main's dispatch head", () =>
   );
   assert.match(admit.run, /node "\$policy\/meet-standalone-release\.mjs"/);
 });
+
+test('the canonical build identity check expects the published source', () => {
+  const verify = step('deploy', 'Verify canonical frontend build identity');
+  assert.match(
+    verify.run,
+    /^GITHUB_SHA="\$SOURCE_SHA" node scripts\/ci\/verify-meet-build-info\.js$/
+  );
+});
