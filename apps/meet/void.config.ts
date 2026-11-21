@@ -77,6 +77,8 @@ const production = defineConfig({
       // Public site key of the production guest-join Turnstile widget; its
       // root hostname covers both meet.tuturuuu.com and tuturuuu.com/meet.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAACFREAh7hBTozwxB',
+      // Meet is mounted at tuturuuu.com/meet; server-built Meet links use it.
+      NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS: 'meet',
       // Meet AI containment (A1, 3 Nov 2026). It must match the live Worker vars,
       // because a deploy replaces vars and dropping these would turn Meet AI back on.
       // Lifting containment is a reviewed change to these two lines.
