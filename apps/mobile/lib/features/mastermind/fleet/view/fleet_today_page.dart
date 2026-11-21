@@ -55,7 +55,17 @@ class FleetTodayPage extends StatelessWidget {
             ],
             _NeedsYouPanel(snapshot: snapshot, state: state, now: now),
             const SizedBox(height: AppSpacing.lg),
-            FleetMachinesPanel(snapshot: snapshot, now: now),
+            FleetClock(
+              period: const Duration(seconds: 10),
+              now: now,
+              builder: (context, current) => Column(
+                children: [
+                  _TodayOutcomesPanel(snapshot: snapshot, now: current),
+                  const SizedBox(height: AppSpacing.lg),
+                  FleetMachinesPanel(snapshot: snapshot, now: () => current),
+                ],
+              ),
+            ),
           ],
         ),
       ],
@@ -75,6 +85,7 @@ class FleetHealthHero extends StatelessWidget {
     final counts = snapshot.counts;
     final open = snapshot.needsYouAt(now).length;
     final paging = snapshot.pageAlerts.length;
+    final failures = _observedRealFailures(snapshot, now);
     final (headline, tone, icon) = paging > 0
         ? (
             l10n.mastermindFleetHeadlinePaging(paging),
@@ -87,9 +98,9 @@ class FleetHealthHero extends StatelessWidget {
             AppTone.warning,
             LucideIcons.inbox,
           )
-        : counts.failed > 0
+        : failures > 0
         ? (
-            l10n.mastermindFleetHeadlineFailed(counts.failed),
+            l10n.mastermindFleetHeadlineFailed(failures),
             AppTone.destructive,
             LucideIcons.circleAlert,
           )
@@ -105,7 +116,10 @@ class FleetHealthHero extends StatelessWidget {
             LucideIcons.moon,
           );
     final online = snapshot.machines
-        .where((m) => m.status == FleetMachineStatus.online)
+        .where(
+          (machine) =>
+              fleetMachineStatusAt(machine, now) == FleetMachineStatus.online,
+        )
         .length;
     return AppSummaryHero(
       eyebrow: l10n.mastermindFleetNowEyebrow,
@@ -181,17 +195,76 @@ class _Kpis extends StatelessWidget {
           onTap: () => context.go(Routes.mastermindInbox),
         ),
         AppStatTile(
-          label: FleetLaneState.failed.label(l10n),
+          label: l10n.mastermindFleetStopped,
           value: '${counts.failed}',
           icon: FleetLaneState.failed.icon,
-          // A zero keeps a neutral glyph: only real failures alarm.
-          tone: alarm(counts.failed, AppTone.destructive),
+          tone: AppTone.neutral,
           onTap: () => context.go(
             '${Routes.mastermindWork}?state=${FleetLaneState.failed.name}',
           ),
         ),
       ],
     );
+  }
+}
+
+int _observedRealFailures(FleetSnapshot snapshot, DateTime now) => snapshot
+    .machines
+    .map((machine) => machine.todayOutcomes)
+    .whereType<FleetTodayOutcomes>()
+    .where(
+      (outcome) =>
+          outcome.isToday(now) &&
+          now.difference(outcome.observedAt) <= fleetStaleAfter,
+    )
+    .fold(0, (total, outcome) => total + outcome.real);
+
+class _TodayOutcomesPanel extends StatelessWidget {
+  const _TodayOutcomesPanel({required this.snapshot, required this.now});
+
+  final FleetSnapshot snapshot;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppPanel(
+      title: l10n.mastermindFleetOutcomesTitle,
+      padded: false,
+      child: Column(
+        children: [
+          for (final machine in snapshot.machines)
+            AppRichRow(
+              title: machine.label,
+              subtitle: _summary(l10n, machine.todayOutcomes),
+              trailing: _isStale(machine.todayOutcomes)
+                  ? AppBadge(
+                      variant: AppBadgeVariant.warning,
+                      child: Text(l10n.mastermindUsageStale),
+                    )
+                  : null,
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool _isStale(FleetTodayOutcomes? outcome) =>
+      outcome != null && now.difference(outcome.observedAt) > fleetStaleAfter;
+
+  String _summary(AppLocalizations l10n, FleetTodayOutcomes? outcome) {
+    if (outcome == null || !outcome.isToday(now)) {
+      return l10n.mastermindUsageMissing;
+    }
+    final summary = l10n.mastermindFleetOutcomesSummary(
+      outcome.real,
+      outcome.quotaRecovered,
+      outcome.quotaUnrecovered,
+      outcome.unclassified,
+    );
+    return outcome.partial
+        ? '$summary · ${l10n.mastermindFleetOutcomesPartial}'
+        : summary;
   }
 }
 

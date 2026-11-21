@@ -72,7 +72,7 @@ void main() {
 
     clock = DateTime.utc(2026, 11, 20, 3, 6);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.textContaining('publisher may be paused'), findsOneWidget);
+    expect(find.textContaining('Last fleet update'), findsOneWidget);
   });
 
   testWidgets('an ask listed as resolved leaves Urgent for Answered', (

@@ -30,23 +30,40 @@ class FleetMachinesPanel extends StatelessWidget {
       child: Column(
         children: [
           for (final machine in snapshot.machines)
-            AppRichRow(
-              title: machine.label,
-              subtitle: l10n.mastermindFleetMachineActive(
-                active[machine.id] ?? 0,
-              ),
-              leading: AppIconTile(
-                icon: LucideIcons.server,
-                tone: machine.status.tone,
-              ),
-              trailing: _StatusBadge(status: machine.status),
-              trailingCaption: machine.lastSeenAt == null
-                  ? null
-                  : fleetAge(l10n, machine.lastSeenAt!, current),
-              onTap: () => context.go('${Routes.mastermindWork}?group=machine'),
+            _MachineRow(
+              machine: machine,
+              active: active[machine.id] ?? 0,
+              now: current,
             ),
         ],
       ),
+    );
+  }
+}
+
+class _MachineRow extends StatelessWidget {
+  const _MachineRow({
+    required this.machine,
+    required this.active,
+    required this.now,
+  });
+
+  final FleetMachine machine;
+  final int active;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final seen = machine.lastSeenAt;
+    final status = fleetMachineStatusAt(machine, now);
+    return AppRichRow(
+      title: machine.label,
+      subtitle: l10n.mastermindFleetMachineActive(active),
+      leading: AppIconTile(icon: LucideIcons.server, tone: status.tone),
+      trailing: _StatusBadge(status: status),
+      trailingCaption: seen == null ? null : fleetAge(l10n, seen, now),
+      onTap: () => context.go('${Routes.mastermindWork}?group=machine'),
     );
   }
 }

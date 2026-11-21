@@ -15051,7 +15051,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindTabInbox => 'Inbox';
 
   @override
-  String get mastermindTabInsights => 'Insights';
+  String get mastermindTabInsights => 'Usage';
 
   @override
   String get mastermindTabShip => 'Ship';
@@ -17792,7 +17792,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mastermindFleetStale(String age) {
-    return 'Last update $age. The fleet publisher may be paused.';
+    return 'Last fleet update $age.';
   }
 
   @override
@@ -18990,4 +18990,120 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetRejectChallenge => 'the server asked for a browser check. Reply on WhatsApp';
+
+  @override
+  String get mastermindUsageAllMachines => 'All machines';
+
+  @override
+  String get mastermindUsageAllProviders => 'All providers';
+
+  @override
+  String get mastermindUsageAvailable => 'Available';
+
+  @override
+  String get mastermindUsageAwaitingRefresh => 'Awaiting quota refresh';
+
+  @override
+  String get mastermindUsageCacheRead => 'Cache read';
+
+  @override
+  String get mastermindUsageCacheWrite => 'Cache write';
+
+  @override
+  String get mastermindUsageCostByAccount => 'Cost by account (USD)';
+
+  @override
+  String get mastermindUsageCostByDay => 'Cost by day (USD, ICT)';
+
+  @override
+  String get mastermindUsageCostByModel => 'Cost by model (USD)';
+
+  @override
+  String get mastermindUsageDay => 'Day';
+
+  @override
+  String get mastermindUsageDisabled => 'Provider is disabled or unavailable on this machine.';
+
+  @override
+  String get mastermindUsageEmailMissing => 'Account email unavailable';
+
+  @override
+  String get mastermindUsageInput => 'Uncached input';
+
+  @override
+  String get mastermindUsageLimited => 'Limited';
+
+  @override
+  String get mastermindUsageMachine => 'Machine';
+
+  @override
+  String get mastermindUsageMissing => 'Unavailable';
+
+  @override
+  String get mastermindUsageModel => 'Model';
+
+  @override
+  String get mastermindUsageNoConfirmedQuota => 'No current quota confirmed';
+
+  @override
+  String get mastermindUsageOutput => 'Output';
+
+  @override
+  String get mastermindUsagePartial => 'Some usage or prices are missing. Totals include the priced records available.';
+
+  @override
+  String get mastermindUsageProvider => 'Provider';
+
+  @override
+  String get mastermindUsageReadiness => 'What can run now';
+
+  @override
+  String get mastermindUsageSession => 'Session used';
+
+  @override
+  String get mastermindUsageSessionLimited => 'Session limit reached.';
+
+  @override
+  String get mastermindUsageSignInRequired => 'Sign-in required.';
+
+  @override
+  String get mastermindUsageSpendLimited => 'Provider spend cap reached.';
+
+  @override
+  String get mastermindUsageStale => 'Stale';
+
+  @override
+  String get mastermindUsageTokens => 'Token usage';
+
+  @override
+  String get mastermindUsageUnattributed => 'Account unavailable';
+
+  @override
+  String get mastermindUsageUnsupported => 'This provider does not report quota here.';
+
+  @override
+  String get mastermindUsageWeekly => 'Weekly used';
+
+  @override
+  String get mastermindUsageWeeklyLimited => 'Weekly limit reached.';
+
+  @override
+  String get mastermindUsageNext => 'Next';
+
+  @override
+  String get mastermindUsagePrevious => 'Previous';
+
+  @override
+  String get mastermindFleetStopped => 'Stopped lanes';
+
+  @override
+  String get mastermindFleetOutcomesTitle => 'Today’s outcomes by machine';
+
+  @override
+  String get mastermindFleetOutcomesPartial => 'Partial coverage';
+
+  @override
+  String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {
+    return '$real failures · $quotaRecovered quota stops auto-recovered · $quotaUnrecovered quota stops with no automatic recovery · $unclassified unclassified';
+  }
 }

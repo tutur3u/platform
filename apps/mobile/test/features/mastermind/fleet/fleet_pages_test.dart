@@ -117,7 +117,7 @@ void main() {
     expect(find.text('Updated 2 min ago'), findsOneWidget);
     expect(find.text('2 decisions need you'), findsOneWidget);
     expect(find.text('Working'), findsOneWidget);
-    expect(find.text('2 of 3'), findsOneWidget);
+    expect(find.text('1 of 3'), findsOneWidget);
     expect(find.text('Ship fleet sync to production?'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Macbook M3'), 200);
     expect(find.text('Offline'), findsWidgets);
@@ -128,7 +128,7 @@ void main() {
   testWidgets('a stale snapshot and a failed refresh warn', (tester) async {
     source.json = fleetSampleJson(receivedAt: '2026-11-20T02:40:00.000Z');
     await pump(tester, FleetTodayPage(now: now));
-    expect(find.textContaining('publisher may be paused'), findsOneWidget);
+    expect(find.textContaining('Last fleet update'), findsOneWidget);
 
     source.fetchError = const ApiException.transport(message: 'offline');
     await harness.runtime.fleet.refresh();

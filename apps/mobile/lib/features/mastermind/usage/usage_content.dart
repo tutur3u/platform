@@ -1,0 +1,288 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
+import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
+import 'package:mobile/features/mastermind/usage/usage_accounting.dart';
+import 'package:mobile/l10n/l10n.dart';
+
+class UsageContent extends StatefulWidget {
+  const UsageContent({required this.usage, super.key});
+
+  final FleetUsage usage;
+
+  @override
+  State<UsageContent> createState() => _UsageContentState();
+}
+
+class _UsageContentState extends State<UsageContent> {
+  static const _all = '';
+  String _machine = _all;
+  String _provider = _all;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final machines = widget.usage.machines;
+    final providers = {
+      for (final machine in machines) ...[
+        for (final account in machine.accounts) account.provider,
+        for (final bucket in machine.buckets) bucket.provider,
+      ],
+    }.toList()..sort();
+    final filtered = machines
+        .where((machine) => _machine == _all || machine.id == _machine)
+        .toList();
+    bool matches(String provider) => _provider == _all || provider == _provider;
+    final accounts = [
+      for (final machine in filtered)
+        for (final account in machine.accounts.where(
+          (a) => matches(a.provider),
+        ))
+          (machine: machine, account: account),
+    ];
+    return AppPageScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverList.list(
+          children: [
+            AppAdaptiveGrid(
+              minTileWidth: 140,
+              equalHeight: true,
+              children: [
+                AppSelect<String>(
+                  options: [
+                    AppSelectOption(
+                      value: _all,
+                      label: l10n.mastermindUsageAllMachines,
+                    ),
+                    for (final machine in machines)
+                      AppSelectOption(value: machine.id, label: machine.label),
+                  ],
+                  value: _machine,
+                  title: l10n.mastermindUsageMachine,
+                  onChanged: (value) => setState(() => _machine = value),
+                ),
+                AppSelect<String>(
+                  options: [
+                    AppSelectOption(
+                      value: _all,
+                      label: l10n.mastermindUsageAllProviders,
+                    ),
+                    for (final provider in providers)
+                      AppSelectOption(value: provider, label: provider),
+                  ],
+                  value: _provider,
+                  title: l10n.mastermindUsageProvider,
+                  onChanged: (value) => setState(() => _provider = value),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FleetClock(
+              period: const Duration(seconds: 3),
+              builder: (context, now) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppPanel(
+                    title: l10n.mastermindUsageReadiness,
+                    padded: false,
+                    child: Column(
+                      children: [
+                        for (final machine in filtered)
+                          _ReadinessRow(
+                            machine: machine,
+                            accounts: machine.accounts.where(
+                              (account) => matches(account.provider),
+                            ),
+                            now: now,
+                          ),
+                      ],
+                    ),
+                  ),
+                  for (final row in accounts) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _AccountPanel(
+                      machine: row.machine,
+                      account: row.account,
+                      now: now,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            UsageAccounting(machines: filtered, provider: _provider),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+bool _stale(DateTime? observedAt, DateTime now) =>
+    observedAt != null && now.difference(observedAt) > usageStaleAfter;
+
+class _ReadinessRow extends StatelessWidget {
+  const _ReadinessRow({
+    required this.machine,
+    required this.accounts,
+    required this.now,
+  });
+
+  final UsageMachine machine;
+  final Iterable<UsageAccount> accounts;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final observedAt = machine.quota.observedAt;
+    final stale = _stale(observedAt, now);
+    final available = [
+      for (final account in accounts)
+        if (observedAt != null &&
+            !stale &&
+            account.checkedAt != null &&
+            !_stale(account.checkedAt, now) &&
+            account.status == 'available')
+          account.instance,
+    ];
+    return AppRichRow(
+      title: machine.label,
+      subtitle: available.isNotEmpty
+          ? available.join(', ')
+          : l10n.mastermindUsageNoConfirmedQuota,
+      leading: const AppIconTile(icon: LucideIcons.server),
+      trailingCaption: observedAt == null
+          ? null
+          : fleetAge(l10n, observedAt, now),
+      trailing: stale
+          ? AppBadge(
+              variant: AppBadgeVariant.warning,
+              child: Text(l10n.mastermindUsageStale),
+            )
+          : null,
+    );
+  }
+}
+
+class _AccountPanel extends StatelessWidget {
+  const _AccountPanel({
+    required this.machine,
+    required this.account,
+    required this.now,
+  });
+
+  final UsageMachine machine;
+  final UsageAccount account;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final stale = _stale(account.checkedAt, now);
+    final (status, tone) = stale
+        ? (l10n.mastermindUsageStale, AppBadgeVariant.warning)
+        : switch (account.status) {
+            'limited' => (
+              l10n.mastermindUsageLimited,
+              AppBadgeVariant.destructive,
+            ),
+            'available' => (
+              l10n.mastermindUsageAvailable,
+              AppBadgeVariant.success,
+            ),
+            _ => (l10n.mastermindUsageMissing, AppBadgeVariant.outline),
+          };
+    final reason = switch (account.reason) {
+      'session' => l10n.mastermindUsageSessionLimited,
+      'weekly' => l10n.mastermindUsageWeeklyLimited,
+      'provider' => l10n.mastermindUsageSpendLimited,
+      'not_authenticated' => l10n.mastermindUsageSignInRequired,
+      'disabled' => l10n.mastermindUsageDisabled,
+      'unsupported' => l10n.mastermindUsageUnsupported,
+      'unavailable' => l10n.mastermindUsageMissing,
+      _ => null,
+    };
+    return AppPanel(
+      title: account.instance,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text([account.provider, machine.label, ?account.plan].join(' · ')),
+          const SizedBox(height: AppSpacing.xs),
+          Text(account.email ?? l10n.mastermindUsageEmailMissing),
+          const SizedBox(height: AppSpacing.sm),
+          AppBadge(variant: tone, child: Text(status)),
+          if (reason != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(reason),
+          ],
+          for (final (kind, label) in [
+            ('session', l10n.mastermindUsageSession),
+            ('weekly', l10n.mastermindUsageWeekly),
+          ]) ...[
+            const SizedBox(height: AppSpacing.md),
+            _UsageWindow(
+              label: label,
+              window: account.windows
+                  .where((row) => row.kind == kind)
+                  .firstOrNull,
+              now: now,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _UsageWindow extends StatelessWidget {
+  const _UsageWindow({
+    required this.label,
+    required this.window,
+    required this.now,
+  });
+
+  final String label;
+  final UsageWindow? window;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final used = window?.usedPercent;
+    final reset = window?.resetsAt;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          used == null
+              ? '$label · ${l10n.mastermindUsageMissing}'
+              : '$label · ${NumberFormat.percentPattern(l10n.localeName).format(used / 100)}',
+        ),
+        if (used != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          AppMeter(value: used / 100, semanticLabel: label),
+        ],
+        if (reset != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            [
+              '${Gmt7.date(reset, l10n.localeName)} '
+                  "${DateFormat('HH:mm:ss', l10n.localeName).format(Gmt7.wallTime(reset))} ICT",
+              reset.isAfter(now)
+                  ? fleetCountdown(l10n, reset.difference(now))
+                  : l10n.mastermindUsageAwaitingRefresh,
+            ].join(' · '),
+          ),
+        ],
+      ],
+    );
+  }
+}

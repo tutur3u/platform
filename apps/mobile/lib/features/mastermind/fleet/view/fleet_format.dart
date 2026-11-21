@@ -80,4 +80,13 @@ bool fleetLaneIsActive(FleetLane lane) =>
     lane.state == FleetLaneState.queued;
 
 /// Data older than this means the publisher stopped, not just a quiet fleet.
-const fleetStaleAfter = Duration(minutes: 5);
+const fleetStaleAfter = Duration(minutes: 2);
+
+FleetMachineStatus fleetMachineStatusAt(FleetMachine machine, DateTime now) {
+  final seen = machine.lastSeenAt;
+  return machine.status == FleetMachineStatus.online &&
+          seen != null &&
+          now.difference(seen) > fleetStaleAfter
+      ? FleetMachineStatus.stale
+      : machine.status;
+}

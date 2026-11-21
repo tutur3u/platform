@@ -9,9 +9,7 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// "Updated 12 s ago", measured from Web's `receivedAt` (when the publisher's
 /// snapshot arrived) and re-rendered every second so the age stays true
-/// between polls. A failed refresh or data older than [fleetStaleAfter]
-/// turns it into a warning; the text keeps foreground contrast and only the
-/// glyph takes the tone.
+/// between polls. Warns when the snapshot is older than [fleetStaleAfter].
 class FleetFreshnessLine extends StatefulWidget {
   const FleetFreshnessLine({required this.state, this.now, super.key});
 
@@ -56,7 +54,7 @@ class _FleetFreshnessLineState extends State<FleetFreshnessLine> {
         ? (
             l10n.mastermindFleetRefreshFailed(age),
             LucideIcons.cloudOff,
-            AppTone.warning,
+            stale ? AppTone.warning : AppTone.neutral,
           )
         : stale
         ? (

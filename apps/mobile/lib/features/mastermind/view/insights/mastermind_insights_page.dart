@@ -1,97 +1,124 @@
-import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
-import 'package:mobile/features/mastermind/presentation/labels.dart';
-import 'package:mobile/features/mastermind/presentation/usage_charts.dart';
-import 'package:mobile/features/mastermind/presentation/usage_model.dart';
-import 'package:mobile/features/mastermind/view/insights/usage_credits_section.dart';
-import 'package:mobile/features/mastermind/view/insights/usage_pool_card.dart';
-import 'package:mobile/features/mastermind/view/insights/usage_quota_sections.dart';
-import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
-import 'package:mobile/features/mastermind/view/mastermind_section.dart';
-import 'package:mobile/l10n/l10n.dart';
+import 'dart:async';
 
-/// `/mastermind/insights`: usage and quota. Each pool keeps its own verdict,
-/// budget meters and chart (the reserve pacing note sits behind the verdict's
-/// info button), the Codex pools add their credits, and the quota table and
-/// forecasts close the page. Read-only. The other Insights sections arrive
-/// later and share the chart Table route this page already uses.
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
+import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
+import 'package:mobile/features/mastermind/usage/usage_content.dart';
+import 'package:mobile/features/mastermind/view/mastermind_states.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
+
 class MastermindInsightsPage extends StatelessWidget {
   const MastermindInsightsPage({super.key});
 
   @override
-  Widget build(BuildContext context) => MastermindSection(
-    builder: (context, ready, freshness) {
-      final l10n = context.l10n;
-      final model = MastermindUsageModel.from(ready.snapshot);
-      UsageChartSpec? chart(UsageChartKind kind, String label) =>
-          usageChartSpec(l10n, model, usageChartId(kind, label));
-      return AppPageScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: MastermindFreshnessStrip(freshness: freshness),
-          ),
-          SliverList.list(
-            children: [
-              if (model.gaps.isNotEmpty)
-                AppGroupedSection.spaced(
-                  children: [
-                    for (final gap in model.gaps)
-                      AppGroupedRow(
-                        title: Text(
-                          l10n.mastermindGapSummary(
-                            Gmt7.time(gap.start, l10n.localeName),
-                            Gmt7.time(gap.end, l10n.localeName),
-                            gap.label(l10n),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              if (model.isEmpty)
-                AppGroupedSection.spaced(
-                  caption: l10n.mastermindScopeUsage,
-                  children: [
-                    AppGroupedRow(
-                      leading: const AppIconTile(icon: LucideIcons.chartLine),
-                      title: Text(l10n.mastermindUsageEmpty),
-                    ),
-                  ],
-                )
-              else ...[
-                // No source: the plots are left out, so say why once.
-                if (!model.plottable)
-                  AppGroupedSection.spaced(
-                    caption: l10n.mastermindScopeUsage,
-                    children: [
-                      AppGroupedRow(
-                        leading: const AppIconTile(icon: AppIcons.info),
-                        title: Text(
-                          MastermindLabels.coverage(l10n, model.coverage),
-                        ),
-                      ),
-                    ],
-                  ),
-                for (final pool in model.pools)
-                  UsagePoolCard(
-                    pool: pool,
-                    chart: chart(UsageChartKind.budget, pool.label),
-                  ),
-                for (final pool in model.credits)
-                  UsageCreditsSection(
-                    pool: pool,
-                    balance: chart(UsageChartKind.credits, pool.label),
-                    burn: chart(UsageChartKind.burn, pool.label),
-                  ),
-                UsageQuotaSection(quotas: model.quotas),
-                UsageForecastsSection(forecasts: model.forecasts),
-              ],
-            ],
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final overlay = AccountOverlayScope.maybeOf(context);
+    final allowed = overlay?.allowed ?? true;
+    final admitted = context.select<MastermindAccessCubit, bool>(
+      (cubit) =>
+          cubit.state.status == MastermindAccessStatus.loaded &&
+          cubit.state.enabled,
+    );
+    return allowed && admitted
+        ? _UsageBody(key: ValueKey(overlay?.epoch))
+        : const MastermindSkeleton();
+  }
+}
+
+class _UsageBody extends StatefulWidget {
+  const _UsageBody({super.key});
+
+  @override
+  State<_UsageBody> createState() => _UsageBodyState();
+}
+
+class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
+  final _source = FleetUsageSource();
+  Timer? _poll;
+  Future<void>? _inFlight;
+  FleetUsage? _usage;
+  FleetFailure? _failure;
+  bool _foreground = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _activate(WidgetsBinding.instance.lifecycleState);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _activate(state);
+
+  void _activate(AppLifecycleState? state) {
+    _poll?.cancel();
+    _foreground = state == null || state == AppLifecycleState.resumed;
+    if (!_foreground) return;
+    ForegroundRefresh.request(this, () {
+      if (!mounted || !_foreground) return;
+      _poll?.cancel();
+      unawaited(_refresh());
+      _poll = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => unawaited(_refresh()),
       );
-    },
-  );
+    });
+  }
+
+  Future<void> _refresh() => _inFlight ??= _fetch().whenComplete(() {
+    _inFlight = null;
+  });
+
+  Future<void> _fetch() async {
+    try {
+      final usage = await _source.fetch();
+      if (!mounted) return;
+      setState(() {
+        _usage = usage;
+        _failure = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      final failure = FleetException.from(error).failure;
+      setState(() {
+        _failure = failure;
+        if (failure == FleetFailure.forbidden ||
+            failure == FleetFailure.notPublished) {
+          _usage = null;
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_usage case final usage?) {
+      return NovaRefreshIndicator(
+        onRefresh: _refresh,
+        child: UsageContent(usage: usage),
+      );
+    }
+    if (_failure case final failure?) {
+      return NovaRefreshIndicator.state(
+        onRefresh: _refresh,
+        child: FleetFailureMessage(
+          failure: failure,
+          onRetry: () => unawaited(_refresh()),
+        ),
+      );
+    }
+    return const MastermindSkeleton();
+  }
 }

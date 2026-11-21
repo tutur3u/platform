@@ -18,7 +18,7 @@
       "fleet": "Đội máy",
       "activity": "Hoạt động",
       "approvals": "Phê duyệt",
-      "cost": "Chi phí và sức khỏe",
+      "cost": "Mức sử dụng",
       "settings": "Thông báo",
       "fleetAccess": "Quyền truy cập đội máy"
     },
@@ -48,7 +48,7 @@
       "unavailable": "Hiện không kết nối được fleet sync.",
       "invalid": "Fleet sync gửi ảnh chụp mà trang này không đọc được.",
       "retry": "Thử lại",
-      "stale": "Đang hiển thị ảnh chụp gần nhất. Bộ điều phối chưa công bố hơn 10 phút."
+      "stale": "Đang hiển thị bản gần nhất. Đã hơn 2 phút chưa có bản cập nhật."
     },
     "now": {
       "title": "Đang diễn ra",
@@ -160,6 +160,9 @@
       "expiresLabel": "Hết hạn"
     },
     "fleet": {
+    "outcomes": "{real} lần lỗi · {quotaRecovered} lần hết hạn mức đã tự phục hồi · {quotaUnrecovered} lần hết hạn mức chưa tự phục hồi · {unclassified} chưa phân loại",
+    "outcomesMissing": "Chưa có kết quả hôm nay",
+    "outcomesPartial": "Dữ liệu một phần",
       "main": "Main",
       "production": "Production",
       "migrations": "Migration",
@@ -226,9 +229,53 @@
       "yes": "Có",
       "no": "Chưa"
     },
-    "cost": {
-      "empty": "Chi phí và ngân sách lỗi chưa được công bố cho Mastermind. Mở trang quản trị để xem chi phí và sức khỏe.",
-      "admin": "Mở /admin"
+    "usage": {
+      "allMachines": "Tất cả máy",
+      "allProviders": "Tất cả nhà cung cấp",
+      "byAccount": "Theo tài khoản",
+      "byDay": "Theo ngày (ICT)",
+      "byModel": "Theo mô hình",
+      "cacheRead": "Đọc bộ nhớ đệm",
+      "cacheWrite": "Ghi bộ nhớ đệm",
+      "cost": "Chi phí (USD)",
+      "day": "Ngày",
+      "emailUnknown": "Chưa có email tài khoản",
+      "input": "Đầu vào chưa lưu đệm",
+      "loading": "Đang tải mức sử dụng",
+      "machine": "Máy",
+      "missing": "Chưa có dữ liệu",
+      "model": "Mô hình",
+      "noConfirmedQuota": "Chưa xác nhận được hạn mức hiện tại",
+      "output": "Đầu ra",
+      "partial": "Thiếu một phần dữ liệu sử dụng hoặc giá. Tổng chi phí gồm các bản ghi đã có giá.",
+      "provider": "Nhà cung cấp",
+      "readiness": "Có thể chạy ngay",
+      "reason": {
+        "disabled": "Nhà cung cấp đã tắt hoặc chưa khả dụng trên máy này.",
+        "not_authenticated": "Cần đăng nhập.",
+        "provider": "Đã chạm giới hạn chi tiêu.",
+        "session": "Đã hết hạn mức phiên.",
+        "unavailable": "Không đọc được hạn mức.",
+        "unsupported": "Nhà cung cấp này không báo hạn mức tại đây.",
+        "weekly": "Đã hết hạn mức tuần."
+      },
+      "reset": "Đặt lại lúc {time} ICT",
+      "resetElapsed": "Đang chờ cập nhật hạn mức",
+      "resetIn": "Còn {age}",
+      "stale": "Dữ liệu cũ",
+      "status": {
+        "available": "Khả dụng",
+        "limited": "Hết hạn mức",
+        "unknown": "Chưa rõ"
+      },
+      "tokens": "Mức sử dụng token",
+      "unattributed": "Chưa rõ tài khoản",
+      "unavailable": "Tạm thời không tải được mức sử dụng.",
+      "unpublished": "Chưa có bản công bố mức sử dụng.",
+      "window": {
+        "session": "Đã dùng trong phiên",
+        "weekly": "Đã dùng trong tuần"
+      }
     },
     "settings": {
       "push": "Cảnh báo quyết định",

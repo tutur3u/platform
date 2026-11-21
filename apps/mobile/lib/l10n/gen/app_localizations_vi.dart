@@ -14882,7 +14882,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindTabInbox => 'Hộp thư';
 
   @override
-  String get mastermindTabInsights => 'Phân tích';
+  String get mastermindTabInsights => 'Mức sử dụng';
 
   @override
   String get mastermindTabShip => 'Phát hành';
@@ -17581,7 +17581,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String mastermindFleetStale(String age) {
-    return 'Cập nhật lần cuối $age. Trình đồng bộ có thể đã dừng.';
+    return 'Cập nhật đội máy lần cuối $age.';
   }
 
   @override
@@ -18767,4 +18767,120 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetRejectChallenge => 'máy chủ yêu cầu xác minh trình duyệt. Hãy trả lời qua WhatsApp';
+
+  @override
+  String get mastermindUsageAllMachines => 'Tất cả máy';
+
+  @override
+  String get mastermindUsageAllProviders => 'Tất cả nhà cung cấp';
+
+  @override
+  String get mastermindUsageAvailable => 'Khả dụng';
+
+  @override
+  String get mastermindUsageAwaitingRefresh => 'Đang chờ cập nhật hạn mức';
+
+  @override
+  String get mastermindUsageCacheRead => 'Đọc bộ nhớ đệm';
+
+  @override
+  String get mastermindUsageCacheWrite => 'Ghi bộ nhớ đệm';
+
+  @override
+  String get mastermindUsageCostByAccount => 'Chi phí theo tài khoản (USD)';
+
+  @override
+  String get mastermindUsageCostByDay => 'Chi phí theo ngày (USD, ICT)';
+
+  @override
+  String get mastermindUsageCostByModel => 'Chi phí theo mô hình (USD)';
+
+  @override
+  String get mastermindUsageDay => 'Ngày';
+
+  @override
+  String get mastermindUsageDisabled => 'Nhà cung cấp đã tắt hoặc chưa khả dụng trên máy này.';
+
+  @override
+  String get mastermindUsageEmailMissing => 'Chưa có email tài khoản';
+
+  @override
+  String get mastermindUsageInput => 'Đầu vào chưa lưu đệm';
+
+  @override
+  String get mastermindUsageLimited => 'Hết hạn mức';
+
+  @override
+  String get mastermindUsageMachine => 'Máy';
+
+  @override
+  String get mastermindUsageMissing => 'Chưa có dữ liệu';
+
+  @override
+  String get mastermindUsageModel => 'Mô hình';
+
+  @override
+  String get mastermindUsageNoConfirmedQuota => 'Chưa xác nhận được hạn mức hiện tại';
+
+  @override
+  String get mastermindUsageOutput => 'Đầu ra';
+
+  @override
+  String get mastermindUsagePartial => 'Thiếu một phần dữ liệu sử dụng hoặc giá. Tổng chi phí gồm các bản ghi đã có giá.';
+
+  @override
+  String get mastermindUsageProvider => 'Nhà cung cấp';
+
+  @override
+  String get mastermindUsageReadiness => 'Có thể chạy ngay';
+
+  @override
+  String get mastermindUsageSession => 'Đã dùng trong phiên';
+
+  @override
+  String get mastermindUsageSessionLimited => 'Đã hết hạn mức phiên.';
+
+  @override
+  String get mastermindUsageSignInRequired => 'Cần đăng nhập.';
+
+  @override
+  String get mastermindUsageSpendLimited => 'Đã chạm giới hạn chi tiêu.';
+
+  @override
+  String get mastermindUsageStale => 'Dữ liệu cũ';
+
+  @override
+  String get mastermindUsageTokens => 'Mức sử dụng token';
+
+  @override
+  String get mastermindUsageUnattributed => 'Chưa rõ tài khoản';
+
+  @override
+  String get mastermindUsageUnsupported => 'Nhà cung cấp này không báo hạn mức tại đây.';
+
+  @override
+  String get mastermindUsageWeekly => 'Đã dùng trong tuần';
+
+  @override
+  String get mastermindUsageWeeklyLimited => 'Đã hết hạn mức tuần.';
+
+  @override
+  String get mastermindUsageNext => 'Tiếp';
+
+  @override
+  String get mastermindUsagePrevious => 'Trước';
+
+  @override
+  String get mastermindFleetStopped => 'Luồng đã dừng';
+
+  @override
+  String get mastermindFleetOutcomesTitle => 'Kết quả hôm nay theo máy';
+
+  @override
+  String get mastermindFleetOutcomesPartial => 'Dữ liệu một phần';
+
+  @override
+  String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {
+    return '$real lần lỗi · $quotaRecovered lần hết hạn mức đã tự phục hồi · $quotaUnrecovered lần hết hạn mức chưa tự phục hồi · $unclassified chưa phân loại';
+  }
 }

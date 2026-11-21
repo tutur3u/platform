@@ -7126,7 +7126,7 @@
   "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
   "mastermindTabHome": "Today",
   "mastermindTabInbox": "Inbox",
-  "mastermindTabInsights": "Insights",
+  "mastermindTabInsights": "Usage",
   "mastermindTabShip": "Ship",
   "mastermindTabWork": "Work",
   "mastermindTableLink": "Table",
@@ -8632,7 +8632,7 @@
       }
     }
   },
-  "mastermindFleetStale": "Last update {age}. The fleet publisher may be paused.",
+  "mastermindFleetStale": "Last fleet update {age}.",
   "@mastermindFleetStale": {
     "placeholders": {
       "age": {
@@ -9391,5 +9391,59 @@
       }
     }
   },
-  "mastermindFleetRejectChallenge": "the server asked for a browser check. Reply on WhatsApp"
+  "mastermindFleetRejectChallenge": "the server asked for a browser check. Reply on WhatsApp",
+  "mastermindUsageAllMachines": "All machines",
+  "mastermindUsageAllProviders": "All providers",
+  "mastermindUsageAvailable": "Available",
+  "mastermindUsageAwaitingRefresh": "Awaiting quota refresh",
+  "mastermindUsageCacheRead": "Cache read",
+  "mastermindUsageCacheWrite": "Cache write",
+  "mastermindUsageCostByAccount": "Cost by account (USD)",
+  "mastermindUsageCostByDay": "Cost by day (USD, ICT)",
+  "mastermindUsageCostByModel": "Cost by model (USD)",
+  "mastermindUsageDay": "Day",
+  "mastermindUsageDisabled": "Provider is disabled or unavailable on this machine.",
+  "mastermindUsageEmailMissing": "Account email unavailable",
+  "mastermindUsageInput": "Uncached input",
+  "mastermindUsageLimited": "Limited",
+  "mastermindUsageMachine": "Machine",
+  "mastermindUsageMissing": "Unavailable",
+  "mastermindUsageModel": "Model",
+  "mastermindUsageNoConfirmedQuota": "No current quota confirmed",
+  "mastermindUsageOutput": "Output",
+  "mastermindUsagePartial": "Some usage or prices are missing. Totals include the priced records available.",
+  "mastermindUsageProvider": "Provider",
+  "mastermindUsageReadiness": "What can run now",
+  "mastermindUsageSession": "Session used",
+  "mastermindUsageSessionLimited": "Session limit reached.",
+  "mastermindUsageSignInRequired": "Sign-in required.",
+  "mastermindUsageSpendLimited": "Provider spend cap reached.",
+  "mastermindUsageStale": "Stale",
+  "mastermindUsageTokens": "Token usage",
+  "mastermindUsageUnattributed": "Account unavailable",
+  "mastermindUsageUnsupported": "This provider does not report quota here.",
+  "mastermindUsageWeekly": "Weekly used",
+  "mastermindUsageWeeklyLimited": "Weekly limit reached.",
+  "mastermindUsageNext": "Next",
+  "mastermindUsagePrevious": "Previous",
+  "mastermindFleetStopped": "Stopped lanes",
+  "mastermindFleetOutcomesTitle": "Today’s outcomes by machine",
+  "mastermindFleetOutcomesPartial": "Partial coverage",
+  "mastermindFleetOutcomesSummary": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
+  "@mastermindFleetOutcomesSummary": {
+    "placeholders": {
+      "real": {
+        "type": "int"
+      },
+      "quotaRecovered": {
+        "type": "int"
+      },
+      "quotaUnrecovered": {
+        "type": "int"
+      },
+      "unclassified": {
+        "type": "int"
+      }
+    }
+  }
 }

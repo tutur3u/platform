@@ -7,6 +7,10 @@ import {
   fleetStateResponseSchema,
 } from '../fleet/contract';
 import type { MastermindEnvironment, Owner } from './auth';
+import {
+  type FleetUsageResponse,
+  fleetUsageResponseSchema,
+} from '../../../web/src/lib/mastermind/fleet/usage-contract';
 
 const WEB_FLEET = 'https://tuturuuu.com/api/v1/mastermind/fleet';
 
@@ -19,6 +23,10 @@ export type FleetWrite =
   | { kind: 'sent'; receipt: FleetAnswerReceipt }
   | { kind: 'closed' }
   | { kind: 'error'; reason: 'denied' | 'unavailable' | 'invalid' };
+
+type UsageRead =
+  | { kind: 'ready'; usage: FleetUsageResponse }
+  | Exclude<FleetRead, { kind: 'ready' }>;
 
 /** One instance per isolate; only call after request authentication. */
 export function createOwnerMemo<T>(now = Date.now) {
@@ -75,6 +83,31 @@ export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
     [FLEET_FEATURES_HEADER]: 'login',
   };
   return {
+    async usage(): Promise<UsageRead> {
+      try {
+        const response = await refuseRedirect(
+          fetcher(
+            new Request(`${WEB_FLEET}/usage`, {
+              headers,
+              redirect: 'manual',
+              cache: 'no-store',
+              signal: AbortSignal.timeout(8_000),
+            })
+          )
+        );
+        if (response.status === 404) return { kind: 'unpublished' };
+        if (!response.ok)
+          return { kind: 'error', reason: failure(response.status) };
+        const parsed = fleetUsageResponseSchema.safeParse(
+          await response.json()
+        );
+        return parsed.success
+          ? { kind: 'ready', usage: parsed.data }
+          : { kind: 'error', reason: 'invalid' };
+      } catch {
+        return { kind: 'error', reason: 'unavailable' };
+      }
+    },
     async state(): Promise<FleetRead> {
       try {
         const response = await refuseRedirect(

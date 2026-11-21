@@ -1,31 +1,7 @@
-import { ExternalLink } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useI18n } from '../i18n';
-import { Section, SectionMessage } from './section';
-
-export const ADMIN_URL = 'https://tuturuuu.com/admin';
-
-/** No spend or error-budget data reaches Mastermind; link where it lives. */
-export function CostSection() {
-  const { t } = useI18n();
-  return (
-    <Section id="cost" title={t('nav.cost')}>
-      <SectionMessage>
-        <div className="space-y-3">
-          <p>{t('cost.empty')}</p>
-          <Button asChild size="sm" variant="outline">
-            <a href={ADMIN_URL} target="_blank" rel="noopener noreferrer">
-              <ExternalLink />
-              {t('cost.admin')}
-            </a>
-          </Button>
-        </div>
-      </SectionMessage>
-    </Section>
-  );
-}
+import { Section } from './section';
 
 export function SettingsSection({
   showFyi,

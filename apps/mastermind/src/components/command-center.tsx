@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNow } from '../fleet/clock';
 import { type FleetSnapshot } from '../fleet/contract';
-import { inbox, loginRequests } from '../fleet/model';
+import { FLEET_STALE_AFTER_MS, inbox, loginRequests } from '../fleet/model';
 import {
   type FleetLoad,
   fleetPageState,
@@ -14,7 +14,8 @@ import { useI18n } from '../i18n';
 import { AccessSection } from './access-section';
 import { ActivitySection } from './activity';
 import { ApprovalsSection } from './approvals';
-import { CostSection, SettingsSection } from './cost-settings';
+import { UsageSection } from '../usage/usage-section';
+import { SettingsSection } from './cost-settings';
 import { Digest } from './digest';
 import { FleetSection } from './fleet-section';
 import { Inbox } from './inbox';
@@ -51,7 +52,7 @@ function Sections({
       <FleetSection state={snapshot.state} now={now} />
       <ActivitySection state={snapshot.state} />
       <ApprovalsSection snapshot={snapshot} />
-      <CostSection />
+      <UsageSection now={now} />
       <SettingsSection showFyi={showFyi} onShowFyi={setShowFyi} />
     </>
   );
@@ -95,20 +96,24 @@ export function CommandCenter({ initial }: { initial: FleetLoad }) {
       (item) => item.state === 'waiting' || item.state === 'approved'
     ).length,
   };
+  const showStaleNotice =
+    snapshot && now - Date.parse(snapshot.receivedAt) > FLEET_STALE_AFTER_MS;
 
   return (
     <Shell
       counts={counts}
       footer={
         <FreshnessLine
-          state={state.kind}
+          state={
+            state.kind === 'stale' && !showStaleNotice ? 'ready' : state.kind
+          }
           receivedAt={snapshot?.receivedAt}
           now={now}
         />
       }
     >
       <PageHeader title={t('title')} subtitle={query.data.email} />
-      {state.kind === 'stale' && (
+      {state.kind === 'stale' && showStaleNotice && (
         <StaleNotice
           reason={state.reason}
           onRetry={retry}

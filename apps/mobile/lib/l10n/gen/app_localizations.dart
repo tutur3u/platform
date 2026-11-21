@@ -28132,7 +28132,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindTabInsights.
   ///
   /// In en, this message translates to:
-  /// **'Insights'**
+  /// **'Usage'**
   String get mastermindTabInsights;
 
   /// No description provided for @mastermindTabShip.
@@ -32884,7 +32884,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindFleetStale.
   ///
   /// In en, this message translates to:
-  /// **'Last update {age}. The fleet publisher may be paused.'**
+  /// **'Last fleet update {age}.'**
   String mastermindFleetStale(String age);
 
   /// No description provided for @mastermindFleetRefreshFailed.
@@ -34872,6 +34872,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'the server asked for a browser check. Reply on WhatsApp'**
   String get mastermindFleetRejectChallenge;
+
+  /// No description provided for @mastermindUsageAllMachines.
+  ///
+  /// In en, this message translates to:
+  /// **'All machines'**
+  String get mastermindUsageAllMachines;
+
+  /// No description provided for @mastermindUsageAllProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'All providers'**
+  String get mastermindUsageAllProviders;
+
+  /// No description provided for @mastermindUsageAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get mastermindUsageAvailable;
+
+  /// No description provided for @mastermindUsageAwaitingRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting quota refresh'**
+  String get mastermindUsageAwaitingRefresh;
+
+  /// No description provided for @mastermindUsageCacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache read'**
+  String get mastermindUsageCacheRead;
+
+  /// No description provided for @mastermindUsageCacheWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache write'**
+  String get mastermindUsageCacheWrite;
+
+  /// No description provided for @mastermindUsageCostByAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost by account (USD)'**
+  String get mastermindUsageCostByAccount;
+
+  /// No description provided for @mastermindUsageCostByDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost by day (USD, ICT)'**
+  String get mastermindUsageCostByDay;
+
+  /// No description provided for @mastermindUsageCostByModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost by model (USD)'**
+  String get mastermindUsageCostByModel;
+
+  /// No description provided for @mastermindUsageDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get mastermindUsageDay;
+
+  /// No description provided for @mastermindUsageDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider is disabled or unavailable on this machine.'**
+  String get mastermindUsageDisabled;
+
+  /// No description provided for @mastermindUsageEmailMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Account email unavailable'**
+  String get mastermindUsageEmailMissing;
+
+  /// No description provided for @mastermindUsageInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncached input'**
+  String get mastermindUsageInput;
+
+  /// No description provided for @mastermindUsageLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited'**
+  String get mastermindUsageLimited;
+
+  /// No description provided for @mastermindUsageMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine'**
+  String get mastermindUsageMachine;
+
+  /// No description provided for @mastermindUsageMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get mastermindUsageMissing;
+
+  /// No description provided for @mastermindUsageModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get mastermindUsageModel;
+
+  /// No description provided for @mastermindUsageNoConfirmedQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'No current quota confirmed'**
+  String get mastermindUsageNoConfirmedQuota;
+
+  /// No description provided for @mastermindUsageOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get mastermindUsageOutput;
+
+  /// No description provided for @mastermindUsagePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some usage or prices are missing. Totals include the priced records available.'**
+  String get mastermindUsagePartial;
+
+  /// No description provided for @mastermindUsageProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get mastermindUsageProvider;
+
+  /// No description provided for @mastermindUsageReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'What can run now'**
+  String get mastermindUsageReadiness;
+
+  /// No description provided for @mastermindUsageSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Session used'**
+  String get mastermindUsageSession;
+
+  /// No description provided for @mastermindUsageSessionLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Session limit reached.'**
+  String get mastermindUsageSessionLimited;
+
+  /// No description provided for @mastermindUsageSignInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in required.'**
+  String get mastermindUsageSignInRequired;
+
+  /// No description provided for @mastermindUsageSpendLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider spend cap reached.'**
+  String get mastermindUsageSpendLimited;
+
+  /// No description provided for @mastermindUsageStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get mastermindUsageStale;
+
+  /// No description provided for @mastermindUsageTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Token usage'**
+  String get mastermindUsageTokens;
+
+  /// No description provided for @mastermindUsageUnattributed.
+  ///
+  /// In en, this message translates to:
+  /// **'Account unavailable'**
+  String get mastermindUsageUnattributed;
+
+  /// No description provided for @mastermindUsageUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider does not report quota here.'**
+  String get mastermindUsageUnsupported;
+
+  /// No description provided for @mastermindUsageWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly used'**
+  String get mastermindUsageWeekly;
+
+  /// No description provided for @mastermindUsageWeeklyLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly limit reached.'**
+  String get mastermindUsageWeeklyLimited;
+
+  /// No description provided for @mastermindUsageNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get mastermindUsageNext;
+
+  /// No description provided for @mastermindUsagePrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get mastermindUsagePrevious;
+
+  /// No description provided for @mastermindFleetStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped lanes'**
+  String get mastermindFleetStopped;
+
+  /// No description provided for @mastermindFleetOutcomesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s outcomes by machine'**
+  String get mastermindFleetOutcomesTitle;
+
+  /// No description provided for @mastermindFleetOutcomesPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial coverage'**
+  String get mastermindFleetOutcomesPartial;
+
+  /// No description provided for @mastermindFleetOutcomesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified'**
+  String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

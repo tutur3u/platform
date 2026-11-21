@@ -116,6 +116,7 @@ class FleetMachine {
     required this.label,
     required this.status,
     this.lastSeenAt,
+    this.todayOutcomes,
   });
 
   static FleetMachine? parse(Map<String, dynamic> json) {
@@ -128,6 +129,10 @@ class FleetMachine {
       label: label,
       status: status,
       lastSeenAt: _time(json['lastSeenAt']),
+      todayOutcomes: switch (json['todayOutcomes']) {
+        final Map<String, dynamic> json => FleetTodayOutcomes.parse(json),
+        _ => null,
+      },
     );
   }
 
@@ -135,6 +140,51 @@ class FleetMachine {
   final String label;
   final FleetMachineStatus status;
   final DateTime? lastSeenAt;
+  final FleetTodayOutcomes? todayOutcomes;
+}
+
+class FleetTodayOutcomes {
+  const FleetTodayOutcomes({
+    required this.observedAt,
+    required this.dayStart,
+    required this.partial,
+    required this.real,
+    required this.quotaRecovered,
+    required this.quotaUnrecovered,
+    required this.unclassified,
+  });
+
+  static FleetTodayOutcomes? parse(Map<String, dynamic> json) {
+    final observedAt = _time(json['observedAt']);
+    final dayStart = _time(json['dayStart']);
+    final kind = json['kind'];
+    if (observedAt == null ||
+        dayStart == null ||
+        (kind != 'complete' && kind != 'partial')) {
+      return null;
+    }
+    return FleetTodayOutcomes(
+      observedAt: observedAt,
+      dayStart: dayStart,
+      partial: kind == 'partial',
+      real: _count(json['real']),
+      quotaRecovered: _count(json['quotaRecovered']),
+      quotaUnrecovered: _count(json['quotaUnrecovered']),
+      unclassified: _count(json['unclassified']),
+    );
+  }
+
+  final DateTime observedAt;
+  final DateTime dayStart;
+  final bool partial;
+  final int real;
+  final int quotaRecovered;
+  final int quotaUnrecovered;
+  final int unclassified;
+
+  bool isToday(DateTime now) =>
+      !now.isBefore(dayStart) &&
+      now.isBefore(dayStart.add(const Duration(days: 1)));
 }
 
 class FleetOption {

@@ -2,7 +2,7 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// "What's happening now", composed only from the snapshot: running and
-/// failed lanes, the main freeze and its queue, production and incidents,
+/// lanes, the main freeze and its queue, production and incidents,
 /// firing SLO burn alerts, and the logins blocking work.
 String fleetDigest(
   AppLocalizations l10n,
@@ -24,7 +24,6 @@ String fleetDigest(
   ];
   return [
     l10n.mastermindFleetDigestLanes(counts.running),
-    if (counts.failed > 0) l10n.mastermindFleetDigestFailed(counts.failed),
     if (release?.mainState == FleetMainState.frozen) ...[
       switch (release!.mainReason) {
         final reason? => l10n.mastermindFleetDigestFrozenReason(reason),

@@ -8,7 +8,7 @@ import {
 } from './contract';
 
 /** A snapshot older than this, or an offline orchestrator, reads as stale. */
-export const FLEET_STALE_AFTER_MS = 10 * 60_000;
+export const FLEET_STALE_AFTER_MS = 120_000;
 
 export type Freshness = 'live' | 'stale';
 

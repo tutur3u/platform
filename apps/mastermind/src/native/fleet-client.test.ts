@@ -102,3 +102,32 @@ test('CSP: nonce scripts only, no inline styles or scripts, never framed', () =>
   expect(policy).not.toContain('unsafe');
   expect(contentSecurityPolicy()).toContain("script-src 'none'");
 });
+
+test('usage reads are owner-scoped and preserve missing accounting data', async () => {
+  const now = new Date().toISOString();
+  const usage = {
+    snapshot: { v: 1, generatedAt: now, machines: [] },
+    receivedAt: now,
+  };
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json(usage));
+  expect(await createFleetClient(owner, fetcher).usage()).toEqual({
+    kind: 'ready',
+    usage,
+  });
+  const request = fetcher.mock.calls[0]?.[0];
+  expect(request).toBeInstanceOf(Request);
+  if (!(request instanceof Request))
+    throw new TypeError('usage request not built');
+  expect(request.url).toBe(
+    'https://tuturuuu.com/api/v1/mastermind/fleet/usage'
+  );
+  expect(request.headers.get('Authorization')).toBe('Bearer session-token');
+  expect(request.cache).toBe('no-store');
+  expect(request.redirect).toBe('manual');
+  expect(
+    await createFleetClient(
+      owner,
+      async () => new Response(null, { status: 403 })
+    ).usage()
+  ).toEqual({ kind: 'error', reason: 'denied' });
+});

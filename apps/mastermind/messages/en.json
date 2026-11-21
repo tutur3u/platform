@@ -18,7 +18,7 @@
       "fleet": "Fleet",
       "activity": "Activity",
       "approvals": "Approvals",
-      "cost": "Cost and health",
+      "cost": "Usage",
       "settings": "Notifications",
       "fleetAccess": "Fleet access"
     },
@@ -48,7 +48,7 @@
       "unavailable": "Fleet sync is unreachable right now.",
       "invalid": "Fleet sync sent a snapshot this page cannot read.",
       "retry": "Retry",
-      "stale": "Showing the last snapshot. The orchestrator has not published for over 10 minutes."
+      "stale": "Showing the last snapshot. No snapshot has arrived for over 2 minutes."
     },
     "now": {
       "title": "What's happening now",
@@ -160,6 +160,9 @@
       "expiresLabel": "Expires"
     },
     "fleet": {
+    "outcomes": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
+    "outcomesMissing": "Today’s outcomes unavailable",
+    "outcomesPartial": "Partial coverage",
       "main": "Main",
       "production": "Production",
       "migrations": "Migrations",
@@ -226,9 +229,53 @@
       "yes": "Yes",
       "no": "Not yet"
     },
-    "cost": {
-      "empty": "Spend and error budgets are not published to Mastermind. Open the admin console for costs and health.",
-      "admin": "Open /admin"
+    "usage": {
+      "allMachines": "All machines",
+      "allProviders": "All providers",
+      "byAccount": "By account",
+      "byDay": "By day (ICT)",
+      "byModel": "By model",
+      "cacheRead": "Cache read",
+      "cacheWrite": "Cache write",
+      "cost": "Cost in USD",
+      "day": "Day",
+      "emailUnknown": "Account email unavailable",
+      "input": "Uncached input",
+      "loading": "Loading fleet usage",
+      "machine": "Machine",
+      "missing": "Unavailable",
+      "model": "Model",
+      "noConfirmedQuota": "No current quota confirmed",
+      "output": "Output",
+      "partial": "Some usage or prices are missing. Totals include the priced records available.",
+      "provider": "Provider",
+      "readiness": "What can run now",
+      "reason": {
+        "disabled": "Provider is disabled or unavailable on this machine.",
+        "not_authenticated": "Sign-in required.",
+        "provider": "Provider spend cap reached.",
+        "session": "Session limit reached.",
+        "unavailable": "Quota could not be read.",
+        "unsupported": "This provider does not report quota here.",
+        "weekly": "Weekly limit reached."
+      },
+      "reset": "Resets {time} ICT",
+      "resetElapsed": "Awaiting quota refresh",
+      "resetIn": "In {age}",
+      "stale": "Stale",
+      "status": {
+        "available": "Available",
+        "limited": "Limited",
+        "unknown": "Unknown"
+      },
+      "tokens": "Token usage",
+      "unattributed": "Account unavailable",
+      "unavailable": "Fleet usage is temporarily unavailable.",
+      "unpublished": "Fleet usage has not been published yet.",
+      "window": {
+        "session": "Session used",
+        "weekly": "Weekly used"
+      }
     },
     "settings": {
       "push": "Decision alerts",

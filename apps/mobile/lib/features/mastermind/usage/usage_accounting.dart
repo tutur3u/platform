@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
+import 'package:mobile/l10n/l10n.dart';
+
+class UsageAccounting extends StatefulWidget {
+  const UsageAccounting({
+    required this.machines,
+    required this.provider,
+    super.key,
+  });
+
+  final List<UsageMachine> machines;
+  final String provider;
+
+  @override
+  State<UsageAccounting> createState() => _UsageAccountingState();
+}
+
+class _UsageAccountingState extends State<UsageAccounting> {
+  static const int _pageSize = 20;
+  int _page = 0;
+
+  @override
+  void didUpdateWidget(covariant UsageAccounting oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.provider != widget.provider ||
+        oldWidget.machines.map((m) => m.id).join() !=
+            widget.machines.map((m) => m.id).join()) {
+      _page = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final now = DateTime.now().toUtc();
+    final machines = widget.machines;
+    final rows = [
+      for (final machine in machines)
+        for (final bucket in machine.buckets)
+          if (widget.provider.isEmpty || bucket.provider == widget.provider)
+            (machine: machine, bucket: bucket),
+    ];
+    final byDay = <String, double>{};
+    final byModel = <String, double>{};
+    final byAccount = <String, double>{};
+    for (final row in rows) {
+      final bucket = row.bucket;
+      final cost = bucket.cost;
+      if (cost == null) continue;
+      final account = row.machine.accounts
+          .where((a) => a.id == bucket.accountId)
+          .firstOrNull;
+      final label =
+          account?.email ??
+          account?.instance ??
+          l10n.mastermindUsageUnattributed;
+      byDay.update(bucket.day, (value) => value + cost, ifAbsent: () => cost);
+      byModel.update(
+        bucket.model,
+        (value) => value + cost,
+        ifAbsent: () => cost,
+      );
+      byAccount.update(label, (value) => value + cost, ifAbsent: () => cost);
+    }
+    final incomplete =
+        machines.any((machine) {
+          final observedAt = machine.accounting.observedAt;
+          return machine.accounting.kind != 'complete' ||
+              observedAt == null ||
+              now.difference(observedAt) > usageStaleAfter;
+        }) ||
+        rows.any((row) => row.bucket.cost == null || row.bucket.unpriced > 0);
+    final count = NumberFormat.decimalPattern(l10n.localeName);
+    final lastPage = rows.isEmpty ? 0 : (rows.length - 1) ~/ _pageSize;
+    final page = _page.clamp(0, lastPage);
+    final visible = rows.skip(page * _pageSize).take(_pageSize);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (incomplete) ...[
+          Text(l10n.mastermindUsagePartial),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        _CostPanel(
+          label: l10n.mastermindUsageCostByDay,
+          totals: byDay,
+          newestFirst: true,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _CostPanel(label: l10n.mastermindUsageCostByAccount, totals: byAccount),
+        const SizedBox(height: AppSpacing.md),
+        _CostPanel(label: l10n.mastermindUsageCostByModel, totals: byModel),
+        const SizedBox(height: AppSpacing.md),
+        AppPanel(
+          title: l10n.mastermindUsageTokens,
+          child: rows.isEmpty
+              ? Text(l10n.mastermindUsageMissing)
+              : Column(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: [
+                          for (final label in [
+                            l10n.mastermindUsageMachine,
+                            l10n.mastermindUsageDay,
+                            l10n.mastermindUsageModel,
+                            l10n.mastermindUsageInput,
+                            l10n.mastermindUsageCacheRead,
+                            l10n.mastermindUsageCacheWrite,
+                            l10n.mastermindUsageOutput,
+                          ])
+                            DataColumn(label: Text(label)),
+                        ],
+                        rows: [
+                          for (final row in visible)
+                            DataRow(
+                              cells: [
+                                DataCell(Text(row.machine.label)),
+                                DataCell(Text(row.bucket.day)),
+                                DataCell(
+                                  Text(
+                                    '${row.bucket.provider} · ${row.bucket.model}',
+                                  ),
+                                ),
+                                DataCell(Text(count.format(row.bucket.input))),
+                                DataCell(
+                                  Text(count.format(row.bucket.cacheRead)),
+                                ),
+                                DataCell(
+                                  Text(count.format(row.bucket.cacheWrite)),
+                                ),
+                                DataCell(Text(count.format(row.bucket.output))),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (lastPage > 0)
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        children: [
+                          AppButton.outline(
+                            onPressed: page == 0
+                                ? null
+                                : () => setState(() => _page = page - 1),
+                            child: Text(l10n.mastermindUsagePrevious),
+                          ),
+                          AppButton.outline(
+                            onPressed: page >= lastPage
+                                ? null
+                                : () => setState(() => _page = page + 1),
+                            child: Text(l10n.mastermindUsageNext),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CostPanel extends StatelessWidget {
+  const _CostPanel({
+    required this.label,
+    required this.totals,
+    this.newestFirst = false,
+  });
+
+  final String label;
+  final Map<String, double> totals;
+  final bool newestFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final currency = NumberFormat.simpleCurrency(
+      locale: l10n.localeName,
+      name: 'USD',
+    );
+    final rows = totals.entries.toList()
+      ..sort(
+        (a, b) =>
+            newestFirst ? b.key.compareTo(a.key) : b.value.compareTo(a.value),
+      );
+    final max = rows.fold<double>(
+      0,
+      (max, row) => row.value > max ? row.value : max,
+    );
+    return AppPanel(
+      title: label,
+      child: rows.isEmpty
+          ? Text(l10n.mastermindUsageMissing)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final row in rows) ...[
+                  Text('${row.key} · ${currency.format(row.value)}'),
+                  if (max > 0)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: AppMeter(
+                        value: row.value / max,
+                        semanticLabel: row.key,
+                      ),
+                    ),
+                ],
+              ],
+            ),
+    );
+  }
+}

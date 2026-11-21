@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import type { FleetState } from '../fleet/contract';
+import { FLEET_STALE_AFTER_MS } from '../fleet/model';
 import { formatAge, useI18n } from '../i18n';
 import { ReleaseStrip } from './release-strip';
 import { Section, SectionMessage } from './section';
@@ -31,33 +32,54 @@ function Machines({ state, now }: { state: FleetState; now: number }) {
   return (
     <ul className="divide-y border-t">
       {state.machines.map((machine) => {
+        const lastSeenAt = machine.lastSeenAt && Date.parse(machine.lastSeenAt);
+        const status =
+          machine.status === 'online' &&
+          lastSeenAt &&
+          now - lastSeenAt > FLEET_STALE_AFTER_MS
+            ? 'stale'
+            : machine.status;
         const lanes = state.lanes.filter(
           (lane) => lane.machineId === machine.id
         );
+        const outcomes = machine.todayOutcomes;
+        const isToday =
+          outcomes &&
+          now >= Date.parse(outcomes.dayStart) &&
+          now < Date.parse(outcomes.dayStart) + 86_400_000;
         return (
           <li key={machine.id} className="space-y-2 px-4 py-4 md:px-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 font-medium">
-                <span
-                  className={toneDot(MACHINE_TONE[machine.status])}
-                  aria-hidden
-                />
+                <span className={toneDot(MACHINE_TONE[status])} aria-hidden />
                 {machine.label}
-                <span className="sr-only">
-                  {t(`fleet.machine.${machine.status}`)}
-                </span>
+                <span className="sr-only">{t(`fleet.machine.${status}`)}</span>
               </div>
               <span className="text-muted-foreground text-sm">
                 {[
                   t('fleet.lanes', { n: lanes.length }),
-                  machine.status !== 'online' && machine.lastSeenAt
+                  t(`fleet.machine.${status}`),
+                  lastSeenAt
                     ? t('fleet.seen', {
-                        age: formatAge(t, now - Date.parse(machine.lastSeenAt)),
+                        age: formatAge(t, now - lastSeenAt),
                       })
-                    : t(`fleet.machine.${machine.status}`),
-                ].join(' · ')}
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </span>
             </div>
+            <p className="text-muted-foreground text-sm">
+              {isToday
+                ? t('fleet.outcomes', outcomes)
+                : t('fleet.outcomesMissing')}
+              {isToday &&
+                outcomes.kind === 'partial' &&
+                ` · ${t('fleet.outcomesPartial')}`}
+              {isToday &&
+                now - Date.parse(outcomes.observedAt) > FLEET_STALE_AFTER_MS &&
+                ` · ${t('usage.stale')}`}
+            </p>
             {lanes.length > 0 && (
               <ul className="divide-y pl-4 text-sm">
                 {lanes.map((lane) => (
