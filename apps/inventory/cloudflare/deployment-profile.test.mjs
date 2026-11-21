@@ -6,11 +6,17 @@ import { deploymentProfile } from './deployment-profile.ts';
 test('staging and production use isolated route-free Worker identities', () => {
   assert.deepEqual(deploymentProfile('staging'), {
     name: 'tuturuuu-inventory-vite-staging',
-    vars: { TUTURUUU_NOINDEX: '1' },
+    vars: {
+      TUTURUUU_NOINDEX: '1',
+      ABUSE_GUARD_FAMILIES: 'proxy,ratelimit,integrity',
+    },
   });
   assert.deepEqual(deploymentProfile('production'), {
     name: 'tuturuuu-inventory',
-    vars: { TUTURUUU_NOINDEX: '0' },
+    vars: {
+      TUTURUUU_NOINDEX: '0',
+      ABUSE_GUARD_FAMILIES: 'proxy,ratelimit,integrity',
+    },
   });
   assert.throws(() => deploymentProfile('prod'), /Expected/);
 });

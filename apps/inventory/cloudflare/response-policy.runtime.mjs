@@ -80,11 +80,18 @@ for (const scenario of ['normal', 'unavailable', 'minute-overflow']) {
         sendMetrics: false,
         bindings: {
           ...Object.fromEntries(
-            [...REQUIRED_RUNTIME_NAMES, 'SEPAY_WEBHOOK_API_KEY'].map((name) => [
-              name,
-              { type: 'secret_text', value: randomBytes(32).toString('hex') },
-            ])
+            [...REQUIRED_RUNTIME_NAMES, 'UPSTASH_REDIS_REST_TOKEN'].map(
+              (name) => [
+                name,
+                { type: 'secret_text', value: randomBytes(32).toString('hex') },
+              ]
+            )
           ),
+          ABUSE_GUARD: {
+            type: 'fetcher',
+            fetcher: async () => new Response(null, { status: 503 }),
+          },
+          ABUSE_GUARD_FAMILIES: { type: 'plain_text', value: '' },
           NEXT_PUBLIC_SUPABASE_URL: {
             type: 'plain_text',
             value: 'https://fixture.supabase.invalid',

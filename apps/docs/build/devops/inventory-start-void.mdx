@@ -18,8 +18,8 @@ acceptance, staging acceptance and Cloudflare rollback qualification pass.
 | Production Worker | `tuturuuu-inventory` (`VITE_INVENTORY_NATIVE_PROFILE=production`) |
 | Staging Worker | the staging Worker name |
 | Host | `inventory.tuturuuu.com` (operator-attached; no source route) |
-| Bindings and vars | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX` (`0` production, `1` staging) |
-| Required secret names | `CRON_SECRET`, `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`, `ENCRYPTION_MASTER_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| Bindings and vars | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX` (`0` production, `1` staging), `ABUSE_GUARD` (the `AbuseGuardEntrypoint` service), `ABUSE_GUARD_FAMILIES=proxy,ratelimit,integrity` |
+| Required secret names | `CRON_SECRET`, `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`, `ENCRYPTION_MASTER_KEY`, `ABUSE_GUARD_KEY_PEPPER`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 | SePay configuration | `SEPAY_OAUTH_CLIENT_ID`, `SEPAY_OAUTH_CLIENT_SECRET`, optional independent `SEPAY_OAUTH_STATE_SECRET`, and `SEPAY_WEBHOOK_API_KEY` or `SEPAY_WEBHOOK_SECRET` |
 | Build | `VITE_INVENTORY_NATIVE_PROFILE=production bun run --cwd apps/inventory build:cloudflare` |
 | Prior Vercel deployment | No immutable deployment ID is recorded in the repository. Rex must capture the active Inventory Vercel deployment ID and URL before cutover. |

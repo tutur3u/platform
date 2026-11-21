@@ -9,6 +9,9 @@ export function deploymentProfile(
       value === 'production'
         ? 'tuturuuu-inventory'
         : 'tuturuuu-inventory-vite-staging',
-    vars: { TUTURUUU_NOINDEX: value === 'production' ? '0' : '1' },
+    vars: {
+      TUTURUUU_NOINDEX: value === 'production' ? '0' : '1',
+      ABUSE_GUARD_FAMILIES: 'proxy,ratelimit,integrity',
+    },
   };
 }

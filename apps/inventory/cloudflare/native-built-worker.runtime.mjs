@@ -115,6 +115,17 @@ test(
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
     assert.equal(config.preview_urls, false);
     assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
+    assert.equal(
+      config.vars?.ABUSE_GUARD_FAMILIES,
+      PROFILE.vars.ABUSE_GUARD_FAMILIES
+    );
+    assert.deepEqual(config.services, [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ]);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -130,36 +141,20 @@ test(
       envFiles: [staged.envFile],
       sendMetrics: false,
       bindings: {
-        SEPAY_WEBHOOK_API_KEY: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
-        },
         CRON_SECRET: { type: 'plain_text', value: 'synthetic-runtime-only' },
-        SEPAY_OAUTH_CLIENT_ID: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () => new Response(null, { status: 503 }),
         },
-        SEPAY_OAUTH_CLIENT_SECRET: {
+        ABUSE_GUARD_KEY_PEPPER: {
           type: 'plain_text',
-          value: 'synthetic-runtime-only',
-        },
-        SEPAY_OAUTH_STATE_SECRET: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
+          value: 'synthetic-runtime-only-abuse-pepper',
         },
         SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET: {
           type: 'plain_text',
           value: 'synthetic-runtime-only',
         },
         ENCRYPTION_MASTER_KEY: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
-        },
-        UPSTASH_REDIS_REST_URL: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
-        },
-        UPSTASH_REDIS_REST_TOKEN: {
           type: 'plain_text',
           value: 'synthetic-runtime-only',
         },
