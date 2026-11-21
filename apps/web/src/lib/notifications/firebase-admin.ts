@@ -133,6 +133,11 @@ export function getFirebaseMessagingClient(): Messaging {
     return messagingSingleton;
   }
 
-  messagingSingleton = getMessaging(resolveFirebaseApp());
+  const messaging = getMessaging(resolveFirebaseApp());
+  // Cloudflare Workers implement node:http/https but not node:http2, and
+  // firebase-admin's default sendEach transport opens an HTTP/2 session
+  // (`http2.connect`), which throws on every batch. Use the HTTP/1.1 path.
+  messaging.enableLegacyHttpTransport();
+  messagingSingleton = messaging;
   return messagingSingleton;
 }
