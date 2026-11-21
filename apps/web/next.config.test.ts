@@ -140,6 +140,9 @@ describe('locale-optional auth shell header sources', () => {
         'NEXT_LOCALE=vi; sb-abcdefgh-auth-token.0=x',
         'tuturuuu_web_app_session=x',
         'NEXT_LOCALE=vi; tuturuuu_web_app_session_refresh=x',
+        // Line separators that workerd passes through must not hide a session.
+        'j=\u2028; sb-abcdefgh-auth-token=x',
+        'sb-abcdefgh-auth-token=x; j=\u2029',
       ]) {
         const signedIn = await finalConfigHeaders(pathname, cookie);
         expect(signedIn.get('cache-control')).toBe('private, no-store');

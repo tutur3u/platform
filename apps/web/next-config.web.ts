@@ -65,13 +65,15 @@ const privateAuthShellHeaders = [
   { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
 ];
 // A Supabase or Web app session cookie: the locale layout then renders the
-// session user, so the shell must never reach a shared cache.
+// session user, so the shell must never reach a shared cache. [\s\S] rather
+// than `.` also spans U+2028/U+2029, which workerd passes through in header
+// values and which `.` would stop at, hiding a session cookie behind it.
 const SESSION_COOKIE_HEADER = [
   {
     type: 'header' as const,
     key: 'cookie',
     value:
-      '(?:.*;\\s*)?(?:sb-[A-Za-z0-9-]+-auth-token(?:\\.\\d+)?|tuturuuu_web_app_session(?:_refresh)?)=.*',
+      '(?:[\\s\\S]*;\\s*)?(?:sb-[A-Za-z0-9-]+-auth-token(?:\\.\\d+)?|tuturuuu_web_app_session(?:_refresh)?)=[\\s\\S]*',
   },
 ];
 
@@ -181,9 +183,10 @@ export function createWebNextConfig({
         },
         // One optional-locale source per page keeps the Vercel route table
         // small; `/:locale?/login` matches both `/login` and `/<locale>/login`.
-        // The shared CDN policy applies only without a session cookie; the
-        // private rule comes last, so a runtime that ignores the cookie
-        // conditions falls back to private for everyone.
+        // The shared CDN policy applies only without a session cookie. The
+        // private rule comes last, so a runtime that ignores has/missing
+        // entirely still serves private; a regex miss is covered only by the
+        // pattern itself, which next.config.test.ts exercises.
         ...['/:locale?/login', '/:locale?/add-account'].flatMap((source) => [
           { source, missing: SESSION_COOKIE_HEADER, headers: authShellHeaders },
           {
