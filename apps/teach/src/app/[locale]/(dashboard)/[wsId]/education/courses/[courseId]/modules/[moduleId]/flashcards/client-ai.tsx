@@ -1,4 +1,5 @@
 'use client';
+import { appApiPath } from '@/lib/mounted-api';
 
 import { useMutation } from '@tanstack/react-query';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -22,7 +23,7 @@ export function AIFlashcards({
   const t = useTranslations();
   const router = useRouter();
   const { object, submit, isLoading } = useObject({
-    api: '/api/ai/objects/flashcards',
+    api: appApiPath('/api/ai/objects/flashcards'),
     schema: flashcardSchema,
   });
 

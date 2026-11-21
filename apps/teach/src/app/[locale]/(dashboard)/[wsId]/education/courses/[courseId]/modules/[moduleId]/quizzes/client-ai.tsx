@@ -1,4 +1,5 @@
 'use client';
+import { appApiPath } from '@/lib/mounted-api';
 
 import { useMutation } from '@tanstack/react-query';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -24,7 +25,7 @@ export default function AIQuizzes({
   const router = useRouter();
 
   const { object, submit, isLoading } = useObject({
-    api: '/api/ai/objects/quizzes',
+    api: appApiPath('/api/ai/objects/quizzes'),
     schema: quizSchema,
   });
 

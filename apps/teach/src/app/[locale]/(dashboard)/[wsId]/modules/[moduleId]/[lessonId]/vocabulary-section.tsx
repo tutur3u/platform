@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -47,7 +48,7 @@ export default function LessonVocabularySection({
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(
+        const response = await mountedFetch(
           `/api/v1/workspaces/${wsId}/course-modules/${moduleId}/vocabulary`,
           {
             credentials: 'include',
@@ -99,7 +100,7 @@ export default function LessonVocabularySection({
     const timeout = window.setTimeout(async () => {
       try {
         setIsSuggesting(true);
-        const response = await fetch(
+        const response = await mountedFetch(
           `/api/v1/vocabulary/suggestions?q=${encodeURIComponent(query)}`,
           {
             credentials: 'include',
@@ -142,7 +143,7 @@ export default function LessonVocabularySection({
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/workspaces/${wsId}/course-modules/${moduleId}/vocabulary`,
         {
           method: 'PATCH',
@@ -192,7 +193,7 @@ export default function LessonVocabularySection({
 
     setIsSearchingImages(true);
     try {
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/vocabulary/images?q=${encodeURIComponent(query)}`,
         { credentials: 'include' }
       );
@@ -213,7 +214,7 @@ export default function LessonVocabularySection({
       const params = new URLSearchParams();
       params.set('word', word);
 
-      const response = await fetch(
+      const response = await mountedFetch(
         `/api/v1/vocabulary/details?${params.toString()}`,
         {
           credentials: 'include',

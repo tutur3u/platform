@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { TeachThemeControl } from '@/components/teach-theme-control';
 import { Link, redirect } from '@/i18n/navigation';
+import { appApiPath } from '@/lib/mounted-api';
 import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 
 export default async function TeachSettingsPage({
@@ -78,7 +79,7 @@ export default async function TeachSettingsPage({
         </section>
         <a
           className="inline-flex h-11 items-center gap-2 rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground"
-          href="/api/auth/logout"
+          href={appApiPath('/api/auth/logout')}
         >
           <LogOut className="h-4 w-4" />
           {t('logout')}
