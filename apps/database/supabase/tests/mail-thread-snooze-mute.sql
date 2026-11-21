@@ -2,12 +2,20 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(16);
+
+\ir helpers/mail-inbound-event.inc
 insert into auth.users(id, aud, role, email, email_confirmed_at, created_at, updated_at)
 values
 ('a1230000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'push-test@tuturuuu.com', now(), now(), now()),
 ('a1230000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'other-push-test@tuturuuu.com', now(), now(), now());
+insert into auth.identities (id, provider_id, user_id, identity_data, provider)
+select gen_random_uuid(), id::text, id, jsonb_build_object('sub', id::text, 'email', email), 'email'
+from auth.users where id in ('a1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000002');
+update private.mail_domains
+set status = 'active', inbound_provider = 'ses', verified_at = coalesce(verified_at, now())
+where domain = 'tuturuuu.com';
 insert into public.users(id) values ('a1230000-0000-0000-0000-000000000001'), ('a1230000-0000-0000-0000-000000000002') on conflict do nothing;
-insert into private.mail_mailboxes(id, address, domain_id) select 'b1230000-0000-0000-0000-000000000001', 'push-test@tuturuuu.com', id from private.mail_domains where domain = 'tuturuuu.com';
+insert into private.mail_mailboxes(id, address, domain_id, type) select 'b1230000-0000-0000-0000-000000000001', 'push-test@tuturuuu.com', id, 'shared' from private.mail_domains where domain = 'tuturuuu.com';
 insert into private.mail_mailbox_members(mailbox_id, user_id)
 select 'b1230000-0000-0000-0000-000000000001', id from public.users where id in ('a1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000002');
 insert into private.mail_threads(id, mailbox_id, subject, normalized_subject)
@@ -25,6 +33,7 @@ select ok(private.mail_thread_push_allowed('e1230000-0000-0000-0000-000000000001
 update private.mail_thread_user_state set snoozed_until = now() - interval '1 minute';
 select ok(private.mail_thread_push_allowed('e1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000001'), 'expired snooze allows future notifications');
 select private.set_mail_thread_preference('b1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000001', array['c1230000-0000-0000-0000-000000000001']::uuid[], 'mute');
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000001');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000001', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001' and user_id = 'a1230000-0000-0000-0000-000000000001'), 0, 'muted member gets no incoming notification');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001' and user_id = 'a1230000-0000-0000-0000-000000000002'), 1, 'unmuted shared-mailbox member still notified');

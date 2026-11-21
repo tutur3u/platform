@@ -3,10 +3,18 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(25);
 
+\ir helpers/mail-inbound-event.inc
+
 insert into auth.users(id, aud, role, email, email_confirmed_at, created_at, updated_at)
 values
 ('a1230000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'push-test@tuturuuu.com', now(), now(), now()),
 ('a1230000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'push-test@example.com', now(), now(), now());
+insert into auth.identities (id, provider_id, user_id, identity_data, provider)
+select gen_random_uuid(), id::text, id, jsonb_build_object('sub', id::text, 'email', email), 'email'
+from auth.users where id in ('a1230000-0000-0000-0000-000000000001', 'a1230000-0000-0000-0000-000000000002');
+update private.mail_domains
+set status = 'active', inbound_provider = 'ses', verified_at = coalesce(verified_at, now())
+where domain = 'tuturuuu.com';
 insert into public.users(id) values ('a1230000-0000-0000-0000-000000000001'), ('a1230000-0000-0000-0000-000000000002') on conflict do nothing;
 insert into private.mail_mailboxes(id, address, domain_id) select 'b1230000-0000-0000-0000-000000000001', 'push-test@tuturuuu.com', id from private.mail_domains where domain = 'tuturuuu.com';
 insert into private.mail_mailbox_members(mailbox_id, user_id)
@@ -17,6 +25,7 @@ insert into private.mail_labels(id, mailbox_id, name, slug, kind)
 values ('d1230000-0000-0000-0000-000000000001', 'b1230000-0000-0000-0000-000000000001', 'Inbox', 'inbox', 'system');
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at)
 values ('e1230000-0000-0000-0000-000000000001', 'b1230000-0000-0000-0000-000000000001', 'c1230000-0000-0000-0000-000000000001', 'inbound', 'ses', 'sender@example.com', 'Hello', now());
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001'), 0, 'no push before Inbox delivery is persisted');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000001', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000001'), 1, 'only internal mailbox member receives notification');
@@ -65,33 +74,46 @@ select is((select count(*)::int from public.notifications where entity_id = 'e12
 insert into public.notification_preferences(user_id, event_type, channel, enabled, scope) values ('a1230000-0000-0000-0000-000000000001', 'mail_received', 'push', false, 'user');
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at)
 select 'e1230000-0000-0000-0000-000000000003', mailbox_id, thread_id, direction, provider, from_address, subject, now() from private.mail_messages where id = 'e1230000-0000-0000-0000-000000000001';
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000003');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000003', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000003'), 0, 'disabled push preference honored');
 update public.notification_preferences set event_type = 'push_notifications'
 where user_id = 'a1230000-0000-0000-0000-000000000001' and event_type = 'mail_received';
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at)
 select 'e1230000-0000-0000-0000-000000000004', mailbox_id, thread_id, direction, provider, from_address, subject, now() from private.mail_messages where id = 'e1230000-0000-0000-0000-000000000001';
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000004');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000004', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000004'), 0, 'general account push switch honored');
 delete from public.notification_preferences where user_id = 'a1230000-0000-0000-0000-000000000001';
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at, created_at)
 select 'e1230000-0000-0000-0000-000000000005', mailbox_id, thread_id, direction, provider, from_address, subject, now() - interval '1 hour', now() - interval '1 hour' from private.mail_messages where id = 'e1230000-0000-0000-0000-000000000001';
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000005');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000005', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000005'), 0, 'restoring historical Inbox message does not push');
 insert into private.mail_raw_messages(id, provider_message_id, spam_verdict) values ('f1230000-0000-0000-0000-000000000001', 'spam-fixture', 'FAIL');
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at, raw_message_id)
 select 'e1230000-0000-0000-0000-000000000006', mailbox_id, thread_id, direction, provider, from_address, subject, now(), 'f1230000-0000-0000-0000-000000000001' from private.mail_messages where id = 'e1230000-0000-0000-0000-000000000001';
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000006');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000006', 'd1230000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000006'), 0, 'spam verdict prevents push');
 -- Forwarded copies must use destination membership, not source membership.
 update auth.users set email = 'forward-test@tuturuuu.com' where id = 'a1230000-0000-0000-0000-000000000002';
-insert into private.mail_mailboxes(id, address, domain_id, type)
-select 'b1230000-0000-0000-0000-000000000002', 'forward-test@tuturuuu.com', id, 'shared' from private.mail_domains where domain = 'tuturuuu.com';
+update auth.identities
+set identity_data = jsonb_set(identity_data, '{email}', to_jsonb('forward-test@tuturuuu.com'::text))
+where user_id = 'a1230000-0000-0000-0000-000000000002' and provider = 'email';
+insert into private.mail_domains (id, domain, status, inbound_provider, verified_at)
+values ('b1230000-0000-0000-0000-000000000003', 'mail-forward-fixture.tuturuuu.com', 'active', 'cloudflare', now());
+insert into private.mail_mailboxes (id, address, domain_id, type)
+values (
+  'b1230000-0000-0000-0000-000000000002', 'forward-test@mail-forward-fixture.tuturuuu.com',
+  'b1230000-0000-0000-0000-000000000003', 'shared'
+);
 insert into private.mail_mailbox_members(mailbox_id, user_id) values ('b1230000-0000-0000-0000-000000000002', 'a1230000-0000-0000-0000-000000000002');
 insert into private.mail_threads(id, mailbox_id, subject, normalized_subject) values ('c1230000-0000-0000-0000-000000000002', 'b1230000-0000-0000-0000-000000000002', 'Forwarded', 'forwarded');
 insert into private.mail_labels(id, mailbox_id, name, slug, kind) values ('d1230000-0000-0000-0000-000000000002', 'b1230000-0000-0000-0000-000000000002', 'Inbox', 'inbox', 'system');
 insert into private.mail_messages(id, mailbox_id, thread_id, direction, provider, from_address, subject, received_at)
 values ('e1230000-0000-0000-0000-000000000007', 'b1230000-0000-0000-0000-000000000002', 'c1230000-0000-0000-0000-000000000002', 'inbound', 'cloudflare', 'sender@example.com', 'Forwarded', now());
+select pg_temp.bind_inbound_mail_fixture('e1230000-0000-0000-0000-000000000007');
 insert into private.mail_message_labels(message_id, label_id) values ('e1230000-0000-0000-0000-000000000007', 'd1230000-0000-0000-0000-000000000002');
 select is((select user_id::text from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000007'), 'a1230000-0000-0000-0000-000000000002', 'forwarded copy goes only to destination member');
 select ok((select private.can_deliver_mail_notification(id) from public.notifications where entity_id = 'e1230000-0000-0000-0000-000000000007'), 'forwarded destination authorized at send time');

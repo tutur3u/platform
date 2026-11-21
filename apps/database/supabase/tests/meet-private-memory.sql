@@ -2,7 +2,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(19);
-insert into public.users(id) values ('00000000-0000-4000-8000-000000009751'), ('00000000-0000-4000-8000-000000009752');
+insert into auth.users (id, email, raw_app_meta_data)
+values
+  ('00000000-0000-4000-8000-000000009751', 'memory-owner@example.com', '{}'::jsonb),
+  ('00000000-0000-4000-8000-000000009752', 'memory-other@example.com', '{}'::jsonb);
 select throws_ok($$select public.save_meet_ai_memory('00000000-0000-4000-8000-000000009751', 'Prefers concise answers', 'preference')$$, 'P0001', 'Memory is disabled', 'memory is off without a preference row');
 insert into public.meet_ai_user_preferences(user_id) values ('00000000-0000-4000-8000-000000009751');
 select is((select memory_enabled from public.meet_ai_user_preferences where user_id = '00000000-0000-4000-8000-000000009751'), false, 'new preference defaults off');

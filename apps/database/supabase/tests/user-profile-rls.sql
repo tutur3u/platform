@@ -154,6 +154,13 @@ select ok(
 
 set local session_replication_role = replica;
 
+insert into auth.users (id, raw_app_meta_data)
+values
+  ('00000000-0000-0000-0000-00000000f101', '{}'::jsonb),
+  ('00000000-0000-0000-0000-00000000f102', '{}'::jsonb),
+  ('00000000-0000-0000-0000-00000000f103', '{}'::jsonb)
+on conflict (id) do nothing;
+
 insert into public.users (id, display_name)
 values
   ('00000000-0000-0000-0000-00000000f101', 'RLS Viewer'),
