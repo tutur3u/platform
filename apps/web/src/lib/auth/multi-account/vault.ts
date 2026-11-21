@@ -211,7 +211,7 @@ function rowToAccountSummary(row: AccountRow): WebAccountSummary {
 
 async function resolveDevice(
   request: Pick<Request, 'headers' | 'url'>,
-  options: { create: boolean }
+  options: { create: boolean; touch?: boolean }
 ): Promise<WebAccountDevice | null> {
   if (!resolveMultiAccountSecret()) return null;
 
@@ -232,10 +232,14 @@ async function resolveDevice(
       !row.revoked_at &&
       row.secret_hash === hashDeviceSecret(credential.secret)
     ) {
-      await db
-        .from('web_account_devices')
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq('id', credential.deviceId);
+      // last_seen_at doubles as the switch compare-and-set version, so a
+      // read-only render must not bump it under a concurrent switch.
+      if (options.touch !== false) {
+        await db
+          .from('web_account_devices')
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq('id', credential.deviceId);
+      }
       return {
         activeUserId: row.active_user_id,
         deviceId: credential.deviceId,
@@ -303,6 +307,17 @@ async function listAccountsForDevice(
     accounts,
     activeAccountId: activeAccountExists ? device.activeUserId : null,
   };
+}
+
+/**
+ * Read-only listing for server-rendered pages: it never touches the device
+ * row, so rendering cannot race an account switch's compare-and-set.
+ */
+export async function peekWebAccounts(
+  request: Pick<Request, 'headers' | 'url'>
+): Promise<WebAccountsResponse> {
+  const device = await resolveDevice(request, { create: false, touch: false });
+  return listAccountsForDevice(device);
 }
 
 export async function listWebAccounts(

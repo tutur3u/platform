@@ -10606,6 +10606,8 @@
     "captcha_error": "Kiểm tra bảo mật thất bại. Đang thử lại...",
     "captcha_not_configured": "Bước xác minh bảo mật chưa được cấu hình cho môi trường này.",
     "check_email": "Kiểm tra email của bạn",
+    "choose_account_for_app": "để tiếp tục đến {app}",
+    "choose_account_title": "Chọn tài khoản",
     "choose_sign_in_method": "Chọn phương thức đăng nhập ưa thích của bạn",
     "clear_invalid_return_url": "Xóa URL quay lại",
     "confirm_internal_app_account_description": "{app} sẽ dùng hồ sơ tài khoản Tuturuuu của {name}. Hãy xác nhận trước khi quay lại ứng dụng.",

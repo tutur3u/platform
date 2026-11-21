@@ -2,10 +2,22 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginContent } from './login-content';
-import Login, * as pageModule from './page';
+import * as pageModule from './page';
+import { LoginView } from './page';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   getLocalE2ESupabaseBrowserConfig: vi.fn(),
+  initialView: {
+    hasSession: false,
+    providerHint: null,
+    savedAccounts: [],
+  } as {
+    hasSession: boolean;
+    providerHint: 'google' | null;
+    savedAccounts: never[];
+  },
+  resolveInitialLoginView: vi.fn(),
   isLocalE2EAuthBypassEnabled: vi.fn(),
   locationReplace: vi.fn(),
   loginFormProps: [] as Array<{
@@ -44,6 +56,16 @@ vi.mock('@/lib/auth/local-e2e', () => ({
   getLocalE2ESupabaseBrowserConfig: () =>
     mocks.getLocalE2ESupabaseBrowserConfig(),
   isLocalE2EAuthBypassEnabled: () => mocks.isLocalE2EAuthBypassEnabled(),
+}));
+
+vi.mock('next/server', () => ({
+  connection: () => mocks.connection(),
+}));
+
+vi.mock('./login-view.server', () => ({
+  resolveInitialLoginView: (
+    ...args: Parameters<typeof mocks.resolveInitialLoginView>
+  ) => mocks.resolveInitialLoginView(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -122,7 +144,7 @@ async function renderLoginPage(
   searchParams: Record<string, string | string[] | undefined> = {}
 ) {
   setSearchParams(searchParams);
-  render(await Login());
+  render(await LoginView({ searchParams: Promise.resolve(searchParams) }));
 
   return screen.findByTestId('login-form');
 }
@@ -134,6 +156,14 @@ describe('Login page', () => {
     mocks.getLocalE2ESupabaseBrowserConfig.mockReturnValue(null);
     mocks.isLocalE2EAuthBypassEnabled.mockReturnValue(false);
     setSearchParams();
+    mocks.initialView = {
+      hasSession: false,
+      providerHint: null,
+      savedAccounts: [],
+    };
+    mocks.resolveInitialLoginView.mockImplementation(
+      async () => mocks.initialView
+    );
   });
 
   it('does not export cache-incompatible route segment config', () => {
@@ -147,8 +177,10 @@ describe('Login page', () => {
     expect(
       screen.getByRole('heading', { name: 'Welcome Back' })
     ).toBeInTheDocument();
+    expect(mocks.connection).toHaveBeenCalled();
     expect(mocks.loginFormProps).toContainEqual({
       deferAuthSurfaceUntilSessionCheck: false,
+      initialView: mocks.initialView,
       localE2EAuthBypass: false,
       runtimeSupabaseConfig: null,
     });
@@ -177,7 +209,31 @@ describe('Login page', () => {
     );
   });
 
+  it('renders the sign-in form at once when the server finds no session', async () => {
+    await renderLoginPage({ returnUrl: 'https://learn.tuturuuu.com/courses' });
+
+    expect(mocks.resolveInitialLoginView).toHaveBeenCalledWith({
+      returnUrl: 'https://learn.tuturuuu.com/courses',
+    });
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'false'
+    );
+  });
+
+  it('holds the sign-in form back while the browser routes a server session', async () => {
+    mocks.initialView = { ...mocks.initialView, hasSession: true };
+
+    await renderLoginPage();
+
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'true'
+    );
+  });
+
   it('renders the partner app header for known returnUrl domains on the client', async () => {
+    mocks.initialView = { ...mocks.initialView, hasSession: true };
     await renderLoginPage({
       returnUrl: 'https://learn.tuturuuu.com/courses',
     });

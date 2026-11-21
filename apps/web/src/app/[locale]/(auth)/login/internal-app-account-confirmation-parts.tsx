@@ -179,12 +179,15 @@ export function StoredAccountSwitchList({
   disabled,
   fallbackAccountName,
   onSwitchAccount,
+  separatorLabel,
   switchingAccountId,
 }: {
   accounts: WebAccountSummary[];
   disabled: boolean;
   fallbackAccountName: string;
   onSwitchAccount: (accountId: string) => void;
+  /** Omitted uses "or switch account"; null hides the separator. */
+  separatorLabel?: string | null;
   switchingAccountId: string | null;
 }) {
   const t = useTranslations();
@@ -195,7 +198,11 @@ export function StoredAccountSwitchList({
 
   return (
     <div className="space-y-3">
-      <LoginMethodSeparator label={t('login.or_switch_account')} />
+      {separatorLabel === null ? null : (
+        <LoginMethodSeparator
+          label={separatorLabel ?? t('login.or_switch_account')}
+        />
+      )}
       <div className="space-y-2">
         {accounts.map((account) => {
           const displayName = getDisplayName({

@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { DEV_MODE } from '@/constants/env';
+import type { InitialLoginView } from './login-view';
 
 const LoginForm = lazy(() => import('./form'));
 
@@ -24,6 +25,7 @@ export type LoginRuntimeSupabaseConfig = {
 
 type LoginContentProps = {
   authCallbackRedirect?: (url: string) => void;
+  initialView?: InitialLoginView;
   localE2EAuthBypass: boolean;
   runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
 };
@@ -133,6 +135,7 @@ function LoginFormFallback() {
 
 export function LoginContent({
   authCallbackRedirect,
+  initialView,
   localE2EAuthBypass,
   runtimeSupabaseConfig,
 }: LoginContentProps) {
@@ -151,9 +154,14 @@ export function LoginContent({
         ) ?? null)
       : DOMAINS.TUTURUUU;
   }, [returnUrl]);
-  const deferAuthSurfaceUntilSessionCheck = Boolean(
-    returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
-  );
+  // A server-confirmed session holds the sign-in form back until the browser
+  // finishes routing it, so the form never flashes before a redirect or the
+  // account confirmation. A server-confirmed absence renders it at once.
+  const deferAuthSurfaceUntilSessionCheck = initialView
+    ? initialView.hasSession && !multiAccount
+    : Boolean(
+        returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
+      );
   const tuturuuuDomain = DOMAINS.TUTURUUU;
 
   useEffect(() => {
@@ -231,6 +239,7 @@ export function LoginContent({
                   deferAuthSurfaceUntilSessionCheck={
                     deferAuthSurfaceUntilSessionCheck
                   }
+                  initialView={initialView}
                   localE2EAuthBypass={localE2EAuthBypass}
                   runtimeSupabaseConfig={runtimeSupabaseConfig}
                 />

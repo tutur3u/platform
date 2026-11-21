@@ -70,6 +70,12 @@ import {
 } from '@/lib/auth/oauth-providers';
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
+import {
+  canAutoStartProvider,
+  type InitialLoginView,
+  readProviderHint,
+  shouldOfferSavedAccountChooser,
+} from './login-view';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import {
   classifyCrossAppHandoff,
@@ -94,6 +100,17 @@ import {
   MANAGED_TUTURUUU_RETURN_APP,
 } from './return-url-helpers';
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
+import {
+  getReturnAppName,
+  InputOTPRowFallback,
+  InternalAppAccountConfirmationFallback,
+  LoginMethodSeparator,
+  RedirectingAfterAuthCard,
+  SocialImageLogo,
+  SocialLogoMask,
+  TurnstileLoadingFallback,
+} from './login-form-parts';
+import { SavedAccountChooser } from './saved-account-chooser';
 import { SocialLoginButton } from './social-login-button';
 import {
   getTurnstileClientErrorMessageKey,
@@ -139,47 +156,6 @@ const InputOTPSlot = lazy(async () => {
   return { default: InputOTPSlotComponent };
 });
 
-function TurnstileLoadingFallback() {
-  return (
-    <div
-      aria-hidden="true"
-      className="h-[65px] w-[300px] max-w-full animate-pulse rounded-xl bg-muted/50"
-    />
-  );
-}
-
-function InputOTPRowFallback() {
-  return (
-    <div className="flex w-full justify-center gap-2">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div
-          aria-hidden="true"
-          className="h-12 w-full animate-pulse rounded-2xl border border-border/60 bg-muted/50"
-          key={`otp-fallback-${index + 1}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function InternalAppAccountConfirmationFallback({
-  appName,
-  disabled,
-  onUseAnotherAccount,
-}: {
-  appName: string;
-  disabled: boolean;
-  onUseAnotherAccount: () => void;
-}) {
-  return (
-    <ProfileLoadingState
-      appName={appName}
-      disabled={disabled}
-      onUseAnotherAccount={onUseAnotherAccount}
-    />
-  );
-}
-
 type AuthStage = 'identify' | 'otp' | 'password';
 
 interface MobileMfaApprovalChallenge {
@@ -194,63 +170,10 @@ interface ReturnUrlValidationFailure {
   returnUrl: string;
 }
 
-function getReturnAppName(returnApp: string | null) {
-  if (returnApp === 'learn') return 'Learn';
-  if (returnApp === 'tulearn') return 'Learn';
-  if (returnApp === 'teach') return 'Teach';
-  if (returnApp === 'chat') return 'Chat';
-  if (returnApp === 'nova') return 'Nova';
-  if (returnApp === 'cms') return 'CMS';
-  if (returnApp === 'inventory') return 'Inventory';
-  return returnApp ?? 'the app';
-}
-
-function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
-  return (
-    <span
-      aria-label={alt}
-      role="img"
-      className="block size-5 shrink-0 bg-current transition-transform duration-200 group-hover:scale-110"
-      style={{
-        WebkitMaskImage: `url(${src})`,
-        maskImage: `url(${src})`,
-        WebkitMaskPosition: 'center',
-        maskPosition: 'center',
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskSize: 'contain',
-        maskSize: 'contain',
-      }}
-    />
-  );
-}
-
-function SocialImageLogo({ src, alt }: { src: string; alt: string }) {
-  return (
-    <span
-      aria-label={alt}
-      role="img"
-      className="block size-5 shrink-0 bg-center bg-contain bg-no-repeat transition-transform duration-200 group-hover:scale-110"
-      style={{ backgroundImage: `url(${src})` }}
-    />
-  );
-}
-
-function LoginMethodSeparator({ label }: { label: string }) {
-  return (
-    <div className="relative py-0.5">
-      <Separator className="bg-border/60" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="bg-background/95 px-3 text-muted-foreground text-xs">
-          {label}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 type LoginFormProps = {
   deferAuthSurfaceUntilSessionCheck?: boolean;
+  /** Server-resolved view; absent in harnesses that render the form alone. */
+  initialView?: InitialLoginView;
   localE2EAuthBypass?: boolean;
   runtimeSupabaseConfig?: {
     supabasePublishableKey: string;
@@ -260,6 +183,7 @@ type LoginFormProps = {
 
 export default function LoginForm({
   deferAuthSurfaceUntilSessionCheck = false,
+  initialView,
   localE2EAuthBypass: runtimeLocalE2EAuthBypass = false,
   runtimeSupabaseConfig = null,
 }: LoginFormProps) {
@@ -422,6 +346,38 @@ export default function LoginForm({
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
     null
   );
+  const [savedAccountChoiceDismissed, setSavedAccountChoiceDismissed] =
+    useState(false);
+  const providerHint =
+    initialView?.providerHint ?? readProviderHint(searchParams.get('provider'));
+  // The server list paints the chooser first. When the server could not
+  // read it, the client list decides, and until then the saved accounts are
+  // unknown so a provider redirect never races them.
+  const knownSavedAccounts =
+    initialView?.savedAccounts ??
+    (accountSwitcherInitialized ? accounts : null);
+  const savedAccounts = knownSavedAccounts ?? [];
+  const hasKnownSession = initialized
+    ? user !== null
+    : Boolean(initialView?.hasSession);
+  const isMultiAccountLogin = searchParams.get('multiAccount') === 'true';
+  const showSavedAccountChooser = shouldOfferSavedAccountChooser({
+    dismissed: savedAccountChoiceDismissed,
+    hasCrossAppReturn: Boolean(returnUrl && !localReturnPath),
+    hasSession: hasKnownSession,
+    multiAccount: isMultiAccountLogin,
+    providerHint,
+    savedAccounts,
+  });
+  const providerAutoStartAllowed =
+    !showSavedAccountChooser &&
+    (savedAccountChoiceDismissed ||
+      canAutoStartProvider({
+        hasSession: hasKnownSession,
+        multiAccount: isMultiAccountLogin,
+        providerHint,
+        savedAccounts: knownSavedAccounts,
+      }));
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
@@ -1376,8 +1332,12 @@ export default function LoginForm({
     setReadyForAuth
   );
   useAutoOAuthLogin(
-    searchParams.get('provider'),
-    initialized && readyForAuth && !requiresMFA && !user,
+    providerHint,
+    initialized &&
+      readyForAuth &&
+      !requiresMFA &&
+      !user &&
+      providerAutoStartAllowed,
     handleOAuthLogin
   );
 
@@ -1621,6 +1581,12 @@ export default function LoginForm({
     requiresMFA,
   ]);
 
+  if (!canRenderAuthSurface && (!returnUrl || localReturnPath)) {
+    return (
+      <RedirectingAfterAuthCard label={t('account_switcher.redirecting')} />
+    );
+  }
+
   if (!canRenderAuthSurface) {
     return (
       <ProfileLoadingState
@@ -1692,16 +1658,19 @@ export default function LoginForm({
 
   if (redirectingAfterAuth) {
     return (
-      <div>
-        <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
-          <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-            <LoadingIndicator className="size-6" />
-            <p className="font-medium text-muted-foreground text-sm">
-              {t('account_switcher.redirecting')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <RedirectingAfterAuthCard label={t('account_switcher.redirecting')} />
+    );
+  }
+
+  if (showSavedAccountChooser && !requiresMFA) {
+    return (
+      <SavedAccountChooser
+        accounts={savedAccounts}
+        appName={returnUrl && !localReturnPath ? returnAppName : null}
+        onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
+        onUseAnotherAccount={() => setSavedAccountChoiceDismissed(true)}
+        switchingAccountId={switchingAccountId}
+      />
     );
   }
 

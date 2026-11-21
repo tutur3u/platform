@@ -10606,6 +10606,8 @@
     "captcha_error": "Security check failed. Retrying...",
     "captcha_not_configured": "Security verification is not configured for this deployment yet.",
     "check_email": "Enter the 6-digit code sent to your email",
+    "choose_account_for_app": "to continue to {app}",
+    "choose_account_title": "Choose an account",
     "choose_sign_in_method": "Choose your preferred sign-in method",
     "clear_invalid_return_url": "Clear return URL",
     "confirm_internal_app_account_description": "We'll use {name}'s Tuturuuu account profile for {app}. Confirm before we send you back.",

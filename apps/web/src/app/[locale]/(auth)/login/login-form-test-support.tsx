@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import React, { type ReactNode } from 'react';
 import { vi } from 'vitest';
 import LoginForm from './form';
+import type { InitialLoginView } from './login-view';
 
 const mocks = vi.hoisted(() => ({
   assign: vi.fn(),
@@ -212,6 +213,7 @@ export function renderLoginFormSearch(
   search = '',
   options: {
     deferAuthSurfaceUntilSessionCheck?: boolean;
+    initialView?: InitialLoginView;
     origin?: string;
   } = {}
 ) {
@@ -234,6 +236,7 @@ export function renderLoginFormSearch(
         deferAuthSurfaceUntilSessionCheck={
           options.deferAuthSurfaceUntilSessionCheck
         }
+        initialView={options.initialView}
       />
     </QueryClientProvider>
   );
