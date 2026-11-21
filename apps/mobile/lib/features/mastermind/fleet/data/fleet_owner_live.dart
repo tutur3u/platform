@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'fleet_owner_socket_io.dart'
+    if (dart.library.js_interop) 'fleet_owner_socket_web.dart';
+
 enum FleetOwnerFrameKind { poke, machine, receipt }
 
 typedef FleetOwnerFrame = ({
@@ -13,6 +16,23 @@ typedef FleetOwnerFrame = ({
 
 const int _maxFrameBytes = 32 * 1024;
 const _ticketPath = '/api/v1/mastermind/fleet/live/ticket';
+const _stableConnection = Duration(minutes: 1);
+
+Uri? parseOwnerLiveEndpoint(Object? url) {
+  if (url is! String || url.length > 2048) return null;
+  final target = Uri.tryParse(url);
+  if (target == null ||
+      target.scheme != 'wss' ||
+      target.host != 'mastermind-store.tuturuuu.com' ||
+      (target.hasPort && target.port != 443) ||
+      target.path != '/v1/bridge/connect' ||
+      target.userInfo.isNotEmpty ||
+      target.hasQuery ||
+      target.hasFragment) {
+    return null;
+  }
+  return target;
+}
 
 FleetOwnerFrame? decodeFleetOwnerFrame(Object? raw) {
   if (raw is! String ||
@@ -105,19 +125,11 @@ class FleetOwnerLive {
         timeout: const Duration(seconds: 8),
       );
       if (current != _generation) return;
-      final url = ticket['url'];
       final key = ticket['ticket'];
       final expiresAt = ticket['expiresAt'];
-      final target = url is String && url.length <= 2048
-          ? Uri.tryParse(url)
-          : null;
+      final target = parseOwnerLiveEndpoint(ticket['url']);
       final expiry = expiresAt is String ? DateTime.tryParse(expiresAt) : null;
       if (target == null ||
-          target.scheme != 'wss' ||
-          target.host.isEmpty ||
-          target.userInfo.isNotEmpty ||
-          target.hasQuery ||
-          target.hasFragment ||
           key is! String ||
           !RegExp(r'^[\w-]{32,128}$').hasMatch(key) ||
           expiry == null ||
@@ -125,13 +137,11 @@ class FleetOwnerLive {
         _retryConnection(current);
         return;
       }
-      final candidate = WebSocketChannel.connect(
-        target,
-        protocols: ['mm-bridge.v1', key],
-      );
+      final candidate = connectFleetOwnerSocket(target, ['mm-bridge.v1', key]);
       _socket = candidate;
       await candidate.ready.timeout(const Duration(seconds: 10));
       if (current != _generation) return;
+      final connected = Stopwatch()..start();
       _subscription = candidate.stream.listen(
         (raw) {
           if (current != _generation) return;
@@ -143,18 +153,19 @@ class FleetOwnerLive {
           }
           onFrame(frame);
         },
-        onDone: () => _retryConnection(current),
-        onError: (Object _) => _retryConnection(current),
+        onDone: () => _retryConnection(current, connected.elapsed),
+        onError: (Object _) => _retryConnection(current, connected.elapsed),
       );
     } on Object {
       _retryConnection(current);
     }
   }
 
-  void _retryConnection(int current) {
+  void _retryConnection(int current, [Duration connected = Duration.zero]) {
     if (!_active || current != _generation) return;
     _generation++;
     _releaseSocket();
+    if (connected >= _stableConnection) _attempts = 0;
     if (_attempts < 3) {
       _retry = Timer(const Duration(seconds: 15), () => unawaited(_connect()));
     }

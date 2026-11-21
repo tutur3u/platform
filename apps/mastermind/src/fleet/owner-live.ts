@@ -13,6 +13,7 @@ const revisions = new Map<string, number>();
 const MAX_REVISIONS = 128;
 const MAX_ATTEMPTS = 3;
 const RETRY_MS = 15_000;
+const STABLE_CONNECTION_MS = 60_000;
 let socket: WebSocket | undefined;
 let retry: ReturnType<typeof setTimeout> | undefined;
 let handshake: ReturnType<typeof setTimeout> | undefined;
@@ -34,7 +35,8 @@ function readTicket(value: unknown) {
   const target = URL.parse(url);
   if (
     !target ||
-    target.protocol !== 'wss:' ||
+    target.origin !== 'wss://mastermind-store.tuturuuu.com' ||
+    target.pathname !== '/v1/bridge/connect' ||
     target.username ||
     target.password ||
     target.search ||
@@ -108,9 +110,12 @@ async function connect() {
       ticket.ticket,
     ]);
     socket = candidate;
+    let openedAt: number | undefined;
     handshake = setTimeout(() => candidate.close(), 10_000);
     candidate.addEventListener('open', () => {
-      if (current === generation) clearTimeout(handshake);
+      if (current !== generation) return;
+      clearTimeout(handshake);
+      openedAt = performance.now();
     });
     candidate.addEventListener('message', (event) => {
       if (current === generation && active()) deliver(event.data);
@@ -121,6 +126,12 @@ async function connect() {
         if (current !== generation) return;
         clearTimeout(handshake);
         socket = undefined;
+        if (
+          openedAt !== undefined &&
+          performance.now() - openedAt >= STABLE_CONNECTION_MS
+        ) {
+          attempts = 0;
+        }
         reschedule(current);
       },
       { once: true }

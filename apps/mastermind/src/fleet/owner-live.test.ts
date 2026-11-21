@@ -19,7 +19,7 @@ test('fans out owner frames over one socket and ignores older poke revisions', a
     }
   }
   const ticket = 'x'.repeat(32);
-  const url = 'wss://socket.example/v1/bridge/connect';
+  const url = 'wss://mastermind-store.tuturuuu.com/v1/bridge/connect';
   vi.mocked(openOwnerLiveTicket).mockResolvedValue({
     url,
     ticket,
@@ -70,5 +70,33 @@ test('fans out owner frames over one socket and ignores older poke revisions', a
   } finally {
     stop();
     stopOther();
+  }
+});
+
+test.each([
+  'wss://socket.example/v1/bridge/connect',
+  'wss://mastermind-store.tuturuuu.com.example/v1/bridge/connect',
+  'wss://mastermind-store.tuturuuu.com:444/v1/bridge/connect',
+  'wss://mastermind-store.tuturuuu.com/other',
+])('never presents a ticket to %s', async (url) => {
+  vi.useFakeTimers();
+  vi.mocked(openOwnerLiveTicket).mockResolvedValue({
+    url,
+    ticket: 'x'.repeat(32),
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  });
+  vi.stubGlobal(
+    'document',
+    Object.assign(new EventTarget(), { visibilityState: 'visible' })
+  );
+  const connect = vi.fn();
+  vi.stubGlobal('WebSocket', connect);
+  const stop = subscribeOwnerLive(vi.fn());
+  try {
+    await vi.advanceTimersByTimeAsync(30_001);
+    expect(connect).not.toHaveBeenCalled();
+  } finally {
+    stop();
+    vi.useRealTimers();
   }
 });
