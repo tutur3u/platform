@@ -147,10 +147,7 @@
   font-size: 17px;
   letter-spacing: -0.01em;
 }
-.ws-two {
-  display: grid;
-  gap: 16px;
-}
+
 .ws-agenda {
   position: relative;
   margin: 0;
@@ -190,24 +187,7 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.ws-outcomes {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 10px;
-  font-size: 14.5px;
-  line-height: 1.5;
-}
-.ws-outcomes li {
-  display: flex;
-  gap: 8px;
-}
-.ws-outcomes svg {
-  flex: none;
-  margin-top: 3px;
-  color: var(--rm-live-text);
-}
+
 .ws-journey {
   display: grid;
   gap: 16px;
@@ -412,31 +392,7 @@
   border-radius: 12px;
   background: var(--rm-soft);
 }
-.ws-flow {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 28px;
-  counter-reset: none;
-}
-.ws-flow > li {
-  position: relative;
-}
-.ws-flow > li:not(:last-child)::after {
-  content: "↓";
-  position: absolute;
-  left: 50%;
-  bottom: -24px;
-  transform: translateX(-50%);
-  color: var(--rm-muted);
-  font-size: 18px;
-}
-.ws-flow h3 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+
 .ws-groups {
   --masonry-gap: 14px;
 }
@@ -482,28 +438,11 @@
   gap: 6px;
 }
 @media (min-width: 720px) {
-  .ws-two {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    align-items: start;
-  }
   .ws-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (min-width: 1024px) {
-  .ws-flow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 32px;
-  }
-  .ws-flow > li:not(:last-child)::after {
-    content: "→";
-    left: auto;
-    right: -24px;
-    top: 50%;
-    bottom: auto;
-    transform: translateY(-50%);
-  }
-}
+
 @media (prefers-reduced-motion: no-preference) {
   .ws-steps button,
   .ws-levels label,

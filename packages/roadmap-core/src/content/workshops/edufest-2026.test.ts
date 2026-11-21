@@ -18,14 +18,12 @@ import {
   AI_LEVELS,
   AI_LEVELS_DELIVERABLE,
   CAPABILITIES,
-  CLASSROOM_FLOW,
-  EXPERIENCES,
+  DEMOS,
+  demoBadge,
   FAQ,
-  HIGHLIGHTS,
-  INSIGHTS_DELIVERABLE,
-  INSIGHTS_DEMO,
   JOURNEY,
-  OUTCOMES,
+  LEARN,
+  PRACTICAL,
   TOOLS,
   toWorkshopStatus,
   USE_CASES,
@@ -70,7 +68,7 @@ describe('EduFest workshop: statuses come only from the roadmap', () => {
     assert.deepEqual(unresolved(USE_CASES.map((item) => item.deliverable)), []);
     assert.ok(deliverables.has(AI_LEVELS_DELIVERABLE));
     const ids = new Set(USE_CASES.map((item) => item.id));
-    for (const step of [...JOURNEY, ...CLASSROOM_FLOW])
+    for (const step of JOURNEY)
       for (const id of step.uses)
         assert.ok(ids.has(id), `${step.id} uses ${id}`);
     assert.equal(ids.size, USE_CASES.length, 'use case ids are unique');
@@ -127,15 +125,10 @@ describe('EduFest workshop: copy', () => {
         assert.ok(messages.capabilities.groups[id]);
       for (const id of TOOLS) assert.ok(messages.tools.names[id]);
       for (const id of AGENDA) assert.ok(messages.agenda.items[id]);
-      for (const id of OUTCOMES) assert.ok(messages.outcomes.items[id]);
       for (const id of AI_LEVELS) assert.ok(messages.aiDemo.levels[id]);
       for (const step of JOURNEY)
         assert.ok(
           messages.journey.steps[step.id as keyof typeof messages.journey.steps]
-        );
-      for (const stage of CLASSROOM_FLOW)
-        assert.ok(
-          messages.flow.stages[stage.id as keyof typeof messages.flow.stages]
         );
     }
   });
@@ -146,10 +139,16 @@ describe('EduFest workshop: copy', () => {
       assert.doesNotMatch(neutral, /Tuturuuu|Upskii/);
     }
     assert.doesNotMatch(JSON.stringify(vi), /tác tử/);
-    assert.equal(vi.hero.title, 'Khi thầy cô làm học trò');
-    assert.equal(vi.hero.titleAccent, 'Bước vào lớp học AI Agent thế hệ mới');
-    assert.equal(en.hero.title, 'When Teachers Become Students');
-    assert.equal(en.hero.titleAccent, 'Step Inside the Agentic AI Classroom');
+    assert.equal(vi.hero.title, 'Một lớp học, nhiều AI Agent');
+    assert.equal(
+      vi.hero.titleAccent,
+      'Vận hành lớp học AI trực tuyến, từ bài giảng đến bài kiểm tra'
+    );
+    assert.equal(en.hero.title, 'One Class, Many Agents');
+    assert.equal(
+      en.hero.titleAccent,
+      'Running a Live AI Classroom, From Lesson to Quiz'
+    );
   });
 
   it('the date and venue are the confirmed ones; no price, form or link in the call to action', () => {
@@ -209,52 +208,86 @@ describe('EduFest workshop: calendar and map', () => {
   });
 });
 
-describe('EduFest workshop: richer content', () => {
-  it('every highlight, experience and FAQ id has copy in both languages', () => {
+describe('EduFest workshop: learn, demos and practical information', () => {
+  it('every learn card, demo, practical row and FAQ id has copy in both languages', () => {
     for (const messages of [en, vi]) {
-      for (const id of HIGHLIGHTS)
-        assert.ok(messages.highlights.items[id].title);
-      for (const item of EXPERIENCES)
+      for (const id of LEARN)
         assert.ok(
-          messages.experience.items[
-            item.id as keyof typeof messages.experience.items
-          ],
-          item.id
+          messages.learn.items[id].title && messages.learn.items[id].body
         );
+      for (const demo of DEMOS) {
+        const copy = messages.demos.items[demo.id];
+        assert.ok(copy.title && copy.body && copy.try, demo.id);
+      }
+      for (const id of PRACTICAL) assert.ok(messages.practical.labels[id], id);
       for (const id of FAQ)
         assert.ok(messages.faq.items[id].q && messages.faq.items[id].a);
-      for (const id of INSIGHTS_DEMO.stickingPoints)
-        assert.ok(messages.insights.stuck[id]);
     }
   });
 
-  it('the insights dashboard is always marked as demo data', () => {
-    assert.equal(en.insights.demo, 'Demo data');
-    assert.equal(vi.insights.demo, 'Dữ liệu mẫu');
-    assert.match(en.insights.demoNote, /not from a real class/i);
-    const component = workshopSource();
-    assert.match(component, /className="ws-demo-pill">\{t\.insights\.demo\}/);
-    assert.ok(deliverables.has(INSIGHTS_DELIVERABLE));
-    const { hints, full, none } = INSIGHTS_DEMO.aiHelp;
-    assert.equal(hints + full + none, 100);
-    assert.equal(
-      INSIGHTS_DEMO.quizBuckets.reduce(
-        (sum, bucket) => sum + bucket.learners,
-        0
-      ),
-      INSIGHTS_DEMO.joined
+  it('a demo status comes from a real deliverable, or says Coming', () => {
+    for (const demo of DEMOS) {
+      if (demo.deliverable)
+        assert.ok(deliverables.has(demo.deliverable), demo.id);
+      assert.ok(!(demo.deliverable && demo.coming), demo.id);
+    }
+    // Not public yet: the booth game has no link and reads as Coming.
+    const booth = DEMOS.find((demo) => demo.id === 'booth');
+    assert.equal(booth?.coming, true);
+    assert.equal(booth?.href, null);
+    assert.equal(en.demos.coming, 'Coming');
+    // Broken variant: a misspelled demo deliverable is caught.
+    assert.deepEqual(unresolved(['meet-clasroom-caps']), [
+      'meet-clasroom-caps',
+    ]);
+  });
+
+  it('each demo card shows its derived status, Coming, or nothing', () => {
+    const byId = new Map(DEMOS.map((demo) => [demo.id, demo]));
+    const statuses = new Map([['meet-classroom-caps', 'in_progress' as const]]);
+    assert.equal(demoBadge(byId.get('classroom')!, statuses), 'in_progress');
+    // An unknown deliverable status never reads as live.
+    assert.equal(demoBadge(byId.get('mira')!, statuses), 'planned');
+    assert.equal(demoBadge(byId.get('booth')!, statuses), 'coming');
+    assert.equal(demoBadge(byId.get('fleet')!, statuses), null);
+    for (const demo of DEMOS)
+      if (demo.href)
+        assert.match(demo.href, /^https:\/\/[a-z0-9.-]+\//, demo.id);
+    const component = workshopSource('showcase.tsx');
+    assert.match(component, /demoBadge\(demo, statuses\)/);
+  });
+
+  it('demo and map links reserve at least 24px height', () => {
+    const css = readStyles();
+    for (const selector of ['.ws-demo-link', '.ws-practical-link'])
+      assert.match(cssRule(css, selector) ?? '', /min-height: 24px;/, selector);
+  });
+
+  it('copy never promises AI help levels or 100-person rooms as available today', () => {
+    assert.match(en.faq.items.answers.a, /are planned/);
+    assert.match(
+      en.demos.items.classroom.body,
+      /a target; hosted video capacity is not yet verified/
+    );
+    assert.match(en.journey.steps.stuck.body, /teacher controls are planned/);
+    assert.match(en.demos.items.booth.body, /^A preview/);
+    assert.ok(!('subtitle' in en.aiDemo), 'unused default-off claim');
+    assert.match(en.demos.items.mira.body, /18\+/);
+    // Broken variant: the old wording promised a teacher choice that is planned.
+    assert.doesNotMatch(
+      en.faq.items.answers.a,
+      /^Only if the teacher allows it/
     );
   });
 
-  it('readiness counts are derived, and FAQ answers stay honest', () => {
-    const component = workshopSource();
-    assert.match(component, /counts\[statusOf\(item, statuses\)\] \+= 1/);
+  it('FAQ answers stay honest and copy invents no testimonials', () => {
     assert.match(en.faq.items.ready.a, /Planned means not built yet/);
     assert.match(en.faq.items.registration.a, /not open yet/);
+    assert.match(en.faq.items.data.a, /off by default/);
     // Broken variant: an attributed quote would read as a fake testimonial.
     for (const messages of [en, vi])
       assert.doesNotMatch(
-        JSON.stringify(messages.experience),
+        JSON.stringify([messages.demos, messages.learn]),
         /[—-]\s*[A-Z][a-z]+ [A-Z]\.|“[^”]+”\s*[—-]/
       );
   });

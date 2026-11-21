@@ -1,0 +1,116 @@
+/* EduFest workshop: what you'll learn, live demos, speakers and practical
+   information. Colours come from the --rm-* tokens only. */
+.ws-learn,
+.ws-demos,
+.ws-practical {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.ws-learn h3,
+.ws-demo h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.ws-learn p,
+.ws-demo-body p {
+  margin: 0;
+  color: var(--rm-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.ws-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  color: var(--rm-merge-text);
+  background: var(--rm-merge-fill);
+}
+.ws-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ws-demo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ws-demo-head .ws-icon {
+  margin-bottom: 0;
+}
+.ws-demo-try {
+  margin: auto 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--rm-line);
+  color: var(--rm-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ws-demo-try b {
+  font-weight: 600;
+}
+.ws-demo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--rm-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+.ws-practical > div {
+  padding: 14px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-practical dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rm-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ws-practical dd {
+  margin: 6px 0 0;
+  color: var(--rm-ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.ws-practical-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--rm-ink);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+@media (min-width: 640px) {
+  .ws-learn,
+  .ws-practical {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ws-demos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .ws-learn {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .ws-demos,
+  .ws-practical {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

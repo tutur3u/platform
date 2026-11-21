@@ -2,9 +2,8 @@
 export type { EduMessages } from './shared';
 export { UPSKII_URL, UpskiiText, useWorkshopStatuses, WsBadge } from './shared';
 export { WsHero } from './hero';
-export { WsAgenda, WsHighlights, WsSeatSwap, WsExperience } from './program';
+export { WsAgenda } from './program';
+export { WsDemos, WsLearn, WsPractical } from './showcase';
 export { WsSimulator } from './simulator';
-export { WsFlow, WsReadiness } from './flow';
 export { WsCapabilities } from './capabilities';
-export { WsInsightsDemo } from './insights';
 export { WsTools, WsFaq } from './faq-tools';

@@ -332,23 +332,14 @@ export const JOURNEY: readonly { id: string; uses: readonly string[] }[] = [
 /** From this step on, the participant is back in the teacher's seat. */
 export const TEACHER_SEAT_FROM = 'switch';
 
-export const CLASSROOM_FLOW: readonly {
-  id: string;
-  uses: readonly string[];
-}[] = [
-  { id: 'before', uses: ['generators', 'class-invites', 'homework'] },
-  { id: 'during', uses: ['share', 'ai-levels', 'quiz', 'co-code'] },
-  { id: 'after', uses: ['notebooks', 'captions', 'surveys', 'family-mail'] },
-];
-
 export const AGENDA = [
-  'roles',
-  'lesson',
-  'upskii',
-  'practice',
-  'debrief',
+  'join',
+  'class',
+  'assistant',
+  'quiz',
+  'behind',
+  'plan',
 ] as const;
-export const OUTCOMES = ['feel', 'when', 'plan', 'look'] as const;
 export const AI_LEVELS = ['off', 'hints', 'full'] as const;
 export type AiLevel = (typeof AI_LEVELS)[number];
 /** The deliverable behind the AI-help demo. */
@@ -363,50 +354,64 @@ export function isAiLevelStep(id: string): id is AiLevelStep {
   return (AI_LEVEL_STEPS as readonly string[]).includes(id);
 }
 
-/** Marketing highlights, before the agenda. */
-export const HIGHLIGHTS = ['seat', 'agents', 'early', 'plan'] as const;
+/** "What you'll learn" cards, after the hero. */
+export const LEARN = [
+  'classroom',
+  'assistant',
+  'assess',
+  'responsible',
+] as const;
 
-/** "What you'll experience" cards; each names the seat it happens in. */
-export const EXPERIENCES: readonly {
-  id: string;
-  seat: 'student' | 'teacher';
+export type DemoId = 'classroom' | 'mira' | 'lms' | 'booth' | 'fleet' | 'edge';
+
+/**
+ * The live demos. `deliverable` is the roadmap item whose derived status the
+ * card shows. A demo outside the roadmap has no deliverable: `coming` marks
+ * one that is not public yet, otherwise it shows no status. `href` is a
+ * public page that already answers.
+ */
+export const DEMOS: readonly {
+  id: DemoId;
+  deliverable: string | null;
+  coming?: true;
+  href: string | null;
 }[] = [
-  { id: 'hint', seat: 'student' },
-  { id: 'handwriting', seat: 'student' },
-  { id: 'quiz', seat: 'student' },
-  { id: 'build', seat: 'teacher' },
-  { id: 'insights', seat: 'teacher' },
-  { id: 'control', seat: 'teacher' },
+  { id: 'classroom', deliverable: 'meet-classroom-caps', href: null },
+  { id: 'mira', deliverable: 'mira-zalo', href: null },
+  { id: 'lms', deliverable: null, href: 'https://tuturuuu.com/lms' },
+  { id: 'booth', deliverable: null, coming: true, href: null },
+  { id: 'fleet', deliverable: null, href: null },
+  { id: 'edge', deliverable: 'meet-workers', href: null },
 ];
+
+/**
+ * The badge a demo card shows: its deliverable's derived status (planned when
+ * unknown, never live), "coming" for a preview, or nothing.
+ */
+export function demoBadge(
+  demo: (typeof DEMOS)[number],
+  statuses: ReadonlyMap<string, WorkshopStatus>
+): WorkshopStatus | 'coming' | null {
+  if (demo.deliverable) return statuses.get(demo.deliverable) ?? 'planned';
+  return demo.coming ? 'coming' : null;
+}
+
+/** Practical information rows; date and venue read WORKSHOP_EVENT. */
+export const PRACTICAL = [
+  'date',
+  'time',
+  'venue',
+  'seats',
+  'registration',
+  'bring',
+] as const;
 
 export const FAQ = [
   'who',
   'skills',
   'ready',
   'answers',
+  'data',
   'registration',
   'after',
 ] as const;
-
-/**
- * Sample data for the classroom-insights mock. Invented for illustration and
- * labelled "demo data" on the page; it is never presented as a measurement.
- */
-export const INSIGHTS_DEMO = {
-  learners: 40,
-  joined: 38,
-  questionsToAi: 126,
-  averageQuiz: 7.6,
-  participation: [92, 88, 85, 81, 77, 74, 70, 64, 58, 49],
-  aiHelp: { hints: 64, full: 14, none: 22 },
-  quizBuckets: [
-    { range: '0–2', learners: 2 },
-    { range: '3–5', learners: 7 },
-    { range: '6–8', learners: 17 },
-    { range: '9–10', learners: 12 },
-  ],
-  stickingPoints: ['step2', 'units', 'checking'],
-} as const;
-
-/** The deliverable behind real class insights (planned). */
-export const INSIGHTS_DELIVERABLE = 'meet-classroom-captions';

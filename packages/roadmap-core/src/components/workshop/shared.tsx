@@ -107,16 +107,19 @@ export function statusOf(item: UseCase, statuses: Statuses): WorkshopStatus {
 
 export function WsBadge({
   status,
+  label,
   t,
 }: {
   status: WorkshopStatus;
+  /** Replaces the status name, keeping its look (a demo marked "Coming"). */
+  label?: string;
   t: EduMessages;
 }) {
   const Icon = STATUS_ICON[status];
   return (
     <span className={`badge ws-badge ${status}`}>
       <Icon size={13} aria-hidden />
-      {t.status[status]}
+      {label ?? t.status[status]}
     </span>
   );
 }

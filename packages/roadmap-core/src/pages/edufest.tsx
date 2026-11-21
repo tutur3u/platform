@@ -13,18 +13,14 @@ import {
   useWorkshopStatuses,
   WsAgenda,
   WsCapabilities,
-  WsExperience,
+  WsDemos,
   WsFaq,
-  WsFlow,
   WsHero,
-  WsHighlights,
-  WsInsightsDemo,
+  WsLearn,
+  WsPractical,
   WsSimulator,
-  WsReadiness,
-  WsSeatSwap,
   WsTools,
 } from '../components/workshop';
-import { WORKSHOP_EVENT } from '../content/workshops/edufest-2026';
 import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
@@ -74,42 +70,28 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
               suspends; the server renders every section): React hydrates
               them one by one, starting with the one a reader taps. */}
           <Suspense>
-            <WsHighlights t={t} />
-          </Suspense>
-          <Suspense>
-            <WsSeatSwap t={t} />
+            <WsLearn t={t} />
           </Suspense>
           <Suspense>
             <WsAgenda t={t} />
           </Suspense>
           <Suspense>
-            <WsExperience t={t} />
+            <WsDemos t={t} statuses={statuses} />
           </Suspense>
           <Suspense>
             <WsSimulator t={t} statuses={statuses} />
           </Suspense>
           <Suspense>
-            <WsFlow t={t} statuses={statuses} />
+            <WsTools t={t} logo={logo} />
           </Suspense>
           <Suspense>
-            <WsInsightsDemo t={t} statuses={statuses} />
-          </Suspense>
-          <Suspense>
-            <WsReadiness
-              t={t}
-              statuses={statuses}
-              checkedAt={live.data.generatedAt}
-              lang={lang}
-            />
+            <WsPractical t={t} />
           </Suspense>
           <Suspense>
             <WsCapabilities t={t} statuses={statuses} />
           </Suspense>
           <Suspense>
             <WsFaq t={t} />
-          </Suspense>
-          <Suspense>
-            <WsTools t={t} logo={logo} />
           </Suspense>
         </main>
       </MarketingShell>
