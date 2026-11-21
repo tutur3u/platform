@@ -37,6 +37,13 @@ export const RELEASE_EXCEPTIONS = [
     source: '351d130d3faef22d890485b576767abe47bbb185',
     workflows: ['turbo-unit-tests.yaml'],
     expires: '2026-11-22T16:59:00Z',
+    // Follow-up owned by the Meet release owner: AT-9(h)
+    // (scripts/meet-erase-inventory.test.mjs) flags changed
+    // workspace_documents-history audit references. Review the S-DH fence
+    // against the commit that changed them before fixing forward or updating
+    // the inventory (never a blind regeneration), with independent review.
+    // Attendance stays disabled everywhere until AT-9(h) is green.
+    followUp: 'AT-9(h) S-DH fence review; attendance off until green',
   },
 ];
 
