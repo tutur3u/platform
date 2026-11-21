@@ -40,14 +40,19 @@ type ReducedReport = Readonly<{
   keys: ReadonlySet<string>;
 }>;
 
-export type PublicationCensus = Readonly<{
+type CensusData = Readonly<{
   takenAt: number;
   jwks: ReadonlySet<string>;
   reports: Readonly<Partial<Record<TokenClass, readonly ReducedReport[]>>>;
 }>;
 
-// Censuses buildCensus returned. publicationHolds accepts nothing else.
-const builtCensuses = new WeakSet<object>();
+/** An opaque census handle. Its reduced data is reachable only from here. */
+export type PublicationCensus = Readonly<{ takenAt: number }>;
+
+// The reduced data of each census buildCensus returned, keyed by its handle,
+// so no caller can add a key to a census after it was built.
+// publicationHolds accepts no other census.
+const censusData = new WeakMap<object, CensusData>();
 
 const pairKey = (tokenClass: TokenClass, kid: string, thumbprint: string) =>
   `${tokenClass}|${kid}|${thumbprint}`;
@@ -90,12 +95,11 @@ export async function buildCensus(
     }
     reports[tokenClass] = Object.freeze(reduced);
   }
-  const census: PublicationCensus = Object.freeze({
-    takenAt,
-    jwks,
-    reports: Object.freeze(reports),
-  });
-  builtCensuses.add(census);
+  const census: PublicationCensus = Object.freeze({ takenAt });
+  censusData.set(
+    census,
+    Object.freeze({ takenAt, jwks, reports: Object.freeze(reports) })
+  );
   return census;
 }
 
@@ -113,8 +117,9 @@ export function publicationHolds(
     now: number;
   }
 ): boolean {
-  const { census, now } = input;
-  if (!census || !builtCensuses.has(census)) return false;
+  const { now } = input;
+  const census = input.census ? censusData.get(input.census) : undefined;
+  if (!census) return false;
   if (!isTimestamp(now) || census.takenAt < 0) return false;
   const age = now - census.takenAt;
   if (age < 0 || age > MAX_CENSUS_AGE_SECONDS) return false;

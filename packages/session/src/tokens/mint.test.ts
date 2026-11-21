@@ -212,7 +212,10 @@ describe('mintToken', () => {
         { class: 'nope', kid: 'x' },
       ])
     );
-    expect(armed.armed).toEqual({ identity: 'unknown', s2s: 's2s-1' });
+    expect(armed.armed).toEqual({
+      identity: ['unknown'],
+      s2s: ['s2s-1', 'second'],
+    });
     expect(
       (
         await mintToken(
@@ -251,6 +254,52 @@ describe('mintToken', () => {
         world.mintOptions({ observations: fresh, emergencyKids: wrongClass })
       )
     ).toEqual({ ok: false, reason: 'not_mintable' });
+  });
+
+  it('arms the active key even when a bad listing for its class comes first', async () => {
+    const world = await createWorld(['identity']);
+    const fresh = rowsFor(world.signer, NOW);
+    const armed = parseEmergencyKids(
+      JSON.stringify([
+        { class: 'identity', kid: 'typo' },
+        { class: 'identity', kid: 'identity-1' },
+      ])
+    );
+    expect(
+      (
+        await mintToken(
+          'identity',
+          mintClaims('identity'),
+          world.mintOptions({ observations: fresh, emergencyKids: armed })
+        )
+      ).ok
+    ).toBe(true);
+  });
+
+  it('signs bytes that a polluted prototype toJSON cannot change', async () => {
+    const world = await createWorld(['access']);
+    const objectProto = Object.prototype as { toJSON?: unknown };
+    const arrayProto = Array.prototype as { toJSON?: unknown };
+    objectProto.toJSON = () => ({ sub: 'attacker' });
+    arrayProto.toJSON = () => ['attacker'];
+    let result: Awaited<ReturnType<typeof mintToken>>;
+    try {
+      result = await mintToken(
+        'access',
+        mintClaims('access'),
+        world.mintOptions()
+      );
+    } finally {
+      delete objectProto.toJSON;
+      delete arrayProto.toJSON;
+    }
+    if (!result.ok) throw new Error(result.reason);
+    const [header, payload] = result.token.split('.');
+    const decode = (part = '') =>
+      JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+    expect(decode(header).kid).toBe(result.kid);
+    expect(decode(payload)).toEqual(JSON.parse(JSON.stringify(result.claims)));
+    expect(decode(payload).sub).toBe(mintClaims('access').sub);
   });
 
   it('ignores an armed next key and never mints with one', async () => {
@@ -428,8 +477,26 @@ describe('mintToken claim profiles', () => {
     ['access', { scope: 'tasks:read tasks:read' }],
     ['access', { azp: 'unknown-client' }],
     ['access', { ws: Array(65).fill('4f1c2d3e-5a6b-4c7d-8e9f-0a1b2c3d4e5f') }],
+    [
+      'access',
+      {
+        ws: [
+          '4f1c2d3e-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
+          '4f1c2d3e-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
+        ],
+      },
+    ],
   ] as const)('refuses %s claims %j', async (tokenClass, patch) => {
     expect(await refusal(tokenClass, patch)).toBe('claims');
+  });
+
+  it('accepts 64 distinct workspace ids', async () => {
+    const ws = Array.from(
+      { length: 64 },
+      (_, index) =>
+        `4f1c2d3e-5a6b-4c7d-8e9f-${index.toString(16).padStart(12, '0')}`
+    );
+    expect(await refusal('access', { ws })).toBe('ok');
   });
 
   it('accepts realtime at its per-kind cap and an empty workspace list', async () => {

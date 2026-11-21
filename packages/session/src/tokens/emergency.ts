@@ -8,9 +8,13 @@ import type { ParsedKeyEntry } from './key-set';
 
 export type EmergencyListing = Readonly<{ class: TokenClass; kid: string }>;
 
-/** The first well-formed listing of each class; later listings are ignored. */
+/**
+ * The well-formed listings of each class. Only a listing that names its
+ * class's `active` key arms anything, so a listing for an unknown, `next` or
+ * retired key never takes the slot from the real active key.
+ */
 export type EmergencyKids = Readonly<{
-  armed: Readonly<Partial<Record<TokenClass, string>>>;
+  armed: Readonly<Partial<Record<TokenClass, readonly string[]>>>;
   ignored: number;
 }>;
 
@@ -20,9 +24,8 @@ export const NO_EMERGENCY_KIDS: EmergencyKids = Object.freeze({
 });
 
 /**
- * Parses a JSON array of `{ "class": ..., "kid": ... }` listings. A listing
- * that is malformed, or a second one for its class, is ignored alone. A
- * missing or unparseable list arms nothing.
+ * Parses a JSON array of `{ "class": ..., "kid": ... }` listings. A malformed
+ * listing is ignored alone. A missing or unparseable list arms nothing.
  */
 export function parseEmergencyKids(
   json: string | null | undefined
@@ -30,7 +33,7 @@ export function parseEmergencyKids(
   if (typeof json !== 'string' || json.trim() === '') return NO_EMERGENCY_KIDS;
   const value = parseStrictJson(json);
   if (!Array.isArray(value)) return NO_EMERGENCY_KIDS;
-  const armed: Partial<Record<TokenClass, string>> = {};
+  const armed: Partial<Record<TokenClass, string[]>> = {};
   let ignored = 0;
   for (const listing of value) {
     const valid =
@@ -39,11 +42,17 @@ export function parseEmergencyKids(
       isTokenClass(listing.class) &&
       typeof listing.kid === 'string' &&
       KID_PATTERN.test(listing.kid);
-    if (!valid || armed[listing.class as TokenClass] !== undefined) {
+    if (!valid) {
       ignored += 1;
       continue;
     }
-    armed[listing.class as TokenClass] = listing.kid as string;
+    const tokenClass = listing.class as TokenClass;
+    const kids = armed[tokenClass] ?? [];
+    if (!kids.includes(listing.kid as string)) kids.push(listing.kid as string);
+    armed[tokenClass] = kids;
+  }
+  for (const tokenClass of Object.keys(armed) as TokenClass[]) {
+    Object.freeze(armed[tokenClass]);
   }
   return Object.freeze({ armed: Object.freeze(armed), ignored });
 }
@@ -59,6 +68,6 @@ export function isEmergencyArmed(
 ): boolean {
   return (
     entry.status === 'active' &&
-    emergencyKids?.armed?.[entry.class] === entry.kid
+    (emergencyKids?.armed?.[entry.class]?.includes(entry.kid) ?? false)
   );
 }

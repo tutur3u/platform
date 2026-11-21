@@ -75,6 +75,33 @@ export type MintResult<C extends TokenClass> =
 const JTI_BYTES = 16;
 
 /** Copies plain JSON data, rejecting anything a verifier could not parse back. */
+/**
+ * Serializes checked JSON without consulting `toJSON` on any object or array,
+ * so nothing reachable through a prototype can change the signed bytes.
+ * Member order is insertion order, as with `JSON.stringify`.
+ */
+function serializeJson(value: JsonValue): string {
+  if (value === null) return 'null';
+  if (typeof value === 'string' || typeof value === 'number') {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (Array.isArray(value)) {
+    const items: string[] = [];
+    for (let index = 0; index < value.length; index += 1) {
+      items.push(serializeJson(value[index] as JsonValue));
+    }
+    return `[${items.join(',')}]`;
+  }
+  const members: string[] = [];
+  for (const key of Object.keys(value)) {
+    members.push(
+      `${JSON.stringify(key)}:${serializeJson((value as Record<string, JsonValue>)[key] as JsonValue)}`
+    );
+  }
+  return `{${members.join(',')}}`;
+}
+
 function cloneJson(value: unknown, depth = 0): JsonValue | undefined {
   if (depth > 8) return undefined;
   if (value === null || typeof value === 'boolean') return value;
@@ -202,12 +229,12 @@ export async function mintToken<C extends TokenClass>(
   if (failure === 'caller') return refuse('caller');
   if (failure) return refuse('claims');
 
-  const header = JSON.stringify({
+  const header = serializeJson({
     alg: 'ES256',
     typ: TOKEN_TYPES[tokenClass],
     kid: entry.kid,
   });
-  const signingInput = `${encodeBase64Url(utf8(header))}.${encodeBase64Url(utf8(JSON.stringify(payload)))}`;
+  const signingInput = `${encodeBase64Url(utf8(header))}.${encodeBase64Url(utf8(serializeJson(payload as JsonValue)))}`;
   let signature: Uint8Array;
   try {
     signature = new Uint8Array(

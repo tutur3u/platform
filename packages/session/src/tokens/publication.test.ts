@@ -194,6 +194,21 @@ describe('publicationHolds', () => {
       publicationHolds(entry, { registry: REGISTRY, census: null, now: NOW })
     ).toBe(false);
   });
+
+  it('exposes no reduced data that a caller could add a key to', async () => {
+    const world = await createWorld(['identity']);
+    const entry = world.signer.entries[0];
+    if (!entry) throw new Error('no entry');
+    const empty = await censusFor(keySetJson([]), '{"keys":[]}');
+    expect(Object.keys(empty)).toEqual(['takenAt']);
+    expect(Object.isFrozen(empty)).toBe(true);
+    expect(() =>
+      Object.assign(empty, { jwks: new Set(), reports: {} })
+    ).toThrow();
+    expect(
+      publicationHolds(entry, { registry: REGISTRY, census: empty, now: NOW })
+    ).toBe(false);
+  });
 });
 
 describe('refreshObservations', () => {

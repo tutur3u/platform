@@ -76,7 +76,13 @@ function isIpPrefix(value: string): boolean {
     return `${canonicalIpv6(hextets)}/48` === value;
   }
   const v4 = IPV4_PREFIX.exec(value);
-  if (v4) return v4.slice(1).every((octet) => Number(octet) <= 255);
+  if (v4) {
+    return v4
+      .slice(1)
+      .every(
+        (octet) => Number(octet) <= 255 && String(Number(octet)) === octet
+      );
+  }
   return false;
 }
 
