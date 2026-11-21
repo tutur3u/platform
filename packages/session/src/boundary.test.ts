@@ -13,10 +13,13 @@ const ALLOWED_EXTERNAL = new Map([['effect', 'type-only']]);
 type ModuleImport = { specifier: string; typeOnly: boolean; dynamic: boolean };
 
 /** Every import, re-export, dynamic import and require in a module. */
-function moduleImports(file: string): ModuleImport[] {
-  const ast = parse(readFileSync(file, 'utf8'), {
+function moduleImports(
+  file: string,
+  source = readFileSync(file, 'utf8')
+): ModuleImport[] {
+  const ast = parse(source, {
     sourceType: 'module',
-    plugins: ['typescript'],
+    plugins: file.endsWith('x') ? ['typescript', 'jsx'] : ['typescript'],
   });
   const found: ModuleImport[] = [];
   const visit = (node: unknown) => {
@@ -147,6 +150,46 @@ describe('portable entry points', () => {
   });
 });
 
+const TESTING_PATH = join(PACKAGE_DIR, 'src', 'testing.ts');
+const TEST_FILE = /(\.test\.tsx?|\.spec\.tsx?|\/__tests__\/.+|\.check\.ts)$/;
+
+/** Whether a module imports the test issuer, resolving relative specifiers. */
+function importsTestIssuer(file: string, source?: string): boolean {
+  return moduleImports(file, source).some(({ specifier }) => {
+    if (specifier === '@tuturuuu/session/testing') return true;
+    if (!specifier.startsWith('.'))
+      return /session\/src\/testing(\.ts)?$/.test(specifier);
+    const base = resolve(dirname(file), specifier);
+    return [base, `${base}.ts`, join(base, 'index.ts')].includes(TESTING_PATH);
+  });
+}
+
+/** Tracked TypeScript files under apps and packages whose text names a `testing` module. */
+function candidateImporters(): string[] {
+  let output = '';
+  try {
+    output = execFileSync(
+      'git',
+      [
+        'grep',
+        '-l',
+        '-E',
+        'testing(\\.ts)?[\'"]',
+        '--',
+        'apps/*.ts',
+        'apps/*.tsx',
+        'packages/*.ts',
+        'packages/*.tsx',
+      ],
+      { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
+    );
+  } catch (error) {
+    // git grep exits 1 when nothing matches; any other failure fails the test.
+    if ((error as { status?: number }).status !== 1) throw error;
+  }
+  return output.split('\n').filter(Boolean);
+}
+
 describe('test issuer', () => {
   it('is not a package entry point', () => {
     expect(Object.keys(packageJson.exports)).not.toContain('./testing');
@@ -162,33 +205,36 @@ describe('test issuer', () => {
   });
 
   it('is imported only from test files anywhere in the repository', () => {
-    let output = '';
-    try {
-      output = execFileSync(
-        'git',
-        [
-          'grep',
-          '-l',
-          '-E',
-          'session/(src/)?testing',
-          '--',
-          'apps',
-          'packages',
-        ],
-        { cwd: REPO_ROOT, encoding: 'utf8' }
-      );
-    } catch (error) {
-      // git grep exits 1 when nothing matches; any other failure fails the test.
-      if ((error as { status?: number }).status !== 1) throw error;
+    const candidates = candidateImporters();
+    // The package's own tests import the issuer, so an empty scan means it is broken.
+    expect(candidates).toContain('packages/session/src/verify.test.ts');
+    const offenders: string[] = [];
+    for (const file of candidates) {
+      if (TEST_FILE.test(file)) continue;
+      if (importsTestIssuer(join(REPO_ROOT, file))) offenders.push(file);
     }
-    const importers = output
-      .split('\n')
-      .filter(Boolean)
-      .filter((file) => file !== 'packages/session/src/boundary.test.ts');
-    for (const file of importers) {
-      expect(file, file).toMatch(
-        /(\.test\.tsx?|\.spec\.tsx?|\/__tests__\/.+|\.mdx?)$/
-      );
-    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('detects a sibling runtime import of the issuer', () => {
+    const sibling = join(PACKAGE_DIR, 'src', 'sibling-runtime.ts');
+    expect(
+      importsTestIssuer(
+        sibling,
+        "import { createTestIssuer } from './testing';"
+      )
+    ).toBe(true);
+    expect(importsTestIssuer(sibling, "export * from './testing.ts';")).toBe(
+      true
+    );
+    expect(importsTestIssuer(sibling, "import x = require('./testing');")).toBe(
+      true
+    );
+    expect(
+      importsTestIssuer(
+        sibling,
+        "import { verifyIdentityAssertion } from './verify';"
+      )
+    ).toBe(false);
   });
 });

@@ -142,7 +142,7 @@ describe('result and key source', () => {
   it('maps a malformed key source result to keys_unavailable', async () => {
     const issuer = await createTestIssuer();
     const token = await issuer.sign(defaultTestClaims(NOW));
-    for (const bad of [undefined, 'yes', 42, {}]) {
+    for (const bad of [undefined, 'yes', 42]) {
       const keys = { get: async () => bad } as unknown as VerifyOptions['keys'];
       expect(
         await verifyIdentityAssertion(token, options(issuer, { keys }))
@@ -185,4 +185,34 @@ describe('assertion provenance', () => {
     expect(Object.isFrozen(AUTH_METHODS)).toBe(true);
     expect(() => (AUTH_METHODS as string[]).push('magic')).toThrow(TypeError);
   });
+});
+
+describe('hostile key objects', () => {
+  it.each([
+    ['an empty object', {}],
+    ['a type without algorithm', { type: 'public', usages: ['verify'] }],
+    [
+      'a throwing accessor',
+      Object.defineProperty({}, 'type', {
+        get() {
+          throw new Error('boom');
+        },
+      }),
+    ],
+  ])('rejects %s as key_type without throwing', async (_label, key) => {
+    const issuer = await createTestIssuer();
+    const token = await issuer.sign(defaultTestClaims(NOW));
+    const keys = { get: async () => key } as unknown as VerifyOptions['keys'];
+    await expect(
+      verifyIdentityAssertion(token, options(issuer, { keys }))
+    ).resolves.toEqual({
+      ok: false,
+      reason: 'key_type',
+    });
+  });
+});
+
+it('refuses a second claim of the assertion registrar', async () => {
+  const { claimAssertionRegistrar } = await import('./assertion-registry');
+  expect(() => claimAssertionRegistrar()).toThrow();
 });

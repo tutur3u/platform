@@ -1,4 +1,4 @@
-import { registerIssuedAssertion } from './assertion-registry';
+import { claimAssertionRegistrar } from './assertion-registry';
 import {
   decodeBase64Url,
   hasOwn,
@@ -78,6 +78,8 @@ const KID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const IPV4_PREFIX = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.0\/24$/;
+
+const registerIssuedAssertion = claimAssertionRegistrar();
 
 const fail = (reason: VerifyFailureReason): VerifyResult => ({
   ok: false,
@@ -236,11 +238,7 @@ export async function verifyIdentityAssertion(
     return fail('keys_unavailable');
   }
   if (key === null) return fail('unknown_key');
-  if (
-    key === 'unavailable' ||
-    typeof key !== 'object' ||
-    typeof (key as Partial<CryptoKey>).type !== 'string'
-  ) {
+  if (key === 'unavailable' || typeof key !== 'object') {
     return fail('keys_unavailable');
   }
   if (!isIdentityKey(key)) return fail('key_type');
