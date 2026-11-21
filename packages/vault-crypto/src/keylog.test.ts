@@ -238,6 +238,26 @@ describe('revocation', () => {
   });
 });
 
+describe('sensitive-only downgrade', () => {
+  it('requires the next epoch when an environment admin becomes an editor', () => {
+    const base = () => {
+      const log = twoOwnerLog();
+      log.append(epoch('prod', 1), [carol]);
+      log.append(member('prod', dave, 'admin'), [carol]);
+      return log;
+    };
+    const missing = base();
+    missing.append(member('prod', dave, 'editor' as 'reader'), [carol]);
+    expect(() => replay(missing)).toThrow(/next epoch/);
+    const rotated = base();
+    rotated.append(
+      member('prod', dave, 'editor' as 'reader', [descriptor('prod', 2)]),
+      [carol]
+    );
+    expect(replay(rotated).epochAt('prod')?.epoch).toBe(2);
+  });
+});
+
 describe('chain and epoch rules', () => {
   it('rejects broken chains, gaps, other vaults and time going backwards', () => {
     for (const overrides of [
@@ -580,6 +600,27 @@ describe('canonical X25519 keys and EDK identifiers', () => {
       }
     }
     expect(twist).not.toBeNull();
+  });
+
+  it('rejects both order-8 points and accepts the base point', () => {
+    const good = descriptor('prod', 1);
+    for (const u of [
+      325606250916557431795983626356110631294008115727848805560023387167927233504n,
+      39382357235489614581723060781553021112529911719440698176882885853963445705823n,
+    ]) {
+      const log = twoOwnerLog();
+      log.append(
+        { kind: 'epoch', descriptor: { ...good, intake_key: le(u) } },
+        [carol]
+      );
+      expect(() => replay(log)).toThrow(/Non-canonical/);
+    }
+    const base = twoOwnerLog();
+    base.append(
+      { kind: 'epoch', descriptor: { ...good, intake_key: le(9n) } },
+      [carol]
+    );
+    expect(() => replay(base)).not.toThrow();
   });
 
   it('checks an unwrapped EDK against its descriptor', () => {

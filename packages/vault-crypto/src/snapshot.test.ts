@@ -203,3 +203,23 @@ describe('witness attestations', () => {
     ).toThrow();
   });
 });
+
+describe('read verifier input hardening', () => {
+  it('validates the record before hashing it', () => {
+    const v = record('var-1');
+    const { signed, proofFor } = attest([v]);
+    const a = verifyAttestation(signed, options());
+    let reads = 0;
+    const tricky = {
+      signature: v.signature,
+      get record() {
+        reads++;
+        return v.record;
+      },
+    };
+    expect(() =>
+      assertLatestRecord(a, tricky as SignedRecord, proofFor(v))
+    ).toThrow(/Malformed/);
+    expect(reads).toBe(0);
+  });
+});

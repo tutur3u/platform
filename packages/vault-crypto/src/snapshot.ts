@@ -3,7 +3,7 @@ import { contextBytes, type VaultScope } from './context';
 import { VaultCryptoError } from './errors';
 import type { KeyLogState } from './keylog';
 import { leafHash, treeRoot, verifyInclusion } from './merkle';
-import { recordHash, type SignedRecord } from './records';
+import { recordHash, type SignedRecord, validateRecord } from './records';
 import { bytes, count, list, nullableBytes, record, text } from './schema';
 import { assertSignature, signObject } from './signing';
 
@@ -215,6 +215,9 @@ export function assertLatestRecord(
   signed: SignedRecord,
   proof: { readonly index: number; readonly path: readonly Uint8Array[] }
 ): void {
+  const wrapper = record(signed, ['record', 'signature'], 'signed record');
+  validateRecord(wrapper.record);
+  bytes(wrapper.signature, 64, 'signature');
   const r = signed.record;
   if (r.deployment !== a.deployment || !equalBytes(r.vault_id, a.vault_id))
     fail('Record for another vault');
