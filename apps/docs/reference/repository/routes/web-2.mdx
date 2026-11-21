@@ -67,6 +67,17 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/time-tracking/export` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/time-tracking/export/route.ts) |
 | `/api/trpc/[trpc]` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/trpc/%5Btrpc%5D/route.ts) |
 | `/api/users/search` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/users/search/route.ts) |
+| `/api/v1/admin/accounts/[userId]/admin` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/%5BuserId%5D/admin/route.ts) |
+| `/api/v1/admin/accounts/[userId]/challenge` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/%5BuserId%5D/challenge/route.ts) |
+| `/api/v1/admin/accounts/[userId]/disable` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/%5BuserId%5D/disable/route.ts) |
+| `/api/v1/admin/accounts/[userId]/role` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/%5BuserId%5D/role/route.ts) |
+| `/api/v1/admin/accounts/[userId]` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/%5BuserId%5D/route.ts) |
+| `/api/v1/admin/accounts/invite` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/invite/route.ts) |
+| `/api/v1/admin/accounts/machine-token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/machine-token/route.ts) |
+| `/api/v1/admin/accounts/operations/[operationId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/operations/%5BoperationId%5D/route.ts) |
+| `/api/v1/admin/accounts` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/route.ts) |
+| `/api/v1/admin/accounts/tests/[userId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/tests/%5BuserId%5D/route.ts) |
+| `/api/v1/admin/accounts/tests` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/accounts/tests/route.ts) |
 | `/api/v1/admin/ai/memory/backfill-mira` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/ai/memory/backfill-mira/route.ts) |
 | `/api/v1/admin/external-apps` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/external-apps/route.ts) |
 | `/api/v1/admin/external-project-audits` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/external-project-audits/route.ts) |
@@ -183,16 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/meet/plans/[planId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/route.ts) |
 | `/api/v1/meet/plans` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/route.ts) |
 | `/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/preview/%5Bport%5D/%5B%5B...path%5D%5D/route.ts) |
-| `/api/v1/meetings/[meetingId]/collaboration` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/route.ts) |
-| `/api/v1/mira/achievements` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/route.ts) |
-| `/api/v1/mira/achievements/unlock` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/unlock/route.ts) |
-| `/api/v1/mira/focus/[id]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/%5Bid%5D/route.ts) |
-| `/api/v1/mira/focus/complete` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/complete/route.ts) |
-| `/api/v1/mira/focus/history` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/history/route.ts) |
-| `/api/v1/mira/focus` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/route.ts) |
-| `/api/v1/mira/focus/start` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/start/route.ts) |
-| `/api/v1/mira/memories` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/memories/route.ts) |
-| `/api/v1/mira/pet/feed` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/feed/route.ts) |
-| `/api/v1/mira/pet` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

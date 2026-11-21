@@ -18,6 +18,7 @@ export function getGlobalHelp() {
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
     '  external <apps|templates|binding|projects>  configure and manage external sites',
     '  domains <list|add|verify|remove>  bind custom domains to a workspace',
+    '  accounts <command>          manage staff and disposable fleet accounts',
     '  qa users <create|list|session|delete|cleanup>  disposable QA test accounts',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',

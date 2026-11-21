@@ -1,0 +1,51 @@
+---
+title: Account management
+description: Staff account operations and disposable fleet QA accounts.
+audience: developers
+---
+
+Web authorizes `ttr accounts` against the live root workspace
+`manage_workspace_roles` permission and an enabled platform user role with
+`allow_role_management`. Staff reads and mutations scope targets to
+`@tuturuuu.com`. Out-of-scope and missing targets return the same error.
+List masks email addresses. Direct status reveals the address of one account.
+
+Invitations use the Auth email invitation API and the fixed
+`https://tuturuuu.com/` redirect. Role assignment requires the operator to
+be a role manager in the destination workspace and the target to be a verified
+full staff member. Creator-only grants require the workspace creator. Root workspace role assignment is closed on this
+surface. Platform-role grants and revocations require fresh TOTP, exact target
+UUID confirmation, and a single-use challenge bound to the verified session
+and request. Human disable, enable, and deletion are closed pending D292.
+The existing account-deletion flow remains the user-facing path.
+
+Accounts enrollment requires an enabled platform role manager with fresh TOTP
+to register an existing runner through the service-only
+`private.accounts_set_machine` RPC. This changes the Accounts registry and
+records the operator and time. The runner exchanges its existing credential for
+a two-minute Accounts token. Rotation, revocation, or Accounts unenrollment
+blocks subsequent test operations. Machine access covers only its own Accounts
+test allocations and operation status through `https://tuturuuu.com`.
+
+Accounts test labels are `a1` and `a2`. Both reserve a non-staff, free-tier QA
+account for one hour. Each machine can have five live accounts and ten
+reservations within a rolling 24-hour window. Fleet limits are 30 live and 60
+within 24 hours. Pending and deleting allocations count as live. The legacy QA
+expiry job cleans up test accounts through the same ledger.
+
+The append-only QA audit retains intent, success, failure, and unknown events
+for 365 days and denials for 90 days. Unresolved operations retain their
+related history until database evidence allows settlement. An ambiguous
+invitation without an Auth confirmation remains unresolved. The
+`database-accounts-audit-retention` Cron Control job runs every 15 minutes
+when enabled. Each slot reconciles up to 500 operations and purges up to 1,500
+rows in three fenced calls. It emits a warning when an eligible event remains
+more than 24 hours overdue. The database `private.accounts_control.purge_enabled`
+switch also stops scheduled reconciliation and purge.
+
+The Web deployment needs a dedicated `ACCOUNTS_MACHINE_SIGNING_KEY`. Enable
+the retention job after applying both migrations. The
+`accounts-management.sql`, `qa-test-users.sql`, and
+`security-definer-search-paths.sql` pgTAP suites cover the database boundaries.
+The Accounts retention processor and its test cover the slot budget, durable
+stop fence, and unknown-write behavior.

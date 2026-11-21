@@ -33,9 +33,7 @@ type Outcome = z.infer<typeof outcomeSchema>;
 
 export interface AccountOperationDependencies {
   authority: HumanAuthority;
-  challenges: ChallengeStore;
-  /** Shared atomic counters, including the invitation target/day bound. */
-  admit(actorId: string, command: AccountMutation): Promise<void>;
+  challenges: Pick<ChallengeStore, 'getdel'>;
   /** Must atomically reject duplicate intent operation IDs; never replay a mutation. */
   appendAudit(event: AuditEvent): Promise<void>;
   /** Adapters must apply scope, target, last-admin and self-escalation guards atomically. */
@@ -65,12 +63,8 @@ export async function runHumanMutation(input: {
     try {
       await dependencies.appendAudit(event);
     } catch (error) {
-      if (
-        error instanceof AccountManagementError &&
-        error.code === 'operation_conflict'
-      ) {
-        throw new AccountManagementError('operation_conflict', 409);
-      }
+      if (error instanceof AccountManagementError && error.status < 500)
+        throw error;
       throw new AccountManagementError('audit_unavailable', 503);
     }
   }
@@ -82,14 +76,21 @@ export async function runHumanMutation(input: {
     ...('targetId' in command ? { targetId: command.targetId } : {}),
   };
   try {
-    await authorizeHuman(human, dependencies.authority, nowSeconds);
-    await dependencies.admit(human.actorId, command);
+    await authorizeHuman(
+      human,
+      dependencies.authority,
+      nowSeconds,
+      command.action === 'admin' ||
+        command.action === 'delete' ||
+        command.action === 'test-delete'
+    );
     if ('confirmTarget' in command) {
       requireTargetConfirmation(command.targetId, command.confirmTarget);
     }
     if ('challenge' in command) {
       await consumeChallenge(dependencies.challenges, command.challenge, {
         actorId: human.actorId,
+        sessionId: human.sessionId,
         action: command.action,
         targetId: command.targetId,
         bodyHash: mutationBodyHash(command),
@@ -101,7 +102,17 @@ export async function runHumanMutation(input: {
     throw new AccountManagementError('dependency_unavailable', 503);
   }
   // An audit failure or duplicate intent stops execution before any supplier call.
-  await append({ ...event, phase: 'intent' });
+  try {
+    await append({ ...event, phase: 'intent' });
+  } catch (error) {
+    if (
+      error instanceof AccountManagementError &&
+      error.status < 500 &&
+      error.code !== 'operation_conflict'
+    )
+      await append({ ...event, phase: 'denied' });
+    throw error;
+  }
   if (command.action === 'delete' && !dependencies.enqueueHumanDeletion) {
     await append({ ...event, phase: 'failure' });
     throw new AccountManagementError('deletion_pipeline_not_available', 503);
@@ -123,7 +134,11 @@ export async function runHumanMutation(input: {
         await dependencies.execute(command, human.actorId)
       );
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof AccountManagementError && error.status < 500) {
+      await append({ ...event, phase: 'failure' });
+      throw error;
+    }
     // A supplier may have acted before losing its response. Preserve that uncertainty.
     await append({ ...event, phase: 'unknown' }).catch(() => undefined);
     return { operationId: command.operationId, status: 'unknown' as const };

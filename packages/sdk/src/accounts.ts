@@ -24,9 +24,7 @@ export const accountCommandSchema = z.discriminatedUnion('action', [
     })
     .strict(),
   z.object({ action: z.literal('status'), ...target }).strict(),
-  z
-    .object({ action: z.literal('create'), ...operation, email: companyEmail })
-    .strict(),
+  z.object({ action: z.literal('operation-status'), ...operation }).strict(),
   z
     .object({ action: z.literal('invite'), ...operation, email: companyEmail })
     .strict(),
@@ -104,6 +102,8 @@ const listResponse = z.object({
 const statusResponse = z.object({
   account: accountSummary.extend({ email: z.email() }),
 });
+const root = '/api/v1/admin/accounts';
+const requestOptions = { cache: 'no-store', redirect: 'error' } as const;
 const mutationResponse = z.object({
   operationId: uuid,
   targetId: uuid.optional(),
@@ -114,7 +114,7 @@ const mutationResponse = z.object({
 export class AccountsClient {
   private readonly api;
 
-  constructor(options: InternalApiClientOptions) {
+  constructor(private readonly options: InternalApiClientOptions) {
     const parsed = z.url().safeParse(options.baseUrl);
     if (!parsed.success)
       throw new Error('Account management requires an explicit HTTPS origin.');
@@ -134,6 +134,64 @@ export class AccountsClient {
     this.api = createInternalApiClient(options);
   }
 
+  withBearer(accessToken: string) {
+    const defaultHeaders = new Headers(this.options.defaultHeaders);
+    defaultHeaders.set('Authorization', `Bearer ${accessToken}`);
+    return new AccountsClient({ ...this.options, defaultHeaders });
+  }
+
+  async requestAdminChallenge(
+    command: Omit<Extract<AccountCommand, { action: 'admin' }>, 'challenge'>
+  ) {
+    const { targetId, ...body } = command;
+    if (
+      !z.uuid().safeParse(targetId).success ||
+      targetId !== command.confirmTarget
+    )
+      throw new Error('Exact target UUID confirmation is required.');
+    try {
+      const result = await this.api.json<unknown>(
+        `${root}/${targetId}/challenge`,
+        {
+          ...requestOptions,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
+      return z
+        .object({ nonce: z.string().regex(/^[a-f0-9]{32}$/u) })
+        .parse(result).nonce;
+    } catch {
+      throw new Error('Account authorization or fresh TOTP MFA is required.');
+    }
+  }
+
+  static async forRunner(runnerToken: string, fetch?: typeof globalThis.fetch) {
+    if (!/^tdbx_[a-f0-9]{64}$/u.test(runnerToken))
+      throw new Error('A valid runner credential is required.');
+    const baseUrl = 'https://tuturuuu.com';
+    const exchange = new AccountsClient({ baseUrl, fetch });
+    try {
+      const result = await exchange.api.json<unknown>(`${root}/machine-token`, {
+        ...requestOptions,
+        method: 'POST',
+        headers: { Authorization: `Bearer ttr_${runnerToken}` },
+      });
+      const { accessToken } = z
+        .object({
+          accessToken: z
+            .string()
+            .max(4096)
+            .regex(/^ttr_accounts_machine_[A-Za-z0-9_-]+$/u),
+        })
+        .parse(result);
+      return exchange.withBearer(accessToken);
+    } catch {
+      throw new Error('The runner could not obtain Accounts test access.');
+    }
+  }
+
   async execute(input: AccountCommand) {
     const parsed = accountCommandSchema.safeParse(input);
     if (!parsed.success)
@@ -145,12 +203,11 @@ export class AccountsClient {
     ) {
       throw new Error('Exact target UUID confirmation is required.');
     }
-    const root = '/api/v1/admin/accounts';
     try {
       if (command.action === 'list') {
         return listResponse.parse(
           await this.api.json<unknown>(root, {
-            cache: 'no-store',
+            ...requestOptions,
             query: { limit: command.limit, cursor: command.cursor },
           })
         );
@@ -158,29 +215,39 @@ export class AccountsClient {
       if (command.action === 'status') {
         return statusResponse.parse(
           await this.api.json<unknown>(`${root}/${command.targetId}`, {
-            cache: 'no-store',
+            ...requestOptions,
           })
         );
       }
+      if (command.action === 'operation-status') {
+        return mutationResponse
+          .extend({
+            status: z.enum(['completed', 'pending', 'unknown', 'failure']),
+          })
+          .parse(
+            await this.api.json<unknown>(
+              `${root}/operations/${command.operationId}`,
+              requestOptions
+            )
+          );
+      }
       const path =
-        command.action === 'create'
-          ? root
-          : command.action === 'invite'
-            ? `${root}/invite`
-            : command.action === 'test-create'
-              ? `${root}/tests`
-              : command.action === 'test-delete'
-                ? `${root}/tests/${command.targetId}`
-                : command.action === 'delete'
-                  ? `${root}/${command.targetId}`
-                  : `${root}/${command.targetId}/${command.action}`;
+        command.action === 'invite'
+          ? `${root}/invite`
+          : command.action === 'test-create'
+            ? `${root}/tests`
+            : command.action === 'test-delete'
+              ? `${root}/tests/${command.targetId}`
+              : command.action === 'delete'
+                ? `${root}/${command.targetId}`
+                : `${root}/${command.targetId}/${command.action}`;
       return mutationResponse.parse(
         await this.api.json<unknown>(path, {
           method:
             command.action === 'delete' || command.action === 'test-delete'
               ? 'DELETE'
               : 'POST',
-          cache: 'no-store',
+          ...requestOptions,
           headers: {
             'Content-Type': 'application/json',
             'Idempotency-Key': command.operationId,
@@ -192,6 +259,12 @@ export class AccountsClient {
       // Supplier errors and invalid responses may contain credentials; never echo them.
       if (error instanceof Error && 'status' in error && error.status === 401) {
         throw new Error('Account authorization or fresh MFA is required.');
+      }
+      if (error instanceof Error && 'status' in error && error.status === 404) {
+        throw new Error('Account or operation not found.');
+      }
+      if (error instanceof Error && 'status' in error && error.status === 429) {
+        throw new Error('Account operation limit reached.');
       }
       if (error instanceof Error && 'status' in error && error.status === 503) {
         throw new Error(

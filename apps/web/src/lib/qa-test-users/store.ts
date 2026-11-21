@@ -5,7 +5,7 @@ import type { QaTier } from './policy';
 export type QaActor = 'operator' | 'cron';
 
 const tier = z.enum(['FREE', 'PLUS', 'PRO']);
-const reservationSchema = z.object({
+export const reservationSchema = z.object({
   runId: z.string(),
   purpose: z.string(),
   expiresAt: z.string(),
@@ -34,13 +34,13 @@ const sessionGrantSchema = z
     expiresAt: z.string(),
   })
   .nullable();
-const beginDeleteSchema = z.object({
+export const beginDeleteSchema = z.object({
   state: z.enum(['not_found', 'deleted', 'busy', 'deleting']),
   authPresent: z.boolean().optional(),
   runId: z.string().optional(),
   runWorkspaceId: z.uuid().nullable().optional(),
 });
-const finishDeleteSchema = z.object({
+export const finishDeleteSchema = z.object({
   state: z.enum(['not_found', 'pending', 'active', 'present', 'deleted']),
 });
 const expiredSchema = z.object({

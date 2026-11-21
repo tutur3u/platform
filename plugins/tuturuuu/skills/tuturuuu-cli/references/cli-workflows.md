@@ -265,6 +265,19 @@ ends instead of waiting for expiry. QA accounts never pass staff checks; only
 Meet hosting admits an unexpired `--staff` host, so give hosts `--tier pro`. See
 `apps/docs/build/development-tools/qa-test-users.mdx`.
 
+## Accounts
+
+Use `ttr accounts` for platform account administration and the bounded fleet
+QA workflow. Use `ttr accounts status --operation <operation-id>` to reconcile
+an ambiguous write. An enrolled runner uses its secret store and `--fleet` on
+test commands. Never accept a credential as an argument or display a token.
+Keep the Accounts token audience separate from the human CLI session. Human
+disable, enable, and deletion depend on D292.
+
+See the [CLI examples](../../../../../apps/docs/reference/packages/cli-fleet.mdx#accounts)
+and [Accounts policy](../../../../../apps/docs/platform/features/account-management.mdx)
+for live authorization, test quotas, and retention checks.
+
 ## Monorepo Behavior
 
 The Tuturuuu monorepo contains a workspace package named `tuturuuu` under

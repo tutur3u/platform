@@ -62,7 +62,7 @@ import {
 import { isDelegatedCommand, runDelegatedCommand } from './delegated-commands';
 import { runDevboxCommandWithSession } from './devbox-session';
 import { runDomainsCommand, runExternalCommand } from './external-admin';
-import { runQaCommand } from './qa-users';
+import { getClient, runAccountGroup } from './account-group';
 import { runHostCommand } from './host-command';
 import { runFeedbackCli } from './feedback';
 import { runFinanceCommand } from './finance';
@@ -683,23 +683,6 @@ export async function searchTasksForCli(
     },
     workspaceName,
   };
-}
-
-function getClient(config: CliConfig) {
-  if (!config.session?.accessToken || !config.session.refreshToken) {
-    throw new Error('Not logged in. Run `ttr login` first.');
-  }
-
-  return new TuturuuuUserClient({
-    accessToken: config.session.accessToken,
-    baseUrl: config.baseUrl,
-    expiresAt: config.session.expiresAt,
-    onSessionRefresh: async (session) => {
-      await writeCliConfig({ ...config, session });
-    },
-    refreshToken: config.session.refreshToken,
-    tasksBaseUrl: config.tasksBaseUrl ?? resolveCliTasksBaseUrl(config.baseUrl),
-  });
 }
 
 async function saveSession(config: CliConfig, token: string) {
@@ -2008,17 +1991,11 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
-  const client = getClient(config);
-
-  if (group === 'qa') {
-    await runQaCommand({
-      client,
-      flags,
-      json,
-      positionals: positionals.slice(1),
-    });
+  if (
+    await runAccountGroup(group, { config, action, flags, json, positionals })
+  )
     return;
-  }
+  const client = getClient(config);
 
   if (group === 'workspaces') {
     if (action === 'list') {

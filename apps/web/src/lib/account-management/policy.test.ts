@@ -13,6 +13,7 @@ const actorId = '00000000-0000-4000-8000-000000000001';
 const targetId = '00000000-0000-4000-8000-000000000002';
 const binding: ChallengeBinding = {
   actorId,
+  sessionId: '00000000-0000-4000-8000-000000000009',
   targetId,
   action: 'admin',
   bodyHash: canonicalBodyHash({ enabled: true }),

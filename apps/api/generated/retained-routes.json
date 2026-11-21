@@ -620,6 +620,116 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/admin/accounts/{userId}/admin",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/admin/route.ts",
+    "sourceSha256": "d1251523c5566ff8e9586dd101c0406443c4a9bd99350fa103ccadc35f642b35",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/{userId}/challenge",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/challenge/route.ts",
+    "sourceSha256": "8d3019663e55e2cfe5582d3781a97362f62c1a5feab1d4090150720ffe423216",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/{userId}/disable",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/disable/route.ts",
+    "sourceSha256": "d7d0f4572adf4d2095836399bee35432ac47fc50d84b7d9bc4dea95b9c0ef310",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/{userId}/role",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/role/route.ts",
+    "sourceSha256": "105f31d751b76486dfc4ec1571a2a06a39274e8b92080213229f4bb5c900930f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/{userId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/[userId]/route.ts",
+    "sourceSha256": "e3aef5d54874edf54ac74cc7e33d6d6871cf68ffd3db5b911e748bbffede9abf",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/invite",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/invite/route.ts",
+    "sourceSha256": "b927c4abddb9a90c7108aef639d6d2811f5b64ebaae74ac3594933869b56cbdc",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/machine-token",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/machine-token/route.ts",
+    "sourceSha256": "d6b6a9f7c53a625ab116419fc08fe1703e26e740dbab2441722a46875c2aeaec",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/operations/{operationId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/operations/[operationId]/route.ts",
+    "sourceSha256": "00ea24879d3b0c091c55848d675a8887d042b9aa930070a1ddefdfaffd280bba",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/route.ts",
+    "sourceSha256": "85ae2b2349886cfab48f2f859a21221b739ca4dbeed380427ba7dedd18b1ebe2",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/tests/{userId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/tests/[userId]/route.ts",
+    "sourceSha256": "5bfddeb41cd7977e1c4ad5d0cb3a85d9daaaa01f8ce8ace1097af9544d780095",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/admin/accounts/tests",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/admin/accounts/tests/route.ts",
+    "sourceSha256": "9cfb649085b58a685b11f739e08ac5f08b415a003a724ce869bb986e00dc2f7c",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/admin/ai/memory/backfill-mira",
     "sideEffects": "unknown",
     "shadow": "never",

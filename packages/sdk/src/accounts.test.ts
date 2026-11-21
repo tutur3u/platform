@@ -106,3 +106,37 @@ describe('accounts HTTPS client', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+it('exchanges the runner credential only at the pinned origin and keeps the bearer private', async () => {
+  const runnerCredential = `tdbx_${'a'.repeat(64)}`;
+  const machineCredential = 'ttr_accounts_machine_fixture';
+  const fetch = vi
+    .fn<typeof globalThis.fetch>()
+    .mockResolvedValueOnce(Response.json({ accessToken: machineCredential }))
+    .mockResolvedValueOnce(
+      Response.json({
+        operationId,
+        targetId,
+        status: 'completed',
+        accessToken: machineCredential,
+      })
+    );
+  const client = await AccountsClient.forRunner(runnerCredential, fetch);
+  const result = await client.execute({
+    action: 'test-create',
+    operationId,
+    label: 'a1',
+  });
+  expect(result).toEqual({ operationId, targetId, status: 'completed' });
+  const [exchange, mutation] = fetch.mock.calls;
+  expect(String(exchange?.[0])).toBe(
+    'https://tuturuuu.com/api/v1/admin/accounts/machine-token'
+  );
+  expect(new Headers(exchange?.[1]?.headers).get('authorization')).toBe(
+    `Bearer ttr_${runnerCredential}`
+  );
+  expect(new Headers(mutation?.[1]?.headers).get('authorization')).toBe(
+    `Bearer ${machineCredential}`
+  );
+  expect(mutation?.[1]?.redirect).toBe('error');
+});

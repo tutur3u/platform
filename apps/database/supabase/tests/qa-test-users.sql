@@ -119,14 +119,14 @@ select '7a000000-0000-4000-8000-000000000001', '7a000000-0000-4000-8000-00000000
 select ok(private.is_verified_tuturuuu_staff('7a000000-0000-4000-8000-000000000001'), 'a real staff account still verifies');
 select ok(not private.is_verified_tuturuuu_staff((select id from host)), 'a staff-domain QA host never verifies as staff');
 
-select is(private.qa_test_begin_delete('7a000000-0000-4000-8000-000000000002', 'operator', null) ->> 'state', 'not_found', 'unregistered accounts are refused');
+select is(private.qa_test_begin_delete('7a000000-0000-4000-8000-000000000002', 'operator', '7a000000-0000-4000-8000-000000000001') ->> 'state', 'not_found', 'unregistered accounts are refused');
 select ok(private.qa_test_record_session((select id from host), '7a000000-0000-4000-8000-000000000001') is not null, 'session mint is recorded for a live account');
 
-select is((select private.qa_test_begin_delete(id, 'operator', null) ->> 'runWorkspaceId' from guest where ordinal = 2), null, 'run workspace stays while accounts remain');
-select is((select private.qa_test_begin_delete(id, 'operator', null) ->> 'state' from guest where ordinal = 2), 'busy', 'a leased deletion is not repeated');
-select is((select private.qa_test_finish_delete(id, 'operator', null) ->> 'state' from guest where ordinal = 2), 'present', 'deletion settles only after Auth removal');
+select is((select private.qa_test_begin_delete(id, 'operator', '7a000000-0000-4000-8000-000000000001') ->> 'runWorkspaceId' from guest where ordinal = 2), null, 'run workspace stays while accounts remain');
+select is((select private.qa_test_begin_delete(id, 'operator', '7a000000-0000-4000-8000-000000000001') ->> 'state' from guest where ordinal = 2), 'busy', 'a leased deletion is not repeated');
+select is((select private.qa_test_finish_delete(id, 'operator', '7a000000-0000-4000-8000-000000000001') ->> 'state' from guest where ordinal = 2), 'present', 'deletion settles only after Auth removal');
 delete from auth.users where id = (select id from guest where ordinal = 2);
-select is((select private.qa_test_finish_delete(id, 'operator', null) ->> 'state' from guest where ordinal = 2), 'deleted', 'deletion settles after Auth removal');
+select is((select private.qa_test_finish_delete(id, 'operator', '7a000000-0000-4000-8000-000000000001') ->> 'state' from guest where ordinal = 2), 'deleted', 'deletion settles after Auth removal');
 
 update private.qa_test_runs set expires_at = now() - interval '1 minute', created_at = now() - interval '2 hours' where id = (select run_id from host);
 select is(jsonb_array_length(private.qa_test_list_expired(25) -> 'userIds'), 2, 'expired live accounts are listed for cleanup');

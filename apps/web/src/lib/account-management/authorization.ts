@@ -22,7 +22,8 @@ export interface HumanAuthority {
 export async function authorizeHuman(
   human: VerifiedHuman,
   authority: HumanAuthority,
-  nowSeconds: number
+  nowSeconds: number,
+  stepUp = true
 ) {
   const parsed = verifiedHumanSchema.safeParse(human);
   if (!parsed.success) throw new AccountManagementError('unauthorized', 401);
@@ -34,6 +35,7 @@ export async function authorizeHuman(
   ) {
     throw new AccountManagementError('forbidden', 403);
   }
+  if (!stepUp) return { actorId, sessionId };
   // Generic app-session MFA proofs do not preserve factor-method provenance.
   // A server-owned TOTP record is bound to the exact authenticated session.
   try {

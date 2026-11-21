@@ -18,6 +18,7 @@ export type ProcessorTarget =
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
+  | 'accounts-audit-retention'
   | 'ai-studio-retention'
   | 'chat-realtime-revocations'
   | 'checkout-expiry'
@@ -36,6 +37,7 @@ export type WorkerProcessorId =
 export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
+  'accounts-audit-retention': 'accounts_purge',
   'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
@@ -252,6 +254,14 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/api/cron/calendar/provider-sync',
     'claim-fenced',
     { timeoutMs: LONG_TIMEOUT_MS }
+  ),
+  job(
+    'database-accounts-audit-retention',
+    '*/15 * * * *',
+    'web',
+    '/rest/v1/rpc/accounts_purge',
+    'claim-fenced',
+    { workerProcessor: 'accounts-audit-retention', timeoutMs: 30_000 }
   ),
   // Deletes expired QA test accounts, at most 25 per slot, natively in the
   // Worker. The ledger lease and the database stop fence

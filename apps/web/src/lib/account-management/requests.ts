@@ -16,9 +16,6 @@ const companyEmail = z
 /** The server validates independently of SDK callers, including unknown fields. */
 export const mutationSchema = z.discriminatedUnion('action', [
   z
-    .object({ action: z.literal('create'), ...operation, email: companyEmail })
-    .strict(),
-  z
     .object({ action: z.literal('invite'), ...operation, email: companyEmail })
     .strict(),
   z

@@ -7,6 +7,23 @@ import {
   qaTestMarker,
 } from './policy';
 
+export async function completeQaOnboarding(
+  admin: Pick<TypedSupabaseClient, 'from'>,
+  userId: string
+) {
+  const onboarding = await admin.from('onboarding_progress').upsert({
+    user_id: userId,
+    completed_steps: ['welcome', 'use_case', 'profile', 'celebration'],
+    current_step: 'celebration',
+    profile_completed: true,
+    completed_at: new Date().toISOString(),
+    use_case: 'personal',
+    flow_type: 'personal',
+    notifications_enabled: false,
+  });
+  if (onboarding.error) throw new Error('Onboarding completion failed');
+}
+
 export interface QaProvisionDeps extends QaDeletionDeps {
   admin: Pick<TypedSupabaseClient, 'auth' | 'from'>;
 }
@@ -86,17 +103,7 @@ export async function createQaUsers(
       });
       if (created.error || created.data.user?.id !== user.userId)
         throw new Error('Auth account creation failed');
-      const onboarding = await deps.admin.from('onboarding_progress').upsert({
-        user_id: user.userId,
-        completed_steps: ['welcome', 'use_case', 'profile', 'celebration'],
-        current_step: 'celebration',
-        profile_completed: true,
-        completed_at: new Date().toISOString(),
-        use_case: 'personal',
-        flow_type: 'personal',
-        notifications_enabled: false,
-      });
-      if (onboarding.error) throw new Error('Onboarding completion failed');
+      await completeQaOnboarding(deps.admin, user.userId);
       const activated = await deps.store.activate(user.userId, operatorUserId);
       if (!activated) throw new Error('Activation refused');
       result.runWorkspaceId ??= activated.runWorkspaceId;

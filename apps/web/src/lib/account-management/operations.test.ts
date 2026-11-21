@@ -17,8 +17,7 @@ function fixture() {
       hasEnabledPlatformRole: vi.fn(async () => true),
       hasFreshTotpStepUp: vi.fn(async () => false),
     },
-    challenges: { putIfAbsent: vi.fn(), getdel: vi.fn() },
-    admit: vi.fn(async () => undefined),
+    challenges: { getdel: vi.fn() },
     appendAudit: vi.fn(async (event) => {
       events.push(event.phase);
     }),

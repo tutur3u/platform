@@ -1,3 +1,4 @@
+import { purgeAccountsAudit } from './accounts-audit-retention';
 import type { WorkerProcessorId } from '../jobs';
 import { purgeAiStudioRetention } from './ai-studio-retention';
 import { recoverChatRevocations } from './chat-realtime-revocations';
@@ -17,6 +18,7 @@ export const WORKER_PROCESSORS: Record<
   WorkerProcessorId,
   (context: ProcessorContext) => Promise<ProcessorResult>
 > = {
+  'accounts-audit-retention': purgeAccountsAudit,
   'ai-studio-retention': purgeAiStudioRetention,
   'chat-realtime-revocations': recoverChatRevocations,
   'checkout-expiry': expireCheckouts,

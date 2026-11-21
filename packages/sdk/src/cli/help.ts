@@ -12,11 +12,10 @@ import { getGlobalHelp } from './help-global';
 import { upgradeHelp } from './help-upgrade';
 import { resourcesHelp } from './resources';
 
-export { getGlobalHelp } from './help-global';
-
 import { externalAdminHelp, isExternalHelp } from './external-admin';
-import { qaHelp } from './qa-users';
+import { accountsHelp } from './accounts';
 
+export { getGlobalHelp } from './help-global';
 const helpTopics: Record<string, HelpTopic> = {
   box: boxHelp,
   boards: boardsHelp,
@@ -743,7 +742,8 @@ export function getHelpOutput(
   subaction?: string
 ) {
   if (group === 'resources') return resourcesHelp();
-  if (group === 'qa') return qaHelp(action === 'users' ? subaction : undefined);
+  if (group === 'accounts' || group === 'qa')
+    return accountsHelp(group, action, subaction);
   if (isExternalHelp(group, action)) return externalAdminHelp(group);
   if (!group) {
     return getGlobalHelp();

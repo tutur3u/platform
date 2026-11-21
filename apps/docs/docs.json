@@ -146,6 +146,7 @@
               "platform/features/programming-playgrounds",
               "platform/features/education-inline-assistant",
               "platform/features/account-benefits",
+              "platform/features/account-management",
               "platform/features/meet-followups",
               "platform/features/meet-forms",
               "platform/features/meet-live-assistants",

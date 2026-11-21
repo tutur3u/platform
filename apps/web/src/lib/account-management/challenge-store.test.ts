@@ -45,6 +45,7 @@ function redisEmulator() {
 }
 
 const binding = {
+  sessionId: '00000000-0000-4000-8000-000000000009',
   actorId: '00000000-0000-4000-8000-000000000001',
   targetId: '00000000-0000-4000-8000-000000000002',
   action: 'admin',

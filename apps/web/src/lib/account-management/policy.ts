@@ -14,6 +14,7 @@ const uuid = z.uuid();
 const bindingSchema = z
   .object({
     actorId: uuid,
+    sessionId: uuid,
     action: z.enum([
       'admin',
       'delete',
@@ -111,7 +112,7 @@ export async function issueChallenge(
 }
 
 export async function consumeChallenge(
-  store: ChallengeStore,
+  store: Pick<ChallengeStore, 'getdel'>,
   nonce: string,
   binding: ChallengeBinding
 ) {
@@ -125,6 +126,7 @@ export async function consumeChallenge(
   if (
     !stored.success ||
     stored.data.actorId !== expected.actorId ||
+    stored.data.sessionId !== expected.sessionId ||
     stored.data.action !== expected.action ||
     stored.data.targetId !== expected.targetId ||
     stored.data.bodyHash !== expected.bodyHash

@@ -23,3 +23,30 @@ existing timeouts, with at most four hosts collected concurrently.
 
 On an admitted remote verification host, run the focused SDK fleet test and
 `bun check:changed`; require applicable exact-source CI before integration.
+
+## Accounts
+
+Platform operators sign in with `ttr login`. For a grant, revoke, or human-
+initiated test deletion, verify TOTP within five minutes and type the target
+UUID exactly. These commands call Web over HTTPS.
+
+```sh
+ttr accounts list
+ttr accounts status <user-id>
+ttr accounts invite <name@tuturuuu.com>
+ttr accounts role <user-id> --workspace <workspace-id> --role <role-id>
+ttr accounts admin <user-id> --enabled true --confirm <user-id>
+ttr accounts test-create --label a1
+ttr accounts test-delete <user-id> --confirm <user-id>
+ttr accounts status --operation <operation-id>
+```
+
+An Accounts-enrolled devbox runner uses `--fleet` on the test commands and on
+its own operation status. Supply the existing runner credential through
+`TUTURUUU_DEVBOX_RUNNER_TOKEN` in the runner's secret store. CLI arguments and
+output carry UUIDs and status, with no passwords, sign-in links, or tokens.
+Use `--json` for structured results. List pagination accepts `--limit` and
+`--cursor`. Check operation status before retrying an ambiguous request.
+
+See the [Accounts feature policy](/platform/features/account-management) for
+target scope, quotas, closed commands, and audit retention.

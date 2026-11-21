@@ -95,6 +95,130 @@ export type Database = {
           },
         ];
       };
+      accounts_control: {
+        Row: {
+          human_delete_enabled: boolean;
+          purge_enabled: boolean;
+          singleton: boolean;
+          suspension_enabled: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          human_delete_enabled?: boolean;
+          purge_enabled?: boolean;
+          singleton?: boolean;
+          suspension_enabled?: boolean;
+        };
+        Update: {
+          human_delete_enabled?: boolean;
+          purge_enabled?: boolean;
+          singleton?: boolean;
+          suspension_enabled?: boolean;
+        };
+        Relationships: [];
+      };
+      accounts_invite_window: {
+        Row: {
+          address_key: number;
+          admitted_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          address_key: number;
+          admitted_at: string;
+        };
+        Update: {
+          address_key?: number;
+          admitted_at?: string;
+        };
+        Relationships: [];
+      };
+      accounts_machine_registry: {
+        Row: {
+          changed_at: string;
+          changed_by: string;
+          enabled: boolean;
+          runner_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          changed_at?: string;
+          changed_by: string;
+          enabled: boolean;
+          runner_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string;
+          enabled?: boolean;
+          runner_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'accounts_machine_registry_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: true;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      accounts_operations: {
+        Row: {
+          action: string;
+          actor_id: string;
+          actor_kind: Database['private']['Enums']['accounts_actor_kind'];
+          created_at: string;
+          id: string;
+          state: string;
+          target_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id: string;
+          actor_kind: Database['private']['Enums']['accounts_actor_kind'];
+          created_at?: string;
+          id: string;
+          state?: string;
+          target_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          actor_kind?: Database['private']['Enums']['accounts_actor_kind'];
+          created_at?: string;
+          id?: string;
+          state?: string;
+          target_id?: string | null;
+        };
+        Relationships: [];
+      };
+      accounts_suspension_reasons: {
+        Row: {
+          active: boolean;
+          changed_at: string;
+          changed_by: string;
+          operation_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active: boolean;
+          changed_at?: string;
+          changed_by: string;
+          operation_id: string;
+          user_id: string;
+        };
+        Update: {
+          active?: boolean;
+          changed_at?: string;
+          changed_by?: string;
+          operation_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       ai_agent_external_message_attachments: {
         Row: {
           content_type: string | null;
@@ -17674,6 +17798,8 @@ export type Database = {
       };
       qa_test_runs: {
         Row: {
+          accounts_machine_id: string | null;
+          accounts_operation_id: string | null;
           created_at: string;
           expires_at: string;
           id: string;
@@ -17685,6 +17811,8 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          accounts_machine_id?: string | null;
+          accounts_operation_id?: string | null;
           created_at?: string;
           expires_at: string;
           id: string;
@@ -17695,6 +17823,8 @@ export type Database = {
           workspace_requested?: boolean;
         };
         Update: {
+          accounts_machine_id?: string | null;
+          accounts_operation_id?: string | null;
           created_at?: string;
           expires_at?: string;
           id?: string;
@@ -17771,32 +17901,41 @@ export type Database = {
         Row: {
           action: string;
           actor: string;
-          actor_user_id: string | null;
+          actor_kind: Database['private']['Enums']['accounts_actor_kind'];
+          actor_user_id: string;
           detail: NonNullable<Json>;
           id: number;
           occurred_at: string;
-          run_id: string;
+          operation_id: string | null;
+          phase: string;
+          run_id: string | null;
           user_id: string | null;
         };
         ComputedFields: never;
         Insert: {
           action: string;
           actor: string;
-          actor_user_id?: string | null;
+          actor_kind: Database['private']['Enums']['accounts_actor_kind'];
+          actor_user_id: string;
           detail?: NonNullable<Json>;
           id?: never;
           occurred_at?: string;
-          run_id: string;
+          operation_id?: string | null;
+          phase?: string;
+          run_id?: string | null;
           user_id?: string | null;
         };
         Update: {
           action?: string;
           actor?: string;
-          actor_user_id?: string | null;
+          actor_kind?: Database['private']['Enums']['accounts_actor_kind'];
+          actor_user_id?: string;
           detail?: NonNullable<Json>;
           id?: never;
           occurred_at?: string;
-          run_id?: string;
+          operation_id?: string | null;
+          phase?: string;
+          run_id?: string | null;
           user_id?: string | null;
         };
         Relationships: [];
@@ -23441,6 +23580,142 @@ export type Database = {
       account_playgrounds_allowed: {
         Args: { p_actor_id: string };
         Returns: boolean;
+      };
+      accounts_admit_invite: { Args: { p_email: string }; Returns: boolean };
+      accounts_apply_human: {
+        Args: {
+          p_actor: string;
+          p_enabled: boolean;
+          p_operation: string;
+          p_role: string;
+          p_session: string;
+          p_workspace: string;
+        };
+        Returns: undefined;
+      };
+      accounts_audit_cutoff: { Args: { p_phase: string }; Returns: string };
+      accounts_begin: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_credential: string;
+          p_email: string;
+          p_operation: string;
+          p_target: string;
+        };
+        Returns: undefined;
+      };
+      accounts_check_machine: {
+        Args: { p_actor: string; p_credential: string };
+        Returns: undefined;
+      };
+      accounts_deny: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_credential: string;
+          p_operation: string;
+        };
+        Returns: undefined;
+      };
+      accounts_event: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_kind: Database['private']['Enums']['accounts_actor_kind'];
+          p_operation: string;
+          p_phase: string;
+          p_target: string;
+        };
+        Returns: undefined;
+      };
+      accounts_finish: {
+        Args: {
+          p_actor: string;
+          p_credential: string;
+          p_operation: string;
+          p_phase: string;
+          p_target: string;
+        };
+        Returns: boolean;
+      };
+      accounts_finish_locked: {
+        Args: {
+          p_op: Omit<
+            Database['private']['Tables']['accounts_operations']['Row'],
+            Database['private']['Tables']['accounts_operations']['ComputedFields']
+          >;
+          p_phase: string;
+          p_target: string;
+        };
+        Returns: boolean;
+      };
+      accounts_fresh_totp: {
+        Args: { p_actor: string; p_session: string };
+        Returns: boolean;
+      };
+      accounts_human_allowed: { Args: { p_actor: string }; Returns: boolean };
+      accounts_lock_operation: {
+        Args: { p_actor: string; p_credential: string; p_operation: string };
+        Returns: {
+          action: string;
+          actor_id: string;
+          actor_kind: Database['private']['Enums']['accounts_actor_kind'];
+          created_at: string;
+          id: string;
+          state: string;
+          target_id: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'accounts_operations';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      accounts_machine_credential: { Args: { p_hash: string }; Returns: Json };
+      accounts_operation_status: {
+        Args: { p_actor: string; p_credential: string; p_operation: string };
+        Returns: Json;
+      };
+      accounts_purge: { Args: { p_limit: number }; Returns: Json };
+      accounts_read: {
+        Args: {
+          p_actor: string;
+          p_cursor: string;
+          p_limit: number;
+          p_target: string;
+        };
+        Returns: Json;
+      };
+      accounts_reconcile: { Args: { p_limit: number }; Returns: number };
+      accounts_reserve_test: {
+        Args: {
+          p_actor: string;
+          p_credential: string;
+          p_label: string;
+          p_operation: string;
+        };
+        Returns: Json;
+      };
+      accounts_set_machine: {
+        Args: {
+          p_actor: string;
+          p_enabled: boolean;
+          p_runner: string;
+          p_session: string;
+        };
+        Returns: undefined;
+      };
+      accounts_target: { Args: { p_user: string }; Returns: boolean };
+      accounts_test_step: {
+        Args: {
+          p_actor: string;
+          p_credential: string;
+          p_operation: string;
+          p_step: string;
+        };
+        Returns: Json;
       };
       adjudicate_employee_creation_rejection: {
         Args: {
@@ -29268,6 +29543,7 @@ export type Database = {
       };
     };
     Enums: {
+      accounts_actor_kind: 'human' | 'system' | 'machine';
       fleet_intent_kind:
         | 'status_question'
         | 'comment'
@@ -60843,6 +61119,7 @@ export type CompositeTypes<
 export const Constants = {
   private: {
     Enums: {
+      accounts_actor_kind: ['human', 'system', 'machine'],
       fleet_intent_kind: [
         'status_question',
         'comment',

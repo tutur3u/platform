@@ -14,6 +14,17 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/meetings/[meetingId]/collaboration` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meetings/%5BmeetingId%5D/collaboration/route.ts) |
+| `/api/v1/mira/achievements` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/route.ts) |
+| `/api/v1/mira/achievements/unlock` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/achievements/unlock/route.ts) |
+| `/api/v1/mira/focus/[id]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/%5Bid%5D/route.ts) |
+| `/api/v1/mira/focus/complete` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/complete/route.ts) |
+| `/api/v1/mira/focus/history` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/history/route.ts) |
+| `/api/v1/mira/focus` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/route.ts) |
+| `/api/v1/mira/focus/start` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/start/route.ts) |
+| `/api/v1/mira/memories` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/memories/route.ts) |
+| `/api/v1/mira/pet/feed` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/feed/route.ts) |
+| `/api/v1/mira/pet` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/route.ts) |
 | `/api/v1/mira/soul` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/soul/route.ts) |
 | `/api/v1/mira/token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/token/route.ts) |
 | `/api/v1/mira/xp` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/xp/route.ts) |
@@ -183,16 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-projects/assets` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/assets/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/assets/upload-url/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/blocks/[blockId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/blocks/%5BblockId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/blocks` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/blocks/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/collections/[collectionId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/collections/%5BcollectionId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/collections` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/collections/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/delivery` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/delivery/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/email-policy` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/email-policy/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/emails` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/emails/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/bundle/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/duplicate/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/publish` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/%5BversionId%5D/publish/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/%5BversionId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).
