@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
 
 export const fullSprintFixtures = [
-  'task-board-sprints.sql',
-  'task-board-sprint-transitions.sql',
-  'task-board-sprint-horizon.sql',
-  'task-project-ticket-keys.sql',
+  'fixtures/task-board-sprints/task-board-sprints.sql',
+  'fixtures/task-board-sprints/task-board-sprint-transitions.sql',
+  'fixtures/task-board-sprints/task-board-sprint-horizon.sql',
+  'fixtures/task-board-sprints/task-cycle-one-per-task.sql',
+  'tests/task-project-ticket-keys.sql',
 ];
 
 const retainedBarrierSources = {
@@ -47,13 +48,13 @@ export function taskBoardContractFixtures({ args, trackedFiles, readSource }) {
     );
   }
   const fixtures = [
-    'task-board-retained-cycles.sql',
-    'task-cycle-workspace-guard.sql',
-    'task-project-ticket-keys.sql',
+    'tests/task-board-retained-cycles.sql',
+    'tests/task-cycle-workspace-guard.sql',
+    'tests/task-project-ticket-keys.sql',
   ];
   const required = [
-    ...fullSprintFixtures.map((file) => `apps/database/supabase/tests/${file}`),
-    ...fixtures.map((file) => `apps/database/supabase/tests/${file}`),
+    ...fullSprintFixtures.map((file) => `apps/database/supabase/${file}`),
+    ...fixtures.map((file) => `apps/database/supabase/${file}`),
     'apps/database/supabase/migrations/20261105223308_assign_task_cycle_legacy_schema.sql',
     'apps/database/supabase/migrations/20261029050300_guard_task_cycle_task_workspace.sql',
   ];

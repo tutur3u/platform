@@ -2,7 +2,7 @@
 -- Run ONLY against a disposable local stack, after applying
 -- apps/database/rollbacks/20261104152700_assign_task_cycle.rollback.sql,
 -- then re-apply the forward migration and re-run
--- supabase/tests/task-cycle-one-per-task.sql.
+-- supabase/fixtures/task-board-sprints/task-cycle-one-per-task.sql.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;

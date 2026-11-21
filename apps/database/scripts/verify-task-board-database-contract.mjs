@@ -53,7 +53,7 @@ const metadata = await stageDisposableProject({
   projectId: identity.projectId,
   basePort: ports.basePort,
   trackedFiles,
-  testPath: `supabase/tests/${fixtures[0]}`,
+  testPath: `supabase/${fixtures[0]}`,
 });
 metadata.typegenOutput = 'packages/types/src/supabase.ts';
 console.log(
@@ -89,10 +89,10 @@ const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;
     for (const fixture of fixtures) {
-      const target = `/tmp/${fixture}`;
+      const target = `/tmp/${path.basename(fixture)}`;
       execFileSync('docker', [
         'cp',
-        path.resolve(metadata.disposableRoot, 'supabase/tests', fixture),
+        path.resolve(metadata.disposableRoot, 'supabase', fixture),
         `${container}:${target}`,
       ]);
       const tap = execFileSync(

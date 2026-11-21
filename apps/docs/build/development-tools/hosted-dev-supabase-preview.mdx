@@ -46,7 +46,7 @@ Read the dry run before pushing.
   private`). A project that only exposes `public` fails on `private` RPCs,
   for example task list counts on a board.
 
-Run SQL suites such as `apps/database/supabase/tests/task-board-sprints.sql`
+Run SQL suites such as `apps/database/supabase/tests/task-board-retained-cycles.sql`
 with `psql` over the temporary login role (`SET ROLE postgres` first). They
 begin and roll back their own transaction, so the dev data is unchanged.
 

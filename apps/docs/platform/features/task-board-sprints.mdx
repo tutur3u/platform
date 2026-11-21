@@ -24,8 +24,9 @@ workspace-cycle assignment and workspace guards, runs the unchanged project
 ticket fixture, and generates actual types. The profile pins the release barrier
 and its negative tests, and refuses held sprint migration versions. Changing
 those pins requires independent review. With no profile argument, the driver
-runs the full board-sprint fixtures unchanged; those fixtures require the
-separately admitted sprint schema.
+runs the board-sprint fixtures under `supabase/fixtures/task-board-sprints/`.
+Those tests require the admitted sprint schema. The general pgTAP run exercises
+the retained workspace-cycle contract in `task-board-retained-cycles.sql`.
 
 Admitting the held sprint migrations must create `task_sprint_reports`, and
 any other new sprint table, in the `private` schema, and the sprint routes must
@@ -61,9 +62,9 @@ out of Done, un-closed, or restored from the recycle bin) rejoins the board's
 current sprint the same way, so no open task drops out of the Board view or
 Plan.
 
-Regression coverage: `apps/database/supabase/tests/task-board-sprint-transitions.sql`
+Regression coverage: `apps/database/supabase/fixtures/task-board-sprints/task-board-sprint-transitions.sql`
 walks every way a task enters, leaves or returns to a board's sprints, and
-`apps/database/supabase/tests/task-board-sprint-horizon.sql` covers planning
+`apps/database/supabase/fixtures/task-board-sprints/task-board-sprint-horizon.sql` covers planning
 several sprints ahead, the five-sprint cap, start order, removal and parked
 tasks.
 
@@ -219,8 +220,8 @@ Workspace-wide cycles without a board keep their existing behavior. The
 personal planner still writes `tasks.end_date` for the day it plans, so planner
 tasks count as having their own due date.
 
-Regression coverage: `apps/database/supabase/tests/task-board-sprints.sql`
-remains in the unchanged default full-sprint profile, which requires the
+Regression coverage: `apps/database/supabase/fixtures/task-board-sprints/task-board-sprints.sql`
+runs in the default full-sprint profile, which requires the
 separately admitted sprint schema. The retained Task board database contract
 workflow runs `apps/database/supabase/tests/task-board-retained-cycles.sql`,
 `apps/database/supabase/tests/task-cycle-workspace-guard.sql` and

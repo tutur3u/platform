@@ -12,7 +12,7 @@ const barrier =
   'apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/sprints/_lib.ts';
 const barrierTest = barrier.replace('_lib.ts', 'release-barrier.test.ts');
 const files = [
-  ...fullSprintFixtures.map((file) => `apps/database/supabase/tests/${file}`),
+  ...fullSprintFixtures.map((file) => `apps/database/supabase/${file}`),
   'apps/database/supabase/tests/task-board-retained-cycles.sql',
   'apps/database/supabase/tests/task-cycle-workspace-guard.sql',
   'apps/database/supabase/migrations/20261105223308_assign_task_cycle_legacy_schema.sql',
@@ -29,17 +29,18 @@ const retained = (overrides = {}) =>
 
 test('default retains all full sprint and ticket fixtures', () => {
   assert.deepEqual(taskBoardContractFixtures({ args: [] }), [
-    'task-board-sprints.sql',
-    'task-board-sprint-transitions.sql',
-    'task-board-sprint-horizon.sql',
-    'task-project-ticket-keys.sql',
+    'fixtures/task-board-sprints/task-board-sprints.sql',
+    'fixtures/task-board-sprints/task-board-sprint-transitions.sql',
+    'fixtures/task-board-sprints/task-board-sprint-horizon.sql',
+    'fixtures/task-board-sprints/task-cycle-one-per-task.sql',
+    'tests/task-project-ticket-keys.sql',
   ]);
 });
 test('explicit retained profile covers cycles, guards and unchanged ticket contract', () => {
   assert.deepEqual(retained(), [
-    'task-board-retained-cycles.sql',
-    'task-cycle-workspace-guard.sql',
-    'task-project-ticket-keys.sql',
+    'tests/task-board-retained-cycles.sql',
+    'tests/task-cycle-workspace-guard.sql',
+    'tests/task-project-ticket-keys.sql',
   ]);
 });
 test('unknown or additional arguments fail closed', () => {
