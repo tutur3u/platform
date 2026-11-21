@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useNow } from '../fleet/clock';
 import { type FleetSnapshot } from '../fleet/contract';
 import { inbox, loginRequests } from '../fleet/model';
+import { subscribeOwnerLive } from '../fleet/owner-live';
 import {
   type FleetLoad,
   fleetPageState,
@@ -14,7 +16,7 @@ import { useI18n } from '../i18n';
 import { AccessSection } from './access-section';
 import { ActivitySection } from './activity';
 import { ApprovalsSection } from './approvals';
-import { UsageSection } from '../usage/usage-section';
+import { USAGE_QUERY_KEY, UsageSection } from '../usage/usage-section';
 import { SettingsSection } from './cost-settings';
 import { Digest } from './digest';
 import { FleetSection } from './fleet-section';
@@ -65,6 +67,25 @@ function Sections({
 export function CommandCenter({ initial }: { initial: FleetLoad }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  useEffect(
+    () =>
+      subscribeOwnerLive((frame) => {
+        if (frame.t !== 'poke') return;
+        const topic = frame.poke.topic;
+        if (topic === 'usage') {
+          void queryClient.invalidateQueries({
+            queryKey: USAGE_QUERY_KEY,
+            exact: true,
+          });
+        } else if (topic === 'state' || topic === 'status') {
+          void queryClient.invalidateQueries({
+            queryKey: FLEET_QUERY_KEY,
+            exact: true,
+          });
+        }
+      }),
+    [queryClient]
+  );
   const query = useQuery({
     queryKey: FLEET_QUERY_KEY,
     initialData: initial,

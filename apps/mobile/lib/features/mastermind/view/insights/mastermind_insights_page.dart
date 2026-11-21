@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_owner_live.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
@@ -39,6 +40,14 @@ class _UsageBody extends StatefulWidget {
 
 class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
   final _source = FleetUsageSource();
+  late final _live = FleetOwnerLive(
+    onFrame: (frame) {
+      if (frame.kind == FleetOwnerFrameKind.poke &&
+          frame.payload['topic'] == 'usage') {
+        unawaited(_refresh());
+      }
+    },
+  );
   Timer? _poll;
   Future<void>? _inFlight;
   FleetUsage? _usage;
@@ -58,11 +67,15 @@ class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
   void _activate(AppLifecycleState? state) {
     _poll?.cancel();
     _foreground = state == null || state == AppLifecycleState.resumed;
-    if (!_foreground) return;
+    if (!_foreground) {
+      _live.stop();
+      return;
+    }
     ForegroundRefresh.request(this, () {
       if (!mounted || !_foreground) return;
       _poll?.cancel();
       unawaited(_refresh());
+      _live.start();
       _poll = Timer.periodic(
         const Duration(seconds: 15),
         (_) => unawaited(_refresh()),
@@ -99,6 +112,7 @@ class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _poll?.cancel();
+    _live.stop();
     super.dispose();
   }
 

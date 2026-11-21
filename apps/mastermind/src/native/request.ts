@@ -50,7 +50,7 @@ export function contentSecurityPolicy(nonce?: string) {
     "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' wss://mastermind-store.tuturuuu.com",
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",

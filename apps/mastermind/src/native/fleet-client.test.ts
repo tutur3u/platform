@@ -98,9 +98,31 @@ test('CSP: nonce scripts only, no inline styles or scripts, never framed', () =>
   const policy = contentSecurityPolicy('bm9uY2U=');
   expect(policy).toContain("script-src 'nonce-bm9uY2U=' 'strict-dynamic'");
   expect(policy).toContain("style-src 'self'");
+  expect(policy).toContain(
+    "connect-src 'self' wss://mastermind-store.tuturuuu.com"
+  );
   expect(policy).toContain("frame-ancestors 'none'");
   expect(policy).not.toContain('unsafe');
   expect(contentSecurityPolicy()).toContain("script-src 'none'");
+});
+
+test('owner live tickets use an uncached authenticated request', async () => {
+  const ticket = {
+    url: 'wss://mastermind-store.tuturuuu.com/v1/bridge/connect',
+    ticket: 'x'.repeat(32),
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  };
+  const fetcher = vi.fn<typeof fetch>(async () => Response.json(ticket));
+  expect(await createFleetClient(owner, fetcher).liveTicket()).toEqual(ticket);
+  const request = fetcher.mock.calls[0]?.[0];
+  if (!(request instanceof Request)) throw new TypeError('request not built');
+  expect(request.url).toBe(
+    'https://tuturuuu.com/api/v1/mastermind/fleet/live/ticket'
+  );
+  expect(request.method).toBe('POST');
+  expect(request.cache).toBe('no-store');
+  expect(request.redirect).toBe('manual');
+  expect(request.headers.get('authorization')).toBe(`Bearer ${owner.token}`);
 });
 
 test('usage reads are owner-scoped and preserve missing accounting data', async () => {

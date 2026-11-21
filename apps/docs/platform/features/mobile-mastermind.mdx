@@ -297,9 +297,10 @@ product rules of the shell entry and every tab.
   answer delivery, on change or a 60-second heartbeat. After successful state
   and Usage writes, the publisher records a topic, revision, and observation
   time in owner-only files for the fleet bridge. The bridge forwards these as
-  refresh signals. Clients can continue polling when the bridge is unavailable.
-  Removing
-  `usageMachines` stops reads and Usage writes at the next publisher tick.
+  refresh signals. The owner clients use a listen-only socket to refresh the
+  affected data and keep their existing polling cadence when the bridge is
+  unavailable. Removing `usageMachines` stops reads and Usage writes at the next
+  publisher tick.
   Keep a private backup of the installed script directory and config before
   switching versions. Restore that directory and config together on rollback.
   Verify a successful core state and answer tick during either switch.

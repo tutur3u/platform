@@ -83,6 +83,24 @@ export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
     [FLEET_FEATURES_HEADER]: 'login',
   };
   return {
+    async liveTicket(): Promise<unknown> {
+      try {
+        const response = await refuseRedirect(
+          fetcher(
+            new Request(`${WEB_FLEET}/live/ticket`, {
+              method: 'POST',
+              headers,
+              redirect: 'manual',
+              cache: 'no-store',
+              signal: AbortSignal.timeout(8_000),
+            })
+          )
+        );
+        return response.ok ? await response.json() : null;
+      } catch {
+        return null;
+      }
+    },
     async usage(): Promise<UsageRead> {
       try {
         const response = await refuseRedirect(
