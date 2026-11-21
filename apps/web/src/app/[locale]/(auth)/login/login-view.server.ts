@@ -12,13 +12,28 @@ function readString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-async function readSession(): Promise<LoginViewResponse['session']> {
+type SessionRead = {
+  session: LoginViewResponse['session'];
+  status: LoginViewResponse['sessionStatus'];
+};
+
+async function readSession(): Promise<SessionRead> {
   try {
     const supabase = await createClient();
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
-    if (!user) return null;
+    if (!user) {
+      // A missing session is a definitive answer; any other failure is not.
+      const absent = !error || error.name === 'AuthSessionMissingError';
+      if (!absent) {
+        console.warn('[login] Could not read the session for the login view', {
+          error: error.message,
+        });
+      }
+      return { session: null, status: absent ? 'absent' : 'unknown' };
+    }
 
     const { data: profile } = await supabase
       .from('users')
@@ -28,18 +43,24 @@ async function readSession(): Promise<LoginViewResponse['session']> {
     const metadata = user.user_metadata ?? {};
 
     return {
-      id: user.id,
-      avatarUrl:
-        readString(profile?.avatar_url) ??
-        readString(metadata.avatar_url) ??
-        readString(metadata.picture),
-      name:
-        readString(profile?.display_name) ??
-        readString(metadata.full_name) ??
-        readString(metadata.name),
+      status: 'present',
+      session: {
+        id: user.id,
+        avatarUrl:
+          readString(profile?.avatar_url) ??
+          readString(metadata.avatar_url) ??
+          readString(metadata.picture),
+        name:
+          readString(profile?.display_name) ??
+          readString(metadata.full_name) ??
+          readString(metadata.name),
+      },
     };
-  } catch {
-    return null;
+  } catch (error) {
+    console.warn('[login] Could not read the session for the login view', {
+      error: error instanceof Error ? error.message : 'unknown',
+    });
+    return { session: null, status: 'unknown' };
   }
 }
 
@@ -110,17 +131,18 @@ export async function resolveLoginView(
   request: RequestLike
 ): Promise<LoginViewResponse> {
   const params = new URL(request.url).searchParams;
-  const [session, savedAccounts, returnApp] = await Promise.all([
+  const [{ session, status }, savedAccounts, returnApp] = await Promise.all([
     readSession(),
     readSavedAccounts(request),
     readReturnApp(params.get('returnUrl')),
   ]);
 
   return {
-    hasSession: session !== null,
+    hasSession: status === 'present',
     providerHint: readProviderHint(params.get('provider')),
     returnApp,
     savedAccounts,
     session,
+    sessionStatus: status,
   };
 }

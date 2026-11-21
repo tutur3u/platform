@@ -84,6 +84,7 @@ describe('resolveLoginView', () => {
       hasSession: false,
       providerHint: 'google',
       returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+      sessionStatus: 'absent',
       savedAccounts: [
         {
           email: 'saved@example.com',
@@ -151,6 +152,7 @@ describe('resolveLoginView', () => {
       providerHint: null,
       savedAccounts: null,
       session: null,
+      sessionStatus: 'unknown',
     });
     warn.mockRestore();
   });

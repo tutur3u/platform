@@ -107,3 +107,12 @@ export function withHandoffTimeout<T>(
     if (timeoutId) globalThis.clearTimeout(timeoutId);
   });
 }
+
+/**
+ * A browser session refresh after a mint succeeded, or had nothing to refresh
+ * because only the server can read the session (the mint already proved it).
+ */
+export function isSessionRefreshSettled(result: unknown) {
+  const error = (result as { error?: { name?: unknown } | null } | null)?.error;
+  return !error || error.name === 'AuthSessionMissingError';
+}

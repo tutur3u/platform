@@ -24,6 +24,7 @@ const savedAccount = {
 function view(overrides: Partial<InitialLoginView> = {}): InitialLoginView {
   return {
     hasSession: false,
+    sessionStatus: 'absent',
     providerHint: 'google',
     returnApp: null,
     savedAccounts: [savedAccount],

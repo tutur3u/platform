@@ -73,6 +73,12 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   skeleton of the same size holds the card and header. When the view names
   the return app it is the only validator for it: the browser runs no second
   cross-app resolve that could disagree.
+- The login view reports `sessionStatus` as `present`, `absent` or
+  `unknown`; a failed server read is `unknown`, never "no session". A hinted
+  provider starts without a click only on a definitive `absent` with no
+  browser session. A session either side sees shows the account
+  confirmation, and Continue binds the mint to the server-seen account even
+  when the browser cannot read the session.
 - A hinted provider never starts while the return target is still
   resolving or beside an invalid-link or handoff error card.
 - Elsewhere a hint is advisory: it starts the provider automatically only

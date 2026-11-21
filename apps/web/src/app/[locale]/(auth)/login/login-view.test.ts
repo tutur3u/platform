@@ -57,6 +57,7 @@ describe('focused external sign-in', () => {
     hasSession: false,
     providerHint: 'google' as const,
     returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+    sessionStatus: 'absent' as const,
     savedAccounts: [],
     session: null,
   };

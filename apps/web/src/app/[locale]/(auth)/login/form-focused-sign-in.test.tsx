@@ -27,6 +27,7 @@ const savedAccount = {
 function view(overrides: Partial<InitialLoginView> = {}): InitialLoginView {
   return {
     hasSession: false,
+    sessionStatus: 'absent',
     providerHint: 'google',
     returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
     savedAccounts: [],
@@ -107,6 +108,7 @@ describe('LoginForm focused external sign-in', () => {
     renderLoginFormSearch(search, {
       initialView: view({
         hasSession: true,
+        sessionStatus: 'present',
         savedAccounts: [savedAccount],
         session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
       }),
@@ -139,6 +141,7 @@ describe('LoginForm focused external sign-in', () => {
     renderLoginFormSearch(search, {
       initialView: view({
         hasSession: true,
+        sessionStatus: 'present',
         savedAccounts: [savedAccount],
         session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
       }),
@@ -215,6 +218,7 @@ describe('LoginForm focused external sign-in', () => {
     renderLoginFormSearch(search, {
       initialView: view({
         hasSession: true,
+        sessionStatus: 'present',
         session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
       }),
     });
@@ -280,6 +284,56 @@ describe('LoginForm focused external sign-in', () => {
     await waitFor(() =>
       expect(mocks.resolveCrossAppReturnUrlWithInternalApi).toHaveBeenCalled()
     );
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('never starts Google when the server could not read the session', async () => {
+    renderLoginFormSearch(search, {
+      initialView: view({ sessionStatus: 'unknown' }),
+    });
+
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    expect(
+      screen.getByRole('button', { name: 'login.continue_with_provider' })
+    ).toBeEnabled();
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('offers Continue for a server session the browser cannot read', async () => {
+    const missing = Object.assign(new Error('Auth session missing!'), {
+      name: 'AuthSessionMissingError',
+    });
+    mocks.refreshSession.mockResolvedValue({ error: missing });
+    const tokenized = `${returnUrl}&token=t&originApp=web&targetApp=edufest`;
+    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      returnUrl: tokenized,
+      targetApp: 'edufest',
+    });
+
+    renderLoginFormSearch(search, {
+      initialView: view({
+        hasSession: true,
+        sessionStatus: 'present',
+        session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
+      }),
+    });
+
+    const continueButton = await screen.findByRole('button', {
+      name: 'login.continue_to_internal_app',
+    });
+    await waitFor(() => expect(continueButton).toBeEnabled());
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(continueButton);
+    });
+
+    await waitFor(() =>
+      expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
+        expect.objectContaining({ expectedUserId: 'user-1', returnUrl })
+      )
+    );
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(tokenized));
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ import {
   classifyCrossAppHandoff,
   getConfirmedReturnKey,
   getConfirmedUserId,
+  isSessionRefreshSettled,
   withHandoffTimeout,
 } from './cross-app-handoff-outcome';
 
@@ -102,5 +103,18 @@ describe('getConfirmedUserId', () => {
     expect(getConfirmedUserId(key, 'https://mail.example/cb')).toBeUndefined();
     expect(getConfirmedUserId(null, 'https://a.example/cb')).toBeUndefined();
     expect(getConfirmedUserId('not json', 'x')).toBeUndefined();
+  });
+});
+
+describe('isSessionRefreshSettled', () => {
+  it('accepts a refresh, or a browser that has no session to refresh', () => {
+    expect(isSessionRefreshSettled({ error: null })).toBe(true);
+    expect(isSessionRefreshSettled(undefined)).toBe(true);
+    expect(
+      isSessionRefreshSettled({ error: { name: 'AuthSessionMissingError' } })
+    ).toBe(true);
+    expect(isSessionRefreshSettled({ error: { name: 'AuthApiError' } })).toBe(
+      false
+    );
   });
 });

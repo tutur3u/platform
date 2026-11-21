@@ -4,6 +4,11 @@ import type { WebAccountSummary } from './auth';
 /** Server-resolved login view; carries no email or token of the session. */
 export interface LoginViewResponse {
   hasSession: boolean;
+  /**
+   * `unknown` when the server could not read the session. Only `absent` may
+   * let a provider start without a click.
+   */
+  sessionStatus: 'absent' | 'present' | 'unknown';
   providerHint: 'apple' | 'github' | 'google' | null;
   /** A registry-validated external app the sign-in returns to. */
   returnApp: { id: string; name: string } | null;

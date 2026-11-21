@@ -47,9 +47,17 @@ export function useSignInRouting({
   // pending or failed they are unknown, so a provider never auto-starts.
   const knownSavedAccounts = initialView?.savedAccounts ?? null;
   const savedAccounts = knownSavedAccounts ?? [];
-  const hasKnownSession = initialized
-    ? user !== null
-    : Boolean(initialView?.hasSession);
+  // The server's answer is authoritative: a session either side sees counts,
+  // and only a definitive "absent" from the server (with no browser session)
+  // lets a provider start without a click. An unreadable session never does.
+  const serverSession = initialView?.sessionStatus === 'present';
+  const browserSession = initialized && user !== null;
+  const hasKnownSession = initialView
+    ? serverSession || browserSession
+    : browserSession;
+  const sessionDefinitelyAbsent = initialView
+    ? initialView.sessionStatus === 'absent' && !browserSession
+    : initialized && user === null;
   // The card names the server's session; once the browser session is known
   // it must be that same account, or the regular confirmation takes over.
   const focusedSessionMatches =
@@ -58,7 +66,8 @@ export function useSignInRouting({
     focusedSessionMatches &&
     isFocusedExternalSignIn(initialView, isMultiAccountLogin);
   const focusedCanContinue =
-    initialized && user !== null && user.id === initialView?.session?.id;
+    initialized &&
+    (user ? user.id === initialView?.session?.id : serverSession);
   const focusedPending =
     Boolean(loginView?.pending) &&
     mayBeFocusedExternalSignIn({
@@ -86,7 +95,11 @@ export function useSignInRouting({
     (!focusedSignIn || focusedStep === 'provider') &&
     canAutoStartProvider({
       anotherAccountRequested,
-      hasSession: hasKnownSession,
+      // "Use another account" signs out locally first, so the earlier
+      // server answer is stale and only the browser session counts.
+      hasSession: anotherAccountRequested
+        ? browserSession
+        : !sessionDefinitelyAbsent,
       multiAccount: isMultiAccountLogin,
       providerHint,
       savedAccounts: knownSavedAccounts,
@@ -98,6 +111,8 @@ export function useSignInRouting({
 
   return {
     anotherAccountRequested,
+    /** The account a confirmation applies to: browser, else server-seen. */
+    selfId: user?.id ?? initialView?.session?.id ?? null,
     focusedCanContinue,
     focusedPending,
     focusedSignIn,

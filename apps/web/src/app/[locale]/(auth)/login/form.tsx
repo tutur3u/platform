@@ -76,6 +76,7 @@ import {
   classifyCrossAppHandoff,
   buildHandoffRequest,
   getConfirmedReturnKey,
+  isSessionRefreshSettled,
   withHandoffTimeout,
 } from './cross-app-handoff-outcome';
 import {
@@ -301,6 +302,7 @@ export default function LoginForm({
   );
   const {
     focusedCanContinue,
+    selfId,
     focusedPending,
     focusedSignIn,
     focusedStep,
@@ -680,8 +682,7 @@ export default function LoginForm({
         return;
       }
 
-      // One mint per attempt, even when bootstrap effects call this at once:
-      // no second one-time token follows a minted handoff.
+      // One mint per attempt, even under concurrent bootstrap calls.
       if (handoffInFlightRef.current) return;
       handoffInFlightRef.current = true;
       const handoff = await withHandoffTimeout(
@@ -712,8 +713,7 @@ export default function LoginForm({
       const refreshCompleted = await withHandoffTimeout(
         supabase.auth.refreshSession()
       ).then(
-        (result: unknown) =>
-          !(result as { error?: unknown } | null | undefined)?.error,
+        (result: unknown) => isSessionRefreshSettled(result),
         () => false
       );
       if (!refreshCompleted) {
@@ -858,7 +858,7 @@ export default function LoginForm({
     // Only this explicit Continue confirms the return, for this account and
     // this exact returnUrl; an MFA step-up after it does not ask again.
     confirmedReturnRef.current = getConfirmedReturnKey(
-      user?.id,
+      selfId,
       searchParams.get('returnUrl')
     );
 
@@ -875,7 +875,7 @@ export default function LoginForm({
       toast.error(t('login.internal_app_continue_failed'));
       setConfirmingReturn(false);
     }
-  }, [markReturnUrlValidationFailure, processNextUrl, searchParams, t, user]);
+  }, [markReturnUrlValidationFailure, processNextUrl, searchParams, t, selfId]);
 
   const switchToStoredAccount = useCallback(
     async (accountId: string) => {
