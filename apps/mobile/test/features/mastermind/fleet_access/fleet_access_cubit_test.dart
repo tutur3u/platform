@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/apps/models/app_module.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_state.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_link_cubit.dart';
@@ -11,7 +13,9 @@ import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_status_cubit
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_models.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_repository.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_intent_draft.dart';
+import 'package:mobile/features/mastermind/fleet_access/fleet_access_module.dart';
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
+import 'package:mobile/features/mastermind/mastermind_module.dart';
 import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 
 import 'fleet_access_fakes.dart';
@@ -158,10 +162,37 @@ void main() {
       );
     });
 
-    test('the route sits with the Mastermind pushed routes', () {
+    test('the Fleet module owns the route; Mastermind keeps its own', () {
+      expect(
+        AppRegistry.routes.where(
+          (route) => route.path == Routes.mastermindFleetAccess,
+        ),
+        hasLength(1),
+      );
       expect(
         mastermindTabRoutes.map((route) => route.path),
-        contains(Routes.mastermindFleetAccess),
+        isNot(contains(Routes.mastermindFleetAccess)),
+      );
+      expect(
+        AppRegistry.moduleFromLocation(Routes.mastermindFleetAccess),
+        same(fleetAccessModule),
+      );
+      expect(
+        AppRegistry.moduleFromLocation(Routes.mastermindInbox),
+        same(mastermindModule),
+      );
+    });
+
+    test('the Fleet dock mirrors the Mastermind tabs', () {
+      String describe(MiniAppNavItem item) =>
+          '${item.id} ${item.route} ${item.icon} ${item.aliasRoutes}';
+      expect(
+        fleetAccessModule.miniAppNavItems.map(describe),
+        mastermindModule.miniAppNavItems.map(describe),
+      );
+      expect(
+        fleetAccessModule.miniAppNavItems.every((i) => i.isVisible != null),
+        isTrue,
       );
     });
 

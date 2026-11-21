@@ -23,6 +23,7 @@ import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
+import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
@@ -49,6 +50,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/pump_app.dart';
+import '../../mastermind/fleet_access/fleet_access_fakes.dart';
 
 const _workspace = Workspace(id: 'smoke-workspace', name: 'Smoke workspace');
 
@@ -257,6 +259,66 @@ void main() {
     ],
   }.toList()..sort();
 
+  group('Fleet access dock', () {
+    // Product rule: apps/docs/platform/features/fleet-access.mdx#mastermind-mobile
+    Future<_DestinationHarness> open(
+      WidgetTester tester, {
+      required TestAccess mastermind,
+    }) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+      final harness = _DestinationHarness(
+        Routes.mastermindFleetAccess,
+        hasWorkspace: true,
+      );
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await harness.dispose();
+      });
+      await harness.mastermind.setAccess(mastermind);
+      await tester.pumpWidget(harness.build());
+      for (var frame = 0; frame < 12; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      return harness;
+    }
+
+    testWidgets('a grantee gets Back and no Mastermind tabs', (tester) async {
+      final harness = await open(tester, mastermind: TestAccess.disabled);
+      expect(
+        harness.router.routeInformationProvider.value.uri.path,
+        Routes.mastermindFleetAccess,
+      );
+      expect(find.text('Release train'), findsOneWidget);
+      for (final tab in ['Today', 'Inbox', 'Work', 'Ship', 'Insights']) {
+        expect(find.bySemanticsLabel(tab), findsNothing, reason: tab);
+      }
+      expect(find.bySemanticsLabel('Back'), findsWidgets);
+
+      // Back falls back to the Apps hub: the owner-only Today redirects there.
+      await tester.tap(find.bySemanticsLabel('Back').last);
+      for (var frame = 0; frame < 12; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(
+        harness.router.routeInformationProvider.value.uri.path,
+        Routes.apps,
+      );
+    });
+
+    testWidgets('the owner keeps the Mastermind tabs', (tester) async {
+      await open(tester, mastermind: TestAccess.enabled);
+      expect(find.text('Release train'), findsOneWidget);
+      for (final tab in ['Today', 'Inbox', 'Work', 'Ship', 'Insights']) {
+        expect(find.bySemanticsLabel(tab), findsWidgets, reason: tab);
+      }
+    });
+  });
+
   for (final size in [const Size(390, 844), const Size(1024, 1366)]) {
     for (final hasWorkspace in [false, true]) {
       for (final destination in destinations) {
@@ -409,9 +471,13 @@ class _DestinationHarness {
       inventory,
       apps,
       mastermindAccessCubit: mastermind.access,
+      fleetAccessCubit: fleet,
       initialLocation: destination,
     );
   }
+
+  // A live Fleet grant, so the Fleet route builds rather than redirects.
+  final fleet = FleetAccessCubit(source: FakeFleetAccessSource());
 
   final AuthCubit auth;
   final workspace = _Workspace();
@@ -446,6 +512,7 @@ class _DestinationHarness {
       BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
       BlocProvider<AppLockCubit>.value(value: lock),
       BlocProvider<MastermindAccessCubit>.value(value: mastermind.access),
+      BlocProvider<FleetAccessCubit>.value(value: fleet),
       BlocProvider<MastermindSnapshotCubit>.value(value: mastermind.snapshot),
       RepositoryProvider<MastermindRuntime>.value(value: mastermind.runtime),
       BlocProvider.value(value: apps),
@@ -482,6 +549,7 @@ class _DestinationHarness {
       timezone.close(),
       lock.close(),
       mastermind.dispose(),
+      fleet.close(),
       apps.close(),
       experiments.close(),
       finance.close(),

@@ -12,7 +12,6 @@ import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_requests_cub
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_status_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_models.dart';
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
-import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_grantee_dock.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_notice.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_link_view.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_requests_view.dart';
@@ -75,7 +74,6 @@ class _FleetAccessPageState extends State<FleetAccessPage>
         title: context.l10n.mastermindFleetAccessTitle,
         showLeadingBrand: false,
       ),
-      const FleetAccessGranteeDock(),
       Expanded(
         child: BlocConsumer<FleetAccessCubit, FleetAccessState>(
           bloc: _access,

@@ -11,9 +11,6 @@ import 'package:mobile/features/mastermind/fleet_access/data/fleet_intent_draft.
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_page.dart';
-import 'package:mobile/features/mastermind/today_more/mastermind_today_more.dart';
-import 'package:mobile/features/mastermind/today_more/mastermind_today_more_item.dart';
-import 'package:mobile/features/mastermind/today_more/mastermind_today_more_items.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
 import '../../../helpers/pump_app.dart';
@@ -48,113 +45,52 @@ void main() {
 
   group('entry visibility', () {
     late ShellChromeActionsCubit chrome;
-    late List<String> opened;
 
-    setUp(() {
-      chrome = ShellChromeActionsCubit();
-      opened = [];
-    });
+    setUp(() => chrome = ShellChromeActionsCubit());
     tearDown(() => chrome.close());
 
-    Future<void> pumpMenu(
-      WidgetTester tester, {
-      List<MastermindTodayMoreItem> items = mastermindTodayMoreItems,
-    }) => pump(
+    Future<void> pumpAction(WidgetTester tester) => pump(
       tester,
       BlocProvider<ShellChromeActionsCubit>.value(
         value: chrome,
-        child: MastermindTodayMoreMenu(
-          items: items,
-          open: (_, route) => opened.add(route),
-        ),
+        child: const FleetAccessTodayAction(),
       ),
     );
 
-    List<ShellActionSpec> todayActions() =>
-        chrome.state.resolveForLocation(Routes.mastermind);
+    Iterable<String> todayActions() => chrome.state
+        .resolveForLocation(Routes.mastermind)
+        .map((action) => action.id);
 
-    testWidgets('Today has no More menu while Fleet access is disabled', (
+    testWidgets('the Today action is absent while Fleet access is disabled', (
       tester,
     ) async {
       source.accessAnswers
         ..clear()
         ..add(const FleetAccess.disabled());
-      await pumpMenu(tester);
+      await pumpAction(tester);
       expect(source.accessCalls, 1);
       expect(todayActions(), isEmpty);
     });
 
-    testWidgets('Fleet access is the first More item while enabled', (
-      tester,
-    ) async {
-      await pumpMenu(tester);
-      expect(todayActions().map((a) => a.id), ['mastermind-today-more']);
-      expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
-
-      todayActions().single.onPressed!();
-      await tester.pumpAndSettle();
-      expect(find.text('More'), findsOneWidget);
-      await tester.tap(
-        find.byKey(const ValueKey('mastermind-today-more-fleet-access')),
-      );
-      await tester.pumpAndSettle();
-      expect(opened, [Routes.mastermindFleetAccess]);
-    });
-
-    testWidgets('a revoke mid-session drops the item and the menu', (
+    testWidgets('the Today action shows while enabled, gone once revoked', (
       tester,
     ) async {
       source.accessAnswers
         ..clear()
         ..addAll([observerAccess, const FleetAccess.disabled()]);
-      await pumpMenu(tester);
-      expect(todayActions(), hasLength(1));
+      await pumpAction(tester);
+      expect(todayActions(), ['mastermind-fleet-access']);
+      expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
+
       await access.handleForbidden();
       await tester.pumpAndSettle();
       expect(todayActions(), isEmpty);
     });
 
-    testWidgets('a failed check shows nothing', (tester) async {
-      source.accessAnswers
-        ..clear()
-        ..add(fleetApiError(503));
-      await pumpMenu(tester);
-      expect(todayActions(), isEmpty);
-    });
-
-    testWidgets('another item is one more list entry', (tester) async {
-      source.accessAnswers
-        ..clear()
-        ..add(const FleetAccess.disabled());
-      await pumpMenu(
-        tester,
-        items: [
-          fleetAccessTodayMoreItem,
-          MastermindTodayMoreItem(
-            id: 'people',
-            label: (_) => 'People',
-            icon: Icons.people_outline,
-            route: '/mastermind/people',
-          ),
-        ],
-      );
-      todayActions().single.onPressed!();
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('mastermind-today-more-fleet-access')),
-        findsNothing,
-      );
-      await tester.tap(
-        find.byKey(const ValueKey('mastermind-today-more-people')),
-      );
-      await tester.pumpAndSettle();
-      expect(opened, ['/mastermind/people']);
-    });
-
     testWidgets('an account switch asks again for the new account', (
       tester,
     ) async {
-      await pumpMenu(tester);
+      await pumpAction(tester);
       expect(source.accessCalls, 1);
       access.reset();
       await tester.pumpAndSettle();
@@ -475,25 +411,6 @@ void main() {
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('Release train'), findsOneWidget);
-    });
-
-    testWidgets('without Mastermind access the dock drops its tabs', (
-      tester,
-    ) async {
-      final chrome = ShellChromeActionsCubit();
-      addTearDown(chrome.close);
-      await pump(
-        tester,
-        BlocProvider<ShellChromeActionsCubit>.value(
-          value: chrome,
-          child: FleetAccessPage(now: now),
-        ),
-      );
-      expect(
-        chrome.state.actionGroupForLocation(Routes.mastermindFleetAccess),
-        isNotNull,
-      );
-      expect(chrome.state.actionGroupForLocation(Routes.mastermind), isNull);
     });
 
     testWidgets('four segments fit at 320 pt with 2x text', (tester) async {
