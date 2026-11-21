@@ -137,6 +137,7 @@
   "security-review-reclassify.yaml": ["always"],
   "security-review-sweep.yaml": ["always"],
   "security-scan.yaml": ["always"],
+  "shared-secret-copy.yaml": ["always"],
   "shared-secret-write.yaml": ["always"],
   "shortener-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "sso-persistence-contract.yaml": ["path-filters"],

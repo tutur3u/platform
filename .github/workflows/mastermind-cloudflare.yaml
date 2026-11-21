@@ -287,7 +287,9 @@ jobs:
         id: output
         run: python3 scripts/ci/mastermind-native-artifact.py config apps/mastermind
       - name: Convert to cf Build Output without rebuilding
-        run: node scripts/ci/void-cf-output.mjs --config "${{ steps.output.outputs.config }}" --out "$RUNNER_TEMP/mastermind-cf" --sha "$SOURCE_SHA"
+        env:
+          EMITTED_CONFIG: ${{ steps.output.outputs.config }}
+        run: node scripts/ci/void-cf-output.mjs --config "$EMITTED_CONFIG" --out "$RUNNER_TEMP/mastermind-cf" --sha "$SOURCE_SHA"
       - name: Require the Worker runtime secret names
         id: secrets
         env:
