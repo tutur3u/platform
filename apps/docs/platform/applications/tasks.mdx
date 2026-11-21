@@ -275,6 +275,34 @@ Task board/list count endpoints must compute counts in the database, preferably
 through private service-role RPCs, and return one aggregate row per board/list.
 Do not hydrate every matching `tasks` row in an API route just to count them.
 
+## Task Progress Ownership And Visibility
+
+Task progress metrics, entries, goals and leaderboards are shared within a
+workspace, but each row belongs to the member who created it (`created_by`, or
+`owner_id` for goals).
+
+- Any task progress member reads metrics, entries, leaderboards, teams and
+  workspace-visible goals. A goal with `visibility: "private"` is visible only
+  to its owner, both in `GET /api/v1/workspaces/{wsId}/task-progress/goals`
+  and under RLS.
+- Only the row's creator or owner edits, archives or deletes it. Members with
+  `manage_projects` may edit or archive any metric, entry, goal or leaderboard
+  in the workspace through the Tasks API; other members receive `403`.
+- Members join and leave leaderboards themselves. Adding another member
+  belongs to the leaderboard's creator or a `manage_projects` member. Any
+  member may create a team; the team's creator or the leaderboard's creator
+  removes it.
+- XP, levels and achievement unlocks are awarded by the Tasks service only.
+  Clients read them and hold no write privilege.
+
+Direct client access through PostgREST follows the same rules without the
+`manage_projects` override, and team or membership edits go through the Tasks
+API only. Regression coverage:
+[route ownership](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/task-progress/_ownership.test.ts),
+[goal route](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/task-progress/goals/%5BgoalId%5D/route.test.ts),
+[metric, goal and leaderboard policies](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-progress-owner-write-policies.sql)
+and [entry, team, member, goal and XP policies](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-progress-entry-team-member-goal-ownership.sql).
+
 ## Board Capacity Rules
 
 Board capacity rules provide reusable work-in-progress controls for task queues.

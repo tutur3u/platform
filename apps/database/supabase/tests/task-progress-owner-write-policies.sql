@@ -22,10 +22,10 @@ insert into public.task_progress_metrics (id, ws_id, name, unit_label, created_b
    'Owner metric', 'tasks', '7a5c0000-0000-4000-8000-00000000000a'),
   ('7a5c0000-0000-4000-8000-0000000000b2', '7a5c0000-0000-4000-8000-0000000000a1',
    'Spare metric', 'tasks', '7a5c0000-0000-4000-8000-00000000000a');
-insert into public.task_progress_goals (id, ws_id, owner_id, metric_id, name, target_value, period_start) values
+insert into public.task_progress_goals (id, ws_id, owner_id, metric_id, name, target_value, period_start, visibility) values
   ('7a5c0000-0000-4000-8000-0000000000c1', '7a5c0000-0000-4000-8000-0000000000a1',
    '7a5c0000-0000-4000-8000-00000000000a', '7a5c0000-0000-4000-8000-0000000000b1',
-   'Owner goal', 10, current_date);
+   'Owner goal', 10, current_date, 'workspace');
 insert into public.task_leaderboards (id, ws_id, metric_id, name, period_start, created_by) values
   ('7a5c0000-0000-4000-8000-0000000000d1', '7a5c0000-0000-4000-8000-0000000000a1',
    '7a5c0000-0000-4000-8000-0000000000b1', 'Owner leaderboard', current_date,

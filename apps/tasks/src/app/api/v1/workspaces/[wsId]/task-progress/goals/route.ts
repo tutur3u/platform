@@ -33,6 +33,8 @@ export async function GET(
       .from('task_progress_goals')
       .select(`${TASK_PROGRESS_GOAL_SELECT}, metric:task_progress_metrics(*)`)
       .eq('ws_id', auth.wsId)
+      // Private goals are visible only to their owner.
+      .or(`visibility.eq.workspace,owner_id.eq.${auth.user.id}`)
       .is('archived_at', null)
       .order('starred', { ascending: false })
       .order('period_start', { ascending: false });

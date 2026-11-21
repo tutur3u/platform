@@ -10,6 +10,7 @@ import {
   taskProgressRouteErrorResponse,
   validateTaskProgressScope,
 } from '../../_utils';
+import { requireTaskProgressRowAccess } from '../../_ownership';
 
 type EntryRouteContext = {
   params: Promise<{ wsId: string; entryId: string }>;
@@ -21,6 +22,13 @@ export async function PATCH(request: NextRequest, context: EntryRouteContext) {
 
   try {
     const { entryId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_entries',
+      entryId,
+      'Progress entry not found'
+    );
+    if (!access.ok) return access.response;
     const body = entryUpdateSchema.parse(await parseTaskProgressJson(request));
 
     if (body.metric_id) {
@@ -36,6 +44,7 @@ export async function PATCH(request: NextRequest, context: EntryRouteContext) {
       .update(body)
       .eq('id', entryId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('deleted_at', null)
       .select(`${TASK_PROGRESS_ENTRY_SELECT}, metric:task_progress_metrics(*)`)
       .maybeSingle();
@@ -64,11 +73,19 @@ export async function DELETE(request: NextRequest, context: EntryRouteContext) {
 
   try {
     const { entryId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_entries',
+      entryId,
+      'Progress entry not found'
+    );
+    if (!access.ok) return access.response;
     const { data, error } = await (auth.sbAdmin as any)
       .from('task_progress_entries')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', entryId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('deleted_at', null)
       .select('id')
       .maybeSingle();

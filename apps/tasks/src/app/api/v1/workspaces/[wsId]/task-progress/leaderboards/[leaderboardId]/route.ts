@@ -9,6 +9,7 @@ import {
   taskProgressErrorResponse,
   taskProgressRouteErrorResponse,
 } from '../../_utils';
+import { requireTaskProgressRowAccess } from '../../_ownership';
 import { hydrateLeaderboards } from '../_leaderboards';
 
 type LeaderboardRouteContext = {
@@ -59,6 +60,13 @@ export async function PATCH(
 
   try {
     const { leaderboardId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_leaderboards',
+      leaderboardId,
+      'Leaderboard not found'
+    );
+    if (!access.ok) return access.response;
     const body = leaderboardUpdateSchema.parse(
       await parseTaskProgressJson(request)
     );
@@ -73,6 +81,7 @@ export async function PATCH(
       .update(body)
       .eq('id', leaderboardId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select(`${TASK_LEADERBOARD_SELECT}, metric:task_progress_metrics(*)`)
       .maybeSingle();
@@ -104,11 +113,19 @@ export async function DELETE(
 
   try {
     const { leaderboardId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_leaderboards',
+      leaderboardId,
+      'Leaderboard not found'
+    );
+    if (!access.ok) return access.response;
     const { data, error } = await (auth.sbAdmin as any)
       .from('task_leaderboards')
       .update({ archived_at: new Date().toISOString(), status: 'archived' })
       .eq('id', leaderboardId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select('id')
       .maybeSingle();

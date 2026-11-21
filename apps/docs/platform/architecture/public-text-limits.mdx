@@ -80,8 +80,8 @@ review before it ships. Other predicate edits rely on code review.
 | `hive_research_sessions`, `hive_servers`, `hive_workflows` | select, insert, update, delete | Members read; platform administrators manage |
 | `meet_ai_memories` | select | The owning user |
 | `rate_limit_appeals` | select, insert | The appeal's creator |
-| `task_leaderboards`, `task_progress_goals`, `task_progress_metrics` | select, insert, update, delete | Task progress workspace members read every row; only the row's creator (`created_by`) or goal owner (`owner_id`) inserts, updates or deletes it, and cannot reassign it |
-| `task_progress_achievements` | select, insert, update, delete | Task progress workspace members; only a select policy exists, so RLS blocks writes |
+| `task_leaderboards`, `task_progress_goals`, `task_progress_metrics` | select, insert, update, delete | Task progress workspace members read every row except another member's private goal; only the row's creator (`created_by`) or goal owner (`owner_id`) inserts, updates or deletes it, and cannot reassign it |
+| `task_progress_achievements` | select | Task progress workspace members; the Tasks service writes the catalog |
 | `task_templates` | select, insert, update, delete | The creator, plus workspace members for workspace-visible templates |
 | `workspace_external_project_field_definitions` | select, insert, update, delete | External project managers and publishers |
 | `notifications`, `workspace_calendar_events` | none | Policies exist without grants, so clients cannot reach the rows |

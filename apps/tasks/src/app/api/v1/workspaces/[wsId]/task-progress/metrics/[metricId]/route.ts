@@ -8,6 +8,7 @@ import {
   taskProgressErrorResponse,
   taskProgressRouteErrorResponse,
 } from '../../_utils';
+import { requireTaskProgressRowAccess } from '../../_ownership';
 
 type MetricRouteContext = {
   params: Promise<{ wsId: string; metricId: string }>;
@@ -19,6 +20,13 @@ export async function PATCH(request: NextRequest, context: MetricRouteContext) {
 
   try {
     const { metricId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_metrics',
+      metricId,
+      'Metric not found'
+    );
+    if (!access.ok) return access.response;
     const body = metricUpdateSchema.parse(await parseTaskProgressJson(request));
 
     if (body.is_default) {
@@ -37,6 +45,7 @@ export async function PATCH(request: NextRequest, context: MetricRouteContext) {
       .update(body)
       .eq('id', metricId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select(TASK_PROGRESS_METRIC_SELECT)
       .maybeSingle();
@@ -67,11 +76,19 @@ export async function DELETE(
 
   try {
     const { metricId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_metrics',
+      metricId,
+      'Metric not found'
+    );
+    if (!access.ok) return access.response;
     const { data, error } = await (auth.sbAdmin as any)
       .from('task_progress_metrics')
       .update({ archived_at: new Date().toISOString(), is_default: false })
       .eq('id', metricId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select('id')
       .maybeSingle();

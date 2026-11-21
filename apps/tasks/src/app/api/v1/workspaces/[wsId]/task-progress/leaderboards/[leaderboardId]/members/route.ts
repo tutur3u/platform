@@ -7,6 +7,7 @@ import {
   taskProgressErrorResponse,
   taskProgressRouteErrorResponse,
 } from '../../../_utils';
+import { requireTaskProgressRowAccess } from '../../../_ownership';
 
 type MembersRouteContext = {
   params: Promise<{ wsId: string; leaderboardId: string }>;
@@ -102,6 +103,18 @@ export async function POST(request: NextRequest, context: MembersRouteContext) {
       await parseTaskProgressJson(request)
     );
     const userId = body.user_id ?? auth.user.id;
+
+    // Members join themselves; adding someone else belongs to the
+    // leaderboard's creator or a Tasks manager.
+    if (userId !== auth.user.id) {
+      const access = await requireTaskProgressRowAccess(
+        auth,
+        'task_leaderboards',
+        leaderboardId,
+        'Leaderboard not found'
+      );
+      if (!access.ok) return access.response;
+    }
 
     if (!(await requireWorkspaceUser(auth, userId))) {
       return taskProgressErrorResponse('User is not a workspace member', 403);

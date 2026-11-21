@@ -11,6 +11,7 @@ import {
   taskProgressRouteErrorResponse,
   validateTaskProgressScope,
 } from '../../_utils';
+import { requireTaskProgressRowAccess } from '../../_ownership';
 
 type GoalRouteContext = {
   params: Promise<{ wsId: string; goalId: string }>;
@@ -22,6 +23,13 @@ export async function PATCH(request: NextRequest, context: GoalRouteContext) {
 
   try {
     const { goalId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_goals',
+      goalId,
+      'Goal not found'
+    );
+    if (!access.ok) return access.response;
     const body = goalUpdateSchema.parse(await parseTaskProgressJson(request));
 
     if (body.metric_id) {
@@ -37,6 +45,7 @@ export async function PATCH(request: NextRequest, context: GoalRouteContext) {
       .update(body)
       .eq('id', goalId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select(`${TASK_PROGRESS_GOAL_SELECT}, metric:task_progress_metrics(*)`)
       .maybeSingle();
@@ -61,11 +70,19 @@ export async function DELETE(request: NextRequest, context: GoalRouteContext) {
 
   try {
     const { goalId } = await context.params;
+    const access = await requireTaskProgressRowAccess(
+      auth,
+      'task_progress_goals',
+      goalId,
+      'Goal not found'
+    );
+    if (!access.ok) return access.response;
     const { data, error } = await (auth.sbAdmin as any)
       .from('task_progress_goals')
       .update({ archived_at: new Date().toISOString(), status: 'archived' })
       .eq('id', goalId)
       .eq('ws_id', auth.wsId)
+      .match(access.ownerFilter)
       .is('archived_at', null)
       .select('id')
       .maybeSingle();
