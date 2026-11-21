@@ -27,6 +27,7 @@ export type WorkerProcessorId =
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
+  | 'provider-cost-collection'
   | 'qa-test-user-cleanup'
   | 'storage-access-audit-retention';
 
@@ -42,6 +43,8 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
+  // Collects provider billing days; the RPC is the idempotent write target.
+  'provider-cost-collection': 'record_provider_cost_day',
   // Lists expired accounts; the Worker then drives the ledger and Auth deletes.
   'qa-test-user-cleanup': 'qa_test_list_expired',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -173,6 +176,14 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/cleanup_ai_studio_retention_batch',
     'idempotent',
     { workerProcessor: 'ai-studio-retention', timeoutMs: 150_000 }
+  ),
+  job(
+    'provider-cost-collection',
+    '17 3 * * *',
+    'web',
+    '/rest/v1/rpc/record_provider_cost_day',
+    'idempotent',
+    { workerProcessor: 'provider-cost-collection', timeoutMs: 150_000 }
   ),
   job(
     'tasks-cleanup-media',

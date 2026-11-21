@@ -2,6 +2,11 @@ import type { DeliveredAuditEvent, RunOutcome } from '../ledger';
 import type { MeetAttendanceErasureBinding } from './meet-attendance-erasure';
 
 export interface ProcessorEnv {
+  /** Read-only billing collector credentials; a source runs only when set. */
+  COST_GITHUB_ORG?: string;
+  COST_GITHUB_TOKEN?: string;
+  COST_VERCEL_API_TOKEN?: string;
+  COST_VERCEL_TEAM_ID?: string;
   /** Exactly 'off', 'dry-run' or 'delete'; any other value (including unset) means off. */
   AI_STUDIO_RETENTION_MODE?: string;
   /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */

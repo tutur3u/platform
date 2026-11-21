@@ -8,6 +8,7 @@ import { dispatchBillSplitReminders } from './finance-bill-split-reminders';
 import { eraseMeetAttendance } from './meet-attendance-erasure';
 import { retainMeetAttendance } from './meet-attendance-retention';
 import { purgeMeetTranscripts } from './meet-transcript-retention';
+import { collectProviderCosts } from './provider-cost-collection';
 import { cleanupQaTestUsers } from './qa-test-user-cleanup';
 import { pruneStorageAccessEvents } from './storage-access-audit-retention';
 import type { ProcessorContext, ProcessorResult } from './types';
@@ -25,6 +26,7 @@ export const WORKER_PROCESSORS: Record<
   'meet-attendance-erasure': eraseMeetAttendance,
   'meet-attendance-retention': retainMeetAttendance,
   'meet-transcript-retention': purgeMeetTranscripts,
+  'provider-cost-collection': (context) => collectProviderCosts(context),
   'qa-test-user-cleanup': cleanupQaTestUsers,
   'storage-access-audit-retention': pruneStorageAccessEvents,
 };

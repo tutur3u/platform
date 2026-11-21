@@ -83,25 +83,68 @@ sites. Groq, Mistral, xAI, DeepSeek, Perplexity, Fireworks, Together, DeepInfra
 and Cohere SDKs are dependencies only, reached through AI Gateway model IDs, so
 their spend appears in Gateway credits.
 
-## Collector design (proposed)
+## Collector
 
-Scheduled collection is to run on Cloudflare, following the
+The `provider-cost-collection` job in Cron Control
+(`apps/cron-control/src/processors/provider-cost-collection.ts`) collects GitHub
+and Vercel billing days on Cloudflare, following the
 [backend ownership guard](https://github.com/tutur3u/platform/blob/main/docs-internal/build/devops/cloudflare-backend-ownership.mdx).
-Each run reads a fixed number of provider-days per provider, writes idempotent
-rows keyed by provider, account and source line identity, and checks a durable
-stop fence before every provider call. A day that fails is left for the next
-scheduled run instead of retrying in a loop.
+It runs daily at 03:17 UTC and stays off until `CRON_CONTROL_ENABLED_JOBS`
+names it. A source runs only when both of its Worker secrets are set:
 
-Each provider call also has a request budget. A one-day window bounds the
-dates, but a paginated response can still cost several requests: AWS Cost
-Explorer bills each paginated request. A window that would exceed its budget
-records that provider-day as budget-exhausted, a terminal state that later
-runs skip until its query or budget changes, so an oversized window cannot
-charge the same pages again.
+| Source | Worker secrets | Request per provider-day |
+| --- | --- | --- |
+| GitHub | `COST_GITHUB_ORG`, `COST_GITHUB_TOKEN` | One billing usage request filtered to the day, response capped at 4 MB |
+| Vercel | `COST_VERCEL_TEAM_ID`, `COST_VERCEL_API_TOKEN` | One FOCUS charges request for the UTC day, streamed, capped at 48 MB and 60,000 rows |
+
+Each run plans at most three provider-days per source with
+`private.plan_provider_cost_days`: the two most recent completed UTC days,
+which providers restate while usage settles, and the oldest day never
+collected in the last 90 days. The Cron Ledger stop fence is checked before
+every provider call. Before each call the collector claims the day with
+`private.claim_provider_cost_day`, which counts a durable attempt; a complete
+collection resets the count. A day that fails is left for the next daily run
+rather than retried in the same run, and a day that reaches three attempts
+without a complete collection becomes `budget_exhausted`. A restart or a
+`degraded` run therefore cannot keep paying for the same failing day. A
+claimed day stays eligible for seven days after it leaves the 90-day window,
+so a day at the edge keeps its remaining attempts. The fence is checked again
+after each claim. A provider request that hits its own 45-second budget fails
+that day and skips the rest of that source for the run, so the next source
+still gets its time. A claim or write the database rejects fails only that
+day; one whose commit cannot be confirmed ends the run as `unknown`.
+
+`private.record_provider_cost_day` replaces one provider-day atomically in
+`private.provider_cost_lines`, aggregated by service, SKU, app, environment
+and unit. An older snapshot never overwrites a newer one. Claims, recordings
+and exhaustion markers for a day take the same transaction lock, so a
+concurrent marker cannot be overwritten by a recording. Vercel rows belong
+to the day their charge period starts; a UTC window also returns the
+previous day's row, which the collector skips.
+
+A day whose response exceeds its cap is also marked `budget_exhausted` in
+`private.provider_cost_collection_days`. That state is terminal: later runs
+neither plan nor overwrite the day, so an oversized window is never paid for
+twice. After raising a cap or narrowing the query, delete the day's row to
+collect it again. The job reports `degraded` while any day in the run was
+exhausted or failed.
+
+Lines record the provider's list amount (GitHub `grossAmount`, Vercel
+`ListCost`, left empty when Vercel omits it) and its billed amount
+(`netAmount`, `BilledCost`). Vercel lines are keyed by `SkuId`. A day with a
+missing or non-numeric billed amount, or a row without a valid usage date,
+fails instead of being recorded as zero or as a partial day.
+Both amounts are provisional until the month's invoice reconciles them.
+Failure logs carry only the provider, day, failure category and HTTP status,
+never response content.
 
 The Vercel charges endpoint returned about 620,000 daily rows (about 480 MB)
-for four months, so the collector requests one day per call, caps the
-response and aggregates by service and project before writing.
+for four months, which is why the collector requests one day per call.
+
+Other providers keep invoice import until their collector credential and
+source exist. A future source with paginated, billed requests (AWS Cost
+Explorer bills each page) also caps its pages per day and marks the day
+exhausted when the cap is reached.
 
 ## Unit economics denominators
 

@@ -17567,6 +17567,89 @@ export type Database = {
           },
         ];
       };
+      provider_cost_collection_days: {
+        Row: {
+          account_id: string;
+          attempted_at: string;
+          attempts: number;
+          collected_at: string | null;
+          line_count: number;
+          provider: string;
+          status: string;
+          usage_date: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          attempted_at: string;
+          attempts?: number;
+          collected_at?: string | null;
+          line_count?: number;
+          provider: string;
+          status: string;
+          usage_date: string;
+        };
+        Update: {
+          account_id?: string;
+          attempted_at?: string;
+          attempts?: number;
+          collected_at?: string | null;
+          line_count?: number;
+          provider?: string;
+          status?: string;
+          usage_date?: string;
+        };
+        Relationships: [];
+      };
+      provider_cost_lines: {
+        Row: {
+          account_id: string;
+          app_id: string;
+          billed_amount_usd: number;
+          collected_at: string;
+          environment: string;
+          line_key: string;
+          list_amount_usd: number | null;
+          provider: string;
+          quantity: number;
+          service: string;
+          sku: string;
+          unit: string;
+          usage_date: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          app_id?: string;
+          billed_amount_usd: number;
+          collected_at: string;
+          environment?: string;
+          line_key: string;
+          list_amount_usd?: number | null;
+          provider: string;
+          quantity?: number;
+          service: string;
+          sku?: string;
+          unit?: string;
+          usage_date: string;
+        };
+        Update: {
+          account_id?: string;
+          app_id?: string;
+          billed_amount_usd?: number;
+          collected_at?: string;
+          environment?: string;
+          line_key?: string;
+          list_amount_usd?: number | null;
+          provider?: string;
+          quantity?: number;
+          service?: string;
+          sku?: string;
+          unit?: string;
+          usage_date?: string;
+        };
+        Relationships: [];
+      };
       qa_test_runs: {
         Row: {
           created_at: string;
@@ -24464,6 +24547,14 @@ export type Database = {
         };
       };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
+      claim_provider_cost_day: {
+        Args: {
+          p_account_id: string;
+          p_provider: string;
+          p_usage_date: string;
+        };
+        Returns: boolean;
+      };
       cleanup_ai_studio_retention: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -26321,6 +26412,32 @@ export type Database = {
         }[];
       };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
+      get_provider_cost_collection_status: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          account_id: string;
+          days: number;
+          exhausted_days: number;
+          first_day: string | null;
+          last_collected_at: string | null;
+          last_day: string | null;
+          provider: string;
+        }[];
+      };
+      get_provider_cost_daily: {
+        Args: { p_from: string; p_to: string };
+        Returns: {
+          account_id: string;
+          app_id: string;
+          billed_amount_usd: number;
+          collected_at: string;
+          environment: string;
+          list_amount_usd: number | null;
+          provider: string;
+          service: string;
+          usage_date: string;
+        }[];
+      };
       get_public_inventory_storefront: {
         Args: { p_now?: string; p_storefront_slug: string };
         Returns: Json;
@@ -27264,6 +27381,14 @@ export type Database = {
         Args: { p_actor_id: string; p_user_id: string };
         Returns: undefined;
       };
+      lock_provider_cost_day: {
+        Args: {
+          p_account_id: string;
+          p_provider: string;
+          p_usage_date: string;
+        };
+        Returns: undefined;
+      };
       lock_tutoring_hours_teacher: {
         Args: { p_teacher: string; p_ws: string };
         Returns: undefined;
@@ -27386,6 +27511,14 @@ export type Database = {
           p_user_id: string;
         };
         Returns: Json;
+      };
+      mark_provider_cost_day_exhausted: {
+        Args: {
+          p_account_id: string;
+          p_provider: string;
+          p_usage_date: string;
+        };
+        Returns: boolean;
       };
       mastermind_grant_allowed: {
         Args: Record<PropertyKey, never>;
@@ -27593,6 +27726,17 @@ export type Database = {
       personal_journal_valid_document: {
         Args: { p_document: Json };
         Returns: boolean;
+      };
+      plan_provider_cost_days: {
+        Args: {
+          p_account_id: string;
+          p_backfill_limit: number;
+          p_from: string;
+          p_provider: string;
+          p_recent: string[];
+          p_to: string;
+        };
+        Returns: string[];
       };
       playground_collaboration_scope: {
         Args: { p_actor_id: string; p_id: string };
@@ -27895,6 +28039,16 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      record_provider_cost_day: {
+        Args: {
+          p_account_id: string;
+          p_collected_at: string;
+          p_lines: Json;
+          p_provider: string;
+          p_usage_date: string;
+        };
+        Returns: number;
       };
       record_rate_limit_attempt: {
         Args: {
