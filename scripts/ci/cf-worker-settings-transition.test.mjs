@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   captureAfter,
@@ -7,14 +6,8 @@ import {
   compareTransition,
   settingsPlan,
 } from './cf-worker-settings.mjs';
+import { BASELINE, LIVE } from './cf-worker-settings-transition.fixture.mjs';
 
-const BASELINE = JSON.parse(
-  readFileSync(
-    new URL('./fixtures/cf-worker-parity/cron-control.json', import.meta.url),
-    'utf8'
-  )
-);
-const LIVE = BASELINE.previousIdentity ?? BASELINE.identity; // live identity
 const CRON_CONTROL = {
   identity: {
     ...LIVE,

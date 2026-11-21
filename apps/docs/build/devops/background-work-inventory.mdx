@@ -96,7 +96,7 @@ Live jobs after replaying every migration's schedule and unschedule calls.
 
 | Job | Cadence | Work | Decision and justification |
 | --- | --- | --- | --- |
-| `fetch-exchange-rates` | `0 6 * * *` | `pg_net` POST to Web `/api/cron/finance/exchange-rates` | Move to Cron Control (`finance-exchange-rates`): Postgres is acting as an HTTP scheduler |
+| `fetch-exchange-rates` | `0 6 * * *` | `pg_net` POST to Web `/api/cron/finance/exchange-rates` | Cron Control `finance-exchange-rates` is enabled; unschedule this pg_cron job after its first successful Cloudflare run (a `finance-exchange-rates` ok entry in the Cron Control job log, plus a `currency_exchange_rates` row for that day). Both owners upsert the same day's rows, so the overlap is harmless |
 | `update_expired_sessions_job` | every minute | One UPDATE closing expired Nova sessions | Retain: pure SQL in the database |
 | typing-indicator cleanup (unnamed) | every minute | DELETE stale typing indicators | Retain: pure SQL in the database |
 | `security-budget-cleanup` | every minute | DELETE at most 20,000 expired budget counters | Retain: pure SQL, already bounded |
