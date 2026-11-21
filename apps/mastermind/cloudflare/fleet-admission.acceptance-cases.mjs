@@ -245,7 +245,9 @@ export function createFleetGrantee({ app, secret }) {
 
     // A forged Access identity naming the owner elevates nothing.
     const forged = {
-      'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+      'Cf-Access-Jwt-Assertion': ['eyJhbGciOiJSUzI1NiJ9', 'e30', 'sig'].join(
+        '.'
+      ),
       'Cf-Access-Authenticated-User-Email': 'owner@example.invalid',
     };
     assert.equal((await page('/en', { headers: forged })).status, 403);

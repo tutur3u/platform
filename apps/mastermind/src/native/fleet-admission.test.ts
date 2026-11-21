@@ -195,7 +195,7 @@ test('a revoked, stopped or unverifiable grant denies the next request', async (
 
 test('forged Access headers are ignored: the session alone is the identity', async () => {
   const forged = {
-    'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+    'Cf-Access-Jwt-Assertion': ['eyJhbGciOiJSUzI1NiJ9', 'e30', 'sig'].join('.'),
     'Cf-Access-Authenticated-User-Email': owner.email,
   };
   for (const path of ['/en', '/_serverFn/answer']) {

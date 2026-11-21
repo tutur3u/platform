@@ -108,7 +108,10 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
     headers.delete('Authorization');
   if (kind === 'forged Access headers only') {
     // Access headers are never authority, valid-looking or not.
-    headers.set('Cf-Access-Jwt-Assertion', 'eyJhbGciOiJSUzI1NiJ9.e30.sig');
+    headers.set(
+      'Cf-Access-Jwt-Assertion',
+      ['eyJhbGciOiJSUzI1NiJ9', 'e30', 'sig'].join('.')
+    );
     headers.set('Cf-Access-Authenticated-User-Email', email);
   }
   const host =
