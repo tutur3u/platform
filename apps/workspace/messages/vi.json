@@ -4796,7 +4796,8 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi thời gian"
+      "track": "Theo dõi thời gian",
+      "vault-witness": "Vault Witness"
     },
     "categories": {
       "ai": "AI và tri thức",
@@ -4958,6 +4959,7 @@
       "track_1": "Lịch sử và báo cáo",
       "track_2": "Yêu cầu thời gian và xét duyệt",
       "track_3": "Quản lý thời gian nhóm",
+      "vaultWitness": "Dịch vụ chứng thực kho bí mật",
       "voiceAssistant": "Trợ lý giọng nói",
       "workforce": "Quản trị nhân sự",
       "workspace-domains_0": "Tên miền tùy chỉnh cho không gian làm việc (edge)",

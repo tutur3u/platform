@@ -119,6 +119,7 @@ COPY apps/ops-hub/package.json ./apps/ops-hub/package.json
 COPY apps/roadmap/package.json ./apps/roadmap/package.json
 COPY apps/status-api/package.json ./apps/status-api/package.json
 COPY apps/turbo-cache/package.json ./apps/turbo-cache/package.json
+COPY apps/vault-witness/package.json ./apps/vault-witness/package.json
 COPY apps/workspace-domains/package.json ./apps/workspace-domains/package.json
 COPY apps/workspace/package.json ./apps/workspace/package.json
 COPY packages/agent-quota/package.json ./packages/agent-quota/package.json

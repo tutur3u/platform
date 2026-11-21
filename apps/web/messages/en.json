@@ -4913,7 +4913,8 @@
       "tasks": "Tasks",
       "teach": "Teach",
       "tools": "Tools",
-      "track": "Track"
+      "track": "Track",
+      "vault-witness": "Vault Witness"
     },
     "categories": {
       "ai": "AI and knowledge",
@@ -5077,6 +5078,7 @@
       "track_1": "History and reports",
       "track_2": "Time requests and review",
       "track_3": "Team time management",
+      "vaultWitness": "Vault witness service",
       "voiceAssistant": "Voice assistant",
       "workforce": "Workforce administration",
       "workspace-domains_0": "Workspace custom domains edge",
