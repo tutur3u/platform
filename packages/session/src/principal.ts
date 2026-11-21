@@ -1,3 +1,5 @@
+import { isIssuedAssertion } from './assertion-registry';
+
 export type SessionEnvironment = 'production' | 'staging' | 'local';
 
 export type UserId = string & { readonly __brand: 'UserId' };
@@ -12,7 +14,7 @@ export type AuthMethod =
   | 'device_approval'
   | 'qr';
 
-export const AUTH_METHODS: readonly AuthMethod[] = [
+export const AUTH_METHODS: readonly AuthMethod[] = Object.freeze([
   'pwd',
   'otp',
   'totp',
@@ -21,7 +23,7 @@ export const AUTH_METHODS: readonly AuthMethod[] = [
   'sso',
   'device_approval',
   'qr',
-];
+]);
 
 export type AssuranceLevel = 'aal1' | 'aal2';
 
@@ -78,6 +80,11 @@ export type Principal = Readonly<{
 export function principalFromAssertion(
   assertion: VerifiedAssertion
 ): Principal {
+  // Only objects the verifier returned are accepted, so a modified copy of a
+  // verified assertion cannot become a principal.
+  if (!isIssuedAssertion(assertion)) {
+    throw new TypeError('principalFromAssertion needs a verifier result');
+  }
   return Object.freeze({
     kind: 'user',
     userId: assertion.userId,

@@ -103,8 +103,14 @@ export function assertionExpiry(
   input: {
     issuedAtSeconds: number;
     clocks: SessionClocks;
-  } & ({ stale: false } | { stale: true; graceDeadlineMs: number })
+  } & (
+    | { stale: false; graceDeadlineMs?: never }
+    | { stale: true; graceDeadlineMs: number }
+  )
 ): number | null {
+  const raw = input as { stale?: unknown; graceDeadlineMs?: unknown };
+  if (typeof raw.stale !== 'boolean') return null;
+  if (!raw.stale && raw.graceDeadlineMs !== undefined) return null;
   if (
     !Number.isSafeInteger(input.issuedAtSeconds) ||
     input.issuedAtSeconds < 0

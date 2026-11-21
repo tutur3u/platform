@@ -103,4 +103,19 @@ describe('expiry policy', () => {
       assertionExpiry({ issuedAtSeconds: iat + 0.5, clocks, stale: false })
     ).toBeNull();
   });
+
+  it('rejects a fresh request that carries a grace deadline, and a missing stale flag', () => {
+    const iat = NOW / 1000;
+    const clocks = { idleExpiresAt: NOW + DAY, absoluteExpiresAt: NOW + DAY };
+    const fresh = {
+      issuedAtSeconds: iat,
+      clocks,
+      stale: false,
+      graceDeadlineMs: NOW + 1_000,
+    };
+    expect(assertionExpiry(fresh as never)).toBeNull();
+    expect(
+      assertionExpiry({ issuedAtSeconds: iat, clocks } as never)
+    ).toBeNull();
+  });
 });

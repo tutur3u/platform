@@ -6,6 +6,7 @@ import {
   TEST_ISSUER,
   type TestIssuer,
 } from './testing';
+import { AUTH_METHODS, principalFromAssertion } from './principal';
 import { type VerifyOptions, verifyIdentityAssertion } from './verify';
 
 const NOW = 1_800_000_000;
@@ -150,5 +151,38 @@ describe('result and key source', () => {
         reason: 'keys_unavailable',
       });
     }
+  });
+});
+
+describe('assertion provenance', () => {
+  it('converts only the verifier-returned object into a principal', async () => {
+    const issuer = await createTestIssuer();
+    const result = await verifyIdentityAssertion(
+      await issuer.sign(defaultTestClaims(NOW)),
+      options(issuer)
+    );
+    if (!result.ok) throw new Error(result.reason);
+    expect(principalFromAssertion(result.assertion)).toMatchObject({
+      kind: 'user',
+      expiresAt: NOW + 60,
+    });
+    const copy = { ...result.assertion, aal: 'aal2' as const, generation: 99 };
+    expect(() => principalFromAssertion(copy)).toThrow(TypeError);
+  });
+
+  it('rejects a key result with a type but no algorithm', async () => {
+    const issuer = await createTestIssuer();
+    const token = await issuer.sign(defaultTestClaims(NOW));
+    const keys = {
+      get: async () => ({ type: 'public', usages: ['verify'] }),
+    } as unknown as VerifyOptions['keys'];
+    expect(
+      await verifyIdentityAssertion(token, options(issuer, { keys }))
+    ).toEqual({ ok: false, reason: 'key_type' });
+  });
+
+  it('freezes the authentication-method allowlist', () => {
+    expect(Object.isFrozen(AUTH_METHODS)).toBe(true);
+    expect(() => (AUTH_METHODS as string[]).push('magic')).toThrow(TypeError);
   });
 });

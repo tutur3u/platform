@@ -35,6 +35,19 @@ function moduleImports(file: string): ModuleImport[] {
         dynamic: false,
       });
     }
+    if (current.type === 'TSImportEqualsDeclaration') {
+      const reference = current.moduleReference as
+        | { type?: string; expression?: { value?: string } }
+        | undefined;
+      const external = reference?.type === 'TSExternalModuleReference';
+      found.push({
+        specifier: external
+          ? (reference?.expression?.value ?? '<import-equals>')
+          : '<import-equals>',
+        typeOnly: current.importKind === 'type',
+        dynamic: !external,
+      });
+    }
     if (
       current.type === 'ImportExpression' ||
       (current.type === 'CallExpression' &&
@@ -134,25 +147,47 @@ describe('portable entry points', () => {
   });
 });
 
-describe('test issuer entry point', () => {
+describe('test issuer', () => {
+  it('is not a package entry point', () => {
+    expect(Object.keys(packageJson.exports)).not.toContain('./testing');
+    expect(Object.values(packageJson.exports)).not.toContain(
+      './src/testing.ts'
+    );
+  });
+
+  it('is reachable from no runtime entry point', () => {
+    expect(
+      runtimeGraph().files.some((file) => file.endsWith('testing.ts'))
+    ).toBe(false);
+  });
+
   it('is imported only from test files anywhere in the repository', () => {
     let output = '';
     try {
       output = execFileSync(
         'git',
-        ['grep', '-l', '@tuturuuu/session/testing', '--', 'apps', 'packages'],
-        {
-          cwd: REPO_ROOT,
-          encoding: 'utf8',
-        }
+        [
+          'grep',
+          '-l',
+          '-E',
+          'session/(src/)?testing',
+          '--',
+          'apps',
+          'packages',
+        ],
+        { cwd: REPO_ROOT, encoding: 'utf8' }
       );
-    } catch {
-      output = '';
+    } catch (error) {
+      // git grep exits 1 when nothing matches; any other failure fails the test.
+      if ((error as { status?: number }).status !== 1) throw error;
     }
-    const importers = output.split('\n').filter(Boolean);
+    const importers = output
+      .split('\n')
+      .filter(Boolean)
+      .filter((file) => file !== 'packages/session/src/boundary.test.ts');
     for (const file of importers) {
       expect(file, file).toMatch(
-        /(\.test\.tsx?|\.spec\.tsx?|\/__tests__\/.+|\.check\.ts|\.mdx?)$/
+        /(\.test\.tsx?|\.spec\.tsx?|\/__tests__\/.+|\.mdx?)$/
       );
     }
   });

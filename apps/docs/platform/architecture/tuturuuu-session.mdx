@@ -99,9 +99,9 @@ Codec invariants, in `@tuturuuu/session`:
   a 24-hour rollover. Emergency retirement removes a key, and its cookies fall
   through to storage-backed checks under the abuse limits.
 - `dev` reveals nothing about the user. The cookie carries no claims.
-- Adapters pass raw `Cookie` field values. The codec also splits on commas,
-  so a comma-joined header cannot hide a duplicate, and trims only spaces and
-  tabs.
+- Adapters pass the `Cookie` field values as received and never fold them
+  with commas. Pairs split only on `;`, because browsers allow commas inside
+  cookie values, and only spaces and tabs are trimmed.
 
 Pre-authentication state (OAuth `state`, PKCE verifier, WebAuthn challenge,
 return target, QR and handoff redemption secrets) lives in a separate
@@ -306,8 +306,9 @@ permissions stay with the existing permission helpers, and step-up is a grant
 Portable entry points have no framework or Cloudflare runtime imports, no
 request globals, no implicit network fetch and no signing keys. A boundary test
 parses the module graph reachable from every entry point and enforces it.
-`@tuturuuu/session/testing` holds an ephemeral-key test issuer; the same test
-fails if any non-test file in the repository imports it. Supabase and Better Auth code live only in the session service.
+An ephemeral-key test issuer lives in `packages/session/src/testing.ts`. It is
+not a package entry point, and the boundary test fails if any non-test file in
+the repository imports it. Supabase and Better Auth code live only in the session service.
 
 ### Trusted ingress
 

@@ -1,3 +1,4 @@
+import { registerIssuedAssertion } from './assertion-registry';
 import {
   decodeBase64Url,
   hasOwn,
@@ -103,13 +104,22 @@ function isTimestamp(value: JsonValue | undefined): value is number {
 }
 
 function isIdentityKey(key: CryptoKey): boolean {
-  const algorithm = key.algorithm as { name: string; namedCurve?: string };
-  return (
-    key.type === 'public' &&
-    algorithm.name === 'ECDSA' &&
-    algorithm.namedCurve === 'P-256' &&
-    key.usages.includes('verify')
-  );
+  try {
+    const algorithm = key.algorithm as
+      | { name?: unknown; namedCurve?: unknown }
+      | undefined;
+    return (
+      key.type === 'public' &&
+      typeof algorithm === 'object' &&
+      algorithm !== null &&
+      algorithm.name === 'ECDSA' &&
+      algorithm.namedCurve === 'P-256' &&
+      Array.isArray(key.usages) &&
+      key.usages.includes('verify')
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** A 16-byte identifier in canonical base64url. */
@@ -303,23 +313,25 @@ export async function verifyIdentityAssertion(
 
   return {
     ok: true,
-    assertion: Object.freeze({
-      keyId: kid,
-      issuer: options.issuer,
-      environment: options.environment,
-      audience: options.audience,
-      userId: sub as UserId,
-      sessionId: sid,
-      generation: gen,
-      source: src,
-      stale,
-      aal,
-      amr: Object.freeze(amr),
-      authTime,
-      issuedAt: iat,
-      expiresAt: exp,
-      jwtId: jti,
-      ipPrefix: typeof ipp === 'string' ? ipp : null,
-    }) as VerifiedAssertion,
+    assertion: registerIssuedAssertion(
+      Object.freeze({
+        keyId: kid,
+        issuer: options.issuer,
+        environment: options.environment,
+        audience: options.audience,
+        userId: sub as UserId,
+        sessionId: sid,
+        generation: gen,
+        source: src,
+        stale,
+        aal,
+        amr: Object.freeze(amr),
+        authTime,
+        issuedAt: iat,
+        expiresAt: exp,
+        jwtId: jti,
+        ipPrefix: typeof ipp === 'string' ? ipp : null,
+      })
+    ) as VerifiedAssertion,
   };
 }

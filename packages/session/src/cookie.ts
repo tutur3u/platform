@@ -62,9 +62,11 @@ export function parseSessionCookieValue(value: string): SessionCookie | null {
 /**
  * Reads the session cookie from the raw `Cookie` field values, one string per
  * field. A name that appears more than once, even across split fields, is
- * ambiguous and must be treated as signed out. Pairs are separated by `;`,
- * and also by `,` so that an adapter that joined fields with commas cannot
- * hide a duplicate. Only spaces and tabs are trimmed.
+ * ambiguous and must be treated as signed out. Pairs are separated only by
+ * `;`: browsers allow commas inside cookie values, so splitting on commas
+ * could lift a session value out of another cookie. Adapters must pass the
+ * fields as received and never fold them with commas. Only spaces and tabs
+ * are trimmed.
  */
 export function readSessionCookie(
   cookieHeader: string | readonly string[] | null | undefined
@@ -77,7 +79,7 @@ export function readSessionCookie(
         : cookieHeader;
   const values: string[] = [];
   for (const field of fields) {
-    for (const pair of field.split(/[;,]/)) {
+    for (const pair of field.split(';')) {
       const separator = pair.indexOf('=');
       const name = trimOws(separator === -1 ? pair : pair.slice(0, separator));
       if (name === SESSION_COOKIE_NAME) {

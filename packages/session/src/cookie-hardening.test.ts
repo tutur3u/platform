@@ -9,7 +9,6 @@ import {
   serializeSessionCookie,
   verifySessionCookieMac,
 } from './cookie';
-import { encodeBase64Url } from './encoding';
 
 const scope = { environment: 'staging' as const, host: 'tuturuuu.com' };
 const RAW_KEY = new Uint8Array(32).fill(11);
@@ -35,17 +34,20 @@ describe('MAC vector', () => {
       key: await importMacKey(),
       scope,
     });
-    const deviceText = encodeBase64Url(device);
-    const secretText = encodeBase64Url(secret);
+    // Pinned literal; the same value comes from Node's HMAC and base64url.
+    expect(value).toBe(
+      'v1.AQEBAQEBAQEBAQEBAQEBAQ.42.AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI.eUcqO-gbEVvYsIRSmKhkOQ'
+    );
+    const deviceText = Buffer.from(device).toString('base64url');
+    const secretText = Buffer.from(secret).toString('base64url');
     const expected = createHmac('sha256', Buffer.from(RAW_KEY))
       .update(
         `ttr-session-mac/v1|staging|tuturuuu.com|${deviceText}.42.${secretText}`
       )
       .digest()
-      .subarray(0, 16);
-    expect(value).toBe(
-      `v1.${deviceText}.42.${secretText}.${encodeBase64Url(new Uint8Array(expected))}`
-    );
+      .subarray(0, 16)
+      .toString('base64url');
+    expect(value).toBe(`v1.${deviceText}.42.${secretText}.${expected}`);
   });
 
   it('refuses keys that are not sign-capable HMAC-SHA-256', async () => {
@@ -111,7 +113,7 @@ describe('serialization and parsing edges', () => {
     }
   );
 
-  it('finds duplicates hidden by comma-joined fields and trims only spaces and tabs', async () => {
+  it('never lifts a session value out of another cookie that contains a comma', async () => {
     const value = await encodeSessionCookieValue({
       device: new Uint8Array(16),
       generation: 1,
@@ -120,11 +122,14 @@ describe('serialization and parsing edges', () => {
       scope,
     });
     expect(
+      readSessionCookie(`parent=x, ${SESSION_COOKIE_NAME}=${value}`)
+    ).toEqual({ kind: 'absent' });
+    expect(
       readSessionCookie(
-        `a=1, ${SESSION_COOKIE_NAME}=${value}; ${SESSION_COOKIE_NAME}=${value}`
+        `parent=x, ${SESSION_COOKIE_NAME}=${value}; ${SESSION_COOKIE_NAME}=${value}`
       )
-    ).toEqual({
-      kind: 'ambiguous',
+    ).toMatchObject({
+      kind: 'present',
     });
     expect(
       readSessionCookie(`a=1;\t${SESSION_COOKIE_NAME}=${value}\t`)
