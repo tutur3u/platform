@@ -59,9 +59,13 @@ NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=... \
 `build-family.sh` builds the workspace packages, prunes with
 `cloudflare/vinext/prune.ts`, runs `vp build --config vite.vinext.config.ts`,
 runs `cf deploy --dry-run --prebuilt`, then
-`scripts/ci/web-vinext-bundle-check.mjs`. The check fails when any emitted
-module carries the real Redis client or the upload exceeds the 9.5 MiB family
-budget. Its result is in `apps/web/cloudflare/vinext/<family>.check.json`.
+`scripts/ci/web-vinext-bundle-check.mjs`. The check fails when the resolved
+`react-server-dom-webpack` is vulnerable to GHSA-xqc2-xf4c-x3h3 (below
+19.2.9, 19.3.0 or any prerelease), when any emitted module carries the real
+Redis client, or when the upload exceeds the 9.5 MiB family budget.
+`build-family.sh` also runs the version check right after install. The result,
+including the resolved version, is in
+`apps/web/cloudflare/vinext/<family>.check.json`.
 
 Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
 rejects an upload whose source maps exceed 60 MiB (error 10021), and the

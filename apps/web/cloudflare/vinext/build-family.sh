@@ -6,7 +6,8 @@
 # vinext needs React 19.3.1 or later while the monorepo pins React for every
 # Next.js app, so the React upgrade, route pruning and Worker build happen only
 # in a checkout marked disposable. Output: apps/web/.cloudflare/output plus
-# apps/web/cloudflare/vinext/<family>.check.json (Redis-free and size gate).
+# apps/web/cloudflare/vinext/<family>.check.json (patched react-server-dom-webpack,
+# Redis-free and size gate).
 set -euo pipefail
 
 family="${1:?usage: build-family.sh <family>}"
@@ -48,6 +49,8 @@ npm pkg set "overrides.react=$react_version" "overrides.react-dom=$react_version
 bun add -d "react@$react_version" "react-dom@$react_version"
 (cd "$app_dir" && bun add -d "react-server-dom-webpack@$react_version")
 bun install
+# Refuse a vulnerable react-server-dom-webpack (GHSA-xqc2-xf4c-x3h3) before building.
+node "$repo_dir/scripts/ci/web-vinext-bundle-check.mjs" --rsdw "$app_dir"
 bun x --no-install turbo run build --filter='@tuturuuu/web^...' --concurrency=4
 
 cd "$app_dir"
@@ -59,5 +62,6 @@ WEB_VINEXT_FAMILY="$family" node_modules/.bin/cf deploy --dry-run --prebuilt 2>&
   | tee "cloudflare/vinext/$family.dry-run.log"
 node "$repo_dir/scripts/ci/web-vinext-bundle-check.mjs" \
   .cloudflare/output/v1/workers/default/bundle \
+  --app "$app_dir" \
   --log "cloudflare/vinext/$family.dry-run.log" \
   | tee "cloudflare/vinext/$family.check.json"
