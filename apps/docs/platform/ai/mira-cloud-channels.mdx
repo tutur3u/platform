@@ -733,7 +733,7 @@ grant runs on a database-owner session that sets
 navigation shows Mira channels only to root admins holding it. Operator writes
 are cookie-only, so each also needs same-origin intent: a JSON body, an
 `Origin` equal to the request origin, `Sec-Fetch-Site` absent or
-`same-origin`, and the `x-tuturuuu-mira-operator-action: 1` header that the
+`same-origin`, and the `x-mira-operator-action: 1` header that the
 internal-api client sends.
 
 The channel route segment is one dynamic segment named `[channel]`: it holds

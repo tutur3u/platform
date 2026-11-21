@@ -2,10 +2,12 @@ import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from './constants';
 import { isAdminImpliedPermission } from './creator-grant-permissions';
 
-// Only the audited root-workspace singleton role can grant these permissions.
-// Workspace creators, `admin` and default permissions never imply them; see
-// apps/docs/platform/features/mobile-mastermind.mdx and
-// apps/docs/platform/ai/mira-cloud-channels.mdx.
+// Only an explicit root-workspace role grant confers these permissions:
+// manage_mastermind through the audited singleton role
+// (apps/docs/platform/features/mobile-mastermind.mdx), operate_mira_channels
+// through a root role grant made by a database-owner session
+// (apps/docs/platform/ai/mira-cloud-channels.mdx). Workspace creators, `admin`
+// and default permissions never imply them.
 export const EXPLICIT_GRANT_PERMISSIONS = [
   'manage_mastermind',
   'operate_mira_channels',

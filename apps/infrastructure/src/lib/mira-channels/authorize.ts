@@ -14,13 +14,12 @@ export function miraJson(body: unknown, status = 200) {
 }
 
 /**
- * Operator routes run only on the Admin session (the Admin proxy enforces MFA
- * assurance). Bearer and scheduled callers are refused before any lookup, and
- * the caller needs root admin plus the explicit-grant operator permission,
- * which creators, admin and default permissions never imply.
+ * Header the operator client sends on every write. It sits outside the
+ * prefixes the apex gateway strips from client requests (`x-tuturuuu-`,
+ * `x-forwarded-` and the others in apps/gateway/src/forwarding-headers.ts),
+ * so it reaches the Admin Worker under the tuturuuu.com/admin mount.
  */
-/** Header the operator client sends on every write. */
-export const MIRA_OPERATOR_ACTION_HEADER = 'x-tuturuuu-mira-operator-action';
+export const MIRA_OPERATOR_ACTION_HEADER = 'x-mira-operator-action';
 
 /**
  * Cookie-only writes need a same-origin browser intent: a JSON body, a
@@ -48,6 +47,12 @@ export function hasSameOriginWriteIntent(request: Request) {
   );
 }
 
+/**
+ * Operator routes run only on the Admin session (the Admin proxy enforces MFA
+ * assurance). Bearer and scheduled callers are refused before any lookup, and
+ * the caller needs root admin plus the explicit-grant operator permission,
+ * which creators, admin and default permissions never imply.
+ */
 export async function authorizeMiraOperator(
   request: Request,
   { write = false }: { write?: boolean } = {}

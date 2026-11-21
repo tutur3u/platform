@@ -103,7 +103,7 @@ const BASE = '/api/v1/infrastructure/mira';
 // same-origin intent alongside Origin and Sec-Fetch-Site.
 const WRITE_HEADERS = {
   'Content-Type': 'application/json',
-  'x-tuturuuu-mira-operator-action': '1',
+  'x-mira-operator-action': '1',
 };
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
