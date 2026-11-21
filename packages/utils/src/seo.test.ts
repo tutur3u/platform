@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { tryToParsePath } from 'next/dist/lib/try-to-parse-path';
 import { describe, expect, it } from 'vitest';
@@ -168,10 +168,15 @@ describe('app indexing boundaries', () => {
   it('registers every Next app and prevents static/metadata route conflicts', () => {
     const root = resolve(__dirname, '../../..');
     for (const app of Object.keys(APP_SEO_POLICY)) {
-      const config = readFileSync(
-        resolve(root, `apps/${app}/next.config.ts`),
-        'utf8'
-      );
+      // An app may build its config in sibling `next-config.*.ts` modules.
+      const config = [
+        'next.config.ts',
+        ...readdirSync(resolve(root, `apps/${app}`)).filter((name) =>
+          /^next-config\.[\w.-]+\.ts$/u.test(name)
+        ),
+      ]
+        .map((name) => readFileSync(resolve(root, `apps/${app}`, name), 'utf8'))
+        .join('\n');
       expect(config).toContain(`seoApp: '${app}'`);
       for (const file of ['robots', 'sitemap']) {
         expect(
