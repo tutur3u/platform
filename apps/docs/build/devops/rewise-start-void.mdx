@@ -1,14 +1,14 @@
 ---
 title: "Rewise on Start + Void"
-description: "Native Rewise Worker profiles, the sealed cutover artifact, and the cutover and Vercel rollback packet."
-updatedAt: "2026-11-09"
+description: "Native Rewise Worker profiles, the sealed cutover artifact, the custom-domain switch and Worker-version rollback."
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
 Rewise (`apps/rewise`) runs on TanStack Start, Vite+ and Void behind
 [`@tuturuuu/start-bridge`](/build/devops/start-bridge). The Next.js build
-(`build`) and the Vercel project stay in place until the cutover has been
-stable, so the canonical host keeps a one-step route back.
+(`build`) and the Vercel project are an archived record only: rollback is a
+previous Cloudflare Worker version, never a return to Vercel.
 
 ## Worker profiles
 
@@ -48,7 +48,7 @@ and a fresh restore in workerd, and uploads
 | Item | Value |
 | --- | --- |
 | Worker | `tuturuuu-rewise` |
-| Route | `rewise.tuturuuu.com/*`, operator-attached |
+| Host | `rewise.tuturuuu.com`, a Worker custom domain |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
 | Build command | `VITE_REWISE_NATIVE_PROFILE=production bun run --cwd apps/rewise build:cloudflare` |
 | Binding | `ABUSE_GUARD` → service `tuturuuu-abuse-guard` |
@@ -56,16 +56,19 @@ and a fresh restore in workerd, and uploads
 | Vars | `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`, `NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
 | Abuse guard | The abuse guard is optional, as on Vercel: with none of `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES`, `ABUSE_GUARD_BACKEND` and the Upstash names set, the Worker skips the guard and logs the names once per isolate. Setting any of them requires a complete configuration, and the Worker refuses to serve otherwise. |
 | Optional AI keys | the provider keys listed in `env.example`, as secrets on the Worker |
-| Prior Vercel deployment | record the immutable deployment ID and URL of the `rewise` Vercel project before the switch |
+| Prior Worker version | record the serving `tuturuuu-rewise` version ID before each deploy |
 | Data | no database writes and no migrations; reuse the existing Upstash database, provision nothing new |
 
 ### Switch
 
-1. Record the source SHA, artifact name and Vercel deployment ID.
+1. Record the source SHA, artifact name and serving Worker version ID.
 2. Provision the secrets and vars on `tuturuuu-rewise`, deploy the sealed
    output, and run the smoke below against the Worker's own address.
-3. Attach `rewise.tuturuuu.com` (a proxied route in front of the still-valid
-   Vercel origin where possible).
+3. Replace the `rewise.tuturuuu.com` DNS record with a Worker custom domain on
+   `tuturuuu-rewise`, recording the replaced record first.
+
+`rewise.tuturuuu.com` is the only Rewise host. `rewise.me` is not a Tuturuuu
+domain, and the Rewise Worker rejects any other host.
 
 ### Smoke
 
@@ -87,8 +90,9 @@ the accepted commit, and `404`.
 
 - **Triggers:** 5xx above 1% for 5 minutes, a sign-in loop, a chat or AI route
   failing for authenticated users, or any cross-host response.
-- **Action:** remove the Worker route (or repoint the mapping) so the host
-  resolves to the recorded Vercel deployment. Never rebuild on the rollback path.
-- **Data:** a route rollback changes no conversation data.
-- **Stability:** keep the Vercel project and domain for 14 consecutive stable
-  days before decommissioning, which is a separate approval.
+- **Action:** roll `tuturuuu-rewise` back to its recorded previous Worker
+  version. The custom domain stays in place; never move the host back to Vercel
+  and never rebuild on the rollback path. Fix forward on Cloudflare.
+- **Data:** a version rollback changes no conversation data.
+- **Archive:** the Vercel project and its recorded DNS record are an archived
+  record only. Decommissioning it is a separate approval.

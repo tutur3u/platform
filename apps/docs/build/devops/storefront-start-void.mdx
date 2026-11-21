@@ -1,25 +1,24 @@
 ---
 title: "Storefront on Start + Void"
-description: "Native Storefront Worker, the cutover artifact, and the cutover and Vercel rollback packet."
-updatedAt: "2026-11-19"
+description: "Native Storefront Worker, the cutover artifact, custom domains and Worker-version rollback."
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
 Storefront (`apps/storefront`) runs on TanStack Start, Vite+ and Void behind
 [`@tuturuuu/start-bridge`](/build/devops/start-bridge) with the React Server
-Components plugin. The Next.js build (`build`) and the Vercel project stay in
-place until the cutover has been stable, so the canonical host keeps a one-step
-route back.
+Components plugin. The Next.js build (`build`) and the Vercel project are an
+archived record only: rollback is a previous Cloudflare Worker version.
 
 ## Canonical host and runtime verification
 
-`store.tuturuuu.com` is canonical. `storefront.tuturuuu.com` is a redirect
-alias; its provider can differ from the canonical host. A Cloudflare response
-header alone does not identify a Worker. Compare `/api/build-info` with the
-accepted deployment and inspect the served HTML for native `/assets/` modules
-rather than Next.js `/_next/` chunks. Confirm the actual Worker mapping and
-version through read-only provider inventory before planning a replacement.
-The source workflow is build-only and cannot establish which version is live.
+`store.tuturuuu.com` is canonical. `storefront.tuturuuu.com`,
+`stores.tuturuuu.com` and `storefronts.tuturuuu.com` are redirect aliases on the
+same Worker. A Cloudflare response header alone does not identify a Worker.
+Compare `/api/build-info` with the accepted deployment and inspect the served
+HTML for native `/assets/` modules rather than Next.js `/_next/` chunks. Read
+the serving Worker version from the provider; the source workflow is build-only
+and cannot establish which version is live.
 
 Build metadata can report `production` while responses still forbid indexing.
 Storefront intentionally sets `X-Robots-Tag: noindex, nofollow` in
@@ -128,26 +127,24 @@ local mechanics; production requires the approved public inputs.
 
 | Item | Value |
 | --- | --- |
-| Candidate Worker | `tuturuuu-storefront-wave1` |
+| Worker | `tuturuuu-storefront` |
 | Apex mount | `tuturuuu.com/storefront` and descendants via the gateway |
-| Canonical host and aliases | Capture the current provider mapping for `store.tuturuuu.com` and each alias before any change. |
+| Canonical host and aliases | Worker custom domains for `store.tuturuuu.com` and the three alias hosts. |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
 | Build | Exact-commit `storefront-cloudflare.yaml` production archive |
 | Secrets (names) | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INVENTORY_APP_URL=https://inventory.tuturuuu.com`, `NEXT_PUBLIC_APP_URL=https://store.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
-| Rollback | Capture the serving gateway deployment, current apex fallback and the immutable canonical deployment before activation. |
+| Rollback | The recorded previous `tuturuuu-storefront` version; for an apex mount change, the recorded previous gateway version. |
 | Data | Storefront forwards checkout writes to Inventory. The release applies no migrations. |
 
 ### Switch
 
-1. Verify the source SHA, archive checksums and both URL variants. Record the
-   current gateway deployment and canonical deployment identifiers.
-2. Upload the candidate as a private Worker version with traffic and routes
-   untouched. Run the smoke with that version pinned, including a signed-in
-   checkout and an approved Inventory payment fixture.
-3. The release operator adds the apex mount once Inventory's scheduler and
-   checkout evidence is accepted. Move canonical or alias mappings only under
-   a separately authorized cutover.
+1. Record the source SHA, the artifact name and the serving Worker version.
+2. Provision the secrets on `tuturuuu-storefront`, deploy the artifact, and
+   run the smoke below against the Worker's own address.
+3. `store.tuturuuu.com` and the three alias hosts are Worker custom domains on
+   `tuturuuu-storefront`. The Worker answers the alias hosts itself, so no
+   separate redirect Worker is needed.
 
 ### Smoke
 
@@ -165,35 +162,24 @@ curl -sI https://storefront.tuturuuu.com/ | head -3
 Expected: a redirect to `/demo`, a `307` to central Web login, the accepted commit, and a `307` to
 `store.tuturuuu.com`.
 
-### Redirect-alias provider migration
+### Alias hosts
 
-If the canonical host already serves the accepted native Worker, leave that
-mapping intact. Capture the `tuturuuu.com` zone ID, alias DNS record and proxy
-state, existing redirect rules, Worker routes and custom domains, and the
-immutable Vercel deployment. Hold the change on a conflicting mapping.
-
-The release authority can move the alias independently: keep its Vercel DNS
-origin, enable Cloudflare proxying if necessary, then attach the exact
-`storefront.tuturuuu.com/*` Worker route to the accepted Storefront Worker.
-Its app wrapper returns a `307` preserving path and query on the canonical
-host. Read back the route and Worker version, then test `/`, `/api/build-info`
-and `/orders?tag=a&tag=b` on the alias with redirects disabled. Each must
-redirect to the identical path and query on `https://store.tuturuuu.com`.
-Never use a custom domain that replaces the retained origin for this plan.
-
-Rollback removes only the captured newly-created alias route via
-`DELETE /zones/{zone_id}/workers/routes/{route_id}`; the retained Vercel origin
-keeps serving its redirect. Keep the route ID privately in the release packet.
-Restoring the captured DNS proxy state is a separate cleanup after rollback
-verification. Provider writes require release-authority approval.
+`storefront.tuturuuu.com`, `stores.tuturuuu.com` and `storefronts.tuturuuu.com`
+are custom domains on `tuturuuu-storefront`. Its app wrapper returns a `307`
+preserving path and query on `https://store.tuturuuu.com`. Test `/`,
+`/api/build-info` and `/orders?tag=a&tag=b` on each alias with redirects
+disabled; each must redirect to the identical path and query on the canonical
+host.
 
 ### Rollback
 
 - **Triggers:** 5xx above 1% for 5 minutes, a wrong redirect, a checkout
   handoff failure, or a private store served anonymously.
-- **Action:** restore the captured gateway deployment to roll back the apex
-  mount. If a separate host cutover also ran, restore its captured mapping.
-  Keep the underlying deployments available for both operations.
-- **Data:** a route rollback changes no catalog, order or payment data.
-- **Stability:** keep the Vercel project and domains for 14 consecutive stable
-  days before decommissioning, which is a separate approval.
+- **Action:** roll `tuturuuu-storefront` back to its recorded previous Worker
+  version. Custom domains stay in place; never move a host back to Vercel and
+  never rebuild on the rollback path. Fix forward on Cloudflare.
+- **Apex mount:** a regression in the `tuturuuu.com/storefront` mount rolls the
+  gateway back to its recorded previous version.
+- **Data:** a version rollback changes no catalog, order or payment data.
+- **Archive:** the Vercel project and its recorded DNS records are an archived
+  record only, not a rollback target. Decommissioning it is a separate approval.

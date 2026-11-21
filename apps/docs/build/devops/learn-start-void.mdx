@@ -1,7 +1,7 @@
 ---
 title: "Learn on Start + Void"
-description: "Qualify the native Learn Worker for the canonical host and apex mount, capture routing and prepare rollback."
-updatedAt: "2026-11-20"
+description: "Native Learn Worker on learn.tuturuuu.com and tuturuuu.com/learn: build, smoke checks and Worker-version rollback."
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
@@ -11,16 +11,22 @@ the serving deployment for each URL before activation.
 
 ## Worker
 
-- `apps/learn/void.config.ts` names the staging candidate (`workers_dev` on, `TUTURUUU_NOINDEX=1`). The production archive targets `tuturuuu-learn` with `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0` and no configured routes.
+- `apps/learn/void.config.ts` names the staging candidate (`workers_dev` on, `TUTURUUU_NOINDEX=1`). The production archive targets `tuturuuu-learn` with `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0` and no configured routes; its custom domain and zone routes are managed in the provider, so a deploy leaves them in place.
 - Entry: `apps/learn/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Root host: `learn.tuturuuu.com` (compiled in `start-bridge.config.ts` or the generated default).
-- Mount: `tuturuuu.com/learn` (base path `/learn`), served by the same Worker.
+- Mount: `tuturuuu.com/learn` (base path `/learn`), served by the same Worker
+  (see [the mount](#tuturuuucomlearn-mount)).
 - Binding: `ASSETS` (static output, `run_worker_first`).
 - Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
 - Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
-  `TUTURUUU_APP_COORDINATION_SECRET`. Compare with the Vercel project
-  environment list before the flip.
+  `TUTURUUU_APP_COORDINATION_SECRET` (see
+  [App coordination secret rollout](/build/devops/app-coordination-secret-rollout)).
+- Optional: `TUTURUUU_DEVBOX_CONTROL_URL` and `TUTURUUU_DEVBOX_CONTROL_TOKEN`.
+  Without them the devbox wake signal is skipped and runners pick work up by
+  polling (`packages/utils/src/devbox-control.ts`). The token is the
+  `DEVBOX_CONTROL_INTERNAL_TOKEN` of `tuturuuu-devbox-control`, a single shared
+  value: issuing a new one rotates it and revokes every existing copy.
 
 ## Document script policy
 
@@ -87,17 +93,34 @@ record, and verify an API call that falls through to Web. Repeat on both URL
 variants. After activation, watch errors, redirects, asset status and sign-in for
 30–60 minutes and roll back immediately on regression.
 
+## tuturuuu.com/learn mount
+
+- Zone routes `tuturuuu.com/learn` and `tuturuuu.com/learn/*` on `tuturuuu-learn`
+  serve the bare path and every nested path, including `/learn/assets/*` and
+  `/learn/api/*`. `/learning` and every other path stay on the gateway.
+- A zone route cannot match the bare path once a query string is present, so
+  the gateway also mounts `/learn`: `GATEWAY_MOUNTED_PATHS` lists `/learn` and
+  `MOUNT_LEARN` binds `tuturuuu-learn` (see
+  [Gateway Worker](/build/devops/gateway-worker#apps-mounted-at-tuturuuucomapp)).
+  `apps/gateway/wrangler.jsonc` commits both, so a gateway deploy keeps them.
+- Smoke: `curl -s https://tuturuuu.com/learn/api/build-info` returns the Learn
+  build identity, and `https://tuturuuu.com/learn` and
+  `https://tuturuuu.com/learn?x=1` render the Learn portal.
+
 ## Rollback
 
-1. Record the immutable deployment and route, custom-domain and DNS readback
-   for `learn.tuturuuu.com`. Record the serving gateway version and its mount
-   configuration for `tuturuuu.com`.
-2. Include only `/learn` and `/learn/*` in the gateway change, using
-   `MOUNT_LEARN` bound to `tuturuuu-learn`. Restore the captured gateway version
-   in one operation if the mount regresses. Retain the serving canonical deployment
-   and its route rollback for an independent subdomain cutover.
-3. Verify Web handles the apex paths again after mount rollback. After canonical
-   rollback, verify the retained deployment responds on the subdomain.
+1. Cloudflare is the only production target; rollback never moves DNS or
+   routes back to Vercel. Before each change, record the serving
+   `tuturuuu-learn` version and, for a mount change, the serving
+   `tuturuuu-gateway` version.
+2. Code regression: roll `tuturuuu-learn` back to its recorded previous version
+   (`cf` Worker version rollback, or a deployment at 100% of that version).
+   Keep the custom domain, zone routes and gateway mount in place.
+3. Mount regression: deploy the recorded previous `tuturuuu-gateway` version.
+   `apps/gateway/wrangler.jsonc` commits the `/learn` mount and CI deploys merge
+   it back, so hold gateway deploys until the fix lands (see
+   [Gateway Worker](/build/devops/gateway-worker)).
+4. Rerun the smoke checks against the Worker hosts and fix forward on Cloudflare.
 
 Rolling back touches no database rows and no migrations. Route, DNS and deployment
 changes belong to the release owner.

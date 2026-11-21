@@ -1,14 +1,19 @@
 ---
 title: "Nova on Start + Void"
-description: "Nova Worker configuration, smoke probes and rollback instructions for a future route cutover."
-updatedAt: "2026-11-09"
+description: "Nova Worker configuration, the tuturuuu.com/nova mount, root-host redirects, smoke probes and Worker-version rollback."
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
 Nova (`apps/nova`) has native TanStack Start + Vite+ + Void source using
-`@tuturuuu/start-bridge`. The native source is present, but this packet does not
-cut over traffic. Rex owns route changes and must capture the immutable Vercel
-deployment ID before any cutover.
+`@tuturuuu/start-bridge`. The production Worker `tuturuuu-nova` serves
+`tuturuuu.com/nova`: the gateway mounts `/nova` and `/nova/*` through
+`MOUNT_NOVA`, committed in `apps/gateway/wrangler.jsonc`. The root hosts
+`nova.ai.vn` and `nova.tuturuuu.com` are custom domains on small redirect
+Workers (`site-nova-redirect` in the account that holds the `nova.ai.vn` zone,
+`tuturuuu-nova-redirect` in the Tuturuuu account). Each answers `307` to
+`https://tuturuuu.com/nova` with path and query preserved, as the production
+profile does for root hosts.
 
 ## Worker configuration
 
@@ -55,10 +60,11 @@ has authorized the host route.
 
 ## Rollback
 
-Rex must capture the prior Vercel deployment ID and URL before cutover. Rollback
-is to remove the Nova Worker route so the existing Vercel route serves traffic
-again. Do not rebuild or change application data during rollback. Keep the
-captured deployment available until the rollback window closes.
+Rollback is the recorded previous Cloudflare version: `tuturuuu-nova` for an app
+regression, `tuturuuu-gateway` for a mount regression, and the redirect Worker
+for a root-host regression. Never move a host back to Vercel, rebuild, or change
+application data during rollback; fix forward on Cloudflare. The Vercel project
+is an archived record only.
 
 ## Local verification
 
