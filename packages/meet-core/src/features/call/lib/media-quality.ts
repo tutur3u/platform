@@ -15,29 +15,49 @@ type SenderReading = {
 };
 
 /**
+ * A reading not refreshed within this window describes no live measurement.
+ * The publisher samples every 3 s and the subscriber every 2 s.
+ */
+export const MEDIA_READING_TTL_MS = 6000;
+
+/**
  * Collects the numbers the publisher and subscriber loops already measure,
- * so room diagnostics cost no extra `getStats()` call. The latest reading is
- * also exposed as `globalThis.__meetMediaStats` for load tests; it holds
- * counters and rates only.
+ * so room diagnostics cost no extra `getStats()` call. Readings expire on
+ * their own, so a loop that stops measuring for any reason never leaves a
+ * stale value behind. The latest reading is also exposed as
+ * `globalThis.__meetMediaStats` for load tests; it holds counters and rates
+ * only.
  */
 export function createMediaQualityRecorder(clock: () => number = Date.now) {
   let sender: SenderReading | null = null;
+  let senderAt = -Infinity;
   let receiver: ReceiverSample | null = null;
+  let receiverAt = -Infinity;
   let layers: Record<MeetVideoLayer, number> = { high: 0, mid: 0, low: 0 };
   let freezes = 0;
   let smallMode = false;
   let since = clock();
+  const none = () => ({ high: 0, mid: 0, low: 0 });
+  const current = () => {
+    const now = clock();
+    const liveReceiver = now - receiverAt <= MEDIA_READING_TTL_MS;
+    return {
+      sender: now - senderAt <= MEDIA_READING_TTL_MS ? sender : null,
+      receiver: liveReceiver ? receiver : null,
+      layers: liveReceiver ? layers : none(),
+    };
+  };
   const publish = () => {
     (globalThis as { __meetMediaStats?: unknown }).__meetMediaStats = {
-      sender,
-      receiver,
-      layers,
+      ...current(),
       freezesSinceReport: freezes,
     };
   };
   return {
-    recordSender(reading: SenderReading) {
+    /** A null reading clears the sender, for example when its peer retires. */
+    recordSender(reading: SenderReading | null) {
       sender = reading;
+      senderAt = clock();
       publish();
     },
     recordReceiver(
@@ -49,14 +69,16 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
       // No sample means no camera is being measured: report none, not the
       // last reading.
       receiver = sample;
+      receiverAt = clock();
       if (sample) freezes += sample.freezes;
-      layers = { high: 0, mid: 0, low: 0 };
+      layers = none();
       for (const layer of requested) layers[layer]++;
       publish();
     },
     /** The sample for one report interval; freezes restart from zero. */
     take(policy: MediaPolicySnapshot) {
       const now = clock();
+      const { sender, receiver, layers } = current();
       const sample: MeetMediaQualitySample = {
         sendKbps: round(sender?.sendKbps),
         availableSendKbps: round(sender?.availableSendKbps),

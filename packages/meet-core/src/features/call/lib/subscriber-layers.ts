@@ -370,14 +370,24 @@ export function useSubscriberLayers({
           const stats = await pc.getStats();
           // The receiver, session or policy may have changed while sampling;
           // a stale sample is discarded and the reading cleared.
+          const liveCameras = currentCameras(
+            owners.current,
+            state.current.remoteTracks
+          );
           if (
             peer.current !== pc ||
             sessionRef.current !== sessionId ||
             !capable() ||
             (policy?.getSnapshot().visibility ?? 'visible') !== 'visible' ||
-            policy?.getSnapshot().audioOnly
-          )
+            policy?.getSnapshot().audioOnly ||
+            // A camera opened or closed meanwhile: the sample no longer
+            // matches the receivers it would be attributed to.
+            liveCameras.map(({ mid }) => mid).join() !==
+              cameras.map(({ mid }) => mid).join()
+          ) {
+            idle();
             return;
+          }
           sample = sampleReceiver(
             stats,
             new Set(cameras.map(({ mid }) => mid)),
@@ -407,7 +417,13 @@ export function useSubscriberLayers({
             policy?.setAudioOnly(true);
             return;
           }
-        } else lastSampleAt = 0;
+        } else {
+          // Nothing is measured while dimmed: clear the reading now, before
+          // any queued layer change, and restart the baseline so hidden-time
+          // loss and freezes are never attributed to the next visible sample.
+          idle();
+          result.recorded = true;
+        }
         const window = applyMediaPolicy(
           stageWindow.current,
           policy?.getSnapshot(),

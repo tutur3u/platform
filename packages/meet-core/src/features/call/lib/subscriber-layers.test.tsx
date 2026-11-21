@@ -269,3 +269,36 @@ it('reports no layers while a dimmed page skips sampling', async () => {
     low: 0,
   });
 });
+
+it('discards a sample when a camera closes while stats are in flight', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { refs, pc } = setup(undefined, undefined, { policy });
+  let resolveStats!: (stats: RTCStatsReport) => void;
+  (pc.getStats as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    () =>
+      new Promise<RTCStatsReport>((resolve) => {
+        resolveStats = resolve;
+      })
+  );
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  refs.owners.current.clear();
+  await act(async () => resolveStats(new Map() as unknown as RTCStatsReport));
+  expect(policy.quality.take(policy.getSnapshot()).recvVideoKbps).toBeNull();
+});
+
+it('clears the reading on dimming even while a layer change is queued', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { refs } = setup(undefined, undefined, { policy });
+  policy.quality.recordReceiver(
+    { loss: 0, freezes: 0, rttMs: 30, availableKbps: null, receivedKbps: 400 },
+    ['high'],
+    false
+  );
+  refs.queue.current = new Promise<void>(() => undefined);
+  policy.setVisibility('dimmed');
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(policy.quality.take(policy.getSnapshot())).toMatchObject({
+    recvVideoKbps: null,
+    layers: { high: 0, mid: 0, low: 0 },
+  });
+});

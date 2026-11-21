@@ -245,6 +245,9 @@ room state is always persisted.
 
 A camera that is not being measured reports no receive rate, loss or layers.
 That covers a hidden tab, an audio-only pause and a receiver with no cameras.
+Every reading also expires six seconds after it was last measured, so a closed
+publisher or receiver never repeats an old value. A sample that resolves after
+its receiver, session or camera set changed is discarded.
 
 Hosts and co-hosts see an anonymous room aggregate under **Settings →
 Connection**:

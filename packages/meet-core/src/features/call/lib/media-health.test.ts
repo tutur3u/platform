@@ -139,6 +139,23 @@ describe('sender watcher', () => {
   });
 });
 
+describe('sender telemetry teardown', () => {
+  it('clears the sender reading once its peer closes', async () => {
+    const recorder = { recordSender: vi.fn() };
+    const pc = { connectionState: 'closed', signalingState: 'closed' };
+    const watcher = watchSenderBandwidth({
+      readPeer: () => pc as unknown as RTCPeerConnection,
+      readSenders: () => new Map(),
+      mode: () => 'auto',
+      hasAudience: () => true,
+      recorder,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(recorder.recordSender).toHaveBeenCalledWith(null);
+    watcher.dispose();
+  });
+});
+
 describe('page visibility with Picture-in-Picture', () => {
   function fakeDocument() {
     const listeners = new Map<string, Set<() => void>>();
@@ -263,10 +280,54 @@ describe('subscription ceiling', () => {
   });
 });
 
-describe('media quality recorder', () => {
-  it('reports one interval of rates, layers and freezes without identifiers', () => {
+describe('media quality recorder expiry', () => {
+  it('stops reporting readings that were not refreshed', () => {
     let now = 0;
     const recorder = createMediaQualityRecorder(() => now);
+    recorder.recordSender({
+      sendKbps: 400,
+      availableSendKbps: null,
+      rttMs: 30,
+      loss: 0,
+      cpuLimited: false,
+      sendLayers: 2,
+    });
+    recorder.recordReceiver(
+      {
+        loss: 0,
+        freezes: 0,
+        rttMs: 30,
+        availableKbps: null,
+        receivedKbps: 400,
+      },
+      ['high'],
+      false
+    );
+    const policy = {
+      smallModePreference: 'auto' as const,
+      audioOnly: false,
+      visibility: 'visible' as const,
+    };
+    now = 6000;
+    expect(recorder.take(policy)).toMatchObject({
+      sendKbps: 400,
+      recvVideoKbps: 400,
+    });
+    now = 90_000;
+    expect(recorder.take(policy)).toMatchObject({
+      sendKbps: null,
+      recvVideoKbps: null,
+      sendLayers: 0,
+      layers: { high: 0, mid: 0, low: 0 },
+    });
+  });
+});
+
+describe('media quality recorder', () => {
+  it('reports one interval of rates, layers and freezes without identifiers', () => {
+    let now = 26_000;
+    const recorder = createMediaQualityRecorder(() => now);
+    now = 29_000;
     recorder.recordSender({
       sendKbps: 812.4,
       availableSendKbps: 2400,
@@ -306,7 +367,7 @@ describe('media quality recorder', () => {
       audioOnly: false,
       smallMode: true,
       visibility: 'visible',
-      intervalMs: 30_000,
+      intervalMs: 4000,
     });
     expect(
       recorder.take({

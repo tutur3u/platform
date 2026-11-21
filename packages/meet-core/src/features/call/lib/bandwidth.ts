@@ -231,8 +231,11 @@ export function watchSenderBandwidth({
   const update = async () => {
     if (running || !active) return;
     const pc = readPeer();
-    if (pc?.connectionState !== 'connected' || pc.signalingState !== 'stable')
+    if (pc?.connectionState !== 'connected' || pc.signalingState !== 'stable') {
+      // A publisher that is gone has nothing to report.
+      if (!pc || pc.connectionState === 'closed') recorder?.recordSender(null);
       return;
+    }
     if (previousPeer !== pc) {
       previousPeer = pc;
       sent = null;
@@ -397,15 +400,17 @@ export function watchSenderBandwidth({
           // Unsupported browser controls leave the existing sender running.
         }
       }
-      recorder?.recordSender({
-        sendKbps,
-        availableSendKbps:
-          network.available === null ? null : network.available / 1000,
-        rttMs: network.rtt,
-        loss: network.loss,
-        cpuLimited: cpu.limited,
-        sendLayers,
-      });
+      // Stats from a peer that was replaced meanwhile describe nothing live.
+      if (readPeer() === pc)
+        recorder?.recordSender({
+          sendKbps,
+          availableSendKbps:
+            network.available === null ? null : network.available / 1000,
+          rttMs: network.rtt,
+          loss: network.loss,
+          cpuLimited: cpu.limited,
+          sendLayers,
+        });
     } catch {
       // Transient stats errors leave the existing sender running.
     } finally {
