@@ -10,7 +10,7 @@ import {
   rm,
   writeFile,
 } from 'node:fs/promises';
-import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -168,7 +168,8 @@ test(
         generateTypes: false,
         enableContainers: false,
         registry: staged.registry,
-        server: { hostname: '127.0.0.1', port: 0 },
+        server: { hostname: '127.0.0.1', port: 0, secure: true },
+        origin: { secure: true },
         inferOriginFromRoutes: false,
         routeRequestsByRoutes: false,
         auth: () => {
@@ -185,15 +186,23 @@ test(
     });
     t.after(() => worker.dispose());
     await worker.ready;
-    const origin = (await worker.url).origin;
-    // Every probe sends a raw Host header (node:http; fetch() drops it), so no
+    const target = await worker.url;
+    assert.equal(target.protocol, 'https:');
+    assert.equal(target.hostname, '127.0.0.1');
+    // Every probe sends a raw Host header (node:https; fetch() drops it), so no
     // dev origin or canonical-host default can turn an apex or unknown-host
     // probe into a canonical-root request.
     const call = (path, host) =>
       new Promise((resolve, reject) => {
-        const target = new URL(origin);
-        httpRequest(
-          { host: target.hostname, port: target.port, path, headers: { host } },
+        httpsRequest(
+          {
+            host: target.hostname,
+            port: target.port,
+            path,
+            headers: { host },
+            // Wrangler uses a self-signed certificate for this loopback listener.
+            rejectUnauthorized: false,
+          },
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
@@ -251,7 +260,7 @@ test(
             path,
             expected,
             ...response,
-            origin: `http://${ROOT_HOST}`,
+            origin: `https://${ROOT_HOST}`,
           });
           assert.equal(failure, null, failure ?? '');
         }
@@ -266,7 +275,7 @@ test(
             path: '/',
             expected: EXPECTED['/'],
             ...(await call('/', host)),
-            origin: `http://${host}`,
+            origin: `https://${host}`,
           });
           assert.equal(failure, null, `${host}: ${failure}`);
         }
@@ -283,7 +292,7 @@ test(
               path,
               expected,
               ...response,
-              origin: `http://${APEX}`,
+              origin: `https://${APEX}`,
               base: BASE,
             });
             assert.equal(failure, null, failure ?? '');

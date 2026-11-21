@@ -15,6 +15,20 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/internal-api$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next',
         replacement: new URL(
           '../../packages/supabase/src/next',
