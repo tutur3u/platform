@@ -253,7 +253,21 @@ function assertPrSupersedes(workflow, eventName) {
   return group;
 }
 
+// Cloudflare app workflows whose PR validation must never share the
+// production deploy lock.
+const cloudflareDeployLocks = [
+  'colab-cloudflare.yaml',
+  'coordination-cloudflare.yaml',
+  'cron-control-cloudflare.yaml',
+  'deploy-coordinator-cloudflare.yaml',
+  'devbox-control-cloudflare.yaml',
+  'lettin-cloudflare.yaml',
+  'meet-cloudflare.yaml',
+  'parley-cloudflare.yaml',
+];
+
 module.exports = {
+  cloudflareDeployLocks,
   serialized,
   prExceptions,
   mainExceptions,

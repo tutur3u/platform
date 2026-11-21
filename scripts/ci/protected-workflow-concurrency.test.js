@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const test = require('node:test');
 const {
+  cloudflareDeployLocks,
   serialized,
   prExceptions,
   mainExceptions,
@@ -400,15 +401,7 @@ test('cancelled Discord PR/main completions never enter the active Modal deploym
 });
 
 test('Cloudflare app PR validation never shares the production deploy lock', () => {
-  for (const file of [
-    'colab-cloudflare.yaml',
-    'coordination-cloudflare.yaml',
-    'cron-control-cloudflare.yaml',
-    'devbox-control-cloudflare.yaml',
-    'lettin-cloudflare.yaml',
-    'meet-cloudflare.yaml',
-    'parley-cloudflare.yaml',
-  ]) {
+  for (const file of cloudflareDeployLocks) {
     const workflow = workflows[file];
     const prefix = file.replace(/\.yaml$/u, '');
     // workflow_call runs inherit the caller's github.workflow, so a literal
