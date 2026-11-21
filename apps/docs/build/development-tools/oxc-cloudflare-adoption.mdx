@@ -384,8 +384,9 @@ independent operator-stop acceptance and billed usage remain rollout evidence.
 
 ### Mastermind ship collector envelope
 
-The `mastermind-ship` Cron Control job is default-off and adds one
-two-minute trigger. A run makes at most 32 provider reads (GitHub and the
+The `mastermind-ship` Cron Control job is default-off and adds no trigger: it
+runs every second minute on the existing one-minute trigger, and dispatch
+skips odd minutes before any ledger call. A run makes at most 32 provider reads (GitHub and the
 Cloudflare API, neither billed per call), two Mastermind store requests and
 about twelve ledger calls, with one attempt per slot and a 40-second
 deadline. A conditional probe answered 304 skips the GitHub query; 403 and

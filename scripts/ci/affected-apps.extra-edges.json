@@ -1,4 +1,6 @@
 {
+  "apps/admin/e2e/fixtures/": ["apps/database"],
+  "apps/admin/src/lib/mobile-calendar/": ["apps/calendar"],
   "apps/ai/start-bridge.config": ["apps/learn"],
   "apps/apps/cloudflare/": ["apps/finance", "apps/pay"],
   "apps/apps/cloudflare/worker": ["packages/start-bridge"],
@@ -14,6 +16,7 @@
   "apps/cron-control/src/processors/chat-realtime-revocations.ts": [
     "apps/chat-realtime"
   ],
+  "apps/cron-control/src/processors/mastermind-ship/": ["apps/web"],
   "apps/database/": ["apps/admin", "packages/feature-flags"],
   "apps/database/scripts/": ["apps/web"],
   "apps/database/supabase/": ["packages/utils"],
@@ -28,8 +31,6 @@
   "apps/forms/start-bridge.config": ["apps/learn"],
   "apps/gateway/src/": ["apps/web"],
   "apps/git/start-bridge.config": ["apps/learn"],
-  "apps/admin/e2e/fixtures/": ["apps/database"],
-  "apps/admin/src/lib/mobile-calendar/": ["apps/calendar"],
   "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
     "packages/users-core"
   ],
@@ -70,6 +71,7 @@
   "apps/web/src/": ["packages/users-core"],
   "apps/web/src/lib/chat/realtime-worker.ts": ["apps/chat-realtime"],
   "apps/web/src/lib/mastermind/fleet/": ["apps/mastermind"],
+  "apps/web/src/lib/mastermind/ship/": ["apps/mastermind"],
   "apps/web/src/lib/seo/": ["apps/gateway", "packages/utils"],
   "packages/hive-ui/src/components/hive/": ["packages/ui"],
   "packages/internal-api/src/": [

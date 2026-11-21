@@ -63,6 +63,11 @@ which those sources read `unconfigured`, and makes no provider request.
 
 ## Bounds and stop fence
 
+- The job adds no Worker trigger: it is admitted every second minute of the
+  existing one-minute trigger (`everyMinutes` in `jobs.ts`), so the reviewed
+  trigger set and its parity baseline are unchanged. Odd minutes cost no
+  ledger or network call.
+
 - One attempt per slot; the next slot is the retry. A run has a 40-second
   deadline, 32 provider requests at most and two store requests (one read,
   one write of two rows).

@@ -1,5 +1,6 @@
 import { CHAT_REALTIME_SECRET_MIN_LENGTH } from '@tuturuuu/realtime/chat/ticket';
 import {
+  admitsTick,
   CRON_JOBS,
   type CronJob,
   DATABASE_MAINTENANCE_RPCS,
@@ -452,7 +453,10 @@ export async function dispatchScheduledJobs(
     console.error('Cron Control ignored unknown enabled jobs', { unknown });
   // Disabled jobs cost nothing beyond this check: no storage or network.
   const due = CRON_JOBS.filter(
-    (cronJob) => cronJob.cron === cron && enabled.has(cronJob.id)
+    (cronJob) =>
+      cronJob.cron === cron &&
+      enabled.has(cronJob.id) &&
+      admitsTick(cronJob, scheduledTime)
   );
   const slot = scheduleSlot(scheduledTime);
   const reports: JobReport[] = [];

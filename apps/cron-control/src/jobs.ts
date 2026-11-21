@@ -84,6 +84,12 @@ export interface CronJob {
   // Legacy ports require CRON_CONTROL_WORKER_PROCESSORS selection. Native
   // maintenance always uses its Worker processor once the job is enabled.
   workerProcessor?: WorkerProcessorId;
+  /**
+   * Admit only ticks whose UTC minute is a multiple of this, so a job can run
+   * at a slower cadence on an existing trigger without adding a schedule to
+   * the Worker's reviewed trigger set.
+   */
+  everyMinutes?: number;
 }
 
 export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
@@ -100,7 +106,7 @@ function job(
   path: string,
   overlap: OverlapClass,
   options: Partial<
-    Pick<CronJob, 'method' | 'timeoutMs' | 'workerProcessor'>
+    Pick<CronJob, 'everyMinutes' | 'method' | 'timeoutMs' | 'workerProcessor'>
   > = {}
 ): CronJob {
   return {
@@ -114,7 +120,16 @@ function job(
     ...(options.workerProcessor
       ? { workerProcessor: options.workerProcessor }
       : {}),
+    ...(options.everyMinutes ? { everyMinutes: options.everyMinutes } : {}),
   };
+}
+
+/** Whether a tick scheduled at [scheduledTime] admits [cronJob]. */
+export function admitsTick(cronJob: CronJob, scheduledTime: number) {
+  return (
+    !cronJob.everyMinutes ||
+    new Date(scheduledTime).getUTCMinutes() % cronJob.everyMinutes === 0
+  );
 }
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
@@ -277,7 +292,10 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
   // Mastermind ship collector: GitHub deployments/CI/pending commits and
   // Cloudflare Worker versions into the Mastermind store. Its target is the
   // store; owners also start a run with "Check now" (src/ship-check.ts).
-  job('mastermind-ship', '*/2 * * * *', 'web', '/v1/ops', 'idempotent', {
+  // Every second minute on the one-minute trigger: the 70-second lease ends
+  // before the next admitted slot.
+  job('mastermind-ship', '* * * * *', 'web', '/v1/ops', 'idempotent', {
+    everyMinutes: 2,
     workerProcessor: 'mastermind-ship',
     timeoutMs: 20_000,
   }),

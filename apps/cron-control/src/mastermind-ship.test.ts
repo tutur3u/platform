@@ -18,7 +18,8 @@ import {
   STORE_URL,
 } from './processors/mastermind-ship/test-world';
 
-const CRON = '*/2 * * * *';
+// The job runs every second minute on the one-minute trigger.
+const CRON = '* * * * *';
 const T0 = Date.parse('2026-11-22T10:00:00Z');
 const MINUTES = 60_000;
 
@@ -154,6 +155,17 @@ it('fails only the rows of an unreadable repository', async () => {
   });
   expect(sources['github:tutur3u/platform']?.state).toBe('ok');
   expect(h.snapshot().apps[0]?.production.release?.sha).toBe(sha('a'));
+});
+
+it('runs only on even minutes of the one-minute trigger', async () => {
+  const h = setup();
+  expect(await h.tick(T0 + MINUTES)).toEqual([]);
+  expect(h.world.log).toEqual([]);
+  expect((await h.ledger().status())['mastermind-ship']).toBeUndefined();
+  expect((await h.tick(T0 + 2 * MINUTES))[0]).toMatchObject({
+    id: 'mastermind-ship',
+    outcome: 'degraded',
+  });
 });
 
 it('reports unconfigured sources honestly without provider calls', async () => {
