@@ -40,6 +40,7 @@ const workspace = {
   behavior: 'expanded',
   behaviorUpdatedAt: null,
   defaultCollapsed: false,
+  sidebarExpandedWidth: '22rem',
   workspace: { id: wsId, personal: true, joined: true, tier: null },
 } as unknown as Parameters<typeof MailWorkspaceView>[0]['workspace'];
 

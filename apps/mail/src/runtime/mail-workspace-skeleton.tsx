@@ -8,7 +8,7 @@ const pulse = 'motion-reduce:animate-none';
 function SidebarSkeleton() {
   return (
     <div
-      className="hidden w-64 shrink-0 flex-col gap-4 border-dynamic border-r p-3 md:flex"
+      className="hidden w-60 shrink-0 flex-col gap-4 border-dynamic border-r p-3 md:flex"
       data-slot="mail-skeleton-sidebar"
     >
       <div className="flex items-center gap-2">
@@ -114,8 +114,8 @@ export function MailContentSkeleton() {
 
 /**
  * Placeholder for the whole Mail workspace (sidebar, list, reader) that holds
- * the final layout while the page model resolves. Layout dimensions mirror the
- * real shell so the swap does not shift content; the bars carry no data.
+ * the default layout while the page model resolves. The initial document uses
+ * the real sidebar and its persisted width alongside MailContentSkeleton.
  */
 export function MailWorkspaceSkeleton() {
   const t = useTranslations('mail');
