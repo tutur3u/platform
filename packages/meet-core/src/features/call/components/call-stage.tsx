@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { VideoPausedNotice } from './video-paused-notice';
 import {
   type CSSProperties,
   useCallback,
@@ -288,6 +289,7 @@ export function CallStage({
   };
   return (
     <div className="flex h-full min-h-0 flex-col [container-type:size]">
+      <VideoPausedNotice policy={room.mediaPolicy} />
       {!compact && !spotlight && count > 1 && (
         <div className="flex shrink-0 justify-end p-1">
           <Select

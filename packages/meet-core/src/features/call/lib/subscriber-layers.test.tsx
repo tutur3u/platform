@@ -9,16 +9,20 @@ import { type RequestedLayer, useSubscriberLayers } from './subscriber-layers';
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-function setup(capabilities: string[] = ['ascii-simulcast', 'layer-update']) {
+function setup(
+  capabilities: string[] = ['ascii-simulcast', 'layer-update'],
+  reply: (message: { tracks: Array<{ mid: string }> }) => unknown = (
+    message
+  ) => ({ tracks: message.tracks.map(({ mid }) => ({ mid })) })
+) {
   const pc = {
     connectionState: 'connected',
     getStats: vi.fn(async () => new Map()),
   } as unknown as RTCPeerConnection;
-  const request = vi.fn(
-    async (message: { tracks: Array<{ mid: string }> }) => ({
-      tracks: message.tracks.map(({ mid }) => ({ mid })),
-    })
+  const request = vi.fn(async (message: { tracks: Array<{ mid: string }> }) =>
+    reply(message)
   );
+  const resetSubscriber = vi.fn();
   const refs = {
     queue: { current: Promise.resolve() },
     peer: { current: pc as RTCPeerConnection | null },
@@ -57,8 +61,10 @@ function setup(capabilities: string[] = ['ascii-simulcast', 'layer-update']) {
       current: { request } as unknown as MeetSignaling | null,
     },
   };
-  renderHook(() => useSubscriberLayers({ active: true, ...refs }));
-  return { pc, request, refs };
+  renderHook(() =>
+    useSubscriberLayers({ active: true, resetSubscriber, ...refs })
+  );
+  return { pc, request, refs, resetSubscriber };
 }
 
 it('downgrades a thumbnail through the subscriber queue and records the confirmed layer', async () => {
@@ -110,4 +116,21 @@ it('sends nothing to a room server without layer updates', async () => {
   await act(() => vi.advanceTimersByTimeAsync(4000));
   expect(request).not.toHaveBeenCalled();
   expect(pc.getStats).not.toHaveBeenCalled();
+});
+
+it('caches nothing when the reply omits per-track results', async () => {
+  const { request, refs } = setup(undefined, () => ({}));
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(refs.requestedLayers.current.get('pub:a-video')?.layer).toBe('high');
+});
+
+it('rebuilds the receiver if a layer update demands renegotiation', async () => {
+  const { resetSubscriber, request } = setup(undefined, () => ({
+    requiresImmediateRenegotiation: true,
+    tracks: [{ mid: '4' }],
+  }));
+  await act(() => vi.advanceTimersByTimeAsync(4000));
+  expect(resetSubscriber).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(1);
 });

@@ -44,6 +44,7 @@ import { DeviceSettings } from './device-settings';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingSettings } from './recording-settings';
+import { ThumbnailModeSetting } from './thumbnail-mode-setting';
 
 export function CallSettings({
   room,
@@ -86,7 +87,11 @@ export function CallSettings({
           name: 'media',
           label: labels('settings_media'),
           icon: Video,
-          keywords: [t('bandwidth'), labels('settings_large_room')],
+          keywords: [
+            t('bandwidth'),
+            t('thumbnail_mode'),
+            labels('settings_large_room'),
+          ],
         },
         {
           name: 'connection',
@@ -193,6 +198,7 @@ export function CallSettings({
                 </SelectContent>
               </Select>
             </SettingItemTab>
+            <ThumbnailModeSetting policy={room.mediaPolicy} />
           </SettingsSection>
         )}
         {activeTab === 'permissions' && managesMedia && (

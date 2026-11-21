@@ -18,6 +18,10 @@ import {
   ridForLayer,
   simulcastPreference,
 } from './simulcast-layers';
+import {
+  MEET_LAYER_UPDATES_PER_MINUTE,
+  MeetCommandExecutor,
+} from './command-executor';
 import { CloudflareSfuClient } from './sfu';
 
 const now = '2026-11-21T12:00:00.000Z';
@@ -293,5 +297,59 @@ describe('sfu.tracks.update', () => {
       'https://rtc.live.cloudflare.com/v1/apps/app-1/sessions/receiver/tracks/update'
     );
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PUT');
+  });
+});
+
+describe('layer update admission', () => {
+  it('rate-limits a receiver once per request without touching the SFU', async () => {
+    const executor = new MeetCommandExecutor();
+    const actor = {
+      ...token('viewer'),
+      userId: '00000000-0000-4000-8000-000000000009',
+      roomId: 'test:rate',
+    };
+    const state = admitOrHold(createMeetRoomSnapshot(), actor, now).state;
+    const commits: unknown[] = [];
+    const runSfu = vi.fn(async () => ({ tracks: [] }));
+    const message = {
+      type: 'sfu.tracks.update' as const,
+      requestId: 'r',
+      sessionId: 'receiver',
+      tracks: [{ mid: '1' }],
+    };
+    for (let n = 0; n <= MEET_LAYER_UPDATES_PER_MINUTE; n++)
+      await executor.run(
+        { token: actor, now, message, canCloseSubscriptions: () => false },
+        { read: () => state, commit: (r) => void commits.push(r), runSfu }
+      );
+    const last = commits.at(-1) as Parameters<
+      typeof isMeetStatelessSfuOutcome
+    >[1];
+    expect(last.reply).toEqual([
+      { type: 'error', requestId: 'r', error: 'layer_update_rate_limited' },
+    ]);
+    expect(isMeetStatelessSfuOutcome(state, last)).toBe(true);
+    expect(runSfu).not.toHaveBeenCalled();
+  });
+
+  it('persists a layer outcome that also sealed attendance', () => {
+    const viewer = token('viewer');
+    const state = admitOrHold(createMeetRoomSnapshot(), viewer, now).state;
+    const result = {
+      state: { ...state, attendance: [] },
+      reply: [
+        {
+          type: 'sfu.response' as const,
+          action: 'sfu.tracks.update' as const,
+          result: {},
+        },
+      ],
+      broadcast: [],
+      toManagers: [],
+      direct: [],
+      disconnect: [],
+      sfu: null,
+    };
+    expect(isMeetStatelessSfuOutcome(state, result)).toBe(false);
   });
 });

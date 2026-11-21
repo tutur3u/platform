@@ -7,6 +7,7 @@ import type {
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
+import { createMediaPolicy } from './media-policy';
 import { prepareParticipantName } from './participant-name';
 import type { MeetSignaling } from './signaling';
 
@@ -27,7 +28,9 @@ export function createRoomActions(
   const pendingChat = new Map<string, string>();
   // Measured outside React state so tile resizes never re-render the room.
   const tileHeights = new Map<string, number>();
+  const mediaPolicy = createMediaPolicy();
   return {
+    mediaPolicy,
     reportTileHeight: (userId: string, devicePx: number | null) => {
       if (devicePx === null) tileHeights.delete(userId);
       else tileHeights.set(userId, devicePx);
@@ -173,6 +176,8 @@ export type StageVideoWindow = {
   tileHeights?: ReadonlyMap<string, number>;
   /** Thumbnail mode: every non-spotlit camera uses the lowest layer. */
   smallMode?: boolean;
+  /** False while remote screen video is paused; audio is unaffected. */
+  screenVideo?: boolean;
 };
 type RoomControls = {
   actions: ReturnType<typeof createRoomActions>;

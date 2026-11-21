@@ -10,12 +10,15 @@ export type MeetMediaFlags = {
   opusDtx: boolean;
   /** Drop the full camera layer and frame rate while the encoder is CPU-bound. */
   cpuAdaptation: boolean;
+  /** Lower, then close, remote video while the Meet tab is hidden. */
+  hiddenTabSaver: boolean;
 };
 
 const DEFAULT_FLAGS: MeetMediaFlags = {
   layerSwitching: true,
   opusDtx: true,
   cpuAdaptation: true,
+  hiddenTabSaver: true,
 };
 export const MEET_MEDIA_FLAGS_STORAGE_KEY = 'tumeet:media-flags';
 

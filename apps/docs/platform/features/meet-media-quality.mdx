@@ -27,6 +27,10 @@ message. Without them, a client publishes `h`/`m`/`l`, requests only legacy
 RIDs and sends no layer updates. A rollback to an older room server therefore
 keeps every subscription valid.
 
+A connected client keeps the capabilities from its last `ready`. If a
+subscription that requested `f` or `q` fails, the client treats that room server
+as legacy until the next join advertises capabilities again.
+
 ### Choosing a layer per tile
 
 Each subscriber requests the smallest layer that fills its tile:
@@ -83,17 +87,70 @@ The room server accepts a change only when all of these hold:
 - The receiver MID belongs to the requesting socket's own session.
 - The target is a current camera publication from another participant.
 - That publication advertised the requested RID.
-- The receiver has sent no more than 40 update batches in the past minute.
+- The receiver has sent no more than 40 update batches in the past minute. The
+  limit is charged once when the request arrives, before any provider call.
+  Requests over it are refused without a durable write.
 
 A receiver can therefore only re-layer a camera it could already subscribe to.
+The client also checks that each receiver still carries the publication the
+change was planned for. The SFU's track update can retarget a transceiver to
+another publication. A modified client could use that only to show a camera it
+may already watch in a different tile, so it crosses no permission boundary.
 
 Layer switches never rewrite the durable room snapshot more than once every 15
 seconds. If the Durable Object is evicted, the time accounting lost is bounded
-by that interval.
+by that interval. A switch that also changes tracks, presence, settings,
+attendance or the room lifecycle is always persisted. That includes the
+empty-room timer that starts when the last socket closes.
 
 A rejected or failed update keeps the current layers and retries after 30
-seconds. If the SFU asks for immediate renegotiation after an update, layer
-switching stops on that receiving peer.
+seconds. Only a matching per-MID success is cached. If the SFU asks for
+immediate renegotiation after an update, the client rebuilds the receiving
+peer and stops layer switching on it.
+
+## Thumbnail mode
+
+In thumbnail mode, every camera outside the spotlight is received on the lowest
+layer. Publishers who have not spoken in the last 20 seconds also stop sending
+their full layer. A recent speaker, the one most likely to be spotlit, keeps it.
+Audio and screen share are unaffected.
+
+| Setting | Behaviour |
+| --- | --- |
+| Automatic (default) | On in rooms of 25 or more participants, and on a receiver whose congestion ceiling has reached the lowest layer |
+| On | Always on |
+| Off | Never on |
+
+Participants choose the setting under **Settings → Media**. Each device
+remembers its own choice. Network and CPU limits still apply on top of it.
+
+## Audio-only fallback
+
+When cameras stay congested on the lowest layer for three consecutive samples,
+the receiver closes camera subscriptions. Speech, screen share and screen audio
+continue. The stage shows that video is paused, with a control to resume it.
+
+With no camera to measure, recovery is a timed probe on the lowest layer after
+30 seconds. A probe that relapses within 30 seconds doubles the next pause, up
+to four minutes. Resuming manually starts a fresh probe.
+
+## Hidden tab
+
+Hiding the Meet tab lowers remote video in two steps. A Picture-in-Picture view
+counts as visible.
+
+| Hidden for | Remote video |
+| --- | --- |
+| 1.5 seconds | Every camera on its lowest layer, including the spotlight. Receiver stats sampling and speaker ordering pause. |
+| 20 seconds | Camera and screen-share video subscriptions are closed. All remote audio, including screen audio, keeps playing. |
+
+Returning to the tab applies at once. Subscriptions reopen immediately, and
+layers return without upgrade hysteresis. A quick tab switch therefore never
+closes anything.
+
+The participant's own camera, microphone and screen share keep publishing,
+including a share of another tab. Under CPU pressure the existing CPU
+adaptation lowers the send frame rate.
 
 ## Sender priority and screen share
 
@@ -144,6 +201,7 @@ Support can turn a behaviour off on one device. Set the browser storage key
 | `layerSwitching` | Layer switching |
 | `opusDtx` | DTX, sent as `usedtx=0` |
 | `cpuAdaptation` | CPU adaptation, clearing any active cap |
+| `hiddenTabSaver` | Hidden-tab saving |
 
 Denied or unreadable storage falls back to the shipped defaults.
 
@@ -164,6 +222,7 @@ Denied or unreadable storage falls back to the shipped defaults.
 ## Regression coverage
 
 - `packages/meet-core/src/features/call/lib/layer-policy.test.ts`
+- `media-policy.test.ts`
 - `subscriber-layers.test.tsx`
 - `negotiation.test.ts`
 - `sender-profile.test.ts`

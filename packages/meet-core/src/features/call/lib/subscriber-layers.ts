@@ -8,6 +8,7 @@ import {
 import { useEffect } from 'react';
 import {
   initialReceiverGovernor,
+  isReceiverCongested,
   layerForTile,
   nextReceiverGovernor,
   planLayerChanges,
@@ -16,6 +17,12 @@ import {
   type ReceiverSample,
 } from './layer-policy';
 import { readMeetMediaFlags } from './media-flags';
+import {
+  applyMediaPolicy,
+  initialAudioOnly,
+  type MediaPolicy,
+  nextAudioOnly,
+} from './media-policy';
 import type { RemoteTrackOwner } from './remote-playback';
 import type { StageVideoWindow } from './room-actions';
 import type { SfuTracksResponse } from './sfu-response';
@@ -148,8 +155,11 @@ function currentCameras(
  */
 export function useSubscriberLayers({
   active,
+  capabilities,
+  policy,
   queue,
   peer,
+  resetSubscriber,
   sessionRef,
   owners,
   state,
@@ -158,6 +168,10 @@ export function useSubscriberLayers({
   signalingRef,
 }: {
   active: boolean;
+  /** Capabilities in effect, which a rejected request can narrow. */
+  capabilities?: () => readonly string[] | undefined;
+  policy?: MediaPolicy;
+  resetSubscriber: () => void;
   queue: Ref<Promise<void>>;
   peer: Ref<RTCPeerConnection | null>;
   sessionRef: Ref<string | null>;
@@ -165,6 +179,7 @@ export function useSubscriberLayers({
   state: Ref<{
     remoteTracks: Record<string, MeetRealtimeRoomTrack>;
     mediaCapabilities?: readonly string[];
+    participants?: Record<string, unknown>;
   }>;
   requestedLayers: Ref<Map<string, RequestedLayer>>;
   stageWindow: Ref<StageVideoWindow | null>;
@@ -177,25 +192,31 @@ export function useSubscriberLayers({
     let lastSampleAt = 0;
     let busy = false;
     let pausedUntil = 0;
+    let audio = initialAudioOnly();
+    let restoring = false;
+    let lastPhase = policy?.getSnapshot().visibility;
     const counters = new Map<string, Counters>();
     const pendingUpgrades = new Map<string, number>();
-    const capable = () =>
-      !!state.current.mediaCapabilities?.includes('layer-update');
+    const readCapabilities =
+      capabilities ?? (() => state.current.mediaCapabilities);
+    const capable = () => !!readCapabilities()?.includes('layer-update');
 
     /** Revalidate and send planned layer changes; runs inside the queue. */
     const dispatch = async (
       pc: RTCPeerConnection,
       sessionId: string,
-      planned: Map<string, MeetVideoLayer>
+      planned: Map<string, { layer: MeetVideoLayer; key: string }>
     ) => {
       if (peer.current !== pc || sessionRef.current !== sessionId) return;
-      const capabilities = state.current.mediaCapabilities;
+      const capabilities = readCapabilities();
       const updates = currentCameras(
         owners.current,
         state.current.remoteTracks
       ).flatMap(({ mid, owner, publication }) => {
-        const layer = planned.get(mid);
-        if (!layer) return [];
+        const plan = planned.get(mid);
+        // The receiver must still carry the publication the plan was made for.
+        if (!plan || plan.key !== owner.subscriptionKey) return [];
+        const { layer } = plan;
         const simulcast = simulcastPreference(
           negotiableCameraRids(publication.cameraRids, capabilities),
           layer
@@ -238,17 +259,22 @@ export function useSubscriberLayers({
       )
         return;
       if (response.requiresImmediateRenegotiation) {
-        // Layer updates are documented as renegotiation-free; if the SFU
-        // disagrees, stop switching on this peer rather than desynchronise it.
+        // Layer updates are documented as renegotiation-free. If the SFU
+        // disagrees, rebuild the receiver rather than leave an offer pending
+        // on a session other operations will reuse, and stop switching.
         pausedUntil = Infinity;
+        resetSubscriber();
         return;
       }
       for (const { key, layer, track } of batch) {
-        // A reply without per-track results confirms the whole batch.
-        const result = response.tracks
-          ? response.tracks.find((entry) => entry.mid === track.mid)
-          : {};
-        if (result && !result.errorCode && owners.current.get(track.mid))
+        const result = response.tracks?.find(
+          (entry) => entry.mid === track.mid
+        );
+        if (
+          result &&
+          !result.errorCode &&
+          owners.current.get(track.mid)?.subscriptionKey === key
+        )
           requestedLayers.current.set(key, { layer, peer: pc });
       }
     };
@@ -265,9 +291,24 @@ export function useSubscriberLayers({
         pendingUpgrades.clear();
         pausedUntil = 0;
         lastSampleAt = 0;
+        audio = initialAudioOnly();
       }
       const now = Date.now();
       if (!capable() || now < pausedUntil) return;
+      const phase = policy?.getSnapshot().visibility ?? 'visible';
+      if (phase === 'background') return;
+      if (audio.active) {
+        // A participant who resumes video manually starts a fresh probe.
+        audio = policy?.getSnapshot().audioOnly
+          ? nextAudioOnly(audio, null, now)
+          : { ...initialAudioOnly(), probedAt: now };
+        if (!audio.active) {
+          counters.clear();
+          lastSampleAt = 0;
+          policy?.setAudioOnly(false);
+        }
+        return;
+      }
       const cameras = currentCameras(
         owners.current,
         state.current.remoteTracks
@@ -280,15 +321,36 @@ export function useSubscriberLayers({
       }
       busy = true;
       try {
-        const sample = sampleReceiver(
-          await pc.getStats(),
-          new Set(cameras.map(({ mid }) => mid)),
-          counters,
-          lastSampleAt ? now - lastSampleAt : 0
+        // A dimmed page only needs every camera on its lowest layer; it
+        // spends no stats work on a view nobody is looking at.
+        if (phase === 'visible') {
+          const sample = sampleReceiver(
+            await pc.getStats(),
+            new Set(cameras.map(({ mid }) => mid)),
+            counters,
+            lastSampleAt ? now - lastSampleAt : 0
+          );
+          lastSampleAt = now;
+          governor = nextReceiverGovernor(governor, sample, now);
+          audio = nextAudioOnly(
+            audio,
+            {
+              congested: isReceiverCongested(sample),
+              ceiling: governor.ceiling,
+            },
+            now
+          );
+          if (audio.active) {
+            policy?.setAudioOnly(true);
+            return;
+          }
+        } else lastSampleAt = 0;
+        const window = applyMediaPolicy(
+          stageWindow.current,
+          policy?.getSnapshot(),
+          Object.keys(state.current.participants ?? {}).length,
+          governor.ceiling === 'low'
         );
-        lastSampleAt = now;
-        governor = nextReceiverGovernor(governor, sample, now);
-        const window = stageWindow.current;
         const visibleTiles = window?.cameraUserIds.length ?? 0;
         const live = new Set(cameras.map(({ owner }) => owner.subscriptionKey));
         for (const key of requestedLayers.current.keys())
@@ -302,7 +364,8 @@ export function useSubscriberLayers({
               mid,
               userId: owner.userId,
               requested: confirmed?.peer === pc ? confirmed.layer : undefined,
-              pendingUpgrade: pendingUpgrades.get(mid),
+              // Returning to the page restores layers without hysteresis.
+              pendingUpgrade: restoring ? 1 : pendingUpgrades.get(mid),
             };
           }),
           (userId) =>
@@ -314,10 +377,19 @@ export function useSubscriberLayers({
             }),
           governor.ceiling
         );
+        restoring = false;
         pendingUpgrades.clear();
         for (const [mid, streak] of pending) pendingUpgrades.set(mid, streak);
         if (!changes.length) return;
-        const planned = new Map(changes.map(({ mid, layer }) => [mid, layer]));
+        const keys = new Map(
+          cameras.map(({ mid, owner }) => [mid, owner.subscriptionKey])
+        );
+        const planned = new Map(
+          changes.map(({ mid, layer }) => [
+            mid,
+            { layer, key: keys.get(mid) ?? '' },
+          ])
+        );
         const run = queue.current.then(() => dispatch(pc, sessionId, planned));
         queue.current = run.catch(() => undefined);
         await run;
@@ -328,12 +400,25 @@ export function useSubscriberLayers({
       }
     };
     const timer = setInterval(() => void tick(), RECEIVER_SAMPLE_MS);
-    return () => clearInterval(timer);
+    const unsubscribe = policy?.subscribe(() => {
+      const phase = policy.getSnapshot().visibility;
+      if (phase === lastPhase) return;
+      restoring ||= phase === 'visible';
+      lastPhase = phase;
+      void tick();
+    });
+    return () => {
+      clearInterval(timer);
+      unsubscribe?.();
+    };
   }, [
     active,
+    capabilities,
     owners,
     peer,
+    policy,
     queue,
+    resetSubscriber,
     requestedLayers,
     sessionRef,
     signalingRef,

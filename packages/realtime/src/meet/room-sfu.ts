@@ -19,11 +19,7 @@ import type {
 import { roomCapacityError } from './room-budget';
 import { denied, outcome } from './room-outcome';
 import { meetTrackKey, replaceRoomPublications } from './room-tracks';
-import { takeActorRateLimit } from './actor-rate-limit';
 import { advertisedCameraRids } from './simulcast-layers';
-
-/** Layer update batches a receiver may send per minute. */
-export const MEET_LAYER_UPDATES_PER_MINUTE = 40;
 export function applySfuCommand(
   state: MeetRoomSnapshot,
   message: MeetRealtimeSfuClientMessage,
@@ -43,13 +39,6 @@ export function applySfuCommand(
     if (
       !hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.sfuSubscribe) ||
       !canCloseSubscriptions?.() ||
-      // Clients send at most one batch per two-second sample; the executor
-      // plans and confirms each command, so every request takes two tokens.
-      !takeActorRateLimit(
-        `layers:${token.roomId}:${token.userId}`,
-        MEET_LAYER_UPDATES_PER_MINUTE * 2,
-        60_000
-      ) ||
       message.tracks.some((track) => {
         const publication = cameras.get(
           `${track.sessionId}\u0000${track.trackName}`
@@ -362,6 +351,8 @@ export function recordMeetSubscriptionOperation(
   if (sessions !== prior) socket.serializeAttachment({ ...attached, sessions });
 }
 
+export const LAYER_UPDATE_RATE_LIMITED = 'layer_update_rate_limited';
+
 /**
  * A layer switch changes no tracks, presence, settings or lifecycle; only the
  * running time accounting advances. Those outcomes may skip the durable write.
@@ -382,10 +373,13 @@ export function isMeetStatelessSfuOutcome(
     next.settings === previous.settings &&
     next.ended === previous.ended &&
     next.lifecycle === previous.lifecycle &&
+    next.attendance === previous.attendance &&
     result.reply.length > 0 &&
     result.reply.every(
       (reply) =>
-        reply.type === 'sfu.response' && reply.action === 'sfu.tracks.update'
+        (reply.type === 'sfu.response' &&
+          reply.action === 'sfu.tracks.update') ||
+        (reply.type === 'error' && reply.error === LAYER_UPDATE_RATE_LIMITED)
     )
   );
 }

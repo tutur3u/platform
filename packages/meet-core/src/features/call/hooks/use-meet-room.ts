@@ -479,6 +479,7 @@ export function useMeetRoom({
     resetSubscriber,
     signalingRef,
     setRemoteMedia,
+    policy: actions.mediaPolicy,
   });
   useRecentSpeakers(
     state.admission === 'admitted',
@@ -567,6 +568,7 @@ export function useMeetRoom({
     senders: sendersRef,
     state: stateRef,
     stage: stageWindow,
+    policy: actions.mediaPolicy,
   });
   const locks = useRoomControlBridge(actions, state);
   useEffect(() => {

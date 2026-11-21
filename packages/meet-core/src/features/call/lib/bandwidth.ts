@@ -15,13 +15,20 @@ import {
   senderPriority,
 } from './sender-profile';
 import { readMeetMediaFlags } from './media-flags';
+import { type MediaPolicy, resolveSmallMode } from './media-policy';
 
 export type BandwidthMode = 'auto' | 'saver' | 'quality';
 type Audience = {
   participants?: number;
   visibleTiles?: number;
   spotlight?: boolean;
+  /** Thumbnail mode applies to this room or was chosen on this device. */
+  smallMode?: boolean;
+  /** Send only the half and quarter camera layers. */
+  thumbnailOnly?: boolean;
 };
+/** A publisher who spoke this recently keeps its full layer for the spotlight. */
+const RECENT_SPEECH_MS = 20_000;
 type Network = {
   available: number | null;
   rtt: number | null;
@@ -187,7 +194,7 @@ export function planSenderEncodings(
       active:
         hasAudience &&
         (!visual || (!severe && !(kind === 'video' && recovering))) &&
-        !(layerIndex === 0 && (cheap || cpuLimited)),
+        !(layerIndex === 0 && (cheap || cpuLimited || audience.thumbnailOnly)),
     };
   });
 }
@@ -215,6 +222,7 @@ export function watchSenderBandwidth({
   let previousPeer: RTCPeerConnection | null = null;
   let cpu = initialCpuPressure();
   let lastCpuSampleAt = -Infinity;
+  let lastSpokeAt = -Infinity;
   const applied = new WeakMap<RTCRtpSender, string>();
   const update = async () => {
     if (running || !active) return;
@@ -235,8 +243,17 @@ export function watchSenderBandwidth({
       const reasons: string[] = [];
       for (const stat of (await pc.getStats()).values()) {
         if (
+          stat.type === 'media-source' &&
+          stat.kind === 'audio' &&
+          typeof stat.audioLevel === 'number' &&
+          stat.audioLevel >= 0.05
+        )
+          lastSpokeAt = Date.now();
+        if (
           stat.type === 'outbound-rtp' &&
           stat.kind === 'video' &&
+          // A paused layer keeps reporting its last reason.
+          stat.active !== false &&
           typeof stat.qualityLimitationReason === 'string'
         )
           reasons.push(stat.qualityLimitationReason);
@@ -277,6 +294,10 @@ export function watchSenderBandwidth({
         senders.filter(([, sender]) => sender.track?.kind === 'video').length
       );
       const room = audience();
+      // In thumbnail mode most viewers draw this camera small; only a recent
+      // speaker is likely to be spotlit at full size.
+      room.thumbnailOnly =
+        !!room.smallMode && Date.now() - lastSpokeAt > RECENT_SPEECH_MS;
       if (
         (network.available !== null && network.available < 650000) ||
         (network.rtt !== null && network.rtt > 500) ||
@@ -370,11 +391,13 @@ export function useAdaptiveSenderBandwidth({
   senders,
   state,
   stage,
+  policy,
 }: {
   peer: { current: RTCPeerConnection | null };
   senders: { current: Map<string, RTCRtpSender> };
   state: { current: CallState };
   stage: { current: StageVideoWindow | null };
+  policy?: MediaPolicy;
 }) {
   const mode = useRef<BandwidthMode>('auto');
   const refresh = useRef<() => void>(() => undefined);
@@ -390,11 +413,20 @@ export function useAdaptiveSenderBandwidth({
         spotlight:
           !!state.current.selfUserId &&
           stage.current?.spotlightUserId === state.current.selfUserId,
+        smallMode: resolveSmallMode(
+          policy?.getSnapshot().smallModePreference ?? 'auto',
+          Object.keys(state.current.participants).length,
+          false
+        ),
       }),
     });
     refresh.current = watcher.refresh;
-    return watcher.dispose;
-  }, [peer, senders, stage, state]);
+    const unsubscribe = policy?.subscribe(watcher.refresh);
+    return () => {
+      unsubscribe?.();
+      watcher.dispose();
+    };
+  }, [peer, policy, senders, stage, state]);
   const setBandwidthMode = useCallback((next: BandwidthMode) => {
     mode.current = next;
     refresh.current();

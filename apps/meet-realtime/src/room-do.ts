@@ -493,8 +493,8 @@ export class MeetRoomDurableObject implements DurableObject {
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
     const deferred = this.deferWrite(this.snapshot, result);
     this.snapshot = result.state;
-    const observed = this.connectionState();
-    if (!deferred || observed !== this.snapshot) await this.persist();
+    this.snapshot = this.connectionState();
+    if (!deferred || this.snapshot !== result.state) await this.persist();
     await this.scheduleEmptyRoom();
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());

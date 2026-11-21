@@ -10,8 +10,20 @@ import {
   negotiableCameraRids,
   simulcastPreference,
 } from '@tuturuuu/realtime/meet';
-import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import { layerForTile } from './layer-policy';
+import { readMeetMediaFlags } from './media-flags';
+import {
+  applyMediaPolicy,
+  type MediaPolicy,
+  watchPageVisibility,
+} from './media-policy';
 import {
   recordSubscribedLayers,
   type RequestedLayer,
@@ -208,10 +220,11 @@ export function planWindowedRemoteSubscriptions({
   const visible = new Set(videoWindow?.cameraUserIds);
   const layers = new Map<string, MeetVideoLayer>();
   const wanted = Object.fromEntries(
-    Object.entries(remoteTracks).filter(
-      ([, track]) =>
-        meetTrackKind(track) !== 'video' || visible.has(track.userId)
-    )
+    Object.entries(remoteTracks).filter(([, track]) => {
+      const kind = meetTrackKind(track);
+      if (kind === 'screen') return videoWindow?.screenVideo !== false;
+      return kind !== 'video' || visible.has(track.userId);
+    })
   );
   const pending = planRemoteSubscriptions(
     wanted,
@@ -279,6 +292,7 @@ export function useWindowedSubscriber({
   resetSubscriber,
   signalingRef,
   setRemoteMedia,
+  policy,
 }: {
   activeRef: Ref<boolean>;
   stateRef: Ref<CallState>;
@@ -297,10 +311,23 @@ export function useWindowedSubscriber({
   resetSubscriber: () => void;
   signalingRef: Ref<MeetSignaling | null>;
   setRemoteMedia: Dispatch<SetStateAction<RemoteMedia>>;
+  policy?: MediaPolicy;
 }) {
   const requestedLayers = useRef(new Map<string, RequestedLayer>());
+  // A room server that rejects current RIDs is treated as legacy until the
+  // next join advertises capabilities again.
+  const rejectedCapabilities = useRef<readonly string[] | null>(null);
+  const capabilities = useCallback(() => {
+    const advertised = stateRef.current.mediaCapabilities;
+    return advertised && advertised === rejectedCapabilities.current
+      ? []
+      : advertised;
+  }, [stateRef]);
   useSubscriberLayers({
     active: admission === 'admitted',
+    capabilities,
+    resetSubscriber,
+    policy,
     queue: subscribeQueue,
     peer: subscribePcRef,
     sessionRef: subscribeSessionRef,
@@ -328,11 +355,15 @@ export function useWindowedSubscriber({
       if (!nextWindow || Date.now() - nextWindow.changedAt >= 700)
         settledWindow = nextWindow;
       const { pending, close, layers } = planWindowedRemoteSubscriptions({
-        capabilities: stateRef.current.mediaCapabilities,
+        capabilities: capabilities(),
         remoteTracks: stateRef.current.remoteTracks,
         subscribedKeys: subscribedRef.current,
         selfUserId: stateRef.current.selfUserId,
-        videoWindow: settledWindow,
+        videoWindow: applyMediaPolicy(
+          settledWindow,
+          policy?.getSnapshot(),
+          Object.keys(stateRef.current.participants).length
+        ),
       });
       const closing = new Set(close);
       const sessionId = subscribeSessionRef.current;
@@ -428,6 +459,14 @@ export function useWindowedSubscriber({
           setRemoteMedia
         );
       } catch (error) {
+        if (
+          pending.some(
+            ({ simulcast }) =>
+              simulcast?.preferredRid === 'f' || simulcast?.preferredRid === 'q'
+          )
+        )
+          rejectedCapabilities.current =
+            stateRef.current.mediaCapabilities ?? null;
         if (requestedPeer && subscribePcRef.current === requestedPeer)
           resetSubscriber();
         throw error;
@@ -459,9 +498,18 @@ export function useWindowedSubscriber({
     };
     schedule();
     const retry = setInterval(schedule, 1500);
+    // Visibility and audio-only changes resubscribe at once, not on the timer.
+    const unsubscribe = policy?.subscribe(schedule);
+    const stopWatching =
+      policy && readMeetMediaFlags().hiddenTabSaver
+        ? watchPageVisibility(policy)
+        : undefined;
     return () => {
       active = false;
       clearInterval(retry);
+      unsubscribe?.();
+      stopWatching?.();
+      policy?.setVisibility('visible');
       if (stateRef.current.admission !== 'admitted') {
         subscribePcRef.current?.close();
         subscribePcRef.current = null;
@@ -484,6 +532,8 @@ export function useWindowedSubscriber({
     subscribedRef,
     trackOwnersRef,
     admission,
+    capabilities,
+    policy,
   ]);
 }
 
@@ -496,6 +546,8 @@ export function useRecentSpeakers(
   useEffect(() => {
     if (!active) return;
     const timer = setInterval(() => {
+      // Speaker ordering only matters for a visible grid.
+      if (typeof document !== 'undefined' && document.hidden) return;
       const speakers = (peer.current?.getTransceivers() ?? [])
         .flatMap(({ mid, receiver }) => {
           const owner = mid === null ? undefined : owners.current.get(mid);
