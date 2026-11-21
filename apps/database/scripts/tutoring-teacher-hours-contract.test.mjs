@@ -5,7 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   assertAuthUsersUseAuthAdmin,
-  asAuthAdmin,
+  assumeAuthWriterSql,
 } from './auth-admin-session.mjs';
 import {
   defaultWrite,
@@ -168,12 +168,18 @@ test('auth user bootstrap uses the GoTrue role the platform-role guard admits', 
   assert.throws(() =>
     assertAuthUsersUseAuthAdmin(
       "insert into auth.users(id) values('x');",
-      'negative'
+      'bare'
+    )
+  );
+  assert.throws(() =>
+    assertAuthUsersUseAuthAdmin(
+      "set role supabase_auth_admin;\ninsert into auth.users(id) values('x');\nreset role;",
+      'unconditional'
     )
   );
   assert.doesNotThrow(() =>
     assertAuthUsersUseAuthAdmin(
-      asAuthAdmin("insert into auth.users(id) values('x');"),
+      assumeAuthWriterSql("insert into auth.users(id) values('x');"),
       'helper'
     )
   );

@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
+import {
+  assertAuthUsersUseAuthAdmin,
+  assertPlatformUserRekeyUsesAdmittedRole,
+} from './auth-admin-session.mjs';
 import { assertStrictTap } from './programming-database-tap.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 import {
@@ -146,4 +149,14 @@ test('auth user bootstrap uses the GoTrue role the platform-role guard admits', 
     ['./tutoring-absence-credit-concurrency.mjs', 'absence concurrency'],
   ])
     assertAuthUsersUseAuthAdmin(read(file), label);
+  assert.throws(() =>
+    assertPlatformUserRekeyUsesAdmittedRole(
+      "select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'23503',null,'x');\nselect throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'23503',null,'y');\nselect lives_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'z');\nselect lives_ok($q$delete from public.users where id=pg_temp.fid(92704)$q$,'d');",
+      'unguarded rekey'
+    )
+  );
+  assertPlatformUserRekeyUsesAdmittedRole(
+    read('../supabase/tests/tutoring-absence-credit-lifecycle.sql'),
+    'absence lifecycle fixture'
+  );
 });

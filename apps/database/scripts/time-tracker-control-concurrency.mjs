@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
@@ -125,9 +126,7 @@ async function fixtureCommands(metadata) {
 
 export async function runTimeTrackerControlConcurrency(metadata) {
   const { args, execute } = await fixtureCommands(metadata);
-  execute(`set role supabase_auth_admin;
-    insert into auth.users(id) values('${actor}');
-    reset role;
+  execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic control race',false,'${actor}');
     insert into public.workspace_members(ws_id,user_id,type) values('${ws}','${actor}','MEMBER') on conflict do nothing;
@@ -192,9 +191,7 @@ export async function runTimeTrackerControlConcurrency(metadata) {
   );
   execute(
     `delete from public.workspaces where id='${ws}';
-    set role supabase_auth_admin;
-    delete from auth.users where id='${actor}';
-    reset role;`
+    ${assumeAuthWriterSql(`delete from auth.users where id='${actor}';`)}`
   );
   console.log('Actual two-connection control CAS and idempotency passed');
 }
@@ -231,9 +228,7 @@ export function normalizedApprovalScript(linked) {
 
 export async function runTimeTrackerReplacementConcurrency(metadata) {
   const { args, execute } = await fixtureCommands(metadata);
-  execute(`set role supabase_auth_admin;
-    insert into auth.users(id) values('${replaceActor}');
-    reset role;
+  execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${replaceActor}');`)}
     insert into public.users(id) values('${replaceActor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${replaceWs}','Synthetic replacement race',false,'${replaceActor}');
     insert into public.workspace_members(ws_id,user_id,type) values('${replaceWs}','${replaceActor}','MEMBER') on conflict do nothing;
@@ -315,9 +310,7 @@ export async function runTimeTrackerReplacementConcurrency(metadata) {
     );
     // Invoke the actual authorized approval RPC while normalized locks remain held.
     const linked = currentId();
-    execute(`set role supabase_auth_admin;
-      insert into auth.users(id) values('${reviewer}');
-      reset role;
+    execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${reviewer}');`)}
       insert into public.users(id) values('${reviewer}') on conflict do nothing;
       insert into public.workspace_members(ws_id,user_id,type) values('${replaceWs}','${reviewer}','MEMBER');
       insert into public.workspace_roles(id,ws_id,name) values('00000000-0000-4000-8000-000000090871','${replaceWs}','Synthetic reviewer');
@@ -374,9 +367,7 @@ export async function runTimeTrackerReplacementConcurrency(metadata) {
   } finally {
     execute(
       `delete from public.workspaces where id='${replaceWs}';
-      set role supabase_auth_admin;
-      delete from auth.users where id in('${replaceActor}','${reviewer}');
-      reset role;`
+      ${assumeAuthWriterSql(`delete from auth.users where id in('${replaceActor}','${reviewer}');`)}`
     );
   }
   console.log(

@@ -5,8 +5,21 @@ select no_plan();
 create function pg_temp.fid(n integer) returns uuid language sql as $$
   select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
--- The platform-role guard admits supabase_auth_admin, the role GoTrue uses.
-set role supabase_auth_admin;
+-- Assume supabase_auth_admin only when this session can. Local postgres is already admitted.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
 insert into auth.users(id)
 select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
 from (values (92701),(92702),(92703)) as ids(n);
@@ -195,13 +208,59 @@ select is((select type::text from public.workspace_members where ws_id=pg_temp.f
 select throws_ok($q$select pg_temp.create_credit(92755,92772)$q$,'42501','Tutoring credit forbidden','revoked actor cannot replay retained receipt');
 select pg_temp.set_actor_membership('MEMBER');
 -- Creation attribution follows actual parent rekey/SET NULL, never direct writes.
+-- The cascade guard admits postgres. supabase_auth_admin cannot update public.users.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text) = 'postgres' then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'postgres') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'postgres', 'SET') then
+    perform set_config('role', 'postgres', false);
+  end if;
+end
+$assume$;
 select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'23503',null,'existing actor membership FK still restricts parent rekey');
+reset role;
+set local search_path=public,extensions;
 delete from public.workspace_members where user_id=pg_temp.fid(92701);
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text) = 'postgres' then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'postgres') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'postgres', 'SET') then
+    perform set_config('role', 'postgres', false);
+  end if;
+end
+$assume$;
 select throws_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,
  '23503',null,'existing private-details FK also restricts unsupported user rekey');
+reset role;
+set local search_path=public,extensions;
 -- Isolate the intended created_by RI action, without changing shared FK policy.
 delete from public.user_private_details where user_id=pg_temp.fid(92701);
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text) = 'postgres' then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'postgres') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'postgres', 'SET') then
+    perform set_config('role', 'postgres', false);
+  end if;
+end
+$assume$;
 select lives_ok($q$update public.users set id=pg_temp.fid(92704) where id=pg_temp.fid(92701)$q$,'creator rekey preserves historical linked sessions');
+reset role;
+set local search_path=public,extensions;
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by=pg_temp.fid(92701)),
  'creator rekey cascades live attribution without rewriting credit history');
 -- Every synthetic auth user already owns an auto-created personal workspace.
@@ -211,7 +270,22 @@ select is((select count(*)::integer from public.workspaces
  where personal and creator_id=pg_temp.fid(92704)),1,'creator rekey retains one synthetic personal workspace');
 select lives_ok($q$delete from public.workspaces where personal and creator_id=pg_temp.fid(92704)$q$,
  'synthetic actor personal workspace cleanup preserves shared uniqueness');
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text) = 'postgres' then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'postgres') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'postgres', 'SET') then
+    perform set_config('role', 'postgres', false);
+  end if;
+end
+$assume$;
 select lives_ok($q$delete from public.users where id=pg_temp.fid(92704)$q$,'creator deletion uses declared SET NULL');
+reset role;
+set local search_path=public,extensions;
 select ok(not exists(select 1 from private.workspace_tutoring_sessions where ws_id=pg_temp.fid(92711) and created_by is not null),
  'creator deletion retains sessions and clears only live attribution');
 select lives_ok($q$delete from public.workspace_user_groups where id=pg_temp.fid(92731)$q$,'group cascade can delete linked sessions and scoped ledger');

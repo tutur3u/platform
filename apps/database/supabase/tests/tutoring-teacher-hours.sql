@@ -5,8 +5,21 @@ select no_plan();
 create function pg_temp.fid(n integer) returns uuid language sql as $$
  select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
--- The platform-role guard admits supabase_auth_admin, the role GoTrue uses.
-set role supabase_auth_admin;
+-- Assume supabase_auth_admin only when this session can. Local postgres is already admitted.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
 insert into auth.users(id)
 select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
 from (values (96001),(96002),(96003),(96004)) as ids(n);

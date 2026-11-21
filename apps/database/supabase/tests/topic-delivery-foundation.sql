@@ -20,8 +20,21 @@ select ok(not has_table_privilege('authenticated','private.topic_announcement_at
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcements',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing parent callers are not revoked');
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcement_recipients',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing recipient callers are not revoked');
 select ok((select bool_and(has_table_privilege('service_role','private.topic_announcement_attachments',privilege)) from unnest(array['INSERT','UPDATE','DELETE']) privilege),'existing attachment callers are not revoked');
--- The platform-role guard admits supabase_auth_admin, the role GoTrue uses.
-set role supabase_auth_admin;
+-- Assume supabase_auth_admin only when this session can. Local postgres is already admitted.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
 insert into auth.users(id)
 select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
 from (values (121701),(121702)) as ids(n);

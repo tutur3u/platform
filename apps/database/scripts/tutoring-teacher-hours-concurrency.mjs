@@ -4,6 +4,7 @@ import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
 } from './run-supabase-isolated.js';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 
 const ws = '00000000-0000-4000-8000-000000096611';
@@ -54,9 +55,7 @@ export async function runTutoringTeacherHoursConcurrency(metadata) {
       timeout: 10000,
       maxBuffer: 65536,
     });
-  execute(`set role supabase_auth_admin;
-    insert into auth.users(id) values('${actor}');
-    reset role;
+  execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic hours race',false,'${actor}');
     insert into public.workspace_members(ws_id,user_id,type) values('${ws}','${actor}','MEMBER') on conflict do nothing;
@@ -124,9 +123,7 @@ export async function runTutoringTeacherHoursConcurrency(metadata) {
   } finally {
     execute(
       `delete from public.workspaces where id='${ws}';
-      set role supabase_auth_admin;
-      delete from auth.users where id='${actor}';
-      reset role;`
+      ${assumeAuthWriterSql(`delete from auth.users where id='${actor}';`)}`
     );
   }
 }

@@ -4,6 +4,7 @@ import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
 } from './run-supabase-isolated.js';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 
 const fid = (suffix) =>
@@ -65,9 +66,7 @@ export async function runTopicDeliveryFoundationConcurrency(metadata) {
       timeout: 10000,
       maxBuffer: 65536,
     });
-  execute(`set role supabase_auth_admin;
-insert into auth.users(id) values('${actor}');
-reset role;
+  execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
 insert into public.users(id) values('${actor}') on conflict do nothing;
 insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic foundation concurrency',false,'${actor}');
 insert into private.topic_announcements(id,ws_id,title,topic,created_by) values('${parent}','${ws}','Synthetic notice','Synthetic topic','${actor}');`);
