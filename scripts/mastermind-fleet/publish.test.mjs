@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fakePeers, fixtureDatabase, threadLister } from './fixture.mjs';
+import { readPokes } from './poke.mjs';
 import {
   acquirePublishLock,
   fitToBudget,
@@ -646,6 +647,17 @@ test('publishes configured usage after state and owner answers, with a bounded h
   );
   assert.doesNotMatch(server.calls[2].body, /fixture-usage-bearer/);
 
+  const pokeDir = path.join(paths.root, 'pokes');
+  const revision = NOW.getTime();
+  assert.deepEqual(
+    readPokes(pokeDir),
+    ['state', 'usage'].map((topic) => ({
+      topic,
+      revision,
+      observedAt: NOW.toISOString(),
+    }))
+  );
+
   server.calls.length = 0;
   const quiet = await runOnce({
     ...options,
@@ -653,10 +665,26 @@ test('publishes configured usage after state and owner answers, with a bounded h
   });
   assert.equal(quiet.usagePublished, undefined);
   assert.equal(server.calls.length, 1);
+  assert.equal(readPokes(pokeDir)[1].revision, revision);
+
+  const refused = await runOnce({
+    ...options,
+    now: new Date(revision + 30_000),
+    force: true,
+    async fetchImpl(url, init) {
+      if (new URL(url).pathname.endsWith('/usage')) {
+        return Response.json({ accepted: false });
+      }
+      return server.fetchImpl(url, init);
+    },
+  });
+  assert.equal(refused.usagePublished, false);
+  assert.equal(readPokes(pokeDir)[1].revision, revision);
 
   const next = await runOnce({
     ...options,
     now: new Date(NOW.getTime() + 60_000),
   });
   assert.equal(next.usagePublished, true);
+  assert.equal(readPokes(pokeDir)[1].revision, revision + 60_000);
 });

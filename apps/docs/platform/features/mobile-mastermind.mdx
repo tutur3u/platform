@@ -259,7 +259,8 @@ product rules of the shell entry and every tab.
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
-  `usage-normalize.mjs`, and `t3-usage.mjs`, with the source commit in
+  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, and
+  `private-files.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
   `StartInterval` 15, `ThrottleInterval` 10 and `WatchPaths` on
   `decisions/open` and `decisions/resolved`, so a new or closed decision
@@ -293,7 +294,11 @@ product rules of the shell entry and every tab.
   16 MiB on the publisher's IPv4 loopback, where T3 also returns local
   diagnostics in its configuration reply. The published Usage snapshot keeps
   its existing byte limit. The signed Usage write runs after state and
-  answer delivery, on change or a 60-second heartbeat. Removing
+  answer delivery, on change or a 60-second heartbeat. After successful state
+  and Usage writes, the publisher records a topic, revision, and observation
+  time in owner-only files for the fleet bridge. The bridge forwards these as
+  refresh signals. Clients can continue polling when the bridge is unavailable.
+  Removing
   `usageMachines` stops reads and Usage writes at the next publisher tick.
   Keep a private backup of the installed script directory and config before
   switching versions. Restore that directory and config together on rollback.

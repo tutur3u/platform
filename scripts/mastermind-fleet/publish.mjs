@@ -26,6 +26,7 @@ import {
   slugify,
 } from './fleet-state.mjs';
 import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
+import { sendPoke } from './poke.mjs';
 import { fleetText } from './scrub.mjs';
 import { readTodayOutcomes } from './today-outcomes.mjs';
 import { usageCollector } from './usage-snapshot.mjs';
@@ -442,6 +443,9 @@ export async function runOnce({
   const secret = readSecret(paths.secretFile);
   const web = { fetchImpl, origin, secret, tickEnd };
   const config = readJson(paths.configFile);
+  const pokeDir = path.join(paths.root, 'pokes');
+  const observedAt = now.toISOString();
+  const revision = now.getTime();
   const db = openDatabase(paths.database);
   let rows;
   let todayOutcomes;
@@ -543,9 +547,10 @@ export async function runOnce({
     }
     writePrivateJson(paths.stampFile, {
       hash,
-      at: now.toISOString(),
+      at: observedAt,
       ...(degraded ? { degraded: true } : {}),
     });
+    sendPoke({ topic: 'state', revision, observedAt }, { dir: pokeDir });
   }
 
   // Web serves answers to decisions open in the last 48 hours too, so an
@@ -585,8 +590,9 @@ export async function runOnce({
       if (usagePublished) {
         writePrivateJson(usageStampFile, {
           hash: usageSnapshot.hash,
-          at: now.toISOString(),
+          at: observedAt,
         });
+        sendPoke({ topic: 'usage', revision, observedAt }, { dir: pokeDir });
       }
     } catch {
       // Optional usage never interrupts the established state and answer path.
