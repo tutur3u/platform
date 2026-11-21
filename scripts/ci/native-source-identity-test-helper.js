@@ -14,7 +14,80 @@ const { join, resolve } = require('node:path');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
-function sourceIdentityTests({ app, workflowName, jobName, source }) {
+const PR_HEAD_SOURCE =
+  '${{ github.event.pull_request.head.sha || github.sha }}';
+
+/**
+ * Evaluates a source-SHA workflow expression for one event. It accepts only
+ * the `github.*` and `inputs.*` references, string literals, `==`, `&&`, `||`
+ * and parentheses these expressions use, so it parses rather than evals.
+ */
+function evaluateSourceExpression(expression, { github, inputs }) {
+  const body = expression.replace(/^\$\{\{\s*|\s*\}\}$/g, '');
+  const tokens = body.match(/\s+|'[^']*'|==|&&|\|\||[()]|[A-Za-z_][\w.]*/g);
+  assert.equal(tokens.join(''), body, 'unsupported expression syntax');
+  const values = tokens.filter((token) => !/^\s+$/.test(token));
+  const read = (path) =>
+    path
+      .split('.')
+      .slice(1)
+      .reduce(
+        (value, key) => value?.[key],
+        path.startsWith('inputs.') ? inputs : github
+      );
+  let index = 0;
+  const primary = () => {
+    const token = values[index++];
+    if (token === '(') {
+      const value = or();
+      assert.equal(values[index++], ')');
+      return value;
+    }
+    if (token.startsWith("'")) return token.slice(1, -1);
+    assert.match(token, /^(github|inputs)\./u, `unexpected reference ${token}`);
+    return read(token);
+  };
+  // GitHub compares strings case-insensitively.
+  const fold = (value) =>
+    typeof value === 'string' ? value.toLowerCase() : value;
+  const equality = () => {
+    let value = primary();
+    while (values[index] === '==') {
+      index++;
+      value = fold(value) === fold(primary());
+    }
+    return value;
+  };
+  const and = () => {
+    let value = equality();
+    while (values[index] === '&&') {
+      index++;
+      const right = equality();
+      value = value ? right : value;
+    }
+    return value;
+  };
+  const or = () => {
+    let value = and();
+    while (values[index] === '||') {
+      index++;
+      const right = and();
+      value = value || right;
+    }
+    return value;
+  };
+  const result = or();
+  assert.equal(index, values.length, 'trailing expression tokens');
+  return result;
+}
+
+function sourceIdentityTests({
+  app,
+  workflowName,
+  jobName,
+  source,
+  sourceExpression = PR_HEAD_SOURCE,
+}) {
   const workflow = readWorkflow(workflowName);
   const job = workflow.jobs[jobName];
   const selected = `\${{ env.${source} }}`;
@@ -48,10 +121,7 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
   const prefix = app.toUpperCase();
 
   test(`${app} selects the PR head and preserves separate workflow supplier identity`, () => {
-    assert.equal(
-      (job.env ?? workflow.env)[source],
-      '${{ github.event.pull_request.head.sha || github.sha }}'
-    );
+    assert.equal((job.env ?? workflow.env)[source], sourceExpression);
     const checkout = job.steps.find((item) =>
       item.uses?.startsWith('actions/checkout@')
     );
@@ -101,12 +171,83 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
         workflow.jobs.deploy.if,
         "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
       );
+      // The marker names the published source, which a release dispatch pins.
       const marker = workflow.jobs.deploy.steps.find(
         (item) => item.env?.DEPLOYMENT_MARKER_SHA
       );
-      assert.equal(marker.env.DEPLOYMENT_MARKER_SHA, '${{ github.sha }}');
+      assert.equal(marker.env.DEPLOYMENT_MARKER_SHA, selected);
     }
   });
+
+  if (app === 'meet') {
+    test('meet release dispatch builds its pinned main source and nothing else', () => {
+      const expression = (job.env ?? workflow.env)[source];
+      const head = 'a'.repeat(40),
+        event = 'b'.repeat(40),
+        pinned = 'c'.repeat(40);
+      const pick = (github, inputs) =>
+        evaluateSourceExpression(expression, { github, inputs });
+      const dispatch = {
+        event_name: 'workflow_dispatch',
+        sha: event,
+        event: {},
+      };
+      // A PR always builds its head, whatever the dispatch inputs say.
+      assert.equal(
+        pick(
+          {
+            event_name: 'pull_request',
+            sha: event,
+            event: { pull_request: { head: { sha: head } } },
+          },
+          { release: true, source_sha: pinned }
+        ),
+        head
+      );
+      // A release dispatch builds the pinned main commit, not the dispatch head.
+      assert.equal(
+        pick(dispatch, { release: true, source_sha: pinned }),
+        pinned
+      );
+      // Without the release flag, or from another event, the pin is ignored.
+      assert.equal(
+        pick(dispatch, { release: false, source_sha: pinned }),
+        event
+      );
+      assert.equal(
+        pick(
+          { event_name: 'push', sha: event, event: {} },
+          { release: true, source_sha: pinned }
+        ),
+        event
+      );
+      // A release without a pin falls back to the event commit; admission then
+      // rejects it because EXPECTED_SOURCE_SHA is empty.
+      assert.equal(pick(dispatch, { release: true, source_sha: '' }), event);
+      assert.equal(
+        workflow.env.EXPECTED_SOURCE_SHA,
+        '${{ inputs.source_sha }}'
+      );
+      const inputs = workflow.on.workflow_dispatch.inputs;
+      assert.equal(inputs.release.type, 'boolean');
+      assert.equal(inputs.release.default, false);
+      assert.equal(inputs.source_sha.type, 'string');
+      // Both jobs that touch the source check it out and verify HEAD against it.
+      for (const name of ['validate', 'deploy']) {
+        const steps = workflow.jobs[name].steps;
+        assert.ok(
+          steps.some((item) => item.with?.ref === selected),
+          `${name} checks out the selected source`
+        );
+        assert.ok(
+          steps.some((item) =>
+            item.run?.includes(`test "$(git rev-parse HEAD)" = "$${source}"`)
+          ),
+          `${name} verifies HEAD is the selected source`
+        );
+      }
+    });
+  }
 
   test(`${app} PR-head/event-merge negative control keeps source, event and supplier distinct`, (t) => {
     const root = realpathSync(
@@ -260,4 +401,4 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
     assert.equal(receiptInput[3], head);
   });
 }
-module.exports = { sourceIdentityTests };
+module.exports = { evaluateSourceExpression, sourceIdentityTests };
