@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { hasConfiguredMemberDefaults } from '@tuturuuu/utils/member-default-permissions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -23,8 +24,7 @@ export async function GET(request: Request, { params }: Params) {
     .select('permission')
     .eq('ws_id', wsId)
     .eq('member_type', 'MEMBER')
-    .eq('enabled', true)
-    .limit(1);
+    .eq('enabled', true);
 
   if (defaultError) {
     console.error('Error checking default permissions', {
@@ -37,7 +37,11 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  if ((defaultPermissions?.length ?? 0) > 0) {
+  if (
+    hasConfiguredMemberDefaults(
+      (defaultPermissions ?? []).map(({ permission }) => permission)
+    )
+  ) {
     return NextResponse.json({ hasConfiguredPermissions: true });
   }
 

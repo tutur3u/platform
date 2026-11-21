@@ -50,7 +50,9 @@ with affected as (delete from storage.objects where bucket_id='changelog' and na
 select throws_ok($$update storage.objects set bucket_id='devbox-code-archives' where bucket_id='storage-test-other' and name='move-source'$$,'42501',null,'root member move into devbox-code-archives denied');
 select throws_ok($$update storage.objects set bucket_id='changelog' where bucket_id='storage-test-other' and name='move-source'$$,'42501',null,'root member move into changelog denied');
 reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
 update public.workspace_members set type='GUEST' where ws_id='00000000-0000-0000-0000-000000000000' and user_id='5707a6e0-0000-4000-8000-000000008801';
+select set_config('request.jwt.claims','{"sub":"5707a6e0-0000-4000-8000-000000008801","role":"authenticated"}',true);
 set local role authenticated;
 select throws_ok($$insert into storage.objects(bucket_id,name) values ('devbox-code-archives','denied-root guest')$$,'42501',null,'root guest devbox-code-archives insert denied');
 with affected as (update storage.objects set name='changed' where bucket_id='devbox-code-archives' and name='existing' returning 1) select is(count(*),0::bigint,'root guest devbox-code-archives update affects no rows') from affected;

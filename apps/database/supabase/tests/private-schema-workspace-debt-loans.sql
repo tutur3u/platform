@@ -447,6 +447,14 @@ select ok(
   'service role can execute private debt-loan RPCs'
 );
 
+-- The RPC tests run as a root member with an explicit finance role.
+insert into public.workspace_roles (id, name, ws_id)
+values ('d4b70000-0000-4000-8000-000000000001', 'Debt loan RPC finance', '00000000-0000-0000-0000-000000000000');
+insert into public.workspace_role_permissions (role_id, ws_id, permission, enabled)
+values ('d4b70000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'manage_finance', true);
+insert into public.workspace_role_members (role_id, user_id)
+values ('d4b70000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000001');
+
 select ok(
   public.has_workspace_permission(
     '00000000-0000-0000-0000-000000000000',

@@ -229,6 +229,16 @@ A newly created workspace may exist before any roles or defaults are configured.
 
 The creator fallback prevents the creator from locking themselves out. The dashboard permission-setup banner exists because everyone else would otherwise have no effective permissions until defaults or roles are configured.
 
+### Member defaults never include `admin`
+
+Product decision, all workspaces on every app surface that reads `getPermissions()` or `has_workspace_permission()`:
+
+- New workspaces seed only the drive and chat `MEMBER` defaults (`view_drive`, `manage_drive_tasks_directory`, `view_chat`, `create_chat`; listed in `packages/utils/src/member-default-permissions.ts`). An invited member with no role holds only those.
+- `admin` reaches members only through an explicit role. Workspaces whose `MEMBER` defaults enabled `admin` keep their members' access through a `Workspace Admin (preserved)` role holding the members who belonged at migration time, their role-less API keys are assigned that role, and their `MEMBER` `admin` default is disabled, so later invitees and invite-link joiners do not inherit it. An existing role with that name is reused only when it holds no creator-grant or explicit-grant permission and is not the recorded Mastermind role. API keys that already hold a role keep only that role plus the remaining defaults, so they lose the access the `MEMBER` `admin` default implied; give such a key an admin role explicitly when it needs that access. Personal workspaces keep their creator-only access.
+- A role manager can still enable `admin` as a `MEMBER` default in settings, but the permission-setup banner treats neither that nor the seeded baseline as configured access; only a role or another enabled default does.
+
+Regression coverage: `apps/database/supabase/tests/member-default-admin-least-privilege.sql`, `apps/database/supabase/tests/member-default-admin-backfill.sql`, `packages/utils/src/__tests__/workspace-helper-seeded-member-defaults.test.ts` and the setup-status route test in `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/setup-status/route.test.ts`.
+
 ### Ownership and personal status
 
 `workspaces.creator_id` and `workspaces.personal` are protected columns. Settings managers (including `admin`) keep table-level `UPDATE` for ordinary settings such as name, handle and avatar, but a `BEFORE UPDATE` trigger applies these rules:

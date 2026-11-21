@@ -391,7 +391,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.has_workspace_permission(uuid,uuid,text)', true, true),
   ('public.has_workspace_secret(uuid,text)', true, true),
   ('public.hook_mfa_verification_attempt(jsonb)', false, false),
-  ('public.initialize_workspace_admin_permission()', true, true),
+  ('public.initialize_workspace_admin_permission()', false, false),
   ('public.insert_ai_chat_message(text,uuid,text)', true, true),
   ('public.insert_task_history(uuid,text,text,jsonb,jsonb,jsonb)', false, true),
   ('public.insert_task_history(uuid,text,text,jsonb,jsonb,jsonb,uuid)', false, true),

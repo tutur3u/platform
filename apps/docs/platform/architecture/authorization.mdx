@@ -16,7 +16,7 @@ The important implementation detail is that modern permission checks do **not** 
 
 `workspace_default_permissions` is typed by `member_type`:
 
-- `MEMBER` rows are the normal workspace defaults for members and API keys.
+- `MEMBER` rows are the normal workspace defaults for members and API keys. New workspaces seed only drive and chat defaults, never `admin`; `admin` reaches members through an explicit role (see "Member defaults never include `admin`" in `platform/architecture/workspaces-permissions`).
 - `GUEST` rows are signed-in guest defaults. Missing guest rows mean denied.
 
 Guest defaults use the same `workspace_role_permission` catalog as member defaults, including management and `admin` bits, but guests are still denied on dashboard routes that have no mapped permission.
@@ -64,7 +64,7 @@ const containsPermission = (permission: PermissionId) => {
 That means creator and `admin` behave similarly at call sites, even though they come from different sources:
 
 - creator access is implicit and computed in code
-- `admin` access is explicit and stored like any other permission
+- `admin` access is explicit and stored like any other permission, normally on a role; a `MEMBER` default `admin` would grant it to every member and is never seeded
 
 For guests, `admin` can satisfy a mapped permission route, but it does not open routes with no permission mapping. The dashboard shell stays default-deny for guest routes that cannot be tied to a permission ID.
 
