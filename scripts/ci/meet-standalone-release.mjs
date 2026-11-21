@@ -29,7 +29,16 @@ const sharedWorkflows = EQUIVALENT_WORKFLOWS;
  * security workflows are never covered, and the covered run must have
  * executed and failed on the exact source.
  */
-export const RELEASE_EXCEPTIONS = [];
+export const RELEASE_EXCEPTIONS = [
+  {
+    // Root script contracts red outside Meet's closure; Meet, security and
+    // type-check green on this source.
+    id: 'RA-20261121-1240-MEET-UNIT',
+    source: '351d130d3faef22d890485b576767abe47bbb185',
+    workflows: ['turbo-unit-tests.yaml'],
+    expires: '2026-11-22T16:59:00Z',
+  },
+];
 
 export function releaseException(
   source,
