@@ -212,6 +212,11 @@ export interface CreateCrossAppReturnUrlPayload {
   codeChallengeMethod?: string;
   /** The account the user confirmed; the server refuses any other session. */
   expectedUserId?: string;
+  /**
+   * Seconds, 30 to 3600: the handed-off session must carry a second-factor
+   * proof no older than this, or the server answers `MFA_REQUIRED`.
+   */
+  mfaMaxAge?: number;
   returnUrl: string;
 }
 

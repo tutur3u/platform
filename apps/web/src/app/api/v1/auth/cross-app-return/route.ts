@@ -27,6 +27,7 @@ import {
   withAuthHandoffDiagnostics,
 } from '@/lib/auth/handoff-diagnostics';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
+import { isFreshMfaProof, parseMfaMaxAge } from '@/lib/auth/mfa-proof-age';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const returnUrlSchema = z.object({
@@ -35,6 +36,12 @@ const returnUrlSchema = z.object({
   /** The account the user confirmed; a different session never mints. */
   expectedUserId: z.string().max(64).optional(),
   generateToken: z.boolean().optional().default(true),
+  /**
+   * Seconds: the minted session must carry a second-factor proof no older
+   * than this. It only adds a requirement, and only a first-party app may
+   * ask; its range is checked below.
+   */
+  mfaMaxAge: z.unknown().optional(),
   returnUrl: z.string().min(1).max(MAX_URL_LENGTH),
 });
 
@@ -217,6 +224,18 @@ async function createCrossAppReturn(
     );
   }
 
+  const mfaMaxAge = parseMfaMaxAge(parsed.data.mfaMaxAge);
+
+  if (mfaMaxAge === false) {
+    return fail(
+      'INVALID_MFA_MAX_AGE',
+      NextResponse.json(
+        { code: 'INVALID_MFA_MAX_AGE', error: 'Invalid mfaMaxAge' },
+        { status: 400 }
+      )
+    );
+  }
+
   if (!parsed.data.generateToken) {
     return NextResponse.json({
       appName: target.appName,
@@ -295,6 +314,21 @@ async function createCrossAppReturn(
   const proof =
     assurance.proof ??
     (sessionClaims ? mfaProofFromVerifiedClaims(sessionClaims) : null);
+  // A first-party app that needs a recent second factor gets no token for an
+  // older proof. The account policy above has already passed and is not
+  // relaxed; the proof judged here is the one the token carries. Another
+  // registered app cannot make the user verify again on demand, so its
+  // request is minted as if it had not asked.
+  if (
+    mfaMaxAge !== undefined &&
+    target.kind === 'internal' &&
+    !isFreshMfaProof(proof, mfaMaxAge)
+  ) {
+    return fail(
+      'MFA_REQUIRED',
+      NextResponse.json({ code: 'MFA_REQUIRED' }, { status: 403 })
+    );
+  }
   const mfaTransfer = createMfaTransfer(user.id, target.targetApp, proof);
   // The handed-off session's own aal/amr, signed so exchange can trust it.
   const assuranceTransfer = createSessionAssuranceTransfer(

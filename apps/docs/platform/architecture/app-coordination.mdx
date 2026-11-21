@@ -401,6 +401,40 @@ does not raise the reported `aal`. Regression coverage lives in
 `apps/web/src/app/api/v1/auth/cross-app-return/route-assurance.test.ts` and
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-assurance.test.ts`.
 
+### Requiring a recent second factor
+
+An app that guards one action with a recent second factor, and not only a
+signed-in session, asks for it on the handoff. It adds `mfaMaxAge=<seconds>`
+to the central login URL; the login page passes the number to
+`POST /api/v1/auth/cross-app-return`, and the mint hands out a token only when
+the session's second-factor proof is at most that old, counted inclusively in
+whole seconds against the time the factor was verified. An older or missing
+proof answers `403 MFA_REQUIRED`, which the login page turns into its one
+second-factor step before minting again; the token then carries the new
+proof, which the app reads from its session as before.
+
+| Rule | Value |
+| --- | --- |
+| Accepted range | 30 to 3600 seconds, whole numbers. Anything else is `400 INVALID_MFA_MAX_AGE`; the mint never guesses a value. |
+| Without the field | The mint behaves as it does for every other app. |
+| Order | The account's own second-factor policy is checked first and is never relaxed. The field only adds a requirement. |
+| Who may ask | First-party apps. A request from any other registered app is minted as if it had not asked, so such an app cannot make a user verify again on demand. |
+| Scope | Token mints. A mounted app that shares the root session, and a return to a managed Tuturuuu host, receive no token and are not affected. |
+
+The field is a way to ask, not the guard: the app's own check of the proof's
+age stays the authority, so a request that leaves the field out gains
+nothing. A crafted login link can at most make a signed-in user verify their
+second factor once more: the return URL is validated separately, the step-up
+runs once per page load and a second refusal shows the retry card. Regression
+coverage lives in
+`apps/web/src/app/api/v1/auth/cross-app-return/route-mfa-max-age.test.ts`
+(the stale-proof loop, the new proof in the token, inclusive counting,
+missing, expired and future-dated proofs, the account policy and the other
+refusals first, the range, first-party apps only, no effect where no token
+is handed out), `cross-app-handoff-outcome.test.ts` and `form-mfa-step-up.test.tsx`
+under `apps/web/src/app/[locale]/(auth)/login/` (the value forwarded before
+and after the step-up, malformed values dropped).
+
 ### App-owned Drive attachments
 
 Registered external apps can request `workspace:drive:read` and

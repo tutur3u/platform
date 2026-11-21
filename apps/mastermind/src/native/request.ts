@@ -121,7 +121,10 @@ export async function mastermindRequest(
     const signedIn = sessionSubject(request, env, now);
     return secure(
       loginRedirect(
-        signedIn && !isOwner(signedIn) ? fleetReturnPath(next) : next
+        signedIn && !isOwner(signedIn) ? fleetReturnPath(next) : next,
+        // `mfa=fresh` is the step-up before a reply: the second factor is
+        // verified again even when the session already holds one.
+        { freshMfa: url.searchParams.get('mfa') === 'fresh' }
       )
     );
   }

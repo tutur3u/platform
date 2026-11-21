@@ -1044,7 +1044,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/cross-app-return/route.ts",
-    "sourceSha256": "c0130fe7844733185cba594c1b60f603e50aa9566bd697cdf08fc26ce7abad0a",
+    "sourceSha256": "63b6e70e82026d3c1a33ac2827bf1a742fc9b6b10e72807d9445df96de559ccb",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2075,6 +2075,26 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/review-assets/[assetId]/route.ts",
     "sourceSha256": "f0caa5029f046517a097aa1398b695bff55ba019f1ac530900e02c400eb27f38",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/ship/check",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/ship/check/route.ts",
+    "sourceSha256": "805078cb9b43f0f7188b466dd7997848cfdea0e3f6ca18a1dd8cebb05bd0ca8a",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/ship",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/ship/route.ts",
+    "sourceSha256": "006f779cf572653094f5c02c33f5174516ef8dbdac409340ca897026c79bbdcb",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

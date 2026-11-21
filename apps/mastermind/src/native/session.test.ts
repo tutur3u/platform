@@ -8,7 +8,12 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { MastermindEnvironment } from './auth';
 import { mastermindRequest } from './request';
 import { createAppRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
-import { exchangeHandoff, refreshSession, safeNextPath } from './session';
+import {
+  exchangeHandoff,
+  loginRedirect,
+  refreshSession,
+  safeNextPath,
+} from './session';
 
 const now = Date.now();
 const token = 'a'.repeat(64);
@@ -361,4 +366,58 @@ test('a forced intruder handoff and a sessionless fetch are refused without cook
     now
   );
   expect(fetchOnly.status).toBe(403);
+});
+
+test('a step-up sign-in asks Web for a second factor verified in the last 30 seconds, and changes nothing else', async () => {
+  const location = (response: Response) =>
+    new URL(response.headers.get('Location') ?? '');
+  const login = (query: string) =>
+    mastermindRequest(
+      new Request(`https://mastermind.tuturuuu.com/login${query}`),
+      env,
+      () => new Response('x'),
+      now
+    );
+  const plain = location(await login('?nextUrl=%2Fvi%2Fprojects'));
+  const fresh = location(await login('?nextUrl=%2Fvi%2Fprojects&mfa=fresh'));
+  expect(plain.searchParams.has('mfaMaxAge')).toBe(false);
+  expect(fresh.searchParams.get('mfaMaxAge')).toBe('30');
+  // Only the literal value asks for it, and it never carries a number in.
+  for (const query of ['?mfa=1', '?mfa=FRESH', '?mfa=', '?mfaMaxAge=5'])
+    expect(location(await login(query)).searchParams.has('mfaMaxAge')).toBe(
+      false
+    );
+
+  // Same host, same path, same callback: the return URL is built as ever.
+  const returnTo = (url: URL) => {
+    const verify = new URL(url.searchParams.get('returnUrl') ?? '');
+    const next = new URL(
+      verify.searchParams.get('nextUrl') ?? '',
+      'https://mastermind.tuturuuu.com'
+    );
+    next.searchParams.delete('mm_state');
+    return [verify.origin + verify.pathname, next.pathname + next.search];
+  };
+  expect(fresh.origin + fresh.pathname).toBe('https://tuturuuu.com/login');
+  expect(returnTo(fresh)).toEqual(returnTo(plain));
+  expect(returnTo(fresh)).toEqual([
+    'https://mastermind.tuturuuu.com/verify-token',
+    '/vi/projects',
+  ]);
+  // A next path that tries to leave the host is dropped with or without it.
+  const away = location(
+    await login('?nextUrl=https%3A%2F%2Fevil.example%2Fx&mfa=fresh')
+  );
+  expect(returnTo(away)[0]).toBe(
+    'https://mastermind.tuturuuu.com/verify-token'
+  );
+  expect(returnTo(away)[1]).toMatch(/^\//);
+  expect(away.searchParams.get('returnUrl')).not.toContain('evil.example');
+  expect(web).not.toHaveBeenCalled();
+
+  expect(
+    location(loginRedirect('/en', { freshMfa: true })).searchParams.get(
+      'mfaMaxAge'
+    )
+  ).toBe('30');
 });

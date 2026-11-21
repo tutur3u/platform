@@ -59,6 +59,31 @@ describe('LoginForm cross-app handoff MFA step-up', () => {
     expect(mocks.routerReplace).not.toHaveBeenCalledWith('/');
   });
 
+  it('asks the mint for a recent second factor when the returning app wants one, before and after the step-up', async () => {
+    // A signed-in session whose second factor is older than the app accepts.
+    mocks.createCrossAppReturnUrlWithInternalApi
+      .mockResolvedValueOnce({ code: 'MFA_REQUIRED' })
+      .mockResolvedValueOnce({ returnUrl: tokenizedUrl, targetApp: 'mail' });
+
+    renderLoginForm(returnUrl);
+    mocks.searchParams.set('mfaMaxAge', '30');
+
+    await screen.findByText('login.two_factor_authentication');
+    await verifyTotp();
+
+    await waitFor(() => {
+      expect(mocks.assign).toHaveBeenCalledWith(tokenizedUrl);
+    });
+    expect(
+      mocks.createCrossAppReturnUrlWithInternalApi.mock.calls.map(
+        ([payload]) => [payload.mfaMaxAge, payload.returnUrl]
+      )
+    ).toEqual([
+      [30, returnUrl],
+      [30, returnUrl],
+    ]);
+  });
+
   it('shows a retry instead of looping when the mint still requires MFA after step-up', async () => {
     mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
       code: 'MFA_REQUIRED',

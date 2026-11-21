@@ -100,6 +100,10 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the MFA step-up once and mints again. A second refusal, a mint failure,
   unavailable assurance or a stalled step shows the retry card instead of the
   home page.
+- A first-party app can require a recent second factor with `mfaMaxAge` on
+  the login URL; a signed-in session whose proof is older takes the same
+  step-up.
+  See [requiring a recent second factor](/platform/architecture/app-coordination#requiring-a-recent-second-factor).
 - Google sign-in asks with `prompt=select_account`, so a returning user
   picks an account in one tap and sees consent only when Google needs it.
 - The login form loads with the shell rather than as a lazy chunk, and the

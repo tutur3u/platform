@@ -78,12 +78,21 @@ function settle(key: string, text: string, reply: FleetReply): ReplyState {
   };
 }
 
+/**
+ * `resume` is a reply that was waiting for a second factor when the page
+ * was left for the sign-in (see thread-reply-pending.ts). It starts in
+ * `needs_mfa` with that key and text, and `retry()` sends that text under
+ * the same key.
+ */
 export function createThreadReply(
   target: ReplyTarget,
   transport: ReplyTransport,
-  newKey: () => string = () => crypto.randomUUID()
+  newKey: () => string = () => crypto.randomUUID(),
+  resume?: { key: string; text: string }
 ) {
-  let state: ReplyState = { phase: 'idle' };
+  let state: ReplyState = resume
+    ? { phase: 'needs_mfa', key: resume.key, text: resume.text }
+    : { phase: 'idle' };
   const listeners = new Set<() => void>();
   const set = (next: ReplyState) => {
     state = next;

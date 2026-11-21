@@ -73,6 +73,18 @@ export function getConfirmedUserId(
 }
 
 /** The mint request: the app's PKCE challenge and the confirmed account. */
+/**
+ * The maximum second-factor proof age the returning app asked for on the
+ * login URL, as a number for the mint to judge. Anything that is not a plain
+ * whole number is left out, which asks for nothing.
+ */
+function getRequestedMfaMaxAge(searchParams: Pick<URLSearchParams, 'get'>) {
+  const raw = searchParams.get('mfaMaxAge');
+  return raw !== null && /^\d{1,6}$/u.test(raw)
+    ? { mfaMaxAge: Number(raw) }
+    : {};
+}
+
 export function buildHandoffRequest(
   searchParams: Pick<URLSearchParams, 'get'>,
   returnUrl: string,
@@ -80,6 +92,7 @@ export function buildHandoffRequest(
 ) {
   return {
     ...getCrossAppPkceParams(searchParams),
+    ...getRequestedMfaMaxAge(searchParams),
     expectedUserId: getConfirmedUserId(confirmedReturnKey, returnUrl),
     returnUrl,
   };

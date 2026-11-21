@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildHandoffRequest,
   classifyCrossAppHandoff,
   getConfirmedReturnKey,
   getConfirmedUserId,
@@ -116,5 +117,36 @@ describe('isSessionRefreshSettled', () => {
     expect(isSessionRefreshSettled({ error: { name: 'AuthApiError' } })).toBe(
       false
     );
+  });
+});
+
+describe('buildHandoffRequest', () => {
+  const returnUrl =
+    'https://mastermind.tuturuuu.com/verify-token?nextUrl=%2Fen';
+  const request = (query: string) =>
+    buildHandoffRequest(new URLSearchParams(query), returnUrl, null);
+
+  it('forwards the second-factor age the returning app asked for', () => {
+    expect(request('mfaMaxAge=30')).toMatchObject({ mfaMaxAge: 30, returnUrl });
+    // The mint judges the range; the form only passes a number on.
+    expect(request('mfaMaxAge=999999').mfaMaxAge).toBe(999_999);
+  });
+
+  it('asks for nothing when the value is absent or not a whole number', () => {
+    for (const query of [
+      '',
+      'mfaMaxAge=',
+      'mfaMaxAge=-30',
+      'mfaMaxAge=30.5',
+      'mfaMaxAge=1e3',
+      'mfaMaxAge=30s',
+      'mfaMaxAge=%2030',
+      'mfaMaxAge=1234567',
+    ])
+      expect('mfaMaxAge' in request(query)).toBe(false);
+  });
+
+  it('never lets the value reach the return URL', () => {
+    expect(request('mfaMaxAge=30').returnUrl).toBe(returnUrl);
   });
 });

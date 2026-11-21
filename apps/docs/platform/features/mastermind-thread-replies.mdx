@@ -310,7 +310,7 @@ layer, and every body is checked against the contract before it is shown.
 | Surface | Module | What it gives a screen |
 | --- | --- | --- |
 | Web and Workers | `@tuturuuu/internal-api/mastermind-threads` | One function per route. Each resolves to `{ ok, data }` or `{ ok: false, error, status }` with a closed `error` (`machine_offline`, `timeout`, `mfa_required`, ...); nothing throws. |
-| Mastermind web | `apps/mastermind/src/fleet/thread-cache.ts`, `thread-reply.ts` | The on-device list cache and the state of one reply. |
+| Mastermind web | `apps/mastermind/src/fleet/thread-cache.ts`, `thread-reply.ts`, `thread-reply-pending.ts` | The on-device list cache, the state of one reply, and a reply kept across the second-factor sign-in. |
 | Mobile | `apps/mobile/lib/features/mastermind/fleet/data/fleet_thread_*.dart`, `fleet_reply_step_up.dart`, `cubit/fleet_thread_reply_cubit.dart` | Models, `FleetThreadSource`, the on-device list cache, the reply cubit and the second-factor step-up for a reply. |
 
 - **On-device list cache.** Product decision (owner, 21 Nov 2026): the last
@@ -354,6 +354,20 @@ layer, and every body is checked against the contract before it is shown.
   after a device unlock, or with a six-digit code from an authenticator app.
   It leaves the signed-in screen where it is, and the composer then retries
   the same reply.
+- **Step-up on the web.** Mastermind's `/login?mfa=fresh` sends the owner
+  through the central sign-in asking for a second factor verified within the
+  last 30 seconds
+  ([`mfaMaxAge`](/platform/architecture/app-coordination#requiring-a-recent-second-factor)),
+  which in practice means verified during that sign-in. A session whose
+  proof is older is asked for the factor once and returns with a session
+  that carries the new proof. The reply route judges the proof's age again,
+  against its own window, when the reply is sent. The sign-in is a full
+  page navigation. `thread-reply-pending.ts` keeps one waiting reply in
+  the tab's session storage for that trip: one owner, one thread, handed
+  back once, and ignored after fifteen minutes. An entry written under
+  another account is dropped, since what comes back is sent as the
+  signed-in owner's reply. `createThreadReply` resumes that pair in
+  `needs_mfa`, and `retry()` sends that text under the same key.
 - **Read markers.** Marking a thread read answers whether Web saved the
   marker. It is not saved when it lost a race with another marker; the list
   keeps its unread count until a later call saves.
@@ -384,7 +398,12 @@ again on retry and left in the outbox by a reset, a failing listener, the
 delivery states),
 `fleet_thread_repository_test.dart` (queries, parsing, refusals, an unsaved
 read marker), `fleet_reply_step_up_test.dart` (a new verification on every
-call, the device authenticator, a dismissed unlock, a refused code).
+call, the device authenticator, a dismissed unlock, a refused code),
+`apps/mastermind/src/native/session.test.ts` (the step-up sign-in asks for
+a 30-second proof and builds the same return URL),
+`apps/mastermind/src/fleet/thread-reply-pending.test.ts` (a waiting reply
+kept for its own owner and thread, handed back once, another owner's,
+expired or malformed entries dropped) and `thread-reply.test.ts` (a resumed reply sent under its key).
 
 ### Bridge daemon
 

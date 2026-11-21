@@ -31,6 +31,7 @@ import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { mfaProofFromVerifiedClaims } from '@tuturuuu/utils/required-mfa-policy';
 import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
 import type { NextRequest } from 'next/server';
+import { isFreshMfaProof } from '@/lib/auth/mfa-proof-age';
 import { MASTERMIND_PUSH_MIN_SECRET_LENGTH } from '@/lib/mastermind/push-events/signature';
 import { fleetError } from './http';
 
@@ -58,18 +59,7 @@ export function replyMfaMaxAgeSeconds(
     : FLEET_REPLY_MFA_DEFAULT_MAX_AGE_SECONDS;
 }
 
-export function isFreshMfaProof(
-  proof: MfaSessionProof | null,
-  maxAgeSeconds: number,
-  nowSeconds = Math.floor(Date.now() / 1000)
-) {
-  return Boolean(
-    proof &&
-    proof.verifiedAt <= nowSeconds &&
-    nowSeconds - proof.verifiedAt <= maxAgeSeconds &&
-    (proof.expiresAt === undefined || proof.expiresAt > nowSeconds)
-  );
-}
+export { isFreshMfaProof };
 
 export type ClaimsReader = {
   auth: {

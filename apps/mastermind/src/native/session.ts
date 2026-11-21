@@ -67,7 +67,23 @@ function randomState() {
     .replace(/=+$/, '');
 }
 
-export function loginRedirect(nextPath: string) {
+/**
+ * How old a second-factor proof may be when Web hands the session back after
+ * a step-up, in seconds: in practice, verified during that sign-in. Web
+ * judges the proof's age again, against its own window, when a reply is sent.
+ */
+export const FRESH_MFA_MAX_AGE_SECONDS = 30;
+
+/**
+ * Sends the browser to the Web sign-in, to return through `/verify-token`.
+ * With `freshMfa`, Web hands back a session only once its second factor was
+ * verified within the last `FRESH_MFA_MAX_AGE_SECONDS`, asking for it again
+ * when the session's own proof is older.
+ */
+export function loginRedirect(
+  nextPath: string,
+  { freshMfa = false }: { freshMfa?: boolean } = {}
+) {
   const state = randomState();
   const next = new URL(safeNextPath(nextPath), MASTERMIND_ORIGIN);
   next.searchParams.set(LOGIN_STATE_PARAM, state);
@@ -75,6 +91,8 @@ export function loginRedirect(nextPath: string) {
   verify.searchParams.set('nextUrl', `${next.pathname}${next.search}`);
   const login = new URL('/login', WEB_ORIGIN);
   login.searchParams.set('returnUrl', verify.toString());
+  if (freshMfa)
+    login.searchParams.set('mfaMaxAge', String(FRESH_MFA_MAX_AGE_SECONDS));
   const headers = new Headers({ Location: login.toString() });
   headers.append(
     'Set-Cookie',

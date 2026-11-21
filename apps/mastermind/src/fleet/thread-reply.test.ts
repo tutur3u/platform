@@ -267,4 +267,27 @@ describe('thread reply', () => {
       idempotencyKey: KEYS[1],
     });
   });
+
+  it('comes back from the sign-in holding the waiting reply, and sends it under its key', async () => {
+    const send = vi.fn<ReplyTransport['send']>(async () => ok(receipt()));
+    const read = vi.fn<ReplyTransport['receipt']>(async () => ok(receipt()));
+    const reply = createThreadReply(
+      TARGET,
+      { send, receipt: read },
+      () => KEYS[1]!,
+      { key: KEYS[0]!, text: 'Ship it.' }
+    );
+    expect(reply.getState()).toEqual({
+      phase: 'needs_mfa',
+      key: KEYS[0],
+      text: 'Ship it.',
+    });
+    await reply.retry();
+    expect(send).toHaveBeenCalledWith({
+      ...TARGET,
+      text: 'Ship it.',
+      idempotencyKey: KEYS[0],
+    });
+    expect(reply.getState().phase).toBe('sent');
+  });
 });
