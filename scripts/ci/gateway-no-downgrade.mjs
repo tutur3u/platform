@@ -22,14 +22,16 @@ const fullSha = /^[0-9a-f]{40}$/;
 
 /** The 40-hex build commit in a gateway version message, or null. */
 export function servingCommit(message) {
+  let commit;
   try {
-    return versionCommit(
+    commit = versionCommit(
       { annotations: { 'workers/message': message } },
       { kind: 'gateway' }
     );
   } catch {
     return null;
   }
+  return typeof commit === 'string' && fullSha.test(commit) ? commit : null;
 }
 
 /**
@@ -65,18 +67,40 @@ const NOTICES = {
     'The serving gateway commit is not related to this commit on GitHub; skipping the gateway deploy.',
 };
 
-async function githubCompare({ repo, base, head, token }) {
-  const response = await fetch(
-    `https://api.github.com/repos/${repo}/compare/${base}...${head}?per_page=1`,
-    {
-      redirect: 'error',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      signal: AbortSignal.timeout(20_000),
-    }
+const repoName = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/**
+ * GitHub's compare status for `<base>...<head>`. Only two validated commit
+ * SHAs and the owner/name repository slug reach the request: nothing else
+ * from the settings file is sent.
+ */
+export async function githubCompare({
+  repo,
+  base,
+  head,
+  token,
+  fetchImpl = fetch,
+}) {
+  // The URL uses only values assigned when their anchored pattern matched.
+  const slug = typeof repo === 'string' && repoName.test(repo) ? repo : '';
+  if (!slug) throw new Error('GITHUB_REPOSITORY is not an owner/name slug');
+  const baseSha = typeof base === 'string' && fullSha.test(base) ? base : '';
+  const headSha = typeof head === 'string' && fullSha.test(head) ? head : '';
+  if (!baseSha || !headSha)
+    throw new Error('compare refs must be full commit SHAs');
+  const [owner, name] = slug.split('/');
+  const url = new URL(
+    `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/compare/${baseSha}...${headSha}`
   );
+  url.searchParams.set('per_page', '1');
+  const response = await fetchImpl(url, {
+    redirect: 'error',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal: AbortSignal.timeout(20_000),
+  });
   // A commit GitHub does not know cannot be related: fail closed.
   if (response.status === 404) return null;
   if (!response.ok)
@@ -103,8 +127,12 @@ export async function evaluate({
 
 async function main([settingsPath]) {
   const env = process.env;
+  const message = JSON.parse(readFileSync(settingsPath, 'utf8'))?.result
+    ?.message;
   const result = await evaluate({
-    settings: JSON.parse(readFileSync(settingsPath, 'utf8')),
+    settings: {
+      result: { message: typeof message === 'string' ? message : '' },
+    },
     target: env.TARGET_SHA,
     repo: env.GITHUB_REPOSITORY,
     token: env.GITHUB_TOKEN,

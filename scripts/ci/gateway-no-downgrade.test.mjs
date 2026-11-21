@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { decide, evaluate, servingCommit } from './gateway-no-downgrade.mjs';
+import {
+  decide,
+  evaluate,
+  githubCompare,
+  servingCommit,
+} from './gateway-no-downgrade.mjs';
 
 const target = 'a'.repeat(40);
 const other = 'b'.repeat(40);
@@ -93,5 +98,53 @@ test('evaluate compares target...serving and skips the call when equal', async (
   await assert.rejects(
     evaluate({ settings: settings(other), target: 'HEAD', compare }),
     /TARGET_SHA/
+  );
+});
+
+test('githubCompare sends only validated SHAs and the repository slug', async () => {
+  const base = 'a'.repeat(40);
+  const head = 'b'.repeat(40);
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url: String(url), init });
+    return new Response(JSON.stringify({ status: 'behind' }), { status: 200 });
+  };
+  assert.equal(
+    await githubCompare({
+      repo: 'tutur3u/platform',
+      base,
+      head,
+      token: 't',
+      fetchImpl,
+    }),
+    'behind'
+  );
+  assert.equal(
+    calls[0].url,
+    `https://api.github.com/repos/tutur3u/platform/compare/${base}...${head}?per_page=1`
+  );
+  assert.equal(calls[0].init.redirect, 'error');
+  for (const bad of [
+    { repo: 'tutur3u/platform/../x', base, head },
+    { repo: 'tutur3u', base, head },
+    { repo: 'tutur3u/platform', base: 'main', head },
+    { repo: 'tutur3u/platform', base, head: `${head}?x=1` },
+  ])
+    await assert.rejects(githubCompare({ ...bad, fetchImpl }));
+  assert.equal(calls.length, 1);
+  const missing = async () => new Response('{}', { status: 404 });
+  assert.equal(
+    await githubCompare({
+      repo: 'tutur3u/platform',
+      base,
+      head,
+      fetchImpl: missing,
+    }),
+    null
+  );
+  const failing = async () => new Response('{}', { status: 500 });
+  await assert.rejects(
+    githubCompare({ repo: 'tutur3u/platform', base, head, fetchImpl: failing }),
+    /HTTP 500/
   );
 });
