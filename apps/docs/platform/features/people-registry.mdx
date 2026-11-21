@@ -1,6 +1,6 @@
 ---
 title: People registry
-description: One protected record of the people Mira and the agent fleet work with, covering channel identities, relationships, profiles, briefs, rules, consent and memories, with discovery, observability and correction in Mastermind.
+description: One protected record of the people Mira and the agent fleet work with, covering channel identities, conversations, relationships, profiles, briefs, rules, consent and memories, with discovery, observability and correction in Mastermind.
 updatedAt: "2026-11-21"
 audience: developers
 ---
@@ -10,347 +10,561 @@ audience: developers
 
 The people registry is the single source of truth for the people that Mira and
 the agent fleet know about. It stores who someone is, how to reach them on each
-channel, how they relate to the workspace owner and to each other, what Mira
-should do when they write, what they have consented to, and what Mira remembers
-about them, each with its provenance. Desks, Cloudflare responders and fleet
-lanes read and write it through the Tuturuuu API and the `ttr` CLI. No machine
-keeps an authoritative copy.
+channel, which conversations they take part in, how they relate to the
+workspace owner and to each other, what Mira should do when they write, what
+they have consented to, and what Mira remembers about them, each with its
+provenance. Desks, Cloudflare responders and fleet lanes read and write it
+through the Tuturuuu API and the `ttr` CLI. No machine keeps an authoritative
+copy.
 
 ## Scope and default
 
 - **Scope:** every surface that stores or reads facts about a person for Mira
-  or the fleet. That covers the Mira desks (Zalo, WhatsApp, Discord), the Mira
-  cloud responder, fleet lanes, Mastermind web and mobile, the `ttr people`
-  commands and the `/api/v1/people/**` and
-  `/api/v1/workspaces/{wsId}/people-registry/**` APIs.
+  or the fleet: the Mira desks (Zalo, WhatsApp, Discord), the Mira cloud
+  responder, fleet lanes, Mastermind web and mobile, the `ttr people` commands,
+  and the `/api/v1/people/**` and `/api/v1/workspaces/{wsId}/people-registry/**`
+  APIs.
 - **Tenancy:** every record belongs to exactly one workspace. Each Mira tenant
   is one workspace, and Tuturuuu's own Mira runs in the root workspace. Nothing
   resolves, joins or returns a person across workspaces, even when two
   workspaces hold the same phone number or Discord account.
-- **Default:** deny. Only holders of the explicit
-  `manage_people_registry` workspace permission can read or change the
-  registry. The permission is never implied by workspace creation, `admin`, or
-  default role permissions. In the root workspace it starts with the platform
-  owner only.
+- **Default:** deny. Only the workspace's registry owner and the managers that
+  owner names can read or change the registry. Workspace roles, `admin`,
+  creator status and default permissions never grant registry access.
 - **Unknown senders:** a recall for an unlinked identity returns no person and
   stores nothing. Capturing new people from chat is a per-workspace setting that
   is off by default.
 - **Supplements, never replaces:** Contacts, workspace membership, Fleet access
   grants and assistant memory keep their own rules. The registry links to them
-  and never widens what they expose.
-- **Exceptions:** the transitional desk mirror described in the
-  [migration plan](#migration-plan), until cutover.
+  and never widens what they expose. No registry record grants
+  [Fleet access](/platform/features/fleet-access) capability.
+- **Exceptions:** the read-only desk mirror during the
+  [migration](#migration-plan), until cutover.
+
+## Authority
+
+### Registry owner and managers
+
+`people_registry_control` holds one row per workspace: the registry owner, the
+capture setting, the stop flag and a generation number.
+
+- In the root workspace the registry owner is the Fleet access owner: the
+  configured owner UUID that also holds a live explicit root
+  `manage_mastermind` grant.
+- In a tenant workspace the registry owner is set when the tenant enables Mira,
+  by the workspace creator after a fresh sign-in. Changing it later needs the
+  current registry owner's step-up confirmation.
+- `people_registry_managers` lists named users the owner adds, each with an
+  optional expiry. Only the registry owner can add or remove a manager.
+  Managers cannot delegate.
+
+This is a registry table, not a `workspace_role_permissions` value, so no role,
+wildcard or default permission can reach it.
+
+### Database execution
+
+- Tables live in the `private` schema with RLS enabled. `PUBLIC`, `anon`,
+  `authenticated` and `service_role` have no table privileges.
+- Tables and functions are owned by `people_registry_definer`, a `NOLOGIN` role
+  that holds privileges only on registry tables, plus `EXECUTE` on
+  `private.fleet_consume_provider_event` and
+  `private.fleet_list_user_channel_identities`.
+- Every function is `SECURITY DEFINER` with
+  `set search_path = pg_catalog, pg_temp` and schema-qualified references. Each
+  function is created, revoked from `PUBLIC`, `anon`, `authenticated` and
+  `service_role`, and granted to `service_role` only, in one migration
+  transaction.
+- The API calls functions with the service role. It passes the actor user ID
+  from the verified session, or the principal ID from a verified request
+  signature, and never a client-supplied ID. Each function rechecks the live
+  manager row or principal, the control generation and the stop flag, then
+  writes the audit event in the same transaction.
+- Every child table carries `ws_id`, and foreign keys are composite
+  `(ws_id, id)`, so a link, edge, merge target, membership or ledger row cannot
+  point into another workspace.
 
 ## Data model
 
 A person in the registry is separate from a Contacts row. Contacts
 (`workspace_users`) are readable by every workspace member, so private facts
-about a person cannot live there. A registry person can link to a contact and
-to a Tuturuuu account, and each link is explicit and audited.
+about a person cannot live there. A registry person can link to a contact and to
+a Tuturuuu account, and each link is explicit and audited.
 
-All tables live in the `private` schema. They have RLS enabled, no grants to
-`anon`, `authenticated` or `service_role`, and are reached only through
-`SECURITY DEFINER` functions with a pinned `search_path`. Each function revokes
-`PUBLIC` execution and grants it only to its designated role. Each function
-takes the actor from the verified request identity, checks the workspace scope
-and the live permission or principal, and writes the audit event in the same
-transaction.
-
-| Table                         | Purpose                                                                                            |
-| ----------------------------- | -------------------------------------------------------------------------------------------------- |
-| `people_persons`              | workspace, kind (`person` or `organisation`), label, status, `merged_into`, links, versions         |
-| `people_channel_identities`   | channel, provider account, keyed identity hash, encrypted display value, verification level, link state |
-| `people_conversations`        | channel, provider account, keyed conversation hash, `dm` or `group`, encrypted label, rules, version |
-| `people_conversation_members` | person to conversation, with the sender identity seen there                                        |
-| `people_relationships`        | from and to person, kind, label, confidence, provenance                                             |
-| `people_facts`                | profile facts: key, value, revision, provenance, consent scope                                     |
-| `people_briefs`               | generated or written summary per person, revision, cited fact and memory IDs                        |
-| `people_rules`                | reply, tag and escalate rules per person, revision                                                  |
-| `people_consents`             | per person and store: state, basis, who recorded it, when                                          |
-| `people_memory_ledger`        | one row per memory written for a person: memory service ID, idempotency key, provenance, state     |
-| `people_deletion_fences`      | tombstones by person and identity hash that block re-creation and replayed writes                  |
-| `people_change_events`        | outbox of `{workspace_id, person_id, version, consent_version, kind}` for cache invalidation       |
-| `people_service_principals`   | per-workspace machine principals: token hash, scopes, generation, revocation                       |
-| `people_import_runs`, `people_import_items` | migration runs and per-record receipts                                               |
-| `people_audit_events`         | append-only events: actor, principal, purpose, conversation, record IDs, reason code              |
+| Table                          | Purpose                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `people_registry_control`      | registry owner, capture setting, stop flag and generation per workspace                      |
+| `people_registry_managers`     | named managers, added by the owner                                                            |
+| `people_persons`               | kind (`person`, `organisation`), label, status, `merged_into`, links, versions               |
+| `people_channel_identities`    | channel, provider account, lookup hash, encrypted display value, verification, link state    |
+| `people_conversations`         | channel, provider account, lookup hash, `dm` or `group`, encrypted label, version            |
+| `people_conversation_members`  | person to conversation, with the identity seen there                                         |
+| `people_relationships`         | directed edge between two persons, kind, label, confidence, provenance                       |
+| `people_facts`                 | profile facts: key, value, revision, provenance                                              |
+| `people_briefs`                | summary per person or conversation, cited sources, consent version used                      |
+| `people_rules`                 | enumerated rules per channel default, conversation or person, with optional expiry           |
+| `people_consents`              | per subject and store: state, basis, evidence, scope, expiry                                 |
+| `people_memory_ledger`         | durable intent and record for each memory written to the memory service                       |
+| `people_suppressions`          | suppression tokens left by deletion                                                           |
+| `people_change_events`         | invalidation outbox                                                                           |
+| `people_principals`            | per-workspace machine principals and their public keys                                       |
+| `people_recall_events`         | one-time recall evidence per provider event                                                  |
+| `people_import_runs`, `people_import_items`, `people_import_staging` | migration runs, receipts and quarantined records         |
+| `people_audit_events`          | append-only events                                                                            |
 
 ### People and organisations
 
 `people_persons.kind` is `person` or `organisation`, so a company, school or
-family group is a node in the same graph. `version` increases on every change
-to the person or anything attached to it. `consent_version` increases on every
-consent change. Optional links:
+family group is a node in the same graph. Status is `active`, `merged`,
+`deleting` or `deleted`. `version` increases on every change to the person or
+anything attached to it. `consent_version` increases on every consent change.
+The owner's own row is flagged `is_owner`, once per workspace.
 
 - `contact_id` references a `workspace_users` row in the same workspace.
-- `linked_user_id` references a Tuturuuu account. Linking uses the existing
-  consent-based contact account link or a verified Fleet access channel
-  identity. It never comes from a desk's assertion alone.
+- `linked_user_id` references a Tuturuuu account. It comes from the existing
+  consent-based contact account link or a verified Fleet channel identity,
+  never from a desk's assertion alone.
 
 ### Channel identities
 
-Channels are `zalo`, `whatsapp`, `discord`, `email` and `phone`. The server
-stores an HMAC of the normalised external ID, keyed by `PEOPLE_IDENTITY_HMAC_KEY`
-over the workspace ID, channel, provider account and external ID. The hash is
-unique per `(workspace_id, channel, provider_account_id, identity_hash)`, so the
-same phone number in two workspaces produces unrelated rows that cannot be
-joined. The display value, for example a phone number or handle, is encrypted
-with the workspace encryption key and returned only to `manage_people_registry`
-holders.
+Channels are `zalo`, `whatsapp`, `discord`, `email` and `phone`.
 
-Verification levels:
+- **Lookup hash:** HMAC-SHA-256 with a per-workspace lookup key over a
+  canonical, length-prefixed encoding of
+  `("people-lookup", key_version, ws_id, channel, provider_account_id,
+  normalised_external_id)`. It is unique per
+  `(ws_id, channel, provider_account_id, lookup_hash)`.
+- **Display value:** the phone number or handle, encrypted with AES-256-GCM
+  under the workspace encryption key, with `(ws_id, identity_id, "display")` as
+  associated data. Only registry managers can read it.
+- **Verification:** `asserted` (entered by the owner or imported, with
+  provenance), `desk_observed` (seen through signed ingress evidence) or
+  `code_verified` (proven through Fleet access linking).
+- **Link state:** `proposed`, `confirmed` or `rejected`, with a basis
+  (`owner_statement`, `self_introduction`, `same_phone`, `same_name`,
+  `migration`, `fleet_verified`), who proposed and decided it, and an evidence
+  pointer. Only `confirmed` identities resolve. A `same_name` basis can only
+  produce a proposal.
 
-| Level           | Meaning                                                                                  |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| `asserted`      | entered by the owner or imported, with provenance                                        |
-| `desk_observed` | seen by a desk in a provider-authenticated conversation                                  |
-| `code_verified` | proven through the Fleet access link-code flow for the linked Tuturuuu account           |
+When a person's `linked_user_id` has verified Fleet channel identities, the
+registry shows them through `private.fleet_list_user_channel_identities`. That
+function returns only confirmed links (channel, provider account, verified
+time), never hashes. The API passes it the account ID from the person's
+verified link and audits each read. A linked identity proves channel ownership
+inside this workspace only. It grants nothing in Fleet access.
 
-Each identity also carries a link state (`proposed`, `confirmed`, `rejected`)
-and a basis (`owner_statement`, `self_introduction`, `same_phone`, `same_name`,
-`migration`, `fleet_verified`), with who proposed and decided it and a pointer
-to the evidence. Only `confirmed` identities resolve in recall. A `same_name`
-basis can only produce a proposal.
+### Keys
 
-The registry reuses Fleet access identity linking instead of running a second
-flow. When a person's `linked_user_id` has verified Fleet channel identities,
-the registry shows them as `code_verified` through
-`private.fleet_list_user_channel_identities`. That function returns only
-confirmed links (channel, provider account, verified time) and never the keyed
-sender or conversation hashes. The API passes it the account ID from the
-person's verified link, never a client-chosen value, and audits each read. A
-linked identity proves channel ownership only. Tiers, grants and intents stay in
-[Fleet access](/platform/features/fleet-access), and no registry rule, fact or
-relationship grants fleet capability.
+Per-workspace keys are derived with HKDF-SHA-256 from
+`PEOPLE_REGISTRY_ROOT_KEY`, using `(purpose, ws_id, key_version)` as the info
+string. The purposes are `lookup` and `suppression`. A leaked derived key
+exposes only one workspace and one purpose.
+
+Rotation adds a new version. During rotation, ingress-time lookups compute both
+versions and re-hash a matching row to the new version, since the raw ID is
+available at that moment. Older suppression key versions stay available to
+suppression checks only, until every token under them expires. Deleting a
+workspace destroys its derived keys and rows.
 
 ### Conversations
 
-Mira remembers most things per chat, not per person: a group chat has its own
-topics, decisions, links and standing arrangements. `people_conversations`
-stores one row per chat, using the same keyed hashing as identities, with
-`kind` `dm` or `group`. Its rules use the same enumerated fields as person rules
-and apply to everyone in that chat. When a person rule and a conversation rule
-differ, the more restrictive one wins. `people_conversation_members` records
-which known people take part and under which sender identity. Conversation
-memories use their own container,
-`tuturuuu.workspace.{wsId}.conversation.{conversationId}`, and the same ledger,
-consent checks and fences as person memories. A conversation's `memory` consent
-is recorded by the owner for the whole chat. A member's denied or revoked
-consent still blocks memories about that member.
+Mira remembers most things per chat: a group chat has its own topics,
+decisions, links and arrangements. `people_conversations` stores one row per
+chat, hashed like identities, with `kind` `dm` or `group`.
+`people_conversation_members` records which known people take part and under
+which identity, as seen in signed ingress evidence.
 
 ### Relationships
 
 `people_relationships` stores a directed edge between two persons in the same
 workspace. Kinds are `owner`, `family`, `partner`, `friend`, `colleague`,
 `manager`, `report`, `client`, `vendor`, `member_of` and `other`, with an
-optional free-text label. Each edge records its provenance and confidence.
-`member_of` connects a person to an organisation. The owner's own person row is
-flagged `is_owner` once per workspace, so "how is this person related to the
-owner" is a single lookup.
+optional label, confidence and provenance. `member_of` connects a person to an
+organisation.
 
-### Facts, briefs and rules
+### Facts and briefs
 
-- **Facts** are small typed key/value records such as preferred name, language,
-  timezone, role or a note. Every edit carries `base_revision`. A stale
-  revision returns a conflict with the current value instead of overwriting.
-- **Briefs** are the short summary Mira reads first. A brief cites the fact and
-  memory IDs it was built from, and it goes stale when any of them changes.
-- **Rules** are structured and enumerated, never free text:
-  - `reply`: `auto`, `draft_for_owner`, `never`
-  - `tag_owner`: `always`, `on_request`, `never`
-  - `escalate`: `none`, `owner_dm`, `owner_dm_urgent`
-  - `quiet_hours`: optional start and end in the person's timezone
+- **Facts** are typed key/value records such as preferred name, pronouns, form
+  of address, language, timezone and role. Every edit carries `base_revision`.
+  A stale revision returns a conflict with the current value.
+- **Briefs** summarise a person or conversation. A brief records the fact and
+  memory IDs it cites and the consent version it was built under. A brief is
+  built only from records usable under current consent. It is withheld and
+  rebuilt when any cited record changes or the consent version moves.
 
-  Desks and responders act only on rules. A fact, brief or memory can never
-  change a rule or trigger an action.
+### Rules
 
-### Consent and separately consented stores
+Rules are enumerated values, never free text. Each rule has a scope (a channel
+default for the workspace, a conversation or a person), an optional
+`expires_at`, and provenance.
 
-`people_consents` holds one row per person and store. The stores are `profile`
-(facts and briefs), `memory` (memories) and `capture` (creating identities from
-chat). Each row has a `state` (`granted`, `denied`, `unknown`) and a `basis`:
+| Rule                  | Values                                                               |
+| --------------------- | -------------------------------------------------------------------- |
+| `addressed_response`  | `acknowledge_always`, `reply_when_helpful`, `never`                  |
+| `group_response`      | `when_addressed`, `when_addressed_or_helpful`, `never`               |
+| `reply_mode`          | `auto`, `draft_for_owner`, `never`                                   |
+| `owner_instructions`  | `require_tag`, `relay_untagged_work_requests`                        |
+| `mention_sender`      | `never`, `when_requested`, `when_context_requires`                   |
+| `quiet_hours`         | start and end time, timezone, mode `shorten` or `hold`               |
+| `quiet_hours_bypass`  | any of `owner`, `urgent`                                             |
+| `hold_topics`         | any of `pins`, `money`, `dates`, `prices`, `go_live`, `client_commitments` |
+| `hold_action`         | `holding_line_then_escalate`, `escalate_only`                        |
+| `initiate`            | `never`, `allowed`                                                   |
+| `escalate`            | `none`, `owner_dm`, `owner_dm_urgent`                                |
 
-| Basis            | Meaning                                                                        |
-| ---------------- | ------------------------------------------------------------------------------ |
-| `subject_given`  | the person agreed, with a reference to where (for example a message ID)         |
-| `owner_attested` | the workspace owner records that they hold a lawful reason, with a note         |
-| `imported`       | carried over from a migrated store, with the source run ID; review is pending  |
+A person rule overrides a conversation rule, and a conversation rule overrides
+the channel default. Restrictive values always win, whatever their scope:
+`never`, `hold` and `hold_topics`. An expired rule stops applying at its
+expiry, and the audit log records that.
 
-Writes need `granted`. `unknown` blocks memory writes and allows only
-owner-entered facts. An `imported` row starts as `granted` so existing
-behaviour continues, and it falls back to `unknown` if the owner has not
-confirmed or changed it within 30 days. Revoking consent bumps `consent_version`, emits a `revoke`
-event and stops writes at once. Existing data stays until the owner deletes it
-or a retention rule removes it, and the UI shows it as held under revoked
-consent.
+Mira's desk behaviour maps to these rules. The never-silent rule is
+`addressed_response: acknowledge_always` with `group_response: when_addressed_or_helpful`.
+Quiet hours are `22:30–07:00`, mode `shorten`, bypassed for `owner` and
+`urgent`. The commitment topics are `hold_topics` with
+`holding_line_then_escalate`. `initiate` is `never`. A test conversation gets
+`reply_mode: never`. The interim owner-group arrangement is a conversation rule
+`owner_instructions: relay_untagged_work_requests` with an expiry. WhatsApp
+group mentions are `mention_sender: when_requested`.
 
-These stores stay isolated, and the registry never reads or merges them:
+Desks and responders act only on rules. A fact, brief or memory can never
+change a rule or trigger an action.
 
-- each user's own assistant memory (user plus workspace scope in the memory
-  service);
-- Meet's opt-in private Live memory;
-- Fleet intent quotes;
-- Contacts custom fields and notes, unless the owner links a field explicitly.
+## Consent
 
-### Memories
+### Stores and bases
 
-Memories live in the existing [memory service](/platform/ai/memory-service)
-under their own container, `tuturuuu.workspace.{wsId}.person.{personId}`, with
-product `mira-people`. The memory service stays the store for content,
-embeddings, search, revisions and forgetting. The registry keeps
-`people_memory_ledger` so it can answer "what does Mira know about this person
-and where did it come from" without scanning containers. Each ledger row holds
-the memory service ID and revision, the kind (`fact`, `preference`, `event`,
-`topic`), the channel, provider message ID, conversation ID, writer principal,
-observed time, consent version at write time and state (`active`, `superseded`,
-`forgotten`).
+`people_consents` holds one row per subject (a person or a conversation) and
+store. The stores are `profile` (facts and briefs), `memory` (memories) and
+`capture` (creating identities and people from chat). Each row records:
 
-Kinds are `fact`, `preference`, `language`, `topic`, `decision`, `link`,
-`outcome` and `commitment`, which cover the sections Mira's desks keep today.
-Each memory also carries a work status (`current`, `open`, `pending`,
-`blocked`, `held`, `resolved`, `delivered`, `verified`). A `commitment` adds a
-due time and a done time, so promises Mira made stay visible and can be closed.
+- `state`: `granted`, `unknown`, `denied`, `revoked` or `expired`;
+- `basis`: `subject_given` (with a provider message reference from signed
+  evidence), `owner_attested` (with the owner's written note) or `imported`
+  (carrying the source's own evidence);
+- the verified subject, the granted scope (purposes and audience), the actor
+  and time it was recorded, and an optional expiry.
 
-- **Idempotency:** `(workspace_id, channel, provider_message_id, kind)` is
-  unique. A replay returns the existing ledger row.
-- **Conflicts:** an edit with a stale revision returns a conflict. The memory
-  service's revision check is the authority.
-- **Untrusted content:** recall returns memories as data with
-  `untrusted: true`. Callers must not follow instructions inside them.
-- **Consolidation:** background merging is not admitted. A consolidation job may
-  only write merge proposals. Applying one follows the memory service's
-  `merge_memories` rule: the replacement must persist and be confirmed before
-  any original is forgotten, and the result lists the forgotten and retained
-  keys separately.
+A conversation's `memory` consent is recorded by the owner for that chat.
+Every member's own state still applies: a member's `denied` or `revoked`
+consent blocks memories about that member, even in a granted conversation.
 
-### Deletion and fences
+### Use matrix
 
-- **Delete a person:** forgets every ledger memory in the memory service, then
-  deletes facts, briefs, rules, relationships and identities. It keeps a
-  `people_deletion_fences` row holding only the identity hashes and the
-  deletion time, so a replayed event or a later capture cannot silently
-  re-create the person. The owner can lift a fence explicitly.
-- **Forget a memory:** marks the ledger row `forgotten` only after the memory
-  service confirms the forget. A failed forget stays `active` and is reported.
-- **Partial failure:** every multi-step delete reports confirmed and retained
-  items separately and can be retried for the retained ones only. A person is
-  marked deleted only when every step is confirmed.
-- **Deletion events:** emit a `delete` change event so caches purge.
+Every path enforces this matrix, including derived data (briefs, embeddings,
+search results, snapshots, exports):
 
-### Dedup and merge
+| State               | New memory writes | Recall, briefs, embeddings, snapshots | Owner-entered facts in recall | Manager view, export, erase |
+| ------------------- | ----------------- | ------------------------------------- | ----------------------------- | --------------------------- |
+| `granted`           | yes               | yes                                   | yes                           | yes                         |
+| `unknown`           | no                | no                                    | yes, profile store only       | yes                         |
+| `denied`            | no                | no                                    | no                            | yes                         |
+| `revoked`           | no                | no                                    | no                            | yes                         |
+| `expired`           | no                | no                                    | no                            | yes                         |
 
-Duplicate detection runs within one workspace. It matches on identity hashes,
-the linked contact and the linked account, then on normalised label similarity,
-which only produces a suggestion. A merge moves identities, facts, rules,
-relationships and ledger rows to the surviving person and records
-`merged_into` on the other. A conflict between two facts or rules keeps both
-until the owner picks one. A merge needs `manage_people_registry` and cannot
-cross workspaces.
+The one exception is that owner-entered profile facts (preferred name, form of
+address, language) can be used under `unknown` consent, so Mira can address
+someone correctly. Data held under `denied`, `revoked` or `expired` consent is
+visible to managers for review, export or erasure only, and is labelled as
+held.
 
-## Permissions and principals
+### Imported consent
 
-| Actor                       | How it authenticates                                  | May                                                                                     |
-| --------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Registry manager            | web session, Mastermind app session or `ttr` CLI session, plus `manage_people_registry` | everything in the workspace: browse, edit, merge, consent, delete, principals, imports |
-| Mira responder or desk      | per-workspace service principal token                 | `people:recall`, `people:memories:write`, `people:identities:observe` (when capture is on) |
-| Fleet lane                  | per-workspace service principal token                 | `people:recall` with the `fleet` purpose; no writes unless granted                      |
-| Invalidation drain          | per-workspace or platform drain principal             | read and acknowledge `people_change_events`                                             |
+Imported records start as `unknown`. An import carries a source grant over only
+when the source has verifiable evidence for the same subject, workspace, store
+and purpose. It then keeps that evidence and expiry. Source denials and
+revocations are always carried over.
 
-- **Principal tokens** have the form `ttr_people_{principalId}.{secret}`. Only
-  the SHA-256 is stored. A token is bound to one workspace, a scope list and a
-  generation. It is minted when a tenant enables Mira and revoked when the tenant
-  disables Mira or the workspace is deleted. Revocation bumps the generation,
-  and every call checks it live.
-- **No cross-workspace token exists.** A responder serving workspace B never
-  holds workspace A's token.
-- **Purpose and conversation:** every principal call sends a `purpose` (`reply`,
-  `brief`, `fleet`, `import`) and a `conversation_id`. Both are written to the
-  audit event with the returned record IDs.
-- **Desk events:** desk writes reuse the Fleet access event binding
-  (`apps/web/src/lib/fleet/desk-event.ts`): an Ed25519 signature from trusted
-  ingress over the channel, account, sender, conversation, event ID, operation
-  and body hash, with the same desk credentials, 30-second skew and 5-minute
-  expiry. Registry writes use their own operation values (`registry.write`,
-  `registry.observe`). The event ID is consumed through
-  `private.fleet_provider_events` inside the registry write's transaction, so
-  one provider event cannot be spent on both a Fleet and a registry action.
-- **Storage:** desks and responders hold their tokens in the E2EE secrets vault
-  when it is available, and in the existing deployment secret bindings until
-  then. Tokens never live in local files.
+Imported memories with `unknown` consent are not written to the memory service.
+They wait in `people_import_staging`, encrypted with the workspace key and
+visible to managers only. They are excluded from recall, briefs, embeddings and
+export. The owner reviews them by subject: a grant writes them to the memory
+service, and a denial deletes them. Review is due within 30 days. Items still
+unreviewed at the deadline stay staged and are flagged, never promoted. The
+desk originals are kept throughout.
+
+## Memories
+
+### Store boundary
+
+Memories live in the existing [memory service](/platform/ai/memory-service),
+inside a separate authorisation namespace. A product filter alone does not
+create a boundary, so the service itself enforces it:
+
+- Container tags are `tuturuuu.people.{wsId}.person.{personId}` and
+  `tuturuuu.people.{wsId}.conversation.{conversationId}`.
+- The registry calls the memory service with its own caller credential,
+  `MEMORY_PEOPLE_CALLER_SECRET`. The service accepts that caller only on
+  `tuturuuu.people.*` tags, and rejects every other caller on those tags.
+- The registry derives the workspace and subject on the server for every
+  search, write, edit, merge, forget and purge.
+- Tests cover both directions: ordinary assistant memory, Meet memory, Fleet
+  quotes and other tenants cannot read people memories, and the people caller
+  cannot read them either.
+
+### Ledger and idempotency
+
+Each memory has a `people_memory_ledger` row. The row is reserved as `pending`,
+with a stable memory service `customId`, before the write is sent. It becomes
+`active` once the service confirms the memory ID and revision. A write with an
+unknown outcome is reconciled by `customId` before any retry. A ledger row
+records:
+
+- kind: `fact`, `preference`, `language`, `topic`, `decision`, `link`,
+  `outcome` or `commitment`, with a work status (`current`, `open`, `pending`,
+  `blocked`, `held`, `resolved`, `delivered`, `verified`) and, for
+  commitments, due and done times;
+- provenance taken from verified ingress evidence (channel, provider account,
+  conversation, message ID and observed time), or labelled `imported` with the
+  run and source key, or `manager` with the actor;
+- the writer principal or actor, and the consent version at write time;
+- state: `pending`, `active`, `superseded`, `retained`, `forgotten` or `purged`.
+
+The idempotency key is `(ws_id, channel, provider_account_id,
+event_namespace, provider_message_id, target_kind, target_id, kind)`. Two
+providers or accounts with the same message ID cannot collide, and one message
+can produce one memory of each kind per target. A replay returns the existing
+row. An edit with a stale revision returns a conflict.
+
+### Consolidation
+
+Background merging is not admitted. A consolidation job may only write merge
+proposals for a manager to review. Applying one follows the memory service's
+`merge_memories` rule. The replacement's durable ID and revision are confirmed
+before any original is forgotten. The result lists confirmed and retained
+originals separately, and only retained ones are retried.
+
+### Untrusted content
+
+Recalled facts, names, briefs, memories and source messages are untrusted data
+through every derivation. They are never instructions.
+
+- Recall for generation returns a chat-safe projection: preferred name, form of
+  address, language and pronouns, the effective rules as enumerated values, the
+  brief, and memories as quoted data.
+- **Audience:** recall for conversation C returns only memories about C itself,
+  or about people who are members of C. The owner's private DM is the one
+  exception. A memory written in one conversation is never returned in another
+  conversation unless its subject takes part in both.
+- The responder's tools, recipients, outbound fields and sends are decided by
+  rules and per-conversation allowlists outside the model. A model output
+  cannot widen them.
+- Manager context, mutations and sends run in separately authorised flows.
+  Logs, traces and telemetry carry IDs and reason codes, never content.
+
+## Deletion
+
+### Deleting a person or conversation
+
+Deletion is a durable state machine.
+
+1. **Fence.** One transaction sets status `deleting`, writes suppression
+   tokens, bumps `version` and `consent_version`, and writes a `delete` change
+   event. From then on, every read path except the deletion status returns
+   nothing. Every writer is refused, including imports, merges, consolidation,
+   retries and in-flight requests that commit later.
+2. **Purge.** Memories are purged from the memory service for every ledger row,
+   `pending` rows included. The subject's containers are then listed to catch
+   writes the service accepted before their ledger row committed. Purging
+   removes content, summary and embedding, which goes beyond forgetting.
+3. **Remove.** Facts, briefs, rules, relationships, memberships, identities,
+   staging rows and quarantine copies are deleted.
+4. **Finish.** The status becomes `deleted` only after every step is
+   confirmed.
+
+A failed purge leaves its row `retained`. It is still unreadable through normal
+paths, and it is reported and retried. The result always lists confirmed and
+retained items separately.
+
+### What remains
+
+- **Suppression tokens:** `people_suppressions` keeps an HMAC under the
+  workspace suppression key of each deleted identity's channel, provider
+  account and external ID, plus the deletion time. It holds no name, content or
+  raw identifier. It is linkable only to someone who presents the same raw
+  identifier. It is used only to stop capture, imports and replays from
+  re-creating the person, it is readable only by fence checks, and lifting it
+  is an audited owner action. Tokens last until the owner lifts them or the
+  workspace is deleted.
+- **Audit events** keep opaque UUIDs and reason codes, never content, for 400
+  days.
+- **Database backups** follow the hosting provider's point-in-time recovery
+  window. A restore replays suppressions and deletions from the audit log
+  before the registry reopens.
+
+The owner-facing delete dialog states what remains. An erasure that also drops
+the suppression token is available and warns that the person could then be
+re-created automatically.
+
+### Forgetting one memory
+
+The ledger row becomes `forgotten` only after the memory service confirms the
+forget. Correcting a memory is a revision-checked edit.
+
+## Dedup and merge
+
+Duplicate detection runs within one workspace. It matches on lookup hashes,
+the linked contact and the linked account, then on normalised label
+similarity, which only produces a proposal.
+
+A merge needs a manager and cannot cross workspaces:
+
+- Consent: the result takes the most restrictive state per store. Two
+  conflicting grants with different scopes block the merge until the owner
+  picks one.
+- Memories move by re-writing each one into the surviving person's container
+  under the merge rule above. The source container is purged only after every
+  copy is confirmed.
+- Identities, facts, rules, relationships, memberships and suppressions move
+  with their provenance. Conflicting facts or rules keep both until the owner
+  chooses.
+- The merged person becomes `merged`, with `merged_into` set. Its old ID
+  resolves to the survivor for managers only.
+
+## Machine access
+
+### Principals
+
+`people_principals` holds machine principals. Each is bound to one workspace,
+one kind and one workload:
+
+| Kind        | May                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| `responder` | recall, observe and write memories for verified ingress events in its workspace                |
+| `fleet`     | recall a reduced projection (label, relationship to owner, rules) for persons the owner lists  |
+| `import`    | import runs only                                                                               |
+| `drain`     | read and acknowledge invalidation metadata only                                                |
+
+There are no bearer tokens. Each principal registers one or two Ed25519 public
+keys. Every request carries a signature over the method, path, body hash,
+audience (`people-registry`), principal ID, timestamp and a nonce. The server
+rejects requests more than 30 seconds in the future, requests older than 5
+minutes, and repeated nonces. That proof binds the request to the key holder,
+so a copied header is useless. The private key lives in the E2EE secrets vault
+once it is available, and in the deployment secret store until then. It never
+lives in a repository or a local file. Header values are redacted from logs.
+
+- Only the registry owner can register a principal, after a fresh sign-in.
+  Tenants receive a `responder` principal when they enable Mira. Disabling Mira
+  or deleting the workspace revokes all of the tenant's principals.
+- Every call checks the principal's live status, generation and kind.
+- Each principal has per-minute limits on recalls and writes. Lookups are
+  audited by principal and provider account.
+- No principal covers more than one workspace.
+
+### Ingress evidence
+
+A principal signature proves which workload is calling. It does not prove who
+sent a message. So recall, observe and memory writes for a conversation also
+need ingress evidence. That reuses the Fleet access event contract in
+`apps/web/src/lib/fleet/desk-event.ts`:
+
+- The trusted ingress signs the channel, provider account, sender,
+  conversation, conversation type, event ID, operation and input hash.
+- Registry operations are `registry.recall`, `registry.observe` and
+  `registry.write`. A fixed per-operation map allows `private_1_to_1` or
+  `group` for registry operations, and `private_1_to_1` only for Fleet
+  operations. The verifier rejects any other pair before touching the
+  database.
+- The server derives the person and conversation from the evidence. A request
+  field that disagrees with the evidence is refused.
+- Write operations consume the event ID through
+  `private.fleet_provider_events` inside the write's transaction, so one
+  provider event cannot serve two writes across Fleet and the registry.
+  `registry.recall` records the event once in `people_recall_events`, so an
+  event supports one recall and at most one write.
+- Ingress verifies group membership and the sender with the provider itself.
 
 ## API
 
 ### Service routes
 
-`POST /api/v1/people/recall` — body `{channel, provider_account_id,
-external_id, conversation_id, purpose, query?, k?}`. It returns
-`{person_id | null, snapshot, memories}`. `snapshot` holds `version`,
-`consent_version`, profile facts, the brief, rules, relationships to the owner
-and up to 20 pinned or recent memories. A non-empty `query` adds semantic
-recall from the memory service, bounded by `k` (at most 20). The person must
-belong to the token's workspace; any other identity returns no person.
+Responder routes require a principal signature and ingress evidence. `fleet`
+recall requires only the signature and returns the reduced projection.
 
-`POST /api/v1/people/memories` — body `{person_id | identity, text, kind,
-provenance: {channel, provider_message_id, conversation_id, observed_at},
-base_revision?}`. It returns `created`, `duplicate`, or a refusal reason:
-`consent_required`, `fenced`, `revision_conflict` or `scope_denied`.
-
-`POST /api/v1/people/identities/observe` — records a `desk_observed` identity
-for a known person, or creates a candidate person when the workspace's capture
-setting and the identity's capture consent allow it. A fence blocks it.
-
-`GET /api/v1/people/changes?after={cursor}` — the invalidation drain reads
-change events in order and acknowledges them.
+- `POST /api/v1/people/recall` — body `{query?, k?, if_version?}`. The person
+  and conversation come from the evidence. The response is
+  `{person_id | null, conversation_id | null, versions, snapshot | not_modified,
+  memories}`. `snapshot` is the chat-safe projection. A non-empty `query` adds
+  semantic recall bounded by `k` (at most 20). `if_version` lets a cache
+  revalidate cheaply.
+- `POST /api/v1/people/memories` — body `{text, kind, status?, due_at?,
+  target: person | conversation, base_revision?}`. It returns `created`,
+  `duplicate`, or a refusal: `consent_required`, `suppressed`, `deleting`,
+  `revision_conflict` or `scope_denied`.
+- `POST /api/v1/people/identities/observe` — records a `desk_observed` identity
+  or conversation membership for a known person. When capture is on and capture
+  consent allows it, it proposes a new person. Suppression blocks it.
+- `GET /api/v1/people/changes?after={cursor}` — drain principals only.
 
 ### Manager routes
 
-`/api/v1/workspaces/{wsId}/people-registry/` serves `persons` (search and
-list), `persons/{id}` (detail and timeline), `facts`, `rules`, `relationships`,
-`identities`, `consents`, `memories`, `merge`, `duplicates`, `principals` and
-`imports`. Mutations take `base_revision` where the record is revisioned. All
-responses send `Cache-Control: private, no-store`. Clients live in
-`@tuturuuu/internal-api` as `people-registry.ts`.
+`/api/v1/workspaces/{wsId}/people-registry/` serves `persons`,
+`persons/{id}`, `conversations`, `facts`, `rules`, `relationships`,
+`identities`, `consents`, `memories`, `merge`, `duplicates`, `principals`,
+`imports` and `managers`. They accept the platform web session, the Mastermind
+app-session audience and the CLI session. Mutations take `base_revision`
+wherever the record has a revision. Responses send
+`Cache-Control: private, no-store`. Clients live in `@tuturuuu/internal-api`
+as `people-registry.ts`.
 
-### Latency and caching
+## Caching and invalidation
 
-Responders may cache the snapshot per person in a Durable Object, keyed by
-workspace and person. Each change emits
-`{workspace_id, person_id, version, consent_version, kind}` with kind `update`,
-`revoke` or `delete`. A Cloudflare drain Worker reads the outbox and publishes
-to a Queue that routes to the tenant's Durable Objects. A cached snapshot lives
-at most five minutes. `revoke` and `delete` purge it at once. Memory writes
-always recheck consent and fences on the server, so a stale cache cannot write
-past a revocation. Semantic recall is optional enrichment outside the
-first-token path.
+Responders may cache snapshot content in a Durable Object, but serving it is
+always gated by a live check:
+
+- Every reply starts with `recall` and `if_version`. The server checks the
+  principal, evidence, status, consent and suppression live, and returns either
+  `not_modified` or a fresh snapshot. When the check fails or the server is
+  unreachable, the responder serves no protected data. It replies with the
+  workspace's default behaviour, without person context.
+- Outbound sends recheck the effective rules for the conversation at send
+  time.
+- Cache fills carry `version`. A fill older than the cached version or a
+  deletion tombstone is dropped, so a stale refresh cannot repopulate a purged
+  entry.
+
+Change events help caches drop entries early. Each event is written in the same
+transaction as the mutation:
+
+- Fields: `{event_id, workspace_id, person_id | conversation_id, version,
+  consent_version, kind}`, where kind is `update`, `revoke` or `delete`.
+  `event_id` is monotonic per workspace.
+- A Cloudflare drain Worker reads the events with a workspace-bound cursor. It
+  acknowledges a batch only after the Queue accepts it.
+- Consumers apply events idempotently, keeping the highest version they have
+  seen. Failed deliveries go to a dead-letter queue and are retried.
+- Lag is measured and alerted.
+- The drain sees invalidation metadata only.
+
+The latency target for `recall` with `not_modified` is measured in slice 2.
+Semantic recall stays off the first-token path.
 
 ## Mastermind
 
-The registry appears inside the single Mastermind shell on web
-(`mastermind.tuturuuu.com/{locale}/people`) and in the mobile Mastermind
-module. It follows the shared Mastermind navigation and design, owned with the
-Mastermind design lane.
+The registry appears inside the single Mastermind shell on web and in the
+mobile Mastermind module, using the shared navigation and design.
 
-- **Discover:** search by name, channel or relationship; filter by
-  relationship kind, channel, consent state and recent activity; a relationship
-  graph view centred on the owner.
-- **Observe:** per person, a timeline of what Mira and the fleet read and
-  wrote, from audit events and ledger rows. Each item shows its channel,
-  conversation, principal, purpose and source. Briefs show their cited facts
-  and memories.
+- **Discover:** search by name, channel, conversation or relationship. Filter
+  by relationship kind, channel, consent state and recent activity. A
+  relationship graph centres on the owner.
+- **Observe:** each person and conversation has a timeline of what Mira and the
+  fleet read and wrote, built from audit events and ledger rows. Each item
+  shows its channel, conversation, principal, purpose and provenance. Briefs
+  show their cited records. Held and staged data is labelled.
 - **Tune:** edit facts with revision checks; correct or forget memories; set
-  reply, tag and escalate rules; change consent with its basis; merge
-  duplicates; delete with a fence. Destructive actions use the shared
-  confirmation dialog and report partial results honestly.
+  rules with optional expiry; record consent with its basis; review staged
+  imports and merge proposals; merge duplicates; delete with a suppression
+  token or full erasure. Destructive actions use the shared confirmation
+  dialog and report confirmed and retained items.
 
-- **Web:** the route is `apps/mastermind/src/routes/$locale/people.tsx`, with
-  code under `apps/mastermind/src/people/`, plus one shell navigation entry.
-  Reads and writes go through server functions and a people client that
-  forwards the verified Mastermind app session to the manager routes, with
-  redirects refused, a timeout and response schema validation. The manager
-  routes accept the `mastermind` app-session audience. Mastermind admission
-  stays owner-only.
+- **Web:** `apps/mastermind/src/routes/$locale/people.tsx`, with code under
+  `apps/mastermind/src/people/` and one shell navigation entry. Reads and
+  writes go through server functions and a people client that forwards the
+  verified Mastermind app session to the manager routes. The client refuses
+  redirects, applies a timeout and validates response schemas. Mastermind
+  admission stays owner-only.
 - **Mobile:** a pushed route `/mastermind/people` under
-  `features/mastermind/people/`, opened from the Today overflow menu, with
-  no new dock tab. It calls the same manager routes.
+  `features/mastermind/people/`, opened from the Today overflow menu. It adds no
+  dock tab and calls the same manager routes.
 
 All strings ship in English and Vietnamese.
 
@@ -358,98 +572,99 @@ All strings ship in English and Vietnamese.
 
 `ttr people` commands use the CLI session and the manager routes:
 
-| Command                                             | Does                                                     |
-| --------------------------------------------------- | -------------------------------------------------------- |
-| `ttr people ls` / `search <text>` / `show <id>`     | discover and inspect                                     |
-| `ttr people link <id> --channel --account --external` | add an asserted identity                               |
-| `ttr people relate <from> <kind> <to>`              | add a relationship                                       |
-| `ttr people fact set <id> <key> <value> --rev`      | revision-checked fact edit                               |
-| `ttr people rules set <id> --reply --tag --escalate` | set rules                                               |
-| `ttr people consent set <id> <store> <state> --basis` | record consent                                         |
-| `ttr people merge <from> <into>` / `duplicates`     | dedup                                                    |
-| `ttr people forget <id>` / `memory forget <id>`     | fenced deletion with confirmed and retained receipts     |
-| `ttr people principal mint` / `revoke`              | manage per-workspace service principals                  |
-| `ttr people import plan|run|verify <manifest>`      | migrate local stores (see below)                         |
+| Command                                               | Does                                                    |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| `ttr people ls` / `search <text>` / `show <id>`       | discover and inspect                                    |
+| `ttr people conversations` / `conversation <id>`      | inspect conversations and their rules                   |
+| `ttr people link <id> --channel --account --external` | add an asserted identity                                |
+| `ttr people relate <from> <kind> <to>`                | add a relationship                                      |
+| `ttr people fact set <id> <key> <value> --rev`        | revision-checked fact edit                              |
+| `ttr people rules set <scope> <rule> <value> [--expires]` | set rules                                           |
+| `ttr people consent set <subject> <store> <state> --basis` | record consent                                     |
+| `ttr people merge <from> <into>` / `duplicates`       | dedup                                                   |
+| `ttr people forget <id> [--erase]` / `memory forget <id>` | fenced deletion with confirmed and retained receipts |
+| `ttr people principal register` / `revoke`            | manage machine principals (owner, step-up)              |
+| `ttr people import plan` / `run` / `verify` / `retire` | migrate local stores                                  |
 
 Every command takes `--workspace` and `--json`.
 
 ## Migration plan
 
-Mira's desks keep a person registry, profiles, briefs, chat memory with nightly
-consolidation and an owner tagging rule in local files on the desk host. The
-migration moves them into the registry without losing data, and keeps the
+Mira's desks keep a person registry, profiles, per-chat memory with nightly
+consolidation, commitments and per-chat rules in local files on the desk host.
+The migration moves them into the registry without losing data, and keeps the
 originals until the copy is confirmed.
 
 ### Store mapping
 
-| Desk store                                         | Registry target                                                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Person registry (people, identity links, audit)    | persons, channel identities with link state and basis, audit events          |
-| Legacy contact links (pronouns, address forms, reply flags) | facts (`pronouns`, `address_form`) and rules                       |
-| Person profiles (role, language, expertise, asks)  | facts and person memories                                                    |
-| Per-chat memory digests                            | conversations, conversation memories by kind and status                     |
-| Per-chat standing rules                            | conversation rules where they map to an enumerated value, otherwise a held memory for owner review |
-| Desk-wide webhook rules                            | workspace Mira settings, outside the registry                                |
-| Commitments                                        | `commitment` memories with due and done times                                |
-| Consolidation archive and audit                    | ledger rows in state `superseded` and audit events                           |
-| Pending person proposals                           | identities in link state `proposed`                                          |
+| Desk store                                       | Registry target                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Person registry (people, identity links, audit)  | persons, identities with link state and basis, audit events                    |
+| Legacy contact links (pronouns, address forms, reply flags) | facts and person rules                                              |
+| Person profiles                                  | facts and person memories                                                      |
+| Per-chat memory digests                          | conversations and conversation memories by kind and status                    |
+| Per-chat standing rules                          | conversation rules where they map to an enumerated value, otherwise a staged item for owner review |
+| Desk-wide rules                                  | channel default rules                                                          |
+| Commitments                                      | `commitment` memories with due and done times                                  |
+| Consolidation archive and audit                  | ledger rows in state `superseded`, and audit events                            |
+| Pending person proposals                         | identities in link state `proposed`                                            |
+| Event registration data with contact details     | staged facts for owner review, never memories                                  |
+| Backup copies of the files above                 | the same run, deduplicated against originals by source key                     |
 
 These stores stay out of the registry:
 
 - **Operational state** (replay ledgers, send ledgers, queues, dedupe caches,
-  reply timings, wake spools) belongs to the Mira runtime and moves with it,
-  not into people data.
-- **Encrypted chat history** is a separate store with its own keys. It needs
-  its own consent decision and vault-held keys before it moves anywhere.
+  reply timings, wake spools) belongs to the Mira runtime and moves with it.
+- **Encrypted chat history** has its own keys. It needs its own consent
+  decision and vault-held keys before it moves anywhere.
 - **Fleet agent memory** indexes agent notes, not people, and stays separate.
-- **Event registration data** with contact details imports as facts held for
-  owner review, under the `imported` consent basis. It never enters memories,
-  and the local file is purged once the import is confirmed.
-- **Backup copies** of desk files import through the same run, deduplicated by
-  source key against their originals, and are purged with them once confirmed.
-
-The owner tagging rule is not stored on the desk host. It is entered once as
-rules on the owner's person row and the relevant conversations.
 
 ### Steps
 
 1. **Inventory:** export schemas, field names, counts and writer processes
    only. No personal content leaves the host for review.
-2. **Plan:** `ttr people import plan <manifest>` maps each local store to
-   registry records and prints counts per record type, unmapped fields and
-   detected duplicates. Nothing is written.
-3. **Run:** `ttr people import run` sends records in batches under a principal
-   with the `import` purpose. Each record has a stable source key (a hash of the
-   store, file and record ID), so a rerun is idempotent. Each record gets a
-   receipt: `created`, `duplicate`, `conflict` or `failed`. Imported consent
-   rows use basis `imported` and are queued for owner review. Imported
-   memories carry their original timestamp and source in provenance.
-4. **Verify:** `ttr people import verify` compares per-record receipts and
-   content checksums with the source. A store is confirmed only when every
-   record is `created` or `duplicate` and its checksum matches.
-5. **Switch:** desks read and write through the API. The local registry stays
-   as a read-only routing mirror until cutover, like Fleet access Slice 0.
-   Desks keep only ephemeral caches. Pending writes may sit in an in-memory
-   retry buffer; a write that never lands is reported as lost, not hidden.
-6. **Retire originals:** a confirmed store moves to a local quarantine
-   directory. It is deleted only after the owner confirms and the run has been
-   verified for 14 days. An unconfirmed store is never deleted.
+2. **Plan:** `ttr people import plan` maps each store to registry records and
+   prints counts per record type, unmapped fields and detected duplicates. It
+   writes nothing.
+3. **Run:** `ttr people import run` sends records in batches under an `import`
+   principal. Each record has a stable source key, a hash of the store, the file
+   and the record ID, so a rerun is idempotent. Each record gets a receipt:
+   `created`, `duplicate`, `staged`, `conflict` or `failed`. The run records a
+   high-water mark per store.
+4. **Freeze and delta:** desks pause local memory writes and the run imports
+   everything past the high-water mark. Writes that arrive during the freeze
+   wait in the desk's in-memory buffer and are sent to the API after the switch.
+5. **Verify:** `ttr people import verify` reads every record back through the
+   manager API, duplicates included. It checks the destination ID, revision,
+   workspace, consent state, provenance and content checksum against the
+   source. Conflicts must be resolved first. A store is confirmed only when
+   every record verifies.
+6. **Switch:** desks read and write only through the API. The API becomes the
+   only writer. Desks keep only ephemeral caches. A write that cannot land after
+   bounded retries is reported, never silently dropped. The local registry
+   stays as a read-only routing mirror until cutover is accepted.
+7. **Retire:** confirmed stores and their backup copies move to a quarantine
+   directory readable only by the desk's own user. Deleting a person in the
+   registry also purges their quarantined records, and suppressions stop a
+   replayed import. After 14 days and the owner's confirmation,
+   `ttr people import retire` re-verifies the exact manifest against the
+   quarantine and the registry, then deletes the quarantined files.
 
 Nightly consolidation on the desk host becomes the proposal-only job described
-in [Memories](#memories). It runs on Cloudflare and requires owner approval
-until a separate consent decision admits automatic merges.
+in [Consolidation](#consolidation). It runs on Cloudflare.
 
 ## Implementation plan
 
-| Slice | Outcome                                                                                    | Gate                                                       |
-| ----- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| 0     | This design                                                                                | independent security and privacy review                    |
-| 1     | Migrations: tables, definer functions, permission, fences, outbox, SQL tests                | exact-SQL security review, local reset, gated production workflow |
-| 2     | Manager and service routes, principal tokens, `@tuturuuu/internal-api` client, route tests  | independent review                                         |
-| 3     | `ttr people` commands and `import plan|run|verify`                                          | independent review                                         |
-| 4     | Mastermind web People area and mobile People view (en and vi)                              | Mastermind design lane, independent review                 |
-| 5     | Cloudflare outbox drain, Queue and proposal-only consolidation                             | cost and stop-fence evidence                               |
-| 6     | Desk migration: plan, run, verify, switch, retire originals                                | slice 3 and owner confirmation                             |
+| Slice | Outcome                                                                                          | Gate                                                              |
+| ----- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| 0     | This design                                                                                      | independent security and privacy review                           |
+| 1     | Migrations: definer role, tables, functions, control, fences, outbox, Fleet read function, SQL tests | exact-SQL security review, local reset, gated production workflow |
+| 2     | Manager and service routes, request signatures, per-operation evidence map, `@tuturuuu/internal-api` client, route tests | Fleet owner ACK on the evidence map, independent review |
+| 3     | Memory service people namespace and caller, purge operation                                       | independent review                                                |
+| 4     | `ttr people` commands and `import plan`, `run`, `verify` and `retire`                              | independent review                                                |
+| 5     | Mastermind web People area and mobile People view (en and vi)                                     | Mastermind design lane, independent review                        |
+| 6     | Cloudflare drain, Queue, dead-letter handling and proposal-only consolidation                     | cost and stop-fence evidence                                      |
+| 7     | Desk migration: plan, run, freeze, verify, switch, retire                                         | slices 2–4, owner confirmation                                    |
 
 ## Regression coverage
 
