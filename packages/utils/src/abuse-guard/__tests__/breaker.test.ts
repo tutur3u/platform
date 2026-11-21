@@ -126,6 +126,45 @@ describe('withGuardBreaker', () => {
     expect(transport).toHaveBeenCalledTimes(4);
   });
 
+  it('lets a new trial replace one that never settles', async () => {
+    // A cancelled request (Worker client disconnect) never settles its trial.
+    const outcomes: Error[] = [timeout(), timeout(), timeout()];
+    let hang = true;
+    let rejectStale: (error: unknown) => void = () => undefined;
+    const transport = vi.fn(async () => {
+      const next = outcomes.shift();
+      if (next) throw next;
+      if (hang) {
+        hang = false;
+        return new Promise((_, reject) => {
+          rejectStale = reject;
+        });
+      }
+      return { ok: true };
+    });
+    const guarded = withGuardBreaker(
+      transport,
+      createGuardBreakerState(),
+      'test'
+    );
+    for (let i = 0; i < 3; i += 1) await codeOf(guarded(RPC));
+
+    vi.setSystemTime(1_000_000 + ABUSE_GUARD_BREAKER_OPEN_MS);
+    const abandoned = guarded(RPC);
+    vi.setSystemTime(1_000_000 + 2 * ABUSE_GUARD_BREAKER_OPEN_MS - 1);
+    expect(await codeOf(guarded(RPC))).toBe('guard_unavailable');
+
+    vi.setSystemTime(1_000_000 + 2 * ABUSE_GUARD_BREAKER_OPEN_MS);
+    expect(await codeOf(guarded(RPC))).toBe('ok');
+    expect(transport).toHaveBeenCalledTimes(5);
+
+    // The superseded trial failing late must not reopen a closed circuit.
+    rejectStale(timeout());
+    expect(await codeOf(abandoned)).toBe('timeout');
+    expect(await codeOf(guarded(RPC))).toBe('ok');
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('reopens after a failed half-open trial', async () => {
     const { outcomes, transport } = scripted();
     const guarded = withGuardBreaker(

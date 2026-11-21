@@ -27,12 +27,19 @@ export type GuardBreakerState = {
   failures: number;
   /** Epoch ms when the breaker opened; null while closed. */
   openedAt: number | null;
-  /** True while the single half-open trial call is in flight. */
-  trialInFlight: boolean;
+  /**
+   * Epoch ms when the single half-open trial started; null when none is in
+   * flight. A trial older than `ABUSE_GUARD_BREAKER_OPEN_MS` is abandoned:
+   * a cancelled request (a Worker client disconnect) never settles it, so
+   * it must not hold the circuit open forever.
+   */
+  trialStartedAt: number | null;
+  /** Bumped per trial, so a superseded trial settling late changes nothing. */
+  trialId: number;
 };
 
 export function createGuardBreakerState(): GuardBreakerState {
-  return { failures: 0, openedAt: null, trialInFlight: false };
+  return { failures: 0, openedAt: null, trialStartedAt: null, trialId: 0 };
 }
 
 function isCountedFailure(error: unknown) {
@@ -63,34 +70,44 @@ export function withGuardBreaker(
     });
   };
 
+  const close = () => {
+    state.failures = 0;
+    state.openedAt = null;
+    state.trialStartedAt = null;
+  };
+
   return async (rpc) => {
-    let trial = false;
+    let trial: number | null = null;
     if (state.openedAt !== null) {
-      if (
-        state.trialInFlight ||
-        now() - state.openedAt < ABUSE_GUARD_BREAKER_OPEN_MS
-      ) {
+      const at = now();
+      const trialLive =
+        state.trialStartedAt !== null &&
+        at - state.trialStartedAt < ABUSE_GUARD_BREAKER_OPEN_MS;
+      if (trialLive || at - state.openedAt < ABUSE_GUARD_BREAKER_OPEN_MS) {
         throw new AbuseGuardUnavailableError(
           'guard_unavailable',
           'Abuse guard store unavailable: circuit open'
         );
       }
-      trial = true;
-      state.trialInFlight = true;
+      state.trialId += 1;
+      state.trialStartedAt = at;
+      trial = state.trialId;
     }
+    const isCurrentTrial = () =>
+      trial !== null &&
+      state.trialStartedAt !== null &&
+      state.trialId === trial;
 
     try {
       const payload = await transport(rpc);
-      state.failures = 0;
-      state.openedAt = null;
+      close();
       return payload;
     } catch (error) {
       if (!isCountedFailure(error)) {
         // The guard answered: it is responsive.
-        state.failures = 0;
-        state.openedAt = null;
-      } else if (trial) {
-        open('trial_failed', 1);
+        close();
+      } else if (trial !== null) {
+        if (isCurrentTrial()) open('trial_failed', 1);
       } else if (state.openedAt === null) {
         state.failures += 1;
         if (state.failures >= ABUSE_GUARD_BREAKER_FAILURE_THRESHOLD) {
@@ -99,7 +116,7 @@ export function withGuardBreaker(
       }
       throw error;
     } finally {
-      if (trial) state.trialInFlight = false;
+      if (isCurrentTrial()) state.trialStartedAt = null;
     }
   };
 }
