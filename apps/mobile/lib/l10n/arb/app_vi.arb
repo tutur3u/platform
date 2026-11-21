@@ -7907,5 +7907,6 @@
   "mastermindFleetAccessSentForOwnerApproval": "Đã gửi chủ sở hữu duyệt.",
   "mastermindFleetAccessDiscardTitle": "Bỏ yêu cầu này?",
   "mastermindFleetAccessDiscard": "Bỏ",
-  "mastermindFleetAccessKeepEditing": "Tiếp tục sửa"
+  "mastermindFleetAccessKeepEditing": "Tiếp tục sửa",
+  "mastermindFleetAccessAppDescription": "Trạng thái đội máy, yêu cầu và liên kết chat"
 }

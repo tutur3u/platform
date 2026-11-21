@@ -7,6 +7,8 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -89,5 +91,31 @@ class FleetAccessTodayAction extends StatelessWidget {
           ),
       ],
     ),
+  );
+}
+
+/// The Inbox row that opens the person's Fleet requests; nothing while Fleet
+/// access is not admitted.
+class FleetAccessRequestsRow extends StatelessWidget {
+  const FleetAccessRequestsRow({super.key});
+
+  @override
+  Widget build(BuildContext context) => FleetAccessVisibility(
+    builder: (context, visible) {
+      if (!visible) return const SizedBox.shrink();
+      final l10n = context.l10n;
+      return MastermindGroup(
+        children: [
+          MastermindListRow(
+            key: const ValueKey('fleet-access-requests-row'),
+            leading: const Icon(LucideIcons.shieldCheck),
+            title: l10n.mastermindFleetAccessViewRequests,
+            subtitle: l10n.mastermindFleetAccessTitle,
+            onTap: () =>
+                openFleetAccess(context, view: FleetAccessView.requests),
+          ),
+        ],
+      );
+    },
   );
 }

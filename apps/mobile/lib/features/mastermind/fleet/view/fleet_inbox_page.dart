@@ -17,6 +17,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_rows.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_login_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_snooze.dart';
+import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -210,6 +211,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                   now: now,
                 ),
             ],
+            const FleetAccessRequestsRow(),
           ],
         ),
       ],

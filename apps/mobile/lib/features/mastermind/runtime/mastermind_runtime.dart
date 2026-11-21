@@ -268,11 +268,14 @@ final class MastermindRuntime {
   }
 
   /// App resume: a failed access check (offline, a Worker blip) must not hide
-  /// the module until the next workspace change.
+  /// the module, or the Fleet access entry, until the next workspace change.
   Future<void> retryAccessAfterError(String? wsId) async {
-    if (access.state.status == MastermindAccessStatus.error) {
-      await access.sync(wsId);
-    }
+    await Future.wait([
+      if (access.state.status == MastermindAccessStatus.error)
+        access.sync(wsId),
+      if (fleetAccess.state.status == FleetAccessStatus.error)
+        fleetAccess.sync(),
+    ]);
   }
 
   Future<void> close() async {

@@ -5,12 +5,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_models.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/pump_app.dart';
 import 'fleet_access_fakes.dart';
 
@@ -113,5 +117,81 @@ void main() {
     await access.handleForbidden();
     await tester.pumpAndSettle();
     expect(tile, findsNothing);
+  });
+
+  testWidgets('the tile uses the existing teal product tone', (tester) async {
+    await tester.pumpThemedHome(
+      Scaffold(
+        body: Row(
+          children: [
+            for (final id in ['fleet_access', 'crm'])
+              AppProductIcon(
+                key: ValueKey(id),
+                module: AppRegistry.moduleById(id)!,
+              ),
+          ],
+        ),
+      ),
+    );
+    Color ink(String id) => tester
+        .widget<Icon>(
+          find.descendant(
+            of: find.byKey(ValueKey(id)),
+            matching: find.byType(Icon),
+          ),
+        )
+        .color!;
+    expect(ink('fleet_access'), ink('crm'));
+  });
+
+  testWidgets('search finds the tile by its description', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 1400);
+    addTearDown(tester.view.reset);
+    await tester.pumpApp(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: tabs),
+          BlocProvider.value(value: experiments),
+          BlocProvider.value(value: access),
+        ],
+        child: const Scaffold(body: AppsHubPage(query: 'chat links')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('results-fleet_access')), findsOneWidget);
+  });
+
+  testWidgets('pull to refresh brings the tile back after a failed check', (
+    tester,
+  ) async {
+    source.accessAnswers
+      ..clear()
+      ..addAll([fleetApiError(503), observerAccess]);
+    await mount(tester);
+    expect(tile, findsNothing);
+    await tester
+        .widget<NovaRefreshIndicator>(find.byType(NovaRefreshIndicator).first)
+        .onRefresh();
+    await tester.pumpAndSettle();
+    expect(source.accessCalls, 2);
+    expect(tile, findsOneWidget);
+  });
+
+  test('app resume re-checks a failed Fleet access check', () async {
+    source.accessAnswers
+      ..clear()
+      ..addAll([fleetApiError(503), observerAccess]);
+    final harness = MastermindViewHarness(fleetAccess: access);
+    addTearDown(harness.dispose);
+    // Only a failed check is retried: an initial one waits for an entry.
+    await harness.runtime.retryAccessAfterError(null);
+    expect(source.accessCalls, 0);
+    await access.sync();
+    expect(access.state.status, FleetAccessStatus.error);
+    await harness.runtime.retryAccessAfterError(null);
+    expect(source.accessCalls, 2);
+    expect(access.state.visible, isTrue);
   });
 }

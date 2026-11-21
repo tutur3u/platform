@@ -18903,4 +18903,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessKeepEditing => 'Keep editing';
+
+  @override
+  String get mastermindFleetAccessAppDescription => 'Fleet status, requests and chat links';
 }

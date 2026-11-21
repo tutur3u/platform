@@ -18682,4 +18682,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessKeepEditing => 'Tiếp tục sửa';
+
+  @override
+  String get mastermindFleetAccessAppDescription => 'Trạng thái đội máy, yêu cầu và liên kết chat';
 }

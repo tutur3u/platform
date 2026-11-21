@@ -16,6 +16,7 @@ String appDescription(BuildContext context, String moduleId) {
     'education' => context.l10n.appsHubEducationDescription,
     'crm' => context.l10n.appsHubCrmDescription,
     'mastermind' => context.l10n.appsHubMastermindDescription,
+    'fleet_access' => context.l10n.mastermindFleetAccessAppDescription,
     'meet' => context.l10n.appsHubMeetDescription,
     'inventory' => context.l10n.appsHubInventoryDescription,
     'settings' => context.l10n.appsHubSettingsDescription,

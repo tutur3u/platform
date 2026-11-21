@@ -14,6 +14,7 @@ import 'package:mobile/features/apps/widgets/app_launcher_pins.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_shortcuts.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -33,14 +34,15 @@ class AppsHubPage extends StatelessWidget {
   final VoidCallback? onManage;
   final Widget? search;
 
-  // Pull to refresh also retries the workspace's app access check.
+  // Pull to refresh also retries the workspace's app access checks.
   Future<void> _refresh(BuildContext context) async {
     final access = context.read<MastermindAccessCubit?>();
-    if (access == null) return;
-    await access.sync(
-      context.read<WorkspaceCubit?>()?.state.currentWorkspace?.id,
-      quiet: true,
-    );
+    final fleet = context.read<FleetAccessCubit?>();
+    final wsId = context.read<WorkspaceCubit?>()?.state.currentWorkspace?.id;
+    await Future.wait([
+      ?access?.sync(wsId, quiet: true),
+      ?fleet?.sync(quiet: true),
+    ]);
   }
 
   @override

@@ -13,6 +13,7 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart'
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
+import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
@@ -98,6 +99,7 @@ final class MastermindViewHarness {
     Stream<bool>? onlineChanges,
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
+    FleetAccessCubit? fleetAccess,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
       repository: accessRepository,
@@ -124,6 +126,7 @@ final class MastermindViewHarness {
       irisTrust: irisTrust,
       fleet: fleet,
       fleetSnoozeStore: fleetSnoozeStore,
+      fleetAccess: fleetAccess,
       onlineChanges: onlineChanges,
     );
   }

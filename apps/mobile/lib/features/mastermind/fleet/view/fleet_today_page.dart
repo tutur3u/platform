@@ -14,6 +14,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart'
 import 'package:mobile/features/mastermind/fleet/view/fleet_machines_panel.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_release_strip.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
+import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// `/mastermind`, Today: what is happening now, the figures that need the
@@ -30,6 +31,7 @@ class FleetTodayPage extends StatelessWidget {
       slivers: [
         SliverList.list(
           children: [
+            const FleetAccessTodayAction(),
             FleetFreshnessLine(state: state, now: now),
             FleetClock(
               period: const Duration(seconds: 30),

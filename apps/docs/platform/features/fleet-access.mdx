@@ -202,13 +202,14 @@ A Fleet view appears to anyone whose fleet access answer is enabled, separate
 from the owner-only Mastermind entry and its offline fallback. The app decides
 nothing; the API enforces every rule.
 
-- **Entry:** the Apps hub's "Fleet access" tile ("Quyền truy cập đội máy"),
-  its own app module beside the owner-only Mastermind tile. It shows only
-  while the access answer is enabled, never while the check loads or fails,
-  and opens `/mastermind/fleet-access`. `?view=requests`, `?view=link` and
-  `?view=approvals` open a segment, as does the app link
-  `/mastermind/fleet-access/requests` (or `link`, `approvals`). No Mastermind
-  screen links to the view.
+- **Entries:** the Apps hub's "Fleet access" tile ("Quyền truy cập đội máy"),
+  its own app module beside the owner-only Mastermind tile; Today's navbar
+  action; and a Requests row at the end of Inbox, which opens Requests. Each
+  shows only while the access answer is enabled, never while the check loads
+  or fails. The Apps hub's pull to refresh and an app resume re-check a
+  failed answer, as they do for Mastermind. `?view=requests`, `?view=link`
+  and `?view=approvals` open a segment, as does the app link
+  `/mastermind/fleet-access/requests` (or `link`, `approvals`).
 - **Dock:** the route belongs to the Fleet access module, not the Mastermind
   tab shell. Someone the owner gate admits keeps the Mastermind tabs; anyone
   else gets only Back, which falls back to the Apps hub. The code lives in

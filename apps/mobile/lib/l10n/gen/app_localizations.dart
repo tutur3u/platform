@@ -34758,6 +34758,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep editing'**
   String get mastermindFleetAccessKeepEditing;
+
+  /// No description provided for @mastermindFleetAccessAppDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet status, requests and chat links'**
+  String get mastermindFleetAccessAppDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

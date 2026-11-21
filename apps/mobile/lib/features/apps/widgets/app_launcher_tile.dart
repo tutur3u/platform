@@ -95,7 +95,7 @@ class AppProductIcon extends StatelessWidget {
       'calendar' => 'orange',
       'documents' || 'education' || 'mail' || 'cms' => 'purple',
       'chat' => 'pink',
-      'crm' || 'drive' || 'inventory' => 'teal',
+      'crm' || 'drive' || 'inventory' || 'fleet_access' => 'teal',
       'notes' => 'yellow',
       _ => null,
     };

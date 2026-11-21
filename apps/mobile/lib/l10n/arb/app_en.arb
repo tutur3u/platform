@@ -9306,5 +9306,6 @@
   "mastermindFleetAccessSentForOwnerApproval": "Sent for Owner approval.",
   "mastermindFleetAccessDiscardTitle": "Discard this request?",
   "mastermindFleetAccessDiscard": "Discard",
-  "mastermindFleetAccessKeepEditing": "Keep editing"
+  "mastermindFleetAccessKeepEditing": "Keep editing",
+  "mastermindFleetAccessAppDescription": "Fleet status, requests and chat links"
 }
