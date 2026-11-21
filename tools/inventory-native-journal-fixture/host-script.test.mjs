@@ -187,14 +187,10 @@ test('actual trusted gate emits true only for explicitly enabled registration', 
     for (const enabled of [true, false, 'missing', 'missing_output'])
       temporary((directory) => {
         mkdirSync(resolve(directory, 'scripts/ci'), { recursive: true });
-        for (const file of [
-          'tuturuuu.ts',
-          'scripts/ci/check-workflow-config.ts',
-          'scripts/ci/workflow-config-core.ts',
-          'scripts/ci/production-test-only-paths.ts',
-          'scripts/ci/workspace-dependency-closure.ts',
-          'scripts/ci/mail-calendar-tasks-affected.ts',
-        ])
+        const sparseCheckout =
+          /^ {10}sparse-checkout: \|\n((?: {12}[^\n]+\n)+)/m.exec(job)?.[1];
+        assert.ok(sparseCheckout);
+        for (const file of sparseCheckout.trim().split(/\s+/))
           copyFileSync(resolve(root, file), resolve(directory, file));
         writeFileSync(
           resolve(directory, 'tuturuuu.ci.ts'),

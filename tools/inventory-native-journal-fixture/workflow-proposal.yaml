@@ -37,7 +37,13 @@ jobs:
             tuturuuu.ts
             tuturuuu.ci.ts
             scripts/ci/check-workflow-config.ts
+            scripts/ci/lockfile-workspace-delta.ts
+            scripts/ci/mail-calendar-tasks-affected.ts
+            scripts/ci/mobile-build-selection.ts
+            scripts/ci/production-test-only-paths.ts
+            scripts/ci/tasks-production-inputs.ts
             scripts/ci/workflow-config-core.ts
+            scripts/ci/workspace-dependency-closure.ts
           sparse-checkout-cone-mode: false
       - name: Admit disk before tool downloads
         working-directory: trusted
@@ -142,7 +148,13 @@ jobs:
             tuturuuu.ts
             tuturuuu.ci.ts
             scripts/ci/check-workflow-config.ts
+            scripts/ci/lockfile-workspace-delta.ts
+            scripts/ci/mail-calendar-tasks-affected.ts
+            scripts/ci/mobile-build-selection.ts
+            scripts/ci/production-test-only-paths.ts
+            scripts/ci/tasks-production-inputs.ts
             scripts/ci/workflow-config-core.ts
+            scripts/ci/workspace-dependency-closure.ts
           sparse-checkout-cone-mode: false
       - name: Admit disk before tool downloads
         working-directory: trusted
