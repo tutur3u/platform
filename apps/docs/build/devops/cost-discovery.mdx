@@ -1,0 +1,141 @@
+---
+title: 'Cost Discovery Inventory'
+description: 'Every paid provider Tuturuuu depends on, what each costs today, the billing or usage API that can report it, the collector credential it needs and who owns it.'
+updatedAt: '2026-11-21'
+audience: developers
+---
+
+This page is the source list for Admin cost analytics. Each provider row names
+the posted-cost source (an invoice or billing export), the usage source (an API
+that meters consumption), the collector credential it needs and the
+team that owns the account. Credentials are referenced by environment variable
+name only.
+
+The reconciliation rules that turn this evidence into Admin numbers live in
+`apps/infrastructure/src/lib/admin-costs/README.md`. Reviewed invoices land in
+`private.external_provider_invoices`. A root-workspace invoice whose provider,
+account and app have a Finance destination in
+`private.usage_finance_destinations` posts to that expense category through
+`private.post_usage_provider_invoice`; other invoices stay unposted. Run-level
+and account-day provider costs land in `private.external_provider_costs`.
+
+## API-reported charges
+
+Snapshot taken 2026-11-21 from read-only provider billing APIs. These are
+provider-reported charges, not issued-invoice totals: an open month is still
+accruing and a closed month becomes a posted cost only after its invoice is
+reconciled. Amounts are USD, rounded to the dollar, and cover the whole
+provider account.
+
+| Provider | Scope and source field | Oct 2026 | Nov 2026, through 19 Nov |
+| --- | --- | --- | --- |
+| GitHub | Organization billing usage, `netAmount` | $32 | $10 |
+| Vercel | Team FOCUS charges, `BilledCost` | $33 | $26 |
+
+GitHub's charge is GitHub Secret Protection seats for the organization. Actions
+minutes and storage are fully discounted for the public repository, so their
+`grossAmount` is list-price exposure rather than spend; it would become spend
+if the repository turned private or jobs moved to larger hosted runners.
+Self-hosted macOS runners cost machine time outside GitHub billing.
+
+Vercel's charge is the Pro plan plus usage after included credit. Per-project
+and per-service detail stays in Admin, not in this public page.
+
+Every other provider has no reported figure yet; see
+[Coverage gaps](#coverage-gaps).
+
+## Provider inventory
+
+Owner names the team accountable for the account and its collector credential.
+`COST_*` names are proposed collector bindings, each a separate credential
+that never shares a token with deploy, runtime or payment paths. The collector
+only makes read calls. Where a provider offers no read-only credential (OpenAI
+and Anthropic admin keys, the AI Gateway API key), the row says so and the key
+is held only by the collector.
+
+| Provider | What we use | Posted cost source | Usage source | Collector credential (scope) | Owner |
+| --- | --- | --- | --- | --- | --- |
+| Cloudflare | Configured in repo (some held from publication; see the [adoption inventory](/build/development-tools/oxc-cloudflare-adoption)): Workers (gateway, api, about 30 Start apps), Durable Objects (meet-realtime, colab, chat-realtime, abuse-guard, ops-hub, coordination, cron-control, roadmap, deploy-coordinator, devbox-control, mastermind-store, turbo-cache, parley), R2 (meet, parley, lettin, turbo-cache, mail), D1 (lettin), KV (status-api), Queues (ops-hub), Images (meet, parley), Stream, Realtime SFU and TURN, Analytics Engine, Rate Limiting, Email Service, Cloudflare for SaaS, Turnstile, Access | Invoice from the dashboard; Billing API billing history | GraphQL Analytics API per product, priced on each product's billable metric (for example, Images bindings bill unique monthly transformations, so daily request counts cannot be priced directly) | `COST_CLOUDFLARE_API_TOKEN` (account token: Account Analytics Read, Billing Read) | Infrastructure |
+| Vercel | Hosting for apps still on Vercel, Analytics, Speed Insights, Blob, Turbo remote cache, AI Gateway | Team invoice | FOCUS charges `GET /v1/billing/charges` (daily rows tagged by project) | `COST_VERCEL_API_TOKEN` (team-scoped token with billing read) | Infrastructure |
+| Vercel AI Gateway | Model traffic for Mira, Meet AI and AI Studio | Credit top-up receipts | Dashboard credit balance (manual); the Gateway credit endpoint needs a Gateway API key, not the billing token. `ai_credit_transactions` priced from `ai_gateway_models` is attribution evidence to reconcile against Gateway charges | Invoice import; `COST_AI_GATEWAY_API_KEY` (not read-only: it can also send model requests) if the credit endpoint is adopted | AI platform |
+| Supabase | Production, staging and qualify projects in one organization | Organization invoice | Management API project and add-on inventory | `COST_SUPABASE_ACCESS_TOKEN` (scoped token: `organization_projects_read`, `infra_add_ons_read`) | Infrastructure |
+| GitHub | Actions (hosted Linux, macOS and Windows), Actions storage, Git LFS, Secret Protection | Organization receipt or invoice | `GET /organizations/{org}/settings/billing/usage` (daily SKU rows with gross, discount and provisional net amounts) | `COST_GITHUB_TOKEN` (fine-grained token: organization Administration read) | Infrastructure |
+| Google Gemini and Vertex AI | Mira, Meet notes and live assistants, AI Studio | Google Cloud invoice | Cloud Billing detailed export to BigQuery | `COST_GCP_BILLING_EXPORT_SA` (service account: BigQuery Data Viewer on the export dataset, BigQuery Job User) | AI platform |
+| Google Cloud and Firebase | OAuth, Calendar, Play Integrity, Firebase Cloud Messaging | Google Cloud invoice | Same billing export | `COST_GCP_BILLING_EXPORT_SA` | Infrastructure |
+| OpenAI | ChatGPT provider, speech evaluation | Organization invoice | Costs API `GET /v1/organization/costs` | `COST_OPENAI_ADMIN_KEY` (admin key; no read-only variant, so it lives only in the collector) | AI platform |
+| Anthropic | Direct provider in `packages/ai` | Console invoice | Usage and Cost Admin API (the `cost_report` endpoint is legacy; use the current analytics endpoints) | `COST_ANTHROPIC_ADMIN_KEY` (admin key; same isolation) | AI platform |
+| Deepgram | Speech to text | Console invoice | Management API `/usage/breakdown` | `COST_DEEPGRAM_API_KEY` (key with usage read scope) | AI platform |
+| Modal | Discord bot and speech-to-text jobs | Workspace invoice | None used | Invoice import | AI platform |
+| Supermemory | Mira memory | Invoice | None used | Invoice import | AI platform |
+| AWS | SES sending and inbound mail, S3 | AWS invoice | Cost Explorer `GetCostAndUsage` (each request is billed, so collect once a day) | `COST_AWS_ACCESS_KEY_ID`, `COST_AWS_SECRET_ACCESS_KEY` (IAM `ce:GetCostAndUsage` only) | Infrastructure |
+| Upstash | Rate-limit Redis | Invoice | None used | Invoice import | Infrastructure |
+| Polar | Billing platform fees | Ledger fee entries | Orders API | Finance ledger export by default. A `COST_POLAR_ACCESS_TOKEN` with `orders:read` can also generate invoices, so it is not read-only | Finance |
+| SePay | Vietnamese payments | Statement | None used | Invoice import | Finance |
+| Apple Developer Program | iOS and macOS distribution | Annual membership receipt | None | Finance recurring entry | Mobile release |
+| Google Play Console | Android distribution | One-time registration receipt | None | Finance entry | Mobile release |
+| Code signing | Windows signing certificate | Issuer invoice | None | Finance recurring entry | Mobile release |
+| Domains and DNS | `tuturuuu.com` and other registered domains | Registrar invoices | None | Invoice import | Infrastructure |
+| Google Workspace | Staff mailboxes | Admin console invoice | Seat counts | Invoice import | Finance |
+| Developer SaaS | Mintlify, CodeRabbit, Codecov | Plan invoices, if any | None | Invoice import | Infrastructure |
+
+Not in use and not costed: Hyperdrive, Workers AI and Vectorize have no
+binding; Sentry, PostHog, Stripe, Resend, Postmark and SendGrid have no call
+sites. Groq, Mistral, xAI, DeepSeek, Perplexity, Fireworks, Together, DeepInfra
+and Cohere SDKs are dependencies only, reached through AI Gateway model IDs, so
+their spend appears in Gateway credits.
+
+## Collector design (proposed)
+
+Scheduled collection is to run on Cloudflare, following the
+[backend ownership guard](https://github.com/tutur3u/platform/blob/main/docs-internal/build/devops/cloudflare-backend-ownership.mdx).
+Each run reads a fixed number of provider-days per provider, writes idempotent
+rows keyed by provider, account and source line identity, and checks a durable
+stop fence before every provider call. A day that fails is left for the next
+scheduled run instead of retrying in a loop.
+
+Each provider call also has a request budget. A one-day window bounds the
+dates, but a paginated response can still cost several requests: AWS Cost
+Explorer bills each paginated request. A window that would exceed its budget
+records that provider-day as budget-exhausted, a terminal state that later
+runs skip until its query or budget changes, so an oversized window cannot
+charge the same pages again.
+
+The Vercel charges endpoint returned about 620,000 daily rows (about 480 MB)
+for four months, so the collector requests one day per call, caps the
+response and aggregates by service and project before writing.
+
+## Unit economics denominators
+
+| Unit | Denominator source |
+| --- | --- |
+| Active workspace or user | Session and engagement sources used by the Executive overview |
+| AI request | `ai_credit_transactions`, `private.ai_studio_usage`, `private.ai_live_sessions` |
+| Meet minute | `public.meet_ai_sessions`, `meet_ai_chunks.duration_seconds`, `private.meet_attendance_sessions`, presence intervals from `packages/realtime/src/meet/room-budget.ts` |
+| Metered workspace usage | `private.usage_meter_periods` (`sandbox_seconds`, `participant_seconds`, `stored_bytes`, `transfer_bytes`) |
+
+`attributedUnitCost` divides posted, reconciled cost attributed to a target by
+a complete denominator for the same provider, account, target and window.
+Estimates cannot feed it; an estimate-based unit cost must be labeled as an
+estimate and computed separately.
+
+## Coverage gaps
+
+These need a credential or an invoice before Admin can show a figure:
+
+- Cloudflare: `COST_CLOUDFLARE_API_TOKEN`.
+- Supabase: `COST_SUPABASE_ACCESS_TOKEN` for inventory, and organization
+  invoices imported through the Finance invoice flow.
+- Google Cloud, Gemini, Vertex and Firebase: billing export to BigQuery enabled
+  on the billing account, then `COST_GCP_BILLING_EXPORT_SA`.
+- OpenAI and Anthropic: `COST_OPENAI_ADMIN_KEY`, `COST_ANTHROPIC_ADMIN_KEY`.
+- Vercel AI Gateway: credit top-up receipts through the Finance invoice flow.
+- Polar: the Finance ledger export.
+- AWS: `COST_AWS_ACCESS_KEY_ID` and `COST_AWS_SECRET_ACCESS_KEY`.
+- Deepgram: `COST_DEEPGRAM_API_KEY`.
+- Invoice-only providers (Modal, Supermemory, Upstash, SePay, Apple, Google
+  Play, code signing, domains, Google Workspace, developer SaaS): import each
+  invoice through the Finance invoice flow.
+
+The AI executions cost view prices tokens per million from a fixed Gemini rate
+table in `ai/executions/utils/cost-calculator.ts` (web and workspace). It is a
+rate-model estimate for that page only and is not a provider cost source.
