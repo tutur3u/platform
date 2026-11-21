@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -6,6 +6,7 @@ import { getDefaultTaskListColorForStatus } from '@tuturuuu/utils/task-list-stat
 import { useState } from 'react';
 
 interface Props {
+  wsId: string;
   boardId: string;
   defaultStatus?: TaskBoardStatus;
   inline?: boolean;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function TaskListForm({
+  wsId,
   boardId,
   defaultStatus = 'not_started',
   inline = false,
@@ -27,20 +29,13 @@ export function TaskListForm({
     e.preventDefault();
     if (!name.trim()) return;
 
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('task_lists')
-      .insert({
-        board_id: boardId,
+    try {
+      await createWorkspaceTaskList(wsId, boardId, {
         name: name.trim(),
         status: defaultStatus,
         color: getDefaultTaskListColorForStatus(defaultStatus),
-      })
-      .select()
-      .single();
-
-    if (error) {
+      });
+    } catch (error) {
       console.error('Error creating task list:', error);
       return;
     }

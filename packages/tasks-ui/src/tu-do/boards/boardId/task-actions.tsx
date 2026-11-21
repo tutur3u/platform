@@ -13,7 +13,6 @@ import {
   getWorkspaceTask,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
@@ -78,41 +77,18 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         throw new Error('Task ID is required');
       }
 
-      if (workspaceId) {
-        const { task: workspaceTask } = await getWorkspaceTask(
-          workspaceId,
-          taskId
-        );
-        if (!workspaceTask) {
-          throw new Error('Task not found');
-        }
-        return transformTaskRecord(workspaceTask);
+      if (!workspaceId) throw new Error('Workspace not loaded');
+      const { task: workspaceTask } = await getWorkspaceTask(
+        workspaceId,
+        taskId
+      );
+      if (!workspaceTask) {
+        throw new Error('Task not found');
       }
-
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(
-          `
-          *,
-          assignees:task_assignees(
-            user:users(
-              id,
-              display_name,
-              avatar_url,
-              handle
-            )
-          )
-        `
-        )
-        .eq('id', taskId)
-        .single();
-
-      if (error) throw error;
-
-      return transformTaskRecord(data);
+      return transformTaskRecord(workspaceTask);
     },
-    enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
+    // Only fetch when the modal is open and the board's workspace is known.
+    enabled: !!taskId && !!workspaceId && isEditDialogOpen,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false,
   });
@@ -212,16 +188,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     setIsLoading(true);
 
     try {
-      if (workspaceId) {
-        await updateWorkspaceTask(workspaceId, taskId, { deleted: true });
-      } else {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('tasks')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', taskId);
-        if (error) throw error;
-      }
+      if (!workspaceId) throw new Error('Workspace not loaded');
+      await updateWorkspaceTask(workspaceId, taskId, { deleted: true });
 
       toast({
         title: 'Task deleted',

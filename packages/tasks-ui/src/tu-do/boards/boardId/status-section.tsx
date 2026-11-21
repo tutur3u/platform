@@ -246,6 +246,7 @@ export function StatusSection({
           {showAddForm ? (
             <div className="fade-in slide-in-from-top-2 animate-in rounded-lg border-2 border-border/60 bg-background/80 p-3 shadow-sm backdrop-blur-sm duration-200">
               <TaskListForm
+                wsId={wsId}
                 boardId={boardId}
                 defaultStatus={status}
                 inline

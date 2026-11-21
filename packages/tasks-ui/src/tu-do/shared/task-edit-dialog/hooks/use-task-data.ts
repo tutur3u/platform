@@ -4,8 +4,8 @@ import {
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api/tasks';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
@@ -369,25 +369,18 @@ export function useTaskData({
 }
 
 /**
- * Fetches the current user from Supabase
+ * Fetches the signed-in user's profile through the same-origin profile API.
  */
 export async function getCurrentUser(): Promise<{
   id: string;
   display_name: string | null;
   avatar_url: string | null;
 } | null> {
-  const supabase = createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const { data: userData } = await supabase
-    .from('users')
-    .select('id, display_name, avatar_url')
-    .eq('id', user.id)
-    .single();
-
-  return userData;
+  const profile = await getCurrentUserProfile().catch(() => null);
+  if (!profile?.id) return null;
+  return {
+    id: profile.id,
+    display_name: profile.display_name,
+    avatar_url: profile.avatar_url,
+  };
 }

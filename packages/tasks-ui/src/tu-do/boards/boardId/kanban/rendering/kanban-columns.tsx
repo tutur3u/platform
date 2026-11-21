@@ -391,7 +391,11 @@ export function KanbanColumns({
             );
           })}
           {!readOnly && (
-            <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+            <TaskListForm
+              wsId={workspaceId}
+              boardId={boardId ?? ''}
+              onListCreated={onUpdate}
+            />
           )}
         </div>
       </SortableContext>

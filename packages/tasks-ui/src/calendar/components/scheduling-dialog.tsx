@@ -13,7 +13,7 @@ import {
   Scissors,
   Zap,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -315,31 +315,17 @@ export function SchedulingDialog({
     }) => {
       if (!task) throw new Error('No task selected');
 
-      const supabase = createClient();
-      return supabase.auth.getUser().then(async ({ data: authData, error }) => {
-        if (error || !authData.user?.id) {
-          throw error ?? new Error('Not signed in');
-        }
-
-        const { error: upsertError } = await (supabase as any)
-          .from('task_user_scheduling_settings')
-          .upsert(
-            {
-              task_id: task.id,
-              user_id: authData.user.id,
-              total_duration: data.total_duration,
-              is_splittable: data.is_splittable,
-              min_split_duration_minutes: data.min_split_duration_minutes,
-              max_split_duration_minutes: data.max_split_duration_minutes,
-              calendar_hours: data.calendar_hours,
-              auto_schedule: data.auto_schedule,
-            },
-            { onConflict: 'task_id,user_id' }
-          );
-
-        if (upsertError) throw upsertError;
-        return { ok: true };
+      // The server resolves the signed-in user and upserts their personal
+      // scheduling settings for this task.
+      await updateCurrentUserTaskSchedulingSettings(task.id, {
+        total_duration: data.total_duration,
+        is_splittable: data.is_splittable,
+        min_split_duration_minutes: data.min_split_duration_minutes,
+        max_split_duration_minutes: data.max_split_duration_minutes,
+        calendar_hours: data.calendar_hours,
+        auto_schedule: data.auto_schedule,
       });
+      return { ok: true };
     },
     onSuccess: () => {
       toast.success('Scheduling settings updated');
