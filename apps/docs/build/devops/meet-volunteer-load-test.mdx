@@ -1,0 +1,131 @@
+---
+title: Meet volunteer load test checklist
+description: Prepare, run and record a live Meet session with about 50 volunteers.
+---
+
+Use this checklist for a hosted Meet session with real people, devices and
+networks. For how layers, thumbnail mode and audio-only fallback behave, see
+[Meet media quality](/platform/features/meet-media-quality). The hosted
+rehearsal steps are in [Meet calls](/platform/features/meet-calls).
+
+## Before the session
+
+- [ ] Record the deployed Meet and `meet-realtime` commit SHAs. Confirm that the
+      room server's `ready` message lists both `ascii-simulcast` and
+      `layer-update` in `mediaCapabilities`:
+  - Without `ascii-simulcast`, clients publish legacy `h`/`m`/`l` layers and
+    request layers only from legacy publishers. A subscription to a publisher
+    advertising current layers carries no layer preference.
+  - Without `layer-update`, clients still choose a layer when they subscribe
+    but never change it in place. Receive-side camera telemetry is also off.
+- [ ] Confirm the room's effective participant cap admits the planned head
+      count, plus about ten for rejoining devices.
+- [ ] Confirm the publisher cap admits every admitted participant who is not a
+      viewer, including muted participants and those with cameras off.
+      Admission enforces publishers separately. The room server keeps media
+      health for at most 150 devices.
+- [ ] Confirm the host can open **Settings → Connection → Room media health**.
+      Only participants who can manage the room can open it. A classroom
+      co-host without participant management cannot.
+- [ ] Ask volunteers to use a current browser and to close other video calls.
+      Include at least one low-end laptop, one phone on mobile data and one iOS
+      Safari device.
+- [ ] Decide on any A/B cohort in advance (see below). Write down which
+      volunteers run which flags.
+
+## Flags and kill switches
+
+Every behaviour is on by default. Turn one off on a single device through the
+browser storage key `tumeet:media-flags`, then reload the page:
+
+```js
+localStorage.setItem('tumeet:media-flags', JSON.stringify({ hiddenTabSaver: false }))
+```
+
+| Flag | Turns off |
+| --- | --- |
+| `layerSwitching` | Per-tile simulcast layer switching |
+| `opusDtx` | Microphone silence suppression |
+| `cpuAdaptation` | Dropping layers and frame rate under CPU pressure |
+| `hiddenTabSaver` | Lowering, then closing, remote video in a hidden tab |
+
+Thumbnail mode has its own per-device setting under **Settings → Media**, also
+stored as `tumeet:small-mode` (`auto`, `on` or `off`). Automatic mode turns on
+at 25 or more participants. It also turns on for a single receiver whose
+congestion ceiling has reached the lowest layer, which the weak-link scene can
+trigger in a smaller room.
+
+To restore defaults on a device, run
+`localStorage.removeItem('tumeet:media-flags')` and reload.
+
+If one behaviour misbehaves for everyone, ask volunteers to set its flag to
+`false` and reload. That takes effect immediately, without a deploy.
+
+## During the session
+
+Run these scenes for at least five minutes each:
+
+1. **Gallery:** everyone's camera on, no spotlight.
+2. **Spotlight:** one presenter spotlit.
+3. **Screen share:** a presenter shares a screen with small text.
+4. **Muted majority:** everyone muted except two speakers. This includes at
+   least one silent join and one unmute after more than 30 seconds of silence.
+5. **Hidden tab:** five volunteers switch to another tab for 30 seconds, then
+   return.
+6. **Weak link:** one volunteer throttles their network or moves to a weak
+   connection.
+
+Every 30 seconds, the host records from **Room media health**:
+
+- Reporting devices.
+- Send and receive rate, p50 and p95.
+- Packet loss p95 and round-trip time p95.
+- Freezes per device-minute.
+- Layer counts.
+- Counts of CPU-limited, audio-only, hidden and thumbnail devices.
+
+Volunteers note anything perceptible, with the time and their device:
+
+- Speech that cuts out.
+- Video that freezes.
+- A screen share that blurs.
+- A spotlight that stays blurry.
+- Video that does not return within about two seconds of refocusing the tab.
+
+Devices that run scripts can read `globalThis.__meetMediaStats` every two
+seconds. It holds rates and counters only, and readings expire six seconds
+after their last measurement.
+
+## Pass criteria
+
+- Speech stays intelligible throughout, including right after unmuting.
+- Freezes stay under one per device-minute in the gallery and spotlight scenes.
+- In a room of 40 or more, the receive rate p95 stays at or under about
+  2.5 Mbps per device. The receive rate covers simulcast camera video only;
+  the send rate also includes audio and screen share.
+- Screen text stays legible.
+- A hidden tab's video returns within about two seconds.
+- The low-end laptop is not CPU-limited for the whole session. Sample
+  `globalThis.__meetMediaStats?.sender?.cpuLimited` on that laptop, with
+  `cpuAdaptation` on, in a Chromium or WebKit browser that reports encoder
+  limitation reasons. In any other setup, `false` is missing evidence rather
+  than a pass, and so is a missing reading.
+
+The freeze and receive-rate criteria need fresh camera readings. Receive-side
+camera telemetry is off on devices with `layerSwitching` disabled, or when the
+room server lacks `layer-update`. Those devices report no receive rate and zero
+freezes, yet the room's freeze rate still divides by their reporting time.
+
+A room-wide freeze rate can pass only when no device in the room has camera
+telemetry off. That means no `layerSwitching` cohort, and `layer-update` must be
+advertised. Otherwise, sum freezes and measured minutes from each measured
+device's `globalThis.__meetMediaStats` samples, and record the unmeasured
+cohort separately as missing evidence.
+
+## After the session
+
+- [ ] Record the SHAs, head count, scene timings, health readings and volunteer
+      notes in the coordination handoff. Keep names and personal details out of
+      it.
+- [ ] Open follow-ups for every failed criterion, with the scene and time.
+- [ ] Record any flag the session needed to turn off, and why.
