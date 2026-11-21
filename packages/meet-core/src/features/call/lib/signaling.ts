@@ -300,6 +300,10 @@ export class MeetSignaling {
       this.pending.get(message.requestId)?.resolve(message.result);
       this.pending.delete(message.requestId);
     }
+    if (message.type === 'media.quality.summary' && message.requestId) {
+      this.pending.get(message.requestId)?.resolve(message.summary);
+      this.pending.delete(message.requestId);
+    }
 
     if (message.type === 'error' && message.requestId) {
       this.pending.get(message.requestId)?.reject(new Error(message.error));

@@ -354,8 +354,9 @@ export function recordMeetSubscriptionOperation(
 export const LAYER_UPDATE_RATE_LIMITED = 'layer_update_rate_limited';
 
 /**
- * A layer switch changes no tracks, presence, settings or lifecycle; only the
- * running time accounting advances. Those outcomes may skip the durable write.
+ * A layer switch or media quality report changes no tracks, presence,
+ * settings, attendance or lifecycle; only time accounting and diagnostics
+ * advance. Those outcomes may skip the durable write.
  */
 export function isMeetStatelessSfuOutcome(
   previous: MeetRoomSnapshot,
@@ -374,13 +375,16 @@ export function isMeetStatelessSfuOutcome(
     next.ended === previous.ended &&
     next.lifecycle === previous.lifecycle &&
     next.attendance === previous.attendance &&
-    result.reply.length > 0 &&
-    result.reply.every(
-      (reply) =>
-        (reply.type === 'sfu.response' &&
-          reply.action === 'sfu.tracks.update') ||
-        (reply.type === 'error' && reply.error === LAYER_UPDATE_RATE_LIMITED)
-    )
+    // A media quality report changes only diagnostic state and replies nothing.
+    ((!result.reply.length && next.mediaQuality !== previous.mediaQuality) ||
+      (result.reply.length > 0 &&
+        result.reply.every(
+          (reply) =>
+            (reply.type === 'sfu.response' &&
+              reply.action === 'sfu.tracks.update') ||
+            (reply.type === 'error' &&
+              reply.error === LAYER_UPDATE_RATE_LIMITED)
+        )))
   );
 }
 
@@ -395,6 +399,15 @@ export function createMeetSnapshotWriteGate(
   let lastWrite = -Infinity;
   return (previous: MeetRoomSnapshot, result: MeetRoomOutcome) => {
     const now = clock();
+    // A refused, rate-limited request never earns a durable write.
+    if (
+      isMeetStatelessSfuOutcome(previous, result) &&
+      result.reply.every(
+        (reply) =>
+          reply.type === 'error' && reply.error === LAYER_UPDATE_RATE_LIMITED
+      )
+    )
+      return true;
     if (
       isMeetStatelessSfuOutcome(previous, result) &&
       now - lastWrite < intervalMs

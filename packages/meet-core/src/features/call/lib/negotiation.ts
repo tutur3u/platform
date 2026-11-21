@@ -17,7 +17,7 @@ import {
   useEffect,
   useRef,
 } from 'react';
-import { layerForTile } from './layer-policy';
+import { layerForTile, lowerLayer } from './layer-policy';
 import { readMeetMediaFlags } from './media-flags';
 import {
   applyMediaPolicy,
@@ -206,12 +206,15 @@ export function localTrackSource(
 
 export function planWindowedRemoteSubscriptions({
   capabilities = MEET_MEDIA_CAPABILITIES,
+  ceiling = 'high',
   remoteTracks,
   subscribedKeys,
   selfUserId,
   videoWindow,
 }: {
   capabilities?: readonly string[];
+  /** Receiver congestion ceiling; new subscriptions start at or below it. */
+  ceiling?: MeetVideoLayer;
   remoteTracks: Record<string, MeetRealtimeRoomTrack>;
   subscribedKeys: Iterable<string>;
   selfUserId: string | null;
@@ -240,12 +243,15 @@ export function planWindowedRemoteSubscriptions({
         })
       ];
     if (!publication) return track;
-    const layer = layerForTile({
-      renderedPx: videoWindow?.tileHeights?.get(publication.userId) ?? null,
-      spotlight: publication.userId === videoWindow?.spotlightUserId,
-      visibleTiles: visible.size,
-      smallMode: videoWindow?.smallMode,
-    });
+    const layer = lowerLayer(
+      layerForTile({
+        renderedPx: videoWindow?.tileHeights?.get(publication.userId) ?? null,
+        spotlight: publication.userId === videoWindow?.spotlightUserId,
+        visibleTiles: visible.size,
+        smallMode: videoWindow?.smallMode,
+      }),
+      ceiling
+    );
     const simulcast = simulcastPreference(
       negotiableCameraRids(publication.cameraRids, capabilities),
       layer
@@ -317,6 +323,7 @@ export function useWindowedSubscriber({
   // A room server that rejects current RIDs is treated as legacy until the
   // next join advertises capabilities again.
   const rejectedCapabilities = useRef<readonly string[] | null>(null);
+  const ceilingRef = useRef<MeetVideoLayer>('high');
   const capabilities = useCallback(() => {
     const advertised = stateRef.current.mediaCapabilities;
     return advertised && advertised === rejectedCapabilities.current
@@ -326,6 +333,7 @@ export function useWindowedSubscriber({
   useSubscriberLayers({
     active: admission === 'admitted',
     capabilities,
+    ceilingRef,
     resetSubscriber,
     policy,
     queue: subscribeQueue,
@@ -364,6 +372,7 @@ export function useWindowedSubscriber({
           policy?.getSnapshot(),
           Object.keys(stateRef.current.participants).length
         ),
+        ceiling: ceilingRef.current,
       });
       const closing = new Set(close);
       const sessionId = subscribeSessionRef.current;
@@ -407,6 +416,7 @@ export function useWindowedSubscriber({
         )
       );
       let requestedPeer: RTCPeerConnection | null = null;
+      const sentCapabilities = stateRef.current.mediaCapabilities;
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
         requestedPeer = pc;
@@ -459,14 +469,19 @@ export function useWindowedSubscriber({
           setRemoteMedia
         );
       } catch (error) {
+        // An older room server drops a request it cannot parse without a
+        // correlated reply, so only a timeout on a request that used current
+        // RIDs, under the same advertisement, is evidence of a rollback.
         if (
+          error instanceof Error &&
+          error.message === 'signaling_timeout' &&
+          sentCapabilities === stateRef.current.mediaCapabilities &&
           pending.some(
             ({ simulcast }) =>
               simulcast?.preferredRid === 'f' || simulcast?.preferredRid === 'q'
           )
         )
-          rejectedCapabilities.current =
-            stateRef.current.mediaCapabilities ?? null;
+          rejectedCapabilities.current = sentCapabilities ?? null;
         if (requestedPeer && subscribePcRef.current === requestedPeer)
           resetSubscriber();
         throw error;
@@ -478,10 +493,17 @@ export function useWindowedSubscriber({
     let active = true;
     let scheduled = false,
       failures = 0,
-      retryAfter = 0;
-    const schedule = () => {
-      if (scheduled || Date.now() < retryAfter) return;
+      retryAfter = 0,
+      // A policy change during a pull reconciles as soon as that pull ends.
+      dirty = false;
+    const schedule = (urgent = false) => {
+      if (scheduled) {
+        dirty ||= urgent;
+        return;
+      }
+      if (!urgent && Date.now() < retryAfter) return;
       scheduled = true;
+      dirty = false;
       subscribeQueue.current = subscribeQueue.current
         .then(async () => {
           if (active) await pull();
@@ -494,12 +516,18 @@ export function useWindowedSubscriber({
         })
         .finally(() => {
           scheduled = false;
+          if (dirty && active) schedule(true);
         });
     };
     schedule();
-    const retry = setInterval(schedule, 1500);
+    const retry = setInterval(() => schedule(), 1500);
     // Visibility and audio-only changes resubscribe at once, not on the timer.
-    const unsubscribe = policy?.subscribe(schedule);
+    const unsubscribe = policy?.subscribe(() => {
+      // Returning to the page uses the current stage, skipping the settle.
+      if (policy.getSnapshot().visibility === 'visible')
+        settledWindow = stageWindow.current;
+      schedule(true);
+    });
     const stopWatching =
       policy && readMeetMediaFlags().hiddenTabSaver
         ? watchPageVisibility(policy)

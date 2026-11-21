@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
+/** Media quality goes to the room every third usage interval (30 s). */
+const QUALITY_EVERY = 3;
+
 export function useRoomUsage(
   telemetry: MediaDiagnostics | undefined,
   enabled: boolean,
-  send: (id: string, bytes: number) => void
+  send: (id: string, bytes: number) => void,
+  sendQuality?: () => void
 ) {
   const id = useRef(crypto.randomUUID()),
     latest = useRef(telemetry);
@@ -22,11 +26,15 @@ export function useRoomUsage(
       return;
     }
     report();
-    const timer = setInterval(report, 10000);
+    let ticks = 0;
+    const timer = setInterval(() => {
+      report();
+      if (++ticks % QUALITY_EVERY === 0) sendQuality?.();
+    }, 10000);
     return () => {
       report();
       clearInterval(timer);
     };
-  }, [enabled, report]);
+  }, [enabled, report, sendQuality]);
   return report;
 }

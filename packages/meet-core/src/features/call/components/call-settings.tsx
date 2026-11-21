@@ -44,6 +44,7 @@ import { DeviceSettings } from './device-settings';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingSettings } from './recording-settings';
+import { RoomMediaHealth } from './room-media-health';
 import { ThumbnailModeSetting } from './thumbnail-mode-setting';
 
 export function CallSettings({
@@ -221,6 +222,12 @@ export function CallSettings({
               read={room.getMediaDiagnostics}
               reconnect={room.reconnectMedia}
             />
+            {managesMedia && (
+              <RoomMediaHealth
+                meetingId={meetingId}
+                read={room.readMediaQuality}
+              />
+            )}
             {canManage && <CloudflareCosts meetingId={meetingId} />}
             {canManage && data?.canManage && <AiCosts data={data} />}
           </SettingsSection>

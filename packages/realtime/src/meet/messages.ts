@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import type { ClassTimer } from './class-timer';
+import {
+  type MeetRoomMediaQualitySummary,
+  meetMediaQualitySampleSchema,
+} from './room-media-quality';
 import type { MeetCameraRid, MeetMediaCapability } from './simulcast-layers';
 import {
   cloudflareSfuSessionDescriptionSchema,
@@ -42,6 +46,11 @@ const participantId = z.string().uuid();
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionStateMessageSchema,
   transcriptionConsentMessageSchema,
+  z.object({
+    type: z.literal('media.quality'),
+    sample: meetMediaQualitySampleSchema,
+  }),
+  z.object({ type: z.literal('media.quality.read'), requestId }),
   z.object({
     type: z.literal('usage.report'),
     reportId: z.uuid(),
@@ -371,6 +380,11 @@ export type MeetRealtimeServerMessage =
       requestId?: string;
       state: MeetRealtimeStreamState;
       type: 'stream.state';
+    }
+  | {
+      requestId?: string;
+      summary: MeetRoomMediaQualitySummary;
+      type: 'media.quality.summary';
     }
   | {
       error: string;

@@ -1,4 +1,5 @@
 import type { MeetVideoLayer } from '@tuturuuu/realtime/meet';
+import { createMediaQualityRecorder } from './media-quality';
 import type { StageVideoWindow } from './room-actions';
 
 /** Thumbnail mode: every non-spotlit camera is sent and received small. */
@@ -73,6 +74,7 @@ export function createMediaPolicy(storage: Storage | null = browserStorage()) {
     for (const listener of listeners) listener();
   };
   return {
+    quality: createMediaQualityRecorder(),
     getSnapshot: () => snapshot,
     subscribe: (listener: () => void) => {
       listeners.add(listener);
@@ -124,10 +126,24 @@ type VisibilityDocument = Pick<
   'visibilityState' | 'addEventListener' | 'removeEventListener'
 > & { pictureInPictureElement?: Element | null };
 
+/** Events that open or close a Picture-in-Picture view while hidden. */
+const PIP_EVENTS = [
+  'enterpictureinpicture',
+  'leavepictureinpicture',
+  'webkitpresentationmodechanged',
+] as const;
+
+type DocumentPip = EventTarget & { window?: unknown };
+const documentPip = () =>
+  (globalThis as { documentPictureInPicture?: DocumentPip })
+    .documentPictureInPicture;
+
 /**
  * Track page visibility into the policy. Becoming visible applies at once;
  * hiding is debounced so quick tab switches never thrash subscriptions. An
- * open Picture-in-Picture view counts as visible.
+ * open Picture-in-Picture view counts as visible, and opening or closing one
+ * while hidden is reconciled immediately. Phases derive from wall time, so a
+ * page the browser suspended lands in the right phase when it resumes.
  */
 export function watchPageVisibility(
   policy: Pick<MediaPolicy, 'setVisibility'>,
@@ -135,34 +151,46 @@ export function watchPageVisibility(
     ? undefined
     : document,
   pipOpen: () => boolean = () =>
-    !!doc?.pictureInPictureElement ||
-    !!(globalThis as { documentPictureInPicture?: { window?: unknown } })
-      .documentPictureInPicture?.window
+    !!doc?.pictureInPictureElement || !!documentPip()?.window,
+  clock: () => number = Date.now
 ) {
   if (!doc) return () => undefined;
   const timers: ReturnType<typeof setTimeout>[] = [];
+  let hiddenAt: number | null = null;
   const clear = () => timers.splice(0).forEach(clearTimeout);
   const update = () => {
     clear();
     if (doc.visibilityState !== 'hidden' || pipOpen()) {
+      hiddenAt = null;
       policy.setVisibility('visible');
       return;
     }
-    const schedule = (ms: number) =>
-      timers.push(
-        setTimeout(() => {
-          if (doc.visibilityState === 'hidden' && !pipOpen())
-            policy.setVisibility(visibilityPhaseAfter(ms));
-        }, ms)
-      );
-    schedule(DIM_AFTER_HIDDEN_MS);
-    schedule(BACKGROUND_AFTER_HIDDEN_MS);
+    const now = clock();
+    hiddenAt ??= now;
+    const hiddenMs = now - hiddenAt;
+    policy.setVisibility(visibilityPhaseAfter(hiddenMs));
+    for (const at of [DIM_AFTER_HIDDEN_MS, BACKGROUND_AFTER_HIDDEN_MS])
+      if (at > hiddenMs) timers.push(setTimeout(update, at - hiddenMs));
   };
   update();
   doc.addEventListener('visibilitychange', update);
+  for (const name of PIP_EVENTS) doc.addEventListener(name, update, true);
+  const pip = documentPip();
+  pip?.addEventListener('enter', update);
+  // A document Picture-in-Picture window reports its own close.
+  const onPipEnter = (event: Event) => {
+    const window = (event as Event & { window?: EventTarget }).window;
+    window?.addEventListener('pagehide', () => setTimeout(update, 0), {
+      once: true,
+    });
+  };
+  pip?.addEventListener('enter', onPipEnter);
   return () => {
     clear();
     doc.removeEventListener('visibilitychange', update);
+    for (const name of PIP_EVENTS) doc.removeEventListener(name, update, true);
+    pip?.removeEventListener('enter', update);
+    pip?.removeEventListener('enter', onPipEnter);
   };
 }
 
@@ -186,6 +214,19 @@ export function initialAudioOnly(): AudioOnlyState {
     until: 0,
     probeMs: AUDIO_ONLY_BASE_PROBE_MS,
     probedAt: -Infinity,
+  };
+}
+
+/** Begin a pause with a fresh probe deadline. */
+export function startAudioOnly(
+  state: AudioOnlyState,
+  now: number
+): AudioOnlyState {
+  return {
+    ...state,
+    active: true,
+    severe: 0,
+    until: now + state.probeMs,
   };
 }
 

@@ -27,9 +27,11 @@ message. Without them, a client publishes `h`/`m`/`l`, requests only legacy
 RIDs and sends no layer updates. A rollback to an older room server therefore
 keeps every subscription valid.
 
-A connected client keeps the capabilities from its last `ready`. If a
-subscription that requested `f` or `q` fails, the client treats that room server
-as legacy until the next join advertises capabilities again.
+A connected client keeps the capabilities from its last `ready`. An older room
+server drops a request it cannot parse without a correlated reply. So if a
+subscription that requested `f` or `q` times out under the same advertisement,
+the client treats that room server as legacy until the next join advertises
+capabilities again. Other failures never downgrade it.
 
 ### Choosing a layer per tile
 
@@ -104,15 +106,23 @@ attendance or the room lifecycle is always persisted. That includes the
 empty-room timer that starts when the last socket closes.
 
 A rejected or failed update keeps the current layers and retries after 30
-seconds. Only a matching per-MID success is cached. If the SFU asks for
-immediate renegotiation after an update, the client rebuilds the receiving
-peer and stops layer switching on it.
+seconds. Only a matching per-MID success is cached. A plan made for one
+visibility phase is discarded if the phase changes before it is sent. If the SFU
+asks for immediate renegotiation after an update, the client rebuilds the
+receiving peer. It then stops layer switching until a fresh join, so rebuilt
+peers are not torn down again.
+
+New subscriptions also start at or below the receiver's congestion ceiling. A
+receiver that has just recovered from congestion therefore never reopens a
+camera above the layer its link could carry.
 
 ## Thumbnail mode
 
 In thumbnail mode, every camera outside the spotlight is received on the lowest
 layer. Publishers who have not spoken in the last 20 seconds also stop sending
 their full layer. A recent speaker, the one most likely to be spotlit, keeps it.
+Speech is measured from the microphone sender's own source; shared audio never
+counts. A live microphone the browser does not measure keeps the full layer.
 Audio and screen share are unaffected.
 
 | Setting | Behaviour |
@@ -126,13 +136,15 @@ remembers its own choice. Network and CPU limits still apply on top of it.
 
 ## Audio-only fallback
 
-When cameras stay congested on the lowest layer for three consecutive samples,
-the receiver closes camera subscriptions. Speech, screen share and screen audio
+When cameras stay congested for three consecutive samples after every one is
+confirmed on the lowest layer, the receiver closes camera subscriptions. Speech, screen share and screen audio
 continue. The stage shows that video is paused, with a control to resume it.
 
 With no camera to measure, recovery is a timed probe on the lowest layer after
 30 seconds. A probe that relapses within 30 seconds doubles the next pause, up
-to four minutes. Resuming manually starts a fresh probe.
+to four minutes. Resuming manually starts a fresh probe. The pause belongs to
+the link rather than the receiving peer, so it and its probe deadline survive
+a receiver rebuild.
 
 ## Hidden tab
 
@@ -144,9 +156,19 @@ counts as visible.
 | 1.5 seconds | Every camera on its lowest layer, including the spotlight. Receiver stats sampling and speaker ordering pause. |
 | 20 seconds | Camera and screen-share video subscriptions are closed. All remote audio, including screen audio, keeps playing. |
 
-Returning to the tab applies at once. Subscriptions reopen immediately, and
-layers return without upgrade hysteresis. A quick tab switch therefore never
-closes anything.
+Returning to the tab applies at once. Subscriptions reopen immediately from the
+current stage, even when a background close is still in flight, and layers
+return without upgrade hysteresis. A quick tab switch therefore never closes
+anything.
+
+Opening or closing Picture-in-Picture while hidden is reconciled immediately.
+This covers the standard, WebKit presentation-mode and document
+Picture-in-Picture events. Phases are derived from wall time, so a page the
+browser suspended lands in the right phase when it resumes. iOS may suspend a
+hidden page entirely, so its thresholds are best effort.
+
+Visibility changes never change what this device sends. Only a thumbnail
+preference change refreshes the publisher.
 
 The participant's own camera, microphone and screen share keep publishing,
 including a share of another tab. Under CPU pressure the existing CPU
@@ -191,6 +213,42 @@ Recovery needs ten clean samples. That run doubles, up to 80 samples, when the
 limit returns within a minute of recovering, and it resets after ten quiet
 minutes.
 
+## Media health diagnostics
+
+Every device sends a `media.quality` report to the room every 30 seconds. It
+holds counters and rates only, and never track IDs, addresses, SDP, names or
+tokens:
+
+- Send rate, available send estimate and camera receive rate.
+- Round-trip time.
+- Inbound and outbound loss.
+- New freezes.
+- How many tiles use each requested layer.
+- Active send layers.
+- CPU limitation, audio-only, thumbnail mode and visibility phase.
+
+The numbers come from the publisher and subscriber loops above, so reporting
+adds no `getStats()` call.
+
+The room keeps the latest report per participant, at most 150, and drops
+reports older than two minutes. Reports never trigger more than one durable
+snapshot write every 15 seconds.
+
+Hosts and co-hosts see an anonymous room aggregate under **Settings →
+Connection**:
+
+- Send and receive p50/p95.
+- Loss and round-trip p95.
+- Freezes per device-minute.
+- Layer counts.
+- Counts of CPU-limited, audio-only, hidden and thumbnail devices.
+
+Other participants are refused. Load tests can read a device's latest numbers
+from `globalThis.__meetMediaStats`.
+
+The in-call connection diagnostics poll every 5 seconds while others are in the
+room and every 15 seconds otherwise. Browsers pause this poll in a hidden tab.
+
 ## Device kill switches
 
 Support can turn a behaviour off on one device. Set the browser storage key
@@ -223,6 +281,8 @@ Denied or unreadable storage falls back to the shipped defaults.
 
 - `packages/meet-core/src/features/call/lib/layer-policy.test.ts`
 - `media-policy.test.ts`
+- `media-health.test.ts`
+- `packages/realtime/src/meet/room-media-quality.test.ts`
 - `subscriber-layers.test.tsx`
 - `negotiation.test.ts`
 - `sender-profile.test.ts`

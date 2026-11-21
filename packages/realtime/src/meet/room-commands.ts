@@ -43,6 +43,10 @@ import { applyRecording } from './room-recording';
 import { applySfuCommand } from './room-sfu';
 import { recordRemovedGuest } from './room-removed-guests';
 import { applyUsageReport, createRoomUsage } from './room-usage';
+import {
+  applyMediaQualityReport,
+  summarizeRoomMediaQuality,
+} from './room-media-quality';
 import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
 
 export function applyMeetRoomCommand(
@@ -233,6 +237,34 @@ function dispatchMeetRoomCommand(
         broadcast: [meetPresenceMessage(next, roomId)],
       });
     }
+
+    case 'media.quality':
+      if (!state.presence[userId]) return denied(state, 'awaiting_admission');
+      return outcome({
+        ...state,
+        mediaQuality: applyMediaQualityReport(
+          state.mediaQuality,
+          userId,
+          message.sample,
+          Date.parse(now)
+        ),
+      });
+
+    case 'media.quality.read':
+      if (!state.presence[userId] || !canMeetRealtimeManageParticipants(token))
+        return denied(state, 'permission_denied', message.requestId);
+      return outcome(state, {
+        reply: [
+          {
+            type: 'media.quality.summary',
+            requestId: message.requestId,
+            summary: summarizeRoomMediaQuality(
+              state.mediaQuality,
+              Date.parse(now)
+            ),
+          },
+        ],
+      });
 
     case 'usage.report':
       if (!state.presence[userId]) return denied(state, 'awaiting_admission');

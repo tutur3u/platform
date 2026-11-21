@@ -16,6 +16,7 @@ import {
 } from './sender-profile';
 import { readMeetMediaFlags } from './media-flags';
 import { type MediaPolicy, resolveSmallMode } from './media-policy';
+import type { MediaQualityRecorder } from './media-quality';
 
 export type BandwidthMode = 'auto' | 'saver' | 'quality';
 type Audience = {
@@ -206,12 +207,14 @@ export function watchSenderBandwidth({
   mode,
   hasAudience,
   audience = () => ({}),
+  recorder,
 }: {
   readPeer: () => RTCPeerConnection | null;
   readSenders: () => Map<string, RTCRtpSender>;
   mode: () => BandwidthMode;
   hasAudience: () => boolean;
   audience?: () => Audience;
+  recorder?: Pick<MediaQualityRecorder, 'recordSender'>;
 }) {
   let active = true;
   let running = false;
@@ -223,6 +226,7 @@ export function watchSenderBandwidth({
   let cpu = initialCpuPressure();
   let lastCpuSampleAt = -Infinity;
   let lastSpokeAt = -Infinity;
+  let sent: { bytes: number; at: number } | null = null;
   const applied = new WeakMap<RTCRtpSender, string>();
   const update = async () => {
     if (running || !active) return;
@@ -231,6 +235,7 @@ export function watchSenderBandwidth({
       return;
     if (previousPeer !== pc) {
       previousPeer = pc;
+      sent = null;
       suspended = false;
       recoverySamples = 0;
       constrained = false;
@@ -241,14 +246,26 @@ export function watchSenderBandwidth({
     try {
       const network: Network = { available: null, rtt: null, loss: null };
       const reasons: string[] = [];
+      let bytesSent = 0;
+      // Speech means the microphone sender's source, never shared audio.
+      const micTracks = new Set(
+        [...readSenders()].flatMap(([name, sender]) =>
+          name.endsWith('-audio') && sender.track ? [sender.track.id] : []
+        )
+      );
+      let micMeasured = false;
       for (const stat of (await pc.getStats()).values()) {
+        if (stat.type === 'outbound-rtp' && Number.isFinite(stat.bytesSent))
+          bytesSent += stat.bytesSent;
         if (
           stat.type === 'media-source' &&
           stat.kind === 'audio' &&
-          typeof stat.audioLevel === 'number' &&
-          stat.audioLevel >= 0.05
-        )
-          lastSpokeAt = Date.now();
+          micTracks.has(stat.trackIdentifier) &&
+          typeof stat.audioLevel === 'number'
+        ) {
+          micMeasured = true;
+          if (stat.audioLevel >= 0.05) lastSpokeAt = Date.now();
+        }
         if (
           stat.type === 'outbound-rtp' &&
           stat.kind === 'video' &&
@@ -282,6 +299,11 @@ export function watchSenderBandwidth({
           network.loss = Math.max(network.loss ?? 0, stat.fractionLost);
       }
       const now = Date.now();
+      const sendKbps =
+        sent && now > sent.at && bytesSent >= sent.bytes
+          ? ((bytesSent - sent.bytes) * 8) / (now - sent.at)
+          : null;
+      sent = { bytes: bytesSent, at: now };
       if (!readMeetMediaFlags().cpuAdaptation) cpu = initialCpuPressure();
       else if (now - lastCpuSampleAt >= CPU_SAMPLE_SPACING_MS) {
         // Refreshes between timer ticks do not count toward recovery.
@@ -296,8 +318,11 @@ export function watchSenderBandwidth({
       const room = audience();
       // In thumbnail mode most viewers draw this camera small; only a recent
       // speaker is likely to be spotlit at full size.
+      // A live microphone the browser does not measure keeps the full layer.
       room.thumbnailOnly =
-        !!room.smallMode && Date.now() - lastSpokeAt > RECENT_SPEECH_MS;
+        !!room.smallMode &&
+        (micMeasured || !micTracks.size) &&
+        Date.now() - lastSpokeAt > RECENT_SPEECH_MS;
       if (
         (network.available !== null && network.available < 650000) ||
         (network.rtt !== null && network.rtt > 500) ||
@@ -327,6 +352,7 @@ export function watchSenderBandwidth({
       ) {
         if (++recoverySamples >= 3) suspended = false;
       }
+      let sendLayers = 0;
       for (const [name, sender] of senders) {
         if (!active || readPeer() !== pc) break;
         if (!sender.track) continue;
@@ -355,6 +381,8 @@ export function watchSenderBandwidth({
           suspended,
           cpu.limited
         );
+        if (kind === 'video')
+          sendLayers = target.filter((encoding) => encoding.active).length;
         const signature = JSON.stringify([
           target,
           parameters.degradationPreference,
@@ -369,6 +397,15 @@ export function watchSenderBandwidth({
           // Unsupported browser controls leave the existing sender running.
         }
       }
+      recorder?.recordSender({
+        sendKbps,
+        availableSendKbps:
+          network.available === null ? null : network.available / 1000,
+        rttMs: network.rtt,
+        loss: network.loss,
+        cpuLimited: cpu.limited,
+        sendLayers,
+      });
     } catch {
       // Transient stats errors leave the existing sender running.
     } finally {
@@ -407,6 +444,7 @@ export function useAdaptiveSenderBandwidth({
       readSenders: () => senders.current,
       mode: () => mode.current,
       hasAudience: () => Object.keys(state.current.participants).length > 1,
+      recorder: policy?.quality,
       audience: () => ({
         participants: Object.keys(state.current.participants).length,
         visibleTiles: stage.current?.cameraUserIds.length,
@@ -421,7 +459,14 @@ export function useAdaptiveSenderBandwidth({
       }),
     });
     refresh.current = watcher.refresh;
-    const unsubscribe = policy?.subscribe(watcher.refresh);
+    // Only the thumbnail preference changes what this device sends.
+    let preference = policy?.getSnapshot().smallModePreference;
+    const unsubscribe = policy?.subscribe(() => {
+      const next = policy.getSnapshot().smallModePreference;
+      if (next === preference) return;
+      preference = next;
+      watcher.refresh();
+    });
     return () => {
       unsubscribe?.();
       watcher.dispose();

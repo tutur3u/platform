@@ -22,6 +22,8 @@ import {
   initialAudioOnly,
   type MediaPolicy,
   nextAudioOnly,
+  startAudioOnly,
+  type VisibilityPhase,
 } from './media-policy';
 import type { RemoteTrackOwner } from './remote-playback';
 import type { StageVideoWindow } from './room-actions';
@@ -156,6 +158,7 @@ function currentCameras(
 export function useSubscriberLayers({
   active,
   capabilities,
+  ceilingRef,
   policy,
   queue,
   peer,
@@ -170,6 +173,8 @@ export function useSubscriberLayers({
   active: boolean;
   /** Capabilities in effect, which a rejected request can narrow. */
   capabilities?: () => readonly string[] | undefined;
+  /** Receives the receiver congestion ceiling for initial subscriptions. */
+  ceilingRef?: Ref<MeetVideoLayer>;
   policy?: MediaPolicy;
   resetSubscriber: () => void;
   queue: Ref<Promise<void>>;
@@ -199,15 +204,30 @@ export function useSubscriberLayers({
     const pendingUpgrades = new Map<string, number>();
     const readCapabilities =
       capabilities ?? (() => state.current.mediaCapabilities);
-    const capable = () => !!readCapabilities()?.includes('layer-update');
+    // Set when the SFU demanded renegotiation for a layer update; holds until
+    // the room server advertises capabilities again on a fresh join.
+    let disabledFor: readonly string[] | undefined | null = null;
+    const capable = () => {
+      const advertised = readCapabilities();
+      return (
+        !!advertised?.includes('layer-update') && advertised !== disabledFor
+      );
+    };
 
     /** Revalidate and send planned layer changes; runs inside the queue. */
     const dispatch = async (
       pc: RTCPeerConnection,
       sessionId: string,
-      planned: Map<string, { layer: MeetVideoLayer; key: string }>
+      planned: Map<string, { layer: MeetVideoLayer; key: string }>,
+      phase: VisibilityPhase
     ) => {
-      if (peer.current !== pc || sessionRef.current !== sessionId) return;
+      if (
+        peer.current !== pc ||
+        sessionRef.current !== sessionId ||
+        // A plan made for another visibility phase is obsolete.
+        (policy?.getSnapshot().visibility ?? 'visible') !== phase
+      )
+        return;
       const capabilities = readCapabilities();
       const updates = currentCameras(
         owners.current,
@@ -262,7 +282,7 @@ export function useSubscriberLayers({
         // Layer updates are documented as renegotiation-free. If the SFU
         // disagrees, rebuild the receiver rather than leave an offer pending
         // on a session other operations will reuse, and stop switching.
-        pausedUntil = Infinity;
+        disabledFor = readCapabilities();
         resetSubscriber();
         return;
       }
@@ -291,12 +311,16 @@ export function useSubscriberLayers({
         pendingUpgrades.clear();
         pausedUntil = 0;
         lastSampleAt = 0;
-        audio = initialAudioOnly();
+        // The audio-only pause belongs to the link, not the peer: keep it.
       }
       const now = Date.now();
       if (!capable() || now < pausedUntil) return;
       const phase = policy?.getSnapshot().visibility ?? 'visible';
       if (phase === 'background') return;
+      // The store and this loop agree on the pause; a pause without a probe
+      // deadline gets one.
+      if (policy?.getSnapshot().audioOnly && !audio.active)
+        audio = startAudioOnly(audio, now);
       if (audio.active) {
         // A participant who resumes video manually starts a fresh probe.
         audio = policy?.getSnapshot().audioOnly
@@ -323,8 +347,9 @@ export function useSubscriberLayers({
       try {
         // A dimmed page only needs every camera on its lowest layer; it
         // spends no stats work on a view nobody is looking at.
+        let sample: ReceiverSample | null = null;
         if (phase === 'visible') {
-          const sample = sampleReceiver(
+          sample = sampleReceiver(
             await pc.getStats(),
             new Set(cameras.map(({ mid }) => mid)),
             counters,
@@ -332,11 +357,19 @@ export function useSubscriberLayers({
           );
           lastSampleAt = now;
           governor = nextReceiverGovernor(governor, sample, now);
+          if (ceilingRef) ceilingRef.current = governor.ceiling;
+          // Severe congestion counts only once every camera is confirmed on
+          // the lowest layer, not merely requested there.
+          const confirmedLow = cameras.every(
+            ({ owner }) =>
+              requestedLayers.current.get(owner.subscriptionKey)?.layer ===
+              'low'
+          );
           audio = nextAudioOnly(
             audio,
             {
               congested: isReceiverCongested(sample),
-              ceiling: governor.ceiling,
+              ceiling: confirmedLow ? governor.ceiling : 'mid',
             },
             now
           );
@@ -378,6 +411,16 @@ export function useSubscriberLayers({
           governor.ceiling
         );
         restoring = false;
+        policy?.quality.recordReceiver(
+          sample,
+          cameras.flatMap(({ owner }) => {
+            const confirmed = requestedLayers.current.get(
+              owner.subscriptionKey
+            );
+            return confirmed?.peer === pc ? [confirmed.layer] : [];
+          }),
+          !!window?.smallMode
+        );
         pendingUpgrades.clear();
         for (const [mid, streak] of pending) pendingUpgrades.set(mid, streak);
         if (!changes.length) return;
@@ -390,7 +433,9 @@ export function useSubscriberLayers({
             { layer, key: keys.get(mid) ?? '' },
           ])
         );
-        const run = queue.current.then(() => dispatch(pc, sessionId, planned));
+        const run = queue.current.then(() =>
+          dispatch(pc, sessionId, planned, phase)
+        );
         queue.current = run.catch(() => undefined);
         await run;
       } catch {
@@ -414,6 +459,7 @@ export function useSubscriberLayers({
   }, [
     active,
     capabilities,
+    ceilingRef,
     owners,
     peer,
     policy,

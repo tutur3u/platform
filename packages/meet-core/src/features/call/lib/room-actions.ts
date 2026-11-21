@@ -4,6 +4,7 @@ import type {
   MeetMediaState,
   MeetReaction,
   MeetRealtimeTrackKind,
+  MeetRoomMediaQualitySummary,
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
@@ -93,6 +94,16 @@ export function createRoomActions(
       assistantAudio = audio;
       signaling.current?.send({ type: 'assistant.preferences', audio });
     },
+    /** Send this device's media health for the last interval to the room. */
+    reportMediaQuality: () =>
+      signaling.current?.send({
+        type: 'media.quality',
+        sample: mediaPolicy.quality.take(mediaPolicy.getSnapshot()),
+      }),
+    readMediaQuality: () =>
+      signaling.current?.request<MeetRoomMediaQualitySummary>({
+        type: 'media.quality.read',
+      }) ?? Promise.reject(new Error('signaling_closed')),
     reportUsage: (reportId: string, bytesReceived: number) =>
       signaling.current?.send({
         type: 'usage.report',

@@ -200,7 +200,7 @@ function CallShellContent({
     queryKey: ['meet-media-health', meetingId],
     queryFn: room.getMediaDiagnostics,
     enabled: joined && !left,
-    refetchInterval: Object.keys(state.participants).length > 1 ? 2000 : 15000,
+    refetchInterval: Object.keys(state.participants).length > 1 ? 5000 : 15000,
     retry: false,
     gcTime: 0,
   });
@@ -210,7 +210,8 @@ function CallShellContent({
       !left &&
       state.admission === 'admitted' &&
       room.connectionStatus === 'open',
-    room.reportUsage
+    room.reportUsage,
+    room.reportMediaQuality
   );
   const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
   const newestChatId = state.chat.at(-1)?.id ?? null;

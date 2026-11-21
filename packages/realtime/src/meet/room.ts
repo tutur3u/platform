@@ -50,6 +50,7 @@ export interface MeetRoomSnapshot
   budget?: RoomBudget;
   attachments?: Record<string, RoomAttachment>;
   usage?: RoomUsage;
+  mediaQuality?: import('./room-media-quality').RoomMediaQuality;
   approved?: Record<string, MeetApprovedParticipant>;
   settings?: MeetRoomSettings;
   ended?: boolean;
