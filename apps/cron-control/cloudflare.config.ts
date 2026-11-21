@@ -44,8 +44,11 @@ export default defineConfig({
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention,ai-studio-retention'
+        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders'
       ),
+      // Cron Control is web's only scheduler (apps/web/vercel.json has no
+      // crons). 'active' dispatches the five web jobs; 'off' makes no calls.
+      CRON_CONTROL_WEB_MODE: bindings.text('active'),
       // Counts only until a reviewed change sets 'delete'; 'off' is the kill
       // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),

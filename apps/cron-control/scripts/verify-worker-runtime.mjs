@@ -49,7 +49,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every schedule and enables only the two retention jobs, AI retention in dry-run', async () => {
+test('source config keeps every schedule and enables the two retention jobs and five web jobs, AI retention in dry-run', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -59,7 +59,12 @@ test('source config keeps every schedule and enables only the two retention jobs
   );
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
-    value: 'database-cron-history-retention,ai-studio-retention',
+    value:
+      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders',
+  });
+  assert.deepEqual(config.worker.env.CRON_CONTROL_WEB_MODE, {
+    type: 'text',
+    value: 'active',
   });
   // Source must never ship delete mode: only a reviewed change may set it.
   assert.deepEqual(config.worker.env.AI_STUDIO_RETENTION_MODE, {

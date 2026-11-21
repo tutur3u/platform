@@ -1,17 +1,60 @@
 ---
 title: "Web Cloudflare migration"
-description: "Move web scheduling to Cron Control behind a default-off gate, before any frontend cutover."
-updatedAt: "2026-10-29"
+description: "Web's five cron schedules run on Cron Control; Vercel owns none."
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
 ## Scope
 
-Web goes first for the next migration step: its five Vercel schedules move to the
-existing `apps/cron-control` Worker. This change prepares dormant scheduling and
-keeps the existing authenticated Next.js processors and Supabase job state.
-It does not change canonical web traffic, deploy a Worker, enable a job, or remove
-any Vercel cron. The paused `apps/tanstack-web` runtime stays paused.
+Web's five cron schedules run on the existing `apps/cron-control` Worker, which
+calls the existing authenticated Next.js processors and keeps their Supabase job
+state. `apps/web/vercel.json` declares `"crons": []`: Vercel Hobby rejects
+sub-daily schedules, and a web deployment must never carry a second scheduler.
+Canonical web traffic is unchanged. The paused `apps/tanstack-web` runtime stays
+paused.
+
+### Current ownership
+
+Cron Control is the only scheduler. `cloudflare.config.ts` enables the five job
+ids in `CRON_CONTROL_ENABLED_JOBS`; `CRON_CONTROL_WEB_MODE=active` dispatches
+them and `off` makes no calls. The
+Worker holds the operator-installed secret `CRON_SECRET_WEB`, equal to web's
+production `CRON_SECRET`. The shared execution gate below is not wired: the
+Worker has no HTTPS ingress, so web has no `WEB_CRON_GATE_ORIGIN`. Without the
+gate, `withWebCronFence` authenticates a request carrying
+`X-Tuturuuu-Cron-Slot` and runs its processor; Cron Control's ledger admits each
+job slot once. Single ownership follows from deployment-bound Vercel crons: a
+deployment without crons accepts Cloudflare slots, and an older deployment that
+still declares them refuses Cloudflare slots with 503. Cron Jobs are also
+disabled in the Vercel project settings, which Instant Rollback does not
+restore, so a rollback to an older deployment cannot revive its schedules. Keep
+that setting disabled while web mode is active; re-adding a Vercel schedule
+requires turning Cloudflare web mode off and draining it first.
+
+- **Kill switch:** set `CRON_CONTROL_WEB_MODE` to `off` in `cloudflare.config.ts`
+  (or drop a job id from `CRON_CONTROL_ENABLED_JOBS`), record the matching vars
+  transition in `scripts/ci/fixtures/cf-worker-parity/cron-control.json`, and
+  deploy. Disabled web jobs make no ledger or HTTP calls.
+- **Secret:** `CRON_SECRET_WEB` is not in the deploy workflow's secrets file; the
+  prebuilt upload keeps existing secret bindings. Confirm the name is still
+  bound after each Cron Control publication: without it web jobs skip, and a
+  mismatched value returns 401 until the failure stop trips.
+- **Failure stop:** five consecutive failed or unknown slots durably stop a job.
+  Resuming uses `/control/jobs/<job-id>/resume`, which needs a reviewed HTTPS
+  route to the Worker.
+- **Verification:** the Worker's log tail (`wrangler tail tuturuuu-cron-control`;
+  the pinned cf CLI has no tail command) shows `Cron Control jobs completed`
+  with each job's outcome per slot. Log head sampling is 5%, so check several
+  slots or the processors' own job records.
+- **Activation order:** publish the cron-free web deployment, disable Vercel
+  Cron Jobs for the project, and let running Vercel invocations drain (at least
+  the 300-second function limit) before Cron Control's first active slot.
+- **Staging and previews:** Cron Control targets `WEB_ORIGIN` only, so staging and
+  preview web deployments have no scheduler.
+- **Target runtime:** `WEB_ORIGIN` (`https://tuturuuu.com`) is served by the web
+  vinext Worker, so that Worker's `CRON_SECRET` must equal Cron Control's
+  `CRON_SECRET_WEB`; re-mint both together.
 
 ## Cron migration
 
@@ -67,9 +110,12 @@ invalid bearers are covered by `apps/web/src/lib/cron/web-cron-fence.test.ts`.
 
 ### Shared write lease and durable stop
 
+This gate is not wired in production; see [Current ownership](#current-ownership).
+It applies only if both schedulers must run during a later handover.
+
 Web's five GET processors use `withWebCronFence` before job work. Without
-`WEB_CRON_GATE_ORIGIN`, Vercel retains its current behavior and Cloudflare
-requests are refused. Once configured, **both schedulers** must acquire the
+`WEB_CRON_GATE_ORIGIN`, the fence passes manual calls to the handler's own
+authentication and runs authenticated Cloudflare-slot requests. Once configured, **both schedulers** must acquire the
 same per-job SQLite execution gate in Cron Control's existing `CronLedger`.
 Set `CRON_CONTROL_WEB_GATE_TOKEN` on web and Cron Control to the same separately
 provisioned secret, at least 32 characters. The Worker reads this optional secret
@@ -138,6 +184,9 @@ invocation and retains its original execution lease for reconciliation. Do not r
 or enable another reminder scheduler until those writes have an atomic claim.
 
 ### Authorized handover and rollback
+
+These steps describe a gated handover with both schedulers live. Production
+runs the ungated single-owner model in [Current ownership](#current-ownership).
 
 1. Deploy the dormant Worker and the five guarded web adapters under a separate
    rollout authorization. Configure the shared gate secret and HTTPS origin on

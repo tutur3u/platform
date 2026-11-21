@@ -97,11 +97,12 @@ reviewed change, then delete the allowlist entry. Never run both owners unfenced
 
 ## Web's five Vercel crons
 
-The [web migration runbook](/build/devops/web-cloudflare-migration#cron-migration)
-prepares the five web schedules in the existing Cron Control Worker. Their
-Vercel definitions stay active. `CRON_CONTROL_WEB_MODE=off` and the per-job
-allowlist keep Cloudflare dormant; `shadow` compares due slots without processor
-or ledger work. Active requests use the existing authenticated web endpoints.
+The five web schedules run on the existing Cron Control Worker with
+`CRON_CONTROL_WEB_MODE` (`active` dispatches, `off` makes no calls);
+`apps/web/vercel.json` has no crons and the
+allowlist has no web Vercel entries. Requests use the existing authenticated web
+endpoints. See the [web migration runbook](/build/devops/web-cloudflare-migration#current-ownership)
+for the ungated single-owner rule, kill switch and verification.
 
 Before cutover, wire the shared SQLite execution gate into both scheduler paths
 at the web processor boundary. It defaults to Vercel ownership, persists active

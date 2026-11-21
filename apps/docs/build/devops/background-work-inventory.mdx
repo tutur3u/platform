@@ -14,7 +14,7 @@ a hosted schedule runs or succeeds; confirm hosted state before a cutover.
 
 | Owner today | Count | Target |
 | --- | ---: | --- |
-| Vercel Cron (this repository) | 13 | 12 Cron Control → existing processor, 1 Worker processor |
+| Vercel Cron (this repository) | 8 | 7 Cron Control → existing processor, 1 Worker processor; web's five already run on Cron Control |
 | Cloudflare Cron Control | 1 | Already on Cloudflare (immediate notifications) |
 | pg_cron, live after migration replay | 8 | 7 retained pure-database maintenance, 1 Cron Control (pg_net HTTP call) |
 | Next.js `after()` continuations | 9 | 7 Queue consumers, 2 `ctx.waitUntil` once Worker-hosted |
@@ -58,17 +58,16 @@ not a concurrent Vercel tick.
 | `infrastructure-docker-recovery-alerts` | Infrastructure `/api/cron/infrastructure/docker-recovery-alerts` | `*/5 * * * *` | 288 | Docker watcher logs, operator email | Persisted watermark | Handover | Cron Trigger; retirement candidate (Docker runner retired) |
 | `infrastructure-sample-resources` | Infrastructure `/api/cron/infrastructure/sample-resources` | `* * * * *` | 1,440 | Docker monitoring snapshot, usage-event insert | Minimum-interval sample check | Idempotent | Cron Trigger; retirement candidate (reads the retired Docker host) |
 
-Declaration locations for these 13 current Vercel schedules:
+Declaration locations for these 8 current Vercel schedules (web's five run on Cron Control; see the [web migration runbook](/build/devops/web-cloudflare-migration#current-ownership)):
 
 | Source | Jobs |
 | --- | --- |
-| `apps/web/vercel.json:14-31` | `web-notification-batches`, `web-post-email-queue`, `web-report-automation`, `web-topic-announcements`, `web-deadline-reminders` |
 | `apps/infrastructure/vercel.json:14-31` | `infrastructure-sample-resources`, `infrastructure-docker-recovery-alerts`, `infrastructure-sync-trust-cache`, `calendar-provider-sync`, `calendar-smart-schedule` |
 | `apps/inventory/vercel.json:8-9` | `inventory-checkout-expiry` |
 | `apps/pay/vercel.json:14-15` | `pay-products` |
 | `apps/tasks/vercel.json:8-9` | `tasks-cleanup-media` |
 
-Per-job Vercel declaration lines and current cadences:
+Per-job declaration lines and current cadences:
 
 | Job | Source | Current trigger |
 | --- | --- | --- |
@@ -76,13 +75,13 @@ Per-job Vercel declaration lines and current cadences:
 | `pay-products` | `apps/pay/vercel.json:14-15` | Vercel Cron, `0 */12 * * *` |
 | `calendar-smart-schedule` | `apps/infrastructure/vercel.json:30-31` | Vercel Cron, `0 */6 * * *` |
 | `infrastructure-sync-trust-cache` | `apps/infrastructure/vercel.json:22-23` | Vercel Cron, `*/10 * * * *` |
-| `web-notification-batches` | `apps/web/vercel.json:14-15` | Vercel Cron, `*/15 * * * *` |
-| `web-report-automation` | `apps/web/vercel.json:22-23` | Vercel Cron, `*/15 * * * *` |
-| `web-topic-announcements` | `apps/web/vercel.json:26-27` | Vercel Cron, `*/15 * * * *` |
+| `web-notification-batches` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
+| `web-report-automation` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
+| `web-topic-announcements` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/15 * * * *` |
 | `calendar-provider-sync` | `apps/infrastructure/vercel.json:26-27` | Vercel Cron gateway, `*/15 * * * *` |
-| `web-post-email-queue` | `apps/web/vercel.json:18-19` | Vercel Cron, `*/30 * * * *` |
+| `web-post-email-queue` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/30 * * * *` |
 | `inventory-checkout-expiry` | `apps/inventory/vercel.json:8-9` | Vercel Cron, `*/5 * * * *` |
-| `web-deadline-reminders` | `apps/web/vercel.json:30-31` | Vercel Cron, `*/5 * * * *` |
+| `web-deadline-reminders` | `apps/cron-control/src/jobs.ts` | Cron Control, `*/5 * * * *` |
 | `infrastructure-docker-recovery-alerts` | `apps/infrastructure/vercel.json:18-19` | Vercel Cron, `*/5 * * * *` |
 | `infrastructure-sample-resources` | `apps/infrastructure/vercel.json:14-15` | Vercel Cron, `* * * * *` |
 

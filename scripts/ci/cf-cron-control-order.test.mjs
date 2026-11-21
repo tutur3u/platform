@@ -19,7 +19,8 @@ const LIVE_ORDER = [
   // AI-PURGE-SCHEDULE-1 (02:43 GMT+7), live since the 4b837f09e1 publication.
   '43 19 * * *',
 ];
-// MEET-ATTENDANCE-RETENTION-1 adds one daily trigger (01:17 GMT+7).
+// MEET-ATTENDANCE-RETENTION-1 added one daily trigger (01:17 GMT+7); it is
+// live, and WEB-CRON-HANDOVER-1 changes only vars.
 const TARGET_ORDER = [...LIVE_ORDER, '17 18 * * *'];
 const app = new URL('../../apps/cron-control/', import.meta.url);
 const cfPackage = pathToFileURL(
@@ -72,8 +73,8 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   );
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
-  assertCronSet(baseline.previousIdentity.crons, LIVE_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['crons']);
+  assertCronSet(baseline.previousIdentity.crons, TARGET_ORDER);
+  assert.deepEqual(baseline.transition.fields, ['vars']);
   assert.equal(validated.worker.env.CRON_LEDGER.worker, validated.worker.name);
   assert.deepEqual(emitted.durable_objects.bindings, [
     { name: 'CRON_LEDGER', class_name: 'CronLedger' },
@@ -133,7 +134,6 @@ test('installed cf bE reports EMPTY drift against the recorded dbe3ed29 live fie
   const live = {
     ...structuredClone(remote),
     vars: baseline.previousIdentity.vars,
-    triggers: { crons: LIVE_ORDER },
   };
   assert.notEqual(diff(live, local).diff, null);
   const unpatched = structuredClone(local);

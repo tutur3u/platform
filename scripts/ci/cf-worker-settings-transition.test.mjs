@@ -120,7 +120,7 @@ test('cron-control records a reviewed transition from the live identity', () => 
   const { CRON_CONTROL_WEB_MODE: webMode, ...liveVars } = plan.target.vars;
   assert.equal(webMode, 'off');
   assert.deepEqual(plan.previous, { ...plan.target, vars: liveVars });
-  assert.equal(plan.target.crons.length, 10);
+  assert.equal(plan.target.crons.length, 11);
   assert.deepEqual(plan.target.durableObjectClasses, { CronLedger: 'sqlite' });
   assert.equal(
     plan.target.vars.CRON_CONTROL_ENABLED_JOBS,
@@ -597,7 +597,7 @@ test('same-version dashboard preflight passes with exact fixture settings', asyn
     'database-cron-history-retention,ai-studio-retention'
   );
   assert.ok(!Object.hasOwn(LIVE.vars, 'CRON_CONTROL_WEB_MODE'));
-  assert.ok(!Object.hasOwn(BASELINE.identity.vars, 'CRON_CONTROL_WEB_MODE'));
+  assert.equal(BASELINE.identity.vars.CRON_CONTROL_WEB_MODE, 'active');
   assert.equal(LIVE.vars.AI_STUDIO_RETENTION_MODE, 'dry-run');
   assert.deepEqual(LIVE.observability.traces, {
     enabled: false,

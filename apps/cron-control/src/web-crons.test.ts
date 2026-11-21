@@ -74,10 +74,11 @@ it('owns all five web cron paths and schedules with none left on Vercel', async 
     new URL('../cloudflare.config.ts', import.meta.url),
     'utf8'
   );
-  expect(config).not.toContain('CRON_CONTROL_WEB_MODE:');
-  expect(config).not.toMatch(
-    /CRON_CONTROL_ENABLED_JOBS: bindings.text\(\s*'[^']*web-/
-  );
+  expect(config).toContain("CRON_CONTROL_WEB_MODE: bindings.text('active')");
+  const enabled = /CRON_CONTROL_ENABLED_JOBS: bindings.text\(\s*'([^']*)'/.exec(
+    config
+  )?.[1];
+  for (const job of jobs) expect(enabled?.split(',')).toContain(job.id);
 });
 it('off and shadow modes spend no ledger or endpoint operations, even with enabled ids', async () => {
   for (const mode of [undefined, 'off', 'shadow', 'typo']) {

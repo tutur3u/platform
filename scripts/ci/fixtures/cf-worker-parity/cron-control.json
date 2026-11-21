@@ -37,12 +37,15 @@
     "routes": [],
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention",
+      "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders",
+      "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
       "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
       "PAY_ORIGIN": "https://pay.tuturuuu.com",
       "TASKS_ORIGIN": "https://tasks.tuturuuu.com",
+      "TASKS_RECURRENCE_MODE": "off",
       "WEB_ORIGIN": "https://tuturuuu.com"
     },
     "secrets": [
@@ -91,6 +94,7 @@
       "0 */12 * * *",
       "0 */6 * * *",
       "0 6 * * *",
+      "17 18 * * *",
       "17 3 * * *",
       "43 19 * * *"
     ],
@@ -122,8 +126,8 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "MEET-ATTENDANCE-RETENTION-1: add the daily 17 18 * * * trigger for the dormant meet-attendance-retention job (c4ce41e71c); the previous stage is the live AI-PURGE-SCHEDULE-1 identity",
-    "fields": ["crons"]
+    "decision": "WEB-CRON-HANDOVER-1: dispatch the five web jobs with CRON_CONTROL_WEB_MODE=active now that web's deployment carries no Vercel crons and every route accepts Cron Control's bearer, and publish the dormant TASKS_RECURRENCE_MODE=off and CLOUDFLARE_ACCOUNT_ID vars; the previous stage is the live MEET-ATTENDANCE-RETENTION-1 identity",
+    "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication.",
   "dashboardAdmission": {
