@@ -10,6 +10,13 @@ export const REQUIRED_RUNTIME_NAMES = [
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
 ] as const;
 
+// Binding declarations from a standalone deploy configuration describe external
+// services by their fetch surface. Inventory calls the guard through its RPC API.
+type ExternalServiceBinding = {
+  fetch(...args: never[]): Promise<unknown>;
+  run?: never;
+};
+
 export type RuntimeEnvironment = Partial<
   Record<
     | (typeof REQUIRED_RUNTIME_NAMES)[number]
@@ -19,7 +26,7 @@ export type RuntimeEnvironment = Partial<
     | 'UPSTASH_REDIS_REST_TOKEN',
     string
   >
-> & { ABUSE_GUARD?: AbuseGuardBinding };
+> & { ABUSE_GUARD?: AbuseGuardBinding | ExternalServiceBinding };
 
 const INVENTORY_GUARD_FAMILIES = ['proxy', 'ratelimit', 'integrity'] as const;
 
@@ -33,7 +40,7 @@ export function getInventoryAbuseGuard(env: RuntimeEnvironment) {
   const families = env.ABUSE_GUARD_FAMILIES;
   const assigned = inventoryGuardFamilies(env);
   if (
-    !binding ||
+    typeof binding?.run !== 'function' ||
     !pepper ||
     pepper.length < 32 ||
     !INVENTORY_GUARD_FAMILIES.every((name) => assigned?.includes(name))

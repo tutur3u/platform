@@ -60,6 +60,15 @@ test('startup accepts a configured guard without SePay or Redis credentials', ()
     () =>
       assertRuntimeEnvironment({
         ...valid,
+        ...legacyRedis,
+        ABUSE_GUARD: { fetch: async () => new Response(null, { status: 503 }) },
+      }),
+    /requires a configured abuse guard/
+  );
+  assert.throws(
+    () =>
+      assertRuntimeEnvironment({
+        ...valid,
         ABUSE_GUARD_FAMILIES: 'proxy,integrity',
       }),
     /requires a configured abuse guard/
