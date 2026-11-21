@@ -337,6 +337,15 @@ describe('Tasks Worker request step (subdomain root + tuturuuu.com/tasks, fail-c
       mountHosts: ['tuturuuu.com'],
       basePath: '/tasks',
       unknownHost: 'reject',
+      isolation: {
+        ownedCookies: [
+          'NEXT_LOCALE',
+          'NEXT_THEME',
+          'sidebar-collapsed',
+          'sidebar-behavior',
+          'sidebar-behavior-updated-at',
+        ],
+      },
     });
     expect(createBridge).toHaveBeenCalledTimes(1);
   });

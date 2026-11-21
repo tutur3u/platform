@@ -6,6 +6,7 @@ import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import '@tuturuuu/tasks-ui/globals.css';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
@@ -70,6 +71,9 @@ export default async function RootLayout({ children }: Props) {
   );
 
   const pwa = await getTranslations({ locale, namespace: 'pwa' });
+  // On the shared origin (tuturuuu.com/tasks) a `/`-scoped worker would
+  // control every app there, so only the subdomain root registers one.
+  const mounted = runtimeAppBase() !== '';
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -78,7 +82,7 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <OfflineProvider options={{ scope: '/' }}>
+        <OfflineProvider options={{ scope: '/' }} register={!mounted}>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>

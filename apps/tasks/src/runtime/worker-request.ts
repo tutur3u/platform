@@ -65,6 +65,21 @@ export const TASKS_MOUNT_HOSTS = ['tuturuuu.com'] as const;
 export const TASKS_BASE_PATH = '/tasks';
 
 /**
+ * Cookies Tasks owns on `tuturuuu.com/tasks`: locale, theme and the sidebar
+ * state its layout reads before first paint. Same-origin isolation hands Tasks
+ * code only these, the logout fence and an access-token-only Supabase session,
+ * and writes them host-only at `Path=/tasks`, so Tasks can never rotate,
+ * clear or shadow a central `Path=/` cookie.
+ */
+export const TASKS_OWNED_COOKIES = [
+  'NEXT_LOCALE',
+  'NEXT_THEME',
+  'sidebar-collapsed',
+  'sidebar-behavior',
+  'sidebar-behavior-updated-at',
+] as const;
+
+/**
  * One artifact serves the subdomain root and the `tuturuuu.com/tasks` mount
  * (one-origin, D87). Fail-closed: unlisted hosts get 404, and the apex outside
  * `/tasks` is not Tasks'. Whether the apex is served at all is decided by
@@ -81,6 +96,7 @@ export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
     mountHosts: [...TASKS_MOUNT_HOSTS],
     basePath: TASKS_BASE_PATH,
     unknownHost: 'reject',
+    isolation: { ownedCookies: [...TASKS_OWNED_COOKIES] },
   };
 }
 
