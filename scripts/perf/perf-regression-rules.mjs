@@ -16,6 +16,9 @@ export const DEFAULT_RULES = Object.freeze({
   errorMinCount: 5,
   errorRatio: 2,
   errorAbsoluteRate: 0.005,
+  // With no usable baseline the rate is an unknown, so only a near-outage
+  // (this share of a busy window failing) fires; modest chronic rates do not.
+  noBaselineErrorRate: 0.5,
 });
 
 export function median(values) {
@@ -102,25 +105,30 @@ export function evaluateWindows(windows, baseline, rules = DEFAULT_RULES) {
     }
   }
   // With no usable baseline window the baseline rate is an unknown, not zero:
-  // treating it as 0% turns any chronic error rate into a "jump".
-  const jump =
-    baseline.windows === 0
-      ? undefined
-      : windows.find(
-          (window) =>
-            window.requests >= rules.minRequestsPerWindow &&
-            isErrorJump(window, baseline.errorRate, rules)
-        );
+  // treating it as 0% turns any chronic error rate into a "jump". Detection is
+  // not disabled though: a busy window that is mostly failing (an outage) still
+  // fires on the absolute floor, so new or low-traffic apps are not blind.
+  const noBaseline = baseline.windows === 0;
+  const jump = windows.find(
+    (window) =>
+      window.requests >= rules.minRequestsPerWindow &&
+      (noBaseline
+        ? window.errors >= rules.errorMinCount &&
+          errorRate(window) >= rules.noBaselineErrorRate
+        : isErrorJump(window, baseline.errorRate, rules))
+  );
   if (jump) {
     findings.push({
       metric: 'error_rate',
       startTime: jump.start,
       baseline: round(baseline.errorRate, 5),
       trigger: round(
-        Math.max(
-          baseline.errorRate * rules.errorRatio,
-          baseline.errorRate + rules.errorAbsoluteRate
-        ),
+        noBaseline
+          ? rules.noBaselineErrorRate
+          : Math.max(
+              baseline.errorRate * rules.errorRatio,
+              baseline.errorRate + rules.errorAbsoluteRate
+            ),
         5
       ),
       observed: [round(errorRate(jump), 5)],

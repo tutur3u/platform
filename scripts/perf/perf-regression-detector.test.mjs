@@ -96,13 +96,37 @@ test('error-rate jumps fire on one window and ignore stray errors', () => {
   assert.deepEqual(finding.observed, [0.04]);
 });
 
-test('error-rate jumps do not fire when there is no usable baseline', () => {
+test('without a usable baseline only a near-outage fires, not a modest rate', () => {
+  // Roadmap 03:30Z case: 8 errors / 60 requests = 0.133 on an Early Hints
+  // artifact. Below the absolute floor, so silent without a baseline.
   const busy = series([400], { requests: 60, errors: [8] });
   const noBaseline = computeBaseline(series([400], { requests: 13 }));
   assert.equal(noBaseline.windows, 0);
   assert.deepEqual(evaluateWindows(busy, noBaseline), []);
   const withBaseline = computeBaseline(series([400, 400], { requests: 200 }));
   assert.equal(evaluateWindows(busy, withBaseline)[0]?.metric, 'error_rate');
+});
+
+test('a total outage on an app with no usable baseline still fires', () => {
+  // Low-traffic baseline (20 req/window) is unusable; 60/60 failing must fire.
+  const noBaseline = computeBaseline(series([400, 400], { requests: 20 }));
+  assert.equal(noBaseline.windows, 0);
+  const [finding] = evaluateWindows(
+    series([400], { requests: 60, errors: [60] }),
+    noBaseline
+  );
+  assert.equal(finding.metric, 'error_rate');
+  assert.equal(finding.trigger, 0.5);
+  assert.deepEqual(finding.observed, [1]);
+  // Needs a busy window and real error counts, so quiet windows stay silent.
+  assert.deepEqual(
+    evaluateWindows(series([400], { requests: 10, errors: [10] }), noBaseline),
+    []
+  );
+  assert.deepEqual(
+    evaluateWindows(series([400], { requests: 60, errors: [4] }), noBaseline),
+    []
+  );
 });
 
 test('suspects are deploys in the lookback window, newest first', () => {
