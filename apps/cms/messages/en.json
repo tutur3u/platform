@@ -1934,6 +1934,8 @@
     "agenda_empty_title": "All clear",
     "agenda_event_count": "{count, plural, one {# event} other {# events}}",
     "all_calendars_connected": "All your Google Calendars are already connected.",
+    "all_day_more": "+{count} more",
+    "all_day_show_less": "Show less",
     "auth_url_invalid": "Invalid authentication URL received",
     "calendar_created": "Calendar created",
     "calendar_creation_failed": "Failed to create calendar",

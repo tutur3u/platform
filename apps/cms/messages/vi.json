@@ -1934,6 +1934,8 @@
     "agenda_empty_title": "Lịch trống",
     "agenda_event_count": "{count, plural, one {# sự kiện} other {# sự kiện}}",
     "all_calendars_connected": "Tất cả lịch Google của bạn đã được kết nối.",
+    "all_day_more": "+{count} sự kiện",
+    "all_day_show_less": "Thu gọn",
     "auth_url_invalid": "URL xác thực không hợp lệ",
     "calendar_created": "Đã tạo lịch",
     "calendar_creation_failed": "Không thể tạo lịch",
