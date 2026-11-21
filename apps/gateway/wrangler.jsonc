@@ -38,7 +38,7 @@
     // path (any query) to the service binding MOUNT_<SEGMENT>; "/learn/*" also
     // hands it nested paths. Empty: every path stays on WEB_ORIGIN. Removing an
     // app's entries (with its zone routes) is that app's one-step rollback.
-    "GATEWAY_MOUNTED_PATHS": "",
+    "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*",
     // Comma-separated apps/web route families (manifest `webFamilies`) served
     // by their own Worker through the binding WEB_FAMILY_<ID>. A family needs
     // both its id here and its binding; otherwise its paths stay on
@@ -46,8 +46,14 @@
     // GATEWAY_MODE=passthrough disables every family.
     "GATEWAY_WEB_FAMILIES": "",
   },
-  // One service binding per mounted app, added at that app's cutover:
-  // "services": [{ "binding": "MOUNT_LEARN", "service": "<learn worker name>" }],
+  // One service binding per mounted app, added at that app's cutover. Learn's
+  // nested paths are zone routes on tuturuuu-learn; the gateway mount covers
+  // the bare path with a query string, which a zone route cannot match. Nova
+  // is mounted for the bare path and every nested path.
+  "services": [
+    { "binding": "MOUNT_LEARN", "service": "tuturuuu-learn" },
+    { "binding": "MOUNT_NOVA", "service": "tuturuuu-nova" },
+  ],
   // One service binding per web family, added at that family's cutover. The
   // family Worker has no routes of its own:
   // "services": [

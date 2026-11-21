@@ -116,7 +116,10 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   const config = deployConfig(base, live, activatedFamilies, env);
   assert.equal(config.routes, undefined);
   assert.equal(config.name, 'tuturuuu-gateway');
-  assert.equal(config.vars.GATEWAY_MOUNTED_PATHS, '/learn,/learn/*');
+  assert.equal(
+    config.vars.GATEWAY_MOUNTED_PATHS,
+    '/learn,/nova,/nova/*,/learn/*'
+  );
   assert.equal(config.vars.WEB_ORIGIN, 'https://web.example.vercel.app');
   assert.equal(
     config.vars.MARKETING_ORIGIN,
@@ -127,6 +130,7 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   assert.equal(config.vars.GATEWAY_ACCEPTANCE_BYPASS_SECRET, undefined);
   assert.deepEqual(config.services, [
     { binding: 'MOUNT_LEARN', service: 'tuturuuu-learn' },
+    { binding: 'MOUNT_NOVA', service: 'tuturuuu-nova' },
     { binding: 'WEB_FAMILY_PUBLIC_DOCS', service: 'tuturuuu-web-public-docs' },
   ]);
 });
@@ -169,6 +173,27 @@ test('admits committed mount paths and bindings alongside live ones', () => {
     },
     { binding: 'MOUNT_TOOLS', service: 'tuturuuu-tools' },
   ]);
+});
+
+test('treats the live default production environment as the committed binding', () => {
+  const config = deployConfig(
+    withTools,
+    [
+      ...liveOrigins,
+      {
+        type: 'service',
+        name: 'MOUNT_TOOLS',
+        service: 'tuturuuu-tools',
+        environment: 'production',
+      },
+    ],
+    families,
+    { ...env, GATEWAY_WEB_FAMILIES: '' }
+  );
+  assert.deepEqual(
+    config.services.find(({ binding }) => binding === 'MOUNT_TOOLS'),
+    { binding: 'MOUNT_TOOLS', service: 'tuturuuu-tools' }
+  );
 });
 
 test('refuses to change a live service claimed by the committed config', () => {
@@ -229,7 +254,10 @@ test('an empty flag list binds no family and routes nothing to one', () => {
     GATEWAY_WEB_FAMILIES: '',
   });
   assert.equal(config.vars.GATEWAY_WEB_FAMILIES, '');
-  assert.deepEqual(config.services, []);
+  assert.deepEqual(
+    config.services.filter(({ binding }) => binding.startsWith('WEB_FAMILY_')),
+    []
+  );
 });
 
 test('refuses held or unknown families, bad origins and unknown binding types', () => {

@@ -116,7 +116,11 @@ export function deployConfig(base, liveBindings, families, env) {
         `Live gateway binding ${binding.name} has type ${binding.type}; add it to the deploy config before deploying from CI.`
       );
     }
-    const { name, service, environment, entrypoint } = binding;
+    const { name, service, entrypoint } = binding;
+    // Version readback names the default environment "production"; a binding
+    // without an environment targets the same one.
+    const environment =
+      binding.environment === 'production' ? undefined : binding.environment;
     const committed = services.get(name);
     if (
       committed &&
