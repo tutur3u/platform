@@ -213,7 +213,7 @@ export async function refreshSepayAccessToken(input: { refreshToken: string }) {
   return {
     accessToken: json.access_token,
     expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString(),
-    refreshToken: json.refresh_token ?? refreshToken,
+    refreshToken: json.refresh_token ?? input.refreshToken,
     scopes: readScopes(json.scope),
   };
 }
