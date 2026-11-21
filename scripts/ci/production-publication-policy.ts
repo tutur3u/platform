@@ -61,6 +61,7 @@ const retiredSatelliteVercelWorkflows = new Set([
   'vercel-production-nova.yaml',
   'vercel-production-pay.yaml',
   'vercel-production-rewise.yaml',
+  'vercel-production-shortener.yaml',
   'vercel-production-storefront.yaml',
 ]);
 const knownWorkflows = new Set<string>(

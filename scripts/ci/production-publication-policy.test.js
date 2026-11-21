@@ -262,7 +262,8 @@ for (const app of apps.filter((name) => name !== 'mind')) {
           workflow === 'vercel-production-forms.yaml' ||
           workflow === 'vercel-production-finance.yaml' ||
           workflow === 'vercel-production-nova.yaml' ||
-          workflow === 'vercel-production-git.yaml'
+          workflow === 'vercel-production-git.yaml' ||
+          workflow === 'vercel-production-shortener.yaml'
             ? /publisher retired/
             : heldReason;
         assert.match(decisions[index].reason, expectedReason);
@@ -338,6 +339,7 @@ for (const app of apps.filter((name) => name !== 'mind')) {
       finance: 'finance-cloudflare.yaml',
       nova: 'nova-cloudflare.yaml',
       git: 'git-cloudflare.yaml',
+      shortener: 'shortener-cloudflare.yaml',
     };
     const target =
       cloudflareCutover[app] ??
@@ -369,6 +371,7 @@ const retiredSatelliteVercel = [
   'vercel-production-nova.yaml',
   'vercel-production-pay.yaml',
   'vercel-production-rewise.yaml',
+  'vercel-production-shortener.yaml',
   'vercel-production-storefront.yaml',
 ];
 test('retired Vercel satellites stay held when protected policy is malformed', (t) => {
@@ -409,7 +412,7 @@ test('Cloudflare-served satellites leave the Vercel planner and inventory stays'
   );
 });
 
-test('Calendar, Meet, Mail and Apps admissions open only their publishers while Shortener remains held', (t) => {
+test('Calendar, Meet, Mail and Apps admissions open only their publishers', (t) => {
   const root = fixture(t);
   for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
     assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
@@ -440,10 +443,6 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers while 
       runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=true\n'
     );
-  assert.equal(
-    runPolicy(root, 'shortener-cloudflare.yaml').output,
-    'allowed=false\n'
-  );
 });
 
 test('admitted apps refuse a dispatch of their switched-off Vercel publishers', (t) => {
@@ -502,32 +501,21 @@ test('Workspace admission opens only its route-free seal workflow and adds no pu
     jobs['workspace-cutover-artifact'].if,
     /github\.event_name == 'workflow_dispatch'/
   );
-  for (const app of ['shortener'])
-    assert.equal(
-      runPolicy(root, `${app}-cloudflare.yaml`).output,
-      'allowed=false\n'
-    );
 });
 
-test('Git admission opens its route-free upload and adds no Cloudflare publisher', (t) => {
-  const root = fixture(t);
-  assert.equal(runPolicy(root, 'git-cloudflare.yaml').output, 'allowed=true\n');
-  const vercel = runPolicy(root, 'vercel-production-git.yaml');
-  assert.equal(vercel.output, 'allowed=false\n');
-  assert.match(vercel.stdout, /publisher retired/);
-  assert.match(vercel.summary, /publisher retired/);
-  // The sealed artifact job never writes to a provider.
-  const { jobs } = readWorkflow('git-cloudflare.yaml');
-  assert.deepEqual(
-    publicationWrites(jobs).map(([name]) => name),
-    []
-  );
-  for (const app of ['shortener'])
-    assert.equal(
-      runPolicy(root, `${app}-cloudflare.yaml`).output,
-      'allowed=false\n'
-    );
-});
+for (const app of ['git', 'shortener'])
+  test(`${app} admission opens its route-free upload and retires its Vercel publisher`, (t) => {
+    const root = fixture(t);
+    const native = runPolicy(root, `${app}-cloudflare.yaml`);
+    assert.equal(native.output, 'allowed=true\n');
+    const vercel = runPolicy(root, `vercel-production-${app}.yaml`);
+    assert.equal(vercel.output, 'allowed=false\n');
+    assert.match(vercel.stdout, /publisher retired/);
+    assert.match(vercel.summary, /publisher retired/);
+    // The sealed artifact job never writes to a provider.
+    const { jobs } = readWorkflow(`${app}-cloudflare.yaml`);
+    assert.deepEqual(publicationWrites(jobs), []);
+  });
 
 const publishers = [
   ...apps
@@ -591,7 +579,8 @@ for (const { workflow, job } of publishers) {
       workflow === 'vercel-production-mind.yaml'
         ? /held: Mind stays with its dedicated owner/
         : workflow === 'vercel-production-finance.yaml' ||
-            workflow === 'vercel-production-nova.yaml'
+            workflow === 'vercel-production-nova.yaml' ||
+            workflow === 'vercel-production-shortener.yaml'
           ? /publisher retired/
           : heldReason
     );

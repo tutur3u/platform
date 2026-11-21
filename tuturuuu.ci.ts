@@ -253,6 +253,13 @@ export const productionPublicationPolicy = {
       'git native root cutover: manual route-free deploy of the sealed artifact, private smoke, one-step route rollback',
     surfaces: ['frontend'],
   },
-  shortener: { state: 'held', reason: 'held for wave-2 cutover' },
+  // Admission opens the manual route-free upload of the sealed artifact; ttr.gg
+  // is served by the tuturuuu-shortener Worker through its zone routes.
+  shortener: {
+    state: 'admitted',
+    reason:
+      'shortener native root cutover: manual route-free deploy of the sealed artifact, private smoke, one-step Worker version rollback',
+    surfaces: ['frontend'],
+  },
   contacts: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;
