@@ -58,6 +58,23 @@ const authShellHeaders = [
   },
 ];
 
+const privateAuthShellHeaders = [
+  { key: 'Cache-Control', value: 'private, no-store' },
+  { key: 'CDN-Cache-Control', value: 'no-store' },
+  { key: 'Vercel-CDN-Cache-Control', value: 'no-store' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+];
+// A Supabase or Web app session cookie: the locale layout then renders the
+// session user, so the shell must never reach a shared cache.
+const SESSION_COOKIE_HEADER = [
+  {
+    type: 'header' as const,
+    key: 'cookie',
+    value:
+      '(?:.*;\\s*)?(?:sb-[A-Za-z0-9-]+-auth-token(?:\\.\\d+)?|tuturuuu_web_app_session(?:_refresh)?)=.*',
+  },
+];
+
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
 
@@ -164,10 +181,17 @@ export function createWebNextConfig({
         },
         // One optional-locale source per page keeps the Vercel route table
         // small; `/:locale?/login` matches both `/login` and `/<locale>/login`.
-        ...['/:locale?/login', '/:locale?/add-account'].map((source) => ({
-          source,
-          headers: authShellHeaders,
-        })),
+        // The shared CDN policy applies only without a session cookie; the
+        // private rule comes last, so a runtime that ignores the cookie
+        // conditions falls back to private for everyone.
+        ...['/:locale?/login', '/:locale?/add-account'].flatMap((source) => [
+          { source, missing: SESSION_COOKIE_HEADER, headers: authShellHeaders },
+          {
+            source,
+            has: SESSION_COOKIE_HEADER,
+            headers: privateAuthShellHeaders,
+          },
+        ]),
         ...['/:locale?/sso/consent'].map((source) => ({
           source,
           headers: [

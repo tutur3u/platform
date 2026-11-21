@@ -2,6 +2,7 @@ import { isCsrfOriginAllowed } from 'next/dist/server/app-render/csrf-protection
 // @vitest-environment node
 import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
+import { matchHas } from 'next/dist/shared/lib/router/utils/prepare-destination';
 import type { NextConfig } from 'next';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +18,7 @@ vi.mock('../../scripts/generate-public-seo-routes', () => ({
 // Next applies every matching config header rule in order before the route
 // handler runs; a later rule overwrites an earlier rule's key, and a handler
 // cannot replace a header the config already set.
-async function finalConfigHeaders(pathname: string) {
+async function finalConfigHeaders(pathname: string, cookie?: string) {
   const { default: nextConfig } = await import('./next.config');
   const rules = (await nextConfig.headers?.()) ?? [];
   const headers = new Map<string, string>();
@@ -31,6 +32,13 @@ async function finalConfigHeaders(pathname: string) {
       strict: true,
     });
     if (match(pathname) === false) continue;
+    const request = { headers: cookie ? { cookie } : {} };
+    if (
+      (rule.has || rule.missing) &&
+      !matchHas(request as never, {}, rule.has, rule.missing)
+    ) {
+      continue;
+    }
 
     for (const { key, value } of rule.headers) {
       headers.set(key.toLowerCase(), value);
@@ -120,6 +128,38 @@ describe('locale-optional auth shell header sources', () => {
     }
   );
 
+  it.each(['/login', '/vi/login', '/add-account'])(
+    'shares the %s shell through the CDN only without a session cookie',
+    async (pathname) => {
+      const anonymous = await finalConfigHeaders(pathname, 'NEXT_LOCALE=vi');
+      expect(anonymous.get('cdn-cache-control')).toContain('public');
+      expect(anonymous.get('vercel-cdn-cache-control')).toContain('public');
+
+      for (const cookie of [
+        'sb-abcdefgh-auth-token=x',
+        'NEXT_LOCALE=vi; sb-abcdefgh-auth-token.0=x',
+        'tuturuuu_web_app_session=x',
+        'NEXT_LOCALE=vi; tuturuuu_web_app_session_refresh=x',
+      ]) {
+        const signedIn = await finalConfigHeaders(pathname, cookie);
+        expect(signedIn.get('cache-control')).toBe('private, no-store');
+        expect(signedIn.get('cdn-cache-control')).toBe('no-store');
+        expect(signedIn.get('vercel-cdn-cache-control')).toBe('no-store');
+      }
+    }
+  );
+
+  it('falls back to private when cookie conditions are ignored', async () => {
+    const { default: nextConfig } = await import('./next.config');
+    const loginRules = ((await nextConfig.headers?.()) ?? []).filter(
+      (rule) => rule.source === '/:locale?/login'
+    );
+    expect(loginRules.at(-1)?.headers).toContainEqual({
+      key: 'CDN-Cache-Control',
+      value: 'no-store',
+    });
+  });
+
   it('declares one header source per auth shell page', async () => {
     const { default: nextConfig } = await import('./next.config');
     const sources = ((await nextConfig.headers?.()) ?? []).map(
@@ -131,6 +171,8 @@ describe('locale-optional auth shell header sources', () => {
       )
     ).toEqual([
       '/:locale?/login',
+      '/:locale?/login',
+      '/:locale?/add-account',
       '/:locale?/add-account',
       '/:locale?/sso/consent',
     ]);
