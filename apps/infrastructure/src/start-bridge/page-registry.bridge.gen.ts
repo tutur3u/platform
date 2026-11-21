@@ -41,6 +41,7 @@ export const pages = [
   { pattern: "/[wsId]/holidays", file: "src/app/[locale]/(dashboard)/[wsId]/holidays/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/internal-accounts", file: "src/app/[locale]/(dashboard)/[wsId]/internal-accounts/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/migrations", file: "src/app/[locale]/(dashboard)/[wsId]/migrations/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/mira/channels", file: "src/app/[locale]/(dashboard)/[wsId]/mira/channels/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/mobile-deployment", file: "src/app/[locale]/(dashboard)/[wsId]/mobile-deployment/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/mobile-versions", file: "src/app/[locale]/(dashboard)/[wsId]/mobile-versions/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring/analytics", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/analytics/page.tsx", defaults: { "locale": "en" } },

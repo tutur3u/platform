@@ -166,6 +166,11 @@ select throws_ok(
 select private.mira_set_stop_reason('ac000000-0000-4000-8000-0000000000a1',
   (select id from mira_ids where name = 'guild'), 'operator', false, 'operator',
   'ac000000-0000-4000-8000-000000000001', null, 'pgtap note');
+-- Tenant-level stops the tenant does not own also block unbinding.
+select private.mira_set_stop_reason('ac000000-0000-4000-8000-0000000000a1', null, 'operator',
+  false, 'operator', 'ac000000-0000-4000-8000-000000000001', null, 'pgtap note');
+select private.mira_set_stop_reason('ac000000-0000-4000-8000-0000000000a1', null, 'cap',
+  false, 'system', null, null, null);
 select ok(private.mira_unbind_channel('ac000000-0000-4000-8000-0000000000a1',
   (select id from mira_ids where name = 'guild'), 'ac000000-0000-4000-8000-000000000001'),
   'the channel unbinds once the operator stop is lifted');

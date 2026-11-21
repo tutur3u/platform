@@ -11,6 +11,7 @@ import { promisify } from 'node:util';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { PermissionId } from '@tuturuuu/types';
 import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 
 const scryptAsync = promisify(scrypt);
 
@@ -278,7 +279,8 @@ export async function logApiKeyUsage(params: {
  * Checks if the workspace context has a specific permission
  *
  * The "admin" permission grants every permission except the creator-grant
- * ones (manage_subscription), matching has_workspace_permission.
+ * ones (manage_subscription) and the explicit-grant ones (manage_mastermind,
+ * operate_mira_channels), matching has_workspace_permission.
  *
  * @param context - The workspace context from validateApiKey
  * @param permission - The permission to check
@@ -291,7 +293,9 @@ export function hasPermission(
   const isAdmin = context.permissions.includes('admin');
   return (
     context.permissions.includes(permission) ||
-    (isAdmin && isAdminImpliedPermission(permission))
+    (isAdmin &&
+      isAdminImpliedPermission(permission) &&
+      !isExplicitGrantPermission(permission))
   );
 }
 

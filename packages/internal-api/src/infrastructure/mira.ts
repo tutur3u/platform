@@ -99,7 +99,12 @@ export interface MiraAuditResponse {
 }
 
 const BASE = '/api/v1/infrastructure/mira';
-const JSON_HEADERS = { 'Content-Type': 'application/json' };
+// Writes carry the operator action header the Admin routes require as
+// same-origin intent alongside Origin and Sec-Fetch-Site.
+const WRITE_HEADERS = {
+  'Content-Type': 'application/json',
+  'x-tuturuuu-mira-operator-action': '1',
+};
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
   const query = new URLSearchParams();
@@ -132,7 +137,7 @@ export function setMiraOperatorStop(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
-      headers: JSON_HEADERS,
+      headers: WRITE_HEADERS,
       method: 'POST',
     }
   );
@@ -154,7 +159,7 @@ export function setMiraGlobalStop(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
-      headers: JSON_HEADERS,
+      headers: WRITE_HEADERS,
       method: 'POST',
     }
   );

@@ -132,6 +132,10 @@ async function connect(
     if (error instanceof MiraRpcError && error.code === 'already_bound') {
       return fail('already_bound', 409);
     }
+    // A verified account the binding constraints reject is invalid proof.
+    if (error instanceof MiraRpcError && error.code === 'invalid_request') {
+      return fail('invalid_proof', 400);
+    }
     throw error;
   }
 }
@@ -147,7 +151,13 @@ async function unbind(
   const tenant = await getMiraTenantRecord(deps.rpc, wsId);
   const record = tenant?.channels.find((c) => c.id === channelId.data);
   if (!record) return fail('not_found', 404);
-  if (record.stopReasons.some((reason) => reason !== 'tenant')) {
+  // Unbinding must not shed a stop the tenant does not own, whether it is
+  // set on the channel or on the whole tenant.
+  if (
+    [...record.stopReasons, ...(tenant?.stopReasons ?? [])].some(
+      (reason) => reason !== 'tenant'
+    )
+  ) {
     return fail('forbidden', 403);
   }
   if (record.secrets.length > 0) {
@@ -221,6 +231,9 @@ export async function runMiraTenantAction(
         return await unbind(deps, wsId, actor.id, request.channel);
       case 'usage': {
         const to = request.searchParams?.get('to') ?? deps.today();
+        if (!z.iso.date().safeParse(to).success) {
+          return fail('invalid_range', 400);
+        }
         const from = request.searchParams?.get('from') ?? addDays(to, -29);
         const parsed = miraUsageQuerySchema.safeParse({ from, to });
         if (!parsed.success) return fail('invalid_range', 400);

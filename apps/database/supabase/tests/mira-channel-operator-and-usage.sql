@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(24);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values
   ('ad000000-0000-4000-8000-000000000001', 'mira-operator@example.com', now(), '{}', '{}'),
@@ -12,7 +12,31 @@ insert into public.workspaces (id, name, personal, creator_id) values
 on conflict (id) do nothing;
 insert into public.workspace_roles (id, ws_id, name) values
   ('ad000000-0000-4000-8000-0000000000c1', '00000000-0000-0000-0000-000000000000', 'Mira operators'),
-  ('ad000000-0000-4000-8000-0000000000c2', 'ad000000-0000-4000-8000-0000000000a1', 'Tenant role');
+  ('ad000000-0000-4000-8000-0000000000c2', 'ad000000-0000-4000-8000-0000000000a1', 'Tenant role'),
+  ('ad000000-0000-4000-8000-0000000000c3', '00000000-0000-0000-0000-000000000000', 'Root admins');
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('00000000-0000-0000-0000-000000000000', 'ad000000-0000-4000-8000-000000000001', 'MEMBER'),
+  ('00000000-0000-0000-0000-000000000000', 'ad000000-0000-4000-8000-000000000002', 'MEMBER')
+on conflict (ws_id, user_id) do update set type = 'MEMBER';
+insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+values ('00000000-0000-0000-0000-000000000000', 'ad000000-0000-4000-8000-0000000000c3', 'admin', true);
+insert into public.workspace_role_members (role_id, user_id)
+values ('ad000000-0000-4000-8000-0000000000c3', 'ad000000-0000-4000-8000-000000000002');
+
+-- has_workspace_permission treats the operator permission as an explicit grant.
+select ok(
+  not public.has_workspace_permission('00000000-0000-0000-0000-000000000000',
+    'ad000000-0000-4000-8000-000000000002', 'operate_mira_channels'),
+  'a root admin does not inherit operate_mira_channels');
+select ok(
+  public.has_workspace_permission('00000000-0000-0000-0000-000000000000',
+    'ad000000-0000-4000-8000-000000000002', 'view_infrastructure'),
+  'admin still implies other root permissions');
+select ok(
+  not public.has_workspace_permission('00000000-0000-0000-0000-000000000000',
+    (select creator_id from public.workspaces where id = '00000000-0000-0000-0000-000000000000'),
+    'operate_mira_channels'),
+  'the root creator does not inherit operate_mira_channels');
 
 select is(
   (select count(*)::int from public.workspace_role_permissions
@@ -53,6 +77,10 @@ select lives_ok(
   $$ update public.workspace_role_permissions set enabled = true
      where role_id = 'ad000000-0000-4000-8000-0000000000c1' and permission::text = 'operate_mira_channels' $$,
   'setup re-save stays accepted');
+select ok(
+  public.has_workspace_permission('00000000-0000-0000-0000-000000000000',
+    'ad000000-0000-4000-8000-000000000001', 'operate_mira_channels'),
+  'a member of a role with the enabled grant holds operate_mira_channels');
 set local tuturuuu.mira_operator_grant = '';
 
 select lives_ok(
@@ -67,6 +95,10 @@ select lives_ok(
   $$ update public.workspace_role_permissions set enabled = false
      where role_id = 'ad000000-0000-4000-8000-0000000000c1' and permission::text = 'operate_mira_channels' $$,
   'revoking stays open');
+select ok(
+  not public.has_workspace_permission('00000000-0000-0000-0000-000000000000',
+    'ad000000-0000-4000-8000-000000000001', 'operate_mira_channels'),
+  'a revoked grant no longer holds operate_mira_channels');
 
 select ok(
   not has_function_privilege('service_role', 'private.mira_operator_grant_allowed()', 'execute')
@@ -102,6 +134,20 @@ select throws_ok(
 select throws_ok(
   $$ select * from private.mira_list_usage('ad000000-0000-4000-8000-0000000000a1', '2026-11-21', '2026-11-01') $$,
   '22023', null, 'inverted ranges are refused');
+
+-- Unbinding cannot shed a tenant-level stop the tenant does not own.
+select private.mira_set_stop_reason('ad000000-0000-4000-8000-0000000000a1', null, 'operator', true,
+  'operator', 'ad000000-0000-4000-8000-000000000001', null, 'pgtap suspension');
+select throws_ok(
+  $$ select private.mira_unbind_channel('ad000000-0000-4000-8000-0000000000a1',
+    (select id from mira_usage_ids), 'ad000000-0000-4000-8000-000000000001') $$,
+  '42501', null, 'a tenant-level operator stop blocks unbinding');
+select private.mira_set_stop_reason('ad000000-0000-4000-8000-0000000000a1', null, 'operator', false,
+  'operator', 'ad000000-0000-4000-8000-000000000001', null, 'pgtap lift');
+select ok(
+  private.mira_unbind_channel('ad000000-0000-4000-8000-0000000000a1',
+    (select id from mira_usage_ids), 'ad000000-0000-4000-8000-000000000001'),
+  'unbinding succeeds once only tenant-owned stops remain');
 reset role;
 
 select * from finish();

@@ -474,6 +474,12 @@ describe('Permission Helpers', () => {
         )
       ).toBe(true);
     });
+
+    it('does not let admin imply explicit-grant permissions', () => {
+      const adminContext = { ...mockContext, permissions: ['admin' as const] };
+      expect(hasPermission(adminContext, 'operate_mira_channels')).toBe(false);
+      expect(hasPermission(adminContext, 'manage_mastermind')).toBe(false);
+    });
   });
 
   describe('hasAnyPermission', () => {

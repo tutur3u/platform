@@ -708,8 +708,8 @@ HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,
 | `GET /workspaces/:wsId/mira` | Mira view | none | tenant settings, persona, bound channels with secret names and connected times, stop reasons and generations, `configVersion` |
 | `PATCH /workspaces/:wsId/mira/settings` | Mira manage | `{ expectedConfigVersion, settings }` with `enabled`, `keyMode`, `preset`, `modelId`, `neverSilent`, `quietHours`, `dailyCapMicroUsd`, `monthlyCapMicroUsd` | `{ configVersion }` |
 | `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped, expectedGeneration }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
-| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof per kind and mode (Embedded Signup code, OAuth callback state, bot token); `personal` mode is refused | `{ channelId }`; failures return only `invalid_proof`, `expired_state` or `already_bound`, never provider text, and proof is never echoed or logged. `connect_unavailable` (503) while no verifier is wired for the kind |
-| `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set; `vault_unavailable` (503) while the channel names vault secrets that cannot be purged first |
+| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof per kind and mode (Embedded Signup code, OAuth callback state, bot token); `personal` mode is refused | `{ channelId }`; failures return only `invalid_proof`, `expired_state` or `already_bound`, never provider text, and proof is never echoed or logged. `connect_unavailable` (503) while no verifier is wired for the kind, `invalid_request` (400) for an unknown kind and `not_found` (404) before the first settings save creates the tenant |
+| `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set on the channel or the tenant; `vault_unavailable` (503) while the channel names vault secrets that cannot be purged first |
 | `GET /workspaces/:wsId/mira/usage` | Mira view | `?from&to` (at most 400 days; defaults to the last 30 days) | daily usage per channel and model, money in micro-USD |
 | `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, `lastErrorAt`, seven-day cost (micro-USD) and replies, plus seven-day error count and p95 first-token latency merged from Analytics Engine in one batched query; `metrics.status` is `unavailable` until the channel Worker emits them |
 | `POST /infrastructure/mira/tenants/:wsId/stop` | root admin + Mira operator | `{ channelId?, stopped, expectedGeneration, note }`; the reason is always `operator`; `note` is required, at most 500 characters | `{ stopReasons, stopGeneration }`, confirmed by a readback |
@@ -730,7 +730,11 @@ it as a default permission, outside the root workspace, and for any API
 session that enables it on a role or adds a member to a role holding it. A
 grant runs on a database-owner session that sets
 `tuturuuu.mira_operator_grant = 'owner'` for the transaction. The Admin
-navigation shows Mira channels only to root admins holding it.
+navigation shows Mira channels only to root admins holding it. Operator writes
+are cookie-only, so each also needs same-origin intent: a JSON body, an
+`Origin` equal to the request origin, `Sec-Fetch-Site` absent or
+`same-origin`, and the `x-tuturuuu-mira-operator-action: 1` header that the
+internal-api client sends.
 
 The channel route segment is one dynamic segment named `[channel]`: it holds
 the channel kind under `connect` and the channel id on `DELETE`. Server code

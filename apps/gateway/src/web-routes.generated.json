@@ -2347,6 +2347,36 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira/channels/[channel]/connect"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira/channels/[channel]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira/settings"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira/stop"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/mira/usage"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/mobile-activity"
     },
     {

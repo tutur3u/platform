@@ -14,11 +14,15 @@ const bypassTimeTrackingRequestApprovalPermission =
 const manageWorkspaceSettingsPermission = 'manage_workspace_settings';
 const manageWorkspaceRolesPermission = 'manage_workspace_roles';
 const manageMastermindPermission = 'manage_mastermind';
+const operateMiraChannelsPermission = 'operate_mira_channels';
 
 /// Never implied by creator or admin access: these count only when a role
 /// grants them explicitly. Mirrors
 /// packages/utils/src/explicit-grant-permissions.ts.
-const Set<String> explicitGrantPermissions = {manageMastermindPermission};
+const Set<String> explicitGrantPermissions = {
+  manageMastermindPermission,
+  operateMiraChannelsPermission,
+};
 
 const String _workspaceRolePermissionsPrefix = 'workspace_roles!inner(';
 const String _workspaceRolePermissionsSuffix =

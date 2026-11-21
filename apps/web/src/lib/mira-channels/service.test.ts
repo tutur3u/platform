@@ -225,6 +225,14 @@ describe('Mira tenant actions', () => {
     );
     expect(operatorStopped.status).toBe(403);
 
+    const tenantSuspended = await runMiraTenantAction(
+      deps({
+        mira_get_tenant: { data: tenant({ stopReasons: ['operator'] }) },
+      }).deps,
+      { wsId: WS, actor: manager, action: 'unbind', channel: CHANNEL }
+    );
+    expect(tenantSuspended.status).toBe(403);
+
     const withSecrets = await runMiraTenantAction(
       deps({
         mira_get_tenant: {
@@ -292,5 +300,16 @@ describe('Mira tenant actions', () => {
       searchParams: new URLSearchParams({ from: '2025-01-01' }),
     });
     expect(tooLong.status).toBe(400);
+
+    const invalidDate = await runMiraTenantAction(d, {
+      wsId: WS,
+      actor: viewer,
+      action: 'usage',
+      searchParams: new URLSearchParams({ to: '2026-13-45' }),
+    });
+    expect(invalidDate).toEqual({
+      status: 400,
+      body: { error: 'invalid_range' },
+    });
   });
 });

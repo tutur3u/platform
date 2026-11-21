@@ -15,7 +15,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: unknown[]) => mocks.getPermissions(...args),
 }));
 
-import { authorizeMiraOperator } from './authorize';
+import {
+  authorizeMiraOperator,
+  MIRA_OPERATOR_ACTION_HEADER,
+} from './authorize';
 
 function permissions(granted: string[]) {
   return {
@@ -65,5 +68,38 @@ describe('authorizeMiraOperator', () => {
         wsId: '00000000-0000-0000-0000-000000000000',
       })
     );
+  });
+
+  it('refuses cookie writes without same-origin intent', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      permissions(['admin', 'operate_mira_channels'])
+    );
+    const url =
+      'https://tuturuuu.test/admin/api/v1/infrastructure/mira/global-stop';
+    const intent = {
+      'content-type': 'application/json',
+      origin: 'https://tuturuuu.test',
+      'sec-fetch-site': 'same-origin',
+      [MIRA_OPERATOR_ACTION_HEADER]: '1',
+    };
+    const refused = [
+      { ...intent, origin: 'https://evil.tuturuuu.test' },
+      { ...intent, 'sec-fetch-site': 'same-site' },
+      { ...intent, 'content-type': 'text/plain' },
+      { ...intent, [MIRA_OPERATOR_ACTION_HEADER]: '' },
+    ];
+    for (const headers of refused) {
+      const result = await authorizeMiraOperator(
+        new Request(url, { method: 'POST', headers }),
+        { write: true }
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.response.status).toBe(403);
+    }
+    const admitted = await authorizeMiraOperator(
+      new Request(url, { method: 'POST', headers: intent }),
+      { write: true }
+    );
+    expect(admitted.ok).toBe(true);
   });
 });

@@ -10,9 +10,11 @@ type RouteContext = { params?: Promise<{ wsId?: string }> };
 /** Route handler factory for /api/v1/infrastructure/mira/**. */
 export function miraOperatorRoute(action: MiraOperatorAction) {
   return async (request: Request, context?: RouteContext) => {
-    const authorization = await authorizeMiraOperator(request);
-    if (!authorization.ok) return authorization.response;
     const isWrite = action === 'tenant_stop' || action === 'global_stop_set';
+    const authorization = await authorizeMiraOperator(request, {
+      write: isWrite,
+    });
+    if (!authorization.ok) return authorization.response;
     const result = await runMiraOperatorAction(
       {
         rpc: authorization.rpc,

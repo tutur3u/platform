@@ -692,7 +692,12 @@ and role-management permissions, and a same-workspace role. Rollbacks retain
 caller binding and grant helper execution only to authenticated/service roles.
 
 `manage_mastermind` requires the recorded root role and its enabled explicit grant.
-Creator/admin/default permissions never imply it. Only the audited owner procedure
+Creator/admin/default permissions never imply it.
+`operate_mira_channels` (the Mira channels operator permission) is also an
+explicit grant: `has_workspace_permission()`, `getPermissions()`, API-key checks
+and the mobile mirror answer it only from an enabled root role grant, and only a
+database-owner session may grant it (see
+[Mira cloud channels](/platform/ai/mira-cloud-channels#api-contract)). Only the audited owner procedure
 admits a member; this migration grants nobody access. The storage-limit RPC
 requires authenticated or service-role EXECUTE.
 

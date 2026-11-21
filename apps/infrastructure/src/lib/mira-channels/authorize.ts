@@ -19,11 +19,49 @@ export function miraJson(body: unknown, status = 200) {
  * the caller needs root admin plus the explicit-grant operator permission,
  * which creators, admin and default permissions never imply.
  */
-export async function authorizeMiraOperator(request: Request) {
+/** Header the operator client sends on every write. */
+export const MIRA_OPERATOR_ACTION_HEADER = 'x-tuturuuu-mira-operator-action';
+
+/**
+ * Cookie-only writes need a same-origin browser intent: a JSON body, a
+ * matching Origin, a same-origin fetch site and the operator action header,
+ * none of which a cross-origin simple request can send.
+ */
+export function hasSameOriginWriteIntent(request: Request) {
+  const origin = request.headers.get('origin');
+  const fetchSite = request.headers.get('sec-fetch-site');
+  const contentType = request.headers.get('content-type') ?? '';
+  let sameOrigin = false;
+  try {
+    sameOrigin =
+      origin !== null &&
+      origin === new URL(origin).origin &&
+      origin === new URL(request.url).origin;
+  } catch {
+    sameOrigin = false;
+  }
+  return (
+    sameOrigin &&
+    (fetchSite === null || fetchSite === 'same-origin') &&
+    contentType.split(';')[0]?.trim().toLowerCase() === 'application/json' &&
+    request.headers.get(MIRA_OPERATOR_ACTION_HEADER) === '1'
+  );
+}
+
+export async function authorizeMiraOperator(
+  request: Request,
+  { write = false }: { write?: boolean } = {}
+) {
   if (request.headers.has('authorization')) {
     return {
       ok: false as const,
       response: miraJson({ error: 'unauthorized' }, 401),
+    };
+  }
+  if (write && !hasSameOriginWriteIntent(request)) {
+    return {
+      ok: false as const,
+      response: miraJson({ error: 'mutation_forbidden' }, 403),
     };
   }
   const actor = await resolveSatelliteRequestActor(request, 'infra');
