@@ -26,17 +26,27 @@ export interface NavCounts {
 type NavLabel = Extract<MessageKey, `nav.${string}`>;
 
 /**
- * A sidebar entry: a section of the command center (`id` is its anchor), or,
- * with `to`, its own route under the locale.
+ * Who the shell is rendered for. An entry is shown when its `scopes` include
+ * the viewer's scope; entries without `scopes` are owner-only. Pages a fleet
+ * grantee can open (their admission is server-side) render the shell with
+ * `scope="fleet"`; the command center itself is owner-only at admission, so
+ * a grantee never renders it.
  */
-interface NavEntry {
+export type NavScope = 'owner' | 'fleet';
+
+/**
+ * A sidebar entry: a section of the command center (`id` is its anchor), or,
+ * with `to`, its own route under the locale. `scopes` defaults to owner only.
+ */
+export interface NavEntry {
   id: string;
   label: NavLabel;
   icon: typeof Inbox;
   to?: LinkProps['to'];
+  scopes?: readonly NavScope[];
 }
 
-const NAV: readonly NavEntry[] = [
+export const NAV: readonly NavEntry[] = [
   { id: 'overview', label: 'nav.overview', icon: LayoutDashboard },
   { id: 'inbox', label: 'nav.inbox', icon: Inbox },
   { id: 'access', label: 'nav.access', icon: KeyRound },
@@ -46,6 +56,14 @@ const NAV: readonly NavEntry[] = [
   { id: 'cost', label: 'nav.cost', icon: ChartLine },
   { id: 'settings', label: 'nav.settings', icon: Bell },
 ];
+
+/** The entries `scope` may open. */
+export function navFor(
+  scope: NavScope,
+  entries: readonly NavEntry[] = NAV
+): NavEntry[] {
+  return entries.filter((entry) => (entry.scopes ?? ['owner']).includes(scope));
+}
 
 const NAV_LINK =
   'flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-3 font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-1 focus-visible:outline-ring/50';
@@ -63,15 +81,17 @@ function Brand() {
 
 function Nav({
   counts,
+  scope,
   onNavigate,
 }: {
   counts?: NavCounts;
+  scope: NavScope;
   onNavigate: () => void;
 }) {
   const { t, locale } = useI18n();
   return (
     <nav aria-label="Mastermind" className="space-y-1 px-2">
-      {NAV.map(({ id, label, icon: Icon, to }) => {
+      {navFor(scope).map(({ id, label, icon: Icon, to }) => {
         const count =
           id === 'inbox'
             ? counts?.inbox
@@ -135,7 +155,15 @@ export function Preferences() {
         <TabsList aria-label={t('language')}>
           {locales.map((value: Locale) => (
             <TabsTrigger key={value} value={value} asChild>
-              <Link to="/$locale" params={{ locale: value }} hash={undefined}>
+              {/* Stays on the current route (and its search), so every
+                  tier keeps the switch, not only owners. */}
+              <Link
+                to="."
+                params={(prev) => ({ ...prev, locale: value })}
+                search={(prev) => prev}
+                hash
+                resetScroll={false}
+              >
                 {value.toUpperCase()}
               </Link>
             </TabsTrigger>
@@ -158,12 +186,35 @@ export function Preferences() {
   );
 }
 
+/** The page title card every Mastermind page starts with. */
+export function PageHeader({
+  title,
+  subtitle,
+  actions = <Preferences />,
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-start justify-between gap-4 rounded-lg border bg-foreground/5 p-3 sm:p-4">
+      <div className="space-y-1">
+        <h1 className="font-bold text-2xl">{title}</h1>
+        {subtitle ? <p className="text-foreground/80">{subtitle}</p> : null}
+      </div>
+      {actions}
+    </header>
+  );
+}
+
 export function Shell({
   counts,
+  scope = 'owner',
   footer,
   children,
 }: {
   counts?: NavCounts;
+  scope?: NavScope;
   footer: ReactNode;
   children: ReactNode;
 }) {
@@ -183,7 +234,11 @@ export function Shell({
         mobileHeader={<Brand />}
         sidebarHeader={<Brand />}
         sidebarContent={
-          <Nav counts={counts} onNavigate={() => setMobileOpen(false)} />
+          <Nav
+            counts={counts}
+            scope={scope}
+            onNavigate={() => setMobileOpen(false)}
+          />
         }
         actions={footer}
       >

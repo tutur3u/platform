@@ -19,7 +19,7 @@ import { Digest } from './digest';
 import { FleetSection } from './fleet-section';
 import { Inbox } from './inbox';
 import { BlockingState, FreshnessLine, StaleNotice } from './page-states';
-import { Preferences, Shell } from './shell';
+import { PageHeader, Shell } from './shell';
 
 export const FLEET_QUERY_KEY = ['fleet'] as const;
 const REFRESH_MS = 15_000;
@@ -107,13 +107,7 @@ export function CommandCenter({ initial }: { initial: FleetLoad }) {
         />
       }
     >
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-lg border bg-foreground/5 p-3 sm:p-4">
-        <div className="space-y-1">
-          <h1 className="font-bold text-2xl">{t('title')}</h1>
-          <p className="text-foreground/80">{query.data.email}</p>
-        </div>
-        <Preferences />
-      </header>
+      <PageHeader title={t('title')} subtitle={query.data.email} />
       {state.kind === 'stale' && (
         <StaleNotice
           reason={state.reason}
