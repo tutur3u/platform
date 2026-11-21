@@ -189,6 +189,32 @@ describe('withSessionAuth app-session step-up controls', () => {
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
+  it('passes stepUpExempt to the app-session path for heuristic challenges', async () => {
+    mocks.resolveWebAbuseDecision.mockResolvedValue({
+      decisionSource: 'heuristic',
+      reasons: ['suspicious_browser_mutation'],
+      subjectKey: 'session:test',
+      subjects: [],
+      tier: 'challenge_required',
+      trustMultiplier: 1,
+    });
+    const stepUpExempt = vi.fn(async () => true);
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler, {
+      allowAppSessionAuth: { requiredScope: 'users:profile:write' },
+      rateLimit: false,
+      stepUpExempt,
+    });
+
+    const response = await route(appSessionRequest());
+
+    expect(response.status).toBe(200);
+    expect(stepUpExempt).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'user-1' })
+    );
+    expect(mocks.enforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
+  });
+
   it('uses the switched cookie account for PATCH instead of a stale app session', async () => {
     const switchedUser = {
       created_at: '2026-06-26T00:00:00.000Z',
@@ -494,5 +520,69 @@ describe('withSessionAuth stepUpExempt', () => {
     expect((await route(nativeRequest('POST'))).status).toBe(200);
     expect((await route(nativeRequest('GET'))).status).toBe(200);
     expect(stepUpExempt).not.toHaveBeenCalled();
+  });
+
+  it('never consults the predicate on a challenged read', async () => {
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    const stepUpExempt = vi.fn(async () => true);
+    const route = withSessionAuth(() => NextResponse.json({ ok: true }), {
+      rateLimit: false,
+      stepUpExempt,
+    });
+
+    expect((await route(nativeRequest('GET'))).status).toBe(200);
+    expect(stepUpExempt).not.toHaveBeenCalled();
+  });
+
+  it('keeps a server reputation challenge even for an exempt user', async () => {
+    mocks.resolveWebAbuseDecision.mockResolvedValue({
+      decisionSource: 'server',
+      reasons: [
+        'server_reputation_challenge_required',
+        'suspicious_browser_mutation',
+      ],
+      subjectKey: 'session:test',
+      subjects: [],
+      tier: 'challenge_required',
+      trustMultiplier: 1,
+    });
+    const stepUpExempt = vi.fn(async () => true);
+    const route = withSessionAuth(() => NextResponse.json({ ok: true }), {
+      rateLimit: false,
+      stepUpExempt,
+    });
+
+    expect((await route(nativeRequest('POST'))).status).toBe(403);
+    expect(stepUpExempt).not.toHaveBeenCalled();
+  });
+
+  it('keeps the challenge when the predicate throws synchronously', async () => {
+    const route = withSessionAuth(() => NextResponse.json({ ok: true }), {
+      rateLimit: false,
+      stepUpExempt: (() => {
+        throw new Error('sync failure');
+      }) as never,
+    });
+
+    expect((await route(nativeRequest('POST'))).status).toBe(403);
+  });
+
+  it('still applies the rate limit to an exempt user', async () => {
+    mocks.getAdaptiveRateLimitConfig.mockReturnValue({
+      config: { maxRequests: 30, windowMs: 60_000 },
+      decision: {},
+    });
+    mocks.checkRateLimit.mockResolvedValue(
+      NextResponse.json({ error: 'Too Many Requests' }, { status: 429 })
+    );
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler, {
+      rateLimit: { maxRequests: 30, windowMs: 60_000 },
+      stepUpExempt: async () => true,
+    });
+
+    expect((await route(nativeRequest('POST'))).status).toBe(429);
+    expect(mocks.enforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 });

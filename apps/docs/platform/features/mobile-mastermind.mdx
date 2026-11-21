@@ -228,9 +228,10 @@ product rules of the shell entry and every tab.
   User-Agent is not a browser (the phone sends `Dart/... (dart:io)`) with a
   Turnstile step-up (403 `ABUSE_CHALLENGE_REQUIRED`), which a native client
   cannot solve. The answer route therefore passes `stepUpExempt: isFleetOwner`
-  to `withSessionAuth`: only a mutation that would be challenged consults it,
-  only the fleet owner skips the challenge, and the per-user rate limit (30
-  per minute) still applies. Other session mutations keep the challenge.
+  to `withSessionAuth`: only a mutation the browser-shape heuristic would
+  challenge consults it, a server reputation challenge always stands, only
+  the fleet owner skips the challenge, and the per-user rate limit (30 per
+  minute) still applies. Other session mutations keep the challenge.
 - **Payload rules:** every free-text field is scrubbed on Web before storage
   (URLs, emails, paths, IPs, UUIDs, token and key shapes, long opaque runs and
   invisible characters are removed) and length-capped; lane and machine labels
@@ -306,7 +307,8 @@ product rules of the shell entry and every tab.
 - **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`
   (owner-only step-up exemption on the answer route),
   `apps/web/src/lib/api-auth.test.ts` (`stepUpExempt`: consulted only on a
-  challenged mutation, refusal or failure keeps the challenge),
+  heuristic-challenged mutation on both auth paths; refusal, failure or a
+  server reputation challenge keeps the challenge; the rate limit holds),
   `apps/web/src/app/api/v1/mastermind/fleet/fleet-alerts.test.ts` (alerts
   feature gate, isolate cache, fail-open, ETag, publisher channel),
   `apps/web/src/lib/mastermind/fleet/alerts.test.ts` (alert ids, ordering,

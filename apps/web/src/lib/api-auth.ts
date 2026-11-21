@@ -317,10 +317,7 @@ interface SessionAuthOptions {
   preferSupabaseSessionAuth?: boolean;
   /** Verified app-session requests skip browser step-up (scoped server-to-server routes only). */
   skipAppSessionStepUpChallenge?: boolean;
-  /**
-   * Admits users who skip the browser step-up on a challenged mutation: native
-   * clients cannot solve Turnstile. Only for allowlisted routes; rate limits still apply.
-   */
+  /** Waives the browser-shape step-up (never a server reputation challenge) for admitted users: native clients cannot solve Turnstile. Rate limits still apply. */
   stepUpExempt?: (user: SupabaseUser) => Promise<boolean>;
 }
 
@@ -378,13 +375,16 @@ async function applyAdaptiveSessionControls({
     userId: user.id,
   });
 
-  // The exemption is checked only when a mutation would be challenged.
   const exempt =
     !skipStepUpChallenge &&
     !isRead &&
     decision.tier === 'challenge_required' &&
+    decision.reasons.includes('suspicious_browser_mutation') &&
+    !decision.reasons.includes('server_reputation_challenge_required') &&
     stepUpExempt !== undefined &&
-    (await stepUpExempt(user).catch(() => false));
+    (await Promise.resolve()
+      .then(() => stepUpExempt(user))
+      .catch(() => false));
   if (!skipStepUpChallenge && !exempt) {
     const challengeResponse = await enforceAdaptiveStepUpChallenge({
       decision,
