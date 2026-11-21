@@ -48,6 +48,7 @@
       "unavailable": "Hiện không kết nối được fleet sync.",
       "invalid": "Fleet sync gửi ảnh chụp mà trang này không đọc được.",
       "retry": "Thử lại",
+      "orchestratorOffline": "Bộ điều phối đang ngoại tuyến. Bạn chỉ có thể xem trạng thái.",
       "stale": "Đang hiển thị bản gần nhất. Đã hơn 2 phút chưa có bản cập nhật."
     },
     "now": {

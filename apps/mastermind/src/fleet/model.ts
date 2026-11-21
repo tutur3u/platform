@@ -10,12 +10,12 @@ import {
 /** A snapshot older than this, or an offline orchestrator, reads as stale. */
 export const FLEET_STALE_AFTER_MS = 120_000;
 
-export type Freshness = 'live' | 'stale';
+export type Freshness = 'live' | 'old' | 'orchestratorOffline';
 
 export function freshness(state: FleetState, now: number): Freshness {
-  return state.orchestrator.state === 'offline' ||
-    now - Date.parse(state.generatedAt) > FLEET_STALE_AFTER_MS
-    ? 'stale'
+  if (now - Date.parse(state.generatedAt) > FLEET_STALE_AFTER_MS) return 'old';
+  return state.orchestrator.state === 'offline'
+    ? 'orchestratorOffline'
     : 'live';
 }
 

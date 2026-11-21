@@ -97,6 +97,30 @@ test('page state: stale on age or failed refresh, error and unpublished otherwis
     kind: 'stale',
     reason: 'old',
   });
+  const offline = {
+    ...ready,
+    read: {
+      ...ready.read,
+      snapshot: {
+        ...parsed,
+        state: {
+          ...parsed.state,
+          orchestrator: {
+            ...parsed.state.orchestrator,
+            state: 'offline' as const,
+          },
+        },
+      },
+    },
+  };
+  expect(fleetPageState(offline, now)).toMatchObject({
+    kind: 'stale',
+    reason: 'orchestratorOffline',
+  });
+  expect(fleetPageState(offline, threshold + 1)).toMatchObject({
+    kind: 'stale',
+    reason: 'old',
+  });
   const failed = {
     ...ready,
     read: { kind: 'error' as const, reason: 'unavailable' as const },

@@ -16,7 +16,9 @@ export type FleetPageState =
   | {
       kind: 'stale';
       snapshot: FleetSnapshot;
-      reason: 'old' | Extract<FleetRead, { kind: 'error' }>['reason'];
+      reason:
+        | Exclude<ReturnType<typeof freshness>, 'live'>
+        | Extract<FleetRead, { kind: 'error' }>['reason'];
     }
   | { kind: 'unpublished' }
   | { kind: 'error'; reason: Extract<FleetRead, { kind: 'error' }>['reason'] };
@@ -45,9 +47,10 @@ export function fleetPageState(load: FleetLoad, now: number): FleetPageState {
           snapshot: read.snapshot,
           reason: load.refreshError,
         };
-      return freshness(read.snapshot.state, now) === 'stale'
-        ? { kind: 'stale', snapshot: read.snapshot, reason: 'old' }
-        : { kind: 'ready', snapshot: read.snapshot };
+      const reason = freshness(read.snapshot.state, now);
+      return reason === 'live'
+        ? { kind: 'ready', snapshot: read.snapshot }
+        : { kind: 'stale', snapshot: read.snapshot, reason };
     default: {
       const exhaustive: never = read;
       return exhaustive;

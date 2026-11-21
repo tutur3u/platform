@@ -48,6 +48,7 @@
       "unavailable": "Fleet sync is unreachable right now.",
       "invalid": "Fleet sync sent a snapshot this page cannot read.",
       "retry": "Retry",
+      "orchestratorOffline": "The orchestrator is offline. Fleet actions are read-only.",
       "stale": "Showing the last snapshot. No snapshot has arrived for over 2 minutes."
     },
     "now": {
