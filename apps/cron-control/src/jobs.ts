@@ -30,6 +30,11 @@ export type WorkerProcessorId =
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
   | 'provider-cost-collection'
+  | 'observability-cloudflare'
+  | 'observability-github-actions'
+  | 'observability-product-analytics'
+  | 'observability-retention'
+  | 'observability-slo-burn'
   | 'qa-test-user-cleanup'
   | 'storage-access-audit-retention'
   | typeof TASKS_RECURRENCE_JOB;
@@ -49,6 +54,13 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
   // Collects provider billing days; the RPC is the idempotent write target.
   'provider-cost-collection': 'record_provider_cost_day',
+  // Observability collectors start with the source's stop fence RPC; they
+  // read providers natively and have no legacy HTTP owner.
+  'observability-cloudflare': 'observability_begin_ingest',
+  'observability-github-actions': 'observability_begin_ingest',
+  'observability-product-analytics': 'rollup_product_analytics_daily',
+  'observability-retention': 'prune_observability_rollups',
+  'observability-slo-burn': 'evaluate_observability_slos',
   // Lists expired accounts; the Worker then drives the ledger and Auth deletes.
   'qa-test-user-cleanup': 'qa_test_list_expired',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -189,6 +201,52 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/cleanup_ai_studio_retention_batch',
     'idempotent',
     { workerProcessor: 'ai-studio-retention', timeoutMs: 150_000 }
+  ),
+  // Observability (apps/docs/build/devops/observability-analytics.mdx). The
+  // collectors also need their source's database control row set to
+  // 'dry_run' or 'on'; rows start 'off'. Each run makes at most the row's
+  // max_requests_per_run provider requests (hard cap 10).
+  job(
+    'observability-cloudflare',
+    '*/15 * * * *',
+    'web',
+    '/rest/v1/rpc/observability_begin_ingest',
+    'idempotent',
+    { workerProcessor: 'observability-cloudflare', timeoutMs: 60_000 }
+  ),
+  job(
+    'observability-github-actions',
+    '*/30 * * * *',
+    'web',
+    '/rest/v1/rpc/observability_begin_ingest',
+    'idempotent',
+    { workerProcessor: 'observability-github-actions', timeoutMs: 60_000 }
+  ),
+  job(
+    'observability-product-analytics',
+    '*/30 * * * *',
+    'web',
+    '/rest/v1/rpc/rollup_product_analytics_daily',
+    'idempotent',
+    { workerProcessor: 'observability-product-analytics', timeoutMs: 45_000 }
+  ),
+  // Evaluates SLO burn after each Cloudflare collection slot and delivers
+  // each alert transition once through the shared operator alert sender.
+  job(
+    'observability-slo-burn',
+    '*/15 * * * *',
+    'web',
+    '/rest/v1/rpc/evaluate_observability_slos',
+    'idempotent',
+    { workerProcessor: 'observability-slo-burn', timeoutMs: 45_000 }
+  ),
+  job(
+    'observability-retention',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/prune_observability_rollups',
+    'idempotent',
+    { workerProcessor: 'observability-retention', timeoutMs: 30_000 }
   ),
   job(
     'provider-cost-collection',

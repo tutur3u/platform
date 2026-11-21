@@ -51,6 +51,9 @@ export default defineConfig({
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
       TASKS_RECURRENCE_MODE: bindings.text('off'),
+      // Read by the observability-cloudflare collector with the optional
+      // CLOUDFLARE_ANALYTICS_API_TOKEN secret (Account Analytics Read).
+      CLOUDFLARE_ACCOUNT_ID: bindings.text('e8912e2867beecc673d171907bf09649'),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),

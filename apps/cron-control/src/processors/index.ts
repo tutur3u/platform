@@ -10,6 +10,13 @@ import { eraseMeetAttendance } from './meet-attendance-erasure';
 import { retainMeetAttendance } from './meet-attendance-retention';
 import { purgeMeetTranscripts } from './meet-transcript-retention';
 import { collectProviderCosts } from './provider-cost-collection';
+import {
+  collectCloudflareObservability,
+  collectGithubObservability,
+  evaluateObservabilitySlos,
+  pruneObservability,
+  rollupProductAnalytics,
+} from './observability';
 import { cleanupQaTestUsers } from './qa-test-user-cleanup';
 import { pruneStorageAccessEvents } from './storage-access-audit-retention';
 import {
@@ -33,6 +40,11 @@ export const WORKER_PROCESSORS: Record<
   'meet-attendance-retention': retainMeetAttendance,
   'meet-transcript-retention': purgeMeetTranscripts,
   'provider-cost-collection': (context) => collectProviderCosts(context),
+  'observability-cloudflare': collectCloudflareObservability,
+  'observability-github-actions': collectGithubObservability,
+  'observability-product-analytics': rollupProductAnalytics,
+  'observability-retention': pruneObservability,
+  'observability-slo-burn': evaluateObservabilitySlos,
   'qa-test-user-cleanup': cleanupQaTestUsers,
   'storage-access-audit-retention': pruneStorageAccessEvents,
   [TASKS_RECURRENCE_JOB]: generateRecurringTasks,

@@ -9,6 +9,12 @@ export interface ProcessorEnv {
   COST_VERCEL_TEAM_ID?: string;
   /** Exactly 'off', 'dry-run' or 'delete'; any other value (including unset) means off. */
   AI_STUDIO_RETENTION_MODE?: string;
+  /** Account id the Cloudflare analytics collector reads (config text). */
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  /** Read-only Account Analytics token for the Cloudflare collector. */
+  CLOUDFLARE_ANALYTICS_API_TOKEN?: string;
+  /** Read-only Actions token for the GitHub Actions collector. */
+  GITHUB_ACTIONS_READ_TOKEN?: string;
   /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */
   MEET_ATTENDANCE_ERASURE?: MeetAttendanceErasureBinding;
   SUPABASE_SECRET_KEY: string;

@@ -88,7 +88,7 @@ private.observability_source_control  ◄── fence ──  normalize to rollu
 | --- | --- | --- | --- |
 | `cloudflare-workers` | 15 min | One GraphQL request for `workersInvocationsAdaptive` (ten series: the sums of requests, errors and subrequests; CPU and wall-time p50 and p99; request-duration p50, p95 and p99; quantiles arrive in microseconds and are stored as ms) and one for `durableObjectsInvocationsAdaptiveGroups` (sum of requests and errors), grouped by `scriptName` and `datetimeFifteenMinutes`. Durable Object ids, names and colos are never selected. | `CLOUDFLARE_ANALYTICS_API_TOKEN` (Account Analytics Read), account id from the Worker config |
 | `cloudflare-gateway` | 15 min | `httpRequestsAdaptiveGroups` per app mount from `scripts/perf/perf-apps.json`: requests, 5xx, TTFB p50/p95/p99 | A token with Zone Analytics Read, `CLOUDFLARE_ZONE_ID` |
-| `github-actions` | 30 min | Workflow runs of `tutur3u/platform` created in each closed hour: run count, failures, duration and queue time (`run_started_at - created_at`) per workflow, and successful production deploy runs on `main` as deploy markers (app, head SHA, completion time). | `GITHUB_ACTIONS_READ_TOKEN` (fine-grained, Actions read) |
+| `github-actions` | 30 min | Workflow runs of `tutur3u/platform` created in each closed 15-minute bucket: run count, failures, duration and queue time (`run_started_at - created_at`) per workflow, and successful production deploy runs on `main` as deploy markers (app, head SHA, completion time). | `GITHUB_ACTIONS_READ_TOKEN` (fine-grained, Actions read) |
 | `vercel` | 30 min | Deployments per project as deploy markers. Request metrics need Observability Plus or a drain and stay out of scope until a provider decision. | `VERCEL_OBSERVABILITY_READ_TOKEN` |
 | `supabase` | 15 min | Project metrics endpoint (Prometheus text): connections, CPU, disk, PostgREST and Auth request counters, parsed into the allowlisted gauges only | `SUPABASE_METRICS_READ_SECRET` |
 
@@ -107,8 +107,13 @@ and 200 deploy markers. A Cloudflare run reads at most four 15-minute
 buckets starting two buckets before the watermark, so it commits at most two
 new buckets per 15-minute slot and gains one bucket per slot after an outage.
 Four buckets of about 100 scripts at 12 metrics are about 4,800 rows, inside
-the 5,000-row write cap. A GitHub run reads at most three new hours per
-30-minute slot. Reads stop at seven days back; anything older stays a
+the 5,000-row write cap. A GitHub run reads up to twelve 15-minute buckets
+per 30-minute slot, one request per page of 100 runs, and moves the watermark
+only past buckets it read whole. When the first bucket alone needs more pages
+than the run's budget, or more than the listing's 1,000 results, it is stored
+as a sample (`runs` from the listing total, `sampled_runs` from what was
+read) and the watermark moves on, so one busy bucket cannot stall the
+source. Reads stop at seven days back; anything older stays a
 recorded gap. A run that reaches a cap records `budget_exhausted` and keeps
 its watermark at the last complete bucket, and the next slot continues. There is no in-run retry. The Cloudflare
 GraphQL API allows 300 queries per 5 minutes; these sources issue at most 2
@@ -136,17 +141,17 @@ after five until an operator resumes it.
 
 **Cost envelope.** Each source writes at most its daily row budget:
 150,000 rows for `cloudflare-workers` and 40,000 for `github-actions`.
-Expected volume is about 115,000 and 22,000 rows a day: about 100 scripts ×
+Expected volume is about 115,000 and 12,000 rows a day: about 100 scripts ×
 12 metrics × 96 buckets (10 Worker metrics plus Durable Object requests and
-errors), and about 150 workflows × 6 metrics (`runs`, `failed_runs`, duration
-and queue p50/p95) × 24 hours.
-The 15-minute rollups are kept for 90 days and hourly rollups for 400 days,
-so the store is capped at about 29.5 M rows (150,000 × 90 + 40,000 × 400) and
-expected near 19 M. Collectors run 144 times a day, plus 48 product analytics
+errors), and about 20 active workflows per bucket × 6 metrics (`runs`,
+`failed_runs`, duration and queue p50/p95) × 96 buckets. Both sources write
+15-minute rollups, kept for 90 days (hourly rollups, which no source writes
+yet, would be kept for 400 days), so the store is capped at about 17.1 M rows
+((150,000 + 40,000) × 90) and expected near 11.4 M. Collectors run 144 times a day, plus 48 product analytics
 and 144 retention runs: about 340 Worker invocations and under 700 PostgREST
 calls a day. `prune_observability_rollups` runs in its own
 `observability-retention` job, at most 1,000 rows per table every 10 minutes
-(144,000 a day, above the expected daily expiry). GraphQL Analytics and the
+(144,000 a day, above the expected daily expiry of about 127,000). GraphQL Analytics and the
 GitHub read API are not billed per call.
 
 ### Schema
@@ -239,43 +244,48 @@ read it.
 
 ### SLOs and alerts
 
-Each SLO names a service, an indicator (availability from error rate, or
-latency against a p95 threshold) and an objective over 30 days. The
-`observability-slo-burn` processor runs every 15 minutes after ingestion and
-evaluates multi-window burn rates:
+`private.observability_slos` names a service (a Worker script, or `*` for
+every script with traffic in the last six hours), an indicator and an
+objective. The defaults are `workers-availability` (99.5% of requests
+without errors) and `workers-latency` (99% of requests in 15-minute buckets
+whose p95 stays at or under 1,000 ms). Bucket quantiles approximate the
+request-level latency indicator. The `observability-slo-burn` job runs
+`private.evaluate_observability_slos` every 15 minutes, at most 500 SLO and
+service pairs per pass, and evaluates multi-window burn rates (bad share
+divided by the error budget):
 
 | Severity | Long window | Short window | Burn rate |
 | --- | --- | --- | --- |
 | Page | 1 hour | 15 minutes (latest bucket) | 14.4 |
 | Ticket | 6 hours | 1 hour | 6 |
 
-A firing alert is keyed by `(slo, severity, start bucket)` and delivered once:
+A window with fewer than 50 requests, or with more than a quarter of its
+buckets missing, is `unavailable`: it neither fires, extends nor resolves an
+alert. An open alert resolves after two consecutive healthy evaluations.
+Alerts are keyed by SLO, severity, service and start bucket, and resolved
+alerts are kept for 90 days. Each transition (fired, resolved) is delivered
+once, at most 20 per pass:
 
 - **Owner notification** through the shared
   `private.send_root_operator_alert` RPC (shared with cost alerts), which
   dedupes per key and calls `public.create_notification` for root workspace
-  members holding the alert's permission. This reaches the web inbox, email
-  and push, honoring each person's notification preferences.
-- **Fleet owner channel** for page-severity burns: the Fleet hub reads the
-  same operator route and relays the alert to the owner's ask channel. There
-  is no separate Mira channel; Mira sees the same owner notification.
-- **Mastermind** through the Fleet hub, which owns Mastermind item ids. Open
-  alerts are exposed at an operator route that the hub turns into
-  `needs_you` items. The push-event contract stays unchanged.
-- **Perf Factory** through a regression record in the detector's existing JSON
-  shape: `id`, `app`, `worker`, `metric`, `startTime`, `detectedAt`,
-  `baseline`, `trigger`, `observed`, `windows`, `baselineWindows`, `rule`,
-  `suspects`, `versionSummary` and `queries`, where each query has `name`,
-  `query`, `variables` and `rerun`. The detector reads open latency and error
-  alerts with `--observability-alerts`, fills `suspects` and `versionSummary`
-  from Worker version annotations as it does for its own regressions, and the
-  dispatcher investigates them by rerunning the stored queries.
-
-A bucket with no rollup is `unavailable`. It never counts as a healthy
-window, and an SLO whose long window is more than a quarter unavailable
-reports `unavailable` instead of a burn rate. Delivery uses bounded attempts
-with durable receipts. Resolution sends one follow-up and closes the alert
-after two healthy windows.
+  members holding `view_infrastructure`. This reaches the web inbox, email
+  and push, honoring each person's notification preferences; page burns are
+  `urgent`. A delivery that creates no notification is retried on the next
+  pass. Mira sees the same notification; there is no separate Mira channel.
+- **Fleet hub** through `GET /api/v1/infrastructure/observability/alerts`,
+  which returns firing and recently resolved alerts to a root member with
+  `view_infrastructure` (session or bearer token). The hub turns them into
+  Mastermind `needs_you` items, since it owns Mastermind item ids, and relays
+  page burns to the owner's ask channel. The push-event contract stays
+  unchanged.
+- **Perf Factory** through the same route's `regressions`: firing alerts in
+  the detector's record shape (`id`, `app`, `worker`, `metric`, `startTime`,
+  `detectedAt`, `baseline`, `trigger`, `observed`, `windows`,
+  `baselineWindows`, `rule`, `suspects`, `versionSummary`, `queries`) with
+  `source: "observability-slo"`. `scripts/perf/perf-observability-alerts.mjs`
+  writes them for the dispatcher, which fills `suspects` and `versionSummary`
+  from Worker version annotations with the detector's `rerun` before intake.
 
 ## Delivery plan
 
