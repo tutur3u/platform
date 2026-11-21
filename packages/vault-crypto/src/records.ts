@@ -233,9 +233,10 @@ export function verifyRecord(
     if (depth >= MAX_PROVENANCE_DEPTH) fail('Re-encryption chain too long');
     const source = current.source;
     const original = ancestry.get(toHex(source.record_hash));
-    if (!original || !equalBytes(recordHash(original), source.record_hash))
-      fail('Re-encryption source missing');
+    if (!original) fail('Re-encryption source missing');
     const o = verifyOne(original, state);
+    if (!equalBytes(recordHash(original), source.record_hash))
+      fail('Re-encryption source missing');
     if (
       o.cipher === 'tombstone' ||
       o.env !== current.env ||
@@ -276,7 +277,11 @@ export function verifyAppend(
     r.env,
     r.auth_seq
   )?.signingKey;
-  for (let seq = r.auth_seq; seq <= state.headSeq; seq++) {
+  const points = [
+    r.auth_seq,
+    ...state.authorityChanges(r.env, r.writer_id, r.auth_seq, state.headSeq),
+  ];
+  for (const seq of points) {
     const at = authorityAt(state, r.writer_id, r.env, seq);
     if (
       !at?.canWrite ||

@@ -18,6 +18,7 @@ import {
 } from './keylog-types';
 import { list } from './schema';
 import { verifyObject } from './signing';
+import { assertCanonicalX25519 } from './x25519';
 
 export * from './keylog-types';
 
@@ -41,6 +42,19 @@ export function entryHash(signed: SignedEntry): Uint8Array {
 /** The signed identifier of an EDK, so a client can check the key it unwrapped. */
 export function edkId(edk: Uint8Array): Uint8Array {
   return sha256(contextBytes('edk-id', { edk })).subarray(0, 16);
+}
+
+/** Checks an unwrapped EDK against the identifier its signed descriptor names. */
+export function assertEdkId(
+  epoch: Pick<EpochDescriptor, 'edk_id'>,
+  edk: Uint8Array
+): void {
+  if (!equalBytes(edkId(edk), epoch.edk_id)) {
+    throw new VaultCryptoError(
+      'bad_mac',
+      'Unwrapped EDK does not match its epoch'
+    );
+  }
 }
 
 /** Signature lists are sorted by key with no duplicates, so the chained hash is canonical. */
@@ -93,6 +107,13 @@ export type KeyLogState = {
   /** The epoch in force after entry `seq` (the head by default), with wraps authorised by then. */
   readonly epochAt: (env: string, seq?: number) => EnvironmentEpoch | null;
   readonly environments: () => string[];
+  /** Sequences in (from, to] where the user's authority on `env` can change. */
+  readonly authorityChanges: (
+    env: string,
+    userId: string,
+    from: number,
+    to: number
+  ) => number[];
 };
 
 export const DECRYPTS: Readonly<
@@ -198,6 +219,10 @@ export function verifyKeyLog(
   const usedEpochKeys = new Set<string>();
   const userKey = new Map<string, string>();
   const keyUser = new Map<string, string>();
+  for (const o of g.owners) {
+    userKey.set(o.user_id, hex(o.signing_key));
+    keyUser.set(hex(o.signing_key), o.user_id);
+  }
   let headHash = genesisHash(genesis);
   let issuedAt = g.issued_at;
 
@@ -249,6 +274,8 @@ export function verifyKeyLog(
       fail('Epochs must advance by one');
     if ((d.epoch === 1) !== (d.history === null))
       fail('History wraps are required after epoch 1');
+    assertCanonicalX25519(d.intake_key, 'intake key');
+    assertCanonicalX25519(d.esk_key, 'ESK');
     for (const k of [d.edk_id, d.intake_key, d.esk_key].map(hex)) {
       if (usedEpochKeys.has(k)) fail('Epoch keys must be fresh');
       usedEpochKeys.add(k);
@@ -305,17 +332,28 @@ export function verifyKeyLog(
           ? p.admins
           : m.admins.filter((a) => !removedOwners.includes(hex(a.signing_key)));
       checkPartySet(admins);
+      // One key per user across the combined manager set; the same user may
+      // be both owner and admin only under the same key.
+      const combined = new Map<string, string>();
+      for (const x of [...owners, ...admins]) {
+        const k = combined.get(x.user_id);
+        if (k !== undefined && k !== hex(x.signing_key))
+          fail('Identity is bound to another key');
+        combined.set(x.user_id, hex(x.signing_key));
+      }
       const after = new Set(
         [...owners, ...admins].map((x) => hex(x.signing_key))
       );
       const removed = [
         ...new Set([...m.owners, ...m.admins].map((x) => hex(x.signing_key))),
       ].filter((k) => !after.has(k));
-      for (const party of [...owners, ...admins])
-        bind(party.user_id, party.signing_key, b.seq);
-      for (const k of removed) revokeKey(k, b.seq);
+      const affected: string[] = [];
+      for (const party of [...owners, ...admins]) {
+        affected.push(...bind(party.user_id, party.signing_key, b.seq));
+      }
+      for (const k of removed) affected.push(...revokeKey(k, b.seq));
       requireRotation(
-        removed.length > 0 ? [...epochs.keys()] : [],
+        removed.length > 0 ? [...epochs.keys()] : affected,
         p.next_epochs,
         b.seq
       );
@@ -324,6 +362,7 @@ export function verifyKeyLog(
       if (countSigners(b, entry.signatures, [...m.owners, ...m.admins]) < 1)
         fail('Missing admin signature');
       if (p.kind === 'member_role') {
+        assertCanonicalX25519(p.encryption_key, 'member encryption key');
         const prior = latestRole(p.env, p.user_id);
         const manager = [...m.owners, ...m.admins].find(
           (x) => x.user_id === p.user_id
@@ -396,6 +435,17 @@ export function verifyKeyLog(
       return { ...descriptor, wrapIndex };
     },
     environments: () => [...epochs.keys()],
+    authorityChanges: (env, userId, from, to) => {
+      bounded(from);
+      bounded(to);
+      const seqs = [
+        ...managers.map((x) => x.seq),
+        ...(roles.get(env)?.get(userId) ?? []).map((x) => x.seq),
+      ];
+      return [...new Set(seqs.filter((x) => x > from && x <= to))].sort(
+        (a, b) => a - b
+      );
+    },
   };
 }
 

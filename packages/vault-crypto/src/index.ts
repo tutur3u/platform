@@ -88,6 +88,8 @@ export {
   verifyObject,
 } from './signing';
 export {
+  assertEdkId,
+  edkId,
   type EntryBody,
   type EntryPayload,
   type EntrySignature,
@@ -143,3 +145,4 @@ export {
   sortLeaves,
   verifyAttestation,
 } from './snapshot';
+export { assertCanonicalX25519 } from './x25519';

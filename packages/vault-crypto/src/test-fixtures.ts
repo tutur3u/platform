@@ -11,7 +11,8 @@ import {
   sortSignatures,
   vaultIdOf,
 } from './keylog';
-import { utf8 } from './bytes';
+import { x25519 } from '@noble/curves/ed25519.js';
+import { randomBytes, utf8 } from './bytes';
 import { sha256 } from './kdf';
 import {
   generateSigningKeyPair,
@@ -20,11 +21,19 @@ import {
 } from './signing';
 
 /** Test-only builder for signed key logs. Not exported from the package. */
-export type Party = PartyKey & { readonly pair: SigningKeyPair };
+export type Party = PartyKey & {
+  readonly pair: SigningKeyPair;
+  readonly encryption_key: Uint8Array;
+};
 
 export function party(user_id: string): Party {
   const pair = generateSigningKeyPair();
-  return { user_id, signing_key: pair.publicKey, pair };
+  return {
+    user_id,
+    signing_key: pair.publicKey,
+    pair,
+    encryption_key: encKey(),
+  };
 }
 
 export const DEPLOYMENT = 'test';
@@ -110,8 +119,8 @@ export function descriptor(
     env,
     epoch: n,
     edk_id: fresh(env, n, 'edk', 16),
-    intake_key: fresh(env, n, 'intake', 32),
-    esk_key: fresh(env, n, 'esk', 32),
+    intake_key: x25519.getPublicKey(fresh(env, n, 'intake', 32)),
+    esk_key: x25519.getPublicKey(fresh(env, n, 'esk', 32)),
     pin_allowed: false,
     wraps: fps.map((f) => ({
       recipient_fp: new Uint8Array(32).fill(f),
@@ -127,4 +136,9 @@ export function descriptor(
             sensitive: fresh(env, n, 'hs', 32),
           },
   };
+}
+
+/** A valid, canonical X25519 public key. */
+export function encKey(): Uint8Array {
+  return x25519.getPublicKey(randomBytes(32));
 }

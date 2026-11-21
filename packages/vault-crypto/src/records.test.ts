@@ -17,6 +17,7 @@ import {
   LogBuilder,
   makeGenesis,
   party,
+  encKey,
 } from './test-fixtures';
 
 const owner = party('owner');
@@ -33,7 +34,7 @@ const role = (
   user_id: user.user_id,
   role: r,
   signing_key: user.signing_key,
-  encryption_key: new Uint8Array(32),
+  encryption_key: user.encryption_key,
   next_epochs: next,
 });
 
@@ -305,4 +306,23 @@ it('checks ciphertext against its record', () => {
   const r = rec(log().l, { ciphertext_hash: sha256(ct) });
   expect(() => assertCiphertextHash(r, ct)).not.toThrow();
   expect(() => assertCiphertextHash(r, randomBytes(10))).toThrow();
+});
+
+describe('continuous attestation authority', () => {
+  it('rejects a re-encryption signed before an admin revoke-then-regrant', () => {
+    const l = new LogBuilder(makeGenesis([owner], 1));
+    l.append({ kind: 'epoch', descriptor: descriptor('prod', 1) }, [owner]);
+    l.append(role(writer, 'writer'), [owner]);
+    l.append({ kind: 'epoch', descriptor: descriptor('prod', 2) }, [owner]);
+    l.append(role(envAdmin, 'admin'), [owner]);
+    l.append(role(envAdmin, 'writer', [descriptor('prod', 3)]), [owner]);
+    l.append(role(envAdmin, 'admin'), [owner]);
+    const state = verifyKeyLog(l.genesis, l.entries, l.pinned);
+    const original = signRecord(writer.pair.secretKey, rec(l, { auth_seq: 2 }));
+    const early = reencrypt(l, envAdmin, original, { epoch: 2, auth_seq: 4 });
+    expect(() => verifyRecord(early, state, ancestry(original))).not.toThrow();
+    expect(() => verifyAppend(early, state, null, ancestry(original))).toThrow(
+      /revoked/
+    );
+  });
 });

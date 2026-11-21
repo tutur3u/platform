@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { concatBytes, randomBytes } from './bytes';
 import { sha256 } from './kdf';
 import {
+  assertEdkId,
   edkId,
   type EntryPayload,
   type EpochDescriptor,
@@ -14,6 +15,7 @@ import {
   LogBuilder,
   makeGenesis,
   party,
+  encKey,
 } from './test-fixtures';
 
 const alice = party('alice');
@@ -32,7 +34,7 @@ const member = (
   user_id: user.user_id,
   role,
   signing_key: user.signing_key,
-  encryption_key: new Uint8Array(32).fill(1),
+  encryption_key: user.encryption_key,
   next_epochs,
 });
 
@@ -376,7 +378,7 @@ describe('fresh keys, identity binding and wrap history', () => {
     newEnc.append(
       {
         ...member('prod', dave, 'reader'),
-        encryption_key: new Uint8Array(32).fill(9),
+        encryption_key: encKey(),
       } as EntryPayload,
       [carol]
     );
@@ -385,7 +387,7 @@ describe('fresh keys, identity binding and wrap history', () => {
     ok.append(
       {
         ...member('prod', dave, 'reader', [descriptor('prod', 2)]),
-        encryption_key: new Uint8Array(32).fill(9),
+        encryption_key: encKey(),
       } as EntryPayload,
       [carol]
     );
@@ -469,6 +471,138 @@ describe('wire shape hardening', () => {
     expect(() => verifyKeyLog(log.genesis, sparse, log.pinned)).toThrow();
     const sparseSigs = { ...entry, signatures: new Array(1) };
     expect(() => verifyKeyLog(log.genesis, [sparseSigs], log.pinned)).toThrow(
+      /Malformed/
+    );
+  });
+});
+
+describe('manager identity and promotion', () => {
+  it('rotates every environment where a member decrypted when promotion replaces their key', () => {
+    const base = () => {
+      const log = twoOwnerLog();
+      log.append(epoch('prod', 1), [carol]);
+      log.append(epoch('dev', 1), [carol]);
+      log.append(member('prod', dave, 'reader'), [carol]);
+      log.append(member('dev', dave, 'reader'), [carol]);
+      return log;
+    };
+    const newDave = party('dave');
+    const missing = base();
+    missing.append(
+      {
+        kind: 'admin_set',
+        admins: [key(carol), key(newDave)],
+        next_epochs: [],
+      },
+      [alice, bob]
+    );
+    expect(() => replay(missing)).toThrow(/next epoch/);
+    const rotated = base();
+    rotated.append(
+      {
+        kind: 'admin_set',
+        admins: [key(carol), key(newDave)],
+        next_epochs: [descriptor('prod', 2), descriptor('dev', 2)],
+      },
+      [alice, bob]
+    );
+    const state = replay(rotated);
+    expect(state.epochAt('prod')?.epoch).toBe(2);
+    expect(state.roleAt('dev', 'dave', 6)?.role).toBe('none');
+  });
+
+  it('binds genesis owners and rejects one user holding two manager keys', () => {
+    const otherAlice = party('alice');
+    const log = new LogBuilder(makeGenesis([alice, bob], 1));
+    log.append(
+      { kind: 'admin_set', admins: [key(otherAlice)], next_epochs: [] },
+      [alice]
+    );
+    expect(() => replay(log)).toThrow(/another key/);
+    const same = new LogBuilder(makeGenesis([alice, bob], 1));
+    same.append({ kind: 'admin_set', admins: [key(alice)], next_epochs: [] }, [
+      alice,
+    ]);
+    expect(() => replay(same)).not.toThrow();
+    const member = twoOwnerLog();
+    member.append(
+      {
+        kind: 'member_role',
+        env: 'prod',
+        user_id: 'dave',
+        role: 'writer',
+        signing_key: alice.signing_key,
+        encryption_key: encKey(),
+        next_epochs: [],
+      },
+      [carol]
+    );
+    expect(() => replay(member)).toThrow(/two users/);
+  });
+});
+
+describe('canonical X25519 keys and EDK identifiers', () => {
+  const p = (1n << 255n) - 19n;
+  const le = (n: bigint) =>
+    Uint8Array.from({ length: 32 }, (_, i) =>
+      Number((n >> BigInt(8 * i)) & 0xffn)
+    );
+
+  it('rejects non-canonical, small-order and twist epoch keys', () => {
+    const good = descriptor('prod', 1);
+    const highBit = good.intake_key.slice();
+    highBit[31] = (highBit[31] ?? 0) | 0x80;
+    for (const bad of [
+      highBit,
+      le(p),
+      le(p + 1n),
+      le(0n),
+      le(1n),
+      le(p - 1n),
+      new Uint8Array(32).fill(0xff).map((b, i) => (i === 31 ? 0x7f : b)),
+    ]) {
+      const log = twoOwnerLog();
+      log.append({ kind: 'epoch', descriptor: { ...good, intake_key: bad } }, [
+        carol,
+      ]);
+      expect(() => replay(log)).toThrow();
+    }
+    let twist: Uint8Array | null = null;
+    for (let u = 2n; !twist; u++) {
+      const log = twoOwnerLog();
+      log.append({ kind: 'epoch', descriptor: { ...good, esk_key: le(u) } }, [
+        carol,
+      ]);
+      try {
+        replay(log);
+      } catch (e) {
+        if (String(e).includes('not on Curve25519')) twist = le(u);
+      }
+    }
+    expect(twist).not.toBeNull();
+  });
+
+  it('checks an unwrapped EDK against its descriptor', () => {
+    const edk = randomBytes(32);
+    expect(() => assertEdkId({ edk_id: edkId(edk) }, edk)).not.toThrow();
+    expect(() => assertEdkId({ edk_id: edkId(edk) }, randomBytes(32))).toThrow(
+      /does not match/
+    );
+  });
+
+  it('rejects accessor list items and null-prototype objects', () => {
+    const log = twoOwnerLog();
+    const entry = log.entries[0]!;
+    const sigs = [...entry.signatures];
+    Object.defineProperty(sigs, 0, {
+      get: () => entry.signatures[0],
+      enumerable: true,
+    });
+    expect(() =>
+      verifyKeyLog(log.genesis, [{ ...entry, signatures: sigs }], log.pinned)
+    ).toThrow(/Malformed/);
+    const nullProto = Object.assign(Object.create(null), entry);
+    expect(() => verifyKeyLog(log.genesis, [nullProto], log.pinned)).toThrow(
       /Malformed/
     );
   });

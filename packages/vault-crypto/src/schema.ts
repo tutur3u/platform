@@ -25,7 +25,7 @@ export function record(
   }
   const proto = Object.getPrototypeOf(value);
   if (
-    (proto !== Object.prototype && proto !== null) ||
+    proto !== Object.prototype ||
     Object.getOwnPropertySymbols(value).length > 0
   ) {
     malformed(what);
@@ -100,7 +100,9 @@ export function list(value: unknown, what: string, max = 1024): unknown[] {
   ) {
     malformed(what);
   }
-  for (let i = 0; i < value.length; i++)
-    if (!Object.hasOwn(value, i)) malformed(what);
+  for (let i = 0; i < value.length; i++) {
+    const d = Object.getOwnPropertyDescriptor(value, i);
+    if (!d || !d.enumerable || !('value' in d)) malformed(what);
+  }
   return value;
 }
