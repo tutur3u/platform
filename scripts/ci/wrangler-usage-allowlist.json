@@ -1029,10 +1029,10 @@
       "uses": 1,
       "gap": "void-emitted-runtime",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7639",
-        "reason": "REV-7639: local unstable_startWorker checks anonymous ingress on the emitted config. Remote is disabled and provider auth is denied. The void-emitted runtime gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/55c5329e60741971410d5b738597bf633f0c3ee3",
+        "reason": "The abuse-guard fixture shares one local SDK binding, const sdk = require('wrangler'), and still starts the Worker with unstable_startWorker. Remote stays disabled. The count stays one use, there is no publish call, and the void-emitted runtime gap is unchanged."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
     "apps/git/package.json": {
       "lines": 1,
@@ -1139,10 +1139,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7961",
-        "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/commit/55c5329e60741971410d5b738597bf633f0c3ee3",
+        "reason": "The abuse-guard fixture shares one local SDK binding, const sdk = require('wrangler'), and still starts the Worker with unstable_startWorker. The count stays one use, there is no publish call, and the void-wave1 publication gap is unchanged."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
     "apps/learn/cloudflare/cutover.runtime.mjs": {
       "lines": 2,
@@ -3591,6 +3591,16 @@
         "decision": "https://github.com/tutur3u/platform/pull/6484",
         "reason": "Read-only workflow assertion rejects Wrangler deployment text; this test never invokes Wrangler."
       }
+    },
+    "scripts/ci/verify-meet-abuse-guard-families.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-config-name",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/55c5329e60741971410d5b738597bf633f0c3ee3",
+        "reason": "The Meet abuse-guard contract test stores a synthetic .void-wrangler.jsonc path. That filename is fixture data, not a CLI or SDK call, and the test publishes nothing. The void-emitted config-name gap stays because the path is Wrangler-format data."
+      },
+      "digest": "123a7c86f224cf5a7919fbe9474806a60271aff6116192a151788b2201e23cf3"
     },
     "scripts/ci/verify-meet-start-output.js": {
       "lines": 1,
