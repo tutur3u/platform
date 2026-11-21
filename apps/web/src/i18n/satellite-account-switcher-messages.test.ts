@@ -30,6 +30,15 @@ const apps = [
   'workspace',
 ];
 
+// App keys whose directory under apps/ differs from the key.
+const appDirectories: Record<string, string> = JSON.parse(
+  readFileSync(
+    new URL('../../../../scripts/app-directories.json', import.meta.url),
+    'utf8'
+  )
+);
+const appDirectory = (app: string) => appDirectories[app] ?? app;
+
 const menuSource = readFileSync(
   new URL(
     '../../../../packages/ui/src/components/ui/custom/satellite-account-switcher-menu.tsx',
@@ -52,7 +61,10 @@ describe.each(apps)('%s shared account switcher catalog', (app) => {
     expect(menuKeys).toContain('switch_account_error');
     const catalog = JSON.parse(
       readFileSync(
-        new URL(`../../../${app}/messages/${locale}.json`, import.meta.url),
+        new URL(
+          `../../../${appDirectory(app)}/messages/${locale}.json`,
+          import.meta.url
+        ),
         'utf8'
       )
     );

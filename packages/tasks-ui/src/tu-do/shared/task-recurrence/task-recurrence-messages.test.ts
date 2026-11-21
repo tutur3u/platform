@@ -32,10 +32,18 @@ const REQUIRED = [
   'invalid',
 ];
 
+// App keys whose directory under apps/ differs from the key.
+const APP_DIRECTORIES: Record<string, string> = JSON.parse(
+  readFileSync(
+    resolve(__dirname, '../../../../../../scripts/app-directories.json'),
+    'utf8'
+  )
+);
+
 function recurrence(app: string, locale: 'en' | 'vi') {
   const path = resolve(
     __dirname,
-    `../../../../../../apps/${app}/messages/${locale}.json`
+    `../../../../../../apps/${APP_DIRECTORIES[app] ?? app}/messages/${locale}.json`
   );
   const messages = JSON.parse(readFileSync(path, 'utf8'));
   return messages['ws-task-boards']?.recurrence as Record<string, string>;

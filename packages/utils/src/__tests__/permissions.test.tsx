@@ -11,6 +11,11 @@ describe('workspace permission catalog', () => {
   const repoRoot = process.cwd().endsWith('/packages/utils')
     ? resolve(process.cwd(), '../..')
     : process.cwd();
+  // App keys whose directory under apps/ differs from the key.
+  const appDirectories: Record<string, string> = JSON.parse(
+    readFileSync(resolve(repoRoot, 'scripts/app-directories.json'), 'utf8')
+  );
+  const appDirectory = (app: string) => appDirectories[app] ?? app;
   const invoiceProductPermissionIds = [
     'adjust_inventory_stock',
     'create_inventory_sales',
@@ -47,7 +52,10 @@ describe('workspace permission catalog', () => {
       for (const locale of ['en', 'vi']) {
         const messages = JSON.parse(
           readFileSync(
-            resolve(repoRoot, `apps/${app}/messages/${locale}.json`),
+            resolve(
+              repoRoot,
+              `apps/${appDirectory(app)}/messages/${locale}.json`
+            ),
             'utf8'
           )
         );
@@ -141,7 +149,10 @@ describe('workspace permission catalog', () => {
       for (const locale of ['en', 'vi']) {
         const messages = JSON.parse(
           readFileSync(
-            resolve(repoRoot, `apps/${app}/messages/${locale}.json`),
+            resolve(
+              repoRoot,
+              `apps/${appDirectory(app)}/messages/${locale}.json`
+            ),
             'utf8'
           )
         ) as { 'ws-roles': Record<string, string> };

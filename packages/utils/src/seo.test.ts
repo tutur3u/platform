@@ -167,24 +167,29 @@ describe('app indexing boundaries', () => {
 
   it('registers every Next app and prevents static/metadata route conflicts', () => {
     const root = resolve(__dirname, '../../..');
+    // App keys whose directory under apps/ differs from the key.
+    const appDirectories: Record<string, string> = JSON.parse(
+      readFileSync(resolve(root, 'scripts/app-directories.json'), 'utf8')
+    );
     for (const app of Object.keys(APP_SEO_POLICY)) {
+      const appDir = `apps/${appDirectories[app] ?? app}`;
       // An app may build its config in sibling `next-config.*.ts` modules.
       const config = [
         'next.config.ts',
-        ...readdirSync(resolve(root, `apps/${app}`)).filter((name) =>
+        ...readdirSync(resolve(root, appDir)).filter((name) =>
           /^next-config\.[\w.-]+\.ts$/u.test(name)
         ),
       ]
-        .map((name) => readFileSync(resolve(root, `apps/${app}`, name), 'utf8'))
+        .map((name) => readFileSync(resolve(root, appDir, name), 'utf8'))
         .join('\n');
       expect(config).toContain(`seoApp: '${app}'`);
       for (const file of ['robots', 'sitemap']) {
         expect(
-          existsSync(resolve(root, `apps/${app}/src/app/${file}.ts`)) &&
+          existsSync(resolve(root, `${appDir}/src/app/${file}.ts`)) &&
             existsSync(
               resolve(
                 root,
-                `apps/${app}/public/${file === 'robots' ? 'robots.txt' : 'sitemap.xml'}`
+                `${appDir}/public/${file === 'robots' ? 'robots.txt' : 'sitemap.xml'}`
               )
             )
         ).toBe(false);

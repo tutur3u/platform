@@ -1,7 +1,20 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { COMPARISON_FEATURES } from './commercial-comparison';
+
+const appKeyByDirectory: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    JSON.parse(
+      readFileSync(
+        resolve(__dirname, '../../../scripts/app-directories.json'),
+        'utf8'
+      )
+    ) as Record<string, string>
+  )
+    .filter(([key]) => key !== '$comment')
+    .map(([key, directory]) => [directory, key])
+);
 
 describe('commercial inventory coverage', () => {
   it('represents every app directory and avoids duplicate feature identifiers', () => {
@@ -9,7 +22,12 @@ describe('commercial inventory coverage', () => {
       withFileTypes: true,
     })
       .filter((item) => item.isDirectory() && !item.name.startsWith('.'))
-      .map((item) => (item.name === 'web' ? 'platform' : item.name));
+      // Rows use app keys; apps/admin holds the infrastructure key.
+      .map((item) =>
+        item.name === 'web'
+          ? 'platform'
+          : (appKeyByDirectory[item.name] ?? item.name)
+      );
     const represented = new Set(COMPARISON_FEATURES.map((row) => row.app));
     expect(apps.filter((app) => !represented.has(app))).toEqual([]);
     expect(new Set(COMPARISON_FEATURES.map((row) => row.id)).size).toBe(

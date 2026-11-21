@@ -24,6 +24,17 @@ const feedbackKeys = [
   'smart_create_selected_success',
 ] as const;
 
+// App keys whose directory under apps/ differs from the key.
+const appDirectories: Record<string, string> = JSON.parse(
+  readFileSync(
+    resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../../../scripts/app-directories.json'
+    ),
+    'utf8'
+  )
+);
+
 describe.each(['en', 'vi'])('Smart Suggest feedback in %s', (locale) => {
   it.each(apps)(
     'renders messages from the %s app without missing-key fallbacks',
@@ -33,7 +44,7 @@ describe.each(['en', 'vi'])('Smart Suggest feedback in %s', (locale) => {
           resolve(
             dirname(fileURLToPath(import.meta.url)),
             '../../../',
-            app,
+            appDirectories[app] ?? app,
             'messages',
             `${locale}.json`
           ),

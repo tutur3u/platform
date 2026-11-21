@@ -17,6 +17,16 @@ const appsDir = join(root, 'apps');
 // Apps whose canonical production host is not `<directory>.tuturuuu.com`.
 const PRODUCTION_HOST = {};
 
+// A directory whose app key differs keeps the key's host (apps/admin serves
+// the infrastructure key at infrastructure.tuturuuu.com).
+const APP_KEY_BY_DIRECTORY = Object.fromEntries(
+  Object.entries(
+    JSON.parse(readFileSync(join(root, 'scripts/app-directories.json'), 'utf8'))
+  )
+    .filter(([key]) => key !== '$comment')
+    .map(([key, directory]) => [directory, key])
+);
+
 // Apps with a confirmed gap, reported by the sweep and kept out of the
 // assertion until the app's own host change lands. Each entry fails the test
 // once the gap is closed, so the entry is removed with the fix.
@@ -132,7 +142,8 @@ for (const app of apps) {
     });
     continue;
   }
-  const production = PRODUCTION_HOST[app] ?? `${app}.tuturuuu.com`;
+  const production =
+    PRODUCTION_HOST[app] ?? `${APP_KEY_BY_DIRECTORY[app] ?? app}.tuturuuu.com`;
   if (KNOWN_GAPS[app]) {
     test(`${app} known gap is still open: ${KNOWN_GAPS[app]}`, () => {
       assert.ok(

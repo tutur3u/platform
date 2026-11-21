@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type {
+  CronMonitoringJob,
+  CronRunRecord,
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   readCronMonitoringSnapshot,
@@ -141,22 +145,15 @@ describe('readCronMonitoringSnapshot', () => {
   });
 
   it('keeps trust cache sync on the infra 10-minute cadence', () => {
-    const repoRootConfigPath = path.join(
-      ORIGINAL_CWD,
-      'apps',
-      'infrastructure',
-      'cron.config.json'
+    // The app's own cron.config.json, wherever the suite runs from.
+    process.env.PLATFORM_INFRA_CRON_CONFIG_PATH = path.resolve(
+      __dirname,
+      '../../../cron.config.json'
     );
-    const appRootConfigPath = path.join(ORIGINAL_CWD, 'cron.config.json');
-    process.env.PLATFORM_INFRA_CRON_CONFIG_PATH = fs.existsSync(
-      repoRootConfigPath
-    )
-      ? repoRootConfigPath
-      : appRootConfigPath;
 
     const snapshot = readCronMonitoringSnapshot();
     const trustCacheSync = snapshot.jobs.find(
-      (job) => job.id === 'infrastructure-sync-trust-cache'
+      (job: CronMonitoringJob) => job.id === 'infrastructure-sync-trust-cache'
     );
 
     expect(trustCacheSync?.schedule).toBe('*/10 * * * *');
@@ -244,7 +241,7 @@ describe('readCronMonitoringSnapshot', () => {
         paths,
       });
 
-      expect(snapshot.runs.map((run) => run.status)).toEqual([
+      expect(snapshot.runs.map((run: CronRunRecord) => run.status)).toEqual([
         'processing',
         'queued',
       ]);
