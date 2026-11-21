@@ -103,7 +103,7 @@ export default async function RoomPage({
         siteKey={access.guestJoin.siteKey}
       />
     );
-  if ('publicInvite' in access)
+  if ('publicInvite' in access && access.publicInvite)
     return (
       <MeetingPublicInvite
         info={access.publicInvite}
