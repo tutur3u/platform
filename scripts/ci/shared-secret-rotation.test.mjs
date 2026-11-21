@@ -1,4 +1,4 @@
-// Copy scope, vinext opt-in and the offline rotation plan of the shared
+// Copy scope, activated vinext Workers and the offline rotation plan of the shared
 // secret tooling. The original write path is covered by
 // shared-secret-scripts.test.mjs; the workflows by shared-secret-write.test.mjs.
 import assert from 'node:assert/strict';
@@ -9,8 +9,8 @@ import { test } from 'node:test';
 import { ROTATION } from './shared-secret-rotation.mjs';
 import * as sharedSecret from './shared-secret.mjs';
 import {
-  FAMILIES_FILE,
   readVinextWorkers,
+  VINEXT_FAMILIES_FILE,
   resolveSharedSecret,
   SHARED_SECRETS,
 } from './shared-secret-targets.mjs';
@@ -19,33 +19,38 @@ const VALUE = 'Zk9Qd2xjTnJ0eUh2bUJxMVd6U2Y4a0xwRDNhRzVqVXhNYzJPdkVuQTdyS2g=';
 
 function inventory(families) {
   const root = mkdtempSync(join(tmpdir(), 'vinext-'));
-  mkdirSync(join(root, 'apps/web/cloudflare/opennext'), { recursive: true });
-  writeFileSync(join(root, FAMILIES_FILE), JSON.stringify({ families }));
+  mkdirSync(join(root, 'apps/web/cloudflare/vinext'), { recursive: true });
+  writeFileSync(join(root, VINEXT_FAMILIES_FILE), JSON.stringify({ families }));
   return root;
 }
 
 const ROOT = inventory([
-  { id: 'public-docs', worker: 'tuturuuu-web-public-docs', vinext: true },
   {
-    id: 'api-identity',
-    worker: 'tuturuuu-web-api-identity',
-    enabled: false,
-    vinext: true,
+    id: 'public-auth',
+    worker: 'tuturuuu-web-vinext-public-auth',
+    activated: true,
   },
-  { id: 'dashboard-core', worker: 'tuturuuu-web-dashboard-core' },
+  { id: 'api-core', worker: 'tuturuuu-web-vinext-api-core', activated: true },
+  {
+    id: 'dashboard',
+    worker: 'tuturuuu-web-vinext-dashboard',
+    activated: false,
+  },
+  { id: 'web-rest', worker: 'tuturuuu-web-vinext-web-rest' },
 ]);
 
-test('vinext Workers come only from families that opt in', () => {
+test('vinext Workers come only from activated families', () => {
   assert.deepEqual(readVinextWorkers(ROOT), [
-    'tuturuuu-web-vinext-public-docs',
-    'tuturuuu-web-vinext-api-identity',
+    'tuturuuu-web-vinext-public-auth',
+    'tuturuuu-web-vinext-api-core',
   ]);
   assert.deepEqual(readVinextWorkers(mkdtempSync(join(tmpdir(), 'none-'))), []);
   for (const bad of [
-    [{ id: 'Bad Id', vinext: true }],
+    [{ id: 'Bad Id', activated: true }],
+    [{ id: 'a', worker: 'tuturuuu-web-other', activated: true }],
     [
-      { id: 'a', vinext: true },
-      { id: 'a', vinext: true },
+      { id: 'a', activated: true },
+      { id: 'a', activated: true },
     ],
   ])
     assert.throws(() => readVinextWorkers(inventory(bad)));
@@ -66,8 +71,8 @@ test('every secret has rotation facts and a fixed mode', () => {
   assert.deepEqual(
     copy.workers.map(({ name, binding, group }) => [name, binding, group]),
     [
-      ['tuturuuu-web-vinext-public-docs', 'MEET_REALTIME_TOKEN_SECRET', 'web'],
-      ['tuturuuu-web-vinext-api-identity', 'MEET_REALTIME_TOKEN_SECRET', 'web'],
+      ['tuturuuu-web-vinext-public-auth', 'MEET_REALTIME_TOKEN_SECRET', 'web'],
+      ['tuturuuu-web-vinext-api-core', 'MEET_REALTIME_TOKEN_SECRET', 'web'],
     ]
   );
   assert.throws(
@@ -98,8 +103,8 @@ test('the guard secret keeps its plural binding and adds web Workers', () => {
     all.workers.map(({ name, binding, group }) => [name, binding, group]),
     [
       ['tuturuuu-abuse-guard', 'ABUSE_GUARD_SECRETS', 'peer'],
-      ['tuturuuu-web-vinext-public-docs', 'ABUSE_GUARD_SECRET', 'web'],
-      ['tuturuuu-web-vinext-api-identity', 'ABUSE_GUARD_SECRET', 'web'],
+      ['tuturuuu-web-vinext-public-auth', 'ABUSE_GUARD_SECRET', 'web'],
+      ['tuturuuu-web-vinext-api-core', 'ABUSE_GUARD_SECRET', 'web'],
     ]
   );
   const coordination = resolveSharedSecret({
@@ -216,4 +221,12 @@ test('plan prints destinations and notes offline, without credentials', async ()
   assert.match(text, /passive archive/);
   assert.match(text, /Never instantly roll Vercel back/);
   assert.doesNotMatch(text, /fallback/i);
+});
+
+test('the committed vinext table lists the live family Workers', () => {
+  const workers = readVinextWorkers(join(import.meta.dirname, '../..'));
+  assert.ok(workers.includes('tuturuuu-web-vinext-public-auth'));
+  assert.ok(
+    workers.every((worker) => worker.startsWith('tuturuuu-web-vinext-'))
+  );
 });

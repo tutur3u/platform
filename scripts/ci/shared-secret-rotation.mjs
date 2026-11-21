@@ -129,7 +129,9 @@ export function formatRotationPlan(plan) {
   for (const worker of plan.workers)
     lines.push(`  ${worker.group} ${worker.name}: ${worker.binding}`);
   if (plan.workers.every((worker) => worker.group !== 'web'))
-    lines.push('  (no web Worker opted in: set vinext: true in families.json)');
+    lines.push(
+      '  (no web Worker activated: mark it activated in apps/web/cloudflare/vinext/families.json)'
+    );
   if (facts) {
     lines.push(`dual-accept: ${facts.dualAccept}`);
     lines.push(`readable source: ${facts.source}`);

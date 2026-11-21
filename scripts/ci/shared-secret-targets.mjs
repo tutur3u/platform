@@ -16,6 +16,7 @@ export const SUPABASE_FAMILY_KEY_NAME = 'cf-web-families';
 export const SUPABASE_FAMILY_BINDING = 'SUPABASE_SECRET_KEY';
 
 export const FAMILIES_FILE = 'apps/web/cloudflare/opennext/families.json';
+export const VINEXT_FAMILIES_FILE = 'apps/web/cloudflare/vinext/families.json';
 // Used only while FAMILIES_FILE does not exist at the checked-out commit.
 export const FALLBACK_FAMILY_WORKERS = Object.freeze([
   'tuturuuu-web-api-identity',
@@ -78,33 +79,39 @@ const FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,40}$/;
 
 /**
  * vinext Workers of the web route families: `tuturuuu-web-vinext-<id>` for
- * each family in `families.json` that opts in with `vinext: true`. The opt-in
- * keeps a not-yet-published Worker out of every destination list, because
- * preflight refuses to write while any listed Worker is missing.
+ * each family in the vinext table (`VINEXT_FAMILIES_FILE`) marked
+ * `activated`, i.e. published and routed by the gateway. A not-yet-activated
+ * family stays out of every destination list, because preflight refuses to
+ * write while any listed Worker is missing.
  */
 export function readVinextWorkers(root) {
   let text;
   try {
-    text = readFileSync(join(root, FAMILIES_FILE), 'utf8');
+    text = readFileSync(join(root, VINEXT_FAMILIES_FILE), 'utf8');
   } catch (error) {
     if (error?.code === 'ENOENT') return [];
     throw error;
   }
   const { families } = JSON.parse(text);
-  assert.ok(Array.isArray(families), 'family inventory has no families');
+  assert.ok(Array.isArray(families), 'vinext family table has no families');
   const workers = families
-    .filter((family) => family?.vinext === true)
+    .filter((family) => family?.activated === true)
     .map((family) => {
       assert.ok(
         typeof family.id === 'string' && FAMILY_ID.test(family.id),
         'invalid family id for vinext delivery'
       );
-      return assertWorkerName(`tuturuuu-web-vinext-${family.id}`);
+      const worker = assertWorkerName(`tuturuuu-web-vinext-${family.id}`);
+      assert.ok(
+        family.worker === undefined || family.worker === worker,
+        'vinext family Worker name does not match its id'
+      );
+      return worker;
     });
   assert.equal(
     new Set(workers).size,
     workers.length,
-    'family inventory repeats a vinext family'
+    'vinext family table repeats a family'
   );
   return workers;
 }
