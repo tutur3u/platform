@@ -5,6 +5,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
+export const defaultCategoryColor = {
+  bg: 'bg-calendar-bg-gray ring-calendar-bg-gray',
+  cbg: 'bg-dynamic-gray',
+  activeBg: 'bg-dynamic-light-gray ring-dynamic-light-gray',
+  text: 'text-dynamic-light-gray',
+};
+
 // Color map with display names and CSS classes - Using dynamic colors that adapt to theme
 export const colorMap: Record<
   SupportedColor,
@@ -69,12 +76,7 @@ export const colorMap: Record<
     activeBg: 'bg-dynamic-light-cyan ring-dynamic-light-cyan',
     text: 'text-dynamic-light-cyan',
   },
-  GRAY: {
-    bg: 'bg-calendar-bg-gray ring-calendar-bg-gray',
-    cbg: 'bg-dynamic-gray',
-    activeBg: 'bg-dynamic-light-gray ring-dynamic-light-gray',
-    text: 'text-dynamic-light-gray',
-  },
+  GRAY: defaultCategoryColor,
 };
 
 export type CategoryColor = {

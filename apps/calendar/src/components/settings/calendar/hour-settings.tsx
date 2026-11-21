@@ -2,6 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Briefcase, Calendar, Layers, Loader2, User } from '@tuturuuu/icons';
+import {
+  getWorkspaceCalendarHours,
+  updateWorkspaceCalendarHours,
+} from '@tuturuuu/internal-api/settings';
 import type { Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -13,11 +17,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { apiFetch } from '@/lib/api-fetch';
 import {
   DAY_KEYS,
   type HoursSettingsData,
   type HourType,
+  isValidWeekTimeRanges,
   type WeekTimeRanges,
 } from './hour-settings-shared';
 import { HoursOverview } from './hours-overview';
@@ -50,27 +54,16 @@ const HOUR_TYPE_CONFIG = {
 } as const;
 
 async function fetchHourSettings(wsId: string): Promise<HoursSettingsData> {
-  return apiFetch<HoursSettingsData>(
-    `/api/v1/workspaces/${wsId}/calendar-hours`,
-    {
-      cache: 'no-store',
-    }
-  );
-}
-
-async function updateHourSettings(params: {
-  wsId: string;
-  type: HourType;
-  hours: WeekTimeRanges;
-}): Promise<void> {
-  await apiFetch(`/api/v1/workspaces/${params.wsId}/calendar-hours`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      type: params.type,
-      hours: params.hours,
-    }),
-  });
+  const { personalHours, workHours, meetingHours } =
+    await getWorkspaceCalendarHours(wsId);
+  if (
+    !isValidWeekTimeRanges(personalHours) ||
+    !isValidWeekTimeRanges(workHours) ||
+    !isValidWeekTimeRanges(meetingHours)
+  ) {
+    throw new Error('Invalid calendar hours response');
+  }
+  return { personalHours, workHours, meetingHours };
 }
 
 export function HoursSettings({ wsId }: HoursSettingsProps) {
@@ -84,7 +77,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
     data: hourSettings,
     isLoading,
     isError,
-    error,
+    refetch,
   } = useQuery({
     queryKey: ['hour-settings', wsId],
     queryFn: () => fetchHourSettings(wsId),
@@ -93,7 +86,14 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: updateHourSettings,
+    mutationFn: ({
+      wsId,
+      ...settings
+    }: {
+      wsId: string;
+      type: HourType;
+      hours: WeekTimeRanges;
+    }) => updateWorkspaceCalendarHours(wsId, settings),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({
         queryKey: ['hour-settings', wsId],
@@ -209,14 +209,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   if (isError) {
     return (
       <SettingsSectionMessage tone="error">
-        <p>{error instanceof Error ? error.message : t('hours.load_failed')}</p>
+        <p>{t('hours.load_failed')}</p>
         <button
           type="button"
-          onClick={() =>
-            queryClient.invalidateQueries({
-              queryKey: ['hour-settings', wsId],
-            })
-          }
+          onClick={() => void refetch()}
           className="mt-3 text-primary text-sm underline hover:no-underline"
         >
           {t('hours.try_again')}

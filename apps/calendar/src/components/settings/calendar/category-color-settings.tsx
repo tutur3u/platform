@@ -1,7 +1,6 @@
 'use client';
 
 import { Loader2, PlusIcon, Trash2 } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,7 +17,11 @@ import {
   type CalendarCategory,
   useCalendarCategories,
 } from '../../../hooks/use-calendar-categories';
-import { type CategoryColor, colorMap } from './color-picker';
+import {
+  type CategoryColor,
+  colorMap,
+  defaultCategoryColor,
+} from './color-picker';
 
 // Common category suggestions with predefined colors
 type CategorySuggestion = {
@@ -49,25 +52,33 @@ const CATEGORY_SUGGESTIONS: CategorySuggestion[] = [
   { color: 'GRAY', translationKey: 'other' },
 ];
 
+function resolveCategoryColor(color: string | null) {
+  return (
+    Object.entries(colorMap).find(([key]) => key === color)?.[1] ??
+    defaultCategoryColor
+  );
+}
+
 type CategoryColorsSettingsProps = {
-  workspace: Workspace | null;
+  workspaceId: string;
 };
 
 export function CategoryColorsSettings({
-  workspace,
+  workspaceId,
 }: CategoryColorsSettingsProps) {
   const t = useTranslations('calendar_settings');
   const {
     categories,
     isLoading,
     isError,
+    retry,
     createCategory,
     updateCategory,
     deleteCategory,
     reorderCategories,
     isCreating,
     isMutating,
-  } = useCalendarCategories({ workspaceId: workspace?.id });
+  } = useCalendarCategories({ workspaceId });
 
   const [newCategoryName, setNewCategoryName] = useState('');
   const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>(
@@ -193,7 +204,7 @@ export function CategoryColorsSettings({
 
   // Get a preview of what an event with this category might look like
   const getCategoryPreview = (category: CalendarCategory) => {
-    const colorInfo = colorMap[category.color];
+    const colorInfo = resolveCategoryColor(category.color);
 
     return (
       <div
@@ -264,9 +275,14 @@ export function CategoryColorsSettings({
     return (
       <SettingsSectionMessage tone="error">
         <p className="font-medium">{t('categories.failed_to_load')}</p>
-        <p className="mt-1 text-muted-foreground">
-          {t('categories.try_refreshing')}
-        </p>
+        <Button
+          type="button"
+          variant="link"
+          className="px-0"
+          onClick={() => void retry()}
+        >
+          {t('hours.try_again')}
+        </Button>
       </SettingsSectionMessage>
     );
   }
@@ -386,7 +402,7 @@ export function CategoryColorsSettings({
                         <div
                           className={cn(
                             'h-6 w-6 flex-none cursor-move rounded-full border',
-                            colorMap[category.color].cbg
+                            resolveCategoryColor(category.color).cbg
                           )}
                           onClick={() => setEditingCategory(category.id)}
                         />
@@ -520,7 +536,7 @@ export function CategoryColorsSettings({
                   cat.color === suggestion.color
               );
 
-              const colorInfo = colorMap[suggestion.color];
+              const colorInfo = resolveCategoryColor(suggestion.color);
 
               return (
                 <div

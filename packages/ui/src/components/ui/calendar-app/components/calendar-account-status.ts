@@ -41,7 +41,7 @@ export function deriveCalendarAccountSyncState(
   ) {
     return { kind: 'attention', reason: 'reconnect_required' };
   }
-  if (input.providerState === 'temporarily_unavailable') {
+  if (input.providerState && input.providerState !== 'connected') {
     return { kind: 'attention', reason: 'provider_unavailable' };
   }
   if (calendarSyncIsActive(syncStatus)) return { kind: 'syncing' };

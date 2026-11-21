@@ -12,6 +12,8 @@ import {
   type SettingsNavGroup,
 } from '../settings-dialog-shell';
 
+import { SettingsSection } from '../settings-section';
+
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -62,6 +64,7 @@ const navItems: SettingsNavGroup[] = [
 function renderShell(
   activeGroupBreadcrumb?: ReactNode,
   options?: {
+    content?: ReactNode;
     navItems?: SettingsNavGroup[];
     onUrlUpdate?: OnUrlUpdateFunction;
     searchParams?: string;
@@ -79,6 +82,7 @@ function renderShell(
           navItems={options?.navItems ?? navItems}
           onActiveTabChange={setActiveTab}
         >
+          {options?.content}
           <input aria-label="Editable field" />
           <div data-testid="active-tab">{activeTab}</div>
         </SettingsDialogShell>
@@ -105,6 +109,31 @@ describe('SettingsDialogShell keyboard navigation', () => {
       onchange: null,
       removeEventListener: vi.fn(),
     }));
+  });
+
+  it('keeps one page heading and preserves distinct section headings and actions', () => {
+    renderShell(undefined, {
+      content: (
+        <>
+          <SettingsSection
+            title="Profile"
+            description="Manage profile"
+            action={<button type="button">Edit profile</button>}
+          >
+            <p>Current profile</p>
+          </SettingsSection>
+          <SettingsSection
+            title="Display name"
+            description="Shown to teammates"
+          >
+            <p>Current name</p>
+          </SettingsSection>
+        </>
+      ),
+    });
+    expect(screen.getAllByRole('heading', { name: 'Profile' })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Display name' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Edit profile' })).toBeVisible();
   });
 
   it('renders an inset desktop dialog with fullscreen mobile defaults', () => {

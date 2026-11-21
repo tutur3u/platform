@@ -1,3 +1,7 @@
+import type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
+
+export type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
+
 /**
  * The sync-health fields the derivation reads. The sync-status API response
  * satisfies it structurally, so this module stays free of API imports.
@@ -23,11 +27,6 @@ export interface CalendarSyncAccountRef {
   account_email: string | null;
   account_name: string | null;
 }
-
-export type CalendarProviderAccountState =
-  | 'connected'
-  | 'reconnect_required'
-  | 'temporarily_unavailable';
 
 /** Why sync needs the user's attention; `unknown` covers unlisted server reasons. */
 export type SyncAttentionReason =
@@ -163,7 +162,14 @@ function attentionReason(
     providerStates.some((state) => state !== 'connected');
   if (!needsAttention) return null;
   if (hasReconnectAccounts) return 'reconnect_required';
-  if (providerStates.includes('temporarily_unavailable'))
+  if (
+    providerStates.some(
+      (state) =>
+        state === 'temporarily_unavailable' ||
+        state === 'scope_required' ||
+        state === 'removed'
+    )
+  )
     return 'provider_unavailable';
   if (health.state === 'degraded') return serverAttentionReason(health.reason);
   return 'last_run_failed';

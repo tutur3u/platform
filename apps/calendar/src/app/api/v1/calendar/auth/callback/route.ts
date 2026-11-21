@@ -200,6 +200,23 @@ export async function GET(request: Request) {
       );
     }
 
+    if (
+      verifiedState.accountId &&
+      (!accountEmail || existingToken?.id !== verifiedState.accountId)
+    ) {
+      const t = await getTranslations({
+        locale: resolveCalendarLocale(request),
+        namespace: 'calendar',
+      });
+      return NextResponse.json(
+        {
+          code: 'calendar_oauth_account_mismatch',
+          error: t('oauth_account_mismatch'),
+        },
+        { status: 409, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
     const receivedRefreshToken =
       typeof tokens.refresh_token === 'string' && tokens.refresh_token.trim()
         ? tokens.refresh_token
@@ -246,6 +263,8 @@ export async function GET(request: Request) {
           clientId: oauthConfig.config.clientId,
           clientSecret: oauthConfig.config.clientSecret,
           consent: true,
+          accountId: verifiedState.accountId,
+          loginHint: accountEmail,
         })
       );
     };

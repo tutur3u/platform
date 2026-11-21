@@ -1,15 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type CalendarCategory as CalendarCategoryResponse,
+  createWorkspaceCalendarCategory,
+  deleteWorkspaceCalendarCategory,
+  listWorkspaceCalendarCategories,
+  reorderWorkspaceCalendarCategories,
+  updateWorkspaceCalendarCategory,
+} from '@tuturuuu/internal-api/calendar';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 
-export interface CalendarCategory {
-  id: string;
-  ws_id: string;
-  name: string;
-  color: SupportedColor;
-  position: number;
-  created_at: string | null;
-  updated_at: string | null;
+export type CalendarCategory = CalendarCategoryResponse;
+
+const EMPTY_CATEGORIES: CalendarCategory[] = [];
+
+function requireWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new Error('Workspace is required');
+  return workspaceId;
 }
 
 interface UseCalendarCategoriesOptions {
@@ -19,45 +27,24 @@ interface UseCalendarCategoriesOptions {
 export function useCalendarCategories({
   workspaceId,
 }: UseCalendarCategoriesOptions) {
+  const t = useTranslations('calendar_settings');
   const queryClient = useQueryClient();
   const queryKey = ['calendar-categories', workspaceId];
 
   // Query for fetching categories
   const categoriesQuery = useQuery({
     queryKey,
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/calendar/categories`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to fetch categories');
-      }
-      const data = await res.json();
-      return data.categories as CalendarCategory[];
-    },
+    queryFn: async () =>
+      (await listWorkspaceCalendarCategories(requireWorkspace(workspaceId)))
+        .categories,
     enabled: !!workspaceId,
     staleTime: 30000,
   });
 
   // Mutation for creating category
   const createMutation = useMutation({
-    mutationFn: async (category: { name: string; color: string }) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/calendar/categories`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(category),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to create category');
-      }
-      return res.json();
-    },
+    mutationFn: (category: { name: string; color: SupportedColor }) =>
+      createWorkspaceCalendarCategory(requireWorkspace(workspaceId), category),
     onMutate: async (newCategory) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<CalendarCategory[]>(queryKey);
@@ -65,9 +52,9 @@ export function useCalendarCategories({
       // Optimistic update
       const optimisticCategory: CalendarCategory = {
         id: `temp-${Date.now()}`,
-        ws_id: workspaceId!,
+        ws_id: workspaceId,
         name: newCategory.name,
-        color: newCategory.color as SupportedColor,
+        color: newCategory.color,
         position: previous?.length ?? 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -80,9 +67,9 @@ export function useCalendarCategories({
 
       return { previous };
     },
-    onError: (err, _, context) => {
+    onError: (_error, _, context) => {
       queryClient.setQueryData(queryKey, context?.previous);
-      toast.error(err.message);
+      toast.error(t('categories.create_failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -91,28 +78,15 @@ export function useCalendarCategories({
 
   // Mutation for updating category
   const updateMutation = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       id,
       ...data
     }: {
       id: string;
-      name?: string;
-      color?: string;
-    }) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/calendar/categories/${id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to update category');
-      }
-      return res.json();
-    },
+      name: string;
+      color: SupportedColor;
+    }) =>
+      updateWorkspaceCalendarCategory(requireWorkspace(workspaceId), id, data),
     onMutate: async (updated) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<CalendarCategory[]>(queryKey);
@@ -124,7 +98,7 @@ export function useCalendarCategories({
             ? {
                 ...cat,
                 name: updated.name ?? cat.name,
-                color: (updated.color as SupportedColor) ?? cat.color,
+                color: updated.color,
                 updated_at: new Date().toISOString(),
               }
             : cat
@@ -133,9 +107,9 @@ export function useCalendarCategories({
 
       return { previous };
     },
-    onError: (err, _, context) => {
+    onError: (_error, _, context) => {
       queryClient.setQueryData(queryKey, context?.previous);
-      toast.error(err.message);
+      toast.error(t('categories.update_failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -144,19 +118,11 @@ export function useCalendarCategories({
 
   // Mutation for deleting category
   const deleteMutation = useMutation({
-    mutationFn: async (categoryId: string) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/calendar/categories/${categoryId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to delete category');
-      }
-      return res.json();
-    },
+    mutationFn: (categoryId: string) =>
+      deleteWorkspaceCalendarCategory(
+        requireWorkspace(workspaceId),
+        categoryId
+      ),
     onMutate: async (categoryId) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<CalendarCategory[]>(queryKey);
@@ -168,9 +134,9 @@ export function useCalendarCategories({
 
       return { previous };
     },
-    onError: (err, _, context) => {
+    onError: (_error, _, context) => {
       queryClient.setQueryData(queryKey, context?.previous);
-      toast.error(err.message);
+      toast.error(t('categories.delete_failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -179,21 +145,10 @@ export function useCalendarCategories({
 
   // Mutation for reordering categories
   const reorderMutation = useMutation({
-    mutationFn: async (categories: Array<{ id: string; position: number }>) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/calendar/categories/reorder`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ categories }),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to reorder categories');
-      }
-      return res.json();
-    },
+    mutationFn: (categories: Array<{ id: string; position: number }>) =>
+      reorderWorkspaceCalendarCategories(requireWorkspace(workspaceId), {
+        categories,
+      }),
     onMutate: async (reorderedItems) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<CalendarCategory[]>(queryKey);
@@ -209,14 +164,14 @@ export function useCalendarCategories({
             ...cat,
             position: positionMap.get(cat.id) ?? cat.position,
           }))
-          .sort((a, b) => a.position - b.position);
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
       });
 
       return { previous };
     },
-    onError: (err, _, context) => {
+    onError: (_error, _, context) => {
       queryClient.setQueryData(queryKey, context?.previous);
-      toast.error(err.message);
+      toast.error(t('categories.reorder_failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -224,10 +179,10 @@ export function useCalendarCategories({
   });
 
   return {
-    categories: categoriesQuery.data ?? [],
+    categories: categoriesQuery.data ?? EMPTY_CATEGORIES,
     isLoading: categoriesQuery.isLoading,
     isError: categoriesQuery.isError,
-    error: categoriesQuery.error,
+    retry: categoriesQuery.refetch,
     createCategory: createMutation.mutate,
     updateCategory: updateMutation.mutate,
     deleteCategory: deleteMutation.mutate,

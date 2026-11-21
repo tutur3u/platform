@@ -61,9 +61,13 @@ import {
 import { GET } from './route';
 
 // Quarantined Google accounts for the caller, as the route reads them.
-function sessionClient(quarantined: unknown[] = []) {
+function sessionClient(quarantined: unknown[] = [], accountEmail?: string) {
   const query: Record<string, unknown> = {};
   for (const method of ['select', 'eq', 'not']) query[method] = () => query;
+  query.maybeSingle = async () => ({
+    data: accountEmail ? { account_email: accountEmail } : null,
+    error: null,
+  });
   query.limit = async () => ({ data: quarantined, error: null });
   return { from: () => query };
 }
@@ -83,6 +87,42 @@ describe('Google Calendar auth route', () => {
       user: { id: 'user-1' },
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+  });
+
+  it('hints the selected account and signs the reconnect target', async () => {
+    const accountId = '00000000-0000-4000-8000-000000000001';
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: sessionClient([], 'person@example.com'),
+      user: { id: 'user-1' },
+    });
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&accountId=${accountId}`
+      )
+    );
+    expect(response.status).toBe(200);
+    const { authUrl } = await response.json();
+    const params = new URL(authUrl).searchParams;
+    expect(params.get('login_hint')).toBe('person@example.com');
+    expect(params.get('prompt')).toBe('consent');
+    expect(
+      verifyCalendarOAuthState(
+        'google',
+        params.get('state'),
+        'google-client-secret'
+      )
+    ).toMatchObject({ ok: true, accountId });
+  });
+
+  it('refuses a reconnect target outside the visible accounts', async () => {
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&accountId=00000000-0000-4000-8000-000000000001'
+      )
+    );
+    expect(response.status).toBe(404);
+    expect(generatedAuthUrlInputs).toEqual([]);
   });
 
   it('forces consent when the reconnect prompt asks for it', async () => {

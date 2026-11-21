@@ -47,11 +47,13 @@ export type CalendarConnectionsUnifiedVariant =
 function mountedProviderStart(
   providerPath: '/api/v1/calendar/auth' | '/api/v1/calendar/auth/microsoft',
   wsId: string,
-  reconnect = false
+  reconnect = false,
+  accountId?: string
 ): AuthResponse | undefined {
   const path = resolveInternalApiUrl(providerPath);
   if (path !== `/calendar${providerPath}`) return;
   const search = new URLSearchParams({ wsId, navigation: '1' });
+  if (accountId) search.set('accountId', accountId);
   if (reconnect) search.set('reconnect', '1');
   return { authUrl: `${path}?${search}` };
 }
@@ -342,15 +344,22 @@ export function useCalendarConnectionsManager(wsId: string) {
   const googleAuthMutation = useMutation<
     AuthResponse,
     Error,
-    { reconnect?: boolean } | void
+    { reconnect?: boolean; accountId?: string } | void
   >({
     mutationKey: ['calendar', 'google-auth', wsId],
     mutationFn: async (variables) =>
       mountedProviderStart(
         '/api/v1/calendar/auth',
         wsId,
-        variables?.reconnect
-      ) ?? getGoogleCalendarAuthUrl(wsId, undefined, !!variables?.reconnect),
+        variables?.reconnect,
+        variables?.accountId
+      ) ??
+      getGoogleCalendarAuthUrl(
+        wsId,
+        undefined,
+        !!variables?.reconnect,
+        variables?.accountId
+      ),
     onSuccess: (data) => {
       if (data.authUrl) window.location.href = data.authUrl;
       else toast.error(t('auth_url_invalid'));
@@ -378,9 +387,17 @@ export function useCalendarConnectionsManager(wsId: string) {
     onMutate: (accountId) => {
       setDisconnectingId(accountId);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success(t('account_disconnected'));
-      queryClient.invalidateQueries({ queryKey: ['calendar-accounts', wsId] });
+      await Promise.all(
+        [
+          'calendar-accounts',
+          'calendar-connections',
+          'calendar-sync-status',
+          'provider-calendar-list',
+          'calendar-default-source',
+        ].map((key) => queryClient.invalidateQueries({ queryKey: [key, wsId] }))
+      );
     },
     onError: () => toast.error(t('failed_to_disconnect')),
     onSettled: () => setDisconnectingId(null),
@@ -500,15 +517,27 @@ export function useCalendarConnectionsManager(wsId: string) {
     providerCalendarsQuery.data?.byAccount || {};
   const providerAccountStatuses =
     providerCalendarsQuery.data?.accountStatuses || {};
-  const syncStatusError =
-    accountsQuery.isError ||
-    syncStatusQuery.isError ||
-    providerCalendarsQuery.isError;
+  const statusErrors = [
+    accountsQuery.error,
+    syncStatusQuery.error,
+    providerCalendarsQuery.error,
+  ];
+  const syncStatusError = statusErrors.some(Boolean);
+  const statusCheckFailure = statusErrors.some(
+    (error) =>
+      error &&
+      'status' in error &&
+      (error.status === 401 || error.status === 403)
+  )
+    ? 'session'
+    : statusErrors.some((error) => error && !(error instanceof TypeError))
+      ? 'server'
+      : 'network';
   const retrySyncStatus = () =>
     Promise.all([
       accountsQuery.refetch(),
       syncStatusQuery.refetch(),
-      providerCalendarsQuery.refetch(),
+      ...(hasConnectedAccounts ? [providerCalendarsQuery.refetch()] : []),
     ]);
   const syncStatus = deriveCalendarSyncStatus({
     status: syncStatusData,
@@ -562,6 +591,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     syncHealth,
     syncStatusError,
     retrySyncStatus,
+    statusCheckFailure,
     syncMutation,
     syncPreferencesData,
     syncPreferencesMutation,

@@ -20,6 +20,7 @@ import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { SettingsDialogHeader } from './settings-dialog-header';
 import { SettingsMobileNav } from './settings-mobile-nav';
+import { SettingsPageHeading } from './settings-section';
 import { SettingsSidebarGroup } from './settings-sidebar-group';
 import { useSettingsDialogKeyboard } from './use-settings-dialog-keyboard';
 import { useSettingsDialogNavigation } from './use-settings-dialog-navigation';
@@ -115,6 +116,17 @@ export function SatelliteSettingsDialogShell({
     t,
   });
   const showContentHeader = !activeItem?.hideContentHeader;
+  const pageHeading =
+    showContentHeader && activeItem
+      ? {
+          title: activeItem.label,
+          description:
+            activeItem.description ||
+            t('settings.manage_settings', {
+              label: activeItem.label.toLowerCase(),
+            }),
+        }
+      : null;
   // Only the first group that owns the active tab marks it current, so a tab
   // name repeated in another group never renders a second highlight.
   const activeGroupLabel = activeGroup?.label;
@@ -252,14 +264,13 @@ export function SatelliteSettingsDialogShell({
                     {activeItem?.label}
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    {activeItem?.description ||
-                      t('settings.manage_settings', {
-                        label: activeItem?.label?.toLowerCase() ?? '',
-                      })}
+                    {pageHeading?.description}
                   </p>
                 </div>
               )}
-              {activeTab === 'onboarding_guide' ? onboardingPanel : children}
+              <SettingsPageHeading value={pageHeading}>
+                {activeTab === 'onboarding_guide' ? onboardingPanel : children}
+              </SettingsPageHeading>
             </div>
           </div>
         </main>

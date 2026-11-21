@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CalendarSyncAttentionButton } from './calendar-sync-attention-button';
 import {
@@ -19,6 +25,8 @@ vi.mock('./calendar-connections-settings-content', () => ({
 function state(overrides: Partial<CalendarConnectionsManagerState> = {}) {
   const value = {
     accounts: [],
+    disconnectMutation: { mutate: vi.fn() },
+    disconnectingId: null,
     failedCalendars: [],
     pauseFailedCalendarMutation: { mutate: vi.fn(), isPending: false },
     providerAccountStatuses: {},
@@ -73,6 +81,9 @@ describe('calendar sync recovery actions', () => {
       screen.getByRole('button', { name: 'sync_recovery.check_again' })
     );
     expect(value.retrySyncStatus).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole('link', { name: 'sync_recovery.contact_support' })
+    ).toHaveAttribute('href', 'mailto:support@tuturuuu.com');
     expect(value.syncMutation.mutate).not.toHaveBeenCalled();
   });
   it('lists quarantined accounts with a reconnect action even when sync is healthy', () => {
@@ -128,8 +139,52 @@ describe('calendar sync recovery actions', () => {
     expect(value.googleAuthMutation.mutate).toHaveBeenCalledOnce();
     expect(value.googleAuthMutation.mutate).toHaveBeenCalledWith({
       reconnect: true,
+      accountId: 'google-account',
     });
   });
+  it('asks for permissions on the selected account and confirms removal of the retired account', () => {
+    const makeAccount = (id: string, name: string) => ({
+      id,
+      provider: 'google' as const,
+      account_name: name,
+      account_email: null,
+      is_active: true,
+      created_at: '',
+      expires_at: null,
+    });
+    const value = state({
+      accounts: [
+        makeAccount('scope', 'Education'),
+        makeAccount('removed', 'Old work'),
+      ],
+      providerAccountStatuses: {
+        scope: { state: 'scope_required' },
+        removed: { state: 'removed' },
+      },
+    });
+    render(<CalendarSyncRecovery state={value} />);
+    expect(screen.getByText('Education')).toBeVisible();
+    expect(screen.getByText('Old work')).toBeVisible();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'sync_recovery.grant_access' })
+    );
+    expect(value.googleAuthMutation.mutate).toHaveBeenCalledWith({
+      reconnect: true,
+      accountId: 'scope',
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'sync_recovery.remove_account' })
+    );
+    const confirmation = screen.getByRole('alertdialog');
+    expect(value.disconnectMutation.mutate).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(confirmation).getByRole('button', {
+        name: 'sync_recovery.remove_account',
+      })
+    );
+    expect(value.disconnectMutation.mutate).toHaveBeenCalledWith('removed');
+  });
+
   it('does not send users through OAuth for a temporary provider outage', () => {
     const value = state({
       providerAccountStatuses: { google: { state: 'temporarily_unavailable' } },

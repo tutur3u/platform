@@ -15,6 +15,7 @@ import type {
 } from './calendar-account-types';
 import type { ProviderCalendarsResponse } from './calendar-sync';
 
+export * from './calendar-auth';
 export * from './calendar-link-preview';
 export * from './calendar-sync';
 
@@ -251,10 +252,6 @@ export type {
   CalendarAccountNeedingReconnect,
   CalendarAccountsResponse,
 } from './calendar-account-types';
-
-export interface CalendarAuthUrlResponse {
-  authUrl: string;
-}
 
 export interface ProviderCalendar {
   id: string;
@@ -596,34 +593,6 @@ export async function disconnectCalendarAccount(
     {
       method: 'DELETE',
       query: { accountId, wsId },
-      cache: 'no-store',
-    }
-  );
-}
-
-export async function getGoogleCalendarAuthUrl(
-  wsId: string,
-  options?: InternalApiClientOptions,
-  // Reconnecting a rejected account: Google must show consent to issue a
-  // fresh refresh token.
-  reconnect = false
-) {
-  const client = getInternalApiClient(options);
-  return client.json<CalendarAuthUrlResponse>('/api/v1/calendar/auth', {
-    query: { wsId, ...(reconnect ? { reconnect: '1' } : {}) },
-    cache: 'no-store',
-  });
-}
-
-export async function getMicrosoftCalendarAuthUrl(
-  wsId: string,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<CalendarAuthUrlResponse>(
-    '/api/v1/calendar/auth/microsoft',
-    {
-      query: { wsId },
       cache: 'no-store',
     }
   );

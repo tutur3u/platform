@@ -1,5 +1,6 @@
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
@@ -7,10 +8,16 @@ import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(request: NextRequest) {
-  const wsId = request.nextUrl.searchParams.get('wsId');
+  const { searchParams } = request.nextUrl;
+  const wsId = searchParams.get('wsId');
+  const accountId = searchParams.get('accountId');
 
   if (!wsId) {
     return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  }
+
+  if (accountId !== null && !validate(accountId)) {
+    return NextResponse.json({ error: 'Invalid account ID' }, { status: 400 });
   }
 
   const authContext = await resolveSessionAuthContext(request, {
@@ -53,6 +60,29 @@ export async function GET(request: NextRequest) {
   const runtime = checkCalendarOAuthRuntime();
   if (!runtime.ok) return runtime.response;
 
+  let loginHint: string | null = null;
+  if (accountId) {
+    const { data: account, error } = await supabase
+      .from('calendar_auth_tokens')
+      .select('account_email')
+      .eq('user_id', user.id)
+      .eq('ws_id', normalizedWsId)
+      .eq('provider', 'google')
+      .eq('id', accountId)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to load account' },
+        { status: 500 }
+      );
+    }
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+    loginHint = account.account_email;
+  }
+
   // Google omits the refresh token for an existing grant unless consent is
   // shown, so reconnecting a quarantined account would keep the rejected one.
   // Normal reconnects stay consent-free.
@@ -69,7 +99,8 @@ export async function GET(request: NextRequest) {
   // held, which stay active and so are not visible here.
   const needsConsent =
     (quarantined?.length ?? 0) > 0 ||
-    request.nextUrl.searchParams.get('reconnect') === '1';
+    accountId !== null ||
+    searchParams.get('reconnect') === '1';
 
   const authUrl = buildGoogleCalendarAuthUrl({
     request,
@@ -78,9 +109,12 @@ export async function GET(request: NextRequest) {
     clientId: oauthConfig.config.clientId,
     clientSecret: oauthConfig.config.clientSecret,
     consent: needsConsent,
+    loginHint,
+    // Legacy rows with no provider email use the existing consent flow.
+    accountId: loginHint ? (accountId ?? undefined) : undefined,
   });
 
-  if (request.nextUrl.searchParams.get('navigation') === '1')
+  if (searchParams.get('navigation') === '1')
     return NextResponse.redirect(authUrl, {
       status: 302,
       headers: { 'Cache-Control': 'no-store' },

@@ -26,22 +26,20 @@ it('uses the Microsoft flow, which always asks for consent', () => {
   expect(value.googleAuthMutation.mutate).not.toHaveBeenCalled();
 });
 
-it('is the only reconnect path in the sync warning and the settings rows', () => {
+it('routes account recovery from both surfaces through the same consent action', () => {
   for (const file of [
     'calendar-sync-recovery.tsx',
     'calendar-connections-settings-content.tsx',
   ]) {
     const source = readFileSync(resolve(__dirname, file), 'utf8');
-    expect(source).toContain('reconnectCalendarProvider(');
+    expect(source).toContain('<CalendarAccountRecovery');
   }
-  const settings = readFileSync(
-    resolve(__dirname, 'calendar-connections-settings-content.tsx'),
+  const recovery = readFileSync(
+    resolve(__dirname, 'calendar-account-recovery.tsx'),
     'utf8'
   );
-  // The reconnect row must not fall back to a consent-free Google flow.
-  const row = settings.slice(
-    settings.indexOf("'reconnect_required'"),
-    settings.indexOf("t('reconnect')")
+  expect(recovery).toContain(
+    'reconnectCalendarProvider(state, account.provider, account.id)'
   );
-  expect(row).not.toContain('googleAuthMutation.mutate()');
+  expect(recovery).not.toContain('googleAuthMutation.mutate');
 });

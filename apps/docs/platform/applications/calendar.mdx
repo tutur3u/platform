@@ -438,12 +438,23 @@ locally, preserving cron authentication, running locks, cooldown behavior and
 `calendar_sync_dashboard` audit rows. It must not send sync requests to the former
 Web owner through `INTERNAL_WEB_API_ORIGIN` or a protected preview URL.
 
-Both Tasks and Calendar show **Sync needs attention** beside the calendar picker
-when a sync stalls, data becomes stale, a provider needs reconnection, or status
-cannot be loaded. Open it for a persistent explanation and a **Sync now**,
-**Check again**, or provider-specific **Reconnect** action. Stored events remain
-visible during provider outages. Ordinary access-token expiry is not itself a
-reconnection failure: Google refreshes those tokens automatically.
+Both Tasks and Calendar show **Sync needs attention** beside the calendar
+picker when sync stalls, data becomes stale, a provider account needs action,
+or the status check fails. The Calendar header popover and the **Accounts** tab
+identify the affected account. **Reconnect Google** renews a rejected grant
+for that account. **Grant access** requests missing permissions. For a
+provider outage or failed status check, **Check again** reloads the status and
+**Contact support** opens an email. **Remove account** asks for confirmation
+when the provider reports that an account is gone. Stored events remain
+available after removal and during provider outages. Google automatically
+refreshes normally expiring access tokens.
+
+Calendar Settings loads Hours and Category Colors through the shared typed
+client. Under the apex mount, the client targets `/calendar/api/` for these
+Calendar-owned endpoints and for sync status. Web-owned calendar preferences
+stay on Web’s `/api/`. The `calendar-mounted-api` regression test checks the
+browser URLs against the local route registry. The `provider-account-status`
+and `calendar-sync-recovery` tests cover classification and recovery actions.
 
 Sync health polls every 30 seconds (every 5 seconds during a run or cooldown).
 A running entry older than five minutes is stalled; a successful sync older than

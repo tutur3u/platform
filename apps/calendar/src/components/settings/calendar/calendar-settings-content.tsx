@@ -44,7 +44,7 @@ export function CalendarSettingsContent({
           title={t('sections.colors.title')}
           description={t('sections.colors.description')}
         >
-          <CategoryColorsSettings workspace={workspace ?? null} />
+          <CategoryColorsSettings workspaceId={wsId} />
         </CalendarSettingsLayout>
       );
     default:

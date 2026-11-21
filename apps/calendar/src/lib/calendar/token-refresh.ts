@@ -20,6 +20,7 @@ import {
   MICROSOFT_CALENDAR_SCOPES,
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
+import { getGoogleCalendarOAuthConfig } from './google-oauth-config';
 import { microsoftRefreshCredential } from './microsoft-refresh-credential';
 import {
   type CalendarOAuthFailure,
@@ -61,7 +62,7 @@ export interface TokenRefreshResult {
 function refreshFailure(
   error: unknown,
   provider: 'google' | 'microsoft'
-): Pick<TokenRefreshResult, 'error' | 'failure'> {
+): { error: string; failure: CalendarOAuthFailure } {
   const candidate = error as {
     errorCode?: unknown;
     code?: unknown;
@@ -104,10 +105,8 @@ export function tokenNeedsRefresh(expiresAt: string | null): boolean {
 async function refreshGoogleToken(
   authToken: CalendarAuthToken
 ): Promise<TokenRefreshResult> {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
+  const config = getGoogleCalendarOAuthConfig();
+  if (!config.ok) {
     return {
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
@@ -119,8 +118,7 @@ async function refreshGoogleToken(
 
   try {
     const oauth2Client = new OAuth2Client({
-      clientId,
-      clientSecret,
+      ...config.config,
       ...(providerSyncSignal()
         ? {
             transporterOptions: {
@@ -147,12 +145,17 @@ async function refreshGoogleToken(
       refreshed: true,
     };
   } catch (error) {
-    console.error('[TokenRefresh] Google token refresh failed');
+    const failure = refreshFailure(error, 'google');
+    console.error('[TokenRefresh] Google token refresh failed', {
+      kind: failure.failure.kind,
+      reason:
+        failure.failure.kind === 'permanent' ? failure.failure.reason : null,
+    });
     return {
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
-      ...refreshFailure(error, 'google'),
+      ...failure,
     };
   }
 }

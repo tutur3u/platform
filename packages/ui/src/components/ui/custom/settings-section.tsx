@@ -1,5 +1,12 @@
+'use client';
+
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
+
+export const SettingsPageHeading = createContext<{
+  title: string;
+  description: string;
+} | null>(null);
 
 interface SettingsSectionProps {
   title?: ReactNode;
@@ -24,19 +31,26 @@ export function SettingsSection({
   className,
   surface = 'card',
 }: SettingsSectionProps) {
-  const hasHeader = title || description || action;
+  const pageHeading = useContext(SettingsPageHeading);
+  const repeatsPageHeading =
+    pageHeading !== null &&
+    title === pageHeading.title &&
+    (!description || description === pageHeading.description);
+  const showTitle = title && !repeatsPageHeading;
+  const showDescription = description && !repeatsPageHeading;
+  const hasHeader = showTitle || showDescription || action;
 
   return (
     <section className={cn('space-y-3', className)}>
       {hasHeader && (
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0 space-y-0.5">
-            {title && (
+            {showTitle && (
               <h3 className="font-semibold text-base tracking-tight">
                 {title}
               </h3>
             )}
-            {description && (
+            {showDescription && (
               <p className="text-muted-foreground text-sm">{description}</p>
             )}
           </div>

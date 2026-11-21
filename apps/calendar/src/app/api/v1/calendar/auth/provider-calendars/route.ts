@@ -1,4 +1,5 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
+import type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
 import {
@@ -9,7 +10,8 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
+import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
+import { classifyCalendarProviderAccountStatus } from '@/lib/calendar/provider-account-status';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
@@ -21,11 +23,9 @@ const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string | null;
 }) => {
-  const oauth2Client = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
-  });
+  const config = getGoogleCalendarOAuthConfig();
+  if (!config.ok) return null;
+  const oauth2Client = new OAuth2Client(config.config);
 
   oauth2Client.setCredentials(tokens);
   return oauth2Client;
@@ -96,16 +96,22 @@ export async function GET(request: Request) {
   const calendars: unknown[] = [];
   const accountStatuses: Record<
     string,
-    { state: 'connected' | 'reconnect_required' | 'temporarily_unavailable' }
+    { state: CalendarProviderAccountState }
   > = {};
 
   for (const token of tokens ?? []) {
+    if (token.provider !== 'google' && token.provider !== 'microsoft') continue;
     try {
       if (token.provider === 'google') {
         const auth = getGoogleAuthClient({
           access_token: token.access_token,
           refresh_token: token.refresh_token,
         });
+        if (!auth) {
+          byAccount[token.id] = [];
+          accountStatuses[token.id] = { state: 'temporarily_unavailable' };
+          continue;
+        }
         const calendar = google.calendar({ version: 'v3', auth });
         const response = await calendar.calendarList.list({
           minAccessRole: 'reader',
@@ -153,18 +159,16 @@ export async function GET(request: Request) {
         calendars.push(...accountCalendars);
       }
     } catch (error) {
+      const state = classifyCalendarProviderAccountStatus(
+        token.provider,
+        error
+      );
       console.warn('Failed to fetch provider calendars', {
         provider: token.provider,
-        tokenId: token.id,
-        error,
+        state,
       });
       byAccount[token.id] = [];
-      accountStatuses[token.id] = {
-        state:
-          classifyCalendarSyncError(error) === 'auth'
-            ? 'reconnect_required'
-            : 'temporarily_unavailable',
-      };
+      accountStatuses[token.id] = { state };
     }
   }
 

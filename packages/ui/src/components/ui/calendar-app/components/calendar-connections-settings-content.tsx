@@ -9,6 +9,7 @@ import {
   Target,
   Trash2,
 } from '@tuturuuu/icons';
+import type { CalendarSourceOption } from '@tuturuuu/internal-api/calendar';
 import Image from 'next/image';
 import type React from 'react';
 import {
@@ -47,7 +48,8 @@ import {
 import { Separator } from '../../separator';
 import { Switch } from '../../switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
-import { reconnectCalendarProvider } from './calendar-reconnect-action';
+import { CalendarAccountRecovery } from './calendar-account-recovery';
+import type { WorkspaceCalendar } from './calendar-connections-manager-helpers';
 import { CalendarSyncRecovery } from './calendar-sync-recovery';
 import { CalendarSyncSettingsPanel } from './calendar-sync-settings-panel';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
@@ -147,22 +149,24 @@ export function CalendarConnectionsSettingsContent({
                 />
               </SelectTrigger>
               <SelectContent>
-                {defaultSourceData?.options.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor: option.color ?? undefined,
-                        }}
-                      />
-                      <span className="truncate">{option.label}</span>
-                      <Badge variant="secondary" className="capitalize">
-                        {option.provider}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
+                {defaultSourceData?.options.map(
+                  (option: CalendarSourceOption) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: option.color ?? undefined,
+                          }}
+                        />
+                        <span className="truncate">{option.label}</span>
+                        <Badge variant="secondary" className="capitalize">
+                          {option.provider}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -255,7 +259,7 @@ export function CalendarConnectionsSettingsContent({
 
             {/* System Calendars */}
             <div className="space-y-1">
-              {systemCalendars.map((cal) => {
+              {systemCalendars.map((cal: WorkspaceCalendar) => {
                 const Icon =
                   cal.calendar_type === 'primary'
                     ? Calendar
@@ -312,7 +316,7 @@ export function CalendarConnectionsSettingsContent({
                 <p className="px-2 text-muted-foreground text-xs">
                   {t('custom_calendars') || 'Custom'}
                 </p>
-                {customCalendars.map((cal) => (
+                {customCalendars.map((cal: WorkspaceCalendar) => (
                   <div
                     key={cal.id}
                     className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
@@ -362,6 +366,14 @@ export function CalendarConnectionsSettingsContent({
         </TabsContent>
 
         <TabsContent value="accounts" className="space-y-3">
+          {state.needsReconnectAccounts?.map((account) => (
+            <CalendarAccountRecovery
+              key={account.id}
+              account={account}
+              state={state}
+              status="reconnect_required"
+            />
+          ))}
           {/* Connected accounts with calendars */}
           {accounts.map((account) => (
             <Collapsible
@@ -398,18 +410,6 @@ export function CalendarConnectionsSettingsContent({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {providerAccountStatuses[account.id]?.state ===
-                      'reconnect_required' && (
-                      <Badge variant="destructive" className="text-xs">
-                        {t('reconnect_required') || 'Reconnect'}
-                      </Badge>
-                    )}
-                    {providerAccountStatuses[account.id]?.state ===
-                      'temporarily_unavailable' && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t('sync_recovery.attention')}
-                      </Badge>
-                    )}
                     <Badge variant="outline" className="text-xs capitalize">
                       {account.provider}
                     </Badge>
@@ -419,37 +419,17 @@ export function CalendarConnectionsSettingsContent({
                   </div>
                 </CollapsibleTrigger>
 
+                <div className="px-3 pb-3 empty:hidden">
+                  <CalendarAccountRecovery
+                    account={account}
+                    state={state}
+                    status={providerAccountStatuses[account.id]?.state}
+                    showAccount={false}
+                  />
+                </div>
                 <CollapsibleContent>
                   <Separator />
                   <div className="space-y-2 p-3">
-                    {providerAccountStatuses[account.id]?.state ===
-                      'reconnect_required' && (
-                      <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-2">
-                        <p className="text-muted-foreground text-xs">
-                          {t('provider_reconnect_description') ||
-                            'The provider session expired. Stored calendars remain available; reconnect to refresh them.'}
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0"
-                          onClick={() =>
-                            reconnectCalendarProvider(
-                              { googleAuthMutation, microsoftAuthMutation },
-                              account.provider
-                            )
-                          }
-                        >
-                          {t('reconnect') || 'Reconnect'}
-                        </Button>
-                      </div>
-                    )}
-                    {providerAccountStatuses[account.id]?.state ===
-                      'temporarily_unavailable' && (
-                      <p className="rounded-md border p-2 text-muted-foreground text-xs">
-                        {t('sync_recovery.provider_unavailable')}
-                      </p>
-                    )}
                     {(calendarsByAccount[account.id] || []).length > 0 ? (
                       (calendarsByAccount[account.id] || []).map((cal) => {
                         const syncControlsDisabled =

@@ -1,6 +1,10 @@
 import { AlertTriangle, RefreshCw } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { Button } from '../../button';
+import {
+  CalendarAccountRecovery,
+  CalendarStatusRetry,
+} from './calendar-account-recovery';
 import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import {
   type CalendarSyncStatus,
@@ -15,6 +19,10 @@ type RecoveryState = Pick<
   CalendarConnectionsManagerState,
   | 'pauseFailedCalendarMutation'
   | 'accounts'
+  | 'providerAccountStatuses'
+  | 'statusCheckFailure'
+  | 'disconnectingId'
+  | 'disconnectMutation'
   | 'syncHealth'
   | 'syncStatus'
   | 'retrySyncStatus'
@@ -61,12 +69,27 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
     return null;
   const syncing = calendarSyncIsActive(status);
   const needsAttention = status.kind !== 'syncing';
-  const syncStatusError = status.kind === 'status_error';
   const reconnectAccounts = status.kind === 'syncing' ? [] : status.accounts;
-  const reconnectProviders = calendarSyncReconnectProviders(
-    status,
-    state.accounts
+  const accountsWithIssues = new Map(
+    reconnectAccounts.map((account) => [account.id, account])
   );
+  for (const account of state.accounts) {
+    const accountStatus = state.providerAccountStatuses?.[account.id]?.state;
+    if (accountStatus && accountStatus !== 'connected')
+      accountsWithIssues.set(account.id, account);
+  }
+  const reconnectProviders = accountsWithIssues.size
+    ? new Set<string>()
+    : calendarSyncReconnectProviders(status, state.accounts);
+  const retryStatus =
+    status.kind === 'status_error' ||
+    (status.kind === 'attention' &&
+      ['configuration', 'provider_unavailable'].includes(status.reason));
+  const summarizedByAccount =
+    status.kind === 'attention' &&
+    accountsWithIssues.size > 0 &&
+    (status.reason === 'reconnect_required' ||
+      status.reason === 'provider_unavailable');
   return (
     <Alert
       role={needsAttention ? 'alert' : 'status'}
@@ -85,7 +108,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
         {t(needsAttention ? 'sync_recovery.attention' : 'syncing_calendars')}
       </AlertTitle>
       <AlertDescription className="space-y-3">
-        <p>{t(recoveryDescriptionKey(status))}</p>
+        {!summarizedByAccount && <p>{t(recoveryDescriptionKey(status))}</p>}
         <p className="text-muted-foreground text-xs">
           {t('sync_recovery.saved_events')}
         </p>
@@ -130,29 +153,42 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             })}
           </p>
         )}
-        {reconnectAccounts.map((account) => (
-          <p key={account.id} className="break-all text-xs">
-            {account.account_email ?? account.account_name}
-          </p>
-        ))}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={syncStatusError ? false : state.manualSyncDisabled}
-            onClick={() =>
-              syncStatusError
-                ? void state.retrySyncStatus()
-                : state.syncMutation.mutate()
+        {[...accountsWithIssues.values()].map((account) => (
+          <CalendarAccountRecovery
+            key={account.id}
+            account={account}
+            status={
+              state.providerAccountStatuses?.[account.id]?.state ??
+              'reconnect_required'
             }
-          >
-            <RefreshCw className={syncing ? 'size-4 animate-spin' : 'size-4'} />
-            {syncStatusError
-              ? t('sync_recovery.check_again')
-              : syncing
-                ? t('syncing_calendars')
-                : t('sync_now')}
-          </Button>
+            state={state}
+          />
+        ))}
+        {status.kind === 'status_error' && (
+          <p className="text-muted-foreground text-xs">
+            {t(
+              `sync_recovery.status_detail_${state.statusCheckFailure ?? 'network'}`
+            )}
+          </p>
+        )}
+        {retryStatus &&
+          (status.kind === 'status_error' || !accountsWithIssues.size) && (
+            <CalendarStatusRetry state={state} />
+          )}
+        <div className="flex flex-wrap gap-2">
+          {!retryStatus && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={state.manualSyncDisabled}
+              onClick={() => state.syncMutation.mutate()}
+            >
+              <RefreshCw
+                className={syncing ? 'size-4 animate-spin' : 'size-4'}
+              />
+              {t(syncing ? 'syncing_calendars' : 'sync_now')}
+            </Button>
+          )}
           {reconnectProviders.has('google') && (
             <Button
               size="sm"

@@ -12,9 +12,13 @@ type ReconnectState = Pick<
  */
 export function reconnectCalendarProvider(
   state: ReconnectState,
-  provider: string
+  provider: string,
+  accountId?: string
 ) {
   if (provider === 'google')
-    state.googleAuthMutation.mutate({ reconnect: true });
+    state.googleAuthMutation.mutate({
+      reconnect: true,
+      ...(accountId ? { accountId } : {}),
+    });
   else state.microsoftAuthMutation.mutate();
 }

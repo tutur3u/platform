@@ -1,3 +1,5 @@
+import { internalApiClient } from '@tuturuuu/internal-api/client';
+
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
@@ -12,7 +14,10 @@ export async function apiFetch<T>(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<T> {
-  const response = await fetch(input, init);
+  const response =
+    typeof input === 'string' && input.startsWith('/api/')
+      ? await internalApiClient.fetch(input, init)
+      : await fetch(input, init);
 
   if (!response.ok) {
     let message = response.statusText || `HTTP ${response.status}`;

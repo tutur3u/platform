@@ -182,6 +182,11 @@ centralFirst)` when they also call Web-owned routes. The resolver applies to all
 relative internal-api calls, so mixed consumers must select their app-owned
 routes rather than prefix every route indiscriminately.
 
+Use the shared client for app settings and sync queries so the registered
+resolver selects the owning Worker. An absolute or root-relative browser
+`fetch` bypasses that resolver. Test both the mount and subdomain URL, and
+include a Web-owned request to verify that it still targets the root API.
+
 Server adapters must return an absolute URL using the incoming request host;
 a mounted relative path alone would still resolve against the configured Web
 origin. Read the bridge context inside the callback on every invocation:

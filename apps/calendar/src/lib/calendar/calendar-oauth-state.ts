@@ -15,6 +15,7 @@ type CalendarOAuthStatePayload = {
   p: CalendarOAuthProvider;
   ws: string;
   uid: string;
+  aid?: string;
   exp: number;
   n: string;
 };
@@ -26,6 +27,7 @@ export type CalendarOAuthStateVerification =
       nonce: string;
       userId: string;
       wsId: string;
+      accountId?: string;
     }
   | { ok: false; reason: 'malformed' | 'signature' | 'expired' };
 
@@ -76,7 +78,7 @@ export function deriveCalendarOAuthPkce(
  */
 export function createCalendarOAuthState(
   provider: CalendarOAuthProvider,
-  input: { userId: string; wsId: string },
+  input: { userId: string; wsId: string; accountId?: string },
   clientSecret: string,
   now = Date.now()
 ) {
@@ -85,6 +87,7 @@ export function createCalendarOAuthState(
     p: provider,
     ws: input.wsId,
     uid: input.userId,
+    ...(input.accountId ? { aid: input.accountId } : {}),
     exp: now + STATE_TTL_MS,
     n: randomBytes(16).toString('base64url'),
   };
@@ -111,6 +114,8 @@ function isPayload(
     payload.ws.length > 0 &&
     typeof payload.uid === 'string' &&
     payload.uid.length > 0 &&
+    (payload.aid === undefined ||
+      (typeof payload.aid === 'string' && payload.aid.length > 0)) &&
     typeof payload.exp === 'number' &&
     typeof payload.n === 'string' &&
     payload.n.length > 0
@@ -157,5 +162,6 @@ export function verifyCalendarOAuthState(
     nonce: payload.n,
     userId: payload.uid,
     wsId: payload.ws,
+    ...(payload.aid ? { accountId: payload.aid } : {}),
   };
 }

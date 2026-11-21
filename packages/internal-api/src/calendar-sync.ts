@@ -7,6 +7,13 @@ import {
 
 type ProviderCalendarEntry = Required<ProviderCalendar>;
 
+export type CalendarProviderAccountState =
+  | 'connected'
+  | 'reconnect_required'
+  | 'scope_required'
+  | 'temporarily_unavailable'
+  | 'removed';
+
 export interface ProviderCalendarsResponse {
   accounts: Array<{
     id: string;
@@ -16,10 +23,7 @@ export interface ProviderCalendarsResponse {
   }>;
   byAccount: Record<string, ProviderCalendarEntry[]>;
   calendars: ProviderCalendarEntry[];
-  accountStatuses?: Record<
-    string,
-    { state: 'connected' | 'reconnect_required' | 'temporarily_unavailable' }
-  >;
+  accountStatuses?: Record<string, { state: CalendarProviderAccountState }>;
 }
 
 export interface CalendarSyncHealth {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   googleCalendarMock,
@@ -56,8 +56,11 @@ function createTokenQuery() {
 }
 
 describe('calendar provider calendars route', () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('GOOGLE_CLIENT_ID', 'test-client-id');
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'test-client-secret');
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });

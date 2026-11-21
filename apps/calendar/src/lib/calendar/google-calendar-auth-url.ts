@@ -22,6 +22,8 @@ export function buildGoogleCalendarAuthUrl(args: {
   clientId: string;
   clientSecret: string;
   consent: boolean;
+  loginHint?: string | null;
+  accountId?: string;
 }) {
   const auth = new OAuth2Client({
     clientId: args.clientId,
@@ -30,7 +32,7 @@ export function buildGoogleCalendarAuthUrl(args: {
   });
   const { nonce, state } = createCalendarOAuthState(
     'google',
-    { userId: args.userId, wsId: args.wsId },
+    { userId: args.userId, wsId: args.wsId, accountId: args.accountId },
     args.clientSecret
   );
   const { codeChallenge } = deriveCalendarOAuthPkce(
@@ -48,6 +50,7 @@ export function buildGoogleCalendarAuthUrl(args: {
       'https://www.googleapis.com/auth/userinfo.profile',
     ],
     access_type: 'offline',
+    ...(args.loginHint ? { login_hint: args.loginHint } : {}),
     ...(args.consent ? { prompt: 'consent' } : {}),
     include_granted_scopes: true,
   });
