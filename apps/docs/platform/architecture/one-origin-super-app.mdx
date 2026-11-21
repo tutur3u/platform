@@ -31,6 +31,15 @@ questions below.
 | Session cookies | One shared `tuturuuu.com` root session accepted by every app, with no per-app cookie names or paths. Mounted apps never write or clear per-app session cookies on the apex; logout is global. Approved on the condition that an independent security review of refresh rotation, CSRF and XSS blast radius comes back clean, with enforced CSP and Trusted Types in every mounted app (see [session cookies](/platform/architecture/one-origin-security#session-cookies)). |
 | Rollout | No staged canaries. Each app cuts over directly once gated, with an instant one-step rollback prepared before the flip, a post-cutover smoke test and a 30 to 60 minute watch. |
 
+Decisions of 2026-11-21 (GMT+7):
+
+| Topic | Decision |
+| --- | --- |
+| Apex mounts | Every first-party satellite with a Cloudflare Worker is served at `tuturuuu.com/<app>` through the gateway. Its legacy `<app>.tuturuuu.com` answers navigations with `301` (`Cache-Control: no-store`) to the mount, and passes machine paths through to the app Worker ([subdomain redirect](/build/devops/gateway-worker#legacy-subdomain-redirect)). |
+| Apex security gate | A new apex mount ships with server-side same-origin isolation and enforced script CSP. Trusted Types stays report-only until a signed-in crawl of every route shows zero violations, then is enforced per app. |
+| Mounted login return | One return path for every app: the app sends an expired or missing session to Web's `/login` with `returnUrl` `https://tuturuuu.com/<base>/verify-token?nextUrl=<in-mount path>`, and the app completes it through the mounted shared-session step (`createMountedAppAuth` in `@tuturuuu/auth/proxy`). Web returns to a mount only when the app is in its active-mount list. Apps that return directly to a page migrate to this path once listed, and the direct-return code is removed with its tests. |
+| Active-mount list | One source of truth in repository configuration, derived from the gateway mount inventory, instead of a hand-maintained build variable. An app is listed only once its gateway mount is live; before that, Web serves `/<app>/verify-token` itself. |
+
 ## Goal
 
 Serve products at `https://tuturuuu.com/<app>/...` instead of
