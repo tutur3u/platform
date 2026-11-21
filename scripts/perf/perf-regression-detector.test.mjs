@@ -96,6 +96,15 @@ test('error-rate jumps fire on one window and ignore stray errors', () => {
   assert.deepEqual(finding.observed, [0.04]);
 });
 
+test('error-rate jumps do not fire when there is no usable baseline', () => {
+  const busy = series([400], { requests: 60, errors: [8] });
+  const noBaseline = computeBaseline(series([400], { requests: 13 }));
+  assert.equal(noBaseline.windows, 0);
+  assert.deepEqual(evaluateWindows(busy, noBaseline), []);
+  const withBaseline = computeBaseline(series([400, 400], { requests: 200 }));
+  assert.equal(evaluateWindows(busy, withBaseline)[0]?.metric, 'error_rate');
+});
+
 test('suspects are deploys in the lookback window, newest first', () => {
   const deploys = [
     { versionId: 'old', createdAt: '2026-11-19T18:00:00Z' },
@@ -134,6 +143,10 @@ test('zone query covers locale-prefixed mounts and keeps ids as env references',
     { clientRequestPath_like: '/vi/forms%' },
   ]);
   assert.equal(spec.variables.errorFilter.edgeResponseStatus_geq, 500);
+  // Cloudflare Early Hints cache fetches are not client traffic and must not
+  // count toward requests, latency or errors.
+  assert.equal(spec.variables.filter.requestSource_neq, 'earlyHintsCache');
+  assert.equal(spec.variables.errorFilter.requestSource_neq, 'earlyHintsCache');
   assert.throws(
     () => buildZoneLatencyQuery({ app: APP, windowMinutes: 7 }),
     /window/

@@ -33,6 +33,15 @@ export function pathFilter(app) {
 }
 
 /**
+ * Cloudflare's own Early Hints cache fetches (UAs like 'nginx-ssl early hints')
+ * are not client traffic: on tuturuuu.com they return instant synthetic 504s
+ * at a chronic 69-82% rate while real clients see none, so they are excluded
+ * from every window (requests, latency and errors) to keep the metric about
+ * users. See perf-roadmap-error_rate-2026-11-21T033000000Z.
+ */
+export const EXCLUDED_REQUEST_SOURCE = 'earlyHintsCache';
+
+/**
  * Gateway-side p95 TTFB, request count and 5xx count per window for one app
  * mount. Two aliases share the same filter so totals and errors line up.
  */
@@ -57,6 +66,7 @@ export function buildZoneLatencyQuery({ app, since, until, windowMinutes }) {
     datetime_geq: since,
     datetime_lt: until,
     clientRequestHTTPHost: app.host,
+    requestSource_neq: EXCLUDED_REQUEST_SOURCE,
     OR: pathFilter(app),
   };
   return {

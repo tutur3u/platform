@@ -101,11 +101,16 @@ export function evaluateWindows(windows, baseline, rules = DEFAULT_RULES) {
       });
     }
   }
-  const jump = windows.find(
-    (window) =>
-      window.requests >= rules.minRequestsPerWindow &&
-      isErrorJump(window, baseline.errorRate, rules)
-  );
+  // With no usable baseline window the baseline rate is an unknown, not zero:
+  // treating it as 0% turns any chronic error rate into a "jump".
+  const jump =
+    baseline.windows === 0
+      ? undefined
+      : windows.find(
+          (window) =>
+            window.requests >= rules.minRequestsPerWindow &&
+            isErrorJump(window, baseline.errorRate, rules)
+        );
   if (jump) {
     findings.push({
       metric: 'error_rate',
