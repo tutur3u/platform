@@ -137,7 +137,7 @@ class ProfileLinkGroups extends StatelessWidget {
 }
 
 /// Sign out, confirmed in a dialog, and Delete account, which opens the
-/// public deletion page in the in-app browser like the Settings row.
+/// public deletion page using the same browser as the Settings row.
 class ProfileDangerGroup extends StatelessWidget {
   const ProfileDangerGroup({this.launch, super.key});
 
