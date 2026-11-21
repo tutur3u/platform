@@ -631,9 +631,16 @@ recall requires only the signature and returns the reduced projection.
   `{person_id | null, conversation_id | null, versions, etag, snapshot |
   not_modified, memories}`. `snapshot` is the chat-safe projection: the
   person's label (granted consent only), consent state, facts under the
-  consent matrix and their audience, the relationship to the owner, briefs
-  built under the current consent version, the conversation kind, and every
-  rule that applies to the channel, conversation and person. Rules apply
+  consent matrix and their audience, the relationship to the owner, briefs,
+  the conversation kind, and every rule that applies to the channel,
+  conversation and person. The owner-entered addressing facts apply wherever
+  the person is recalled. Every other fact needs the resolved conversation to
+  match its audience: its origin, a listed conversation, or one the person
+  takes part in (the direct message with this sender, or a group with a
+  membership row). A brief applies only under its subject's current consent
+  version, while every record it cites still exists and every person it can
+  describe (the conversation's members and the subjects of its cited records)
+  keeps a granted profile. Rules apply
   whatever the consent state, so a restrictive rule is never dropped. `etag`
   hashes the snapshot and versions; sending it as `if_version` returns
   `not_modified` when nothing changed, rule expiry included. Each provider
@@ -660,9 +667,9 @@ recall requires only the signature and returns the reduced projection.
   `scope_denied` or `event_consumed`. A memory edit with a stale revision is a
   manager action and returns `revision_conflict`.
 - `GET /api/v1/people/changes?after={cursor}&limit={1-500}` — drain principals
-  only. The response is `{events, next}`. Events younger than five seconds are
-  held back so a slower transaction with a lower event ID usually commits
-  first; caches still revalidate every serve live.
+  only. The response is `{events, next}`. The cursor is a per-workspace
+  sequence allocated under a row lock held until commit, so a cursor never
+  passes an uncommitted event and reveals nothing about other workspaces.
 
 ### Manager routes
 
@@ -967,10 +974,12 @@ Each slice links its coverage here when it lands.
 - **Slice 2b, machine routes:**
   - [people-registry-recall.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry-recall.sql)
     covers the consent matrix in recall, fact audience in DMs and groups, rule
-    expiry and the etag, one recall per event, unbound, cross-tenant and Fleet
+    expiry and the etag, group briefs withheld when a member denies consent,
+    one recall per event, unbound, cross-tenant and Fleet
     desk accounts refused without taking a slot, group recall never touching
     the Fleet slot or Fleet identities, principal kind and tenant checks,
-    lookup keys limited to responders, and the change feed cursor.
+    lookup keys limited to responders, and the gapless per-workspace change
+    cursor.
   - The [request signature](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/request-signature.test.ts)
     and [ingress evidence](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/ingress-event.test.ts)
     tests cover replay onto another body, path or method, foreign keys,

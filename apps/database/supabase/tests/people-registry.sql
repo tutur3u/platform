@@ -5,7 +5,7 @@ select plan(99);
 create temporary view people_registry_test_tables as
 select oid, relname, relrowsecurity from pg_class
 where relnamespace = 'private'::regnamespace and relkind = 'r' and relname like 'people\_%';
-select is((select count(*) from people_registry_test_tables), 22::bigint, 'registry tables exist');
+select is((select count(*) from people_registry_test_tables), 23::bigint, 'registry tables exist');
 select ok(not exists (select 1 from people_registry_test_tables where not relrowsecurity),
   'every registry table has RLS enabled');
 select ok(not exists (

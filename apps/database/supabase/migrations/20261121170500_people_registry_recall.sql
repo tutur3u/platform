@@ -114,11 +114,67 @@ $$;
 revoke all on function private.people_machine_lookup_keys(uuid, uuid) from public, anon, authenticated, service_role;
 grant execute on function private.people_machine_lookup_keys(uuid, uuid) to service_role;
 
+-- A person whose profile store is granted and unexpired, and who is active
+-- in the workspace.
+-- tuturuuu: no-grant (internal)
+create function private.people_profile_granted(p_ws uuid, p_person uuid)
+returns boolean
+language sql
+stable
+set search_path = pg_catalog, pg_temp
+as $$
+  select exists (
+    select 1 from private.people_consents s
+    join private.people_persons p on p.ws_id = s.ws_id and p.id = s.person_id and p.status = 'active'
+    where s.ws_id = p_ws and s.person_id = p_person and s.store = 'profile' and s.state = 'granted'
+      and (s.expires_at is null or s.expires_at > clock_timestamp())
+  );
+$$;
+revoke all on function private.people_profile_granted(uuid, uuid) from public, anon, authenticated, service_role;
+
+-- A brief is usable only while every record it cites still exists in the
+-- workspace and every person it can describe (the conversation's members and
+-- the subjects of its cited facts and memories) keeps a granted profile.
+-- Revoking one member therefore withholds a group brief that mentions them.
+-- tuturuuu: no-grant (internal)
+create function private.people_brief_usable(p_ws uuid, p_conversation uuid, p_cited uuid[])
+returns boolean
+language sql
+stable
+set search_path = pg_catalog, pg_temp
+as $$
+  select cardinality(p_cited) = (
+      select count(*) from (
+        select f.id from private.people_facts f where f.ws_id = p_ws and f.id = any (p_cited)
+        union
+        select l.id from private.people_memory_ledger l
+          where l.ws_id = p_ws and l.id = any (p_cited) and l.state = 'active'
+      ) cited
+    )
+    and not exists (
+      select 1 from (
+        select m.person_id from private.people_conversation_members m
+          where p_conversation is not null and m.ws_id = p_ws and m.conversation_id = p_conversation
+        union
+        select f.person_id from private.people_facts f where f.ws_id = p_ws and f.id = any (p_cited)
+        union
+        select l.person_id from private.people_memory_ledger l
+          where l.ws_id = p_ws and l.id = any (p_cited) and l.person_id is not null
+      ) subjects
+      where not private.people_profile_granted(p_ws, subjects.person_id)
+    );
+$$;
+revoke all on function private.people_brief_usable(uuid, uuid, uuid[]) from public, anon, authenticated, service_role;
+
 -- Full recall for a responder principal. The person and conversation come
 -- from the ingress evidence: the API passes the lookup hashes it derived from
 -- the signed sender and conversation, never a person ID. Rules always apply,
 -- whatever the consent state, so a restrictive rule is never dropped. Facts,
--- relationships and briefs follow the consent matrix and fact audience. The
+-- relationships and briefs follow the consent matrix and fact audience: the
+-- owner-entered addressing facts apply wherever the person is recalled, and
+-- every other fact needs the resolved conversation to match its audience (its
+-- origin, a listed conversation, or one the person takes part in: the direct
+-- message with this sender or a group with a membership row). The
 -- etag hashes the snapshot and versions, so `p_if_version` revalidates a cache
 -- live, including rule expiry. Each recall consumes the event's recall slot
 -- once; a retry for the same event is refused and the responder falls back to
@@ -224,13 +280,16 @@ begin
       select jsonb_agg(jsonb_build_object('key', f.key, 'value', f.value) order by f.key)
       from private.people_facts f
       where v_person.id is not null and f.ws_id = p_ws and f.person_id = v_person.id
-        and (v_consent = 'granted' or (v_consent = 'unknown' and f.owner_entered
-          and f.key in ('preferred_name', 'form_of_address', 'language')))
-        and case f.audience
-          when 'origin' then (f.origin_conversation_id is null and f.owner_entered)
-            or f.origin_conversation_id = v_conversation.id
-          when 'subject_conversations' then true
-          else v_conversation.id = any (f.audience_conversation_ids)
+        and v_consent in ('granted', 'unknown')
+        and case
+          when f.owner_entered and f.key in ('preferred_name', 'form_of_address', 'language') then true
+          when v_consent <> 'granted' or v_conversation.id is null then false
+          when f.audience = 'origin' then f.origin_conversation_id = v_conversation.id
+          when f.audience = 'listed' then v_conversation.id = any (f.audience_conversation_ids)
+          else v_conversation.kind = 'dm' or exists (
+            select 1 from private.people_conversation_members m
+            where m.ws_id = p_ws and m.conversation_id = v_conversation.id and m.person_id = v_person.id
+          )
         end
     ), '[]'::jsonb),
     'relationships', coalesce((
@@ -248,6 +307,7 @@ begin
       select b.body from private.people_briefs b
       where v_consent = 'granted' and b.ws_id = p_ws and b.person_id = v_person.id
         and b.consent_version = v_person.consent_version
+        and private.people_brief_usable(p_ws, null, b.cited_ids)
     ),
     'conversation', case when v_conversation.id is not null then jsonb_build_object(
       'kind', v_conversation.kind,
@@ -255,6 +315,7 @@ begin
         select b.body from private.people_briefs b
         where v_conversation_consent = 'granted' and b.ws_id = p_ws and b.conversation_id = v_conversation.id
           and b.consent_version = v_conversation.consent_version
+          and private.people_brief_usable(p_ws, v_conversation.id, b.cited_ids)
       )
     ) end,
     'rules', coalesce((
@@ -293,10 +354,10 @@ revoke all on function private.people_recall(uuid, uuid, jsonb, text, jsonb, jso
   from public, anon, authenticated, service_role;
 grant execute on function private.people_recall(uuid, uuid, jsonb, text, jsonb, jsonb, text) to service_role;
 
--- Invalidation metadata for a drain principal, in event order after a
--- workspace-bound cursor. Events younger than five seconds are held back so a
--- slower transaction with a lower event ID usually commits first. Caches
--- revalidate every serve live, so a late event only delays an early drop.
+-- Invalidation metadata for a drain principal, in workspace sequence order
+-- after its cursor. The per-workspace sequence is allocated under a row lock
+-- held to commit, so a cursor never passes an uncommitted event, and it
+-- reveals nothing about other workspaces.
 -- tuturuuu: reviewed(function-grant) service role; drain principals read invalidation metadata only
 create function private.people_list_changes(p_ws uuid, p_principal uuid, p_after bigint, p_limit integer)
 returns jsonb
@@ -318,15 +379,15 @@ begin
     select jsonb_build_object(
       'reason', 'ok',
       'events', coalesce(jsonb_agg(jsonb_build_object(
-          'eventId', e.event_id, 'personId', e.person_id, 'conversationId', e.conversation_id,
+          'eventId', e.ws_seq, 'personId', e.person_id, 'conversationId', e.conversation_id,
           'version', e.version, 'consentVersion', e.consent_version, 'kind', e.kind
-        ) order by e.event_id), '[]'::jsonb),
-      'next', coalesce(max(e.event_id), p_after)
+        ) order by e.ws_seq), '[]'::jsonb),
+      'next', coalesce(max(e.ws_seq), p_after)
     )
     from (
       select * from private.people_change_events e
-      where e.ws_id = p_ws and e.event_id > p_after and e.created_at <= clock_timestamp() - interval '5 seconds'
-      order by e.event_id
+      where e.ws_id = p_ws and e.ws_seq > p_after
+      order by e.ws_seq
       limit p_limit
     ) e
   );
@@ -347,6 +408,10 @@ alter function private.people_recall(uuid, uuid, jsonb, text, jsonb, jsonb, text
 alter function private.people_list_changes(uuid, uuid, bigint, integer) owner to people_registry_definer;
 -- tuturuuu: reviewed(alter-routine-review): transfers ownership to the NOLOGIN registry definer role; search_path is pinned in the CREATE above
 alter function private.people_machine_lookup_keys(uuid, uuid) owner to people_registry_definer;
+-- tuturuuu: reviewed(alter-routine-review): transfers ownership to the NOLOGIN registry definer role; search_path is pinned in the CREATE above
+alter function private.people_profile_granted(uuid, uuid) owner to people_registry_definer;
+-- tuturuuu: reviewed(alter-routine-review): transfers ownership to the NOLOGIN registry definer role; search_path is pinned in the CREATE above
+alter function private.people_brief_usable(uuid, uuid, uuid[]) owner to people_registry_definer;
 revoke create on schema private from people_registry_definer;
 
 commit;
