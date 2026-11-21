@@ -54,13 +54,16 @@ export const TRUSTED_TYPES_DIRECTIVES = [
 ].join('; ');
 
 /**
- * Source of the head script that registers the `default` policy:
+ * Source of the head script that registers the `default` policy. It runs
+ * right after the app-base head script, so the app base is already known:
  * - HTML passes through; the nonce script policy already keeps injected
  *   markup from running.
- * - Script URLs must be same-origin and inside the app's base path, which the
- *   app-base head script publishes before any module loads.
- * - Script text is admitted only when it is byte-identical to a script the
- *   server already sent with this response's nonce. TanStack Router re-inserts
- *   its inline head scripts after hydration; any other text is refused.
+ * - Script URLs must be same-origin and inside the app's base path.
+ * - Script text is admitted only when it is one of the two head scripts the
+ *   server renders: this bootstrap (its own `currentScript` text) and the
+ *   app-base script for the published base. TanStack Router unmounts both
+ *   after hydration and re-inserts copies through `textContent` on client
+ *   navigation. Nothing is learned from the DOM, so injected markup cannot
+ *   enroll text; any other text is refused.
  */
-export const TRUSTED_TYPES_BOOTSTRAP = `(function(t){if(!t||t.defaultPolicy)return;t.createPolicy(${JSON.stringify(TRUSTED_TYPES_POLICY)},{createHTML:function(s){return s},createScriptURL:function(s){var u=new URL(s,document.baseURI),b=globalThis[${JSON.stringify(TRUSTED_TYPES_APP_BASE_GLOBAL)}]||"";if(u.origin===location.origin&&(b===""||u.pathname===b||u.pathname.indexOf(b+"/")===0))return u.href;throw new TypeError("Trusted Types: script URL outside the app")},createScript:function(s){for(var i=0,l=document.scripts;i<l.length;i++)if(l[i].nonce&&l[i].text===s)return s;throw new TypeError("Trusted Types: script text")}})})(globalThis.trustedTypes);`;
+export const TRUSTED_TYPES_BOOTSTRAP = `(function(t){if(!t||t.defaultPolicy)return;var c=document.currentScript,k=${JSON.stringify(TRUSTED_TYPES_APP_BASE_GLOBAL)},b=globalThis[k]||"",a=["globalThis."+k+"="+JSON.stringify(b).replace(/</g,"\\\\u003c")+";"];if(c&&c.text)a.push(c.text);t.createPolicy(${JSON.stringify(TRUSTED_TYPES_POLICY)},{createHTML:function(s){return s},createScriptURL:function(s){var u=new URL(s,document.baseURI);if(u.origin===location.origin&&(b===""||u.pathname===b||u.pathname.indexOf(b+"/")===0))return u.href;throw new TypeError("Trusted Types: script URL outside the app")},createScript:function(s){if(a.indexOf(s)>=0)return s;throw new TypeError("Trusted Types: script text")}})})(globalThis.trustedTypes);`;

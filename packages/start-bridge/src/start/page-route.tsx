@@ -81,7 +81,7 @@ export function BridgeDocument({ children }: { children: ReactNode }) {
  */
 export function createBridgeRootRoute(
   status: BridgeStatusOptions & {
-    /** Register the Trusted Types `default` policy before any other script. */
+    /** Register the Trusted Types `default` policy right after the app base. */
     trustedTypes?: boolean;
   } = {}
 ) {
@@ -92,7 +92,7 @@ export function createBridgeRootRoute(
     // The request's mount must reach the browser before the router starts.
     head: () => ({
       scripts: trustedTypes
-        ? [trustedTypesHeadScript(), appBaseHeadScript()]
+        ? [appBaseHeadScript(), trustedTypesHeadScript()]
         : [appBaseHeadScript()],
     }),
     shellComponent: BridgeDocument,

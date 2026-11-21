@@ -5,7 +5,7 @@ import {
   TRUSTED_TYPES_DIRECTIVES,
 } from '../core/csp';
 import { APP_BASE_GLOBAL } from '../core/app-url';
-import { trustedTypesHeadScript } from './base-path';
+import { appBaseHeadScript, trustedTypesHeadScript } from './base-path';
 import { createBridgeRootRoute } from './page-route';
 
 type Rules = {
@@ -14,7 +14,9 @@ type Rules = {
   createScript(value: string): string;
 };
 
-function register(existing?: object, base = '/admin') {
+const BASE_SCRIPT = 'globalThis.__tuturuuuAppBase="/admin";';
+
+function register(existing?: object, base: string | null = '/admin') {
   const createPolicy = vi.fn((_name: string, rules: Rules) => rules);
   const trustedTypes = { defaultPolicy: existing, createPolicy };
   new Function(
@@ -26,10 +28,9 @@ function register(existing?: object, base = '/admin') {
     { t: trustedTypes, [APP_BASE_GLOBAL]: base },
     {
       baseURI: 'https://tuturuuu.com/admin/internal',
-      scripts: [
-        { nonce: '', text: 'unstamped()' },
-        { nonce: 'n0', text: 'globalThis.__tuturuuuAppBase="/admin";' },
-      ],
+      currentScript: { nonce: 'n0', text: TRUSTED_TYPES_BOOTSTRAP },
+      // Never consulted: the policy learns nothing from the DOM.
+      scripts: [{ nonce: 'injected', text: 'alert(1)' }],
     },
     { origin: 'https://tuturuuu.com' }
   );
@@ -77,13 +78,29 @@ describe('Trusted Types bootstrap', () => {
     );
   });
 
-  it('admits only script text the server sent with the nonce', () => {
+  it('admits only the two head scripts the server renders', () => {
     const rules = rulesOf(register());
-    expect(rules.createScript('globalThis.__tuturuuuAppBase="/admin";')).toBe(
-      'globalThis.__tuturuuuAppBase="/admin";'
+    expect(rules.createScript(BASE_SCRIPT)).toBe(BASE_SCRIPT);
+    expect(rules.createScript(TRUSTED_TYPES_BOOTSTRAP)).toBe(
+      TRUSTED_TYPES_BOOTSTRAP
     );
-    expect(() => rules.createScript('unstamped()')).toThrow(TypeError);
+    // Text from markup carrying any nonce is refused.
     expect(() => rules.createScript('alert(1)')).toThrow(TypeError);
+    expect(() =>
+      rules.createScript('globalThis.__tuturuuuAppBase="/learn";')
+    ).toThrow(TypeError);
+  });
+
+  it('matches the app-base script for every published base', () => {
+    for (const [base, published] of [
+      ['/admin', '/admin'],
+      ['', ''],
+      [null, ''],
+      ['/a</script>', '/a</script>'],
+    ] as const) {
+      const text = appBaseHeadScript(published).children;
+      expect(rulesOf(register(undefined, base)).createScript(text)).toBe(text);
+    }
   });
 
   it('keeps an existing default policy', () => {
@@ -97,12 +114,13 @@ describe('Trusted Types bootstrap', () => {
     });
   });
 
-  it('puts the policy before the base script only when asked', () => {
+  it('puts the policy after the base script only when asked', () => {
     const scripts = (options?: { trustedTypes?: boolean }) =>
       createBridgeRootRoute(options)
         .head()
         .scripts.map((s) => s.children);
-    expect(scripts({ trustedTypes: true })[0]).toBe(TRUSTED_TYPES_BOOTSTRAP);
+    // The policy reads the app base, so the base script runs first.
+    expect(scripts({ trustedTypes: true })[1]).toBe(TRUSTED_TYPES_BOOTSTRAP);
     expect(scripts()).not.toContain(TRUSTED_TYPES_BOOTSTRAP);
   });
 });

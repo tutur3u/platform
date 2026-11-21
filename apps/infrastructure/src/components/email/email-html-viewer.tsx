@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 interface EmailHtmlViewerProps {
   content: string;
@@ -63,25 +63,14 @@ function injectPreviewStyle(content: string, previewTheme: 'light' | 'dark') {
   return `<!DOCTYPE html><html${htmlClass}><head>${style}</head><body>${withHtmlClass}</body></html>`;
 }
 
-export function EmailHtmlViewer({
-  content,
-  previewTheme = 'light',
-  className,
-  onLoad,
-}: EmailHtmlViewerProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    if (!iframeRef.current || !content) return;
-
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-
-    const htmlContent = isFullHtmlDocument(content)
-      ? injectPreviewStyle(content, previewTheme)
-      : `<!DOCTYPE html>
-<html class="${previewTheme === 'dark' ? 'dark' : ''}">
+/**
+ * The preview document, always light; `applyPreviewTheme` toggles dark mode
+ * in place so switching themes never reloads the frame.
+ */
+function previewDocument(content: string) {
+  if (isFullHtmlDocument(content)) return injectPreviewStyle(content, 'light');
+  return `<!DOCTYPE html>
+<html>
   <head>
     <meta name="color-scheme" content="light dark">
     <style>
@@ -92,30 +81,31 @@ export function EmailHtmlViewer({
     ${content}
   </body>
 </html>`;
+}
 
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
+export function EmailHtmlViewer({
+  content,
+  previewTheme = 'light',
+  className,
+  onLoad,
+}: EmailHtmlViewerProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // `srcDoc` goes through the parent's Trusted Types policy; writing into an
+  // about:blank frame would hit the frame's own registry, which has none.
+  const srcDoc = useMemo(
+    () => (content ? previewDocument(content) : undefined),
+    [content]
+  );
 
-    if (onLoad) {
-      onLoad();
-    }
-  }, [content, previewTheme, onLoad]);
+  const applyPreviewTheme = useCallback(() => {
+    iframeRef.current?.contentDocument?.documentElement?.classList.toggle(
+      'dark',
+      previewTheme === 'dark'
+    );
+  }, [previewTheme]);
 
   // Handle dark mode toggle without reloading iframe
-  useEffect(() => {
-    if (!iframeRef.current) return;
-
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument;
-    if (!doc?.documentElement) return;
-
-    if (previewTheme === 'dark') {
-      doc.documentElement.classList.add('dark');
-    } else {
-      doc.documentElement.classList.remove('dark');
-    }
-  }, [previewTheme]);
+  useEffect(applyPreviewTheme, [applyPreviewTheme]);
 
   return (
     <iframe
@@ -123,6 +113,11 @@ export function EmailHtmlViewer({
       title="Email Preview"
       className={cn('h-full w-full border-0 bg-white', className)}
       sandbox="allow-same-origin"
+      srcDoc={srcDoc}
+      onLoad={() => {
+        applyPreviewTheme();
+        if (srcDoc) onLoad?.();
+      }}
     />
   );
 }

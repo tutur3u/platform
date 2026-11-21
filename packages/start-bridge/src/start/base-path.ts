@@ -43,7 +43,8 @@ export const bridgeServerFnFetch: typeof fetch = (input, init) => {
 
 /**
  * Head script that registers the document's Trusted Types `default` policy.
- * Add it before every other script when the app's CSP requires Trusted Types.
+ * Add it directly after `appBaseHeadScript()` and before every other script
+ * when the app's CSP requires Trusted Types: the policy reads the app base.
  */
 export function trustedTypesHeadScript(nonce = requestNonce()) {
   return {
