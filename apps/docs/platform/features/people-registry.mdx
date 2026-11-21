@@ -155,16 +155,25 @@ inside this workspace only. It grants nothing in Fleet access.
 
 ### Keys
 
-Per-workspace keys are derived with HKDF-SHA-256 from
-`PEOPLE_REGISTRY_ROOT_KEY`, using `(purpose, ws_id, key_version)` as the info
-string. The purposes are `lookup` and `suppression`. A leaked derived key
-exposes only one workspace and one purpose.
+Each workspace has random 256-bit key material per purpose and version, created
+when the registry is enabled. It is stored wrapped (AES-256-GCM) under
+`PEOPLE_REGISTRY_WRAP_KEY`, so it cannot be derived from anything else.
+Deleting the wrapped material makes the workspace's hashes and ciphertexts
+unrecoverable, and workspace deletion does exactly that. The purposes are
+`sender_lookup`, `conversation_lookup`, `suppression` and `display`. Each
+purpose is also part of the hashed input, so sender and chat hashes can never
+collide.
 
-Rotation adds a new version. During rotation, ingress-time lookups compute both
-versions and re-hash a matching row to the new version, since the raw ID is
-available at that moment. Older suppression key versions stay available to
-suppression checks only, until every token under them expires. Deleting a
-workspace destroys its derived keys and rows.
+- **Display encryption:** uses the `display` key with a random 96-bit nonce per
+  write, stored with the ciphertext. Every rewrite of a value gets a fresh
+  nonce.
+- **Rotation:** adds a new version. Uniqueness holds per key version. Lookups
+  try the current version and then older ones, and re-hash a matching row to
+  the current version when the raw ID is presented. Records that are never
+  seen again keep their old version, so a version retires only after an owner
+  re-entry pass or after its dormant records are deleted.
+- **Suppression versions:** stay available to suppression checks while any
+  token uses them. Suppression tokens have no automatic expiry.
 
 ### Conversations
 
@@ -227,7 +236,10 @@ Quiet hours are `22:30–07:00`, mode `shorten`, bypassed for `owner` and
 group mentions are `mention_sender: when_requested`.
 
 Desks and responders act only on rules. A fact, brief or memory can never
-change a rule or trigger an action.
+change a rule or trigger an action. Only a manager publishes a rule. Rules
+from imports or machine principals are proposals until a manager reviews them,
+and the review shows each rule's scope and the replies, tags or escalations it
+would change.
 
 ## Consent
 
@@ -341,10 +353,16 @@ through every derivation. They are never instructions.
 - Recall for generation returns a chat-safe projection: preferred name, form of
   address, language and pronouns, the effective rules as enumerated values, the
   brief, and memories as quoted data.
-- **Audience:** recall for conversation C returns only memories about C itself,
-  or about people who are members of C. The owner's private DM is the one
-  exception. A memory written in one conversation is never returned in another
-  conversation unless its subject takes part in both.
+- **Audience:** every memory and fact records its origin conversation and an
+  audience. The default audience is the origin conversation only. Recall for
+  conversation C returns only records whose audience includes C. Shared
+  membership in two chats never widens the audience. A wider audience, the
+  owner's DM included, needs an explicit manager grant on that record. A
+  derived brief includes a source only when that source's audience includes the
+  brief's conversation and its subject's consent covers the use. A group record
+  that names several people needs usable consent from every named subject. An
+  `unknown` or `expired` state for any of them withholds the record. Owner
+  review of records happens in the separately authorised manager flow.
 - The responder's tools, recipients, outbound fields and sends are decided by
   rules and per-conversation allowlists outside the model. A model output
   cannot widen them.
@@ -388,8 +406,12 @@ retained items separately.
 - **Audit events** keep opaque UUIDs and reason codes, never content, for 400
   days.
 - **Database backups** follow the hosting provider's point-in-time recovery
-  window. A restore replays suppressions and deletions from the audit log
-  before the registry reopens.
+  window. Every deletion and suppression is also appended to a deletion
+  ledger kept outside the database, in an append-only R2 object per workspace,
+  so it survives a restored snapshot. After a restore, the registry stays
+  closed until that ledger has been replayed: deletions are re-run and
+  suppressions re-applied, while erasures that dropped their token re-run
+  without one. Slice 1 tests this restore path before it ships.
 
 The owner-facing delete dialog states what remains. An erasure that also drops
 the suppression token is available and warns that the person could then be
@@ -467,11 +489,22 @@ need ingress evidence. That reuses the Fleet access event contract in
   database.
 - The server derives the person and conversation from the evidence. A request
   field that disagrees with the evidence is refused.
-- Write operations consume the event ID through
-  `private.fleet_provider_events` inside the write's transaction, so one
-  provider event cannot serve two writes across Fleet and the registry.
-  `registry.recall` records the event once in `people_recall_events`, so an
-  event supports one recall and at most one write.
+- **One event, one bundle:** a provider event admits at most one recall and
+  one write bundle. The bundle is a single request to `POST /api/v1/people/events`
+  that carries every observation and memory derived from that event, at most
+  one per kind and target. It commits atomically: all items commit or none do.
+  The write consumes the event ID through `private.fleet_consume_registry_event`,
+  a narrow Fleet-owned wrapper over `private.fleet_provider_events`, inside the
+  bundle's transaction. One provider event can therefore never serve two writes
+  across Fleet and the registry. `registry.recall` records the event once in
+  `people_recall_events`.
+- **Retries:** a retry of the same bundle with the same input hash returns the
+  original receipt. An unknown outcome is resolved by reading that receipt by
+  event, never by sending a different bundle. A different bundle for a consumed
+  event is refused.
+- **Live binding:** the workspace-to-account binding is checked when the
+  ingress signs and again when the server verifies. Reassigning an account
+  invalidates every unconsumed event signed for the old binding.
 - Ingress verifies group membership and the sender with the provider itself.
 - **Signers and bindings:** Fleet operations accept only the registered Fleet
   desks. Registry operations also accept the Mira ingress signer, whose
@@ -496,13 +529,15 @@ recall requires only the signature and returns the reduced projection.
   memories}`. `snapshot` is the chat-safe projection. A non-empty `query` adds
   semantic recall bounded by `k` (at most 20). `if_version` lets a cache
   revalidate cheaply.
-- `POST /api/v1/people/memories` — body `{text, kind, status?, due_at?,
-  target: person | conversation, base_revision?}`. It returns `created`,
-  `duplicate`, or a refusal: `consent_required`, `suppressed`, `deleting`,
-  `revision_conflict` or `scope_denied`.
-- `POST /api/v1/people/identities/observe` — records a `desk_observed` identity
-  or conversation membership for a known person. When capture is on and capture
-  consent allows it, it proposes a new person. Suppression blocks it.
+- `POST /api/v1/people/events` — the event's write bundle. Its `observe` items
+  record a `desk_observed` identity or conversation membership for a known
+  person. When capture is on and capture consent allows it, an `observe` item
+  proposes a new person, and suppression blocks it. Its `memories` items are
+  `{text, kind, status?, due_at?, target: person | conversation}`. The response
+  is one receipt per item, either `created` or `duplicate`, or the whole bundle
+  is refused with one reason: `consent_required`, `suppressed`, `deleting`,
+  `scope_denied` or `event_consumed`. A memory edit with a stale revision is a
+  manager action and returns `revision_conflict`.
 - `GET /api/v1/people/changes?after={cursor}` — drain principals only.
 
 ### Manager routes
@@ -586,7 +621,7 @@ All strings ship in English and Vietnamese.
 | ----------------------------------------------------- | ------------------------------------------------------- |
 | `ttr people ls` / `search <text>` / `show <id>`       | discover and inspect                                    |
 | `ttr people conversations` / `conversation <id>`      | inspect conversations and their rules                   |
-| `ttr people link <id> --channel --account --external` | add an asserted identity                                |
+| `ttr people link <id> --channel --account`            | add an asserted identity (external ID read from a prompt or stdin) |
 | `ttr people relate <from> <kind> <to>`                | add a relationship                                      |
 | `ttr people fact set <id> <key> <value> --rev`        | revision-checked fact edit                              |
 | `ttr people rules set <scope> <rule> <value> [--expires]` | set rules                                           |
@@ -596,7 +631,11 @@ All strings ship in English and Vietnamese.
 | `ttr people principal register` / `revoke`            | manage machine principals (owner, step-up)              |
 | `ttr people import plan` / `run` / `verify` / `retire` | migrate local stores                                  |
 
-Every command takes `--workspace` and `--json`.
+Every command takes `--workspace` and `--json`. Raw identifiers such as phone
+numbers or provider IDs are never command-line arguments. `ttr people link`
+reads the external ID from a hidden prompt or from standard input, so it never
+reaches shell history or process listings. Command output, errors and
+diagnostics show only the encrypted display value's masked form.
 
 ## Migration plan
 
@@ -613,8 +652,8 @@ originals until the copy is confirmed.
 | Legacy contact links (pronouns, address forms, reply flags) | facts and person rules                                              |
 | Person profiles                                  | facts and person memories                                                      |
 | Per-chat memory digests                          | conversations and conversation memories by kind and status                    |
-| Per-chat standing rules                          | conversation rules where they map to an enumerated value, otherwise a staged item for owner review |
-| Desk-wide rules                                  | channel default rules                                                          |
+| Per-chat standing rules                          | staged rule proposals for owner review                                         |
+| Desk-wide rules                                  | staged channel default rule proposals for owner review                         |
 | Commitments                                      | `commitment` memories with due and done times                                  |
 | Consolidation archive and audit                  | ledger rows in state `superseded`, and audit events                            |
 | Pending person proposals                         | identities in link state `proposed`                                            |
@@ -641,9 +680,14 @@ These stores stay out of the registry:
    and the record ID, so a rerun is idempotent. Each record gets a receipt:
    `created`, `duplicate`, `staged`, `conflict` or `failed`. The run records a
    high-water mark per store.
-4. **Freeze and delta:** desks pause local memory writes and the run imports
-   everything past the high-water mark. Writes that arrive during the freeze
-   wait in the desk's in-memory buffer and are sent to the API after the switch.
+4. **Freeze and delta:** every desk writer of the migrated stores is fenced,
+   covering edits and deletes as well as appends, and the run imports
+   everything past the high-water mark. Messages that arrive during the freeze
+   are not buffered in memory. The provider event stream is checkpointed at the
+   freeze, and after the switch the desk replays it from that checkpoint
+   through the API. Where a provider cannot replay, the desk writes the event
+   IDs to a durable journal. That journal holds IDs only, no content, and the
+   desk re-fetches the content from the provider when it replays.
 5. **Verify:** `ttr people import verify` reads every record back through the
    manager API, duplicates included. It checks the destination ID, revision,
    workspace, consent state, provenance and content checksum against the
@@ -653,12 +697,18 @@ These stores stay out of the registry:
    only writer. Desks keep only ephemeral caches. A write that cannot land after
    bounded retries is reported, never silently dropped. The local registry
    stays as a read-only routing mirror until cutover is accepted.
+   **Rollback** has been exercised before the switch. It returns desks to the
+   local stores, with every registry write made after the switch exported back
+   to them, and it keeps registry deletions and suppressions in force.
 7. **Retire:** confirmed stores and their backup copies move to a quarantine
    directory readable only by the desk's own user. Deleting a person in the
    registry also purges their quarantined records, and suppressions stop a
    replayed import. After 14 days and the owner's confirmation,
    `ttr people import retire` re-verifies the exact manifest against the
-   quarantine and the registry, then deletes the quarantined files.
+   quarantine and the registry, then deletes the quarantined files. Staged
+   items the owner has denied are deleted from both the registry and the
+   quarantine. Items still unreviewed keep their originals in quarantine until
+   they are reviewed.
 
 Nightly consolidation on the desk host becomes the proposal-only job described
 in [Consolidation](#consolidation). It runs on Cloudflare.
@@ -675,6 +725,52 @@ in [Consolidation](#consolidation). It runs on Cloudflare.
 | 5     | Mastermind web People area and mobile People view (en and vi)                                     | Mastermind design lane, independent review                        |
 | 6     | Cloudflare drain, Queue, dead-letter handling and proposal-only consolidation                     | cost and stop-fence evidence                                      |
 | 7     | Desk migration: plan, run, freeze, verify, switch, retire                                         | slices 2–4, owner confirmation                                    |
+
+### Acceptance gates
+
+A slice ships only when its gates pass:
+
+- **Slice 1:**
+  - One-time, atomic bootstrap of each workspace's registry.
+  - Live checks of the root owner and manager expiry.
+  - Mutations restricted to the owner.
+  - Serialised generations.
+  - Proof that `people_registry_definer` has no Fleet table privileges and
+    reaches Fleet only through `fleet_consume_registry_event` and
+    `fleet_list_user_channel_identities`.
+  - Deletion-ledger restore tested.
+- **Slice 2:**
+  - A live account binding checked at signing and at verification.
+  - Tests for evidence mismatches and account reassignment.
+  - Single use of a provider event across Fleet and the registry.
+  - Canonical signature bytes, covering the exact query and the key ID.
+  - Nonce admission shared across replicas for the whole acceptance window.
+  - Key revocation and rollover under retries.
+  - Rate limits and replay state keyed to the verified principal.
+  - Revalidation bound to the principal's projection, conversation, subject,
+    consent, audience and expiry.
+  - A recheck of permission, membership, consent and deletion immediately
+    before sending, with stale drafts discarded.
+  - Tests that hostile recalled content cannot enable actions, change rules,
+    or reach privileged flows, briefs, audit or telemetry.
+  - Fleet recall restricted to people on the owner's list and filtered by
+    consent.
+- **Slice 3:**
+  - Every read, search, write, edit, forget and purge path tested under both
+    caller classes and across tenants.
+  - A fenced, resumable merge that intersects grants or takes fresh evidence.
+  - Completed deletion verified against writes the service had already
+    accepted.
+  - Memory routes stay disabled until slice 3 passes.
+- **Slice 6:**
+  - A commit-safe cursor.
+  - Idempotent recovery after Queue acceptance, partial delivery and gaps in
+    outbox retention.
+- **Slice 7:**
+  - Rollback exercised.
+  - Durable replay journal.
+  - Every writer fenced.
+  - Each staged item given an explicit disposition before retirement.
 
 ## Regression coverage
 
