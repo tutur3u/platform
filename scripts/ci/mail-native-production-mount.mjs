@@ -88,6 +88,11 @@ export async function exerciseMailProductionMount({
     assert.ok(path, `Mounted Mail HTML is missing a ${extension} asset`);
     const response = await fetchWorker(path);
     assert.equal(response.status, 200, `Missing mounted Mail asset: ${path}`);
+    assert.match(
+      response.headers.get('cache-control') ?? '',
+      /max-age=31536000/u
+    );
+    assert.match(response.headers.get('cache-control') ?? '', /\bimmutable\b/u);
     const expected = await readAsset('client' + path.slice(base.length));
     assert.deepEqual(Buffer.from(await response.arrayBuffer()), expected);
   }
