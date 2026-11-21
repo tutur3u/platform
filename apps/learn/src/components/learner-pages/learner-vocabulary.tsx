@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from '@tuturuuu/icons';
@@ -157,7 +158,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
       setPronunciationFeedback(null);
 
       const audioData = await blobToBase64(blob);
-      const response = await fetch('/api/v1/vocabulary/pronunciation', {
+      const response = await mountedFetch('/api/v1/vocabulary/pronunciation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

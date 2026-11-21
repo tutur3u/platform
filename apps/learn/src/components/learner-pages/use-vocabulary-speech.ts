@@ -1,4 +1,5 @@
 'use client';
+import { mountedFetch } from '@/lib/mounted-api';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -40,7 +41,7 @@ export function useVocabularySpeech() {
 
     try {
       setPlayingKey(key);
-      const response = await fetch('/api/v1/vocabulary/speech', {
+      const response = await mountedFetch('/api/v1/vocabulary/speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

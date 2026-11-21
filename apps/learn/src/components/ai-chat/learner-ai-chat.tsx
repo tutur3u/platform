@@ -1,4 +1,5 @@
 'use client';
+import { appApiPath, mountedFetch } from '@/lib/mounted-api';
 
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
@@ -25,7 +26,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: '/api/ai/chat',
+        api: appApiPath('/api/ai/chat'),
         body: {
           creditSource: 'workspace',
           model: LEARNER_AI_MODEL,
@@ -48,7 +49,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
   const createChat = async (prompt: string) => {
     setIsCreatingChat(true);
     try {
-      const response = await fetch('/api/ai/chat/new', {
+      const response = await mountedFetch('/api/ai/chat/new', {
         body: JSON.stringify({
           id: chatId,
           message: prompt,
