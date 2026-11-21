@@ -86,10 +86,10 @@ without project JWT-signing material, which Tuturuuu does not hold.
 - **No in-place upgrade marker.** `@supabase/ssr` writes a chunk only when its
   value changes, and a `Cookie` header carries no attributes. So no server can
   prove that an existing shared cookie is `HttpOnly`. A request-snapshot
-  re-emit could also race a later refresh, switch or logout. Readable cookies
-  written before the flip have no upper bound on how long they stay readable:
-  an idle browser may never refresh, and an unchanged chunk is skipped even
-  during a write. The flip waits for a migration design that Web owns: a
+  re-emit could also race a later refresh, switch or logout. There is no
+  guaranteed upgrade of a readable cookie written before the flip until that
+  cookie expires (400-day max age): an idle browser may never refresh, and an
+  unchanged chunk is skipped even during a write. The flip waits for a migration design that Web owns: a
   versioned `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a
   stale response from restoring a superseded session.
 - The host-only clear header serializer (`getHostOnlyCookieClearHeadersForNames`)
@@ -101,7 +101,7 @@ without project JWT-signing material, which Tuturuuu does not hold.
 | Flag | Scope | Default |
 | --- | --- | --- |
 | `TUTURUUU_SESSION_COOKIE_HTTP_ONLY` | Server-only env, read wherever cookie options are built | off |
-| `NEXT_PUBLIC_TUTURUUU_BROWSER_SESSION_MODE` | Per-app client deployment control: `cookie` (current) or `server`. In `server` mode, browser auth and identity calls use server routes and `createAuthClient` is not constructed. It is embedded at build time, so open tabs and cached assets keep the old client until they reload | `cookie` |
+| `NEXT_PUBLIC_TUTURUUU_BROWSER_SESSION_MODE` (planned, not implemented) | Per-app client deployment control: `cookie` (current) or `server`. In `server` mode, browser auth and identity calls use server routes and `createAuthClient` is not constructed. It is embedded at build time, so open tabs and cached assets keep the old client until they reload | `cookie` |
 
 The cookie is shared across `.tuturuuu.com`. For one name and scope, the last
 accepted write sets its attributes. With the server flag on in Web only, a
@@ -116,9 +116,12 @@ flips for every writer at once.
    whatever the cookie attributes, so they ship first. Implemented:
    - The TOTP challenge verify and factor verify handlers return allowlisted,
      token-free bodies.
-   - QR-login polling and the QA mint endpoint deliver tokens only to explicit
-     native or machine callers. They reject browser requests before consuming
-     a challenge or minting a token.
+   - QR-login polling and the QA mint endpoint reject requests that carry
+     `Origin` or Fetch Metadata before consuming a challenge or minting a
+     token. That stops a browser page from receiving the pair through `fetch`.
+     It does not bind redemption to a native client: the polling secret is in
+     the challenge payload, so anyone holding it can redeem an approved
+     challenge without those headers. Trusted-device approval stays required.
    - Each has a negative route test: `mfa-verify-subject-limit.test.ts`,
      `qr-login.test.ts` (with a native-poller control) and the QA admin
      `route.test.ts`. The Web and Workspace `LoginQrCard` components, which no
@@ -152,7 +155,9 @@ flips for every writer at once.
    - Tests cover refresh and logout on direct and mounted routes, including
      expired sessions and app-only logout.
 6. **Per app.** Turn on `server` mode for the app and verify login, refresh,
-   realtime and storage on staging.
+   realtime and storage on staging. An isolated staging exercise of the server
+   flag is a test, not rollout authorization; enabling it on a shared staging
+   or production domain needs every gate below.
 7. **Flip.** Wait for every gate in the next section to clear. Then set
    `TUTURUUU_SESSION_COOKIE_HTTP_ONLY=1` on every server writer of the shared
    domain (Web and each subdomain app): staging first, then production.
@@ -204,8 +209,15 @@ app is admitted to the shared origin:
 - **Bundle-level inventory.** Check the transitive client graph and emitted
   assets, including relative and direct SDK imports. auth-js reads cookies
   itself and can broadcast sessions between tabs.
-- **Emitted-Worker acceptance.** On staging, verify forced chunked cookies,
-  scopes, expiry and flag-off bytes through the emitted Workers.
+- **QR redemption bound to the native client**, or a browser QR flow that ends
+  in a server-written session, before the flip or another apex admission.
+- **Emitted-Worker acceptance.** On staging, through the gateway and the
+  emitted Workers, verify:
+  - forced chunked cookies, scopes, expiry and flag-off bytes;
+  - the QR and QA browser refusals for each header on its own, and the native
+    control;
+  - that TOTP verification still writes the upgraded session cookie while
+    returning only its message.
 
 ## Verification
 
