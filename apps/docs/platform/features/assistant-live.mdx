@@ -414,16 +414,20 @@ Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
 - Clients: the Live entry is locked with a short reason before Start, and a
   blocked sheet explains the reason with one primary action and "Not now",
   plus `Billed to: <workspace>`. Limit, role and pause refusals never upsell.
-  Mobile omits Upgrade and Top up until a store-compliant purchase channel
-  exists (App Store guideline 3.1.1), and shows Got it instead. A failed
-  pre-check leaves Start open and the token route decides.
+  The iOS and Mac App Store v1 builds ship without in-app purchases. Their
+  Live entry, refusal sheet and credit errors report access without upgrade,
+  top-up, pricing or external billing prompts. The refusal sheet shows Got it.
+  Signing in uses the existing eligibility decision for the personal workspace.
+  Android retains its existing billing action. A failed pre-check leaves Start
+  open and the token route decides.
 
 Regression coverage: `eligibility.test.ts` (Pro personal fixture, plans,
 paid credit packs, credits floor, paid stop, wire shape),
 `assistant/live/token/route.test.ts` (production defaults mint for Pro and
 refuse Free with `plan_required`, limit reset), `assistant/live/eligibility/route.test.ts`,
 mobile `assistant_live_eligibility_test.dart`, `assistant_live_blocked_sheet_test.dart`
-(one test per reason, EN/VI, light/dark renders) and
+(one test per reason, English and Vietnamese, light and dark renders),
+`assistant_live_apple_copy_test.dart` (iOS and macOS, English and Vietnamese), and
 `assistant_live_locked_entry_test.dart`.
 
 ### Live voice admission cap
