@@ -70,7 +70,11 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   - neither: the hinted provider starts at once, with a manual button only
     as a fallback.
   The header reads "Sign in to continue to <app>". While the view loads, a
-  skeleton of the same size holds the card and header.
+  skeleton of the same size holds the card and header. When the view names
+  the return app it is the only validator for it: the browser runs no second
+  cross-app resolve that could disagree.
+- A hinted provider never starts while the return target is still
+  resolving or beside an invalid-link or handoff error card.
 - Elsewhere a hint is advisory: it starts the provider automatically only
   with no session and a device known to have no saved account. With saved
   accounts, a hint or a cross-app return shows the saved-account chooser

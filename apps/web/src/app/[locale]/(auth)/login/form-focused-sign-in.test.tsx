@@ -224,4 +224,62 @@ describe('LoginForm focused external sign-in', () => {
     );
     expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
   });
+
+  it('trusts the server view and never shows the app-link warning beside it', async () => {
+    mocks.resolveCrossAppReturnUrlWithInternalApi.mockRejectedValue(
+      new Error('Fixture transport failure')
+    );
+
+    renderLoginFormSearch(search, { initialView: view() });
+
+    await waitFor(() => {
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({ provider: 'google' })
+      );
+    });
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText('login.invalid_return_url_title')
+    ).not.toBeInTheDocument();
+  });
+
+  it('never starts the provider beside an unverified return target', async () => {
+    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      error: 'Invalid returnUrl',
+    });
+
+    renderLoginFormSearch(search, {
+      initialView: view({ returnApp: null }),
+    });
+
+    await screen.findByText('login.invalid_return_url_title');
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('waits for the view before validating or starting anything', async () => {
+    renderLoginFormSearch(search, { loginViewPending: true });
+
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('keeps waiting while an unverified target is still resolving', async () => {
+    mocks.resolveCrossAppReturnUrlWithInternalApi.mockReturnValue(
+      new Promise(() => {})
+    );
+
+    renderLoginFormSearch(search, {
+      initialView: view({ returnApp: null }),
+    });
+
+    await waitFor(() =>
+      expect(mocks.resolveCrossAppReturnUrlWithInternalApi).toHaveBeenCalled()
+    );
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
 });

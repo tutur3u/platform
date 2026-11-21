@@ -20,7 +20,6 @@ import {
   getOtpSettings,
   passwordLoginWithInternalApi,
   pollMfaMobileApprovalChallengeWithInternalApi,
-  resolveCrossAppReturnUrlWithInternalApi,
   sendOtpWithInternalApi,
   verifyOtpWithInternalApi,
 } from '@tuturuuu/internal-api/auth';
@@ -70,6 +69,7 @@ import {
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import type { LoginViewState } from './use-login-view';
+import { useReturnApp } from './use-return-app';
 import { useSignInRouting } from './use-sign-in-routing';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import {
@@ -97,7 +97,6 @@ import {
 } from './return-url-helpers';
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
 import {
-  getReturnAppName,
   InputOTPRowFallback,
   InternalAppAccountConfirmationFallback,
   LoginMethodSeparator,
@@ -202,54 +201,17 @@ export default function LoginForm({
     switchAccount,
   } = useAccountSwitcher();
   const returnUrl = searchParams.get('returnUrl');
-  const localReturnPath = useMemo(
-    () => getSafeLocalReturnPath(returnUrl),
-    [returnUrl]
-  );
-  const staticReturnApp = useMemo(
-    () => getStaticReturnApp(returnUrl, localReturnPath),
-    [localReturnPath, returnUrl]
-  );
-  const shouldResolveReturnApp = Boolean(
-    returnUrl && !localReturnPath && !staticReturnApp
-  );
   const {
-    data: resolvedReturnApp,
-    isError: didFailToResolveReturnApp,
-    isLoading: isResolvingConfiguredReturnApp,
-    refetch: refetchResolvedReturnApp,
-  } = useQuery({
-    enabled: shouldResolveReturnApp,
-    queryFn: async () => {
-      const result = await resolveCrossAppReturnUrlWithInternalApi({
-        returnUrl: returnUrl ?? '',
-      });
-
-      if (!result.targetApp) {
-        throw new Error(result.error ?? 'Invalid returnUrl');
-      }
-
-      return result;
-    },
-    queryKey: ['auth', 'cross-app-return', returnUrl],
-    retry: false,
-    staleTime: 60_000,
-  });
-  const returnApp = staticReturnApp ?? resolvedReturnApp?.targetApp ?? null;
-  const isResolvingReturnApp =
-    shouldResolveReturnApp && isResolvingConfiguredReturnApp;
-  const isRegisteredInternalAppReturn =
-    staticReturnApp !== null &&
-    staticReturnApp !== 'web' &&
-    staticReturnApp !== 'platform' &&
-    staticReturnApp !== MANAGED_TUTURUUU_RETURN_APP;
-  const requiresReturnAppConfirmation = requiresAccountConfirmationForReturnApp(
-    returnApp,
+    didFailToResolveReturnApp,
     isRegisteredInternalAppReturn,
-    searchParams.get('confirmAccount') === '1'
-  );
-  const returnAppName =
-    resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
+    isResolvingReturnApp,
+    localReturnPath,
+    refetchResolvedReturnApp,
+    requiresReturnAppConfirmation,
+    returnApp,
+    returnAppName,
+    shouldResolveReturnApp,
+  } = useReturnApp({ loginView, returnUrl, searchParams });
 
   const emailModePreference = useRef(new LoginEmailModePreference());
   const emailSchema = z.string().transform(processEmailInput).pipe(z.email());
@@ -432,6 +394,9 @@ export default function LoginForm({
       ? returnUrlValidationFailure
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
+  // A provider never starts beside an unverified or failed return target.
+  const returnTargetSettled =
+    !hasActiveReturnUrlFailure && !isResolvingReturnApp;
   const canRenderAuthSurface =
     readyForAuth ||
     (!deferAuthSurfaceUntilSessionCheck && (!initialized || user === null));
@@ -1330,6 +1295,7 @@ export default function LoginForm({
   useAutoOAuthLogin(
     providerHint,
     providerAutoStartAllowed &&
+      returnTargetSettled &&
       !requiresMFA &&
       !user &&
       // A focused sign-in starts at once from the server view; elsewhere the
