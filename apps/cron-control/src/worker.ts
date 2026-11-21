@@ -11,13 +11,15 @@ import {
 } from './jobs';
 import type { Ledger } from './ledger';
 import { CronLedger } from './ledger-object';
+import { handleShipCheck, type ShipCheckEnv } from './ship-check';
 import { handleWebGate, type WebGateEnv } from './web-gate-http';
 
 export { CronLedger, processImmediateNotifications };
 
 type Env = WebGateEnv &
   DispatchEnv &
-  ImmediateNotificationsEnv & {
+  ImmediateNotificationsEnv &
+  ShipCheckEnv & {
     CRON_CONTROL_OPERATOR_TOKEN?: string;
     CRON_LEDGER: DurableObjectNamespace<CronLedger>;
   };
@@ -49,6 +51,14 @@ export default {
       ).webCron(job, action)
     );
     if (webGate) return webGate;
+    const shipCheck = await handleShipCheck(request, env, {
+      fetch: (input, init) => fetch(input, init),
+      ledger: ledgerFor(env),
+      now: () => Date.now(),
+      sleep: (milliseconds) =>
+        new Promise((resolve) => setTimeout(resolve, milliseconds)),
+    });
+    if (shipCheck) return shipCheck;
     const control = await handleControlRequest(request, env, ledgerFor(env));
     if (control) return control;
     return Response.json({ message: 'Not found' }, { status: 404 });

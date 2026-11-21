@@ -224,6 +224,11 @@ describe('mastermind store Worker', () => {
       expect(await store.get('fleet:state', { cacheMs: 5000 })).toBe('v1');
       // Uncached reads are always current.
       expect(await store.get('fleet:state')).toBe('v2');
+      // A refresh read is current and replaces the cached copy.
+      expect(
+        await store.get('fleet:state', { cacheMs: 5000, refresh: true })
+      ).toBe('v2');
+      expect(await store.get('fleet:state', { cacheMs: 5000 })).toBe('v2');
     } finally {
       await mf.dispose();
     }

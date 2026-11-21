@@ -52,6 +52,8 @@ export const storeOpSchema = z.discriminatedUnion('op', [
     op: z.literal('get'),
     k: key,
     cacheMs: z.number().int().min(0).max(5000).optional(),
+    /** With `cacheMs`: skip the cached copy and replace it with this read. */
+    refresh: z.boolean().optional(),
   }),
   z.object({
     op: z.literal('mget'),

@@ -22,7 +22,10 @@ export class MastermindStoreUnavailableError extends Error {
 
 /** The atomic key-value operations the fleet and push-event code use. */
 export interface MastermindStore {
-  get(key: string, options?: { cacheMs?: number }): Promise<string | null>;
+  get(
+    key: string,
+    options?: { cacheMs?: number; refresh?: boolean }
+  ): Promise<string | null>;
   mget(keys: string[]): Promise<(string | null)[]>;
   set(
     key: string,
@@ -102,6 +105,7 @@ export function createMastermindStoreClient(options: {
         op: 'get',
         k: key,
         ...(getOptions?.cacheMs ? { cacheMs: getOptions.cacheMs } : {}),
+        ...(getOptions?.cacheMs && getOptions.refresh ? { refresh: true } : {}),
       });
       if (value !== null && typeof value !== 'string')
         throw new MastermindStoreUnavailableError('invalid_response');

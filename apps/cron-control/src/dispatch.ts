@@ -54,6 +54,19 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  if (cronJob.workerProcessor === 'mastermind-ship') {
+    const secret = env.MASTERMIND_STORE_TOKEN?.trim();
+    if (!secret || secret.length < 32)
+      return { problem: 'MASTERMIND_STORE_TOKEN unset' };
+    try {
+      const origin = new URL(env.MASTERMIND_STORE_URL?.trim() ?? '');
+      if (origin.protocol === 'https:' && origin.href === origin.origin + '/')
+        return { secret, url: new URL(cronJob.path, origin) };
+    } catch {
+      // Malformed origins fail closed.
+    }
+    return { problem: 'MASTERMIND_STORE_URL must be an HTTPS origin' };
+  }
   if (cronJob.workerProcessor === 'fleet-access-consumer') {
     const secret = env.FLEET_CONSUMER_TOKEN;
     if (!secret || !/^ttr_fleet_consumer_[A-Za-z0-9_-]{43}$/.test(secret))
@@ -150,6 +163,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
     !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
     cronJob.workerProcessor !== 'chat-realtime-revocations' &&
     cronJob.workerProcessor !== 'fleet-access-consumer' &&
+    cronJob.workerProcessor !== 'mastermind-ship' &&
     !selected.includes(cronJob.id)
   )
     return null;
@@ -261,7 +275,7 @@ async function invoke(
   return { result: 'failed', status: response.status };
 }
 
-async function runJob(
+export async function runJob(
   cronJob: CronJob,
   slot: string,
   env: DispatchEnv,

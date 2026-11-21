@@ -28,6 +28,7 @@ export type WorkerProcessorId =
   | 'devbox-unauthorized-run-sweep'
   | 'finance-bill-split-reminders'
   | 'fleet-access-consumer'
+  | 'mastermind-ship'
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
@@ -273,6 +274,13 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     'idempotent',
     { workerProcessor: 'observability-retention', timeoutMs: 30_000 }
   ),
+  // Mastermind ship collector: GitHub deployments/CI/pending commits and
+  // Cloudflare Worker versions into the Mastermind store. Its target is the
+  // store; owners also start a run with "Check now" (src/ship-check.ts).
+  job('mastermind-ship', '*/2 * * * *', 'web', '/v1/ops', 'idempotent', {
+    workerProcessor: 'mastermind-ship',
+    timeoutMs: 20_000,
+  }),
   job(
     'provider-cost-collection',
     '17 3 * * *',

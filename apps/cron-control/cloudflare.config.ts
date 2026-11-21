@@ -29,6 +29,9 @@ export default defineConfig({
       '17 3 * * *',
       '*/30 * * * *',
       '*/5 * * * *',
+      // mastermind-ship: the Ship screen's collector; off until
+      // CRON_CONTROL_ENABLED_JOBS names it.
+      '*/2 * * * *',
       // ai-studio-retention: 02:43 GMT+7.
       '43 19 * * *',
       // meet-attendance-retention: 01:17 GMT+7. The job stays disabled until

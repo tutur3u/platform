@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 880,
+    "total": 882,
     "categories": {
-      "api": 680,
+      "api": 682,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 868 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 870 }
   },
   "routes": [
     {
@@ -3104,6 +3104,22 @@
     {
       "pattern": "/api/v1/mastermind/fleet/review-assets/[assetId]",
       "source": "apps/web/src/app/api/v1/mastermind/fleet/review-assets/[assetId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/ship/check",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/ship/check/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/ship",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/ship/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

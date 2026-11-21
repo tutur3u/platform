@@ -1,0 +1,116 @@
+---
+title: Mastermind ship collector
+description: The Cron Control job that records what is live per app and environment for the Mastermind Ship screen, with its credentials, request budget, stop fence and operation envelope.
+updatedAt: "2026-11-22"
+---
+
+The Ship screen ([web and mobile](/platform/features/mobile-mastermind#ship))
+reads one snapshot that the `mastermind-ship` job in
+[Cron Control](/build/devops/cloudflare-cron-control) writes to the
+[Mastermind store](/build/devops/mastermind-store) every two minutes. Owners
+can also run it with **Check now**. Web serves the snapshot owner-only at
+`GET /api/v1/mastermind/fleet/ship` from a five-second per-colo cache;
+`?fresh=1`, the read after Check now, skips it and replaces the cached
+copy.
+
+## What each run reads
+
+| Source | Requests | Facts |
+| --- | --- | --- |
+| GitHub, per repository | One conditional probe of the newest Actions run per repository (`If-None-Match`; a 304 costs no rate limit), then one batched GraphQL query, plus at most two deployment follow-up queries | The newest successful deployment per tracked environment, the CI rollup of its commit, and the commits on the branch newer than the production commit for the app's paths |
+| Cloudflare | One deployments read per Worker script, plus one version read the first time a version id is seen | The active version, its traffic share, its deploy time and the SHA from its message or tag |
+
+The probe is skipped on **Check now** and when the last full read is four
+minutes old, so a read is reused for at most four minutes, inside the
+clients' six-minute stale window. A 304 leaves `okAt` at the last full read.
+A GraphQL answer with `errors` or a missing repository fails the source
+instead of replacing its facts. When an environment's first page of
+deployments holds no success and more pages exist, the run reads up to two
+more pages (100 deployments each, one query for every such environment).
+Past those it keeps the previous live release, marked with the newest
+attempt's state, rather than recording none. Only a newest successful
+deployment reads as Deployed; a newer failed, inactive or unfinished one
+reads as Deploy failed or Deploying. The
+catalog of apps, environments, paths and Worker scripts is
+`apps/cron-control/src/processors/mastermind-ship/catalog.ts`. Apps outside this repository default to their known repositories; one
+without a known repository stays "not configured" until
+`MASTERMIND_SHIP_REPOS` names it. Each repository is its own source, so an
+unreadable repository marks only its own rows.
+
+Each source records `checkedAt`, `okAt` (data last confirmed current),
+`retryAt` and a closed-set `problem`. A failed source keeps its last-known
+facts with the old `okAt`, so a client always shows how old a row is.
+The snapshot holds SHAs, times, environment and script names, CI states and
+counts only. ETags, installation ids and cached version facts live under a
+separate store key that Web never serves.
+
+## Configuration
+
+| Name | Where | Purpose |
+| --- | --- | --- |
+| `CRON_CONTROL_ENABLED_JOBS` | Cron Control text | Add `mastermind-ship` to enable the schedule and Check now. |
+| `MASTERMIND_STORE_URL` | Cron Control secret | HTTPS origin of the Mastermind store. |
+| `MASTERMIND_STORE_TOKEN` | Cron Control secret | A store service token; add it to the store's `MASTERMIND_STORE_TOKENS` rotation list. |
+| `MASTERMIND_SHIP_GITHUB_APP_ID`, `MASTERMIND_SHIP_GITHUB_APP_PRIVATE_KEY` | Cron Control secrets | Preferred: a GitHub App installed on each tracked owner with read-only Actions, Checks, Commit statuses, Contents, Deployments and Metadata. The key is PKCS#8 PEM (`openssl pkcs8 -topk8 -nocrypt -in app.pem`). Each run mints a one-hour installation token. |
+| `MASTERMIND_SHIP_GITHUB_TOKEN` | Cron Control secret | Fallback when no App is set: one read-only token for every tracked owner. Never the shared fleet token. |
+| `MASTERMIND_SHIP_CLOUDFLARE_TOKEN` | Cron Control secret | Account token with Workers Scripts Read. |
+| `MASTERMIND_SHIP_REPOS` | Cron Control text | `app=owner/name[@branch]`, comma-separated, for the apps tracked outside this repository (catalog ids). Other app ids and malformed entries are ignored. |
+| `MASTERMIND_SHIP_CHECK_TOKEN` | Cron Control and Web secret | At least 32 characters; authorizes `POST /mastermind-ship/check`. |
+| `MASTERMIND_SHIP_CHECK_ORIGIN` | Web | Cron Control's HTTPS origin; defaults to `WEB_CRON_GATE_ORIGIN`. |
+
+Without GitHub or Cloudflare credentials the job still writes a snapshot in
+which those sources read `unconfigured`, and makes no provider request.
+
+## Bounds and stop fence
+
+- One attempt per slot; the next slot is the retry. A run has a 40-second
+  deadline, 32 provider requests at most and two store requests (one read,
+  one write of two rows).
+- A 403 or 429 backs the source off until `Retry-After` or the rate-limit
+  reset, clamped to one minute to one hour; a GraphQL budget below 200 points
+  backs off until its reset. Backed-off sources make no request.
+- Check now goes through the same ledger claim as the schedule. The last
+  claimed slot rate-limits checks to one per 30 seconds across both paths,
+  the lease refuses overlapping runs, and Web adds six requests a minute per
+  owner.
+- A slot in which a provider call failed and no configured source is `ok`
+  is `failed` and counts against the failure budget, so a revoked
+  credential stops the job after five slots. One failing source beside a
+  working one is `degraded`.
+- Durable stops: `POST /control/jobs/mastermind-ship/stop` with the operator
+  token (survives restarts; resume opens a new generation), five consecutive
+  failed or unknown slots, or the store's own fence (`stopped` ends the run
+  without charging the failure budget). The fence is checked before each
+  owner, each Worker read and the write.
+
+Regressions: `apps/cron-control/src/mastermind-ship.test.ts` (default-off,
+the snapshot and its sanitization, unconfigured sources, the 304 reuse
+window, backoff with carried facts, stop across a restart, the store fence,
+the failure budget, Check now auth, rate limit and stop) and
+`src/processors/mastermind-ship/units.test.ts` (repository config, the
+query, capped pending counts, GraphQL budget backoff, App tokens, version
+caching and the request budget).
+`apps/web/src/app/api/v1/mastermind/fleet/ship/ship-route.test.ts` runs the
+collector's output through Web's schema and covers owner-only reads,
+tampered values and the Check now relay.
+
+## Operation envelope
+
+At 720 slots a day a normal run makes one or two GitHub requests per
+repository (one more with App tokens), nine Cloudflare deployment reads, two
+store requests and about fourteen ledger calls. For three repositories that
+is about 2,200 to 6,500 GitHub requests, 6,500
+Cloudflare API reads and 1,440 store row writes a day (of the store's 50,000
+daily write budget). Check now adds at most one run per 30 seconds. The
+failure case is capped by the request budget per run and the five-slot
+failure stop.
+
+## Enable
+
+1. Create the GitHub App (or token) and the Cloudflare token; set the Cron
+   Control secrets above and add the store token to the store's rotation list.
+2. Set `MASTERMIND_SHIP_CHECK_TOKEN` on both Workers and
+   `MASTERMIND_SHIP_CHECK_ORIGIN` on Web.
+3. Add `mastermind-ship` to `CRON_CONTROL_ENABLED_JOBS` and deploy Cron
+   Control. Confirm `GET /control/jobs` shows the job and the Ship screen
+   shows fresh `okAt` stamps.

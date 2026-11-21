@@ -14,6 +14,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/[columnId]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/%5BcolumnId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/sync` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/sync/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/duplicates/detect` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/duplicates/detect/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/duplicates/remove` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/duplicates/remove/route.ts) |
@@ -192,7 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/storage/finalize-upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/finalize-upload/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/folders` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/folders/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/list` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/list/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/migrate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/migrate/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/move` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/move/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

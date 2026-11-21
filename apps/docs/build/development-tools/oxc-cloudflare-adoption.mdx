@@ -382,6 +382,24 @@ history retention runbook
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
+### Mastermind ship collector envelope
+
+The `mastermind-ship` Cron Control job is default-off and adds one
+two-minute trigger. A run makes at most 32 provider reads (GitHub and the
+Cloudflare API, neither billed per call), two Mastermind store requests and
+about twelve ledger calls, with one attempt per slot and a 40-second
+deadline. A conditional probe answered 304 skips the GitHub query; 403 and
+429 back a source off for one minute to one hour. Check now shares the
+ledger claim, so the last claimed slot limits it to one run per 30 seconds
+and the lease refuses overlap. The durable job stop, the five-slot failure
+budget (a slot with every configured source failing is `failed`) and the
+store fence each end work before the next provider call.
+At 720 slots a day the store sees 1,440 row writes (of its 50,000 daily
+budget). `apps/cron-control/src/mastermind-ship.test.ts` counts provider and
+store calls through stop, restart, backoff, failure and rate-limit cases. The
+[runbook](../devops/mastermind-ship-collector.mdx) owns enablement and stop.
+Hosted execution and billed usage remain rollout evidence.
+
 ### Fleet dry-run and retention envelope
 
 Fleet reuses one existing 15-minute Cron Control trigger. Disabled mode

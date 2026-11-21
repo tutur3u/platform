@@ -27,7 +27,8 @@ fan-out without KV's eventual consistency or per-write cost).
 ## Protocol
 
 `packages/utils/src/mastermind-store/protocol.ts` defines `POST /v1/ops` with
-1 to 8 ops per request: `get` (optional `cacheMs`), `mget` (up to 64 keys),
+1 to 8 ops per request: `get` (optional `cacheMs`; with `refresh` it skips
+and replaces the cached copy), `mget` (up to 64 keys),
 `set` (`always` or `nx`), `cas` (compare-and-set; `expect: null` means
 absent), `cad` (compare-and-delete) and `del`. A request runs in one
 transaction: every op or none. `client.ts` is the typed client (one attempt,

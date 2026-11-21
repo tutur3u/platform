@@ -101,7 +101,8 @@ async function handleOps(request: Request, env: StoreEnv) {
     typeof caches === 'undefined'
       ? null
       : (caches as unknown as { default: Cache }).default;
-  if (single?.op === 'get' && cacheMs > 0 && cache) {
+  // A refresh read skips the cached copy; the put below replaces it.
+  if (single?.op === 'get' && cacheMs > 0 && cache && !single.refresh) {
     const hit = await cache.match(cacheKey(single.k));
     if (hit) return { response: hit, kind: `${kind}:hit` };
   }
