@@ -305,16 +305,15 @@ export function useSubscriberLayers({
       counters.clear();
       policy?.quality.recordReceiver(null, [], false);
     };
-    let recorded = false;
     // Every tick that does not record a measurement clears the reading, so
-    // room reports never repeat a stale receive rate.
+    // room reports never repeat a stale receive rate. The flag is per tick.
     const tick = async () => {
       if (busy) return;
-      recorded = false;
-      await step();
-      if (!recorded) policy?.quality.recordReceiver(null, [], false);
+      const result = { recorded: false };
+      await step(result);
+      if (!result.recorded) policy?.quality.recordReceiver(null, [], false);
     };
-    const step = async () => {
+    const step = async (result: { recorded: boolean }) => {
       const now = Date.now();
       // The audio-only pause belongs to the link, not to any receiving peer:
       // its probe runs even while no receiver exists, because closing every
@@ -368,8 +367,19 @@ export function useSubscriberLayers({
         // spends no stats work on a view nobody is looking at.
         let sample: ReceiverSample | null = null;
         if (phase === 'visible') {
+          const stats = await pc.getStats();
+          // The receiver, session or policy may have changed while sampling;
+          // a stale sample is discarded and the reading cleared.
+          if (
+            peer.current !== pc ||
+            sessionRef.current !== sessionId ||
+            !capable() ||
+            (policy?.getSnapshot().visibility ?? 'visible') !== 'visible' ||
+            policy?.getSnapshot().audioOnly
+          )
+            return;
           sample = sampleReceiver(
-            await pc.getStats(),
+            stats,
             new Set(cameras.map(({ mid }) => mid)),
             counters,
             lastSampleAt ? now - lastSampleAt : 0
@@ -431,17 +441,20 @@ export function useSubscriberLayers({
           governor.ceiling
         );
         restoring = false;
-        recorded = true;
-        policy?.quality.recordReceiver(
-          sample,
-          cameras.flatMap(({ owner }) => {
-            const confirmed = requestedLayers.current.get(
-              owner.subscriptionKey
-            );
-            return confirmed?.peer === pc ? [confirmed.layer] : [];
-          }),
-          !!window?.smallMode
-        );
+        // Layers are reported only alongside a fresh measurement.
+        if (sample) {
+          result.recorded = true;
+          policy?.quality.recordReceiver(
+            sample,
+            cameras.flatMap(({ owner }) => {
+              const confirmed = requestedLayers.current.get(
+                owner.subscriptionKey
+              );
+              return confirmed?.peer === pc ? [confirmed.layer] : [];
+            }),
+            !!window?.smallMode
+          );
+        }
         pendingUpgrades.clear();
         for (const [mid, streak] of pending) pendingUpgrades.set(mid, streak);
         if (!changes.length) return;

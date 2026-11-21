@@ -221,3 +221,51 @@ it('clears a recorded receive reading once the receiver disappears', async () =>
     layers: { high: 0, mid: 0, low: 0 },
   });
 });
+
+it('discards a sample that resolves after the receiver went away', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { refs, pc } = setup(undefined, undefined, { policy });
+  let resolveStats!: (stats: RTCStatsReport) => void;
+  (pc.getStats as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    () =>
+      new Promise<RTCStatsReport>((resolve) => {
+        resolveStats = resolve;
+      })
+  );
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  policy.setVisibility('background');
+  refs.peer.current = null;
+  refs.sessionRef.current = null;
+  const stats = new Map([
+    [
+      'v',
+      {
+        id: 'v',
+        type: 'inbound-rtp',
+        kind: 'video',
+        mid: '4',
+        packetsLost: 0,
+        packetsReceived: 100,
+        bytesReceived: 400_000,
+        freezeCount: 0,
+      },
+    ],
+  ]) as unknown as RTCStatsReport;
+  await act(async () => resolveStats(stats));
+  expect(policy.quality.take(policy.getSnapshot())).toMatchObject({
+    recvVideoKbps: null,
+    layers: { high: 0, mid: 0, low: 0 },
+  });
+});
+
+it('reports no layers while a dimmed page skips sampling', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  setup(undefined, undefined, { policy });
+  policy.setVisibility('dimmed');
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(policy.quality.take(policy.getSnapshot()).layers).toEqual({
+    high: 0,
+    mid: 0,
+    low: 0,
+  });
+});
