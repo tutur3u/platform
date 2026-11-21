@@ -605,7 +605,9 @@ export async function persistAssistantResponse({
         chatMessageId: messageData?.id,
         model,
         ...(searchCount > 0 ? { searchCount } : {}),
-        error,
+        // Workers Logs serialize an Error as {}; keep its class and message.
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
       });
       return true;
     }

@@ -172,6 +172,45 @@ describe('stream finish persistence', () => {
     }
   );
 
+  it('keeps the reply and logs a readable cause when deduction throws', async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: () => ({
+        single: async () => ({ data: { id: 'assistant-1' }, error: null }),
+      }),
+    });
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    mocks.deductAiCredits.mockRejectedValueOnce(
+      new Error('cookies() was called outside a request scope')
+    );
+
+    await expect(
+      persistAssistantResponse({
+        chatId: 'chat-1',
+        effectiveSource: 'Mira',
+        model: 'google/gemini-3-flash',
+        response: {
+          finishReason: 'stop',
+          text: 'Answer',
+          totalUsage: { inputTokens: 10, outputTokens: 5 },
+        },
+        sbAdmin: { from: () => ({ insert }) },
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      })
+    ).resolves.toBe(true);
+    expect(consoleError).toHaveBeenCalledWith(
+      'Failed to deduct AI credits after assistant response.',
+      expect.objectContaining({
+        chatMessageId: 'assistant-1',
+        errorName: 'Error',
+        errorMessage: 'cookies() was called outside a request scope',
+      })
+    );
+    consoleError.mockRestore();
+  });
+
   it('reports empty streams as not persisted', async () => {
     const sbAdmin = { from: vi.fn() };
 

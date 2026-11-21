@@ -168,6 +168,8 @@ describe('AI credit Redis snapshot cache', () => {
     });
 
     expect(result.success).toBe(true);
+    // Settlement runs after the response stream, outside the request scope.
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
     expect(mocks.incrementAiCreditChargeInFlight).toHaveBeenCalledWith({
       wsId: 'workspace-1',
       userId: 'user-1',
@@ -202,6 +204,8 @@ describe('AI credit Redis snapshot cache', () => {
     });
 
     expect(result.success).toBe(true);
+    // Settlement runs after the response stream, outside the request scope.
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
     expect(mocks.incrementAiCreditChargeInFlight).toHaveBeenCalledWith({
       wsId: 'workspace-1',
       userId: 'user-1',

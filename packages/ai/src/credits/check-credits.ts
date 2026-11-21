@@ -50,7 +50,7 @@ export async function checkAiCredits(
   // Status snapshots are UI hints only. The RPC is the authoritative gate for
   // daily credit, daily request, and feature-specific request limits.
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = await sbAdmin.rpc('check_ai_credit_allowance', {
     p_ws_id: wsId,
     p_model_id: gatewayModelId,
@@ -123,7 +123,9 @@ export async function deductAiCredits(
   }
 
   const wsId = params.wsId;
-  const sbAdmin = await createAdminClient();
+  // Settlement runs after the response stream, outside the request scope, so
+  // the admin client must not touch request cookies.
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const gatewayModelId = resolveGatewayModelId(params.modelId);
   let inFlightMarked = false;
 

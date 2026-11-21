@@ -96,7 +96,8 @@ async function getRpcCaller(
     return rpcCaller;
   }
 
-  return createAdminClient();
+  // Reservations settle after the response stream, outside the request scope.
+  return createAdminClient({ noCookie: true });
 }
 
 function rpcErrorFromUnknown(error: unknown): RpcError {
