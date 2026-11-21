@@ -90,7 +90,7 @@ export function SignInMethods({
             <span className="sr-only">, {t('login.last_used')}</span>
             <History
               aria-hidden
-              className="absolute right-4 size-4 text-muted-foreground"
+              className="absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted-foreground"
             />
           </>
         ) : null}
