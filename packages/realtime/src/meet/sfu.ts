@@ -141,6 +141,17 @@ export class CloudflareSfuClient {
     );
   }
 
+  /** Changes a subscribed track's simulcast layer without renegotiation. */
+  updateTracks(input: Omit<CloseTracksInput, 'force'>) {
+    return this.request(
+      `/sessions/${encodeURIComponent(input.sessionId)}/tracks/update`,
+      {
+        body: JSON.stringify({ tracks: input.tracks }),
+        method: 'PUT',
+      }
+    );
+  }
+
   closeTracks(input: CloseTracksInput) {
     return this.request(
       `/sessions/${encodeURIComponent(input.sessionId)}/tracks/close`,

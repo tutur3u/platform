@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MEET_CAMERA_RID_VALUES } from './simulcast-layers';
 
 export const meetRealtimeRoleSchema = z.enum(['host', 'speaker', 'viewer']);
 export const meetRealtimeRoomModeSchema = z.enum(['call', 'webinar', 'stream']);
@@ -208,9 +209,9 @@ export const cloudflareSfuTrackSchema = z.object({
   sessionId: z.string().optional(),
   simulcast: z
     .object({
-      preferredRid: z.enum(['h', 'm', 'l']),
-      priorityOrdering: z.literal('asciibetical'),
-      ridNotAvailable: z.literal('asciibetical'),
+      preferredRid: z.enum(MEET_CAMERA_RID_VALUES),
+      priorityOrdering: z.enum(['none', 'asciibetical']),
+      ridNotAvailable: z.enum(['none', 'asciibetical']),
     })
     .optional(),
   trackName: z.string().optional(),

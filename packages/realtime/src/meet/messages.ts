@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { ClassTimer } from './class-timer';
+import type { MeetCameraRid } from './simulcast-layers';
 import {
   cloudflareSfuSessionDescriptionSchema,
   cloudflareSfuTrackSchema,
@@ -183,6 +184,12 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     requestId,
+    sessionId: z.string().trim().min(1).max(180),
+    tracks: z.array(cloudflareSfuTrackSchema).min(1).max(64),
+    type: z.literal('sfu.tracks.update'),
+  }),
+  z.object({
+    requestId,
     state: meetRealtimeStreamStateSchema,
     type: z.literal('stream.state'),
   }),
@@ -209,7 +216,7 @@ export type MeetRealtimeSfuClientMessage = Extract<
 >;
 
 export type MeetRealtimeRoomTrack = {
-  cameraRids?: Array<'h' | 'm' | 'l'>;
+  cameraRids?: MeetCameraRid[];
   kind?: string;
   mid?: string;
   sessionId: string;

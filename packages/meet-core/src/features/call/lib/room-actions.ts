@@ -25,7 +25,13 @@ export function createRoomActions(
     | undefined;
   let customDisplayName: string | undefined;
   const pendingChat = new Map<string, string>();
+  // Measured outside React state so tile resizes never re-render the room.
+  const tileHeights = new Map<string, number>();
   return {
+    reportTileHeight: (userId: string, devicePx: number | null) => {
+      if (devicePx === null) tileHeights.delete(userId);
+      else tileHeights.set(userId, devicePx);
+    },
     setStageVideoWindow: (
       cameraUserIds: string[],
       spotlightUserId?: string
@@ -41,6 +47,7 @@ export function createRoomActions(
         cameraUserIds,
         spotlightUserId,
         changedAt: Date.now(),
+        tileHeights,
       };
     },
     admitAllWaiting: () =>
@@ -162,6 +169,10 @@ export type StageVideoWindow = {
   cameraUserIds: string[];
   spotlightUserId?: string;
   changedAt: number;
+  /** Rendered camera tile heights in device pixels, by participant. */
+  tileHeights?: ReadonlyMap<string, number>;
+  /** Thumbnail mode: every non-spotlit camera uses the lowest layer. */
+  smallMode?: boolean;
 };
 type RoomControls = {
   actions: ReturnType<typeof createRoomActions>;

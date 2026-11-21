@@ -3,8 +3,14 @@ import type {
   MeetRealtimeRoomTrack,
   MeetRealtimeTrackKind,
 } from '@tuturuuu/realtime/meet';
-import { meetTrackKind } from '@tuturuuu/realtime/meet';
-import { useEffect, type Dispatch, type SetStateAction } from 'react';
+import {
+  meetTrackKind,
+  type MeetVideoLayer,
+  simulcastPreference,
+} from '@tuturuuu/realtime/meet';
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import { layerForTile } from './layer-policy';
+import { useSubscriberLayers } from './subscriber-layers';
 import type { RemoteMedia } from './remote-streams';
 import { preparePeerSession } from './peer-connection';
 import {
@@ -192,6 +198,7 @@ export function planWindowedRemoteSubscriptions({
   videoWindow: StageVideoWindow | null;
 }) {
   const visible = new Set(videoWindow?.cameraUserIds);
+  const layers = new Map<string, MeetVideoLayer>();
   const wanted = Object.fromEntries(
     Object.entries(remoteTracks).filter(
       ([, track]) =>
@@ -211,23 +218,20 @@ export function planWindowedRemoteSubscriptions({
           userId: '',
         })
       ];
-    const preferredRid =
-      publication?.userId === videoWindow?.spotlightUserId
-        ? 'h'
-        : visible.size >= 9
-          ? 'l'
-          : 'm';
-    if (!publication?.cameraRids?.includes(preferredRid)) return track;
-    return {
-      ...track,
-      simulcast: {
-        preferredRid,
-        priorityOrdering: 'asciibetical',
-        ridNotAvailable: 'asciibetical',
-      },
-    } satisfies CloudflareSfuTrack;
+    if (!publication) return track;
+    const layer = layerForTile({
+      renderedPx: videoWindow?.tileHeights?.get(publication.userId) ?? null,
+      spotlight: publication.userId === videoWindow?.spotlightUserId,
+      visibleTiles: visible.size,
+      smallMode: videoWindow?.smallMode,
+    });
+    const simulcast = simulcastPreference(publication.cameraRids, layer);
+    if (!simulcast) return track;
+    layers.set(remoteTrackKey(publication), layer);
+    return { ...track, simulcast } satisfies CloudflareSfuTrack;
   });
   return {
+    layers,
     pending,
     close: [...subscribedKeys].filter(
       (key) => remoteTracks[key] && !wanted[key]
@@ -283,6 +287,17 @@ export function useWindowedSubscriber({
   signalingRef: Ref<MeetSignaling | null>;
   setRemoteMedia: Dispatch<SetStateAction<RemoteMedia>>;
 }) {
+  const requestedLayers = useRef(new Map<string, MeetVideoLayer>());
+  useSubscriberLayers({
+    active: admission === 'admitted',
+    peer: subscribePcRef,
+    sessionRef: subscribeSessionRef,
+    owners: trackOwnersRef,
+    state: stateRef,
+    requestedLayers,
+    stageWindow,
+    signalingRef,
+  });
   useEffect(() => {
     if (admission !== 'admitted') return;
     const pull = async () => {
@@ -300,7 +315,7 @@ export function useWindowedSubscriber({
       const nextWindow = stageWindow.current;
       if (!nextWindow || Date.now() - nextWindow.changedAt >= 700)
         settledWindow = nextWindow;
-      const { pending, close } = planWindowedRemoteSubscriptions({
+      const { pending, close, layers } = planWindowedRemoteSubscriptions({
         remoteTracks: stateRef.current.remoteTracks,
         subscribedKeys: subscribedRef.current,
         selfUserId: stateRef.current.selfUserId,
@@ -328,6 +343,7 @@ export function useWindowedSubscriber({
           response.tracks?.some((track) => track.errorCode)
         )
           throw new Error('sfu_subscription_close_failed');
+        for (const key of closing) requestedLayers.current.delete(key);
         releaseClosedSubscriptions(
           closing,
           trackOwnersRef.current,
@@ -362,6 +378,8 @@ export function useWindowedSubscriber({
           type: 'sfu.tracks.subscribe',
         });
         if (subscribePcRef.current !== pc) return;
+        for (const [key, layer] of layers)
+          requestedLayers.current.set(key, layer);
         applySubscribeResponse(
           answer,
           pending,

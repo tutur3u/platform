@@ -19,6 +19,7 @@ export {
   MEET_ASSISTANT_USER_ID,
 } from './assistant-mentions';
 export * from './room-presence-diff';
+export * from './simulcast-layers';
 export { retainRoomChat } from './chat-retention';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
@@ -266,5 +267,6 @@ export {
 
 export {
   canCloseMeetSubscriptions,
+  isMeetStatelessSfuOutcome,
   recordMeetSubscriptionOperation,
 } from './room-sfu';

@@ -145,11 +145,11 @@ it('scales grid camera budgets down at each room tier while preserving spotlight
   ).toMatchObject({ scaleResolutionDownBy: 1 });
 });
 
-it('advertises three RIDs and adapts an unsupported browser with a single encoding', () => {
+it('advertises three ASCII-ordered RIDs and adapts an unsupported browser with a single encoding', () => {
   expect(initialSendEncodings('video', 50).map((layer) => layer.rid)).toEqual([
+    'f',
     'h',
-    'm',
-    'l',
+    'q',
   ]);
   expect(initialSendEncodings('video', 50, false)).toEqual([
     expect.objectContaining({ scaleResolutionDownBy: 2 }),

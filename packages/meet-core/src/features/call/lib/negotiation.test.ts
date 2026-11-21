@@ -235,4 +235,34 @@ it('keeps audio and screens across pages while pulling and closing camera tracks
   expect(
     plan.pending.find((entry) => entry.trackName === 'first-video')
   ).toMatchObject({ simulcast: { preferredRid: 'h' } });
+  expect(plan.layers.get('first:first-video')).toBe('high');
+});
+
+it('requests the layer a measured tile needs from ASCII-ordered publishers', () => {
+  const publication = {
+    userId: 'a',
+    sessionId: 'a',
+    trackName: 'a-video',
+    cameraRids: ['f', 'h', 'q'] as Array<'f' | 'h' | 'q'>,
+  };
+  const plan = (heights: Array<[string, number]>, spotlightUserId?: string) =>
+    planWindowedRemoteSubscriptions({
+      remoteTracks: { 'a:a-video': publication },
+      subscribedKeys: [],
+      selfUserId: 'me',
+      videoWindow: {
+        cameraUserIds: ['a'],
+        spotlightUserId,
+        changedAt: 0,
+        tileHeights: new Map(heights),
+      },
+    }).pending[0]?.simulcast;
+  expect(plan([['a', 160]])).toEqual({
+    preferredRid: 'q',
+    priorityOrdering: 'asciibetical',
+    ridNotAvailable: 'asciibetical',
+  });
+  expect(plan([['a', 280]])?.preferredRid).toBe('h');
+  expect(plan([['a', 720]])?.preferredRid).toBe('f');
+  expect(plan([['a', 160]], 'a')?.preferredRid).toBe('h');
 });

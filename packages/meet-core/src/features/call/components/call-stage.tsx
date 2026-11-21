@@ -258,6 +258,7 @@ export function CallStage({
       focusKey={tile.key}
       onFocus={share && tile.kind === 'camera' ? undefined : focusTile}
       onRetry={room.reconnectReceivingMedia}
+      onRenderedHeight={room.reportTileHeight}
       onMute={
         (room.state.canManageParticipants ?? room.state.role === 'host')
           ? mute

@@ -1568,6 +1568,60 @@ Sending pauses when the participant is alone and resumes when an audience joins.
 Sender parameter failures preserve the working transport rather than forcing a
 reconnect. Initial encodings are capped before negotiation.
 
+### Simulcast layers
+
+Cameras publish three RID simulcast layers: `f` (full), `h` (half) and `q`
+(quarter resolution). Cloudflare Realtime falls back between layers in ASCII
+order, so the RIDs sort from highest to lowest quality. Under receiver congestion,
+or when the publisher pauses its full layer, a subscriber steps down one layer
+instead of jumping to the smallest. Publishers from older clients advertise
+`h`/`m`/`l`. The room server records whichever scheme the offer carries, and
+subscribers address both by semantic layer (high, mid, low).
+
+Each subscriber requests the smallest layer that fills its tile. The tile's
+rendered height in device pixels, with the pixel ratio capped at 2, maps to the
+layer: 400 px or more selects high, 200 px or more selects mid, and anything
+smaller selects low. A spotlit camera never drops below mid on size alone.
+Before a tile is measured, spotlight selects high, a window of nine or more
+cameras selects low, and anything else selects mid. Off-page cameras are not
+subscribed at all.
+
+A receiver-wide ceiling caps every tile's layer. Any one of these signals
+counts as congestion:
+
+- At least 6% inbound video loss.
+- Two new freezes in a 2-second sample.
+- A round-trip time of 700 ms or more.
+- A saturated receive estimate.
+
+Congestion lowers the ceiling one layer at once, with a 4-second cooldown.
+Recovery raises it one layer after five healthy samples (10 seconds). A recovery
+that meets congestion within 15 seconds doubles the healthy run needed next
+time, up to 40 samples. Missing statistics never upgrade. Per tile, a downgrade
+applies immediately and an upgrade waits for two consecutive samples.
+
+Layer changes use the SFU's `PUT /sessions/{id}/tracks/update`, which needs no
+renegotiation. The room server forwards a change only for receiver MIDs that
+the requesting socket's own session subscribed, and it does not rewrite the
+durable room snapshot for it. If the room server rejects layer updates, the
+client keeps its current layers and retries after 30 seconds.
+
+Support can turn layer switching off on one device by setting the browser
+storage key `tumeet:media-flags` to `{"layerSwitching":false}`.
+
+Known gaps:
+
+- The SFU gives publishers no feedback about which layers are subscribed.
+  Publishers therefore pause the full layer from their own bandwidth budget
+  rather than from audience demand.
+- Cloudflare Realtime documents RID simulcast only, with no SVC
+  `scalabilityMode`.
+- While a deployment rolls out, an older subscriber may receive the SFU's
+  default layer from a newer publisher.
+
+Regression coverage: `layer-policy.test.ts`, `negotiation.test.ts`,
+`bandwidth.test.ts` and `packages/realtime/src/meet/simulcast-layers.test.ts`.
+
 Admins see client-reported received RTP bytes and server request counters in
 settings. Estimates use [SFU pricing](https://developers.cloudflare.com/realtime/sfu/pricing/)
 and [Durable Object request pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/),

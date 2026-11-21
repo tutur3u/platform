@@ -4,6 +4,7 @@ import {
   applyMeetRoomSettings,
   MeetPresencePublisher,
   canCloseMeetSubscriptions,
+  isMeetStatelessSfuOutcome,
   recordMeetSubscriptionOperation,
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
@@ -183,9 +184,7 @@ export class MeetRoomDurableObject implements DurableObject {
         socket.close(1012, 'service restart');
   }
 
-  private sockets() {
-    return this.state.getWebSockets();
-  }
+  private sockets = () => this.state.getWebSockets();
 
   private connectionState(
     excluded?: WebSocket,
@@ -468,7 +467,6 @@ export class MeetRoomDurableObject implements DurableObject {
         ...roomCommand(message, token, this.env),
         requireAdmission: true,
         canCloseSubscriptions: () =>
-          message.type === 'sfu.tracks.close' &&
           canCloseMeetSubscriptions(
             this.delivery.attachmentOf(socket)?.sessions,
             message
@@ -492,9 +490,10 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
+    const stateless = isMeetStatelessSfuOutcome(this.snapshot, result);
     this.snapshot = result.state;
     this.snapshot = this.connectionState();
-    await this.persist();
+    if (!stateless) await this.persist();
     await this.scheduleEmptyRoom();
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());

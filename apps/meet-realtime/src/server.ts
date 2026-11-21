@@ -33,7 +33,7 @@ import { verifyMeetRealtimeJoinToken } from './token';
 
 type SfuClient = Pick<
   CloudflareSfuClient,
-  'addTracks' | 'closeTracks' | 'createSession' | 'renegotiate'
+  'addTracks' | 'closeTracks' | 'createSession' | 'renegotiate' | 'updateTracks'
 >;
 
 export type MeetRealtimeServerOptions = {
@@ -58,6 +58,9 @@ function runSfuIntent(intent: MeetSfuIntent, client: SfuClient) {
   }
   if (message.type === 'sfu.renegotiate') {
     return client.renegotiate(message);
+  }
+  if (message.type === 'sfu.tracks.update') {
+    return client.updateTracks(message);
   }
   return client.closeTracks(message);
 }

@@ -24,5 +24,6 @@ export async function runRoomSfuIntent(
   )
     return client.addTracks(message);
   if (message.type === 'sfu.renegotiate') return client.renegotiate(message);
+  if (message.type === 'sfu.tracks.update') return client.updateTracks(message);
   return client.closeTracks(message);
 }

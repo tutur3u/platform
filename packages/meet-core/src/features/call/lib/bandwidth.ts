@@ -14,10 +14,12 @@ type Network = {
   rtt: number | null;
   loss: number | null;
 };
+// RIDs sort from highest to lowest quality so the SFU's ASCII-ordered
+// fallback steps down one layer at a time (see `MEET_CAMERA_RIDS`).
 const CAMERA_LAYERS = [
-  { rid: 'h', scale: 1, share: 0.65 },
-  { rid: 'm', scale: 2, share: 0.25 },
-  { rid: 'l', scale: 4, share: 0.1 },
+  { rid: 'f', scale: 1, share: 0.65 },
+  { rid: 'h', scale: 2, share: 0.25 },
+  { rid: 'q', scale: 4, share: 0.1 },
 ];
 
 export function encodingBudget(
@@ -129,7 +131,7 @@ export function planSenderEncodings(
       active:
         hasAudience &&
         (!visual || (!severe && !(kind === 'video' && recovering))) &&
-        !(layer?.rid === 'h' && cheap),
+        !(layer?.rid === 'f' && cheap),
     };
   });
 }

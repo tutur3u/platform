@@ -26,6 +26,7 @@ import {
 } from './media-receiving-status';
 import { MiraAudioStatus } from './mira-audio-status';
 import { usePlaybackVolume } from './playback-volume';
+import { useRenderedHeight } from '../hooks/use-rendered-height';
 
 function ParticipantTileImpl({
   className,
@@ -47,6 +48,7 @@ function ParticipantTileImpl({
   onRetry,
   focused,
   focusKey,
+  onRenderedHeight,
 }: {
   className?: string;
   miraActive?: boolean;
@@ -68,6 +70,8 @@ function ParticipantTileImpl({
   onRetry?: () => void;
   focusKey?: string;
   focused?: boolean;
+  /** Receives this camera tile's device-pixel height for layer selection. */
+  onRenderedHeight?: (userId: string, devicePx: number | null) => void;
 }) {
   const t = useTranslations('meet.call');
   const [expanded, setExpanded] = useState(false);
@@ -92,6 +96,15 @@ function ParticipantTileImpl({
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
+  const userId = participant.userId;
+  const reportHeight = useMemo(
+    () =>
+      onRenderedHeight && kind === 'camera' && !isSelf
+        ? (devicePx: number | null) => onRenderedHeight(userId, devicePx)
+        : undefined,
+    [onRenderedHeight, kind, isSelf, userId]
+  );
+  useRenderedHeight(tileRef, reportHeight);
   const videoEnabled =
     kind === 'screen'
       ? participant.media.screenEnabled

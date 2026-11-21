@@ -19,12 +19,45 @@ import type {
 import { roomCapacityError } from './room-budget';
 import { denied, outcome } from './room-outcome';
 import { meetTrackKey, replaceRoomPublications } from './room-tracks';
+import { advertisedCameraRids } from './simulcast-layers';
 export function applySfuCommand(
   state: MeetRoomSnapshot,
   message: MeetRealtimeSfuClientMessage,
   token: MeetRealtimeTokenPayload,
   canCloseSubscriptions?: () => boolean
 ): MeetRoomOutcome {
+  if (message.type === 'sfu.tracks.update') {
+    // Only the subscriber's own provider-confirmed receivers may change layer.
+    if (
+      !hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.sfuSubscribe) ||
+      !canCloseSubscriptions?.() ||
+      message.tracks.some(
+        (track) =>
+          !track.simulcast ||
+          !track.trackName ||
+          !track.sessionId ||
+          (track.location !== undefined && track.location !== 'remote')
+      )
+    )
+      return denied(state, 'permission_denied', message.requestId);
+    return outcome(state, {
+      sfu: {
+        requestId: message.requestId,
+        message: {
+          ...message,
+          tracks: message.tracks.map(
+            ({ mid, sessionId, trackName, simulcast }) => ({
+              location: 'remote',
+              mid,
+              sessionId,
+              trackName,
+              simulcast,
+            })
+          ),
+        },
+      },
+    });
+  }
   if (message.type === 'sfu.tracks.close' && message.subscription) {
     if (
       !hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.sfuSubscribe) ||
@@ -119,11 +152,7 @@ export function applySfuCommand(
       const section = mediaSections.get(track.mid);
       const kind = meetTrackKind(track);
       const cameraRids =
-        kind === 'video' && section
-          ? (['h', 'm', 'l'] as const).filter((rid) =>
-              section.includes(`a=rid:${rid} send`)
-            )
-          : [];
+        kind === 'video' && section ? advertisedCameraRids(section) : [];
       return {
         ...track,
         sessionId: message.sessionId,
@@ -223,13 +252,14 @@ export function applySfuCommand(
 
 type SocketSessionRegistry = Record<string, string[]>;
 
-/** Only provider-confirmed receiver MIDs in a socket's own session may be closed. */
+/** Only provider-confirmed receiver MIDs in a socket's own session may be closed or re-layered. */
 export function canCloseMeetSubscriptions(
   sessions: SocketSessionRegistry | undefined,
-  message: MeetRealtimeSfuClientMessage
+  message: MeetRealtimeClientMessage
 ) {
   if (
-    message.type !== 'sfu.tracks.close' ||
+    (message.type !== 'sfu.tracks.close' &&
+      message.type !== 'sfu.tracks.update') ||
     !sessions ||
     !Object.hasOwn(sessions, message.sessionId)
   )
@@ -305,4 +335,19 @@ export function recordMeetSubscriptionOperation(
   const prior = attached.sessions ?? {};
   const sessions = updateMeetSubscriberRegistry(prior, message, reply.result);
   if (sessions !== prior) socket.serializeAttachment({ ...attached, sessions });
+}
+
+/** A layer switch changes no room state, so it needs no durable snapshot write. */
+export function isMeetStatelessSfuOutcome(
+  previous: MeetRoomSnapshot,
+  result: MeetRoomOutcome
+) {
+  return (
+    result.state === previous &&
+    !result.broadcast.length &&
+    result.reply.some(
+      (reply) =>
+        reply.type === 'sfu.response' && reply.action === 'sfu.tracks.update'
+    )
+  );
 }

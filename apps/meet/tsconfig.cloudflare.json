@@ -127,6 +127,7 @@
     "../../packages/realtime/src/meet/room.ts",
     "../../packages/realtime/src/meet/service-credential.ts",
     "../../packages/realtime/src/meet/sfu.ts",
+    "../../packages/realtime/src/meet/simulcast-layers.ts",
     "../../packages/realtime/src/meet/token.ts",
     "../../packages/realtime/src/meet/transcription.ts",
     "../../packages/utils/src/app-switch-rum.ts",
