@@ -90,4 +90,27 @@ describe('abuse protection Redis fail-open behavior', () => {
     });
     expect(from).not.toHaveBeenCalledWith('blocked_ips');
   });
+
+  it('builds the admin client without the request cookie store', async () => {
+    const insert = vi.fn(async () => ({ error: null }));
+    const from = vi.fn(() => ({ insert }));
+    const createAdminClient = vi.fn(async () => ({ from, rpc: vi.fn() }));
+
+    vi.doMock('../../upstash-rest', () => ({
+      getUpstashRestRedisClient: vi.fn(),
+      hasUpstashRestEnv: () => false,
+    }));
+    vi.doMock('@tuturuuu/supabase/next/server', () => ({
+      createAdminClient,
+    }));
+
+    const { logAbuseEvent } = await import('../index.js');
+    await logAbuseEvent('203.0.113.82', 'otp_send' as never);
+
+    // cookies() throws outside a request scope (proxy guards, background
+    // follow-ups), so the service-role client must never read it.
+    expect(createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(from).toHaveBeenCalledWith('abuse_events');
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
 });

@@ -261,14 +261,13 @@ async function deleteKeysWithCount(...keys: string[]): Promise<number> {
   }
 }
 
-/**
- * Create Supabase admin client for database operations
- */
+/** Service-role client without cookies: callers may run outside a request scope. */
 async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
   try {
     const { createAdminClient } =
       await import('@tuturuuu/supabase/next/server');
-    return (await createAdminClient()) as SupabaseClient<Database>;
+    const client = await createAdminClient({ noCookie: true });
+    return client as SupabaseClient<Database>;
   } catch (error) {
     logAbuseError(
       '[Abuse Protection] Failed to create Supabase client:',
