@@ -85,28 +85,35 @@ describe('resolveCanonicalRecipient', () => {
 describe('Cloudflare Email Routing Worker', () => {
   it('stores and submits shadow mail using the canonical mailbox identity', async () => {
     const requests: Record<string, unknown>[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (_url: string, init?: RequestInit) => {
-        const payload = JSON.parse(String(init?.body)) as Record<
-          string,
-          unknown
-        >;
-        requests.push(payload);
-        if (payload.type === 'domain_check') {
-          return Response.json({
-            accepted: true,
-            canonicalDomain: 'tuturuuu.com',
-          });
-        }
-        return Response.json({ imported: 1, status: 'imported' });
-      })
-    );
+    const publicFetch = vi.fn();
+    vi.stubGlobal('fetch', publicFetch);
+    const ingest = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://mail.example.test/webhook');
+      expect(request.method).toBe('POST');
+      expect(request.redirect).toBe('error');
+      expect(request.headers.get('x-tuturuuu-mail-signature')).toMatch(
+        /^[a-f0-9]{64}$/u
+      );
+      expect(request.headers.get('x-tuturuuu-mail-timestamp')).toMatch(
+        /^\d+$/u
+      );
+      const payload = (await request.json()) as Record<string, unknown>;
+      requests.push(payload);
+      if (payload.type === 'domain_check') {
+        return Response.json({
+          accepted: true,
+          canonicalDomain: 'tuturuuu.com',
+        });
+      }
+      return Response.json({ imported: 1, status: 'imported' });
+    });
     const message = createMessage();
-    const env = createEnv();
+    const env = { ...createEnv(), MAIL_INGEST: { fetch: ingest } };
 
     await worker.email(message, env);
 
+    expect(ingest).toHaveBeenCalledTimes(2);
+    expect(publicFetch).not.toHaveBeenCalled();
     expect(message.setReject).not.toHaveBeenCalled();
     expect(requests[0]).toEqual({
       domain: 'ingest.tutur3u.com',

@@ -29,6 +29,7 @@ type R2Bucket = {
 };
 
 type Env = {
+  MAIL_INGEST?: { fetch(request: Request): Promise<Response> };
   MAIL_INGEST_SECRET: string;
   MAIL_INGEST_URL: string;
   MAIL_R2_BUCKET: R2Bucket;
@@ -141,7 +142,7 @@ async function signedPost<T>(env: Env, payload: unknown): Promise<T> {
     try {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const signature = await sign(env.MAIL_INGEST_SECRET, timestamp, body);
-      const response = await fetch(env.MAIL_INGEST_URL, {
+      const init = {
         body,
         headers: {
           'Content-Type': 'application/json',
@@ -149,7 +150,11 @@ async function signedPost<T>(env: Env, payload: unknown): Promise<T> {
           'X-Tuturuuu-Mail-Timestamp': timestamp,
         },
         method: 'POST',
-      });
+        redirect: 'error',
+      } satisfies RequestInit;
+      const response = env.MAIL_INGEST
+        ? await env.MAIL_INGEST.fetch(new Request(env.MAIL_INGEST_URL, init))
+        : await fetch(env.MAIL_INGEST_URL, init);
       if (response.ok) return (await response.json()) as T;
       if (response.status !== 429 && response.status < 500) {
         const error = new Error(

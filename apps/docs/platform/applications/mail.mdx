@@ -577,12 +577,14 @@ staging domain before changing a production domain.
    returned to clients. See `apps/mail/env.example` for the complete contract.
 3. Set the Worker secret with
    `bunx wrangler secret put MAIL_INGEST_SECRET --config apps/mail/wrangler.email-routing.jsonc`.
-4. Configure the same value as `MAIL_CLOUDFLARE_INGEST_SECRET` in the Mail
-   Vercel environment. Signed events include the request body and a timestamp;
+4. Configure the same value as `MAIL_CLOUDFLARE_INGEST_SECRET` on the Mail
+   Worker. Signed events include the request body and a timestamp, and
    the API rejects invalid or older-than-five-minute signatures.
 5. Set `MAIL_INGEST_URL` to the deployed Mail endpoint
-   `/api/v1/webhooks/mail/cloudflare`, then deploy with
-   `bunx wrangler deploy --config apps/mail/wrangler.email-routing.jsonc`.
+   `/api/v1/webhooks/mail/cloudflare`. The Email Routing Worker uses the
+   `MAIL_INGEST` service binding to pass a signed request directly to
+   `tuturuuu-mail`. Verify the domain check and an isolated test delivery
+   through the bound version before changing the public webhook route.
 6. In Cloudflare Email Routing, onboard the domain and route its intended
    address patterns to `tuturuuu-mail-email-routing`.
 7. Configure the domain row through `GET/PUT /api/v1/mail/domains`. Only root
