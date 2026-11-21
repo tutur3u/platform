@@ -204,11 +204,11 @@ select is((select receipt->>'state' from private.fleet_intents where id = md5('f
 insert into private.fleet_intent_quotes (intent_id, redacted_quote, created_at)
 values (md5('fleet-question-1')::uuid, 'Expired quote', clock_timestamp() - interval '91 days'),
   (md5('fleet-question-2')::uuid, 'Current quote', clock_timestamp());
-insert into private.fleet_provider_events (channel, provider_account_id, event_hash, consumed_at)
-select 'zalo', 'retention-fixture', sha256(convert_to(n::text, 'UTF8')), clock_timestamp() - interval '91 days'
+insert into private.fleet_provider_events (channel, provider_account_id, event_hash, consumed_at, exclusive_slot)
+select 'zalo', 'retention-fixture', sha256(convert_to(n::text, 'UTF8')), clock_timestamp() - interval '91 days', 'fleet'
 from generate_series(1, 335) n;
-insert into private.fleet_provider_events (channel, provider_account_id, event_hash)
-values ('zalo', 'retention-fixture', sha256(convert_to('fresh', 'UTF8')));
+insert into private.fleet_provider_events (channel, provider_account_id, event_hash, exclusive_slot)
+values ('zalo', 'retention-fixture', sha256(convert_to('fresh', 'UTF8')), 'fleet');
 insert into private.fleet_identity_link_codes (user_id, code_hash, expires_at)
 values
   ('f5000000-0000-4000-8000-000000000001', decode(repeat('ab', 32), 'hex'), clock_timestamp() - interval '1 minute'),

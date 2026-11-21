@@ -33,7 +33,8 @@ select ok(not exists (
     'fleet_version_project', 'fleet_version_control', 'fleet_check_intent_transition',
     'fleet_require_owner', 'fleet_grant_access', 'fleet_revoke_access',
     'fleet_set_stopped', 'fleet_admit_intent', 'fleet_submit_intent',
-    'fleet_digest_labels_approved', 'fleet_get_access', 'fleet_get_digest', 'fleet_publish_digest'
+    'fleet_digest_labels_approved', 'fleet_get_access', 'fleet_get_digest', 'fleet_publish_digest',
+    'fleet_list_user_channel_identities', 'fleet_consume_registry_event', 'fleet_is_owner'
   )
     and (caller <> 'service_role' or p.proname not in (
       'fleet_submit_intent', 'fleet_get_access', 'fleet_get_digest', 'fleet_publish_digest'
