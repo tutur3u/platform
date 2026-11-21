@@ -91,6 +91,22 @@ describe('vinext route families', () => {
     }
   });
 
+  it('places the API families in a Gemini-supported region', async () => {
+    const placement = async (family?: string) => {
+      vi.resetModules();
+      vi.stubEnv('WEB_VINEXT_FAMILY', family ?? '');
+      const { default: config } = await import('../../cloudflare.config');
+      vi.unstubAllEnvs();
+      return (config as { worker: { placement?: unknown } }).worker.placement;
+    };
+    const singapore = { region: 'aws:ap-southeast-1' };
+    expect(await placement()).toEqual(singapore);
+    for (const { id, kind } of config.families) {
+      const expected = kind === 'api' ? singapore : undefined;
+      expect(await placement(id), id).toEqual(expected);
+    }
+  });
+
   it('keeps the localized sign-in and landing pages in public-auth', () => {
     const { keep } = planVinextPrune('public-auth');
     expect(keep).toContain('[locale]/(auth)/login/page.tsx');

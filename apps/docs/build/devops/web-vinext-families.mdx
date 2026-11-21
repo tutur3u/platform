@@ -219,6 +219,13 @@ nothing populates the R2 store yet.
 - `cloudflare.config.ts` enables Workers observability (logs at a head
   sampling rate of 1, with invocation logs), so every family deploy keeps
   requests and console output queryable in Workers Logs.
+- The `api-*` families, and the unsplit Worker, run with
+  `placement: { region: 'aws:ap-southeast-1' }`. At the nearest edge,
+  Vietnamese traffic mostly lands in Hong Kong, and the Gemini API rejects
+  requests from Hong Kong as an unsupported location. Mira and AI chat then
+  fail before the first token, as a generic stream error. Singapore is a
+  supported region and sits beside the Supabase database. The page families
+  stay at the edge.
 - `cloudflare/vinext/worker-entry.ts` is the Worker entrypoint. It installs
   `cloudflare/vinext/workers-fetch.ts`, because workerd's fetch rejects every
   `cache` mode except `no-store` ("Unsupported cache mode"). The bundler

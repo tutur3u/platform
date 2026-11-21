@@ -29,6 +29,13 @@ export default defineConfig({
     compatibilityFlags: ['nodejs_compat'],
     workersDev: false,
     previewUrls: false,
+    // The API families call the Gemini API, which rejects requests from
+    // unsupported locations such as Hong Kong, the edge most Vietnamese
+    // traffic reaches. Running them in Singapore keeps that egress in a
+    // supported region and beside the Supabase database.
+    ...(!family || family.startsWith('api-')
+      ? { placement: { region: 'aws:ap-southeast-1' } }
+      : {}),
     // Every request and its console output stay queryable in Workers Logs;
     // a deploy applies this, so it is not lost on redeploy.
     observability: {
