@@ -108,7 +108,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  group: nova-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   affected-gate:
@@ -159,7 +159,7 @@ jobs:
   # Qualify both route-free identities before Rex uploads a private version.
   native:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'workflow_dispatch' && (needs.check-ci.outputs.should_run == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (github.ref != 'refs/heads/production' && (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'workflow_dispatch' && (needs.check-ci.outputs.should_run == 'true')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     strategy:
       fail-fast: false
       matrix:
@@ -189,7 +189,7 @@ jobs:
 
   cutover-build:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (github.ref != 'refs/heads/production' && (needs.affected-gate.outputs.run == 'true' && (github.event_name == 'workflow_dispatch'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -270,7 +270,7 @@ jobs:
           if-no-files-found: error
   nova-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' || github.ref == 'refs/heads/production')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -279,10 +279,10 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       NOVA_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_NOVA_NATIVE_PROFILE: production
-      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NOVA_ABUSE_GUARD_FAMILIES: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.NOVA_ABUSE_GUARD_FAMILIES || '' }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
+      TRUSTED: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NOVA_ABUSE_GUARD_FAMILIES: ${{ ((github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.NOVA_ABUSE_GUARD_FAMILIES || '' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ ((github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ ((github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://tuturuuu.com/nova
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'

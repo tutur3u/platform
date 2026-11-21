@@ -150,10 +150,37 @@ export const productionAppExclusions: Record<string, string> = {
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  // Already serving through the apex gateway: serving-workers-production.yaml
+  // republishes these from their sealed production-SHA builds.
   lms: {
-    state: 'held',
+    state: 'admitted',
     reason:
-      'LMS requires signed-in staging acceptance and gateway cutover review',
+      'LMS serves tuturuuu.com/lms; serving-worker republication with 0% smoke and one-step version rollback',
+    surfaces: ['frontend'],
+  },
+  roadmap: {
+    state: 'admitted',
+    reason:
+      'Roadmap serves tuturuuu.com/roadmap; serving-worker republication with 0% smoke and one-step version rollback',
+    surfaces: ['frontend'],
+  },
+  learn: {
+    state: 'admitted',
+    reason:
+      'Learn serves learn.tuturuuu.com and tuturuuu.com/learn; serving-worker republication with 0% smoke and one-step version rollback',
+    surfaces: ['frontend'],
+  },
+  teach: {
+    state: 'admitted',
+    reason:
+      'Teach serves teach.tuturuuu.com and tuturuuu.com/teach; serving-worker republication with 0% smoke and one-step version rollback',
+    surfaces: ['frontend'],
+  },
+  tools: {
+    state: 'admitted',
+    reason:
+      'Tools serves tools.tuturuuu.com and tuturuuu.com/tools; serving-worker republication with 0% smoke and one-step version rollback',
+    surfaces: ['frontend'],
   },
   forms: {
     state: 'admitted',

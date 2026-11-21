@@ -1,5 +1,11 @@
 name: Roadmap Cloudflare Artifact
 on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Exact production source commit of the calling run
+        type: string
+        required: false
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
@@ -22,7 +28,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  group: roadmap-artifact-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.sha) }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   affected-gate:
@@ -72,7 +78,7 @@ jobs:
       workflow_name: roadmap-cloudflare.yaml
   build:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && ((needs.check-ci.outputs.should_run == 'true' || github.ref == 'refs/heads/production') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Read-only: the build reads public pull requests and commits from the

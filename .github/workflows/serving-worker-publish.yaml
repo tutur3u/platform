@@ -1,0 +1,73 @@
+name: Publish serving Worker
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: Serving app id from scripts/ci/serving-workers-apps.mjs
+        type: string
+        required: true
+      artifact:
+        description: Same-run sealed artifact built at the production SHA
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  publish:
+    name: publish-${{ inputs.app }}
+    # Durable stop fence: the repository variable must say enabled when the job
+    # starts. The script also refuses without the token or a policy admission.
+    # Cancelling a running publisher leaves its current step as it is; the
+    # receipt's rollbackVersion restores serving in one deployment.
+    if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' }}
+    runs-on: ubuntu-latest
+    environment: cloudflare-release-production
+    timeout-minutes: 30
+    concurrency:
+      group: serving-worker-publish-${{ inputs.app }}
+      cancel-in-progress: false
+    env:
+      APP: ${{ inputs.app }}
+      SOURCE_SHA: ${{ github.sha }}
+      CF_SEND_TELEMETRY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          # Full history without blobs: the publisher refuses any source that
+          # is not a fast-forward of the live build.
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Verify checkout identity
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.artifact }}
+          path: ${{ runner.temp }}/serving-artifact
+      - name: Restore, verify and convert the sealed artifact
+        env:
+          NOVA_ABUSE_GUARD_FAMILIES: ${{ vars.NOVA_ABUSE_GUARD_FAMILIES }}
+        run: node scripts/ci/serving-workers.mjs restore "$APP" "$SOURCE_SHA" "$RUNNER_TEMP/serving-artifact" "$RUNNER_TEMP/serving-cf"
+      - name: Upload, stage, smoke and assign
+        env:
+          SERVING_WORKERS_PUBLICATION: ${{ vars.SERVING_WORKERS_PUBLICATION }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.SERVING_WORKERS_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/ci/serving-workers.mjs publish "$APP" "$SOURCE_SHA" "$RUNNER_TEMP/serving-cf"
+      - name: Retain the publication and rollback receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: serving-${{ inputs.app }}-publication-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/${{ inputs.app }}-serving-publication.json
+          retention-days: 90
+          if-no-files-found: warn

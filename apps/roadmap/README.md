@@ -431,8 +431,11 @@ Run the data tests directly through Node; no database or app server is needed.
 No local machine release build is required.
 
 The pull-request artifact job builds and seals its triggering CI merge cohort
-without deployment credentials. Release artifacts come from a separate manual run.
-Dispatch `roadmap-cloudflare.yaml` on `main` with `source_sha` equal to the
+without deployment credentials. Every push to `production` builds the exact
+production SHA through `workflow_call` and republishes it with
+`serving-workers-production.yaml`
+(see [Serving Worker republication](../docs/build/devops/serving-workers-publication.mdx)).
+For a manual release artifact, dispatch `roadmap-cloudflare.yaml` on `main` with `source_sha` equal to the
 reviewed merged commit. The workflow checks out its triggering `github.sha` and
 rejects a mismatching requested source before checkout or dependency execution.
 A moved main requires fresh exact-source qualification rather than a silent rebuild.
@@ -481,8 +484,8 @@ The source trace uses react-start 1.169.3 and router-core 1.171.38; acceptance m
 verify actual SSR/hydration and navigation in the emitted Worker, not just the
 pure boundary fixtures. No provider config projection or build-SHA change is used.
 
-The release owner uploads the sealed prebuilt artifact with the qualified
-Wrangler versions interface. Publication must not rebuild it with Void deploy.
+The serving-worker publisher, or a release owner running it, converts the
+sealed prebuilt artifact to cf Build Output and uploads it with the cf CLI. Publication must not rebuild it with Void deploy.
 A configured Worker name does not establish target identity or authentication.
 
 Hosted acceptance must build the exact source, inspect the emitted configuration

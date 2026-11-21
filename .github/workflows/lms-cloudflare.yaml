@@ -1,5 +1,6 @@
 name: LMS Cloudflare Artifact
 on:
+  workflow_call:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
@@ -29,7 +30,7 @@ jobs:
       workflow_name: lms-cloudflare.yaml
   artifact:
     needs: check-ci
-    if: ${{ (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((needs.check-ci.outputs.should_run == 'true' || github.ref == 'refs/heads/production')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

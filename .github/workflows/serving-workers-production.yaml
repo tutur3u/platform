@@ -1,0 +1,157 @@
+name: Serving Workers Production
+# Republishes the already-serving Workers from each app's own sealed build at the
+# exact production SHA. Inert until both the repository variable
+# SERVING_WORKERS_PUBLICATION=enabled and the cloudflare-release-production
+# secret SERVING_WORKERS_CLOUDFLARE_API_TOKEN exist. Only apps whose public
+# build is not the production SHA are built; scripts/ci/serving-workers.mjs owns
+# the upload, strict binding check, 0% smoke, expect-current assignment and rollback.
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Serving app to republish from the production branch head
+        type: choice
+        options: [all, roadmap, learn, teach, nova, tools, lms]
+        default: all
+permissions:
+  contents: read
+concurrency:
+  group: serving-workers-production-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' }}
+    runs-on: ubuntu-latest
+    environment: cloudflare-release-production
+    timeout-minutes: 5
+    outputs:
+      apps: ${{ steps.plan.outputs.apps || '[]' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - id: token
+        env:
+          PRESENT: ${{ secrets.SERVING_WORKERS_CLOUDFLARE_API_TOKEN != '' }}
+        run: |
+          if [ "$PRESENT" = true ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::SERVING_WORKERS_CLOUDFLARE_API_TOKEN is not set; nothing is built or published"
+          fi
+      - id: plan
+        if: steps.token.outputs.ready == 'true'
+        env:
+          ONLY: ${{ inputs.app || 'all' }}
+        run: node scripts/ci/serving-workers.mjs plan "$GITHUB_SHA" "$ONLY"
+
+  build-roadmap:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'roadmap') }}
+    uses: ./.github/workflows/roadmap-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: read
+    with:
+      source_sha: ${{ github.sha }}
+  publish-roadmap:
+    needs: build-roadmap
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: roadmap
+      artifact: roadmap-worker-${{ github.sha }}
+
+  build-learn:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'learn') }}
+    uses: ./.github/workflows/learn-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+  publish-learn:
+    needs: build-learn
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: learn
+      artifact: learn-cutover-production-${{ github.sha }}
+
+  build-teach:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'teach') }}
+    uses: ./.github/workflows/teach-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+  publish-teach:
+    needs: build-teach
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: teach
+      artifact: teach-cutover-production-${{ github.sha }}
+
+  build-nova:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'nova') }}
+    uses: ./.github/workflows/nova-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+  publish-nova:
+    needs: build-nova
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: nova
+      artifact: nova-cutover-production-${{ github.sha }}
+
+  build-tools:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'tools') }}
+    uses: ./.github/workflows/tools-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+  publish-tools:
+    needs: build-tools
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: tools
+      artifact: tools-cutover-${{ github.sha }}
+
+  build-lms:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'lms') }}
+    uses: ./.github/workflows/lms-cloudflare.yaml
+    permissions:
+      contents: read
+      deployments: read
+  publish-lms:
+    needs: build-lms
+    uses: ./.github/workflows/serving-worker-publish.yaml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      app: lms
+      artifact: lms-worker-${{ github.sha }}

@@ -15,23 +15,10 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = [
-  'lms',
-  'forms',
-  'inventory',
-  'nova',
-  'mind',
-  'finance',
-  'meet',
-  'calendar',
-  'mail',
-  'apps',
-  'workspace',
-  'git',
-  'shortener',
-  'mastermind',
-  'contacts',
-];
+const apps = (
+  'lms forms inventory nova mind finance meet calendar mail apps workspace git ' +
+  'shortener mastermind contacts roadmap learn teach tools'
+).split(' ');
 test('preview-only apps remain scoped and are absent from the production plan', async () => {
   const { getWorkflowDecision, vercelWorkflowTargets } =
     await import('../../tuturuuu.ts');

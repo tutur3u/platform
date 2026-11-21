@@ -8,6 +8,10 @@ import { cloudflareProductionTargets } from '../../tuturuuu.ts';
 
 const protectedSurfaces = {
   lms: ['frontend'],
+  roadmap: ['frontend'],
+  learn: ['frontend'],
+  teach: ['frontend'],
+  tools: ['frontend'],
   forms: ['frontend'],
   inventory: ['frontend'],
   nova: ['frontend'],

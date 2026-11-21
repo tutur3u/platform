@@ -1,0 +1,104 @@
+---
+title: "Serving Worker republication"
+description: "How production promotion republishes the Workers that already serve roadmap, learn, teach, nova, tools and lms, and how to stop, retry or roll one back."
+updatedAt: '2026-11-21'
+audience: developers
+---
+
+Some native Workers already serve production traffic through the apex gateway
+mount and their own hosts. A production promotion must reach them as well, or a
+dependency fix (for example a React Server Components advisory) stays merged but
+unshipped. `serving-workers-production.yaml` closes that gap.
+
+| App | Worker | Public origins | Sealed artifact |
+| --- | --- | --- | --- |
+| roadmap | `tuturuuu-roadmap` | `tuturuuu.com/roadmap` | `roadmap-worker-<sha>` |
+| learn | `tuturuuu-learn` | `learn.tuturuuu.com`, `tuturuuu.com/learn` | `learn-cutover-production-<sha>` |
+| teach | `tuturuuu-teach` | `teach.tuturuuu.com`, `tuturuuu.com/teach` | `teach-cutover-production-<sha>` |
+| nova | `tuturuuu-nova` | `tuturuuu.com/nova` | `nova-cutover-production-<sha>` |
+| tools | `tuturuuu-tools` | `tools.tuturuuu.com`, `tuturuuu.com/tools` | `tools-cutover-<sha>` |
+| lms | `tuturuuu-lms` | `tuturuuu.com/lms` | `lms-worker-<sha>` |
+
+`scripts/ci/serving-workers-apps.mjs` holds this table. Each app also needs an
+`admitted` entry in `productionPublicationPolicy` (`tuturuuu.ci.ts`); a `held`
+entry or a `productionAppExclusions` line keeps `plan` from selecting that app
+and stops the publisher.
+
+## Flow
+
+On every push to `production`:
+
+1. `plan` runs in the `cloudflare-release-production` environment (production
+   branch only). Without the `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` secret it
+   selects nothing. Otherwise it reads each app's public `/api/build-info` and
+   selects every app that does not serve the production SHA yet, so a failed or
+   skipped earlier promotion is retried by the next one.
+2. Each selected app's own workflow runs through `workflow_call` at the exact
+   production SHA and seals its production artifact. Its qualification-only
+   `native` jobs do not run on the production ref.
+3. `serving-worker-publish.yaml` runs one app at a time per
+   `serving-worker-publish-<app>` concurrency group. It restores the sealed
+   archive, reruns the seal verifier and converts the archive's own emitted
+   config to cf Build Output with `void-cf-output.mjs`. Cron triggers stay
+   configured on the Worker and are never part of a version, so they are left
+   out of the uploaded config and checked against the live schedules instead.
+4. The publisher refuses a split deployment (another rollout is in progress)
+   and any source that is not a fast-forward of the live build, and skips when
+   live already serves the SHA.
+5. `void-cf-publisher.mjs publish --strict` uploads one version with no traffic
+   and rejects any binding that differs from the serving version.
+6. The candidate is staged at 0% beside the serving version and smoked through
+   the `Cloudflare-Workers-Version-Overrides` header, including through the
+   apex gateway mount, once the override reaches the candidate (deployment
+   writes take a few seconds to propagate). Build-info must report the SHA on every origin, each
+   probe must match the serving status and redirect, and the page's scripts and
+   stylesheets must return 200. Afterwards the serving version is restored
+   alone and must read back steadily, so nothing changes for readers yet.
+7. `void-cf-publisher.mjs assign --expect-current <serving>` moves 100% of
+   traffic only while the captured version still serves, then waits for the
+   public build-info to report the SHA. On failure the captured version is
+   restored, but only over a deployment this run wrote; another writer's
+   deployment is left in place and recorded.
+
+Every step lands in the `serving-<app>-publication-<sha>-<run>-<attempt>`
+artifact, retained 90 days, including the `rollbackVersion` that served before.
+
+## Stop, retry and roll back
+
+- **Stop.** Set the repository variable `SERVING_WORKERS_PUBLICATION` to
+  anything other than `enabled`. New runs build and publish nothing. A job reads
+  the variable when it starts, so cancel the workflow run to stop a publisher
+  that is already running. Cancelling leaves the current step as it is, which
+  can be a 0% stage or a just-assigned candidate; restore the receipt's
+  `rollbackVersion` as described below.
+- **Retry one app.** Dispatch `serving-workers-production.yaml` on `production`
+  with that app. It rebuilds only if the app does not serve the SHA yet.
+- **Roll back.** Read `rollbackVersion` from the receipt and run
+  `cf workers deployments create --worker <worker> --strategy percentage --versions '[{"version_id":"<rollbackVersion>","percentage":100}]'`.
+  Routes, custom domains, schedules and the gateway are never changed by this
+  flow.
+
+## Credentials
+
+`SERVING_WORKERS_CLOUDFLARE_API_TOKEN` is an environment secret on
+`cloudflare-release-production`, scoped to Workers Scripts edit on the
+production account only, with no zone permissions. `CLOUDFLARE_ACCOUNT_ID` and
+`NOVA_ABUSE_GUARD_FAMILIES` are repository variables. Rotate the token through
+the token ledger and set it with `gh secret set --env` from standard input so it
+is never printed.
+
+## Local release
+
+When CI runners are unavailable, mirror the app's own artifact job on a trusted
+host at the production SHA, pack the archive the same way, then run the same
+publisher with the same environment:
+
+```bash
+node scripts/ci/serving-workers.mjs restore <app> <sha> <artifact-dir> <absent-output-dir>
+SERVING_WORKERS_PUBLICATION=enabled node scripts/ci/serving-workers.mjs publish <app> <sha> <output-dir>
+```
+
+The roadmap seal and its verifier need Linux `/proc`; on macOS run them in a
+Linux container, and pack archives with `COPYFILE_DISABLE=1` so macOS metadata
+files do not enter the sealed tree. A shallow checkout drops the roadmap commit
+metrics, so build roadmap from full history.
