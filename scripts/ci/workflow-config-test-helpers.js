@@ -35,10 +35,6 @@ const targetApps = [
   ['learn', '@tuturuuu/learn'],
 ];
 
-const vercelWorkflows = ['platform', ...targetApps.map(([app]) => app)].map(
-  (app) => `vercel-preview-${app}.yaml`
-);
-
 function writePackageJson(rootDir, workspacePath, packageJson) {
   const packageDir = path.join(rootDir, workspacePath);
   fs.mkdirSync(packageDir, { recursive: true });
@@ -323,7 +319,7 @@ function runChangedFileResolver({
   headSha,
   refName = 'main',
   rootDir,
-  workflowName = 'vercel-preview-calendar.yaml',
+  workflowName = 'calendar-cloudflare.yaml',
 }) {
   const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'changed-files-'));
   const output = execFileSync(
@@ -442,6 +438,5 @@ module.exports = {
   readWorkflowJobBlock,
   repoRoot,
   runChangedFileResolver,
-  vercelWorkflows,
   writeEventPayload,
 };

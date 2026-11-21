@@ -325,14 +325,7 @@ by this implementation PR. Obtain explicit per-case approval before execution.
 
 ## CI/CD
 
-Production runs on the Drive Cloudflare Worker; Vercel receives no production
-deploys. The manual `.github/workflows/vercel-preview-drive.yaml` preview
-remains until the Vercel project is decommissioned. It uses the
-`vercel-preview-drive` environment, `VERCEL_DRIVE_PROJECT_ID`, `VERCEL_TOKEN`
-and `VERCEL_ORG_ID`.
-
-The app-specific project secret should live in that GitHub Environment, not in
-workflow-level `env`.
+Production runs on the Drive Cloudflare Worker; Vercel receives no deploys.
 
 ## Validation
 

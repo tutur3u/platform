@@ -33,7 +33,6 @@ export type VercelWorkflowTarget = {
   app: string;
   appPath: string;
   packageName: string;
-  previewWorkflow: string;
 } & (
   | {
       buildInfoApp: string;
@@ -51,7 +50,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'ai',
     framework: 'next',
     packageName: '@tuturuuu/ai-studio',
-    previewWorkflow: 'vercel-preview-ai.yaml',
   },
   {
     app: 'apps',
@@ -59,7 +57,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'apps',
     framework: 'next',
     packageName: '@tuturuuu/apps',
-    previewWorkflow: 'vercel-preview-apps.yaml',
   },
   {
     app: 'calendar',
@@ -67,7 +64,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'calendar',
     framework: 'next',
     packageName: '@tuturuuu/calendar',
-    previewWorkflow: 'vercel-preview-calendar.yaml',
   },
   {
     app: 'chat',
@@ -75,7 +71,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'chat',
     framework: 'next',
     packageName: '@tuturuuu/chat',
-    previewWorkflow: 'vercel-preview-chat.yaml',
   },
   {
     app: 'cms',
@@ -83,7 +78,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'cms',
     framework: 'next',
     packageName: '@tuturuuu/cms',
-    previewWorkflow: 'vercel-preview-cms.yaml',
   },
   {
     app: 'drive',
@@ -91,7 +85,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'drive',
     framework: 'next',
     packageName: '@tuturuuu/drive',
-    previewWorkflow: 'vercel-preview-drive.yaml',
   },
   {
     app: 'finance',
@@ -99,7 +92,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'finance',
     framework: 'next',
     packageName: '@tuturuuu/finance',
-    previewWorkflow: 'vercel-preview-finance.yaml',
   },
   {
     app: 'inventory',
@@ -107,7 +99,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'inventory',
     framework: 'next',
     packageName: '@tuturuuu/inventory',
-    previewWorkflow: 'vercel-preview-inventory.yaml',
   },
   {
     app: 'infrastructure',
@@ -115,7 +106,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'infrastructure',
     framework: 'next',
     packageName: '@tuturuuu/admin',
-    previewWorkflow: 'vercel-preview-infrastructure.yaml',
   },
   {
     app: 'storefront',
@@ -123,7 +113,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'storefront',
     framework: 'next',
     packageName: '@tuturuuu/storefront',
-    previewWorkflow: 'vercel-preview-storefront.yaml',
   },
   {
     app: 'meet',
@@ -131,7 +120,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'meet',
     framework: 'next',
     packageName: '@tuturuuu/meet',
-    previewWorkflow: 'vercel-preview-meet.yaml',
   },
   {
     app: 'mail',
@@ -139,14 +127,12 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'mail',
     framework: 'next',
     packageName: '@tuturuuu/mail',
-    previewWorkflow: 'vercel-preview-mail.yaml',
   },
   {
     app: 'tanstack-web',
     appPath: 'apps/tanstack-web',
     framework: 'tanstack-start',
     packageName: '@tuturuuu/tanstack-web',
-    previewWorkflow: 'vercel-preview-tanstack-web.yaml',
   },
   {
     app: 'mind',
@@ -154,7 +140,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'mind',
     framework: 'next',
     packageName: '@tuturuuu/mind',
-    previewWorkflow: 'vercel-preview-mind.yaml',
   },
   {
     app: 'nova',
@@ -162,7 +147,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'nova',
     framework: 'next',
     packageName: '@tuturuuu/nova',
-    previewWorkflow: 'vercel-preview-nova.yaml',
   },
   {
     app: 'platform',
@@ -170,7 +154,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'web',
     framework: 'next',
     packageName: '@tuturuuu/web',
-    previewWorkflow: 'vercel-preview-platform.yaml',
   },
   {
     app: 'tools',
@@ -178,7 +161,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'tools',
     framework: 'next',
     packageName: '@tuturuuu/tools',
-    previewWorkflow: 'vercel-preview-tools.yaml',
   },
   {
     app: 'rewise',
@@ -186,14 +168,12 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'rewise',
     framework: 'next',
     packageName: '@tuturuuu/rewise',
-    previewWorkflow: 'vercel-preview-rewise.yaml',
   },
   {
     app: 'shortener',
     appPath: 'apps/shortener',
     framework: 'tanstack-start',
     packageName: '@tuturuuu/shortener',
-    previewWorkflow: 'vercel-preview-shortener.yaml',
   },
   {
     app: 'tasks',
@@ -201,7 +181,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'tasks',
     framework: 'next',
     packageName: '@tuturuuu/tasks',
-    previewWorkflow: 'vercel-preview-tasks.yaml',
   },
   {
     app: 'teach',
@@ -209,7 +188,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'teach',
     framework: 'next',
     packageName: '@tuturuuu/teach',
-    previewWorkflow: 'vercel-preview-teach.yaml',
   },
   {
     app: 'track',
@@ -217,7 +195,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'track',
     framework: 'next',
     packageName: '@tuturuuu/track',
-    previewWorkflow: 'vercel-preview-track.yaml',
   },
   {
     app: 'learn',
@@ -225,7 +202,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'learn',
     framework: 'next',
     packageName: '@tuturuuu/learn',
-    previewWorkflow: 'vercel-preview-learn.yaml',
   },
   {
     app: 'pay',
@@ -233,7 +209,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'pay',
     framework: 'next',
     packageName: '@tuturuuu/pay',
-    previewWorkflow: 'vercel-preview-pay.yaml',
   },
   {
     app: 'contacts',
@@ -241,7 +216,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'contacts',
     framework: 'next',
     packageName: '@tuturuuu/contacts',
-    previewWorkflow: 'vercel-preview-contacts.yaml',
   },
   {
     app: 'forms',
@@ -249,7 +223,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'forms',
     framework: 'next',
     packageName: '@tuturuuu/forms',
-    previewWorkflow: 'vercel-preview-forms.yaml',
   },
   {
     app: 'git',
@@ -257,7 +230,6 @@ export const vercelWorkflowTargets = [
     buildInfoApp: 'git',
     framework: 'next',
     packageName: '@tuturuuu/git',
-    previewWorkflow: 'vercel-preview-git.yaml',
   },
 ] satisfies VercelWorkflowTarget[];
 
@@ -333,15 +305,6 @@ export const cloudflareProductionTargets = [
   mastermindProductionTarget,
 ] as const;
 
-const globalVercelAffectingPaths = new Set([
-  '.github/actions/run-with-turbo-remote-cache/action.yml',
-  '.github/actions/setup-bun-with-retry/action.yml',
-  'bun.lock',
-  'package.json',
-  'scripts/ci/generate-build-metadata.ts',
-  'turbo.json',
-]);
-
 const globalCloudflareAffectingPaths = new Set([
   '.github/actions/run-with-turbo-remote-cache/action.yml',
   '.github/actions/setup-bun-with-retry/action.yml',
@@ -380,9 +343,6 @@ const scopedVercelAffectingPaths = [
   },
 ] as const;
 
-const vercelTargetsByWorkflow = new Map(
-  vercelWorkflowTargets.map((target) => [target.previewWorkflow, target])
-);
 const cloudflareTargetsByWorkflow = new Map(
   cloudflareProductionTargets.map((target) => [
     target.productionWorkflow,
@@ -538,10 +498,7 @@ export function getWorkflowDecision({
     };
   }
 
-  const target =
-    vercelTargetsByWorkflow.get(workflowName) ??
-    cloudflareTargetsByWorkflow.get(workflowName);
-  const isCloudflareTarget = cloudflareTargetsByWorkflow.has(workflowName);
+  const target = cloudflareTargetsByWorkflow.get(workflowName);
 
   if (!target) {
     return {
@@ -560,18 +517,6 @@ export function getWorkflowDecision({
       reason: 'changed-file state is unavailable, so deployment gating is open',
       shouldRun: true,
     };
-  }
-  if (target.app === 'platform') {
-    const databasePaths = normalizedChangedFiles.filter(
-      isDatabaseMigrationAffectingPath
-    );
-    if (databasePaths.length > 0) {
-      return {
-        matchedPaths: databasePaths,
-        reason: 'platform preview validates database changes',
-        shouldRun: true,
-      };
-    }
   }
   const dependencyClosure =
     'packageName' in target
@@ -606,16 +551,12 @@ export function getWorkflowDecision({
       return scopedOwners.has(target.app);
     }
     if (
-      (isCloudflareTarget
-        ? globalCloudflareAffectingPaths
-        : globalVercelAffectingPaths
-      ).has(filePath) ||
-      (isCloudflareTarget &&
-        ((filePath ===
-          'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch' &&
-          ['meet', 'lettin', 'parley'].includes(target.app)) ||
-          (filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
-            ['meet', 'lettin', 'parley'].includes(target.app))))
+      globalCloudflareAffectingPaths.has(filePath) ||
+      (filePath ===
+        'patches/@opennextjs%2Fcloudflare@https%3A%2F%2Fregistry.npmjs.org%2F@opennextjs%2Fcloudflare%2F-%2Fcloudflare-1.20.6.tgz.patch' &&
+        ['meet', 'lettin', 'parley'].includes(target.app)) ||
+      (filePath === 'patches/@opennextjs%2Fcloudflare@1.20.6.patch' &&
+        ['meet', 'lettin', 'parley'].includes(target.app))
     ) {
       return true;
     }

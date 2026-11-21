@@ -21,7 +21,7 @@ const project = {
         caller: 'calendar-cloudflare.yaml',
       },
     ],
-    preview: ['vercel-preview-calendar.yaml'],
+    preview: [],
   },
 };
 const deployment = {

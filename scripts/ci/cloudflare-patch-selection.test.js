@@ -134,15 +134,6 @@ for (const app of workers) {
   });
 }
 
-for (const workflow of [
-  'vercel-preview-platform.yaml',
-  'vercel-preview-meet.yaml',
-]) {
-  test(`the OpenNext patch does not select ${workflow}`, () => {
-    assert.equal(decide(workflow).shouldRun, false);
-  });
-}
-
 test('disabled workflows remain disabled even for the patch or dispatch', () => {
   for (const eventName of ['push', 'workflow_dispatch']) {
     assert.equal(
@@ -212,9 +203,7 @@ for (const workflow of ['supabase-production.yaml', 'supabase-staging.yaml']) {
     assert.deepEqual(decision.matchedPaths, ['tuturuuu.ts']);
     assert.equal(
       decision.reason,
-      workflow === 'vercel-preview-platform.yaml'
-        ? 'platform deployment is required to gate production database migrations'
-        : `${workflow} is affected by 1 database path(s)`
+      `${workflow} is affected by 1 database path(s)`
     );
   });
 }
@@ -227,8 +216,4 @@ test('the shared candidate patch selects its Meet, Lettin and Parley Cloudflare 
       true
     );
   }
-  assert.equal(
-    decide('vercel-preview-meet.yaml', [parleyCandidatePatch]).shouldRun,
-    false
-  );
 });

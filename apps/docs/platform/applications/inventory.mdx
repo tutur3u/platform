@@ -452,12 +452,8 @@ transaction fee rows after settlement.
 
 ## Deployment
 
-Inventory has dedicated Vercel workflows:
-
-- `.github/workflows/vercel-preview-inventory.yaml`
-
-These workflows use `VERCEL_INVENTORY_PROJECT_ID`. Add that secret before
-enabling hosted deployments for `inventory.tuturuuu.com`.
+Inventory deploys to Cloudflare through `.github/workflows/inventory-cloudflare.yaml`.
+Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration).
 
 Price history references durable product/unit/warehouse identities instead of the
 replaceable stock tuple. Combined product edits and dedicated stock edits for

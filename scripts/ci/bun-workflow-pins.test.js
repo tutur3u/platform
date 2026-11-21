@@ -15,10 +15,7 @@ test('workflows use the repo Bun setup and install retry helpers', () => {
   );
   const bunVersion = packageJson.packageManager.replace(/^bun@/, '');
 
-  const retainedPins = new Map([
-    ['tanstack-route-manifest.yaml', '1.4.1'],
-    ['vercel-preview-tanstack-web.yaml', '1.4.1'],
-  ]);
+  const retainedPins = new Map([['tanstack-route-manifest.yaml', '1.4.1']]);
 
   for (const workflowFile of workflowFiles) {
     const workflow = fs.readFileSync(

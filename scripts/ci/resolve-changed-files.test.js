@@ -65,7 +65,7 @@ test('changed-file resolver unions batched push commits before workflow gating',
     {
       changedFiles: resolver.changedFiles,
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     true
   );
@@ -76,9 +76,9 @@ test('changed-file resolver uses deployment marker baseline before latest push p
   const baseSha = initializeGitRepo(rootDir);
   commitFile(
     rootDir,
-    'apps/calendar/src/app/page.tsx',
+    'apps/finance/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'calendar change'
+    'finance change'
   );
   const headSha = commitFile(
     rootDir,
@@ -98,7 +98,7 @@ test('changed-file resolver uses deployment marker baseline before latest push p
     ],
     size: 1,
   });
-  const workflowName = 'vercel-preview-calendar.yaml';
+  const workflowName = 'vercel-production-finance.yaml';
   const resolver = runChangedFileResolver({
     env: {
       VERCEL_DEPLOYMENT_MARKER_SHA: baseSha,
@@ -111,8 +111,8 @@ test('changed-file resolver uses deployment marker baseline before latest push p
 
   assert.match(resolver.output, /Changed-file source: deployment-marker/);
   assert.deepEqual(resolver.changedFiles, [
-    'apps/calendar/src/app/page.tsx',
     'apps/docs/build/devops/github-actions-runbook.mdx',
+    'apps/finance/src/app/page.tsx',
   ]);
 
   assertWorkflowDecision(
@@ -167,7 +167,7 @@ test('Supabase workflow runs diff from the last successful migration marker', ()
   );
 });
 
-test('enabled Vercel gating fails open when no successful deployment marker exists', () => {
+test('enabled deploy gating fails open when no successful deployment marker exists', () => {
   const rootDir = createFixtureRoot();
   initializeGitRepo(rootDir);
   commitFile(
@@ -195,7 +195,7 @@ test('enabled Vercel gating fails open when no successful deployment marker exis
     ],
     size: 1,
   });
-  const workflowName = 'vercel-preview-storefront.yaml';
+  const workflowName = 'meet-cloudflare.yaml';
   const resolver = runChangedFileResolver({
     eventPath,
     headSha,
@@ -389,7 +389,7 @@ test('changed-file resolver does not fall back to latest commit only when push r
         import { getWorkflowDecision } from './tuturuuu.ts';
         const decision = getWorkflowDecision({
           changedFiles: null,
-          workflowName: 'vercel-preview-calendar.yaml',
+          workflowName: 'calendar-cloudflare.yaml',
           workspaceManifests: [
             {
               dependencies: [],
@@ -422,7 +422,7 @@ test('workflow gating reuses manifest indexes for equivalent arrays', () => {
 
         const input = {
           changedFiles: ['package.json'],
-          workflowName: 'vercel-preview-calendar.yaml',
+          workflowName: 'calendar-cloudflare.yaml',
         };
         getWorkflowDecision({
           ...input,

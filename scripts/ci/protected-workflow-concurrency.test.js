@@ -81,10 +81,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
           ref: 'refs/heads/production',
         })
       );
-      if (
-        Object.hasOwn(events(workflow), 'workflow_dispatch') &&
-        file !== 'vercel-preview-platform.yaml'
-      ) {
+      if (Object.hasOwn(events(workflow), 'workflow_dispatch')) {
         const manual = { ...first, event_name: 'workflow_dispatch' };
         assert.equal(
           render(workflow.concurrency['cancel-in-progress'], manual),
@@ -161,7 +158,6 @@ test('production validation and generated release evidence retain immutable atte
       !c?.group.includes('github.workflow') ||
       mainExceptions[file] ||
       serialized.includes(file) ||
-      file.startsWith('vercel-preview-') ||
       // Production pushes share one group. The desktop beta test locks it.
       file === 'desktop-beta.yaml'
     )
@@ -185,14 +181,6 @@ test('production validation and generated release evidence retain immutable atte
     }
   }
 });
-test('preview workflows retain latest-run cancellation instead of a conflicting max queue', () => {
-  for (const [file, workflow] of Object.entries(workflows)) {
-    if (!file.startsWith('vercel-preview-')) continue;
-    assert.equal(workflow.concurrency['cancel-in-progress'], true);
-    assert.notEqual(workflow.concurrency.queue, 'max');
-  }
-});
-
 function assertQualification(policy, workflowName, mainPushCancels = true) {
   const first = { ...context('refs/heads/main'), workflow: workflowName };
   const later = { ...first, sha: 'later', run_id: 2 };
@@ -242,7 +230,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
 }
 test('main validation inventory requires isolated qualification, including Oxc jobs', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
-    if (mainExceptions[file] || file.startsWith('vercel-preview-')) continue;
+    if (mainExceptions[file]) continue;
     if (!Object.hasOwn(events(workflow), 'push')) continue;
     const push = events(workflow).push;
     if (push?.branches && !push.branches.includes('main')) continue;
@@ -457,11 +445,8 @@ test('Calendar and Mail PR revisions supersede while main staging uploads never 
 
 function prGroupExclusion(file) {
   if (file.includes('cloudflare')) return 'deploys to Cloudflare';
-  if (
-    file.startsWith('vercel-preview-') ||
-    file.startsWith('vercel-production')
-  ) {
-    return 'deploys a Vercel preview or production app';
+  if (file.startsWith('vercel-production')) {
+    return 'deploys a Vercel production app';
   }
   if (file.startsWith('release-') || file.includes('release-please')) {
     return 'publishes a release';

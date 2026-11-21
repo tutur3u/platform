@@ -356,7 +356,7 @@ In a monolithic architecture, operational tasks affect the entire system. Deploy
 
 This independence accelerates development velocity and reduces the coordination overhead that plagues monolithic systems.
 
-**In Tuturuuu today:** there are no `deploy:web` / `deploy:finance` / `deploy:calendar` package scripts. Independence is achieved through **per-app Vercel projects** wired up by dedicated GitHub Actions workflows. Each app has its own preview workflow under `.github/workflows/` (for example `vercel-preview-finance.yaml`, `vercel-preview-calendar.yaml`, `vercel-preview-drive.yaml`), and Turborepo only rebuilds the apps affected by a change:
+**In Tuturuuu today:** there are no `deploy:web` / `deploy:finance` / `deploy:calendar` package scripts. Independence is achieved through **per-app Cloudflare Workers** wired up by dedicated GitHub Actions workflows. Each app has its own workflow under `.github/workflows/` (for example `finance-cloudflare.yaml`, `calendar-cloudflare.yaml`, `apps-cloudflare.yaml`), and Turborepo only rebuilds the apps affected by a change:
 
 ```bash
 # Build a single workspace and its dependency graph (Turborepo filters by app)
@@ -366,14 +366,7 @@ bun turbo run build --filter=@tuturuuu/web
 cd apps/finance && bun dev
 ```
 
-```yaml
-# Real per-app preview workflow — .github/workflows/vercel-preview-finance.yaml
-name: Vercel Finance Preview Deployment
-# Builds only the shared deps the finance app needs, then deploys it to Vercel:
-#   bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
-```
-
-Because each app is its own Vercel project, finance can deploy without rebuilding or redeploying the web or calendar apps.
+Because each app is its own Worker, finance can deploy without rebuilding or redeploying the web or calendar apps.
 
 **Monitoring:** Tuturuuu does not ship a custom per-service metrics SDK. Runtime/server logs in API, cron, and infrastructure code use the native console method matching severity, while retained request, cron, deployment, and usage data still flows through the internal log-drain storage where those wrappers are wired. Vercel provides per-project deployment and runtime insight. Treat the `monitorErrorRate(...)` snippet style as conceptual.
 
@@ -902,16 +895,16 @@ In a monolithic architecture, all tests run in a single, long CI pipeline. A fai
 - **Focus**: Teams see only their service's test results, reducing noise
 - **Speed**: Smaller test suites run faster than monolithic suites
 
-**In Tuturuuu today:** there are no `web-ci.yml` / `finance-ci.yml` per-app pipeline files. Instead, shared workflows test the whole graph with Turborepo's affected-package filtering, and **per-app Vercel preview workflows** handle build/deploy. Real workflows under `.github/workflows/` include:
+**In Tuturuuu today:** there are no `web-ci.yml` / `finance-ci.yml` per-app pipeline files. Instead, shared workflows test the whole graph with Turborepo's affected-package filtering, and **per-app Cloudflare workflows** handle build/deploy. Real workflows under `.github/workflows/` include:
 
 - `turbo-unit-tests.yaml` — runs unit tests across affected workspaces
 - `type-check.yaml` — type checking
 - `oxc-check.yaml` — lint/format (Tuturuuu uses **Oxc**, not ESLint/Prettier)
 - `ci-check.yml` — validates CI configuration
-- `vercel-preview-finance.yaml`, `vercel-preview-calendar.yaml`, `vercel-preview-drive.yaml`, ... — one preview-deploy workflow per app
+- `finance-cloudflare.yaml`, `calendar-cloudflare.yaml`, `apps-cloudflare.yaml`, ... — one deploy workflow per app
 - `rust-backend.yml` — builds/tests `apps/backend`
 
-The independence comes from Turborepo only running tasks for changed packages plus separate Vercel projects per app, rather than from one CI file per service.
+The independence comes from Turborepo only running tasks for changed packages plus separate Workers per app, rather than from one CI file per service.
 
 ```bash
 # How affected work is scoped locally and in CI
@@ -972,21 +965,20 @@ Monolithic architectures force **all-or-nothing deployments**. Every change, no 
 - **Team autonomy**: No cross-team coordination required for deployments
 - **Continuous delivery**: Deploy multiple times per day without fear
 
-**In Tuturuuu today:** there is no `bun deploy:web` / `bun deploy:finance` / `bun deploy:calendar` command. Each app is a **separate Vercel project**, driven by its own GitHub Actions workflow, so deploys are already decoupled per app:
+**In Tuturuuu today:** there is no `bun deploy:web` / `bun deploy:finance` / `bun deploy:calendar` command. Each app is a **separate Cloudflare Worker**, driven by its own GitHub Actions workflow, so deploys are already decoupled per app:
 
 ```text
 .github/workflows/
-├── vercel-preview-finance.yaml    // Finance app preview/deploy
-├── vercel-preview-calendar.yaml   // Calendar app preview/deploy
-├── vercel-preview-drive.yaml      // Drive app preview/deploy
-├── vercel-preview-apps.yaml       // Shared preview orchestration
+├── finance-cloudflare.yaml        // Finance Worker deploy
+├── calendar-cloudflare.yaml       // Calendar Worker deploy
+├── apps-cloudflare.yaml           // Apps Worker deploy
 └── rust-backend.yml               // apps/backend (Rust) build + deploy
 ```
 
-Each workflow builds only the shared dependencies that app needs (via Turborepo `--filter`) and ships that one Vercel project. Deploying finance does not rebuild or redeploy web or calendar.
+Each workflow builds only the shared dependencies that app needs (via Turborepo `--filter`) and ships that one Worker. Deploying finance does not rebuild or redeploy web or calendar.
 
 <Note>
-The Rust `apps/backend` (port `7820`) deploys on its own track (`rust-backend.yml`), independent of the Vercel front-ends — another axis of deployment independence introduced by the migration.
+The Rust `apps/backend` (port `7820`) deploys on its own track (`rust-backend.yml`), independent of the Worker front-ends — another axis of deployment independence introduced by the migration.
 </Note>
 
 #### Clarifying Additions

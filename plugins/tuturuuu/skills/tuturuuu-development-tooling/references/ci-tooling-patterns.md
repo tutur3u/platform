@@ -881,10 +881,6 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   cancellation. Any force phase needs explicit authorization, bounded remaining
   IDs and a bounded verification read, not polling or automatic batch expansion.
   Follow the [queue cleanup procedure](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#authorized-ci-queue-cleanup).
-- Key preview concurrency by workflow and `preview_ref` and enable
-  `cancel-in-progress`. This lets a newer protected-main platform signal or a
-  repeated manual preview replace stale work without serializing unrelated
-  preview refs behind the same group.
 - Use GitHub's organization-managed `dynamic/github-code-scanning/codeql`
   workflow for automatic JavaScript/TypeScript and Python scans. Keep the
   checked-in `codeql.yml` manual-only so it provides an explicit fallback and

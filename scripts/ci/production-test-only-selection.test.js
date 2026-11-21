@@ -131,12 +131,8 @@ test('manual dispatch remains open and disabled targets remain disabled', () => 
     false
   );
 });
-test('preview and validation CI still select test changes', () => {
-  for (const workflowName of [
-    'vercel-preview-tools.yaml',
-    'unit-test.yaml',
-    'type-check.yaml',
-  ]) {
+test('validation CI still selects test changes', () => {
+  for (const workflowName of ['unit-test.yaml', 'type-check.yaml']) {
     assert.equal(
       decision({ changedFiles: testPaths, workflowName }).shouldRun,
       true

@@ -124,8 +124,6 @@ const buildPaths = [
   ['mail-calendar-tasks-builds.yaml', { job: 'build-mail' }],
   ['programming-app-builds.yaml', { job: 'build' }],
   ['app-builds-affected.yaml', { job: 'build' }],
-  ['vercel-preview-mail.yaml', { step: 'Build Project Artifacts' }],
-  ['mail-vercel-exact-sha.yaml', { step: 'Publish the exact SHA once' }],
 ];
 
 test('every Mail build path sets an explicit deployment profile', () => {
@@ -157,7 +155,6 @@ test('every Mail build path sets an explicit deployment profile', () => {
 test('no workflow builds Mail without naming the deployment profile', () => {
   const buildsMail = [
     /--filter=@tuturuuu\/mail\b/u,
-    /mail-exact-sha-publisher/u,
     /VERCEL_MAIL_PROJECT_ID[\s\S]*vercel build/u,
     /app:\s*\[[^\]]*\bmail\b[^\]]*\]/u,
     /\bmail\|/u,

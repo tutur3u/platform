@@ -57,20 +57,11 @@ describe('project catalog', () => {
       }
   });
 
-  it('routes previews through dispatch-only preview workflows', () => {
-    for (const project of PROJECTS)
-      for (const rule of project.workflows.preview) {
-        const workflow = String(rule);
-        expect(typeof rule).toBe('string');
-        const source = read(workflow);
-        expect(source, workflow).toMatch(/preview_ref:/);
-        expect(source, workflow).not.toMatch(/^\s+pull_request/m);
-      }
+  it('lists no preview reporters', () => {
     // Cloudflare Worker previews run on pull request events, which the
-    // coordinator rejects; the only previews listed are Vercel dispatches.
+    // coordinator rejects, so no workflow reports a preview.
     for (const project of PROJECTS)
-      for (const rule of project.workflows.preview)
-        expect(String(rule), project.id).toMatch(/^vercel-preview-/);
+      expect(project.workflows.preview, project.id).toEqual([]);
   });
 
   // wave1-web-staging.yaml publishes a dispatched source_sha that can differ

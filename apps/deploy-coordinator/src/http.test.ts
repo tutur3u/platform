@@ -193,7 +193,7 @@ describe('router', () => {
     expect(calls).toEqual([]);
   });
 
-  it('takes the preview lane from the preview workflow body', async () => {
+  it('refuses CI preview reports: no workflow reports one', async () => {
     const token = await signer.sign({
       ref: 'refs/heads/main',
       event_name: 'workflow_dispatch',
@@ -201,27 +201,12 @@ describe('router', () => {
         'tutur3u/platform/.github/workflows/vercel-preview-calendar.yaml@refs/heads/main',
     });
     const path = '/v1/projects/calendar/environments/preview/deployments';
-    expect(
-      (await request(path, { token, body: { sha: 'd'.repeat(40) } })).status
-    ).toBe(400);
-    expect(
-      (
-        await request(path, {
-          token,
-          body: { sha: 'd'.repeat(40), lane: '../main' },
-        })
-      ).status
-    ).toBe(400);
-    const created = await (
-      await request(path, {
-        token,
-        body: { sha: 'd'.repeat(40), lane: 'feature/x' },
-      })
-    ).json();
-    expect(created.deployment).toMatchObject({
-      lane: 'feature/x',
-      ref: 'feature/x',
+    const refused = await request(path, {
+      token,
+      body: { sha: 'd'.repeat(40), lane: 'feature/x' },
     });
+    expect(refused.status).toBe(403);
+    expect((await refused.json()).message).toBe('BAD_WORKFLOW');
   });
 
   it('promotes a succeeded staging deployment through the operator API', async () => {

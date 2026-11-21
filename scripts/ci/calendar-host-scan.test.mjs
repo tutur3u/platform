@@ -127,12 +127,6 @@ test('rejects cross-environment hosts, the production Supabase ref and unfolded 
 const buildPaths = [
   ['wave1-native-production.yaml', 'qualify', null, 'production'],
   ['mail-calendar-tasks-builds.yaml', 'calendar-native', null, 'production'],
-  [
-    'vercel-preview-calendar.yaml',
-    null,
-    'Build Project Artifacts',
-    'production',
-  ],
 ];
 
 test('every Calendar build path sets an explicit deployment profile', () => {

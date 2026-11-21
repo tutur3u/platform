@@ -15,21 +15,40 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = (
-  'lms forms inventory nova mind finance meet calendar mail apps workspace git ' +
-  'shortener mastermind contacts roadmap learn teach tools'
-).split(' ');
-test('preview-only apps remain scoped and are absent from the production plan', async () => {
-  const { getWorkflowDecision, vercelWorkflowTargets } =
-    await import('../../tuturuuu.ts');
-  const previewOnly = vercelWorkflowTargets.filter(({ app }) =>
-    ['chat', 'cms', 'drive', 'forms', 'teach', 'tools', 'track'].includes(app)
-  );
-  assert.ok(previewOnly.length > 0);
+const apps = [
+  'lms',
+  'forms',
+  'inventory',
+  'nova',
+  'mind',
+  'finance',
+  'meet',
+  'calendar',
+  'mail',
+  'apps',
+  'workspace',
+  'git',
+  'shortener',
+  'mastermind',
+  'contacts',
+  'roadmap',
+  'learn',
+  'teach',
+  'tools',
+];
+test('retired Vercel apps are absent from the production plan', async () => {
   const { productionPublicationHold } =
     await import('./production-publication-policy.ts');
   const planner = readWorkflow('vercel-production.yaml');
-  for (const { app, appPath, packageName, previewWorkflow } of previewOnly) {
+  for (const app of [
+    'chat',
+    'cms',
+    'drive',
+    'forms',
+    'teach',
+    'tools',
+    'track',
+  ]) {
     assert.ok(!Object.hasOwn(planner.jobs, `deploy-${app}`));
     assert.match(
       productionPublicationHold(`vercel-production-${app}.yaml`),
@@ -40,18 +59,6 @@ test('preview-only apps remain scoped and are absent from the production plan', 
         join(repoRoot, '.github/workflows', `vercel-production-${app}.yaml`)
       )
     );
-    assert.ok(existsSync(join(repoRoot, '.github/workflows', previewWorkflow)));
-    const decide = (file) =>
-      getWorkflowDecision({
-        changedFiles: [file],
-        eventName: 'push',
-        workflowName: previewWorkflow,
-        workspaceManifests: [
-          { name: packageName, path: appPath, dependencies: [] },
-        ],
-      }).shouldRun;
-    assert.equal(decide(`${appPath}/src/app/page.tsx`), true, previewWorkflow);
-    assert.equal(decide('apps/web/src/unrelated.ts'), false, previewWorkflow);
   }
 });
 

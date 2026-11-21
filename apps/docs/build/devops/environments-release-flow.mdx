@@ -54,31 +54,17 @@ No package version, dependency resolution or published changelog is rewritten.
 
 ### Preview
 
-- Preview workflows are named `vercel-preview-<app>.yaml`.
-- Most preview workflows are manual-only from `main` with a required
-  `preview_ref`; `vercel-preview-platform.yaml` also triggers on protected
-  `main` pushes so the staging database workflow receives a same-SHA platform
-  build signal.
+- Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration).
 - `e2e-tests.yaml` also runs only on non-`production` pushes; production
   promotion relies on the already-green validation before the branch is
   promoted plus the production build-validation gates below.
 - Production workflows cancel superseded per-app runs only when a newer
   `production` push arrives; `main` commits and manual recovery runs leave an
   active production deployment untouched.
-- Each deploy job is bound to a `vercel-preview-<app>` GitHub Environment and
-  introduces Vercel credentials only after dependency installation.
-- Platform preview is build validation only; on-premise machines own the actual
-  `apps/web` runtime deployment.
-- Satellite preview deploys remain the normal Vercel validation surface for
-  branch work and merged `main` changes.
-- Platform preview can reuse a successful same-SHA production platform build
-  marker to avoid redundant preview builds. Production does not reuse preview
-  markers because it must build and deploy the prebuilt production artifacts.
 
 ### Staging Database
 
-- `supabase-staging.yaml` runs on protected `main` pushes independently of Vercel
-  preview results. Main-only manual dispatch remains available for staging repair.
+- `supabase-staging.yaml` runs on protected `main` pushes. Main-only manual dispatch remains available for staging repair.
 - Before checkout, its shell gate exactly binds runner/event refs, repository name
   and ID, and push `after` to `GITHUB_SHA`. Deleted pushes, unprotected push refs,
   unsupported events, case variants and non-full SHAs fail closed. The verified SHA

@@ -37,7 +37,6 @@ const acceptedOutputInterpolations = {
     'steps.restored.outputs.restored',
     'steps.warm.outputs.restored',
   ],
-  'vercel-preview-platform.yaml': ['steps.check_config.outputs.should_run'],
 };
 
 function outputInterpolations(script) {

@@ -6,7 +6,6 @@ const test = require('node:test');
 const {
   readWorkflowJobBlock,
   repoRoot,
-  vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
 
 const workflowsDir = path.join(repoRoot, '.github', 'workflows');
@@ -311,7 +310,6 @@ test('Turbo hashes output inputs without treating credentials as task env', () =
 
 test('workflow remote-cache credentials stay narrow and untrusted jobs get none', () => {
   const trustedOnly = new Set([
-    ...vercelWorkflows,
     ...listWorkflowFiles().filter((fileName) =>
       /^release-.+-package\.yaml$/u.test(fileName)
     ),

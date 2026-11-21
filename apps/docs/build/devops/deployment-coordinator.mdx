@@ -51,14 +51,13 @@ project (catalog entry, e.g. "calendar")
   | ----------- | ----------- | ------------------ |
   | production  | `meet-cloudflare.yaml` for `meet` and `tasks-cloudflare.yaml` for `tasks` | `<worker>-cloudflare.yaml` |
   | staging     | `wave1-native-publish.yaml` called from `<app>-cloudflare.yaml`, for `apps`, `calendar` and `mail`; none for the others, whose `<app>-cloudflare.yaml` only qualifies builds | none |
-  | preview     | `vercel-preview-<app>.yaml` | none: Worker previews run on pull request events, which are rejected |
+  | preview     | none | none: Worker previews run on pull request events, which are rejected |
 
   Chat, CMS, Drive, Forms, Teach, Tools and Track publish production natively
   on Cloudflare after their Vercel production workflows retired (see
   [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project)).
   That release does not report to the coordinator yet, so they list no
-  production workflow; their retained `vercel-preview-<app>.yaml` may still
-  report previews.
+  workflow.
 
   A job inside a reusable workflow reports that reusable file as its
   `job_workflow_ref` and the workflow the run started from as its
@@ -71,17 +70,14 @@ project (catalog entry, e.g. "calendar")
   catalog tests check that every listed file exists, that each production
   file has a job gated on the production ref in a GitHub Environment, that
   each staging caller runs the shared publisher with its own `app` and
-  `profile: staging`, and that preview workflows are dispatch-only.
+  `profile: staging`, and that no project lists a preview workflow.
 - **Environments** follow the existing branch flow (see
   [environments and release flow](/build/devops/environments-release-flow)):
-  production deploys run on `refs/heads/production`, staging on
-  `refs/heads/main`, and previews are dispatched manually from `main` with a
-  `preview_ref` input.
+  production deploys run on `refs/heads/production` and staging on
+  `refs/heads/main`. No CI workflow reports previews, so a preview token is
+  refused with `BAD_WORKFLOW`.
 - **Lanes** are the unit of serialization. Staging and production have one
-  `default` lane. Every preview token carries `ref` `refs/heads/main`, so the
-  preview lane is the `preview_ref` the caller states. That value is accepted
-  only from an allowlisted preview workflow on `main`, which is already the
-  trust boundary for preview dispatch.
+  `default` lane; a preview lane is the `lane` an operator states.
 - **Deployments** carry the plan they were built from. The coordinator stores
   the CI affected-planner's plan reference (`source`, `sha256` digest, run URL)
   and never recomputes affected apps.

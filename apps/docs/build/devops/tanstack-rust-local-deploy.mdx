@@ -286,15 +286,7 @@ vercel build --token="${VERCEL_TOKEN:?set VERCEL_TOKEN}"
 Production uses the same sequence with `vercel pull --environment=production`
 and `vercel build --prod`. It intentionally does not run `vercel deploy`.
 
-GitHub Actions owns the normal path:
-
-- `.github/workflows/vercel-preview-tanstack-web.yaml`
-
-The workflows use `VERCEL_TANSTACK_WEB_PROJECT_ID`, `VERCEL_ORG_ID`, and
-`VERCEL_TOKEN` inside the build jobs only. Preview builds require
-`workflow_dispatch` from protected `main` plus a trusted actor. Production builds
-run from the `production` branch. They record build markers after `vercel build`
-passes and do not create Vercel deployments.
+No GitHub Actions workflow builds TanStack Web for Vercel.
 
 External references: [Vercel TanStack Start](https://vercel.com/docs/frameworks/full-stack/tanstack-start),
 [vercel pull](https://vercel.com/docs/cli/pull),

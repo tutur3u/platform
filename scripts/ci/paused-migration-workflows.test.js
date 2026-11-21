@@ -48,13 +48,6 @@ test('paused Docker, TanStack and Rust workflows remain disabled', () => {
   }
 });
 
-test('direct TanStack deploy entrypoints remain paused', () => {
-  assertJobPaused(
-    readWorkflow('vercel-preview-tanstack-web.yaml'),
-    'Build-Preview'
-  );
-});
-
 test('shared TypeScript checks exclude the paused TanStack package', () => {
   for (const workflowName of [
     'type-check.yaml',

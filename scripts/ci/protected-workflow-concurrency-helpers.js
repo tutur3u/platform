@@ -86,7 +86,6 @@ const boundedMainProducers = new Set();
 // Main pushes may still supersede these: their newest run is the only signal.
 const mainSupersedeAllowed = {
   'e2e-smoke-report-only.yaml': 'Report-only smoke; the newest main run wins',
-  'vercel-preview-platform.yaml': 'Previews follow the newest ref',
 };
 
 function mainRunCancels(file) {

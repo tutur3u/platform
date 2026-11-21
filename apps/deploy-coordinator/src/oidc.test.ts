@@ -152,7 +152,7 @@ describe('environment authorization', () => {
     ).toBe('BAD_WORKFLOW');
   });
 
-  it('accepts previews only from the preview workflow on main', () => {
+  it('rejects previews: no workflow reports one', () => {
     const preview = {
       ...base,
       ref: 'refs/heads/main',
@@ -160,7 +160,9 @@ describe('environment authorization', () => {
       job_workflow_ref:
         'tutur3u/platform/.github/workflows/vercel-preview-calendar.yaml@refs/heads/main',
     };
-    expect(authorizeForEnvironment(preview, calendar, 'preview')).toBeNull();
+    expect(authorizeForEnvironment(preview, calendar, 'preview')).toBe(
+      'BAD_WORKFLOW'
+    );
     expect(authorizeForEnvironment(preview, calendar, 'staging')).toBe(
       'BAD_WORKFLOW'
     );

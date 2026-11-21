@@ -64,14 +64,9 @@ does not authorize promotion.
   If an incompatible build reaches production first, roll back only the affected
   app, then test its new deployment against the migrated database before
   promoting it again. Do not roll back an applied migration file.
-- Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
-  `supabase-staging.yaml` depends on its completed workflow-run event; other
-  preview Vercel workflows remain trusted manual-dispatch only.
-- Keep the platform preview affected-path decision inline in its deploy job so
-  every protected `main` push still emits the staging workflow-run signal
-  without allocating a second runner. Manual-only satellite previews should
-  launch their guarded deploy job directly and must not add a redundant
-  reusable `check-ci` job.
+- Do not add Vercel preview workflows. Previews are Cloudflare Worker versions
+  uploaded at a 0% stage and checked with a version override;
+  `supabase-staging.yaml` runs on protected `main` pushes by itself.
 - Keep commit-driven production Vercel deployments under the production
   planner's push run. Call selected per-app workflows through `workflow_call`
   and reserve `workflow_dispatch` for explicit operator reruns.
@@ -88,9 +83,6 @@ does not authorize promotion.
   as well as the root suite. Database contract workflows run their own Node
   tests; root script discovery does not include all of them. Verify behavior
   across events, refs, SHAs, run IDs and attempts, retaining negative controls.
-- Keep preview concurrency keyed by workflow and `preview_ref` with
-  `cancel-in-progress: true`; repeated requests for one target should replace
-  stale runs without canceling a distinct preview ref.
 - Prefer native trigger paths for a broad compatibility smoke only when its
   contract is intentionally path-simple. The external-app internal-package
   smoke owns `apps/external/**`, `packages/**`, and its build-control files, so

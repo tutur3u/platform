@@ -99,11 +99,6 @@ The production Teach Worker serves `teach.tuturuuu.com` and the apex
 `/teach` mount. Use the [Teach cutover packet](/build/devops/teach-start-void)
 for Worker qualification and rollback.
 
-For a Vercel preview, dispatch `vercel-preview-teach.yaml` from `main` with a
-reviewed `preview_ref`. Scope `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
-`VERCEL_TEACH_PROJECT_ID` to the `vercel-preview-teach` environment and
-restrict `TRUSTED_PREVIEW_DEPLOY_ACTORS` to approved maintainers.
-
 ## Personal To do
 
 The **To do** sidebar destination (`/{wsId}/todo`) lists this signed-in actor's

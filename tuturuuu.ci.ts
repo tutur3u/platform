@@ -92,9 +92,6 @@ export const ci = {
   'supabase-staging-list.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
-  // Satellite previews are trusted workflow_dispatch-only jobs and bypass
-  // affected-path gating. Only the automatic platform preview belongs here.
-  'vercel-preview-platform.yaml': true,
   'finance-cloudflare.yaml': true,
   'tasks-cloudflare.yaml': true,
   'vercel-production.yaml': true,

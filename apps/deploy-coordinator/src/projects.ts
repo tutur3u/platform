@@ -20,8 +20,9 @@ export type ProjectEntry = {
   workflows: Readonly<Record<EnvironmentName, readonly WorkflowRule[]>>;
 };
 
-// Vercel apps publish production through their per-app production workflow and
-// previews through the per-app preview workflow dispatched from main.
+// Vercel apps publish production through their per-app production workflow.
+// No workflow reports previews: Cloudflare Worker previews run on pull request
+// events, which the coordinator rejects.
 const vercel = (
   app: string,
   extra: { staging?: WorkflowRule[]; production?: string[] } = {}
@@ -31,7 +32,7 @@ const vercel = (
   workflows: {
     production: [`vercel-production-${app}.yaml`, ...(extra.production ?? [])],
     staging: extra.staging ?? [],
-    preview: [`vercel-preview-${app}.yaml`],
+    preview: [],
   },
 });
 
@@ -49,16 +50,11 @@ const wave1 = (app: string) =>
 
 // Apps whose production moved from Vercel to a native Cloudflare release
 // (apps/docs/build/devops/native-start-migration.mdx). That release does not
-// report to the coordinator yet, so production lists nothing; the retained
-// Vercel preview workflow may report previews until the project retires.
+// report to the coordinator yet, so no environment lists a workflow.
 const cutover = (app: string): ProjectEntry => ({
   id: app,
   provider: 'cloudflare',
-  workflows: {
-    production: [],
-    staging: [],
-    preview: [`vercel-preview-${app}.yaml`],
-  },
+  workflows: { production: [], staging: [], preview: [] },
 });
 
 // Cloudflare Workers publish production from their own workflow at the

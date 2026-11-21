@@ -7,8 +7,15 @@ const {
   assertWorkflowDecision,
   createFixtureRoot,
   repoRoot,
-  vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
+
+// Cloudflare deploy workflows gated by affected paths in tuturuuu.ts.
+const gatedDeployWorkflows = [
+  'apps-cloudflare.yaml',
+  'calendar-cloudflare.yaml',
+  'git-cloudflare.yaml',
+  'mail-cloudflare.yaml',
+];
 
 const {
   readWorkflow: readWorkflowYaml,
@@ -50,9 +57,9 @@ function readCompositeStep(action, name) {
   return action.slice(start, next === -1 ? undefined : next);
 }
 
-function assertVercelControlScope(changedFiles) {
+function assertDeployControlScope(changedFiles) {
   const rootDir = createFixtureRoot();
-  for (const workflowName of vercelWorkflows) {
+  for (const workflowName of gatedDeployWorkflows) {
     assertWorkflowDecision({ changedFiles, rootDir, workflowName }, false);
   }
   assertWorkflowDecision(
@@ -61,14 +68,14 @@ function assertVercelControlScope(changedFiles) {
   );
 }
 
-test('docs-only changes skip all Vercel deploy workflows', () => {
-  assertVercelControlScope([
+test('docs-only changes skip gated app deploy workflows', () => {
+  assertDeployControlScope([
     'apps/docs/build/devops/github-actions-runbook.mdx',
   ]);
 });
 
 test('CI wrappers do not rebuild application artifacts', () => {
-  assertVercelControlScope([
+  assertDeployControlScope([
     '.github/workflows/ci-check.yml',
     '.github/workflows/vercel-production.yaml',
     'scripts/ci/resolve-production-targets.ts',
@@ -82,39 +89,15 @@ test('app-only changes run only that app', () => {
     {
       changedFiles: ['apps/calendar/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/calendar/src/app/page.tsx'],
-      rootDir,
       workflowName: 'calendar-cloudflare.yaml',
     },
     true
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/calendar/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-finance.yaml',
-    },
-    false
-  );
-  assertWorkflowDecision(
-    {
       changedFiles: ['apps/drive/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-drive.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/drive/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
@@ -122,7 +105,7 @@ test('app-only changes run only that app', () => {
     {
       changedFiles: ['apps/apps/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-apps.yaml',
+      workflowName: 'apps-cloudflare.yaml',
     },
     true
   );
@@ -130,7 +113,7 @@ test('app-only changes run only that app', () => {
     {
       changedFiles: ['apps/apps/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
@@ -138,25 +121,9 @@ test('app-only changes run only that app', () => {
     {
       changedFiles: ['apps/tools/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-tools.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/tools/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-apps.yaml',
+      workflowName: 'apps-cloudflare.yaml',
     },
     false
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/mail/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-mail.yaml',
-    },
-    true
   );
   assertWorkflowDecision(
     {
@@ -168,25 +135,9 @@ test('app-only changes run only that app', () => {
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/mail/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-teach.yaml',
-    },
-    false
-  );
-  assertWorkflowDecision(
-    {
       changedFiles: ['apps/admin/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-infrastructure.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/admin/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
@@ -200,25 +151,9 @@ test('shared package changes fan out through transitive workspace dependencies',
     {
       changedFiles,
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles,
-      rootDir,
-      workflowName: 'vercel-preview-track.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles,
-      rootDir,
-      workflowName: 'vercel-preview-shortener.yaml',
-    },
-    false
   );
 
   const paymentChangedFiles = ['packages/payment/src/polar/index.ts'];
@@ -226,15 +161,7 @@ test('shared package changes fan out through transitive workspace dependencies',
     {
       changedFiles: paymentChangedFiles,
       rootDir,
-      workflowName: 'vercel-preview-infrastructure.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: paymentChangedFiles,
-      rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
@@ -247,71 +174,55 @@ test('unrelated package changes do not deploy apps that do not consume them', ()
     {
       changedFiles: ['packages/unused/src/index.ts'],
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
 });
 
-test('bun.lock-only changes run enabled Vercel app deploys', () => {
+test('bun.lock-only changes run gated app deploys', () => {
   const rootDir = createFixtureRoot();
-  const held = /production-(apps|calendar|mail|meet|tanstack-web|tasks)\./;
-  for (const workflowName of vercelWorkflows) {
+  for (const workflowName of gatedDeployWorkflows) {
     assertWorkflowDecision(
       {
         changedFiles: ['bun.lock'],
         rootDir,
         workflowName,
       },
-      !held.test(workflowName)
+      true
     );
   }
 });
 
-test('shared remote-cache and metadata changes run Vercel workflows', () => {
+test('shared remote-cache changes run gated app deploys', () => {
   const rootDir = createFixtureRoot();
 
   for (const changedFile of [
     '.github/actions/run-with-turbo-remote-cache/action.yml',
     '.github/actions/setup-bun-with-retry/action.yml',
-    'scripts/ci/generate-build-metadata.ts',
   ]) {
     assertWorkflowDecision(
       {
         changedFiles: [changedFile],
         rootDir,
-        workflowName: 'vercel-preview-calendar.yaml',
+        workflowName: 'calendar-cloudflare.yaml',
       },
       true
     );
   }
 });
 
-test('storefront UI modules only rebuild their verified consuming apps', () => {
+test('storefront UI modules do not rebuild non-consuming apps', () => {
   const rootDir = createFixtureRoot();
   const changedFiles = [
     'packages/ui/src/components/ui/storefront/product-detail.tsx',
   ];
 
-  for (const workflowName of [
-    'vercel-preview-storefront.yaml',
-    'vercel-preview-inventory.yaml',
-  ]) {
-    assertWorkflowDecision(
-      {
-        changedFiles,
-        rootDir,
-        workflowName,
-      },
-      true
-    );
-  }
-
   assertWorkflowDecision(
     {
       changedFiles,
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     false
   );
@@ -356,7 +267,7 @@ test('workflow_dispatch bypasses affected gating', () => {
       changedFiles: ['apps/docs/build/devops/github-actions-runbook.mdx'],
       eventName: 'workflow_dispatch',
       rootDir,
-      workflowName: 'vercel-preview-calendar.yaml',
+      workflowName: 'calendar-cloudflare.yaml',
     },
     true
   );
@@ -905,8 +816,8 @@ test('disabled ci entries still skip regardless of affected status', () => {
         import { getWorkflowDecision } from './tuturuuu.ts';
         const decision = getWorkflowDecision({
           changedFiles: ['apps/calendar/src/app/page.tsx'],
-          ciConfig: { 'vercel-preview-calendar.yaml': false },
-          workflowName: 'vercel-preview-calendar.yaml',
+          ciConfig: { 'calendar-cloudflare.yaml': false },
+          workflowName: 'calendar-cloudflare.yaml',
           workspaceManifests: [
             {
               dependencies: [],

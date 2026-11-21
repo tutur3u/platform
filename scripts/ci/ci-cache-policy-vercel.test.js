@@ -2,14 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const {
-  repoRoot,
-  vercelWorkflows,
-} = require('./workflow-config-test-helpers.js');
-const workflowsDir = path.join(repoRoot, '.github', 'workflows');
-function readWorkflow(workflowName) {
-  return fs.readFileSync(path.join(workflowsDir, workflowName), 'utf8');
-}
+const { repoRoot } = require('./workflow-config-test-helpers.js');
 
 const activeVercelProjects = {
   ai: '@tuturuuu/ai-studio',
@@ -92,28 +85,6 @@ test('all 27 active Vercel projects preserve their exact Turbo build recipes', (
       vercelInstallCommand,
       `${project} must preserve the dependency refresh override inside Vercel`
     );
-
-    const previewWorkflow = `vercel-preview-${project}.yaml`;
-    assert.ok(vercelWorkflows.includes(previewWorkflow));
-    for (const workflowName of vercelWorkflows.filter((name) =>
-      name.endsWith(`-${project}.yaml`)
-    )) {
-      const workflow = readWorkflow(workflowName);
-      assert.match(
-        workflow,
-        /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/u
-      );
-      assert.match(workflow, /command: vercel build/u);
-      assert.match(
-        workflow,
-        /PLATFORM_BUILD_ENVIRONMENT: (?:preview|production)/u
-      );
-      assert.match(workflow, /PLATFORM_BUILD_REF_NAME:/u);
-      assert.match(workflow, /NODE_OPTIONS: --max-old-space-size=8192/u);
-      assert.match(workflow, /TURBO_CONCURRENCY: "2"/u);
-      assert.doesNotMatch(workflow, /Build workspace dependencies/u);
-      assert.doesNotMatch(workflow, /^\s+run:\s+vercel build/mu);
-    }
   }
 
   for (const inactiveProject of ['external', 'playground']) {
