@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/features/shell/view/shell_brand_title.dart';
 
 import '../../../helpers/design_render_harness.dart';
 import 'task_experience_harness.dart';
@@ -43,6 +44,20 @@ void main() {
             forGolden: true,
           );
           expect(find.text('Review launch checklist'), findsOneWidget);
+          if (surface == 'kanban') {
+            final brandImage = find.descendant(
+              of: find.byType(ShellBrandTitle),
+              matching: find.byType(Image),
+            );
+            // A test shard can reach Kanban with a cold image cache.
+            await tester.runAsync(
+              () => precacheImage(
+                tester.widget<Image>(brandImage).image,
+                tester.element(brandImage),
+              ),
+            );
+            await tester.pump();
+          }
           expect(tester.takeException(), isNull);
           await expectLater(
             find.byKey(taskExperienceRenderKey),
