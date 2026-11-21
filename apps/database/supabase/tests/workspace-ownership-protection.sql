@@ -573,6 +573,11 @@ select is(pg_temp.as_err(null,
 select is(pg_temp.creator_of(pg_temp.w('fk')),
   '38800000-0000-4000-8000-0000000000f2'::uuid,
   'the FK cascade moves creator_id under service_role');
+select results_eq(
+  $q$select account_id from private.contact_account_provisioned_profiles
+    where ws_id = pg_temp.w('fk')$q$,
+  $q$values ('38800000-0000-4000-8000-0000000000f2'::uuid)$q$,
+  'the provisioned profile stays attached to the rekeyed workspace creator');
 delete from public.workspace_members where user_id = '38800000-0000-4000-8000-0000000000f2';
 update public.users set id = '38800000-0000-4000-8000-0000000000f3'
 where id = '38800000-0000-4000-8000-0000000000f2';
