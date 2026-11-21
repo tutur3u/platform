@@ -84,7 +84,7 @@ export function useCalendarCategories({
     }: {
       id: string;
       name: string;
-      color: SupportedColor;
+      color: CalendarCategory['color'];
     }) =>
       updateWorkspaceCalendarCategory(requireWorkspace(workspaceId), id, data),
     onMutate: async (updated) => {

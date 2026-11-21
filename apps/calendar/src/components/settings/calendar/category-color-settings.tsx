@@ -104,7 +104,10 @@ export function CategoryColorsSettings({
     }
   }, [isLoading, categories.length]);
 
-  const handleCategoryChange = (id: string, updatedCategory: CategoryColor) => {
+  const handleCategoryChange = (
+    id: string,
+    updatedCategory: CalendarCategory
+  ) => {
     // Update local state immediately for responsive UI
     setLocalCategories((prev) =>
       prev.map((cat) =>
