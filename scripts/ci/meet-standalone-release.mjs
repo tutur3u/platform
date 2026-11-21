@@ -45,6 +45,17 @@ export const RELEASE_EXCEPTIONS = [
     // Attendance stays disabled everywhere until AT-9(h) is green.
     followUp: 'AT-9(h) S-DH fence review; attendance off until green',
   },
+  {
+    // Known root-script and utils drift, same signatures as the Prod lane
+    // record. Security and Meet Cloudflare, including validate, are green
+    // on this source. Expires 2026-11-22 23:59 ICT.
+    id: 'RA-20261122-0010-TEST-DRIFT-5',
+    source: 'a6acf0e3affd1bb6bc91ce203d18beaf4fa4bd40',
+    workflows: ['turbo-unit-tests.yaml'],
+    expires: '2026-11-22T16:59:00Z',
+    followUp:
+      'Root-script 6133, 6135-6138, 6276, 6581, 6940, 6950 and utils commercial-comparison. No Meet runtime failure.',
+  },
 ];
 
 export function releaseException(
