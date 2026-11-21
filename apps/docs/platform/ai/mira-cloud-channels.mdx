@@ -486,7 +486,12 @@ replay or redirect one.
   them returns only a reduced projection (rules and owner-entered addressing
   facts for identities the owner confirmed; no memories or briefs), and only
   while the registry's personal-session setting is on, which it is not by
-  default. Otherwise they run with default behavior and no person context.
+  default and rechecked on every recall. That projection carries only
+  addressing facts and speech rules, plus a server-computed delivery (send,
+  shorten, hold or draft) where a routing decision is needed; it has no ids,
+  versions or `if_version`, is capped per session at one recall per event,
+  and is cached in a separate namespace that full-recall callers never read.
+  Otherwise they run with default behavior and no person context.
 - **Typed private operations:** one typed operation per use, each owned by
   one signer as listed above. The owning signer derives parameters and the reply destination from the verified event and
   policy, builds and hashes the exact UTF-8 body, and sends it to a fixed
