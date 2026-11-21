@@ -5,15 +5,21 @@ import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
 import 'package:mobile/features/mastermind/usage/usage_accounting.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class UsageContent extends StatefulWidget {
-  const UsageContent({required this.usage, super.key});
+  const UsageContent({
+    required this.usage,
+    this.refreshFailed = false,
+    super.key,
+  });
 
   final FleetUsage usage;
+  final bool refreshFailed;
 
   @override
   State<UsageContent> createState() => _UsageContentState();
@@ -50,6 +56,10 @@ class _UsageContentState extends State<UsageContent> {
       slivers: [
         SliverList.list(
           children: [
+            FleetReceiptFreshnessLine(
+              receivedAt: widget.usage.receivedAt,
+              failed: widget.refreshFailed,
+            ),
             AppAdaptiveGrid(
               minTileWidth: 140,
               equalHeight: true,

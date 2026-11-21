@@ -104,6 +104,12 @@ class FleetHealthHero extends StatelessWidget {
             AppTone.destructive,
             LucideIcons.circleAlert,
           )
+        : counts.failed > 0
+        ? (
+            '${l10n.mastermindFleetStopped} · ${counts.failed}',
+            AppTone.warning,
+            LucideIcons.circleAlert,
+          )
         : counts.running > 0
         ? (
             l10n.mastermindFleetHeadlineRunning(counts.running),
@@ -198,7 +204,7 @@ class _Kpis extends StatelessWidget {
           label: l10n.mastermindFleetStopped,
           value: '${counts.failed}',
           icon: FleetLaneState.failed.icon,
-          tone: AppTone.neutral,
+          tone: alarm(counts.failed, AppTone.warning),
           onTap: () => context.go(
             '${Routes.mastermindWork}?state=${FleetLaneState.failed.name}',
           ),

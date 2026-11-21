@@ -25,10 +25,12 @@ function CostBars({
   title,
   rows,
   currency,
+  labels,
 }: {
   title: string;
   rows: [string, number][];
   currency: Intl.NumberFormat;
+  labels?: ReadonlyMap<string, string>;
 }) {
   const { t } = useI18n();
   const max = Math.max(0, ...rows.map(([, cost]) => cost));
@@ -42,12 +44,12 @@ function CostBars({
         {rows.map(([key, cost]) => (
           <li key={key} className="space-y-1 text-sm">
             <div className="flex justify-between gap-2">
-              <span className="break-all">{key}</span>
+              <span className="break-all">{labels?.get(key) ?? key}</span>
               <span className="tabular-nums">{currency.format(cost)}</span>
             </div>
             {max > 0 && (
               <meter
-                aria-label={key}
+                aria-label={labels?.get(key) ?? key}
                 className="block h-2 w-full accent-primary"
                 min={0}
                 max={max}
@@ -75,20 +77,30 @@ export function UsageAccounting({
   });
   const count = new Intl.NumberFormat(locale);
   const rows = machines.flatMap((machine) => machine.buckets);
-  const byAccountRows = machines.flatMap((machine) => {
-    const accounts = new Map(
-      machine.accounts.map((account) => [
-        account.id,
-        account.email ?? account.instance,
-      ])
+  const accounts = new Map<string, [string, number]>();
+  for (const machine of machines) {
+    const byId = new Map(
+      machine.accounts.map((account) => [account.id, account])
     );
-    return machine.buckets.map((bucket) => ({
-      ...bucket,
-      accountLabel:
-        (bucket.accountId && accounts.get(bucket.accountId)) ||
-        t('usage.unattributed'),
-    }));
-  });
+    for (const bucket of machine.buckets) {
+      if (bucket.costUsd === null) continue;
+      const account = bucket.accountId ? byId.get(bucket.accountId) : undefined;
+      const key = account?.email
+        ? JSON.stringify(['email', account.email])
+        : account
+          ? JSON.stringify(['instance', machine.id, account.id])
+          : 'unattributed';
+      const label =
+        account?.email ??
+        (account
+          ? `${machine.label} · ${account.provider} · ${account.instance}`
+          : t('usage.unattributed'));
+      accounts.set(key, [
+        label,
+        (accounts.get(key)?.[1] ?? 0) + bucket.costUsd,
+      ]);
+    }
+  }
   const byDay = breakdown(rows, (row) => row.day).sort(([a], [b]) =>
     b.localeCompare(a)
   );
@@ -96,9 +108,7 @@ export function UsageAccounting({
     rows,
     (row) => `${row.provider} · ${row.model}`
   ).sort((a, b) => b[1] - a[1]);
-  const byAccount = breakdown(byAccountRows, (row) => row.accountLabel).sort(
-    (a, b) => b[1] - a[1]
-  );
+  const byAccount = [...accounts].sort((a, b) => b[1][1] - a[1][1]);
   const incomplete =
     machines.some(
       ({ accounting }) =>
@@ -116,7 +126,8 @@ export function UsageAccounting({
         <CostBars title={t('usage.byDay')} rows={byDay} currency={currency} />
         <CostBars
           title={t('usage.byAccount')}
-          rows={byAccount}
+          rows={byAccount.map(([key, [, cost]]) => [key, cost])}
+          labels={new Map(byAccount.map(([key, [label]]) => [key, label]))}
           currency={currency}
         />
         <CostBars

@@ -107,7 +107,7 @@ class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
     if (_usage case final usage?) {
       return NovaRefreshIndicator(
         onRefresh: _refresh,
-        child: UsageContent(usage: usage),
+        child: UsageContent(usage: usage, refreshFailed: _failure != null),
       );
     }
     if (_failure case final failure?) {

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNow } from '../fleet/clock';
 import { type FleetSnapshot } from '../fleet/contract';
-import { FLEET_STALE_AFTER_MS, inbox, loginRequests } from '../fleet/model';
+import { inbox, loginRequests } from '../fleet/model';
 import {
   type FleetLoad,
   fleetPageState,
@@ -96,24 +96,20 @@ export function CommandCenter({ initial }: { initial: FleetLoad }) {
       (item) => item.state === 'waiting' || item.state === 'approved'
     ).length,
   };
-  const showStaleNotice =
-    snapshot && now - Date.parse(snapshot.receivedAt) > FLEET_STALE_AFTER_MS;
 
   return (
     <Shell
       counts={counts}
       footer={
         <FreshnessLine
-          state={
-            state.kind === 'stale' && !showStaleNotice ? 'ready' : state.kind
-          }
+          state={state.kind}
           receivedAt={snapshot?.receivedAt}
           now={now}
         />
       }
     >
       <PageHeader title={t('title')} subtitle={query.data.email} />
-      {state.kind === 'stale' && showStaleNotice && (
+      {state.kind === 'stale' && (
         <StaleNotice
           reason={state.reason}
           onRetry={retry}

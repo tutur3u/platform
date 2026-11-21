@@ -91,7 +91,9 @@ test('page state: stale on age or failed refresh, error and unpublished otherwis
     read: { kind: 'ready' as const, snapshot: parsed },
   };
   expect(fleetPageState(ready, now).kind).toBe('ready');
-  expect(fleetPageState(ready, now + 11 * 60_000)).toMatchObject({
+  const threshold = Date.parse(parsed.state.generatedAt) + 120_000;
+  expect(fleetPageState(ready, threshold).kind).toBe('ready');
+  expect(fleetPageState(ready, threshold + 1)).toMatchObject({
     kind: 'stale',
     reason: 'old',
   });

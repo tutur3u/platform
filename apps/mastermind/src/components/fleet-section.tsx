@@ -1,10 +1,5 @@
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+import { Card, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import type { FleetState } from '../fleet/contract';
 import { FLEET_STALE_AFTER_MS } from '../fleet/model';
 import { formatAge, useI18n } from '../i18n';
@@ -71,7 +66,12 @@ function Machines({ state, now }: { state: FleetState; now: number }) {
             </div>
             <p className="text-muted-foreground text-sm">
               {isToday
-                ? t('fleet.outcomes', outcomes)
+                ? t('fleet.outcomes', {
+                    real: outcomes.real,
+                    quotaRecovered: outcomes.quotaRecovered,
+                    quotaUnrecovered: outcomes.quotaUnrecovered,
+                    unclassified: outcomes.unclassified,
+                  })
                 : t('fleet.outcomesMissing')}
               {isToday &&
                 outcomes.kind === 'partial' &&
@@ -119,20 +119,12 @@ export function FleetSection({
   return (
     <Section id="fleet" title={t('nav.fleet')}>
       <ReleaseStrip release={state.release} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="overflow-hidden">
-          <CardHeader className="px-4 pb-4 md:px-6">
-            <CardTitle>{t('fleet.machines')}</CardTitle>
-          </CardHeader>
-          <Machines state={state} now={now} />
-        </Card>
-        <Card>
-          <CardHeader className="px-4 md:px-6">
-            <CardTitle>{t('fleet.quota')}</CardTitle>
-            <CardDescription>{t('fleet.quotaEmpty')}</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <Card className="overflow-hidden">
+        <CardHeader className="px-4 pb-4 md:px-6">
+          <CardTitle>{t('fleet.machines')}</CardTitle>
+        </CardHeader>
+        <Machines state={state} now={now} />
+      </Card>
     </Section>
   );
 }

@@ -39,7 +39,7 @@ typedef UsageMachine = ({
 class FleetUsage {
   const FleetUsage({required this.machines, required this.receivedAt});
 
-  factory FleetUsage.parse(Map<String, Object?> json) {
+  factory FleetUsage.parse(Map<String, dynamic> json) {
     final snapshot = _object(json['snapshot']);
     if (snapshot['v'] != 1) {
       throw const FormatException('Unsupported usage snapshot');
@@ -65,17 +65,17 @@ class FleetUsageSource {
       FleetUsage.parse(await _api.getJson('/api/v1/mastermind/fleet/usage'));
 }
 
-Map<String, Object?> _object(Object? value) {
-  if (value is Map<String, Object?>) return value;
+Map<String, dynamic> _object(Object? value) {
+  if (value is Map<String, dynamic>) return value;
   throw const FormatException('Invalid usage object');
 }
 
 List<T> _list<T>(
   Object? value,
   int limit,
-  T Function(Map<String, Object?>) parse,
+  T Function(Map<String, dynamic>) parse,
 ) {
-  if (value is! List<Object?> || value.length > limit) {
+  if (value is! List<dynamic> || value.length > limit) {
     throw const FormatException('Invalid usage list');
   }
   return value.map((row) => parse(_object(row))).toList(growable: false);
@@ -99,16 +99,16 @@ int _count(Object? raw) {
   throw const FormatException('Invalid usage count');
 }
 
-UsageObservation _observation(Map<String, Object?> raw) =>
+UsageObservation _observation(Map<String, dynamic> raw) =>
     (kind: _text(raw['kind']), observedAt: _date(raw['observedAt']));
 
-UsageWindow _window(Map<String, Object?> raw) => (
+UsageWindow _window(Map<String, dynamic> raw) => (
   kind: _text(raw['kind']),
   usedPercent: _number(raw['usedPercent']),
   resetsAt: _date(raw['resetsAt']),
 );
 
-UsageAccount _account(Map<String, Object?> raw) {
+UsageAccount _account(Map<String, dynamic> raw) {
   final status = _object(raw['status']);
   return (
     id: _text(raw['id']),
@@ -123,7 +123,7 @@ UsageAccount _account(Map<String, Object?> raw) {
   );
 }
 
-UsageBucket _bucket(Map<String, Object?> raw) => (
+UsageBucket _bucket(Map<String, dynamic> raw) => (
   day: _text(raw['day']),
   provider: _text(raw['provider']),
   model: _text(raw['model']),
@@ -136,7 +136,7 @@ UsageBucket _bucket(Map<String, Object?> raw) => (
   cost: _number(raw['costUsd']),
 );
 
-UsageMachine _machine(Map<String, Object?> raw) => (
+UsageMachine _machine(Map<String, dynamic> raw) => (
   id: _text(raw['id']),
   label: _text(raw['label']),
   quota: _observation(_object(raw['quota'])),

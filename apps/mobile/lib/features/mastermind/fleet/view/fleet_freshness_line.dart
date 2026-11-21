@@ -10,7 +10,7 @@ import 'package:mobile/l10n/l10n.dart';
 /// "Updated 12 s ago", measured from Web's `receivedAt` (when the publisher's
 /// snapshot arrived) and re-rendered every second so the age stays true
 /// between polls. Warns when the snapshot is older than [fleetStaleAfter].
-class FleetFreshnessLine extends StatefulWidget {
+class FleetFreshnessLine extends StatelessWidget {
   const FleetFreshnessLine({required this.state, this.now, super.key});
 
   final FleetViewState state;
@@ -19,10 +19,37 @@ class FleetFreshnessLine extends StatefulWidget {
   final DateTime Function()? now;
 
   @override
-  State<FleetFreshnessLine> createState() => _FleetFreshnessLineState();
+  Widget build(BuildContext context) {
+    final snapshot = state.snapshot;
+    if (snapshot == null) return const SizedBox.shrink();
+    return FleetReceiptFreshnessLine(
+      receivedAt: snapshot.receivedAt,
+      failed: state.failure != null,
+      refreshing: state.refreshing,
+      now: now,
+    );
+  }
 }
 
-class _FleetFreshnessLineState extends State<FleetFreshnessLine> {
+class FleetReceiptFreshnessLine extends StatefulWidget {
+  const FleetReceiptFreshnessLine({
+    required this.receivedAt,
+    this.failed = false,
+    this.refreshing = false,
+    this.now,
+    super.key,
+  });
+
+  final DateTime receivedAt;
+  final bool failed;
+  final bool refreshing;
+  final DateTime Function()? now;
+
+  @override
+  State<FleetReceiptFreshnessLine> createState() => _FleetFreshnessLineState();
+}
+
+class _FleetFreshnessLineState extends State<FleetReceiptFreshnessLine> {
   Timer? _ticker;
 
   @override
@@ -42,15 +69,12 @@ class _FleetFreshnessLineState extends State<FleetFreshnessLine> {
 
   @override
   Widget build(BuildContext context) {
-    final snapshot = widget.state.snapshot;
-    if (snapshot == null) return const SizedBox.shrink();
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final now = (widget.now ?? DateTime.now)().toUtc();
-    final age = fleetAge(l10n, snapshot.receivedAt, now);
-    final failed = widget.state.failure != null;
-    final stale = now.difference(snapshot.receivedAt) > fleetStaleAfter;
-    final (text, icon, tone) = failed
+    final age = fleetAge(l10n, widget.receivedAt, now);
+    final stale = now.difference(widget.receivedAt) > fleetStaleAfter;
+    final (text, icon, tone) = widget.failed
         ? (
             l10n.mastermindFleetRefreshFailed(age),
             LucideIcons.cloudOff,
@@ -86,7 +110,7 @@ class _FleetFreshnessLineState extends State<FleetFreshnessLine> {
               ),
               const SizedBox(width: AppSpacing.sm),
             ],
-            if (widget.state.refreshing)
+            if (widget.refreshing)
               SizedBox.square(
                 dimension: 14,
                 child: CircularProgressIndicator(

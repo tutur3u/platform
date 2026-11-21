@@ -47,7 +47,7 @@ class _UsageAccountingState extends State<UsageAccounting> {
     ];
     final byDay = <String, double>{};
     final byModel = <String, double>{};
-    final byAccount = <String, double>{};
+    final byAccount = <(String?, String?, String?), MapEntry<String, double>>{};
     for (final row in rows) {
       final bucket = row.bucket;
       final cost = bucket.cost;
@@ -57,15 +57,19 @@ class _UsageAccountingState extends State<UsageAccounting> {
           .firstOrNull;
       final label =
           account?.email ??
-          account?.instance ??
-          l10n.mastermindUsageUnattributed;
+          (account == null
+              ? l10n.mastermindUsageUnattributed
+              : '${row.machine.label} · ${account.provider} · ${account.instance}');
+      final key = account?.email == null
+          ? (null, account == null ? null : row.machine.id, account?.id)
+          : (account?.email, null, null);
       byDay.update(bucket.day, (value) => value + cost, ifAbsent: () => cost);
       byModel.update(
-        bucket.model,
+        '${bucket.provider} · ${bucket.model}',
         (value) => value + cost,
         ifAbsent: () => cost,
       );
-      byAccount.update(label, (value) => value + cost, ifAbsent: () => cost);
+      byAccount[key] = MapEntry(label, (byAccount[key]?.value ?? 0) + cost);
     }
     final incomplete =
         machines.any((machine) {
@@ -88,13 +92,19 @@ class _UsageAccountingState extends State<UsageAccounting> {
         ],
         _CostPanel(
           label: l10n.mastermindUsageCostByDay,
-          totals: byDay,
+          totals: byDay.entries,
           newestFirst: true,
         ),
         const SizedBox(height: AppSpacing.md),
-        _CostPanel(label: l10n.mastermindUsageCostByAccount, totals: byAccount),
+        _CostPanel(
+          label: l10n.mastermindUsageCostByAccount,
+          totals: byAccount.values,
+        ),
         const SizedBox(height: AppSpacing.md),
-        _CostPanel(label: l10n.mastermindUsageCostByModel, totals: byModel),
+        _CostPanel(
+          label: l10n.mastermindUsageCostByModel,
+          totals: byModel.entries,
+        ),
         const SizedBox(height: AppSpacing.md),
         AppPanel(
           title: l10n.mastermindUsageTokens,
@@ -175,7 +185,7 @@ class _CostPanel extends StatelessWidget {
   });
 
   final String label;
-  final Map<String, double> totals;
+  final Iterable<MapEntry<String, double>> totals;
   final bool newestFirst;
 
   @override
@@ -185,7 +195,7 @@ class _CostPanel extends StatelessWidget {
       locale: l10n.localeName,
       name: 'USD',
     );
-    final rows = totals.entries.toList()
+    final rows = totals.toList()
       ..sort(
         (a, b) =>
             newestFirst ? b.key.compareTo(a.key) : b.value.compareTo(a.value),
