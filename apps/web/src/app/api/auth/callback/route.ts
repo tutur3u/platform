@@ -40,6 +40,17 @@ function replaceLegacyOnboardingDestination(url: URL) {
   return url;
 }
 
+// URLSearchParams already decoded the query value once. Only a legacy
+// fully-encoded outer URL (encoded scheme or leading slash) is decoded again;
+// decoding any other value would corrupt escaped characters in nested queries.
+const LEGACY_ENCODED_RETURN_URL = /^(?:https?%3A%2F%2F|%2F)/i;
+
+function resolveParsedReturnUrl(parsedUrl: string): string {
+  return LEGACY_ENCODED_RETURN_URL.test(parsedUrl)
+    ? decodeURIComponent(parsedUrl)
+    : parsedUrl;
+}
+
 /**
  * Validates a redirect URL to prevent open redirects.
  * Allows:
@@ -50,7 +61,7 @@ function replaceLegacyOnboardingDestination(url: URL) {
  *   when this request is itself on the shared-cookie tuturuuu.com domain
  */
 async function validateRedirectUrl(
-  encodedUrl: string,
+  parsedUrl: string,
   requestOrigin: string,
   request: NextRequest
 ): Promise<{
@@ -59,7 +70,7 @@ async function validateRedirectUrl(
   targetApp: string | null;
 } | null> {
   try {
-    const decodedUrl = decodeURIComponent(encodedUrl);
+    const decodedUrl = resolveParsedReturnUrl(parsedUrl);
 
     // Relative paths are always safe (same origin)
     if (decodedUrl.startsWith('/')) {

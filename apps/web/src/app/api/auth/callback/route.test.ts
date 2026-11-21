@@ -441,4 +441,133 @@ describe('auth callback route', () => {
     );
     expect(response.headers.get('location')).not.toContain('0.0.0.0');
   });
+
+  describe('returnUrl decoding', () => {
+    const nestedQuery = 'q=a%26b%3Fc%25d%2Be';
+
+    async function redirectFor(callbackUrl: string) {
+      const response = await GET(new NextRequest(callbackUrl));
+      return response.headers.get('location');
+    }
+
+    it('preserves escaped characters in a managed returnUrl nested query', async () => {
+      const returnUrl = `https://vc.tuturuuu.com/workspace/search?${nestedQuery}`;
+
+      await expect(
+        redirectFor(
+          `https://tuturuuu.com/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+        )
+      ).resolves.toBe(returnUrl);
+    });
+
+    it('keeps an escaped nested verifier destination intact', async () => {
+      const returnUrl =
+        'https://vc.tuturuuu.com/verify-token?nextUrl=%2Finbox%3Fq%3Da%2526b';
+
+      await expect(
+        redirectFor(
+          `https://tuturuuu.com/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+        )
+      ).resolves.toBe('https://vc.tuturuuu.com/inbox?q=a%26b');
+    });
+
+    it('preserves escaped characters in a trusted external returnUrl', async () => {
+      const returnUrl = `https://cms.tuturuuu.com/search?${nestedQuery}`;
+      const location = new URL(
+        (await redirectFor(
+          `http://localhost/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+        )) ?? ''
+      );
+
+      expect(location.pathname).toBe('/login');
+      expect(location.searchParams.get('returnUrl')).toBe(returnUrl);
+    });
+
+    it('preserves a relative returnUrl with a nested query', async () => {
+      const returnUrl = `/workspace/search?${nestedQuery}`;
+
+      await expect(
+        redirectFor(
+          `http://localhost/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+        )
+      ).resolves.toBe(`http://localhost${returnUrl}`);
+    });
+
+    it('preserves a nested query through the multi-account callback', async () => {
+      const returnUrl = `/workspace/search?${nestedQuery}`;
+      const location = new URL(
+        (await redirectFor(
+          `http://localhost/api/auth/callback?code=oauth-code&multiAccount=true&returnUrl=${encodeURIComponent(returnUrl)}`
+        )) ?? ''
+      );
+
+      expect(location.pathname).toBe('/add-account');
+      expect(location.searchParams.get('returnUrl')).toBe(returnUrl);
+    });
+
+    it('keeps a lone percent sign instead of falling back to the default', async () => {
+      await expect(
+        redirectFor(
+          `http://localhost/api/auth/callback?returnUrl=${encodeURIComponent('/search?q=100%')}`
+        )
+      ).resolves.toBe('http://localhost/search?q=100%');
+    });
+
+    it.each([
+      [
+        'absolute',
+        'https://vc.tuturuuu.com/workspace/personal/plans',
+        'https://tuturuuu.com',
+        'https://vc.tuturuuu.com/workspace/personal/plans',
+      ],
+      [
+        'relative',
+        '/en/personal/tasks?view=board',
+        'http://localhost',
+        'http://localhost/en/personal/tasks?view=board',
+      ],
+    ])(
+      'decodes a legacy fully encoded %s returnUrl once',
+      async (_kind, target, origin, expected) => {
+        const legacyReturnUrl = encodeURIComponent(encodeURIComponent(target));
+
+        await expect(
+          redirectFor(
+            `${origin}/api/auth/callback?returnUrl=${legacyReturnUrl}`
+          )
+        ).resolves.toBe(expected);
+      }
+    );
+
+    it.each([
+      '//evil.test/x',
+      '%2F%2Fevil.test%2Fx',
+      '/%2F%2Fevil.test',
+      '/\\evil.test',
+      '%2F%5Cevil.test',
+      '\\\\evil.test',
+      '%5C%5Cevil.test',
+      'javascript:alert(1)',
+      'javascript%3Aalert(1)',
+      'JAVASCRIPT%3Aalert%281%29',
+      'data:text/html,evil',
+      'https://evil.test',
+      'https%3A%2F%2Fevil.test',
+      'HTTPS%3A%2F%2Fevil.test',
+      'https%3A//evil.test',
+      'https%253A%252F%252Fevil.test',
+      'https%3A%2F%2Fcms.tuturuuu.com.evil.test',
+      'https://evil.test/?returnUrl=%2Fpersonal',
+    ])('rejects malicious returnUrl %s', async (returnUrl) => {
+      const location = new URL(
+        (await redirectFor(
+          `http://localhost/api/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+        )) ?? ''
+      );
+
+      expect(location.origin).toBe('http://localhost');
+      expect(location.pathname).not.toMatch(/evil/i);
+      expect(location.searchParams.get('returnUrl') ?? '').not.toMatch(/evil/i);
+    });
+  });
 });
