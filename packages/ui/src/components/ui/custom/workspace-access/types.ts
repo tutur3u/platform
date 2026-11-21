@@ -104,6 +104,12 @@ export type WorkspaceAccessAdapter = {
     workspaceId: string,
     payload: { email?: null | string; userId?: null | string }
   ) => Promise<unknown>;
+  /**
+   * Whether `removeMember` also revokes direct task-board shares, so rows for
+   * board guests (people who hold board shares but no membership) can offer
+   * Remove. Without it those rows point to the board's share settings.
+   */
+  removesDirectBoardGuests?: boolean;
   removeRoleMember: (
     workspaceId: string,
     roleId: string,

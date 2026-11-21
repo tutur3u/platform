@@ -45,6 +45,11 @@ type GuestContext = InternalApiEnhancedWorkspaceMember & {
 
 type Props = {
   canEditProfiles: boolean;
+  /**
+   * Board guests hold direct board shares, not a membership. Remove is only
+   * offered for them when the host's removal also revokes those shares.
+   */
+  canRemoveBoardGuests?: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
   canUpdateInvitationRoles: boolean;
@@ -69,6 +74,7 @@ type Props = {
 
 export function WorkspaceAccessMemberRow({
   canEditProfiles,
+  canRemoveBoardGuests = false,
   canManageMembers,
   canManageRoles,
   canUpdateInvitationRoles,
@@ -105,10 +111,20 @@ export function WorkspaceAccessMemberRow({
     !member.pending &&
     !guest.direct_board_guest &&
     member.workspace_member_type !== 'GUEST';
+  const canRemoveMember =
+    canManageMembers &&
+    !member.is_creator &&
+    (!guest.direct_board_guest || canRemoveBoardGuests);
+  // A board guest without an account carries a synthetic `board-guest:` id,
+  // so removal identifies them by email alone.
+  const removalUserId =
+    guest.direct_board_guest && member.pending ? null : member.id;
+  const showsBoardShareHint =
+    canManageMembers && guest.direct_board_guest && !canRemoveBoardGuests;
   const hasActions =
     Boolean(canRemoveRoles) ||
     canEditProfile ||
-    (canManageMembers && !member.is_creator) ||
+    canRemoveMember ||
     shouldShowProtectedMemberStatus({ isCreator: member.is_creator });
 
   return (
@@ -233,6 +249,11 @@ export function WorkspaceAccessMemberRow({
                 ) : null}
               </div>
             ) : null}
+            {showsBoardShareHint ? (
+              <p className="mt-1.5 text-muted-foreground text-xs">
+                {t('ws-members.direct_board_guest_manage_hint')}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -332,7 +353,7 @@ export function WorkspaceAccessMemberRow({
               </>
             ) : null}
 
-            {canManageMembers && !member.is_creator ? (
+            {canRemoveMember ? (
               <>
                 {canRemoveRoles || canEditProfile ? (
                   <DropdownMenuSeparator />
@@ -342,7 +363,7 @@ export function WorkspaceAccessMemberRow({
                   onSelect={() =>
                     onRemoveMember({
                       email: member.email,
-                      userId: member.id,
+                      userId: removalUserId,
                     })
                   }
                 >

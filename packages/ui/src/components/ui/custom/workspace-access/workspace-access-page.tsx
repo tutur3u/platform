@@ -470,6 +470,7 @@ export function WorkspaceAccessPage({
 
             <WorkspaceAccessMembers
               canEditProfiles={Boolean(adapter.updateMemberProfile)}
+              canRemoveBoardGuests={adapter.removesDirectBoardGuests === true}
               canManageMembers={canManageMembers}
               canManageRoles={canManageRoles}
               canUpdateInvitationRoles={

@@ -12,6 +12,7 @@ import { WorkspaceAccessMemberRow } from './workspace-access-member-row';
 
 type Props = {
   canEditProfiles: boolean;
+  canRemoveBoardGuests?: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
   canUpdateInvitationRoles: boolean;
@@ -39,6 +40,7 @@ type Props = {
 
 export function WorkspaceAccessMembers({
   canEditProfiles,
+  canRemoveBoardGuests = false,
   canManageMembers,
   canManageRoles,
   canUpdateInvitationRoles,
@@ -82,6 +84,7 @@ export function WorkspaceAccessMembers({
     <WorkspaceAccessMemberRow
       key={`${member.id ?? member.email ?? member.handle}`}
       canEditProfiles={canEditProfiles}
+      canRemoveBoardGuests={canRemoveBoardGuests}
       canManageMembers={canManageMembers}
       canManageRoles={canManageRoles}
       canUpdateInvitationRoles={canUpdateInvitationRoles}

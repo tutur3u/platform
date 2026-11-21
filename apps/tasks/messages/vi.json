@@ -13386,6 +13386,7 @@
     "delete-member-description": "Bạn có thể xóa thành viên này khỏi không gian làm việc.",
     "description": "Quản lý và mời thành viên cộng tác trong không gian làm việc của bạn. Kiểm soát vai trò và quyền hạn để giữ cho nhóm của bạn có tổ chức.",
     "direct_board_guest_badge": "Khách của bảng",
+    "direct_board_guest_manage_hint": "Quản lý quyền này trong phần chia sẻ của từng bảng.",
     "direct_board_guest_scope_description": "Người này không phải thành viên không gian làm việc. Họ chỉ có thể truy cập {count, plural, =1 {bảng được chia sẻ trực tiếp với họ} other {các bảng được chia sẻ trực tiếp với họ}} và không thể xem cài đặt, vai trò, thành viên, bảng không liên quan, nhãn, dự án, mẫu, nhật ký hoặc sản phẩm khác.",
     "direct_board_guest_scope_title": "Chỉ có quyền trực tiếp trên bảng",
     "edit_role": "Chỉnh sửa vai trò",

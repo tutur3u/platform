@@ -20369,6 +20369,7 @@
     "delete-member-description": "You can delete this member from the workspace.",
     "description": "Manage members of your workspace.",
     "direct_board_guest_badge": "Board guest",
+    "direct_board_guest_manage_hint": "Manage this access from each board's share settings.",
     "direct_board_guest_scope_description": "This person is not a workspace member. They can only access {count, plural, =1 {the board shared directly with them} other {the boards shared directly with them}} and cannot see workspace settings, roles, members, unrelated boards, labels, projects, templates, logs, or other products.",
     "direct_board_guest_scope_title": "Direct board access only",
     "edit_role": "Edit role",

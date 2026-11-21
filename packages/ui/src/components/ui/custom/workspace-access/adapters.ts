@@ -203,6 +203,7 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
       };
     },
     removeMember: removeWorkspaceMember,
+    removesDirectBoardGuests: true,
     removeRoleMember,
     updateMemberProfile: updateWorkspaceMemberProfile,
     updateInvitationRole: updateWorkspaceInvitationRole,

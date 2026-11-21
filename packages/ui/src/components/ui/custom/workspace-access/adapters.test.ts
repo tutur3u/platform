@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createExternalProjectWorkspaceAccessAdapter,
   createStandardWorkspaceAccessAdapter,
   mergeWorkspaceInvitationRoles,
   normalizeWorkspaceAccessRole,
@@ -48,6 +49,15 @@ describe('workspace access adapters', () => {
     expect(
       createStandardWorkspaceAccessAdapter().updateMemberProfile
     ).toBeTypeOf('function');
+  });
+
+  it('offers board-guest removal only where removal revokes board shares', () => {
+    expect(
+      createStandardWorkspaceAccessAdapter().removesDirectBoardGuests
+    ).toBe(true);
+    expect(
+      createExternalProjectWorkspaceAccessAdapter().removesDirectBoardGuests
+    ).toBeUndefined();
   });
 
   it('hydrates pending email and registered-user invitations with their assigned roles', () => {
