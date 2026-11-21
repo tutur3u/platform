@@ -97,11 +97,18 @@ export async function sealTo(
   } catch {
     throw new VaultCryptoError('invalid_input', 'Invalid public key');
   }
-  const sender = await suite.createSenderContext({
-    recipientPublicKey: publicKey,
-    info: ctx,
-  });
-  const ct = await sender.seal(asBufferSource(plaintext), ctx);
+  let sender: Awaited<ReturnType<typeof suite.createSenderContext>>;
+  let ct: ArrayBuffer;
+  try {
+    sender = await suite.createSenderContext({
+      recipientPublicKey: publicKey,
+      info: ctx,
+    });
+    ct = await sender.seal(asBufferSource(plaintext), ctx);
+  } catch {
+    // The KEM rejects low-order public keys during Diffie-Hellman.
+    throw new VaultCryptoError('invalid_input', 'Invalid public key');
+  }
   return {
     v: FORMAT_VERSION,
     suite: SUITE_ID,

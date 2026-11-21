@@ -20,15 +20,23 @@ export type CanonicalObject = { readonly [key: string]: CanonicalValue };
 
 const MAX_DEPTH = 16;
 
+/** A lone UTF-16 surrogate would be replaced by U+FFFD when encoded. */
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+function assertWellFormed(text: string): void {
+  if (LONE_SURROGATE.test(text)) {
+    throw new VaultCryptoError('invalid_input', 'Ill-formed string');
+  }
+}
+
 function assertCanonicalValue(value: unknown, depth: number): void {
   if (depth > MAX_DEPTH) {
     throw new VaultCryptoError('invalid_input', 'Object nesting too deep');
   }
-  if (
-    value === null ||
-    typeof value === 'string' ||
-    typeof value === 'boolean'
-  ) {
+  if (value === null || typeof value === 'boolean') return;
+  if (typeof value === 'string') {
+    assertWellFormed(value);
     return;
   }
   if (typeof value === 'number') {
@@ -46,8 +54,10 @@ function assertCanonicalValue(value: unknown, depth: number): void {
     typeof value === 'object' &&
     Object.getPrototypeOf(value) === Object.prototype
   ) {
-    for (const item of Object.values(value))
+    for (const [key, item] of Object.entries(value)) {
+      assertWellFormed(key);
       assertCanonicalValue(item, depth + 1);
+    }
     return;
   }
   throw new VaultCryptoError('invalid_input', 'Unsupported value type');
@@ -76,6 +86,7 @@ export function decodeCanonical(bytes: Uint8Array): CanonicalValue {
       allowNaN: false,
       allowBigInt: false,
       useMaps: false,
+      strictUtf8: true,
     });
   } catch {
     throw new VaultCryptoError('non_canonical', 'Malformed CBOR');

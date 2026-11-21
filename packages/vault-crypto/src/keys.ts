@@ -21,11 +21,22 @@ export function displayFingerprint(fp: Uint8Array): string {
 
 export type UnlockMethod = 'passkey' | 'recovery' | 'pin';
 
+/**
+ * Unlock wraps belong to a user, not to one workspace vault, so they bind the
+ * deployment and the stable `vault_user_id` but no `vault_id`.
+ */
 export type UnlockContext = {
+  readonly deployment: string;
   readonly vault_user_id: Uint8Array;
   readonly identity_tier: 'strong' | 'pin';
   readonly method_id: Uint8Array;
   readonly params_version: number;
+};
+
+const METHOD_TIER: Record<UnlockMethod, UnlockContext['identity_tier']> = {
+  passkey: 'strong',
+  recovery: 'strong',
+  pin: 'pin',
 };
 
 /**
@@ -41,7 +52,7 @@ export async function deriveKek(
   if (ikm.length < 32 || wrapSalt.length < 16) {
     throw new VaultCryptoError('invalid_input', 'Weak KEK input');
   }
-  if ((method === 'pin') !== (context.identity_tier === 'pin')) {
+  if (METHOD_TIER[method] !== context.identity_tier) {
     throw new VaultCryptoError(
       'invalid_input',
       'Method does not match identity tier'

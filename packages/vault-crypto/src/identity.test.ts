@@ -82,6 +82,7 @@ describe('signatures', () => {
 
 describe('key derivation', () => {
   const unlock = {
+    deployment: 'test',
     vault_user_id: new Uint8Array(16).fill(1),
     identity_tier: 'strong' as const,
     method_id: new Uint8Array(16).fill(2),

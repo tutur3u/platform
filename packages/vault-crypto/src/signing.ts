@@ -33,8 +33,10 @@ export function signObject(
 }
 
 /**
- * Strict RFC 8032 verification: non-canonical encodings and small-order
- * points are rejected (`zip215: false`), so a signature has one valid form.
+ * Verification with `zip215: false`: non-canonical point and scalar encodings
+ * and small-order public keys are rejected, so `s + L` and similar re-encodings
+ * fail. The check is Noble's cofactored equation; there is no separate
+ * small-order `R` rejection.
  */
 export function verifyObject(
   publicKey: Uint8Array,

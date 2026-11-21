@@ -56,9 +56,19 @@ function fromBase64Url(input: string): Uint8Array {
   if (!/^[A-Za-z0-9_-]*$/.test(input)) {
     throw new VaultCryptoError('invalid_input', 'Invalid fragment');
   }
-  const padded = input.replace(/-/g, '+').replace(/_/g, '/');
-  const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
-  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  let bytes: Uint8Array;
+  try {
+    const padded = input.replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
+    bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  } catch {
+    throw new VaultCryptoError('invalid_input', 'Invalid fragment');
+  }
+  // Unused padding bits must be zero, so each fragment has one spelling.
+  if (toBase64Url(bytes) !== input) {
+    throw new VaultCryptoError('invalid_input', 'Non-canonical fragment');
+  }
+  return bytes;
 }
 
 export function createPairingFragment(
