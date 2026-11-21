@@ -9,7 +9,11 @@ import {
 } from '@tuturuuu/internal-api/people-registry';
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag } from './args';
-import { maskDisplay, readSensitiveValue } from './people-input';
+import {
+  maskDisplay,
+  maskPersonDisplays,
+  readSensitiveValue,
+} from './people-input';
 
 // `ttr people` drives the people registry manager routes with the CLI
 // session. Raw external IDs are never arguments: `link` reads them from a
@@ -159,7 +163,7 @@ export async function runPeopleCommand(options: Options) {
 
   if (action === 'show') {
     const person = await showPerson(options, required(args[0], 'person id'));
-    emit(person, summarizePerson(person));
+    emit(maskPersonDisplays(person), summarizePerson(person));
     return;
   }
 
@@ -304,17 +308,20 @@ export async function runPeopleCommand(options: Options) {
 
   if (action === 'flags') {
     const toggle = (name: string) => {
+      if (!(name in flags)) return undefined;
       const value = getFlag(flags, name);
-      if (value === undefined) return undefined;
       if (value !== 'on' && value !== 'off')
         throw new Error(`--${name} takes on or off.`);
       return value === 'on';
     };
+    const body = { captureEnabled: toggle('capture'), stopped: toggle('stop') };
+    if (body.captureEnabled === undefined && body.stopped === undefined)
+      throw new Error('Pass --capture on|off or --stop on|off.');
     const result = unwrap(
       await writeRegistrySetting(
         options.workspaceId,
         'flags',
-        { captureEnabled: toggle('capture'), stopped: toggle('stop') },
+        body,
         clientOptions
       )
     );

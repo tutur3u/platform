@@ -228,4 +228,102 @@ describe('people input', () => {
     await expect(reading).resolves.toBe('+84900009999');
     expect(readSensitiveValue).toBe(secret);
   });
+
+  function tty(withRawMode = true) {
+    const stream = new PassThrough() as unknown as NodeJS.ReadStream & {
+      setRawMode?: (mode: boolean) => void;
+    };
+    Object.assign(stream, { isTTY: true });
+    const modes: boolean[] = [];
+    if (withRawMode)
+      stream.setRawMode = (mode: boolean) => void modes.push(mode);
+    return {
+      stream,
+      modes,
+      feed: (text: string) => (stream as unknown as PassThrough).write(text),
+    };
+  }
+
+  async function actualInput() {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    return vi.importActual<typeof import('./people-input')>('./people-input');
+  }
+
+  it.each([
+    ['Enter', 'abc\r', 'abc'],
+    ['backspace then Enter', 'abx\u007fc\n', 'abc'],
+  ])('restores the terminal after %s', async (_name, keys, expected) => {
+    const actual = await actualInput();
+    const { stream, modes, feed } = tty();
+    const reading = actual.readSensitiveValue('prompt: ', stream);
+    feed(keys);
+    await expect(reading).resolves.toBe(expected);
+    expect(modes).toEqual([true, false]);
+  });
+
+  it.each([
+    ['Ctrl-C', '\u0003', 'Cancelled.'],
+    ['Ctrl-D', '\u0004', 'Cancelled.'],
+    ['overlong input', 'x'.repeat(321), 'Input is too long.'],
+  ])('restores the terminal after %s', async (_name, keys, message) => {
+    const actual = await actualInput();
+    const { stream, modes, feed } = tty();
+    const reading = actual.readSensitiveValue('prompt: ', stream);
+    feed(keys);
+    await expect(reading).rejects.toThrow(message);
+    expect(modes).toEqual([true, false]);
+  });
+
+  it('cancels on end of input and refuses a terminal without raw mode', async () => {
+    const actual = await actualInput();
+    const ended = tty();
+    const reading = actual.readSensitiveValue('prompt: ', ended.stream);
+    (ended.stream as unknown as PassThrough).end();
+    await expect(reading).rejects.toThrow('Cancelled.');
+    expect(ended.modes).toEqual([true, false]);
+    await expect(
+      actual.readSensitiveValue('prompt: ', tty(false).stream)
+    ).rejects.toThrow('Cannot hide input');
+  });
+
+  it('refuses piped input over the size limit', async () => {
+    const actual = await actualInput();
+    const stdin = new PassThrough() as unknown as NodeJS.ReadStream;
+    const reading = actual.readSensitiveValue('prompt: ', stdin);
+    (stdin as unknown as PassThrough).end('9'.repeat(4097));
+    await expect(reading).rejects.toThrow('Input is too long.');
+  });
+});
+
+describe('ttr people output and validation', () => {
+  it('masks display values in JSON and never prints the linked external ID', async () => {
+    secret.mockResolvedValue('+84900005678');
+    const shown = fixture(true);
+    await shown.run(['show', PERSON]);
+    expect(shown.printed()).not.toContain('+84900001234');
+    expect(JSON.parse(shown.printed()).identities[0].displayValue).toBe(
+      '********234'
+    );
+    const errors = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
+    const linked = fixture(true, { reason: 'proposed', identityId: IDENTITY });
+    await linked.run(['link', PERSON], { channel: 'zalo', account: 'acct-1' });
+    const stderr = errors.mock.calls.map(([text]) => String(text)).join('');
+    expect(linked.printed() + stderr).not.toContain('+84900005678');
+  });
+
+  it('refuses bare switches, empty flag writes and non-person rules before any request', async () => {
+    const { fetch, run } = fixture();
+    await expect(run(['flags'], { capture: true })).rejects.toThrow(
+      '--capture takes on or off.'
+    );
+    await expect(run(['flags'])).rejects.toThrow('Pass --capture on|off');
+    await expect(
+      run(['rules', 'set', 'channel_default', 'reply_mode', '"auto"'], {
+        channel: 'zalo',
+      })
+    ).rejects.toThrow('This CLI sets person rules');
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

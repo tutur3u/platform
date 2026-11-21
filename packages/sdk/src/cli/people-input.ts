@@ -4,40 +4,73 @@
 
 type InputStream = NodeJS.ReadStream & { setRawMode?: (mode: boolean) => void };
 
+const MAX_PIPED_BYTES = 4096;
+const MAX_TYPED_CHARS = 320;
+
 async function readPiped(stdin: InputStream) {
   const chunks: Buffer[] = [];
+  let size = 0;
   for await (const chunk of stdin) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-    if (chunks.reduce((size, part) => size + part.length, 0) > 4096)
-      throw new Error('Input is too long.');
+    const part = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+    size += part.length;
+    if (size > MAX_PIPED_BYTES) throw new Error('Input is too long.');
+    chunks.push(part);
   }
   return Buffer.concat(chunks).toString('utf8').trim();
 }
 
 function readHidden(stdin: InputStream, prompt: string) {
+  // Without raw mode the terminal would echo the value.
+  if (typeof stdin.setRawMode !== 'function')
+    return Promise.reject(
+      new Error('Cannot hide input on this terminal; pipe the value on stdin.')
+    );
+  const setRawMode = stdin.setRawMode.bind(stdin);
   return new Promise<string>((resolve, reject) => {
-    process.stderr.write(prompt);
-    stdin.setRawMode?.(true);
-    stdin.resume();
     let value = '';
+    let done = false;
     const finish = (error?: Error) => {
-      stdin.setRawMode?.(false);
-      stdin.pause();
+      if (done) return;
+      done = true;
       stdin.off('data', onData);
-      process.stderr.write('\n');
-      if (error) reject(error);
-      else resolve(value.trim());
-    };
-    const onData = (data: Buffer | string) => {
-      for (const char of data.toString('utf8')) {
-        if (char === '\r' || char === '\n') return finish();
-        if (char === '\u0003') return finish(new Error('Cancelled.'));
-        if (char === '\u007f' || char === '\b') value = value.slice(0, -1);
-        else if (char >= ' ') value += char;
-        if (value.length > 320) return finish(new Error('Input is too long.'));
+      stdin.off('end', onEnd);
+      stdin.off('error', onError);
+      try {
+        setRawMode(false);
+      } finally {
+        stdin.pause();
+        process.stderr.write('\n');
+        if (error) reject(error);
+        else resolve(value.trim());
       }
     };
-    stdin.on('data', onData);
+    const onEnd = () => finish(new Error('Cancelled.'));
+    const onError = (error: Error) => finish(error);
+    const onData = (data: Buffer | string) => {
+      try {
+        for (const char of data.toString('utf8')) {
+          if (char === '\r' || char === '\n') return finish();
+          if (char === '\u0003' || char === '\u0004')
+            return finish(new Error('Cancelled.'));
+          if (char === '\u007f' || char === '\b') value = value.slice(0, -1);
+          else if (char >= ' ') value += char;
+          if (value.length > MAX_TYPED_CHARS)
+            return finish(new Error('Input is too long.'));
+        }
+      } catch (error) {
+        finish(error instanceof Error ? error : new Error('Input failed.'));
+      }
+    };
+    try {
+      process.stderr.write(prompt);
+      setRawMode(true);
+      stdin.on('data', onData);
+      stdin.once('end', onEnd);
+      stdin.once('error', onError);
+      stdin.resume();
+    } catch (error) {
+      finish(error instanceof Error ? error : new Error('Input failed.'));
+    }
   });
 }
 
@@ -58,4 +91,21 @@ export function maskDisplay(value: string | null | undefined) {
   if (!value) return '-';
   const visible = value.length > 6 ? value.slice(-3) : '';
   return `${'*'.repeat(Math.min(8, value.length - visible.length))}${visible}`;
+}
+
+// Replaces every identity's display value with its masked form, so JSON output
+// follows the same rule as text output.
+export function maskPersonDisplays<
+  T extends { identities?: { displayValue: string | null }[] },
+>(person: T): T {
+  return {
+    ...person,
+    identities: person.identities?.map((identity) => ({
+      ...identity,
+      displayValue:
+        identity.displayValue === null
+          ? null
+          : maskDisplay(identity.displayValue),
+    })),
+  };
 }
