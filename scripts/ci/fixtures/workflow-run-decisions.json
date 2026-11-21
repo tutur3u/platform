@@ -165,6 +165,7 @@
   "tutoring-absence-credit-contract.yaml": ["path-filters"],
   "tutoring-teacher-hours-contract.yaml": ["path-filters"],
   "type-check.yaml": ["planner-job"],
+  "vault-witness-cloudflare.yaml": ["path-filters"],
   "vercel-preview-ai.yaml": ["always"],
   "vercel-preview-apps.yaml": ["always"],
   "vercel-preview-calendar.yaml": ["always"],

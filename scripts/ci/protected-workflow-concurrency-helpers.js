@@ -74,6 +74,8 @@ const mainExceptions = {
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
   'mastermind-store-cloudflare.yaml':
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
+  'vault-witness-cloudflare.yaml':
+    'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
 };
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group drops the previous pending run when

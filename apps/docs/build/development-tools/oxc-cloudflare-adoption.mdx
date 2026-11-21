@@ -102,6 +102,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
 | Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
 | Deploy coordinator | New native Worker and per-environment SQLite DO; publication held | No alarms, queues or outbound calls; catalog-bounded objects, durable daily call budget and environment stop fence. See the [deployment coordinator](/build/devops/deployment-coordinator) |
+| Vault witness | New cf + Void Worker with per-vault and per-user SQLite DOs; publication held for a dedicated account | No alarms, queues or outbound calls; durable per-minute and daily call budgets per object, storage caps, 256 KiB bodies and the `WITNESS_STOPPED` stop secret. See the [Secrets vault witness](/platform/architecture/secrets-vault-witness) |
 | Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
 
 This inventory follows active checked-in Wrangler configurations. Existing
