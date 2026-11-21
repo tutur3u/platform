@@ -507,6 +507,23 @@ rollback.
 The release authority records each item with its scope and a review date
 before production leaves the hold. Until then the dependent gate stays open.
 
+Recorded decisions, scoped to the slice 4 auth Worker design at revision
+`53e354ede4`, review date 2026-12-21. A later change to these pages needs its
+own decision for the items it touches:
+
+| Item | Decision |
+| --- | --- |
+| 1 G5 bounds | Accepted |
+| 2 `SessionControl` fuse | Accepted |
+| 3 Key guard outage | Accepted |
+| 4 Separate Cloudflare account | Open, with the owner |
+| 5 Procedures | Accepted |
+| 6 AI validation cost | Accepted |
+| 7 Budget exhaustion | Accepted |
+| 8 Script-scoped deploy tokens and the token attestation | Open, with the owner |
+
+The scoped gateway deploy token is in the Web release lane's custody.
+
 1. **G5 bounds.** The ordinary-read bounds above (5, 35, 70 and 100 seconds)
    for `read` routes only.
 2. **The 5-minute `SessionControl` fuse.** Past 5 minutes without a fence
