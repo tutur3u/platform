@@ -19,8 +19,6 @@ import {
   guardApiProxyRequest,
   hasSupabaseSessionCookie,
   isTrustedProxyBypassForRequest,
-  type ProxyRoutePolicy,
-  type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
   INTERNAL_WORKSPACE_SLUG,
@@ -48,6 +46,10 @@ import {
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
 import * as designPublic from './lib/design-public-redirect';
+import {
+  EMAIL_ROUTE_WORKSPACE_PATTERN,
+  webProxyRoutePolicies,
+} from './lib/proxy-route-policies';
 import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
@@ -116,8 +118,6 @@ const OFFLINE_FALLBACK_PATH = '/~offline';
 const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
-const EMAIL_ROUTE_WORKSPACE_PATTERN =
-  /^\/api\/v1\/workspaces\/([^/]+)\/(?:users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_MINUTE',
   'EMAIL_RATE_LIMIT_HOUR',
@@ -129,19 +129,6 @@ const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_IP_MINUTE',
   'EMAIL_RATE_LIMIT_IP_HOUR',
 ] as const;
-const EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS = {
-  get: [],
-  mutate: [
-    { window: 'minute', limit: 30, duration: '1 m' },
-    { window: 'hour', limit: 120, duration: '1 h' },
-    { window: 'day', limit: 600, duration: '1 d' },
-  ],
-} satisfies RateLimitProfile;
-const EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY: ProxyRoutePolicy = {
-  key: 'email-rate-limit-override',
-  matches: (req) => EMAIL_ROUTE_WORKSPACE_PATTERN.test(req.nextUrl.pathname),
-  rateLimits: EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS,
-};
 const SUSPICIOUS_QUERY_LENGTH_MAX = parsePositiveIntEnv(
   'PROXY_SUSPICIOUS_QUERY_LENGTH_MAX',
   1024
@@ -1031,11 +1018,9 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     const costResponse = await guardApiCostAndCsrf(req, WEB_APP_URL);
     if (costResponse) return costResponse;
     if (versionedAsset) return NextResponse.next();
-    const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
-      req.nextUrl.pathname
-    ))
-      ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
-      : undefined;
+    const additionalRoutePolicies = webProxyRoutePolicies(
+      await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)
+    );
     return guardBrowserApiSession(req, async () => {
       const trustedStaffCli = await isVerifiedStaffCliSession(req.headers);
       const guardResponse = await guardApiProxyRequest(req, {

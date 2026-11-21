@@ -602,16 +602,15 @@ describe('web proxy api handling', () => {
     expect(options).toEqual(
       expect.objectContaining({
         additionalRoutePolicies: [
-          expect.objectContaining({
-            key: 'email-rate-limit-override',
-          }),
+          expect.objectContaining({ key: 'fleet-publisher' }),
+          expect.objectContaining({ key: 'email-rate-limit-override' }),
         ],
         prefixBase: 'proxy:web:api',
         trustedBypassRules: expect.any(Array),
       })
     );
     expect(
-      options?.additionalRoutePolicies?.[0]?.matches(
+      options?.additionalRoutePolicies?.[1]?.matches(
         new NextRequest(`http://localhost${emailRoute}`, { method: 'POST' })
       )
     ).toBe(true);
