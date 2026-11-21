@@ -66,10 +66,18 @@ vi.mock('../app/[locale]/(dashboard)/[wsId]/structure', () => ({
   Structure: ({
     children,
     actions,
+    sidebarExpandedWidth,
   }: {
     children?: ReactNode;
     actions?: ReactNode;
-  }) => createElement('div', null, actions, children),
+    sidebarExpandedWidth: string;
+  }) =>
+    createElement(
+      'div',
+      { style: { width: sidebarExpandedWidth } },
+      actions,
+      children
+    ),
 }));
 
 import { loadMailWorkspace } from './mail-workspace-model.server';
@@ -139,4 +147,22 @@ describe('server-resolved public notification configuration', () => {
       expect(output).not.toContain('different-browser-value');
       expect(output).not.toContain('9977');
     });
+});
+
+it('renders the persisted sidebar width in the first HTML', async () => {
+  const workspace = await withMailRequest(
+    {
+      request: new Request('https://mail.example.test/tenant/inbox', {
+        headers: { cookie: 'sidebar-size=22rem; sidebar-size=28' },
+      }),
+    },
+    () => loadMailWorkspace('tenant')
+  );
+  if (workspace.kind !== 'workspace')
+    throw new Error('Expected authorized workspace');
+
+  const html = renderToString(
+    createElement(MailWorkspaceView, { workspace, locale: 'en' })
+  );
+  expect(html).toContain('style="width:22rem"');
 });

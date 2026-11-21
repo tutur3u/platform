@@ -8,6 +8,7 @@ import {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
+  parseSidebarExpandedWidth,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -92,6 +93,9 @@ export default async function Layout({ children, params }: LayoutProps) {
               wsId={wsId}
               workspace={workspace}
               defaultCollapsed={defaultCollapsed}
+              sidebarExpandedWidth={parseSidebarExpandedWidth(
+                requestHeaders.get('cookie')
+              )}
               links={await getNavigationLinks({
                 workspaceSlug: toWorkspaceSlug(wsId, {
                   personal: !!workspace.personal,

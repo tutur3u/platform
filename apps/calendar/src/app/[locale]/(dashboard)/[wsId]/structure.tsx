@@ -15,6 +15,7 @@ interface StructureProps {
   disableCreateNewWorkspace?: boolean;
   links: (NavLink | null)[];
   notificationPopover: ReactNode;
+  sidebarExpandedWidth: string;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   wsId: string;
@@ -27,6 +28,7 @@ export function Structure({
   disableCreateNewWorkspace,
   links,
   notificationPopover,
+  sidebarExpandedWidth,
   userPopover,
   workspace,
   wsId,
@@ -42,6 +44,7 @@ export function Structure({
       defaultCollapsed={defaultCollapsed}
       links={links}
       notificationPopover={notificationPopover}
+      sidebarExpandedWidth={sidebarExpandedWidth}
       sidebarContentAfter={({ isCollapsed }) =>
         isCollapsed || isTaskView ? null : (
           <CalendarSidebarContent wsId={wsId} />

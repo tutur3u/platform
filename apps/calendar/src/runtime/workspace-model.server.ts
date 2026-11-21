@@ -8,6 +8,7 @@ import {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
+  parseSidebarExpandedWidth,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getRequestWorkspace } from '@tuturuuu/utils/request-workspace';
@@ -50,6 +51,9 @@ export async function workspaceShellModel(
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(cookieStore),
     defaultCollapsed: getSidebarCollapsedState(cookieStore, behavior),
+    sidebarExpandedWidth: parseSidebarExpandedWidth(
+      (await headers()).get('cookie')
+    ),
     calendarConnections: calendarConnections || [],
   };
 }

@@ -12,6 +12,7 @@ import {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
+  parseSidebarExpandedWidth,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import {
@@ -68,5 +69,9 @@ export async function loadMailWorkspace(id: string) {
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(store),
     defaultCollapsed: getSidebarCollapsedState(store, behavior),
+    sidebarExpandedWidth: parseSidebarExpandedWidth(
+      (await headers()).get('cookie'),
+      '15rem'
+    ),
   };
 }

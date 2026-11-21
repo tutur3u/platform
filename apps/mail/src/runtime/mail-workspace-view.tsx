@@ -63,6 +63,7 @@ export function MailWorkspaceView({
               </div>
             }
             defaultCollapsed={model.defaultCollapsed}
+            sidebarExpandedWidth={model.sidebarExpandedWidth}
             links={links}
             personalOrWsId={workspaceSlug}
             notificationPopover={notificationPopover}

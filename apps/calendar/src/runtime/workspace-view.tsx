@@ -47,6 +47,7 @@ export function WorkspaceView({
               wsId={workspace.id}
               workspace={workspace}
               defaultCollapsed={model.defaultCollapsed}
+              sidebarExpandedWidth={model.sidebarExpandedWidth}
               links={[
                 {
                   title: t('calendar'),

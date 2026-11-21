@@ -15,6 +15,7 @@ interface StructureProps {
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
   notificationPopover: ReactNode;
+  sidebarExpandedWidth: string;
   personalOrWsId: string;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
@@ -28,6 +29,7 @@ export function Structure({
   links,
   personalOrWsId,
   notificationPopover,
+  sidebarExpandedWidth,
   userPopover,
   workspace,
   wsId,
@@ -94,7 +96,7 @@ export function Structure({
         />
       )}
       showSettingsButton={false}
-      sidebarExpandedWidth="15rem"
+      sidebarExpandedWidth={sidebarExpandedWidth}
       sidebarHeaderClassName="border-foreground/10 border-b"
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}

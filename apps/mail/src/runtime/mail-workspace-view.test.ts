@@ -107,6 +107,7 @@ const model = {
   behavior: 'expanded',
   behaviorUpdatedAt: null,
   defaultCollapsed: false,
+  sidebarExpandedWidth: '15rem',
   workspace: {
     id: wsId,
     personal: true,
