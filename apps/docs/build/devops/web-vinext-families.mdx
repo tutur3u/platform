@@ -216,10 +216,13 @@ nothing populates the R2 store yet.
 
 ## Worker runtime behavior
 
-- `cloudflare/vinext/worker-entry.ts` is the Worker entrypoint. Before vinext
-  loads, it installs `cloudflare/vinext/workers-fetch.ts`, because workerd's
-  fetch rejects every `cache` mode except `no-store` ("Unsupported cache
-  mode"). vinext keeps its own handling of `cache`, `next.revalidate` and
+- `cloudflare/vinext/worker-entry.ts` is the Worker entrypoint. It installs
+  `cloudflare/vinext/workers-fetch.ts`, because workerd's fetch rejects every
+  `cache` mode except `no-store` ("Unsupported cache mode"). The bundler
+  inlines the entry's side-effect imports into the entry chunk, which runs
+  after every chunk it imports, so `cloudflare/vinext/workers-fetch-first.ts`
+  makes vinext's fetch-cache shim import the install module: ESM dependency
+  order then runs the install before vinext captures the network fetch. vinext keeps its own handling of `cache`, `next.revalidate` and
   `next.tags`, and the network fetch drops the mode workerd rejects.
   workerd's fetch and `Request` constructor also throw `Invalid redirect
   value` for `redirect: 'error'`, which server code (the Mastermind store

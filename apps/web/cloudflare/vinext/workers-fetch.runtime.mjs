@@ -114,13 +114,15 @@ test(
 // dynamic key) without a declaration in cloudflare.config.ts, and
 // `redirect: 'error'` fetches work through the installed fetch and through a
 // patch assigned after it, which rebuilds a Request from the init as vinext's
-// caching fetch does.
-const redirectWorker = `
+// caching fetch does. With `captureFirst`, the network fetch is captured
+// before the install, as a module evaluated ahead of it would do.
+const redirectWorker = (captureFirst) => `
 import { installWorkersFetch } from ${JSON.stringify(wrapper)};
 import { configuredMastermindStore } from ${JSON.stringify(storeClient)};
 
+${captureFirst ? "globalThis[Symbol.for('vinext.fetchCache.originalFetch')] = globalThis.fetch;" : ''}
 installWorkersFetch();
-const network = globalThis.fetch;
+const network = globalThis[Symbol.for('vinext.fetchCache.originalFetch')];
 globalThis.fetch = (input, init) => network(new Request(input, init));
 
 export default {
@@ -152,63 +154,64 @@ export default {
 };
 `;
 
-test(
-  'Workers runtime exposes undeclared secrets and emulates redirect error',
-  { timeout: 120_000 },
-  async (t) => {
-    const scratch = await mkdtemp(join(tmpdir(), 'web-vinext-redirect-'));
-    t.after(() => rm(scratch, { recursive: true, force: true }));
-    await writeFile(join(scratch, 'worker.ts'), redirectWorker);
-    // Disposable fixture values, bound as secrets that no config declares.
-    const token = 'fixture-store-token-0123456789abcdef';
-    await writeFile(
-      join(scratch, '.dev.vars'),
-      `MASTERMIND_STORE_URL=https://store.test\nMASTERMIND_STORE_TOKEN=${token}\n`
-    );
-    const seen = [];
-    const origin = await startScratchWorker(t, scratch, async (request) => {
-      const url = new URL(request.url);
-      seen.push(`${request.method} ${url.host}${url.pathname}`);
-      if (url.host === 'store.test') {
-        assert.equal(request.headers.get('authorization'), `Bearer ${token}`);
-        return Response.json({ ok: true, results: [true] });
-      }
-      if (url.pathname === '/moved') {
-        return new Response(null, {
-          status: 302,
-          headers: { location: 'https://elsewhere.test/' },
-        });
-      }
-      return new Response('origin body', { status: 200 });
-    });
-    const call = async (path) => {
-      const response = await fetch(`${origin}${path}`);
-      return { status: response.status, body: await response.text() };
-    };
+for (const captureFirst of [false, true])
+  test(
+    `Workers runtime exposes undeclared secrets and emulates redirect error${captureFirst ? ' after an earlier capture' : ''}`,
+    { timeout: 120_000 },
+    async (t) => {
+      const scratch = await mkdtemp(join(tmpdir(), 'web-vinext-redirect-'));
+      t.after(() => rm(scratch, { recursive: true, force: true }));
+      await writeFile(join(scratch, 'worker.ts'), redirectWorker(captureFirst));
+      // Disposable fixture values, bound as secrets that no config declares.
+      const token = 'fixture-store-token-0123456789abcdef';
+      await writeFile(
+        join(scratch, '.dev.vars'),
+        `MASTERMIND_STORE_URL=https://store.test\nMASTERMIND_STORE_TOKEN=${token}\n`
+      );
+      const seen = [];
+      const origin = await startScratchWorker(t, scratch, async (request) => {
+        const url = new URL(request.url);
+        seen.push(`${request.method} ${url.host}${url.pathname}`);
+        if (url.host === 'store.test') {
+          assert.equal(request.headers.get('authorization'), `Bearer ${token}`);
+          return Response.json({ ok: true, results: [true] });
+        }
+        if (url.pathname === '/moved') {
+          return new Response(null, {
+            status: 302,
+            headers: { location: 'https://elsewhere.test/' },
+          });
+        }
+        return new Response('origin body', { status: 200 });
+      });
+      const call = async (path) => {
+        const response = await fetch(`${origin}${path}`);
+        return { status: response.status, body: await response.text() };
+      };
 
-    const env = await call(
-      `/env?name=MASTERMIND_STORE_TOKEN&expect=${encodeURIComponent(token)}`
-    );
-    assert.deepEqual(JSON.parse(env.body), {
-      store: true,
-      dynamic: true,
-      listed: true,
-    });
-    assert.deepEqual(await call('/store'), {
-      status: 200,
-      body: JSON.stringify({ set: true }),
-    });
-    assert.deepEqual(await call('/data'), {
-      status: 200,
-      body: 'origin body',
-    });
-    const moved = await call('/moved');
-    assert.equal(moved.status, 500);
-    assert.match(moved.body, /^TypeError: fetch failed: redirect/u);
-    assert.deepEqual(seen, [
-      'POST store.test/v1/ops',
-      'GET origin.test/data',
-      'GET origin.test/moved',
-    ]);
-  }
-);
+      const env = await call(
+        `/env?name=MASTERMIND_STORE_TOKEN&expect=${encodeURIComponent(token)}`
+      );
+      assert.deepEqual(JSON.parse(env.body), {
+        store: true,
+        dynamic: true,
+        listed: true,
+      });
+      assert.deepEqual(await call('/store'), {
+        status: 200,
+        body: JSON.stringify({ set: true }),
+      });
+      assert.deepEqual(await call('/data'), {
+        status: 200,
+        body: 'origin body',
+      });
+      const moved = await call('/moved');
+      assert.equal(moved.status, 500);
+      assert.match(moved.body, /^TypeError: fetch failed: redirect/u);
+      assert.deepEqual(seen, [
+        'POST store.test/v1/ops',
+        'GET origin.test/data',
+        'GET origin.test/moved',
+      ]);
+    }
+  );

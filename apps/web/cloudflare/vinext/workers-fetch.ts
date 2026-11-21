@@ -12,6 +12,7 @@
 // those requests with `redirect: 'manual'` and turns a redirect response into
 // the TypeError the Fetch standard specifies for `error` mode.
 const ORIGINAL_FETCH = Symbol.for('vinext.fetchCache.originalFetch');
+const INSTALLED = Symbol.for('tuturuuu.workersFetch.installed');
 const WORKERS_CACHE_MODES = new Set<RequestCache>(['no-store']);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
@@ -41,17 +42,27 @@ export function withWorkersRedirectError(fetchImpl: Fetch): Fetch {
 
 /**
  * Installs the filtered fetch as the global fetch and as vinext's network
- * fetch. Runs before vinext evaluates, which captures ORIGINAL_FETCH once and
- * later assigns its caching patch to the global fetch.
+ * fetch. vinext captures ORIGINAL_FETCH once when its fetch-cache shim
+ * evaluates, which `workers-fetch-first.ts` orders after this install, and
+ * later assigns its caching patch to the global fetch. When something captured
+ * the network fetch first, the global fetch still emulates `redirect: 'error'`.
  */
 export function installWorkersFetch(scope: typeof globalThis = globalThis) {
-  const slot = scope as typeof globalThis & { [ORIGINAL_FETCH]?: Fetch };
-  if (slot[ORIGINAL_FETCH]) return;
-  const network = withWorkersRedirectError(
-    withWorkersCacheModes(scope.fetch.bind(scope))
-  );
-  slot[ORIGINAL_FETCH] = network;
-  let current = network;
+  const slot = scope as typeof globalThis & {
+    [ORIGINAL_FETCH]?: Fetch;
+    [INSTALLED]?: true;
+  };
+  if (slot[INSTALLED]) return;
+  slot[INSTALLED] = true;
+  let current: Fetch;
+  if (slot[ORIGINAL_FETCH]) {
+    current = withWorkersRedirectError(scope.fetch.bind(scope));
+  } else {
+    current = withWorkersRedirectError(
+      withWorkersCacheModes(scope.fetch.bind(scope))
+    );
+    slot[ORIGINAL_FETCH] = current;
+  }
   Object.defineProperty(scope, 'fetch', {
     configurable: true,
     enumerable: true,

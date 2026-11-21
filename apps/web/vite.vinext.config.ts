@@ -9,6 +9,7 @@ import postcssSimpleVars from 'postcss-simple-vars';
 import vinext from 'vinext';
 import { patchCssModules } from 'vite-css-modules';
 import { defineConfig } from 'vite-plus';
+import { workersFetchFirst } from './cloudflare/vinext/workers-fetch-first';
 import { createWebNextConfig } from './next-config.web';
 
 // The same discovery the Next.js build runs (a CommonJS script).
@@ -23,6 +24,7 @@ const family = process.env.WEB_VINEXT_FAMILY?.trim();
 // `--config` / `--vite-config`.
 export default defineConfig({
   plugins: [
+    workersFetchFirst(),
     patchCssModules({ exportMode: 'default' }),
     // Tailwind resolves `@import`/`@plugin` itself; Vite's PostCSS import
     // inlining would resolve package `@plugin`s from the importing package.
