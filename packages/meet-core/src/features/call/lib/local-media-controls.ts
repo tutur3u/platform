@@ -13,6 +13,7 @@ type Setter<T> = Dispatch<SetStateAction<T>>;
 /** Serialize microphone intent and device changes while keeping mute immediate. */
 export function createLocalMediaControls({
   activeRef,
+  canCapture = () => true,
   effects,
   localStreamRef,
   screenStreamRef,
@@ -22,6 +23,7 @@ export function createLocalMediaControls({
   applyMedia,
 }: {
   activeRef: Ref<boolean>;
+  canCapture?: () => boolean;
   effects: CameraEffects;
   localStreamRef: Ref<MediaStream | null>;
   screenStreamRef: Ref<MediaStream | null>;
@@ -50,6 +52,7 @@ export function createLocalMediaControls({
     return result;
   };
   const selectDevice = async (kind: 'audio' | 'video', deviceId: string) => {
+    if (!canCapture()) return;
     const old = localStreamRef.current;
     const enabled =
       kind === 'audio'
@@ -83,7 +86,7 @@ export function createLocalMediaControls({
         acquired.getAudioTracks?.()[0],
         audioProcessing.getPreferences()
       );
-    if (!activeRef.current) {
+    if (!activeRef.current || !canCapture()) {
       for (const track of acquired.getTracks()) track.stop();
       return;
     }
@@ -94,7 +97,7 @@ export function createLocalMediaControls({
         kind === 'video' && source
           ? await effects.replaceSource(source)
           : source;
-      if (!activeRef.current) {
+      if (!activeRef.current || !canCapture()) {
         if (kind === 'video') effects.dispose();
         for (const track of acquired.getTracks()) track.stop();
         return;
@@ -134,7 +137,12 @@ export function createLocalMediaControls({
         track.enabled = false;
     return withAudio(async () => {
       try {
-        if (!activeRef.current || revision !== microphoneRevision) return;
+        if (
+          !activeRef.current ||
+          !canCapture() ||
+          revision !== microphoneRevision
+        )
+          return;
         let stream = localStreamRef.current;
         if (
           enabled &&
@@ -150,7 +158,11 @@ export function createLocalMediaControls({
             audio.getAudioTracks?.()[0],
             audioProcessing.getPreferences()
           );
-          if (!activeRef.current || revision !== microphoneRevision) {
+          if (
+            !activeRef.current ||
+            !canCapture() ||
+            revision !== microphoneRevision
+          ) {
             for (const track of audio.getTracks()) track.stop();
             return;
           }
@@ -174,6 +186,7 @@ export function createLocalMediaControls({
   };
 
   const toggleCamera = async () => {
+    if (!canCapture()) return;
     let stream = localStreamRef.current;
     if (
       !stream?.getVideoTracks().some((track) => track.readyState === 'live')
@@ -186,7 +199,7 @@ export function createLocalMediaControls({
           frameRate: { ideal: 24 },
         },
       });
-      if (!activeRef.current) {
+      if (!activeRef.current || !canCapture()) {
         video.getTracks().forEach((track) => {
           track.stop();
         });
@@ -203,7 +216,7 @@ export function createLocalMediaControls({
         for (const track of video.getTracks()) track.stop();
         throw error;
       }
-      if (!activeRef.current) {
+      if (!activeRef.current || !canCapture()) {
         effects.dispose();
         return;
       }
@@ -225,7 +238,7 @@ export function createLocalMediaControls({
   };
 
   const toggleScreenShare = async () => {
-    if (screenPending) return;
+    if (screenPending || !canCapture()) return;
     screenPending = true;
     try {
       if (mediaRef.current.screenEnabled) {
@@ -256,7 +269,7 @@ export function createLocalMediaControls({
         });
         throw new DOMException('No screen track', 'NotSupportedError');
       }
-      if (!activeRef.current) {
+      if (!activeRef.current || !canCapture()) {
         display.getTracks().forEach((track) => {
           track.stop();
         });

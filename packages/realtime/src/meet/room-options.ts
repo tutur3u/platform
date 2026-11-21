@@ -29,6 +29,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   viewersByDefault: z.boolean().optional(),
   ...mediaSettings,
+  transport: z.enum(['media', 'presence']).optional(),
   advancedTools,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
@@ -46,6 +47,7 @@ export const meetRoomSettingsSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   viewersByDefault: z.boolean().optional(),
   ...mediaSettings,
+  transport: z.enum(['media', 'presence']).default('media').optional(),
   advancedTools,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */

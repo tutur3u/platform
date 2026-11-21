@@ -408,3 +408,19 @@ it.each([
     await waitFor(() => expect(tracks.audio[0]?.stop).toHaveBeenCalled());
   }
 );
+
+it('joins a presence-only meeting without acquiring devices or showing media controls', () => {
+  const { getUserMedia } = installMediaDevices();
+  const props = lobbyProps({ presenceOnly: true, defaultDisplayName: 'Guest' });
+  render(localized(<Lobby {...props} />));
+  expect(screen.getByText(en.meet.call.presence_only)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: en.meet.call.mute })).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: en.meet.call.camera_on })
+  ).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: en.meet.call.join_now }));
+  expect(getUserMedia).not.toHaveBeenCalled();
+  expect(props.onJoin).toHaveBeenCalledWith(
+    expect.objectContaining({ audioEnabled: false, videoEnabled: false })
+  );
+});

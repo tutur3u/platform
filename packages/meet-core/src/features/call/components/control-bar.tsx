@@ -15,6 +15,9 @@ import {
   Video,
   VideoOff,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -161,6 +164,8 @@ export function ControlBar({
   unreadChat,
   waitingCount,
   viewer = false,
+  presenceOnly = false,
+  onPresenceChange,
 }: {
   activePanel: CallPanel;
   /** Tools hub trigger, shown in the bar on wider screens. */
@@ -189,6 +194,8 @@ export function ControlBar({
   unreadChat: number;
   waitingCount: number;
   viewer?: boolean;
+  presenceOnly?: boolean;
+  onPresenceChange?: (enabled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -224,39 +231,44 @@ export function ControlBar({
       aria-label={t('control_bar')}
       className="flex flex-nowrap items-center justify-center gap-1.5 border-t bg-background/95 px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-3 sm:px-4"
     >
-      <ControlButton
-        active={!micOn}
-        busy={busyDevices?.microphone}
-        icon={micOn ? Mic : MicOff}
-        locked={locked?.audio}
-        label={
-          locked?.audio
-            ? viewer
-              ? t('viewer_mic_unavailable')
-              : labels('mic_locked_hint')
-            : micOn
-              ? t('mute')
-              : t('unmute')
-        }
-        onClick={onToggleMic}
-      />
-      <ControlButton
-        active={!cameraOn}
-        busy={busyDevices?.camera}
-        icon={cameraOn ? Video : VideoOff}
-        locked={locked?.video}
-        label={
-          locked?.video
-            ? viewer
-              ? t('viewer_camera_unavailable')
-              : labels('camera_locked_hint')
-            : cameraOn
-              ? t('camera_off')
-              : t('camera_on')
-        }
-        onClick={onToggleCamera}
-      />
-      <div className="hidden sm:block">{shareScreen}</div>
+      {presenceOnly && <Badge variant="secondary">{t('presence_only')}</Badge>}
+      {!presenceOnly && (
+        <>
+          <ControlButton
+            active={!micOn}
+            busy={busyDevices?.microphone}
+            icon={micOn ? Mic : MicOff}
+            locked={locked?.audio}
+            label={
+              locked?.audio
+                ? viewer
+                  ? t('viewer_mic_unavailable')
+                  : labels('mic_locked_hint')
+                : micOn
+                  ? t('mute')
+                  : t('unmute')
+            }
+            onClick={onToggleMic}
+          />
+          <ControlButton
+            active={!cameraOn}
+            busy={busyDevices?.camera}
+            icon={cameraOn ? Video : VideoOff}
+            locked={locked?.video}
+            label={
+              locked?.video
+                ? viewer
+                  ? t('viewer_camera_unavailable')
+                  : labels('camera_locked_hint')
+                : cameraOn
+                  ? t('camera_off')
+                  : t('camera_on')
+            }
+            onClick={onToggleCamera}
+          />
+          <div className="hidden sm:block">{shareScreen}</div>
+        </>
+      )}
       <ControlButton
         active={activePanel === 'participants'}
         badge={waitingCount}
@@ -308,7 +320,16 @@ export function ControlBar({
           sideOffset={8}
         >
           <CloseCallOverflow.Provider value={() => setMoreOpen(false)}>
-            <div className="sm:hidden">{shareScreen}</div>
+            {!presenceOnly && <div className="sm:hidden">{shareScreen}</div>}
+            {onPresenceChange && (
+              <Label className="flex min-h-11 items-center justify-between gap-2 px-3">
+                {t('presence_only')}
+                <Switch
+                  checked={presenceOnly}
+                  onCheckedChange={onPresenceChange}
+                />
+              </Label>
+            )}
             {toolsMenu && (
               <div className="flex flex-col gap-1 sm:hidden">{toolsMenu}</div>
             )}

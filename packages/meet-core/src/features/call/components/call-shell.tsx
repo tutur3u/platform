@@ -60,7 +60,6 @@ import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
 import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
-
 type Device = 'microphone' | 'camera' | 'screen';
 function CallShellContent({
   accountId,
@@ -371,7 +370,6 @@ function CallShellContent({
         }
       />
     );
-
   return (
     <div className="flex h-dvh flex-col bg-background">
       <header className="flex flex-wrap items-center gap-3 border-b px-4 py-2">
@@ -397,30 +395,39 @@ function CallShellContent({
             meetingId={meetingId}
             outputDeviceId={outputDeviceId}
           />
-          <MeetLivePanel
-            wsId={wsId}
-            accountId={accountId}
-            key="live-assistant"
-            onOpenChat={askMira}
-            onLeave={leaveNow}
-            room={room}
-            meetingId={meetingId}
-            outputDeviceId={outputDeviceId}
-            canManage={canManage}
-            audioSuppressed={sharedAudio.microphonePaused}
-          />
-          <PlaybackVolumeControl
-            participants={participants}
-            selfUserId={state.selfUserId}
-          />
-          <SharedAudioControl
-            audio={sharedAudio}
-            busy={!!busyDevices.microphone}
-            onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
-            onUseMicrophone={() =>
-              void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
-            }
-          />
+          {state.settings.transport !== 'presence' && (
+            <>
+              <MeetLivePanel
+                wsId={wsId}
+                accountId={accountId}
+                key="live-assistant"
+                onOpenChat={askMira}
+                onLeave={leaveNow}
+                room={room}
+                meetingId={meetingId}
+                outputDeviceId={outputDeviceId}
+                canManage={canManage}
+                audioSuppressed={sharedAudio.microphonePaused}
+              />
+              <PlaybackVolumeControl
+                participants={participants}
+                selfUserId={state.selfUserId}
+              />
+              <SharedAudioControl
+                audio={sharedAudio}
+                busy={!!busyDevices.microphone}
+                onShare={() =>
+                  void runMediaAction(sharedAudio.share, 'microphone')
+                }
+                onUseMicrophone={() =>
+                  void runMediaAction(
+                    sharedAudio.useOwnMicrophone,
+                    'microphone'
+                  )
+                }
+              />
+            </>
+          )}
           <CallSettings
             meetingId={meetingId}
             room={room}
@@ -567,6 +574,15 @@ function CallShellContent({
         )}
       </div>
       <ControlBar
+        presenceOnly={state.settings.transport === 'presence'}
+        onPresenceChange={
+          canManage
+            ? (enabled) =>
+                room.updateSettings({
+                  transport: enabled ? 'presence' : 'media',
+                })
+            : undefined
+        }
         activePanel={panel}
         tools={tools.hub}
         toolsMenu={tools.menu}
@@ -669,7 +685,6 @@ function CallShellContent({
     </div>
   );
 }
-
 export { CallShell } from './device-session-gate';
 export function ConnectedCallShell(
   props: ComponentProps<typeof CallShellContent>

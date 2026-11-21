@@ -10,7 +10,8 @@ export function usePublishSession(
   peer: Ref<RTCPeerConnection | null>,
   session: Ref<string | null>,
   signaling: Ref<MeetSignaling | null>,
-  reset: (recover?: boolean) => void
+  reset: (recover?: boolean) => void,
+  mediaAllowed: () => boolean = () => true
 ) {
   const retry = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -24,6 +25,7 @@ export function usePublishSession(
   }, []);
   return useCallback(async () => {
     clearTimeout(timer.current);
+    if (!mediaAllowed()) throw new Error('presence_only');
     if (session.current && peer.current)
       return { pc: peer.current, sessionId: session.current };
     const pc = new RTCPeerConnection(PEER_CONFIG);
@@ -43,5 +45,5 @@ export function usePublishSession(
     });
     retry.current = 0;
     return result;
-  }, [peer, session, signaling, reset]);
+  }, [peer, session, signaling, reset, mediaAllowed]);
 }

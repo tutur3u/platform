@@ -26,6 +26,8 @@ export function applySfuCommand(
   token: MeetRealtimeTokenPayload,
   canCloseSubscriptions?: () => boolean
 ): MeetRoomOutcome {
+  if (state.settings?.transport === 'presence')
+    return denied(state, 'permission_denied', message.requestId);
   if (message.type === 'sfu.tracks.update') {
     // Only the subscriber's own provider-confirmed receivers may change layer,
     // and only to a layer a current room camera publication advertises. A

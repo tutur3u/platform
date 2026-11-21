@@ -54,3 +54,29 @@ it('closes a failed publisher before a later attempt creates another peer', asyn
   expect(await ensure()).toHaveProperty('sessionId', 'new');
   hook.unmount();
 });
+
+it('does not construct a publisher or request an SFU session in presence mode', async () => {
+  const construct = vi.fn();
+  vi.stubGlobal(
+    'RTCPeerConnection',
+    class {
+      constructor() {
+        construct();
+      }
+    }
+  );
+  const request = vi.fn();
+  const hook = renderHook(() =>
+    usePublishSession(
+      { current: null },
+      { current: null },
+      { current: { request } as unknown as MeetSignaling },
+      vi.fn(),
+      () => false
+    )
+  );
+  await expect(hook.result.current()).rejects.toThrow('presence_only');
+  expect(construct).not.toHaveBeenCalled();
+  expect(request).not.toHaveBeenCalled();
+  hook.unmount();
+});

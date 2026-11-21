@@ -4266,6 +4266,7 @@
       "bandwidth_hint": "Video thích ứng với mạng. Giọng nói được ưu tiên và tạm dừng gửi khi bạn ở một mình.",
       "bandwidth_quality": "Chất lượng cao hơn",
       "bandwidth_saver": "Tiết kiệm dữ liệu",
+      "presence_only": "Chỉ hiện diện",
       "thumbnail_mode": "Chế độ ảnh thu nhỏ",
       "room_media_health": "Tình trạng media của phòng",
       "room_media_health_unavailable": "Hiện chưa xem được tình trạng media.",

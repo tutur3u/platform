@@ -15,13 +15,18 @@ import {
 import {
   type CallState,
   clampLocalMedia,
-  INITIAL_CALL_STATE,
   localMediaLocks,
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
 import { microphoneMids, withOpusResilience } from '../lib/audio-sdp';
 import { CameraEffects } from '../lib/camera-effects';
+import {
+  IDLE_MEDIA,
+  INITIAL_PRESENCE_STATE,
+  stopLocalCapture,
+  usePresenceTransport,
+} from '../lib/presence-transport';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
 import { openPeerSession } from '../lib/open-peer-session';
@@ -38,12 +43,10 @@ import type {
 import { useCameraControls } from './use-camera-controls';
 import { usePublishSession } from './use-publish-session';
 import { useSoloTransport } from './use-solo-transport';
-
 export type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
-
 import { applyForcedMute } from '../lib/forced-media';
 import {
   diffLocalTracks,
@@ -86,7 +89,7 @@ export function useMeetRoom({
   const diagnostics = useMemo(() => createMediaDiagnosticsReader(), []);
   const effects = useMemo(() => new CameraEffects(), []);
   const activeRef = useRef(true);
-  const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
+  const [state, setState] = useState<CallState>(INITIAL_PRESENCE_STATE);
   const [connectionStatus, setConnectionStatus] =
     useState<MeetSignalingStatus>('connecting');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -97,11 +100,7 @@ export function useMeetRoom({
   const publishQueue = useRef(Promise.resolve());
   const subscribeQueue = useRef(Promise.resolve());
   const sendersRef = useRef(new Map<string, RTCRtpSender>());
-  const [media, setMedia] = useState<MeetMediaState>({
-    audioEnabled: false,
-    screenEnabled: false,
-    videoEnabled: false,
-  });
+  const [media, setMedia] = useState<MeetMediaState>(IDLE_MEDIA);
   const signalingRef = useRef<MeetSignaling | null>(null);
   const stageWindow = useRef<StageVideoWindow | null>(null);
   const actions = useMemo(
@@ -209,7 +208,11 @@ export function useMeetRoom({
           setMedia(next);
           syncForcedMediaRef.current(next, message.kinds.includes('audio'));
         }
-        setState((current) => reduceCallState(current, message));
+        setState((current) => {
+          const next = reduceCallState(current, message);
+          stateRef.current = next;
+          return next;
+        });
       },
       onReconnected: () => {
         actions.replayPresenceJoin(mediaRef.current);
@@ -224,19 +227,14 @@ export function useMeetRoom({
       activeRef.current = false;
       effects.dispose();
       signaling.close();
-      for (const track of localStreamRef.current?.getTracks() ?? [])
-        track.stop();
-      for (const track of screenStreamRef.current?.getTracks() ?? [])
-        track.stop();
-      localStreamRef.current = null;
-      screenStreamRef.current = null;
-      setLocalStream(null);
-      setScreenStream(null);
-      mediaRef.current = {
-        audioEnabled: false,
-        screenEnabled: false,
-        videoEnabled: false,
-      };
+      stopLocalCapture(
+        effects,
+        localStreamRef,
+        screenStreamRef,
+        setLocalStream,
+        setScreenStream
+      );
+      mediaRef.current = IDLE_MEDIA;
       setMedia(mediaRef.current);
       signalingRef.current = null;
       resetPublisher();
@@ -258,13 +256,29 @@ export function useMeetRoom({
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
+  const mediaAllowed = usePresenceTransport(
+    stateRef,
+    state.settings.transport,
+    localStreamRef,
+    screenStreamRef,
+    mediaRef,
+    effects,
+    resetPublisher,
+    resetSubscriber,
+    setLocalStream,
+    setScreenStream,
+    setMedia,
+    publishPresence
+  );
   const ensurePublishSession = usePublishSession(
     publishPcRef,
     publishSessionRef,
     signalingRef,
-    resetPublisher
+    resetPublisher,
+    mediaAllowed
   );
   const ensureSubscribeSession = useCallback(async () => {
+    if (!mediaAllowed()) throw new Error('presence_only');
     if (subscribeSessionRef.current && subscribePcRef.current) {
       return {
         pc: subscribePcRef.current,
@@ -301,12 +315,13 @@ export function useMeetRoom({
       signalingRef,
       resetSubscriber
     );
-  }, [resetSubscriber]);
+  }, [resetSubscriber, mediaAllowed]);
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
     async (stream: MediaStream, next: MeetMediaState) => {
       if (
         !activeRef.current ||
+        !mediaAllowed() ||
         Object.keys(stateRef.current.participants).length < 2
       )
         return;
@@ -362,7 +377,6 @@ export function useMeetRoom({
             screenStreamRef.current
           );
           if (!source || source.readyState === 'ended') continue;
-
           const transceiver = addLocalTransceiver(
             pc,
             source,
@@ -374,14 +388,12 @@ export function useMeetRoom({
           sendersRef.current.set(plan.trackName, transceiver.sender);
           added.push({ plan, transceiver });
         }
-
         if (added.length) {
           const offer = await pc.createOffer();
           if (publishPcRef.current !== pc) return;
           // Apply the offer before reading the assigned transceiver MIDs.
           await pc.setLocalDescription(offer);
           if (publishPcRef.current !== pc) return;
-
           const tracks: CloudflareSfuTrack[] = added.map(
             ({ plan: added_plan, transceiver }) => ({
               location: 'local',
@@ -390,7 +402,6 @@ export function useMeetRoom({
               trackName: added_plan.trackName,
             })
           );
-
           const answer = await signalingRef.current?.request<SfuTracksResponse>(
             {
               sessionDescription: {
@@ -402,7 +413,6 @@ export function useMeetRoom({
               type: 'sfu.tracks.publish',
             }
           );
-
           if (publishPcRef.current !== pc) return;
           assertPublishedResponse(answer);
           await pc.setRemoteDescription(
@@ -417,9 +427,8 @@ export function useMeetRoom({
         }
       }
     },
-    [ensurePublishSession, resetPublisher]
+    [ensurePublishSession, resetPublisher, mediaAllowed]
   );
-
   const queueLocalTracks = useCallback(
     (stream: MediaStream, next: MeetMediaState) => {
       const task = publishQueue.current.then(() =>
@@ -430,7 +439,6 @@ export function useMeetRoom({
     },
     [syncLocalTracks]
   );
-
   const resumeLocalMedia = useCallback(() => {
     void queueLocalTracks(
       localStreamRef.current ?? new MediaStream(),
@@ -449,7 +457,6 @@ export function useMeetRoom({
     resetSubscriber,
     resumeLocalMedia
   );
-
   syncForcedMediaRef.current = (next, muteAudio) => {
     if (muteAudio) localControls.cancelPendingMicrophone();
     publishPresence(next);
@@ -458,7 +465,6 @@ export function useMeetRoom({
       next
     ).catch(() => undefined);
   };
-
   useEffect(() => {
     if (!connectionGeneration || state.admission !== 'admitted') return;
     void queueLocalTracks(
@@ -466,11 +472,10 @@ export function useMeetRoom({
       mediaRef.current
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
-
   useWindowedSubscriber({
     activeRef,
     stateRef,
-    admission: state.admission,
+    admission: mediaAllowed() ? state.admission : 'waiting',
     stageWindow,
     subscribeSessionRef,
     subscribePcRef,
@@ -490,7 +495,6 @@ export function useMeetRoom({
     trackOwnersRef,
     setState
   );
-
   const applyMedia = useCallback(
     async (next: MeetMediaState, stream: MediaStream | null) => {
       const previous = mediaRef.current;
@@ -550,11 +554,11 @@ export function useMeetRoom({
     },
     [effects, publishPresence, queueLocalTracks, resetPublisher]
   );
-
   const localControls = useMemo(
     () =>
       createLocalMediaControls({
         activeRef,
+        canCapture: mediaAllowed,
         effects,
         localStreamRef,
         screenStreamRef,
@@ -563,9 +567,8 @@ export function useMeetRoom({
         setScreenStream,
         applyMedia,
       }),
-    [applyMedia, effects]
+    [applyMedia, effects, mediaAllowed]
   );
-
   const { setBandwidthMode, getBandwidthMode } = useAdaptiveSenderBandwidth({
     peer: publishPcRef,
     senders: sendersRef,
@@ -611,20 +614,18 @@ export function useMeetRoom({
     () => buildRemoteStreams(remoteMedia, sharingUsers),
     [buildRemoteStreams, remoteMedia, sharingUsers]
   );
-
   const leave = useCallback(() => {
     activeRef.current = false;
     signalingRef.current?.close();
     resetPublisher();
     resetSubscriber();
-    effects.dispose();
-    for (const track of localStreamRef.current?.getTracks() ?? []) track.stop();
-    for (const track of screenStreamRef.current?.getTracks() ?? [])
-      track.stop();
-    localStreamRef.current = null;
-    screenStreamRef.current = null;
-    setLocalStream(null);
-    setScreenStream(null);
+    stopLocalCapture(
+      effects,
+      localStreamRef,
+      screenStreamRef,
+      setLocalStream,
+      setScreenStream
+    );
     setConnectionStatus('closed');
   }, [effects, resetPublisher, resetSubscriber]);
   const { cameraLook, setCameraLook, adoptPreview } = useCameraControls(
@@ -640,6 +641,10 @@ export function useMeetRoom({
     setBandwidthMode,
     getBandwidthMode,
     adoptPreview: async (stream) => {
+      if (!mediaAllowed()) {
+        for (const track of stream?.getTracks() ?? []) track.stop();
+        return;
+      }
       const { audio, video } = localMediaLocks(stateRef.current);
       if (audio)
         for (const track of stream?.getAudioTracks() ?? []) track.stop();

@@ -61,6 +61,13 @@ export function ConnectedLobby({
       avatarUrl={defaultAvatarUrl}
       connectionStatus={room.connectionStatus}
       viewer={room.state.role === 'viewer'}
+      presenceOnly={room.state.settings.transport === 'presence'}
+      onPresenceChange={
+        room.state.role === 'host'
+          ? (enabled) =>
+              room.updateSettings({ transport: enabled ? 'presence' : 'media' })
+          : undefined
+      }
       capturePending={room.state.role === null}
       defaultDisplayName={defaultDisplayName}
       error={room.state.error}

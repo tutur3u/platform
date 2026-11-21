@@ -2,6 +2,8 @@
 
 import { Loader2, Mic, MicOff, Video, VideoOff } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -132,6 +134,8 @@ export function Lobby({
   waiting,
   viewer = false,
   capturePending = false,
+  presenceOnly = false,
+  onPresenceChange,
 }: {
   defaultDisplayName: string;
   avatarUrl?: string;
@@ -156,6 +160,8 @@ export function Lobby({
   waiting: boolean;
   viewer?: boolean;
   capturePending?: boolean;
+  presenceOnly?: boolean;
+  onPresenceChange?: (enabled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
   // Raw text as typed; only prepareParticipantName() output leaves the lobby.
@@ -173,7 +179,7 @@ export function Lobby({
   const { devices, refreshDevices } = useLobbyMediaDevices();
   const [audioRequested, setAudioEnabled] = useState(true);
   const [videoRequested, setVideoEnabled] = useState(false);
-  const captureDisabled = viewer || capturePending;
+  const captureDisabled = presenceOnly || viewer || capturePending;
   const audioEnabled = !captureDisabled && audioRequested;
   const videoEnabled = !captureDisabled && videoRequested;
   const [audioDeviceId, setAudioDeviceId] = useState(initialAudioDeviceId);
@@ -382,6 +388,18 @@ export function Lobby({
     <div className="grid min-h-dvh items-center overflow-y-auto bg-background px-4 py-6 sm:px-6 lg:px-10">
       <div className="mx-auto grid w-full max-w-6xl items-start gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(21rem,0.8fr)] lg:items-center lg:gap-10">
         <div className="min-w-0 space-y-4">
+          {presenceOnly && !onPresenceChange && (
+            <Badge variant="secondary">{t('presence_only')}</Badge>
+          )}
+          {onPresenceChange && (
+            <Label className="flex items-center gap-2">
+              <Switch
+                checked={presenceOnly}
+                onCheckedChange={onPresenceChange}
+              />
+              {t('presence_only')}
+            </Label>
+          )}
           <div className="relative aspect-video w-full min-w-0 overflow-hidden rounded-2xl bg-foreground/5 ring-1 ring-border">
             {activeStream ? (
               <video
@@ -400,70 +418,72 @@ export function Lobby({
                       {initial}
                     </AvatarFallback>
                   </Avatar>
-                  <p>{previewError ?? t('camera_is_off')}</p>
+                  {!presenceOnly && <p>{previewError ?? t('camera_is_off')}</p>}
                 </div>
               </div>
             )}
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-background/70 via-background/20 to-transparent p-3">
-              {mediaHandedOff ? (
+              {mediaHandedOff || presenceOnly ? (
                 <div aria-hidden="true" className="w-20" />
               ) : (
                 <LiveMicMeter audioEnabled={audioEnabled} stream={micStream} />
               )}
-              <div className="flex items-center gap-2">
-                <Button
-                  aria-label={
-                    viewer
-                      ? t('viewer_mic_unavailable')
-                      : t(audioEnabled ? 'mute' : 'unmute')
-                  }
-                  aria-pressed={!audioEnabled}
-                  className={cn(
-                    'size-11 rounded-full',
-                    !audioEnabled &&
-                      'bg-dynamic-red text-white hover:bg-dynamic-red/90'
-                  )}
-                  disabled={mediaHandedOff || captureDisabled}
-                  onClick={() => setAudioEnabled((value) => !value)}
-                  size="icon"
-                  type="button"
-                  variant={audioEnabled ? 'secondary' : 'default'}
-                >
-                  {audioEnabled ? (
-                    <Mic className="size-5" />
-                  ) : (
-                    <MicOff className="size-5" />
-                  )}
-                </Button>
-                <Button
-                  aria-label={
-                    viewer
-                      ? t('viewer_camera_unavailable')
-                      : t(videoEnabled ? 'camera_off' : 'camera_on')
-                  }
-                  aria-pressed={!videoEnabled}
-                  className={cn(
-                    'size-11 rounded-full',
-                    !videoEnabled &&
-                      'bg-dynamic-red text-white hover:bg-dynamic-red/90'
-                  )}
-                  disabled={mediaHandedOff || captureDisabled}
-                  onClick={() => {
-                    if (videoEnabled) setStream(null);
-                    setVideoEnabled((value) => !value);
-                  }}
-                  size="icon"
-                  type="button"
-                  variant={videoEnabled ? 'secondary' : 'default'}
-                >
-                  {videoEnabled ? (
-                    <Video className="size-5" />
-                  ) : (
-                    <VideoOff className="size-5" />
-                  )}
-                </Button>
-              </div>
+              {!presenceOnly && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    aria-label={
+                      viewer
+                        ? t('viewer_mic_unavailable')
+                        : t(audioEnabled ? 'mute' : 'unmute')
+                    }
+                    aria-pressed={!audioEnabled}
+                    className={cn(
+                      'size-11 rounded-full',
+                      !audioEnabled &&
+                        'bg-dynamic-red text-white hover:bg-dynamic-red/90'
+                    )}
+                    disabled={mediaHandedOff || captureDisabled}
+                    onClick={() => setAudioEnabled((value) => !value)}
+                    size="icon"
+                    type="button"
+                    variant={audioEnabled ? 'secondary' : 'default'}
+                  >
+                    {audioEnabled ? (
+                      <Mic className="size-5" />
+                    ) : (
+                      <MicOff className="size-5" />
+                    )}
+                  </Button>
+                  <Button
+                    aria-label={
+                      viewer
+                        ? t('viewer_camera_unavailable')
+                        : t(videoEnabled ? 'camera_off' : 'camera_on')
+                    }
+                    aria-pressed={!videoEnabled}
+                    className={cn(
+                      'size-11 rounded-full',
+                      !videoEnabled &&
+                        'bg-dynamic-red text-white hover:bg-dynamic-red/90'
+                    )}
+                    disabled={mediaHandedOff || captureDisabled}
+                    onClick={() => {
+                      if (videoEnabled) setStream(null);
+                      setVideoEnabled((value) => !value);
+                    }}
+                    size="icon"
+                    type="button"
+                    variant={videoEnabled ? 'secondary' : 'default'}
+                  >
+                    {videoEnabled ? (
+                      <Video className="size-5" />
+                    ) : (
+                      <VideoOff className="size-5" />
+                    )}
+                  </Button>
+                </div>
+              )}
               <div aria-hidden="true" className="hidden w-20 sm:block" />
             </div>
           </div>
@@ -475,19 +495,21 @@ export function Lobby({
             </output>
           ) : null}
 
-          <LobbyDevicePickers
-            audioDeviceId={audioDeviceId}
-            devices={devices}
-            disabled={mediaHandedOff}
-            onAudioDeviceChange={setAudioDeviceId}
-            onOutputDeviceChange={(next) => {
-              setLocalOutputId(next);
-              onOutputDeviceChange?.(next);
-            }}
-            onVideoDeviceChange={setVideoDeviceId}
-            outputDeviceId={activeOutputId}
-            videoDeviceId={videoDeviceId}
-          />
+          {!presenceOnly && (
+            <LobbyDevicePickers
+              audioDeviceId={audioDeviceId}
+              devices={devices}
+              disabled={mediaHandedOff}
+              onAudioDeviceChange={setAudioDeviceId}
+              onOutputDeviceChange={(next) => {
+                setLocalOutputId(next);
+                onOutputDeviceChange?.(next);
+              }}
+              onVideoDeviceChange={setVideoDeviceId}
+              outputDeviceId={activeOutputId}
+              videoDeviceId={videoDeviceId}
+            />
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col rounded-2xl border bg-card p-5 shadow-xs sm:p-6">
