@@ -289,7 +289,10 @@ product rules of the shell entry and every tab.
   `diagnostics:read`. Keep its bearer in the existing private publisher root
   under `usage-readers/<id>` with mode 0600. The collector verifies the T3
   environment descriptor before authentication. At most 12 machine readers
-  share a 6-second deadline. The signed Usage write runs after state and
+  share a 6-second deadline. Replies are capped at 2 MiB per peer frame and
+  16 MiB on the publisher's IPv4 loopback, where T3 also returns local
+  diagnostics in its configuration reply. The published Usage snapshot keeps
+  its existing byte limit. The signed Usage write runs after state and
   answer delivery, on change or a 60-second heartbeat. Removing
   `usageMachines` stops reads and Usage writes at the next publisher tick.
   Keep a private backup of the installed script directory and config before

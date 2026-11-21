@@ -3,7 +3,8 @@ import { normalizeT3Accounting, normalizeT3Quota } from './usage-normalize.mjs';
 
 const ZONE = 'Asia/Ho_Chi_Minh';
 const DAY_MS = 86_400_000;
-const MAX_FRAME = 2 * 1024 * 1024;
+const MAX_PEER_FRAME_BYTES = 2 * 1024 * 1024;
+const MAX_LOCAL_FRAME_BYTES = 16 * 1024 * 1024;
 const RPC_TIMEOUT_MS = 6_000;
 
 function dayInIct(now) {
@@ -11,6 +12,10 @@ function dayInIct(now) {
 }
 
 function readUsageRpc(url, { openSocket, signal, now }) {
+  // The local T3 getConfig reply includes other diagnostics besides quota.
+  // Keep the smaller frame budget for replies arriving from peers.
+  const maxFrameBytes =
+    url.hostname === '127.0.0.1' ? MAX_LOCAL_FRAME_BYTES : MAX_PEER_FRAME_BYTES;
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
     const socket = openSocket(url);
@@ -52,8 +57,9 @@ function readUsageRpc(url, { openSocket, signal, now }) {
     };
     const accept = (event) => {
       const data = event.data;
-      const length = typeof data === 'string' ? data.length : data?.byteLength;
-      if (!Number.isSafeInteger(length) || length > MAX_FRAME) {
+      const length =
+        typeof data === 'string' ? Buffer.byteLength(data) : data?.byteLength;
+      if (!Number.isSafeInteger(length) || length > maxFrameBytes) {
         return finish(new Error('usage_rpc_frame_invalid'));
       }
       try {

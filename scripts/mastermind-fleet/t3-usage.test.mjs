@@ -5,11 +5,12 @@ import { readT3Usage } from './t3-usage.mjs';
 const NOW = new Date('2026-11-21T18:02:00.000Z');
 
 class FakeSocket extends EventTarget {
-  constructor(encoding = 'single') {
+  constructor(encoding = 'single', extraConfig) {
     super();
     this.sent = [];
     this.closed = false;
     this.encoding = encoding;
+    this.extraConfig = extraConfig;
   }
 
   send(message) {
@@ -23,7 +24,10 @@ class FakeSocket extends EventTarget {
           requestId: id,
           exit:
             id === 'quota'
-              ? { _tag: 'Success', value: { providers: [] } }
+              ? {
+                  _tag: 'Success',
+                  value: { providers: [], diagnostics: this.extraConfig },
+                }
               : { _tag: 'Failure', cause: [] },
         })
       );
@@ -101,6 +105,57 @@ for (const encoding of ['single', 'batch', 'binary']) {
       JSON.stringify(result),
       /test-local-bearer|test-ticket/
     );
+  });
+}
+
+for (const { name, origin, padding, permitted } of [
+  {
+    name: 'reads local quota from a config reply larger than the peer budget',
+    origin: 'http://127.0.0.1:3773',
+    padding: () => 'x'.repeat(9 * 1024 * 1024),
+    permitted: true,
+  },
+  {
+    name: 'rejects a peer config reply that exceeds the UTF-8 byte budget',
+    origin: 'https://t3.example.com',
+    padding: () => 'ệ'.repeat(1024 * 1024),
+    permitted: false,
+  },
+  {
+    name: 'rejects a local config reply that exceeds the loopback byte budget',
+    origin: 'http://127.0.0.1:3773',
+    padding: () => 'x'.repeat(16 * 1024 * 1024),
+    permitted: false,
+  },
+]) {
+  test(name, async () => {
+    const socket = new FakeSocket('single', padding());
+    const result = readT3Usage({
+      origin,
+      environmentId: 'fixture-environment',
+      bearer: 'test-local-bearer',
+      now: NOW,
+      async fetchImpl(url) {
+        return url.pathname.endsWith('/environment')
+          ? Response.json({ environmentId: 'fixture-environment' })
+          : Response.json({ ticket: 'test-ticket' });
+      },
+      openSocket() {
+        queueMicrotask(() => socket.dispatchEvent(new Event('open')));
+        return socket;
+      },
+    });
+    if (permitted) {
+      assert.deepEqual(await result, {
+        quota: { kind: 'complete', observedAt: NOW.toISOString() },
+        accounts: [],
+        accounting: { kind: 'unavailable' },
+        buckets: [],
+      });
+    } else {
+      await assert.rejects(result, /usage_rpc_frame_invalid/);
+    }
+    assert.equal(socket.closed, true);
   });
 }
 
