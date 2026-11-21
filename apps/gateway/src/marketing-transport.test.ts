@@ -39,7 +39,6 @@ it('uses real HTTP fetch to the Marketing policy with the rewritten backend URL'
       const response = await handler(
         new Request(`https://tuturuuu.com${path}`),
         {
-          WEB_ORIGIN: origin,
           MARKETING_ORIGIN: origin,
           GATEWAY_MARKETING_GROUPS: 'home,products',
           PUBLIC_HOST: 'tuturuuu.com',

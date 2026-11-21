@@ -3,8 +3,8 @@ import type { Env } from './worker';
 /**
  * Signed visitor address for Web's `TRUSTED_PROXY=cloudflare-origin` resolver
  * (`@tuturuuu/utils/abuse-protection/client-ip`). Behind the gateway every
- * Vercel request comes from a Cloudflare egress address, so without this proof
- * one abuse block on that address hits every visitor behind it.
+ * web family request comes from the gateway Worker, so without this proof one
+ * abuse block on that address hits every visitor behind it.
  *
  * The format and digest match `createOriginClientIpProof` in
  * `packages/utils/src/abuse-protection/origin-ip-proof.ts` byte for byte
@@ -143,20 +143,6 @@ export async function originAuthProof(request: Request, env: Env) {
   });
   if (!proof) warnUnsigned('the request has no valid cf-connecting-ip');
   return proof;
-}
-
-/** The proof for WEB_ORIGIN; every other origin (Marketing included) gets none. */
-export function originProofFor(request: Request, env: Env, origin: URL) {
-  if (!env.WEB_ORIGIN) return Promise.resolve(null);
-  let web: URL;
-  try {
-    web = new URL(env.WEB_ORIGIN);
-  } catch {
-    return Promise.resolve(null);
-  }
-  return web.origin === origin.origin
-    ? originAuthProof(request, env)
-    : Promise.resolve(null);
 }
 
 /** Replaces any proof and Worker zone on `headers` with the gateway's own, or removes them. */

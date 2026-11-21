@@ -57,7 +57,9 @@ and decides the origin per request:
   Worker (`MARKETING_ORIGIN`); see [marketing page groups](/build/devops/gateway-worker#marketing-page-groups).
 - Paths listed in `GATEWAY_MOUNTED_PATHS` go to the mounted app's Worker through
   its `MOUNT_<SEGMENT>` service binding; see [mounted apps](/build/devops/gateway-worker#apps-mounted-at-tuturuuucomapp).
-- Everything else goes to the Vercel web origin (`WEB_ORIGIN`).
+- Everything else goes to an `apps/web` family Worker through its
+  `WEB_FAMILY_<ID>` binding, with `web-rest` as the fallback; see
+  [web route families](/build/devops/gateway-worker#web-route-families).
 
 Per-app zone routes that are more specific than `tuturuuu.com/*` reach the app
 Worker without passing through the gateway.

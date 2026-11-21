@@ -75,8 +75,9 @@ reads and versions `tuturuuu-gateway`:
 2. **gateway**: captures the live gateway settings, checks that every family in
    the `GATEWAY_WEB_FAMILIES` variable has its Worker and every secret name its
    wrangler config requires, writes the deploy config, then
-   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` comes
-   from the `GATEWAY_WEB_ORIGIN` variable and `MARKETING_ORIGIN` is
+   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` (unread
+   by the gateway, kept for deploy parity) comes from the `GATEWAY_WEB_ORIGIN`
+   variable and `MARKETING_ORIGIN` is
    `https://marketing.tuturuuu.com`. The deploy config requires both origins to
    match their live plain-text bindings exactly. It refuses any acceptance
    hostname or Vercel protection bypass setting in the committed config, live
@@ -182,10 +183,10 @@ proofs.
 
 ## Rollback
 
-Remove the family id from the `GATEWAY_WEB_FAMILIES` repository variable and
-rerun the gateway job, or roll the gateway back to the previous version printed
-by that job (`wrangler rollback <version-id> --name tuturuuu-gateway`);
-`GATEWAY_MODE=passthrough` disables every family. The family Worker
+Roll the gateway back to the previous version printed by the gateway job
+(`wrangler rollback <version-id> --name tuturuuu-gateway`). Removing a family
+id from `GATEWAY_WEB_FAMILIES` sends its paths to the `web-rest` fallback. The
+family Worker
 has no routes, so leaving it deployed serves nothing.
 
 Regression coverage: `apps/web/cloudflare/opennext/families.test.ts` (route

@@ -4,10 +4,11 @@ import policies from '../../../packages/utils/src/seo-policy.json';
 import { PRIVATE_ROBOTS_HEADER } from '../../../packages/utils/src/seo-robots';
 import { manifest } from './manifest';
 import { applyMarketingRobots } from './marketing-robots';
+import { withWebRest } from './web-rest.test-helper';
 import { createHandler, type Env } from './worker';
 
 const env: Env = {
-  WEB_ORIGIN: 'https://web.example',
+  ...withWebRest(),
   MARKETING_ORIGIN: 'https://marketing.tuturuuu.com',
   PUBLIC_HOST: 'tuturuuu.com',
   GATEWAY_MARKETING_GROUPS: 'home,legal,company,products,solutions,blog',
@@ -117,7 +118,7 @@ describe('gateway → Marketing response policy', () => {
     expect(response.headers.get('x-robots-tag')).toContain('noindex');
   });
   it.each(['/auth', '/%61uth', '/login'])(
-    'keeps the Web origin private robots on %s despite forged forwarding hints',
+    'keeps the web-rest private robots on %s despite forged forwarding hints',
     async (path) => {
       const t = setup({ headers: { 'x-robots-tag': PRIVATE_ROBOTS_HEADER } });
       const response = await t.call(`https://tuturuuu.com${path}`, {
@@ -127,7 +128,7 @@ describe('gateway → Marketing response policy', () => {
           'x-marketing-origin-robots': '1',
         },
       });
-      expect(t.sent.at(-1)?.url).toContain('web.example');
+      expect(t.sent.at(-1)?.url).toBe(`https://tuturuuu.com${path}`);
       expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
     }
   );
@@ -250,7 +251,7 @@ describe('gateway → Marketing response policy', () => {
   ])('leaves requests requiring Web to Web robots', async (init) => {
     const t = setup({ headers: { 'x-robots-tag': 'noindex, nofollow' } });
     const response = await t.call('https://tuturuuu.com/', init);
-    expect(t.sent[0]?.url).toBe('https://web.example/');
+    expect(t.sent[0]?.url).toBe('https://tuturuuu.com/');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
   });
 });
@@ -269,19 +270,19 @@ describe('gateway → Web robots on the canonical host', () => {
     '/visualizations/horse-racing',
   ];
   it.each(published)(
-    'keeps published Web page %s indexable on MISS and HIT',
+    'keeps published Web page %s indexable through the web-rest family',
     async (path) => {
       const t = setup();
-      for (const state of ['MISS', 'HIT']) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
         const response = await t.call(`https://tuturuuu.com${path}`, {
           headers: { 'x-marketing-origin-robots': '1' },
         });
-        expect(t.sent[0]?.url).toBe(`https://web.example${path}`);
+        expect(t.sent[attempt]?.url).toBe(`https://tuturuuu.com${path}`);
         expect(response.headers.get('x-robots-tag')).toBeNull();
         expect(response.headers.has('x-marketing-origin-robots')).toBe(false);
-        if (path.startsWith('/changelog') || path === '/download')
-          expect(response.headers.get('x-gateway-cache')).toBe(state);
+        expect(response.headers.get('x-gateway-cache')).toBe('FAMILY');
       }
+      expect(t.sent).toHaveLength(2);
     }
   );
   it.each([
@@ -301,7 +302,7 @@ describe('gateway → Web robots on the canonical host', () => {
       },
     });
     const response = await t.call(`https://tuturuuu.com${path}`);
-    expect(t.sent[0]?.url).toBe(`https://web.example${path}`);
+    expect(t.sent[0]?.url).toBe(`https://tuturuuu.com${path}`);
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
     expect(response.headers.has('x-marketing-origin-robots')).toBe(false);
   });
@@ -315,7 +316,7 @@ describe('gateway → Web robots on the canonical host', () => {
     );
   });
   it.each(published)(
-    'forces %s private under gateway TUTURUUU_NOINDEX=1, including a cache hit',
+    'forces %s private under gateway TUTURUUU_NOINDEX=1',
     async (path) => {
       const t = setup();
       await t.call(`https://tuturuuu.com${path}`);
@@ -421,7 +422,7 @@ describe('gateway → unmarked Marketing builds (GATEWAY_MARKETING_LEGACY_ROBOTS
     ).toBe(PRIVATE_ROBOTS_HEADER);
   });
   it.each(['/changelog', '/download', '/models', '/products/meet'])(
-    'leaves Web-origin %s robots unchanged',
+    'leaves web-rest %s robots unchanged',
     async (path) => {
       const open = setup();
       expect(

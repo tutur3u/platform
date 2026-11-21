@@ -1,14 +1,15 @@
 ---
 title: "Gateway Worker"
-description: "Cloudflare Worker in front of tuturuuu.com: route manifest, public-page cache, rollback flag, cutover packet and smoke checks."
+description: "Cloudflare Worker in front of tuturuuu.com: route manifest, Marketing page cache, web family dispatch, rollback and smoke checks."
 updatedAt: "2026-11-21"
 audience: developers
 ---
 
-`apps/gateway` is a Cloudflare Worker routed on `tuturuuu.com/*`. It serves
-anonymous public pages from the Workers Cache API and proxies everything else to
-the Vercel production web deployment unchanged. It exists to cut Vercel
-serverless and bandwidth cost for traffic that does not need a render.
+`apps/gateway` is a Cloudflare Worker routed on `tuturuuu.com/*`. It sends
+mounted apps to their Worker bindings, serves Marketing pages from the
+`apps/marketing` Worker through the Workers Cache API, and hands every Web path
+to an `apps/web` family Worker over a service binding. Web has no HTTP origin:
+Vercel serves no part of `tuturuuu.com`, and nothing routes traffic back to it.
 
 The route `tuturuuu.com/*` is attached by the provider owner. Versions are
 uploaded and deployed by the `gateway` job of `.github/workflows/web-opennext.yaml`
@@ -21,11 +22,14 @@ requests they match.
 
 - **Manifest:** `apps/gateway/src/manifest.json` maps URL patterns to an origin
   and a cache class. `page` is an anonymous public page, `static` is a build or
-  public asset, and anything unmatched is `bypass` (pure pass-through). A unit
+  public asset, and anything unmatched is `bypass`. Only the `marketing` origin
+  (`MARKETING_ORIGIN`) is an HTTP origin; a path whose origin is `web` goes to
+  the [web families](#web-route-families) and never enters the cache. A unit
   test checks that every path in
   `apps/web/src/lib/seo/public-routes.generated.json` is a `page` route, so the
   manifest cannot drift from the marketing pages.
-- **Cache:** `GET` and `HEAD` on `page` and `static` routes. Fresh for 5 minutes,
+- **Cache:** `GET` and `HEAD` on `page` and `static` routes served by the
+  Marketing origin. Fresh for 5 minutes,
   then served stale for up to 1 hour while a background refresh runs
   (`X-Gateway-Cache: HIT | STALE | MISS`). Only `200` responses without
   `Set-Cookie` and without `Vary: *` are stored. Pages vary by locale bucket
@@ -38,79 +42,61 @@ requests they match.
   `token`, `tuturuuu*`, `__Secure-`/`__Host-`). Static assets ignore cookies.
   Bypassed requests are forwarded with method, headers, body and cookies
   untouched; redirects are not followed and `Set-Cookie` is returned as sent.
-- **Redirects:** a `Location` that points at the origin host is rewritten to
-  `PUBLIC_HOST`, because the Next proxy builds absolute redirects from the
-  request host. Marketing robots are finalized against the public ingress URL as described below.
+- **Redirects:** a Marketing `Location` that points at the Marketing origin host
+  is rewritten to `PUBLIC_HOST`. Family requests already carry the public host. Marketing robots are finalized against the public ingress URL as described below.
 - **Origin `Cache-Control`:** ignored on cacheable routes by default (dynamic
   Next pages send `private, no-store`). Set
   `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL=true` to honour `no-store` and
   `private`.
-- **Failure:** missing `WEB_ORIGIN` returns `500`, an unreachable origin `502`,
-  and a request that already passed through the gateway (`x-gateway-hop`) `508`.
+- **Failure:** a Web path with no bound family, including the fallback
+  `web-rest` (`WEB_FAMILY_WEB_REST`), answers `503 gateway web family
+  unavailable` and is never forwarded elsewhere. An unreachable Marketing
+  origin answers `502`, a throwing family `502`, and a request that already
+  passed through the gateway (`x-gateway-hop`) `508`.
 
 ## Configuration
 
 | Name | Kind | Purpose |
 | --- | --- | --- |
-| `WEB_ORIGIN` | variable, set at deploy | Vercel production web origin, `https://<hostname>`. Must not be `tuturuuu.com` itself (that loops back). |
 | `PUBLIC_HOST` | variable | Public hostname for redirect rewriting. Default `tuturuuu.com`. |
 | `TUTURUUU_NOINDEX` | variable | `1` forces private robots, including cached pages. |
-| `GATEWAY_MODE` | variable | `active` or `passthrough` (rollback flag). |
+| `GATEWAY_MODE` | variable | Unread by the Worker. The deploy parity tooling still requires the name; there is no passthrough mode. |
 | `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL` | variable | `true` honours origin `no-store`/`private`. |
-| `GATEWAY_WEB_FAMILIES` | variable | Comma-separated web family ids served by their `WEB_FAMILY_<ID>` binding. Default empty. |
+| `GATEWAY_WEB_FAMILIES` | variable | Comma-separated web family ids served by their `WEB_FAMILY_<ID>` binding. Unflagged paths go to the bound `web-rest` family. |
+| `WEB_ORIGIN` | unused | Never read by the Worker. The deploy config still requires it to match its live binding. |
 | `TRUSTED_PROXY_ORIGIN_SECRET` | secret, required | At least 32 characters; signs the visitor IP for Web (see [Visitor IP for Web](#visitor-ip-for-web)). Equal to Web's value. |
 
 `wrangler.jsonc` lists required secret names under `secrets.required`; the CI
 deploy config (`scripts/ci/gateway-deploy-config.mjs`) refuses to deploy when
-the live Worker lacks one. The Vercel origin hostname has to accept requests for its
-own host; a custom origin hostname such as `origin.tuturuuu.com` must be added
-as a domain on the Vercel web project before cutover.
+the live Worker lacks one.
 
-## Cutover packet
+## Releasing and rollback
 
-Deploy (provider owner):
-
-```bash
-cd apps/gateway
-bunx wrangler deploy --var WEB_ORIGIN:https://<vercel-web-hostname>
-```
-
-The route `tuturuuu.com/*` comes from `wrangler.jsonc`. Record the prior Vercel
-production deployment id before the first deploy; Vercel keeps serving
-`tuturuuu.com` unchanged until the route is attached.
-
-Pre-flight smoke against the Worker with the route not yet attached is not
-possible, so deploy first with `GATEWAY_MODE=passthrough`, verify, then switch:
+Gateway versions are uploaded and deployed by CI as described in
+[Uploading a gateway version](#vinext-family-route-table): capture the serving
+version, upload, deploy at 0%, smoke with a version override, then move to
+100%. After the move, run the smoke script against production:
 
 ```bash
-node apps/gateway/scripts/gateway-smoke.mjs --base https://tuturuuu.com \
-  --origin https://<vercel-web-hostname> --expect-mode passthrough
-# after switching the variable to active:
-node apps/gateway/scripts/gateway-smoke.mjs --base https://tuturuuu.com \
-  --origin https://<vercel-web-hostname>
+node apps/gateway/scripts/gateway-smoke.mjs --base https://tuturuuu.com
 ```
 
-The smoke script checks 17 anonymous public URLs (`200`, second request served
-from cache, no `Set-Cookie` on cacheable responses), the login page, that an
-anonymous dashboard path redirects to login on the public host, that session
-cookies and `Authorization` bypass the cache, and that `Set-Cookie` names match
-the origin when `--origin` is given.
+It checks the Marketing pages (`200`, second request served from cache, no
+`Set-Cookie` on cached responses), that Web paths and the login page answer
+with `x-gateway-cache: FAMILY`, that an anonymous dashboard path redirects to
+login on the public host, and that session cookies and `Authorization` go to
+a family.
 
-## Rollback
-
-1. Fastest, keeps the Worker: set `GATEWAY_MODE=passthrough` (variable change,
-   no code deploy). The Worker becomes a transparent proxy with no cache reads
-   or writes.
-2. Full removal: delete the `tuturuuu.com/*` route (or the Worker) in the
-   Cloudflare dashboard. Traffic returns to the unchanged Vercel deployment.
-3. No purge is needed: cache entries expire within 65 minutes and are
-   never read in `passthrough` mode.
+**Rollback** is re-assigning the previous gateway version (`wrangler rollback
+<version-id> --name tuturuuu-gateway`). There is no passthrough flag and no
+other origin to fall back to. No purge is needed: Marketing cache entries
+expire within 65 minutes.
 
 ## Visitor IP for Web
 
-Every request the gateway sends to Vercel arrives from a Cloudflare egress
-address, so Web in `TRUSTED_PROXY=vercel` mode would rate-limit and block one
-shared address for every visitor behind it. The gateway therefore signs the
+Web family requests come from the gateway Worker, so Web rate-limiting keyed
+on the calling address would block one shared address for every visitor
+behind it. The gateway therefore signs the
 visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
 `TRUSTED_PROXY=cloudflare-origin`
 (`packages/utils/src/abuse-protection/client-ip.ts`).
@@ -124,16 +110,14 @@ visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
   request. A client-sent `x-tuturuuu-origin-auth`, `X-Forwarded-For`,
   `X-Real-IP` or `True-Client-IP` never changes the signed address, and a
   client-sent proof never reaches any origin.
-- **Recipients:** `WEB_ORIGIN` (cached-page misses, refreshes, bypass and
-  passthrough requests) and web family Workers (`WEB_FAMILY_*`). The Marketing
+- **Recipients:** web family Workers (`WEB_FAMILY_*`) only. The Marketing
   origin and mounted apps (`MOUNT_*`) never receive it; none of them runs
   `cloudflare-origin`. Web family Workers run `TRUSTED_PROXY=cloudflare` and
   read `cf-connecting-ip` directly, so the proof there only keeps both paths
   alike.
 - **Missing key:** without a secret of at least 32 characters, or without a
   valid `cf-connecting-ip`, the header is omitted and the isolate logs one
-  warning (no value). Web then falls back to Vercel headers, which name the
-  Cloudflare egress address.
+  warning (no value). Web then keys on `cf-connecting-ip`.
 
 - **Calling Worker zone:** beside its proof, the gateway forwards the
   Cloudflare-set `CF-Worker` value of the incoming request in
@@ -156,24 +140,22 @@ Configuration, by name only:
 | Where | Name | Value |
 | --- | --- | --- |
 | Gateway Worker (`tuturuuu-gateway`) | `TRUSTED_PROXY_ORIGIN_SECRET` | Worker secret, at least 32 random characters |
-| Vercel Web project (Production) | `TRUSTED_PROXY` | `cloudflare-origin` |
-| Vercel Web project (Production) | `TRUSTED_PROXY_ORIGIN_SECRET` | The same value as the gateway secret |
+| Web family Workers | `TRUSTED_PROXY` | `cloudflare` |
+| Web family Workers | `TRUSTED_PROXY_ORIGIN_SECRET` | The same value as the gateway secret |
 
 Enable in this order: put the gateway secret
 (`bunx wrangler secret put TRUSTED_PROXY_ORIGIN_SECRET --name tuturuuu-gateway`),
-deploy the gateway, set both Vercel variables and redeploy Web. Confirm in Web
+deploy the gateway, set both family Worker values and deploy the families. Confirm in Web
 logs that rate-limit and block keys show visitor addresses, not Cloudflare
 ranges.
 
 **Rotation.** Web verifies one key, so change both ends back to back: put the
-new gateway secret, then set Web's `TRUSTED_PROXY_ORIGIN_SECRET` and redeploy
-Web. Until Web serves the new value, proofs fail and Web resolves through the
-Vercel fallback (the egress address); it never trusts an unverified
-`cf-connecting-ip`. Other holders of the same origin secret, such as the
+new gateway secret, then set the families' `TRUSTED_PROXY_ORIGIN_SECRET` and
+deploy them. Until they serve the new value, proofs fail and the families key
+on `cf-connecting-ip` directly. Other holders of the same origin secret, such as the
 [standalone API](/build/devops/standalone-api) forwarder, rotate with it.
 
-**Rollback.** Set Web's `TRUSTED_PROXY` back to `vercel` and redeploy Web; the
-gateway header is then ignored. Deleting the gateway secret also stops the
+**Rollback.** Re-assign the previous gateway or family Worker version. Deleting the gateway secret also stops the
 header, but CI gateway deploys refuse to run until it is restored or removed
 from `secrets.required`.
 
@@ -187,7 +169,7 @@ vp lint --config .oxlintrc.json src --deny-warnings
 
 ## Marketing page groups
 
-The gateway can serve a page group from the `apps/marketing` Worker instead of the Vercel web origin. Each group is one flag.
+The gateway serves a page group from the `apps/marketing` Worker instead of the web families. Each group is one flag.
 
 | Group | Paths |
 | --- | --- |
@@ -198,18 +180,18 @@ The gateway can serve a page group from the `apps/marketing` Worker instead of t
 | `blog` | `/blog`, `/blog/*` |
 | `home` | `/`, `/pricing` |
 
-`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator`, `/visualizations/*` and the Meet product page (`/products/meet`, `/products/meet/*`, which `/meet` redirects anonymous visitors to) always stay on the web origin.
+`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator`, `/visualizations/*` and the Meet product page (`/products/meet`, `/products/meet/*`, which `/meet` redirects anonymous visitors to) always stay on the web families.
 
 Two Worker variables control the flip:
 
-- `MARKETING_ORIGIN`: the `https://` origin of the marketing Worker. Without it, every group stays on web.
+- `MARKETING_ORIGIN`: the `https://` origin of the marketing Worker. Without it, every group stays on the web families.
 - `GATEWAY_MARKETING_GROUPS`: comma-separated group names served by the marketing origin, for example `legal,company`.
 
 Flip a group by adding its name and redeploying the gateway variables. Roll it back by removing the name, or by clearing `GATEWAY_MARKETING_GROUPS`. Cached pages from the other origin are keyed separately and expire within the cache window, so a rollback is complete within one stale period.
 
 Smoke for each group before the next one: anonymous 200 on two paths of the group, `x-gateway-cache` present, and `x-tuturuuu-runtime: native` on a cache MISS from the marketing origin.
 
-`/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web origin while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`; Vercel web has no `/assets` path.
+`/assets/*` is the Vite build output of the marketing app. It always goes to `MARKETING_ORIGIN` (cached as static) and falls back to the web families while `MARKETING_ORIGIN` is unset. It is not tied to a page-group flag, so rolling a group back does not move `/assets/*`.
 
 ## Marketing robots at the gateway
 
@@ -270,7 +252,7 @@ apex mount. Configure the paths the gateway should dispatch:
   configuration. A conflicting live service target fails the deploy.
 
 A service binding is not a same-zone subrequest, so the request reaches the
-Worker, not the Vercel origin. Only requests on `PUBLIC_HOST` mount, and
+Worker directly. Only requests on `PUBLIC_HOST` mount, and
 `/api` never mounts. The URL, prefix, query, method and body reach the app
 unchanged. Client-supplied forwarding and framework-internal headers
 (`x-forwarded-*`, `Forwarded`, `x-real-ip`, `x-original-*`, `x-rewrite-url`,
@@ -278,8 +260,7 @@ unchanged. Client-supplied forwarding and framework-internal headers
 are stripped and none are synthesized, so a mounted app takes its public origin
 from its own configuration. Responses carry `x-gateway-cache: MOUNT` and are
 never cached by the gateway. Nested paths without a `/<app>/*` entry,
-lookalikes (`/learning`), other hosts and unlisted or unbound paths keep going
-to `WEB_ORIGIN`. Regression coverage lives in
+lookalikes (`/learning`) and unlisted or unbound paths go to the web families. Regression coverage lives in
 `apps/gateway/src/worker-mount.test.ts`.
 
 ### Version-pinned asset smoke
@@ -341,7 +322,7 @@ wrangler rollback <prior-gateway-version-id> --name tuturuuu-gateway \
 Rehearse this against the staging equivalents and verify the before, active
 and restored request paths. Independent DNS, zone routes and target Worker
 versions need separate changes, so keep them out of this activation. Mount
-dispatch precedes `GATEWAY_MODE`. Pause gateway releases during the watch so a
+dispatch precedes the Web manifest. Pause gateway releases during the watch so a
 rollback cannot discard another gateway change. If a rollout is reverted,
 hold future gateway deploys until the mount configuration reflects that
 decision.
@@ -443,12 +424,12 @@ route. Family Workers have no routes, so no zone or DNS change is involved.
   `/api/v1/devboxes`, the ChatGPT credential routes and `/_next/image`.
 - `GATEWAY_WEB_FAMILIES` (comma-separated ids, default empty) turns families
   on. A listed family serves its paths only when its binding exists;
-  otherwise they stay on `WEB_ORIGIN`. Percent-encoded, doubled-slash and
-  non-`PUBLIC_HOST` requests always stay on `WEB_ORIGIN`.
+  otherwise they go to the fallback family `web-rest`.
 
-Order in the handler: loop check, mounts, then (unless `GATEWAY_MODE` is
-`passthrough`) deny list and the first flagged, bound family, then the cached
-manifest path. Families do not apply the signed-in/RSC/server-action bypass:
+Order in the handler: loop check, mounts, Marketing origin paths (cached),
+then the vinext route table, the OpenNext deny list and first flagged, bound
+family, then the bound fallback `web-rest`. `web-rest` needs only its binding,
+not a flag. Without it the request answers `503`. Families do not apply the signed-in/RSC/server-action bypass:
 those requests are what moves.
 
 The family request keeps method, body, query, cookies, `authorization` and
@@ -462,7 +443,7 @@ answers `502 gateway family unreachable`.
 
 Security header parity: the gateway fills `Strict-Transport-Security:
 max-age=63072000` and `Referrer-Policy: same-origin` on family responses that
-lack them, matching the live Vercel responses. It never overrides a header the
+lack them. It never overrides a header the
 family sends (CSP, `X-Frame-Options`, route-specific `Referrer-Policy`) and
 adds no `Permissions-Policy`, which the live responses do not carry. The other
 live security headers (`X-Content-Type-Options`, `X-XSS-Protection`,
@@ -471,8 +452,8 @@ headers" managed transform and appear on every gateway response today; the
 per-family S3 header diff confirms them on family responses. Regression coverage
 lives in `apps/gateway/src/web-family.test.ts`.
 
-**Rollback for one family:** remove its id from `GATEWAY_WEB_FAMILIES`.
-**All families:** `GATEWAY_MODE=passthrough`. Enabling a family is a change of the
+**Rollback** is the previous gateway version, or the family's previous Worker
+version. Enabling a family is a change of the
 `GATEWAY_WEB_FAMILIES` repository variable followed by a run of the gateway job,
 which adds the family's service binding.
 
@@ -494,14 +475,13 @@ route entries and `apps/web/cloudflare/vinext/families.json` by
   Unprefixed `/_next/static/*` and `/_f/<id>/` paths of non-vinext builders
   never reach a vinext family: only pages rendered elsewhere emit them, so they
   keep their own route.
-- `api-ops` owns the former deny list, including the ChatGPT credential
-  routes; nothing is pinned to `WEB_ORIGIN` by path.
+- `api-ops` owns the OpenNext deny list paths, including the ChatGPT
+  credential routes.
 - Each page family serves its own client assets under `/_f/<id>/`. The path
   reaches the family unchanged, and the family serves it from its own assets.
 - A family takes traffic only when its id is in `GATEWAY_WEB_FAMILIES` and
   `WEB_FAMILY_<ID>` is bound; otherwise its paths fall through to the OpenNext
-  families and then `WEB_ORIGIN`. With all six ids flagged, no Web path reaches
-  `WEB_ORIGIN`. The vinext table runs before the OpenNext table, after mounts,
+  families and then the bound `web-rest` fallback. The vinext table runs before the OpenNext table, after mounts,
   and not for paths the manifest sends to another configured origin (marketing
   assets and flagged marketing groups).
 - Cross-family client navigation is a hard navigation: every family build has
@@ -516,10 +496,8 @@ Page families activate after a build with their `/_f/<id>` asset prefix.
 
 All six families are activated and flagged
 (`GATEWAY_WEB_FAMILIES=public-docs,api-ops,api-core,public-auth,web-rest,dashboard-apps,dashboard`).
-Only these requests still reach `WEB_ORIGIN`: unprefixed `/_next/static/*`
-(emitted only by pages rendered before the cutover, so that open tabs keep
-loading), `/_f/<id>/*` for an id no Worker builds, requests for another host,
-and everything in passthrough mode.
+Unprefixed `/_next/static/*` and `/_f/<id>/*` for an id no Worker builds go
+to `web-rest`; requests for another host get `503`.
 
 **Uploading a gateway version** (no traffic until it is deployed), from a
 clean checkout at a commit on `main`:
@@ -547,8 +525,8 @@ of its `/_f/<id>/_next/static/*` assets. Then move the version to 100%.
 **Rollback:** re-assign the previous gateway version. A broken family Worker
 rolls back to its own previous Worker version instead (see
 [Web vinext Workers](/build/devops/web-vinext-families#deploying-a-family)).
-Dropping an id from `GATEWAY_WEB_FAMILIES` sends its paths to `WEB_ORIGIN`,
-which no longer serves production, so it is not a rollback.
+Dropping an id from `GATEWAY_WEB_FAMILIES` sends its paths to `web-rest`,
+which does not own them, so it is not a rollback.
 
 ## Path ownership and rollback
 

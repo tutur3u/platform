@@ -13,18 +13,18 @@
   "limits": { "cpu_ms": 50 },
   "observability": { "enabled": true, "head_sampling_rate": 0.01 },
   "vars": {
-    // `active` serves the route manifest. `passthrough` is the rollback flag:
-    // every request is proxied to WEB_ORIGIN untouched, no cache reads/writes.
+    // Unread by the Worker: the deploy parity tooling still requires the
+    // name. There is no passthrough mode; rollback is a previous gateway
+    // version.
     "GATEWAY_MODE": "active",
-    // Public hostname clients see; origin redirects to WEB_ORIGIN's host are
-    // rewritten to it.
+    // Public hostname clients see; Marketing origin redirects to its own host
+    // are rewritten to it. Web has no HTTP origin: its family Workers serve it
+    // over service bindings, and without the web-rest binding the gateway
+    // answers 503.
     "PUBLIC_HOST": "tuturuuu.com",
-    // Origin that serves the Next app on Vercel. Set per environment (name only
-    // here; the value is configured at deploy time, never committed).
-    // "WEB_ORIGIN": "https://<vercel production web hostname>",
     // Comma-separated page groups served by the apps/marketing Worker (legal,
     // company, products, solutions, blog, home). Every deploy from this file
-    // applies this value. Empty keeps every page on WEB_ORIGIN; removing a
+    // applies this value. Empty keeps every page on the web families; removing a
     // group is the one-flag rollback for that group.
     "GATEWAY_MARKETING_GROUPS": "legal,company,products,solutions,blog,home",
     // "1" releases the exact private robots value on canonical Marketing pages
@@ -36,7 +36,7 @@
     "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false",
     // Mounts of apps served at tuturuuu.com/<app>: "/learn" hands the bare
     // path (any query) to the service binding MOUNT_<SEGMENT>; "/learn/*" also
-    // hands it nested paths. Empty: every path stays on WEB_ORIGIN. Removing an
+    // hands it nested paths. Empty: every path stays on the web families. Removing an
     // app's entries (with its zone routes) is that app's one-step rollback.
     // This list is the committed inventory of LIVE mounts: Web's active-mount
     // list (scripts/active-app-mounts.mjs) is derived from it, and Web returns
@@ -47,9 +47,9 @@
     "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*,/roadmap,/tools,/tools/*,/teach,/teach/*,/lms,/lms/*,/admin,/admin/*,/meet,/meet/*,/mail,/mail/*,/calendar,/calendar/*",
     // Comma-separated apps/web route families (manifest `webFamilies`) served
     // by their own Worker through the binding WEB_FAMILY_<ID>. A family needs
-    // both its id here and its binding; otherwise its paths stay on
-    // WEB_ORIGIN. Removing an id is that family's one-step rollback;
-    // GATEWAY_MODE=passthrough disables every family.
+    // both its id here and its binding; otherwise its paths go to the
+    // fallback family web-rest (WEB_FAMILY_WEB_REST), which needs only its
+    // binding.
     "GATEWAY_WEB_FAMILIES": "",
   },
   // Worker secrets the deploy requires on the live gateway (names only; values

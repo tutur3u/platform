@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Manifest, manifest } from './manifest';
 import { FAMILY_PARITY_HEADERS, inSubtree, matchFamily } from './web-family';
+import { withWebRest } from './web-rest.test-helper';
 import { type CacheLike, createHandler, type Env } from './worker';
 
 class MemoryCache implements CacheLike {
@@ -51,15 +52,14 @@ const FIXTURE: Manifest = {
   },
 };
 
-const WEB_ORIGIN = 'https://web-origin.vercel.app';
-const BASE_ENV: Env = { WEB_ORIGIN, PUBLIC_HOST: 'tuturuuu.com' };
+/** Paths no flagged family claims reach web-rest, which forwards to `fetch`. */
+const BASE_ENV: Env = { PUBLIC_HOST: 'tuturuuu.com', ...withWebRest() };
 
 type FamilyFetch = (request: Request) => Promise<Response>;
 
 function setup(options: {
   flags?: string;
   bound?: boolean;
-  mode?: string;
   family?: FamilyFetch;
   source?: Manifest;
 }) {
@@ -74,7 +74,6 @@ function setup(options: {
     ...(options.flags === undefined
       ? {}
       : { GATEWAY_WEB_FAMILIES: options.flags }),
-    ...(options.mode ? { GATEWAY_MODE: options.mode } : {}),
     ...(options.bound === false
       ? {}
       : {
@@ -142,14 +141,14 @@ const ALWAYS_WEB = [
 ];
 
 describe('web family dispatch', () => {
-  it('keeps every path on WEB_ORIGIN while the flag is empty or unset', async () => {
+  it('keeps every path on web-rest while the flag is empty or unset', async () => {
     for (const flags of [undefined, '', ' , ']) {
       const t = setup({ flags });
       const response = await t.call('/api/v1/users/me/profile');
       expect(await response.text()).toBe('web');
       expect(t.family).not.toHaveBeenCalled();
       expect(t.web.mock.calls[0]?.[0].url).toBe(
-        `${WEB_ORIGIN}/api/v1/users/me/profile`
+        'https://tuturuuu.com/api/v1/users/me/profile'
       );
     }
   });
@@ -170,7 +169,7 @@ describe('web family dispatch', () => {
   );
 
   it.each(ALWAYS_WEB)(
-    'keeps %s on WEB_ORIGIN with the family on',
+    'keeps %s on web-rest with the family on',
     async (path) => {
       const t = setup({ flags: 'api-identity' });
       expect(await (await t.call(path)).text()).toBe('web');
@@ -178,7 +177,7 @@ describe('web family dispatch', () => {
     }
   );
 
-  it('falls back to WEB_ORIGIN when the flagged family has no binding', async () => {
+  it('falls back to web-rest when the flagged family has no binding', async () => {
     const t = setup({ flags: 'api-identity', bound: false });
     expect(await (await t.call('/api/health')).text()).toBe('web');
   });
@@ -191,16 +190,10 @@ describe('web family dispatch', () => {
     expect(off.family).not.toHaveBeenCalled();
   });
 
-  it('disables every family in passthrough mode', async () => {
-    const t = setup({ flags: 'api-identity', mode: 'passthrough' });
-    const response = await t.call('/api/health');
-    expect(await response.text()).toBe('web');
-    expect(response.headers.get('x-gateway-cache')).toBe('PASSTHROUGH');
-  });
-
   it('ignores other hosts and non-canonical paths', async () => {
     const t = setup({ flags: 'api-identity' });
-    await t.call('/api/health', undefined, 'web-origin.vercel.app');
+    const other = await t.call('/api/health', undefined, 'other.example.com');
+    expect(other.status).toBe(503);
     for (const path of [
       '/api/v1/users/me/%70assword',
       '/api/v1/users//me/password',
@@ -306,7 +299,7 @@ describe('web family request hygiene', () => {
 });
 
 describe('web family security header parity', () => {
-  it('pins the live Vercel values', () => {
+  it('pins the parity header values', () => {
     expect(FAMILY_PARITY_HEADERS).toEqual({
       'strict-transport-security': 'max-age=63072000',
       'referrer-policy': 'same-origin',
@@ -396,7 +389,7 @@ describe('web family matching', () => {
     expect(await (await t.call('/api/v1/auth/otp')).text()).toBe('family');
   });
 
-  it('keeps denied public-docs asset paths on WEB_ORIGIN after prefix stripping', async () => {
+  it('keeps denied public-docs asset paths on web-rest after prefix stripping', async () => {
     const t = setup({ flags: 'public-docs' });
     for (const path of [
       '/_f/public-docs/_next/image',

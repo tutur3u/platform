@@ -1,19 +1,11 @@
-import {
-  acceptanceRobots,
-  acceptanceUnavailable,
-  bypassSecret,
-  bypassSecretFor,
-  isAcceptanceHost,
-  scrubBypass,
-  withBypass,
-} from './acceptance-host';
+import { acceptanceRobots, isAcceptanceHost } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
 import { mastermindRedirect } from './mastermind-redirect';
-import { originProofFor, withOriginAuth } from './origin-ip-proof';
+import { withOriginAuth } from './origin-ip-proof';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
-import { vinextFamilyTarget } from './web-route-table';
+import { vinextFamilyTarget, webFallbackTarget } from './web-route-table';
 import {
   bypassReason,
   hasAuthCookie,
@@ -34,12 +26,8 @@ import {
 } from './manifest';
 
 export interface Env {
-  /** `passthrough` is the rollback flag: transparent proxy, no cache. */
-  GATEWAY_MODE?: string;
   /** Explicit deployment robots override, including cached Marketing pages. */
   TUTURUUU_NOINDEX?: string;
-  /** Origin of the Vercel production web deployment, e.g. https://host. */
-  WEB_ORIGIN?: string;
   /** Hostname clients use; origin redirects to the origin host map to it. */
   PUBLIC_HOST?: string;
   /** Comma-separated page groups served by MARKETING_ORIGIN (empty: none). */
@@ -54,7 +42,7 @@ export interface Env {
    * subtree entry (`/learn/*`) admits its nested paths. Admitted requests on
    * PUBLIC_HOST reach the app Worker through the service binding
    * `MOUNT_<SEGMENT>` (`MOUNT_LEARN`) with prefix and query unchanged. `/api`
-   * never mounts. Unlisted or unbound paths keep going to WEB_ORIGIN.
+   * never mounts. Unlisted or unbound paths go to the web families.
    * Clearing an app's entries is part of that app's one-step rollback.
    */
   GATEWAY_MOUNTED_PATHS?: string;
@@ -71,21 +59,16 @@ export interface Env {
   /**
    * Comma-separated web family ids (`api-identity`). A listed family whose
    * service binding (`WEB_FAMILY_<ID>`) exists serves its manifest paths;
-   * unlisted or unbound families stay on WEB_ORIGIN. Removing an id is that
-   * family's one-step rollback.
+   * every other Web path goes to the bound fallback family (web-rest), and
+   * without it the gateway answers 503. Rollback is a previous gateway version.
    */
   GATEWAY_WEB_FAMILIES?: string;
-  /**
-   * Hostname of the staging acceptance gateway. Only on that host, requests to
-   * WEB_ORIGIN carry the Vercel protection bypass. Unset on production.
-   */
+  /** Hostname of the staging acceptance gateway, kept out of search engines. */
   GATEWAY_ACCEPTANCE_HOST?: string;
-  /** Worker secret: Vercel protection bypass for the staging WEB_ORIGIN. */
-  VERCEL_PROTECTION_BYPASS?: string;
   /**
    * Worker secret (at least 32 characters) shared with Web's
    * `TRUSTED_PROXY=cloudflare-origin`: signs the visitor's `cf-connecting-ip`
-   * into `x-tuturuuu-origin-auth` on WEB_ORIGIN and web family requests.
+   * into `x-tuturuuu-origin-auth` on web family requests.
    */
   TRUSTED_PROXY_ORIGIN_SECRET?: string;
   [name: string]: string | ServiceBinding | undefined;
@@ -169,7 +152,13 @@ function plain(status: number, body: string) {
   });
 }
 
+/**
+ * The configured HTTP origin for `originName`. Web (the manifest default) has
+ * none: its families serve it over service bindings, and the deprecated
+ * WEB_ORIGIN variable is never read.
+ */
 function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
+  if (originName === manifest.default.origin) return null;
   const envName = manifest.origins[originName]?.env;
   const raw = envName ? env[envName] : undefined;
   if (typeof raw !== 'string' || !raw) return null;
@@ -183,7 +172,7 @@ function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
 
 /**
  * Requests that depend on a signed-in session or on the Next app (RSC and
- * server actions) always go to the web origin, even for a flagged group, so a
+ * server actions) always go to the web families, even for a flagged group, so a
  * signed-in visitor keeps today's behavior (for example `/` redirects them to
  * their workspace).
  */
@@ -209,7 +198,11 @@ function flaggedGroups(env: Env) {
   );
 }
 
-/** The origin a matched route uses: its flagged origin when the group flag is on and that origin is configured, otherwise its default. */
+/**
+ * The HTTP origin a matched route uses: its flagged origin when the group flag
+ * is on and that origin is configured, otherwise its own configured non-Web
+ * origin. A null url means the web families serve the request.
+ */
 function chooseOrigin(
   env: Env,
   manifest: Manifest,
@@ -225,11 +218,9 @@ function chooseOrigin(
     const flagged = resolveOrigin(env, manifest, match.flagOrigin);
     if (flagged) return { url: flagged, flagged: true };
   }
-  const own = resolveOrigin(env, manifest, match.origin);
   // A route that names an optional origin (for example the marketing assets)
-  // falls back to the default origin while that origin is not configured.
-  const url = own ?? resolveOrigin(env, manifest, manifest.default.origin);
-  return { url, flagged: false };
+  // falls back to the web families while that origin is not configured.
+  return { url: resolveOrigin(env, manifest, match.origin), flagged: false };
 }
 
 const FORWARDED_HOST = 'x-forwarded-host';
@@ -239,23 +230,18 @@ const FORWARDED_PROTO = 'x-forwarded-proto';
  * The origin request. Client-supplied X-Forwarded-Host/-Proto never reach the
  * origin: the gateway states the public host itself, so an origin that trusts
  * these headers (the marketing Worker) builds public URLs, never spoofed ones.
- * A client-sent origin proof never passes; only the gateway's own reaches
- * WEB_ORIGIN.
+ * A client-sent origin proof never passes: only web families receive one.
  */
 function originRequest(
   request: Request,
   origin: URL,
-  publicHost: string | undefined,
-  bypass: string | undefined,
-  proof: string | null
+  publicHost: string | undefined
 ) {
   const incoming = new URL(request.url);
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
   const outgoing = new Request(target, request);
   outgoing.headers.set(HOP_HEADER, '1');
-  // Client-supplied bypass headers never pass; only the Worker secret does.
-  withBypass(outgoing.headers, bypass);
-  withOriginAuth(outgoing.headers, proof);
+  withOriginAuth(outgoing.headers, null);
   outgoing.headers.delete(FORWARDED_HOST);
   outgoing.headers.delete(FORWARDED_PROTO);
   if (publicHost) {
@@ -403,13 +389,7 @@ async function proxy(
   let response: Response;
   try {
     response = await fetch(
-      originRequest(
-        request,
-        origin,
-        env.PUBLIC_HOST,
-        bypassSecretFor(request, env, origin),
-        await originProofFor(request, env, origin)
-      ),
+      originRequest(request, origin, env.PUBLIC_HOST),
       NO_FOLLOW
     );
   } catch {
@@ -455,22 +435,11 @@ export function createHandler(deps: HandlerDeps) {
     key: string,
     options: { respectOriginCacheControl: boolean },
     publicHost: string | undefined,
-    isPage: boolean,
-    bypass: string | undefined,
-    env: Env
+    isPage: boolean
   ) {
     try {
       let response = withPublicLink(
-        await fetch(
-          originRequest(
-            request,
-            origin,
-            publicHost,
-            bypass,
-            await originProofFor(request, env, origin)
-          ),
-          NO_FOLLOW
-        ),
+        await fetch(originRequest(request, origin, publicHost), NO_FOLLOW),
         origin,
         publicHost
       );
@@ -500,16 +469,9 @@ export function createHandler(deps: HandlerDeps) {
     }
     const robots = acceptanceRobots(request, env);
     if (robots) return robots;
-    // The acceptance host fails closed without its bypass secret.
-    if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
-      return acceptanceUnavailable();
-    }
     const mastermind = mastermindRedirect(request, env);
     if (mastermind) return mastermind;
-    if (
-      env.GATEWAY_MODE !== 'passthrough' &&
-      env.GATEWAY_LMS_REDIRECTS === '1'
-    ) {
+    if (env.GATEWAY_LMS_REDIRECTS === '1') {
       const target = lmsRedirectDestination(request);
       if (
         target &&
@@ -526,7 +488,7 @@ export function createHandler(deps: HandlerDeps) {
         });
       }
     }
-    // Admitted mounts precede the Web manifest, cache and passthrough mode.
+    // Admitted mounts precede the Web manifest and cache.
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
@@ -541,24 +503,17 @@ export function createHandler(deps: HandlerDeps) {
     }
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);
-    // Flagged and bound web families (vinext route table, then OpenNext) come
-    // next unless the manifest routes the path to another configured origin;
-    // passthrough mode disables them so the rollback reaches WEB_ORIGIN.
-    const elsewhere =
-      chosen.flagged ||
-      (match.origin !== deps.manifest.default.origin &&
-        resolveOrigin(env, deps.manifest, match.origin) !== null);
-    if (env.GATEWAY_MODE !== 'passthrough' && !elsewhere) {
+    const origin = chosen.url;
+    // Web paths go to a flagged and bound family (vinext route table, then
+    // OpenNext), else the bound fallback family; never to an HTTP origin.
+    if (!origin) {
       const family =
         vinextFamilyTarget(request, env, deps.manifest.locales) ??
-        webFamilyTarget(request, env, deps.manifest);
-      if (family) return dispatchWebFamily(request, family, env);
-    }
-    const origin = chosen.url;
-    if (!origin) return plain(500, 'gateway origin not configured');
-
-    if (env.GATEWAY_MODE === 'passthrough') {
-      return proxy(request, origin, env, 'PASSTHROUGH');
+        webFamilyTarget(request, env, deps.manifest) ??
+        webFallbackTarget(request, env);
+      return family
+        ? dispatchWebFamily(request, family, env)
+        : plain(503, 'gateway web family unavailable');
     }
 
     const reason = bypassReason(request, match);
@@ -598,9 +553,7 @@ export function createHandler(deps: HandlerDeps) {
           key,
           options,
           env.PUBLIC_HOST,
-          isPage,
-          bypassSecretFor(request, env, origin),
-          env
+          isPage
         );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
@@ -613,16 +566,7 @@ export function createHandler(deps: HandlerDeps) {
     let response: Response;
     try {
       response = withPublicLink(
-        await fetch(
-          originRequest(
-            request,
-            origin,
-            env.PUBLIC_HOST,
-            bypassSecretFor(request, env, origin),
-            await originProofFor(request, env, origin)
-          ),
-          NO_FOLLOW
-        ),
+        await fetch(originRequest(request, origin, env.PUBLIC_HOST), NO_FOLLOW),
         origin,
         env.PUBLIC_HOST
       );
@@ -672,10 +616,7 @@ export function createHandler(deps: HandlerDeps) {
       (request.method === 'GET' || request.method === 'HEAD');
     const acceptance = isAcceptanceHost(request, env);
     return applyMarketingRobots(
-      scrubBypass(
-        await handle(request, env, ctx),
-        acceptance ? bypassSecret(env) : undefined
-      ),
+      await handle(request, env, ctx),
       request,
       marketingPage ? 'marketing-page' : fromMarketing ? 'marketing' : 'origin',
       // The acceptance host stays out of search engines regardless of config.

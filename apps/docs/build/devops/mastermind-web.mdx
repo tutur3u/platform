@@ -285,7 +285,7 @@ Mastermind is served only on `mastermind.tuturuuu.com`. With
 `GATEWAY_MASTERMIND_REDIRECT=1`, which the release owner sets on the gateway
 once the host passes acceptance, the gateway answers `tuturuuu.com/mastermind`
 and its children with a plain 302 to it (path suffix and query kept, no
-proxying, also in passthrough mode). The build is pinned to the root
+proxying). The build is pinned to the root
 (`basePath: ''`). Mounting it on the shared `tuturuuu.com` origin was
 reviewed and rejected, because nothing can bind the caller there:
 

@@ -61,7 +61,7 @@ describe('vinext route table', () => {
     }
   });
 
-  it('serves the former WEB_ORIGIN deny list from api-ops', () => {
+  it('serves the OpenNext family deny list from api-ops', () => {
     for (const path of [
       '/api/v1/auth/accounts',
       '/api/v1/auth/accounts/switch',
@@ -161,7 +161,6 @@ describe('vinext family dispatch', () => {
       ])
     );
     const env = {
-      WEB_ORIGIN: 'https://web-origin.vercel.app',
       PUBLIC_HOST: 'tuturuuu.com',
       GATEWAY_WEB_FAMILIES: flags,
       ...bindings,
@@ -182,7 +181,7 @@ describe('vinext family dispatch', () => {
 
   const ALL = webRouteTable.families.map((family) => family.id).join(',');
 
-  it('sends nothing to WEB_ORIGIN once every family is flagged', async () => {
+  it('serves every path from a family once every family is flagged', async () => {
     const { web, calls, call } = setup(ALL);
     for (const path of [
       '/',
@@ -206,20 +205,47 @@ describe('vinext family dispatch', () => {
     );
   });
 
-  it('leaves unprefixed Next assets with the origin that renders their pages', async () => {
+  it('sends unprefixed Next assets to the web-rest fallback', async () => {
     const { web, calls, call } = setup(ALL);
     await call('/_next/static/chunks/app.js');
-    expect(calls).toHaveLength(0);
-    expect(web).toHaveBeenCalledOnce();
+    await call('/_f/other-builder/a.js');
+    expect(calls.map((entry) => entry.family)).toEqual([
+      'web-rest',
+      'web-rest',
+    ]);
+    expect(web).not.toHaveBeenCalled();
   });
 
-  it('routes only the flagged API families and leaves the rest on WEB_ORIGIN', async () => {
+  it('routes the flagged API families and sends the rest to web-rest', async () => {
     const { web, calls, call } = setup('api-ops,api-core');
     await call('/api/cron/daily', { method: 'POST' });
     await call('/api/v1/workspaces');
     await call('/vi/login');
-    expect(calls.map((entry) => entry.family)).toEqual(['api-ops', 'api-core']);
-    expect(web).toHaveBeenCalledOnce();
+    expect(calls.map((entry) => entry.family)).toEqual([
+      'api-ops',
+      'api-core',
+      'web-rest',
+    ]);
+    expect(web).not.toHaveBeenCalled();
+  });
+
+  it('serves an unflagged path from web-rest with no family flagged', async () => {
+    const { web, calls, call } = setup('');
+    const response = await call('/personal/tasks');
+    expect(response.headers.get('x-gateway-family')).toBe('web-rest');
+    expect(calls).toEqual([{ family: 'web-rest', path: '/personal/tasks' }]);
+    expect(web).not.toHaveBeenCalled();
+  });
+
+  it('answers 503 when the web-rest binding is missing', async () => {
+    const { web, calls, call } = setup('api-ops', {
+      WEB_FAMILY_WEB_REST: undefined,
+    });
+    const response = await call('/personal/tasks');
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe('gateway web family unavailable');
+    expect(calls).toHaveLength(0);
+    expect(web).not.toHaveBeenCalled();
   });
 
   it('leaves marketing assets on a configured marketing origin', async () => {
@@ -233,10 +259,14 @@ describe('vinext family dispatch', () => {
     );
   });
 
-  it('disables every family in passthrough mode', async () => {
-    const { web, calls, call } = setup(ALL, { GATEWAY_MODE: 'passthrough' });
+  it('ignores GATEWAY_MODE=passthrough and a deprecated WEB_ORIGIN', async () => {
+    const { web, calls, call } = setup(ALL, {
+      GATEWAY_MODE: 'passthrough',
+      WEB_ORIGIN: 'https://origin.tuturuuu.com',
+    } as Partial<Env>);
     await call('/api/cron/daily');
-    expect(calls).toHaveLength(0);
-    expect(web).toHaveBeenCalledOnce();
+    await call('/no/such/page');
+    expect(calls).toHaveLength(2);
+    expect(web).not.toHaveBeenCalled();
   });
 });

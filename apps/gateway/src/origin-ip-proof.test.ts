@@ -8,10 +8,10 @@ import {
   createOriginClientIpProof,
   ORIGIN_AUTH_HEADER,
   ORIGIN_WORKER_HEADER,
-  originProofFor,
   resetOriginAuthWarning,
 } from './origin-ip-proof';
 import { dispatchWebFamily } from './web-family';
+import { withWebRest } from './web-rest.test-helper';
 import { type CacheLike, createHandler, type Env } from './worker';
 
 const SECRET = 'synthetic-gateway-origin-secret-at-least-32';
@@ -19,9 +19,9 @@ const OTHER_SECRET = 'other-synthetic-origin-secret-at-least-32';
 const VISITOR = '203.0.113.42';
 
 const ENV: Env = {
-  WEB_ORIGIN: 'https://web-origin.vercel.app',
   PUBLIC_HOST: 'tuturuuu.com',
   TRUSTED_PROXY_ORIGIN_SECRET: SECRET,
+  ...withWebRest(),
 };
 
 class MemoryCache implements CacheLike {
@@ -118,7 +118,7 @@ describe('origin IP proof parity with @tuturuuu/utils', () => {
 });
 
 describe('gateway origin proof', () => {
-  it('signs the edge cf-connecting-ip on WEB_ORIGIN requests', async () => {
+  it('signs the edge cf-connecting-ip on web-rest family requests', async () => {
     const { seen, handle } = setup();
     await handle(await spoofedRequest('/api/v1/anything'), ENV);
     expect(seen).toHaveLength(1);
@@ -127,14 +127,14 @@ describe('gateway origin proof', () => {
     expect(verify(proof, OTHER_SECRET)).toBe(null);
   });
 
-  it('signs cached-page misses and passthrough requests too', async () => {
+  it('signs unflagged page groups and unmatched paths on web-rest', async () => {
     const { seen, handle } = setup();
     await handle(await spoofedRequest('/privacy', { method: 'GET' }), ENV);
-    await handle(await spoofedRequest('/x'), {
-      ...ENV,
-      GATEWAY_MODE: 'passthrough',
-    });
+    await handle(await spoofedRequest('/x'), ENV);
     expect(seen).toHaveLength(2);
+    for (const request of seen) {
+      expect(new URL(request.url).host).toBe('tuturuuu.com');
+    }
     for (const request of seen) {
       expect(verify(request.headers.get(ORIGIN_AUTH_HEADER))).toBe(VISITOR);
     }
@@ -178,10 +178,6 @@ describe('gateway origin proof', () => {
     await handle(await spoofedRequest('/privacy', { method: 'GET' }), env);
     expect(new URL(seen[0]?.url ?? '').host).toBe('marketing-origin.example');
     expect(seen[0]?.headers.has(ORIGIN_AUTH_HEADER)).toBe(false);
-    const marketing = new URL('https://marketing-origin.example');
-    expect(
-      await originProofFor(await spoofedRequest('/'), env, marketing)
-    ).toBe(null);
   });
 
   it('never sends a proof to a mounted app', async () => {

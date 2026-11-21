@@ -31,7 +31,7 @@ export interface WebFamily {
   exact: string[];
   /** Raw string prefixes; each ends with `/`. */
   prefix: string[];
-  /** Path subtrees (the path itself and everything below it) kept on WEB_ORIGIN. */
+  /** Path subtrees (the path itself and everything below it) left to the fallback family. */
   exclude: string[];
 }
 
@@ -43,7 +43,8 @@ export interface WebFamilies {
 
 export interface Manifest {
   locales: string[];
-  origins: Record<string, { env: string }>;
+  /** HTTP origins by name; Web (the default) has no `env`: families serve it. */
+  origins: Record<string, { env?: string }>;
   default: { origin: string; cache: 'bypass' };
   routes: ManifestRoute[];
   webFamilies?: WebFamilies;

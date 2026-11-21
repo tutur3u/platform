@@ -2,8 +2,10 @@
 // Smoke checks for the tuturuuu.com gateway Worker.
 //
 //   node apps/gateway/scripts/gateway-smoke.mjs [--base https://tuturuuu.com]
-//        [--origin https://<vercel web hostname>] [--expect-mode active|passthrough]
 //
+// Marketing pages come from the gateway cache (MISS, then HIT or STALE). Every
+// Web path is served by a web family Worker over its service binding
+// (x-gateway-cache FAMILY); there is no HTTP origin behind Web.
 // Exits non-zero on the first failing group. Prints names and statuses only;
 // it never prints cookie values or tokens.
 
@@ -14,8 +16,6 @@ function option(name, fallback) {
 }
 
 const base = option('base', 'https://tuturuuu.com').replace(/\/$/, '');
-const origin = option('origin', '').replace(/\/$/, '');
-const mode = option('expect-mode', 'active');
 
 const PUBLIC_PATHS = [
   '/',
@@ -29,13 +29,13 @@ const PUBLIC_PATHS = [
   '/solutions/education',
   '/legal/dpa',
   '/blog',
-  '/changelog',
   '/contact',
   '/vi',
   '/vi/about',
-  '/robots.txt',
-  '/sitemap.xml',
 ];
+
+/** Anonymous Web paths: served by a family, never by the gateway cache. */
+const WEB_PATHS = ['/changelog', '/robots.txt', '/sitemap.xml'];
 
 const failures = [];
 const fail = (message) => {
@@ -50,7 +50,7 @@ async function get(path, init = {}) {
 
 const cacheHeader = (response) => response.headers.get('x-gateway-cache');
 
-// 1. Anonymous 200 on public URLs; cache MISS/HIT/STALE sequence.
+// 1. Anonymous 200 on Marketing pages; cache MISS/HIT/STALE sequence.
 for (const path of PUBLIC_PATHS) {
   const first = await get(path);
   if (first.status !== 200) {
@@ -59,12 +59,6 @@ for (const path of PUBLIC_PATHS) {
   }
   const second = await get(path);
   const states = `${cacheHeader(first)}->${cacheHeader(second)}`;
-  if (mode === 'passthrough') {
-    if (cacheHeader(second) !== 'PASSTHROUGH') {
-      fail(`${path} expected PASSTHROUGH, saw ${states}`);
-    } else pass(`${path} 200 ${states}`);
-    continue;
-  }
   if (!['HIT', 'STALE'].includes(cacheHeader(second))) {
     fail(`${path} second request not served from cache (${states})`);
   } else if (second.status !== 200) {
@@ -87,13 +81,15 @@ for (const path of PUBLIC_PATHS) {
   }
 }
 
-// 2. Login page renders and is a pure pass-through.
-{
-  const response = await get('/login');
-  if (response.status !== 200) fail(`/login status ${response.status}`);
-  else if (mode === 'active' && cacheHeader(response) !== 'BYPASS') {
-    fail(`/login expected BYPASS, saw ${cacheHeader(response)}`);
-  } else pass(`/login 200 ${cacheHeader(response)}`);
+// 2. Web paths and the login page come from a web family.
+for (const path of [...WEB_PATHS, '/login']) {
+  const response = await get(path);
+  if (response.status !== 200) fail(`${path} status ${response.status}`);
+  else if (cacheHeader(response) !== 'FAMILY') {
+    fail(`${path} expected FAMILY, saw ${cacheHeader(response)}`);
+  } else {
+    pass(`${path} 200 FAMILY ${response.headers.get('x-gateway-family')}`);
+  }
 }
 
 // 3. Anonymous dashboard route redirects to login on the public host.
@@ -114,45 +110,19 @@ for (const path of PUBLIC_PATHS) {
   } else pass(`/personal/tasks ${response.status} -> login`);
 }
 
-// 4. Session cookies bypass the cache and the cookie reaches the origin path.
+// 4. Signed-in requests skip the cache and go to a web family.
 {
   const response = await get('/about', {
     headers: { cookie: 'sb-gatewaysmoke-auth-token=invalid' },
   });
   if (response.status >= 500) fail(`cookie request status ${response.status}`);
-  else if (mode === 'active' && cacheHeader(response) !== 'BYPASS') {
-    fail(`cookie request expected BYPASS, saw ${cacheHeader(response)}`);
-  } else pass(`cookie request ${response.status} ${cacheHeader(response)}`);
+  else if (cacheHeader(response) !== 'FAMILY') {
+    fail(`cookie request expected FAMILY, saw ${cacheHeader(response)}`);
+  } else pass(`cookie request ${response.status} FAMILY`);
   const auth = await get('/about', { headers: { authorization: 'Bearer x' } });
-  if (mode === 'active' && cacheHeader(auth) !== 'BYPASS') {
-    fail(`authorization request expected BYPASS, saw ${cacheHeader(auth)}`);
-  } else pass(`authorization request ${auth.status} ${cacheHeader(auth)}`);
-}
-
-// 5. Set-Cookie passthrough: compare cookie names with the origin directly.
-if (origin) {
-  for (const path of ['/login', '/personal/tasks']) {
-    const names = (response) =>
-      response.headers
-        .getSetCookie()
-        .map((cookie) => cookie.split('=')[0])
-        .sort()
-        .join(',');
-    const viaGateway = await get(path);
-    const direct = await fetch(`${origin}${path}`, { redirect: 'manual' });
-    if (direct.status === 403) {
-      // The origin's bot protection blocks non-Cloudflare addresses.
-      console.log(`skip ${path} Set-Cookie comparison (origin answered 403)`);
-      continue;
-    }
-    if (names(viaGateway) !== names(direct)) {
-      fail(
-        `${path} Set-Cookie names differ (gateway "${names(viaGateway)}", origin "${names(direct)}")`
-      );
-    } else pass(`${path} Set-Cookie names match origin`);
-  }
-} else {
-  console.log('skip Set-Cookie origin comparison (no --origin)');
+  if (cacheHeader(auth) !== 'FAMILY') {
+    fail(`authorization request expected FAMILY, saw ${cacheHeader(auth)}`);
+  } else pass(`authorization request ${auth.status} FAMILY`);
 }
 
 if (failures.length > 0) {

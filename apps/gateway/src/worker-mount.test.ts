@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { manifest } from './manifest';
+import { withWebRest } from './web-rest.test-helper';
 import { type CacheLike, createHandler, type Env } from './worker';
 
 class MemoryCache implements CacheLike {
@@ -13,8 +14,8 @@ class MemoryCache implements CacheLike {
 }
 
 const ENV: Env = {
-  WEB_ORIGIN: 'https://web-origin.vercel.app',
   PUBLIC_HOST: 'tuturuuu.com',
+  ...withWebRest(),
 };
 
 function mountEnv(
@@ -170,7 +171,7 @@ describe('mounted app ingress', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('keeps unmounted paths on the existing origin forwarding contract', async () => {
+  it('keeps unmounted paths on the web-rest forwarding contract', async () => {
     const origin = vi.fn(async (_request: Request) => new Response('web'));
     vi.stubGlobal('fetch', origin);
     const { handle } = handler();
@@ -214,14 +215,19 @@ it('switches an entire apex mount through a single gateway version', async () =>
   }
 
   for (const url of [
-    'https://tools.tuturuuu.com/',
     'https://tuturuuu.com/toolshed',
     'https://tuturuuu.com/products/tools',
   ]) {
     expect(await (await handle(new Request(url), active)).text()).toBe('web');
   }
+  // Another host is neither mounted nor a web family request.
+  const alias = await handle(
+    new Request('https://tools.tuturuuu.com/'),
+    active
+  );
+  expect(alias.status).toBe(503);
   expect(mounted).toHaveBeenCalledTimes(paths.length);
-  expect(web).toHaveBeenCalledTimes(paths.length + 3);
+  expect(web).toHaveBeenCalledTimes(paths.length + 2);
 });
 
 describe('mount admission', () => {
@@ -278,10 +284,15 @@ describe('mount admission', () => {
       PUBLIC_HOST: undefined,
     });
     for (const path of ['/mind', '/mind/boards?x=1']) {
-      await handle(new Request(`https://tuturuuu.com${path}`), env);
+      const response = await handle(
+        new Request(`https://tuturuuu.com${path}`),
+        env
+      );
+      // Without a public host no web family qualifies either: fail closed.
+      expect(response.status).toBe(503);
     }
     expect(fetch).not.toHaveBeenCalled();
-    expect(origin).toHaveBeenCalledTimes(2);
+    expect(origin).not.toHaveBeenCalled();
   });
 
   it('does not mount encoded, normalized, lookalike, API or alias-host paths', async () => {

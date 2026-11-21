@@ -43,7 +43,7 @@ function comparisonPath(pathname: string) {
 
 /**
  * Percent-encoded, doubled or backslashed paths can resolve to a different
- * route inside the app than the gateway matched, so they stay on WEB_ORIGIN.
+ * route inside the app than the gateway matched, so they go to the fallback.
  */
 function isCanonicalPath(pathname: string) {
   return !/%|\/\/|\\/u.test(pathname);
@@ -92,7 +92,7 @@ export function matchFamily(
 }
 
 /**
- * The family Worker that serves this request, or null for WEB_ORIGIN. Only
+ * The family Worker that serves this request, or null for the fallback. Only
  * PUBLIC_HOST requests on canonical paths qualify; the global deny list wins
  * over every family; a family must be both flagged and bound.
  */

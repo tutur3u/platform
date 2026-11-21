@@ -140,17 +140,16 @@ to `/_f/<id>` from `WEB_VINEXT_FAMILY`, so each family's client assets have
 their own URL base. Page families need that build before their id goes into
 `GATEWAY_WEB_FAMILIES`.
 
-All six families are flagged, so no Web page or API path reaches
-`WEB_ORIGIN`. The only requests that still do are unprefixed
-`/_next/static/*` (emitted only by pages rendered before the cutover),
-`/_f/<id>/*` for an id no Worker builds, requests for another host, and
-everything when the gateway is in passthrough mode.
+All six families are flagged. Web has no HTTP origin: a path no flagged
+family claims, including unprefixed `/_next/static/*` and `/_f/<id>/*` for an
+id no Worker builds, goes to the bound `web-rest` family, and without that
+binding the gateway answers `503`.
 
 **Rollback ladder:** a broken family Worker rolls back to its previous Worker
 version (above). A broken routing change rolls back by re-assigning the
 previous gateway version. Removing an id from `GATEWAY_WEB_FAMILIES` sends
-that family's paths back to `WEB_ORIGIN`, which no longer serves production,
-so it is not a rollback.
+that family's paths to `web-rest`, which does not own them, so it is not a
+rollback.
 
 ## Runtime bindings
 

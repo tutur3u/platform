@@ -1,9 +1,7 @@
 {
   "locales": ["en", "vi"],
   "origins": {
-    "web": {
-      "env": "WEB_ORIGIN"
-    },
+    "web": {},
     "marketing": {
       "env": "MARKETING_ORIGIN"
     }

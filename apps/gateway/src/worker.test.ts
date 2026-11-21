@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { manifest } from './manifest';
+import { withWebRest } from './web-rest.test-helper';
 import { type CacheLike, createHandler, type Env } from './worker';
 
 class MemoryCache implements CacheLike {
@@ -12,9 +13,14 @@ class MemoryCache implements CacheLike {
   }
 }
 
+const MARKETING = 'https://marketing-origin.example';
+
+/** Every Marketing group flagged; Web paths reach the web-rest family. */
 const ENV: Env = {
-  WEB_ORIGIN: 'https://web-origin.vercel.app',
   PUBLIC_HOST: 'tuturuuu.com',
+  MARKETING_ORIGIN: MARKETING,
+  GATEWAY_MARKETING_GROUPS: 'legal,company,products,solutions,blog,home',
+  ...withWebRest(),
 };
 
 function setup(origin: (request: Request) => Response | Promise<Response>) {
@@ -41,16 +47,14 @@ function setup(origin: (request: Request) => Response | Promise<Response>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('gateway handler', () => {
-  it('redirects /mastermind to its host only when enabled, even in passthrough', async () => {
+  it('redirects /mastermind to its host only when enabled', async () => {
     const t = setup(() => new Response('web'));
     const enabled = { ...ENV, GATEWAY_MASTERMIND_REDIRECT: '1' };
-    for (const env of [enabled, { ...enabled, GATEWAY_MODE: 'passthrough' }]) {
-      const response = await t.call('/mastermind/vi?x=1', undefined, env);
-      expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe(
-        'https://mastermind.tuturuuu.com/vi?x=1'
-      );
-    }
+    const response = await t.call('/mastermind/vi?x=1', undefined, enabled);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toBe(
+      'https://mastermind.tuturuuu.com/vi?x=1'
+    );
     expect(t.fetchMock).not.toHaveBeenCalled();
     const off = await t.call('/mastermind/vi');
     expect(off.headers.get('Location')).not.toBe(
@@ -69,7 +73,7 @@ describe('gateway handler', () => {
     expect(second.headers.has('set-cookie')).toBe(false);
     expect(t.fetchMock).toHaveBeenCalledTimes(1);
     expect(t.fetchMock.mock.calls[0]?.[0].url).toBe(
-      'https://web-origin.vercel.app/about'
+      'https://marketing-origin.example/about'
     );
   });
 
@@ -110,12 +114,12 @@ describe('gateway handler', () => {
     expect(second.headers.has('set-cookie')).toBe(false);
   });
 
-  it('bypasses cache for auth cookies and Authorization, keeping them intact', async () => {
+  it('sends auth cookies and Authorization to web-rest uncached, keeping them intact', async () => {
     const t = setup(() => new Response('private'));
     const withCookie = await t.call('/about', {
       headers: { cookie: 'sb-x-auth-token=1' },
     });
-    expect(withCookie.headers.get('x-gateway-cache')).toBe('BYPASS');
+    expect(withCookie.headers.get('x-gateway-cache')).toBe('FAMILY');
     const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
     expect(sent.headers.get('cookie')).toBe('sb-x-auth-token=1');
     await t.call('/about', { headers: { authorization: 'Bearer t' } });
@@ -144,13 +148,13 @@ describe('gateway handler', () => {
         new Response(null, {
           status: 307,
           headers: [
-            ['location', 'https://web-origin.vercel.app/login?x=1'],
+            ['location', 'https://marketing-origin.example/login?x=1'],
             ['set-cookie', 'a=1'],
             ['set-cookie', 'b=2'],
           ],
         })
     );
-    const res = await t.call('/personal/tasks', {
+    const res = await t.call('/about', {
       method: 'POST',
       body: 'payload',
     });
@@ -166,7 +170,7 @@ describe('gateway handler', () => {
 
   it('maps an origin-host returnUrl in the sign-in redirect to the public host', async () => {
     const returnUrl =
-      'https://web-origin.vercel.app/verify-token?nextUrl=%2Fpersonal';
+      'https://marketing-origin.example/verify-token?nextUrl=%2Fpersonal';
     const t = setup(
       () =>
         new Response(null, {
@@ -176,7 +180,7 @@ describe('gateway handler', () => {
           },
         })
     );
-    const res = await t.call('/personal');
+    const res = await t.call('/about');
     const location = new URL(res.headers.get('location') ?? '');
     expect(location.origin).toBe('https://tuturuuu.com');
     expect(location.pathname).toBe('/login');
@@ -192,11 +196,11 @@ describe('gateway handler', () => {
           status: 307,
           headers: {
             location:
-              '/login?returnUrl=https%3A%2F%2Fweb-origin.vercel.app%2Fx&lang=vi',
+              '/login?returnUrl=https%3A%2F%2Fmarketing-origin.example%2Fx&lang=vi',
           },
         })
     );
-    const res = await t.call('/personal');
+    const res = await t.call('/about');
     const location = res.headers.get('location') ?? '';
     expect(location.startsWith('/login?')).toBe(true);
     const parsed = new URL(location, 'https://tuturuuu.com');
@@ -211,11 +215,11 @@ describe('gateway handler', () => {
         new Response(null, {
           status: 307,
           headers: {
-            location: `https://tuturuuu.com/login?${siblings.split('&').slice(0, 2).join('&')}&returnUrl=https%3A%2F%2Fweb-origin.vercel.app%2Fx%3Fa%3D1&${siblings.split('&').slice(2).join('&')}`,
+            location: `https://tuturuuu.com/login?${siblings.split('&').slice(0, 2).join('&')}&returnUrl=https%3A%2F%2Fmarketing-origin.example%2Fx%3Fa%3D1&${siblings.split('&').slice(2).join('&')}`,
           },
         })
     );
-    const res = await t.call('/personal');
+    const res = await t.call('/about');
     expect(res.headers.get('location')).toBe(
       'https://tuturuuu.com/login?sig=a%2Fb%2Bc%3D%3D&note=hello%20world&returnUrl=https%3A%2F%2Ftuturuuu.com%2Fx%3Fa%3D1&tag=1&tag=2&flag'
     );
@@ -227,13 +231,13 @@ describe('gateway handler', () => {
     const t = setup(
       () => new Response(null, { status: 307, headers: { location } })
     );
-    const res = await t.call('/personal');
+    const res = await t.call('/about');
     expect(res.headers.get('location')).toBe(location);
   });
 
   it('replaces client X-Forwarded-Host/-Proto with the public host', async () => {
     const t = setup(() => new Response('ok'));
-    await t.call('/personal', {
+    await t.call('/about', {
       headers: {
         'x-forwarded-host': 'evil.example.com',
         'x-forwarded-proto': 'http',
@@ -247,27 +251,22 @@ describe('gateway handler', () => {
   it('drops client X-Forwarded-Host when no public host is configured', async () => {
     const t = setup(() => new Response('ok'));
     await t.call(
-      '/personal',
+      '/about',
       { headers: { 'x-forwarded-host': 'evil.example.com' } },
-      { WEB_ORIGIN: ENV.WEB_ORIGIN }
+      { MARKETING_ORIGIN: MARKETING, GATEWAY_MARKETING_GROUPS: 'company' }
     );
     const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
     expect(sent.headers.has('x-forwarded-host')).toBe(false);
   });
 
-  it('GATEWAY_MODE=passthrough skips the cache for public pages too', async () => {
+  it('fails closed without the web-rest binding and on loops', async () => {
     const t = setup(() => new Response('x'));
-    const env = { ...ENV, GATEWAY_MODE: 'passthrough' };
-    const a = await t.call('/about', undefined, env);
-    await t.call('/about', undefined, env);
-    expect(a.headers.get('x-gateway-cache')).toBe('PASSTHROUGH');
-    expect(t.fetchMock).toHaveBeenCalledTimes(2);
-    expect(t.cache.entries.size).toBe(0);
-  });
-
-  it('fails closed without an origin and on loops', async () => {
-    const t = setup(() => new Response('x'));
-    expect((await t.call('/about', undefined, {})).status).toBe(500);
+    const unbound = await t.call('/personal', undefined, {
+      PUBLIC_HOST: 'tuturuuu.com',
+    });
+    expect(unbound.status).toBe(503);
+    expect(await unbound.text()).toBe('gateway web family unavailable');
+    expect((await t.call('/about', undefined, {})).status).toBe(503);
     expect(
       (await t.call('/about', { headers: { 'x-gateway-hop': '1' } })).status
     ).toBe(508);
@@ -279,6 +278,8 @@ describe('gateway handler', () => {
       throw new Error('down');
     });
     expect((await t.call('/about')).status).toBe(502);
+    expect((await t.call('/about', { method: 'POST' })).status).toBe(502);
+    // A throwing family answers 502 too.
     expect((await t.call('/login')).status).toBe(502);
   });
 
@@ -290,7 +291,7 @@ describe('gateway handler', () => {
 
     it('never stores or lets the edge keep an empty 200 asset', async () => {
       const t = setup(() => png(null));
-      const first = await t.call('/media/logos/transparent.png');
+      const first = await t.call('/assets/logo.png');
       expect(first.headers.get('x-gateway-cache')).toBe('BYPASS');
       expect(first.headers.get('x-gateway-bypass')).toBe('empty-body');
       expect(first.headers.get('cache-control')).toBe('no-store');
@@ -299,14 +300,14 @@ describe('gateway handler', () => {
 
     it('never stores a 200 whose content-length is zero', async () => {
       const t = setup(() => png('', { 'content-length': '0' }));
-      const first = await t.call('/media/logos/transparent.png');
+      const first = await t.call('/assets/logo.png');
       expect(first.headers.get('x-gateway-bypass')).toBe('empty-body');
       expect(t.cache.entries.size).toBe(0);
     });
 
     it('never stores an asset shorter than the declared length', async () => {
       const t = setup(() => png('abc', { 'content-length': '2572' }));
-      const first = await t.call('/media/logos/transparent.png');
+      const first = await t.call('/assets/logo.png');
       expect(first.headers.get('x-gateway-bypass')).toBe('truncated-body');
       expect(first.headers.get('cache-control')).toBe('no-store');
       expect(await first.text()).toBe('abc');
@@ -318,23 +319,23 @@ describe('gateway handler', () => {
       const t = setup(() =>
         broken ? png(null) : png('PNGDATA', { 'content-length': '7' })
       );
-      await t.call('/media/logos/transparent.png');
+      await t.call('/assets/logo.png');
       expect(t.cache.entries.size).toBe(1);
       t.advance(600);
       broken = true;
-      const stale = await t.call('/media/logos/transparent.png');
+      const stale = await t.call('/assets/logo.png');
       expect(stale.headers.get('x-gateway-cache')).toBe('STALE');
       expect(await stale.text()).toBe('PNGDATA');
-      const next = await t.call('/media/logos/transparent.png');
+      const next = await t.call('/assets/logo.png');
       expect(await next.text()).toBe('PNGDATA');
     });
 
     it('still stores a complete asset and serves it from the cache', async () => {
       const t = setup(() => png('PNGDATA', { 'content-length': '7' }));
-      const first = await t.call('/media/logos/transparent.png');
+      const first = await t.call('/assets/logo.png');
       expect(first.headers.get('x-gateway-cache')).toBe('MISS');
       expect(await first.text()).toBe('PNGDATA');
-      const second = await t.call('/media/logos/transparent.png');
+      const second = await t.call('/assets/logo.png');
       expect(second.headers.get('x-gateway-cache')).toBe('HIT');
       expect(await second.text()).toBe('PNGDATA');
       expect(t.fetchMock).toHaveBeenCalledTimes(1);
@@ -342,7 +343,7 @@ describe('gateway handler', () => {
 
     it('stores a streamed asset with no declared length when it has bytes', async () => {
       const t = setup(() => png(new Blob(['PNGDATA']).stream()));
-      const first = await t.call('/media/logos/transparent.png');
+      const first = await t.call('/assets/logo.png');
       expect(first.headers.get('x-gateway-cache')).toBe('MISS');
       expect(await first.text()).toBe('PNGDATA');
       expect(t.cache.entries.size).toBe(1);
@@ -365,31 +366,36 @@ describe('gateway handler', () => {
       expect(await vi.text()).toBe('marketing-origin.example');
     });
 
-    it('keeps groups without the flag on the web origin', async () => {
+    it('keeps groups without the flag on the web-rest family', async () => {
       const t = setup((r) => new Response(hostOf(r)));
       const response = await t.call('/blog', undefined, FLAGGED);
-      expect(await response.text()).toBe('web-origin.vercel.app');
+      expect(await response.text()).toBe('tuturuuu.com');
       const held = await t.call('/download', undefined, FLAGGED);
-      expect(await held.text()).toBe('web-origin.vercel.app');
+      expect(await held.text()).toBe('tuturuuu.com');
     });
 
     it('falls back to web when the flag is on but no marketing origin is set', async () => {
       const t = setup((r) => new Response(hostOf(r)));
       const response = await t.call('/privacy', undefined, {
         ...ENV,
+        MARKETING_ORIGIN: undefined,
         GATEWAY_MARKETING_GROUPS: 'legal',
       });
-      expect(await response.text()).toBe('web-origin.vercel.app');
+      expect(response.headers.get('x-gateway-family')).toBe('web-rest');
+      expect(await response.text()).toBe('tuturuuu.com');
     });
 
     it('turning the flag off returns the group to web without a stale cross-origin hit', async () => {
       const t = setup((r) => new Response(hostOf(r)));
       await t.call('/privacy', undefined, FLAGGED);
-      const off = await t.call('/privacy', undefined, ENV);
-      expect(await off.text()).toBe('web-origin.vercel.app');
+      const off = await t.call('/privacy', undefined, {
+        ...ENV,
+        GATEWAY_MARKETING_GROUPS: '',
+      });
+      expect(await off.text()).toBe('tuturuuu.com');
     });
 
-    it('keeps signed-in and Next-specific requests on the web origin', async () => {
+    it('keeps signed-in and Next-specific requests on the web families', async () => {
       const t = setup((r) => new Response(hostOf(r)));
       const cookie = await t.call(
         '/',
@@ -399,15 +405,15 @@ describe('gateway handler', () => {
           GATEWAY_MARKETING_GROUPS: 'home',
         }
       );
-      expect(await cookie.text()).toBe('web-origin.vercel.app');
+      expect(await cookie.text()).toBe('tuturuuu.com');
       const auth = await t.call(
         '/privacy',
         { headers: { authorization: 'Bearer x' } },
         FLAGGED
       );
-      expect(await auth.text()).toBe('web-origin.vercel.app');
+      expect(await auth.text()).toBe('tuturuuu.com');
       const rsc = await t.call('/about', { headers: { rsc: '1' } }, FLAGGED);
-      expect(await rsc.text()).toBe('web-origin.vercel.app');
+      expect(await rsc.text()).toBe('tuturuuu.com');
       const anon = await t.call('/about', undefined, FLAGGED);
       expect(await anon.text()).toBe('marketing-origin.example');
     });
@@ -427,7 +433,7 @@ describe('gateway handler', () => {
       );
     });
 
-    it('serves /assets from the marketing origin and falls back to web when it is not set', async () => {
+    it('serves /assets from the marketing origin and falls back to web-rest when it is not set', async () => {
       const a = setup((r) => new Response(hostOf(r)));
       const withOrigin = await a.call('/assets/app-abc.js', undefined, {
         ...ENV,
@@ -436,9 +442,58 @@ describe('gateway handler', () => {
       expect(await withOrigin.text()).toBe('marketing-origin.example');
       // A fresh cache: a stored asset outlives the flag for at most one cache window.
       const b = setup((r) => new Response(hostOf(r)));
-      const without = await b.call('/assets/app-abc.js', undefined, ENV);
-      expect(await without.text()).toBe('web-origin.vercel.app');
+      const without = await b.call('/assets/app-abc.js', undefined, {
+        ...ENV,
+        MARKETING_ORIGIN: undefined,
+      });
+      expect(await without.text()).toBe('tuturuuu.com');
     });
+  });
+});
+
+describe('web-rest fallback without an HTTP origin', () => {
+  it('serves an unmatched path from web-rest while no family is flagged', async () => {
+    const t = setup((r) => new Response(new URL(r.url).host));
+    for (const env of [ENV, { ...ENV, GATEWAY_WEB_FAMILIES: '' }]) {
+      const res = await t.call('/personal/tasks?x=1', undefined, env);
+      expect(await res.text()).toBe('tuturuuu.com');
+      expect(res.headers.get('x-gateway-cache')).toBe('FAMILY');
+      expect(res.headers.get('x-gateway-family')).toBe('web-rest');
+    }
+    const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
+    expect(sent.url).toBe('https://tuturuuu.com/personal/tasks?x=1');
+  });
+
+  it('answers 503 without the binding and never fetches an origin', async () => {
+    const t = setup(() => new Response('origin'));
+    const { WEB_FAMILY_WEB_REST: _unbound, ...env } = ENV;
+    for (const path of ['/personal/tasks', '/login', '/media/a.png']) {
+      const res = await t.call(path, undefined, env);
+      expect(res.status).toBe(503);
+      expect(res.headers.get('cache-control')).toBe('no-store');
+    }
+    expect(t.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores GATEWAY_MODE=passthrough and a deprecated WEB_ORIGIN', async () => {
+    const t = setup((r) => new Response(new URL(r.url).host));
+    const env: Env = {
+      ...ENV,
+      GATEWAY_MODE: 'passthrough',
+      WEB_ORIGIN: 'https://origin.tuturuuu.com',
+    };
+    const res = await t.call('/personal', undefined, env);
+    expect(res.headers.get('x-gateway-family')).toBe('web-rest');
+    const page = await t.call('/about', undefined, env);
+    expect(await page.text()).toBe('marketing-origin.example');
+    expect(page.headers.get('x-gateway-cache')).toBe('MISS');
+    for (const [request] of t.fetchMock.mock.calls) {
+      expect(new URL((request as Request).url).host).not.toBe(
+        'origin.tuturuuu.com'
+      );
+    }
+    const { WEB_FAMILY_WEB_REST: _unbound, ...unbound } = env;
+    expect((await t.call('/personal', undefined, unbound)).status).toBe(503);
   });
 });
 
@@ -472,7 +527,7 @@ describe('bare mount paths', () => {
     expect(t.fetchMock).not.toHaveBeenCalled();
   });
 
-  it('keeps unlisted, unbound, nested and lookalike paths on the web origin', async () => {
+  it('keeps unlisted, unbound, nested and lookalike paths on web-rest', async () => {
     const t = setup(() => new Response('web'));
     const { env, fetch } = mountEnv('/learn,/tasks');
     for (const path of [

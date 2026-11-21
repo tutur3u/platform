@@ -184,3 +184,37 @@ export function vinextFamilyTarget(
   }
   return { id, binding: binding as ServiceBinding, path: url.pathname };
 }
+
+/**
+ * The fallback family (web-rest) for a PUBLIC_HOST request no flagged family
+ * claimed: an unprefixed `/_next/static/*`, another builder's `/_f/<id>/*`, or
+ * a path whose own family is unflagged or unbound. Its binding alone admits it
+ * (the GATEWAY_WEB_FAMILIES flag does not), and null means the gateway fails
+ * closed: there is no HTTP origin behind the families.
+ */
+export function webFallbackTarget(
+  request: Request,
+  env: Env,
+  table: WebRouteTable = webRouteTable
+): WebFamilyTarget | null {
+  const url = new URL(request.url);
+  if (!env.PUBLIC_HOST || url.host !== env.PUBLIC_HOST) return null;
+  const family = table.families.find(
+    (candidate) => candidate.id === table.fallback
+  );
+  const binding = family
+    ? (env as unknown as Record<string, unknown>)[family.binding]
+    : undefined;
+  if (
+    !family ||
+    !binding ||
+    typeof (binding as Partial<ServiceBinding>).fetch !== 'function'
+  ) {
+    return null;
+  }
+  return {
+    id: family.id,
+    binding: binding as ServiceBinding,
+    path: url.pathname,
+  };
+}
