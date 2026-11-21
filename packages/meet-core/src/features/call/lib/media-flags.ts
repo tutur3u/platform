@@ -6,9 +6,17 @@
 export type MeetMediaFlags = {
   /** Switch subscribed camera layers from tile size and receiver health. */
   layerSwitching: boolean;
+  /** Ask the Opus encoder for discontinuous transmission during silence. */
+  opusDtx: boolean;
+  /** Drop the full camera layer and frame rate while the encoder is CPU-bound. */
+  cpuAdaptation: boolean;
 };
 
-const DEFAULT_FLAGS: MeetMediaFlags = { layerSwitching: true };
+const DEFAULT_FLAGS: MeetMediaFlags = {
+  layerSwitching: true,
+  opusDtx: true,
+  cpuAdaptation: true,
+};
 export const MEET_MEDIA_FLAGS_STORAGE_KEY = 'tumeet:media-flags';
 
 export function readMeetMediaFlags(

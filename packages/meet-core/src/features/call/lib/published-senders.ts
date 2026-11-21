@@ -1,5 +1,6 @@
 import type { CloudflareSfuTrack } from '@tuturuuu/realtime/meet';
 import { type LocalTrackPlan, localTrackSource } from './negotiation';
+import { contentHintFor } from './sender-profile';
 import type { SfuTracksResponse } from './sfu-response';
 import type { MeetSignaling } from './signaling';
 
@@ -56,6 +57,7 @@ async function updateSenders({
       continue;
     }
     // Disabled device tracks send silence/black frames, preventing SFU expiry.
+    source.contentHint = contentHintFor(plan.kind);
     await sender?.replaceTrack(source);
     remaining.push(plan);
   }

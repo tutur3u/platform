@@ -154,7 +154,15 @@ it('advertises three ASCII-ordered RIDs and adapts an unsupported browser with a
   expect(initialSendEncodings('video', 50, false)).toEqual([
     expect.objectContaining({ scaleResolutionDownBy: 2 }),
   ]);
-  expect(initialSendEncodings('audio', 50)).toEqual([{ maxBitrate: 48000 }]);
+  expect(initialSendEncodings('audio', 50)).toEqual([
+    { maxBitrate: 48000, priority: 'high', networkPriority: 'high' },
+  ]);
+  expect(initialSendEncodings('screen', 50)[0]).toMatchObject({
+    priority: 'medium',
+  });
+  expect(
+    initialSendEncodings('video', 50).every((layer) => layer.priority === 'low')
+  ).toBe(true);
 });
 
 it.each([

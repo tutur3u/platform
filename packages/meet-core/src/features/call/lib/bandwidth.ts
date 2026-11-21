@@ -2,6 +2,14 @@ import type { MeetRealtimeTrackKind } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useRef } from 'react';
 import type { CallState } from './call-state';
 import type { StageVideoWindow } from './room-actions';
+import {
+  applyDegradationPreference,
+  contentHintFor,
+  initialCpuPressure,
+  nextCpuPressure,
+  senderPriority,
+} from './sender-profile';
+import { readMeetMediaFlags } from './media-flags';
 
 export type BandwidthMode = 'auto' | 'saver' | 'quality';
 type Audience = {
@@ -66,7 +74,12 @@ export function initialSendEncodings(
   participants: number,
   simulcast = true
 ) {
-  const budget = encodingBudget(kind, 'auto', null, null, { participants });
+  const priority = senderPriority(kind);
+  const budget = {
+    ...encodingBudget(kind, 'auto', null, null, { participants }),
+    priority,
+    networkPriority: priority,
+  };
   if (kind !== 'video' || !simulcast) return [budget];
   return CAMERA_LAYERS.map(({ rid, scale, share }) => ({
     ...budget,
@@ -84,7 +97,8 @@ export function planSenderEncodings(
   hasAudience: boolean,
   encodings: RTCRtpEncodingParameters[],
   videoSenders = 1,
-  recovering = false
+  recovering = false,
+  cpuLimited = false
 ) {
   const budget = encodingBudget(
     kind,
@@ -116,9 +130,29 @@ export function planSenderEncodings(
         ? CAMERA_LAYERS.find(({ rid }) => rid === encoding.rid)
         : undefined;
     const cheap = mode === 'saver' || maxBitrate < 360000;
+    // A CPU-bound encoder sheds the full layer and frame rate; a screen keeps
+    // its resolution and gives up frames.
+    const cpu =
+      cpuLimited && visual
+        ? {
+            maxFramerate: Math.min(
+              budget.maxFramerate ?? 30,
+              kind === 'screen' ? 5 : 15
+            ),
+            ...(kind === 'video' && !layer
+              ? {
+                  scaleResolutionDownBy: Math.max(
+                    2,
+                    budget.scaleResolutionDownBy ?? 1
+                  ),
+                }
+              : {}),
+          }
+        : {};
     return {
       ...encoding,
       ...budget,
+      ...cpu,
       ...(visual
         ? {
             maxBitrate: Math.max(
@@ -131,7 +165,7 @@ export function planSenderEncodings(
       active:
         hasAudience &&
         (!visual || (!severe && !(kind === 'video' && recovering))) &&
-        !(layer?.rid === 'f' && cheap),
+        !(layer?.rid === 'f' && (cheap || cpuLimited)),
     };
   });
 }
@@ -157,6 +191,7 @@ export function watchSenderBandwidth({
   let healthy = 0;
   let recoverySamples = 0;
   let previousPeer: RTCPeerConnection | null = null;
+  let cpu = initialCpuPressure();
   const applied = new WeakMap<RTCRtpSender, string>();
   const update = async () => {
     if (running || !active) return;
@@ -169,11 +204,19 @@ export function watchSenderBandwidth({
       recoverySamples = 0;
       constrained = false;
       healthy = 0;
+      cpu = initialCpuPressure();
     }
     running = true;
     try {
       const network: Network = { available: null, rtt: null, loss: null };
+      let cpuLimited: boolean | null = null;
       for (const stat of (await pc.getStats()).values()) {
+        if (
+          stat.type === 'outbound-rtp' &&
+          stat.kind === 'video' &&
+          typeof stat.qualityLimitationReason === 'string'
+        )
+          cpuLimited ||= stat.qualityLimitationReason === 'cpu';
         if (
           stat.type === 'candidate-pair' &&
           stat.state === 'succeeded' &&
@@ -198,6 +241,8 @@ export function watchSenderBandwidth({
         )
           network.loss = Math.max(network.loss ?? 0, stat.fractionLost);
       }
+      if (readMeetMediaFlags().cpuAdaptation)
+        cpu = nextCpuPressure(cpu, cpuLimited, Date.now());
       const senders = [...readSenders().entries()];
       const videos = Math.max(
         1,
@@ -253,7 +298,8 @@ export function watchSenderBandwidth({
           hasAudience(),
           parameters.encodings,
           videos,
-          suspended
+          suspended,
+          cpu.limited
         );
         const signature = JSON.stringify(target);
         if (applied.get(sender) === signature) continue;
@@ -325,16 +371,20 @@ export function addLocalTransceiver(
   kind: MeetRealtimeTrackKind,
   count: number
 ) {
+  source.contentHint = contentHintFor(kind);
+  let transceiver: RTCRtpTransceiver;
   try {
-    return pc.addTransceiver(source, {
+    transceiver = pc.addTransceiver(source, {
       direction: 'sendonly',
       sendEncodings: initialSendEncodings(kind, count),
     });
   } catch (error) {
     if (kind !== 'video') throw error;
-    return pc.addTransceiver(source, {
+    transceiver = pc.addTransceiver(source, {
       direction: 'sendonly',
       sendEncodings: initialSendEncodings(kind, count, false),
     });
   }
+  void applyDegradationPreference(transceiver.sender, kind);
+  return transceiver;
 }

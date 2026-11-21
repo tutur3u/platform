@@ -1568,6 +1568,30 @@ Sending pauses when the participant is alone and resumes when an audience joins.
 Sender parameter failures preserve the working transport rather than forcing a
 reconnect. Initial encodings are capped before negotiation.
 
+Speech is sent first. Microphone senders carry high send and network priority,
+screen share and screen audio carry medium priority, and cameras carry low
+priority. A short uplink therefore gives up camera quality before screen
+detail, and screen detail before speech. The publisher asks its Opus encoder
+for in-band FEC, which rebuilds a lost frame from the next packet, and for DTX,
+which sends almost nothing during silence. Cameras hint `motion`, screens
+`detail`, speech `speech`, and screen audio `music`. Screen senders prefer
+`maintain-resolution`, so text stays legible while the frame rate drops.
+
+When the browser reports a camera or screen encoder limited by CPU
+(`qualityLimitationReason: cpu`), the publisher sheds load at once:
+
+- The camera drops its full layer and caps its frame rate at 15 fps.
+- A single-encoding camera halves its resolution.
+- A screen keeps its resolution and drops to 5 fps.
+
+Recovery needs ten clean 3-second samples. That run doubles, up to 80 samples,
+when the limit returns within a minute of recovering, and resets after ten quiet
+minutes. Missing statistics neither recover nor relapse.
+
+Support can turn either behaviour off on one device through `tumeet:media-flags`
+with `{"opusDtx":false}` or `{"cpuAdaptation":false}`. Regression coverage:
+`sender-profile.test.ts` and `bandwidth.test.ts`.
+
 ### Simulcast layers
 
 Cameras publish three RID simulcast layers: `f` (full), `h` (half) and `q`

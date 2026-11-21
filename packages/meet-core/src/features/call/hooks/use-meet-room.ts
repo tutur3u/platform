@@ -18,6 +18,7 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
+import { withOpusResilience } from '../lib/audio-sdp';
 import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
@@ -359,12 +360,6 @@ export function useMeetRoom({
           );
           if (!source || source.readyState === 'ended') continue;
 
-          source.contentHint =
-            source.kind === 'audio'
-              ? 'speech'
-              : plan.kind === 'screen'
-                ? 'detail'
-                : 'motion';
           const transceiver = addLocalTransceiver(
             pc,
             source,
@@ -405,7 +400,9 @@ export function useMeetRoom({
 
           if (publishPcRef.current !== pc) return;
           assertPublishedResponse(answer);
-          await pc.setRemoteDescription(answer.sessionDescription);
+          await pc.setRemoteDescription(
+            withOpusResilience(answer.sessionDescription)
+          );
           await waitForPeerConnection(pc);
           if (publishPcRef.current !== pc) return;
           publishedRef.current = [
