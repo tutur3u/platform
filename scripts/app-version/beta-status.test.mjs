@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { shouldReplace, statusDocument } from './beta-status.mjs';
+import {
+  recordShardOf,
+  shouldReplace,
+  statusDocument,
+} from './beta-status.mjs';
 
 const base = {
   platform: 'ios',
@@ -108,7 +112,7 @@ function fakeReleases(
   };
   t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
     calls.push(`${options.method ?? 'GET'} ${url}`);
-    if (String(url).includes('uploads.github.com')) {
+    if (new URL(url).hostname === 'uploads.github.com') {
       const release = byId(Number(/releases\/(\d+)\/assets/u.exec(url)[1]));
       const name = new URL(url).searchParams.get('name');
       release.assets.push({
@@ -228,4 +232,16 @@ test('pointer repair follows release pagination to the end', async (t) => {
     .get('app-release-status')
     .assets.find((asset) => asset.name === 'ios.json');
   assert.equal(pointer.body.build, 1001000);
+});
+
+test('reads record shard numbers without building a pattern from the platform', () => {
+  assert.equal(recordShardOf('app-release-status-ios-2000', 'ios'), 2000);
+  assert.equal(recordShardOf('app-release-status-android-2', 'android'), 2);
+  assert.equal(recordShardOf('app-release-status-ios-2000', 'android'), null);
+  assert.equal(recordShardOf('app-release-status-ios-2000-x', 'ios'), null);
+  assert.equal(recordShardOf('app-release-status-ios-', 'ios'), null);
+  assert.equal(recordShardOf('app-release-status', 'ios'), null);
+  assert.equal(recordShardOf(undefined, 'ios'), null);
+  assert.throws(() => recordShardOf('app-release-status-.*-1', '.*'));
+  assert.throws(() => recordShardOf('x', 'windows'));
 });

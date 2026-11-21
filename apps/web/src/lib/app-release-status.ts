@@ -75,6 +75,17 @@ export function parseReleaseStatus(
   };
 }
 
+// Shard number of an `app-release-status-<platform>-<shard>` tag, or null.
+// Matched by prefix with a fixed digit pattern, so the platform never becomes
+// part of a regular expression.
+function shardOf(tag: unknown, platform: ReleaseStatusPlatform) {
+  if (!RELEASE_STATUS_PLATFORMS.includes(platform)) return null;
+  const prefix = `${STATUS_TAG}-${platform}-`;
+  if (typeof tag !== 'string' || !tag.startsWith(prefix)) return null;
+  const shard = tag.slice(prefix.length);
+  return /^\d{1,9}$/u.test(shard) ? Number(shard) : null;
+}
+
 // Shard release tags for a platform, highest shard first, from a
 // `git/matching-refs/tags/app-release-status-` response.
 export function shardTagsFromRefs(
@@ -82,15 +93,13 @@ export function shardTagsFromRefs(
   refs: unknown
 ): string[] {
   if (!Array.isArray(refs)) return [];
-  const shardRef = new RegExp(
-    `^refs/tags/(${STATUS_TAG}-${platform}-(\\d{1,9}))$`,
-    'u'
-  );
   return refs
     .map((entry) => {
       const ref = (entry as { ref?: unknown })?.ref;
-      const match = typeof ref === 'string' ? shardRef.exec(ref) : null;
-      return match?.[1] ? { tag: match[1], shard: Number(match[2]) } : null;
+      if (typeof ref !== 'string' || !ref.startsWith('refs/tags/')) return null;
+      const tag = ref.slice('refs/tags/'.length);
+      const shard = shardOf(tag, platform);
+      return shard === null ? null : { tag, shard };
     })
     .filter((entry) => entry !== null)
     .sort((a, b) => b.shard - a.shard)
@@ -110,14 +119,11 @@ export function selectHighestRecord(
   releases: unknown
 ): ReleaseStatusRecord | null {
   if (!Array.isArray(releases)) return null;
-  const shardTag = new RegExp(`^${STATUS_TAG}-${platform}-(\\d{1,9})$`, 'u');
   const shards = releases
     .map((release) => {
       const tag = (release as { tag_name?: unknown })?.tag_name;
-      const match = typeof tag === 'string' ? shardTag.exec(tag) : null;
-      return match
-        ? { tag: tag as string, shard: Number(match[1]), release }
-        : null;
+      const shard = shardOf(tag, platform);
+      return shard === null ? null : { tag: tag as string, shard, release };
     })
     .filter((entry) => entry !== null)
     .sort((a, b) => b.shard - a.shard);

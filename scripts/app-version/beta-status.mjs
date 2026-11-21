@@ -128,9 +128,22 @@ async function readPublished(asset, fetchImpl = fetch) {
 
 const RECORD = /^(android|desktop|ios)-([1-9]\d{0,9})\.json$/u;
 
+/**
+ * Shard number of an `app-release-status-<platform>-<shard>` tag, or null.
+ * Matched by prefix with a fixed digit pattern, so the platform name never
+ * becomes part of a regular expression.
+ */
+export function recordShardOf(tag, platform) {
+  if (!Object.hasOwn(STATUS_PLATFORMS, platform))
+    throw new Error(`Unknown beta platform ${platform}`);
+  const prefix = `${STATUS_TAG}-${platform}-`;
+  if (typeof tag !== 'string' || !tag.startsWith(prefix)) return null;
+  const shard = tag.slice(prefix.length);
+  return /^\d{1,9}$/u.test(shard) ? Number(shard) : null;
+}
+
 /** Highest uploaded per-build record for a platform, across every shard. */
 async function highestRecord(request, platform, fetchImpl) {
-  const shardTag = new RegExp(`^${STATUS_TAG}-${platform}-(\\d+)$`, 'u');
   const shards = [];
   // Scan to exhaustion: a partial scan could miss a newer record and repair
   // the pointer with an older build.
@@ -144,8 +157,8 @@ async function highestRecord(request, platform, fetchImpl) {
     if (!Array.isArray(releases))
       throw new Error('Release list is unreadable; pointer left as is');
     for (const release of releases) {
-      const match = shardTag.exec(release.tag_name ?? '');
-      if (match) shards.push({ shard: Number(match[1]), release });
+      const shard = recordShardOf(release.tag_name, platform);
+      if (shard !== null) shards.push({ shard, release });
     }
     if (releases.length < 100) break;
   }
