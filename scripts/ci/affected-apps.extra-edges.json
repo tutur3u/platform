@@ -1,7 +1,12 @@
 {
+  "apps/ai/start-bridge.config": ["apps/learn"],
   "apps/apps/cloudflare/": ["apps/finance", "apps/pay"],
+  "apps/apps/cloudflare/worker": ["packages/start-bridge"],
+  "apps/apps/src/native/api.server": ["packages/start-bridge"],
   "apps/calendar/messages/": ["packages/ui"],
   "apps/calendar/src/lib/calendar/": ["apps/cron-control"],
+  "apps/chat/start-bridge.config": ["apps/learn"],
+  "apps/cms/start-bridge.config": ["apps/learn"],
   "apps/contacts/messages/": ["packages/ui"],
   "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
     "packages/users-core"
@@ -15,15 +20,20 @@
   "apps/database/supabase/migrations/": ["apps/web", "packages/meet-core"],
   "apps/devbox-control/src/": ["packages/sdk"],
   "apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/": ["packages/ui"],
+  "apps/drive/start-bridge.config": ["apps/learn"],
   "apps/finance/messages/": ["packages/ui"],
   "apps/finance/src/lib/mounted-auth": ["apps/web"],
+  "apps/finance/start-bridge.config": ["apps/learn"],
   "apps/forms/src/features/forms/": ["packages/meet-core"],
+  "apps/forms/start-bridge.config": ["apps/learn"],
   "apps/gateway/src/": ["apps/web"],
+  "apps/git/start-bridge.config": ["apps/learn"],
   "apps/infrastructure/e2e/fixtures/": ["apps/database"],
   "apps/infrastructure/src/lib/mobile-calendar/": ["apps/calendar"],
   "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
     "packages/users-core"
   ],
+  "apps/lms/cloudflare/worker": ["packages/start-bridge"],
   "apps/mail/src/app/[locale]/(dashboard)/[wsId]/": ["packages/ui"],
   "apps/marketing/": ["apps/gateway"],
   "apps/meet-realtime/src/": [
@@ -37,6 +47,7 @@
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
   "apps/mobile/store/": ["packages/roadmap-core"],
   "apps/nova/src/lib/": ["apps/web"],
+  "apps/nova/start-bridge.config": ["apps/learn"],
   "apps/rewise/src/lib/": ["apps/web"],
   "apps/roadmap/": ["packages/roadmap-core"],
   "apps/storefront/": ["apps/inventory"],
@@ -45,6 +56,8 @@
   "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/members/": [
     "apps/web"
   ],
+  "apps/teach/start-bridge.config": ["apps/learn"],
+  "apps/tools/start-bridge.config": ["apps/learn"],
   "apps/web/": [
     "apps/cron-control",
     "apps/database",

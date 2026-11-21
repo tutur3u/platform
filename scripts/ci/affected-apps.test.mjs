@@ -467,6 +467,65 @@ test('the committed extra-edges file covers the known undeclared imports and nam
       ),
       true
     );
+  for (const target of [
+    'apps/ai/start-bridge.config.ts',
+    'apps/chat/start-bridge.config.ts',
+    'apps/cms/start-bridge.config.ts',
+    'apps/drive/start-bridge.config.ts',
+    'apps/finance/start-bridge.config.ts',
+    'apps/forms/start-bridge.config.ts',
+    'apps/git/start-bridge.config.ts',
+    'apps/nova/start-bridge.config.ts',
+    'apps/teach/start-bridge.config.ts',
+    'apps/tools/start-bridge.config.ts',
+  ]) {
+    assert.equal(
+      coveredByExtraEdges(edges, target, 'apps/learn'),
+      true,
+      target
+    );
+    assert.equal(
+      coveredByExtraEdges(
+        edges,
+        target.replace(/\/[^/]+$/, '/src/unrelated.ts'),
+        'apps/learn'
+      ),
+      false,
+      target
+    );
+  }
+  assert.equal(
+    coveredByExtraEdges(
+      edges,
+      'apps/apps/cloudflare/worker.ts',
+      'packages/start-bridge'
+    ),
+    true
+  );
+  assert.equal(
+    coveredByExtraEdges(
+      edges,
+      'apps/apps/src/native/api.server.ts',
+      'packages/start-bridge'
+    ),
+    true
+  );
+  assert.equal(
+    coveredByExtraEdges(
+      edges,
+      'apps/lms/cloudflare/worker.ts',
+      'packages/start-bridge'
+    ),
+    true
+  );
+  assert.equal(
+    coveredByExtraEdges(
+      edges,
+      'apps/apps/cloudflare/native-browser-fence.mjs',
+      'packages/start-bridge'
+    ),
+    false
+  );
   const { dirs } = loadGraph(repoRoot);
   for (const [prefix, dependents] of Object.entries(edges))
     for (const dep of dependents)
