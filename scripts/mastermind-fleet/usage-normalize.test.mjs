@@ -168,3 +168,34 @@ test('keeps impossible dates out of observations and quota resets', () => {
   assert.equal(accounting.kind, 'partial');
   assert.deepEqual(buckets, []);
 });
+
+test('uses a valid reset when equally used quota windows disagree', () => {
+  const { accounts } = normalizeT3Quota(
+    {
+      providers: [
+        {
+          ...PROVIDER,
+          usageLimits: {
+            ...PROVIDER.usageLimits,
+            windows: [
+              {
+                kind: 'session',
+                usedPercent: 88,
+                resetsAt: '2026-11-31T19:00:00+07:00',
+              },
+              {
+                kind: 'session',
+                usedPercent: 88,
+                resetsAt: '2026-11-21T19:00:00+07:00',
+              },
+            ],
+          },
+        },
+      ],
+    },
+    NOW
+  );
+  assert.deepEqual(accounts[0].windows, [
+    { kind: 'session', usedPercent: 88, resetsAt: '2026-11-21T12:00:00.000Z' },
+  ]);
+});

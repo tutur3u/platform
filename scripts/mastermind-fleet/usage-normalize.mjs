@@ -62,17 +62,23 @@ function normalizeWindows(limits) {
         row.usedPercent >= 0 &&
         row.usedPercent <= 100
     );
-    const highest = candidates.sort(
-      (a, b) =>
-        b.usedPercent - a.usedPercent ||
-        (Date.parse(b.resetsAt) || 0) - (Date.parse(a.resetsAt) || 0)
-    )[0];
+    const highest = candidates
+      .map((window) => ({
+        usedPercent: window.usedPercent,
+        resetsAt: isoTime(window.resetsAt),
+      }))
+      .sort(
+        (a, b) =>
+          b.usedPercent - a.usedPercent ||
+          (b.resetsAt ? Date.parse(b.resetsAt) : -Number.MAX_VALUE) -
+            (a.resetsAt ? Date.parse(a.resetsAt) : -Number.MAX_VALUE)
+      )[0];
     return highest
       ? [
           {
             kind,
             usedPercent: highest.usedPercent,
-            resetsAt: isoTime(highest.resetsAt),
+            resetsAt: highest.resetsAt,
           },
         ]
       : [];
