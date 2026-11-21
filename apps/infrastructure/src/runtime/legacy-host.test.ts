@@ -49,7 +49,7 @@ describe('production legacy host', () => {
     // A path already under the mount keeps its prefix (no /admin/admin).
     ['/admin', 'https://tuturuuu.com/admin'],
     ['/admin/boards', 'https://tuturuuu.com/admin/boards'],
-    ['/api/build-info/x', 'https://tuturuuu.com/admin/api/build-info/x'],
+    ['/apiary', 'https://tuturuuu.com/admin/apiary'],
   ])('moves %s to %s', (path, location) => {
     expectMounted(redirect(`${LEGACY}${path}`), location);
   });
@@ -78,25 +78,31 @@ describe('production legacy host', () => {
     expectInsideMount(response);
   });
 
-  it.each([
-    ['GET', 301],
-    ['HEAD', 301],
-    ['POST', 308],
-    ['PUT', 308],
-    ['PATCH', 308],
-    ['DELETE', 308],
-    ['OPTIONS', 308],
-  ])('answers %s with a permanent %i', (method, status) => {
+  it.each(['GET', 'HEAD'])('answers a %s navigation with a 301', (method) => {
     expectMounted(
-      redirect(`${LEGACY}/api/boards?x=1`, { method }),
-      'https://tuturuuu.com/admin/api/boards?x=1',
-      status
+      redirect(`${LEGACY}/boards?x=1`, { method }),
+      'https://tuturuuu.com/admin/boards?x=1'
     );
   });
 
-  it('keeps serving the build identity for every method', () => {
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])(
+    'serves %s on the subdomain',
+    (method) => {
+      expect(redirect(`${LEGACY}/boards?x=1`, { method })).toBeNull();
+    }
+  );
+
+  it.each([
+    '/api',
+    '/api/build-info',
+    '/api/cron/calendar/sync',
+    '/api/v1/mobile-deployment/bundle?environment=production&platform=ios',
+    '/api/v1/infrastructure/devboxes',
+    '//api/v1/infrastructure/devboxes',
+    '/\\api/v1/x',
+  ])('serves the API path %s on the subdomain for every method', (path) => {
     for (const method of ['GET', 'HEAD', 'POST', 'DELETE'])
-      expect(redirect(`${LEGACY}/api/build-info`, { method })).toBeNull();
+      expect(redirect(`${LEGACY}${path}`, { method })).toBeNull();
   });
 
   it('matches the legacy host case-insensitively and ignores its port', () => {

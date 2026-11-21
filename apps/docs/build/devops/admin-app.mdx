@@ -58,10 +58,13 @@ permissions.
 4. **Redirect.** `infrastructure.tuturuuu.com` is a Workers Custom Domain of
    `tuturuuu-infrastructure`. The production Worker
    (`TUTURUUU_LEGACY_HOST_REDIRECT=1`, set by the production config rewrite)
-   answers 301 for GET/HEAD and 308 for other methods to
+   answers GET/HEAD page requests with a 301 to
    `https://tuturuuu.com/admin<path><query>`, with the raw query kept and
-   `Cache-Control: private, no-store`. `/api/build-info` keeps answering on the
-   subdomain. Staging artifacts never redirect.
+   `Cache-Control: private, no-store`. Machine traffic keeps answering on the
+   subdomain: every `/api` path (Cron Control, mobile and desktop deployment
+   bundles, devbox and SDK callers authenticate with bearer credentials that
+   HTTP clients drop on a cross-host redirect) and every other method. Staging
+   artifacts never redirect.
 
 Admin binds the shared abuse guard (`ABUSE_GUARD` → `tuturuuu-abuse-guard`,
 entrypoint `AbuseGuardEntrypoint`) with `ABUSE_GUARD_FAMILIES=proxy,ratelimit,integrity`

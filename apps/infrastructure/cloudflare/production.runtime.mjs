@@ -172,9 +172,13 @@ test(
       legacyAsset.headers.location,
       `https://tuturuuu.com/admin/assets/${asset}?v=1`
     );
-    // Monitoring keeps reading the build identity on the legacy host.
+    // Machine traffic keeps answering on the legacy host.
     const legacyBuildInfo = await get('/api/build-info');
     assert.notEqual(legacyBuildInfo.status, 301);
+    const legacyApi = await get(
+      '/api/v1/mobile-deployment/bundle?platform=ios'
+    );
+    assert.ok(![301, 308].includes(legacyApi.status));
     const refused = await get(
       '/__native-smoke-missing__',
       'unknown-host.invalid'
