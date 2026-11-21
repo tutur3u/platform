@@ -10,6 +10,7 @@ import {
   type UpstashRestRedisClient,
 } from '../upstash-rest';
 import { type ClientIpConfig, resolveClientIp } from './client-ip';
+import { isCloudflareIp } from './cloudflare-ip-ranges';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -187,10 +188,13 @@ export async function writeEdgeAbuseProtectionControls(
  * Check if an IP is blocked using the proxy family's edge cache.
  * Designed for Edge Runtime where speed > completeness.
  * The serverless layer provides full DB-backed check as backup.
+ * Cloudflare addresses are shared by every visitor behind them and are never
+ * blocked as a unit.
  */
 export async function isIPBlockedEdge(
   ipAddress: string
 ): Promise<BlockInfo | null> {
+  if (isCloudflareIp(ipAddress)) return null;
   try {
     const controls = await readEdgeAbuseProtectionControls();
     if (!controls.ipBlockingEnabled) return null;
@@ -221,6 +225,7 @@ export async function blockIPEdge(
   ipAddress: string,
   reason: BlockInfo['reason']
 ): Promise<BlockInfo | null> {
+  if (isCloudflareIp(ipAddress)) return null;
   try {
     const controls = await readEdgeAbuseProtectionControls();
     if (!controls.ipBlockingEnabled) return null;
@@ -278,6 +283,8 @@ async function recordEdgeAbuseSignal(
     windowMs: number;
   }
 ): Promise<BlockInfo | null> {
+  // A shared Cloudflare address never escalates toward a block.
+  if (isCloudflareIp(ipAddress)) return null;
   try {
     const redis = await getEdgeRedisClient();
     if (!redis) return null;

@@ -15,6 +15,7 @@ import {
   type ClientIpHeaders,
   resolveClientIp,
 } from './client-ip';
+import { isCloudflareIp } from './cloudflare-ip-ranges';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -284,8 +285,7 @@ export async function isIPBlocked(
   ipAddress: string,
   context?: AbuseProtectionLogContext
 ): Promise<BlockInfo | null> {
-  const redis = await getRedisClient();
-
+  const redis = isCloudflareIp(ipAddress) ? null : await getRedisClient();
   if (!redis) {
     return null;
   }
@@ -386,7 +386,7 @@ export async function blockIP(
   }
 
   try {
-    const redis = await getRedisClient();
+    const redis = isCloudflareIp(ipAddress) ? null : await getRedisClient();
     if (!redis) return;
 
     const sbAdmin = await getSupabaseAdmin();

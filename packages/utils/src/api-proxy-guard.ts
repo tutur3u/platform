@@ -9,6 +9,7 @@ import {
   getCachedTrustEntries,
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
+import { isCloudflareIp } from './abuse-protection/cloudflare-ip-ranges';
 import { guardApiProxyBody } from './api-proxy-body';
 
 export { clearApiProxyGuardLimiterCache } from './api-proxy-rate-limiters';
@@ -18,10 +19,9 @@ import {
   type TrustedProxyBypassRule,
 } from './api-proxy-bypass-rules';
 import {
-  forgetRateLimiters,
-  getRateLimiters,
-  type RateLimitResult,
-} from './api-proxy-rate-limiters';
+  enforceLimiterSubjects,
+  sharedEgressSubjects,
+} from './api-proxy-limiter-subjects';
 import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
@@ -1051,11 +1051,13 @@ export async function guardApiProxyRequest(
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
     if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
+      // Trust granted to a shared Cloudflare address never uplifts everyone.
+      const location = isCloudflareIp(ip)
+        ? []
+        : [identity.cidrKey, identity.ipKey];
       const lookupKeys = [
         identity.sessionKey,
-        ...(isRead
-          ? [identity.cidrKey, identity.ipKey, identity.workspaceKey]
-          : []),
+        ...(isRead ? [...location, identity.workspaceKey] : []),
       ].filter((key): key is string => key != null);
       const entries = await getCachedTrustEntries(lookupKeys);
 
@@ -1100,63 +1102,17 @@ export async function guardApiProxyRequest(
         effectiveCallerClass,
         trustSuffix
       );
-      const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
-      const limiters = await getRateLimiters(limiterPrefix, rateLimits);
-      const activeLimiters = limiters
-        ? isRead
-          ? limiters.get
-          : limiters.mutate
-        : [];
-
-      for (let index = 0; index < activeLimiters.length; index += 1) {
-        const { limiter, window } = activeLimiters[index]!;
-        let result: RateLimitResult | null | undefined;
-
-        try {
-          result = await limiter.limit(limiterId);
-        } catch {
-          forgetRateLimiters(limiterCacheKey);
-          break;
-        }
-
-        if (!result) {
-          forgetRateLimiters(limiterCacheKey);
-          break;
-        }
-
-        const { success, limit, remaining, reset } = result;
-
-        if (isDev) {
-          const consumed = limit - remaining;
-          const kind = isRead ? 'read' : 'mutate';
-          console.log(
-            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | id: ${limiterId} | path: ${req.nextUrl.pathname}`
-          );
-        }
-
-        if (!success) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((reset - Date.now()) / 1000)
-          );
-
-          return buildProxyRateLimitRejection(
-            req,
-            retryAfter,
-            {
-              'X-Proxy-Block-Reason': 'route-rate-limit',
-              'X-RateLimit-Limit': `${limit}`,
-              'X-RateLimit-Remaining': `${remaining}`,
-              'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-              'X-RateLimit-Caller-Class': effectiveCallerClass,
-              'X-RateLimit-Window': result.window ?? window,
-              'X-RateLimit-Policy':
-                options.diagnosticPolicyName ?? routePolicy.key,
-            },
-            'proxy-rate-limited'
-          );
-        }
-      }
+      // A verified actor or session keeps its own bucket on any address.
+      const subjects = (limiterId === identity.ipKey
+        ? await sharedEgressSubjects(req, ip, limiterPrefix, rateLimits)
+        : null) ?? [{ id: limiterId, prefix: limiterPrefix, rateLimits }];
+      const rejection = await enforceLimiterSubjects(req, subjects, {
+        callerClass: effectiveCallerClass,
+        isDev,
+        isRead,
+        policyName: options.diagnosticPolicyName ?? routePolicy.key,
+      });
+      if (rejection) return rejection;
     }
   }
 

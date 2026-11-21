@@ -135,6 +135,16 @@ visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
   warning (no value). Web then falls back to Vercel headers, which name the
   Cloudflare egress address.
 
+- **Shared Cloudflare addresses:** an address in Cloudflare's published ranges
+  (`packages/utils/src/abuse-protection/cloudflare-ip-ranges.ts`) is never
+  blocked as a unit, never escalates toward a block and never earns location
+  trust. Anonymous API requests from one are rate-limited per app token, per
+  site for CMS delivery reads, or per client otherwise, and every one also
+  counts against a bounded aggregate for the address
+  (`packages/utils/src/api-proxy-limiter-subjects.ts`). Verified sessions and
+  actors keep their own buckets, and a visitor address from a valid proof is
+  keyed per IP.
+
 Configuration, by name only:
 
 | Where | Name | Value |
