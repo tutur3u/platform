@@ -105,6 +105,8 @@ class MailReaderRecipientLine extends StatelessWidget {
     this.name,
     this.profile,
     this.date,
+    this.others = 0,
+    this.kind = 'to',
     super.key,
   });
 
@@ -113,12 +115,20 @@ class MailReaderRecipientLine extends StatelessWidget {
   final Map<String, dynamic>? profile;
   final DateTime? date;
 
+  /// Further recipients beyond [address], shown as a count.
+  final int others;
+
+  /// The recipient field [address] comes from: `to`, `cc` or `bcc`.
+  final String kind;
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => MailRecipientSummary(
       address: address,
       name: name,
       profile: profile,
+      others: others,
+      kind: kind,
       date:
           MailReaderDatePlacement.onSenderRow(
             context,

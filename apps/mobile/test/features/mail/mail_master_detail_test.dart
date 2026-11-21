@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byTooltip('Reply'), findsOneWidget);
     expect(find.byTooltip('Archive'), findsOneWidget);
-    expect(find.byTooltip('Star'), findsOneWidget);
+    expect(find.byTooltip('Trash'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

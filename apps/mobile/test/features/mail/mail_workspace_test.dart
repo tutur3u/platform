@@ -97,7 +97,7 @@ void main() {
     );
     await mount(tester);
     await tester.pump();
-    expect(find.text('Loading'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mail-inbox-skeleton')), findsOneWidget);
     bootstrap.complete({
       'mailboxes': [
         {'id': 'box', 'address': 'me@tuturuuu.com'},

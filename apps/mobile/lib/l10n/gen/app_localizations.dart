@@ -30649,12 +30649,6 @@ abstract class AppLocalizations {
   /// **'Unread'**
   String get notificationsUnreadLabel;
 
-  /// No description provided for @mailConversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation'**
-  String get mailConversation;
-
   /// No description provided for @mailAttachments.
   ///
   /// In en, this message translates to:
@@ -30721,17 +30715,29 @@ abstract class AppLocalizations {
   /// **'Mark as read'**
   String get mailMarkRead;
 
-  /// No description provided for @mailRetryProfiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry profiles'**
-  String get mailRetryProfiles;
-
   /// No description provided for @mailFrom.
   ///
   /// In en, this message translates to:
   /// **'From'**
   String get mailFrom;
+
+  /// No description provided for @mailThreadMessageCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 message} other{{count} messages}}'**
+  String mailThreadMessageCount(int count);
+
+  /// No description provided for @mailAttachmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 attachment} other{{count} attachments}}'**
+  String mailAttachmentCount(int count);
+
+  /// No description provided for @mailProfilesRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Names unavailable · Retry'**
+  String get mailProfilesRetry;
 
   /// No description provided for @fleetStatusNeedsUser.
   ///

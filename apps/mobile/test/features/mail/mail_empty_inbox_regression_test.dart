@@ -111,7 +111,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(MailReader), findsOneWidget);
         expect(find.byTooltip('Archive'), findsOneWidget);
-        expect(find.byTooltip('Star'), findsOneWidget);
+        expect(find.byTooltip('Trash'), findsOneWidget);
         await tester.tap(find.byTooltip('Archive'));
         // Bound the frame wait so the original infinite spinner fails quickly.
         await tester.pump();

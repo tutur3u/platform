@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_people_resolver.dart';
@@ -25,6 +24,7 @@ import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader_dock_plan.dart';
 import 'package:mobile/features/mail/view/mail_reader_header.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
+import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -127,6 +127,10 @@ class _MailReaderState extends State<MailReader> {
   Map<String, Map<String, dynamic>> _people = {};
   bool _peopleFailed = false;
   bool _peopleLoading = false;
+
+  /// A failed lookup retries once quietly before offering a manual retry.
+  bool _peopleRetried = false;
+  Timer? _peopleRetry;
   int _peopleGeneration = 0;
   bool? _unreadOverride;
   bool? _snoozedOverride;
@@ -203,6 +207,8 @@ class _MailReaderState extends State<MailReader> {
       _people = {};
       _peopleFailed = false;
       _peopleLoading = false;
+      _peopleRetried = false;
+      _peopleRetry?.cancel();
       _readPending = false;
       _busy = false;
       _attachmentsTab = false;
@@ -265,6 +271,7 @@ class _MailReaderState extends State<MailReader> {
     MailAppearancePreference.instance.removeListener(_primaryActionChanged);
     _peopleGeneration++;
     _contentGeneration++;
+    _peopleRetry?.cancel();
     _peopleResolver.dispose();
     super.dispose();
   }
@@ -398,9 +405,8 @@ class _MailReaderState extends State<MailReader> {
                     children: _detail == null
                         ? [_summaryPreview()]
                         : [
-                            _readerActions(),
-                            _readerTabs(),
-                            if (_attachmentsTab)
+                            _threadHeader(),
+                            if (_attachmentsTab && _attachments.isNotEmpty)
                               _attachmentList()
                             else
                               for (final message in _messages)

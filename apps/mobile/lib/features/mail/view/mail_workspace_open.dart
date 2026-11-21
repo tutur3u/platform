@@ -245,6 +245,20 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     _previews.prefetch(box, ids, thread: _threads);
   }
 
+  /// Starts loading a row's body as the finger lands, ahead of the tap that
+  /// opens it; the open shares the same request.
+  void _warmPreview(Map<String, dynamic> item) {
+    final box = _mailboxId;
+    if (box == null || !_canPrefetch || _mutating || _selected.isNotEmpty) {
+      return;
+    }
+    unawaited(
+      _previews
+          .load(box, item['id'] as String, thread: _threads)
+          .then<void>((_) {}, onError: (Object _) {}),
+    );
+  }
+
   /// After opening a row, its neighbours are the likely next reads.
   void _prefetchAround(String id) {
     final box = _mailboxId;

@@ -34,6 +34,7 @@ extension _MailReaderPaneHeader on _MailReaderState {
               onPressed: idle ? _runPrimaryAction : null,
               icon: Icon(primary.icon),
             ),
+          ..._prominentActions(),
           IconButton(
             tooltip: l10n.mailLoadImages,
             isSelected: _showImages,

@@ -57,7 +57,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Final attachment.txt'), findsNothing);
-    await tester.tap(find.text('Attachments'));
+    await tester.tap(find.byKey(const ValueKey('mail-attachments-toggle')));
     await tester.pumpAndSettle();
     final scroll = find.byType(ListView).first;
     expect(

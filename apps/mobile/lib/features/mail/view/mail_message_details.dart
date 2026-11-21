@@ -87,7 +87,6 @@ class MailMessageDetails extends StatelessWidget {
         : const <String, dynamic>{};
     final sent = mailSentDate(message);
     final received = mailDistinctReceivedDate(message);
-    final colors = AppTokens.of(context).colorScheme;
     final from = _text(message['fromAddress']);
     final messageId =
         _text(message['internetMessageId']) ?? _text(headers['message-id']);
@@ -97,107 +96,97 @@ class MailMessageDetails extends StatelessWidget {
     final subject = _text(message['subject']);
     final rawDate = _text(headers['date']);
     final replyTo = mailReplyToPeople(message);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.muted,
-        borderRadius: AppTokens.of(context).borderRadiusMd,
-        border: Border.all(color: colors.border),
-      ),
-      child: ExpansionTile(
-        key: ValueKey('mail-details-${message['id']}'),
-        tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        title: Text(l10n.mailMessageDetails),
-        dense: true,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        children: [
-          if (from != null)
-            _row(
-              context,
-              l10n.mailFrom,
-              _person(
-                context,
-                from,
-                _text(message['fromName']),
-                _profile(message['fromProfile']),
-              ),
-            ),
-          for (final (kind, label) in [
-            ('reply_to', l10n.mailReplyTo),
-            ('to', l10n.mailTo),
-            ('cc', l10n.mailCc),
-            ('bcc', l10n.mailBcc),
-          ])
-            if (recipients.any((row) => row['kind'] == kind))
-              _row(
-                context,
-                label,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final row in recipients.where(
-                      (row) => row['kind'] == kind,
-                    ))
-                      _person(
-                        context,
-                        _text(row['address']) ?? '',
-                        _text(row['displayName']),
-                        _profile(row['profile']),
-                      ),
-                  ],
-                ),
-              ),
-          if (!recipients.any((row) => row['kind'] == 'reply_to') &&
-              replyTo.isNotEmpty)
-            _row(
-              context,
-              l10n.mailReplyTo,
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (address, name) in replyTo)
-                    _person(context, address, name, null),
-                ],
-              ),
-            ),
+    final rows = <Widget>[
+      if (from != null)
+        _row(
+          context,
+          l10n.mailFrom,
+          _person(
+            context,
+            from,
+            _text(message['fromName']),
+            _profile(message['fromProfile']),
+          ),
+        ),
+      for (final (kind, label) in [
+        ('reply_to', l10n.mailReplyTo),
+        ('to', l10n.mailTo),
+        ('cc', l10n.mailCc),
+        ('bcc', l10n.mailBcc),
+      ])
+        if (recipients.any((row) => row['kind'] == kind))
           _row(
             context,
-            l10n.mailSent,
-            SelectableText(
-              sent == null
-                  ? l10n.mailDateUnavailable
-                  : formatMailDeliveryDate(context, sent),
+            label,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final row in recipients.where(
+                  (row) => row['kind'] == kind,
+                ))
+                  _person(
+                    context,
+                    _text(row['address']) ?? '',
+                    _text(row['displayName']),
+                    _profile(row['profile']),
+                  ),
+              ],
             ),
           ),
-          if (received != null)
-            _row(
-              context,
-              l10n.mailReceived,
-              SelectableText(formatMailDeliveryDate(context, received)),
-            ),
-          if (subject != null)
-            _row(context, l10n.mailSubject, SelectableText(subject)),
-          if (messageId != null)
-            _row(context, l10n.mailMessageId, SelectableText(messageId)),
-          if (inReplyTo != null)
-            _row(context, l10n.mailInReplyTo, SelectableText(inReplyTo)),
-          if (original != null)
-            _row(
-              context,
-              l10n.mailOriginalRecipient,
-              _person(context, original, null, null),
-            ),
-          if (rawDate != null)
-            ExpansionTile(
-              key: ValueKey('mail-technical-headers-${message['id']}'),
-              tilePadding: EdgeInsets.zero,
-              title: Text(l10n.mailTechnicalHeaders),
-              dense: true,
-              children: [_row(context, 'Date', SelectableText(rawDate))],
-            ),
-        ],
+      if (!recipients.any((row) => row['kind'] == 'reply_to') &&
+          replyTo.isNotEmpty)
+        _row(
+          context,
+          l10n.mailReplyTo,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (address, name) in replyTo)
+                _person(context, address, name, null),
+            ],
+          ),
+        ),
+      _row(
+        context,
+        l10n.mailSent,
+        SelectableText(
+          sent == null
+              ? l10n.mailDateUnavailable
+              : formatMailDeliveryDate(context, sent),
+        ),
       ),
+      if (received != null)
+        _row(
+          context,
+          l10n.mailReceived,
+          SelectableText(formatMailDeliveryDate(context, received)),
+        ),
+      if (subject != null)
+        _row(context, l10n.mailSubject, SelectableText(subject)),
+      if (messageId != null)
+        _row(context, l10n.mailMessageId, SelectableText(messageId)),
+      if (inReplyTo != null)
+        _row(context, l10n.mailInReplyTo, SelectableText(inReplyTo)),
+      if (original != null)
+        _row(
+          context,
+          l10n.mailOriginalRecipient,
+          _person(context, original, null, null),
+        ),
+      if (rawDate != null)
+        ExpansionTile(
+          key: ValueKey('mail-technical-headers-${message['id']}'),
+          tilePadding: EdgeInsets.zero,
+          title: Text(l10n.mailTechnicalHeaders),
+          dense: true,
+          children: [_row(context, 'Date', SelectableText(rawDate))],
+        ),
+    ];
+    return Column(
+      key: ValueKey('mail-details-sheet-${message['id']}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: rows,
     );
   }
 }

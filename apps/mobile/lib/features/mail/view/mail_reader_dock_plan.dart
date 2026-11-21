@@ -12,6 +12,9 @@ enum MailDockMore {
   unstar,
   markRead,
   markUnread,
+  snooze,
+  unsnooze,
+  labels,
   archive,
   restore,
   move,
@@ -33,6 +36,7 @@ class MailReaderDockPlan {
     required bool canRestore,
     required bool starred,
     required bool unread,
+    bool snoozed = false,
   }) {
     final circleReply = primary == MailPrimaryAction.reply;
     final circleArchive = primary == MailPrimaryAction.archive;
@@ -55,6 +59,8 @@ class MailReaderDockPlan {
           MailDockMore.markRead
         else if (!circleMarkUnread)
           MailDockMore.markUnread,
+        if (snoozed) MailDockMore.unsnooze else MailDockMore.snooze,
+        MailDockMore.labels,
         if (!quarantined && !circleArchive)
           if (canRestore) MailDockMore.restore else MailDockMore.archive,
         if (!quarantined) MailDockMore.move,

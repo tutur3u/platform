@@ -16352,9 +16352,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notificationsUnreadLabel => 'Chưa đọc';
 
   @override
-  String get mailConversation => 'Cuộc trò chuyện';
-
-  @override
   String get mailAttachments => 'Tệp đính kèm';
 
   @override
@@ -16388,10 +16385,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailMarkRead => 'Đánh dấu đã đọc';
 
   @override
-  String get mailRetryProfiles => 'Thử tải lại hồ sơ';
+  String get mailFrom => 'Từ';
 
   @override
-  String get mailFrom => 'Từ';
+  String mailThreadMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thư',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mailAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp đính kèm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mailProfilesRetry => 'Không tải được tên · Thử lại';
 
   @override
   String get fleetStatusNeedsUser => 'Cần bạn';

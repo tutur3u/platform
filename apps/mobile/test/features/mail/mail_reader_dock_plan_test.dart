@@ -10,6 +10,7 @@ MailReaderDockPlan _plan({
   bool canRestore = false,
   bool starred = false,
   bool unread = false,
+  bool snoozed = false,
 }) => MailReaderDockPlan.build(
   canSend: canSend,
   primary: primary,
@@ -18,6 +19,7 @@ MailReaderDockPlan _plan({
   canRestore: canRestore,
   starred: starred,
   unread: unread,
+  snoozed: snoozed,
 );
 
 void main() {
@@ -34,9 +36,17 @@ void main() {
       MailDockMore.images,
       MailDockMore.star,
       MailDockMore.markUnread,
+      MailDockMore.snooze,
+      MailDockMore.labels,
       MailDockMore.move,
       MailDockMore.trash,
     ]);
+  });
+
+  test('a snoozed message offers Move to Inbox now instead of Snooze', () {
+    final more = _plan(snoozed: true).more;
+    expect(more, contains(MailDockMore.unsnooze));
+    expect(more, isNot(contains(MailDockMore.snooze)));
   });
 
   test('read-only mailboxes offer More without reply entries', () {

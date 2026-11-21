@@ -22,6 +22,7 @@ import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
+import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';

@@ -16,6 +16,8 @@ class MailRecipientSummary extends StatelessWidget {
     required this.date,
     this.name,
     this.profile,
+    this.others = 0,
+    this.kind = 'to',
     super.key,
   });
 
@@ -23,6 +25,12 @@ class MailRecipientSummary extends StatelessWidget {
   final String? name;
   final Map<String, dynamic>? profile;
   final DateTime? date;
+
+  /// Further recipients beyond [address], shown as a count.
+  final int others;
+
+  /// The recipient field [address] comes from: `to`, `cc` or `bcc`.
+  final String kind;
 
   /// Clearance between the sender row and the recipient row.
   static const double topGap = AppSpacing.sm;
@@ -39,6 +47,7 @@ class MailRecipientSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final muted = AppTokens.of(context).colorScheme.mutedForeground;
     final to = address;
     return Padding(
@@ -54,10 +63,11 @@ class MailRecipientSummary extends StatelessWidget {
               key: const ValueKey('mail-recipient-row'),
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  context.l10n.mailTo,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: muted),
-                ),
+                Text(switch (kind) {
+                  'cc' => l10n.mailCc,
+                  'bcc' => l10n.mailBcc,
+                  _ => l10n.mailTo,
+                }, style: theme.textTheme.bodyMedium?.copyWith(color: muted)),
                 const SizedBox(width: AppSpacing.sm),
                 Flexible(
                   child: MailReaderIdentity(
@@ -67,6 +77,29 @@ class MailRecipientSummary extends StatelessWidget {
                     compact: true,
                   ),
                 ),
+                if (others > 0) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    '+$others',
+                    key: const ValueKey('mail-recipient-others'),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                  ),
+                ],
+                const SizedBox(width: AppSpacing.xxs),
+                Icon(Icons.expand_more, size: 18, color: muted),
+              ],
+            )
+          else
+            Row(
+              key: const ValueKey('mail-recipient-details'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.mailMessageDetails,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                ),
+                const SizedBox(width: AppSpacing.xxs),
+                Icon(Icons.expand_more, size: 18, color: muted),
               ],
             ),
           if (date case final value?)

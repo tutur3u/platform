@@ -16541,9 +16541,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsUnreadLabel => 'Unread';
 
   @override
-  String get mailConversation => 'Conversation';
-
-  @override
   String get mailAttachments => 'Attachments';
 
   @override
@@ -16577,10 +16574,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailMarkRead => 'Mark as read';
 
   @override
-  String get mailRetryProfiles => 'Retry profiles';
+  String get mailFrom => 'From';
 
   @override
-  String get mailFrom => 'From';
+  String mailThreadMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mailAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mailProfilesRetry => 'Names unavailable · Retry';
 
   @override
   String get fleetStatusNeedsUser => 'Needs you';

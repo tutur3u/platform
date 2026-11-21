@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -55,8 +56,11 @@ void main() {
       tester.widget<ExpansionTile>(latestMessage).initiallyExpanded,
       isTrue,
     );
+    expect(find.byKey(const ValueKey('mail-collapsed-old')), findsOneWidget);
     await tester.tap(find.text('old@example.com').first);
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('mail-collapsed-old')), findsNothing);
+    expect(find.byType(MailMessageContent), findsNWidgets(2));
     expect(find.text('Old message body'), findsOneWidget);
   });
 
@@ -110,7 +114,12 @@ void main() {
       ],
     });
     await tester.pumpAndSettle();
-    expect(find.text('Previous body'), findsNothing);
+    // The earlier message folds to a one-line preview with no body.
+    expect(
+      find.byKey(const ValueKey('mail-collapsed-previous')),
+      findsOneWidget,
+    );
+    expect(find.byType(MailMessageContent), findsOneWidget);
     expect(find.text('Latest body'), findsOneWidget);
     expect(
       tester
@@ -243,9 +252,10 @@ void main() {
       );
       await tester.tap(find.text('Open message'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Star'));
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Star'));
       await tester.pump();
-      expect(find.byTooltip('Remove star'), findsOneWidget);
       read.completeError(ApiException(message: 'Failed', statusCode: status));
       await tester.pumpAndSettle();
       expect(failures, 1);
@@ -253,12 +263,16 @@ void main() {
         verify(() => repository.denyAccess('ws')).called(1);
         expect(find.byType(MailReader), findsNothing);
       } else {
-        expect(find.byTooltip('Remove star'), findsOneWidget);
         expect(find.byType(SnackBar), findsNothing);
         verifyNever(() => repository.denyAccess('ws'));
       }
       star.complete();
       await tester.pumpAndSettle();
+      if (status != 403) {
+        await tester.tap(find.byTooltip('Show menu'));
+        await tester.pumpAndSettle();
+        expect(find.text('Remove star'), findsOneWidget);
+      }
       expect(tester.takeException(), isNull);
     });
   }

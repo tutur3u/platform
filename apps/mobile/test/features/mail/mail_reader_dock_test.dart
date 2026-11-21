@@ -64,6 +64,10 @@ Future<ShellDockActionGroup> _pumpDock(
       .actionGroup!;
 }
 
+/// The reader's top navbar actions.
+List<ShellActionSpec> _navbar(WidgetTester tester) =>
+    tester.widget<ShellChromeActions>(find.byType(ShellChromeActions)).actions;
+
 List<String> _ids(Iterable<dynamic> items) => [
   for (final item in items) (item as ShellDockMoreItem).id,
 ];
@@ -80,17 +84,14 @@ void main() {
       [for (final section in group.more) _ids(section)],
       [
         ['inbox', 'appearance', 'images'],
-        ['star', 'mark-read', 'move', 'trash'],
+        ['star', 'mark-read', 'snooze', 'labels', 'move'],
       ],
     );
     expect(group.primary!.label, 'Archive');
+    // Trash is one tap away on the navbar; the circle already archives.
     expect(
-      group.more.last.singleWhere((item) => item.id == 'trash'),
-      isA<ShellDockGroupAction>().having(
-        (action) => action.destructive,
-        'destructive',
-        isTrue,
-      ),
+      [for (final action in _navbar(tester)) action.id],
+      ['mail-reader-trash'],
     );
   });
 
@@ -108,9 +109,13 @@ void main() {
 
     expect(group.primary!.id, 'reply');
     expect(_ids(group.actions), ['reply-all', 'forward']);
+    expect(
+      [for (final action in _navbar(tester)) action.id],
+      ['mail-reader-archive', 'mail-reader-trash'],
+    );
     expect([
       for (final section in group.more) ..._ids(section),
-    ], contains('archive'));
+    ], isNot(contains('archive')));
   });
 
   testWidgets('sheet labels follow message state', (tester) async {
@@ -120,15 +125,17 @@ void main() {
     expect(read.label, 'Mark as read');
   });
 
-  testWidgets('archived mail offers Restore in the sheet', (tester) async {
-    final group = await _pumpDock(
+  testWidgets('archived mail offers Restore on the navbar', (tester) async {
+    await _pumpDock(
       tester,
       sourceFolder: 'archive',
       primary: MailPrimaryAction.reply,
     );
 
     expect(
-      group.more.last.singleWhere((item) => item.id == 'archive').label,
+      _navbar(
+        tester,
+      ).singleWhere((action) => action.id == 'mail-reader-archive').tooltip,
       'Move to inbox',
     );
   });

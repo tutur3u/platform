@@ -30,7 +30,6 @@ void main() {
     await tester.pumpApp(
       const Scaffold(body: MailMessageDetails(message: message)),
     );
-    await tester.tap(find.text('Message details'));
     await tester.pumpAndSettle();
     for (final value in [
       'host@example.test',
@@ -71,7 +70,6 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Message details'));
     await tester.pumpAndSettle();
     expect(find.text('Bcc'), findsOneWidget);
     expect(find.text('authorized@example.test'), findsOneWidget);
@@ -104,8 +102,6 @@ void main() {
           'recipients': <Map<String, dynamic>>[],
         }),
       );
-      expect(find.text('Sent'), findsNothing);
-      await tester.tap(find.text('Message details'));
       await tester.pumpAndSettle();
       expect(find.text('Sent'), findsOneWidget);
       expect(find.text('Received'), findsOneWidget);
@@ -139,7 +135,6 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text('Message details'));
     await tester.pumpAndSettle();
     expect(find.text('secret@example.com'), findsNothing);
     expect(find.text('Header name'), findsNothing);
@@ -157,7 +152,6 @@ void main() {
         'recipients': <Map<String, dynamic>>[],
       }),
     );
-    await tester.tap(find.text('Message details'));
     await tester.pumpAndSettle();
     expect(find.text('secret@example.com'), findsNothing);
     expect(find.text('Private member'), findsOneWidget);

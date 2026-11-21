@@ -83,15 +83,33 @@ wide layouts, the first Back (dock, rail or system) and Escape close the pane;
 the next Back leaves Mail. The pane header carries the subject and message
 actions; the shell navbar and dock keep the inbox title, filters and actions.
 
+The mobile reader body carries no command row. A compact header shows the
+message count (conversations with more than one message), the labels and an
+attachments toggle that swaps the conversation for its attachment list. On
+phones, Archive (Restore in Archive and Trash) and Trash sit on the top navbar
+unless the dock's primary circle already owns that command. Reply, Reply all
+and Forward fill the dock pill, and Star, Read state, Snooze, Labels and Move
+live in the dock's More sheet. Standalone and split-pane readers show Archive
+or Restore and Trash beside their overflow menu, which lists every command.
+Quarantined messages offer neither Archive nor Trash. Earlier messages in a
+conversation fold to one line (sender, date and snippet), and the newest is
+expanded. Profile lookups never block reading: a failed lookup retries once
+after two seconds, and only a second failure shows an inline retry caption.
+Coverage: `mail_reader_states_test.dart`, `mail_reader_dock_test.dart` and
+`mail_reader_dock_plan_test.dart`.
+
 Each message header shows the sender on the left and its date right-aligned
-on the same row, with the To recipient directly below. The sender name
+on the same row, with the recipients line directly below. That line names the
+first To recipient (or the first Cc or Bcc recipient when there is no To),
+counts the rest as "+N", and opens the delivery details in a sheet. The sender name
 truncates before the date. When the row cannot keep 120dp for the sender
 (narrow widths or large text), the date follows the To recipient instead, on
 its line when it fits and wrapped below it otherwise. Coverage:
 `mail_reader_header_test.dart` and `mail_recipient_summary_test.dart`.
 
 Opening never waits for the network. The reader renders the inbox row's
-subject, participants and snippet in the opening frame, then hydrates from the
+subject, participants and snippet over placeholder lines in the opening frame
+(a deep link without a row shows a conversation-shaped skeleton), then hydrates from the
 in-memory preview store, the encrypted Mail cache, or one detail request (one
 retry on transient failures). A conversation shown from memory or from the
 encrypted snapshot is revalidated with one refresh request when it opens. A
@@ -106,7 +124,10 @@ built in the list, after scrolling pauses for 250ms: conversations in thread
 folders and message details in Sent; never drafts. At most two
 requests run, eight are queued, and each makes one attempt. A failure is not
 retried in the background. The queue is replaced when the visible rows change,
-and the neighbours of an opened conversation are queued next. Prefetching
+and the neighbours of an opened conversation are queued next. A press that
+holds still for 40ms on an inbox row starts loading that row's body, and the
+open shares the request; a press that turns into a scroll fetches nothing. A
+cold inbox shows placeholder rows until the list arrives. Prefetching
 fetches message JSON only; images load only when a body is shown, under the
 saved remote-image preference (or the notification-entry suppression). The
 preview store lives in memory for one signed-in workspace view, holds 40
@@ -117,7 +138,8 @@ view, which is keyed by account and workspace; a render finishing after its
 reader or view closed is not stored.
 
 Regression coverage: `mail_master_detail_test.dart`,
-`mail_preview_latency_test.dart`, `mail_preview_revalidation_test.dart`,
+`mail_preview_latency_test.dart`, `mail_tap_warmup_test.dart`,
+`mail_preview_revalidation_test.dart`,
 `mail_rendered_documents_test.dart` and `mail_workspace_test.dart` in
 `apps/mobile/test/features/mail`, and `core/layout/master_detail_test.dart`.
 

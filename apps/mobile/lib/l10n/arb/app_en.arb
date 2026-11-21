@@ -7920,7 +7920,6 @@
   "settingsLearnMore": "Learn more",
   "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
   "notificationsUnreadLabel": "Unread",
-  "mailConversation": "Conversation",
   "mailAttachments": "Attachments",
   "mailNoAttachments": "No attachments",
   "mailMember": "Member",
@@ -7932,8 +7931,24 @@
   "mailTechnicalHeaders": "Technical headers",
   "mailDateUnavailable": "Date unavailable",
   "mailMarkRead": "Mark as read",
-  "mailRetryProfiles": "Retry profiles",
   "mailFrom": "From",
+  "mailThreadMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@mailThreadMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailAttachmentCount": "{count, plural, =1{1 attachment} other{{count} attachments}}",
+  "@mailAttachmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailProfilesRetry": "Names unavailable · Retry",
   "fleetStatusNeedsUser": "Needs you",
   "fleetStatusRunning": "Running",
   "fleetStatusWaitingReview": "In review",

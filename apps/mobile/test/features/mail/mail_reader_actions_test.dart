@@ -60,8 +60,12 @@ void main() {
         'to@example.test',
       ]),
     );
-    await tester.tap(find.text('Message details'));
+    await tester.tap(find.byKey(const ValueKey('mail-recipients-message')));
     await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('mail-details-sheet-message')),
+      findsOneWidget,
+    );
     expect(find.text('PRIVATE@example.test'), findsNothing);
     expect(find.text('original@example.test'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -100,11 +104,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final button = find.widgetWithIcon(
-      IconButton,
-      Icons.mark_email_read_outlined,
-    );
-    expect(tester.widget<IconButton>(button).onPressed, isNull);
     verify(
       () => repository.changeState(
         'ws',
@@ -146,8 +145,17 @@ void main() {
     );
     read.complete();
     await tester.pumpAndSettle();
-    expect(tester.widget<IconButton>(button).onPressed, isNotNull);
-    expect(find.byTooltip('Mark unread'), findsWidgets);
+    await tester.tap(find.byTooltip('Show menu'));
+    await tester.pumpAndSettle();
+    final settled = tester.widget<AppActionSheet<String>>(
+      find.byType(AppActionSheet<String>),
+    );
+    expect(
+      settled.actions
+          .singleWhere((action) => action.value == 'mark_unread')
+          .enabled,
+      isTrue,
+    );
   });
   for (final oldCompletesFirst in [true, false]) {
     testWidgets(

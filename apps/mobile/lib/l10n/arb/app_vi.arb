@@ -7178,7 +7178,6 @@
   "settingsLearnMore": "Tìm hiểu thêm",
   "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
   "notificationsUnreadLabel": "Chưa đọc",
-  "mailConversation": "Cuộc trò chuyện",
   "mailAttachments": "Tệp đính kèm",
   "mailNoAttachments": "Không có tệp đính kèm",
   "mailMember": "Thành viên",
@@ -7190,8 +7189,24 @@
   "mailTechnicalHeaders": "Tiêu đề kỹ thuật",
   "mailDateUnavailable": "Không có ngày gửi",
   "mailMarkRead": "Đánh dấu đã đọc",
-  "mailRetryProfiles": "Thử tải lại hồ sơ",
   "mailFrom": "Từ",
+  "mailThreadMessageCount": "{count, plural, other{{count} thư}}",
+  "@mailThreadMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailAttachmentCount": "{count, plural, other{{count} tệp đính kèm}}",
+  "@mailAttachmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailProfilesRetry": "Không tải được tên · Thử lại",
   "fleetStatusNeedsUser": "Cần bạn",
   "fleetStatusRunning": "Đang chạy",
   "fleetStatusWaitingReview": "Chờ duyệt",

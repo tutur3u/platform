@@ -30,6 +30,29 @@ extension _MailReaderBody on _MailReaderState {
     }
   }
 
+  /// Archive (or Restore) and Trash stay one tap away in readers whose
+  /// header owns the commands; everything else lives in More.
+  List<Widget> _prominentActions() {
+    final l10n = context.l10n;
+    final idle = !_busy && _detail != null;
+    return [
+      if (!_quarantined)
+        IconButton(
+          tooltip: _canRestore ? l10n.mailRestore : l10n.mailArchive,
+          onPressed: idle ? _archiveOrRestore : null,
+          icon: Icon(
+            _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
+          ),
+        ),
+      if (widget.sourceFolder != 'trash' && !_quarantined)
+        IconButton(
+          tooltip: l10n.mailTrash,
+          onPressed: idle ? _trashMessage : null,
+          icon: Icon(_mailMessageActionIcon('trash')),
+        ),
+    ];
+  }
+
   /// Standalone readers (outside the shared shell) keep a plain app bar.
   PreferredSizeWidget _fallbackAppBar(
     String title,
@@ -41,6 +64,7 @@ extension _MailReaderBody on _MailReaderState {
       surfaceTintColor: Colors.transparent,
       title: Text(title),
       actions: [
+        ..._prominentActions(),
         IconButton(
           tooltip: MaterialLocalizations.of(context).showMenuTooltip,
           onPressed: idle ? () => _chooseAction(actions) : null,
@@ -50,11 +74,12 @@ extension _MailReaderBody on _MailReaderState {
     );
   }
 
-  /// The inbox row, shown in the opening frame while the body hydrates.
+  /// The opening frame while the body hydrates: the inbox row's sender and
+  /// snippet when known, then placeholders in the shape of the message.
   Widget _summaryPreview() {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final tokens = AppTokens.of(context);
     final summary = widget.summary ?? const <String, dynamic>{};
     final sender = widget.thread
         ? mailRows(
@@ -64,119 +89,184 @@ extension _MailReaderBody on _MailReaderState {
     final snippet =
         (summary[widget.thread ? 'latestSnippet' : 'snippet'] as String?) ?? '';
     final failed = _loadError != null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+    final known = sender.isNotEmpty || snippet.isNotEmpty;
+    return Semantics(
+      label: failed ? null : l10n.commonLoading,
       child: Column(
         key: const ValueKey('mail-reader-summary'),
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (sender.isNotEmpty)
-            Text(
-              sender,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall,
-            ),
-          if (snippet.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              snippet,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
+          if (failed)
+            AppAlert(
+              key: const ValueKey('mail-reader-load-error'),
+              variant: AppAlertVariant.destructive,
+              title: Text(l10n.mailOpenFailed),
+              trailing: TextButton.icon(
+                onPressed: () => unawaited(_hydrate()),
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.commonRetry),
               ),
             ),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          if (failed)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.mailOpenFailed,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colors.error,
+          if (known)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (sender.isNotEmpty)
+                    Text(
+                      sender,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall,
                     ),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => unawaited(_hydrate()),
-                  icon: const Icon(Icons.refresh),
-                  label: Text(l10n.commonRetry),
-                ),
-              ],
-            )
-          else
-            Semantics(
-              label: l10n.commonLoading,
-              child: const LinearProgressIndicator(minHeight: 2),
+                  if (snippet.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      snippet,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        height: 1.5,
+                        color: tokens.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
+          if (!failed && known)
+            const ExcludeSemantics(child: MailMessageSkeleton(bodyLines: 4))
+          else if (!failed)
+            const MailThreadSkeleton(),
         ],
       ),
     );
   }
 
+  bool _messageExpanded(Map<String, dynamic> message) =>
+      _expandedMessages[message['id']] ??
+      (!widget.thread || message['id'] == _messages.last['id']);
+
+  /// The To line with a count of further recipients; it opens the full
+  /// delivery details in a sheet.
   Widget _recipientSummary(Map<String, dynamic> message) {
-    final first = mailRows(
+    final recipients = mailRows(
       message['recipients'],
-    ).where((row) => row['kind'] == 'to').firstOrNull;
+    ).where((row) => const {'to', 'cc', 'bcc'}.contains(row['kind'])).toList();
+    final first =
+        recipients.where((row) => row['kind'] == 'to').firstOrNull ??
+        recipients.firstOrNull;
     final address = first?['address'] as String?;
-    return MailReaderRecipientLine(
-      address: address,
-      name: first?['displayName'] as String?,
-      profile: _person(address),
-      date: mailMessageDate(message),
+    return Semantics(
+      button: true,
+      label: context.l10n.mailMessageDetails,
+      child: InkWell(
+        key: ValueKey('mail-recipients-${message['id']}'),
+        borderRadius: AppTokens.of(context).borderRadiusMd,
+        onTap: () => unawaited(_showMessageDetails(message)),
+        child: MailReaderRecipientLine(
+          address: address,
+          name: first?['displayName'] as String?,
+          profile: _person(address),
+          date: mailMessageDate(message),
+          kind: first?['kind'] as String? ?? 'to',
+          others: first == null ? 0 : recipients.length - 1,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showMessageDetails(Map<String, dynamic> message) =>
+      showAdaptiveSheet<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (_) => AppDialogScaffold(
+          title: context.l10n.mailMessageDetails,
+          child: MailMessageDetails(message: message, people: _people),
+        ),
+      );
+
+  /// Earlier messages collapse to one line: sender, date and snippet.
+  Widget? _collapsedPreview(Map<String, dynamic> message) {
+    final raw =
+        (message['snippet'] as String?) ??
+        (message['bodyText'] as String?) ??
+        '';
+    final snippet = raw
+        .substring(0, raw.length.clamp(0, 240))
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (snippet.isEmpty) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Text(
+        snippet,
+        key: ValueKey('mail-collapsed-${message['id']}'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppTokens.of(context).colorScheme.mutedForeground,
+        ),
+      ),
     );
   }
 
   Widget _messageCard(Map<String, dynamic> message, bool headerControls) {
-    return Card(
-      color: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      margin: const EdgeInsets.only(bottom: 6),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTokens.of(context).borderRadiusMd,
+    final expanded = _messageExpanded(message);
+    final last = message['id'] == _messages.last['id'];
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: last
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: AppTokens.of(context).colorScheme.border,
+                ),
+              ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: ExpansionTile(
+          key: _threadExpansionKey(message),
+          initiallyExpanded: expanded,
+          onExpansionChanged: (value) => _updateState(
+            () => _expandedMessages[message['id'] as String] = value,
+          ),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: AppSpacing.md),
+          shape: const Border(),
+          collapsedShape: const Border(),
+          showTrailingIcon: false,
+          dense: true,
+          title: MailReaderSenderRow(
+            address: message['fromAddress'] as String? ?? '',
+            name: message['fromName'] as String?,
+            profile: _person(message['fromAddress'] as String?),
+            date: mailMessageDate(message),
+          ),
+          subtitle: AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            alignment: AlignmentDirectional.topStart,
+            child: expanded
+                ? _recipientSummary(message)
+                : _collapsedPreview(message) ?? const SizedBox.shrink(),
+          ),
           children: [
-            ExpansionTile(
-              key: _threadExpansionKey(message),
-              initiallyExpanded:
-                  _expandedMessages[message['id']] ??
-                  (!widget.thread || message['id'] == _messages.last['id']),
-              onExpansionChanged: (expanded) =>
-                  _expandedMessages[message['id'] as String] = expanded,
-              tilePadding: EdgeInsets.zero,
-              dense: true,
-              title: MailReaderSenderRow(
-                address: message['fromAddress'] as String? ?? '',
-                name: message['fromName'] as String?,
-                profile: _person(message['fromAddress'] as String?),
-                date: mailMessageDate(message),
-              ),
-              subtitle: _recipientSummary(message),
-              children: [
-                MailMessageDetails(message: message, people: _people),
-                MailMessageContent(
-                  key: ValueKey(message['id']),
-                  repository: widget.repository,
-                  workspaceId: widget.workspaceId,
-                  mailboxId: widget.mailboxId,
-                  message: message,
-                  threadId: _id,
-                  showControls: !headerControls,
-                  renderedDocuments: widget.renderedDocuments,
-                  imagesVisible: headerControls || widget.notificationEntry
-                      ? _showImages
-                      : null,
-                  onImagesChanged: widget.notificationEntry
-                      ? (_) => _toggleReaderImages()
-                      : null,
-                ),
-              ],
+            MailMessageContent(
+              key: ValueKey(message['id']),
+              repository: widget.repository,
+              workspaceId: widget.workspaceId,
+              mailboxId: widget.mailboxId,
+              message: message,
+              threadId: _id,
+              showControls: !headerControls,
+              renderedDocuments: widget.renderedDocuments,
+              imagesVisible: headerControls || widget.notificationEntry
+                  ? _showImages
+                  : null,
+              onImagesChanged: widget.notificationEntry
+                  ? (_) => _toggleReaderImages()
+                  : null,
             ),
           ],
         ),

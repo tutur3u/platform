@@ -66,6 +66,7 @@ extension _MailReaderLoading on _MailReaderState {
 
   Future<void> _resolvePeople({bool replace = false}) async {
     if (_peopleLoading && !replace) return;
+    _peopleRetry?.cancel();
     final generation = ++_peopleGeneration;
     final workspace = widget.workspaceId;
     final emails = <String>{
@@ -103,9 +104,23 @@ extension _MailReaderLoading on _MailReaderState {
         };
         _peopleFailed = false;
         _peopleLoading = false;
+        _peopleRetried = false;
       });
     } on Object {
       if (!mounted || generation != _peopleGeneration || _accessRevoked) return;
+      if (!_peopleRetried) {
+        // Names are decoration: the message stays readable with addresses,
+        // so a transient failure retries once before surfacing.
+        _peopleRetried = true;
+        _peopleLoading = false;
+        _peopleRetry?.cancel();
+        _peopleRetry = Timer(const Duration(seconds: 2), () {
+          if (mounted && generation == _peopleGeneration && !_accessRevoked) {
+            unawaited(_resolvePeople());
+          }
+        });
+        return;
+      }
       _updateState(() {
         _peopleFailed = true;
         _peopleLoading = false;

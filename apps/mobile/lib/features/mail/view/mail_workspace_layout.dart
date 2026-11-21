@@ -254,7 +254,14 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         ),
                       ),
                     ),
-                    if (_items.isEmpty)
+                    if (_items.isEmpty && _loading && !_listResolved)
+                      SliverToBoxAdapter(
+                        child: Semantics(
+                          label: l10n.commonLoading,
+                          child: const MailInboxSkeleton(),
+                        ),
+                      )
+                    else if (_items.isEmpty)
                       SliverAppPage(
                         includeTop: false,
                         sliver: SliverFillRemaining(
@@ -267,20 +274,15 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (_loading && !_listResolved)
-                                    const NovaLoadingIndicator(size: 24)
-                                  else
-                                    Icon(
-                                      _failed && !_listResolved
-                                          ? Icons.error_outline
-                                          : Icons.inbox_outlined,
-                                      size: 32,
-                                    ),
+                                  Icon(
+                                    _failed && !_listResolved
+                                        ? Icons.error_outline
+                                        : Icons.inbox_outlined,
+                                    size: 32,
+                                  ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    _loading && !_listResolved
-                                        ? l10n.commonLoading
-                                        : _failed && !_listResolved
+                                    _failed && !_listResolved
                                         ? l10n.commonSomethingWentWrong
                                         : l10n.mailEmpty,
                                     textAlign: TextAlign.center,
@@ -366,6 +368,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                                           }
                                         });
                                       },
+                                      onPressStart: () => _warmPreview(item),
                                       onTap: () {
                                         if (_mutating) return;
                                         if (_selected.isEmpty) {

@@ -15,92 +15,68 @@ extension _MailReaderActions on _MailReaderState {
   bool get _canRestore =>
       !_quarantined && const {'archive', 'trash'}.contains(widget.sourceFolder);
 
-  Widget _readerActions() {
+  List<(Map<String, dynamic>, Map<String, dynamic>)> get _attachments => [
+    for (final message in _messages)
+      for (final file in mailRows(message['attachments'])) (message, file),
+  ];
+
+  /// Message count, labels and the attachments toggle on one compact row.
+  /// Message commands live on the dock and its More sheet.
+  Widget _threadHeader() {
     final l10n = context.l10n;
-    final unread =
-        _unreadOverride ??
-        _messages.any((message) => message['unread'] == true);
-    final snoozed = _messageSnoozed;
-    final archived = _canRestore;
-    final actions = <(IconData, String, VoidCallback)>[
-      (
-        Icons.snooze_outlined,
-        snoozed ? l10n.mailUnsnooze : l10n.mailSnooze,
-        () => _action(snoozed ? 'unsnooze' : 'snooze'),
-      ),
-      (Icons.label_outline, l10n.mailLabels, _readerLabels),
-      (
-        Icons.mark_email_read_outlined,
-        unread ? l10n.mailMarkRead : l10n.mailMarkUnread,
-        () => _action(unread ? 'mark_read' : 'mark_unread'),
-      ),
-      (
-        _starred ? Icons.star : Icons.star_border,
-        _starred ? l10n.mailUnstar : l10n.mailStar,
-        () => _action(_starred ? 'unstar' : 'star'),
-      ),
-      if (!_quarantined)
-        (
-          Icons.archive_outlined,
-          archived ? l10n.mailRestore : l10n.mailArchive,
-          () => _action(archived ? 'restore' : 'archive', close: true),
+    final tokens = AppTokens.of(context);
+    final muted = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: tokens.colorScheme.mutedForeground);
+    final labels = mailRows(
+      _messageStateMetadata?['labels'] ?? widget.summary?['labels'],
+    );
+    final attachments = _attachments.length;
+    final children = <Widget>[
+      if (widget.thread && _messages.length > 1)
+        Text(
+          l10n.mailThreadMessageCount(_messages.length),
+          key: const ValueKey('mail-thread-count'),
+          style: muted,
         ),
-      if (widget.sourceFolder != 'trash' && !_quarantined)
-        (
-          Icons.delete_outline,
-          l10n.mailTrash,
-          () => _action('trash', close: true),
+      for (final label in labels)
+        if (label['name'] case final String name)
+          AppBadge.outline(child: Text(name)),
+      if (attachments > 0)
+        AppChip(
+          key: const ValueKey('mail-attachments-toggle'),
+          selected: _attachmentsTab,
+          avatar: _attachmentsTab ? null : const Icon(Icons.attach_file),
+          label: Text(l10n.mailAttachmentCount(attachments)),
+          onSelected: (value) => _updateState(() => _attachmentsTab = value),
+        ),
+      if (_peopleFailed)
+        TextButton.icon(
+          key: const ValueKey('mail-people-retry'),
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            foregroundColor: tokens.colorScheme.mutedForeground,
+            textStyle: muted,
+          ),
+          onPressed: _peopleLoading ? null : _resolvePeople,
+          icon: const Icon(Icons.refresh, size: 16),
+          label: Text(l10n.mailProfilesRetry),
         ),
     ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_peopleFailed)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _peopleLoading ? null : _resolvePeople,
-              icon: const Icon(Icons.refresh),
-              label: Text(l10n.mailRetryProfiles),
-            ),
-          ),
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          children: [
-            for (final (icon, label, onPressed) in actions)
-              IconButton(
-                tooltip: label,
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                onPressed:
-                    _busy ||
-                        (_readPending && icon == Icons.mark_email_read_outlined)
-                    ? null
-                    : onPressed,
-                icon: Icon(icon, size: 20),
-              ),
-          ],
-        ),
-      ],
+    if (children.isEmpty) return const SizedBox(height: AppSpacing.xs);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: children,
+      ),
     );
   }
 
-  Widget _readerTabs() => Padding(
-    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-    child: AppSegmentedControl<bool>(
-      segments: [
-        AppSegment(value: false, label: context.l10n.mailConversation),
-        AppSegment(value: true, label: context.l10n.mailAttachments),
-      ],
-      selected: _attachmentsTab,
-      onChanged: (value) => _updateState(() => _attachmentsTab = value),
-    ),
-  );
-
   Widget _attachmentList() {
-    final files = [
-      for (final message in _messages)
-        for (final file in mailRows(message['attachments'])) (message, file),
-    ];
+    final files = _attachments;
     if (files.isEmpty) return Text(context.l10n.mailNoAttachments);
     return Column(
       children: [
@@ -130,6 +106,22 @@ extension _MailReaderActions on _MailReaderState {
           ),
       ],
     );
+  }
+
+  /// The open detail with [label] added to its header labels.
+  Map<String, dynamic>? _withLabel(Map<String, dynamic> label) {
+    final detail = _detail;
+    if (detail == null) return null;
+    List<Map<String, dynamic>> merged(Object? labels) => [
+      ...mailRows(labels).where((row) => row['id'] != label['id']),
+      label,
+    ];
+    if (!widget.thread) return {...detail, 'labels': merged(detail['labels'])};
+    final thread = detail['thread'] as Map<String, dynamic>;
+    return {
+      ...detail,
+      'thread': {...thread, 'labels': merged(thread['labels'])},
+    };
   }
 
   Future<void> _readerLabels() async {
@@ -182,6 +174,12 @@ extension _MailReaderActions on _MailReaderState {
         threads: widget.thread,
         labelId: label,
       );
+      final row = mailRows(
+        (await organization)['labels'],
+      ).where((row) => row['id'] == label).firstOrNull;
+      if (mounted && generation == _contentGeneration && row != null) {
+        _updateState(() => _detail = _withLabel(row));
+      }
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(

@@ -42,6 +42,9 @@ extension _MailReaderChrome on _MailReaderState {
 
   Future<void> _trashMessage() => _action('trash', close: true);
 
+  Future<void> _toggleSnooze() =>
+      _action(_messageSnoozed ? 'unsnooze' : 'snooze');
+
   void _setAppearance(String id) {
     final mode = MailMessageAppearance.values
         .where((value) => value.name == id)
@@ -60,6 +63,7 @@ extension _MailReaderChrome on _MailReaderState {
       ShellChromeActions(
         ownerId: 'mail-reader',
         locations: const {Routes.mail},
+        actions: _navbarActions(),
         actionGroup: _dockGroup(),
         // The reader sits in Mail's own navigator at the Mail location, so
         // the dock's Back closes it back to the list instead of leaving Mail.
@@ -78,21 +82,54 @@ extension _MailReaderChrome on _MailReaderState {
     ],
   );
 
+  MailReaderDockPlan _dockPlan() => MailReaderDockPlan.build(
+    canSend: widget.canSend,
+    primary: _primaryAction,
+    quarantined: _quarantined,
+    inTrash: widget.sourceFolder == 'trash',
+    canRestore: _canRestore,
+    starred: _starred,
+    unread: _unread,
+    snoozed: _messageSnoozed,
+  );
+
+  /// Archive (or Restore) and Trash sit on the top navbar, one tap away,
+  /// unless the dock's primary circle already owns them.
+  List<ShellActionSpec> _navbarActions() {
+    final l10n = context.l10n;
+    final ready = !_busy && _detail != null;
+    final more = _dockPlan().more;
+    return [
+      if (more.contains(MailDockMore.archive) ||
+          more.contains(MailDockMore.restore))
+        ShellActionSpec(
+          id: 'mail-reader-archive',
+          icon: _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
+          tooltip: _canRestore ? l10n.mailRestore : l10n.mailArchive,
+          enabled: ready,
+          callbackToken: (_canRestore, ready),
+          onPressed: _archiveOrRestore,
+        ),
+      if (more.contains(MailDockMore.trash))
+        ShellActionSpec(
+          id: 'mail-reader-trash',
+          icon: _mailMessageActionIcon('trash'),
+          tooltip: l10n.mailTrash,
+          enabled: ready,
+          callbackToken: ready,
+          onPressed: _trashMessage,
+        ),
+    ];
+  }
+
   /// Reply, Reply all and Forward fill the pill, the primary command owns the
-  /// circle, and everything else lives in the More sheet.
+  /// circle, Archive and Trash sit on the navbar, and everything else lives in
+  /// the More sheet.
   ShellDockActionGroup _dockGroup() {
     final l10n = context.l10n;
     final primary = _primaryAction;
     final ready = !_busy && _detail != null;
-    final plan = MailReaderDockPlan.build(
-      canSend: widget.canSend,
-      primary: primary,
-      quarantined: _quarantined,
-      inTrash: widget.sourceFolder == 'trash',
-      canRestore: _canRestore,
-      starred: _starred,
-      unread: _unread,
-    );
+    final plan = _dockPlan();
     final canReply = ready && _messages.isNotEmpty;
     final readBlocked = _readPending;
     final appearance =
@@ -170,6 +207,20 @@ extension _MailReaderChrome on _MailReaderState {
         enabled: ready && !readBlocked,
         onPressed: _toggleRead,
       ),
+      MailDockMore.snooze || MailDockMore.unsnooze => ShellDockGroupAction(
+        id: 'snooze',
+        icon: _mailMessageActionIcon(_messageSnoozed ? 'unsnooze' : 'snooze'),
+        label: _messageSnoozed ? l10n.mailUnsnooze : l10n.mailSnooze,
+        enabled: ready,
+        onPressed: _toggleSnooze,
+      ),
+      MailDockMore.labels => ShellDockGroupAction(
+        id: 'labels',
+        icon: Icons.label_outline,
+        label: l10n.mailLabels,
+        enabled: ready,
+        onPressed: _readerLabels,
+      ),
       MailDockMore.archive || MailDockMore.restore => ShellDockGroupAction(
         id: 'archive',
         icon: _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
@@ -194,6 +245,11 @@ extension _MailReaderChrome on _MailReaderState {
       ),
     };
 
+    const navbar = {
+      MailDockMore.archive,
+      MailDockMore.restore,
+      MailDockMore.trash,
+    };
     const reader = {
       MailDockMore.inbox,
       MailDockMore.appearance,
@@ -222,7 +278,7 @@ extension _MailReaderChrome on _MailReaderState {
         ],
         [
           for (final kind in plan.more)
-            if (!reader.contains(kind)) more(kind),
+            if (!reader.contains(kind) && !navbar.contains(kind)) more(kind),
         ],
       ],
     );
@@ -301,6 +357,11 @@ extension _MailReaderChrome on _MailReaderState {
           icon: _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
           value: _starred ? 'unstar' : 'star',
         ),
+        AppSheetAction(
+          label: context.l10n.mailLabels,
+          icon: Icons.label_outline,
+          value: 'labels',
+        ),
         if (!_quarantined)
           AppSheetAction(
             label: context.l10n.mailMove,
@@ -323,6 +384,9 @@ extension _MailReaderChrome on _MailReaderState {
     switch (value) {
       case 'move':
         await _moveMessage();
+        return;
+      case 'labels':
+        await _readerLabels();
         return;
       case 'reply':
         await _replyLast();
