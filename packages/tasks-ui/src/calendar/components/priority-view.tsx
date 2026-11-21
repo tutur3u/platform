@@ -80,7 +80,6 @@ const CALENDAR_HOURS_ICONS: Record<string, { icon: LucideIcon }> = {
   personal_hours: { icon: User },
 };
 
-// Format duration helper
 function formatDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = Math.round(totalMinutes % 60);
@@ -258,7 +257,6 @@ export default function PriorityView({
     router.refresh();
   });
 
-  // Debounced search function
   const debouncedSearch = useDebouncedCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -307,7 +305,7 @@ export default function PriorityView({
       throw new Error('Failed to update task priority');
     }
 
-    toast.success('Task priority updated');
+    toast.success(t('toast.priority_updated'));
 
     router.refresh();
   };
@@ -342,11 +340,13 @@ export default function PriorityView({
 
     try {
       await updateWorkspaceTask(taskWsId, taskId, { start_date: dateString });
-      toast.success(date ? 'Start date set' : 'Start date cleared');
+      toast.success(
+        t(date ? 'toast.start_date_set' : 'toast.start_date_cleared')
+      );
       router.refresh();
     } catch (error) {
       console.error('Failed to update start date:', error);
-      toast.error('Failed to update start date');
+      toast.error(t('toast.start_date_failed'));
     }
   };
 
@@ -357,18 +357,18 @@ export default function PriorityView({
 
     try {
       await updateWorkspaceTask(taskWsId, taskId, { end_date: dateString });
-      toast.success(date ? 'Due date set' : 'Due date cleared');
+      toast.success(t(date ? 'toast.due_date_set' : 'toast.due_date_cleared'));
       router.refresh();
     } catch (error) {
       console.error('Failed to update due date:', error);
-      toast.error('Failed to update due date');
+      toast.error(t('toast.due_date_failed'));
     }
   };
 
   const handleMarkDone = async (taskId: string) => {
     const task = combinedTasks.find((t) => t.id === taskId);
     if (!task) {
-      toast.error('Task not found');
+      toast.error(t('toast.task_not_found'));
       return;
     }
 
@@ -383,7 +383,7 @@ export default function PriorityView({
           completed_at: timestamp,
           completed: true,
         });
-        toast.success('Task marked as done');
+        toast.success(t('toast.marked_done'));
         router.refresh();
         return;
       }
@@ -406,8 +406,8 @@ export default function PriorityView({
         // Move to the done list (this also sets closed_at via the moveTask helper)
         const taskHelper = await import('@tuturuuu/utils/task-helper');
         await taskHelper.moveTask(taskWsId, taskId, targetList.id);
-        toast.success('Task completed', {
-          description: `Moved to ${targetList.name}`,
+        toast.success(t('completed'), {
+          description: t('toast.moved_to', { list: targetList.name }),
         });
       } else {
         // No done list or already in done list, just update the necessary fields
@@ -428,13 +428,13 @@ export default function PriorityView({
         }
 
         await updateWorkspaceTask(taskWsId, taskId, updates);
-        toast.success('Task marked as done');
+        toast.success(t('toast.marked_done'));
       }
 
       router.refresh();
     } catch (error) {
       console.error('Failed to mark task as done:', error);
-      toast.error('Failed to mark task as done');
+      toast.error(t('toast.mark_done_failed'));
     }
   };
 
@@ -444,11 +444,11 @@ export default function PriorityView({
       const taskWsId = task?.ws_id ?? wsId;
       await updateWorkspaceTask(taskWsId, taskId, { deleted: true });
 
-      toast.success('Task moved to trash');
+      toast.success(t('toast.moved_to_trash'));
       router.refresh();
     } catch (error) {
       console.error('Failed to delete task:', error);
-      toast.error('Failed to delete task');
+      toast.error(t('toast.delete_failed'));
     }
   };
 
@@ -461,7 +461,7 @@ export default function PriorityView({
     const dragData = {
       type: 'task',
       taskId: task.id,
-      taskName: task.name || 'Untitled Task',
+      taskName: task.name || t('untitled_task'),
       totalDuration:
         scheduleSettings?.total_duration ?? task.total_duration ?? 0,
       priority: task.priority,
@@ -813,7 +813,7 @@ export default function PriorityView({
                               <div className="opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/task:opacity-100">
                                 <ActionsDropdown
                                   taskId={task.id}
-                                  taskName={task.name || 'Untitled'}
+                                  taskName={task.name || t('untitled_task')}
                                   startDate={task.start_date}
                                   endDate={task.end_date}
                                   onEdit={handleEdit}

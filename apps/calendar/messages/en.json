@@ -1693,6 +1693,21 @@
       "splittable": "Splittable ({min} – {max})",
       "tasks": "Tasks",
       "title": "Plan",
+      "toast": {
+        "delete_failed": "Failed to delete task",
+        "due_date_cleared": "Due date cleared",
+        "due_date_failed": "Failed to update due date",
+        "due_date_set": "Due date set",
+        "mark_done_failed": "Failed to mark task as done",
+        "marked_done": "Task marked as done",
+        "moved_to": "Moved to {list}",
+        "moved_to_trash": "Task moved to trash",
+        "priority_updated": "Task priority updated",
+        "start_date_cleared": "Start date cleared",
+        "start_date_failed": "Failed to update start date",
+        "start_date_set": "Start date set",
+        "task_not_found": "Task not found"
+      },
       "untitled_task": "Untitled task"
     },
     "please_reconnect": "Please reconnect your Google Calendar",

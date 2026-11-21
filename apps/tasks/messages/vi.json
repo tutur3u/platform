@@ -1756,6 +1756,21 @@
       "splittable": "Có thể chia nhỏ ({min} – {max})",
       "tasks": "Công việc",
       "title": "Kế hoạch",
+      "toast": {
+        "delete_failed": "Không thể xóa công việc",
+        "due_date_cleared": "Đã xóa hạn chót",
+        "due_date_failed": "Không thể cập nhật hạn chót",
+        "due_date_set": "Đã đặt hạn chót",
+        "mark_done_failed": "Không thể đánh dấu hoàn thành",
+        "marked_done": "Đã đánh dấu công việc hoàn thành",
+        "moved_to": "Đã chuyển sang {list}",
+        "moved_to_trash": "Đã chuyển công việc vào thùng rác",
+        "priority_updated": "Đã cập nhật mức ưu tiên",
+        "start_date_cleared": "Đã xóa ngày bắt đầu",
+        "start_date_failed": "Không thể cập nhật ngày bắt đầu",
+        "start_date_set": "Đã đặt ngày bắt đầu",
+        "task_not_found": "Không tìm thấy công việc"
+      },
       "untitled_task": "Công việc chưa đặt tên"
     },
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",
