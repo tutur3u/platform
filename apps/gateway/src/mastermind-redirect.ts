@@ -18,7 +18,16 @@ export function mastermindRedirectDestination(request: Request): URL | null {
   return url;
 }
 
-export function mastermindRedirect(request: Request): Response | null {
+/**
+ * Mastermind is served only on its own host; the apex path redirects there
+ * once the release owner sets GATEWAY_MASTERMIND_REDIRECT=1 after host
+ * acceptance.
+ */
+export function mastermindRedirect(
+  request: Request,
+  env: { GATEWAY_MASTERMIND_REDIRECT?: string }
+): Response | null {
+  if (env.GATEWAY_MASTERMIND_REDIRECT !== '1') return null;
   const target = mastermindRedirectDestination(request);
   if (!target) return null;
   return new Response(null, {

@@ -504,12 +504,8 @@ export function createHandler(deps: HandlerDeps) {
     if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
       return acceptanceUnavailable();
     }
-    // Mastermind is served only on its own host; the apex path redirects
-    // there once the release owner enables it after host acceptance.
-    if (env.GATEWAY_MASTERMIND_REDIRECT === '1') {
-      const mastermind = mastermindRedirect(request);
-      if (mastermind) return mastermind;
-    }
+    const mastermind = mastermindRedirect(request, env);
+    if (mastermind) return mastermind;
     if (
       env.GATEWAY_MODE !== 'passthrough' &&
       env.GATEWAY_LMS_REDIRECTS === '1'

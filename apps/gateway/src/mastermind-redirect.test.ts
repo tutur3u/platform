@@ -38,10 +38,18 @@ describe('Mastermind apex redirect', () => {
     ).toBeNull();
   });
 
+  it('stays off until the release owner enables it', () => {
+    for (const env of [{}, { GATEWAY_MASTERMIND_REDIRECT: '0' }])
+      expect(
+        mastermindRedirect(new Request('https://tuturuuu.com/mastermind'), env)
+      ).toBeNull();
+  });
+
   it('is a plain uncached 302 for every method', () => {
     for (const method of ['GET', 'HEAD', 'POST']) {
       const response = mastermindRedirect(
-        new Request('https://tuturuuu.com/mastermind/en', { method })
+        new Request('https://tuturuuu.com/mastermind/en', { method }),
+        { GATEWAY_MASTERMIND_REDIRECT: '1' }
       );
       expect(response?.status).toBe(302);
       expect(response?.headers.get('Location')).toBe(
