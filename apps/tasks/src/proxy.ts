@@ -34,6 +34,11 @@ import {
   TTR_URL,
 } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import {
+  isMountedTasks,
+  mountedTasksAuth,
+  resolveMountedTasksSession,
+} from './lib/mounted-auth';
 import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { proxyAppUrl } from './lib/proxy-app-url';
 import {
@@ -176,6 +181,9 @@ function withTaskApiCors(request: NextRequest, response: NextResponse) {
 }
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  // On tuturuuu.com/tasks the session belongs to Web: Tasks reads its access
+  // token and never refreshes or writes one.
+  const mounted = isMountedTasks(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (req.method === 'OPTIONS') {
       return withTaskApiCors(req, new NextResponse(null, { status: 204 }));
@@ -199,10 +207,12 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
-        : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
-            targetApp: 'tasks',
-          });
+        : mounted
+          ? await resolveMountedTasksSession(req)
+          : await refreshAppSessionForRequest(req, {
+              sessionMode: 'supabase-first',
+              targetApp: 'tasks',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return withTaskApiCors(
@@ -244,15 +254,17 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const taskLinkPreviewRewrite = getTaskLinkPreviewRewrite(req);
   if (taskLinkPreviewRewrite) return taskLinkPreviewRewrite;
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
-  if (verifyTokenResponse) {
-    return verifyTokenResponse;
+  if (!mounted) {
+    const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
+      locales: supportedLocales,
+    });
+    if (verifyTokenResponse) {
+      return verifyTokenResponse;
+    }
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted ? await mountedTasksAuth(req) : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it

@@ -73,6 +73,8 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
   refreshAppSessionForRequest: (
     ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
   ) => mocks.refreshAppSessionForRequest(...args),
+  resolveMountedSharedSession: async () =>
+    ({ ok: true, response: NextResponse.next() }) as const,
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
