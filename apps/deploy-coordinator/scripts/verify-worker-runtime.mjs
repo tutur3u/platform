@@ -15,17 +15,10 @@ const OBJECT = 'calendar:production';
 const PROD = '/v1/projects/calendar/environments/production';
 let worker;
 
-before(async () => {
-  worker = await startCfViteWorker({
-    root,
-    mode:
-      process.env.DEPLOY_COORDINATOR_TEST_BUILD_OUTPUT === '1'
-        ? 'build-output'
-        : 'source',
-    secrets: { DEPLOY_COORDINATOR_OPERATOR_TOKEN: operatorToken },
-  });
-  // A cold source start can re-optimize dependencies and reload the Worker on
-  // its first Durable Object request; warm that path before asserting.
+// A cold start or a restart can reload the Worker on its first Durable Object
+// request, which then fails; warm that path, on an object the assertions do
+// not use, before asserting.
+async function waitReady() {
   for (let attempt = 1; ; attempt += 1) {
     const response = await worker
       .fetch(`/v1/projects/mail/environments/staging`, {
@@ -36,10 +29,22 @@ before(async () => {
         signal: AbortSignal.timeout(10_000),
       })
       .catch(() => null);
-    if (response?.status === 200) break;
-    if (attempt === 5) throw new Error('Worker did not become ready');
+    if (response?.status === 200) return;
+    if (attempt === 10) throw new Error('Worker did not become ready');
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
+}
+
+before(async () => {
+  worker = await startCfViteWorker({
+    root,
+    mode:
+      process.env.DEPLOY_COORDINATOR_TEST_BUILD_OUTPUT === '1'
+        ? 'build-output'
+        : 'source',
+    secrets: { DEPLOY_COORDINATOR_OPERATOR_TOKEN: operatorToken },
+  });
+  await waitReady();
 });
 after(async () => {
   await worker?.close();
@@ -202,6 +207,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
     1
   );
   await worker.restart();
+  await waitReady();
   const snapshot = await call(PROD);
   assert.equal(snapshot.body.meta.stopped, true);
   assert.equal(snapshot.body.meta.stopRevision, 1);
@@ -231,6 +237,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   await sql('DELETE FROM budget');
   await sql('INSERT INTO budget (day, used) VALUES (?, 500)', [day]);
   await worker.restart();
+  await waitReady();
   const rejected = await call(`${PROD}/deployments/${id}/cancel`, {
     method: 'POST',
     body: {},
