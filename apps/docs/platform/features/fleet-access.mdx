@@ -262,7 +262,13 @@ the verified user's request identity and a live explicit root Mastermind grant.
 The service role can submit a server-resolved intent. The insert checks the
 live grant, project versions and the rolling one-hour question and 24-hour
 intent counts. Model budget consumption belongs to the Ask execution path.
-User-facing routes, event verification and dispatch are covered by later slices.
+Auth account deletion revokes the grant and retains its generation and historical
+intent references. Fleet grant, project and control rows retain their fences.
+
+Slice 3 must bind and consume verified provider event evidence before any desk
+receives a credential that can reach the submission function. Quote readers
+must filter on `expires_at` from their first release. The Slice 5 consumer lane
+owns the Cloudflare job that purges expired quotes.
 
 ## Implementation plan
 
@@ -273,7 +279,7 @@ User-facing routes, event verification and dispatch are covered by later slices.
 | 2     | Observer reads: `GET /api/v1/fleet/access`, digest publish and scoped read, `@tuturuuu/internal-api` client | Web API (Codex) | 1 |
 | 3     | Pending submissions: `POST /api/v1/fleet/intents`, identity linking, event binding            | Web API (Codex)              | 2 |
 | 4     | Mira desks move to the API; Slice 0 retired                                                   | Mira desk host (Codex)       | 3 and 5 acceptance |
-| 5     | Dry-run consumer: claims, leases, generations, receipts without dispatch, on Cloudflare scheduling | Orchestrator          | 3 |
+| 5     | Dry-run consumer and quote purge: claims, leases, generations, receipts and retention on Cloudflare | Orchestrator          | 3 |
 | 6     | Mastermind web Fleet area and admission change (en and vi)                                    | Design (Claude Opus)         | 2, release approval |
 | 7     | Mastermind mobile Fleet view                                                                  | Mobile design (Claude Opus)  | 2 |
 | 8     | Steerer: live dispatch for low and medium risk                                                | Orchestrator, then Owner grant | replay, revocation-race, isolation and web/mobile admission tests |
@@ -288,8 +294,8 @@ delivery for slices 2 and later run on Cloudflare.
 Each slice links its coverage here when it lands:
 
 - Slice 1 covers default deny, table and function privileges, tier ceilings,
-  Owner-only mutations, audit immutability, quota refusals, quote expiry and
-  generation changes. See [fleet-access.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access.sql).
+  Owner-only mutations, audit immutability, quota refusals, quote expiry,
+  grant and project fences, and intent approvals and leases. See [fleet-access.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access.sql).
 - Slice 1 also races two PostgreSQL sessions against the final question and
   steer slots. See [fleet-access-quota-race.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-access-quota-race.sql).
 - Slices 2–3: route tests under `apps/web/src/app/api/v1/fleet/**` —

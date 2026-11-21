@@ -13,6 +13,11 @@ declare
   v_owner uuid;
   v_root constant uuid := '00000000-0000-0000-0000-000000000000';
 begin
+  if session_user::text in ('authenticator', 'anon', 'authenticated', 'service_role')
+    or not pg_has_role(session_user, 'postgres', 'MEMBER') then
+    raise exception 'Fleet management requires a database owner session' using errcode = '42501';
+  end if;
+
   select owner_user_id into v_owner from private.fleet_control for update;
   if auth.role() is distinct from 'authenticated'
     or v_actor is null or v_actor is distinct from v_owner then
@@ -70,7 +75,7 @@ begin
     p_model_budget_per_month
   )
   on conflict (user_id) do update
-  set tier = excluded.tier, capabilities = excluded.capabilities, expires_at = excluded.expires_at,
+  set auth_user_id = excluded.auth_user_id, tier = excluded.tier, capabilities = excluded.capabilities, expires_at = excluded.expires_at,
       questions_per_hour = excluded.questions_per_hour, intents_per_day = excluded.intents_per_day,
       model_budget_per_month = excluded.model_budget_per_month, revoked_at = null,
       generation = g.generation + 1
@@ -154,7 +159,7 @@ begin
   -- at stronger isolation. Replacing a grant preserves the person's usage.
   update private.fleet_access_grants
   set generation = generation
-  where user_id = new.requester_id and revoked_at is null
+  where user_id = new.requester_id and auth_user_id = new.requester_id and revoked_at is null
   returning * into v_grant;
 
   new.created_at := clock_timestamp();
@@ -226,8 +231,23 @@ begin
     when 'work.redirect' then 'medium'
     else 'high'
   end;
-  new.state := case when not new.requires_owner_approval and new.kind in ('status_question', 'comment')
-    then 'approved' else 'pending_approval' end;
+  new.approver_id := null;
+  new.approver_generation := null;
+  new.lease_id := null;
+  new.lease_expires_at := null;
+  new.receipt := null;
+  new.idempotency_key := gen_random_uuid();
+  new.state := 'pending_approval';
+
+  if not new.requires_owner_approval then
+    if new.kind in ('status_question', 'comment') then
+      new.state := 'approved';
+    elsif new.risk in ('low', 'medium') and 'approve.low' = any (v_grant.capabilities) then
+      new.state := 'approved';
+      new.approver_id := new.requester_id;
+      new.approver_generation := new.requester_generation;
+    end if;
+  end if;
   return new;
 end;
 $$;

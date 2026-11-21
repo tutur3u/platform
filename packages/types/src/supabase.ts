@@ -6931,6 +6931,7 @@ export type Database = {
       };
       fleet_access_grants: {
         Row: {
+          auth_user_id: string | null;
           capabilities: string[];
           expires_at: string | null;
           generation: number;
@@ -6943,6 +6944,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          auth_user_id?: string | null;
           capabilities: string[];
           expires_at?: string | null;
           generation?: number;
@@ -6954,6 +6956,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          auth_user_id?: string | null;
           capabilities?: string[];
           expires_at?: string | null;
           generation?: number;
@@ -7115,7 +7118,7 @@ export type Database = {
           created_at?: string;
           expires_at: string;
           id?: string;
-          idempotency_key?: string;
+          idempotency_key: string;
           kind: Database['private']['Enums']['fleet_intent_kind'];
           lease_expires_at?: string | null;
           lease_id?: string | null;
@@ -7151,7 +7154,15 @@ export type Database = {
           state?: Database['private']['Enums']['fleet_intent_state'];
           stop_generation?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'fleet_intents_requester_id_fkey';
+            columns: ['requester_id'];
+            isOneToOne: false;
+            referencedRelation: 'fleet_access_grants';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       fleet_projects: {
         Row: {

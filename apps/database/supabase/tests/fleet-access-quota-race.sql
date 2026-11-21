@@ -2,18 +2,29 @@
 
 select plan(6);
 
+create function pg_temp.clear_fleet_quota_fixture()
+returns void language sql as $$
+  delete from private.fleet_intents where requester_id = 'fa000000-0000-4000-8000-000000000003';
+  delete from auth.users where id = 'fa000000-0000-4000-8000-000000000003';
+  delete from public.workspaces where personal and creator_id = 'fa000000-0000-4000-8000-000000000003';
+  delete from public.users where id = 'fa000000-0000-4000-8000-000000000003';
+$$;
+
 -- Two independent transactions use the real insert trigger. The direct fixture
--- inserts omit the service RPC's durable audit records so cleanup needs no bypass.
+-- inserts omit the service RPC's audit records. Cleanup leaves the revoked
+-- grant and its project in place to preserve their fences between runs.
 begin;
 select set_config('request.jwt.claims', '{}', true);
+select pg_temp.clear_fleet_quota_fixture();
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
   values ('fa000000-0000-4000-8000-000000000003', 'fleet-race@example.com', now(), '{}', '{}');
 insert into private.fleet_projects (key, name_en, name_vi)
-  values ('fleet-quota-race', 'Quota race', 'Kiểm thử hạn mức');
+  values ('fleet-quota-race', 'Quota race', 'Kiểm thử hạn mức') on conflict do nothing;
 insert into private.fleet_access_grants (user_id, tier, capabilities, questions_per_hour, intents_per_day)
-  values ('fa000000-0000-4000-8000-000000000003', 'observer', array['ask', 'intent.request'], 1, 1);
+  values ('fa000000-0000-4000-8000-000000000003', 'observer', array['ask', 'intent.request'], 1, 1)
+  on conflict (user_id) do update set auth_user_id = excluded.auth_user_id, revoked_at = null;
 insert into private.fleet_access_grant_projects (user_id, project_key)
-  values ('fa000000-0000-4000-8000-000000000003', 'fleet-quota-race');
+  values ('fa000000-0000-4000-8000-000000000003', 'fleet-quota-race') on conflict do nothing;
 commit;
 
 select extensions.dblink_connect('fleet_holder', pg_temp.fixture_dblink_connstr());
@@ -72,12 +83,7 @@ select extensions.dblink_disconnect('fleet_holder');
 select extensions.dblink_disconnect('fleet_waiter');
 
 begin;
-delete from private.fleet_intents where requester_id = 'fa000000-0000-4000-8000-000000000003';
-delete from private.fleet_access_grants where user_id = 'fa000000-0000-4000-8000-000000000003';
-delete from private.fleet_projects where key = 'fleet-quota-race';
-delete from auth.users where id = 'fa000000-0000-4000-8000-000000000003';
-delete from public.workspaces where personal and creator_id = 'fa000000-0000-4000-8000-000000000003';
-delete from public.users where id = 'fa000000-0000-4000-8000-000000000003';
+select pg_temp.clear_fleet_quota_fixture();
 commit;
 
 select * from finish();

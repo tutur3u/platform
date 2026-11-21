@@ -21,7 +21,8 @@ create table private.fleet_projects (
 );
 
 create table private.fleet_access_grants (
-  user_id uuid primary key references auth.users (id) on delete cascade,
+  user_id uuid primary key,
+  auth_user_id uuid references auth.users (id) on delete set null,
   tier private.fleet_tier not null,
   capabilities text[] not null,
   questions_per_hour integer not null default 30 check (questions_per_hour >= 0),
@@ -29,8 +30,10 @@ create table private.fleet_access_grants (
   model_budget_per_month bigint not null default 0 check (model_budget_per_month >= 0),
   expires_at timestamptz,
   revoked_at timestamptz,
-  generation bigint not null default 1 check (generation > 0)
+  generation bigint not null default 1 check (generation > 0),
+  check (auth_user_id is not distinct from user_id or (auth_user_id is null and revoked_at is not null))
 );
+create index fleet_access_grants_auth_user on private.fleet_access_grants (auth_user_id);
 
 create table private.fleet_access_grant_projects (
   user_id uuid not null references private.fleet_access_grants (user_id) on delete cascade,
@@ -61,7 +64,7 @@ insert into private.fleet_control default values;
 
 create table private.fleet_intents (
   id uuid primary key default gen_random_uuid(),
-  requester_id uuid not null,
+  requester_id uuid not null references private.fleet_access_grants (user_id),
   channel text not null check (channel in ('web', 'mobile', 'whatsapp', 'zalo', 'discord')),
   kind private.fleet_intent_kind not null,
   payload jsonb not null check (jsonb_typeof(payload) = 'object'),
@@ -78,13 +81,15 @@ create table private.fleet_intents (
   approver_generation bigint check (approver_generation > 0),
   lease_id uuid,
   lease_expires_at timestamptz,
-  idempotency_key uuid not null default gen_random_uuid() unique,
+  idempotency_key uuid not null unique,
   receipt jsonb check (jsonb_typeof(receipt) = 'object'),
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,
   check (expires_at > created_at),
   check (risk <> 'high' or approver_id is distinct from requester_id),
-  check ((lease_id is null) = (lease_expires_at is null))
+  check ((approver_id is null) = (approver_generation is null)),
+  check ((lease_id is null) = (lease_expires_at is null)),
+  check (state not in ('claimed', 'dispatched') or lease_id is not null)
 );
 
 create index fleet_intents_question_quota
@@ -144,6 +149,30 @@ before update or delete or truncate on private.fleet_audit_events
 for each statement execute function private.fleet_reject_audit_mutation();
 
 -- tuturuuu: no-grant (trigger)
+create function private.fleet_reject_fence_reset()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, pg_temp
+as $$
+begin
+  raise exception 'Fleet fence rows cannot be removed or replaced' using errcode = '55000';
+end;
+$$;
+revoke all on function private.fleet_reject_fence_reset() from public, anon, authenticated, service_role;
+
+create trigger fleet_preserve_grant_fence
+before delete or truncate on private.fleet_access_grants
+for each statement execute function private.fleet_reject_fence_reset();
+
+create trigger fleet_preserve_project_fence
+before delete or truncate on private.fleet_projects
+for each statement execute function private.fleet_reject_fence_reset();
+
+create trigger fleet_preserve_control_fence
+before insert or delete or truncate on private.fleet_control
+for each statement execute function private.fleet_reject_fence_reset();
+
+-- tuturuuu: no-grant (trigger)
 create function private.fleet_check_grant()
 returns trigger
 language plpgsql
@@ -168,14 +197,21 @@ begin
     raise exception 'Capabilities exceed the Fleet tier ceiling' using errcode = '23514';
   end if;
   if tg_op = 'INSERT' then
+    new.auth_user_id := new.user_id;
     new.generation := 1;
-  elsif new.user_id is distinct from old.user_id
+    return new;
+  end if;
+  if new.user_id is distinct from old.user_id
     or new.generation not in (old.generation, old.generation + 1) then
     raise exception 'Invalid Fleet grant identity or generation' using errcode = '23514';
-  elsif row(new.tier, new.capabilities, new.expires_at, new.revoked_at,
+  end if;
+  if new.auth_user_id is null and old.auth_user_id is not null then
+    new.revoked_at := coalesce(new.revoked_at, clock_timestamp());
+  end if;
+  if row(new.auth_user_id, new.tier, new.capabilities, new.expires_at, new.revoked_at,
       new.questions_per_hour, new.intents_per_day, new.model_budget_per_month)
     is distinct from
-    row(old.tier, old.capabilities, old.expires_at, old.revoked_at,
+    row(old.auth_user_id, old.tier, old.capabilities, old.expires_at, old.revoked_at,
       old.questions_per_hour, old.intents_per_day, old.model_budget_per_month) then
     new.generation := old.generation + 1;
   end if;
@@ -240,7 +276,12 @@ returns trigger
 language plpgsql
 set search_path = pg_catalog, pg_temp
 as $$
+declare
+  v_now timestamptz := clock_timestamp();
 begin
+  if old.state in ('done', 'failed', 'rejected', 'expired', 'cancelled') then
+    raise exception 'Terminal Fleet intents are immutable' using errcode = '23514';
+  end if;
   if row(new.id, new.requester_id, new.channel, new.kind, new.payload, new.risk,
     new.action_hash, new.project_versions, new.requester_generation, new.stop_generation,
     new.requires_owner_approval, new.idempotency_key, new.created_at, new.expires_at)
@@ -259,6 +300,14 @@ begin
     else false
   end) then
     raise exception 'Invalid Fleet intent state transition' using errcode = '23514';
+  end if;
+  if new.state is distinct from old.state then
+    if new.state in ('approved', 'claimed') and v_now >= old.expires_at then
+      raise exception 'Fleet intent has expired' using errcode = '23514';
+    end if;
+    if new.state = 'expired' and v_now < old.expires_at then
+      raise exception 'Fleet intent has not expired' using errcode = '23514';
+    end if;
   end if;
   if old.state = 'pending_approval' and new.state = 'approved' and new.approver_id is null then
     raise exception 'Fleet approval requires an approver' using errcode = '23514';
