@@ -4,9 +4,10 @@ import { CheckSquare, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useState } from 'react';
+import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 
-export function AssessmentPanel({ onClose }: { onClose?: () => void }) {
+export function AssessmentPanel({ onClose }: MeetToolPanelProps) {
   const [items, setItems] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
 

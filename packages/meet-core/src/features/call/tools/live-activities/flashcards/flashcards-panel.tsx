@@ -3,6 +3,7 @@
 import { Layers, RotateCcw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
+import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 
 const DECK = [
@@ -11,7 +12,7 @@ const DECK = [
   { front: 'Win', back: 'Share a recent customer signal.' },
 ] as const;
 
-export function FlashcardsPanel({ onClose }: { onClose?: () => void }) {
+export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const card = DECK[index] ?? DECK[0];

@@ -4,6 +4,7 @@ import { MessageSquare, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { type FormEvent, useState, useSyncExternalStore } from 'react';
+import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 import {
   askLiveQaQuestion,
@@ -19,12 +20,7 @@ export function QaPanel({
   role = 'participant',
   participantId = 'guest',
   onClose,
-}: {
-  meetingId?: string;
-  role?: 'host' | 'participant';
-  participantId?: string;
-  onClose?: () => void;
-}) {
+}: MeetToolPanelProps) {
   const snapshot = useSyncExternalStore(
     (onStoreChange) => subscribeLiveQa(meetingId, onStoreChange),
     () => readLiveQa(meetingId),

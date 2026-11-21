@@ -3,6 +3,7 @@
 import { Hand, Shuffle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
+import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 
 const PROMPTS = [
@@ -11,7 +12,7 @@ const PROMPTS = [
   'Which topic should this meeting prioritize?',
 ] as const;
 
-export function IcebreakerPanel({ onClose }: { onClose?: () => void }) {
+export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
   const [index, setIndex] = useState(0);
   const prompt = PROMPTS[index] ?? PROMPTS[0];
 
