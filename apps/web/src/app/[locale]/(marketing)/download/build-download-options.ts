@@ -160,7 +160,7 @@ export async function buildDownloadContent(
         : null,
       note:
         download && platform === 'windows'
-          ? t('windows.installation')
+          ? `${t('windows.legacy_update')} ${t('windows.installation')}`
           : undefined,
       releaseNotes: download
         ? {
