@@ -18,8 +18,8 @@
   },
   "peerDependencies": {
     "@tanstack/react-router": "1.170.45",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react": "19.2.9",
+    "react-dom": "19.2.9"
   },
   "devDependencies": {
     "@tanstack/react-router": "1.170.45",
@@ -27,8 +27,8 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "miniflare": "4.20260730.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
   }

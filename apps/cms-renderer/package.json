@@ -11,8 +11,8 @@
     "@tanstack/react-router": "1.170.45",
     "@tanstack/react-start": "1.169.3",
     "@tuturuuu/cms-blocks": "workspace:*",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "zod": "4.6.7",
     "@tuturuuu/start-bridge": "workspace:*"
   },

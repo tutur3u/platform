@@ -16,8 +16,8 @@
         "oxlint": "1.93.0",
         "oxlint-tsgolint": "7.0.2005",
         "portless": "^0.17.0",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
         "turbo": "^2.11.10",
         "typescript": "7.0.2",
         "vite": "^8.3.5",
@@ -388,8 +388,8 @@
         "@tanstack/react-start": "1.169.3",
         "@tuturuuu/cms-blocks": "workspace:*",
         "@tuturuuu/start-bridge": "workspace:*",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
         "zod": "4.6.7",
       },
       "devDependencies": {
@@ -1216,8 +1216,8 @@
         "@tuturuuu/start-bridge": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
       },
       "devDependencies": {
         "@tailwindcss/vite": "4.3.3",
@@ -1895,8 +1895,8 @@
         "@tuturuuu/roadmap-core": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20261022.1",
@@ -2463,9 +2463,9 @@
         "playwright": "^1.64.1",
         "postgres": "^3.4.9",
         "qrcode.react": "^4.2.0",
-        "react": "^19.2.8",
+        "react": "^19.2.9",
         "react-confetti": "^6.4.0",
-        "react-dom": "^19.2.8",
+        "react-dom": "^19.2.9",
         "react-easy-crop": "^6.2.4",
         "react-hook-form": "^7.90.0",
         "react-intersection-observer": "^11.0.1",
@@ -2535,7 +2535,7 @@
         "postcss": "^8.5.31",
         "postcss-preset-mantine": "^1.18.0",
         "postcss-simple-vars": "^7.0.1",
-        "react-server-dom-webpack": "19.2.8",
+        "react-server-dom-webpack": "19.2.9",
         "typescript": "7.0.2",
         "undici": "^8.12.3",
         "vinext": "1.4.6",
@@ -2761,8 +2761,8 @@
       "dependencies": {
         "@tuturuuu/cms-blocks": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
       },
       "devDependencies": {
         "@types/react": "19.2.18",
@@ -3237,7 +3237,7 @@
         "@types/react-dom": "~19.2.7",
         "@vitejs/plugin-react": "6.1.2",
         "jsdom": "30.1.3",
-        "react-dom": "19.2.8",
+        "react-dom": "19.2.9",
         "typescript": "7.0.2",
         "vitest": "5.0.5",
       },
@@ -3479,7 +3479,7 @@
         "@tuturuuu/ui": "workspace:*",
         "monaco-editor": "0.57.0",
         "next-intl": "4.14.9",
-        "react": "19.2.8",
+        "react": "19.2.9",
         "yjs": "13.6.33",
       },
       "devDependencies": {
@@ -3528,15 +3528,15 @@
         "@types/react": "19.2.18",
         "@types/react-dom": "19.2.7",
         "miniflare": "4.20260730.0",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
         "typescript": "7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
       },
       "peerDependencies": {
         "@tanstack/react-router": "1.170.45",
-        "react": "19.2.8",
-        "react-dom": "19.2.8",
+        "react": "19.2.9",
+        "react-dom": "19.2.9",
       },
     },
     "packages/satellite": {
@@ -4217,8 +4217,8 @@
     },
     "prosemirror-view": "1.42.3",
     "proxy-addr": "2.0.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "sanitize-html": "2.18.1",
     "sharp": "0.35.5",
     "shiki": "4.4.3",
@@ -8645,7 +8645,7 @@
 
     "rc": ["rc@1.2.8", "", { "dependencies": { "deep-extend": "^0.6.0", "ini": "~1.3.0", "minimist": "^1.2.0", "strip-json-comments": "~2.0.1" }, "bin": { "rc": "./cli.js" } }, "sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw=="],
 
-    "react": ["react@19.2.8", "", {}, "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw=="],
+    "react": ["react@19.2.9", "", {}, "sha512-RuLdAokXv3sRmZa2/N8QH0KmTBIgDKC+buRUikGqow31+mGSGidLCX2o4XFq8OV+xBFWfhM9DVgTq1PPHADH4w=="],
 
     "react-colorful": ["react-colorful@5.8.1", "", { "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-oz68bhsnFWnpDf1ZR8daiQbYpXUnM2h2J6hl9Zg2rTpM/DU6vCqe1E+CpqmqLnJucMZetHZeifSAfJ+geN9lcA=="],
 
@@ -8653,7 +8653,7 @@
 
     "react-day-picker": ["react-day-picker@10.0.2", "", { "dependencies": { "@date-fns/tz": "^1.4.1", "date-fns": "^4.1.0" }, "peerDependencies": { "@types/react": ">=16.8.0", "react": ">=16.8.0" }, "optionalPeers": ["@types/react"] }, "sha512-QetiKtZWE9Uaw/pM/SYNv6WPYOTRnSJ2puL0GgwkmUFMIwiY0dtjH1W4B7DOVXVNQM0ZOClGpH/heOfBSzWeiA=="],
 
-    "react-dom": ["react-dom@19.2.8", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.8" } }, "sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ=="],
+    "react-dom": ["react-dom@19.2.9", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.9" } }, "sha512-YceU74W21fXEHszKBLj16MY0CmvpFKOs60iVrIyW/cCgOPsZJNaB6GVJEtIUqt6AG6EjzKLui5lPRrxAeS328Q=="],
 
     "react-draggable": ["react-draggable@4.7.2", "", { "dependencies": { "clsx": "^2.1.1", "prop-types": "^15.8.1" }, "peerDependencies": { "react": ">= 16.3.0", "react-dom": ">= 16.3.0" } }, "sha512-pmqDx72EqhMGoJe/x42ZO2wJ9TIz7qJ5OPnFu6lVWWznEuJumlSjR+J0V4tNyDFhUo6dVvv56FeiTqN+arTgnw=="],
 
@@ -8689,7 +8689,7 @@
 
     "react-resizable-panels": ["react-resizable-panels@4.14.8", "", { "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-kVot7JCIZct85ZY87vww95R7tI25VSTjHpEAIIy2YcsOtbtwG6l1+vDD6TCYgmgE/JSp0ADqNooHn97Y6dMOFw=="],
 
-    "react-server-dom-webpack": ["react-server-dom-webpack@19.2.8", "", { "dependencies": { "acorn-loose": "^8.3.0", "neo-async": "^2.6.1", "webpack-sources": "^3.2.0" }, "peerDependencies": { "react": "^19.2.8", "react-dom": "^19.2.8", "webpack": "^5.59.0" } }, "sha512-rFO1VJZ+cH9ZH6hGy9+qmIsmZHZpCMKJZXhWHqT71UnSfg+w+W+gwrwp58MVzMqdFquG8GF1c6C8q0OGphkEdg=="],
+    "react-server-dom-webpack": ["react-server-dom-webpack@19.2.9", "", { "dependencies": { "acorn-loose": "^8.3.0", "neo-async": "^2.6.1", "webpack-sources": "^3.2.0" }, "peerDependencies": { "react": "^19.2.9", "react-dom": "^19.2.9", "webpack": "^5.59.0" } }, "sha512-7vhLc+COcttZsIsZa5qbT4Qn3Flp2fCadhuGRKpwE3ahmbu21hOnPFKwziNHZj8Fqtfcbs7pTJV69QA5GcUpbw=="],
 
     "react-style-singleton": ["react-style-singleton@2.2.3", "", { "dependencies": { "get-nonce": "^1.0.0", "tslib": "^2.0.0" }, "peerDependencies": { "@types/react": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ=="],
 

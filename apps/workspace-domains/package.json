@@ -18,7 +18,7 @@
   "dependencies": {
     "@tuturuuu/cms-blocks": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react": "19.2.9",
+    "react-dom": "19.2.9"
   }
 }

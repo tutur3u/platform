@@ -1,6 +1,6 @@
-# React 19.2.8
+# React 19.2.9
 
-The root dependency overrides pin `react` and `react-dom` to 19.2.8.
+The root dependency overrides pin `react` and `react-dom` to 19.2.9.
 A rendering mode belongs to the app's actual build configuration.
 React's version alone does not establish RSC support in a deployment.
 

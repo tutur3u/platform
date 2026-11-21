@@ -19,7 +19,7 @@ Upstream links marked `latest` can change independently of these pins.
 | Vite+ | 1.3.0 | [Build configuration](03-vite-plus.md) |
 | Void | 1.1.12 | [Worker configuration](04-void.md) |
 | Next.js | 16.4.2 | [Migration map](05-nextjs.md) |
-| React | 19.2.8 | [Rendering and state](06-react.md) |
+| React | 19.2.9 | [Rendering and state](06-react.md) |
 | OpenNext Cloudflare | 1.20.6 | [Retained Next adapter](07-opennext-cloudflare.md) |
 | Wrangler | 4.151.2 and 4.152.0 in app manifests | [Provider configuration](08-wrangler-config.md) |
 | Workers | Provider documentation, checked 9 November 2026 | [Runtime limits](09-workers-runtime.md) |
