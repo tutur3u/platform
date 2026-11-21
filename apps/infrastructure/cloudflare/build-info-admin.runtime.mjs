@@ -301,6 +301,9 @@ test(
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_synthetic_only',
       SUPABASE_SECRET_KEY: fixtureKey,
       INTERNAL_WEB_API_ORIGIN: 'https://central.invalid',
+      // Exercises the app's build-info admission on the legacy host; the
+      // production legacy-host redirect has its own coverage.
+      TUTURUUU_LEGACY_HOST_REDIRECT: '0',
     };
     const worker = await require('wrangler').unstable_startWorker({
       config: pointer,

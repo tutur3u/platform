@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 const host = 'infrastructure.tuturuuu.com';
 
 test(
-  'production Infrastructure preserves auth, assets and host isolation',
+  'production Infrastructure preserves auth, assets, host isolation and the legacy redirect',
   {
     timeout: 120000,
     skip: process.env.INFRASTRUCTURE_ARTIFACT_PROFILE !== 'production',
@@ -39,6 +39,7 @@ test(
     assert.equal(config.vars.TUTURUUU_REQUIRE_SECRETS, '1');
     assert.equal(config.vars.NEXT_PUBLIC_APP_URL, `https://${host}`);
     assert.equal(config.vars.NEXT_PUBLIC_WEB_APP_URL, 'https://tuturuuu.com');
+    assert.equal(config.vars.TUTURUUU_LEGACY_HOST_REDIRECT, '1');
     const scratch = await mkdtemp(join(tmpdir(), 'infra-production-'));
     t.after(() => rm(scratch, { recursive: true, force: true }));
     await cp(join(app, 'dist'), join(scratch, 'dist'), { recursive: true });
@@ -104,11 +105,12 @@ test(
           headers: response.headers,
         })
       );
-      assert.equal(response.status, 307);
-      const target = new URL(response.headers.location, `https://${host}`);
-      assert.equal(target.origin, `https://${host}`);
-      assert.equal(target.pathname, '/login');
-      assert.equal(target.searchParams.get('next'), path);
+      // The legacy host only moves visitors to the apex mount.
+      assert.equal(response.status, 301);
+      assert.equal(
+        response.headers.location,
+        `https://tuturuuu.com/admin${path === '/' ? '' : path}`
+      );
       assert.equal(
         response.headers['strict-transport-security'],
         'max-age=63072000'
@@ -138,22 +140,28 @@ test(
       (name) => name.endsWith('.js')
     );
     assert.ok(asset);
-    const response = await get(`/assets/${asset}`);
+    const mountedAsset = await get(`/admin/assets/${asset}`, 'tuturuuu.com');
     t.diagnostic(
       JSON.stringify({
-        path: `/assets/${asset}`,
-        status: response.status,
-        headers: response.headers,
+        path: `/admin/assets/${asset}`,
+        status: mountedAsset.status,
+        headers: mountedAsset.headers,
       })
     );
-    assert.equal(response.status, 200);
+    assert.equal(mountedAsset.status, 200);
     assert.deepEqual(
-      response.body,
+      mountedAsset.body,
       await readFile(join(app, 'dist/client/assets', asset))
     );
-    const mountedAsset = await get(`/admin/assets/${asset}`, 'tuturuuu.com');
-    assert.equal(mountedAsset.status, 200);
-    assert.deepEqual(mountedAsset.body, response.body);
+    const legacyAsset = await get(`/assets/${asset}?v=1`);
+    assert.equal(legacyAsset.status, 301);
+    assert.equal(
+      legacyAsset.headers.location,
+      `https://tuturuuu.com/admin/assets/${asset}?v=1`
+    );
+    // Monitoring keeps reading the build identity on the legacy host.
+    const legacyBuildInfo = await get('/api/build-info');
+    assert.notEqual(legacyBuildInfo.status, 301);
     const refused = await get(
       '/__native-smoke-missing__',
       'unknown-host.invalid'

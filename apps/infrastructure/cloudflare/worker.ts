@@ -14,10 +14,15 @@ import { config as proxyConfig, proxy } from '../src/proxy';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import {
+  legacyHostRedirectEnabled,
+  legacyHostResponse,
+} from '../src/runtime/legacy-host';
 
 export interface InfrastructureEnvironment {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
+  TUTURUUU_LEGACY_HOST_REDIRECT?: string;
   TUTURUUU_NOINDEX?: string;
 }
 
@@ -78,7 +83,11 @@ export default {
     ) => {
       let response: Response;
       try {
-        response = await (await handler)(request, env, ctx);
+        // In production the subdomain only redirects to the apex mount.
+        response =
+          (legacyHostRedirectEnabled(env)
+            ? legacyHostResponse(request, mounts)
+            : null) ?? (await (await handler)(request, env, ctx));
       } catch (error) {
         // Even a failed route load answers through the response policy.
         console.error('[start-bridge] worker failed', error);

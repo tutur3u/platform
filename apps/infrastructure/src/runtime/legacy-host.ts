@@ -1,0 +1,86 @@
+/**
+ * The production legacy host: `infrastructure.tuturuuu.com` only moves
+ * visitors to the apex Admin mount. Navigations (GET/HEAD) get a permanent,
+ * path-preserving 301 to `https://tuturuuu.com/admin<path><query>`; every
+ * other method gets a 308 so the method and body survive. Both run before any
+ * auth, locale or app handling. The apex mount never redirects back to the
+ * subdomain, so a cached permanent redirect cannot loop after a rollback. The
+ * target origin and base are fixed constants, never read from the request, so
+ * no Host, forwarded header, path or query can change them.
+ */
+const LEGACY_HOST = 'infrastructure.tuturuuu.com';
+const MOUNT_HOST = 'tuturuuu.com';
+const MOUNT_ORIGIN = `https://${MOUNT_HOST}`;
+const MOUNT_BASE = '/admin';
+/** Monitoring keeps reading the subdomain's build identity directly. */
+const BUILD_INFO_PATH = '/api/build-info';
+const PRIVATE_NO_STORE = 'private, no-store';
+
+interface LegacyHostMounts {
+  mountHosts?: readonly string[];
+}
+
+/** Only the production Worker serves the legacy host; it sets this var. */
+export function legacyHostRedirectEnabled(env: {
+  TUTURUUU_LEGACY_HOST_REDIRECT?: string;
+}) {
+  return env.TUTURUUU_LEGACY_HOST_REDIRECT === '1';
+}
+
+/** The mount pathname for a legacy pathname: leading slashes and backslashes
+ * collapse to one `/`, and a path already under `/admin` keeps its prefix. */
+function mountPathname(pathname: string) {
+  const path = pathname.replace(/^[/\\]+/u, '/');
+  if (path === MOUNT_BASE || path.startsWith(`${MOUNT_BASE}/`)) return path;
+  return path === '/' ? MOUNT_BASE : `${MOUNT_BASE}${path}`;
+}
+
+function insideMount(target: URL) {
+  return (
+    target.origin === MOUNT_ORIGIN &&
+    !target.username &&
+    !target.password &&
+    (target.pathname === MOUNT_BASE ||
+      target.pathname.startsWith(`${MOUNT_BASE}/`))
+  );
+}
+
+/** The request's query exactly as received, including a bare `?`. */
+function rawQuery(requestUrl: string) {
+  const start = requestUrl.indexOf('?');
+  if (start < 0) return '';
+  const end = requestUrl.indexOf('#', start);
+  return end < 0 ? requestUrl.slice(start) : requestUrl.slice(start, end);
+}
+
+/**
+ * The legacy-host redirect, or `null` when the request is not for the legacy
+ * host, the artifact has no apex mount (the staging profile), or the request
+ * reads the build identity.
+ */
+export function legacyHostResponse(
+  request: Request,
+  mounts: LegacyHostMounts
+): Response | null {
+  if (!mounts.mountHosts?.some((host) => host.toLowerCase() === MOUNT_HOST))
+    return null;
+  const url = new URL(request.url);
+  if (url.hostname.toLowerCase() !== LEGACY_HOST) return null;
+  // The build identity stays on the subdomain for every method.
+  if (url.pathname === BUILD_INFO_PATH) return null;
+  const method = request.method.toUpperCase();
+
+  const target = new URL(MOUNT_ORIGIN);
+  target.pathname = mountPathname(url.pathname);
+  const query = rawQuery(request.url);
+  const location = `${target.origin}${target.pathname}${query}`;
+  if (!insideMount(target) || !insideMount(new URL(location)))
+    return new Response(null, {
+      status: 400,
+      headers: { 'Cache-Control': PRIVATE_NO_STORE },
+    });
+  return new Response(null, {
+    status: method === 'GET' || method === 'HEAD' ? 301 : 308,
+    headers: { 'Cache-Control': PRIVATE_NO_STORE, Location: location },
+  });
+}

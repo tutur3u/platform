@@ -32,6 +32,8 @@ class InfrastructureArtifactTest(unittest.TestCase):
         self.assertEqual(production.IDENTITY["vars"]["TUTURUUU_REQUIRE_SECRETS"], "1")
         self.assertEqual(production.IDENTITY["vars"]["NEXT_PUBLIC_APP_URL"], "https://infrastructure.tuturuuu.com")
         self.assertEqual(production.IDENTITY["vars"]["NEXT_PUBLIC_WEB_APP_URL"], "https://tuturuuu.com")
+        self.assertEqual(production.IDENTITY["vars"]["TUTURUUU_LEGACY_HOST_REDIRECT"], "1")
+        self.assertNotIn("TUTURUUU_LEGACY_HOST_REDIRECT", staging.IDENTITY.get("vars", {}))
         self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-infrastructure")
         self.assertFalse(production.NORMALIZED_DEFAULTS["preview_urls"])
         self.assertFalse(production.NORMALIZED_DEFAULTS["upload_source_maps"])

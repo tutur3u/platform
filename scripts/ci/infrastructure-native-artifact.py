@@ -43,6 +43,7 @@ def load(profile="staging"):
                 "TUTURUUU_REQUIRE_SECRETS": "1",
                 "NEXT_PUBLIC_APP_URL": "https://infrastructure.tuturuuu.com",
                 "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+                "TUTURUUU_LEGACY_HOST_REDIRECT": "1",
             },
         }
         module.NORMALIZED_DEFAULTS = {

@@ -55,8 +55,13 @@ permissions.
 3. **Sections.** The remaining sections are rebuilt on the shared `Structure`
    shell and `@tuturuuu/ui` in the order of the table above. Old code is removed
    only after the rebuilt section reaches parity.
-4. **Redirect.** After `/admin` is verified, `infrastructure.tuturuuu.com`
-   answers 301 to `tuturuuu.com/admin` with path and query kept.
+4. **Redirect.** `infrastructure.tuturuuu.com` is a Workers Custom Domain of
+   `tuturuuu-infrastructure`. The production Worker
+   (`TUTURUUU_LEGACY_HOST_REDIRECT=1`, set by the production config rewrite)
+   answers 301 for GET/HEAD and 308 for other methods to
+   `https://tuturuuu.com/admin<path><query>`, with the raw query kept and
+   `Cache-Control: private, no-store`. `/api/build-info` keeps answering on the
+   subdomain. Staging artifacts never redirect.
 
 Mounted apps follow the apex isolation rules: app-owned cookies use
 `Path=/admin`, and no service worker is registered over `/`.
@@ -106,8 +111,9 @@ report-only policy without a rebuild.
 - Admin Worker: `void-cf-publisher.mjs assign --version <previous> --expect-current <new>`.
 - Gateway: redeploy the previous gateway version; removing `/admin` entries
   returns the path to Web.
-- Redirect: remove the `infrastructure.tuturuuu.com` redirect rule; the prior
-  serving version keeps working.
+- Redirect: assign the previous Worker version, which serves the app on the
+  subdomain. The custom domain stays on the Worker; it never points back at
+  Vercel.
 
 Rollback always targets the previous Cloudflare version, never a Vercel
 deployment. See [Infrastructure on Start + Void](/build/devops/infrastructure-start-void)
