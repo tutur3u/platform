@@ -66,3 +66,19 @@ test('Meet publication resolves the pinned cf CLI, not a hoisted binary', () => 
   ])
     assert.doesNotMatch(step(job, name).run, /CF_BIN|node_modules\/\.bin/);
 });
+
+test('a release dispatch publishes its pinned main source', () => {
+  assert.equal(
+    workflow.env.SOURCE_SHA,
+    "${{ github.event.pull_request.head.sha || (github.event_name == 'workflow_dispatch' && inputs.release && inputs.source_sha) || github.sha }}"
+  );
+  const marker = step('deploy', 'Record successful Cloudflare deployment');
+  assert.equal(marker.env.DEPLOYMENT_MARKER_SHA, '${{ env.SOURCE_SHA }}');
+  for (const job of ['validate', 'deploy'])
+    assert.ok(
+      workflow.jobs[job].steps.some(
+        (item) => item.with?.ref === '${{ env.SOURCE_SHA }}'
+      ),
+      `${job} checks out the source`
+    );
+});

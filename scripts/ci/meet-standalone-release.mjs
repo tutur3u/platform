@@ -32,12 +32,20 @@ function stop(code) {
   throw Object.assign(new Error(code), { guardCode: code });
 }
 
+/**
+ * A production push publishes its own head. A main dispatch publishes its
+ * pinned `source_sha`, which need not be main's head: admission still
+ * requires the checkout to be that commit, the commit to be on main and its
+ * exact-source CI to be green, so a busy main cannot strand a release.
+ */
 export function validateInvocation(env) {
   if (env.GITHUB_REPOSITORY !== 'tutur3u/platform')
     stop('MEET_RELEASE_REPOSITORY');
-  if (!SHA.test(env.SOURCE_SHA ?? '') || env.SOURCE_SHA !== env.GITHUB_SHA)
-    stop('MEET_RELEASE_SOURCE');
-  if (env.GITHUB_REF === 'refs/heads/production') return;
+  if (!SHA.test(env.SOURCE_SHA ?? '')) stop('MEET_RELEASE_SOURCE');
+  if (env.GITHUB_REF === 'refs/heads/production') {
+    if (env.SOURCE_SHA !== env.GITHUB_SHA) stop('MEET_RELEASE_SOURCE');
+    return;
+  }
   if (
     env.GITHUB_REF !== 'refs/heads/main' ||
     env.GITHUB_EVENT_NAME !== 'workflow_dispatch' ||
@@ -177,8 +185,14 @@ export async function admitRelease({
         stdio: ['ignore', 'pipe', 'pipe'],
       }).trim();
     phase = 'ancestry';
-    if (git(['rev-parse', 'HEAD']) !== env.SOURCE_SHA)
-      stop('MEET_RELEASE_CHECKOUT');
+    const head = git(['rev-parse', 'HEAD']);
+    if (head !== env.SOURCE_SHA) {
+      // The policy job runs this script from main's dispatch head; the jobs
+      // that build and publish check out the pinned source itself.
+      if (env.GITHUB_REF !== 'refs/heads/main' || head !== env.GITHUB_SHA)
+        stop('MEET_RELEASE_CHECKOUT');
+      git(['cat-file', '-e', `${env.SOURCE_SHA}^{commit}`]);
+    }
     git(['fetch', '--no-tags', 'origin', 'main']);
     git(['merge-base', '--is-ancestor', env.SOURCE_SHA, 'FETCH_HEAD']);
     phase = 'live-identity';

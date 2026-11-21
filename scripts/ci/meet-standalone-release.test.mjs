@@ -69,6 +69,17 @@ test('only pinned main dispatch or existing production invocation is admitted', 
     GITHUB_REF: 'refs/heads/production',
     EXPECTED_SOURCE_SHA: '',
   });
+  // A pinned main ancestor may be released while main has moved on.
+  validateInvocation({ ...env, GITHUB_SHA: live });
+  assert.throws(
+    () =>
+      validateInvocation({
+        ...env,
+        GITHUB_REF: 'refs/heads/production',
+        GITHUB_SHA: live,
+      }),
+    /MEET_RELEASE_SOURCE/
+  );
   for (const mutation of [
     { SOURCE_SHA: 'main' },
     { SOURCE_SHA: live },
@@ -513,4 +524,46 @@ test('admission reads run pages up to the bounded size', async () => {
     }),
     /MEET_RELEASE_READ_TOO_LARGE/
   );
+});
+
+test("the policy job admits a pinned main ancestor from main's head checkout", async () => {
+  const head = 'c'.repeat(40);
+  const commands = [];
+  const run = (_bin, args) => {
+    commands.push(args.join(' '));
+    return args[0] === 'rev-parse' ? head : '';
+  };
+  const fetcher = async (url) => ({
+    ok: true,
+    text: async () =>
+      JSON.stringify(
+        new URL(url).origin === 'https://api.github.com'
+          ? { workflow_runs: [green] }
+          : metadata
+      ),
+  });
+  const receipts = [];
+  await admitRelease({
+    env: { ...env, GITHUB_SHA: head },
+    run,
+    fetcher,
+    receipt: (value) => receipts.push(value),
+  });
+  assert.equal(receipts.at(-1).guardCode, 'MEET_RELEASE_ADMITTED');
+  assert.ok(commands.includes(`cat-file -e ${source}^{commit}`));
+  assert.ok(commands.includes(`merge-base --is-ancestor ${source} FETCH_HEAD`));
+  // Any other checkout, or a production push, must be the source itself.
+  for (const mutation of [
+    { GITHUB_SHA: 'd'.repeat(40) },
+    { GITHUB_REF: 'refs/heads/production', GITHUB_SHA: head },
+  ])
+    await assert.rejects(
+      admitRelease({
+        env: { ...env, ...mutation, EXPECTED_SOURCE_SHA: source },
+        run,
+        fetcher,
+        receipt: () => {},
+      }),
+      /MEET_RELEASE_(CHECKOUT|SOURCE)/
+    );
 });
