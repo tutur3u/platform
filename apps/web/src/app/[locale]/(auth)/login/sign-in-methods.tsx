@@ -11,6 +11,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import {
@@ -69,6 +70,11 @@ export function SignInMethods({
   const lastUsed = useLastLoginMethod();
   const { more, primary } = arrangeLoginMethods(lastUsed);
   const [moreOpen, setMoreOpen] = useState(false);
+  // The chosen method shows a spinner in its icon lane while the page waits
+  // for its provider, so a tap never leaves only greyed-out buttons.
+  const [chosen, setChosen] = useState<LoginMethod | null>(null);
+  // Re-enabled buttons (an OAuth start failed) forget the earlier choice.
+  if (!disabled && chosen !== null) setChosen(null);
 
   const renderMethod = (
     method: LoginMethod,
@@ -81,8 +87,19 @@ export function SignInMethods({
         // centred label never moves when it appears after hydration.
         className={method === lastUsed ? 'border-primary/50' : undefined}
         disabled={disabled}
-        icon={<MethodIcon method={method} />}
-        onClick={() => onChoose(method)}
+        icon={
+          disabled && chosen === method ? (
+            <span aria-hidden className="flex">
+              <LoadingIndicator className="size-5" />
+            </span>
+          ) : (
+            <MethodIcon method={method} />
+          )
+        }
+        onClick={() => {
+          setChosen(method);
+          onChoose(method);
+        }}
       >
         {t(METHOD_LABEL_KEYS[method])}
         {method === lastUsed ? (

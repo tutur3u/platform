@@ -79,6 +79,13 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   browser session. A session either side sees shows the account
   confirmation, and Continue binds the mint to the server-seen account even
   when the browser cannot read the session.
+- Pending actions on the login card never sit as a silent grey button.
+  Continue shows a spinner in its icon lane and steps from "Continuing…" to
+  "Securing your session…" (after 2s) and "Opening <app>…" (after 5s), with
+  every phase label stacked in one cell so the button keeps its size; both
+  card actions are disabled meanwhile. A chosen first-step provider shows a
+  spinner in its icon lane. A failed handoff lands on the error card with
+  Retry.
 - A hinted provider never starts while the return target is still
   resolving or beside an invalid-link or handoff error card.
 - Elsewhere a hint is advisory: it starts the provider automatically only

@@ -14,6 +14,7 @@ import {
   StoredAccountSwitchList,
 } from './internal-app-account-confirmation-parts';
 import type { FocusedSignInStep } from './login-view';
+import { PendingLabel, usePendingPhase } from './pending-label';
 
 /**
  * Every step shares this fixed-height frame, so switching steps never
@@ -78,6 +79,7 @@ export function FocusedSignInCard({
 }) {
   const t = useTranslations();
   const busy = continuing || startingProvider || switchingAccountId !== null;
+  const continuePhase = usePendingPhase(continuing);
 
   if (step === 'provider') {
     return (
@@ -155,14 +157,33 @@ export function FocusedSignInCard({
       </div>
       <div className="space-y-3">
         <Button
-          aria-busy={continuing}
-          className="h-12 w-full rounded-2xl font-medium"
+          className="relative h-12 w-full rounded-2xl px-12 font-medium"
           disabled={!canContinue || busy}
           onClick={onContinue}
           type="button"
         >
-          {continuing ? <LoadingIndicator className="mr-2 size-4" /> : null}
-          {t('login.continue_to_internal_app', { app: appName })}
+          {continuing ? (
+            <>
+              <span
+                aria-hidden
+                className="absolute top-1/2 left-4 flex -translate-y-1/2"
+              >
+                <LoadingIndicator className="size-4" />
+              </span>
+              <PendingLabel
+                labels={[
+                  t('login.continuing'),
+                  t('login.securing_session'),
+                  t('login.opening_app', { app: appName }),
+                ]}
+                phase={continuePhase}
+              />
+            </>
+          ) : (
+            <span className="min-w-0 truncate">
+              {t('login.continue_to_internal_app', { app: appName })}
+            </span>
+          )}
         </Button>
         <Button
           className="h-11 w-full rounded-2xl"

@@ -336,4 +336,38 @@ describe('LoginForm focused external sign-in', () => {
     await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(tokenized));
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
   });
+
+  it('shows a pending Continue with both actions disabled while the handoff runs', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: 'person@example.com', id: 'user-1' } },
+    });
+    mocks.createCrossAppReturnUrlWithInternalApi.mockReturnValue(
+      new Promise(() => {})
+    );
+
+    renderLoginFormSearch(search, {
+      initialView: view({
+        hasSession: true,
+        sessionStatus: 'present',
+        session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
+      }),
+    });
+
+    const continueButton = await screen.findByRole('button', {
+      name: 'login.continue_to_internal_app',
+    });
+    await waitFor(() => expect(continueButton).toBeEnabled());
+    await act(async () => {
+      fireEvent.click(continueButton);
+    });
+
+    // The exact name: the spinner adds nothing, in any language.
+    const pending = await screen.findByRole('button', {
+      name: 'login.continuing',
+    });
+    expect(pending).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'login.use_another_account' })
+    ).toBeDisabled();
+  });
 });
