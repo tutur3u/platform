@@ -9,7 +9,6 @@ import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
 import { sanitizeLogError, sanitizeLogValue } from '../log-sanitizer';
-import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import {
   type ClientIpConfig,
   type ClientIpHeaders,
@@ -23,13 +22,16 @@ import {
   REDIS_KEYS,
   WINDOW_MS,
 } from './constants';
+import {
+  getAbuseProtectionStore as getRedisClient,
+  invalidateAbuseProtectionStore,
+} from './store';
 import type {
   AbuseCheckResult,
   AbuseEventType,
   AbuseProtectionLogContext,
   BlockInfo,
   LogAbuseEventOptions,
-  RedisClient,
 } from './types';
 
 // Re-export types and constants
@@ -51,26 +53,13 @@ export function isSharedIpThrottleOnlyBlockReason(reason: AbuseEventType) {
   return SHARED_IP_THROTTLE_ONLY_BLOCK_REASONS.has(reason);
 }
 
-// Redis client singleton (lazy initialized)
-let redisClient: RedisClient | null = null;
-let redisInitialized = false;
-
-function markRedisUnavailable(message: string, ...details: unknown[]): void {
-  console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
-
-  redisClient = null;
-  redisInitialized = true;
-}
-
 function logAbuseError(message: string, error: unknown): void {
   console.error(message, sanitizeLogError(error));
 }
 
 function markRedisCommandFailed(message: string, ...details: unknown[]): void {
   console.warn(message, ...details.map((detail) => sanitizeLogError(detail)));
-
-  redisClient = null;
-  redisInitialized = false;
+  invalidateAbuseProtectionStore();
 }
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
@@ -98,34 +87,6 @@ function getOTPSendIpLimits() {
       ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE
     ),
   };
-}
-
-/**
- * Initialize Redis client from Upstash environment variables
- */
-async function getRedisClient(): Promise<RedisClient | null> {
-  if (redisInitialized) return redisClient;
-
-  try {
-    if (!hasUpstashRestEnv()) {
-      markRedisUnavailable(
-        '[Abuse Protection] Redis not configured - failing open'
-      );
-      return null;
-    }
-
-    redisClient = await getUpstashRestRedisClient();
-    if (!redisClient) {
-      markRedisUnavailable(
-        '[Abuse Protection] Redis client unavailable - failing open'
-      );
-    }
-    redisInitialized = true;
-    return redisClient;
-  } catch (error) {
-    markRedisUnavailable('[Abuse Protection] Redis unavailable:', error);
-    return null;
-  }
 }
 
 /**

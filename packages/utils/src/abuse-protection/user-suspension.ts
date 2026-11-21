@@ -3,8 +3,7 @@
  * Checks and manages user account suspensions.
  */
 
-import { getUpstashRestRedisClient } from '../upstash-rest';
-import type { RedisClient } from './types';
+import { getAbuseProtectionStore as getRedisClient } from './store';
 
 // Extend REDIS_KEYS locally (avoids modifying shared constants for this feature)
 const SUSPENSION_KEYS = {
@@ -15,23 +14,6 @@ interface SuspensionResult {
   suspended: boolean;
   reason?: string;
   expiresAt?: Date;
-}
-
-// Lazy-loaded Redis client
-let redisClient: RedisClient | null = null;
-let redisInitialized = false;
-
-async function getRedisClient(): Promise<RedisClient | null> {
-  if (redisInitialized) return redisClient;
-
-  try {
-    redisClient = await getUpstashRestRedisClient();
-    redisInitialized = true;
-    return redisClient;
-  } catch {
-    redisInitialized = true;
-    return null;
-  }
 }
 
 async function getSupabaseAdmin() {

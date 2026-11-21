@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const reportLegacyFamilyWithoutStore = vi.fn();
+
 describe('abuse protection Redis fail-open behavior', () => {
   afterEach(() => {
     vi.doUnmock('../../upstash-rest');
@@ -19,6 +21,7 @@ describe('abuse protection Redis fail-open behavior', () => {
     vi.doMock('../../upstash-rest', () => ({
       getUpstashRestRedisClient: getRedis,
       hasUpstashRestEnv: () => false,
+      reportLegacyFamilyWithoutStore,
     }));
     vi.doMock('@tuturuuu/supabase/next/server', () => ({
       createAdminClient,
@@ -38,6 +41,8 @@ describe('abuse protection Redis fail-open behavior', () => {
       allowed: true,
     });
     expect(getRedis).not.toHaveBeenCalled();
+    // Failing open without a store raises the SR-951 alert.
+    expect(reportLegacyFamilyWithoutStore).toHaveBeenCalledWith('ratelimit');
     expect(rpc).not.toHaveBeenCalledWith('get_active_ip_block', {
       p_ip_address: '203.0.113.80',
     });
@@ -66,6 +71,7 @@ describe('abuse protection Redis fail-open behavior', () => {
     vi.doMock('../../upstash-rest', () => ({
       getUpstashRestRedisClient: async () => redis,
       hasUpstashRestEnv: () => true,
+      reportLegacyFamilyWithoutStore,
     }));
     vi.doMock('@tuturuuu/supabase/next/server', () => ({
       createAdminClient,
@@ -99,6 +105,7 @@ describe('abuse protection Redis fail-open behavior', () => {
     vi.doMock('../../upstash-rest', () => ({
       getUpstashRestRedisClient: vi.fn(),
       hasUpstashRestEnv: () => false,
+      reportLegacyFamilyWithoutStore,
     }));
     vi.doMock('@tuturuuu/supabase/next/server', () => ({
       createAdminClient,
