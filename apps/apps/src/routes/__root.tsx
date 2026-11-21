@@ -1,3 +1,4 @@
+import { trustedTypesHeadScript } from '@tuturuuu/start-bridge/start/base-path';
 import {
   createRootRoute,
   HeadContent,
@@ -25,7 +26,7 @@ export const Route = createRootRoute({
     const copy = (locale === 'vi' ? vi : en).appsGateway.metadata;
     const canonical = 'https://apps.tuturuuu.com/';
     return {
-      scripts: [appBaseHeadScript()],
+      scripts: [trustedTypesHeadScript(), appBaseHeadScript()],
       meta: [
         { charSet: 'utf-8' },
         {

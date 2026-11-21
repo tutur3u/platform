@@ -5,11 +5,16 @@ import {
   appRobots,
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
-import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import {
+  defineBridgeAppConfig,
+  withDocumentSecurity,
+} from '@tuturuuu/start-bridge/start/app-config';
 
-export default defineBridgeAppConfig({
-  // Robots (the app's seo-policy.json allowlist on its canonical host),
-  // framing, sniffing, referrer and private caching on every response; only
-  // GET/HEAD static files keep their own caching.
-  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
-});
+export default defineBridgeAppConfig(
+  withDocumentSecurity('teach', {
+    // Robots (the app's seo-policy.json allowlist on its canonical host),
+    // framing, sniffing, referrer and private caching on every response; only
+    // GET/HEAD static files keep their own caching.
+    wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+  })
+);

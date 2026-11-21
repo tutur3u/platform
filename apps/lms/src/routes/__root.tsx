@@ -1,3 +1,7 @@
+import {
+  trustedTypesHeadScript,
+  appBaseHeadScript as securityAppBaseHeadScript,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
 import { createBridgeStatusComponents } from '@tuturuuu/start-bridge/start/status-route';
 import type { ReactNode } from 'react';
@@ -18,6 +22,8 @@ export const Route = createRootRoute({
     const copy = loaderData === 'vi' ? vi : en;
     return {
       scripts: [
+        trustedTypesHeadScript(),
+        securityAppBaseHeadScript(),
         {
           children:
             "document.documentElement.classList.toggle('dark',matchMedia('(prefers-color-scheme: dark)').matches)",

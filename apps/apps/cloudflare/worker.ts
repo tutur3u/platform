@@ -1,3 +1,12 @@
+import {
+  createNonce,
+  defaultContentSecurityPolicy,
+} from '@tuturuuu/start-bridge/csp';
+import {
+  secureBridgeDocument,
+  collectDocumentSecurityReport,
+  CSP_REPORT_PATH,
+} from '@tuturuuu/start-bridge/start/app-config';
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import {
   hasAmbiguousSupabaseSession,
@@ -29,6 +38,7 @@ export interface AppsEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
+  TTR_TRUSTED_TYPES_APPS?: string;
   APPS_CANONICAL_HOST_ENABLED?: string;
 }
 const publicPaths = new Set([
@@ -93,6 +103,9 @@ async function serveApps(request: Request, env: AppsEnvironment) {
   const routed = base.stripRequest(request);
   if (!routed) return new Response('Not Found', { status: 404 });
   const url = new URL(routed.url);
+  if (url.pathname === CSP_REPORT_PATH)
+    return collectDocumentSecurityReport(request);
+  const nonce = createNonce();
   const result = await withRequestContext(
     request,
     async () => {
@@ -173,8 +186,26 @@ async function serveApps(request: Request, env: AppsEnvironment) {
         ? new Response(null, response)
         : response;
     },
-    base.basePath
+    base.basePath,
+    nonce
   );
-  return enforceStagingCookiePolicy(request, base.finalizeResponse(result));
+  if (
+    result.headers.get('Content-Type')?.includes('text/html') &&
+    !url.pathname.startsWith('/api/')
+  )
+    result.headers.set(
+      'Content-Security-Policy',
+      defaultContentSecurityPolicy(nonce)
+    );
+  return secureBridgeDocument(
+    enforceStagingCookiePolicy(request, base.finalizeResponse(result)),
+    {
+      request,
+      env,
+      app: 'apps',
+      basePath: base.basePath,
+      policies: ['dompurify'],
+    }
+  );
 }
 export default { fetch: withHstsResponsePolicy(appsRequest) };

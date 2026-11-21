@@ -6,7 +6,10 @@ import {
   appRobots,
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
-import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import {
+  defineBridgeAppConfig,
+  withDocumentSecurity,
+} from '@tuturuuu/start-bridge/start/app-config';
 import {
   type AppSecurityProfile,
   applyDocumentSecurityHeaders,
@@ -50,44 +53,63 @@ function learnSecurityProfile(
   };
 }
 
-export default defineBridgeAppConfig({
-  // Enforced: nonce + strict-dynamic scripts, no plugins, no base rewrites,
-  // no framing (the same policy Track and Finance enforce).
-  csp: defaultContentSecurityPolicy,
-  async wrapResponse(response, context) {
-    const secured = await rootPolicy(response, context);
-    const { request, mounts } = context;
-    const basePath = mounts?.basePath ?? '/learn';
-    const url = new URL(request.url);
-    const path =
-      url.hostname === 'tuturuuu.com'
-        ? url.pathname.slice(basePath.length)
-        : url.pathname;
-    if (
-      (request.method === 'GET' || request.method === 'HEAD') &&
-      secured.status === 200 &&
-      FINGERPRINTED_ASSET.test(path) &&
-      secured.headers.get('Cache-Control')?.startsWith('public,') &&
-      !secured.headers.has('Set-Cookie')
-    ) {
-      secured.headers.set(
-        'Cache-Control',
-        'public, max-age=31536000, immutable'
-      );
-    }
-    if (response.headers.get('Referrer-Policy') === 'no-referrer') {
-      secured.headers.set('Referrer-Policy', 'no-referrer');
-    }
-    return applyDocumentSecurityHeaders(
-      secured,
-      learnSecurityProfile(context.env, basePath),
-      {
-        requestOrigin: url.origin,
-        sharedOrigin:
-          readVar(context.env, 'NEXT_PUBLIC_WEB_APP_URL') ??
-          'https://tuturuuu.com',
-        reportUri: readVar(context.env, 'TTR_CSP_REPORT_URI'),
-      }
-    );
-  },
-});
+export default defineBridgeAppConfig(
+  withDocumentSecurity(
+    'learn',
+    {
+      // Enforced: nonce + strict-dynamic scripts, no plugins, no base rewrites,
+      // no framing (the same policy Track and Finance enforce).
+      csp: defaultContentSecurityPolicy,
+      async wrapResponse(response, context) {
+        const secured = await rootPolicy(response, context);
+        const { request, mounts } = context;
+        const basePath = mounts?.basePath ?? '/learn';
+        const url = new URL(request.url);
+        const path =
+          url.hostname === 'tuturuuu.com'
+            ? url.pathname.slice(basePath.length)
+            : url.pathname;
+        if (
+          (request.method === 'GET' || request.method === 'HEAD') &&
+          secured.status === 200 &&
+          FINGERPRINTED_ASSET.test(path) &&
+          secured.headers.get('Cache-Control')?.startsWith('public,') &&
+          !secured.headers.has('Set-Cookie')
+        ) {
+          secured.headers.set(
+            'Cache-Control',
+            'public, max-age=31536000, immutable'
+          );
+        }
+        if (response.headers.get('Referrer-Policy') === 'no-referrer') {
+          secured.headers.set('Referrer-Policy', 'no-referrer');
+        }
+        return applyDocumentSecurityHeaders(
+          secured,
+          learnSecurityProfile(context.env, basePath),
+          {
+            requestOrigin: url.origin,
+            sharedOrigin:
+              readVar(context.env, 'NEXT_PUBLIC_WEB_APP_URL') ??
+              'https://tuturuuu.com',
+            reportUri: readVar(context.env, 'TTR_CSP_REPORT_URI'),
+          }
+        );
+      },
+    },
+    [
+      'dompurify',
+      'defaultWorkerFactory',
+      'domLineBreaksComputer',
+      'editorViewLayer',
+      'standaloneColorizer',
+      'richScreenReaderContent',
+      'tokenizeToString',
+      'stickyScrollViewLayer',
+      'diffEditorWidget',
+      'editorGhostText',
+      'diffReview',
+      'domSanitize0',
+    ]
+  )
+);

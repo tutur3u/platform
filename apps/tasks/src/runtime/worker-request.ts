@@ -150,11 +150,11 @@ export function denyFraming(csp: string | null) {
  */
 /**
  * Trusted Types for the target policy: script sinks need Trusted Types, and
- * only DOMPurify's policy may be created (no duplicates). The report-only
+ * only the bridge default and DOMPurify policies may be created (no duplicates). The report-only
  * window reveals any other policy name before enforcement.
  */
 const TRUSTED_TYPES_DIRECTIVES =
-  "require-trusted-types-for 'script'; trusted-types dompurify";
+  "require-trusted-types-for 'script'; trusted-types default dompurify";
 
 /** Same-origin CSP report collector, relative to the app base. */
 export const CSP_REPORT_PATH = '/api/csp-report';
@@ -326,7 +326,7 @@ function secureDocument(
     buildPermissionsPolicy(DEFAULT_PERMISSIONS)
   );
   const cspEnforced = isEnforced(env, 'TTR_CSP_TASKS');
-  const ttEnforced = cspEnforced && isEnforced(env, 'TTR_TRUSTED_TYPES_TASKS');
+  const ttEnforced = cspEnforced && env.TTR_TRUSTED_TYPES_TASKS === 'enforce';
   if (!cspEnforced) headers.delete('Content-Security-Policy');
   else
     headers.set(

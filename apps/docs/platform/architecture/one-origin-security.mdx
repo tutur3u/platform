@@ -34,3 +34,41 @@ isolation, mounted assets and API dispatch, central login return URLs and root
 behavior. Drive's `src/start-candidate/apex-worker.test.ts` additionally covers
 production bindings on the apex. Emitted Worker and deployed acceptance remain
 required before routing production traffic.
+
+## Mounted app Trusted Types rollout
+
+Tasks, Learn, Nova, Tools, Teach, LMS, Finance, Drive, Chat, CMS, Forms,
+Git, AI and Apps register the shared Start bridge default Trusted Types policy
+before application scripts. Script CSP uses a response nonce and `strict-dynamic`.
+The custom LMS and Apps renderers propagate that nonce through the bridge request
+context and TanStack Router SSR options.
+
+`TTR_TRUSTED_TYPES_<APP>=enforce` selects enforcement in the app Worker binding;
+the default sends Trusted Types in `Content-Security-Policy-Report-Only`.
+Tasks additionally requires `TTR_CSP_TASKS=enforce` for its existing script rollout.
+Learn and Teach use their own variables on `/lms/learn` and `/lms/teach`;
+`TTR_TRUSTED_TYPES_LMS` controls the launcher only. LMS has no subdomain route.
+
+Every report endpoint is relative to the resolved app base at `/api/csp-report`.
+The collector caps bodies at 16 KiB and logs only bounded directive/disposition
+categories, with at most 50 entries per minute per isolate. It never records URLs,
+script samples, cookies or report bodies. It returns an empty 204 for POST reports.
+This isolate budget bounds diagnostic output, not incoming request volume.
+
+The named policies include `default` and `dompurify`; Learn also names its Monaco
+editor policies. Monaco's initial stale-realm replacement `domSanitize0` is listed;
+further stale-realm recoveries must be assessed from the report window. Neither
+wildcard names nor `allow-duplicates` are granted. Tiptap/ProseMirror create no
+additional named policies in the installed source. Forms' Turnstile flow and
+Learn's coding/editor/worker flows need explicit runtime coverage before enforcement.
+
+An app may enforce only after a clean window of a few hours of traffic, or a
+headless crawl of its key pages with zero violations. Header unit tests establish
+configuration and mode selection; they do not establish that clean window.
+The release owner flips each app's binding after acceptance and retains the
+report-only binding value as the immediate Trusted Types rollback.
+Meet and Roadmap follow their release owners' separate rollout.
+
+Regression coverage lives in `packages/start-bridge/src/core/document-security.test.ts`,
+`apps/learn/security-configs.test.ts`, the bridge nonce
+and bootstrap suites, and Tasks' Worker request suite.

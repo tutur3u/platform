@@ -3,5 +3,5 @@ import { createRootRoute } from '@tanstack/react-router';
 import { createBridgeRootRoute } from '@tuturuuu/start-bridge/start/page-route';
 
 export const Route = createRootRoute(
-  createBridgeRootRoute({ appName: 'Learn' })
+  createBridgeRootRoute({ trustedTypes: true, appName: 'Learn' })
 );

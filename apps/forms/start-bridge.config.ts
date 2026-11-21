@@ -1,7 +1,10 @@
 import { withTurnstileCsp } from '@tuturuuu/cloudflare/turnstile/client';
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
-import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import {
+  defineBridgeAppConfig,
+  withDocumentSecurity,
+} from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { FormsEnvironment } from './cloudflare/worker';
 
@@ -14,91 +17,93 @@ const profile =
   import.meta.env?.VITE_FORMS_NATIVE_PROFILE ??
   process.env.VITE_FORMS_NATIVE_PROFILE;
 
-export default defineBridgeAppConfig<FormsEnvironment>({
-  mounts: {
-    rootHosts: ['forms.tuturuuu.com', 'forms.tutur3u.com'],
-    mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
-    basePath: '/forms',
-    isolation: {
-      ownedCookies: [
-        'NEXT_LOCALE',
-        'sidebar-collapsed',
-        'sidebar-behavior',
-        'sidebar-behavior-updated-at',
-      ],
+export default defineBridgeAppConfig<FormsEnvironment>(
+  withDocumentSecurity<FormsEnvironment>('forms', {
+    mounts: {
+      rootHosts: ['forms.tuturuuu.com', 'forms.tutur3u.com'],
+      mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
+      basePath: '/forms',
+      isolation: {
+        ownedCookies: [
+          'NEXT_LOCALE',
+          'sidebar-collapsed',
+          'sidebar-behavior',
+          'sidebar-behavior-updated-at',
+        ],
+      },
+      unknownHost: 'reject',
     },
-    unknownHost: 'reject',
-  },
-  // Shared forms render Cloudflare Turnstile, so its origin is allowed in
-  // every directive the policy restricts.
-  csp: (nonce) => withTurnstileCsp(defaultContentSecurityPolicy(nonce)),
-  wrapResponse(response, { request, env, mounts }) {
-    const headers = new Headers(response.headers);
-    const url = new URL(request.url);
-    const mount = mounts && resolveAppBase(url, { ...mounts, app: 'forms' });
-    const path = url.pathname.slice(mount?.basePath.length ?? 0);
-    const isEmbed = EMBED_PAGE.test(path);
-    const upstreamFramable = upstreamFramablePaths.some((pattern) =>
-      pattern.test(path)
-    );
-    headers.set('X-Content-Type-Options', 'nosniff');
-    headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Shared forms render Cloudflare Turnstile, so its origin is allowed in
+    // every directive the policy restricts.
+    csp: (nonce) => withTurnstileCsp(defaultContentSecurityPolicy(nonce)),
+    wrapResponse(response, { request, env, mounts }) {
+      const headers = new Headers(response.headers);
+      const url = new URL(request.url);
+      const mount = mounts && resolveAppBase(url, { ...mounts, app: 'forms' });
+      const path = url.pathname.slice(mount?.basePath.length ?? 0);
+      const isEmbed = EMBED_PAGE.test(path);
+      const upstreamFramable = upstreamFramablePaths.some((pattern) =>
+        pattern.test(path)
+      );
+      headers.set('X-Content-Type-Options', 'nosniff');
+      headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-    if (isEmbed) {
-      headers.delete('X-Frame-Options');
-      const directives = (headers.get('Content-Security-Policy') ?? '')
-        .split(';')
-        .map((directive) => directive.trim())
-        .filter(
-          (directive) =>
-            directive && !/^frame-ancestors(?:\s|$)/iu.test(directive)
+      if (isEmbed) {
+        headers.delete('X-Frame-Options');
+        const directives = (headers.get('Content-Security-Policy') ?? '')
+          .split(';')
+          .map((directive) => directive.trim())
+          .filter(
+            (directive) =>
+              directive && !/^frame-ancestors(?:\s|$)/iu.test(directive)
+          );
+        headers.set(
+          'Content-Security-Policy',
+          [...directives, 'frame-ancestors *'].join('; ')
         );
-      headers.set(
-        'Content-Security-Policy',
-        [...directives, 'frame-ancestors *'].join('; ')
-      );
-    } else if (!upstreamFramable) {
-      headers.set('X-Frame-Options', 'DENY');
-    }
-
-    if (env.TUTURUUU_NOINDEX === '1' || isEmbed || upstreamFramable) {
-      headers.set('X-Robots-Tag', 'noindex, nofollow');
-    }
-
-    const isStatic =
-      (request.method === 'GET' || request.method === 'HEAD') &&
-      response.status === 200 &&
-      !headers.get('Content-Type')?.toLowerCase().includes('text/html') &&
-      !headers.has('Set-Cookie') &&
-      (path.startsWith('/assets/') || PUBLIC_FILES.has(path));
-    if (isStatic && FINGERPRINTED_ASSET.test(path)) {
-      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    }
-    if (!isStatic) {
-      headers.set('Cache-Control', 'private, no-store');
-      for (const name of [
-        'CDN-Cache-Control',
-        'Cloudflare-CDN-Cache-Control',
-        'Vercel-CDN-Cache-Control',
-      ]) {
-        headers.delete(name);
+      } else if (!upstreamFramable) {
+        headers.set('X-Frame-Options', 'DENY');
       }
-      const vary = new Set(
-        (headers.get('Vary') ?? '')
-          .split(',')
-          .map((value) => value.trim().toLowerCase())
-          .filter(Boolean)
-      );
-      for (const value of ['cookie', 'authorization', 'accept-language']) {
-        vary.add(value);
-      }
-      headers.set('Vary', [...vary].join(', '));
-    }
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  },
-});
+      if (env.TUTURUUU_NOINDEX === '1' || isEmbed || upstreamFramable) {
+        headers.set('X-Robots-Tag', 'noindex, nofollow');
+      }
+
+      const isStatic =
+        (request.method === 'GET' || request.method === 'HEAD') &&
+        response.status === 200 &&
+        !headers.get('Content-Type')?.toLowerCase().includes('text/html') &&
+        !headers.has('Set-Cookie') &&
+        (path.startsWith('/assets/') || PUBLIC_FILES.has(path));
+      if (isStatic && FINGERPRINTED_ASSET.test(path)) {
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+      if (!isStatic) {
+        headers.set('Cache-Control', 'private, no-store');
+        for (const name of [
+          'CDN-Cache-Control',
+          'Cloudflare-CDN-Cache-Control',
+          'Vercel-CDN-Cache-Control',
+        ]) {
+          headers.delete(name);
+        }
+        const vary = new Set(
+          (headers.get('Vary') ?? '')
+            .split(',')
+            .map((value) => value.trim().toLowerCase())
+            .filter(Boolean)
+        );
+        for (const value of ['cookie', 'authorization', 'accept-language']) {
+          vary.add(value);
+        }
+        headers.set('Vary', [...vary].join(', '));
+      }
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    },
+  })
+);

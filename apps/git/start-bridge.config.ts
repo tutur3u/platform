@@ -5,29 +5,34 @@ import {
   appRobots,
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
-import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import {
+  defineBridgeAppConfig,
+  withDocumentSecurity,
+} from '@tuturuuu/start-bridge/start/app-config';
 
-export default defineBridgeAppConfig({
-  mounts: {
-    rootHosts: ['git.tuturuuu.com'],
-    mountHosts:
-      import.meta.env?.VITE_GIT_NATIVE_PROFILE === 'production'
-        ? ['tuturuuu.com']
-        : [],
-    basePath: '/git',
-    isolation: {
-      ownedCookies: [
-        'NEXT_LOCALE',
-        'sidebar-collapsed',
-        'sidebar-behavior',
-        'sidebar-behavior-updated-at',
-      ],
+export default defineBridgeAppConfig(
+  withDocumentSecurity('git', {
+    mounts: {
+      rootHosts: ['git.tuturuuu.com'],
+      mountHosts:
+        import.meta.env?.VITE_GIT_NATIVE_PROFILE === 'production'
+          ? ['tuturuuu.com']
+          : [],
+      basePath: '/git',
+      isolation: {
+        ownedCookies: [
+          'NEXT_LOCALE',
+          'sidebar-collapsed',
+          'sidebar-behavior',
+          'sidebar-behavior-updated-at',
+        ],
+      },
+      unknownHost: 'reject',
     },
-    unknownHost: 'reject',
-  },
-  worker: { workersDev: false },
-  // Robots (the app's seo-policy.json allowlist on its canonical host),
-  // framing, sniffing, referrer and private caching on every response; only
-  // GET/HEAD static files keep their own caching.
-  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
-});
+    worker: { workersDev: false },
+    // Robots (the app's seo-policy.json allowlist on its canonical host),
+    // framing, sniffing, referrer and private caching on every response; only
+    // GET/HEAD static files keep their own caching.
+    wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+  })
+);

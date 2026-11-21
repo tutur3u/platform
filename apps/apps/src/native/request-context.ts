@@ -13,9 +13,10 @@ export {
 export function withRequestContext<T>(
   request: Request,
   work: () => T,
-  appBase = ''
+  appBase = '',
+  nonce?: string
 ) {
-  return withBridgeRequest({ request, appBase }, work);
+  return withBridgeRequest({ request, appBase, nonce }, work);
 }
 
 export const requestContext = bridgeRequest;

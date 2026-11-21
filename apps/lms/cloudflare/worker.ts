@@ -1,3 +1,12 @@
+import {
+  createNonce,
+  defaultContentSecurityPolicy,
+} from '@tuturuuu/start-bridge/csp';
+import {
+  secureBridgeDocument,
+  collectDocumentSecurityReport,
+  CSP_REPORT_PATH,
+} from '@tuturuuu/start-bridge/start/app-config';
 import { type AssetsBinding, fetchAsset } from '@tuturuuu/start-bridge/assets';
 import { createBasePath, retarget } from '@tuturuuu/start-bridge/base-path';
 import {
@@ -18,6 +27,7 @@ export interface LmsEnvironment {
   TEACH?: Binding;
   LEARN?: Binding;
   TUTURUUU_NOINDEX?: string;
+  TTR_TRUSTED_TYPES_LMS?: string;
 }
 
 const base = createBasePath({ app: 'lms', basePath: LMS_BASE });
@@ -68,6 +78,8 @@ async function handleRequest(
 
   const build = workerBuildInfo(routed, 'lms');
   const path = new URL(routed.url).pathname;
+  if (path === CSP_REPORT_PATH) return collectDocumentSecurityReport(request);
+  const nonce = createNonce();
   const isAsset = path.startsWith('/assets/');
   const response = policy(build ?? (await renderShell()), {
     request,
@@ -87,7 +99,18 @@ async function handleRequest(
       'public, max-age=31536000, immutable'
     );
   }
-  return request.method === 'HEAD' ? new Response(null, response) : response;
+  if (response.headers.get('Content-Type')?.includes('text/html'))
+    response.headers.set(
+      'Content-Security-Policy',
+      defaultContentSecurityPolicy(nonce)
+    );
+  const secured = secureBridgeDocument(response, {
+    request,
+    env,
+    app: 'lms',
+    basePath: LMS_BASE,
+  });
+  return request.method === 'HEAD' ? new Response(null, secured) : secured;
 
   function renderShell() {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -109,7 +132,7 @@ async function handleRequest(
     // Start canonicalizes the mounted index to a slash. Render that path
     // internally so the public landing stays at the bare mount.
     if (url.pathname === LMS_BASE) url.pathname = `${LMS_BASE}/`;
-    return withBridgeRequest({ request, appBase: LMS_BASE }, () =>
+    return withBridgeRequest({ request, appBase: LMS_BASE, nonce }, () =>
       render.fetch(url.href === request.url ? request : retarget(request, url))
     );
   }

@@ -1,3 +1,7 @@
+import {
+  CSP_REPORT_PATH,
+  collectDocumentSecurityReport,
+} from '../core/document-security';
 import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import {
   applyOneOriginNoindex,
@@ -221,6 +225,8 @@ export function createBridgeHandler<
     }
     const appPath = base.strip(url.pathname);
     if (appPath === null) return new Response('Not Found', { status: 404 });
+    if (options.csp && appPath === CSP_REPORT_PATH)
+      return collectDocumentSecurityReport(incoming);
     // The mount header is bridge-owned: never trust a client-sent copy.
     const headers = new Headers(incoming.headers);
     headers.delete(APP_BASE_HEADER);

@@ -1722,3 +1722,15 @@ cache adapter in `packages/utils/src/task-helper/board-task-query-cache.ts`
 for writes and rollbacks across the prefix so task edits preserve cursor
 state. Keep the route's 50-row response budget and the List view's bounded
 initial render covered by the Tasks performance tests.
+
+### Mounted document security
+
+Use `withDocumentSecurity` from `@tuturuuu/start-bridge/start/app-config` around
+app-owned Worker options and `createBridgeRootRoute({ trustedTypes: true })` for
+bridged roots. Custom roots place `trustedTypesHeadScript()` before application
+scripts and propagate `requestNonce()` into Router SSR. Custom Workers must
+create a nonce inside their request context and use the same value in the CSP.
+The shared handler answers `/api/csp-report` locally when CSP is configured.
+Pass each app's extra named policies explicitly; do not allow wildcard policies.
+See `apps/docs/platform/architecture/one-origin-security.mdx` for binding names,
+clean-window acceptance, custom LMS/Apps handling, and rollback scope.

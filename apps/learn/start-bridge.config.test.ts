@@ -7,6 +7,10 @@ const html = () =>
   });
 
 async function wrap(url: string, response = html()) {
+  response.headers.set(
+    'Content-Security-Policy',
+    config.csp!('test', { request: new Request(url), response, path: '/' })!
+  );
   return config.wrapResponse!(response, {
     request: new Request(url),
     env: { NEXT_PUBLIC_SUPABASE_URL: 'https://abcd.supabase.co' },
@@ -38,13 +42,13 @@ describe('learn security headers', () => {
       const reportOnly =
         response.headers.get('content-security-policy-report-only') ?? '';
       expect(reportOnly).toContain("require-trusted-types-for 'script'");
-      expect(reportOnly).toContain('https://abcd.supabase.co');
+      expect(reportOnly).toContain('trusted-types default dompurify');
       expect(response.headers.get('x-content-type-options')).toBe('nosniff');
     }
     const mounted = await wrap('https://tuturuuu.com/learn/courses');
     expect(
       mounted.headers.get('content-security-policy-report-only')
-    ).toContain('https://tuturuuu.com/learn/');
+    ).toContain('report-uri /learn/api/csp-report');
   });
 
   it('adds no document policy to non-HTML responses', async () => {

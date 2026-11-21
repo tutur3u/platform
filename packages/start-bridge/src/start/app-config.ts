@@ -1,3 +1,6 @@
+import { defaultContentSecurityPolicy } from '../core/csp';
+import { secureBridgeDocument } from '../core/document-security';
+import { resolveAppBase } from '../core/mounts';
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import {
   isolateMountedRequest,
@@ -150,3 +153,39 @@ export function defineBridgeAppConfig<Env = unknown>(
     },
   };
 }
+
+/** Stages Trusted Types independently for each app while enforcing script nonces. */
+export function withDocumentSecurity<Env>(
+  app: string,
+  config: BridgeAppConfig<Env>,
+  policies: readonly string[] = ['dompurify']
+): BridgeAppConfig<Env> {
+  return {
+    ...config,
+    csp: config.csp ?? defaultContentSecurityPolicy,
+    async wrapResponse(response, context) {
+      const secured = config.wrapResponse
+        ? await config.wrapResponse(response, context)
+        : response;
+      const mount =
+        context.mounts &&
+        resolveAppBase(new URL(context.request.url), {
+          ...context.mounts,
+          app,
+        });
+      return secureBridgeDocument(secured, {
+        request: context.request,
+        env: context.env,
+        app,
+        basePath: mount?.basePath ?? '',
+        policies,
+      });
+    },
+  };
+}
+
+export {
+  CSP_REPORT_PATH,
+  collectDocumentSecurityReport,
+  secureBridgeDocument,
+} from '../core/document-security';

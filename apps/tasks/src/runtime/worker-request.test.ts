@@ -404,7 +404,7 @@ describe('Tasks document security headers (D87 per-app gate)', () => {
       const response = await call(url, {}, html(status));
       expect(response.status).toBe(status);
       expect(reported(response)).toBe(
-        `${POLICY}; require-trusted-types-for 'script'; trusted-types dompurify; report-uri ${base}/api/csp-report; report-to csp`
+        `${POLICY}; require-trusted-types-for 'script'; trusted-types default dompurify; report-uri ${base}/api/csp-report; report-to csp`
       );
       expect(response.headers.get('reporting-endpoints')).toBe(
         `csp="${base}/api/csp-report"`
@@ -430,16 +430,16 @@ describe('Tasks document security headers (D87 per-app gate)', () => {
     ])
       expect(policy).toContain(directive);
     expect(policy).not.toContain('require-trusted-types-for');
-    expect(reported(response)).toContain('trusted-types dompurify');
+    expect(reported(response)).toContain('trusted-types default dompurify');
   });
 
   it('enforces Trusted Types only together with the script policy', async () => {
     const both = await call('https://tasks.tuturuuu.com/personal', {
       TTR_CSP_TASKS: 'enforce',
-      TTR_TRUSTED_TYPES_TASKS: 'ENFORCE',
+      TTR_TRUSTED_TYPES_TASKS: 'enforce',
     });
     expect(enforced(both)).toContain(
-      "require-trusted-types-for 'script'; trusted-types dompurify"
+      "require-trusted-types-for 'script'; trusted-types default dompurify"
     );
     expect(enforced(both)).not.toContain('allow-duplicates');
     expect(both.headers.has('content-security-policy-report-only')).toBe(false);
@@ -448,7 +448,27 @@ describe('Tasks document security headers (D87 per-app gate)', () => {
       TTR_TRUSTED_TYPES_TASKS: 'enforce',
     });
     expect(enforced(ttOnly)).toBe("frame-ancestors 'none'");
-    expect(reported(ttOnly)).toContain('trusted-types dompurify');
+    expect(reported(ttOnly)).toContain('trusted-types default dompurify');
+  });
+
+  it('selects both Trusted Types modes on root and mount', async () => {
+    for (const base of ['', '/tasks'])
+      for (const mode of ['report', 'enforce']) {
+        const response = await call(
+          `https://${base ? 'tuturuuu.com' : 'tasks.tuturuuu.com'}${base}/personal`,
+          {
+            TTR_CSP_TASKS: 'enforce',
+            TTR_TRUSTED_TYPES_TASKS: mode,
+          }
+        );
+        expect(enforced(response)).toContain("'nonce-n0nce' 'strict-dynamic'");
+        expect(enforced(response).includes('require-trusted-types-for')).toBe(
+          mode === 'enforce'
+        );
+        expect(
+          mode === 'enforce' ? enforced(response) : reported(response)
+        ).toContain(`report-uri ${base}/api/csp-report`);
+      }
   });
 
   it('treats typos as report-only', async () => {
@@ -458,7 +478,9 @@ describe('Tasks document security headers (D87 per-app gate)', () => {
         TTR_TRUSTED_TYPES_TASKS: value,
       });
       expect(enforced(response), value).toBe("frame-ancestors 'none'");
-      expect(reported(response), value).toContain('trusted-types dompurify');
+      expect(reported(response), value).toContain(
+        'trusted-types default dompurify'
+      );
     }
   });
 

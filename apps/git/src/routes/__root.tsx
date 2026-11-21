@@ -2,4 +2,6 @@
 import { createRootRoute } from '@tanstack/react-router';
 import { createBridgeRootRoute } from '@tuturuuu/start-bridge/start/page-route';
 
-export const Route = createRootRoute(createBridgeRootRoute({ appName: 'Git' }));
+export const Route = createRootRoute(
+  createBridgeRootRoute({ trustedTypes: true, appName: 'Git' })
+);
