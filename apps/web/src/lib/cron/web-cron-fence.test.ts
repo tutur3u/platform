@@ -112,7 +112,7 @@ it.each([
     expect(send).not.toHaveBeenCalled();
   }
 );
-it('keeps Vercel active and Cloudflare off before gate wiring', async () => {
+it('runs manual and Cloudflare-scheduled calls without the gate', async () => {
   const handler = vi.fn(async () => Response.json({ ok: true }));
   const send = vi.fn();
   expect(
@@ -136,8 +136,21 @@ it('keeps Vercel active and Cloudflare off before gate wiring', async () => {
         send
       )
     ).status
-  ).toBe(503);
-  expect(handler).toHaveBeenCalledOnce();
+  ).toBe(200);
+  expect(
+    (
+      await withWebCronFence(
+        new Request(`https://web.test${path}`, {
+          headers: { 'x-tuturuuu-cron-slot': String(T0) },
+        }),
+        path,
+        handler,
+        { CRON_SECRET: SECRET },
+        send
+      )
+    ).status
+  ).toBe(401);
+  expect(handler).toHaveBeenCalledTimes(2);
   expect(send).not.toHaveBeenCalled();
 });
 it.each([false, true])(

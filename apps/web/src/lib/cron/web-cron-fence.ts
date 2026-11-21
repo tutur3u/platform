@@ -41,7 +41,7 @@ export async function withWebCronFence(
   now = Date.now()
 ): Promise<Response> {
   const cloudflare = isCloudflareCron(request);
-  // Preserve the existing response/auth contract until the gate is wired.
+  // Manual callers keep the handler's own response/auth contract.
   if (!env.WEB_CRON_GATE_ORIGIN && !cloudflare) return handler();
   const secret =
     env.CRON_SECRET ??
@@ -58,8 +58,9 @@ export async function withWebCronFence(
     )
   )
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  // The legacy owner remains live until the boundary gate is explicitly wired.
-  if (!env.WEB_CRON_GATE_ORIGIN) return unavailable();
+  // Web's deployment carries no Vercel schedule, so without the boundary gate
+  // Cron Control is the only scheduler and its ledger admits each slot once.
+  if (!env.WEB_CRON_GATE_ORIGIN) return handler();
   const token = env.CRON_CONTROL_WEB_GATE_TOKEN;
   if (!token || token.length < 32) return unavailable();
   let origin: URL;

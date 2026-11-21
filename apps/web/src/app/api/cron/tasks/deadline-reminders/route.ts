@@ -11,8 +11,12 @@ import {
   WEB_CRON_MAX_REMINDER_TASKS,
 } from '@/lib/cron/web-cron-budget';
 
+// Ends before Cron Control's 120-second dispatch timeout, so an unknown
+// outcome never leaves a run alive into the next five-minute slot.
+export const maxDuration = 100;
+
 /**
- * Vercel Cron Job: Process Task Deadline Reminders
+ * Cron Control job web-deadline-reminders: Process Task Deadline Reminders
  *
  * This endpoint runs every 5 minutes to check for tasks with approaching due dates
  * and sends reminder notifications to all watchers.

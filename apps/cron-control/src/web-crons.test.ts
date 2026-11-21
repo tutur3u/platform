@@ -50,30 +50,25 @@ function harness(respond: () => Response = () => Response.json({ ok: true })) {
   };
   return { deps, send, counts, ledger };
 }
-it('preserves all five Vercel paths, schedules, methods and default-off selection', async () => {
+it('owns all five web cron paths and schedules with none left on Vercel', async () => {
   const vercel = JSON.parse(
     readFileSync(new URL('../../web/vercel.json', import.meta.url), 'utf8')
   );
-  expect(
-    jobs
-      .map(({ path, cron }) => ({ path, schedule: cron }))
-      .sort((a, b) => a.path.localeCompare(b.path))
-  ).toEqual(
-    vercel.crons.sort((a: { path: string }, b: { path: string }) =>
-      a.path.localeCompare(b.path)
-    )
+  // Single scheduler: web's deployment carries no Vercel schedule.
+  expect(vercel.crons).toEqual([]);
+  expect(jobs.map(({ path }) => path).sort()).toEqual(
+    Object.keys(WEB_CRON_PATHS).sort()
   );
   expect(jobs).toHaveLength(5);
   for (const job of jobs) {
     expect(job.method).toBe('GET');
     expect(CRON_TRIGGERS).toContain(job.cron);
     expect(maxAttempts(job)).toBe(1);
+    const minutes = Object.entries(WEB_JOBS).find(([id]) => id === job.id)?.[1];
+    expect(job.cron).toBe(`*/${minutes} * * * *`);
     expect(
       Object.entries(WEB_CRON_PATHS).find(([path]) => path === job.path)?.[1]
-    ).toEqual([
-      job.id,
-      Object.entries(WEB_JOBS).find(([id]) => id === job.id)?.[1],
-    ]);
+    ).toEqual([job.id, minutes]);
   }
   const config = readFileSync(
     new URL('../cloudflare.config.ts', import.meta.url),

@@ -118,7 +118,7 @@ describe('Web route census', () => {
     ).toBe('/[locale]/[wsId]/api/[...path]');
     expect(routePattern('(marketing)/page.tsx')).toBe('/');
   });
-  it('moves only the eleven static public documents and retains all five Vercel schedules', () => {
+  it('moves only the eleven static public documents and declares no Vercel schedule', () => {
     expect(
       manifest.routes
         .filter(
@@ -143,10 +143,8 @@ describe('Web route census', () => {
       'native-Start': 12,
       'Next-fallback': manifest.summary.total - 12,
     });
-    expect(manifest.crons).toHaveLength(5);
-    expect(manifest.crons.every((cron) => cron.owner === 'vercel-web')).toBe(
-      true
-    );
+    // Cron Control schedules web's cron routes; Vercel owns none.
+    expect(manifest.crons).toEqual([]);
     expect(manifest.serviceWorker).toMatchObject({
       url: '/serwist/sw.js',
       scope: '/',

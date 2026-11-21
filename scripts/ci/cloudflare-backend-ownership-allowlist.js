@@ -75,41 +75,6 @@ const LEGACY_OWNERS = Object.freeze([
     'Cron Control job calendar-smart-schedule through the Infrastructure gateway; later a Workflow.'
   ),
   vercelCron(
-    'apps/web',
-    '/api/cron/process-notification-batches',
-    '*/15 * * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job web-notification-batches (batch claims stay authoritative); later a Queue consumer.'
-  ),
-  vercelCron(
-    'apps/web',
-    '/api/cron/process-post-email-queue',
-    '*/30 * * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job web-post-email-queue; later a Queue consumer.'
-  ),
-  vercelCron(
-    'apps/web',
-    '/api/cron/process-report-automation',
-    '*/15 * * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job web-report-automation; later a Queue consumer.'
-  ),
-  vercelCron(
-    'apps/web',
-    '/api/cron/process-topic-announcement-queue',
-    '*/15 * * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job web-topic-announcements; later a Queue consumer.'
-  ),
-  vercelCron(
-    'apps/web',
-    '/api/cron/tasks/deadline-reminders',
-    '*/5 * * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job web-deadline-reminders at the live */5 cadence.'
-  ),
-  vercelCron(
     'apps/inventory',
     '/api/cron/inventory/checkout-expiry',
     '*/5 * * * *',
