@@ -353,10 +353,10 @@ imports. The workflow then runs
 local `workspace:` protocol ranges. Keep matching npm release workflows for the
 SDK runtime workspace dependencies so consumers can install the published SDK.
 When release-please bumps the SDK and one of those dependencies in the same
-production push, the SDK workflow waits for the dependency versions before it
-packs and publishes. If a dependency release workflow for the same SHA fails,
-the SDK wait fails immediately instead of waiting for npm visibility until
-timeout.
+production push, the SDK workflow defers packaging until the dependency
+versions are visible on npm. Its release gate can dispatch a missing dependency
+release on the production branch. A failed dependency release for the same SHA
+fails the gate.
 
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:
@@ -375,6 +375,43 @@ do not paper over the failure by reintroducing a long-lived `NPM_TOKEN`. After
 confirming a trusted-publisher release works end to end, the npm package
 settings should keep `Require two-factor authentication and disallow tokens`
 enabled so the package cannot be published with classic tokens.
+
+### Catch up a stable CLI release
+
+The stable npm package is `tuturuuu`, which installs the `ttr` binary.
+If npm `latest` is behind production, read the package version from
+`packages/sdk/package.json` at the approved production commit. Confirm its
+SDK build and tests passed in CI at that commit. Check the GitHub Actions
+workflow state separately from `tuturuuu.ci.ts`. A workflow marked
+`disabled_manually` in GitHub stays disabled even when the source switch is on.
+
+Before a CLI-only catch-up, confirm npm returns every exact publishable
+workspace dependency version from that commit. Stop if a version is missing
+or the registry check fails. The SDK release gate can dispatch dependency
+workflows before the protected publish job if it cannot find those versions.
+
+Coordinate with the production owner to hold the branch at the approved
+commit until GitHub assigns a run to that commit. If the release owner approves
+resuming a disabled workflow, enable only `release-sdk-package.yaml` and
+dispatch it on `production`. Verify the run's head SHA against the approved
+commit. The `sdk-release-production` environment accepts only that branch.
+The SDK run's completion can resume a deployment that the production planner
+deferred while waiting for packages at that SHA. Confirm with the production
+owner that the existing planner may resume before dispatch.
+
+The workflow checks npm availability again and publishes using the existing
+trusted publisher. Keep the workflow enabled so subsequent green production
+version bumps can publish. If npm requests interactive authentication, stop
+and ask the npm package owner to check the trusted-publisher settings.
+
+After the publish job succeeds, verify the stable dist-tag and run the
+published CLI from a temporary directory. Both commands should report the
+approved version. Replace `<approved-version>` before running the smoke test.
+
+```bash
+npm view tuturuuu version
+npx --yes --package "tuturuuu@<approved-version>" ttr --version
+```
 
 ### Dev channel and private previews
 
