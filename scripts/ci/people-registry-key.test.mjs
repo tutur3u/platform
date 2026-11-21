@@ -21,6 +21,7 @@ import {
   verify,
   write,
 } from './people-registry-key.mjs';
+import { CLOUDFLARE_ACCOUNT_ID } from './shared-secret-targets.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '../..');
@@ -29,6 +30,12 @@ const ARMORED =
   '-----BEGIN AGE ENCRYPTED FILE-----\nYWdl\n-----END AGE ENCRYPTED FILE-----\n';
 const KID = '0a1b2c3d';
 const KEY = 'ab'.repeat(32);
+const ESCROW_HOST = `${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+/** True when a request goes to the escrow bucket's exact S3 origin. */
+const isEscrowUrl = (value) => {
+  const url = new URL(value);
+  return url.protocol === 'https:' && url.hostname === ESCROW_HOST;
+};
 
 function fixture({ recipients = [RECIPIENT] } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'prk-'));
@@ -304,10 +311,7 @@ test('escrow uses only the dedicated escrow token', async () => {
   const cf = cloudflare();
   const seen = [];
   const fetchImpl = (url, init) => {
-    seen.push([
-      url.includes('.r2.cloudflarestorage.com/'),
-      init.headers.authorization,
-    ]);
+    seen.push([isEscrowUrl(url), init.headers.authorization]);
     return cf.fetchImpl(url, init);
   };
   await escrow('staging', KID, ARMORED, { ...quiet, root, fetchImpl });
@@ -377,15 +381,12 @@ test('escrow objects keep literal slashes in their path', async () => {
     root,
     fetchImpl: cf.fetchImpl,
   });
-  const urls = cf.calls
-    .map((c) => c.url)
-    .filter((u) => u.includes('.r2.cloudflarestorage.com/'));
+  const urls = cf.calls.map((c) => c.url).filter(isEscrowUrl);
   assert.ok(urls.length >= 2);
   for (const url of urls) {
-    assert.ok(
-      url.endsWith(
-        `/tuturuuu-secret-escrow/people-registry/production/${KID}.age`
-      )
+    assert.equal(
+      new URL(url).pathname,
+      `/tuturuuu-secret-escrow/people-registry/production/${KID}.age`
     );
     assert.ok(!/%2F/i.test(url));
   }
