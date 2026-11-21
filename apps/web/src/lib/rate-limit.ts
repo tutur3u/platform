@@ -7,6 +7,7 @@
  */
 
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
+import { AbuseGuardUnavailableError } from '@tuturuuu/utils/abuse-guard/client';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import {
   getUpstashRestRedisClient,
@@ -160,6 +161,28 @@ export async function getRedisClient() {
 }
 
 /**
+ * Fixed fields for a failed count: the error class, the guard failure code,
+ * and the runtime rejection behind a `network` failure (its class and a
+ * bounded message, which carry runtime text such as subrequest or I/O
+ * errors, never the rate-limit key or request data).
+ */
+function describeRateLimitStoreError(error: unknown) {
+  const cause =
+    error instanceof AbuseGuardUnavailableError ? error.cause : undefined;
+  return {
+    errorType: error instanceof Error ? error.name : 'unknown',
+    code: error instanceof AbuseGuardUnavailableError ? error.code : null,
+    causeType:
+      cause === undefined
+        ? null
+        : cause instanceof Error
+          ? cause.name
+          : typeof cause,
+    causeMessage: cause instanceof Error ? cause.message.slice(0, 160) : null,
+  };
+}
+
+/**
  * Rate limit using Redis (production-ready, serverless-safe)
  */
 export async function checkRateLimitRedis(
@@ -196,7 +219,11 @@ export async function checkRateLimitRedis(
     };
   } catch (error) {
     if (options.failClosed) console.error('Redis rate limit unavailable');
-    else console.error('Redis rate limit error, allowing request:', error);
+    else
+      console.error(
+        'Redis rate limit error, allowing request:',
+        describeRateLimitStoreError(error)
+      );
     return unavailable();
   }
 }

@@ -36,9 +36,10 @@ export type AbuseGuardFailureCode =
 export class AbuseGuardUnavailableError extends Error {
   constructor(
     readonly code: AbuseGuardFailureCode,
-    message = `Abuse guard store unavailable: ${code}`
+    message = `Abuse guard store unavailable: ${code}`,
+    options?: { cause?: unknown }
   ) {
-    super(message);
+    super(message, options);
     this.name = 'AbuseGuardUnavailableError';
   }
 }
@@ -172,7 +173,10 @@ export function createBindingGuardTransport(
       return payload;
     } catch (error) {
       if (error instanceof AbuseGuardUnavailableError) throw error;
-      throw new AbuseGuardUnavailableError('network');
+      // Keep the runtime's rejection so callers can log what failed.
+      throw new AbuseGuardUnavailableError('network', undefined, {
+        cause: error,
+      });
     } finally {
       clearTimeout(timer);
     }

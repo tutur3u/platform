@@ -71,3 +71,28 @@ it('uses the legacy Upstash client when the family is not assigned', async () =>
   expect(mocks.getClient).toHaveBeenCalledWith();
   log.mockRestore();
 });
+
+it('logs the guard failure code and runtime cause when a count fails open', async () => {
+  vi.stubEnv('ABUSE_GUARD_FAMILIES', 'ratelimit');
+  const { AbuseGuardUnavailableError } =
+    await import('@tuturuuu/utils/abuse-guard/client');
+  mocks.client!.incrRateWindow.mockRejectedValueOnce(
+    new AbuseGuardUnavailableError('network', undefined, {
+      cause: new TypeError('Network connection lost.'),
+    })
+  );
+  const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const { checkRateLimitRedis } = await import('./rate-limit');
+
+  expect((await checkRateLimitRedis('a', config)).allowed).toBe(true);
+  expect(error).toHaveBeenCalledWith(
+    'Redis rate limit error, allowing request:',
+    {
+      errorType: 'AbuseGuardUnavailableError',
+      code: 'network',
+      causeType: 'TypeError',
+      causeMessage: 'Network connection lost.',
+    }
+  );
+  error.mockRestore();
+});

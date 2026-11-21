@@ -451,7 +451,10 @@ describe('createBindingGuardTransport', () => {
         family: 'password',
         steps: [],
       })
-    ).rejects.toMatchObject({ code: 'network' });
+    ).rejects.toMatchObject({
+      code: 'network',
+      cause: expect.objectContaining({ message: 'binding down' }),
+    });
   });
 });
 
