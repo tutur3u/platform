@@ -67,6 +67,9 @@ describe('Sorbet surfaces', () => {
 
   it('aligns structure content with the mobile gutter and flattens embed shells', () => {
     expect(css).toMatch(
+      /\[data-slot="structure-content"\][\s\S]*padding-bottom: var\(--sorbet-content-bottom-clearance\)/
+    );
+    expect(css).toMatch(
       /\[data-slot="structure-content"\]:not\(\[data-content-full-bleed="true"\]\)[\s\S]*padding-inline: var\(--sorbet-gutter\)/
     );
     expect(css).toMatch(

@@ -172,11 +172,15 @@
   }
 
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
+    :where([data-slot="structure-content"]) {
+    padding-bottom: var(--sorbet-content-bottom-clearance);
+  }
+
+  :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where(
       [data-slot="structure-content"]:not([data-content-full-bleed="true"])
     ) {
     padding-inline: var(--sorbet-gutter);
-    padding-bottom: var(--sorbet-content-bottom-clearance);
   }
 
   /*
