@@ -72,17 +72,25 @@ List<RouteBase> financeRoutes() => [
   GoRoute(path: Routes.financeManage, redirect: (_, _) => Routes.wallets),
   GoRoute(
     path: Routes.financeBillSplits,
-    builder: (context, state) => FinanceDockRegistration(
-      location: Routes.financeBillSplits,
-      detailBackRoute: state.uri.queryParameters.containsKey('split')
-          ? Routes.financeBillSplits
-          : null,
-      child: BillSplitsPage(
-        splitId: state.uri.queryParameters['split'],
-        participantId: state.uri.queryParameters['participant'],
-        settlement: state.uri.queryParameters['settlement'] == '1',
-      ),
-    ),
+    builder: (context, state) {
+      final query = state.uri.queryParameters;
+      final splitId = query['split'];
+      final participantId = query['participant'];
+      final settlement = query['settlement'] == '1';
+      return FinanceDockRegistration(
+        location: Routes.financeBillSplits,
+        detailBackRoute: splitId == null
+            ? null
+            : participantId != null || settlement
+            ? Routes.financeBillSplitLocation(splitId)
+            : Routes.financeBillSplits,
+        child: BillSplitsPage(
+          splitId: splitId,
+          participantId: participantId,
+          settlement: settlement,
+        ),
+      );
+    },
   ),
   GoRoute(path: Routes.financeMore, builder: financeMoreFallback),
   GoRoute(path: Routes.financeReports, redirect: (_, _) => Routes.finance),

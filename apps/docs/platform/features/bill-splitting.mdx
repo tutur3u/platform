@@ -157,7 +157,11 @@ default. Editors can also enter exact amounts or percentages for the included
 attendees. Exact shares must add up to the bill total in the workspace currency,
 and percentages must add up to 100%. Editing inputs clears the server preview
 before the bill can be saved. The Flutter flow also supports comments, payment
-confirmation, and signed-in views for settlement and participant links.
+confirmation, and signed-in links. Open a participant from the balance list or
+use View settlement to open the settlement view. Copy signed-in link copies the
+current view's address. The recipient must sign in and have access to the split.
+The navigation and clipboard regression is in
+`apps/mobile/test/features/finance/view/bill_split_render_test.dart`.
 The allocation editor regression is in
 `apps/mobile/test/features/finance/view/bill_split_create_sheet_test.dart`.
 

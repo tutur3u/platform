@@ -180,6 +180,22 @@ abstract final class Routes {
   static const financeAnalytics = '/finance/analytics';
   static const financePromotions = '/finance/promotions';
   static const financeBillSplits = '/finance/bill-splits';
+
+  static String financeBillSplitLocation(
+    String splitId, {
+    String? participantId,
+    bool settlement = false,
+  }) => Uri(
+    path: financeBillSplits,
+    queryParameters: {
+      'split': splitId,
+      if (participantId != null)
+        'participant': participantId
+      else if (settlement)
+        'settlement': '1',
+    },
+  ).toString();
+
   static const financeMore = '/finance/more';
   static const financeManage = '/finance/manage';
   static const financeReports = '/finance/reports';

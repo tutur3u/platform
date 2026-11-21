@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -10,11 +13,18 @@ import 'package:mobile/l10n/l10n.dart';
 class BillSplitSettlementView extends StatelessWidget {
   const BillSplitSettlementView({
     required this.split,
+    required this.workspaceId,
+    required this.splitId,
     this.participantId,
+    this.settlement = false,
     super.key,
   });
+
   final Map<String, dynamic> split;
+  final String workspaceId;
+  final String splitId;
   final String? participantId;
+  final bool settlement;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -50,11 +60,23 @@ class BillSplitSettlementView extends StatelessWidget {
           row['from'] == participant ||
           row['to'] == participant,
     );
+    final showNavigation = participant == null && !settlement;
     return [
       Text(
         split['title'] as String,
         style: Theme.of(context).textTheme.titleLarge,
       ),
+      AppButton.secondary(
+        onPressed: () => _copyLink(context),
+        child: Text(l10n.financeBillSplitCopyLink),
+      ),
+      if (showNavigation)
+        AppButton.secondary(
+          onPressed: () => context.push(
+            Routes.financeBillSplitLocation(splitId, settlement: true),
+          ),
+          child: Text(l10n.financeBillSplitViewSettlement),
+        ),
       AppGroupedSection.spaced(
         caption: l10n.financeBillSplitBalances,
         children: [
@@ -62,9 +84,25 @@ class BillSplitSettlementView extends StatelessWidget {
             if (participant == null || row['participantId'] == participant)
               AppRichRow(
                 title: participants[row['participantId']] ?? '',
-                trailing: FinanceAmountText(
-                  (row['amountMinor'] as num) / divisor,
-                  code,
+                onTap: showNavigation
+                    ? () => context.push(
+                        Routes.financeBillSplitLocation(
+                          splitId,
+                          participantId: row['participantId'] as String,
+                        ),
+                      )
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: AppSpacing.xs,
+                  children: [
+                    FinanceAmountText(
+                      (row['amountMinor'] as num) / divisor,
+                      code,
+                    ),
+                    if (showNavigation)
+                      const Icon(LucideIcons.chevronRight, size: 16),
+                  ],
                 ),
               ),
         ],
@@ -90,6 +128,38 @@ class BillSplitSettlementView extends StatelessWidget {
         ],
       ),
     ];
+  }
+
+  Future<void> _copyLink(BuildContext context) async {
+    final participant = participantId;
+    final link = Uri(
+      scheme: 'https',
+      host: 'tuturuuu.com',
+      pathSegments: [
+        Localizations.localeOf(context).languageCode,
+        workspaceId,
+        'finance',
+        'bill-splits',
+        splitId,
+        if (participant != null) ...[
+          'participants',
+          participant,
+        ] else if (settlement)
+          'settlement',
+      ],
+    );
+
+    try {
+      await Clipboard.setData(ClipboardData(text: link.toString()));
+    } on PlatformException {
+      if (context.mounted) {
+        showAppToast(context, message: context.l10n.commonSomethingWentWrong);
+      }
+      return;
+    }
+    if (context.mounted) {
+      showAppToast(context, message: context.l10n.financeBillSplitLinkCopied);
+    }
   }
 
   Iterable<Map<String, dynamic>> _objects(Object? value) =>

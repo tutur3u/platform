@@ -4071,6 +4071,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeBillSplitsUnavailable => 'Bill splits are unavailable';
 
   @override
+  String get financeBillSplitCopyLink => 'Copy signed-in link';
+
+  @override
+  String get financeBillSplitLinkCopied => 'Link copied';
+
+  @override
+  String get financeBillSplitViewSettlement => 'View settlement';
+
+  @override
   String get financeBillSplitBalances => 'Balances';
 
   @override

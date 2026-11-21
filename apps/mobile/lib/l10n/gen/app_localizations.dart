@@ -7765,6 +7765,24 @@ abstract class AppLocalizations {
   /// **'Bill splits are unavailable'**
   String get financeBillSplitsUnavailable;
 
+  /// No description provided for @financeBillSplitCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy signed-in link'**
+  String get financeBillSplitCopyLink;
+
+  /// No description provided for @financeBillSplitLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get financeBillSplitLinkCopied;
+
+  /// No description provided for @financeBillSplitViewSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'View settlement'**
+  String get financeBillSplitViewSettlement;
+
   /// No description provided for @financeBillSplitBalances.
   ///
   /// In en, this message translates to:

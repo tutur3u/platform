@@ -61,6 +61,7 @@ class BillSplitsPage extends StatelessWidget {
           _BillSplitContent(
             key: ValueKey((workspace, actor, splitId)),
             workspace: workspace,
+            settlement: settlement,
             splitId: splitId,
             participantId: participantId,
           )
@@ -81,6 +82,7 @@ class BillSplitsPage extends StatelessWidget {
 class _BillSplitContent extends StatefulWidget {
   const _BillSplitContent({
     required this.workspace,
+    required this.settlement,
     this.splitId,
     this.participantId,
     super.key,
@@ -89,6 +91,7 @@ class _BillSplitContent extends StatefulWidget {
   final String workspace;
   final String? splitId;
   final String? participantId;
+  final bool settlement;
 
   @override
   State<_BillSplitContent> createState() => _BillSplitContentState();
@@ -155,17 +158,21 @@ class _BillSplitContentState extends State<_BillSplitContent> {
       future: _response,
       builder: (context, snapshot) {
         final data = snapshot.data?['data'];
+        final splitId = widget.splitId;
         final children = switch (data) {
           List<Object?>() => _list(context, data),
-          Map<String, dynamic>() => <Widget>[
+          Map<String, dynamic>() when splitId != null => <Widget>[
             BillSplitSettlementView(
               split: data,
+              workspaceId: widget.workspace,
+              splitId: splitId,
               participantId: widget.participantId,
+              settlement: widget.settlement,
             ),
-            if (widget.splitId case final id? when widget.participantId == null)
+            if (widget.participantId == null)
               BillSplitActivityPanel(
                 api: _api,
-                path: '$_splitPath/${Uri.encodeComponent(id)}/activity',
+                path: '$_splitPath/${Uri.encodeComponent(splitId)}/activity',
                 split: data,
                 onUpdate: _reload,
               ),
@@ -205,10 +212,7 @@ class _BillSplitContentState extends State<_BillSplitContent> {
                 leading: const AppIconTile(icon: LucideIcons.receipt),
                 title: split['title'] as String,
                 onTap: () => context.push(
-                  Uri(
-                    path: Routes.financeBillSplits,
-                    queryParameters: {'split': split['id'] as String},
-                  ).toString(),
+                  Routes.financeBillSplitLocation(split['id'] as String),
                 ),
               ),
           ],
@@ -225,11 +229,6 @@ class _BillSplitContentState extends State<_BillSplitContent> {
     );
     if (!mounted || split == null) return;
     setState(() => _response = _load());
-    await context.push(
-      Uri(
-        path: Routes.financeBillSplits,
-        queryParameters: {'split': split},
-      ).toString(),
-    );
+    await context.push(Routes.financeBillSplitLocation(split));
   }
 }

@@ -4056,6 +4056,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeBillSplitsUnavailable => 'Không thể mở chia hóa đơn';
 
   @override
+  String get financeBillSplitCopyLink => 'Sao chép liên kết yêu cầu đăng nhập';
+
+  @override
+  String get financeBillSplitLinkCopied => 'Đã sao chép liên kết';
+
+  @override
+  String get financeBillSplitViewSettlement => 'Xem phương án thanh toán';
+
+  @override
   String get financeBillSplitBalances => 'Số dư';
 
   @override
