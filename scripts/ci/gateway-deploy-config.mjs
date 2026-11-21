@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -231,6 +231,34 @@ export function deployConfig(base, liveBindings, families, env) {
   };
 }
 
+/**
+ * The Worker a flagged family id names and the secret names it must hold: a
+ * vinext family's `worker` and its table's `requiredSecrets`, or an OpenNext
+ * family's `tuturuuu-web-<id>` and its committed wrangler config.
+ */
+export function familySpec(id, openNext, vinext, root = ROOT) {
+  if (!/^[a-z0-9-]+$/u.test(id)) throw new Error('invalid family id');
+  const vinextFamily = vinext?.families?.find((family) => family.id === id);
+  if (vinextFamily) {
+    return {
+      worker: vinextFamily.worker,
+      required: vinext.requiredSecrets ?? [],
+    };
+  }
+  const family = openNext.families.find((candidate) => candidate.id === id);
+  const config = resolve(
+    root,
+    `apps/web/cloudflare/opennext/wrangler.${id}.jsonc`
+  );
+  if (!family || !existsSync(config)) {
+    throw new Error(`${id} has no committed family Worker config`);
+  }
+  return {
+    worker: `tuturuuu-web-${id}`,
+    required: requiredSecrets(readJsonc(config)),
+  };
+}
+
 /** Secret names a family's committed wrangler config requires. */
 export function requiredSecrets(config) {
   return config.secrets?.required ?? [];
@@ -313,6 +341,20 @@ async function main([command, ...args]) {
     await assertServingGateway(snapshot.result);
     return 0;
   }
+  if (command === 'family-spec') {
+    const read = (path) =>
+      JSON.parse(readFileSync(resolve(ROOT, path), 'utf8'));
+    console.log(
+      JSON.stringify(
+        familySpec(
+          args[0] ?? '',
+          read('apps/web/cloudflare/opennext/families.json'),
+          read('apps/web/cloudflare/vinext/families.json')
+        )
+      )
+    );
+    return 0;
+  }
   if (command === 'required-secrets') {
     console.log(JSON.stringify(requiredSecrets(readJsonc(args[0]))));
     return 0;
@@ -353,7 +395,7 @@ async function main([command, ...args]) {
     return 0;
   }
   throw new Error(
-    'usage: gateway-deploy-config.mjs capture <settings.json> | assert-current <settings.json> | write <settings.json> <out.json> | required-secrets <wrangler.jsonc>'
+    'usage: gateway-deploy-config.mjs capture <settings.json> | assert-current <settings.json> | write <settings.json> <out.json> | required-secrets <wrangler.jsonc> | family-spec <id>'
   );
 }
 

@@ -1,5 +1,10 @@
 {
   "note": "Route families for apps/web vinext Worker builds. Ownership uses the OpenNext family rules (cloudflare/opennext/prune.ts). api-ops owns the OpenNext global deny list; every other family excludes it. nodeOnly lists entries that still need Node-only APIs and so have no Worker home yet. A `rest` family owns every entry no other enabled family owns, except nodeOnly entries. `activated` admits a family to GATEWAY_WEB_FAMILIES (scripts/ci/gateway-deploy-config.mjs); page families activate once built with their /_f/<id> asset prefix.",
+  "requiredSecrets": [
+    "SUPABASE_SECRET_KEY",
+    "TUTURUUU_APP_COORDINATION_SECRET",
+    "ABUSE_GUARD_KEY_PEPPER"
+  ],
   "families": [
     {
       "id": "api-core",

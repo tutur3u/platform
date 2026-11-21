@@ -15,6 +15,7 @@ import {
   assertServingGateway,
   captureGatewaySettings,
   deployConfig,
+  familySpec,
   gatewayFamilies,
   familyBinding,
   parseFlagged,
@@ -472,4 +473,30 @@ test('binds activated vinext families and refuses held ones', () => {
     () => gatewayFamilies(families, { families: [enabledOpenNext] }),
     /is enabled and also a vinext family/
   );
+});
+
+test('names the Worker and required secrets for OpenNext and vinext families', () => {
+  const vinext = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../apps/web/cloudflare/vinext/families.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+  assert.deepEqual(familySpec('api-core', families, vinext), {
+    worker: 'tuturuuu-web-vinext-api-core',
+    required: vinext.requiredSecrets,
+  });
+  assert.ok(vinext.requiredSecrets.includes('SUPABASE_SECRET_KEY'));
+  assert.equal(
+    familySpec('public-docs', families, vinext).worker,
+    'tuturuuu-web-public-docs'
+  );
+  assert.throws(
+    () => familySpec('no-such-family', families, vinext),
+    /no committed/
+  );
+  assert.throws(() => familySpec('a b', families, vinext), /invalid family id/);
 });

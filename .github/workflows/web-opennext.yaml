@@ -359,11 +359,12 @@ jobs:
         run: |
           for id in $(echo "$GATEWAY_WEB_FAMILIES" | tr ',' ' '); do
             [[ "$id" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid family id in GATEWAY_WEB_FAMILIES"; exit 1; }
-            worker="tuturuuu-web-$id"
-            config="apps/web/cloudflare/opennext/wrangler.$id.jsonc"
-            test -f "$config" || { echo "::error::$id has no committed wrangler config"; exit 1; }
+            # OpenNext (tuturuuu-web-<id>) or vinext (tuturuuu-web-vinext-<id>) family.
+            spec=$(node scripts/ci/gateway-deploy-config.mjs family-spec "$id") \
+              || { echo "::error::$id is not a known OpenNext or vinext family"; exit 1; }
+            worker=$(jq -r '.worker' <<< "$spec")
             bun x --no-install wrangler secret list --name "$worker" --format json > "$RUNNER_TEMP/secrets-$id.json"
-            required=$(node scripts/ci/gateway-deploy-config.mjs required-secrets "$config")
+            required=$(jq -c '.required' <<< "$spec")
             jq -e --argjson required "$required" 'map(.name) as $names | all($required[]; . as $n | $names | index($n) != null)' \
               "$RUNNER_TEMP/secrets-$id.json" > /dev/null \
               || { echo "::error::$worker is missing a required secret name: $required"; exit 1; }
