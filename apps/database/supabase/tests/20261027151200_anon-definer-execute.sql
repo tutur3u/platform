@@ -616,7 +616,10 @@ INSERT INTO definer_added_later VALUES
   ('public.workspace_usage_summary(uuid)'),
   ('public.apply_usage_pack_order(uuid,uuid,uuid,text,text,text,integer,timestamptz,timestamptz,timestamptz)'),
   -- apps/database/supabase/migrations/20261121184500_ai_chat_credit_exactly_once.sql
-  ('public.record_unbilled_ai_charge(uuid,uuid,uuid,text,text,integer,integer,integer,integer,text)');
+  ('public.record_unbilled_ai_charge(uuid,uuid,uuid,text,text,integer,integer,integer,integer,text)'),
+  -- apps/database/supabase/migrations/20261122023000_guard_workspace_member_removals.sql
+  ('public.remove_workspace_member_guarded(uuid,uuid,uuid)'),
+  ('public.remove_workspace_role_member_guarded(uuid,uuid,uuid,uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
