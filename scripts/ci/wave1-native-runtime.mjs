@@ -494,39 +494,38 @@ async function runRuntimeAcceptance() {
             assert.equal(returnUrl.searchParams.get('nextUrl'), workspace);
           }
           if (calendarShadow && host === calendarShadow.apexHost) {
-            assert.equal(
-              target.href,
-              `https://${host}${basePath}/00000000-0000-4000-8000-000000000001`,
-              'Mounted locale canonicalization must retain the exact workspace path'
-            );
+            // Shared mounted login: Web returns to the mount's verify-token
+            // with the exact in-mount path, locale and query included.
+            const expectWebLogin = (response, nextUrl) => {
+              assert.equal(
+                response.status,
+                307,
+                'Anonymous mounted page must hand off to Web login'
+              );
+              const login = new URL(
+                response.headers.get('location'),
+                `https://${host}`
+              );
+              assert.equal(login.origin, 'https://tuturuuu.com');
+              assert.equal(login.pathname, '/login');
+              const returnUrl = new URL(login.searchParams.get('returnUrl'));
+              assert.equal(returnUrl.origin, 'https://tuturuuu.com');
+              assert.equal(returnUrl.pathname, `${basePath}/verify-token`);
+              assert.equal(returnUrl.searchParams.get('nextUrl'), nextUrl);
+              for (const cookie of response.headers.getSetCookie())
+                assert.doesNotMatch(
+                  cookie,
+                  /^(?:sb-|__Host-ttr_session)|(?:^|;)\s*Domain=/iu,
+                  'Mounted login handoff wrote a shared session cookie'
+                );
+              return login;
+            };
+            target = expectWebLogin(page, workspace);
             const returnPath =
               '/00000000-0000-4000-8000-000000000001?view=week&q=a%2Bb';
             const canonicalPage = await fetchWorker(returnPath);
-            assert.equal(
-              canonicalPage.status,
-              307,
-              'Canonical anonymous native page must hand off to central login'
-            );
-            target = new URL(
-              canonicalPage.headers.get('location'),
-              `https://${host}`
-            );
-            assert.equal(target.hostname, 'tuturuuu.com');
-            assert.equal(target.pathname, `${basePath}/login`);
-            const login = await fetchWorker(`/login${target.search}`);
-            assert.equal(
-              login.status,
-              307,
-              'Mounted login must hand off to Web'
-            );
-            target = new URL(login.headers.get('location'), `https://${host}`);
-            assert.equal(target.origin, 'https://tuturuuu.com');
-            assert.equal(target.pathname, '/login');
-            const returnUrl = new URL(target.searchParams.get('returnUrl'));
-            assert.equal(
-              returnUrl.href,
-              `https://tuturuuu.com${basePath}${returnPath}`
-            );
+            expectWebLogin(canonicalPage, returnPath);
+            await canonicalPage.body?.cancel();
             const dormant = await fetchWorker(
               '/api/v1/calendar/auth/microsoft/callback'
             );

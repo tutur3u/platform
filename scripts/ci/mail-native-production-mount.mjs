@@ -47,26 +47,35 @@ export async function exerciseMailProductionMount({
   assert.equal(rejected.status, 405);
   await rejected.body?.cancel();
 
+  // Shared mounted login: Web signs in and returns to the mount's own
+  // verify-token, which completes the session for the exact in-mount path.
+  const expectWebLogin = (response, nextUrl) => {
+    assert.equal(response.status, 307);
+    assertNoSharedSessionWrites(response);
+    const webLogin = new URL(response.headers.get('location'), origin);
+    assert.equal(webLogin.origin, origin);
+    assert.equal(webLogin.pathname, '/login');
+    const returnUrl = new URL(webLogin.searchParams.get('returnUrl'));
+    assert.equal(returnUrl.origin, origin);
+    assert.equal(returnUrl.pathname, base + '/verify-token');
+    assert.equal(returnUrl.searchParams.get('nextUrl'), nextUrl);
+  };
+
   const protectedPage = await fetchWorker(base + deepPath);
-  assert.equal(protectedPage.status, 307);
-  assertNoSharedSessionWrites(protectedPage);
-  const login = new URL(protectedPage.headers.get('location'), origin);
-  assert.equal(login.origin, origin);
-  assert.equal(login.pathname, base + '/login');
-  assert.equal(login.searchParams.get('next'), deepPath);
+  expectWebLogin(protectedPage, deepPath);
   await protectedPage.body?.cancel();
 
-  const handoff = await fetchWorker(login.pathname + login.search);
-  assert.equal(handoff.status, 307);
-  assertNoSharedSessionWrites(handoff);
-  const webLogin = new URL(handoff.headers.get('location'), origin);
-  assert.equal(webLogin.origin, origin);
-  assert.equal(webLogin.pathname, '/login');
-  assert.equal(
-    webLogin.searchParams.get('returnUrl'),
-    origin + base + deepPath
+  const login = await fetchWorker(
+    `${base}/login?next=${encodeURIComponent(deepPath)}`
   );
-  await handoff.body?.cancel();
+  expectWebLogin(login, deepPath);
+  await login.body?.cancel();
+
+  const hostile = await fetchWorker(
+    `${base}/login?next=${encodeURIComponent('https://evil.example/x')}`
+  );
+  expectWebLogin(hostile, '/');
+  await hostile.body?.cancel();
 
   const page = await fetchWorker(base + '/not-available');
   assert.equal(page.status, 200);
