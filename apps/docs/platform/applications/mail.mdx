@@ -1486,6 +1486,34 @@ Coverage lives in `revoke.test.ts` and `route.test.ts` under
 `apps/mail/src/lib/mail/connected/`. The Privacy Policy's "Google user data in
 Tuturuuu Mail" section (`packages/legal/src/mail-google-revision-2026-11-21.ts`)
 describes this disconnect behavior and the Limited Use commitments.
+
+When a token refresh shows that the user revoked access or the grant expired, the
+server deletes that account's stored credentials automatically. This is how
+Mail stops accessing the account and deletes the stored tokens, as the Privacy
+Policy states. The trigger is an HTTP 400 `invalid_grant` from the token
+endpoint. For Google, that response is enough unless its `error_subtype` is
+`invalid_rapt` (a Workspace re-authentication request). For Microsoft, every
+reported code must be one of AADSTS 70000, 70008, 50173, 700081 or 700082 (grant
+revoked or expired), with no `suberror` other than `bad_token` or
+`token_expired`, and a 70000 that mentions scopes does not count. Credentials
+are kept for network errors, timeouts, 5xx, rate limits, `invalid_client` and
+other configuration errors, and for sign-in code exchanges. They are also kept
+for Microsoft consent or interaction errors (65001, MFA, Conditional Access,
+password expiry) and disabled accounts, because a scope or policy change on our
+side can cause those for every account at once. The delete matches exactly one
+`mail_connected_accounts` row: the disconnect predicate (`id`, `user_id`,
+`ws_id`) plus the revision the failed refresh read. Send claims and receipts
+cascade with the row, as they do on disconnect, so a send whose refresh finds
+the grant revoked returns the same 409 rather than a claim-release failure, and
+a reconnected account starts with no duplicate-send history. A concurrent
+successful refresh or reconnect writes a newer revision, so it is adopted
+instead of deleted. A row that is
+already gone makes the delete a no-op. The server logs one `console.warn` with
+only the account id and provider, never a token, code or response body. The
+request fails with 409 `Mail account access was revoked; reconnect it`, which
+the connected pane shows like the existing reconnect error. Coverage lives in
+`grant-revocation.test.ts` and `send.test.ts` under
+`apps/mail/src/lib/mail/connected/`.
 Sends reserve an account/request claim; acceptance records a receipt. Proven pre-send
 failures or explicit provider rejections release only their matching sending claim for user retry.
 Completed requests acknowledge without resending; in-flight, unknown or post-acceptance failures require provider Sent checks.

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { type CalendarResponse, calendarReply } from '../calendar-invitation';
 import { attachmentBytes } from './attachment-bytes';
 import { ConnectedMailError } from './config';
+import { RevokedGrantError } from './grant-revocation';
 import { readMessage } from './messages';
 import {
   buildMime,
@@ -248,7 +249,9 @@ async function claimedSend(
         .eq('status', 'sending')
         .select('request_id')
         .maybeSingle();
-      if (releaseError || !data)
+      // A revoked grant deletes the account row before submission, and the
+      // claim is removed with it by the cascade, so no claim remains to release.
+      if (releaseError || (!data && !(error instanceof RevokedGrantError)))
         throw new Error('Failed to release unsent mail claim');
     } else {
       await (

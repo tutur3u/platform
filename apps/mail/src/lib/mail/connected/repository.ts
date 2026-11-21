@@ -7,6 +7,7 @@ import {
   scopes,
 } from './config';
 import { seal, unseal } from './crypto';
+import { isRevokedGrantResponse, RevokedGrantError } from './grant-revocation';
 
 export type Credentials = {
   accessToken: string;
@@ -74,8 +75,18 @@ export async function exchangeToken(
       ...values,
     }),
   });
-  if (response.type === 'opaqueredirect' || !response.ok)
+  if (response.type === 'opaqueredirect') {
+    await response.body?.cancel();
     throw new ConnectedMailError(409, 'Reconnect this mail account');
+  }
+  if (!response.ok) {
+    if (
+      values.grant_type === 'refresh_token' &&
+      (await isRevokedGrantResponse(provider, response))
+    )
+      throw new RevokedGrantError();
+    throw new ConnectedMailError(409, 'Reconnect this mail account');
+  }
   const token = await response.json();
   const refreshToken = token.refresh_token || previousRefresh;
   if (
@@ -127,7 +138,8 @@ function refreshConflict() {
 async function winningRefresh(
   account: ConnectedAccount,
   previousToken: string,
-  force: boolean
+  force: boolean,
+  missing: () => ConnectedMailError = refreshConflict
 ): Promise<RefreshedCredentials> {
   const { data, error } = await (
     await table('mail_connected_accounts')
@@ -138,6 +150,7 @@ async function winningRefresh(
     .eq('ws_id', account.ws_id)
     .eq('provider', account.provider)
     .maybeSingle();
+  if (!error && !data) throw missing();
   if (
     error ||
     !data ||
@@ -167,6 +180,47 @@ async function winningRefresh(
     revision: data.revision,
   };
 }
+/**
+ * Deletes one account's stored credentials after the provider reported its
+ * grant as revoked. The delete uses the disconnect predicate (id, user_id,
+ * ws_id) fenced by the revision the failed refresh read, so a concurrent
+ * successful refresh or reconnect is adopted instead of deleted, and a row that
+ * is already gone is a no-op.
+ */
+async function removeRevokedAccount(
+  account: ConnectedAccount,
+  previousToken: string,
+  force: boolean
+): Promise<RefreshedCredentials> {
+  const log = { accountId: account.id, provider: account.provider };
+  const { data, error } = await (
+    await table('mail_connected_accounts')
+  )
+    .delete()
+    .eq('id', account.id)
+    .eq('user_id', account.user_id)
+    .eq('ws_id', account.ws_id)
+    .eq('revision', account.revision)
+    .select('id')
+    .maybeSingle();
+  if (error) {
+    console.warn('Mail could not remove a revoked connected account', log);
+    throw new RevokedGrantError();
+  }
+  if (data) {
+    console.warn(
+      'Mail removed a connected account whose grant was revoked',
+      log
+    );
+    throw new RevokedGrantError();
+  }
+  return winningRefresh(
+    account,
+    previousToken,
+    force,
+    () => new RevokedGrantError()
+  );
+}
 const refreshes = new Map<string, Promise<RefreshedCredentials>>();
 function applyRefresh(
   account: ConnectedAccount,
@@ -183,17 +237,24 @@ export async function accessToken(account: ConnectedAccount, force = false) {
   const active = refreshes.get(account.id);
   if (active) return applyRefresh(account, await active);
   const pending = (async () => {
-    const updated = await exchangeToken(
-      account.provider,
-      {
-        grant_type: 'refresh_token',
-        refresh_token: credentials.refreshToken,
-        ...(account.provider === 'microsoft'
-          ? { scope: scopes.microsoft.join(' ') }
-          : {}),
-      },
-      credentials.refreshToken
-    );
+    let updated: Credentials;
+    try {
+      updated = await exchangeToken(
+        account.provider,
+        {
+          grant_type: 'refresh_token',
+          refresh_token: credentials.refreshToken,
+          ...(account.provider === 'microsoft'
+            ? { scope: scopes.microsoft.join(' ') }
+            : {}),
+        },
+        credentials.refreshToken
+      );
+    } catch (error) {
+      if (error instanceof RevokedGrantError)
+        return removeRevokedAccount(account, credentials.accessToken, force);
+      throw error;
+    }
     const encrypted = seal(updated, account.user_id);
     const revision = account.revision + 1;
     const { data, error } = await (

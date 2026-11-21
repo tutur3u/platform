@@ -481,6 +481,25 @@ it('does not claim a retry is available when conditional unsent-claim release ma
   );
   expect(mocks.json).toHaveBeenCalledTimes(1);
 });
+it('returns the revoked-grant error when the account row and its claim were deleted', async () => {
+  const { RevokedGrantError } = await import('./grant-revocation');
+  // The refresh deletes the account row before submission; its claim cascades.
+  mocks.json.mockRejectedValueOnce(new RevokedGrantError());
+  mocks.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+  await expect(sendConnectedMessage(account, payload)).rejects.toBeInstanceOf(
+    RevokedGrantError
+  );
+  expect(mocks.delete).toHaveBeenCalledTimes(1);
+  expect(mocks.update).not.toHaveBeenCalledWith({ status: 'uncertain' });
+});
+it('still reports a failed claim release after a revoked grant', async () => {
+  const { RevokedGrantError } = await import('./grant-revocation');
+  mocks.json.mockRejectedValueOnce(new RevokedGrantError());
+  mocks.maybeSingle.mockResolvedValueOnce({ data: null, error: {} });
+  await expect(sendConnectedMessage(account, payload)).rejects.toThrow(
+    'release unsent mail claim'
+  );
+});
 it('never submits a concurrently in-flight identical request again', async () => {
   const { createHash } = await import('node:crypto');
   mocks.insert.mockResolvedValueOnce({ error: { code: '23505' } });
