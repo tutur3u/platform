@@ -309,6 +309,7 @@ jobs:
     environment: colab-production
     permissions:
       contents: read
+      id-token: write
     concurrency:
       group: web-opennext-gateway-deploy
       cancel-in-progress: false
@@ -322,6 +323,18 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: gateway
+          environment: production
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
@@ -429,3 +442,15 @@ jobs:
           status=$(curl --silent --retry 5 --retry-delay 5 --max-time 30 --output /dev/null \
             --write-out '%{http_code}' https://tuturuuu.com/api/build-info)
           test "$status" = 200
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: gateway
+          environment: production
+          job-status: ${{ job.status }}

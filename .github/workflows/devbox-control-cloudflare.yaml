@@ -152,6 +152,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      id-token: write
     runs-on: ubuntu-latest
     environment: devbox-control-production
     env:
@@ -164,24 +165,50 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: devbox-control
+          environment: production
       - uses: ./.github/actions/setup-bun-with-retry
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+        if: steps.coordinator.outputs.publish != 'false'
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           name: devbox-control-worker-${{ github.sha }}
           path: apps/devbox-control/.cloudflare/output
       - name: Recheck the downloaded artifact identity
+        if: steps.coordinator.outputs.publish != 'false'
         run: node scripts/ci/cf-worker-parity.mjs apps/devbox-control scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$CLOUDFLARE_ACCOUNT_ID"
       - name: Capture and verify settings before publication
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$RUNNER_TEMP/devbox-control-settings-before.json"
+      - name: Check the deployment coordinator lease
+        if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: devbox-control
+          environment: production
       - name: Publish the exact prebuilt artifact with secrets
+        if: steps.coordinator.outputs.publish != 'false'
         working-directory: apps/devbox-control
         env:
           CF_SEND_TELEMETRY: 'false'
@@ -197,11 +224,12 @@ jobs:
           node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "DEVBOX_CONTROL_INTERNAL_TOKEN"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });' "$secrets_file"
           bun x --no-install cf deploy --prebuilt --mode production --no-provision --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Capture and compare settings after publication
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/devbox-control.json "$RUNNER_TEMP/devbox-control-settings-before.json" "$RUNNER_TEMP/devbox-control-settings-after.json"
       - name: Retain settings and rollback evidence
-        if: always()
+        if: always() && steps.coordinator.outputs.publish != 'false'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: devbox-control-settings-${{ github.sha }}
@@ -211,15 +239,27 @@ jobs:
       # A success marker needs code plus health proof; without it the planner
       # fails closed for this Worker instead of reselecting it.
       - name: Verify the published Worker answers health
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
         run: |
           test -n "$WORKERS_SUBDOMAIN" || { echo 'Missing workers.dev subdomain; no success marker is recorded'; exit 1; }
           curl --fail --silent --show-error --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 120 "https://tuturuuu-devbox-control.${WORKERS_SUBDOMAIN}.workers.dev/health" | jq -e '.ok == true' > /dev/null
       - name: Record successful Cloudflare deployment
+        if: steps.coordinator.outputs.publish != 'false'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: devbox-control-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: devbox-control
+          environment: production
+          job-status: ${{ job.status }}

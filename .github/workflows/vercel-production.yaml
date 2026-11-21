@@ -115,24 +115,50 @@ jobs:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'coordination-cloudflare.yaml')
     uses: ./.github/workflows/coordination-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-cron-control-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'cron-control-cloudflare.yaml')
     uses: ./.github/workflows/cron-control-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+    secrets: inherit
+
+  deploy-deploy-coordinator-cloudflare:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'deploy-coordinator-cloudflare.yaml')
+    uses: ./.github/workflows/deploy-coordinator-cloudflare.yaml
     secrets: inherit
 
   deploy-devbox-control-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'devbox-control-cloudflare.yaml')
     uses: ./.github/workflows/devbox-control-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-lettin-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'lettin-cloudflare.yaml')
     uses: ./.github/workflows/lettin-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-calendar-native:
@@ -157,12 +183,23 @@ jobs:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'meet-cloudflare.yaml')
     uses: ./.github/workflows/meet-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-parley-cloudflare:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'parley-cloudflare.yaml')
     uses: ./.github/workflows/parley-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-apps:
@@ -173,6 +210,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-apps.yaml')
     uses: ./.github/workflows/vercel-production-apps.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-ai:
@@ -183,6 +225,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-ai.yaml')
     uses: ./.github/workflows/vercel-production-ai.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-calendar:
@@ -193,6 +240,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-calendar.yaml')
     uses: ./.github/workflows/vercel-production-calendar.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-contacts:
@@ -203,6 +255,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-contacts.yaml')
     uses: ./.github/workflows/vercel-production-contacts.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-git:
@@ -213,6 +270,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-git.yaml')
     uses: ./.github/workflows/vercel-production-git.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-finance:
@@ -223,6 +285,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-finance.yaml')
     uses: ./.github/workflows/vercel-production-finance.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-infrastructure:
@@ -233,6 +300,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-infrastructure.yaml')
     uses: ./.github/workflows/vercel-production-infrastructure.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-inventory:
@@ -243,6 +315,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-inventory.yaml')
     uses: ./.github/workflows/vercel-production-inventory.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-learn:
@@ -253,6 +330,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-learn.yaml')
     uses: ./.github/workflows/vercel-production-learn.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-mail:
@@ -263,6 +345,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mail.yaml')
     uses: ./.github/workflows/vercel-production-mail.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-meet:
@@ -273,6 +360,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-meet.yaml')
     uses: ./.github/workflows/vercel-production-meet.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-mind:
@@ -283,6 +375,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mind.yaml')
     uses: ./.github/workflows/vercel-production-mind.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-nova:
@@ -293,6 +390,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-nova.yaml')
     uses: ./.github/workflows/vercel-production-nova.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-pay:
@@ -303,12 +405,23 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-pay.yaml')
     uses: ./.github/workflows/vercel-production-pay.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-platform:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml')
     uses: ./.github/workflows/vercel-production-platform.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      actions: write
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-rewise:
@@ -319,6 +432,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-rewise.yaml')
     uses: ./.github/workflows/vercel-production-rewise.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-shortener:
@@ -329,6 +447,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-shortener.yaml')
     uses: ./.github/workflows/vercel-production-shortener.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-storefront:
@@ -339,6 +462,11 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-storefront.yaml')
     uses: ./.github/workflows/vercel-production-storefront.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-tanstack-web:
@@ -359,6 +487,12 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'tasks-cloudflare.yaml')
     uses: ./.github/workflows/tasks-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      id-token: write
     # Reusable workflows only resolve tasks-production environment secrets
     # (TASKS_CLOUDFLARE_API_TOKEN) when the caller forwards secrets; every
     # secret reference inside tasks-cloudflare.yaml stays production-gated.

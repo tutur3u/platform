@@ -292,6 +292,33 @@ describe('deploy coordinator client', () => {
     assert.match(noToken.logs.join('\n'), /NO_ID_TOKEN/);
   });
 
+  test('heartbeat fences itself once failures outlast the lease', async () => {
+    const h = run(
+      {},
+      {
+        [`POST ${PROD}/deployments/:id/heartbeat`]: [
+          { status: 503, body: { error: 'UNAVAILABLE' } },
+        ],
+      }
+    );
+    let fenced = null;
+    const result = await heartbeat(h.client, {
+      now: h.deps.now,
+      sleep: h.deps.sleep,
+      readState: () => ({ deploymentId: ID, grant }),
+      markFenced: (code) => {
+        fenced = code;
+      },
+    });
+    assert.equal(result, 'fenced');
+    assert.equal(fenced, 'LEASE_LAPSED');
+    const calls = h.server.calls.filter((call) =>
+      call.path.endsWith('/heartbeat')
+    ).length;
+    // About nine one-minute retries of three attempts each, then it stops.
+    assert.ok(calls <= 30, String(calls));
+  });
+
   test('heartbeat stops on refusal and records the fence', async () => {
     const h = run(
       {},

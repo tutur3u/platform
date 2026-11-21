@@ -51,7 +51,11 @@ const SUPERSEDED_SKIP_PLANNER_CONTRACT =
   '821f197ff27852c19c422fcaabcbbe7c37e8fe5e';
 // This planner also grants the Colab job id-token: write for the deployment
 // coordinator. Platform proof is unchanged.
-const CURRENT_PLANNER_CONTRACT = '8bbb84a2ff0c72db5127a2ff2f8c8943a530c697';
+const COLAB_OIDC_PLANNER_CONTRACT = '8bbb84a2ff0c72db5127a2ff2f8c8943a530c697';
+// This planner also publishes the deployment coordinator as an independent
+// app and grants id-token: write to every caller whose deploy job reports to
+// it. Platform proof is unchanged.
+const CURRENT_PLANNER_CONTRACT = '5dcdb368b1e7ac00cbadfa4c846436462acb10e5';
 
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
@@ -76,6 +80,7 @@ const PRODUCTION_PLATFORM = {
         ...LEGACY_VERCEL_PLANNER_CONTRACTS,
         POST_RETIREMENT_PLANNER_CONTRACT,
         SUPERSEDED_SKIP_PLANNER_CONTRACT,
+        COLAB_OIDC_PLANNER_CONTRACT,
         CURRENT_PLANNER_CONTRACT,
       ],
     ],
@@ -87,6 +92,9 @@ const PRODUCTION_PLATFORM = {
         'b1e5dead4ac84db1b5f9e498026c21e6b2eae730',
         '4f7ada884d805edda91cd25c1abeef196b0e4508',
         '5cbada1d00428fb1b2f6480ae5cf1421146d79bc',
+        // Reports the deploy job to the deployment coordinator around its
+        // publish steps; the marker step and its proof are unchanged.
+        'ac102388e545887cc5aaef6f333aa17c6dc6d373',
       ],
     ],
     [

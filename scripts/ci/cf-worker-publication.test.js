@@ -2,7 +2,12 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
-for (const app of ['cron-control', 'devbox-control', 'coordination']) {
+for (const app of [
+  'cron-control',
+  'devbox-control',
+  'coordination',
+  'deploy-coordinator',
+]) {
   test(`${app} snapshots deployment settings around every publication`, () => {
     const steps = readWorkflow(`${app}-cloudflare.yaml`).jobs.deploy.steps;
     const before = steps.findIndex((step) =>
@@ -29,13 +34,23 @@ for (const app of ['cron-control', 'devbox-control', 'coordination']) {
     const evidence = steps.find(
       (step) => step.name === 'Retain settings and rollback evidence'
     );
-    assert.equal(evidence.if, 'always()');
+    // Evidence is retained on every outcome except a publish the deployment
+    // coordinator skipped, which produced none.
+    assert.match(
+      evidence.if,
+      /^always\(\)(?: && steps\.coordinator\.outputs\.publish != 'false')?$/
+    );
     assert.match(evidence.with.path, /settings-\*\.json$/);
   });
 }
 
 test('service deploy jobs pin the configured Cloudflare account by variable', () => {
-  for (const app of ['cron-control', 'devbox-control', 'coordination']) {
+  for (const app of [
+    'cron-control',
+    'devbox-control',
+    'coordination',
+    'deploy-coordinator',
+  ]) {
     assert.equal(
       readWorkflow(`${app}-cloudflare.yaml`).jobs.deploy.env
         .CLOUDFLARE_ACCOUNT_ID,

@@ -202,6 +202,19 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-android
+          environment: production
+
       - name: Use prepared beta release history
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -336,6 +349,19 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-android
+          environment: production
+          job-status: ${{ job.status }}
+
 
   publish-ios-testflight:
     permissions:
@@ -357,6 +383,19 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-ios
+          environment: production
 
       - name: Use prepared beta release history
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -617,6 +656,19 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-ios
+          environment: production
+          job-status: ${{ job.status }}
+
 
   publish-macos-app-store:
     permissions:
@@ -640,6 +692,19 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-macos
+          environment: production
 
       - name: Use prepared beta release history
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -750,6 +815,19 @@ jobs:
           rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mac-app-store"
           rm -f "$RUNNER_TEMP/mobile-deployment-macos.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-macos-oidc.json"
+
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mobile-macos
+          environment: production
+          job-status: ${{ job.status }}
 
   record-mobile-store-tree:
     permissions:

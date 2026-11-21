@@ -555,6 +555,7 @@ jobs:
       contents: read
       deployments: write
       actions: read
+      id-token: write
     runs-on: ubuntu-latest
     # Enable only after the dedicated environment protections and secrets are verified.
     environment: ${{ vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && 'meet-cloudflare-production' || 'meet-production' }}
@@ -570,6 +571,20 @@ jobs:
           ref: ${{ env.SOURCE_SHA }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Register with the deployment coordinator
+        id: coordinator
+        # A release dispatch of another commit cannot report: the token names
+        # the dispatching commit, and an older tree has no coordinator action.
+        if: (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce') && env.SOURCE_SHA == github.sha && github.ref == 'refs/heads/production'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: meet-worker
+          environment: production
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - uses: ./.github/actions/setup-bun-with-retry
@@ -765,3 +780,15 @@ jobs:
           DEPLOYMENT_MARKER_SHA: ${{ env.SOURCE_SHA }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: meet-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce') && env.SOURCE_SHA == github.sha && github.ref == 'refs/heads/production'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: meet-worker
+          environment: production
+          job-status: ${{ job.status }}

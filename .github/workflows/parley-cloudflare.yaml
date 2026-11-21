@@ -124,6 +124,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      id-token: write
     runs-on: ubuntu-latest
     environment: meet-production
     timeout-minutes: 50
@@ -138,18 +139,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: parley
+          environment: production
+          max-wait-minutes: '15'
       - uses: ./.github/actions/setup-bun-with-retry
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+        if: steps.coordinator.outputs.publish != 'false'
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           name: parley-worker-${{ github.sha }}
           path: apps/parley/.open-next
       - name: Wait for production Parley schema
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
@@ -157,15 +174,27 @@ jobs:
       # MEET_REALTIME_TOKEN_SECRET is published with the code below, so only the
       # names this workflow does not supply must already exist.
       - name: Verify required runtime secret names
+        if: steps.coordinator.outputs.publish != 'false'
         run: |
           bun x --no-install wrangler secret list --name tuturuuu-parley --format json > "$RUNNER_TEMP/parley-secrets.json"
           jq -e --argjson required '["NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/parley-secrets.json" > /dev/null
       - name: Wait for shared provider runtime
+        if: steps.coordinator.outputs.publish != 'false'
         run: bun apps/parley/scripts/verify-provider.ts
       # Code and the realtime signing identity publish as ONE version. A separate
       # secret write first would deploy a secret-only version of the previous
       # code that stays live if the code upload then fails.
+      - name: Check the deployment coordinator lease
+        if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: parley
+          environment: production
       - name: Deploy verified Worker
+        if: steps.coordinator.outputs.publish != 'false'
         working-directory: apps/parley
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
@@ -175,15 +204,27 @@ jobs:
           node ../../scripts/ci/write-worker-secrets-file.mjs "$secrets_file" MEET_REALTIME_TOKEN_SECRET
           bun run deploy:cloudflare -- --cacheChunkSize 1 --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Verify rendered canonical route
+        if: steps.coordinator.outputs.publish != 'false'
         run: |
           route_status=$(curl --fail --retry 5 --retry-delay 5 --max-time 30 \
             --write-out '%{http_code}' --output /dev/null \
             https://parley.tuturuuu.com/access-denied)
           test "$route_status" = 200
       - name: Record successful Cloudflare deployment
+        if: steps.coordinator.outputs.publish != 'false'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: parley-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: parley
+          environment: production
+          job-status: ${{ job.status }}

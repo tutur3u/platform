@@ -12,7 +12,7 @@ export const DEPLOY_ENVIRONMENTS = [
 ] as const;
 export type DeployEnvironmentName = (typeof DEPLOY_ENVIRONMENTS)[number];
 
-export type DeployProvider = 'cloudflare' | 'vercel';
+export type DeployProvider = 'cloudflare' | 'store' | 'vercel';
 export type DeployKind = 'deploy' | 'promotion' | 'rollback';
 export type DeployStatus =
   | 'queued'

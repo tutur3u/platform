@@ -12,8 +12,8 @@ describe('project catalog', () => {
   // The cost ceiling in the deployment coordinator design scales with this
   // count; growing the catalog is a reviewed change to that figure.
   it('pins the catalog size and unique ids', () => {
-    expect(PROJECTS).toHaveLength(33);
-    expect(new Set(PROJECTS.map((project) => project.id)).size).toBe(33);
+    expect(PROJECTS).toHaveLength(37);
+    expect(new Set(PROJECTS.map((project) => project.id)).size).toBe(37);
   });
 
   it('allowlists only workflow files that exist', () => {

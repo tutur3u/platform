@@ -19,6 +19,9 @@ const controlPlane = [
   'deploy-devbox-control-cloudflare',
 ];
 const independentApps = [
+  // The deployment coordinator falls open in CI, so its publication never
+  // gates platform deploys or migrations.
+  'deploy-deploy-coordinator-cloudflare',
   'deploy-lettin-cloudflare',
   'deploy-calendar-native',
   'deploy-mail-native',

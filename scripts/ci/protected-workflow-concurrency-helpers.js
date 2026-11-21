@@ -9,6 +9,7 @@ const serialized = [
   'colab-cloudflare.yaml',
   'coordination-cloudflare.yaml',
   'cron-control-cloudflare.yaml',
+  'deploy-coordinator-cloudflare.yaml',
   'desktop-store-draft.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-modal-deploy.yml',

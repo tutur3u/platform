@@ -34,12 +34,26 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      id-token: write
     steps:
       - name: Check out code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
           persist-credentials: false
+
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mail
+          environment: production
 
       - name: Keep native Mail outside Vercel publication
         shell: bash
@@ -103,3 +117,16 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           VERCEL_WORKFLOW_NAME: vercel-production-mail.yaml
         run: bun run --silent scripts/ci/record-vercel-deployment.ts
+
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: observe
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mail
+          environment: production
+          job-status: ${{ job.status }}

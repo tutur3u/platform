@@ -9,6 +9,7 @@ import { currentDeployment } from './cf-worker-current-deployment.mjs';
 import { verifyDashboardAdmission } from './cf-worker-settings-dashboard.mjs';
 import { settingsList } from './cf-worker-settings-pagination.mjs';
 import { retryMissingSecret } from './cf-worker-settings-retry.mjs';
+import { verifyPublicRoutes } from './cf-worker-settings-routes.mjs';
 
 function canonical(value) {
   if (Array.isArray(value))
@@ -443,20 +444,7 @@ function verifySettings(
   const secrets = raw.secrets.map((entry) => entry.name).sort();
   for (const name of identity.secrets)
     assert.ok(secrets.includes(name), `missing declared secret ${name}`);
-  const domains = raw.domains.filter(
-    (domain) => domain.service === identity.name
-  );
-  const routes = raw.zoneRoutes
-    .filter(({ route }) => route.script === identity.name)
-    .map(({ zone, route }) => ({ zone, pattern: route.pattern }));
-  // This pilot has no public routes/custom domains. Adding one needs a new profile.
-  same(
-    identity.routes,
-    [],
-    'settings snapshot profile only supports route-free Workers'
-  );
-  same(routes, [], 'unexpected Worker routes');
-  same(domains, [], 'unexpected Worker custom domains');
+  const { routes, domains } = verifyPublicRoutes(raw, identity);
   const rollback = raw.deployments;
   assert.ok(
     Array.isArray(rollback.deployments) && rollback.deployments.length > 0,
@@ -651,8 +639,8 @@ export function compareTransition(plan, before, after) {
 
 async function main(phase, baseline, beforePath, afterPath) {
   assert.ok(
-    phase === 'before' || phase === 'after',
-    'usage: before <baseline> <out> | after <baseline> <before> <out>'
+    phase === 'before' || phase === 'after' || phase === 'verify',
+    'usage: before <baseline> <out> | after <baseline> <before> <out> | verify <baseline> <out>'
   );
   assert.ok(phase !== 'after' || afterPath, 'after snapshot path is required');
   const plan = settingsPlan(JSON.parse(readFileSync(baseline, 'utf8')));
@@ -663,12 +651,21 @@ async function main(phase, baseline, beforePath, afterPath) {
   await describeToken(credentials);
   const before =
     phase === 'after' ? JSON.parse(readFileSync(beforePath, 'utf8')) : null;
+  // `verify` checks a first publication, which has no before snapshot: the
+  // live Worker must match the recorded identity, allowing for the secret list
+  // to catch up with the new version.
   const snapshot =
     phase === 'before'
       ? await captureBefore({ plan, ...credentials })
-      : await retryMissingSecret(() => captureAfter({ plan, ...credentials }));
+      : phase === 'verify'
+        ? await retryMissingSecret(() =>
+            captureBefore({ plan, ...credentials })
+          )
+        : await retryMissingSecret(() =>
+            captureAfter({ plan, ...credentials })
+          );
   writeFileSync(
-    phase === 'before' ? beforePath : afterPath,
+    phase === 'after' ? afterPath : beforePath,
     `${JSON.stringify(snapshot, null, 2)}\n`,
     { mode: 0o600 }
   );
@@ -682,7 +679,9 @@ async function main(phase, baseline, beforePath, afterPath) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [argument] = process.argv.slice(2);
-  const phase = ['before', 'after'].includes(argument) ? argument : 'settings';
+  const phase = ['before', 'after', 'verify'].includes(argument)
+    ? argument
+    : 'settings';
   try {
     await main(...process.argv.slice(2));
   } catch (error) {

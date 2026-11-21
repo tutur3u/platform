@@ -311,11 +311,11 @@ export const cloudflareProductionTargets = [
         : ['scripts/ci/wave1-', '.github/workflows/wave1-'],
     productionWorkflow: `${app}-cloudflare.yaml`,
   })),
-  {
-    app: 'cron-control',
-    appPath: 'apps/cron-control',
-    productionWorkflow: 'cron-control-cloudflare.yaml',
-  },
+  ...(['cron-control', 'deploy-coordinator'] as const).map((app) => ({
+    app,
+    appPath: `apps/${app}`,
+    productionWorkflow: `${app}-cloudflare.yaml`,
+  })),
   {
     app: 'colab',
     appPath: 'apps/colab',

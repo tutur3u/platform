@@ -141,6 +141,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      id-token: write
     runs-on: ubuntu-latest
     environment: coordination-production
     env:
@@ -153,27 +154,54 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: coordination
+          environment: production
       - uses: ./.github/actions/setup-bun-with-retry
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           bun-version: 1.4.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
+        if: steps.coordinator.outputs.publish != 'false'
       - name: Capture and verify settings before publication
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json"
       - name: Require pre-provisioned server credentials
+        if: steps.coordinator.outputs.publish != 'false'
         run: |
           jq -e '(.secrets | type == "array") and (.secrets | index("COORDINATION_TOKEN") != null)' "$RUNNER_TEMP/coordination-settings-before.json" > /dev/null
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        if: steps.coordinator.outputs.publish != 'false'
         with:
           name: coordination-worker-${{ github.sha }}
           path: apps/coordination/.cloudflare/output
       - name: Recheck the downloaded artifact identity
+        if: steps.coordinator.outputs.publish != 'false'
         run: node scripts/ci/cf-worker-parity.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json "$CLOUDFLARE_ACCOUNT_ID"
+      - name: Check the deployment coordinator lease
+        if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: coordination
+          environment: production
       - name: Publish the exact prebuilt artifact
+        if: steps.coordinator.outputs.publish != 'false'
         working-directory: apps/coordination
         env:
           CF_SEND_TELEMETRY: 'false'
@@ -182,14 +210,16 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Coordination Cloudflare API token'; exit 1; }
           bun x --no-install cf deploy --prebuilt --mode production --no-provision --message "$GITHUB_SHA"
       - name: Capture and compare settings after publication
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/coordination.json "$RUNNER_TEMP/coordination-settings-before.json" "$RUNNER_TEMP/coordination-settings-after.json"
       - name: Verify the coordination token survived publication
+        if: steps.coordinator.outputs.publish != 'false'
         run: |
           jq -e '(.secrets | type == "array") and (.secrets | index("COORDINATION_TOKEN") != null)' "$RUNNER_TEMP/coordination-settings-after.json" > /dev/null
       - name: Retain settings and rollback evidence
-        if: always()
+        if: always() && steps.coordinator.outputs.publish != 'false'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coordination-settings-${{ github.sha }}
@@ -197,9 +227,20 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Record successful Cloudflare deployment
+        if: steps.coordinator.outputs.publish != 'false'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: coordination-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: coordination
+          environment: production
+          job-status: ${{ job.status }}

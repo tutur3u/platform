@@ -1,0 +1,43 @@
+{
+  "source": "apps/deploy-coordinator/cloudflare.config.ts",
+  "identity": {
+    "name": "tuturuuu-deploy-coordinator",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": false,
+    "previewUrls": false,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      }
+    },
+    "crons": [],
+    "routes": [
+      {
+        "pattern": "deploy.tuturuuu.com",
+        "customDomain": true
+      }
+    ],
+    "vars": {
+      "DEPLOY_COORDINATOR_ENABLED": "true",
+      "DEPLOY_COORDINATOR_OIDC_AUDIENCE": "tuturuuu-deploy-coordinator",
+      "DEPLOY_COORDINATOR_REPOSITORY_ID": "536896722"
+    },
+    "secrets": ["DEPLOY_COORDINATOR_OPERATOR_TOKEN"],
+    "durableObjects": {
+      "DEPLOY_ENVIRONMENTS": {
+        "className": "DeployEnvironment"
+      }
+    },
+    "durableObjectClasses": {
+      "DeployEnvironment": "sqlite"
+    },
+    "unmapped": {}
+  },
+  "settingsDecision": "DEPLOY-COORDINATOR-1: first publication; the deploy job verifies live settings against this identity after publishing, and against it before every later publication."
+}

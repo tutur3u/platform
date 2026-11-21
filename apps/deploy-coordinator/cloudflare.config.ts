@@ -2,8 +2,8 @@ import { bindings, defineConfig, exports } from 'cf/config';
 
 // Deployment authority for GitHub Actions publishes. One SQLite Durable Object
 // per catalog project environment serializes publishes; the Worker holds no
-// provider credentials. No route, workers.dev URL or preview URL is published
-// until release authority approves a hostname.
+// provider credentials. Its only public address is the deploy.tuturuuu.com
+// custom domain; workers.dev and preview URLs stay off.
 export default defineConfig({
   accountId: 'e8912e2867beecc673d171907bf09649',
   worker: {
@@ -12,6 +12,7 @@ export default defineConfig({
     entrypoint: 'src/worker.ts',
     workersDev: false,
     previewUrls: false,
+    domains: ['deploy.tuturuuu.com'],
     observability: {
       enabled: true,
       headSamplingRate: 0.05,

@@ -11,6 +11,9 @@ on:
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/deploy-coordinator-client.mjs'
       - 'scripts/ci/deploy-coordinator-client.test.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json'
       - 'scripts/ci/run-with-backoff.sh'
       - 'tuturuuu.ts'
       - 'tuturuuu.ci.ts'
@@ -27,12 +30,16 @@ on:
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/deploy-coordinator-client.mjs'
       - 'scripts/ci/deploy-coordinator-client.test.mjs'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/cf-worker-settings.mjs'
+      - 'scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json'
       - 'scripts/ci/run-with-backoff.sh'
       - 'tuturuuu.ts'
       - 'tuturuuu.ci.ts'
       - 'bun.lock'
       - 'package.json'
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
   deployments: read
@@ -117,7 +124,134 @@ jobs:
         working-directory: apps/deploy-coordinator
       - name: Test the GitHub Actions client
         run: node --test scripts/ci/deploy-coordinator-client.test.mjs
-      # The Worker is not published; this accepts the source Worker and its
-      # Durable Object state surviving a restart in workerd.
-      - name: Accept the Worker, lane lock and stop fence in workerd
+      - name: Accept the source Worker, lane lock and stop fence in workerd
         run: node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs
+      - name: Build the Worker
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/deploy-coordinator --concurrency=2
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Compare emitted Build Output with the recorded deployment identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/deploy-coordinator scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json
+      - name: Accept the emitted Worker in workerd
+        env:
+          DEPLOY_COORDINATOR_TEST_BUILD_OUTPUT: '1'
+        run: node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs
+      - name: Check the prebuilt artifact without credentials
+        run: bun x --no-install cf deploy --prebuilt --mode production --dry-run --no-provision
+        working-directory: apps/deploy-coordinator
+      # upload-artifact skips hidden paths, so stage the Build Output first.
+      - name: Stage the cf Build Output artifact
+        run: cp -R apps/deploy-coordinator/.cloudflare/output "$RUNNER_TEMP/deploy-coordinator-build-output"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: deploy-coordinator-worker-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/deploy-coordinator-build-output
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+  deploy:
+    needs: validate
+    if: (github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    permissions:
+      contents: read
+      deployments: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: deploy-coordinator-production
+    env:
+      CF_SEND_TELEMETRY: 'false'
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    concurrency:
+      group: deploy-coordinator-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: deploy-coordinator-worker-${{ github.sha }}
+          path: apps/deploy-coordinator/.cloudflare/output
+      - name: Recheck the downloaded artifact identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/deploy-coordinator scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json "$CLOUDFLARE_ACCOUNT_ID"
+      # The first publication has no live Worker to read; every later one
+      # verifies the live settings before publishing.
+      - name: Detect whether the Worker is already published
+        id: live
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN'; exit 1; }
+          header_file="$RUNNER_TEMP/deploy-coordinator-auth-header"
+          trap 'rm -f "$header_file"' EXIT
+          ( umask 077; printf 'Authorization: Bearer %s\n' "$CLOUDFLARE_API_TOKEN" > "$header_file" )
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 -H "@$header_file" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/tuturuuu-deploy-coordinator/settings")
+          case "$status" in
+            200) echo 'published=true' >> "$GITHUB_OUTPUT" ;;
+            404) echo 'published=false' >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unexpected Cloudflare status $status"; exit 1 ;;
+          esac
+      - name: Capture and verify settings before publication
+        if: steps.live.outputs.published == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json "$RUNNER_TEMP/deploy-coordinator-settings-before.json"
+      - name: Publish the exact artifact with its secret
+        working-directory: apps/deploy-coordinator
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN }}
+          DEPLOY_COORDINATOR_OPERATOR_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_OPERATOR_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$DEPLOY_COORDINATOR_OPERATOR_TOKEN" || { echo 'Missing deploy coordinator credential'; exit 1; }
+          secrets_file="$RUNNER_TEMP/deploy-coordinator-secrets.json"
+          trap 'rm -f "$secrets_file"' EXIT
+          node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({ DEPLOY_COORDINATOR_OPERATOR_TOKEN: process.env.DEPLOY_COORDINATOR_OPERATOR_TOKEN }), { mode: 0o600 });' "$secrets_file"
+          # --no-provision: a deploy must never create resources (cf defaults to provisioning).
+          bun x --no-install cf deploy --prebuilt --mode production --no-provision --message "$GITHUB_SHA" --secrets-file "$secrets_file"
+      - name: Capture and compare settings after publication
+        if: steps.live.outputs.published == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json "$RUNNER_TEMP/deploy-coordinator-settings-before.json" "$RUNNER_TEMP/deploy-coordinator-settings-after.json"
+      - name: Verify the first publication's settings
+        if: steps.live.outputs.published == 'false'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/cf-worker-settings.mjs verify scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json "$RUNNER_TEMP/deploy-coordinator-settings-after.json"
+      # A first custom-domain attach can take minutes to issue its certificate.
+      - name: Check the public health route
+        env:
+          ATTEMPTS: ${{ steps.live.outputs.published == 'true' && '6' || '20' }}
+        run: |
+          for attempt in $(seq 1 "$ATTEMPTS"); do
+            if curl -fsS --max-time 15 https://deploy.tuturuuu.com/health; then exit 0; fi
+            sleep 30
+          done
+          echo 'deploy.tuturuuu.com/health did not answer'
+          exit 1
+      - name: Retain settings and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: deploy-coordinator-settings-${{ github.sha }}
+          path: ${{ runner.temp }}/deploy-coordinator-settings-*.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Record successful Cloudflare deployment
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: deploy-coordinator-cloudflare.yaml
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

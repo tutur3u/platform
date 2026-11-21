@@ -28,6 +28,9 @@ export const LIMITS = {
   // outlast the lease.
   heartbeatSeconds: 240,
   heartbeatRetrySeconds: 60,
+  // The coordinator's lease: with no successful heartbeat for this long the
+  // lease has lapsed, so the job fences itself instead of retrying on.
+  leaseSeconds: 600,
   maxHeartbeatMinutes: 90,
 };
 
@@ -229,6 +232,7 @@ export async function begin(
 // `check` can fence later provider effects.
 export async function heartbeat(client, { now, sleep, readState, markFenced }) {
   const started = now();
+  let lastSuccess = started;
   let delaySeconds = LIMITS.heartbeatSeconds;
   for (;;) {
     await sleep(delaySeconds * 1000);
@@ -243,6 +247,11 @@ export async function heartbeat(client, { now, sleep, readState, markFenced }) {
     );
     if (response.status === 409 || response.status === 403) {
       markFenced(response.body?.error ?? 'REFUSED');
+      return 'fenced';
+    }
+    if (response.ok) lastSuccess = now();
+    else if (now() - lastSuccess > LIMITS.leaseSeconds * 1000) {
+      markFenced('LEASE_LAPSED');
       return 'fenced';
     }
     delaySeconds = response.ok

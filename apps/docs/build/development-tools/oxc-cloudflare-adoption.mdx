@@ -396,8 +396,8 @@ written are counted with their index rows and pinned per call by a cost test:
 at most 18 a create, 6 for any other call once deferred transitions are
 charged to the create they belong to. Clients poll with backoff and heartbeat
 every four minutes, so a worst-case deployment is about 36 calls. With every
-environment at budget the hard ceiling is about $0.07 a month above the plan
-standalone, about $28 a month marginal once other Workers use up the shared
+environment at budget the hard ceiling is about $0.10 a month above the plan
+standalone, about $31 a month marginal once other Workers use up the shared
 included allowances; the figures and the stop order are in the
 [deployment coordinator design](/build/devops/deployment-coordinator#cost-and-stop-fence-analysis).
 

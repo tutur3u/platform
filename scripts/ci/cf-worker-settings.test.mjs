@@ -391,6 +391,23 @@ for (const [label, change, error] of [
     await assert.rejects(captureSettings(options(fixture(change))), error);
   });
 
+test('a recorded custom domain is accepted and every other shape blocks publication', async () => {
+  const routes = [{ pattern: 'deploy.example', customDomain: true }];
+  const target = { ...identity, routes };
+  const ok = { service: 'fixture', hostname: 'deploy.example' };
+  const capture = (domains, scope = target) =>
+    captureSettings(options(fixture({ domains }, scope), scope));
+  await capture([{ ...ok, environment: 'production' }]);
+  for (const [domains, error] of [
+    [[], /custom domains/],
+    [[ok, { ...ok, hostname: 'other.example' }], /custom domains/],
+    [[{ ...ok, environment: 'staging' }], /another environment/],
+  ])
+    await assert.rejects(capture(domains), error);
+  const zone = { ...identity, routes: [{ pattern: 'a.example/*', zone: 'a' }] };
+  await assert.rejects(capture([], zone), /only custom-domain routes/);
+});
+
 test('API failure and pagination fail closed without replay', async () => {
   let calls = 0;
   for (const body of [

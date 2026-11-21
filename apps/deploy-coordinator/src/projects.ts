@@ -4,7 +4,7 @@
 export const ENVIRONMENTS = ['preview', 'staging', 'production'] as const;
 export type EnvironmentName = (typeof ENVIRONMENTS)[number];
 
-export type Provider = 'cloudflare' | 'vercel';
+export type Provider = 'cloudflare' | 'store' | 'vercel';
 
 // A workflow allowed to report for an environment. A job inside a reusable
 // workflow reports that reusable file as its `job_workflow_ref` and the
@@ -74,6 +74,18 @@ const worker = (id: string, workflow: string): ProjectEntry => ({
 // is the published commit. `wave1-web-staging.yaml` publishes a dispatched
 // `source_sha` that may differ from the token's commit, so `platform` staging
 // is not reportable until that workflow can state its source commit.
+// Mobile store publishes, one project per store: the jobs run in parallel in
+// one run, so a shared project would serialize them on one lane.
+const store = (id: string): ProjectEntry => ({
+  id,
+  provider: 'store',
+  workflows: {
+    production: ['mobile-deploy-stores.yaml'],
+    staging: [],
+    preview: [],
+  },
+});
+
 export const PROJECTS: readonly ProjectEntry[] = [
   vercel('ai'),
   wave1('apps'),
@@ -108,6 +120,11 @@ export const PROJECTS: readonly ProjectEntry[] = [
   worker('lettin', 'lettin-cloudflare.yaml'),
   worker('meet-worker', 'meet-cloudflare.yaml'),
   worker('parley', 'parley-cloudflare.yaml'),
+  // The tuturuuu.com gateway Worker, published by the Web OpenNext workflow.
+  worker('gateway', 'web-opennext.yaml'),
+  store('mobile-android'),
+  store('mobile-ios'),
+  store('mobile-macos'),
 ];
 
 const byId = new Map(PROJECTS.map((project) => [project.id, project]));

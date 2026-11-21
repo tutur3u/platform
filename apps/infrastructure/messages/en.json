@@ -24398,6 +24398,7 @@
     },
     "providers": {
       "cloudflare": "Cloudflare Workers",
+      "store": "App stores",
       "vercel": "Vercel"
     },
     "environments": {

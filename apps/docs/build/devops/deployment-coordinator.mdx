@@ -20,11 +20,11 @@ coordinator issues them fenced grants.
 | Part | State |
 | ---- | ----- |
 | This design | Accepted |
-| Worker, Durable Object state machine, API | Source, unit and workerd tests; not published. `deploy-coordinator-cloudflare.yaml` runs its type check, lint, format check, unit suites, the client tests and the workerd harness |
-| GitHub Actions begin/check/finish steps | `.github/actions/deploy-coordinator`, piloted on the Colab production deploy; `DEPLOY_COORDINATOR_MODE` unset, so off |
+| Worker, Durable Object state machine, API | `deploy-coordinator-cloudflare.yaml` runs its type check, lint, format check, unit and cost suites, the client tests and the workerd harness on the source and emitted Worker, then publishes it on production sync |
+| GitHub Actions begin/check/finish steps | `.github/actions/deploy-coordinator` in every production deploy job (see [wirings](#github-actions-integration)); `DEPLOY_COORDINATOR_MODE` selects off, observe or enforce |
 | Infrastructure **Deployments** page | Built under **Delivery → Deployments**; shows the unconfigured state until the origin and operator token are set |
 | Executor workflow for promotion and rollback markers | Not built; markers are resolved by operators |
-| Hostname, secrets and Worker publication | Release-authority steps |
+| Hostname, secrets and Worker publication | `deploy.tuturuuu.com` custom domain; the `deploy` job of `deploy-coordinator-cloudflare.yaml` publishes on production sync from the `deploy-coordinator-production` environment |
 
 ## Model
 
@@ -231,8 +231,34 @@ grant's `attemptId` and epoch, which another attempt never holds.
 `X-Deploy-Actor` user id. The Worker records that id for audit and trusts it
 only because the token holder has already authorized the user.
 
-The Worker has no public route until release authority approves a hostname;
+The Worker's only public address is the `deploy.tuturuuu.com` custom domain;
 `workersDev` and preview URLs stay disabled.
+
+### Publication
+
+The production planner (`vercel-production.yaml`) calls
+`deploy-coordinator-cloudflare.yaml` on production sync, as an independent app
+whose failure never gates platform deploys or migrations. The `validate` job
+builds the Worker once, compares the emitted Build Output with
+`scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json`, accepts it in
+workerd and uploads it. The `deploy` job, in the `deploy-coordinator-production`
+GitHub Environment (production branch only):
+
+1. Rechecks the downloaded artifact identity.
+2. Reads the live Worker's settings and verifies them against the fixture;
+   the first publication, when no Worker exists, skips this step.
+3. Publishes that artifact with
+   `cf deploy --prebuilt --mode production --no-provision`, passing
+   `DEPLOY_COORDINATOR_OPERATOR_TOKEN` through a 0600 secrets file.
+4. Verifies the live settings again, then requires `GET /health` on
+   `deploy.tuturuuu.com` to answer.
+
+The environment holds `DEPLOY_COORDINATOR_CLOUDFLARE_API_TOKEN`, an
+account-owned token with Workers Scripts and `tuturuuu.com` Workers Routes
+write, and `DEPLOY_COORDINATOR_OPERATOR_TOKEN`. Roll a publication back with
+`cf workers deployments create --worker tuturuuu-deploy-coordinator` naming the
+previous version, the same procedure as the other cf Workers in the
+[cf parity guide](/build/development-tools/cf-cli-wrangler-parity).
 
 ## GitHub Actions integration
 
@@ -255,9 +281,9 @@ cannot read repository variables, so each step passes `mode` and `origin` from
 `vars.DEPLOY_COORDINATOR_MODE` and `vars.DEPLOY_COORDINATOR_ORIGIN`, and is
 itself skipped unless the mode is `observe` or `enforce`. The job needs
 `id-token: write`; when the deploy workflow runs as a reusable workflow, its
-caller job must grant it too (the production planner grants it to
-`deploy-colab-cloudflare` only). The pilot is the Colab production `deploy` job
-in `colab-cloudflare.yaml`:
+caller job must grant it too; the production planner grants it to every
+caller of a wired workflow. The Colab production `deploy` job in
+`colab-cloudflare.yaml` shows the full wiring:
 
 ```yaml
 - id: coordinator
@@ -272,6 +298,19 @@ in `colab-cloudflare.yaml`:
 # publish steps: if: steps.coordinator.outputs.publish != 'false'
 # phase: check before `wrangler deploy`; phase: finish under if: always()
 ```
+
+Every production deploy job reports, in one of two wirings:
+
+| Wiring | Jobs | `mode` input |
+| ------ | ---- | ------------ |
+| Enforce-capable: begin, publish steps gated on `publish`, check before the first provider effect, finish | Colab, Coordination, Cron Control, Devbox Control, Lettin and Parley `deploy` jobs | `vars.DEPLOY_COORDINATOR_MODE` |
+| Observe-only: begin and finish under `continue-on-error` and a 5-minute step timeout, no gating | `vercel-production-<app>.yaml`; the Meet (`meet-worker`), Tasks and gateway (`web-opennext.yaml`) publishers, which keep their own release admission and rollback; the Android, iOS and macOS store publishes | `observe` whenever the variable is `observe` or `enforce` |
+
+A Meet release dispatch of another commit (`release: true` with a
+`source_sha`) does not report, because the token names the dispatching commit.
+The gateway reports as the `gateway` project and each store publish as its own
+`mobile-android`, `mobile-ios` or `mobile-macos` project, because those jobs run
+in parallel in one run and would otherwise wait on one lane.
 
 The repository variable `DEPLOY_COORDINATOR_MODE` selects:
 
@@ -340,10 +379,10 @@ calls, well inside its budget; a budget that runs out falls open in CI, so it
 never blocks a release. The hard ceiling, with every catalog environment
 pinned at its budget every day:
 
-- 33 projects × 3 environments × 500 calls ≈ 49,500 calls a day, about 1.5
+- 37 projects × 3 environments × 500 calls ≈ 55,500 calls a day, about 1.7
   million a month.
 - Worker requests: inside the 10 million included, so nothing extra.
-- Durable Object requests above the 1 million included: about $0.07.
+- Durable Object requests above the 1 million included: about $0.10.
 - SQLite rows written. Cloudflare bills each row a write touches in a table
   and in every index on it. Text-keyed tables are `WITHOUT ROWID`, so a
   primary key is the table itself: a deployment write is 4 rows (table,
@@ -368,8 +407,8 @@ pinned at its budget every day:
   terminal transition 5, its deletion 4, its lane 1), and no other call
   exceeds 6 once its share is counted. The first counted call of each UTC day
   also replaces the budget row, 1 more row once a day per environment.
-- Hard ceiling, every call a create: 49,500 × 18 ≈ 0.9 million rows a day,
-  about 27 million a month, inside the 50 million included.
+- Hard ceiling, every call a create: 55,500 × 18 ≈ 1.0 million rows a day,
+  about 30 million a month, inside the 50 million included.
 - The cost test pins a worst-case lifecycle of 41 calls and 166 rows: the
   deployment's create, 12 backed-off wait polls, its grant, 23 heartbeats and
   completion, plus the create, claim and completion of the run blocking it.
@@ -377,11 +416,11 @@ pinned at its budget every day:
 - Rows read stay far below the 25 billion included; duration is the
   millisecond-scale handling time of each call, far below 400,000 GB-s.
 
-Standalone, the hard ceiling is about $0.07 a month above the Workers paid
+Standalone, the hard ceiling is about $0.10 a month above the Workers paid
 plan. The included requests and rows are shared by every Worker on the
 account, so once other Workers use them up the coordinator's marginal hard
-ceiling is about $0.45 in Worker requests, $0.22 in Durable Object requests
-and $27 in rows written, about $28 a month, or about $6 at the CI client's 4
+ceiling is about $0.50 in Worker requests, $0.25 in Durable Object requests
+and $30 in rows written, about $31 a month, or about $7 at the CI client's 4
 rows a call. Both scale linearly with the catalog size. A CI
 create is idempotent per run attempt and lane, so reaching the hard ceiling
 needs a distinct GitHub run, or a distinct preview lane, for every call. The
@@ -409,6 +448,33 @@ Stop fences, outermost first:
 
 A rate limit or billing alert alone is not a spend cap; the durable budget and
 the catalog-bounded object count are.
+
+## Operating runbook
+
+Operators act from the Infrastructure **Deployments** page, which calls the
+coordinator with the operator token and records the signed-in user. The same
+actions are plain `POST`s on the API above for scripts.
+
+| Task | Action |
+| ---- | ------ |
+| Turn reporting on or change mode | `gh variable set DEPLOY_COORDINATOR_ORIGIN --body https://deploy.tuturuuu.com` once, then `gh variable set DEPLOY_COORDINATOR_MODE --body observe` or `enforce`. The next deploy job picks it up |
+| Stop all CI traffic (kill switch) | `gh variable set DEPLOY_COORDINATOR_MODE --body off`: every coordinator step is skipped and CI publishes exactly as without it |
+| Pause publishes in one environment | **Stop** on the environment (`POST …/stop` with a reason). In `enforce`, claims answer `stopped` and jobs wait, then fall open after `max-wait-minutes`; publishes in progress finish. **Resume** clears it |
+| Promote a staging commit | **Promote** on a succeeded staging deployment queues a production `promotion` marker. Release that commit with the owning production tooling, then **Resolve** the marker as succeeded or failed |
+| Roll back | **Roll back** on an earlier succeeded deployment queues a `rollback` marker and holds the lane, so enforce-capable deploys skip in `enforce`; observe-only publishers (Vercel, Meet, Tasks, gateway, stores) still publish and can overwrite it, so pause their workflow too. Restore that version with the owning tooling (for a cf Worker, `cf workers deployments create` naming its version), **Resolve** the marker, then **Release hold** when automatic deploys may resume |
+| Abandon a rollback or promotion | **Cancel** the queued marker; cancelling a rollback releases its hold |
+| Retry a failed marker | Repeat **Promote** or **Roll back**: a failed, cancelled or unknown marker is replaced by a new one |
+| Disable the coordinator itself | Not instant: set `DEPLOY_COORDINATOR_ENABLED` to anything but `true` in `cloudflare.config.ts` and its parity fixture, then publish through production sync; every CI call then answers `503 COORDINATOR_OFF` before any Durable Object call. Use the `DEPLOY_COORDINATOR_MODE=off` kill switch first |
+
+The switch to `enforce` follows a clean observe window: about ten consecutive
+coordinated production runs that recorded `succeeded` with no false `wait`,
+`held` or `stopped` answers. Only the enforce-capable jobs then wait for
+grants or skip; the observe-only jobs keep reporting.
+
+If a first publication uploads the Worker but fails to attach the custom
+domain, the next deploy finds a live Worker without its domain and its settings
+check fails closed; attach `deploy.tuturuuu.com` to `tuturuuu-deploy-coordinator`
+in the Workers custom domains settings, then rerun.
 
 ## Relationship to existing pieces
 
