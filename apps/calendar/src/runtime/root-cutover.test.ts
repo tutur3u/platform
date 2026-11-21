@@ -179,8 +179,6 @@ describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
       '/calendar/settings?x=1&x=2&next=%2Fabc%3Fa%3D1&empty=',
     ],
     ['/login?next=%2Fabc', '/calendar/login?next=%2Fabc'],
-    ['/verify-token?nextUrl=%2Fabc', '/calendar/verify-token?nextUrl=%2Fabc'],
-    ['/api/v1/calendar/connections', '/calendar/api/v1/calendar/connections'],
     ['/offline.html', '/calendar/offline.html'],
     ['/calendar/personal', '/calendar/personal'],
   ])('sends %s to the apex mount before auth', async (path, to) => {
@@ -207,6 +205,24 @@ describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
     expect(suppliers.start).not.toHaveBeenCalled();
     expect(asset).not.toHaveBeenCalled();
   });
+
+  it.each(['/verify-token?nextUrl=%2Fabc', '/api/v1/calendar/connections'])(
+    'keeps %s on the existing host when the page redirect is on',
+    async (path) => {
+      suppliers.proxy.mockResolvedValueOnce(
+        NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      );
+      const response = await handleCalendarRequest(
+        new Request(`https://calendar.tuturuuu.com${path}`),
+        apexRedirect,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(401);
+      expect(response.headers.get('location')).toBeNull();
+      expect(suppliers.proxy).toHaveBeenCalledOnce();
+    }
+  );
 
   it('keeps serving build-info for monitoring', async () => {
     const response = await handleCalendarRequest(

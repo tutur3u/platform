@@ -33,11 +33,14 @@ export async function loadPageModel(path: string) {
 }
 
 async function loadResolvedPageModel(url: URL) {
-  const pathname = calendarBase(url)?.strip(url.pathname);
+  const base = calendarBase(url);
+  const pathname = base?.strip(url.pathname);
   if (pathname == null) notFound();
   const segments = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   const locale = loadLocaleContext(`${url.pathname}${url.search}`);
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
+  const verifier = segments[0] === 'verify-token' && segments.length === 1;
+  if (verifier && base && !base.isRoot) redirect(base.withBase('/login'));
   const request = calendarRequest().request;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&
@@ -69,9 +72,15 @@ async function loadResolvedPageModel(url: URL) {
     });
     throw new Error('Calendar login must redirect');
   }
-  if (segments[0] === 'verify-token' && segments.length === 1)
-    return { ...common, kind: 'verify-token' as const };
-  if (!actor?.id) redirect('/login');
+  if (verifier) return { ...common, kind: 'verify-token' as const };
+  if (!actor?.id) {
+    if (base && !base.isRoot) {
+      const login = new URL(base.withBase('/login'), url);
+      login.searchParams.set('next', pathname + url.search);
+      redirect(login.pathname + login.search);
+    }
+    redirect('/login');
+  }
   if (!segments.length) redirect('/personal');
   if (!matchPage(pages, `/${segments.join('/')}`)) notFound();
   const wsId = segments[0];

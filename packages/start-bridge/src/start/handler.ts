@@ -40,6 +40,10 @@ import {
 } from './mounted-session-guard';
 
 export type { AssetsBinding } from '../core/assets';
+export {
+  isolateMountedRequest,
+  scopeMountedResponseCookies,
+} from '../core/mount-isolation';
 export { admitMountedMutation } from './csrf-admission';
 export { prefixHtmlAssets } from './html-assets';
 export {

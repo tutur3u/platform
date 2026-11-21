@@ -160,23 +160,12 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
     !req.nextUrl.searchParams.has('token');
   if (
     mounted &&
-    !publicCompletion &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
   ) {
-    // The mount shares the apex session that Web already set, so it never
-    // consumes, verifies or forwards `token`: GET/HEAD only resume the
-    // same-origin validated next path; every other method returns to login.
-    // A tokenless completion document renders like the subdomain's.
-    const target = isDocumentRequest
-      ? normalizeAuthRedirectPath(
-          req.nextUrl.searchParams.get('nextUrl') ??
-            req.nextUrl.searchParams.get('next'),
-          req.nextUrl.origin,
-          '/personal'
-        )
-      : '/login';
+    // Web owns the shared session. A mounted legacy handoff never renders
+    // or forwards its verifier, even when the request carries no token.
     return NextResponse.redirect(
-      new URL(withAppBase(target, req.nextUrl.basePath), req.nextUrl.origin)
+      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
     );
   }
   const verifyTokenResponse =

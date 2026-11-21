@@ -21,7 +21,9 @@ export const mailMachinePathPrefixes = [
 export const mailOwnedCookies = [
   'NEXT_LOCALE',
   'sidebar-behavior',
+  'sidebar-behavior-updated-at',
   'sidebar-collapsed',
+  'sidebar-size',
   'mail_oauth_state',
 ] as const;
 

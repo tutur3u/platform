@@ -72,7 +72,7 @@ export function WorkspaceView({
               notificationPopover={notifications}
               userPopover={userPopover}
             >
-              <RealtimeLogProvider wsId={workspace.id}>
+              <RealtimeLogProvider wsId={workspace.id} verifiedUserId={user.id}>
                 <WorkspacePresenceProvider
                   wsId={workspace.id}
                   tier={workspace.tier ?? null}

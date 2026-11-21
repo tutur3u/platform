@@ -130,7 +130,7 @@ describe('Calendar one-origin activation', () => {
     expect(serviceWorker.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('on still redirects callback paths, so provider registration stays deferred', async () => {
+  it('on keeps registered callback paths on the subdomain and fences their apex copies', async () => {
     const response = await handleCalendarRequest(
       new Request(
         'https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback?code=1'
@@ -139,11 +139,73 @@ describe('Calendar one-origin activation', () => {
       ctx,
       telemetry
     );
-    expect(response.status).toBe(301);
-    expect(response.headers.get('location')).toBe(
-      'https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback?code=1'
+    expect(response.status).not.toBe(301);
+    expect(response.headers.get('location')).toBeNull();
+    expect(suppliers.proxy).toHaveBeenCalled();
+    vi.clearAllMocks();
+    const mounted = await handleCalendarRequest(
+      new Request(
+        'https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback'
+      ),
+      workerEnv('on'),
+      ctx,
+      telemetry
     );
+    expect(mounted.status).toBe(409);
+    expect(mounted.headers.getSetCookie()).toEqual([]);
     expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+
+  it('passes scoped cookies through while blocking shared session writes', async () => {
+    suppliers.start.mockImplementationOnce(async (request: Request) => {
+      const cookie = request.headers.get('cookie') ?? '';
+      expect(cookie).toContain('NEXT_LOCALE=en');
+      expect(cookie).not.toContain('foreign=');
+      const value = cookie
+        .split(/;\s*/u)
+        .find((part) => part.startsWith('sb-project-auth-token=base64-'))
+        ?.slice('sb-project-auth-token=base64-'.length);
+      expect(value).toBeTruthy();
+      expect(
+        JSON.parse(Buffer.from(value ?? '', 'base64url').toString())
+      ).toEqual({
+        access_token: 'fixture-access',
+        refresh_token: '',
+      });
+      const headers = new Headers({ 'Clear-Site-Data': '"cookies"' });
+      headers.append('set-cookie', 'sb-project-auth-token=ignored; Path=/');
+      headers.append(
+        'set-cookie',
+        'NEXT_LOCALE=vi; Domain=.tuturuuu.com; Path=/'
+      );
+      return new Response('served', { headers });
+    });
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/personal', {
+        headers: {
+          Cookie: [
+            'foreign=ignore',
+            'NEXT_LOCALE=en',
+            'sb-project-auth-token=' +
+              encodeURIComponent(
+                JSON.stringify({
+                  access_token: 'fixture-access',
+                  refresh_token: 'fixture-refresh',
+                  provider_token: 'fixture-provider',
+                })
+              ),
+          ].join('; '),
+        },
+      }),
+      workerEnv('shadow'),
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('clear-site-data')).toBeNull();
+    expect(response.headers.getSetCookie()).toEqual([
+      'NEXT_LOCALE=vi; Path=/calendar; Secure',
+    ]);
   });
 
   it('shadow serves the apex mount', async () => {

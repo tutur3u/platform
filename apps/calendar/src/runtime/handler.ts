@@ -2,6 +2,13 @@ import { retarget } from '@tuturuuu/start-bridge/base-path';
 import { createNonce } from '@tuturuuu/start-bridge/csp';
 import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { matchRoute } from '@tuturuuu/start-bridge/route-match';
+import {
+  admitMountedMutation,
+  isolateMountedRequest,
+  refuseMountedSessionMinting,
+  scopeMountedResponseCookies,
+} from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
@@ -37,6 +44,21 @@ import type {
 
 registerCalendarServerApiPaths();
 const start = createBridgeStartHandler();
+const mountedCookies = {
+  ownedCookies: [
+    'NEXT_LOCALE',
+    'sidebar-behavior',
+    'sidebar-behavior-updated-at',
+    'sidebar-collapsed',
+    'sidebar-size',
+  ],
+};
+const providerHandoffs = [
+  '/api/v1/calendar/auth',
+  '/api/v1/calendar/auth/callback',
+  '/api/v1/calendar/auth/microsoft',
+  '/api/v1/calendar/auth/microsoft/callback',
+];
 
 export async function handleCalendarRequest(
   request: Request,
@@ -46,11 +68,15 @@ export async function handleCalendarRequest(
 ): Promise<Response> {
   const nonce = createNonce();
   try {
-    return await applyCalendarResponsePolicy(
+    const response = await applyCalendarResponsePolicy(
       request,
       await dispatchCalendarRequest(request, env, ctx, nonce, telemetry),
       nonce
     );
+    const base = calendarBase(new URL(request.url));
+    return base && !base.isRoot
+      ? scopeMountedResponseCookies(response, base.basePath, mountedCookies)
+      : response;
   } catch (error) {
     reportCalendarSsrError(error, 'handler');
     throw error;
@@ -84,6 +110,28 @@ async function dispatchCalendarRequest(
   if (!base || path == null) return new Response('Not Found', { status: 404 });
   const denied = await denyWithoutStagingAccess(request, env);
   if (denied) return denied;
+  if (!base.isRoot) {
+    if (
+      refuseMountedSessionMinting(path) ||
+      matchRoute('/api/auth/logout', path)
+    )
+      return Response.json(
+        { error: 'The shared session is managed by Web' },
+        { status: 409 }
+      );
+    if (providerHandoffs.some((pattern) => matchRoute(pattern, path)))
+      return Response.json(
+        { error: 'Calendar provider sign-in uses calendar.tuturuuu.com' },
+        { status: 409, headers: { 'Cache-Control': 'no-store' } }
+      );
+    const rejected = admitMountedMutation({
+      appPath: path,
+      mode: 'enforce',
+      request,
+    });
+    if (rejected) return rejected;
+    request = isolateMountedRequest(request, mountedCookies);
+  }
   if (
     path === CALENDAR_LEGACY_FUNCTION_BASE ||
     path.startsWith(`${CALENDAR_LEGACY_FUNCTION_BASE}/`)
@@ -97,18 +145,6 @@ async function dispatchCalendarRequest(
   if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
   if (!base.isRoot || request.headers.has(APP_BASE_HEADER))
     request = new Request(request, { headers });
-  if (
-    !base.isRoot &&
-    [
-      '/api/auth/logout',
-      '/api/auth/refresh-app-session',
-      '/api/auth/verify-app-token',
-    ].includes(path)
-  )
-    return Response.json(
-      { error: 'The shared session is managed by Web' },
-      { status: 409 }
-    );
   if (path === '/api/build-info') {
     const identity = workerBuildInfo(
       base.stripRequest(request) ?? request,

@@ -359,13 +359,16 @@ test('Calendar production acceptance exercises the existing Worker at the apex m
     {
       path: '/_fn/path-acceptance',
       method: 'DELETE',
-      headers: {},
+      headers: { origin: 'https://tuturuuu.com' },
       status: 405,
     },
     {
       path: '/_fn/path-acceptance',
       method: 'POST',
-      headers: { 'content-type': 'text/plain' },
+      headers: {
+        'content-type': 'text/plain',
+        origin: 'https://tuturuuu.com',
+      },
       status: 415,
     },
   ]);

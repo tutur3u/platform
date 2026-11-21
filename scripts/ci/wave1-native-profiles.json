@@ -140,7 +140,7 @@
         "app": "mail",
         "platform": "cf-wave1",
         "canonicalHosts": ["https://mail.tuturuuu.com"],
-        "mountHosts": [],
+        "mountHosts": ["https://tuturuuu.com"],
         "requiredSecretNames": [
           "NEXT_PUBLIC_SUPABASE_URL",
           "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -159,6 +159,8 @@
           "NEXT_PUBLIC_MAIL_APP_URL": "https://mail.tuturuuu.com",
           "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
           "MAIL_R2_BUCKET_NAME": "tuturuuu-mail",
+          "TTR_ONE_ORIGIN_MAIL": "shadow",
+          "TTR_ONE_ORIGIN_MAIL_REDIRECT_STATUS": "301",
           "TUTURUUU_NOINDEX": "0"
         },
         "publicInputPins": [],

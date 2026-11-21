@@ -11,7 +11,7 @@ Full rollback for the apex `tuturuuu.com` (Vercel project `platform`, apps/web):
 
 ## Common steps
 
-1. Record the source SHA, the sealed artifact (CI run id) and the Vercel rollback pin below.
+1. Record the source SHA, the sealed artifact (CI run id) and the rollback evidence listed for the app.
 2. Download the artifact: `gh run download <run-id> -R tutur3u/platform -n <artifact-name> -D /tmp/<app>-cutover`.
    Take the run id from a run on the production ref (`main`) at the accepted source SHA, and verify the run's head SHA. Never take an artifact by name alone: a name can match a pull-request run.
    Apps that upload a sealed archive (`<app>-cutover.tar.gz`: Chat, Hive, Playground, Rewise, Tools, Workspace) must be restored and verified with their own artifact tool in a checkout of the accepted SHA before step 4, exactly as the workflow's restore step does. For Rewise: `python3 scripts/ci/rewise-native-artifact.py restore apps/rewise --archive /tmp/rewise-cutover/rewise-cutover.tar.gz --receipt /tmp/rewise-cutover/restored.json`, then `verify apps/rewise --receipt /tmp/rewise-cutover/restored.json`. Step 4 then reads `apps/<app>/dist/server/wrangler.json` from that checkout instead of `/tmp/<app>-cutover/dist/server/wrangler.json`.

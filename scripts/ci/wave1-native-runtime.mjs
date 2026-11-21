@@ -10,6 +10,10 @@ import {
   exerciseAppsProductionMount,
 } from './apps-native-production-mount.mjs';
 import {
+  exerciseMailProductionMount,
+  mailProductionMountHost,
+} from './mail-native-production-mount.mjs';
+import {
   exerciseStorefrontHost,
   storefrontAssetFile,
   storefrontRuntimeHosts,
@@ -33,13 +37,16 @@ export function calendarProductionRuntimeTarget(profile) {
       {
         path: '/_fn/path-acceptance',
         method: 'DELETE',
-        headers: {},
+        headers: { origin: 'https://tuturuuu.com' },
         status: 405,
       },
       {
         path: '/_fn/path-acceptance',
         method: 'POST',
-        headers: { 'content-type': 'text/plain' },
+        headers: {
+          'content-type': 'text/plain',
+          origin: 'https://tuturuuu.com',
+        },
         status: 415,
       },
     ],
@@ -107,6 +114,11 @@ async function runRuntimeAcceptance() {
       app === 'apps' && environment === 'production'
         ? appsProductionMountHost(releaseRecipes.apps)
         : null;
+    const mailMountHost =
+      app === 'mail' && environment === 'production'
+        ? mailProductionMountHost(releaseRecipes.mail)
+        : null;
+    if (mailMountHost) hosts.push(mailMountHost);
     if (appsMountHost) hosts.push(appsMountHost);
     if (app === 'apps' && environment === 'staging')
       hosts.push('apps.tuturuuu.com');
@@ -195,6 +207,23 @@ async function runRuntimeAcceptance() {
           });
           console.log(
             'Accepted Apps production mount https://tuturuuu.com/apps'
+          );
+          continue;
+        }
+        if (host === mailMountHost) {
+          await exerciseMailProductionMount({
+            fetchWorker,
+            sha,
+            readAsset: (file) => {
+              assert.ok(
+                Object.hasOwn(receipt.files, file),
+                'Mail asset is not sealed'
+              );
+              return readFile(join(scratch, 'dist', file));
+            },
+          });
+          console.log(
+            'Accepted Mail production mount https://tuturuuu.com/mail'
           );
           continue;
         }
@@ -320,8 +349,6 @@ async function runRuntimeAcceptance() {
             `/${file.slice('client/'.length)}`,
             '/en/00000000-0000-4000-8000-000000000001?view=week',
             '/?view=week',
-            '/api/v1/calendar/auth/callback',
-            '/api/v1/calendar/auth/microsoft/callback',
           ]) {
             const served = await fetchWorker(path);
             assert.notEqual(
@@ -336,8 +363,20 @@ async function runRuntimeAcceptance() {
             );
             await served.body?.cancel();
           }
+          for (const path of [
+            '/api/v1/calendar/auth/callback',
+            '/api/v1/calendar/auth/microsoft/callback',
+          ]) {
+            const callback = await fetchWorker(path);
+            assert.equal(
+              callback.status,
+              400,
+              `${path} must reach the registered callback`
+            );
+            assert.equal((await callback.json()).error, 'state is required');
+          }
           const serviceWorker = await fetchWorker('/serwist/sw.js');
-          assert.notEqual(serviceWorker.status, 301);
+          assert.equal(serviceWorker.status, 200);
           assert.doesNotMatch(
             await serviceWorker.text(),
             /registration\.unregister/
@@ -377,9 +416,9 @@ async function runRuntimeAcceptance() {
               `https://${host}${basePath}/00000000-0000-4000-8000-000000000001`,
               'Mounted locale canonicalization must retain the exact workspace path'
             );
-            const canonicalPage = await fetchWorker(
-              '/00000000-0000-4000-8000-000000000001'
-            );
+            const returnPath =
+              '/00000000-0000-4000-8000-000000000001?view=week&q=a%2Bb';
+            const canonicalPage = await fetchWorker(returnPath);
             assert.equal(
               canonicalPage.status,
               307,
@@ -401,9 +440,16 @@ async function runRuntimeAcceptance() {
             assert.equal(target.origin, 'https://tuturuuu.com');
             assert.equal(target.pathname, '/login');
             const returnUrl = new URL(target.searchParams.get('returnUrl'));
-            assert.equal(returnUrl.origin, 'https://tuturuuu.com');
-            assert.equal(returnUrl.pathname, '/calendar/verify-token');
-            assert.equal(returnUrl.searchParams.get('nextUrl'), '/personal');
+            assert.equal(
+              returnUrl.href,
+              `https://tuturuuu.com${basePath}${returnPath}`
+            );
+            const dormant = await fetchWorker(
+              '/api/v1/calendar/auth/microsoft/callback'
+            );
+            assert.equal(dormant.status, 409);
+            assert.deepEqual(dormant.headers.getSetCookie(), []);
+            await dormant.body?.cancel();
           }
           if (calendarShadow && host === calendarShadow.host) {
             const returnUrl = new URL(target.searchParams.get('returnUrl'));
