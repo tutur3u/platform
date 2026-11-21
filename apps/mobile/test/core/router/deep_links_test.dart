@@ -4,6 +4,23 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test('Fleet access links open a segment and drop anything else', () {
+      for (final entry in {
+        'mastermind/fleet-access': Routes.mastermindFleetAccess,
+        'mastermind/fleet-access/requests':
+            '${Routes.mastermindFleetAccess}?view=requests',
+        'mastermind/fleet-access/link':
+            '${Routes.mastermindFleetAccess}?view=link',
+        'mastermind/fleet-access/unknown': Routes.mastermindFleetAccess,
+      }.entries) {
+        expect(
+          resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/en/personal/${entry.key}'),
+          )?.location,
+          entry.value,
+        );
+      }
+    });
     test('platform app links preserve the native meeting destination', () {
       final link = resolveMobileDeepLink(
         Uri.parse(

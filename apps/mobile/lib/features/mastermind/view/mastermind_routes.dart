@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
+import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
+import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_page.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
 import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
@@ -26,7 +28,7 @@ import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 
 /// Tab routes other than Home, which the app registry owns at
 /// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
-/// table details, and Iris devices. Inside the shell route.
+/// table details, Iris devices and Fleet access. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: '/mastermind/work/machine/:machineId',
@@ -130,6 +132,14 @@ final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: Routes.mastermindInsights,
     builder: (context, state) => const MastermindInsightsPage(),
+  ),
+  // Gated by the Fleet access answer, not the owner-only Mastermind gate;
+  // see shouldRedirectDisabledFleetAccessRoute.
+  GoRoute(
+    path: Routes.mastermindFleetAccess,
+    builder: (context, state) => FleetAccessPage(
+      initialView: fleetAccessViewFromQuery(state.uri.queryParameters['view']),
+    ),
   ),
   GoRoute(
     path: Routes.mastermindInsightsTable,

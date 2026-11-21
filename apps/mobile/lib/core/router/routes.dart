@@ -66,6 +66,10 @@ abstract final class Routes {
   static const mastermindWorkLane = '/mastermind/work/lane/:laneId';
   static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
   static const mastermindIrisDevices = '/mastermind/iris/devices';
+
+  /// The Fleet view. Gated by the Fleet access answer, not the owner-only
+  /// Mastermind gate; see `fleet_access_routes.dart`.
+  static const mastermindFleetAccess = '/mastermind/fleet-access';
   static const mastermindInboxDecision =
       '/mastermind/inbox/decision/:decisionId';
   static const mastermindInsightsTable =

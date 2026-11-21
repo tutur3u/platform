@@ -18537,4 +18537,355 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetSnoozeFailed => 'Couldn\'t snooze on this device';
+
+  @override
+  String get mastermindFleetAccessTitle => 'Fleet access';
+
+  @override
+  String get mastermindFleetAccessViewStatus => 'Status';
+
+  @override
+  String get mastermindFleetAccessViewRequests => 'Requests';
+
+  @override
+  String get mastermindFleetAccessViewLink => 'Chat link';
+
+  @override
+  String get mastermindFleetAccessViewApprovals => 'Approvals';
+
+  @override
+  String get mastermindFleetAccessKpiLanes => 'Lanes';
+
+  @override
+  String get mastermindFleetAccessKpiRunning => 'Running';
+
+  @override
+  String get mastermindFleetAccessKpiBlocked => 'Blocked';
+
+  @override
+  String get mastermindFleetAccessKpiReady => 'Ready';
+
+  @override
+  String mastermindFleetAccessGenerated(String time) {
+    return 'Generated $time';
+  }
+
+  @override
+  String mastermindFleetAccessReceived(String time) {
+    return 'Received $time';
+  }
+
+  @override
+  String get mastermindFleetAccessStale => 'Stale';
+
+  @override
+  String mastermindFleetAccessEta(String time) {
+    return 'ETA $time';
+  }
+
+  @override
+  String get mastermindFleetAccessNoDigest => 'Nothing published for your projects yet';
+
+  @override
+  String get mastermindFleetAccessNoLanes => 'No lanes';
+
+  @override
+  String get mastermindFleetAccessLanePlanned => 'Planned';
+
+  @override
+  String get mastermindFleetAccessLaneRunning => 'Running';
+
+  @override
+  String get mastermindFleetAccessLaneBlocked => 'Blocked';
+
+  @override
+  String get mastermindFleetAccessLaneReady => 'Ready';
+
+  @override
+  String get mastermindFleetAccessLaneDone => 'Done';
+
+  @override
+  String get mastermindFleetAccessLanePaused => 'Paused';
+
+  @override
+  String get mastermindFleetAccessBlockerDependency => 'Dependency';
+
+  @override
+  String get mastermindFleetAccessBlockerReview => 'Review';
+
+  @override
+  String get mastermindFleetAccessBlockerCi => 'CI';
+
+  @override
+  String get mastermindFleetAccessBlockerApproval => 'Approval';
+
+  @override
+  String get mastermindFleetAccessBlockerReleaseHold => 'Release hold';
+
+  @override
+  String get mastermindFleetAccessBlockerCapacity => 'Capacity';
+
+  @override
+  String get mastermindFleetAccessBlockerIncident => 'Incident';
+
+  @override
+  String get mastermindFleetAccessNewRequest => 'New request';
+
+  @override
+  String get mastermindFleetAccessNoRequests => 'No requests yet';
+
+  @override
+  String get mastermindFleetAccessShowOlder => 'Show older';
+
+  @override
+  String get mastermindFleetAccessKindStatusQuestion => 'Status question';
+
+  @override
+  String get mastermindFleetAccessKindComment => 'Comment';
+
+  @override
+  String get mastermindFleetAccessKindPrioritySet => 'Set priority';
+
+  @override
+  String get mastermindFleetAccessKindApproveItem => 'Approve readiness item';
+
+  @override
+  String get mastermindFleetAccessKindWorkCreate => 'Create work';
+
+  @override
+  String get mastermindFleetAccessKindWorkRedirect => 'Redirect work';
+
+  @override
+  String get mastermindFleetAccessKindLanePause => 'Pause lane';
+
+  @override
+  String get mastermindFleetAccessKindApproveDeploy => 'Approve deploy';
+
+  @override
+  String get mastermindFleetAccessKindApproveProductionChange => 'Approve production change';
+
+  @override
+  String get mastermindFleetAccessStatePendingApproval => 'Waiting for approval';
+
+  @override
+  String get mastermindFleetAccessStateApproved => 'Approved';
+
+  @override
+  String get mastermindFleetAccessStateRejected => 'Rejected';
+
+  @override
+  String get mastermindFleetAccessStateClaimed => 'Picked up';
+
+  @override
+  String get mastermindFleetAccessStateDispatched => 'Dispatched';
+
+  @override
+  String get mastermindFleetAccessStateDone => 'Done';
+
+  @override
+  String get mastermindFleetAccessStateFailed => 'Failed';
+
+  @override
+  String get mastermindFleetAccessStateExpired => 'Expired';
+
+  @override
+  String get mastermindFleetAccessStateCancelled => 'Cancelled';
+
+  @override
+  String get mastermindFleetAccessSubmit => 'Send request';
+
+  @override
+  String get mastermindFleetAccessSubmitted => 'Request sent';
+
+  @override
+  String get mastermindFleetAccessChoose => 'Choose';
+
+  @override
+  String get mastermindFleetAccessFieldKind => 'Request';
+
+  @override
+  String get mastermindFleetAccessFieldProject => 'Project';
+
+  @override
+  String get mastermindFleetAccessFieldTopic => 'Topic';
+
+  @override
+  String get mastermindFleetAccessFieldTarget => 'Target';
+
+  @override
+  String get mastermindFleetAccessFieldTargetPlaceholder => 'Catalog key';
+
+  @override
+  String get mastermindFleetAccessFieldPriority => 'Priority';
+
+  @override
+  String get mastermindFleetAccessFieldTemplate => 'Template';
+
+  @override
+  String get mastermindFleetAccessFieldObjective => 'Objective';
+
+  @override
+  String get mastermindFleetAccessFieldEnvironment => 'Environment';
+
+  @override
+  String get mastermindFleetAccessFieldCommit => 'Commit SHA';
+
+  @override
+  String get mastermindFleetAccessFieldCommitPlaceholder => '40-character SHA';
+
+  @override
+  String get mastermindFleetAccessFieldQuote => 'Note';
+
+  @override
+  String get mastermindFleetAccessFieldQuotePlaceholder => 'Add a note';
+
+  @override
+  String get mastermindFleetAccessTopicStatus => 'Status';
+
+  @override
+  String get mastermindFleetAccessTopicReadiness => 'Readiness';
+
+  @override
+  String get mastermindFleetAccessTopicTimeline => 'Timeline';
+
+  @override
+  String get mastermindFleetAccessPriorityLow => 'Low';
+
+  @override
+  String get mastermindFleetAccessPriorityNormal => 'Normal';
+
+  @override
+  String get mastermindFleetAccessPriorityHigh => 'High';
+
+  @override
+  String get mastermindFleetAccessPriorityUrgent => 'Urgent';
+
+  @override
+  String get mastermindFleetAccessTemplateInvestigation => 'Investigation';
+
+  @override
+  String get mastermindFleetAccessTemplateMaintenance => 'Maintenance';
+
+  @override
+  String get mastermindFleetAccessTemplateRegressionFix => 'Regression fix';
+
+  @override
+  String get mastermindFleetAccessObjectiveInvestigate => 'Investigate';
+
+  @override
+  String get mastermindFleetAccessObjectiveVerify => 'Verify';
+
+  @override
+  String get mastermindFleetAccessObjectivePrepareReview => 'Prepare review';
+
+  @override
+  String get mastermindFleetAccessEnvironmentStaging => 'Staging';
+
+  @override
+  String get mastermindFleetAccessEnvironmentProduction => 'Production';
+
+  @override
+  String get mastermindFleetAccessErrorRequired => 'Required';
+
+  @override
+  String get mastermindFleetAccessErrorTarget => 'Use lowercase letters, digits, - or _';
+
+  @override
+  String get mastermindFleetAccessErrorCommit => 'Enter the full 40-character SHA';
+
+  @override
+  String get mastermindFleetAccessErrorQuoteTooLong => 'Keep it under 1,000 characters';
+
+  @override
+  String get mastermindFleetAccessFailureSession => 'Fleet couldn\'t verify your session';
+
+  @override
+  String get mastermindFleetAccessFailureForbidden => 'This account no longer has Fleet access';
+
+  @override
+  String get mastermindFleetAccessFailureQuota => 'Request limit reached. Try again later';
+
+  @override
+  String get mastermindFleetAccessFailureStale => 'The project catalog changed. Check the target and try again';
+
+  @override
+  String get mastermindFleetAccessFailureInvalid => 'Fleet didn\'t accept this request';
+
+  @override
+  String get mastermindFleetAccessFailureUnavailable => 'Can\'t reach Fleet';
+
+  @override
+  String get mastermindFleetAccessFailureUnreadable => 'Couldn\'t read Fleet\'s answer';
+
+  @override
+  String get mastermindFleetAccessFailureInvalidConfirmation => 'The link ID or code is wrong or expired';
+
+  @override
+  String get mastermindFleetAccessFailureAlreadyLinked => 'This chat account is already linked';
+
+  @override
+  String get mastermindFleetAccessLinkStart => 'Get a link code';
+
+  @override
+  String get mastermindFleetAccessLinkSendCode => 'Send this code to Mira in a private chat';
+
+  @override
+  String mastermindFleetAccessLinkExpiresIn(String time) {
+    return 'Expires in $time';
+  }
+
+  @override
+  String get mastermindFleetAccessLinkExpired => 'Code expired';
+
+  @override
+  String get mastermindFleetAccessLinkNewCode => 'New code';
+
+  @override
+  String get mastermindFleetAccessLinkCopy => 'Copy';
+
+  @override
+  String get mastermindFleetAccessLinkCopied => 'Code copied';
+
+  @override
+  String mastermindFleetAccessLinkCodeLabel(String code) {
+    return 'Link code $code';
+  }
+
+  @override
+  String get mastermindFleetAccessLinkIdField => 'Link ID';
+
+  @override
+  String get mastermindFleetAccessLinkConfirmationField => 'Confirmation code';
+
+  @override
+  String get mastermindFleetAccessLinkFromReply => 'From Mira\'s reply';
+
+  @override
+  String get mastermindFleetAccessLinkIdInvalid => 'Paste the ID exactly as Mira sent it';
+
+  @override
+  String get mastermindFleetAccessLinkConfirmationInvalid => 'Paste the 43-character code exactly';
+
+  @override
+  String get mastermindFleetAccessLinkCheck => 'Check link';
+
+  @override
+  String get mastermindFleetAccessLinkChannel => 'Channel';
+
+  @override
+  String get mastermindFleetAccessLinkAccount => 'Account';
+
+  @override
+  String get mastermindFleetAccessLinkConfirm => 'Confirm link';
+
+  @override
+  String get mastermindFleetAccessLinkStartOver => 'Start over';
+
+  @override
+  String mastermindFleetAccessLinkLinked(String account, String channel) {
+    return 'Linked to $account on $channel';
+  }
+
+  @override
+  String get mastermindFleetAccessApprovalsUnavailable => 'Approvals aren\'t available in the app yet';
 }

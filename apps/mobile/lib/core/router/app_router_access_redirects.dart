@@ -29,11 +29,14 @@ bool shouldRedirectDisabledEducationRoutes(
 
 /// Holds the route while the access check is still running, so a deep link or
 /// a push tap neither flashes content nor bounces before the answer arrives.
+/// The Fleet view follows its own answer instead (see
+/// `shouldRedirectDisabledFleetAccessRoute`).
 bool shouldRedirectDisabledMastermindRoutes(
   String matchedLocation,
   MastermindAccessState accessState,
 ) =>
     Routes.miniAppRootForLocation(matchedLocation) == Routes.mastermind &&
+    Routes.normalizeLocation(matchedLocation) != Routes.mastermindFleetAccess &&
     switch (accessState.status) {
       MastermindAccessStatus.initial || MastermindAccessStatus.loading => false,
       MastermindAccessStatus.error => true,

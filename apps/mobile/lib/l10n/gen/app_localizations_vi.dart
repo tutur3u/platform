@@ -18316,4 +18316,355 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetSnoozeFailed => 'Không thể tạm hoãn trên thiết bị này';
+
+  @override
+  String get mastermindFleetAccessTitle => 'Quyền truy cập đội máy';
+
+  @override
+  String get mastermindFleetAccessViewStatus => 'Trạng thái';
+
+  @override
+  String get mastermindFleetAccessViewRequests => 'Yêu cầu';
+
+  @override
+  String get mastermindFleetAccessViewLink => 'Liên kết chat';
+
+  @override
+  String get mastermindFleetAccessViewApprovals => 'Phê duyệt';
+
+  @override
+  String get mastermindFleetAccessKpiLanes => 'Luồng việc';
+
+  @override
+  String get mastermindFleetAccessKpiRunning => 'Đang chạy';
+
+  @override
+  String get mastermindFleetAccessKpiBlocked => 'Bị chặn';
+
+  @override
+  String get mastermindFleetAccessKpiReady => 'Sẵn sàng';
+
+  @override
+  String mastermindFleetAccessGenerated(String time) {
+    return 'Tạo $time';
+  }
+
+  @override
+  String mastermindFleetAccessReceived(String time) {
+    return 'Nhận $time';
+  }
+
+  @override
+  String get mastermindFleetAccessStale => 'Đã cũ';
+
+  @override
+  String mastermindFleetAccessEta(String time) {
+    return 'Dự kiến $time';
+  }
+
+  @override
+  String get mastermindFleetAccessNoDigest => 'Chưa có cập nhật cho dự án của bạn';
+
+  @override
+  String get mastermindFleetAccessNoLanes => 'Không có luồng việc';
+
+  @override
+  String get mastermindFleetAccessLanePlanned => 'Đã lên kế hoạch';
+
+  @override
+  String get mastermindFleetAccessLaneRunning => 'Đang chạy';
+
+  @override
+  String get mastermindFleetAccessLaneBlocked => 'Bị chặn';
+
+  @override
+  String get mastermindFleetAccessLaneReady => 'Sẵn sàng';
+
+  @override
+  String get mastermindFleetAccessLaneDone => 'Hoàn tất';
+
+  @override
+  String get mastermindFleetAccessLanePaused => 'Tạm dừng';
+
+  @override
+  String get mastermindFleetAccessBlockerDependency => 'Phụ thuộc';
+
+  @override
+  String get mastermindFleetAccessBlockerReview => 'Đánh giá';
+
+  @override
+  String get mastermindFleetAccessBlockerCi => 'CI';
+
+  @override
+  String get mastermindFleetAccessBlockerApproval => 'Phê duyệt';
+
+  @override
+  String get mastermindFleetAccessBlockerReleaseHold => 'Tạm giữ phát hành';
+
+  @override
+  String get mastermindFleetAccessBlockerCapacity => 'Năng lực';
+
+  @override
+  String get mastermindFleetAccessBlockerIncident => 'Sự cố';
+
+  @override
+  String get mastermindFleetAccessNewRequest => 'Yêu cầu mới';
+
+  @override
+  String get mastermindFleetAccessNoRequests => 'Chưa có yêu cầu';
+
+  @override
+  String get mastermindFleetAccessShowOlder => 'Xem cũ hơn';
+
+  @override
+  String get mastermindFleetAccessKindStatusQuestion => 'Hỏi trạng thái';
+
+  @override
+  String get mastermindFleetAccessKindComment => 'Bình luận';
+
+  @override
+  String get mastermindFleetAccessKindPrioritySet => 'Đặt mức ưu tiên';
+
+  @override
+  String get mastermindFleetAccessKindApproveItem => 'Duyệt mục sẵn sàng';
+
+  @override
+  String get mastermindFleetAccessKindWorkCreate => 'Tạo việc';
+
+  @override
+  String get mastermindFleetAccessKindWorkRedirect => 'Chuyển hướng việc';
+
+  @override
+  String get mastermindFleetAccessKindLanePause => 'Tạm dừng luồng việc';
+
+  @override
+  String get mastermindFleetAccessKindApproveDeploy => 'Duyệt triển khai';
+
+  @override
+  String get mastermindFleetAccessKindApproveProductionChange => 'Duyệt thay đổi production';
+
+  @override
+  String get mastermindFleetAccessStatePendingApproval => 'Chờ phê duyệt';
+
+  @override
+  String get mastermindFleetAccessStateApproved => 'Đã duyệt';
+
+  @override
+  String get mastermindFleetAccessStateRejected => 'Bị từ chối';
+
+  @override
+  String get mastermindFleetAccessStateClaimed => 'Đã nhận';
+
+  @override
+  String get mastermindFleetAccessStateDispatched => 'Đã giao';
+
+  @override
+  String get mastermindFleetAccessStateDone => 'Hoàn tất';
+
+  @override
+  String get mastermindFleetAccessStateFailed => 'Thất bại';
+
+  @override
+  String get mastermindFleetAccessStateExpired => 'Hết hạn';
+
+  @override
+  String get mastermindFleetAccessStateCancelled => 'Đã hủy';
+
+  @override
+  String get mastermindFleetAccessSubmit => 'Gửi yêu cầu';
+
+  @override
+  String get mastermindFleetAccessSubmitted => 'Đã gửi yêu cầu';
+
+  @override
+  String get mastermindFleetAccessChoose => 'Chọn';
+
+  @override
+  String get mastermindFleetAccessFieldKind => 'Loại yêu cầu';
+
+  @override
+  String get mastermindFleetAccessFieldProject => 'Dự án';
+
+  @override
+  String get mastermindFleetAccessFieldTopic => 'Chủ đề';
+
+  @override
+  String get mastermindFleetAccessFieldTarget => 'Đối tượng';
+
+  @override
+  String get mastermindFleetAccessFieldTargetPlaceholder => 'Khóa danh mục';
+
+  @override
+  String get mastermindFleetAccessFieldPriority => 'Mức ưu tiên';
+
+  @override
+  String get mastermindFleetAccessFieldTemplate => 'Mẫu';
+
+  @override
+  String get mastermindFleetAccessFieldObjective => 'Mục tiêu';
+
+  @override
+  String get mastermindFleetAccessFieldEnvironment => 'Môi trường';
+
+  @override
+  String get mastermindFleetAccessFieldCommit => 'Commit SHA';
+
+  @override
+  String get mastermindFleetAccessFieldCommitPlaceholder => 'SHA 40 ký tự';
+
+  @override
+  String get mastermindFleetAccessFieldQuote => 'Ghi chú';
+
+  @override
+  String get mastermindFleetAccessFieldQuotePlaceholder => 'Thêm ghi chú';
+
+  @override
+  String get mastermindFleetAccessTopicStatus => 'Trạng thái';
+
+  @override
+  String get mastermindFleetAccessTopicReadiness => 'Mức sẵn sàng';
+
+  @override
+  String get mastermindFleetAccessTopicTimeline => 'Tiến độ';
+
+  @override
+  String get mastermindFleetAccessPriorityLow => 'Thấp';
+
+  @override
+  String get mastermindFleetAccessPriorityNormal => 'Bình thường';
+
+  @override
+  String get mastermindFleetAccessPriorityHigh => 'Cao';
+
+  @override
+  String get mastermindFleetAccessPriorityUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindFleetAccessTemplateInvestigation => 'Điều tra';
+
+  @override
+  String get mastermindFleetAccessTemplateMaintenance => 'Bảo trì';
+
+  @override
+  String get mastermindFleetAccessTemplateRegressionFix => 'Sửa lỗi hồi quy';
+
+  @override
+  String get mastermindFleetAccessObjectiveInvestigate => 'Điều tra';
+
+  @override
+  String get mastermindFleetAccessObjectiveVerify => 'Xác minh';
+
+  @override
+  String get mastermindFleetAccessObjectivePrepareReview => 'Chuẩn bị đánh giá';
+
+  @override
+  String get mastermindFleetAccessEnvironmentStaging => 'Staging';
+
+  @override
+  String get mastermindFleetAccessEnvironmentProduction => 'Production';
+
+  @override
+  String get mastermindFleetAccessErrorRequired => 'Bắt buộc';
+
+  @override
+  String get mastermindFleetAccessErrorTarget => 'Dùng chữ thường, chữ số, - hoặc _';
+
+  @override
+  String get mastermindFleetAccessErrorCommit => 'Nhập đủ SHA 40 ký tự';
+
+  @override
+  String get mastermindFleetAccessErrorQuoteTooLong => 'Tối đa 1.000 ký tự';
+
+  @override
+  String get mastermindFleetAccessFailureSession => 'Đội máy không thể xác minh phiên của bạn';
+
+  @override
+  String get mastermindFleetAccessFailureForbidden => 'Tài khoản này không còn quyền truy cập đội máy';
+
+  @override
+  String get mastermindFleetAccessFailureQuota => 'Đã đạt giới hạn yêu cầu. Hãy thử lại sau';
+
+  @override
+  String get mastermindFleetAccessFailureStale => 'Danh mục dự án đã thay đổi. Hãy kiểm tra đối tượng rồi thử lại';
+
+  @override
+  String get mastermindFleetAccessFailureInvalid => 'Đội máy không chấp nhận yêu cầu này';
+
+  @override
+  String get mastermindFleetAccessFailureUnavailable => 'Không thể kết nối đội máy';
+
+  @override
+  String get mastermindFleetAccessFailureUnreadable => 'Không đọc được phản hồi của đội máy';
+
+  @override
+  String get mastermindFleetAccessFailureInvalidConfirmation => 'ID liên kết hoặc mã xác nhận sai hoặc đã hết hạn';
+
+  @override
+  String get mastermindFleetAccessFailureAlreadyLinked => 'Tài khoản chat này đã được liên kết';
+
+  @override
+  String get mastermindFleetAccessLinkStart => 'Lấy mã liên kết';
+
+  @override
+  String get mastermindFleetAccessLinkSendCode => 'Gửi mã này cho Mira trong cuộc trò chuyện riêng';
+
+  @override
+  String mastermindFleetAccessLinkExpiresIn(String time) {
+    return 'Hết hạn sau $time';
+  }
+
+  @override
+  String get mastermindFleetAccessLinkExpired => 'Mã đã hết hạn';
+
+  @override
+  String get mastermindFleetAccessLinkNewCode => 'Mã mới';
+
+  @override
+  String get mastermindFleetAccessLinkCopy => 'Sao chép';
+
+  @override
+  String get mastermindFleetAccessLinkCopied => 'Đã sao chép mã';
+
+  @override
+  String mastermindFleetAccessLinkCodeLabel(String code) {
+    return 'Mã liên kết $code';
+  }
+
+  @override
+  String get mastermindFleetAccessLinkIdField => 'ID liên kết';
+
+  @override
+  String get mastermindFleetAccessLinkConfirmationField => 'Mã xác nhận';
+
+  @override
+  String get mastermindFleetAccessLinkFromReply => 'Trong tin trả lời của Mira';
+
+  @override
+  String get mastermindFleetAccessLinkIdInvalid => 'Dán ID đúng như Mira đã gửi';
+
+  @override
+  String get mastermindFleetAccessLinkConfirmationInvalid => 'Dán đúng mã 43 ký tự';
+
+  @override
+  String get mastermindFleetAccessLinkCheck => 'Kiểm tra liên kết';
+
+  @override
+  String get mastermindFleetAccessLinkChannel => 'Kênh';
+
+  @override
+  String get mastermindFleetAccessLinkAccount => 'Tài khoản';
+
+  @override
+  String get mastermindFleetAccessLinkConfirm => 'Xác nhận liên kết';
+
+  @override
+  String get mastermindFleetAccessLinkStartOver => 'Làm lại';
+
+  @override
+  String mastermindFleetAccessLinkLinked(String account, String channel) {
+    return 'Đã liên kết với $account trên $channel';
+  }
+
+  @override
+  String get mastermindFleetAccessApprovalsUnavailable => 'Ứng dụng chưa hỗ trợ phê duyệt';
 }

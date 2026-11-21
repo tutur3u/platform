@@ -34050,6 +34050,684 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t snooze on this device'**
   String get mastermindFleetSnoozeFailed;
+
+  /// No description provided for @mastermindFleetAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet access'**
+  String get mastermindFleetAccessTitle;
+
+  /// No description provided for @mastermindFleetAccessViewStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get mastermindFleetAccessViewStatus;
+
+  /// No description provided for @mastermindFleetAccessViewRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get mastermindFleetAccessViewRequests;
+
+  /// No description provided for @mastermindFleetAccessViewLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat link'**
+  String get mastermindFleetAccessViewLink;
+
+  /// No description provided for @mastermindFleetAccessViewApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get mastermindFleetAccessViewApprovals;
+
+  /// No description provided for @mastermindFleetAccessKpiLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes'**
+  String get mastermindFleetAccessKpiLanes;
+
+  /// No description provided for @mastermindFleetAccessKpiRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindFleetAccessKpiRunning;
+
+  /// No description provided for @mastermindFleetAccessKpiBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mastermindFleetAccessKpiBlocked;
+
+  /// No description provided for @mastermindFleetAccessKpiReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get mastermindFleetAccessKpiReady;
+
+  /// No description provided for @mastermindFleetAccessGenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {time}'**
+  String mastermindFleetAccessGenerated(String time);
+
+  /// No description provided for @mastermindFleetAccessReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received {time}'**
+  String mastermindFleetAccessReceived(String time);
+
+  /// No description provided for @mastermindFleetAccessStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get mastermindFleetAccessStale;
+
+  /// No description provided for @mastermindFleetAccessEta.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA {time}'**
+  String mastermindFleetAccessEta(String time);
+
+  /// No description provided for @mastermindFleetAccessNoDigest.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing published for your projects yet'**
+  String get mastermindFleetAccessNoDigest;
+
+  /// No description provided for @mastermindFleetAccessNoLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'No lanes'**
+  String get mastermindFleetAccessNoLanes;
+
+  /// No description provided for @mastermindFleetAccessLanePlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get mastermindFleetAccessLanePlanned;
+
+  /// No description provided for @mastermindFleetAccessLaneRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindFleetAccessLaneRunning;
+
+  /// No description provided for @mastermindFleetAccessLaneBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mastermindFleetAccessLaneBlocked;
+
+  /// No description provided for @mastermindFleetAccessLaneReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get mastermindFleetAccessLaneReady;
+
+  /// No description provided for @mastermindFleetAccessLaneDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get mastermindFleetAccessLaneDone;
+
+  /// No description provided for @mastermindFleetAccessLanePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get mastermindFleetAccessLanePaused;
+
+  /// No description provided for @mastermindFleetAccessBlockerDependency.
+  ///
+  /// In en, this message translates to:
+  /// **'Dependency'**
+  String get mastermindFleetAccessBlockerDependency;
+
+  /// No description provided for @mastermindFleetAccessBlockerReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get mastermindFleetAccessBlockerReview;
+
+  /// No description provided for @mastermindFleetAccessBlockerCi.
+  ///
+  /// In en, this message translates to:
+  /// **'CI'**
+  String get mastermindFleetAccessBlockerCi;
+
+  /// No description provided for @mastermindFleetAccessBlockerApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval'**
+  String get mastermindFleetAccessBlockerApproval;
+
+  /// No description provided for @mastermindFleetAccessBlockerReleaseHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Release hold'**
+  String get mastermindFleetAccessBlockerReleaseHold;
+
+  /// No description provided for @mastermindFleetAccessBlockerCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get mastermindFleetAccessBlockerCapacity;
+
+  /// No description provided for @mastermindFleetAccessBlockerIncident.
+  ///
+  /// In en, this message translates to:
+  /// **'Incident'**
+  String get mastermindFleetAccessBlockerIncident;
+
+  /// No description provided for @mastermindFleetAccessNewRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'New request'**
+  String get mastermindFleetAccessNewRequest;
+
+  /// No description provided for @mastermindFleetAccessNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests yet'**
+  String get mastermindFleetAccessNoRequests;
+
+  /// No description provided for @mastermindFleetAccessShowOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show older'**
+  String get mastermindFleetAccessShowOlder;
+
+  /// No description provided for @mastermindFleetAccessKindStatusQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Status question'**
+  String get mastermindFleetAccessKindStatusQuestion;
+
+  /// No description provided for @mastermindFleetAccessKindComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get mastermindFleetAccessKindComment;
+
+  /// No description provided for @mastermindFleetAccessKindPrioritySet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set priority'**
+  String get mastermindFleetAccessKindPrioritySet;
+
+  /// No description provided for @mastermindFleetAccessKindApproveItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve readiness item'**
+  String get mastermindFleetAccessKindApproveItem;
+
+  /// No description provided for @mastermindFleetAccessKindWorkCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create work'**
+  String get mastermindFleetAccessKindWorkCreate;
+
+  /// No description provided for @mastermindFleetAccessKindWorkRedirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Redirect work'**
+  String get mastermindFleetAccessKindWorkRedirect;
+
+  /// No description provided for @mastermindFleetAccessKindLanePause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause lane'**
+  String get mastermindFleetAccessKindLanePause;
+
+  /// No description provided for @mastermindFleetAccessKindApproveDeploy.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve deploy'**
+  String get mastermindFleetAccessKindApproveDeploy;
+
+  /// No description provided for @mastermindFleetAccessKindApproveProductionChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve production change'**
+  String get mastermindFleetAccessKindApproveProductionChange;
+
+  /// No description provided for @mastermindFleetAccessStatePendingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get mastermindFleetAccessStatePendingApproval;
+
+  /// No description provided for @mastermindFleetAccessStateApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get mastermindFleetAccessStateApproved;
+
+  /// No description provided for @mastermindFleetAccessStateRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get mastermindFleetAccessStateRejected;
+
+  /// No description provided for @mastermindFleetAccessStateClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked up'**
+  String get mastermindFleetAccessStateClaimed;
+
+  /// No description provided for @mastermindFleetAccessStateDispatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispatched'**
+  String get mastermindFleetAccessStateDispatched;
+
+  /// No description provided for @mastermindFleetAccessStateDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get mastermindFleetAccessStateDone;
+
+  /// No description provided for @mastermindFleetAccessStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindFleetAccessStateFailed;
+
+  /// No description provided for @mastermindFleetAccessStateExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindFleetAccessStateExpired;
+
+  /// No description provided for @mastermindFleetAccessStateCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get mastermindFleetAccessStateCancelled;
+
+  /// No description provided for @mastermindFleetAccessSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get mastermindFleetAccessSubmit;
+
+  /// No description provided for @mastermindFleetAccessSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get mastermindFleetAccessSubmitted;
+
+  /// No description provided for @mastermindFleetAccessChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get mastermindFleetAccessChoose;
+
+  /// No description provided for @mastermindFleetAccessFieldKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get mastermindFleetAccessFieldKind;
+
+  /// No description provided for @mastermindFleetAccessFieldProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get mastermindFleetAccessFieldProject;
+
+  /// No description provided for @mastermindFleetAccessFieldTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic'**
+  String get mastermindFleetAccessFieldTopic;
+
+  /// No description provided for @mastermindFleetAccessFieldTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get mastermindFleetAccessFieldTarget;
+
+  /// No description provided for @mastermindFleetAccessFieldTargetPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog key'**
+  String get mastermindFleetAccessFieldTargetPlaceholder;
+
+  /// No description provided for @mastermindFleetAccessFieldPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get mastermindFleetAccessFieldPriority;
+
+  /// No description provided for @mastermindFleetAccessFieldTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get mastermindFleetAccessFieldTemplate;
+
+  /// No description provided for @mastermindFleetAccessFieldObjective.
+  ///
+  /// In en, this message translates to:
+  /// **'Objective'**
+  String get mastermindFleetAccessFieldObjective;
+
+  /// No description provided for @mastermindFleetAccessFieldEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get mastermindFleetAccessFieldEnvironment;
+
+  /// No description provided for @mastermindFleetAccessFieldCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit SHA'**
+  String get mastermindFleetAccessFieldCommit;
+
+  /// No description provided for @mastermindFleetAccessFieldCommitPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'40-character SHA'**
+  String get mastermindFleetAccessFieldCommitPlaceholder;
+
+  /// No description provided for @mastermindFleetAccessFieldQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get mastermindFleetAccessFieldQuote;
+
+  /// No description provided for @mastermindFleetAccessFieldQuotePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note'**
+  String get mastermindFleetAccessFieldQuotePlaceholder;
+
+  /// No description provided for @mastermindFleetAccessTopicStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get mastermindFleetAccessTopicStatus;
+
+  /// No description provided for @mastermindFleetAccessTopicReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness'**
+  String get mastermindFleetAccessTopicReadiness;
+
+  /// No description provided for @mastermindFleetAccessTopicTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get mastermindFleetAccessTopicTimeline;
+
+  /// No description provided for @mastermindFleetAccessPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get mastermindFleetAccessPriorityLow;
+
+  /// No description provided for @mastermindFleetAccessPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get mastermindFleetAccessPriorityNormal;
+
+  /// No description provided for @mastermindFleetAccessPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get mastermindFleetAccessPriorityHigh;
+
+  /// No description provided for @mastermindFleetAccessPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindFleetAccessPriorityUrgent;
+
+  /// No description provided for @mastermindFleetAccessTemplateInvestigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Investigation'**
+  String get mastermindFleetAccessTemplateInvestigation;
+
+  /// No description provided for @mastermindFleetAccessTemplateMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get mastermindFleetAccessTemplateMaintenance;
+
+  /// No description provided for @mastermindFleetAccessTemplateRegressionFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Regression fix'**
+  String get mastermindFleetAccessTemplateRegressionFix;
+
+  /// No description provided for @mastermindFleetAccessObjectiveInvestigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Investigate'**
+  String get mastermindFleetAccessObjectiveInvestigate;
+
+  /// No description provided for @mastermindFleetAccessObjectiveVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get mastermindFleetAccessObjectiveVerify;
+
+  /// No description provided for @mastermindFleetAccessObjectivePrepareReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare review'**
+  String get mastermindFleetAccessObjectivePrepareReview;
+
+  /// No description provided for @mastermindFleetAccessEnvironmentStaging.
+  ///
+  /// In en, this message translates to:
+  /// **'Staging'**
+  String get mastermindFleetAccessEnvironmentStaging;
+
+  /// No description provided for @mastermindFleetAccessEnvironmentProduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Production'**
+  String get mastermindFleetAccessEnvironmentProduction;
+
+  /// No description provided for @mastermindFleetAccessErrorRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get mastermindFleetAccessErrorRequired;
+
+  /// No description provided for @mastermindFleetAccessErrorTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Use lowercase letters, digits, - or _'**
+  String get mastermindFleetAccessErrorTarget;
+
+  /// No description provided for @mastermindFleetAccessErrorCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the full 40-character SHA'**
+  String get mastermindFleetAccessErrorCommit;
+
+  /// No description provided for @mastermindFleetAccessErrorQuoteTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it under 1,000 characters'**
+  String get mastermindFleetAccessErrorQuoteTooLong;
+
+  /// No description provided for @mastermindFleetAccessFailureSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet couldn\'t verify your session'**
+  String get mastermindFleetAccessFailureSession;
+
+  /// No description provided for @mastermindFleetAccessFailureForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This account no longer has Fleet access'**
+  String get mastermindFleetAccessFailureForbidden;
+
+  /// No description provided for @mastermindFleetAccessFailureQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Request limit reached. Try again later'**
+  String get mastermindFleetAccessFailureQuota;
+
+  /// No description provided for @mastermindFleetAccessFailureStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The project catalog changed. Check the target and try again'**
+  String get mastermindFleetAccessFailureStale;
+
+  /// No description provided for @mastermindFleetAccessFailureInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet didn\'t accept this request'**
+  String get mastermindFleetAccessFailureInvalid;
+
+  /// No description provided for @mastermindFleetAccessFailureUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Fleet'**
+  String get mastermindFleetAccessFailureUnavailable;
+
+  /// No description provided for @mastermindFleetAccessFailureUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read Fleet\'s answer'**
+  String get mastermindFleetAccessFailureUnreadable;
+
+  /// No description provided for @mastermindFleetAccessFailureInvalidConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'The link ID or code is wrong or expired'**
+  String get mastermindFleetAccessFailureInvalidConfirmation;
+
+  /// No description provided for @mastermindFleetAccessFailureAlreadyLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat account is already linked'**
+  String get mastermindFleetAccessFailureAlreadyLinked;
+
+  /// No description provided for @mastermindFleetAccessLinkStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a link code'**
+  String get mastermindFleetAccessLinkStart;
+
+  /// No description provided for @mastermindFleetAccessLinkSendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this code to Mira in a private chat'**
+  String get mastermindFleetAccessLinkSendCode;
+
+  /// No description provided for @mastermindFleetAccessLinkExpiresIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {time}'**
+  String mastermindFleetAccessLinkExpiresIn(String time);
+
+  /// No description provided for @mastermindFleetAccessLinkExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Code expired'**
+  String get mastermindFleetAccessLinkExpired;
+
+  /// No description provided for @mastermindFleetAccessLinkNewCode.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get mastermindFleetAccessLinkNewCode;
+
+  /// No description provided for @mastermindFleetAccessLinkCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get mastermindFleetAccessLinkCopy;
+
+  /// No description provided for @mastermindFleetAccessLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied'**
+  String get mastermindFleetAccessLinkCopied;
+
+  /// No description provided for @mastermindFleetAccessLinkCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Link code {code}'**
+  String mastermindFleetAccessLinkCodeLabel(String code);
+
+  /// No description provided for @mastermindFleetAccessLinkIdField.
+  ///
+  /// In en, this message translates to:
+  /// **'Link ID'**
+  String get mastermindFleetAccessLinkIdField;
+
+  /// No description provided for @mastermindFleetAccessLinkConfirmationField.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation code'**
+  String get mastermindFleetAccessLinkConfirmationField;
+
+  /// No description provided for @mastermindFleetAccessLinkFromReply.
+  ///
+  /// In en, this message translates to:
+  /// **'From Mira\'s reply'**
+  String get mastermindFleetAccessLinkFromReply;
+
+  /// No description provided for @mastermindFleetAccessLinkIdInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the ID exactly as Mira sent it'**
+  String get mastermindFleetAccessLinkIdInvalid;
+
+  /// No description provided for @mastermindFleetAccessLinkConfirmationInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the 43-character code exactly'**
+  String get mastermindFleetAccessLinkConfirmationInvalid;
+
+  /// No description provided for @mastermindFleetAccessLinkCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check link'**
+  String get mastermindFleetAccessLinkCheck;
+
+  /// No description provided for @mastermindFleetAccessLinkChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get mastermindFleetAccessLinkChannel;
+
+  /// No description provided for @mastermindFleetAccessLinkAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get mastermindFleetAccessLinkAccount;
+
+  /// No description provided for @mastermindFleetAccessLinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm link'**
+  String get mastermindFleetAccessLinkConfirm;
+
+  /// No description provided for @mastermindFleetAccessLinkStartOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Start over'**
+  String get mastermindFleetAccessLinkStartOver;
+
+  /// No description provided for @mastermindFleetAccessLinkLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked to {account} on {channel}'**
+  String mastermindFleetAccessLinkLinked(String account, String channel);
+
+  /// No description provided for @mastermindFleetAccessApprovalsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals aren\'t available in the app yet'**
+  String get mastermindFleetAccessApprovalsUnavailable;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

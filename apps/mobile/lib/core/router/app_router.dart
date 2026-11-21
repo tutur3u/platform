@@ -41,6 +41,8 @@ import 'package:mobile/features/inventory/view/inventory_product_editor_page.dar
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart';
 import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 import 'package:mobile/features/notifications/data/notifications_unread_count.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
@@ -170,6 +172,7 @@ GoRouter createAppRouter(
   InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
   MastermindAccessCubit? mastermindAccessCubit,
+  FleetAccessCubit? fleetAccessCubit,
   String? initialLocation,
   TelemetryPreference? telemetryConsent,
 }) {
@@ -191,6 +194,7 @@ GoRouter createAppRouter(
         educationAccessCubit,
         inventoryAccessCubit,
         mastermindAccessCubit,
+        fleetAccessCubit,
       ),
       if (telemetryConsent != null) telemetryConsent,
     ]),
@@ -304,6 +308,14 @@ GoRouter createAppRouter(
           shouldRedirectDisabledMastermindRoutes(
             state.matchedLocation,
             mastermindAccessCubit.state,
+          )) {
+        return Routes.apps;
+      }
+
+      if (fleetAccessCubit != null &&
+          shouldRedirectDisabledFleetAccessRoute(
+            state.matchedLocation,
+            fleetAccessCubit.state,
           )) {
         return Routes.apps;
       }
@@ -584,6 +596,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     EducationAccessCubit educationAccessCubit,
     InventoryAccessCubit inventoryAccessCubit,
     MastermindAccessCubit? mastermindAccessCubit,
+    FleetAccessCubit? fleetAccessCubit,
   ) {
     _authSub = authCubit.stream.listen((state) {
       if (kDebugMode) {
@@ -613,6 +626,9 @@ class _AppRefreshNotifier extends ChangeNotifier {
     _mastermindAccessSub = mastermindAccessCubit?.stream.listen((_) {
       notifyListeners();
     });
+    _fleetAccessSub = fleetAccessCubit?.stream.listen((_) {
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<AuthState> _authSub;
@@ -621,6 +637,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
   late final StreamSubscription<EducationAccessState> _educationAccessSub;
   late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
   late final StreamSubscription<MastermindAccessState>? _mastermindAccessSub;
+  late final StreamSubscription<FleetAccessState>? _fleetAccessSub;
 
   @override
   Future<void> dispose() async {
@@ -630,6 +647,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     await _educationAccessSub.cancel();
     await _inventoryAccessSub.cancel();
     await _mastermindAccessSub?.cancel();
+    await _fleetAccessSub?.cancel();
     super.dispose();
   }
 }

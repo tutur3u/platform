@@ -295,6 +295,7 @@ class _AppState extends State<App> {
       _inventoryAccessCubit,
       _appTabCubit,
       mastermindAccessCubit: _mastermind.access,
+      fleetAccessCubit: _mastermind.fleetAccess,
       initialLocation: widget.initialRoute,
       telemetryConsent: consentGate.isEligible(widget.appFlavor)
           ? TelemetryPreference.instance
@@ -534,6 +535,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _audienceModeCubit),
         BlocProvider.value(value: _inventoryAccessCubit),
         BlocProvider.value(value: _mastermind.access),
+        BlocProvider.value(value: _mastermind.fleetAccess),
         BlocProvider.value(value: _mastermind.snapshot),
         RepositoryProvider.value(value: _mastermind),
         BlocProvider.value(value: _appTabCubit),

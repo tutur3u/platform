@@ -17,6 +17,8 @@ import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
+import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
+import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_repository.dart';
 import 'package:mobile/features/mastermind/iris/data/http_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay_factory.dart';
@@ -48,8 +50,11 @@ final class MastermindRuntime {
     this.irisTrust,
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
+    FleetAccessCubit? fleetAccess,
     Stream<bool>? onlineChanges,
   }) : _fleet = fleet,
+       fleetAccess =
+           fleetAccess ?? FleetAccessCubit(source: FleetAccessRepository()),
        _fleetSnoozeStore = fleetSnoozeStore,
        iris = iris ?? const UnconfiguredIrisRelay(),
        replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
@@ -147,6 +152,11 @@ final class MastermindRuntime {
   }
 
   final MastermindAccessCubit access;
+
+  /// The Fleet view's own gate, separate from [access]: anyone Web grants
+  /// Fleet access, in any workspace. It asks only when a Fleet entry point or
+  /// the Fleet route needs the answer.
+  final FleetAccessCubit fleetAccess;
   final MastermindSnapshotCubit snapshot;
   final MastermindRefreshScheduler scheduler;
   final MastermindRepliesCubit replies;
@@ -228,6 +238,7 @@ final class MastermindRuntime {
     // Sync first: for the root workspace it emits `loading` synchronously, so a
     // deep link on screen is held rather than redirected during the switch.
     final synced = access.sync(wsId);
+    fleetAccess.reset();
     answered.clear();
     _fleet?.clear();
     _fleetSnoozes?.clear();
@@ -275,6 +286,7 @@ final class MastermindRuntime {
     await _fleetSnoozes?.close();
     await snapshot.close();
     await access.close();
+    await fleetAccess.close();
     if (_source case final HubHttpSnapshotSource live) live.close();
     if (_replyTransport case final HubReplyTransport live) live.close();
     if (askDetails case final HubAskDetailSource live) live.close();

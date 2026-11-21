@@ -219,7 +219,8 @@ String? _moduleLocation(Uri uri, List<String> segments) {
   };
 }
 
-/// Mastermind tabs only. Item and decision ids never travel in a link.
+/// Mastermind tabs and the Fleet access segments only. Item and decision ids
+/// never travel in a link.
 String _mastermindLocation(List<String> segments) {
   if (segments.length < 2) return Routes.mastermind;
   return switch (segments[1]) {
@@ -227,8 +228,18 @@ String _mastermindLocation(List<String> segments) {
     'work' => Routes.mastermindWork,
     'ship' => Routes.mastermindShip,
     'insights' => Routes.mastermindInsights,
+    'fleet-access' => _fleetAccessLocation(segments),
     _ => Routes.mastermind,
   };
+}
+
+/// `/mastermind/fleet-access/requests` opens Requests; Status is the bare
+/// route and any other segment falls back to it.
+String _fleetAccessLocation(List<String> segments) {
+  final view = segments.length > 2 ? segments[2] : null;
+  return const {'requests', 'link', 'approvals'}.contains(view)
+      ? '${Routes.mastermindFleetAccess}?view=$view'
+      : Routes.mastermindFleetAccess;
 }
 
 /// Carry only the meeting code into native calls.

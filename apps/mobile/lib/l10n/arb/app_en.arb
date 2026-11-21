@@ -9143,5 +9143,163 @@
     }
   },
   "mastermindFleetSignedIn": "I signed in",
-  "mastermindFleetSnoozeFailed": "Couldn't snooze on this device"
+  "mastermindFleetSnoozeFailed": "Couldn't snooze on this device",
+  "mastermindFleetAccessTitle": "Fleet access",
+  "mastermindFleetAccessViewStatus": "Status",
+  "mastermindFleetAccessViewRequests": "Requests",
+  "mastermindFleetAccessViewLink": "Chat link",
+  "mastermindFleetAccessViewApprovals": "Approvals",
+  "mastermindFleetAccessKpiLanes": "Lanes",
+  "mastermindFleetAccessKpiRunning": "Running",
+  "mastermindFleetAccessKpiBlocked": "Blocked",
+  "mastermindFleetAccessKpiReady": "Ready",
+  "mastermindFleetAccessGenerated": "Generated {time}",
+  "@mastermindFleetAccessGenerated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessReceived": "Received {time}",
+  "@mastermindFleetAccessReceived": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessStale": "Stale",
+  "mastermindFleetAccessEta": "ETA {time}",
+  "@mastermindFleetAccessEta": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessNoDigest": "Nothing published for your projects yet",
+  "mastermindFleetAccessNoLanes": "No lanes",
+  "mastermindFleetAccessLanePlanned": "Planned",
+  "mastermindFleetAccessLaneRunning": "Running",
+  "mastermindFleetAccessLaneBlocked": "Blocked",
+  "mastermindFleetAccessLaneReady": "Ready",
+  "mastermindFleetAccessLaneDone": "Done",
+  "mastermindFleetAccessLanePaused": "Paused",
+  "mastermindFleetAccessBlockerDependency": "Dependency",
+  "mastermindFleetAccessBlockerReview": "Review",
+  "mastermindFleetAccessBlockerCi": "CI",
+  "mastermindFleetAccessBlockerApproval": "Approval",
+  "mastermindFleetAccessBlockerReleaseHold": "Release hold",
+  "mastermindFleetAccessBlockerCapacity": "Capacity",
+  "mastermindFleetAccessBlockerIncident": "Incident",
+  "mastermindFleetAccessNewRequest": "New request",
+  "mastermindFleetAccessNoRequests": "No requests yet",
+  "mastermindFleetAccessShowOlder": "Show older",
+  "mastermindFleetAccessKindStatusQuestion": "Status question",
+  "mastermindFleetAccessKindComment": "Comment",
+  "mastermindFleetAccessKindPrioritySet": "Set priority",
+  "mastermindFleetAccessKindApproveItem": "Approve readiness item",
+  "mastermindFleetAccessKindWorkCreate": "Create work",
+  "mastermindFleetAccessKindWorkRedirect": "Redirect work",
+  "mastermindFleetAccessKindLanePause": "Pause lane",
+  "mastermindFleetAccessKindApproveDeploy": "Approve deploy",
+  "mastermindFleetAccessKindApproveProductionChange": "Approve production change",
+  "mastermindFleetAccessStatePendingApproval": "Waiting for approval",
+  "mastermindFleetAccessStateApproved": "Approved",
+  "mastermindFleetAccessStateRejected": "Rejected",
+  "mastermindFleetAccessStateClaimed": "Picked up",
+  "mastermindFleetAccessStateDispatched": "Dispatched",
+  "mastermindFleetAccessStateDone": "Done",
+  "mastermindFleetAccessStateFailed": "Failed",
+  "mastermindFleetAccessStateExpired": "Expired",
+  "mastermindFleetAccessStateCancelled": "Cancelled",
+  "mastermindFleetAccessSubmit": "Send request",
+  "mastermindFleetAccessSubmitted": "Request sent",
+  "mastermindFleetAccessChoose": "Choose",
+  "mastermindFleetAccessFieldKind": "Request",
+  "mastermindFleetAccessFieldProject": "Project",
+  "mastermindFleetAccessFieldTopic": "Topic",
+  "mastermindFleetAccessFieldTarget": "Target",
+  "mastermindFleetAccessFieldTargetPlaceholder": "Catalog key",
+  "mastermindFleetAccessFieldPriority": "Priority",
+  "mastermindFleetAccessFieldTemplate": "Template",
+  "mastermindFleetAccessFieldObjective": "Objective",
+  "mastermindFleetAccessFieldEnvironment": "Environment",
+  "mastermindFleetAccessFieldCommit": "Commit SHA",
+  "mastermindFleetAccessFieldCommitPlaceholder": "40-character SHA",
+  "mastermindFleetAccessFieldQuote": "Note",
+  "mastermindFleetAccessFieldQuotePlaceholder": "Add a note",
+  "mastermindFleetAccessTopicStatus": "Status",
+  "mastermindFleetAccessTopicReadiness": "Readiness",
+  "mastermindFleetAccessTopicTimeline": "Timeline",
+  "mastermindFleetAccessPriorityLow": "Low",
+  "mastermindFleetAccessPriorityNormal": "Normal",
+  "mastermindFleetAccessPriorityHigh": "High",
+  "mastermindFleetAccessPriorityUrgent": "Urgent",
+  "mastermindFleetAccessTemplateInvestigation": "Investigation",
+  "mastermindFleetAccessTemplateMaintenance": "Maintenance",
+  "mastermindFleetAccessTemplateRegressionFix": "Regression fix",
+  "mastermindFleetAccessObjectiveInvestigate": "Investigate",
+  "mastermindFleetAccessObjectiveVerify": "Verify",
+  "mastermindFleetAccessObjectivePrepareReview": "Prepare review",
+  "mastermindFleetAccessEnvironmentStaging": "Staging",
+  "mastermindFleetAccessEnvironmentProduction": "Production",
+  "mastermindFleetAccessErrorRequired": "Required",
+  "mastermindFleetAccessErrorTarget": "Use lowercase letters, digits, - or _",
+  "mastermindFleetAccessErrorCommit": "Enter the full 40-character SHA",
+  "mastermindFleetAccessErrorQuoteTooLong": "Keep it under 1,000 characters",
+  "mastermindFleetAccessFailureSession": "Fleet couldn't verify your session",
+  "mastermindFleetAccessFailureForbidden": "This account no longer has Fleet access",
+  "mastermindFleetAccessFailureQuota": "Request limit reached. Try again later",
+  "mastermindFleetAccessFailureStale": "The project catalog changed. Check the target and try again",
+  "mastermindFleetAccessFailureInvalid": "Fleet didn't accept this request",
+  "mastermindFleetAccessFailureUnavailable": "Can't reach Fleet",
+  "mastermindFleetAccessFailureUnreadable": "Couldn't read Fleet's answer",
+  "mastermindFleetAccessFailureInvalidConfirmation": "The link ID or code is wrong or expired",
+  "mastermindFleetAccessFailureAlreadyLinked": "This chat account is already linked",
+  "mastermindFleetAccessLinkStart": "Get a link code",
+  "mastermindFleetAccessLinkSendCode": "Send this code to Mira in a private chat",
+  "mastermindFleetAccessLinkExpiresIn": "Expires in {time}",
+  "@mastermindFleetAccessLinkExpiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessLinkExpired": "Code expired",
+  "mastermindFleetAccessLinkNewCode": "New code",
+  "mastermindFleetAccessLinkCopy": "Copy",
+  "mastermindFleetAccessLinkCopied": "Code copied",
+  "mastermindFleetAccessLinkCodeLabel": "Link code {code}",
+  "@mastermindFleetAccessLinkCodeLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessLinkIdField": "Link ID",
+  "mastermindFleetAccessLinkConfirmationField": "Confirmation code",
+  "mastermindFleetAccessLinkFromReply": "From Mira's reply",
+  "mastermindFleetAccessLinkIdInvalid": "Paste the ID exactly as Mira sent it",
+  "mastermindFleetAccessLinkConfirmationInvalid": "Paste the 43-character code exactly",
+  "mastermindFleetAccessLinkCheck": "Check link",
+  "mastermindFleetAccessLinkChannel": "Channel",
+  "mastermindFleetAccessLinkAccount": "Account",
+  "mastermindFleetAccessLinkConfirm": "Confirm link",
+  "mastermindFleetAccessLinkStartOver": "Start over",
+  "mastermindFleetAccessLinkLinked": "Linked to {account} on {channel}",
+  "@mastermindFleetAccessLinkLinked": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAccessApprovalsUnavailable": "Approvals aren't available in the app yet"
 }

@@ -202,6 +202,40 @@ A Fleet view appears to anyone whose fleet access answer is enabled, separate
 from the owner-only Mastermind entry and its offline fallback. The app decides
 nothing; the API enforces every rule.
 
+- **Route:** `/mastermind/fleet-access`, pushed inside the Mastermind section
+  with the title "Fleet access" ("Quyền truy cập đội máy") and no dock tab.
+  `?view=requests`, `?view=link` and `?view=approvals` open a segment, and
+  the app link `/mastermind/fleet-access/requests` (or `link`, `approvals`)
+  opens the same segment. Today's navbar action and Inbox's Requests row
+  appear only while Fleet access is admitted. The code lives in
+  `apps/mobile/lib/features/mastermind/fleet_access/`.
+- **Gate:** only `GET /api/v1/fleet/access` decides. The route is held on a
+  skeleton while the check runs, then redirected to the Apps hub when the
+  answer is disabled, stopped or failed. The owner-only Mastermind gate does
+  not apply to it. The answer is never stored, so there is no offline
+  fallback. A 403 from any Fleet call, an app resume and pull to refresh
+  re-check it, and logout or an account switch forgets it.
+- **Status:** lane totals, then each project's latest snapshot with its
+  received and generated times. A Stale badge shows when the server marks the
+  snapshot stale or an hour has passed since receipt while it stays on screen.
+- **Requests:** the person's own receipts, newest first, with their typed
+  state and Show older. New request opens a full-screen form above the shell.
+  It offers the kinds the grant files directly or as `intent.request`, the
+  grant's projects, and only the enumerated fields the kind sends. Target
+  keys and commit SHAs are checked against the API syntax before sending.
+  A refusal stays on the form with a fixed category message.
+- **Link chat:** take a code (Copy, ten-minute countdown, a new code once it
+  expires), send it to Mira in a private chat, paste the link ID and
+  confirmation code Mira replies with, check the channel and desk account,
+  then confirm.
+- **Approvals:** shown only to a grant holding an approval capability, and
+  read-only: no API lists or decides approvals yet.
+- **Sessions:** the app calls the API with its Supabase bearer session. The
+  read routes accept it. The write routes (`POST /api/v1/fleet/intents`,
+  `identity/link-codes` and `identity/confirm`) accept only a browser
+  session or a Mastermind app session, so they answer 401 and the app shows
+  "Fleet couldn't verify your session" until they admit the mobile session.
+
 ## Intent queue
 
 ```
@@ -386,5 +420,9 @@ Each slice links its coverage here when it lands:
   limits, stop and restart through the scheduler and ledger.
   `apps/web/src/app/api/v1/fleet/consumer/route.test.ts` checks bearer
   isolation, request bounds and the private RPC bindings.
+- Slice 7 covers the mobile gate (disabled, enabled, stopped, failed, revoked
+  mid-session, account reset, the owner gate exemption), strict parsing,
+  the stale badge, request validation and payloads, receipts paging and the
+  link flow in the [Fleet access mobile tests](https://github.com/tutur3u/platform/tree/main/apps/mobile/test/features/mastermind/fleet_access).
 - Slice 4: desk tests for unlinked senders, group chats, injected instructions
   and stale digests.
