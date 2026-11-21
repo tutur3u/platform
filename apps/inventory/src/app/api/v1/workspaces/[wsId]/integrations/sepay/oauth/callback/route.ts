@@ -4,6 +4,7 @@ import { defaultLocale, supportedLocales } from '@/i18n/routing';
 import { exchangeSepayAuthorizationCode } from '@/lib/sepay-api';
 import { encryptSepayToken } from '@/lib/sepay-crypto';
 import {
+  getSepayOauthEnv,
   getSepayOauthStateCookieName,
   verifySepayOauthState,
 } from '@/lib/sepay-oauth';
@@ -13,7 +14,11 @@ import {
   resolveSepayAppOrigin,
   syncSepayBankAccounts,
 } from '../../service';
-import { requireSepayAccess, requireSepayFeatureEnabled } from '../../shared';
+import {
+  requireSepayAccess,
+  requireSepayFeatureEnabled,
+  sepayReconfiguringResponse,
+} from '../../shared';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -87,6 +92,8 @@ function redirectToIntegrations(input: {
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
+  if (!getSepayOauthEnv()) return sepayReconfiguringResponse();
+
   const { wsId } = await params;
   const url = new URL(request.url);
   const code = getQueryValue(url, 'code');

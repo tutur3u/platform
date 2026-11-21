@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { getSepayWebhookAuthSecret } from './sepay';
 
 const DEFAULT_STATE_TTL_MS = 10 * 60 * 1000;
 const SEPAY_OAUTH_STATE_COOKIE_PREFIX = 'sepay_oauth_state_';
@@ -23,21 +24,18 @@ function safeEquals(left: string, right: string): boolean {
 }
 
 function getSepayOauthStateSigningSecret() {
-  const secret =
+  return (
     process.env.SEPAY_OAUTH_STATE_SECRET ??
-    process.env.SEPAY_OAUTH_CLIENT_SECRET;
-
-  if (!secret?.trim()) {
-    throw new Error('Missing SePay OAuth state signing secret');
-  }
-
-  return secret;
+    process.env.SEPAY_OAUTH_CLIENT_SECRET
+  );
 }
 
 function signSepayOauthStatePayload(payload: string) {
-  return createHmac('sha256', getSepayOauthStateSigningSecret())
-    .update(payload)
-    .digest('base64url');
+  const secret = getSepayOauthStateSigningSecret();
+  if (!secret?.trim()) {
+    throw new Error('Missing SePay OAuth state signing secret');
+  }
+  return createHmac('sha256', secret).update(payload).digest('base64url');
 }
 
 function encodeSepayOauthStatePayload(payload: SepayOauthStatePayload) {
@@ -73,12 +71,24 @@ function decodeSepayOauthStatePayload(
 }
 
 export function getSepayOauthEnv() {
+  const {
+    SEPAY_OAUTH_CLIENT_ID: clientId,
+    SEPAY_OAUTH_CLIENT_SECRET: clientSecret,
+  } = process.env;
+  if (
+    !clientId?.trim() ||
+    !clientSecret?.trim() ||
+    !getSepayOauthStateSigningSecret()?.trim() ||
+    !process.env.SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET?.trim() ||
+    !getSepayWebhookAuthSecret()?.trim()
+  ) {
+    return null;
+  }
   return {
     authorizeUrl:
       process.env.SEPAY_OAUTH_AUTHORIZE_URL ??
       'https://my.sepay.vn/oauth/authorize',
-    clientId: process.env.SEPAY_OAUTH_CLIENT_ID ?? null,
-    clientSecret: process.env.SEPAY_OAUTH_CLIENT_SECRET ?? null,
+    clientId,
   };
 }
 

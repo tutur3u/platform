@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getSepayOauthEnv } from '@/lib/sepay-oauth';
 import { syncSepayBankAccounts } from '../service';
-import { requireSepayAccess, requireSepayFeatureEnabled } from '../shared';
+import {
+  requireSepayAccess,
+  requireSepayFeatureEnabled,
+  sepayReconfiguringResponse,
+  sepayReconnectResponse,
+} from '../shared';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -21,6 +27,8 @@ export async function POST(request: Request, { params }: Params) {
     return featureError;
   }
 
+  if (!getSepayOauthEnv()) return sepayReconfiguringResponse();
+
   try {
     const result = await syncSepayBankAccounts({
       sbAdmin: access.sbAdmin,
@@ -29,6 +37,8 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
+    const reconnect = sepayReconnectResponse(error);
+    if (reconnect) return reconnect;
     console.error('Failed to sync SePay bank accounts:', error);
     return NextResponse.json(
       { message: 'Failed to sync SePay bank accounts' },

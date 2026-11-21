@@ -10,7 +10,6 @@ test('startup rejects every missing or blank required binding', () => {
   const valid = Object.fromEntries(
     REQUIRED_RUNTIME_NAMES.map((name) => [name, 'synthetic-unit-only'])
   );
-  valid.SEPAY_WEBHOOK_API_KEY = 'synthetic-unit-only';
   assert.doesNotThrow(() => assertRuntimeEnvironment(valid));
   for (const name of REQUIRED_RUNTIME_NAMES) {
     const missing = { ...valid };
@@ -34,28 +33,19 @@ test('startup rejects every missing or blank required binding', () => {
   );
 });
 
-test('startup requires the effective SePay webhook credential', () => {
+test('startup accepts missing SePay provider credentials', () => {
   process.env.NODE_ENV = 'production';
-  const valid = Object.fromEntries(
-    REQUIRED_RUNTIME_NAMES.map((name) => [name, 'synthetic-unit-only'])
-  );
-  assert.throws(
-    () => assertRuntimeEnvironment(valid),
-    /SEPAY_WEBHOOK_API_KEY or SEPAY_WEBHOOK_SECRET/
-  );
   assert.doesNotThrow(() =>
     assertRuntimeEnvironment({
-      ...valid,
-      SEPAY_WEBHOOK_SECRET: 'synthetic-legacy',
+      CRON_SECRET: 'synthetic-unit-only',
+      SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET: 'synthetic-unit-only',
+      ENCRYPTION_MASTER_KEY: 'synthetic-unit-only',
+      UPSTASH_REDIS_REST_URL: 'synthetic-unit-only',
+      UPSTASH_REDIS_REST_TOKEN: 'synthetic-unit-only',
+      TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-unit-only',
+      SUPABASE_SECRET_KEY: 'synthetic-unit-only',
+      NEXT_PUBLIC_SUPABASE_URL: 'synthetic-unit-only',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'synthetic-unit-only',
     })
-  );
-  assert.throws(
-    () =>
-      assertRuntimeEnvironment({
-        ...valid,
-        SEPAY_WEBHOOK_API_KEY: ' ',
-        SEPAY_WEBHOOK_SECRET: 'synthetic-legacy',
-      }),
-    /SEPAY_WEBHOOK_API_KEY or SEPAY_WEBHOOK_SECRET/
   );
 });

@@ -5,6 +5,13 @@ import {
   randomBytes,
 } from 'node:crypto';
 
+export class SepayReconnectRequiredError extends Error {
+  constructor() {
+    super('Reconnect SePay');
+    this.name = 'SepayReconnectRequiredError';
+  }
+}
+
 function getEncryptionKey() {
   const secret = process.env.SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET?.trim();
 
@@ -30,17 +37,11 @@ export function encryptSepayToken(token: string) {
 }
 
 export function decryptSepayToken(encryptedToken: string) {
-  const parts = encryptedToken.split('.');
-
-  if (parts.length !== 3 || parts.some((part) => part.length === 0)) {
-    throw new Error('Invalid encrypted SePay token format');
+  const [ivPart, ciphertextPart, authTagPart, extra] =
+    encryptedToken.split('.');
+  if (!ivPart || !ciphertextPart || !authTagPart || extra !== undefined) {
+    throw new SepayReconnectRequiredError();
   }
-
-  const [ivPart, ciphertextPart, authTagPart] = parts as [
-    string,
-    string,
-    string,
-  ];
 
   const key = getEncryptionKey();
   const iv = Buffer.from(ivPart, 'base64url');
@@ -48,16 +49,18 @@ export function decryptSepayToken(encryptedToken: string) {
   const authTag = Buffer.from(authTagPart, 'base64url');
 
   if (iv.length !== 12 || authTag.length !== 16 || ciphertext.length === 0) {
-    throw new Error('Invalid encrypted SePay token format');
+    throw new SepayReconnectRequiredError();
   }
 
   const decipher = createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);
 
-  const decrypted = Buffer.concat([
-    decipher.update(ciphertext),
-    decipher.final(),
-  ]);
-
-  return decrypted.toString('utf8');
+  const decrypted = decipher.update(ciphertext);
+  let final: Buffer;
+  try {
+    final = decipher.final();
+  } catch {
+    throw new SepayReconnectRequiredError();
+  }
+  return Buffer.concat([decrypted, final]).toString('utf8');
 }

@@ -26,6 +26,20 @@ normalized finance records into the platform.
    deduplicates/retries safely through `sepay_webhook_events`, classifies the
    transaction, and inserts `wallet_transactions`.
 
+## Inventory connection recovery
+
+For workspaces with SePay enabled, finance managers see a reconfiguration
+notice in Inventory Payments while OAuth or webhook settings are missing.
+Inventory blocks OAuth, bank account sync and webhook provisioning during
+that period. Incoming webhook deliveries still require their configured
+authorization.
+
+After a SePay encryption key change, Inventory prompts finance managers to
+reconnect when a saved token cannot be decrypted. The connection row and
+wallet links stay in place. Completing OAuth replaces the stored access and
+refresh tokens through the existing upsert. The separate workspace master key
+continues to protect workspace data.
+
 ## Data Model
 
 ### `sepay_connections`

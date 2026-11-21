@@ -5,6 +5,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateSepayEndpointToken } from '@/lib/sepay';
+import { SepayReconnectRequiredError } from '@/lib/sepay-crypto';
 import { isSepayIntegrationEnabled } from './feature-flag';
 
 export const sepayEndpointBodySchema = z.object({
@@ -23,6 +24,25 @@ export type SepayAccessContext = {
   sbAdmin: SepayAdminClient;
   wsId: string;
 };
+
+export function sepayReconfiguringResponse() {
+  return NextResponse.json(
+    {
+      code: 'SEPAY_RECONFIGURING',
+      message:
+        'SePay is being reconfigured. Reconnect SePay when setup is complete.',
+    },
+    { status: 503 }
+  );
+}
+
+export function sepayReconnectResponse(error: unknown) {
+  if (!(error instanceof SepayReconnectRequiredError)) return null;
+  return NextResponse.json(
+    { code: 'SEPAY_RECONNECT_REQUIRED', message: error.message },
+    { status: 409 }
+  );
+}
 
 export async function requireSepayAccess(
   request: Request,

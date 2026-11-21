@@ -7,7 +7,11 @@ import {
   getSepayOauthStateMaxAgeSeconds,
 } from '@/lib/sepay-oauth';
 import { buildSepayOauthCallbackUrl } from '../../service';
-import { requireSepayAccess, requireSepayFeatureEnabled } from '../../shared';
+import {
+  requireSepayAccess,
+  requireSepayFeatureEnabled,
+  sepayReconfiguringResponse,
+} from '../../shared';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -29,12 +33,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const env = getSepayOauthEnv();
-  if (!env.clientId || !env.clientSecret) {
-    return NextResponse.json(
-      { message: 'SePay OAuth is not configured' },
-      { status: 500 }
-    );
-  }
+  if (!env) return sepayReconfiguringResponse();
 
   const callbackUrl = buildSepayOauthCallbackUrl(access.wsId);
   const callbackPath = new URL(callbackUrl).pathname;

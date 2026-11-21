@@ -1,5 +1,3 @@
-import { decryptSepayToken } from './sepay-crypto';
-
 interface SepayTokenResponse {
   access_token: string;
   expires_in?: number;
@@ -171,9 +169,7 @@ export async function exchangeSepayAuthorizationCode(input: {
   };
 }
 
-export async function refreshSepayAccessToken(input: {
-  refreshTokenEncrypted: string;
-}) {
+export async function refreshSepayAccessToken(input: { refreshToken: string }) {
   const clientId = process.env.SEPAY_OAUTH_CLIENT_ID ?? '';
   const clientSecret = process.env.SEPAY_OAUTH_CLIENT_SECRET ?? '';
 
@@ -181,13 +177,12 @@ export async function refreshSepayAccessToken(input: {
     throw new Error('Missing SePay OAuth client credentials');
   }
 
-  const refreshToken = decryptSepayToken(input.refreshTokenEncrypted);
   const tokenUrl = `${getSepayOauthBaseUrl()}/oauth/token`;
   const body = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
     grant_type: 'refresh_token',
-    refresh_token: refreshToken,
+    refresh_token: input.refreshToken,
   });
 
   const response = await fetchSepay(tokenUrl, {

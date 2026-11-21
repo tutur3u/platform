@@ -72,7 +72,7 @@ export function buildSepayOauthCallbackUrl(wsId: string) {
   return `${origin}/api/v1/workspaces/${encodeURIComponent(wsId)}/integrations/sepay/oauth/callback`;
 }
 
-async function resolveConnection(input: {
+export async function resolveSepayConnection(input: {
   sbAdmin: SepayAdminClient;
   wsId: string;
 }) {
@@ -96,7 +96,7 @@ export async function ensureSepayAccessToken(input: {
   sbAdmin: SepayAdminClient;
   wsId: string;
 }) {
-  const connection = await resolveConnection({
+  const connection = await resolveSepayConnection({
     sbAdmin: input.sbAdmin,
     wsId: input.wsId,
   });
@@ -116,11 +116,11 @@ export async function ensureSepayAccessToken(input: {
     };
   }
 
+  // Check the stored token before the provider error path can update the row.
+  const refreshToken = decryptSepayToken(connection.refresh_token_encrypted);
   let refreshed: Awaited<ReturnType<typeof refreshSepayAccessToken>>;
   try {
-    refreshed = await refreshSepayAccessToken({
-      refreshTokenEncrypted: connection.refresh_token_encrypted,
-    });
+    refreshed = await refreshSepayAccessToken({ refreshToken });
   } catch (error) {
     const { error: statusError } = await input.sbAdmin
       .from('sepay_connections')
