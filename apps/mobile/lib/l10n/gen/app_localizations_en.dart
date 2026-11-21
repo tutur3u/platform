@@ -184,6 +184,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockProtectedDevice => 'Protected on this device';
 
   @override
+  String get appLockSaveFailedDescription => 'App lock setting couldn\'t be saved on this device. Try again.';
+
+  @override
   String get appLockSettingsDescription => 'Require Face ID, fingerprint, or device PIN before using the app.';
 
   @override
@@ -17585,6 +17588,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeAnalyticsNoCategories => 'No categorised activity in this period';
+
+  @override
+  String get financeAnalyticsErrorRequest => 'Analytics couldn\'t read this period. Update the app, then try again.';
+
+  @override
+  String get financeAnalyticsErrorSession => 'Your session expired. Sign out and back in to see analytics.';
+
+  @override
+  String get financeAnalyticsErrorServer => 'Analytics isn\'t responding right now. Try again in a moment.';
+
+  @override
+  String get financeAnalyticsErrorUnknown => 'Analytics didn\'t load. Try again.';
+
+  @override
+  String get financeMoreLoadFailed => 'Couldn\'t load your finance data. Check your connection and try again.';
+
+  @override
+  String get financeReportsNeedWallet => 'Add a wallet to see reports.';
 
   @override
   String financeBudgetAlertOver(int count) {

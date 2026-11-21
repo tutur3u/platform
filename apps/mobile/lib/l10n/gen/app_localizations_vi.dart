@@ -184,6 +184,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockProtectedDevice => 'Được bảo vệ trên thiết bị này';
 
   @override
+  String get appLockSaveFailedDescription => 'Không lưu được cài đặt khóa ứng dụng trên thiết bị này. Hãy thử lại.';
+
+  @override
   String get appLockSettingsDescription => 'Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.';
 
   @override
@@ -17378,6 +17381,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeAnalyticsNoCategories => 'Không có giao dịch theo danh mục trong kỳ này';
+
+  @override
+  String get financeAnalyticsErrorRequest => 'Không đọc được dữ liệu phân tích cho kỳ này. Hãy cập nhật ứng dụng rồi thử lại.';
+
+  @override
+  String get financeAnalyticsErrorSession => 'Phiên đăng nhập đã hết hạn. Hãy đăng xuất rồi đăng nhập lại để xem phân tích.';
+
+  @override
+  String get financeAnalyticsErrorServer => 'Phân tích hiện không phản hồi. Hãy thử lại sau giây lát.';
+
+  @override
+  String get financeAnalyticsErrorUnknown => 'Không tải được phân tích. Hãy thử lại.';
+
+  @override
+  String get financeMoreLoadFailed => 'Không tải được dữ liệu tài chính. Hãy kiểm tra kết nối rồi thử lại.';
+
+  @override
+  String get financeReportsNeedWallet => 'Hãy thêm một ví để xem báo cáo.';
 
   @override
   String financeBudgetAlertOver(int count) {

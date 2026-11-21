@@ -418,7 +418,6 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
       now: financeSceneDate,
       onTransactionTap: (_) {},
       onCreate: () {},
-      onRecurring: () {},
     ),
     FinanceScene.transactions => TransactionListBody(
       state: TransactionListState(

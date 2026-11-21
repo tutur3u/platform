@@ -53,7 +53,9 @@ void main() {
       wrap: (app) => BlocProvider.value(value: miniNav, child: app),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Reports'), findsNothing);
+    for (final tool in ['Invoices', 'Reports', 'Recurring transactions']) {
+      expect(find.text(tool), findsOneWidget);
+    }
     await tester.tap(find.text('Checkpoints'));
     await tester.pumpAndSettle();
     expect(router.canPop(), isFalse);
@@ -113,7 +115,7 @@ void main() {
     expect(find.text('Checkpoints'), findsOneWidget);
     expect(find.text('Manage'), findsNothing);
     expect(find.text('Create wallet'), findsNothing);
-    expect(find.text('Reports'), findsNothing);
+    expect(find.text('Reports'), findsOneWidget);
     Navigator.of(tester.element(find.text('Checkpoints'))).pop();
     await tester.pumpAndSettle();
 

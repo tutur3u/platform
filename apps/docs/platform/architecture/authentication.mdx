@@ -44,83 +44,81 @@ Browser sign-in uses the browser session flow. Raw access and refresh tokens are
 
 ## Mobile App Lock
 
-An elapsed App Lock timeout applies to the device's signed-in content even when
-the app resumes into an authentication route. Add Account stays available, and
-returning to protected content requires local authentication. The unlock action
-is visible on the first resumed Flutter frame. App-owned foreground refreshes
-wait for the gate to clear.
+App Lock is off by default and opt-in from Settings. While it is off, nothing
+covers or blanks the app: switching away, system prompts, Control Center and
+the notification shade leave the live UI and its input untouched, and the
+operating system keeps its normal app-switcher preview and screenshots.
 
-The Flutter boundary hides protected routes during lifecycle transitions.
-App Lock dismisses account toasts even on Add Account. Lock and account
-changes discard toasts from the former UI session. On iOS the window cover
-attaches when the scene starts to deactivate.
-Flutter reports rasterization of the safe frame for the current activation.
-After acknowledgment, the native cover waits through at least three display
-refreshes and 50 milliseconds. Both native bridges retry failures
-at most once per Flutter frame while resumed and keep privacy in place until
-the current handshake succeeds. On iOS, a missing raster report causes a new
-frame to be submitted after a two-second timeout.
+With App Lock on:
 
-The mobile lifecycle tests exercise first-frame privacy, deferred refresh and
-stale prompts. The registered destinations tests drive Add Account cancellation
-and a platform deep link through the production router.
+- An elapsed timeout locks the device's signed-in content even when the app
+  resumes into an authentication route. Add Account stays available, and
+  returning to protected content requires local authentication.
+- The lock screen shows its guidance and the Unlock action on its first frame
+  and asks for biometrics automatically. A cancelled or failed attempt says so
+  and keeps Unlock available; an attempt in progress disables it.
+- The app-switcher preview stays private natively, because Flutter draws no
+  frames once the app is in the background. iOS adds a non-interactive blur
+  only after the scene enters the background and removes it 0.3 seconds after
+  the scene becomes active. Android 13 and later hide the Recents thumbnail;
+  Android 12 and earlier have no thumbnail control, so App Lock secures the
+  window, which also blocks screenshots there. A failed native update is
+  retried on the next lock or account change.
+- Control Center, the notification shade and system prompts never blur or
+  cover the app; with a delay other than Immediately, staying in them longer
+  than the delay locks on return. An elapsed lock engages on the first lifecycle event back
+  from the background, before the resumed frame, and the time spent returning
+  still counts toward the delay.
+- Signing into or switching to an account locks at once when App Lock is
+  known to be on, before the settings read completes.
+- App-owned foreground refreshes wait for the lock to clear. Lock and account
+  changes discard toasts from the former UI session.
 
-### Android screen capture
+The first App Lock settings read after sign-in shows a splash with a progress
+indicator so a locked device never flashes content. A settings reload keeps the
+last known state on screen. Turning App Lock on or off records the choice as a
+device preference before the secure write, and fails visibly if the record
+cannot be saved; each successful read refreshes the record, and the secure
+value always wins over it; when secure storage fails or times out, App Lock follows
+that record, so it fails closed. A device with no record and an unreadable keychain
+shows the lock screen when it can authenticate locally, since App Lock cannot
+have been turned on otherwise, and stays unlocked only when it cannot. Either
+way the splash never holds. A failed
+delay read keeps a confirmed opt-in with its last delay.
 
-App Lock is off by default. On Android 12 and earlier (API 32 and below),
-enabling it secures the entire Tuturuuu window whenever an account is signed in,
-including after a successful unlock. The secure window blocks screenshots,
-screen recording, and casting to non-secure displays. Keeping it secure in the
-foreground protects account content during the transition to Overview and during
-account changes. The app clears its secure flag after sign-out or after App
-Lock is disabled, once a safe frame for the new state is acknowledged and a
-native display interval has elapsed. Android 13 and later use the system
-Overview thumbnail control for snapshot privacy.
-[Android secure window behavior](https://developer.android.com/security/fraud-prevention/activities#flag-secure)
+Regression coverage: `apps/mobile/test/features/security/cubit/app_lock_cubit_test.dart`
+(lock on account change, read-failure fallbacks, unlock failure feedback),
+`app_lock_settings_store_test.dart` (fail-closed opt-in record),
+`apps/mobile/test/features/security/view/app_lock_boundary_test.dart`
+(no cover while off, system prompts stay responsive, first-load progress,
+reload without cover), `app_lock_lifecycle_test.dart` (resume lock and deferred
+refresh, stale prompts, lock before the resumed frame, return time counted
+toward the delay, no lock for system prompts, switcher privacy follows App Lock and retries, a failing native bridge
+never holds the UI) and `app_lock_splash_timing_test.dart` (Unlock and
+failure feedback from the first frame). The registered destinations tests
+drive Add Account cancellation and a platform deep link through the production
+router.
 
-The Flutter regression checks that a signed-in account with App Lock enabled
-requests secure-window protection and that sign-out can release it only after
-the new frame is acknowledged. The device checklist below covers the OS capture
-behavior. [Android privacy lifecycle regression](https://github.com/tutur3u/platform/blob/6fc16a7af0941abb09d4461ea9178c0623eb32a8/apps/mobile/test/features/security/view/app_lock_lifecycle_test.dart#L140)
+### Verify on device
 
-### Verify device snapshot ordering
+Use the same candidate build on an iPhone with a device passcode and an Android
+device with a PIN, in light and dark appearance.
 
-Use the same candidate build on an iPhone with a device passcode and on an
-Android 12 device with a PIN. Sign into a test account, set App Lock to
-**Immediately**, and open a workspace or mailbox with recognizable test text.
-Use an external camera in slow motion to record the screen and inspect the
-recording frame by frame. Repeat with light and dark appearance.
-
-1. **iOS.** Open the app switcher directly from the protected page. Check that its
-   preview contains no test text. Reopen the app, cancel authentication, and
-   confirm that the first frame after the native cover is the lock screen.
-   Record how long the cover remains visible after returning to the app.
-   Rapidly repeat the switch twice and return to the app. Confirm that neither
-   a stale page nor a stuck cover appears. Unlock using Face ID or Touch ID, then
-   repeat using the device passcode. Repeat after terminating the app from the
-   switcher and launching it directly.
-2. **Android 12.** While the protected page is visible, press Power and Volume
-   Down. Confirm the OS rejects the screenshot or captures a blank app window.
-   Check that the Tuturuuu window is also absent or blank in a screen recording
-   and while casting to a non-secure display. Open Overview directly from the
-   protected page and check that the thumbnail contains no test text. Return
-   and unlock using the device PIN. Repeat the screenshot on the restored page. Switch to a second test account and
-   verify screenshots stay blocked across the transition. Sign out and verify
-   screenshots work after the sign-in screen replaces the signed-in content.
-   Sign in again, disable App Lock, and confirm screenshots work on the
-   current page. On Android 13 or later, repeat the Overview check.
+1. **App Lock off.** Pull down Control Center and the notification shade,
+   trigger a system permission prompt, and switch apps. The live page stays
+   visible and responsive throughout; no black or blank screen appears.
+2. **App Lock on, Immediately.** Open the app switcher from a page with
+   recognizable test text and check that its preview is blurred (iOS) or
+   hidden (Android). Pull down Control Center and confirm nothing blurs. Return,
+   cancel authentication, and confirm the lock screen shows the cancellation
+   message and Unlock. Unlock with biometrics, then with the device passcode.
 3. **Both.** Open Add Account, background the app, return, and tap its cancel
-   button. Verify that the lock screen precedes Home, including any workspace
-   toast. Repeat by tapping `https://tuturuuu.com/apps` from another app.
-   Start disabling App Lock from Settings, background during authentication,
-   then return. Confirm that a new unlock works and the stale prompt cannot
-   disable App Lock.
+   button. Verify that the lock screen precedes Home. Start disabling App Lock
+   from Settings, background during authentication, then return. Confirm that
+   a new unlock works and the stale prompt cannot disable App Lock.
 4. **Both.** Leave Mail open when backgrounding. Return and cancel the unlock.
-   Confirm the mailbox fetch logs show zero resume refreshes. Unlock and
-   confirm the refresh fires after authentication. Repeat by opening a Mail
-   notification while App Lock is engaged. Leave Mastermind Fleet open,
-   background it, and return. Wait at least 30 seconds before unlocking.
-   Verify Fleet does not fetch while locked and refreshes once on unlock.
+   Confirm the mailbox fetch logs show zero resume refreshes, then unlock and
+   confirm the refresh fires after authentication.
 
 ## Mobile approval keys
 

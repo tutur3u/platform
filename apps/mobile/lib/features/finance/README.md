@@ -30,6 +30,7 @@ navigation keeps a slot for its "Split bills" entry.
 | Promotions | `view/finance_promotions_page.dart`, `view/promotion_form_sheet.dart`, promotion picker in `view/finance_invoice_editor.dart` |
 | Budget alerts and upcoming recurring | `widgets/finance_budget_alerts.dart` on Overview, `widgets/recurring_upcoming.dart` in Recurring |
 | Analytics | `view/finance_analytics_page.dart`: closing balance, income and expense bars, balance trend, category shares. Daily spending trends are covered by the day bars |
+| More tools | `view/finance_more_actions.dart`: Invoices, Reports and Recurring open as sheets from the Finance More menu and their deep links |
 
 Mobile also queues finance edits offline
 (`lib/data/repositories/finance_pending_overlay.dart`).

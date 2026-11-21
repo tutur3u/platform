@@ -35,7 +35,6 @@ void main() {
         ),
       );
       expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
-      await tester.pump(const Duration(seconds: 5));
       final button = find.byKey(const ValueKey('app-lock-unlock-button'));
       expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
       await tester.ensureVisible(button);
@@ -46,47 +45,49 @@ void main() {
     });
   }
 
-  testWidgets('removed lock entry cancels delayed recovery', (tester) async {
-    await tester.pumpApp(AppLockGate(authenticating: false, onUnlock: () {}));
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 6));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('recovery is hidden until five seconds from entry', (
+  testWidgets('Unlock and its guidance show from the first frame', (
     tester,
   ) async {
     await tester.pumpApp(AppLockGate(authenticating: false, onUnlock: () {}));
-    expect(find.byKey(const ValueKey('app-lock-unlock-button')), findsNothing);
-    await tester.pump(const Duration(milliseconds: 4999));
-    expect(find.byKey(const ValueKey('app-lock-unlock-button')), findsNothing);
-    await tester.pump(const Duration(milliseconds: 1));
     expect(
       find.byKey(const ValueKey('app-lock-unlock-button')),
       findsOneWidget,
     );
+    expect(
+      find.text(
+        'Use biometrics or your device passcode in the system prompt to '
+        'continue.',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('failed attempt rebuild does not reset entry deadline', (
+  testWidgets('a failed attempt says so and keeps Unlock available', (
     tester,
   ) async {
-    final authenticating = ValueNotifier(true);
+    var attempts = 0;
     await tester.pumpApp(
-      ValueListenableBuilder<bool>(
-        valueListenable: authenticating,
-        builder: (_, value, _) =>
-            AppLockGate(authenticating: value, onUnlock: () {}),
+      AppLockGate(
+        authenticating: false,
+        failed: true,
+        onUnlock: () => attempts++,
       ),
     );
-    await tester.pump(const Duration(seconds: 4));
-    authenticating.value = false;
-    await tester.pump();
-    expect(find.byKey(const ValueKey('app-lock-unlock-button')), findsNothing);
-    await tester.pump(const Duration(seconds: 1));
     expect(
-      find.byKey(const ValueKey('app-lock-unlock-button')),
+      find.text('Local authentication is unavailable or was cancelled.'),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('app-lock-unlock-button')));
+    expect(attempts, 1);
+  });
+
+  testWidgets('an attempt in progress disables Unlock', (tester) async {
+    var attempts = 0;
+    await tester.pumpApp(
+      AppLockGate(authenticating: true, onUnlock: () => attempts++),
+    );
+    expect(find.text('Unlocking...'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('app-lock-unlock-button')));
+    expect(attempts, 0);
   });
 }

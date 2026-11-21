@@ -6,6 +6,7 @@ import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/debts_page.dart';
 import 'package:mobile/features/finance/view/finance_analytics_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
+import 'package:mobile/features/finance/view/finance_more_actions.dart';
 import 'package:mobile/features/finance/view/finance_promotions_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
@@ -93,7 +94,8 @@ List<RouteBase> financeRoutes() => [
     },
   ),
   GoRoute(path: Routes.financeMore, builder: financeMoreFallback),
-  GoRoute(path: Routes.financeReports, redirect: (_, _) => Routes.finance),
+  for (final action in FinanceMoreAction.values)
+    GoRoute(path: action.route, builder: financeMoreActionRoute(action)),
   GoRoute(
     path: Routes.wallets,
     builder: (context, state) => const FinanceDockRegistration(

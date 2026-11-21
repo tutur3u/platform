@@ -18,14 +18,13 @@ import UserNotifications
   private var analyticsStarted = false
   private var pushAdmitted = false
   private var meetNoticeSound: SystemSoundID = 0
-  private var snapshotCovers: [ObjectIdentifier: UIView] = [:]
-  private var snapshotActivation = 0
-  private var snapshotPresentationLink: CADisplayLink?
-  private var snapshotPresentationTicks = 0
-  private var snapshotAcknowledgedAt: CFTimeInterval = 0
+  // App Lock's app-switcher privacy: a blur added only once the scene is in
+  // the background. It never takes input and is removed shortly after the
+  // scene becomes active, once Flutter has drawn the returning frame.
+  private var switcherPrivacy = false
+  private var switcherBlurs: [UIVisualEffectView] = []
 
   deinit {
-    snapshotPresentationLink?.invalidate()
     if meetNoticeSound != 0 { AudioServicesDisposeSystemSoundID(meetNoticeSound) }
   }
 
@@ -48,65 +47,40 @@ import UserNotifications
     smartSync.register()
     // Dart configures Firebase after sign-in.
     NotificationCenter.default.addObserver(
-      self, selector: #selector(coverSceneForSnapshot(_:)),
-      name: UIScene.willDeactivateNotification, object: nil
+      self, selector: #selector(blurSceneForSwitcher(_:)),
+      name: UIScene.didEnterBackgroundNotification, object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(removeSwitcherBlurAfterReturn),
+      name: UIScene.didActivateNotification, object: nil
     )
     UNUserNotificationCenter.current().delegate = self
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  @objc private func coverSceneForSnapshot(_ notification: Notification) {
-    guard let scene = notification.object as? UIWindowScene else { return }
-    snapshotActivation += 1
-    snapshotPresentationLink?.invalidate()
-    snapshotPresentationLink = nil
+  @objc private func blurSceneForSwitcher(_ notification: Notification) {
+    guard switcherPrivacy, let scene = notification.object as? UIWindowScene else { return }
     for window in scene.windows where window.rootViewController != nil {
-      let id = ObjectIdentifier(window)
-      guard snapshotCovers[id] == nil else { continue }
-      let cover = UIView(frame: window.bounds)
-      cover.backgroundColor = .systemBackground
-      cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-      cover.accessibilityViewIsModal = true
-      window.addSubview(cover)
-      snapshotCovers[id] = cover
+      let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+      blur.frame = window.bounds
+      blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      blur.isUserInteractionEnabled = false
+      window.addSubview(blur)
+      switcherBlurs.append(blur)
     }
   }
 
-  private func waitForSnapshotPresentation(activation: Int) -> Bool {
-    guard activation == snapshotActivation else { return false }
-    guard !snapshotCovers.isEmpty else { return true }
-    guard snapshotCovers.values.contains(where: { cover in
-      cover.window == nil || cover.window?.windowScene?.activationState == .foregroundActive
-    }) else { return false }
-    snapshotPresentationLink?.invalidate()
-    snapshotPresentationTicks = 0
-    snapshotAcknowledgedAt = CACurrentMediaTime()
-    let link = CADisplayLink(target: self, selector: #selector(snapshotPresentationTick(_:)))
-    snapshotPresentationLink = link
-    link.add(to: .main, forMode: .common)
-    return true
+  @objc private func removeSwitcherBlurAfterReturn() {
+    let blurs = switcherBlurs
+    switcherBlurs.removeAll()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      blurs.forEach { $0.removeFromSuperview() }
+    }
   }
 
-  @objc private func snapshotPresentationTick(_ link: CADisplayLink) {
-    guard link === snapshotPresentationLink else { return }
-    snapshotPresentationTicks += 1
-    guard snapshotPresentationTicks >= 3,
-          CACurrentMediaTime() - snapshotAcknowledgedAt >= 0.05
-    else { return }
-    link.invalidate()
-    snapshotPresentationLink = nil
-    revealForegroundScenes()
-  }
-
-  private func revealForegroundScenes() {
-    let activeCovers = snapshotCovers.filter { _, cover in
-      cover.window?.windowScene?.activationState == .foregroundActive
-        || cover.window == nil
-    }
-    for (id, cover) in activeCovers {
-      cover.removeFromSuperview()
-      snapshotCovers.removeValue(forKey: id)
-    }
+  private func removeSwitcherBlur() {
+    switcherBlurs.forEach { $0.removeFromSuperview() }
+    switcherBlurs.removeAll()
   }
 
   override func application(
@@ -174,18 +148,13 @@ import UserNotifications
         name: "mobile/app_snapshot_privacy", binaryMessenger: registrar.messenger()
       )
       channel.setMethodCallHandler { [weak self] call, result in
-        switch call.method {
-        case "snapshotActivation":
-          result(self?.snapshotActivation)
-        case "foregroundFrameReady":
-          if let activation = call.arguments as? Int {
-            result(self?.waitForSnapshotPresentation(activation: activation) ?? false)
-          } else {
-            result(false)
-          }
-        default:
+        guard call.method == "setRecentsPrivacy", let hidden = call.arguments as? Bool else {
           result(FlutterMethodNotImplemented)
+          return
         }
+        self?.switcherPrivacy = hidden
+        if !hidden { self?.removeSwitcherBlur() }
+        result(nil)
       }
     }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {

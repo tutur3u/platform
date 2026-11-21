@@ -336,6 +336,12 @@ String? _financeLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'reports') {
     return Routes.financeReports;
   }
+  if (segments.length > 1 && segments[1] == 'invoices') {
+    return Routes.financeInvoices;
+  }
+  if (segments.length > 1 && segments[1] == 'recurring') {
+    return Routes.financeRecurring;
+  }
   if (segments.length > 1 && segments[1] == 'manage') return Routes.wallets;
   if (segments.length > 1 && segments[1] == 'budgets') {
     return Routes.financeBudgets;

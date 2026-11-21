@@ -48,6 +48,14 @@ void main() {
     expect(find.text(financeMaskedAmountPlaceholder), findsWidgets);
     expect(find.textContaining(r'$'), findsNothing);
     expect(find.text('Payroll'), findsOneWidget);
+    for (final tool in [
+      'All-wallet check',
+      'Invoices',
+      'Reports',
+      'Recurring transactions',
+    ]) {
+      expect(find.text(tool), findsNothing, reason: '$tool lives in More');
+    }
 
     await preferences.toggleShowAmounts();
     await tester.pump();

@@ -92,6 +92,31 @@ describe('finance income expense chart summary route', () => {
     });
   });
 
+  it('includes confidential amounts when the query omits includeConfidential', async () => {
+    const rpcMock = vi.fn().mockResolvedValue({ data: {}, error: null });
+    requireFinanceStatsAccessMock.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        sbAdmin: { schema: vi.fn(() => ({ rpc: rpcMock })) },
+        user: { id: 'user-1' },
+      },
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/finance/charts/income-expense-summary?startDate=2026-11-01&endDate=2026-11-30'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(rpcMock).toHaveBeenCalledWith(
+      'get_income_expense_chart_summary',
+      expect.objectContaining({ include_confidential: true })
+    );
+  });
+
   it('returns the finance access response before calling the private RPC', async () => {
     requireFinanceStatsAccessMock.mockResolvedValue({
       response: new Response(JSON.stringify({ message: 'Forbidden' }), {

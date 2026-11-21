@@ -44,6 +44,7 @@ class FinanceAnalyticsRepository {
         'startDate': _day(start),
         'endDate': _day(last),
         'interval': monthly ? 'monthly' : 'daily',
+        'includeConfidential': 'true',
       }),
       forceRefresh: forceRefresh,
     ),
@@ -63,6 +64,7 @@ class FinanceAnalyticsRepository {
         'startDate': _day(start),
         'endDate': _day(last),
         'maxPoints': '62',
+        'includeConfidential': 'true',
       }),
       forceRefresh: forceRefresh,
     );

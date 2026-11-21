@@ -273,7 +273,7 @@ class FinanceRepository
       final memoryCached =
           _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)];
       if (memoryCached != null) {
-        unawaited(_refreshWorkspaceDefaultCurrency(wsId));
+        _refreshWorkspaceDefaultCurrency(wsId).ignore();
         return memoryCached.currency;
       }
 
@@ -288,7 +288,7 @@ class FinanceRepository
           currency: diskCached.data!,
           fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
         );
-        unawaited(_refreshWorkspaceDefaultCurrency(wsId));
+        _refreshWorkspaceDefaultCurrency(wsId).ignore();
         return diskCached.data!;
       }
     }

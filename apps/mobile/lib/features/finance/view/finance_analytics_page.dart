@@ -111,6 +111,7 @@ class _AnalyticsViewState extends State<_AnalyticsView> {
   String _currency = 'USD';
   bool _income = false;
   FinanceProblem? _problem;
+  Object? _failure;
   int _request = 0;
   int _categoryRequest = 0;
 
@@ -122,21 +123,20 @@ class _AnalyticsViewState extends State<_AnalyticsView> {
     unawaited(_load());
   }
 
-  FinanceProblem _classify(Object error) {
-    final failure = switch (error) {
-      ParallelWaitError(
-        errors: (final AsyncError? a, final AsyncError? b, final AsyncError? c),
-      ) =>
-        (a ?? b ?? c)?.error ?? error,
-      _ => error,
-    };
-    return switch (failure) {
-      ApiException(statusCode: 403) => FinanceProblem.forbidden,
-      final Object failure when isOfflineTransportFailure(failure) =>
-        FinanceProblem.offline,
-      _ => FinanceProblem.error,
-    };
-  }
+  static Object _rootFailure(Object error) => switch (error) {
+    ParallelWaitError(
+      errors: (final AsyncError? a, final AsyncError? b, final AsyncError? c),
+    ) =>
+      (a ?? b ?? c)?.error ?? error,
+    _ => error,
+  };
+
+  FinanceProblem _classify(Object error) => switch (_rootFailure(error)) {
+    ApiException(statusCode: 403) => FinanceProblem.forbidden,
+    final Object failure when isOfflineTransportFailure(failure) =>
+      FinanceProblem.offline,
+    _ => FinanceProblem.error,
+  };
 
   Future<String> _timezone() async =>
       widget.timezone ?? await getCurrentTimezoneIdentifier();
@@ -169,11 +169,15 @@ class _AnalyticsViewState extends State<_AnalyticsView> {
         _trend = trend;
         _currency = currency;
         _problem = null;
+        _failure = null;
       });
       await _loadCategories(force: force);
     } on Object catch (error) {
       if (!mounted || request != _request) return;
-      setState(() => _problem = _classify(error));
+      setState(() {
+        _failure = _rootFailure(error);
+        _problem = _classify(error);
+      });
     }
   }
 
@@ -215,6 +219,7 @@ class _AnalyticsViewState extends State<_AnalyticsView> {
     if (problem != null && summary == null) {
       return FinanceProblemView(
         problem: problem,
+        message: financeAnalyticsFailureMessage(context.l10n, _failure),
         onRetry: problem == FinanceProblem.forbidden
             ? null
             : () => unawaited(_load(force: true)),
@@ -277,3 +282,15 @@ class _AnalyticsViewState extends State<_AnalyticsView> {
     );
   }
 }
+
+/// What went wrong with an analytics read, in words that say what to do.
+String financeAnalyticsFailureMessage(AppLocalizations l10n, Object? failure) =>
+    switch (failure) {
+      ApiException(statusCode: 401) => l10n.financeAnalyticsErrorSession,
+      ApiException(statusCode: 400 || 404 || 422) =>
+        l10n.financeAnalyticsErrorRequest,
+      ApiException(statusCode: final int status)
+          when status == 429 || status >= 500 =>
+        l10n.financeAnalyticsErrorServer,
+      _ => l10n.financeAnalyticsErrorUnknown,
+    };

@@ -149,5 +149,50 @@ void main() {
       expect(find.text('Closing balance'), findsNothing);
       expect(find.text('Retry'), findsNothing);
     });
+
+    testWidgets('explains a rejected request and offers Retry', (tester) async {
+      await pump(
+        tester,
+        failure: const ApiException(
+          message: 'Invalid query parameters',
+          statusCode: 400,
+        ),
+      );
+      expect(
+        find.text(
+          "Analytics couldn't read this period. "
+          'Update the app, then try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('explains a server failure and offers Retry', (tester) async {
+      await pump(
+        tester,
+        failure: const ApiException(message: 'Internal', statusCode: 500),
+      );
+      expect(
+        find.text(
+          "Analytics isn't responding right now. Try again in a moment.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('explains an expired session', (tester) async {
+      await pump(
+        tester,
+        failure: const ApiException(message: 'Unauthorized', statusCode: 401),
+      );
+      expect(
+        find.text(
+          'Your session expired. Sign out and back in to see analytics.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

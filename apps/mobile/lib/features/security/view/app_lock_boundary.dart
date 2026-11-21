@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,14 +11,21 @@ import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/view/app_lock_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_splash_surface.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
+/// Shows the unlock screen over protected routes while an opted-in App Lock
+/// is locked.
+///
+/// App Lock off leaves the UI untouched. App-switcher privacy is handled
+/// natively, because Flutter draws no frames once the app is in the
+/// background. The first settings read after sign-in shows a loading splash so
+/// a locked device never flashes content.
 class AppLockBoundary extends StatefulWidget {
   const AppLockBoundary({
     required this.child,
     this.excluded = false,
     this.isExcluded,
     this.routeChanges,
-    this.nativePrivacyReady,
     this.accountIdentity,
     super.key,
   });
@@ -27,7 +33,6 @@ class AppLockBoundary extends StatefulWidget {
   AppLockBoundary.router({
     required GoRouter router,
     required this.child,
-    this.nativePrivacyReady,
     this.accountIdentity,
     super.key,
   }) : excluded = false,
@@ -39,7 +44,6 @@ class AppLockBoundary extends StatefulWidget {
   final bool excluded;
   final bool Function()? isExcluded;
   final Listenable? routeChanges;
-  final ValueListenable<bool>? nativePrivacyReady;
   final String? accountIdentity;
 
   @override
@@ -119,24 +123,18 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
     });
   }
 
-  Widget _paint(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final lock = context.watch<AppLockCubit>().state;
     final protected = !_excluded;
-    final loading =
-        protected && (!lock.hasLoaded || lock.status == AppLockStatus.loading);
+    final firstLoad = protected && !lock.hasLoaded;
     final locked = protected && lock.enabled && lock.locked;
-    final nativeReady = widget.nativePrivacyReady?.value ?? true;
-    final checkRouteAtPaint =
-        !protected &&
-        (!lock.hasLoaded ||
-            lock.status == AppLockStatus.loading ||
-            lock.locked);
-    final screenCovered = !_foreground || loading || locked || !nativeReady;
+    final hidden = firstLoad || locked;
+    final checkRouteAtPaint = !protected && (!lock.hasLoaded || lock.locked);
     final overlaysAllowed =
-        !screenCovered &&
+        !hidden &&
         !lock.locked &&
-        (widget.accountIdentity == null ||
-            (lock.hasLoaded && lock.status != AppLockStatus.loading));
+        (widget.accountIdentity == null || lock.hasLoaded);
     if (_overlaysAllowed != overlaysAllowed) {
       _overlaysAllowed = overlaysAllowed;
       _overlayEpoch = Object();
@@ -151,12 +149,12 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
       fit: StackFit.expand,
       children: [
         Offstage(
-          offstage: screenCovered,
+          offstage: hidden,
           child: ExcludeFocus(
-            excluding: screenCovered,
+            excluding: hidden,
             child: ClipRect(
               // A synchronous router restore cannot expose the new route
-              // between the build and the next privacy-boundary rebuild.
+              // between the build and the next boundary rebuild.
               clipBehavior: checkRouteAtPaint ? Clip.hardEdge : Clip.none,
               clipper: checkRouteAtPaint
                   ? _ExcludedRouteClip(() => _excluded, widget.routeChanges)
@@ -169,25 +167,21 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
             ),
           ),
         ),
-        if (!_foreground || loading || (!nativeReady && !locked))
-          const AppSplashSurface(key: ValueKey('app-lock-privacy-cover'))
-        else if (locked)
+        if (locked)
           AppLockGate(
-            showUnlockImmediately: lock.showUnlockImmediately,
             authenticating: lock.status == AppLockStatus.authenticating,
+            failed: lock.error != null,
             onUnlock: _unlock,
+          )
+        else if (firstLoad)
+          const AppSplashSurface(
+            key: ValueKey('app-lock-loading'),
+            child: Align(
+              alignment: Alignment(0, 0.4),
+              child: NovaLoadingIndicator(),
+            ),
           ),
       ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final privacy = widget.nativePrivacyReady;
-    if (privacy == null) return _paint(context);
-    return ListenableBuilder(
-      listenable: privacy,
-      builder: (context, _) => _paint(context),
     );
   }
 }

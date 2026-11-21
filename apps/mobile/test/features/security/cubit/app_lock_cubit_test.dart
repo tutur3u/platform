@@ -38,6 +38,92 @@ void main() {
       settingsStore: settingsStore,
     );
 
+    test('an account change locks before the settings read finishes', () async {
+      when(settingsStore.isEnabled).thenAnswer((_) async => true);
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load();
+      expect(cubit.state.locked, isFalse);
+
+      final pending = cubit.load(lockIfEnabled: true);
+      expect(cubit.state.locked, isTrue);
+      expect(cubit.state.status, AppLockStatus.loading);
+      await pending;
+      expect(cubit.state.locked, isTrue);
+    });
+
+    test('a failed read keeps the known opt-in and the pending lock', () async {
+      when(settingsStore.isEnabled).thenAnswer((_) async => true);
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load();
+      when(settingsStore.isEnabled).thenThrow(StateError('keychain'));
+      await cubit.load(lockIfEnabled: true);
+      expect(cubit.state.enabled, isTrue);
+      expect(cubit.state.locked, isTrue);
+      expect(cubit.state.hasLoaded, isTrue);
+    });
+
+    test('a failed delay read keeps a confirmed opt-in', () async {
+      when(settingsStore.isEnabled).thenAnswer((_) async => true);
+      when(settingsStore.readDelay).thenThrow(StateError('keychain'));
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load(lockIfEnabled: true);
+      expect(cubit.state.enabled, isTrue);
+      expect(cubit.state.locked, isTrue);
+      expect(cubit.state.delay, AppLockDelay.after30Seconds);
+    });
+
+    test('a failed first read fails closed where unlock is possible', () async {
+      when(settingsStore.isEnabled).thenThrow(StateError('keychain'));
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load(lockIfEnabled: true);
+      expect(cubit.state.hasLoaded, isTrue);
+      expect(cubit.state.enabled, isTrue);
+      expect(cubit.state.locked, isTrue);
+      expect(await cubit.unlock(reason: 'unlock'), isTrue);
+      expect(cubit.state.locked, isFalse);
+    });
+
+    test('a failed first read stays off where unlock is impossible', () async {
+      when(settingsStore.isEnabled).thenThrow(StateError('keychain'));
+      when(localAuthService.isDeviceSupported).thenAnswer((_) async => false);
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load(lockIfEnabled: true);
+      expect(cubit.state.hasLoaded, isTrue);
+      expect(cubit.state.enabled, isFalse);
+      expect(cubit.state.locked, isFalse);
+    });
+
+    test('a setting that cannot be saved reports it', () async {
+      when(
+        () => settingsStore.setEnabled(enabled: true),
+      ).thenThrow(StateError('prefs'));
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load();
+      await cubit.setEnabled(enabled: true, reason: 'enable');
+      expect(cubit.state.enabled, isFalse);
+      expect(cubit.state.status, AppLockStatus.unavailable);
+      expect(cubit.state.error, isNotNull);
+    });
+
+    test('a cancelled unlock reports the failure', () async {
+      when(settingsStore.isEnabled).thenAnswer((_) async => true);
+      when(
+        () => localAuthService.authenticate(reason: any(named: 'reason')),
+      ).thenAnswer((_) async => false);
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+      await cubit.load(lockIfEnabled: true);
+      expect(await cubit.unlock(reason: 'unlock'), isFalse);
+      expect(cubit.state.locked, isTrue);
+      expect(cubit.state.error, isNotNull);
+    });
+
     blocTest<AppLockCubit, AppLockState>(
       'loads persisted lock setting',
       setUp: () {

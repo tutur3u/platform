@@ -1377,6 +1377,7 @@
   "appLockLockedDescription": "Use biometrics or your device passcode in the system prompt to continue.",
   "appLockLockedTitle": "Tuturuuu is locked",
   "appLockProtectedDevice": "Protected on this device",
+  "appLockSaveFailedDescription": "App lock setting couldn't be saved on this device. Try again.",
   "appLockSettingsDescription": "Require Face ID, fingerprint, or device PIN before using the app.",
   "appLockSettingsDisabled": "Off",
   "appLockSettingsEnabled": "On",
@@ -8490,6 +8491,12 @@
     }
   },
   "financeAnalyticsNoCategories": "No categorised activity in this period",
+  "financeAnalyticsErrorRequest": "Analytics couldn't read this period. Update the app, then try again.",
+  "financeAnalyticsErrorSession": "Your session expired. Sign out and back in to see analytics.",
+  "financeAnalyticsErrorServer": "Analytics isn't responding right now. Try again in a moment.",
+  "financeAnalyticsErrorUnknown": "Analytics didn't load. Try again.",
+  "financeMoreLoadFailed": "Couldn't load your finance data. Check your connection and try again.",
+  "financeReportsNeedWallet": "Add a wallet to see reports.",
   "financeBudgetAlertOver": "{count, plural, =1{1 budget is over its limit} other{{count} budgets are over their limit}}",
   "@financeBudgetAlertOver": {
     "placeholders": {

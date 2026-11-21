@@ -72,7 +72,7 @@ export async function GET(
     const parsed = querySchema.safeParse({
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      includeConfidential: searchParams.get('includeConfidential'),
+      includeConfidential: searchParams.get('includeConfidential') ?? undefined,
       interval: searchParams.get('interval') ?? undefined,
     });
 

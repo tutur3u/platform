@@ -84,17 +84,89 @@ class _FinancePermissionRequestState extends State<_FinancePermissionRequest> {
       permissions: snapshot.connectionState == ConnectionState.done
           ? snapshot.data
           : null,
+      // No workspace or actor yet means grants are still to come.
+      ready:
+          _permissions != null &&
+          snapshot.connectionState == ConnectionState.done,
       child: widget.child,
     ),
   );
 }
 
 class _FinanceGrants extends InheritedWidget {
-  const _FinanceGrants({required this.permissions, required super.child});
+  const _FinanceGrants({
+    required this.permissions,
+    required super.child,
+    this.ready = true,
+  });
 
   final WorkspacePermissions? permissions;
 
+  /// The grant request has settled, with or without permissions.
+  final bool ready;
+
   @override
   bool updateShouldNotify(_FinanceGrants oldWidget) =>
-      permissions != oldWidget.permissions;
+      permissions != oldWidget.permissions || ready != oldWidget.ready;
+}
+
+/// Whether finance grants have settled, so a denial is final.
+bool financeGrantsReady(BuildContext context, {bool listen = true}) =>
+    (listen
+            ? context.dependOnInheritedWidgetOfExactType<_FinanceGrants>()
+            : context.getInheritedWidgetOfExactType<_FinanceGrants>())
+        ?.ready ??
+    true;
+
+/// Reports, after each frame where it changes, whether finance grants have
+/// settled.
+class FinanceGrantsReady extends StatefulWidget {
+  const FinanceGrantsReady({
+    required this.onChanged,
+    required this.child,
+    super.key,
+  });
+
+  final ValueChanged<bool> onChanged;
+  final Widget child;
+
+  @override
+  State<FinanceGrantsReady> createState() => _FinanceGrantsReadyState();
+}
+
+class _FinanceGrantsReadyState extends State<FinanceGrantsReady> {
+  bool? _reported;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ready = financeGrantsReady(context);
+    if (_reported == ready) return;
+    _reported = ready;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _reported == ready) widget.onChanged(ready);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// Supplies fixed finance grants to [child] in widget tests.
+@visibleForTesting
+class FinanceTestGrants extends StatelessWidget {
+  const FinanceTestGrants({
+    required this.permissions,
+    required this.child,
+    this.ready = true,
+    super.key,
+  });
+
+  final WorkspacePermissions? permissions;
+  final Widget child;
+  final bool ready;
+
+  @override
+  Widget build(BuildContext context) =>
+      _FinanceGrants(permissions: permissions, ready: ready, child: child);
 }

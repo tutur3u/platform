@@ -6,35 +6,27 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
-import android.view.Choreographer
 import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
-import androidx.lifecycle.Lifecycle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.videoplayer.VideoPlayerPlugin
-import java.util.UUID
 
 class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var exitMessage: String = "Press back again to exit"
     private var exitHintMessage: String = "Tap back once more to close the app"
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
     private var shellBackChannel: MethodChannel? = null
-    private var snapshotFlagOwned = false
-    private data class PrivacyFrame(val token: String, val required: Boolean)
-    private var pendingPrivacyFrame: PrivacyFrame? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val shellBack = ShellBackCoordinator(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        protectLegacySnapshot()
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            setRecentsScreenshotEnabled(false)
             val callback = OnBackInvokedCallback {
                 Log.d("MainActivity", "OnBackInvokedCallback.handleBack")
                 shellBack.onBack()
@@ -47,55 +39,17 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         }
     }
 
-    private fun protectLegacySnapshot() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
-        val secureFlag = WindowManager.LayoutParams.FLAG_SECURE
-        if (window.attributes.flags and secureFlag == 0) {
-            window.addFlags(secureFlag)
-            snapshotFlagOwned = true
+    // App Lock's opt-in Recents privacy. Android 13 and later hide only the
+    // thumbnail. Earlier versions have no thumbnail control, so App Lock
+    // secures the window instead. Neither covers the live UI or takes input.
+    private fun setRecentsPrivacy(hidden: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(!hidden)
+        } else if (hidden) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
-    }
-
-    private fun preparePrivacyFrame(required: Boolean): String {
-        protectLegacySnapshot()
-        val frame = PrivacyFrame(UUID.randomUUID().toString(), required)
-        pendingPrivacyFrame = frame
-        return frame.token
-    }
-
-    private fun acknowledgePrivacyFrame(token: Any?): Boolean {
-        val frame = pendingPrivacyFrame ?: return false
-        if (frame.token != token || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            return false
-        }
-        if (frame.required || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pendingPrivacyFrame = null
-            return true
-        }
-
-        // Keep the secure flag through the next display interval. A new policy
-        // or pause replaces the entitlement even after an acknowledgment arrives.
-        val choreographer = Choreographer.getInstance()
-        choreographer.postFrameCallback {
-            choreographer.postFrameCallback {
-                if (pendingPrivacyFrame === frame &&
-                    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-                ) {
-                    pendingPrivacyFrame = null
-                    if (snapshotFlagOwned) {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                        snapshotFlagOwned = false
-                    }
-                }
-            }
-        }
-        return true
-    }
-
-    override fun onPause() {
-        pendingPrivacyFrame = null
-        protectLegacySnapshot()
-        super.onPause()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -125,15 +79,15 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
             "mobile/app_snapshot_privacy",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
-                "preparePrivacyFrame" -> {
-                    val required = call.arguments as? Boolean
-                    if (required == null) {
-                        result.error("bad_arguments", "Expected a privacy policy", null)
+                "setRecentsPrivacy" -> {
+                    val hidden = call.arguments as? Boolean
+                    if (hidden == null) {
+                        result.error("bad_arguments", "Expected a privacy flag", null)
                     } else {
-                        result.success(preparePrivacyFrame(required))
+                        setRecentsPrivacy(hidden)
+                        result.success(null)
                     }
                 }
-                "foregroundFrameReady" -> result.success(acknowledgePrivacyFrame(call.arguments))
                 else -> result.notImplemented()
             }
         }

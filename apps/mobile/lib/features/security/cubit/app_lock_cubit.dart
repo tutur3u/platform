@@ -1,16 +1,20 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 
 enum AppLockStatus { idle, loading, authenticating, unavailable }
+
+/// [AppLockState.error] when authentication succeeded but the setting could
+/// not be stored.
+const appLockSaveFailedError = 'App Lock setting could not be saved';
 
 class AppLockState extends Equatable {
   const AppLockState({
     this.enabled = false,
     this.locked = false,
     this.hasLoaded = false,
-    this.showUnlockImmediately = false,
     this.delay = AppLockDelay.after30Seconds,
     this.status = AppLockStatus.idle,
     this.error,
@@ -19,7 +23,6 @@ class AppLockState extends Equatable {
   final bool enabled;
   final bool locked;
   final bool hasLoaded;
-  final bool showUnlockImmediately;
   final AppLockDelay delay;
   final AppLockStatus status;
   final String? error;
@@ -28,7 +31,6 @@ class AppLockState extends Equatable {
     bool? enabled,
     bool? locked,
     bool? hasLoaded,
-    bool? showUnlockImmediately,
     AppLockDelay? delay,
     AppLockStatus? status,
     String? error,
@@ -37,8 +39,6 @@ class AppLockState extends Equatable {
       enabled: enabled ?? this.enabled,
       locked: locked ?? this.locked,
       hasLoaded: hasLoaded ?? this.hasLoaded,
-      showUnlockImmediately:
-          showUnlockImmediately ?? this.showUnlockImmediately,
       delay: delay ?? this.delay,
       status: status ?? this.status,
       error: error,
@@ -46,15 +46,7 @@ class AppLockState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-    enabled,
-    locked,
-    hasLoaded,
-    showUnlockImmediately,
-    delay,
-    status,
-    error,
-  ];
+  List<Object?> get props => [enabled, locked, hasLoaded, delay, status, error];
 }
 
 class AppLockCubit extends Cubit<AppLockState> {
@@ -64,6 +56,8 @@ class AppLockCubit extends Cubit<AppLockState> {
   }) : _localAuthService = localAuthService,
        _settingsStore = settingsStore,
        super(const AppLockState());
+
+  static const _settingsTimeout = Duration(seconds: 3);
 
   final LocalAuthService _localAuthService;
   final AppLockSettingsStore _settingsStore;
@@ -103,15 +97,40 @@ class AppLockCubit extends Cubit<AppLockState> {
   Future<void> load({bool lockIfEnabled = false}) async {
     if (isClosed) return;
     final generation = ++_generation;
-    emit(state.copyWith(status: AppLockStatus.loading));
-    final enabled = await _settingsStore.isEnabled();
+    // An account change keeps the device-wide setting it already knows, so
+    // lock before the read rather than leaving the navigator usable during it.
+    final lockNow =
+        state.hasLoaded && (state.locked || (lockIfEnabled && state.enabled));
+    emit(state.copyWith(locked: lockNow, status: AppLockStatus.loading));
+    bool enabled;
+    try {
+      enabled = await _settingsStore.isEnabled().timeout(_settingsTimeout);
+    } on Object catch (error) {
+      // An unreadable setting must not leave the app on the loading splash.
+      // The last known choice stands. With none, a device that can
+      // authenticate fails closed to the lock screen; App Lock cannot have
+      // been turned on without local authentication.
+      debugPrint('App Lock settings read failed: $error');
+      enabled = state.hasLoaded
+          ? state.enabled
+          : await _localAuthService.isDeviceSupported().then<bool>(
+              (supported) => supported,
+              onError: (Object _) => false,
+            );
+    }
     if (!_current(generation)) return;
-    final delay = await _settingsStore.readDelay();
+    AppLockDelay delay;
+    try {
+      delay = await _settingsStore.readDelay().timeout(_settingsTimeout);
+    } on Object catch (error) {
+      debugPrint('App Lock delay read failed: $error');
+      delay = state.delay;
+    }
     if (!_current(generation)) return;
     emit(
       AppLockState(
         enabled: enabled,
-        locked: enabled && lockIfEnabled,
+        locked: enabled && (lockIfEnabled || lockNow),
         hasLoaded: true,
         delay: delay,
       ),
@@ -147,7 +166,19 @@ class AppLockCubit extends Cubit<AppLockState> {
       }
     }
 
-    await _settingsStore.setEnabled(enabled: enabled);
+    try {
+      await _settingsStore.setEnabled(enabled: enabled);
+    } on Object {
+      if (_current(generation)) {
+        emit(
+          state.copyWith(
+            status: AppLockStatus.unavailable,
+            error: appLockSaveFailedError,
+          ),
+        );
+      }
+      return;
+    }
     if (!_current(generation)) return;
     emit(AppLockState(enabled: enabled, hasLoaded: true, delay: state.delay));
   }
@@ -184,7 +215,6 @@ class AppLockCubit extends Cubit<AppLockState> {
     emit(
       state.copyWith(
         locked: true,
-        showUnlockImmediately: true,
         status: _authenticationInFlight
             ? AppLockStatus.authenticating
             : AppLockStatus.idle,
@@ -222,12 +252,11 @@ class AppLockCubit extends Cubit<AppLockState> {
     if (!_current(generation)) return false;
     emit(
       authenticated
-          ? state.copyWith(
-              locked: false,
-              showUnlockImmediately: false,
+          ? state.copyWith(locked: false, status: AppLockStatus.idle)
+          : state.copyWith(
               status: AppLockStatus.idle,
-            )
-          : state.copyWith(status: AppLockStatus.idle),
+              error: 'Local authentication failed',
+            ),
     );
     return authenticated;
   }

@@ -99,12 +99,89 @@ void main() {
         appLockState: const AppLockState(status: AppLockStatus.loading),
       );
 
-      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
       expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
       expect(find.text('Sensitive workspace'), findsNothing);
     });
 
-    testWidgets('held settings hydration keeps splash until lock entry', (
+    testWidgets('a settings reload never covers loaded content', (
+      tester,
+    ) async {
+      await _pumpBoundary(
+        tester,
+        authState: _authenticatedState(),
+        appLockState: const AppLockState(
+          hasLoaded: true,
+          status: AppLockStatus.loading,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('app-splash-logo')), findsNothing);
+      expect(find.text('Sensitive workspace'), findsOneWidget);
+    });
+
+    testWidgets('App Lock off never covers content in the background', (
+      tester,
+    ) async {
+      await _pumpBoundary(
+        tester,
+        authState: _authenticatedState(),
+        appLockState: const AppLockState(hasLoaded: true),
+      );
+      for (final state in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        await tester.setAppLifecycle(state);
+        await tester.pump();
+        expect(find.byKey(const ValueKey('app-splash-logo')), findsNothing);
+        expect(find.text('Sensitive workspace'), findsOneWidget);
+      }
+      await tester.setAppLifecycle(AppLifecycleState.resumed);
+    });
+
+    testWidgets('App Lock on keeps a system prompt responsive', (tester) async {
+      var taps = 0;
+      final appLockCubit = _MockAppLockCubit();
+      const state = AppLockState(enabled: true, hasLoaded: true);
+      when(() => appLockCubit.state).thenReturn(state);
+      whenListen(
+        appLockCubit,
+        const Stream<AppLockState>.empty(),
+        initialState: state,
+      );
+      final account = _MockAuthCubit();
+      whenListen(
+        account,
+        const Stream<AuthState>.empty(),
+        initialState: _authenticatedState(),
+      );
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: account),
+            BlocProvider<AppLockCubit>.value(value: appLockCubit),
+          ],
+          child: AppLockBoundary(
+            child: Center(
+              child: TextButton(
+                onPressed: () => taps++,
+                child: const Text('Sensitive workspace'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.setAppLifecycle(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('app-splash-logo')), findsNothing);
+      await tester.tap(find.text('Sensitive workspace'));
+      expect(taps, 1);
+      await tester.setAppLifecycle(AppLifecycleState.resumed);
+    });
+
+    testWidgets('held settings hydration shows progress, then Unlock', (
       tester,
     ) async {
       final store = _Store();
@@ -132,31 +209,25 @@ void main() {
           child: const AppLockBoundary(child: Text('Sensitive workspace')),
         ),
       );
-      await tester.pump(const Duration(seconds: 6));
+      await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
       expect(
         tester.getSize(find.byKey(const ValueKey('app-splash-logo'))),
         const Size(104, 104),
       );
-      expect(find.byType(NovaLoadingIndicator), findsNothing);
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
       expect(find.text('Sensitive workspace'), findsNothing);
-      expect(
-        find.byKey(const ValueKey('app-lock-unlock-button')),
-        findsNothing,
-      );
       held.complete(true);
       await loading;
       await tester.pump();
-      await tester.pump();
-      expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 4999));
       expect(
         find.byKey(const ValueKey('app-lock-unlock-button')),
-        findsNothing,
+        findsOneWidget,
       );
-      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump();
+      expect(find.text('Sensitive workspace'), findsNothing);
       expect(
-        find.byKey(const ValueKey('app-lock-unlock-button')),
+        find.text('Local authentication is unavailable or was cancelled.'),
         findsOneWidget,
       );
       await tester.pumpWidget(const SizedBox.shrink());
@@ -285,7 +356,7 @@ void main() {
         expect(find.bySemanticsLabel('Tuturuuu is locked'), findsOneWidget);
         expect(find.text('Protected on this device'), findsNothing);
         expect(find.byKey(const ValueKey('app-splash-logo')), findsOneWidget);
-        expect(find.text('Unlock'), findsNothing);
+        expect(find.text('Unlock'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
         final logoRect = tester.getRect(
@@ -325,7 +396,6 @@ void main() {
       expect(tester.takeException(), isNull);
       verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
       clearInteractions(appLockCubit);
-      await tester.pump(const Duration(seconds: 5));
       await tester.ensureVisible(find.text('Unlock'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unlock'));
@@ -346,8 +416,6 @@ void main() {
         ),
       );
 
-      expect(find.text('Unlocking...'), findsNothing);
-      await tester.pump(const Duration(seconds: 5));
       expect(find.text('Unlocking...'), findsOneWidget);
       expect(find.byType(NovaLoadingIndicator), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());

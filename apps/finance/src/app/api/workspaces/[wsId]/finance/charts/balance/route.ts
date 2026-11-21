@@ -29,7 +29,7 @@ export async function GET(
     // Validate query parameters
     const parsed = querySchema.safeParse({
       date: searchParams.get('date'),
-      includeConfidential: searchParams.get('includeConfidential'),
+      includeConfidential: searchParams.get('includeConfidential') ?? undefined,
     });
 
     if (!parsed.success) {

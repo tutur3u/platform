@@ -235,12 +235,9 @@ void main() {
             () => _pixel(lock, 0, 0),
           );
           lock.dispose();
-          await tester.pump(const Duration(seconds: 5));
-          final recovery = await _capture(tester, key, '$label-lock-recovery');
-          final recoveryBounds = (await tester.runAsync(
-            () => _artworkBounds(recovery),
-          ))!;
-          recovery.dispose();
+          // Unlock shows from the first frame, so the entry is the full
+          // recovery layout.
+          final recoveryBounds = lockBounds!;
           final description = find.text(
             key.currentContext!.l10n.appLockLockedDescription,
           );
@@ -259,7 +256,6 @@ void main() {
           expect(splashBackground, expectedBackground.toARGB32());
           expect(lockBackground, expectedBackground.toARGB32());
           expect(splashBounds, expectedBounds);
-          expect(lockBounds, expectedBounds);
           expect(
             expectedBounds!.center,
             Offset(size.width / 2, size.height / 2),

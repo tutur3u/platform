@@ -14,11 +14,8 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
-import 'package:mobile/features/finance/view/finance_invoices_sheet.dart';
 import 'package:mobile/features/finance/view/finance_overview_balances.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
-import 'package:mobile/features/finance/view/finance_reports_sheet.dart';
-import 'package:mobile/features/finance/view/recurring_transactions_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_budget_alerts.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -180,33 +177,6 @@ class _FinanceView extends StatelessWidget {
             : null,
         onTransactionTap: (transaction) =>
             _openTransaction(context, state, transaction),
-        onInvoices: canManageFinance(context, 'view_invoices')
-            ? () => unawaited(
-                openFinanceInvoices(
-                  context,
-                  wallets: state.wallets,
-                  currency: state.workspaceCurrency,
-                ),
-              )
-            : null,
-        onReports:
-            state.wallets.isNotEmpty &&
-                canManageFinance(context, 'view_finance_stats')
-            ? () => unawaited(
-                openFinanceReports(
-                  context,
-                  wallets: state.wallets,
-                  currency: state.workspaceCurrency,
-                  exchangeRates: state.exchangeRates,
-                ),
-              )
-            : null,
-        onRecurring: () => unawaited(
-          openRecurringTransactionsSheet(
-            context,
-            currency: state.workspaceCurrency,
-          ),
-        ),
         onCreate: canManageFinance(context, 'create_transactions')
             ? () => _create(context, state)
             : null,
@@ -222,18 +192,12 @@ class FinanceOverviewContent extends StatelessWidget {
     required this.state,
     required this.onTransactionTap,
     required this.onCreate,
-    this.onRecurring,
-    this.onInvoices,
-    this.onReports,
     this.budgetAlerts,
     this.now,
     super.key,
   });
 
   final FinanceState state;
-  final VoidCallback? onRecurring;
-  final VoidCallback? onInvoices;
-  final VoidCallback? onReports;
 
   /// Banner for budgets over or close to their limit, when the person can
   /// manage budgets.
@@ -296,50 +260,6 @@ class FinanceOverviewContent extends StatelessWidget {
                   if (budgetAlerts case final alerts?) ...[
                     const SizedBox(height: AppLayout.itemGap),
                     alerts,
-                  ],
-                  if (state.wallets.isNotEmpty ||
-                      onRecurring != null ||
-                      onInvoices != null) ...[
-                    const SizedBox(height: AppLayout.itemGap),
-                    AppGroupedCard(
-                      children: [
-                        if (state.wallets.isNotEmpty)
-                          AppRichRow(
-                            key: const ValueKey('finance-overview-checkpoints'),
-                            title: l10n.financeCheckpointsBatchRecord,
-                            leading: const AppIconTile(
-                              icon: LucideIcons.listChecks,
-                            ),
-                            onTap: () =>
-                                context.push(Routes.financeCheckpoints),
-                          ),
-                        if (onInvoices != null)
-                          AppRichRow(
-                            title: l10n.financeInvoices,
-                            leading: const AppIconTile(
-                              icon: LucideIcons.receipt,
-                            ),
-                            onTap: onInvoices,
-                          ),
-                        if (onReports != null)
-                          AppRichRow(
-                            title: l10n.financeReports,
-                            leading: const AppIconTile(
-                              icon: LucideIcons.chartNoAxesColumn,
-                            ),
-                            onTap: onReports,
-                          ),
-                        if (onRecurring != null)
-                          AppRichRow(
-                            key: const ValueKey('finance-overview-recurring'),
-                            title: l10n.financeRecurring,
-                            leading: const AppIconTile(
-                              icon: LucideIcons.repeat,
-                            ),
-                            onTap: onRecurring,
-                          ),
-                      ],
-                    ),
                   ],
                   const SizedBox(height: AppLayout.sectionGap),
                   if (wide)

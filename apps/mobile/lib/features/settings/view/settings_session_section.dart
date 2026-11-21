@@ -155,9 +155,11 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
         SettingsTile(
           icon: LucideIcons.lock,
           title: l10n.appLockSettingsTitle,
-          subtitle: appLockState.status == AppLockStatus.unavailable
-              ? l10n.appLockUnavailableDescription
-              : l10n.appLockSettingsDescription,
+          subtitle: appLockState.status != AppLockStatus.unavailable
+              ? l10n.appLockSettingsDescription
+              : appLockState.error == appLockSaveFailedError
+              ? l10n.appLockSaveFailedDescription
+              : l10n.appLockUnavailableDescription,
           value: appLockEnabled
               ? l10n.appLockSettingsEnabled
               : l10n.appLockSettingsDisabled,

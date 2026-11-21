@@ -26,11 +26,28 @@ destination shown), the shell shows it as a filled top-bar button instead.
 ## Destinations
 
 The dock holds Overview, Transactions, Budgets and Wallets; More opens
-Categories, Checkpoints, Analytics, Debts & loans and Promotions, and reserves the next entry for
-the bill-splitting module's Split bills. Finance has no separate Manage page: creating a
-wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
-Overview also opens All-wallet check directly.
-Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
+Categories, Checkpoints (the all-wallet check), Analytics, Invoices, Reports,
+Recurring transactions, Debts & loans and Promotions, and reserves the next
+entry for the bill-splitting module's Split bills. Overview keeps balances, the
+month and recent activity only. Invoices, Reports and Recurring transactions
+open as sheets from any Finance destination and keep their deep links
+(`/finance/invoices`, `/finance/reports`, `/finance/recurring`), which open the
+sheet and then land on Overview. Invoices needs `view_invoices`; Reports needs
+`view_finance_stats` and a wallet, and says so when there is none. The menu
+and the deep links apply the same grants; while grants load, More lists every
+tool and the chosen one waits up to 15 seconds for them in the workspace it was
+chosen in, then explains a missing grant or a failed load. A deep link waits
+once from when it opens and then lands on Overview; a workspace switch before
+its tool opens restarts it for the current workspace, and reads already
+started for the earlier workspace are dropped. Reports opens without exchange rates when they are unavailable; only a
+cross-wallet report needs them. A failed
+load shows a toast instead of doing nothing, and any workspace switch while the
+sheet's data loads drops it. Finance has no separate Manage
+page: creating a wallet belongs to Wallets, and old `/finance/manage` links
+open Wallets. Coverage: `finance_manage_redirect_test.dart`,
+`finance_section_reset_test.dart`, `finance_overview_test.dart`,
+`finance_more_actions_test.dart` and
+`app_registry_test.dart`.
 
 ## Periods
 
@@ -130,7 +147,12 @@ follow with one bar pair per day (per month for a year), then the balance
 trend and expense or income totals per category with each one's share.
 Category days follow the device time zone. Hidden amounts hide the charts
 and shares. Workspace `/api/workspaces/{id}/finance/*` requests go to the
-Finance origin. Coverage: `finance_analytics_page_test.dart`.
+Finance origin. Requests send `includeConfidential` explicitly, and the chart
+routes treat an omitted value as `true`. A failed load names the cause with
+Retry: a rejected request, an expired session, an unresponsive service, or
+being offline. Coverage: `finance_analytics_page_test.dart`,
+`finance_analytics_repository_test.dart` and the chart route tests in
+`apps/finance`.
 
 ## Promotions
 
@@ -169,7 +191,7 @@ opens its details; Edit is offered with budget permission.
 
 ## Recurring transactions
 
-Overview opens recurring transactions, with each rule's frequency, wallet and
+More opens recurring transactions, with each rule's frequency, wallet and
 next scheduled date. Finance managers can create, edit or delete rules. Use a
 negative amount for an expense and a positive amount for income. A rule uses
 the selected wallet's currency and can end on a date.
@@ -184,7 +206,7 @@ and linking to Budgets. Coverage: `finance_budget_alerts_test.dart` and
 
 ## Invoices and subscriptions
 
-Open Invoices from the Overview. Search by customer, open an invoice to edit
+Open Invoices from More. Search by customer, open an invoice to edit
 its description or notes, and create invoices from catalog products. Each line
 uses the selected unit and warehouse. The server checks the prices and issues
 the invoice.
@@ -200,7 +222,7 @@ selecting an outstanding subscription.
 
 ## Reports
 
-Open Reports from Overview and choose a wallet and calendar period. The
+Open Reports from More and choose a wallet and calendar period. The
 report shows income, expense, cumulative net movement from the start of the
 period, and category totals in the selected wallet's currency. Transfers and
 transactions excluded from reports are omitted. Amount masking hides the

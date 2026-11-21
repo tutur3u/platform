@@ -421,6 +421,12 @@ abstract class AppLocalizations {
   /// **'Protected on this device'**
   String get appLockProtectedDevice;
 
+  /// No description provided for @appLockSaveFailedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'App lock setting couldn\'t be saved on this device. Try again.'**
+  String get appLockSaveFailedDescription;
+
   /// No description provided for @appLockSettingsDescription.
   ///
   /// In en, this message translates to:
@@ -32568,6 +32574,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No categorised activity in this period'**
   String get financeAnalyticsNoCategories;
+
+  /// No description provided for @financeAnalyticsErrorRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics couldn\'t read this period. Update the app, then try again.'**
+  String get financeAnalyticsErrorRequest;
+
+  /// No description provided for @financeAnalyticsErrorSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Sign out and back in to see analytics.'**
+  String get financeAnalyticsErrorSession;
+
+  /// No description provided for @financeAnalyticsErrorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics isn\'t responding right now. Try again in a moment.'**
+  String get financeAnalyticsErrorServer;
+
+  /// No description provided for @financeAnalyticsErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics didn\'t load. Try again.'**
+  String get financeAnalyticsErrorUnknown;
+
+  /// No description provided for @financeMoreLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your finance data. Check your connection and try again.'**
+  String get financeMoreLoadFailed;
+
+  /// No description provided for @financeReportsNeedWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a wallet to see reports.'**
+  String get financeReportsNeedWallet;
 
   /// No description provided for @financeBudgetAlertOver.
   ///

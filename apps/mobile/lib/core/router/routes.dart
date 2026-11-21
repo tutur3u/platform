@@ -199,6 +199,8 @@ abstract final class Routes {
   static const financeMore = '/finance/more';
   static const financeManage = '/finance/manage';
   static const financeReports = '/finance/reports';
+  static const financeInvoices = '/finance/invoices';
+  static const financeRecurring = '/finance/recurring';
   static const inventoryProducts = '/inventory/products';
   static const inventoryProductCreate = '/inventory/products/create';
   static const inventoryProductDetail = '/inventory/products/:productId';
