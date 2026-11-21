@@ -212,7 +212,30 @@ describe('hostile key objects', () => {
   });
 });
 
-it('refuses a second claim of the assertion registrar', async () => {
-  const { claimAssertionRegistrar } = await import('./assertion-registry');
-  expect(() => claimAssertionRegistrar()).toThrow();
+it('rejects a plain object that mimics an ECDSA public key', async () => {
+  const issuer = await createTestIssuer();
+  const token = await issuer.sign(defaultTestClaims(NOW));
+  const fake = {
+    type: 'public',
+    algorithm: { name: 'ECDSA', namedCurve: 'P-256' },
+    usages: ['verify'],
+  };
+  const keys = { get: async () => fake } as unknown as VerifyOptions['keys'];
+  expect(
+    await verifyIdentityAssertion(token, options(issuer, { keys }))
+  ).toEqual({ ok: false, reason: 'key_type' });
+});
+
+it('exposes no way to enroll an object as a verifier result', async () => {
+  const verify = await import('./verify');
+  expect(Object.keys(verify).sort()).toEqual(
+    [
+      'FUTURE_IAT_TOLERANCE_SECONDS',
+      'IDENTITY_ASSERTION_TYPE',
+      'MAX_ASSERTION_BYTES',
+      'isIssuedAssertion',
+      'verifyIdentityAssertion',
+    ].sort()
+  );
+  expect(verify.isIssuedAssertion({})).toBe(false);
 });

@@ -1,4 +1,3 @@
-import { claimAssertionRegistrar } from './assertion-registry';
 import {
   decodeBase64Url,
   hasOwn,
@@ -8,12 +7,11 @@ import {
   utf8,
 } from './encoding';
 import { MAX_ASSERTION_LIFETIME_SECONDS } from './expiry';
-import {
-  AUTH_METHODS,
-  type AuthMethod,
-  type SessionEnvironment,
-  type UserId,
-  type VerifiedAssertion,
+import { AUTH_METHODS, type AuthMethod } from './auth-methods';
+import type {
+  SessionEnvironment,
+  UserId,
+  VerifiedAssertion,
 } from './principal';
 
 export type { VerifiedAssertion } from './principal';
@@ -79,7 +77,21 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const IPV4_PREFIX = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.0\/24$/;
 
-const registerIssuedAssertion = claimAssertionRegistrar();
+// The objects this verifier returned. Private to this module: other modules
+// can only ask whether an object is one of them.
+const issuedAssertions = new WeakSet<object>();
+
+function registerIssuedAssertion<T extends object>(assertion: T): T {
+  issuedAssertions.add(assertion);
+  return assertion;
+}
+
+/** Whether `value` is an assertion object this verifier returned. */
+export function isIssuedAssertion(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && issuedAssertions.has(value)
+  );
+}
 
 const fail = (reason: VerifyFailureReason): VerifyResult => ({
   ok: false,
@@ -254,7 +266,8 @@ export async function verifyIdentityAssertion(
       utf8(`${headerSegment}.${payloadSegment}`)
     );
   } catch {
-    valid = false;
+    // Web Crypto throws for a key it cannot use; a mismatch returns false.
+    return fail('key_type');
   }
   if (!valid) return fail('signature');
 

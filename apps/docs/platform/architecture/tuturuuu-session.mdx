@@ -307,8 +307,10 @@ Portable entry points have no framework or Cloudflare runtime imports, no
 request globals, no implicit network fetch and no signing keys. A boundary test
 parses the module graph reachable from every entry point and enforces it.
 An ephemeral-key test issuer lives in `packages/session/src/testing.ts`. It is
-not a package entry point, and the boundary test fails if any non-test file in
-the repository imports it. Supabase and Better Auth code live only in the session service.
+not a package entry point, it refuses to run outside a Vitest process, and the
+boundary test fails if any tracked non-test source in `apps` or `packages`
+imports it. Only the verifier can mark an object as a verified assertion, and
+`principalFromAssertion` accepts nothing else. Supabase and Better Auth code live only in the session service.
 
 ### Trusted ingress
 

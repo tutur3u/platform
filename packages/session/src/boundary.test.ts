@@ -51,18 +51,41 @@ function moduleImports(
         dynamic: !external,
       });
     }
-    if (
+    const literalTarget = (argument: unknown): string | null => {
+      const node = argument as
+        | {
+            type?: string;
+            value?: unknown;
+            quasis?: Array<{ value: { cooked?: string } }>;
+            expressions?: unknown[];
+          }
+        | undefined;
+      if (node?.type === 'StringLiteral' && typeof node.value === 'string')
+        return node.value;
+      if (node?.type === 'TemplateLiteral' && node.expressions?.length === 0) {
+        return node.quasis?.[0]?.value.cooked ?? null;
+      }
+      return null;
+    };
+    const callee = current.callee as
+      | { type?: string; name?: string }
+      | undefined;
+    const isDynamicImport =
       current.type === 'ImportExpression' ||
-      (current.type === 'CallExpression' &&
-        (current.callee as { type?: string; name?: string })?.type === 'Import')
-    ) {
-      found.push({ specifier: '<dynamic>', typeOnly: false, dynamic: true });
-    }
-    if (
-      current.type === 'CallExpression' &&
-      (current.callee as { name?: string })?.name === 'require'
-    ) {
-      found.push({ specifier: '<require>', typeOnly: false, dynamic: true });
+      (current.type === 'CallExpression' && callee?.type === 'Import');
+    const isRequire =
+      current.type === 'CallExpression' && callee?.name === 'require';
+    if (isDynamicImport || isRequire) {
+      const argument =
+        current.type === 'ImportExpression'
+          ? current.source
+          : (current.arguments as unknown[] | undefined)?.[0];
+      const target = literalTarget(argument);
+      found.push({
+        specifier: target ?? (isRequire ? '<require>' : '<dynamic>'),
+        typeOnly: false,
+        dynamic: true,
+      });
     }
     for (const value of Object.values(current)) {
       if (Array.isArray(value)) value.forEach(visit);
@@ -157,30 +180,39 @@ const TEST_FILE = /(\.test\.tsx?|\.spec\.tsx?|\/__tests__\/.+|\.check\.ts)$/;
 function importsTestIssuer(file: string, source?: string): boolean {
   return moduleImports(file, source).some(({ specifier }) => {
     if (specifier === '@tuturuuu/session/testing') return true;
-    if (!specifier.startsWith('.'))
-      return /session\/src\/testing(\.ts)?$/.test(specifier);
-    const base = resolve(dirname(file), specifier);
+    if (!specifier.startsWith('.')) {
+      return /session\/src\/testing(\.[cm]?[jt]s)?$/.test(specifier);
+    }
+    const base = resolve(dirname(file), specifier).replace(/\.[cm]?js$/, '');
     return [base, `${base}.ts`, join(base, 'index.ts')].includes(TESTING_PATH);
   });
 }
 
-/** Tracked TypeScript files under apps and packages whose text names a `testing` module. */
+/**
+ * Scan scope: every tracked JavaScript or TypeScript source under `apps` and
+ * `packages` whose text contains `testing` followed by a quote, optionally
+ * with an extension. Computed specifiers are out of scope; the issuer itself
+ * refuses to run outside Vitest, so this scan is a second line of defence.
+ */
+const CANDIDATE_PATTERN = 'testing(\\.[cm]?[jt]sx?)?[\'"`]';
+const SOURCE_GLOBS = [
+  'ts',
+  'tsx',
+  'mts',
+  'cts',
+  'js',
+  'jsx',
+  'mjs',
+  'cjs',
+].flatMap((extension) => [`apps/*.${extension}`, `packages/*.${extension}`]);
+
+/** Tracked source files in the scan scope whose text names a `testing` module. */
 function candidateImporters(): string[] {
   let output = '';
   try {
     output = execFileSync(
       'git',
-      [
-        'grep',
-        '-l',
-        '-E',
-        'testing(\\.ts)?[\'"]',
-        '--',
-        'apps/*.ts',
-        'apps/*.tsx',
-        'packages/*.ts',
-        'packages/*.tsx',
-      ],
+      ['grep', '-l', '-E', CANDIDATE_PATTERN, '--', ...SOURCE_GLOBS],
       { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
     );
   } catch (error) {
@@ -216,6 +248,20 @@ describe('test issuer', () => {
     expect(offenders).toEqual([]);
   });
 
+  it.each([
+    "import { createTestIssuer } from './testing';",
+    "export * from './testing.ts';",
+    "import x = require('./testing');",
+    "const m = await import('./testing');",
+    'const m = await import(`./testing`);',
+    "const m = require('./testing.js');",
+    "import { createTestIssuer } from './testing.js';",
+  ])('selects and resolves the sibling import %s', (source) => {
+    const sibling = join(PACKAGE_DIR, 'src', 'sibling-runtime.ts');
+    expect(new RegExp(CANDIDATE_PATTERN).test(source)).toBe(true);
+    expect(importsTestIssuer(sibling, source)).toBe(true);
+  });
+
   it('detects a sibling runtime import of the issuer', () => {
     const sibling = join(PACKAGE_DIR, 'src', 'sibling-runtime.ts');
     expect(
@@ -236,5 +282,18 @@ describe('test issuer', () => {
         "import { verifyIdentityAssertion } from './verify';"
       )
     ).toBe(false);
+  });
+});
+
+describe('test issuer runtime guard', () => {
+  it('refuses to create an issuer outside Vitest', async () => {
+    const { createTestIssuer } = await import('./testing');
+    const previous = process.env.VITEST;
+    delete process.env.VITEST;
+    try {
+      await expect(createTestIssuer()).rejects.toThrow(/only under Vitest/);
+    } finally {
+      process.env.VITEST = previous;
+    }
   });
 });

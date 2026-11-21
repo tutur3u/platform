@@ -1,6 +1,8 @@
 /**
  * Test-only issuer for identity assertions. It generates an ephemeral P-256
- * key pair in memory per call and is never part of a runtime entry point.
+ * key pair in memory per call, is never part of a package entry point, and
+ * refuses to run outside a Vitest process, so a stray runtime import cannot
+ * mint anything.
  */
 import { encodeBase64Url, utf8 } from './encoding';
 import type { KeySource } from './verify';
@@ -39,9 +41,19 @@ export type TestIssuer = {
   sign(claims: TestClaims, header?: Record<string, unknown>): Promise<string>;
 };
 
+function assertTestRuntime(): void {
+  const env = (
+    globalThis as { process?: { env?: Record<string, string | undefined> } }
+  ).process?.env;
+  if (env?.VITEST !== 'true') {
+    throw new Error('The session test issuer runs only under Vitest');
+  }
+}
+
 export async function createTestIssuer(
   kid = 'test-identity-1'
 ): Promise<TestIssuer> {
+  assertTestRuntime();
   const pair = (await crypto.subtle.generateKey(
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,

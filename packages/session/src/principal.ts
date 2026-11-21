@@ -1,29 +1,11 @@
-import { isIssuedAssertion } from './assertion-registry';
+import type { AuthMethod } from './auth-methods';
+import { isIssuedAssertion } from './verify';
 
 export type SessionEnvironment = 'production' | 'staging' | 'local';
 
 export type UserId = string & { readonly __brand: 'UserId' };
 
-export type AuthMethod =
-  | 'pwd'
-  | 'otp'
-  | 'totp'
-  | 'passkey'
-  | 'oauth'
-  | 'sso'
-  | 'device_approval'
-  | 'qr';
-
-export const AUTH_METHODS: readonly AuthMethod[] = Object.freeze([
-  'pwd',
-  'otp',
-  'totp',
-  'passkey',
-  'oauth',
-  'sso',
-  'device_approval',
-  'qr',
-]);
+export { AUTH_METHODS, type AuthMethod } from './auth-methods';
 
 export type AssuranceLevel = 'aal1' | 'aal2';
 
