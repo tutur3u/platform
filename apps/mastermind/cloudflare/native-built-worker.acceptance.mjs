@@ -248,11 +248,19 @@ test(
         403
       );
     }
-    // Signed out, a navigation goes to Tuturuuu sign-in, never Access.
-    const signIn = await worker.fetch('https://mastermind.tuturuuu.com/vi', {
-      headers: { 'Sec-Fetch-Mode': 'navigate' },
-      redirect: 'manual',
-    });
+    // Signed out, the root and sign-in go to Tuturuuu sign-in, never Access.
+    // (Node's fetch overrides Sec-Fetch-Mode with `cors`, so navigation-mode
+    // redirects stay covered by the unit tests.)
+    const signedOutRoot = await worker.fetch(
+      'https://mastermind.tuturuuu.com/',
+      { redirect: 'manual' }
+    );
+    assert.equal(signedOutRoot.status, 303);
+    assert.equal(signedOutRoot.headers.get('Location'), '/login');
+    const signIn = await worker.fetch(
+      'https://mastermind.tuturuuu.com/login?nextUrl=%2Fvi',
+      { redirect: 'manual' }
+    );
     assert.equal(signIn.status, 303);
     assert.ok(
       (signIn.headers.get('Location') ?? '').startsWith(
