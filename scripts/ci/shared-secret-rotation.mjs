@@ -5,25 +5,20 @@
 // notice, and consumers outside the target table. Names and facts only.
 
 // Cloudflare serves tuturuuu.com and rollback means a previous Cloudflare
-// version. Vercel is a passive archive that never takes traffic; a mint still
-// writes it so the archive stays consistent with the Workers.
-export const VERCEL_NOTE =
-  'Vercel is a passive archive, never a traffic target: the mint writes it only to keep the archive consistent, and it applies to the next Vercel deployment. Never instantly roll Vercel back to a deployment built before the rotation; roll back with a previous Cloudflare version instead.';
+// version; every destination is a Worker secret.
 
 export const ROTATION = Object.freeze({
   ABUSE_GUARD_SECRET: {
     dualAccept:
       'yes on the verifier: tuturuuu-abuse-guard reads ABUSE_GUARD_SECRETS as a comma list (current first). The mint writes a single value, so no overlap is kept.',
-    source: 'none readable (Vercel sensitive, Worker secret)',
-    order: [
-      'Mint with shared-secret-write (guard + web Workers + the Vercel archive in one job).',
-    ],
+    source: 'none readable (Worker secret)',
+    order: ['Mint with shared-secret-write (guard + web Workers in one job).'],
     impact:
       'Between the guard write and each web Worker write (seconds, one job), signed guard calls from a not-yet-written Worker are rejected: most families fail open to the local limiter; the replay family fails closed, so a CLI or app-coordination refresh in that window fails and is retried. ±60 s signature skew.',
   },
   WEB_MULTI_ACCOUNT_SESSION_SECRET: {
     dualAccept: 'no: one key derives the device-cookie HMAC and vault keys.',
-    source: 'none readable (Vercel sensitive)',
+    source: 'none readable (Worker secret)',
     order: [
       'Mint with shared-secret-write once every web Worker that serves the account routes is opted in, so all of them switch in one job.',
     ],
@@ -33,26 +28,19 @@ export const ROTATION = Object.freeze({
   ABUSE_GUARD_KEY_PEPPER: {
     dualAccept:
       'no: a single client-side HMAC pepper for bucket keys (the guard Worker never sees it).',
-    source: 'none readable (Vercel sensitive, Worker secret)',
-    order: [
-      'Mint with shared-secret-write (cms/nova/rewise + web Workers + the Vercel archive).',
-    ],
+    source: 'none readable (Worker secret)',
+    order: ['Mint with shared-secret-write (cms/nova/rewise + web Workers).'],
     impact:
       'All rate-limit, quota and replay-fence buckets restart from zero; old Durable Object rows expire by TTL. While consumers disagree, one subject is counted in separate buckets per app. Nothing fails outright.',
-    outOfReach:
-      'any other Vercel project that still sets ABUSE_GUARD_KEY_PEPPER',
   },
   CLOUDFLARE_COORDINATION_TOKEN: {
     dualAccept: 'no: tuturuuu-coordination checks one COORDINATION_TOKEN.',
-    source: 'none readable (Vercel sensitive, Worker secret)',
+    source: 'none readable (Worker secret)',
     order: [
-      'Prepare the other senders (infrastructure, calendar) to take the new value right after.',
-      'Mint with shared-secret-write (coordination + web Workers + the Vercel archive).',
-      'Write the new value to the other senders immediately.',
+      'Mint with shared-secret-write (coordination + infrastructure and calendar senders + web Workers in one job).',
     ],
     impact:
-      'Fails closed for each sender until it holds the new value: MFA authenticator registration, internal-account MFA/recovery and calendar meeting-request leases answer 503.',
-    outOfReach: 'infrastructure and calendar senders of the same token',
+      'Between the coordination write and each sender write (seconds, one job), that sender fails closed: MFA authenticator registration and reset, web device MFA and calendar meeting requests answer 503, and internal-account MFA-policy and password-recovery requests answer 500.',
   },
   MASTERMIND_STORE_TOKEN: {
     dualAccept:
@@ -102,7 +90,7 @@ export const ROTATION = Object.freeze({
       'publisher host file ~/.local/share/fleet-sync/publisher-secret (mode 0600) on the orchestrator Mac',
     order: [
       'Copy: on the publisher host, pipe the file to `write workers MASTERMIND_FLEET_PUBLISHER_SECRET production web`.',
-      'If the file is unavailable: set the new value as _NEXT on the web Workers (and the Vercel archive), switch the publisher, then promote.',
+      'If the file is unavailable: set the new value as _NEXT on the web Workers, switch the publisher, then promote.',
     ],
     impact:
       'Copy: none. Mismatch: publishes are rejected and the phone fleet view goes stale (warning after 5 min).',
@@ -113,7 +101,7 @@ export const ROTATION = Object.freeze({
     source: 'the external push hub configuration (not in this repository)',
     order: [
       'Copy from the hub configuration to the web Workers (operator run, scope web).',
-      'If unavailable: follow the _NEXT procedure on the web Workers (and the Vercel archive).',
+      'If unavailable: follow the _NEXT procedure on the web Workers.',
     ],
     impact: 'Mismatch: owner push notifications are not delivered (401).',
   },
@@ -124,8 +112,6 @@ export function formatRotationPlan(plan) {
   const lines = [
     `${plan.secret} (${plan.environment}, mode ${plan.mode}, scope ${plan.scope})`,
   ];
-  if (plan.scope === 'all')
-    lines.push(`  vercel ${plan.vercel.key} -> ${plan.vercel.target}`);
   for (const worker of plan.workers)
     lines.push(`  ${worker.group} ${worker.name}: ${worker.binding}`);
   if (plan.workers.every((worker) => worker.group !== 'web'))
@@ -141,6 +127,5 @@ export function formatRotationPlan(plan) {
     lines.push(`users notice: ${facts.impact}`);
     if (facts.outOfReach) lines.push(`also update: ${facts.outOfReach}`);
   }
-  if (plan.mode === 'mint') lines.push(VERCEL_NOTE);
   return lines.join('\n');
 }

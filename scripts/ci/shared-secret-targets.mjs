@@ -10,7 +10,6 @@ import { dirname, join } from 'node:path';
 import { readJsonc } from './gateway-deploy-config.mjs';
 
 export const CLOUDFLARE_ACCOUNT_ID = 'e8912e2867beecc673d171907bf09649';
-export const VERCEL_PROJECT_ID = 'prj_RlDllxkTSo5mjpzycCRQY4tGONYu';
 export const SUPABASE_PROJECT_REF = 'nzamlzqfdwaaxdefwraj';
 export const SUPABASE_FAMILY_KEY_NAME = 'cf-web-families';
 export const SUPABASE_FAMILY_BINDING = 'SUPABASE_SECRET_KEY';
@@ -23,12 +22,6 @@ export const FALLBACK_FAMILY_WORKERS = Object.freeze([
 ]);
 
 export const ENVIRONMENTS = Object.freeze(['staging', 'production']);
-// Vercel keeps staging values on the preview target of the web project.
-const VERCEL_TARGETS = Object.freeze({
-  production: 'production',
-  staging: 'preview',
-});
-
 const WORKER_NAME = /^tuturuuu-[a-z0-9][a-z0-9-]{0,62}$/;
 
 function assertWorkerName(name) {
@@ -132,19 +125,19 @@ const peer = (worker, binding) => (_root, environment) => [
  * The per-secret target table.
  *
  * `mode` says how a new destination gets the value:
- *   mint           shared-secret-write.yaml generates one value for Vercel and
- *                  every Worker target (a rotation everywhere at once)
+ *   mint           shared-secret-write.yaml generates one value for every
+ *                  Worker target (a rotation everywhere at once)
  *   copy           the current value, held in a GitHub secret, is piped to
  *                  the web targets only with scope web (no rotation)
  *   operator-copy  the value lives on an operator host; the operator pipes it
  *                  to `write workers <secret> production web`
  * `targets(root, environment)` lists `{ name, binding, group }`, where `group`
- * is `web` (apps/web Workers) or `peer` (the other side of the protocol).
+ * is `web` (apps/web Workers), `peer` (the other side of the protocol) or
+ * `sender` (another app Worker that sends with the same value).
  * `environments` limits an entry whose peers have no `-staging` twin.
  */
 export const SHARED_SECRETS = Object.freeze({
   ABUSE_GUARD_SECRET: {
-    vercelKey: 'ABUSE_GUARD_SECRET',
     mode: 'mint',
     targets: (root, environment) => [
       ...peer('tuturuuu-abuse-guard', 'ABUSE_GUARD_SECRETS')(root, environment),
@@ -152,7 +145,6 @@ export const SHARED_SECRETS = Object.freeze({
     ],
   },
   WEB_MULTI_ACCOUNT_SESSION_SECRET: {
-    vercelKey: 'WEB_MULTI_ACCOUNT_SESSION_SECRET',
     mode: 'mint',
     targets: (root, environment) => [
       ...readFamilyWorkers(root, { authOnly: true }).map((worker) =>
@@ -166,7 +158,6 @@ export const SHARED_SECRETS = Object.freeze({
     ],
   },
   ABUSE_GUARD_KEY_PEPPER: {
-    vercelKey: 'ABUSE_GUARD_KEY_PEPPER',
     mode: 'mint',
     environments: ['production'],
     targets: (root, environment) => [
@@ -179,16 +170,24 @@ export const SHARED_SECRETS = Object.freeze({
     ],
   },
   CLOUDFLARE_COORDINATION_TOKEN: {
-    vercelKey: 'CLOUDFLARE_COORDINATION_TOKEN',
     mode: 'mint',
     environments: ['production'],
     targets: (root, environment) => [
       ...peer('tuturuuu-coordination', 'COORDINATION_TOKEN')(root, environment),
+      // The other senders, which call `coordinate()` from
+      // @tuturuuu/utils/coordination. The admin app keeps the deployed Worker
+      // name tuturuuu-infrastructure.
+      ...['tuturuuu-infrastructure', 'tuturuuu-calendar'].map((worker) =>
+        target(
+          forEnvironment(worker, environment),
+          'CLOUDFLARE_COORDINATION_TOKEN',
+          'sender'
+        )
+      ),
       ...vinextTargets(root, environment, 'CLOUDFLARE_COORDINATION_TOKEN'),
     ],
   },
   MASTERMIND_STORE_TOKEN: {
-    vercelKey: 'MASTERMIND_STORE_TOKEN',
     mode: 'mint',
     environments: ['production'],
     targets: (root, environment) => [
@@ -200,35 +199,30 @@ export const SHARED_SECRETS = Object.freeze({
     ],
   },
   MEET_REALTIME_TOKEN_SECRET: {
-    vercelKey: 'MEET_REALTIME_TOKEN_SECRET',
     mode: 'copy',
     environments: ['production'],
     targets: (root, environment) =>
       vinextTargets(root, environment, 'MEET_REALTIME_TOKEN_SECRET'),
   },
   CRON_CONTROL_DELIVERY_TOKEN: {
-    vercelKey: 'CRON_CONTROL_DELIVERY_TOKEN',
     mode: 'copy',
     environments: ['production'],
     targets: (root, environment) =>
       vinextTargets(root, environment, 'CRON_CONTROL_DELIVERY_TOKEN'),
   },
   TUTURUUU_DEVBOX_CONTROL_TOKEN: {
-    vercelKey: 'TUTURUUU_DEVBOX_CONTROL_TOKEN',
     mode: 'copy',
     environments: ['production'],
     targets: (root, environment) =>
       vinextTargets(root, environment, 'TUTURUUU_DEVBOX_CONTROL_TOKEN'),
   },
   MASTERMIND_FLEET_PUBLISHER_SECRET: {
-    vercelKey: 'MASTERMIND_FLEET_PUBLISHER_SECRET',
     mode: 'operator-copy',
     environments: ['production'],
     targets: (root, environment) =>
       vinextTargets(root, environment, 'MASTERMIND_FLEET_PUBLISHER_SECRET'),
   },
   MASTERMIND_PUSH_HMAC_SECRET: {
-    vercelKey: 'MASTERMIND_PUSH_HMAC_SECRET',
     mode: 'operator-copy',
     environments: ['production'],
     targets: (root, environment) =>
@@ -260,12 +254,6 @@ export function resolveSharedSecret({
     environment,
     mode: entry.mode,
     scope,
-    vercel: {
-      projectId: VERCEL_PROJECT_ID,
-      key: entry.vercelKey,
-      target: VERCEL_TARGETS[environment],
-      type: 'sensitive',
-    },
     workers: entry
       .targets(root, environment)
       .filter((item) => scope === 'all' || item.group === 'web')

@@ -25,8 +25,9 @@ import { fileURLToPath } from 'node:url';
 import { globToRegExp, readNameLists } from './web-cf-env-sync-names.mjs';
 import * as providers from './web-cf-env-sync-providers.mjs';
 import { readBack } from './shared-secret-api.mjs';
-import { VERCEL_PROJECT_ID } from './shared-secret-targets.mjs';
 
+// The Vercel `platform` project this tool reads from (an id, not a secret).
+const VERCEL_PROJECT_ID = 'prj_RlDllxkTSo5mjpzycCRQY4tGONYu';
 const WORKER_NAME = /^tuturuuu-[a-z0-9][a-z0-9-]{0,62}$/;
 // Cloudflare limits a secret or plain-text binding to 5 KiB.
 const MAX_VALUE_BYTES = 5 * 1024;

@@ -22,9 +22,8 @@ const WORKFLOWS = {
   'shared-secret-write.yaml': {
     job: 'write',
     environment: 'shared-secret-${{ inputs.environment }}',
-    secrets: ['COLAB_CLOUDFLARE_API_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_TOKEN'],
+    secrets: ['COLAB_CLOUDFLARE_API_TOKEN'],
     consumers: [
-      'node scripts/ci/shared-secret.mjs write vercel "$SHARED_SECRET" "$TARGET_ENVIRONMENT"',
       'node scripts/ci/shared-secret.mjs write workers "$SHARED_SECRET" "$TARGET_ENVIRONMENT"',
     ],
     assignment: 'value="$(',
@@ -128,7 +127,7 @@ for (const [file, spec] of Object.entries(WORKFLOWS)) {
     // Built from parts: the usage guard for the legacy CLI counts literal mentions.
     const legacyCli = new RegExp(['wrang', 'ler'].join(''), 'i');
     assert.ok(!legacyCli.test(text), 'use the Cloudflare API script');
-    assert.ok(!/vercel (?:link|pull|env pull)/.test(text));
+    assert.ok(!/vercel/i.test(text), 'no Vercel destination or credential');
   });
 
   test(`${file}: no expression reaches a shell script`, () => {

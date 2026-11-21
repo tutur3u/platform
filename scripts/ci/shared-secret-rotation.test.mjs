@@ -149,7 +149,7 @@ function cloudflare() {
 
 const ENV = { CLOUDFLARE_API_TOKEN: 'cf-token' };
 
-test('a web-scope copy touches only web Workers and never Vercel', async () => {
+test('a web-scope copy touches only web Workers on Cloudflare', async () => {
   const plan = resolveSharedSecret({
     secret: 'MEET_REALTIME_TOKEN_SECRET',
     environment: 'production',
@@ -169,10 +169,7 @@ test('a web-scope copy touches only web Workers and never Vercel', async () => {
   assert.ok(calls.every(({ url }) => url.includes('api.cloudflare.com')));
   assert.ok(calls.every(({ url }) => url.includes('tuturuuu-web-vinext-')));
   assert.equal(calls.filter(({ method }) => method === 'PUT').length, 2);
-  await assert.rejects(
-    sharedSecret.writeVercel(plan, VALUE, { env: ENV, fetchImpl, log }),
-    /not minted here/
-  );
+  assert.equal(sharedSecret.writeVercel, undefined);
 });
 
 test('scope all is only for minted values, and copies need a web Worker', async () => {
@@ -216,11 +213,42 @@ test('plan prints destinations and notes offline, without credentials', async ()
   }
   const text = lines.join('\n');
   assert.match(text, /mode mint, scope all/);
-  assert.match(text, /vercel WEB_MULTI_ACCOUNT_SESSION_SECRET -> production/);
   assert.match(text, /users notice: /);
-  assert.match(text, /passive archive/);
-  assert.match(text, /Never instantly roll Vercel back/);
+  assert.doesNotMatch(text, /vercel/i);
   assert.doesNotMatch(text, /fallback/i);
+});
+
+test('the coordination token reaches every sender in one mint', async () => {
+  const lines = [];
+  const original = console.log;
+  console.log = (line) => lines.push(line);
+  try {
+    await sharedSecret.main(
+      ['plan', 'CLOUDFLARE_COORDINATION_TOKEN', 'production'],
+      {
+        env: {},
+        fetchImpl: () => assert.fail('plan must not call a provider'),
+      }
+    );
+  } finally {
+    console.log = original;
+  }
+  const text = lines.join('\n');
+  assert.match(text, /peer tuturuuu-coordination: COORDINATION_TOKEN/);
+  assert.match(
+    text,
+    /sender tuturuuu-infrastructure: CLOUDFLARE_COORDINATION_TOKEN/
+  );
+  assert.match(text, /sender tuturuuu-calendar: CLOUDFLARE_COORDINATION_TOKEN/);
+  assert.doesNotMatch(text, /also update: /);
+  assert.doesNotMatch(text, /vercel/i);
+  const web = resolveSharedSecret({
+    secret: 'CLOUDFLARE_COORDINATION_TOKEN',
+    environment: 'production',
+    root: ROOT,
+    scope: 'web',
+  });
+  assert.ok(web.workers.every(({ group }) => group === 'web'));
 });
 
 test('the committed vinext table lists the live family Workers', () => {

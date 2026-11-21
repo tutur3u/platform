@@ -9,11 +9,9 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  putVercelEnv,
   putWorkerSecret,
   readBack,
   verifySupabaseKey,
-  verifyVercelEnv,
   verifyWorkerSecret,
 } from './shared-secret-api.mjs';
 import * as familyKey from './supabase-family-key.mjs';
@@ -118,30 +116,6 @@ test('malformed values are rejected without being quoted', async () => {
     );
 });
 
-test('Vercel write upserts a sensitive variable on one target', async () => {
-  const { calls, fetchImpl } = provider([
-    { match: '/v10/projects/', method: 'POST', reply: { body: {} } },
-  ]);
-  await putVercelEnv({
-    token: 't',
-    teamId: 'team_x',
-    projectId: 'prj_x',
-    key: 'ABUSE_GUARD_SECRET',
-    target: 'production',
-    value: VALUE,
-    fetchImpl,
-  });
-  const { value: sent, ...body } = JSON.parse(calls[0].init.body);
-  assert.equal(sent, VALUE);
-  assert.deepEqual(body, {
-    key: 'ABUSE_GUARD_SECRET',
-    type: 'sensitive',
-    target: ['production'],
-  });
-  assert.ok(calls[0].url.includes('upsert=true'));
-  assert.ok(!calls[0].url.includes(VALUE));
-});
-
 test('readback verifiers fail closed', () => {
   const worker = [{ name: 'B', type: 'secret_text' }];
   assert.match(verifyWorkerSecret(worker, 'w', 'B'), /secret_text/);
@@ -153,23 +127,6 @@ test('readback verifiers fail closed', () => {
   assert.throws(
     () => verifyWorkerSecret([{ name: 'B', type: 'plain_text' }], 'w', 'B'),
     /wrong type/
-  );
-  const spec = { key: 'K', target: 'production', type: 'sensitive' };
-  const ok = { key: 'K', type: 'sensitive', target: ['production'] };
-  assert.match(verifyVercelEnv([ok], spec), /sensitive/);
-  assert.throws(() => verifyVercelEnv([], spec), /exactly one/);
-  assert.throws(
-    () =>
-      verifyVercelEnv([ok, { ...ok, target: ['production', 'preview'] }], spec),
-    /exactly one/
-  );
-  assert.throws(
-    () => verifyVercelEnv([{ ...ok, type: 'encrypted' }], spec),
-    /wrong type/
-  );
-  assert.throws(
-    () => verifyVercelEnv([{ ...ok, target: ['production', 'preview'] }], spec),
-    /wrong target/
   );
   const id = '123e4567-e89b-12d3-a456-426614174000';
   assert.match(
@@ -226,19 +183,13 @@ test('targets are fixed per secret and environment', () => {
       group: 'peer',
     },
   ]);
-  assert.deepEqual(abuse.vercel, {
-    projectId: 'prj_RlDllxkTSo5mjpzycCRQY4tGONYu',
-    key: 'ABUSE_GUARD_SECRET',
-    target: 'production',
-    type: 'sensitive',
-  });
+  assert.equal('vercel' in abuse, false);
   const staging = resolveSharedSecret({
     secret: 'ABUSE_GUARD_SECRET',
     environment: 'staging',
     root: here,
   });
   assert.equal(staging.workers[0].name, 'tuturuuu-abuse-guard-staging');
-  assert.equal(staging.vercel.target, 'preview');
   for (const input of [
     { secret: 'SUPABASE_SECRET_KEY', environment: 'production' },
     { secret: 'ABUSE_GUARD_SECRET', environment: 'dev' },
@@ -398,7 +349,6 @@ test('shared-secret write and verify print names and types only', async () => {
   });
   const { calls, fetchImpl } = provider([
     { match: '/secrets', method: 'PUT', reply: { body: { success: true } } },
-    { match: '/v10/projects/', method: 'POST', reply: { body: {} } },
     {
       match: '/secrets',
       reply: {
@@ -407,28 +357,9 @@ test('shared-secret write and verify print names and types only', async () => {
         },
       },
     },
-    {
-      match: '/v10/projects/',
-      reply: {
-        body: {
-          envs: [
-            {
-              key: 'ABUSE_GUARD_SECRET',
-              type: 'sensitive',
-              target: ['production'],
-            },
-          ],
-        },
-      },
-    },
   ]);
-  const env = {
-    CLOUDFLARE_API_TOKEN: 'cf',
-    VERCEL_TOKEN: 'v',
-    VERCEL_ORG_ID: 'team_x',
-  };
+  const env = { CLOUDFLARE_API_TOKEN: 'cf' };
   const out = capture();
-  await sharedSecret.writeVercel(plan, VALUE, { env, fetchImpl, log: out.log });
   await sharedSecret.writeWorkers(plan, VALUE, {
     env,
     fetchImpl,
@@ -440,9 +371,12 @@ test('shared-secret write and verify print names and types only', async () => {
     log: out.log,
     retry: { attempts: 1, delayMs: 0 },
   });
-  assert.equal(out.lines.length, 4);
+  assert.equal(out.lines.length, 2);
   assert.ok(!out.lines.join('\n').includes(VALUE));
-  assert.equal(secretIn(calls).length, 2, 'only the two write bodies carry it');
+  assert.equal(secretIn(calls).length, 1, 'only the write body carries it');
+  assert.ok(
+    calls.every(({ url }) => url.startsWith('https://api.cloudflare.com/'))
+  );
   assert.ok(out.lines.at(-1).includes('(secret_text)'));
 });
 
@@ -459,28 +393,10 @@ test('verify fails when a Worker holds an unexpected secret type', async () => {
         body: { result: [{ name: 'ABUSE_GUARD_SECRETS', type: 'plain_text' }] },
       },
     },
-    {
-      match: '/v10/projects/',
-      reply: {
-        body: {
-          envs: [
-            {
-              key: 'ABUSE_GUARD_SECRET',
-              type: 'sensitive',
-              target: ['production'],
-            },
-          ],
-        },
-      },
-    },
   ]);
   await assert.rejects(
     sharedSecret.verify(plan, {
-      env: {
-        CLOUDFLARE_API_TOKEN: 'cf',
-        VERCEL_TOKEN: 'v',
-        VERCEL_ORG_ID: 'team_x',
-      },
+      env: { CLOUDFLARE_API_TOKEN: 'cf' },
       fetchImpl,
       log: () => {},
       retry: { attempts: 1, delayMs: 0 },
@@ -498,11 +414,7 @@ test('preflight refuses a missing Worker before any write', async () => {
   const { calls, fetchImpl } = provider([]);
   await assert.rejects(
     sharedSecret.preflight(plan, {
-      env: {
-        CLOUDFLARE_API_TOKEN: 'cf',
-        VERCEL_TOKEN: 'v',
-        VERCEL_ORG_ID: 'team_x',
-      },
+      env: { CLOUDFLARE_API_TOKEN: 'cf' },
       fetchImpl,
       log: () => {},
     }),

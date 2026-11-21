@@ -3,30 +3,26 @@
 //
 //   plan <secret> <environment> [scope]       destinations and rotation notes
 //   preflight <secret> <environment> [scope]  every destination exists
-//   write vercel <secret> <environment>       value on stdin -> Vercel env
 //   write workers <secret> <environment> [scope]  value on stdin -> Workers
 //   verify <secret> <environment> [scope]     name + type readback
 //
 // `scope` is `all` (default) or `web`: `web` selects only the apps/web Workers
-// and leaves Vercel and the peer Workers alone, which is how an existing value
+// and leaves the peer Workers alone, which is how an existing value
 // is copied to a new web Worker without rotating it. `plan` needs no
 // credentials and makes no request.
 //
 // The value is read from stdin only. Output names destinations and types,
 // never a value. Credentials come from the environment by name:
-// CLOUDFLARE_API_TOKEN, VERCEL_TOKEN, VERCEL_ORG_ID.
+// CLOUDFLARE_API_TOKEN. Nothing is written to Vercel.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   assertDeclaredIdentity,
   assertSecretValue,
-  listVercelEnv,
   listWorkerSecrets,
-  putVercelEnv,
   putWorkerSecret,
   readBack,
-  verifyVercelEnv,
   verifyWorkerSecret,
   workerExists,
 } from './shared-secret-api.mjs';
@@ -38,14 +34,8 @@ function requiredEnv(env, name) {
   return env[name];
 }
 
-const includesVercel = (plan) => plan.scope === 'all';
-
 export async function preflight(plan, { env, fetchImpl = fetch, log }) {
   const token = requiredEnv(env, 'CLOUDFLARE_API_TOKEN');
-  if (includesVercel(plan)) {
-    requiredEnv(env, 'VERCEL_TOKEN');
-    requiredEnv(env, 'VERCEL_ORG_ID');
-  }
   assert.ok(
     plan.workers.length > 0,
     `no Worker selected for ${plan.secret}; opt the vinext families in first`
@@ -57,29 +47,6 @@ export async function preflight(plan, { env, fetchImpl = fetch, log }) {
     );
     log(`worker ${name} present`);
   }
-  if (includesVercel(plan))
-    log(`vercel ${plan.vercel.key} -> ${plan.vercel.target}`);
-}
-
-export async function writeVercel(
-  plan,
-  value,
-  { env, fetchImpl = fetch, log }
-) {
-  // Only a minted value may replace the Vercel one: a copy or operator-held
-  // value already lives there, and Vercel cannot be read back to compare.
-  assert.equal(plan.mode, 'mint', `${plan.secret} is not minted here`);
-  assert.equal(plan.scope, 'all', 'Vercel writes need scope all');
-  await putVercelEnv({
-    token: requiredEnv(env, 'VERCEL_TOKEN'),
-    teamId: requiredEnv(env, 'VERCEL_ORG_ID'),
-    projectId: plan.vercel.projectId,
-    key: plan.vercel.key,
-    target: plan.vercel.target,
-    value,
-    fetchImpl,
-  });
-  log(`wrote vercel ${plan.vercel.key} (${plan.vercel.type})`);
 }
 
 export async function writeWorkers(
@@ -102,21 +69,6 @@ export async function writeWorkers(
 
 export async function verify(plan, { env, fetchImpl = fetch, log, retry }) {
   const token = requiredEnv(env, 'CLOUDFLARE_API_TOKEN');
-  if (includesVercel(plan)) {
-    const vercel = {
-      token: requiredEnv(env, 'VERCEL_TOKEN'),
-      teamId: requiredEnv(env, 'VERCEL_ORG_ID'),
-      projectId: plan.vercel.projectId,
-      fetchImpl,
-    };
-    log(
-      await readBack(
-        () => listVercelEnv(vercel),
-        (entries) => verifyVercelEnv(entries, plan.vercel),
-        retry
-      )
-    );
-  }
   for (const { name, binding } of plan.workers)
     log(
       await readBack(
@@ -146,12 +98,10 @@ export async function main(
     return verify(plan(...rest), { env, fetchImpl, log, retry });
   assert.equal(command, 'write', 'usage: plan|preflight|write|verify');
   const [kind, ...target] = rest;
-  assert.ok(kind === 'vercel' || kind === 'workers', 'write vercel|workers');
+  assert.equal(kind, 'workers', 'usage: write workers <secret> <environment>');
   const resolved = plan(...target);
   const value = stdin();
-  return kind === 'vercel'
-    ? writeVercel(resolved, value, { env, fetchImpl, log })
-    : writeWorkers(resolved, value, { env, fetchImpl, log });
+  return writeWorkers(resolved, value, { env, fetchImpl, log });
 }
 
 function readValue() {

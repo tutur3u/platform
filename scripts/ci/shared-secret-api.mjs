@@ -9,7 +9,6 @@ import {
 } from './shared-secret-targets.mjs';
 
 const CLOUDFLARE_API = 'https://api.cloudflare.com/client/v4';
-const VERCEL_API = 'https://api.vercel.com';
 const SUPABASE_API = 'https://api.supabase.com';
 const TIMEOUT_MS = 30_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -125,52 +124,6 @@ export async function listWorkerSecrets({ token, name, fetchImpl = fetch }) {
   return body.result.map((entry) => ({ name: entry?.name, type: entry?.type }));
 }
 
-// Vercel -------------------------------------------------------------------
-
-const envPath = (projectId) => `${VERCEL_API}/v10/projects/${projectId}/env`;
-
-export async function putVercelEnv({
-  token,
-  teamId,
-  projectId,
-  key,
-  target,
-  value,
-  fetchImpl = fetch,
-}) {
-  assertSecretValue(value);
-  await send(
-    fetchImpl,
-    `Vercel env write ${key}`,
-    `${envPath(projectId)}?upsert=true&teamId=${encodeURIComponent(teamId)}`,
-    {
-      token,
-      method: 'POST',
-      body: { key, value, type: 'sensitive', target: [target] },
-    }
-  );
-}
-
-export async function listVercelEnv({
-  token,
-  teamId,
-  projectId,
-  fetchImpl = fetch,
-}) {
-  const body = await send(
-    fetchImpl,
-    'Vercel env list',
-    `${envPath(projectId)}?decrypt=false&teamId=${encodeURIComponent(teamId)}`,
-    { token }
-  );
-  assert.ok(Array.isArray(body.envs), 'Vercel env list unavailable');
-  return body.envs.map((entry) => ({
-    key: entry?.key,
-    type: entry?.type,
-    target: [entry?.target ?? []].flat(),
-  }));
-}
-
 // Supabase -----------------------------------------------------------------
 
 const keysPath = (ref) =>
@@ -235,18 +188,6 @@ export function verifyWorkerSecret(entries, name, binding) {
   );
   assert.equal(entry.type, 'secret_text', `${name} ${binding}: wrong type`);
   return `${name}: ${binding} (${entry.type})`;
-}
-
-/** One `sensitive` entry for the key on the target, no overlapping entries. */
-export function verifyVercelEnv(entries, { key, target, type }) {
-  const entry = unique(
-    entries,
-    (item) => item.key === key && item.target.includes(target),
-    `Vercel ${key} on ${target}`
-  );
-  assert.equal(entry.type, type, `Vercel ${key}: wrong type`);
-  assert.deepEqual(entry.target, [target], `Vercel ${key}: wrong target set`);
-  return `vercel ${key} (${entry.type}) on ${target}`;
 }
 
 export function verifySupabaseKey(entries, name) {
