@@ -93,11 +93,13 @@ describe('fleet publisher output', () => {
 
     // Counts keep every lane even when the budget trims the list.
     expect(fitted.state.counts).toEqual(built.counts);
-    expect(
-      Object.values(built.counts as Record<string, number>).reduce(
-        (a, b) => a + b
-      )
-    ).toBe(400);
+    // Each lane counts once by state; resolution counts overlap `idle`.
+    const { recovered, quotaRecovered, cancelled, ...byState } =
+      built.counts as Record<string, number>;
+    expect(Object.values(byState).reduce((a, b) => a + b)).toBe(400);
+    expect(recovered! + quotaRecovered! + cancelled!).toBeLessThanOrEqual(
+      byState.idle!
+    );
     const machineIds = fitted.state.machines.map((m: { id: string }) => m.id);
     expect(new Set(machineIds).size).toBe(machineIds.length);
     for (const decision of fitted.state.decisions) {

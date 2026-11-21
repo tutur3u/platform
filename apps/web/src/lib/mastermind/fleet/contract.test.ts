@@ -25,6 +25,35 @@ describe('scrubFleetText', () => {
 });
 
 describe('fleetStateSchema', () => {
+  it('keeps the additive failure split and refuses unknown resolutions', () => {
+    const lane = sampleFleetState().lanes[0];
+    const parsed = fleetStateSchema.parse(
+      sampleFleetState({
+        counts: {
+          running: 2,
+          waiting: 1,
+          queued: 0,
+          idle: 4,
+          failed: 1,
+          recovered: 2,
+          quotaRecovered: 1,
+          cancelled: 1,
+        },
+        lanes: [{ ...lane, state: 'idle', resolution: 'quotaRecovered' }],
+      })
+    );
+    expect(parsed.counts.recovered).toBe(2);
+    expect(parsed.lanes[0]?.resolution).toBe('quotaRecovered');
+    expect(fleetStateSchema.parse(sampleFleetState()).counts.recovered).toBe(
+      undefined
+    );
+    expect(
+      fleetStateSchema.safeParse(
+        sampleFleetState({ lanes: [{ ...lane, resolution: 'superseded' }] })
+      ).success
+    ).toBe(false);
+  });
+
   it('accepts a valid snapshot and scrubs free text', () => {
     const parsed = fleetStateSchema.parse(
       sampleFleetState({

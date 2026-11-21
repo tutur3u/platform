@@ -325,6 +325,9 @@ export async function listPeerThreads(callTool, now = new Date()) {
         threadId: thread.threadId,
         title: thread.title,
         state: laneStateFor(thread.status),
+        ...(['cancelled', 'interrupted', 'rolled_back'].includes(thread.status)
+          ? { resolution: 'cancelled' }
+          : {}),
         projectId: thread.projectId,
         provider: thread.providerInstanceId,
         model: thread.model,
@@ -392,14 +395,12 @@ export async function listPeerThreads(callTool, now = new Date()) {
       () => new Map()
     ),
   ]);
-  const rows = [...byId.values()]
-    .slice(0, MAX_PEER_LANES)
-    .map(({ projectId, ...row }) => ({
-      ...row,
-      ...(projects.get(projectId)
-        ? { projectTitle: projects.get(projectId) }
-        : {}),
-    }));
+  const rows = [...byId.values()].slice(0, MAX_PEER_LANES).map((row) => ({
+    ...row,
+    ...(projects.get(row.projectId)
+      ? { projectTitle: projects.get(row.projectId) }
+      : {}),
+  }));
   // Active threads past the lane cap still count, by T3's per-status totals.
   const extraCounts = {};
   for (const [state, total] of Object.entries(totals)) {

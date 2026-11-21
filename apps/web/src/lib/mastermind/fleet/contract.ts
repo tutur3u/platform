@@ -35,6 +35,19 @@ export const fleetLaneStates = [
 ] as const;
 export type FleetLaneState = (typeof fleetLaneStates)[number];
 
+/**
+ * How a lane that is no longer failing ended: a later run or same-work lane
+ * recovered it (`quotaRecovered` when T3 resumed it after a usage limit), or
+ * it was cancelled, interrupted or duplicated by a later attempt. Additive to
+ * v1; such lanes are `idle`.
+ */
+export const fleetLaneResolutions = [
+  'recovered',
+  'quotaRecovered',
+  'cancelled',
+] as const;
+export type FleetLaneResolution = (typeof fleetLaneResolutions)[number];
+
 export const fleetLaneSchema = z.object({
   id: slug,
   title: labelText(80, 'Untitled lane'),
@@ -43,6 +56,7 @@ export const fleetLaneSchema = z.object({
   model: text(40).optional(),
   machineId: slug,
   state: z.enum(fleetLaneStates),
+  resolution: z.enum(fleetLaneResolutions).optional(),
   parentId: slug.optional(),
   startedAt: isoTime.optional(),
   updatedAt: isoTime,
@@ -174,12 +188,19 @@ export const fleetStateSchema = z.object({
     state: z.enum(['running', 'waiting', 'idle', 'offline']),
     lastActiveAt: isoTime.optional(),
   }),
+  /**
+   * `failed` counts only terminal failures nobody picked up again. The
+   * optional resolution counts are additive and also included in `idle`.
+   */
   counts: z.object({
     running: count,
     waiting: count,
     queued: count,
     idle: count,
     failed: count,
+    recovered: count.optional(),
+    quotaRecovered: count.optional(),
+    cancelled: count.optional(),
   }),
   machines: z.array(fleetMachineSchema).max(32),
   lanes: z.array(fleetLaneSchema).max(300),

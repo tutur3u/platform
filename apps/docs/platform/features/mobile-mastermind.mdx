@@ -59,6 +59,35 @@ product rules of the shell entry and every tab.
   when two machines' labels slug alike. A thread listed twice is counted once,
   preferring the local row, then a live listing over a cached one. Past 32
   machines, the extra machines are left out together with their lanes.
+- **Failure split:** `counts.failed` and a lane's `failed` state mean a
+  terminal failure nobody picked up again, so the Today headline never counts
+  retried or duplicated work as failed. A thread's newest run decides its
+  state, so a later finished run on the same thread recovers it
+  (`resolution: recovered`, or `quotaRecovered` when that finishing run is
+  T3's usage-limit continuation). A failed lane is also superseded by a
+  strictly later lane that was not itself cancelled, interrupted or rolled
+  back, on any machine and in the same project (a lane without a project
+  only matches another without one; a project whose title did not resolve
+  only matches the same project id on the same machine), that names the same
+  work: titles compare as word sets without bracket tags, attempt words
+  (retry, again, rerun, resume, continue, follow-up), attempt counters
+  (round 3, attempt 2) and the `re-` prefix; parentheticals keep only their
+  tokens with digits. The two sets must be equal and hold at least three
+  words, so "slice 3" and "(slice 4)", or R2 and R3, stay different work and
+  reworded titles stay failures. A superseded lane is `recovered` when the
+  newest attempt did not fail and `cancelled` (a duplicate) when it failed
+  too, so one piece of work counts as at most one failure. Attempts order by
+  when their newest run ended (a linked machine's listing gives only the
+  thread's update time). Cancelled, interrupted and rolled-back runs are
+  `cancelled`. These lanes are `idle` with a
+  `resolution`, and `counts.recovered`, `counts.quotaRecovered` and
+  `counts.cancelled` count them on top of `idle`. A linked machine's listing
+  reports only each thread's latest status, so its recoveries on the same
+  thread read as plain `idle`; only its cancelled threads and cross-lane
+  supersession count there. A thread with any active run keeps the active
+  state. All of it is additive to v1: an older client reads them as idle.
+  Regression coverage: `scripts/mastermind-fleet/lane-outcomes.test.mjs` and
+  the split test in `fleet-state.test.mjs`.
 - **Heartbeat:** a linked machine is `online` when it answered this run's
   probe or within the last two minutes, `stale` while it has been silent for
   up to 30 minutes, and `offline` after that or once its link has expired.
@@ -257,7 +286,7 @@ product rules of the shell entry and every tab.
   `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
   `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
-  `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
+  `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
   `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, and
   `private-files.mjs`, with the source commit in

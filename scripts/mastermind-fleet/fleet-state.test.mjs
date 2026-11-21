@@ -16,6 +16,9 @@ test('builds lanes, counts, machines and orchestrator from live rows', () => {
     queued: 0,
     idle: 0,
     failed: 1,
+    recovered: 0,
+    quotaRecovered: 0,
+    cancelled: 0,
   });
   assert.deepEqual(
     state.lanes.map((lane) => [lane.title, lane.state]),
@@ -87,6 +90,9 @@ test('counts lanes on every linked machine under its own slug', () => {
     queued: 1,
     idle: 0,
     failed: 2,
+    recovered: 0,
+    quotaRecovered: 0,
+    cancelled: 0,
   });
   const machineIds = new Set(state.machines.map((m) => m.id));
   for (const lane of state.lanes) assert.ok(machineIds.has(lane.machineId));
@@ -313,4 +319,158 @@ test('keeps per-machine active totals from before the lane cap', () => {
   assert.equal(state.machineActive['studio-a'], 154);
   assert.equal(state.machineActive['studio-b'], 154);
   assert.ok(!JSON.stringify(state).includes('machineActive'));
+});
+
+test('splits recovered, quota-recovered and cancelled lanes out of failed', () => {
+  const db = fixtureDatabase();
+  const thread = db.prepare(
+    'INSERT INTO orchestration_v2_projection_threads VALUES (?, ?, ?, ?, ?, NULL, ?)'
+  );
+  const run = db.prepare(
+    'INSERT INTO orchestration_v2_projection_runs VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const at = (m) => `2026-11-20T0${m}:00:00.000Z`;
+  for (const [id, title] of [
+    ['t-retry', 'Retried on the same thread'],
+    ['t-quota', 'Resumed after a usage limit'],
+    ['t-stop', 'Cancelled by its parent'],
+    ['t-cal', 'Ship the calendar sync worker'],
+    ['t-manual', 'Finished by a manual retry'],
+  ])
+    thread.run(id, 'p1', title, at(2), null, '{}');
+  run.run('rr1', 't-retry', 1, 'codex', 'failed', at(1), at(1), '{}');
+  run.run('rr2', 't-retry', 2, 'codex', 'completed', at(1), at(2), '{}');
+  run.run('rq1', 't-quota', 1, 'codex', 'failed', at(1), at(1), '{}');
+  run.run(
+    'rq2',
+    't-quota',
+    2,
+    'codex',
+    'completed',
+    at(1),
+    at(2),
+    JSON.stringify({ usageLimitContinuationOfRunId: 'rq1' })
+  );
+  run.run('rs1', 't-stop', 1, 'codex', 'interrupted', at(1), at(2), '{}');
+  run.run('rc1', 't-cal', 1, 'codex', 'failed', at(1), at(2), '{}');
+  // A quota continuation that failed, then a manual retry that finished:
+  // the finishing run decides, so this is a plain recovery.
+  run.run('rm1', 't-manual', 1, 'codex', 'failed', at(1), at(1), '{}');
+  run.run(
+    'rm2',
+    't-manual',
+    2,
+    'codex',
+    'failed',
+    at(1),
+    at(1),
+    JSON.stringify({ usageLimitContinuationOfRunId: 'rm1' })
+  );
+  run.run('rm3', 't-manual', 3, 'codex', 'completed', at(1), at(2), '{}');
+  const rows = readFleetRows(db, NOW);
+  rows.peers = [
+    {
+      environment_id: 'env-1',
+      label: 'MacStudio1',
+      status: 'online',
+      threads: [
+        remoteThread('dup', 'idle', at(2), { resolution: 'cancelled' }),
+        {
+          ...remoteThread('again', 'running', at(3), {
+            projectTitle: 'tuturuuu',
+          }),
+          title: 'Ship the calendar sync worker (retry)',
+        },
+      ],
+    },
+  ];
+  const state = buildFleetState(rows, { now: NOW });
+  // The calendar failure is superseded by the peer's later retry; the
+  // fixture's "CI fix" failure has no successor and still counts.
+  assert.equal(state.counts.failed, 1);
+  assert.equal(state.counts.recovered, 3);
+  assert.equal(state.counts.quotaRecovered, 1);
+  assert.equal(state.counts.cancelled, 2);
+  const byTitle = Object.fromEntries(
+    state.lanes.map((lane) => [lane.title, [lane.state, lane.resolution]])
+  );
+  assert.deepEqual(byTitle['CI fix'], ['failed', undefined]);
+  assert.deepEqual(byTitle['Ship the calendar sync worker'], [
+    'idle',
+    'recovered',
+  ]);
+  assert.deepEqual(byTitle['Resumed after a usage limit'], [
+    'idle',
+    'quotaRecovered',
+  ]);
+  assert.deepEqual(byTitle['Cancelled by its parent'], ['idle', 'cancelled']);
+  assert.deepEqual(byTitle['Finished by a manual retry'], [
+    'idle',
+    'recovered',
+  ]);
+});
+
+test('orders attempts by when their runs ended, and rollbacks never recover', () => {
+  const db = fixtureDatabase();
+  const thread = db.prepare(
+    'INSERT INTO orchestration_v2_projection_threads VALUES (?, ?, ?, ?, ?, NULL, ?)'
+  );
+  const run = db.prepare(
+    'INSERT INTO orchestration_v2_projection_runs VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const at = (h) => `2026-11-20T0${h}:00:00.000Z`;
+  // Finished at 01:00 but touched at 02:30; its retry failed at 02:00.
+  thread.run(
+    'x-done',
+    'p1',
+    'Ship the calendar sync worker',
+    '2026-11-20T02:30:00.000Z',
+    null,
+    '{}'
+  );
+  run.run('d1', 'x-done', 1, 'codex', 'completed', at(0), at(1), '{}');
+  thread.run(
+    'x-fail',
+    'p1',
+    'Ship the calendar sync worker (retry)',
+    at(2),
+    null,
+    '{}'
+  );
+  run.run('f1', 'x-fail', 1, 'codex', 'failed', at(1), at(2), '{}');
+  // A failure followed by a rolled-back retry stays a failure.
+  thread.run(
+    'x-mail',
+    'p1',
+    'Move the mail worker to queues',
+    at(1),
+    null,
+    '{}'
+  );
+  run.run('m1', 'x-mail', 1, 'codex', 'failed', at(0), at(1), '{}');
+  thread.run(
+    'x-mail2',
+    'p1',
+    'Move the mail worker to queues (retry)',
+    at(2),
+    null,
+    '{}'
+  );
+  run.run('m2', 'x-mail2', 1, 'codex', 'rolled_back', at(1), at(2), '{}');
+  const state = buildFleetState(readFleetRows(db, NOW), { now: NOW });
+  const byTitle = Object.fromEntries(
+    state.lanes.map((lane) => [lane.title, [lane.state, lane.resolution]])
+  );
+  assert.deepEqual(byTitle['Ship the calendar sync worker (retry)'], [
+    'failed',
+    undefined,
+  ]);
+  assert.deepEqual(byTitle['Move the mail worker to queues'], [
+    'failed',
+    undefined,
+  ]);
+  assert.deepEqual(byTitle['Move the mail worker to queues (retry)'], [
+    'idle',
+    'cancelled',
+  ]);
 });
