@@ -99,6 +99,53 @@ describe('MAC vector', () => {
 });
 
 describe('serialization and parsing edges', () => {
+  it('trims long whitespace runs in linear time', async () => {
+    const value = await encodeSessionCookieValue({
+      device: new Uint8Array(16),
+      generation: 1,
+      secret: new Uint8Array(32),
+      key: await importMacKey(),
+      scope,
+    });
+    const run = ' \t'.repeat(50_000);
+    const started = performance.now();
+    expect(
+      readSessionCookie(
+        `${run}${SESSION_COOKIE_NAME}${run}=${run}${value}${run}`
+      )
+    ).toMatchObject({ kind: 'present' });
+    // An interior run followed by a non-space character is the quadratic case
+    // for a regex with a trailing-whitespace alternative.
+    const interior = ' '.repeat(100_000);
+    expect(readSessionCookie(`a${interior}b=x`)).toEqual({ kind: 'absent' });
+    expect(readSessionCookie(`${SESSION_COOKIE_NAME}=x${interior}x`)).toEqual({
+      kind: 'malformed',
+    });
+    expect(readSessionCookie(`${SESSION_COOKIE_NAME}=${run}`)).toEqual({
+      kind: 'malformed',
+    });
+    expect(performance.now() - started).toBeLessThan(250);
+  });
+
+  it('trims only spaces and tabs', async () => {
+    const value = await encodeSessionCookieValue({
+      device: new Uint8Array(16),
+      generation: 1,
+      secret: new Uint8Array(32),
+      key: await importMacKey(),
+      scope,
+    });
+    expect(
+      readSessionCookie(`\t ${SESSION_COOKIE_NAME} \t= \t${value} \t`)
+    ).toMatchObject({ kind: 'present' });
+    expect(readSessionCookie(`${SESSION_COOKIE_NAME}=\n${value}`)).toEqual({
+      kind: 'malformed',
+    });
+    expect(readSessionCookie(`\u00a0${SESSION_COOKIE_NAME}=${value}`)).toEqual({
+      kind: 'absent',
+    });
+  });
+
   it.each([0.5, 10.5, Number.NaN, Number.POSITIVE_INFINITY, -1])(
     'clears for Max-Age %s',
     async (age) => {

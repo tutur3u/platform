@@ -93,8 +93,20 @@ export function readSessionCookie(
   return cookie ? { kind: 'present', cookie } : { kind: 'malformed' };
 }
 
+/**
+ * Trims spaces and tabs with one linear index scan from each end. A regex
+ * with a trailing-whitespace alternative is quadratic on long whitespace runs.
+ */
 function trimOws(value: string): string {
-  return value.replace(/^[ \t]+|[ \t]+$/g, '');
+  let start = 0;
+  let end = value.length;
+  while (start < end && isOws(value.charCodeAt(start))) start++;
+  while (end > start && isOws(value.charCodeAt(end - 1))) end--;
+  return start === 0 && end === value.length ? value : value.slice(start, end);
+}
+
+function isOws(code: number): boolean {
+  return code === 0x20 || code === 0x09;
 }
 
 /**
