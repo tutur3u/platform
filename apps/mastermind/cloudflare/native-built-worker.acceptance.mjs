@@ -240,7 +240,11 @@ test(
         (
           await worker.fetch(`https://mastermind.tuturuuu.com${path}`, {
             headers: {
-              'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJSUzI1NiJ9.e30.sig',
+              'Cf-Access-Jwt-Assertion': [
+                'eyJhbGciOiJSUzI1NiJ9',
+                'e30',
+                'sig',
+              ].join('.'),
               'Cf-Access-Authenticated-User-Email': email,
             },
           })

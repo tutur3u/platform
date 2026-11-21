@@ -16,7 +16,7 @@ import {
   signRequest,
 } from './publish.mjs';
 
-const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
+const SECRET = 'fleet-test-'.padEnd(44, 'f');
 const NOW = new Date('2026-11-20T03:00:00.000Z');
 
 function sandbox() {

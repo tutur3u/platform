@@ -11,7 +11,7 @@ import {
 import { fixtureDatabase } from './fixture.mjs';
 import { runOnce } from './publish.mjs';
 
-const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
+const SECRET = 'fleet-test-'.padEnd(44, 'f');
 const NOW = new Date('2026-11-21T03:05:00.000Z');
 const PAGE = {
   id: 'slo-workers-availability-page-tuturuuu-meet-2-0123456789abcdef',

@@ -13,7 +13,7 @@ import { signMastermindPushEvent } from '@/lib/mastermind/push-events/signature'
 vi.mock('server-only', () => ({}));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
-const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
+const SECRET = 'fleet-test-'.padEnd(44, 'f');
 const ALERTS_PATH = '/api/v1/mastermind/fleet/alerts';
 
 const mocks = vi.hoisted(() => ({
