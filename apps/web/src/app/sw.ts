@@ -36,5 +36,9 @@ const worker = createOfflineWorker({
   // Web's original cache names; changing this orphans installed caches.
   cacheNamespace: 'tuturuuu-offline',
   bypassPathPrefixes: ONE_ORIGIN_APP_PREFIXES,
+  // Route families deploy independently, so stored HTML can name chunks the
+  // serving version no longer has. Pages always come from the network; only
+  // the precached offline page answers a failed navigation.
+  cacheNavigations: false,
 });
 worker.addEventListeners();

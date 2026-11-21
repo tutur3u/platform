@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect } from 'react';
+import { installChunkReloadGuard } from './chunk-reload-guard';
 
 const registrationPromises = new Map<
   string,
@@ -113,6 +114,13 @@ export function OfflineProvider({
 }: OfflineProviderProps) {
   // Skip registration in development if configured
   const shouldSkip = skipInDev && process.env.NODE_ENV === 'development';
+
+  // A deploy that replaces this page's chunks recovers with one reload
+  // instead of the error boundary, whether or not a worker is registered.
+  useEffect(() => {
+    if (shouldSkip || typeof window === 'undefined') return;
+    return installChunkReloadGuard({ window });
+  }, [shouldSkip]);
 
   useEffect(() => {
     if (
