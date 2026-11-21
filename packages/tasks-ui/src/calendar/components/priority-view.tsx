@@ -33,6 +33,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
@@ -42,14 +43,6 @@ import PriorityDropdown from './priority-dropdown';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
 import { useTaskScheduleBatch } from './use-task-schedule-batch';
-
-// Priority labels (matching task-properties-section.tsx)
-const PRIORITY_LABELS: Record<TaskPriority, string> = {
-  critical: 'Urgent',
-  high: 'High',
-  normal: 'Medium',
-  low: 'Low',
-};
 
 // Priority icons (matching taskPriorityUtils.tsx)
 const PRIORITY_ICONS: Record<TaskPriority, React.ReactElement> = {
@@ -80,14 +73,11 @@ const PRIORITY_GROUP_COLORS: Record<string, string> = {
   low: 'from-dynamic-blue/20 to-dynamic-blue/30 border-dynamic-blue/30',
 };
 
-// Calendar hours type icons
-const CALENDAR_HOURS_ICONS: Record<
-  string,
-  { icon: LucideIcon; label: string }
-> = {
-  work_hours: { icon: Briefcase, label: 'Work Hours' },
-  meeting_hours: { icon: Calendar, label: 'Meeting Hours' },
-  personal_hours: { icon: User, label: 'Personal Hours' },
+// Calendar hours type icons; labels come from calendar.plan_panel.hours.*
+const CALENDAR_HOURS_ICONS: Record<string, { icon: LucideIcon }> = {
+  work_hours: { icon: Briefcase },
+  meeting_hours: { icon: Calendar },
+  personal_hours: { icon: User },
 };
 
 // Format duration helper
@@ -111,6 +101,7 @@ export default function PriorityView({
   /** If true, skip auto-assignment (personal workspace) */
   isPersonalWorkspace?: boolean;
 }) {
+  const t = useTranslations('calendar.plan_panel');
   const router = useRouter();
   const { openTaskById, onUpdate } = useTaskDialog();
   const { setOnTaskScheduled } = useCalendar();
@@ -291,7 +282,7 @@ export default function PriorityView({
       setSearchResults(results.tasks as ExtendedWorkspaceTask[]);
     } catch (error) {
       console.error('Error searching tasks:', error);
-      setSearchError('Failed to search tasks');
+      setSearchError(t('search_failed'));
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -513,7 +504,8 @@ export default function PriorityView({
             )}
             <input
               className="w-full bg-transparent px-2.5 py-2 text-sm placeholder-muted-foreground outline-none"
-              placeholder="Search tasks..."
+              placeholder={t('search_tasks')}
+              aria-label={t('search_tasks')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -535,16 +527,13 @@ export default function PriorityView({
             <button
               type="button"
               onClick={handleCreateTask}
+              aria-label={t('create_task')}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background/50 transition-colors hover:border-primary/50 hover:bg-background"
             >
               <Plus className="h-4 w-4 text-muted-foreground" />
             </button>
           </TooltipTrigger>
-          <TooltipContent>
-            {allTasks.length > 0
-              ? 'Create new task'
-              : 'Go to Tasks page to create'}
-          </TooltipContent>
+          <TooltipContent>{t('create_task')}</TooltipContent>
         </Tooltip>
       </div>
       {/* Priority Groups */}
@@ -552,7 +541,7 @@ export default function PriorityView({
         {PRIORITY_ORDER.map((priorityKey, index) => {
           const tasks = grouped[priorityKey] || [];
           const colorClasses = PRIORITY_GROUP_COLORS[priorityKey];
-          const label = PRIORITY_LABELS[priorityKey];
+          const label = t(`priority.${priorityKey}`);
           const isCollapsed = collapsedGroups.has(priorityKey);
 
           return (
@@ -652,16 +641,24 @@ export default function PriorityView({
                         >
                           <div className="flex w-full items-start gap-2 overflow-hidden">
                             <div className="min-w-0 flex-1 overflow-hidden">
-                              {/* Task Name */}
+                              {/* Task Name: the card's keyboard target; card clicks bubble to the same action */}
                               <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key !== 'Enter' && e.key !== ' ')
+                                    return;
+                                  e.preventDefault();
+                                  handleTaskClick(task.id);
+                                }}
                                 className={cn(
-                                  'wrap-break-word line-clamp-2 cursor-pointer font-medium text-sm transition-colors hover:text-primary',
+                                  'wrap-break-word line-clamp-2 cursor-pointer rounded-sm font-medium text-sm transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-solid focus-visible:-outline-offset-2',
                                   isCompleted && 'text-muted-foreground'
                                 )}
                               >
                                 {task.name || (
                                   <span className="text-muted-foreground italic">
-                                    Untitled task
+                                    {t('untitled_task')}
                                   </span>
                                 )}
                               </div>
@@ -677,7 +674,9 @@ export default function PriorityView({
                                         {formatDueDate(task.due_date)}
                                       </div>
                                     </TooltipTrigger>
-                                    <TooltipContent>Due date</TooltipContent>
+                                    <TooltipContent>
+                                      {t('due_date')}
+                                    </TooltipContent>
                                   </Tooltip>
                                 )}
 
@@ -687,11 +686,11 @@ export default function PriorityView({
                                     <TooltipTrigger asChild>
                                       <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/40 px-1 py-0.5 text-[10px] text-muted-foreground">
                                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                        Loading
+                                        {t('loading')}
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Loading scheduling settings
+                                      {t('loading_schedule')}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -705,7 +704,7 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Allocated duration
+                                      {t('allocated_duration')}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -719,8 +718,10 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      {CALENDAR_HOURS_ICONS[calendarHours!]
-                                        ?.label ?? 'Schedule type'}
+                                      {calendarHours &&
+                                      CALENDAR_HOURS_ICONS[calendarHours]
+                                        ? t(`hours.${calendarHours}`)
+                                        : t('schedule_type')}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -734,15 +735,14 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Splittable (
-                                      {formatDuration(
-                                        minSplitDurationMinutes ?? 30
-                                      )}{' '}
-                                      -{' '}
-                                      {formatDuration(
-                                        maxSplitDurationMinutes ?? 120
-                                      )}
-                                      )
+                                      {t('splittable', {
+                                        min: formatDuration(
+                                          minSplitDurationMinutes ?? 30
+                                        ),
+                                        max: formatDuration(
+                                          maxSplitDurationMinutes ?? 120
+                                        ),
+                                      })}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -756,7 +756,7 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Auto-schedule enabled
+                                      {t('auto_schedule')}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -770,7 +770,7 @@ export default function PriorityView({
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Task completed
+                                      {t('completed')}
                                     </TooltipContent>
                                   </Tooltip>
                                 )}

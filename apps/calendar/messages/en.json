@@ -1666,11 +1666,34 @@
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
     "personal_timezone_override_desc": "You have set your personal timezone to <bold>{timezone}</bold>, which overrides this workspace setting. Your effective timezone is <bold>{effectiveTimezone}</bold>. Change it in Appearance & Theme settings.",
     "plan_panel": {
+      "allocated_duration": "Allocated duration",
+      "auto_schedule": "Auto-schedule enabled",
       "collapse": "Collapse plan panel",
+      "completed": "Task completed",
+      "create_task": "Create task",
+      "due_date": "Due date",
       "habits": "Habits",
+      "hours": {
+        "meeting_hours": "Meeting hours",
+        "personal_hours": "Personal hours",
+        "work_hours": "Work hours"
+      },
+      "loading": "Loading",
+      "loading_schedule": "Loading scheduling settings",
       "open": "Open plan panel",
+      "priority": {
+        "critical": "Urgent",
+        "high": "High",
+        "low": "Low",
+        "normal": "Medium"
+      },
+      "schedule_type": "Schedule type",
+      "search_failed": "Failed to search tasks",
+      "search_tasks": "Search tasks",
+      "splittable": "Splittable ({min} – {max})",
       "tasks": "Tasks",
-      "title": "Plan"
+      "title": "Plan",
+      "untitled_task": "Untitled task"
     },
     "please_reconnect": "Please reconnect your Google Calendar",
     "primary": "Primary",

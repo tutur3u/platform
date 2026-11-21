@@ -3643,11 +3643,34 @@
     "personal_first_day_override_desc": "Bạn đã đặt ngày bắt đầu tuần cá nhân là <bold>{firstDay}</bold>, việc này ghi đè cài đặt không gian làm việc. Ngày bắt đầu của bạn là <bold>{effectiveFirstDay}</bold>. Thay đổi trong cài đặt Giao diện & Chủ đề.",
     "personal_timezone_override_desc": "Bạn đã đặt múi giờ cá nhân là <bold>{timezone}</bold>, việc này ghi đè cài đặt không gian làm việc. Múi giờ hiện tại của bạn là <bold>{effectiveTimezone}</bold>. Thay đổi trong cài đặt Giao diện & Chủ đề.",
     "plan_panel": {
+      "allocated_duration": "Thời lượng đã phân bổ",
+      "auto_schedule": "Đã bật tự động xếp lịch",
       "collapse": "Thu gọn bảng kế hoạch",
+      "completed": "Công việc đã hoàn thành",
+      "create_task": "Tạo công việc",
+      "due_date": "Hạn chót",
       "habits": "Thói quen",
+      "hours": {
+        "meeting_hours": "Giờ họp",
+        "personal_hours": "Giờ cá nhân",
+        "work_hours": "Giờ làm việc"
+      },
+      "loading": "Đang tải",
+      "loading_schedule": "Đang tải cài đặt xếp lịch",
       "open": "Mở bảng kế hoạch",
+      "priority": {
+        "critical": "Khẩn cấp",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Trung bình"
+      },
+      "schedule_type": "Loại lịch",
+      "search_failed": "Không thể tìm công việc",
+      "search_tasks": "Tìm công việc",
+      "splittable": "Có thể chia nhỏ ({min} – {max})",
       "tasks": "Công việc",
-      "title": "Kế hoạch"
+      "title": "Kế hoạch",
+      "untitled_task": "Công việc chưa đặt tên"
     },
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",
     "primary": "Chính",
