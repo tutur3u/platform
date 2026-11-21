@@ -466,10 +466,41 @@ Bindings: `WEB_FAMILY_API_OPS`, `WEB_FAMILY_API_CORE`,
 id in `GATEWAY_WEB_FAMILIES` only when `families.json` marks it `activated`.
 Page families activate after a build with their `/_f/<id>` asset prefix.
 
-**Cutover:** upload a gateway version with the bindings and the flagged ids,
-deploy it at 0%, smoke with the `Cloudflare-Workers-Version-Overrides` header,
-then move it to 100%. **Rollback:** re-assign the previous gateway version, or
-drop ids from `GATEWAY_WEB_FAMILIES`.
+All six families are activated and flagged
+(`GATEWAY_WEB_FAMILIES=public-docs,api-ops,api-core,public-auth,web-rest,dashboard-apps,dashboard`).
+Only these requests still reach `WEB_ORIGIN`: unprefixed `/_next/static/*`
+(emitted only by pages rendered before the cutover, so that open tabs keep
+loading), `/_f/<id>/*` for an id no Worker builds, requests for another host,
+and everything in passthrough mode.
+
+**Uploading a gateway version** (no traffic until it is deployed), from a
+clean checkout at a commit on `main`:
+
+```bash
+node scripts/ci/gateway-deploy-config.mjs capture settings.json   # serving version's bindings
+WEB_ORIGIN=<live value> MARKETING_ORIGIN=<live value> GATEWAY_WEB_FAMILIES=<ids> \
+  node scripts/ci/gateway-deploy-config.mjs write settings.json apps/gateway/wrangler.deploy.json
+cd apps/gateway && wrangler versions upload --config wrangler.deploy.json \
+  --tag <sha10> --message "<what changes>"
+```
+
+`capture` reads the version that serves traffic (`/deployments`, then
+`/versions/<id>`), never `/settings`, and `write` keeps its mounts, services
+and variables while adding the flagged family bindings. A version upload
+inherits the serving version's secrets, so it needs no `--secrets-file` once
+`TRUSTED_PROXY_ORIGIN_SECRET` is live. Read the version back
+(`GET .../workers/scripts/tuturuuu-gateway/versions/<id>`) and diff its
+binding names against the capture before handing it over.
+
+**Cutover:** deploy the uploaded version at 0%, then smoke with
+`Cloudflare-Workers-Version-Overrides: tuturuuu-gateway="<version id>"`. Each
+moved path answers with `x-gateway-family: <id>`, and each family serves one
+of its `/_f/<id>/_next/static/*` assets. Then move the version to 100%.
+**Rollback:** re-assign the previous gateway version. A broken family Worker
+rolls back to its own previous Worker version instead (see
+[Web vinext Workers](/build/devops/web-vinext-families#deploying-a-family)).
+Dropping an id from `GATEWAY_WEB_FAMILIES` sends its paths to `WEB_ORIGIN`,
+which no longer serves production, so it is not a rollback.
 
 ## Path ownership and rollback
 

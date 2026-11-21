@@ -48,11 +48,22 @@ pin.
   `~/.t3/scratch/vinext-<family>`.
 
 ```bash
-git worktree add --detach <dir> <sha> && cd <dir> && bun install
+git worktree add --detach ~/.t3/scratch/vinext-<family> <sha>
+cd ~/.t3/scratch/vinext-<family> && bun install
 printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
-NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=... \
-  bash apps/web/cloudflare/vinext/build-family.sh api-core
+set -a; . <build-env-file>; set +a   # NEXT_PUBLIC_* values, inlined at build time
+export NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS=infra
+PLATFORM_BUILD_ENVIRONMENT=production PLATFORM_BUILD_REF_NAME=main \
+  PLATFORM_BUILD_COMMIT_HASH=<sha> bun run --silent scripts/ci/generate-build-metadata.ts
+bash apps/web/cloudflare/vinext/build-family.sh <family>
 ```
+
+The build-env file holds `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`,
+`NEXT_PUBLIC_DISCORD_LINK` and `NEXT_PUBLIC_SHORTENER_URL`. The metadata step
+stamps `/api/build-info` with the commit, so build every family from a commit
+on `main`.
 
 `build-family.sh` builds the workspace packages, prunes with
 `cloudflare/vinext/prune.ts`, runs `vp build --config vite.vinext.config.ts`,
@@ -76,11 +87,26 @@ built checkout:
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=... WEB_VINEXT_FAMILY=<family> node_modules/.bin/cf deploy \
-  --prebuilt --no-provision --secrets-file <secrets.json> --message "vinext <family> <sha>"
+  --prebuilt --no-provision --secrets-file <secrets.json> --message "vinext <family> <sha12>"
 ```
 
-The deploy reports `No targets deployed`: the Worker has no routes, custom
-domains, workers.dev or preview URLs.
+A redeploy of an existing Worker omits `--secrets-file`; its secrets carry
+over. The deploy reports `No targets deployed`: the Worker has no routes,
+custom domains, workers.dev or preview URLs. A family the gateway flags takes
+production traffic as soon as the deploy finishes, so:
+
+1. Before deploying, record the version that serves the Worker now
+   (`GET /accounts/<account>/workers/scripts/tuturuuu-web-vinext-<family>/deployments`,
+   the first deployment's version at 100%). That is the rollback target.
+2. Deploy, then confirm the new version is at 100% in the same listing.
+3. Smoke through `https://tuturuuu.com`: every response carries
+   `x-gateway-family: <family>`. Check `/api/build-info` (api-core) for the
+   commit and `environment: production`, a page of the family (for example
+   `/vi/login` for public-auth) and one `/_f/<family>/_next/static/*` asset it
+   references.
+4. On any failure, roll back at once: create a deployment of the recorded
+   version at 100% (`POST .../deployments` with
+   `{"strategy":"percentage","versions":[{"version_id":"<previous>","percentage":100}]}`).
 
 ## Gateway routing
 
@@ -92,6 +118,18 @@ for matching, flags, cutover and rollback. A family build sets `assetPrefix`
 to `/_f/<id>` from `WEB_VINEXT_FAMILY`, so each family's client assets have
 their own URL base. Page families need that build before their id goes into
 `GATEWAY_WEB_FAMILIES`.
+
+All six families are flagged, so no Web page or API path reaches
+`WEB_ORIGIN`. The only requests that still do are unprefixed
+`/_next/static/*` (emitted only by pages rendered before the cutover),
+`/_f/<id>/*` for an id no Worker builds, requests for another host, and
+everything when the gateway is in passthrough mode.
+
+**Rollback ladder:** a broken family Worker rolls back to its previous Worker
+version (above). A broken routing change rolls back by re-assigning the
+previous gateway version. Removing an id from `GATEWAY_WEB_FAMILIES` sends
+that family's paths back to `WEB_ORIGIN`, which no longer serves production,
+so it is not a rollback.
 
 ## Runtime bindings
 
