@@ -4,6 +4,7 @@ import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
 } from './run-supabase-isolated.js';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 
 const actor = '00000000-0000-4000-8000-000000098001';
@@ -57,7 +58,7 @@ export async function runReportReviewConcurrency(metadata) {
       timeout: 10000,
       maxBuffer: 65536,
     });
-  execute(`insert into auth.users(id) values('${actor}');
+  execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic review race',false,'${actor}');
     insert into public.workspace_users(id,ws_id,full_name) values('${subject}','${ws}','Synthetic subject');
@@ -123,7 +124,8 @@ export async function runReportReviewConcurrency(metadata) {
     );
   } finally {
     execute(
-      `delete from public.workspaces where id='${ws}'; delete from auth.users where id='${actor}';`
+      `delete from public.workspaces where id='${ws}';
+      ${assumeAuthWriterSql(`delete from auth.users where id='${actor}';`)}`
     );
   }
   console.log(

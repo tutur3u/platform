@@ -4,6 +4,7 @@ import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
 } from './run-supabase-isolated.js';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 
 export const storageRaceWorkspace = '00000000-0000-4000-8000-000000073071';
@@ -120,7 +121,7 @@ export async function runStorageAnalyticsConcurrency(metadata) {
       'Synthetic storage paths must be unused'
     );
     seedStarted = true;
-    execute(`insert into auth.users(id) values('${actor}');
+    execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
       insert into public.users(id) values('${actor}') on conflict do nothing;
       insert into public.workspaces(id,name,personal,creator_id) values('${storageRaceWorkspace}','Synthetic storage cache race',false,'${actor}');
       insert into storage.buckets(id,name) values('workspaces','workspaces') on conflict do nothing;
@@ -206,7 +207,7 @@ export async function runStorageAnalyticsConcurrency(metadata) {
       execute(`select set_config('storage.allow_delete_query','true',false);
       delete from storage.objects where bucket_id='workspaces' and name in('${prefix}original.png','${prefix}new.png');
       delete from public.workspaces where id='${storageRaceWorkspace}';
-      delete from auth.users where id='${actor}';`);
+      ${assumeAuthWriterSql(`delete from auth.users where id='${actor}';`)}`);
   } catch (cleanupError) {
     if (primaryError)
       throw new AggregateError(

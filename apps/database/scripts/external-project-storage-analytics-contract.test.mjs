@@ -7,6 +7,7 @@ import {
   storageAnalyticsRaceScripts,
   storageRaceWorkspace,
 } from './external-project-storage-analytics-concurrency.mjs';
+import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
 import { runIsolatedLifecycle } from './run-supabase-isolated.js';
 import {
   assertStorageAnalyticsTap,
@@ -263,4 +264,11 @@ test('actual executor emits quiet bounded psql invocation and parses only one in
     () => 'SET\n150\n'
   );
   assert.throws(() => contaminated.scalar('select 150;'));
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  assertAuthUsersUseAuthAdmin(
+    read('./external-project-storage-analytics-concurrency.mjs'),
+    'storage analytics concurrency'
+  );
 });

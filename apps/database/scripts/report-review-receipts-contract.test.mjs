@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import { assertAuthUsersUseAuthAdmin } from './auth-admin-session.mjs';
 import { reviewRaceScripts } from './report-review-receipt-concurrency.mjs';
 
 const require = createRequire(import.meta.url);
@@ -259,4 +260,9 @@ test('daily creator reassignment and clear invalidate parent version and prior r
     fixture,
     /receipt\.parent_review_revision <> post\.review_revision/u
   );
+});
+
+test('auth user bootstrap uses the GoTrue role the platform-role guard admits', () => {
+  assertAuthUsersUseAuthAdmin(fixture, 'report review fixture');
+  assertAuthUsersUseAuthAdmin(race, 'report review concurrency');
 });

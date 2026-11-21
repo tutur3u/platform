@@ -3,10 +3,27 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT no_plan();
 INSERT INTO public.calendar_event_colors(value) VALUES ('BLUE'), ('PURPLE'), ('GREEN') ON CONFLICT DO NOTHING;
+-- Assume supabase_auth_admin only when this session can. Local postgres is already admitted.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
 INSERT INTO auth.users(id) VALUES
  ('00000000-0000-4000-8000-000000009101'),
  ('00000000-0000-4000-8000-000000009102'),
  ('00000000-0000-4000-8000-000000009103');
+reset role;
+SET LOCAL search_path = public, extensions;
 INSERT INTO public.users(id) SELECT id FROM auth.users WHERE id::text LIKE '%00910_' ON CONFLICT DO NOTHING;
 INSERT INTO public.workspaces(id, name, personal, creator_id) VALUES
  ('00000000-0000-4000-8000-000000009111', 'SSO fixture A', false, '00000000-0000-4000-8000-000000009101'),
@@ -412,7 +429,24 @@ SELECT is((SELECT count(*)::integer FROM private.sso_assignments WHERE ws_id=(SE
  'direct workspace deletion removes live assignment');
 SELECT is((SELECT count(*)::integer FROM private.sso_transactions WHERE ws_id=(SELECT other_ws FROM fixture)),0,
  'direct workspace deletion removes consent-bound transaction');
-SELECT lives_ok($$DELETE FROM auth.users WHERE id=(SELECT member FROM fixture)$$,
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
+DELETE FROM auth.users WHERE id='00000000-0000-4000-8000-000000009103';
+reset role;
+SET LOCAL search_path = public, extensions;
+SELECT ok(NOT EXISTS (SELECT 1 FROM auth.users WHERE id=(SELECT member FROM fixture)),
  'actual Auth deletion trigger chain succeeds');
 SELECT ok(EXISTS(SELECT 1 FROM public.users WHERE id=(SELECT member FROM fixture)),
  'Auth deletion retains public user proving the actual lifecycle was tested');
@@ -428,7 +462,24 @@ SELECT is((SELECT count(*)::integer FROM private.sso_disclosure_grants g
  JOIN private.sso_transactions t ON (t.ws_id,t.client_id,t.id)=(g.ws_id,g.client_id,g.transaction_id)
  WHERE g.actor_id=(SELECT member FROM fixture)),0,
  'Auth deletion leaves no live consent authorization; retained receipts are historical');
-SELECT lives_ok($$DELETE FROM auth.users WHERE id=(SELECT actor FROM fixture)$$,
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
+DELETE FROM auth.users WHERE id='00000000-0000-4000-8000-000000009101';
+reset role;
+SET LOCAL search_path = public, extensions;
+SELECT ok(NOT EXISTS (SELECT 1 FROM auth.users WHERE id=(SELECT actor FROM fixture)),
  'creator Auth deletion succeeds with clients and immutable history');
 SELECT ok((SELECT bool_and(created_by IS NULL) FROM private.sso_clients WHERE ws_id=(SELECT ws FROM fixture)),
  'creator Auth deletion clears live client attribution');

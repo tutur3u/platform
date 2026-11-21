@@ -5,6 +5,7 @@ import {
   deriveIsolatedIdentity,
   readLifecycleMetadata,
 } from './run-supabase-isolated.js';
+import { assumeAuthWriterSql } from './auth-admin-session.mjs';
 import { openFixtureSession } from './time-tracker-control-concurrency.mjs';
 
 export async function runSsoConsumptionRace(metadata) {
@@ -40,7 +41,7 @@ export async function runSsoConsumptionRace(metadata) {
   function createFixture() {
     const actor = randomUUID();
     const ws = randomUUID();
-    execute(`insert into auth.users(id) values('${actor}');
+    execute(`${assumeAuthWriterSql(`insert into auth.users(id) values('${actor}');`)}
     insert into public.users(id) values('${actor}') on conflict do nothing;
     insert into public.workspaces(id,name,personal,creator_id) values('${ws}','Synthetic SSO race',false,'${actor}');`);
     const client = execute(

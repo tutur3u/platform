@@ -5,7 +5,26 @@ select no_plan();
 create function pg_temp.fid(n integer) returns uuid language sql as $$
   select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
-insert into auth.users(id) select pg_temp.fid(n) from generate_series(97001,97006) n;
+-- Assume supabase_auth_admin only when this session can. Local postgres is already admitted.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
+insert into auth.users(id)
+select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid
+from (values (97001),(97002),(97003),(97004),(97005),(97006)) as ids(n);
+reset role;
+set local search_path=public,extensions;
 insert into public.users(id) select pg_temp.fid(n) from generate_series(97001,97006) n on conflict do nothing;
 insert into public.workspaces(id,name,personal,creator_id) values
   (pg_temp.fid(97011),'Synthetic report review',false,pg_temp.fid(97001)),
@@ -75,7 +94,23 @@ update public.workspace_default_permissions set enabled=false where ws_id=pg_tem
 select ok(not pg_temp.can_review(97004),'GUEST still cannot borrow role admin');
 delete from public.workspace_members where ws_id=pg_temp.fid(97011) and user_id=pg_temp.fid(97003);
 select ok(not pg_temp.can_review(97003),'revoked membership denies role admin');
-delete from auth.users where id=pg_temp.fid(97005);
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', false);
+  end if;
+end
+$assume$;
+delete from auth.users where id=('00000000-0000-4000-8000-'||lpad(97005::text,12,'0'))::uuid;
+reset role;
+set local search_path=public,extensions;
 select ok(not pg_temp.can_review(97005),'deleted actor cannot acquire new admission');
 
 insert into public.workspace_user_groups(id,ws_id,name) values(pg_temp.fid(97301),pg_temp.fid(97011),'Synthetic group'),(pg_temp.fid(97302),pg_temp.fid(97011),'Synthetic second group');
