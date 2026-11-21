@@ -13,6 +13,7 @@ import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-en
 import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import { configureToolsAbuseGuard } from '../src/runtime/abuse-guard';
 import appConfig from '../start-bridge.config';
 import { assertStartupEnvironment } from './startup.mjs';
 
@@ -80,6 +81,7 @@ export default {
   fetch: withHstsResponsePolicy(
     async (request: Request, env: ToolsEnvironment, ctx: WorkerContext) => {
       assertStartupEnvironment(env);
+      configureToolsAbuseGuard(env);
       let response: Response;
       try {
         response = await (await handler)(request, env, ctx);

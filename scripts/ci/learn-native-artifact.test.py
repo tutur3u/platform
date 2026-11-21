@@ -27,6 +27,12 @@ class LearnArtifactTest(unittest.TestCase):
         self.assertFalse(production.NORMALIZED_DEFAULTS["upload_source_maps"])
         self.assertEqual(production.RECEIPT, "learn-production-artifact.json")
         self.assertEqual(production.IDENTITY["vars"]["NEXT_PUBLIC_APP_URL"], "https://learn.tuturuuu.com")
+        self.assertEqual(staging.NORMALIZED_DEFAULTS["services"], wrapper.SERVICES)
+        self.assertEqual(production.NORMALIZED_DEFAULTS["services"], wrapper.SERVICES)
+        self.assertEqual(wrapper.SERVICES, [{"binding": "ABUSE_GUARD", "service": "tuturuuu-abuse-guard", "entrypoint": "AbuseGuardEntrypoint"}])
+        self.assertEqual(staging.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "1", "ABUSE_GUARD_FAMILIES": "proxy"})
+        self.assertEqual(production.IDENTITY["vars"]["ABUSE_GUARD_FAMILIES"], "proxy")
+        self.assertNotIn("ABUSE_GUARD_KEY_PEPPER", production.IDENTITY["vars"])
         self.assertEqual(wrapper.PUBLIC_FILES, ("robots.txt", "sitemap.xml"))
 
     def test_cli_requires_learn_source_sha(self):

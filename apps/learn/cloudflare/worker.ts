@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { config as proxyConfig, proxy } from '../src/proxy';
+import { configureLearnAbuseGuard } from '../src/runtime/abuse-guard';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
@@ -96,6 +97,7 @@ export default {
       const handler = isLms ? lmsHandler : legacyHandler;
       let response: Response;
       try {
+        configureLearnAbuseGuard(env);
         response = await (await handler)(request, env, ctx);
       } catch (error) {
         // Even a failed route load answers through the response policy.

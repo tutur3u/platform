@@ -28,7 +28,15 @@ for (const app of ['calendar', 'mail', 'apps']) {
       assert.deepEqual(emitted.routes, []);
       assert.ok(receipt.files['server/index.js']);
       assert.deepEqual(emitted.secrets.required, p.secrets);
-      assert.equal(emitted.services, undefined);
+      if (app === 'calendar')
+        assert.deepEqual(emitted.services, [
+          {
+            binding: 'ABUSE_GUARD',
+            service: 'tuturuuu-abuse-guard',
+            entrypoint: 'AbuseGuardEntrypoint',
+          },
+        ]);
+      else assert.equal(emitted.services, undefined);
       assert.equal(emitted.r2_buckets, undefined);
       if (app === 'calendar') {
         assert.equal(

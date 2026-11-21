@@ -30,14 +30,14 @@ export const AI_SOURCE_VARS = Object.freeze({
   TUTURUUU_NOINDEX: '1',
 });
 
-const ABUSE_GUARD_APPS = new Set(['nova', 'rewise']);
+const ABUSE_GUARD_APPS = new Set(['calendar', 'finance', 'nova', 'rewise']);
 
 export function validateAdmittedSourceServices(app, services) {
   assert.ok(Array.isArray(services));
   if (!services.length) return;
   assert.ok(
     ABUSE_GUARD_APPS.has(app),
-    'Admitted source services are limited to nova and rewise'
+    'Admitted source services are limited to calendar, finance, nova and rewise'
   );
   assert.deepEqual(services, [ABUSE_GUARD_SERVICE_BINDING]);
 }

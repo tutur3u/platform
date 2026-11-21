@@ -8,6 +8,13 @@ import unittest
 
 HERE = Path(__file__).parent
 SHA = "d" * 40
+GUARD_SERVICES = [
+    {
+        "binding": "ABUSE_GUARD",
+        "service": "tuturuuu-abuse-guard",
+        "entrypoint": "AbuseGuardEntrypoint",
+    },
+]
 
 
 def load(profile):
@@ -41,14 +48,16 @@ class GitArtifactTest(unittest.TestCase):
             self.assertEqual(module.IDENTITY["name"], "tuturuuu-git-vite-staging")
             self.assertFalse(module.IDENTITY["workers_dev"])
             self.assertFalse(module.IDENTITY["preview_urls"])
-            self.assertEqual(module.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "1"})
+            self.assertEqual(module.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "1", "ABUSE_GUARD_FAMILIES": "proxy"})
+            self.assertEqual(module.NORMALIZED_DEFAULTS["services"], GUARD_SERVICES)
             self.assertEqual(module.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-git-vite-staging")
             self.assertIs(module.NORMALIZED_DEFAULTS["upload_source_maps"], True)
             self.assertEqual(module.RECEIPT, "git-native-artifact.json")
         self.assertEqual(production.IDENTITY["name"], "tuturuuu-git")
         self.assertFalse(production.IDENTITY["workers_dev"])
         self.assertFalse(production.IDENTITY["preview_urls"])
-        self.assertEqual(production.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "0"})
+        self.assertEqual(production.IDENTITY["vars"], {"TUTURUUU_NOINDEX": "0", "ABUSE_GUARD_FAMILIES": "proxy"})
+        self.assertEqual(production.NORMALIZED_DEFAULTS["services"], GUARD_SERVICES)
         self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-git")
         self.assertIs(production.NORMALIZED_DEFAULTS["upload_source_maps"], True)
         self.assertNotIn("preview_urls", production.NORMALIZED_DEFAULTS)

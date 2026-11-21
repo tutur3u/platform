@@ -67,6 +67,7 @@ const identity = {
     MEET_CLASSROOM_LIMITS_ENABLED: 'false',
     MEET_CLASS_ATTENDANCE_ENABLED: 'false',
     MEET_CLASS_TIMER_ENABLED: 'true',
+    ABUSE_GUARD_FAMILIES: 'proxy',
   },
 };
 

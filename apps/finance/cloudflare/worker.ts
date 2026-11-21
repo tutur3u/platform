@@ -8,6 +8,7 @@ import { createProxyMatcher } from '@tuturuuu/start-bridge/proxy-matcher';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { proxy, config as proxyConfig } from '../src/proxy';
+import { configureFinanceAbuseGuard } from '../src/runtime/abuse-guard';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
@@ -59,6 +60,7 @@ const handler = (
 export default {
   fetch: withHstsResponsePolicy(
     async (request: Request, env: FinanceEnvironment, ctx: WorkerContext) => {
+      configureFinanceAbuseGuard(env);
       const response = await (await handler)(request, env, ctx);
       return appConfig.wrapResponse
         ? appConfig.wrapResponse(response, { request, env })

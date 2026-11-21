@@ -22,6 +22,15 @@ export default defineConfig({
     workers_dev: false,
     preview_urls: false,
     vars: profile.vars,
+    // Abuse-guard proxy state over RPC; no staging guard Worker exists, so
+    // every profile binds the shared one.
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

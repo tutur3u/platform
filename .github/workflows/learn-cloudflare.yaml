@@ -254,6 +254,7 @@ jobs:
             TUTURUUU_REQUIRE_SECRETS: '1',
             NEXT_PUBLIC_APP_URL: 'https://learn.tuturuuu.com',
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+            ABUSE_GUARD_FAMILIES: 'proxy',
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
           JS

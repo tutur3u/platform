@@ -13,7 +13,10 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { manifest } from './calendar-native-artifact.mjs';
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
-import { denyCalendarOutbound } from './calendar-native-runtime-profile.mjs';
+import {
+  abuseGuardUnavailableFixture,
+  denyCalendarOutbound,
+} from './calendar-native-runtime-profile.mjs';
 import { calendarProductionRuntimeTarget } from './wave1-native-runtime.mjs';
 import {
   assertArtifactUnchanged,
@@ -36,6 +39,14 @@ async function calendarFixture(run) {
     compatibility_date: '2026-10-19',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
+    vars: { ABUSE_GUARD_FAMILIES: 'proxy' },
     assets: {
       binding: 'ASSETS',
       directory: '../client',
@@ -60,6 +71,7 @@ async function calendarFixture(run) {
     sourceSHA,
     canonicalHost: 'calendar-ci.invalid',
     outbound: denyCalendarOutbound([]),
+    fixtureServices: { ABUSE_GUARD: abuseGuardUnavailableFixture },
   };
   async function save() {
     await put('dist/server/wrangler.json', config);
@@ -106,7 +118,9 @@ test('Calendar profile admits sealed owning config without changing any bytes', 
       'global_fetch_strictly_public',
     ]);
     assert.equal(admitted.config.workers_dev, false);
-    assert.deepEqual(admitted.bindings, {});
+    assert.deepEqual(admitted.bindings, {
+      ABUSE_GUARD: { type: 'fetcher', fetcher: abuseGuardUnavailableFixture },
+    });
     assert.deepEqual(await readFile(options.config), bytes);
     assert.deepEqual(
       await sealArtifact(options.root, 'calendar'),

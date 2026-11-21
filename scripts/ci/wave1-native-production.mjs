@@ -11,6 +11,7 @@ import {
 import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
 import { assertResolvedVersionsAbsent } from './wave1-native-production-resolution.mjs';
 import { profiles } from './wave1-native-profile.mjs';
+import { ABUSE_GUARD_SERVICE_BINDING } from './wave1-source-admissions.mjs';
 import {
   boundedJson,
   matchesVersion,
@@ -24,6 +25,14 @@ import {
 import { UploadLimitsError } from './wave1-native-upload-limits.mjs';
 
 export function assertRouteFree(config) {
+  // The shared abuse guard is the only admitted service binding.
+  const services = Object.hasOwn(config, 'services') ? ['services'] : [];
+  if (services.length)
+    assert.deepEqual(
+      config.services,
+      [ABUSE_GUARD_SERVICE_BINDING],
+      'Unadmitted production service binding'
+    );
   assert.equal(
     config.upload_source_maps,
     false,
@@ -47,6 +56,7 @@ export function assertRouteFree(config) {
       'secrets',
       'vars',
       'observability',
+      ...services,
     ].sort(),
     'Unexpected production configuration keys'
   );

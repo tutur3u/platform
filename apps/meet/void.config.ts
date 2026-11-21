@@ -88,6 +88,10 @@ const production = defineConfig({
       MEET_CLASS_TIMER_ENABLED: 'true',
       MEET_AI_DISABLED: 'true',
       MEET_AI_ENABLED_WORKSPACE_IDS: '',
+      // The API proxy guard reaches its store over the ABUSE_GUARD binding.
+      // Only `proxy` is assigned: `meet` and `password` keep their own
+      // store paths until they are moved deliberately.
+      ABUSE_GUARD_FAMILIES: 'proxy',
     },
     durable_objects: {
       bindings: [

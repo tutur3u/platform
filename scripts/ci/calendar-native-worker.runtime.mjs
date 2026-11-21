@@ -17,7 +17,10 @@ import {
   validateOutput,
   verify,
 } from './calendar-native-artifact.mjs';
-import { denyCalendarOutbound } from './calendar-native-runtime-profile.mjs';
+import {
+  abuseGuardUnavailableFixture,
+  denyCalendarOutbound,
+} from './calendar-native-runtime-profile.mjs';
 import { createCalendar500Diagnostics } from './calendar-response-diagnostics.mjs';
 import {
   createCalendarSsrCollector,
@@ -69,6 +72,8 @@ async function runParent() {
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),
     outbound: denyCalendarOutbound([]),
+    // No pepper is bound, so the proxy family stays `off` and never calls it.
+    fixtureServices: { ABUSE_GUARD: abuseGuardUnavailableFixture },
   };
   const programRoot = await realpath(
     await mkdtemp(join(tmpdir(), 'calendar-sdk-run-'))

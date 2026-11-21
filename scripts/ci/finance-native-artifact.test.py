@@ -71,7 +71,13 @@ class FinanceArtifactTest(unittest.TestCase):
             "NEXT_PUBLIC_APP_URL": "https://finance.tutur3u.com",
             "FINANCE_APP_URL": "https://finance.tutur3u.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+            "ABUSE_GUARD_FAMILIES": "proxy",
         })
+        guard = [{"binding": "ABUSE_GUARD", "service": "tuturuuu-abuse-guard", "entrypoint": "AbuseGuardEntrypoint"}]
+        self.assertEqual(artifact.NORMALIZED_DEFAULTS["services"], guard)
+        self.assertEqual(production.NORMALIZED_DEFAULTS["services"], guard)
+        self.assertEqual(production.IDENTITY["vars"]["ABUSE_GUARD_FAMILIES"], "proxy")
+        self.assertEqual(base.NORMALIZED_DEFAULTS["services"], [])
         self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
         self.assertEqual(base.IDENTITY["compatibility_flags"], ["nodejs_compat"])
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
@@ -135,6 +141,7 @@ class FinanceArtifactTest(unittest.TestCase):
             "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
             "FINANCE_APP_URL": "https://finance.tuturuuu.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+            "ABUSE_GUARD_FAMILIES": "proxy",
         })
         self.assertEqual(wrapper.PROFILES["staging"]["rootHost"], "finance.tutur3u.com")
         self.assertEqual(wrapper.PROFILES["production"]["rootHost"], "finance.tuturuuu.com")

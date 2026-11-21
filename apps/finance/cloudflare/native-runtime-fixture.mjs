@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import {
   FINANCE_NATIVE_PROFILE_ENV,
   resolveFinanceNativeProfile,
@@ -44,6 +45,13 @@ export async function financeRuntime(t, options = {}) {
     'global_fetch_strictly_public',
   ]);
   assert.deepEqual(config.vars, profile.vars);
+  assert.deepEqual(config.services, [
+    {
+      binding: 'ABUSE_GUARD',
+      service: 'tuturuuu-abuse-guard',
+      entrypoint: 'AbuseGuardEntrypoint',
+    },
+  ]);
   const scratch = await realpath(
     await mkdtemp(join(tmpdir(), 'finance-native-'))
   );
@@ -71,11 +79,13 @@ export async function financeRuntime(t, options = {}) {
   let operations = 0;
   const require = createRequire(join(app, 'package.json'));
   const sdk = require('wrangler');
+  const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
   worker = await sdk.unstable_startWorker({
     config: join(scratch, relative(app, configPath)),
     envFiles: [envFile],
     sendMetrics: false,
     bindings: {
+      ...guardBindings,
       INTERNAL_WEB_API_ORIGIN: plain(fixtureOrigin),
       FINANCE_APP_URL: plain(options.financeOrigin),
       NEXT_PUBLIC_SUPABASE_URL: plain(fixtureOrigin),

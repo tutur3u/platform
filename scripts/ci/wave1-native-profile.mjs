@@ -262,6 +262,9 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
     vars: { ...vars },
     observability: { enabled: true, head_sampling_rate: 0.05 },
   };
+  // Admitted source services (only the shared abuse guard) publish as emitted.
+  const services = recipe.cf.admittedSourceServices ?? [];
+  if (services.length) config.services = services.map((s) => ({ ...s }));
   if (!production) assertStagingIsolation(config);
   return config;
 }

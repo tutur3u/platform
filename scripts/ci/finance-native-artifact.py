@@ -15,6 +15,15 @@ PUBLIC_FILES = tuple(sorted(
     path.relative_to(PUBLIC_ROOT).as_posix()
     for path in PUBLIC_ROOT.rglob("*") if path.is_file()
 ))
+# No staging abuse-guard Worker exists in source: every profile binds the
+# shared guard, the only service binding a Finance artifact may carry.
+SERVICES = [
+    {
+        "binding": "ABUSE_GUARD",
+        "service": "tuturuuu-abuse-guard",
+        "entrypoint": "AbuseGuardEntrypoint",
+    },
+]
 
 
 def profile(name=None):
@@ -77,7 +86,11 @@ def load(name=None):
         "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
         "vars": dict(selected["vars"]),
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": worker}
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": worker,
+        "services": SERVICES,
+    }
     module.RECEIPT = "finance-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     validate_output = module.validate_output

@@ -18,6 +18,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 import {
   FIXTURE,
@@ -131,6 +132,14 @@ test(
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
     assert.equal(config.preview_urls, false);
     assert.equal(config.vars?.TUTURUUU_NOINDEX, production ? '0' : '1');
+    assert.equal(config.vars?.ABUSE_GUARD_FAMILIES, 'proxy');
+    assert.deepEqual(config.services, [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ]);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -141,11 +150,13 @@ test(
     // Every outbound request is denied and recorded; nothing leaves the host.
     const egress = [];
     const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, staged.registry);
     const worker = await sdk.unstable_startWorker({
       config: staged.configPath,
       envFiles: [staged.envFile],
       sendMetrics: false,
       bindings: {
+        ...guardBindings,
         TUTURUUU_APP_COORDINATION_SECRET: {
           type: 'secret_text',
           value: 'synthetic-runtime-coordination-key',

@@ -50,7 +50,8 @@
           "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
           "MICROSOFT_REDIRECT_URI": "https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback",
           "TUTURUUU_NOINDEX": "0",
-          "TTR_ONE_ORIGIN_CALENDAR": "shadow"
+          "TTR_ONE_ORIGIN_CALENDAR": "shadow",
+          "ABUSE_GUARD_FAMILIES": "proxy"
         },
         "publicInputPins": [],
         "publicationPolicyKey": "productionPublicationPolicy",
@@ -84,7 +85,7 @@
           "doctorExpectations": {
             "expectRedirect": true
           },
-          "sourceVars": {},
+          "sourceVars": { "ABUSE_GUARD_FAMILIES": "proxy" },
           "stagingPublicationVars": {
             "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
             "NEXT_PUBLIC_APP_URL": "https://{{host}}",
@@ -93,9 +94,16 @@
             "GOOGLE_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/callback",
             "MICROSOFT_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/microsoft/callback",
             "TUTURUUU_NOINDEX": "1",
-            "TTR_ONE_ORIGIN_CALENDAR": "off"
+            "TTR_ONE_ORIGIN_CALENDAR": "off",
+            "ABUSE_GUARD_FAMILIES": "proxy"
           },
-          "admittedSourceServices": []
+          "admittedSourceServices": [
+            {
+              "binding": "ABUSE_GUARD",
+              "service": "tuturuuu-abuse-guard",
+              "entrypoint": "AbuseGuardEntrypoint"
+            }
+          ]
         }
       }
     },
@@ -297,7 +305,8 @@
         "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
         "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
         "FINANCE_APP_URL": "https://finance.tuturuuu.com",
-        "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+        "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+        "ABUSE_GUARD_FAMILIES": "proxy"
       },
       "secrets": [
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -320,7 +329,8 @@
           "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
           "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
           "FINANCE_APP_URL": "https://finance.tuturuuu.com",
-          "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+          "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+          "ABUSE_GUARD_FAMILIES": "proxy"
         },
         "publicInputPins": ["https://nzamlzqfdwaaxdefwraj.supabase.co"],
         "publicationPolicyKey": "productionPublicationPolicy",
@@ -342,10 +352,17 @@
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
             "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
             "FINANCE_APP_URL": "https://finance.tuturuuu.com",
-            "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+            "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+            "ABUSE_GUARD_FAMILIES": "proxy"
           },
           "stagingPublicationVars": {},
-          "admittedSourceServices": []
+          "admittedSourceServices": [
+            {
+              "binding": "ABUSE_GUARD",
+              "service": "tuturuuu-abuse-guard",
+              "entrypoint": "AbuseGuardEntrypoint"
+            }
+          ]
         },
         "buildRecipe": {
           "appConfig": "apps/finance/void.config.ts",

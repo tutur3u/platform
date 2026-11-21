@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { config as proxyConfig, proxy } from '../src/proxy';
+import { configureTeachAbuseGuard } from '../src/runtime/abuse-guard';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
@@ -96,6 +97,7 @@ export default {
       const handler = isLms ? lmsHandler : legacyHandler;
       let response: Response;
       try {
+        configureTeachAbuseGuard(env);
         const staging =
           env.NODE_ENV !== 'production' && env.TUTURUUU_NOINDEX === '1';
         const admitted =

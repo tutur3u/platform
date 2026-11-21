@@ -106,6 +106,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Packet | `tools-cutover-packet` |
 | Smoke | `node scripts/cutover-smoke.mjs tools https://tools.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 ## 3. storefront
 
@@ -169,6 +170,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Smoke | `node scripts/cutover-smoke.mjs teach https://teach.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 | Note | Not restricted to its declared hosts: attach only the teach route. |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 ## 8. tasks
 
@@ -205,6 +207,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Packet | `finance-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs finance https://finance.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 ## 11. calendar
 
@@ -217,6 +220,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Packet | `wave1-cutover-packets` |
 | Smoke | `node scripts/cutover-smoke.mjs calendar https://calendar.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 ## 12. mail
 
@@ -253,6 +257,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Packet | `learn-start-void` |
 | Smoke | `node scripts/cutover-smoke.mjs learn https://learn.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 ## 15. chat
 
@@ -357,6 +362,7 @@ Each sealed artifact carries only its own environment's root host. `scripts/ci/m
 | Smoke | `node scripts/cutover-smoke.mjs git https://git.tuturuuu.com` |
 | Coordination secret | `TUTURUUU_APP_COORDINATION_SECRET` = exactly Web's signer value (the `SUPABASE_SECRET_KEY` value), plus the same `SUPABASE_SECRET_KEY`; never leave it unset |
 ## Inventory
+| Abuse guard | Service binding `ABUSE_GUARD` → `tuturuuu-abuse-guard` (`AbuseGuardEntrypoint`) in every sealed profile, text variable `ABUSE_GUARD_FAMILIES=proxy`, and secret `ABUSE_GUARD_KEY_PEPPER` (set by Web; not a deploy-required secret). The Worker installs the binding per request; without the pepper the `proxy` family is `off` and fails open, never falling back to the HTTP guard. |
 
 | Item | Value |
 | --- | --- |

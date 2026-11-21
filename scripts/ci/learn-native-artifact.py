@@ -14,6 +14,16 @@ PUBLIC_FILES = (
     "robots.txt",
     "sitemap.xml",
 )
+# No staging abuse-guard Worker exists in source: every profile binds the
+# shared guard, the only service binding a Learn artifact may carry.
+SERVICES = [
+    {
+        "binding": "ABUSE_GUARD",
+        "service": "tuturuuu-abuse-guard",
+        "entrypoint": "AbuseGuardEntrypoint",
+    },
+]
+ABUSE_GUARD_FAMILIES = "proxy"
 
 
 def load(profile="staging"):
@@ -29,8 +39,13 @@ def load(profile="staging"):
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": True,
+        "vars": {"TUTURUUU_NOINDEX": "1", "ABUSE_GUARD_FAMILIES": ABUSE_GUARD_FAMILIES},
     }
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.NORMALIZED_DEFAULTS = {
+        **module.NORMALIZED_DEFAULTS,
+        "topLevelName": WORKER,
+        "services": SERVICES,
+    }
     module.RECEIPT = "learn-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     if profile == "production":
@@ -44,6 +59,7 @@ def load(profile="staging"):
                 "TUTURUUU_REQUIRE_SECRETS": "1",
                 "NEXT_PUBLIC_APP_URL": "https://learn.tuturuuu.com",
                 "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+                "ABUSE_GUARD_FAMILIES": ABUSE_GUARD_FAMILIES,
             },
         }
         module.NORMALIZED_DEFAULTS = {

@@ -171,7 +171,7 @@ for (const [name, change, message] of [
       ...base,
       services: [{ binding: 'FOREIGN', service: 'tuturuuu-web' }],
     }),
-    /Unadmitted source resource: services/,
+    /Unexpected source service bindings/,
   ],
   [
     'a static asset fallback',
@@ -200,6 +200,13 @@ test('Finance secret names never duplicate a bound var', () => {
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     vars: financeVars,
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     assets: {
       binding: 'ASSETS',
       run_worker_first: true,

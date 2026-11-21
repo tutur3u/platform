@@ -25,6 +25,7 @@ import {
   CALENDAR_FUNCTION_BASE,
   CALENDAR_LEGACY_FUNCTION_BASE,
 } from './native-function-config';
+import { configureCalendarAbuseGuard } from './abuse-guard';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughCalendarProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
@@ -67,6 +68,8 @@ export async function handleCalendarRequest(
   ctx: CalendarExecutionContext,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
+  // Install the RPC guard binding before the proxy reads any guard family.
+  configureCalendarAbuseGuard(env);
   const nonce = createNonce();
   try {
     const response = await applyCalendarResponsePolicy(

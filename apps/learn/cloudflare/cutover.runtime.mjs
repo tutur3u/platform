@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 import { assertLmsMount } from './lms-mount-acceptance.mjs';
 
@@ -65,12 +66,14 @@ test(
       ])
     );
     const egress = [];
+    const registry = join(scratch, 'registry');
     const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
     const worker = await sdk.unstable_startWorker({
       config: local,
       envFiles: [envFile],
       sendMetrics: false,
-      bindings,
+      bindings: { ...guardBindings, ...bindings },
       build: { bundle: false, processEntrypoint: false },
       dev: {
         remote: false,
@@ -80,7 +83,7 @@ test(
         liveReload: false,
         generateTypes: false,
         enableContainers: false,
-        registry: join(scratch, 'registry'),
+        registry,
         server: { hostname: '127.0.0.1', port: 0 },
         inferOriginFromRoutes: false,
         routeRequestsByRoutes: false,

@@ -20,5 +20,15 @@ export default defineConfig({
       html_handling: 'none',
     },
     workers_dev: false,
+    // Proxy abuse-guard state over RPC (SR-951). Without ABUSE_GUARD_KEY_PEPPER
+    // the assigned proxy family reports `off` and the proxy fails open.
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
+    vars: { ABUSE_GUARD_FAMILIES: 'proxy' },
   },
 });

@@ -173,6 +173,7 @@ jobs:
       app: tools
       package: '@tuturuuu/tools'
       artifact-script: scripts/ci/tools-native-artifact.py
+      helper-tests: python3 scripts/ci/tools-native-artifact.test.py
       env-interface: ToolsGeneratedEnv
       worker-environment-type: ToolsEnvironment
       # No app test script: run the app's Vitest suite if it has one.

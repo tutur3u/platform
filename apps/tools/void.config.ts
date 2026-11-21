@@ -16,6 +16,8 @@ export default defineConfig({
     workers_dev: false,
     preview_urls: false,
     vars: profile.vars,
+    // Abuse-guard state for the proxy family over RPC (every profile).
+    services: profile.services,
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

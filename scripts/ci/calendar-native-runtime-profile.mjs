@@ -17,6 +17,11 @@ export async function inspectCalendarProfile(options, config) {
   assert.deepEqual(config, output.config, 'Calendar emitted config changed');
 }
 
+/** Same-process stand-in for the unreachable shared abuse guard. */
+export function abuseGuardUnavailableFixture() {
+  return new Response('abuse guard fixture', { status: 503 });
+}
+
 export function denyCalendarOutbound(unexpected) {
   return async (request) => {
     unexpected.push(new URL(request.url).origin);

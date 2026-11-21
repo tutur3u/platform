@@ -8,6 +8,7 @@ const financeVars = {
   NEXT_PUBLIC_APP_URL: 'https://finance.tuturuuu.com',
   FINANCE_APP_URL: 'https://finance.tuturuuu.com',
   NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
+  ABUSE_GUARD_FAMILIES: 'proxy',
 };
 function fixture(t, app = 'mail') {
   const dir = fs.realpathSync(
@@ -68,7 +69,20 @@ function fixture(t, app = 'mail') {
                 }
               : app === 'finance'
                 ? financeVars
-                : {},
+                : app === 'calendar'
+                  ? { ABUSE_GUARD_FAMILIES: 'proxy' }
+                  : {},
+      ...(app === 'calendar' || app === 'finance'
+        ? {
+            services: [
+              {
+                binding: 'ABUSE_GUARD',
+                service: 'tuturuuu-abuse-guard',
+                entrypoint: 'AbuseGuardEntrypoint',
+              },
+            ],
+          }
+        : {}),
       rules: [{ type: 'ESModule', globs: ['**/*.js'] }],
       assets: {
         directory: '../client',

@@ -20,11 +20,22 @@ import {
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 
 export const PRIVATE_CANARY = 'calendar_ci_private_canary_never_ship_349';
+// SR-951: the proxy family reaches the shared abuse guard over RPC only.
+export const CALENDAR_ABUSE_GUARD_SERVICES = Object.freeze([
+  Object.freeze({
+    binding: 'ABUSE_GUARD',
+    service: 'tuturuuu-abuse-guard',
+    entrypoint: 'AbuseGuardEntrypoint',
+  }),
+]);
+export const CALENDAR_SOURCE_VARS = Object.freeze({
+  ABUSE_GUARD_FAMILIES: 'proxy',
+});
 const EMPTY_RESOURCES = {
   ...Object.fromEntries(
     `workflows migrations kv_namespaces send_email connect
     r2_buckets d1_databases vectorize ai_search_namespaces ai_search agent_memory
-    hyperdrive services analytics_engine_datasets dispatch_namespaces
+    hyperdrive analytics_engine_datasets dispatch_namespaces
     mtls_certificates pipelines k2 secrets_store_secrets artifacts unsafe_hello_world
     flagship worker_loaders ratelimits vpc_services vpc_networks`
       .split(/\s+/)
@@ -153,6 +164,7 @@ function validateArtifact(directory, sealedNormalization) {
     'assets',
     'vars',
     'secrets',
+    'services',
     'env',
     'send_metrics',
     '$schema',
@@ -169,7 +181,14 @@ function validateArtifact(directory, sealedNormalization) {
         `resource registration forbidden: ${key}`
       );
   assert.ok(empty(config.env), 'named environments forbidden');
-  assert.ok(empty(config.vars), 'emitted vars require explicit review');
+  assert.ok(
+    isDeepStrictEqual(config.services, CALENDAR_ABUSE_GUARD_SERVICES),
+    'resource registration forbidden: services'
+  );
+  assert.ok(
+    isDeepStrictEqual(config.vars, CALENDAR_SOURCE_VARS),
+    'emitted vars require explicit review'
+  );
   assert.deepEqual(Object.keys(config.assets).sort(), [
     'binding',
     'directory',

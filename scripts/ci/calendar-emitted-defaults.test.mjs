@@ -113,6 +113,14 @@ function fixture(run) {
     compatibility_date: '2026-10-19',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
+    vars: { ABUSE_GUARD_FAMILIES: 'proxy' },
     assets: {
       binding: 'ASSETS',
       directory: '../client',

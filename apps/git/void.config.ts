@@ -16,6 +16,8 @@ export default defineConfig({
     workers_dev: false,
     preview_urls: false,
     vars: profile.vars,
+    // Abuse-guard proxy-family state over RPC (no shared signing secret).
+    services: profile.services,
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

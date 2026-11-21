@@ -85,6 +85,14 @@ function publicationEnvBindings(config) {
     env[name] = { type: 'text', value: String(value) };
   for (const name of config.secrets?.required ?? [])
     env[name] = { type: 'secret' };
+  for (const service of config.services ?? []) {
+    assert.ok(!Object.hasOwn(env, service.binding), `${service.binding} dup`);
+    env[service.binding] = {
+      type: 'worker',
+      worker: service.service,
+      ...(service.entrypoint ? { exportName: service.entrypoint } : {}),
+    };
+  }
   return env;
 }
 

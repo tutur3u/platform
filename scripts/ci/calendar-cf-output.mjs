@@ -158,7 +158,7 @@ function source(appDirectory, sourceSha, receiptPath) {
     compatibilityFlags: qualified.config.compatibility_flags,
     workersDev: qualified.config.workers_dev,
     assets: { runWorkerFirst: true, notFoundHandling: 'none' },
-    env: { ASSETS: { type: 'assets' } },
+    env: calendarEnvBindings(qualified.config),
     manifest: { type: 'complete', mainModule, modules },
   };
   return {
@@ -175,6 +175,22 @@ function source(appDirectory, sourceSha, receiptPath) {
     serverFiles,
     excluded,
   };
+}
+
+// The qualified config admits only the abuse-guard service and its family var.
+function calendarEnvBindings(config) {
+  const env = { ASSETS: { type: 'assets' } };
+  for (const [name, value] of Object.entries(config.vars ?? {}))
+    env[name] = { type: 'text', value: String(value) };
+  for (const service of config.services ?? []) {
+    assert.ok(!Object.hasOwn(env, service.binding), `${service.binding} dup`);
+    env[service.binding] = {
+      type: 'worker',
+      worker: service.service,
+      ...(service.entrypoint ? { exportName: service.entrypoint } : {}),
+    };
+  }
+  return env;
 }
 
 function expectedFiles(input) {

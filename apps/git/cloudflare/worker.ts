@@ -17,6 +17,7 @@ import { config as proxyConfig, proxy } from '../src/proxy';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import { configureGitAbuseGuard } from '../src/runtime/abuse-guard';
 
 export interface GitEnvironment {
   ASSETS: AssetsBinding;
@@ -95,6 +96,7 @@ async function render(
     if (!env.ASSETS || required.some((name) => !env[name]?.trim())) {
       throw new Error('Missing required Worker bindings');
     }
+    configureGitAbuseGuard(env);
     response = await (await handler())(request, env, ctx);
   } catch (error) {
     console.error('[start-bridge] worker failed', error);

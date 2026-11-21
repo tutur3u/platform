@@ -235,9 +235,12 @@ export async function inspectArtifact(options) {
   }
   const serviceNames = new Set();
   for (const service of config.services ?? []) {
-    closed(service, ['binding', 'service'], 'fixture service');
+    closed(service, ['binding', 'service', 'entrypoint'], 'fixture service');
     assert.equal(typeof service.binding, 'string');
     assert.equal(typeof service.service, 'string');
+    // A named entrypoint is still replaced by the same-process fixture.
+    if (Object.hasOwn(service, 'entrypoint'))
+      assert.equal(typeof service.entrypoint, 'string');
     assert.ok(!serviceNames.has(service.binding), 'Duplicate service');
     serviceNames.add(service.binding);
   }

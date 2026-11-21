@@ -51,10 +51,13 @@ test('ai allows TUTURUUU_NOINDEX=1 in source and release vars', () => {
 
 for (const [label, app, mutate] of [
   [
-    'calendar',
+    'a second calendar service',
     'calendar',
     (recipe) => {
-      recipe.cf.admittedSourceServices = [ABUSE_GUARD_SERVICE_BINDING];
+      recipe.cf.admittedSourceServices = [
+        ABUSE_GUARD_SERVICE_BINDING,
+        { binding: 'OTHER', service: 'tuturuuu-other' },
+      ];
     },
   ],
   [
@@ -108,7 +111,17 @@ test('rejects foreign service bindings during qualification', () => {
   );
 });
 
-test('abuse-guard admissions stay limited to nova and rewise', () => {
+test('calendar admits exactly the shared abuse guard', () => {
+  const recipe = policy.apps.calendar.releaseRecipe;
+  assert.deepEqual(recipe.cf.admittedSourceServices, [
+    ABUSE_GUARD_SERVICE_BINDING,
+  ]);
+  assert.equal(recipe.cf.sourceVars.ABUSE_GUARD_FAMILIES, 'proxy');
+  assert.equal(recipe.allowedVars.ABUSE_GUARD_FAMILIES, 'proxy');
+  assertSourceResources({ services: [ABUSE_GUARD_SERVICE_BINDING] }, recipe);
+});
+
+test('abuse-guard admissions stay limited to calendar, finance, nova and rewise', () => {
   assert.throws(() =>
     validateAdmittedSourceServices('ai', [ABUSE_GUARD_SERVICE_BINDING])
   );

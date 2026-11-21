@@ -9,7 +9,8 @@
       "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
       "NEXT_PUBLIC_APP_URL": "https://finance.tutur3u.com",
       "FINANCE_APP_URL": "https://finance.tutur3u.com",
-      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co"
+      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+      "ABUSE_GUARD_FAMILIES": "proxy"
     }
   },
   "production": {
@@ -20,7 +21,8 @@
       "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
       "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
       "FINANCE_APP_URL": "https://finance.tuturuuu.com",
-      "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+      "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
+      "ABUSE_GUARD_FAMILIES": "proxy"
     }
   }
 }
