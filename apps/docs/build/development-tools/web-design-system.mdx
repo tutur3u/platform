@@ -180,6 +180,11 @@ resizes or moves the page. Rules for any change to it:
 - The rail and the expanded panel are separate subtrees (keyed remount), because an
   element that exists in both states and changes position counts as a layout shift.
 - Async content inside the panel needs a fixed-size skeleton, not a pop-in.
+- Rail items render `SidebarNavigationItemContent` from
+  `@tuturuuu/ui/custom/satellite-navigation`: the icon over a one-line
+  `text-[10px]` caption, muted unless active, truncating inside the 4rem rail.
+  Keep the collapsed tooltip and `aria-label` with the full title. The nav grid
+  is `grid-cols-1` so a long caption cannot widen the rail.
 
 Verify with the headless harness, which mounts the real shared sidebar chrome with
 static fixtures, hovers the rail, and fails on any grid movement or on a

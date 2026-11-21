@@ -1,7 +1,7 @@
 ---
 title: 'Sidebar Navigation'
 description: 'How dashboard sidebar layout preferences work in apps/web.'
-updatedAt: "2026-05-27"
+updatedAt: "2026-11-21"
 audience: users
 ---
 
@@ -26,6 +26,17 @@ On desktop, **Expand on hover** keeps the sidebar open while a popover, menu,
 or dialog opened from it is active. After you dismiss the last overlay, the
 sidebar collapses if the pointer is outside it. This applies to Web, Workspace,
 and satellite dashboards that offer hover expansion.
+
+The collapsed rail shows each navigation item's name, and **Settings**, as a
+one-line caption under its icon, so the rail reads without hovering. Long names
+truncate; the item's tooltip and accessible name keep the full name. The rail
+stays 4rem wide, and collapsing remains a saved preference. This applies to Web,
+Workspace, and satellite dashboards that render items through the shared
+`NavLink`. Colab draws its own rail items and stays icon-only with tooltips.
+Footer actions (Upgrade, Feedback) and the account and notification controls
+stay icon-only with tooltips. Coverage: `packages/ui/src/components/ui/custom/nav-link.test.tsx`,
+`packages/satellite/src/components/sidebar-settings-button.test.tsx`, and the
+layout-shift harness in [Web design system](/build/development-tools/web-design-system#hover-expand-sidebar).
 
 ## Preference precedence
 

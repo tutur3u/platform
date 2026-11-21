@@ -33,7 +33,10 @@ import {
 } from '../dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import type { NavLink as NavLinkType } from './navigation';
-import { satelliteNavigationItemClass } from './satellite-navigation';
+import {
+  SidebarNavigationItemContent,
+  satelliteNavigationItemClass,
+} from './satellite-navigation';
 
 function matchesPathPrefix(targetPath: string, pathPrefix: string) {
   return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
@@ -165,21 +168,13 @@ export function NavLink({
 
   const content = (
     <>
-      <div
+      <SidebarNavigationItemContent
         key="nav-content"
-        className={cn(
-          'flex min-w-0 items-center gap-2',
-          isCollapsed ? 'justify-center' : 'flex-1'
-        )}
-      >
-        {icon && <span key="nav-icon">{icon}</span>}
-        <span
-          key="nav-title"
-          className={cn('truncate', isCollapsed && 'hidden')}
-        >
-          {title}
-        </span>
-      </div>
+        icon={icon}
+        isActive={Boolean(isActive)}
+        isCollapsed={isCollapsed}
+        title={title}
+      />
 
       {!isCollapsed && (
         <div className="ml-auto flex h-6 shrink-0 items-center gap-0.5">

@@ -1,7 +1,10 @@
 'use client';
 
 import { Settings } from '@tuturuuu/icons';
-import { satelliteNavigationItemClass } from '@tuturuuu/ui/custom/satellite-navigation';
+import {
+  SidebarNavigationItemContent,
+  satelliteNavigationItemClass,
+} from '@tuturuuu/ui/custom/satellite-navigation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 
 const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
@@ -32,10 +35,11 @@ export function SidebarSettingsButton({
       }
       type="button"
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <Settings className="size-4 shrink-0" />
-        {isCollapsed ? null : <span className="truncate">{label}</span>}
-      </span>
+      <SidebarNavigationItemContent
+        icon={<Settings className="size-4" />}
+        isCollapsed={isCollapsed}
+        title={label}
+      />
     </button>
   );
 

@@ -25,9 +25,13 @@ export function SidebarNavigation({
   return (
     <div
       data-collapsed={isCollapsed}
-      className={cn('group flex flex-col gap-y-0.5 p-2', className)}
+      className={cn(
+        'group flex flex-col gap-y-0.5',
+        isCollapsed ? 'px-1 py-2' : 'p-2',
+        className
+      )}
     >
-      <nav aria-label={label} className="grid gap-y-0.5">
+      <nav aria-label={label} className="grid grid-cols-1 gap-y-0.5">
         {links.map((link, index) => {
           if (!link) {
             return (
@@ -76,11 +80,51 @@ export function satelliteNavigationItemClass({
   isDisabled?: boolean;
 }) {
   return cn(
-    'group/navlink flex w-full cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
-    isCollapsed && 'justify-center',
+    'group/navlink flex w-full cursor-pointer items-center rounded-md py-2 font-medium text-sm',
+    isCollapsed ? 'flex-col justify-center px-1' : 'justify-between px-2',
     isActive && 'bg-accent text-accent-foreground',
     isDisabled
       ? 'cursor-not-allowed opacity-50'
       : 'hover:bg-accent hover:text-accent-foreground'
+  );
+}
+
+/**
+ * Icon and title of a sidebar item. The collapsed rail keeps the title as a
+ * one-line caption under the icon, so it reads without hovering; the item's
+ * tooltip still carries the full title when the caption truncates.
+ */
+export function SidebarNavigationItemContent({
+  icon,
+  title,
+  isCollapsed,
+  isActive,
+}: {
+  icon?: ReactNode;
+  title: string;
+  isCollapsed: boolean;
+  isActive?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex min-w-0 items-center',
+        isCollapsed ? 'w-full flex-col gap-1' : 'flex-1 gap-2'
+      )}
+    >
+      {icon && <span className="flex shrink-0">{icon}</span>}
+      <span
+        data-slot="sidebar-item-label"
+        className={cn(
+          'truncate',
+          isCollapsed && 'max-w-full text-[10px] leading-normal',
+          isCollapsed &&
+            !isActive &&
+            'text-muted-foreground group-hover/navlink:text-current group-focus-visible/navlink:text-current'
+        )}
+      >
+        {title}
+      </span>
+    </span>
   );
 }

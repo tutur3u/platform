@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NavLink } from './nav-link';
@@ -88,6 +88,73 @@ describe('NavLink', () => {
       'aria-label',
       'Boards'
     );
+  });
+
+  it('shows a one-line caption under the icon in the collapsed rail', () => {
+    navigationState.pathname = '/personal/calendar';
+
+    renderNavLink(
+      {
+        href: '/personal/calendar',
+        icon: <svg aria-hidden="true" data-testid="calendar-icon" />,
+        title: 'Calendar',
+      },
+      { isCollapsed: true }
+    );
+
+    const link = screen.getByRole('link', { name: 'Calendar' });
+    const label = within(link).getByText('Calendar');
+
+    expect(label).toBeVisible();
+    expect(label).toHaveAttribute('data-slot', 'sidebar-item-label');
+    expect(label).toHaveClass('truncate', 'text-[10px]');
+    expect(label).not.toHaveClass('text-muted-foreground');
+    expect(link).toHaveClass('flex-col', 'bg-accent');
+  });
+
+  it('mutes the collapsed caption of inactive links', () => {
+    renderNavLink(
+      { href: '/personal/calendar', title: 'Calendar' },
+      { isCollapsed: true }
+    );
+
+    expect(
+      within(screen.getByRole('link', { name: 'Calendar' })).getByText(
+        'Calendar'
+      )
+    ).toHaveClass('text-muted-foreground');
+  });
+
+  it('keeps the full title in the collapsed tooltip and the accessible name', async () => {
+    const title = 'Workspace analytics and reporting';
+
+    renderNavLink(
+      { href: '/personal/analytics', title },
+      { isCollapsed: true }
+    );
+
+    const link = screen.getByRole('link', { name: title });
+    expect(link).toHaveAccessibleName(title);
+    expect(within(link).getAllByText(title)).toHaveLength(1);
+
+    fireEvent.focus(link);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(title);
+  });
+
+  it('renders the title once when expanded, without a tooltip', () => {
+    renderNavLink({ href: '/personal/calendar', title: 'Calendar' });
+
+    const link = screen.getByRole('link', { name: 'Calendar' });
+
+    expect(link).not.toHaveAttribute('aria-label');
+    expect(within(link).getAllByText('Calendar')).toHaveLength(1);
+    expect(within(link).getByText('Calendar')).not.toHaveClass('text-[10px]');
+    expect(link).not.toHaveClass('flex-col');
+
+    fireEvent.focus(link);
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('does not prefetch external routes', () => {

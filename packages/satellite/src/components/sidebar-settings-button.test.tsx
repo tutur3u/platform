@@ -31,4 +31,17 @@ describe('SidebarSettingsButton', () => {
       unmount();
     }
   );
+
+  it('captions the collapsed rail button under its icon', () => {
+    const { container } = render(
+      <SidebarSettingsButton isCollapsed label="Settings" />
+    );
+
+    const button = within(container).getByRole('button', { name: 'Settings' });
+
+    expect(within(button).getByText('Settings').getAttribute('data-slot')).toBe(
+      'sidebar-item-label'
+    );
+    expect(within(button).getAllByText('Settings')).toHaveLength(1);
+  });
 });

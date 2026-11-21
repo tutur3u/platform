@@ -259,8 +259,8 @@ export function Structure({
                   {sidebarUtility && (
                     <div
                       className={cn(
-                        'flex border-foreground/10 border-t p-2',
-                        isCollapsed ? 'justify-center' : ''
+                        'flex border-foreground/10 border-t',
+                        isCollapsed ? 'justify-center px-1 py-2' : 'p-2'
                       )}
                     >
                       {sidebarUtility}

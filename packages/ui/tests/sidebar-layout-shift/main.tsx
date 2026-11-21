@@ -2,6 +2,7 @@
 import {
   Bell,
   Calendar,
+  ChartColumn,
   Clock,
   ListTodo,
   Settings,
@@ -12,11 +13,12 @@ import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-act
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import {
   SidebarNavigation,
+  SidebarNavigationItemContent,
   satelliteNavigationItemClass,
 } from '@tuturuuu/ui/custom/satellite-navigation';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { cn } from '@tuturuuu/utils/format';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { type ReactNode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
@@ -43,6 +45,11 @@ const links: NavLink[] = [
     icon: <Clock className="h-4 w-4" />,
   },
   { title: 'People', href: '/ws/people', icon: <Users className="h-4 w-4" /> },
+  {
+    title: 'Workspace analytics',
+    href: '/ws/analytics',
+    icon: <ChartColumn className="h-4 w-4" />,
+  },
 ];
 
 function SyntheticLink({
@@ -52,27 +59,27 @@ function SyntheticLink({
   link: NavLink;
   isCollapsed: boolean;
 }) {
-  return (
+  const isActive = link.href === pathname;
+  const anchor = (
     <a
       aria-label={isCollapsed ? link.title : undefined}
-      className={satelliteNavigationItemClass({
-        isCollapsed,
-        isActive: link.href === pathname,
-      })}
+      className={satelliteNavigationItemClass({ isCollapsed, isActive })}
       href={link.href}
     >
-      <div
-        className={cn(
-          'flex min-w-0 items-center gap-2',
-          isCollapsed ? 'justify-center' : 'flex-1'
-        )}
-      >
-        <span>{link.icon}</span>
-        <span className={cn('truncate', isCollapsed && 'hidden')}>
-          {link.title}
-        </span>
-      </div>
+      <SidebarNavigationItemContent
+        icon={link.icon}
+        isActive={isActive}
+        isCollapsed={isCollapsed}
+        title={link.title}
+      />
     </a>
+  );
+  if (!isCollapsed) return anchor;
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>{anchor}</TooltipTrigger>
+      <TooltipContent side="right">{link.title}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -205,7 +212,21 @@ function Harness() {
           wsId="ws"
         />
       }
-      sidebarUtility={<Settings className="size-4" />}
+      sidebarUtility={
+        <button
+          aria-label="Settings"
+          className={satelliteNavigationItemClass({
+            isCollapsed: shell.isCollapsed,
+          })}
+          type="button"
+        >
+          <SidebarNavigationItemContent
+            icon={<Settings className="size-4" />}
+            isCollapsed={shell.isCollapsed}
+            title="Settings"
+          />
+        </button>
+      }
       userPopover={shell.isCollapsed ? <Avatar /> : null}
     >
       <CalendarGrid />
