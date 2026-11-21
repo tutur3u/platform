@@ -67,6 +67,9 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
   pass while schema lookup fails. Capture the result with psql's `\gset` and
   reset the role before pgTAP assertions, rather than granting Auth access to
   the test extension.
+  The [privileged security fixtures](../../../../../apps/docs/reference/database/migrations-guide.mdx#privileged-security-fixtures)
+  use the disposable security-egress profile for Auth role switching and
+  migration replay.
 - Clear transaction-local JWT claims before privileged signup fixture inserts.
   `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
 - For finance aggregates, use two synthetic workspaces with unequal amounts.

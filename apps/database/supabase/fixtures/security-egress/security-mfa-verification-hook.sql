@@ -64,8 +64,10 @@ select is(
   'The hook pins the hardened pg_catalog, pg_temp search_path'
 );
 
+set local role supabase_auth_admin;
 insert into auth.users (id, email, email_confirmed_at) values
   ('e3000000-0000-0000-0000-000000000001', 'mfa-hook@example.test', now());
+reset role;
 
 create temporary table hook_results (n integer, result jsonb) on commit drop;
 
@@ -202,6 +204,7 @@ select throws_ok(
 
 reset role;
 
+select set_config('request.jwt.claims', '', true);
 set local role supabase_auth_admin;
 
 select public.hook_mfa_verification_attempt(

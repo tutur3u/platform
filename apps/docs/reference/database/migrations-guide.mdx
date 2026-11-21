@@ -1089,3 +1089,12 @@ depends on which record pins it.
    Records that carry a `line` (verified records, reviewed exceptions) also
    break on any line shift. Check by running the guards locally and confirming
    no pinned digest or line changed.
+
+### Privileged security fixtures
+
+`apps/database/supabase/fixtures/security-egress/` contains the Auth hook and
+role-quarantine pgTAP fixtures. The security-egress contract runner connects
+as `supabase_admin` for the Auth hook so it can assume `supabase_auth_admin`
+for signup and the direct hook check. It runs the quarantine fixture as the
+disposable database's `postgres` role and stages its tracked migration for
+the fixture's relative SQL include.

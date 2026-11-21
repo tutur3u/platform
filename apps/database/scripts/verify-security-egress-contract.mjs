@@ -48,16 +48,19 @@ const trackedFiles = execFileSync(
 )
   .split('\0')
   .filter(Boolean);
+const authHookFixture =
+  'fixtures/security-egress/security-mfa-verification-hook.sql';
 const fixtures = [
-  'security-egress-budgets.sql',
-  'security-mfa-verification-hook.sql',
-  'security-budget-entitlements.sql',
-  'security-user-email-helper.sql',
-  'security-notification-email-access.sql',
-  'security-definer-function-grants.sql',
-  'security-definer-search-paths.sql',
-  'security-definer-policy-callers.sql',
-  'security-definer-chat-access.sql',
+  'tests/security-egress-budgets.sql',
+  authHookFixture,
+  'tests/security-budget-entitlements.sql',
+  'tests/security-user-email-helper.sql',
+  'tests/security-notification-email-access.sql',
+  'tests/security-definer-function-grants.sql',
+  'tests/security-definer-search-paths.sql',
+  'tests/security-definer-policy-callers.sql',
+  'tests/security-definer-chat-access.sql',
+  'fixtures/security-egress/quarantine-orphan-role-permissions.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
@@ -66,7 +69,7 @@ const metadata = await stageDisposableProject({
   projectId: identity.projectId,
   basePort: ports.basePort,
   trackedFiles,
-  testPath: `supabase/tests/${fixtures[0]}`,
+  testPath: `supabase/${fixtures[0]}`,
   typegenOutput: 'packages/types/src/supabase.ts',
 });
 console.log(
@@ -101,11 +104,31 @@ const excluded =
 const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;
+    const fixtureRoot = '/tmp/security-egress-contract';
+    const quarantineMigration =
+      '20261030130950_quarantine_orphan_role_permissions.sql';
+    execFileSync('docker', [
+      'exec',
+      container,
+      'mkdir',
+      '-p',
+      `${fixtureRoot}/tests`,
+      `${fixtureRoot}/migrations`,
+    ]);
+    execFileSync('docker', [
+      'cp',
+      path.resolve(
+        metadata.disposableRoot,
+        'supabase/migrations',
+        quarantineMigration
+      ),
+      `${container}:${fixtureRoot}/migrations/${quarantineMigration}`,
+    ]);
     for (const fixture of fixtures) {
-      const target = '/tmp/security-egress-contract.sql';
+      const target = `${fixtureRoot}/tests/${path.basename(fixture)}`;
       execFileSync('docker', [
         'cp',
-        path.resolve(metadata.disposableRoot, 'supabase/tests', fixture),
+        path.resolve(metadata.disposableRoot, 'supabase', fixture),
         `${container}:${target}`,
       ]);
       const tap = execFileSync(
@@ -122,7 +145,7 @@ const runner = async (command, args, cwd) => {
           '-v',
           `security_exposed_schemas=${exposedSchemas}`,
           '-U',
-          'supabase_admin',
+          fixture === authHookFixture ? 'supabase_admin' : 'postgres',
           '--dbname',
           'postgres',
           '-f',
