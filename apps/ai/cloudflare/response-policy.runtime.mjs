@@ -40,9 +40,10 @@ test(
       for (const path of ['/api/build-info', '/api/private', '/vi']) {
         const response = await worker.request(`${base}${path}`, { host });
         if (path === '/api/build-info') assert.equal(response.status, 200);
-        assert.equal(
-          response.headers['content-security-policy'],
-          "frame-ancestors 'none'"
+        assert.match(
+          response.headers['content-security-policy'] ?? '',
+          /^script-src 'nonce-[A-Za-z0-9+/]{22}==' 'strict-dynamic'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'$/u,
+          `${host}${base}${path}: enforced nonce CSP`
         );
         assert.equal(response.headers['x-frame-options'], 'DENY');
         assert.equal(response.headers['x-content-type-options'], 'nosniff');
