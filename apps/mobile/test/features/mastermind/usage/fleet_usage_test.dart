@@ -12,57 +12,56 @@ void main() {
   test(
     'reads account scope and keeps unreported windows and prices absent',
     () {
-      final body = jsonDecode(
-        jsonEncode({
-          'receivedAt': '2026-11-21T11:25:00Z',
-          'snapshot': {
-            'v': 1,
-            'machines': [
-              {
-                'id': 'm4',
-                'label': 'M4',
-                'quota': {
-                  'kind': 'complete',
-                  'observedAt': '2026-11-21T11:24:00Z',
-                },
-                'accounting': {'kind': 'unavailable'},
-                'accounts': [
-                  {
-                    'id': 'codex',
-                    'provider': 'codex',
-                    'instance': 'Work',
-                    'email': 'owner@example.com',
-                    'plan': null,
-                    'checkedAt': '2026-11-21T18:24:00+07:00',
-                    'status': {'kind': 'limited', 'reason': 'weekly'},
-                    'windows': [
-                      {
-                        'kind': 'weekly',
-                        'usedPercent': 100,
-                        'resetsAt': '2026-11-21T19:24:00+07:00',
-                      },
-                    ],
-                  },
-                ],
-                'buckets': [
-                  {
-                    'day': '2026-11-21',
-                    'provider': 'codex',
-                    'model': 'fixture-model',
-                    'accountId': null,
-                    'uncachedInputTokens': 1,
-                    'cachedInputTokens': 0,
-                    'cacheCreationTokens': 0,
-                    'outputTokens': 1,
-                    'unpricedRecords': 1,
-                    'costUsd': null,
-                  },
-                ],
+      final fixture = {
+        'receivedAt': '2026-11-21T11:25:00Z',
+        'snapshot': {
+          'v': 1,
+          'machines': [
+            {
+              'id': 'm4',
+              'label': 'M4',
+              'quota': {
+                'kind': 'complete',
+                'observedAt': '2026-11-21T11:24:00Z',
               },
-            ],
-          },
-        }),
-      ) as Map<String, dynamic>;
+              'accounting': {'kind': 'unavailable'},
+              'accounts': [
+                {
+                  'id': 'codex',
+                  'provider': 'codex',
+                  'instance': 'Work',
+                  'email': 'owner@example.com',
+                  'plan': null,
+                  'checkedAt': '2026-11-21T18:24:00+07:00',
+                  'status': {'kind': 'limited', 'reason': 'weekly'},
+                  'windows': [
+                    {
+                      'kind': 'weekly',
+                      'usedPercent': 100,
+                      'resetsAt': '2026-11-21T19:24:00+07:00',
+                    },
+                  ],
+                },
+              ],
+              'buckets': [
+                {
+                  'day': '2026-11-21',
+                  'provider': 'codex',
+                  'model': 'fixture-model',
+                  'accountId': null,
+                  'uncachedInputTokens': 1,
+                  'cachedInputTokens': 0,
+                  'cacheCreationTokens': 0,
+                  'outputTokens': 1,
+                  'unpricedRecords': 1,
+                  'costUsd': null,
+                },
+              ],
+            },
+          ],
+        },
+      };
+      final body = jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>;
       final usage = FleetUsage.parse(body);
       final machine = usage.machines.single;
       final account = machine.accounts.single;
