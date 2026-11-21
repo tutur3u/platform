@@ -1,7 +1,7 @@
 ---
 title: "Start bridge (@tuturuuu/start-bridge)"
 description: "The frozen v0 contract for running Next App Router satellites on TanStack Start + Vite+ on Cloudflare, including the basePath and per-app session cookie rules."
-updatedAt: "2026-10-28"
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
@@ -180,7 +180,12 @@ Register once in each app adapter entrypoint, before requests or hydration.
 Browser adapters can register `appPath`, or `createApiPath(appApiPatterns,
 centralFirst)` when they also call Web-owned routes. The resolver applies to all
 relative internal-api calls, so mixed consumers must select their app-owned
-routes rather than prefix every route indiscriminately.
+routes rather than prefix every route indiscriminately. Learn, Teach, Nova
+and Admin do that with `mountedFetch` and `appApiPath` in
+`apps/<app>/src/lib/mounted-api.ts` (Admin is `apps/admin`).
+`scripts/check-mounted-client-api.js` rejects a new raw root-relative `/api`
+fetch or `href` in those apps unless the path is a verified Web passthrough
+in `scripts/mounted-client-api-allowlist.json`.
 
 Use the shared client for app settings and sync queries so the registered
 resolver selects the owning Worker. An absolute or root-relative browser

@@ -1,0 +1,53 @@
+{
+  "learn": [
+    {
+      "pattern": "/api/ai/chat",
+      "reason": "Web route apps/web/src/app/api/ai/chat/route.ts. Absent from learn appApiPatterns."
+    },
+    {
+      "pattern": "/api/ai/chat/new",
+      "reason": "Web route apps/web/src/app/api/ai/chat/new/route.ts. Absent from learn appApiPatterns."
+    }
+  ],
+  "teach": [],
+  "nova": [
+    {
+      "pattern": "/api/v1/users/me/profile",
+      "reason": "Web profile route. Absent from nova appApiPatterns."
+    },
+    {
+      "pattern": "/api/v1/users/me/email",
+      "reason": "Web email route. Absent from nova appApiPatterns."
+    },
+    {
+      "pattern": "/api/workspaces/[wsId]/accept-invite",
+      "reason": "Web workspace invite accept. Absent from nova appApiPatterns."
+    },
+    {
+      "pattern": "/api/workspaces/[wsId]/decline-invite",
+      "reason": "Web workspace invite decline. Absent from nova appApiPatterns."
+    },
+    {
+      "pattern": "/api/v1/nova/me/team",
+      "reason": "Web route apps/web/src/app/api/v1/nova/me/team/route.ts. Absent from nova appApiPatterns."
+    }
+  ],
+  "admin": [
+    {
+      "pattern": "/api/v1/proxy/tuturuuu",
+      "reason": "Web route apps/web/src/app/api/v1/proxy/tuturuuu/route.ts. Migration proxy stays on Web."
+    },
+    {
+      "pattern": "/api/workspaces/invitations",
+      "reason": "centralFirst Web reserved path from packages/utils/src/next-config.ts."
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/permissions",
+      "reason": "centralFirst Web reserved path from packages/utils/src/next-config.ts."
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/feedbacks",
+      "reason": "centralFirst Web reserved path from packages/utils/src/next-config.ts."
+    }
+  ]
+}

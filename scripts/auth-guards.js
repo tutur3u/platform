@@ -29,6 +29,12 @@ const AUTH_GUARDS = [
     script: 'scripts/check-public-schema-objects.js',
     summary: 'No new public relations; client access stays off moved tables',
   },
+  {
+    name: 'mounted-client-api',
+    script: 'scripts/check-mounted-client-api.js',
+    summary:
+      'Mounted satellite client /api calls use the app base, except verified Web passthroughs',
+  },
 ];
 
 const authGuardChecks = AUTH_GUARDS.map(({ name, script, summary }) => ({
