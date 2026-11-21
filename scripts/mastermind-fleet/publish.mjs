@@ -28,6 +28,7 @@ import {
 import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
 import { sendPoke } from './poke.mjs';
 import { fleetText } from './scrub.mjs';
+import { attachReviewAssets } from './review-extras.mjs';
 import { readTodayOutcomes } from './today-outcomes.mjs';
 import { usageCollector } from './usage-snapshot.mjs';
 
@@ -503,6 +504,17 @@ export async function runOnce({
   }
   rows = { ...rows, peers: peerResult.peers };
   const { decisions, skipped } = readDecisions(paths.openDir);
+  // Preview images upload before the snapshot that names them.
+  const assetsFile = path.join(paths.root, 'review-assets.json');
+  const priorAssets = readJson(assetsFile);
+  const assets = await attachReviewAssets(decisions, {
+    dir: path.join(paths.root, 'reviews'),
+    put: (assetPath, body) => call(web, 'PUT', assetPath, body),
+    uploaded: priorAssets,
+    now,
+  });
+  if (JSON.stringify(assets) !== JSON.stringify(priorAssets))
+    writePrivateJson(assetsFile, assets);
   const resolved = readResolved(paths.resolvedDir, now, readRegularText);
   const release = readRelease(paths.releaseFile, readRegularText);
   const built = buildFleetState(rows, {

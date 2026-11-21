@@ -88,10 +88,16 @@ export const POST = withSessionAuth<{ decisionId: string }>(
       };
       if (!decision) return closed('decision_closed');
       // "I signed in" exists only on login requests that are still open, and
-      // an ask's approve or hold never answers a login request.
+      // an ask's approve or hold never answers a login request. "Request
+      // changes" exists only on design reviews.
       if (
         (parsed.data.action === 'signed_in') !== (decision.kind === 'login') &&
         parsed.data.action !== 'reply'
+      )
+        return fleetError('invalid_answer', 422);
+      if (
+        parsed.data.action === 'request_changes' &&
+        decision.kind !== 'review'
       )
         return fleetError('invalid_answer', 422);
       if (

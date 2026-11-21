@@ -4,7 +4,8 @@ import { effectiveLoginState } from './login';
 /**
  * Header a client sends to declare optional snapshot features it can render,
  * as a comma-separated list. `login` = access-request cards with the
- * `signed_in` answer.
+ * `signed_in` answer; `review` = design-review cards with the
+ * `request_changes` answer.
  */
 export const FLEET_FEATURES_HEADER = 'x-mastermind-fleet-features';
 
@@ -23,29 +24,29 @@ export function parseFleetFeatures(value: string | null) {
  *   code, even when the publisher has stopped and the stored copy is old;
  * - clients without the `login` feature never see login requests, because
  *   their Approve and Hold would be refused and their parser would drop the
- *   `signed_in` receipt.
+ *   `signed_in` receipt;
+ * - clients without the `review` feature never see design reviews, which
+ *   they would show without the preview, the mockup link or Request changes.
  */
 export function fleetStateView(
   state: FleetState,
   { now = new Date(), features = new Set<string>() } = {}
 ): FleetState {
-  const login = features.has('login');
+  const visible = ({ kind }: { kind: string }) =>
+    (kind !== 'login' || features.has('login')) &&
+    (kind !== 'review' || features.has('review'));
   return {
     ...state,
-    decisions: state.decisions
-      .filter((decision) => login || decision.kind !== 'login')
-      .map((decision) => {
-        if (!decision.login) return decision;
-        const effective = effectiveLoginState(decision.login, now);
-        if (effective === decision.login.state) return decision;
-        const { url: _url, userCode: _userCode, ...rest } = decision.login;
-        return { ...decision, login: { ...rest, state: effective } };
-      }),
+    decisions: state.decisions.filter(visible).map((decision) => {
+      if (!decision.login) return decision;
+      const effective = effectiveLoginState(decision.login, now);
+      if (effective === decision.login.state) return decision;
+      const { url: _url, userCode: _userCode, ...rest } = decision.login;
+      return { ...decision, login: { ...rest, state: effective } };
+    }),
     ...(state.resolved
       ? {
-          resolved: state.resolved.filter(
-            (decision) => login || decision.kind !== 'login'
-          ),
+          resolved: state.resolved.filter(visible),
         }
       : {}),
   };

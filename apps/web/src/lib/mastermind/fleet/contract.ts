@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { fleetLoginSchema } from './login';
+import { fleetReviewSchema } from './review';
 import { scrubFleetText } from './scrub';
 
 /**
@@ -85,13 +86,14 @@ export const fleetDecisionOptionSchema = z.object({
   label: requiredText(60),
 });
 
-export const fleetDecisionKinds = ['ask', 'login'] as const;
+export const fleetDecisionKinds = ['ask', 'login', 'review'] as const;
 export type FleetDecisionKind = (typeof fleetDecisionKinds)[number];
 
 /**
  * Optional context fields (`why`, `defaultOutcome`, `requester`) and the
- * `login` kind are additive to v1: older clients ignore them and read a
- * login request as an ask with its title and body.
+ * `login` and `review` kinds are additive to v1: older clients ignore them,
+ * and the owner read hides login and review items from clients that do not
+ * declare the matching feature.
  */
 export const fleetDecisionSchema = z
   .object({
@@ -110,6 +112,7 @@ export const fleetDecisionSchema = z
     recommendedOptionId: slug.optional(),
     laneId: slug.optional(),
     login: fleetLoginSchema.optional(),
+    review: fleetReviewSchema.optional(),
     createdAt: isoTime,
     deadlineAt: isoTime.optional(),
   })
@@ -124,6 +127,10 @@ export const fleetDecisionSchema = z
   .refine((decision) => (decision.kind === 'login') === !!decision.login, {
     message: 'login kind and login payload go together',
     path: ['login'],
+  })
+  .refine((decision) => (decision.kind === 'review') === !!decision.review, {
+    message: 'review kind and review payload go together',
+    path: ['review'],
   });
 
 export const fleetAnswerChannels = [
@@ -228,12 +235,14 @@ export type FleetState = z.infer<typeof fleetStateSchema>;
 /**
  * `signed_in` is the owner's "I signed in" on a login request; the agent
  * still verifies the sign-in itself before the request reads as verified.
+ * `request_changes` answers a design review and carries the owner's notes.
  */
 export const fleetAnswerActions = [
   'approve',
   'hold',
   'reply',
   'signed_in',
+  'request_changes',
 ] as const;
 export type FleetAnswerAction = (typeof fleetAnswerActions)[number];
 
@@ -245,10 +254,12 @@ export const fleetAnswerInputSchema = z
     /** Body fallback for clients that cannot set the Idempotency-Key header. */
     idempotencyKey: z.string().optional(),
   })
-  .refine((input) => input.action !== 'reply' || !!input.text, {
-    message: 'reply needs text',
-    path: ['text'],
-  });
+  .refine(
+    (input) =>
+      (input.action !== 'reply' && input.action !== 'request_changes') ||
+      !!input.text,
+    { message: 'reply needs text', path: ['text'] }
+  );
 export type FleetAnswerInput = z.infer<typeof fleetAnswerInputSchema>;
 
 /**

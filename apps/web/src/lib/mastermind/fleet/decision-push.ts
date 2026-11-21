@@ -41,11 +41,12 @@ export async function notifyNewFleetDecision(
   const deadline = mastermindPushDeadline(FLEET_PUSH_BUDGET_MS);
   try {
     const current = await deadline.run(() => readFleetState(store));
-    // Login requests are left out: clients only see them after opting in
-    // with the fleet features header, so a push could open an Inbox without
-    // the item and spend the minute's slot meant for a visible ask.
+    // Login requests and design reviews are left out: clients only see them
+    // after opting in with the fleet features header, so a push could open
+    // an Inbox without the item and spend the minute's slot meant for a
+    // visible ask.
     const candidates = current?.state.decisions.filter(
-      ({ id, kind }) => newIds.has(id) && kind !== 'login'
+      ({ id, kind }) => newIds.has(id) && kind === 'ask'
     );
     if (!candidates?.length) return;
 

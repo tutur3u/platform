@@ -7,6 +7,7 @@
 // (scrub.mjs). The Web route remains the authority.
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseReview } from './review-extras.mjs';
 import { fleetText } from './scrub.mjs';
 
 const SLUG = /^[a-z0-9][a-z0-9._-]{0,63}$/;
@@ -40,6 +41,7 @@ const LOGIN_STATES = new Set([
 ]);
 const TERMINAL = new Set(['verified', 'expired', 'failed']);
 const CHANNELS = new Set(['mastermind', 'mobile', 'whatsapp', 'cli']);
+const V1_COUNTS = new Set(['running', 'waiting', 'queued', 'idle', 'failed']);
 
 function iso(value) {
   return typeof value === 'string' && !Number.isNaN(Date.parse(value))
@@ -157,6 +159,11 @@ export function parseDecisionExtras(raw, now = new Date()) {
     if (!login) return null;
     extras.kind = 'login';
     extras.login = login;
+  } else if (raw.kind === 'review') {
+    const review = parseReview(raw.review);
+    if (!review) return null;
+    extras.kind = 'review';
+    extras.review = review;
   } else if (raw.kind !== undefined && raw.kind !== 'ask') {
     return null;
   }
@@ -212,7 +219,7 @@ export function readResolved(dir, now = new Date(), readText = readUtf8) {
       const outcome = fleetText(raw.outcome, 60);
       out.push({
         id: raw.id,
-        kind: raw.kind === 'login' ? 'login' : 'ask',
+        kind: ['login', 'review'].includes(raw.kind) ? raw.kind : 'ask',
         title,
         ...(CHANNELS.has(raw.answeredVia)
           ? { answeredVia: raw.answeredVia }
@@ -304,7 +311,7 @@ export function readRelease(file, readText = readUtf8) {
 
 /**
  * The v1 core of a snapshot: no resolved history, release status, login
- * requests or decision context. Returns the same object when there is
+ * requests, design reviews, lane resolutions or decision context. Returns the same object when there is
  * nothing to strip.
  */
 export function baseFleetState(state) {
@@ -312,8 +319,16 @@ export function baseFleetState(state) {
     state.resolved ||
     state.release ||
     state.machines?.some((machine) => machine.todayOutcomes) ||
+    state.lanes?.some((lane) => lane.resolution) ||
+    Object.keys(state.counts ?? {}).some((key) => !V1_COUNTS.has(key)) ||
     state.decisions.some(
-      (d) => d.kind || d.login || d.why || d.defaultOutcome || d.requester
+      (d) =>
+        d.kind ||
+        d.login ||
+        d.review ||
+        d.why ||
+        d.defaultOutcome ||
+        d.requester
     );
   if (!hasExtras) return state;
   const { resolved: _resolved, release: _release, ...rest } = state;
@@ -326,12 +341,27 @@ export function baseFleetState(state) {
           ),
         }
       : {}),
+    ...(state.counts
+      ? {
+          counts: Object.fromEntries(
+            Object.entries(state.counts).filter(([key]) => V1_COUNTS.has(key))
+          ),
+        }
+      : {}),
+    ...(state.lanes
+      ? {
+          lanes: state.lanes.map(
+            ({ resolution: _resolution, ...lane }) => lane
+          ),
+        }
+      : {}),
     decisions: state.decisions
-      .filter((d) => d.kind !== 'login')
+      .filter((d) => d.kind !== 'login' && d.kind !== 'review')
       .map(
         ({
           kind: _kind,
           login: _login,
+          review: _review,
           why: _why,
           defaultOutcome: _default,
           requester: _requester,

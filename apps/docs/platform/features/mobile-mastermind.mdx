@@ -141,8 +141,9 @@ product rules of the shell entry and every tab.
 - **Decision context:** a decision may also carry `why` (why it is asked
   now), `defaultOutcome` (what happens at the deadline without an answer)
   and `requester` (the asking agent, lane or machine). All three are
-  scrubbed free text. `kind` is `ask` (default) or `login`. Older clients
-  ignore the extra fields and read a login request as an ask.
+  scrubbed free text. `kind` is `ask` (default), `login` or `review`. Older
+  clients ignore the extra fields, and the owner read hides login requests
+  and reviews from clients that do not declare the matching feature.
 - **Access requests (`kind: "login"`):** a CLI or provider on a fleet machine
   needs the owner's sign-in. `login` holds `service` (`github`,
   `cloudflare`, `vercel`, `claude`, `openai`, `google`, `apple`, `supabase`,
@@ -173,6 +174,41 @@ product rules of the shell entry and every tab.
   support with the `x-mastermind-fleet-features: login` request header; reads without it
   omit login requests, because older apps would offer Approve and Hold,
   which Web refuses for them.
+- **Design-review asks (`kind: "review"`):** <a id="design-review-asks"></a>
+  the orchestrator asks the owner to approve a design. The decision's
+  `title` names it and `why` summarizes it; `review` holds `mockupUrl` and an
+  optional `preview`. Neither link may point at an arbitrary origin.
+  `mockupUrl` must be https with no credentials, port or fragment, on a
+  `claude.ai` artifact path (`/artifact/`, `/code/artifact/`,
+  `/public/artifacts/`) or on `tuturuuu.com` or a subdomain. The preview is
+  either `{ "url": "https://<first-party host>/<name>.png|jpg|jpeg|webp" }`
+  (no query) or `{ "file": "<name>.png" }`, a bare file name in
+  `~/.local/share/fleet-sync/reviews/`. The publisher reads that file
+  without following links (a regular file this user owns, at most 200 KiB),
+  checks its PNG, JPEG or WebP signature, and uploads it with a signed `PUT
+  /api/v1/mastermind/fleet/review-assets/<sha256>` (`{ contentType, data }`,
+  base64). Web re-checks the size, the signature against the declared type
+  and the hash against the id, then keeps it for 7 days. At most 24 previews
+  are live at once (a compare-and-set index row counts them), so previews
+  can never fill the store's row budget that signed fleet calls need for
+  their nonces; a new one past the cap gets `429 asset_limit` and the
+  review publishes without it. Uploading a live id again renews it. The snapshot names it
+  as `{ source: "asset", assetId, contentType }`. The publisher uploads at
+  most three images per run, records them in `review-assets.json` and
+  uploads again after three days while the review is open. A preview that
+  cannot be read, checked or uploaded is dropped; the review stays. `GET` on
+  the asset route serves the image only to the fleet owner (same admission as
+  the state read), as `private` with `nosniff` and a sandboxing CSP. The owner
+  answers Approve (`approve`) or Request changes (`request_changes`, which
+  requires notes and is accepted only on a review); Hold and a free reply
+  stay available. Clients declare support with the `review` feature
+  (`x-mastermind-fleet-features: login,alerts,review`); reads without it omit
+  open and resolved reviews, and reviews never trigger a decision push.
+  Reviews share the 50-ask budget. A Web that predates reviews refuses the
+  snapshot with 422, and the v1 fallback leaves reviews out. Regression
+  coverage: `apps/web/src/lib/mastermind/fleet/review.test.ts`,
+  `apps/web/src/app/api/v1/mastermind/fleet/fleet-review-routes.test.ts`
+  and `scripts/mastermind-fleet/review-extras.test.mjs`.
 - **Resolved and release status:** the publisher adds decisions resolved in
   the last 24 hours from `decisions/resolved/<id>.json` (`id`, `title`,
   `kind`, `answeredVia` of `mastermind`, `mobile`, `whatsapp` or `cli`,
@@ -286,7 +322,7 @@ product rules of the shell entry and every tab.
   `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
   `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
-  `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
+  `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
   `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, and
   `private-files.mjs`, with the source commit in
