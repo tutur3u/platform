@@ -19,19 +19,90 @@ product rules of the shell entry and every tab.
 - **Source:** `scripts/mastermind-fleet/publish.mjs` runs on the orchestrator
   Mac every 30 seconds. It reads the local T3 state database read-only
   (`PRAGMA query_only`) and selects run statuses, thread titles, project names,
-  providers, models, lineage and peer-machine reachability. It never selects
-  message bodies, prompts, runtime requests or peer secrets. Thread ids leave
-  only as one-way `lane-<hash>` ids.
+  providers, models, lineage and the linked environments. It never selects
+  message bodies, prompts or runtime requests. Thread ids leave only as
+  one-way `lane-<hash>` ids.
+- **Linked machines:** threads on linked T3 environments never reach the local
+  database, so each run also asks every link in `peer_environment_links` for
+  its threads with MCP `t3_thread_list` (running, then waiting, then queued,
+  paged up to 300; then failed and idle threads that have a run and changed
+  in the last 24 hours, paged until the cutoff within the peer budget) and its
+  project names. Side chats are left out on every machine (T3's list omits
+  them, so the local count does too). Past a peer's 300-lane cap, its active
+  threads still count from T3's per-status totals. The list reports only a
+  thread's update time, so a metadata
+  edit on an older thread can count it as recent for a day. Replies
+  must answer the request's JSON-RPC id with a well-formed thread list (every
+  row and cursor checked), or the probe counts as failed and the last good
+  listing stays. It uses the credential the local T3 server already holds for
+  that link (`~/.t3/userdata/secrets/<secret_name>.bin`, opened without
+  following symlinks and refused unless it is a regular file owned by the
+  publisher's user with mode exactly 0600). Like T3 itself, it sends the
+  credential only to a link address (HTTPS, or HTTP to loopback or the
+  tailnet) whose unauthenticated `/.well-known/t3/environment` descriptor
+  answers with the link's environment id (probes race; matching addresses
+  are tried in link order), only for a fenced link (T3 treats an unfenced one
+  as expired from its link time), and only while the link's lease holds,
+  rechecked before every request: the database expiry,
+  or a later `T3-Link-Expires-At` renewal the peer returned for the same link
+  generation. It closes each MCP session and never writes the credential
+  anywhere. A run has one 25-second budget inside the 30-second tick: each
+  peer gets at most 10 seconds plus a 2-second close, the Web calls share the
+  rest and are skipped once it is spent, and a watchdog ends a run still
+  going at 29 seconds. Every file input (secret, config, decisions, cache,
+  stamp) opens without following links or blocking and must be a regular
+  file, so nothing planted at an input path can stall a run. No per-machine publisher or
+  extra secret exists: a newly linked environment appears on the next run.
+  Each lane carries the `machineId` of the machine it runs on, the same id
+  as that machine's entry: the slugged link label, plus an environment hash
+  when two machines' labels slug alike. A thread listed twice is counted once,
+  preferring the local row, then a live listing over a cached one. Past 32
+  machines, the extra machines are left out together with their lanes.
+- **Heartbeat:** a linked machine is `online` when it answered this run's
+  probe or within the last two minutes, `stale` while it has been silent for
+  up to 30 minutes, and `offline` after that or once its link has expired.
+  Silence is measured from the later of the last successful probe and T3's
+  own `last_reached_at`. Lanes from the last successful listing stay while
+  the machine is not offline and that listing is under 30 minutes old;
+  reachability alone never brings older lanes back. Both live in
+  `~/.local/share/fleet-sync/peer-cache.json` (mode 0600, keyed by link and
+  credential, so a re-linked machine starts fresh); a failed cache write
+  does not stop the publish. The orchestrator Mac is always `online`; the snapshot's
+  receive time carries its age. A probe refresh alone does not force a
+  publish; status changes and the two-minute heartbeat do.
 - **Counts:** a lane is one non-archived thread with an active run (running,
   waiting or queued) or a run in the last 24 hours (failed or idle). Threads
   with no run in 24 hours are not counted, so idle reflects recent work rather
-  than every thread ever created.
+  than every thread ever created. `counts` cover every collected lane before
+  the 300-lane cap; the cap keeps running, then waiting, queued, failed and
+  idle lanes, newest first (ties by lane id). The phone counts each machine's
+  active lanes from the list, so those counts stay exact unless more than 300
+  lanes are active fleet-wide; the publisher log reports per-machine active
+  totals from before the cap, and the snapshot carries no per-machine count
+  field yet. The body is
+  then fitted under 240 KiB (the route refuses over 256 KiB with 413) by
+  dropping idle and failed lanes, then decision bodies, then optional lane
+  detail (project, provider, model, parent, start time), then active lanes,
+  then the newest decisions; `counts` are kept, and the log's per-machine
+  counts come from the snapshot before trimming.
 - **Decisions:** the orchestrator writes one JSON file per open decision to
   `~/.local/share/fleet-sync/decisions/open/<id>.json` with `id` (lowercase
   slug), `title`, optional `body`, `urgency` (`urgent`, `high`, `normal`,
   `fyi`), up to six `options` (`{id, label}`), optional `recommendedOptionId`,
-  `laneId`, `deadlineAt`, and `createdAt`. Unreadable files are skipped and
-  only counted. Removing the file closes the decision on the next publish.
+  `laneId`, `deadlineAt`, and `createdAt` (any parseable timestamp; sent as
+  UTC ISO). Files with a bad id, no title, or no usable `createdAt`, and
+  unparseable files, are skipped and only counted (`skippedDecisions` in the
+  log); an unknown urgency becomes `normal`, and an option whose label
+  scrubs to nothing, an invalid recommendation, or a timestamp outside the
+  contract format (such as an extended year) is dropped. Every text field
+  leaves the publisher already run through the Web scrubber
+  (`scripts/mastermind-fleet/scrub.mjs`, kept identical to `scrub.ts` by
+  its test) at its contract cap until the server's own pass changes nothing,
+  with at most ten emoji counted after any regrouping: the Web edge guard
+  rejects the whole request with a 400 when any field has more than ten emoji
+  or any `title` or `label` exceeds 280 graphemes, and a required field the
+  route scrubs to nothing fails the whole snapshot with 422. Removing the
+  file closes the decision on the next publish.
 - **Decision notifications:** a newly published open decision can alert fleet
   owners with push enabled. The notification shows the scrubbed title and
   opens the Inbox. A shared one-minute cap limits bursts, and repeated
@@ -74,8 +145,14 @@ product rules of the shell entry and every tab.
   `~/.local/share/fleet-sync/publisher-secret` (mode 0600, at least 32
   characters). Optional `~/.local/share/fleet-sync/config.json` sets
   `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
-  `^\[Iris\]`). Schedule `node scripts/mastermind-fleet/publish.mjs --origin
-  https://tuturuuu.com` with launchd `StartInterval` 30; it logs counts only.
+  `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
+  installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
+  `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, with the source commit in
+  `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
+  `StartInterval` 30. Update it by copying those four files from `main` and
+  running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
+  It logs counts only, plus per-machine status and lane counts; failures log
+  the HTTP status in `logs/publisher.err.log`.
 - **Mobile surfaces:** Today shows a health hero (open decisions, then
   failures, then running work), Running/Waiting/Queued/Failed/Idle tiles that
   open Work filtered (`?state=`), up to three open decisions and every machine.
@@ -91,7 +168,14 @@ product rules of the shell entry and every tab.
   `apps/web/src/lib/mastermind/fleet/store.test.ts` (revisions, retries,
   pickups and racing answers), `apps/web/src/lib/mastermind/store.test.ts`
   (store resolution and push-event claims),
-  `apps/mastermind-store/src/*.test.ts`, `scripts/mastermind-fleet/*.test.mjs` and
+  `apps/mastermind-store/src/*.test.ts`, `scripts/mastermind-fleet/*.test.mjs`
+  (`fleet-state.test.mjs`: per-machine lanes and counts, the lane cap order;
+  `peer-lanes.test.mjs`: heartbeat classes, priority paging, malformed
+  replies, deadlines, credential and address checks; `publish.test.mjs`:
+  decision clipping and rejects, linked machine lanes end to end;
+  `scrub.test.mjs`: parity with the Web scrubber),
+  `apps/web/src/lib/mastermind/fleet/publisher-output.test.ts` (worst-case
+  publisher output through the real edge guard, contract and body cap) and
   `apps/mobile/test/features/mastermind/fleet/`.
 
 ## Native Worker live admission

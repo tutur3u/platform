@@ -4,6 +4,8 @@
 // route validates and scrubs again; see
 // apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync.
 import { createHash } from 'node:crypto';
+import { classifyPeer } from './peer-lanes.mjs';
+import { fleetText } from './scrub.mjs';
 
 export const ACTIVE_RUN_STATUSES = [
   'queued',
@@ -16,6 +18,7 @@ const STATE_ORDER = { running: 0, waiting: 1, queued: 2, failed: 3, idle: 4 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_LANES = 300;
 const MAX_MACHINES = 32;
+const ACTIVE_STATES = new Set(['running', 'waiting', 'queued']);
 
 export function opaqueId(prefix, value) {
   return `${prefix}-${createHash('sha256').update(String(value)).digest('hex').slice(0, 16)}`;
@@ -30,15 +33,35 @@ export function slugify(value, fallback = 'machine') {
   return slug || fallback;
 }
 
-/** Light first pass; the server scrub is authoritative. */
+/** Text as the Web route will store it, within the edge guard's limits. */
 export function tidyText(value, max) {
-  const text = String(value ?? '')
-    .replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, ' ')
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, ' ')
-    .replace(/(~|\.{1,2})?\/[\w.@-]+(\/[\w.@-]+)+\/?/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+  return fleetText(String(value ?? ''), max);
+}
+
+/**
+ * A contract timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`), or undefined for
+ * anything unparseable or outside years 0000-9999, which the schema refuses.
+ */
+export function isoTime(value) {
+  if (typeof value !== 'string' && !(value instanceof Date)) return undefined;
+  const ms = value instanceof Date ? value.getTime() : Date.parse(value);
+  if (Number.isNaN(ms)) return undefined;
+  const iso = new Date(ms).toISOString();
+  return /^\d{4}-\d{2}-\d{2}T/.test(iso) ? iso : undefined;
+}
+
+/** Newest first, then the opaque id, so equal rows order the same each run. */
+function compareLanes(a, b) {
+  return (
+    STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+    b.updatedAt.localeCompare(a.updatedAt) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+function optionalText(key, value, max) {
+  const text = tidyText(value, max);
+  return text ? { [key]: text } : {};
 }
 
 function runState(statuses) {
@@ -91,19 +114,31 @@ export function readFleetRows(db, now = new Date()) {
   }
   const peers = db
     .prepare(
-      `SELECT environment_id, label, last_reached_at
-         FROM peer_environment_links`
+      `SELECT environment_id, label, last_reached_at, secret_name, urls_json,
+              expires_at, linked_at, fenced
+         FROM peer_environment_links
+        ORDER BY linked_at, environment_id`
     )
     .all();
   return { active, recent, threads, peers };
 }
 
-function peerStatus(lastReachedAt, now) {
-  if (!lastReachedAt) return 'offline';
-  const age = now.getTime() - Date.parse(lastReachedAt);
-  if (age <= 10 * 60 * 1000) return 'online';
-  if (age <= 2 * 60 * 60 * 1000) return 'stale';
-  return 'offline';
+/**
+ * Machine ids for every peer, keyed by environment: the slugged label, or the
+ * label plus an environment hash when another machine already holds it.
+ */
+export function peerMachineIds(peers, localId) {
+  const taken = new Set([localId]);
+  const ids = new Map();
+  for (const peer of peers) {
+    const base = slugify(peer.label, opaqueId('machine', peer.environment_id));
+    let id = base;
+    for (let n = 0; taken.has(id); n++)
+      id = `${base.slice(0, 40)}-${opaqueId('m', `${peer.environment_id}:${n}`).slice(2, 10)}`;
+    taken.add(id);
+    ids.set(peer.environment_id, id);
+  }
+  return ids;
 }
 
 /**
@@ -135,6 +170,10 @@ export function buildFleetState(
 
   const lanes = [];
   const seen = new Set();
+  const pushLane = (threadId, title, lane) => {
+    seen.add(threadId);
+    lanes.push({ threadId, title, lane });
+  };
   const consider = (threadId, state, provider, startedAt) => {
     const thread = rows.threads.get(threadId);
     if (
@@ -144,28 +183,25 @@ export function buildFleetState(
       seen.has(threadId)
     )
       return;
-    seen.add(threadId);
+    const updatedAt = isoTime(thread.updated_at);
+    if (!updatedAt) return;
+    const started = isoTime(startedAt);
     const payload = parsePayload(thread.payload_json);
+    // T3's thread list leaves side chats out on every machine, so the local
+    // count does too.
+    if (payload?.lineage?.sideChat) return;
     const parent = payload?.lineage?.parentThreadId;
-    lanes.push({
-      threadId,
-      title: thread.title,
-      lane: {
-        id: opaqueId('lane', threadId),
-        title: tidyText(thread.title, 80) || 'Untitled lane',
-        ...(thread.project_title
-          ? { project: tidyText(thread.project_title, 40) }
-          : {}),
-        ...(provider ? { provider: tidyText(provider, 24) } : {}),
-        ...(payload?.modelSelection?.model
-          ? { model: tidyText(payload.modelSelection.model, 40) }
-          : {}),
-        machineId: localMachine.id,
-        state,
-        ...(parent ? { parentId: opaqueId('lane', parent) } : {}),
-        ...(startedAt ? { startedAt } : {}),
-        updatedAt: thread.updated_at,
-      },
+    pushLane(threadId, thread.title, {
+      id: opaqueId('lane', threadId),
+      title: tidyText(thread.title, 80) || 'Untitled lane',
+      ...optionalText('project', thread.project_title, 40),
+      ...optionalText('provider', provider, 24),
+      ...optionalText('model', payload?.modelSelection?.model, 40),
+      machineId: localMachine.id,
+      state,
+      ...(parent ? { parentId: opaqueId('lane', parent) } : {}),
+      ...(started ? { startedAt: started } : {}),
+      updatedAt,
     });
   };
 
@@ -186,16 +222,49 @@ export function buildFleetState(
     );
   }
 
+  // Threads on linked environments carry their own machine's id. Machines past
+  // the cap are left out with their lanes; a thread listed twice keeps the
+  // local row, then a live listing over a cached one.
+  const machineIds = peerMachineIds(rows.peers, localMachine.id);
+  const peers = rows.peers
+    .map((peer) => ({
+      ...peer,
+      machineId: machineIds.get(peer.environment_id),
+    }))
+    .slice(0, MAX_MACHINES - 1);
+  const byFreshness = [
+    ...peers.filter((peer) => peer.live !== false),
+    ...peers.filter((peer) => peer.live === false),
+  ];
+  for (const peer of byFreshness)
+    for (const thread of peer.threads ?? []) {
+      const updatedAt = isoTime(thread.updatedAt);
+      if (seen.has(thread.threadId) || !updatedAt) continue;
+      pushLane(thread.threadId, thread.title, {
+        id: opaqueId('lane', thread.threadId),
+        title: tidyText(thread.title, 80) || 'Untitled lane',
+        ...optionalText('project', thread.projectTitle, 40),
+        ...optionalText('provider', thread.provider, 24),
+        ...optionalText('model', thread.model, 40),
+        machineId: peer.machineId,
+        state: thread.state,
+        ...(thread.parentThreadId
+          ? { parentId: opaqueId('lane', thread.parentThreadId) }
+          : {}),
+        updatedAt,
+      });
+    }
+
   const counts = { running: 0, waiting: 0, queued: 0, idle: 0, failed: 0 };
   for (const { lane } of lanes) counts[lane.state] += 1;
+  for (const peer of peers)
+    for (const [state, extra] of Object.entries(peer.extraCounts ?? {}))
+      if (state in counts && Number.isInteger(extra) && extra > 0)
+        counts[state] += extra;
 
   const orchestratorEntry = lanes
     .filter((entry) => orchestratorPattern.test(entry.title))
-    .sort(
-      (a, b) =>
-        STATE_ORDER[a.lane.state] - STATE_ORDER[b.lane.state] ||
-        b.lane.updatedAt.localeCompare(a.lane.updatedAt)
-    )[0];
+    .sort((a, b) => compareLanes(a.lane, b.lane))[0];
   const orchestrator = {
     label: orchestratorLabel,
     state: !orchestratorEntry
@@ -213,11 +282,7 @@ export function buildFleetState(
 
   const sortedLanes = lanes
     .map((entry) => entry.lane)
-    .sort(
-      (a, b) =>
-        STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
-        b.updatedAt.localeCompare(a.updatedAt)
-    )
+    .sort(compareLanes)
     .slice(0, MAX_LANES);
 
   const machines = [
@@ -227,20 +292,35 @@ export function buildFleetState(
       // The publisher itself is the heartbeat; `receivedAt` carries its age.
       status: 'online',
     },
-    ...rows.peers.map((peer) => ({
-      id: slugify(peer.label, opaqueId('machine', peer.environment_id)),
-      label: tidyText(peer.label, 40) || 'Machine',
-      status: peerStatus(peer.last_reached_at, now),
-      ...(peer.last_reached_at ? { lastSeenAt: peer.last_reached_at } : {}),
-    })),
-  ]
-    .filter(
-      (machine, index, all) =>
-        all.findIndex((other) => other.id === machine.id) === index
-    )
-    .slice(0, MAX_MACHINES);
+    ...peers.map((peer) => {
+      const lastSeenAt = isoTime(peer.lastSeenAt ?? peer.last_reached_at);
+      return {
+        id: peer.machineId,
+        label: tidyText(peer.label, 40) || 'Machine',
+        status:
+          peer.status ??
+          classifyPeer(
+            { reachedNow: false, lastSeenAt, expiresAt: peer.expires_at },
+            now
+          ),
+        ...(lastSeenAt ? { lastSeenAt } : {}),
+      };
+    }),
+  ];
 
-  return {
+  // Every machine's active lanes before the cap, overflow included. Kept off
+  // the wire (non-enumerable): the contract has no per-machine count yet.
+  const machineActive = {};
+  for (const { lane } of lanes)
+    if (ACTIVE_STATES.has(lane.state))
+      machineActive[lane.machineId] = (machineActive[lane.machineId] ?? 0) + 1;
+  for (const peer of peers)
+    for (const [state, extra] of Object.entries(peer.extraCounts ?? {}))
+      if (ACTIVE_STATES.has(state) && Number.isInteger(extra) && extra > 0)
+        machineActive[peer.machineId] =
+          (machineActive[peer.machineId] ?? 0) + extra;
+
+  const state = {
     version: 1,
     generatedAt: now.toISOString(),
     orchestrator,
@@ -249,10 +329,17 @@ export function buildFleetState(
     lanes: sortedLanes,
     decisions,
   };
+  Object.defineProperty(state, 'machineActive', { value: machineActive });
+  return state;
 }
 
-/** Content hash that ignores `generatedAt`, for publish-on-change. */
+/** Content hash that ignores `generatedAt` and machine ages, for publish-on-change. */
 export function contentHash(state) {
   const { generatedAt: _generatedAt, ...content } = state;
+  // Every live probe refreshes `lastSeenAt`; the heartbeat publish carries
+  // it, so only a status change forces an early publish.
+  content.machines = content.machines.map(
+    ({ lastSeenAt: _lastSeenAt, ...machine }) => machine
+  );
   return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }

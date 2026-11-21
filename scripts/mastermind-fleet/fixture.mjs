@@ -1,4 +1,5 @@
 // Synthetic T3 state database for the fleet publisher tests.
+import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 
 export function fixtureDatabase() {
@@ -13,7 +14,9 @@ export function fixtureDatabase() {
     CREATE TABLE projection_projects (project_id TEXT PRIMARY KEY, title TEXT);
     CREATE TABLE peer_environment_links (
       environment_id TEXT PRIMARY KEY, label TEXT, last_reached_at TEXT,
-      secret_name TEXT);
+      secret_name TEXT, urls_json TEXT NOT NULL DEFAULT '[]',
+      linked_at TEXT NOT NULL DEFAULT '', expires_at TEXT,
+      fenced INTEGER NOT NULL DEFAULT 1);
     CREATE TABLE orchestration_v2_projection_messages (thread_id TEXT, text TEXT);
   `);
   db.prepare('INSERT INTO projection_projects VALUES (?, ?)').run(
@@ -141,20 +144,89 @@ export function fixtureDatabase() {
     null,
     '{}'
   );
-  db.prepare('INSERT INTO peer_environment_links VALUES (?, ?, ?, ?)').run(
+  db.prepare(
+    "INSERT INTO peer_environment_links (environment_id, label, last_reached_at, secret_name, urls_json, linked_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, '2026-12-20T00:00:00.000Z')"
+  ).run(
     'env-1',
     'MacStudio1',
     '2026-11-20T02:55:00.000Z',
-    'kept-out'
+    'peer-link-kept-out',
+    '["https://relay.example.test"]',
+    '2026-11-09T00:00:00.000Z'
   );
-  db.prepare('INSERT INTO peer_environment_links VALUES (?, ?, ?, ?)').run(
+  db.prepare(
+    "INSERT INTO peer_environment_links (environment_id, label, last_reached_at, secret_name, urls_json, linked_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, '2026-12-20T00:00:00.000Z')"
+  ).run(
     'env-2',
     'Old laptop',
     '2026-11-18T02:55:00.000Z',
-    'kept-out'
+    'kept-out',
+    '[]',
+    '2026-11-10T00:00:00.000Z'
   );
   db.prepare(
     'INSERT INTO orchestration_v2_projection_messages VALUES (?, ?)'
   ).run('t-run', 'PRIVATE CHAT BODY');
   return db;
+}
+
+/** A fake T3 peer speaking MCP streamable HTTP, keyed by origin. */
+export function fakePeers(byOrigin) {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    const { origin } = new URL(url);
+    const peer = byOrigin[origin];
+    calls.push({
+      origin,
+      method: init.method,
+      auth: init.headers.authorization,
+    });
+    assert.equal(init.redirect, 'error');
+    if (!peer || peer.down) throw new Error('unreachable');
+    if (new URL(url).pathname === '/.well-known/t3/environment') {
+      assert.equal(init.headers.authorization, undefined);
+      return Response.json({ environmentId: peer.environmentId });
+    }
+    if (init.headers.authorization !== `Bearer ${peer.token}`)
+      return new Response('{}', { status: 401 });
+    if (init.method === 'DELETE') {
+      peer.closed = (peer.closed ?? 0) + 1;
+      return new Response(null, { status: 204 });
+    }
+    const message = JSON.parse(init.body);
+    if (message.id === undefined) return new Response(null, { status: 202 });
+    let result = { protocolVersion: '2025-06-18', capabilities: {} };
+    if (message.method === 'tools/call') {
+      const { name, arguments: args } = message.params;
+      const payload =
+        name === 't3_project_list'
+          ? { projects: peer.projects ?? [], nextCursor: null }
+          : peer.list(args);
+      result = { content: [{ type: 'text', text: JSON.stringify(payload) }] };
+    }
+    const body = JSON.stringify({ jsonrpc: '2.0', id: message.id, result });
+    return new Response(peer.sse ? `event: message\ndata: ${body}\n\n` : body, {
+      headers: {
+        'content-type': peer.sse ? 'text/event-stream' : 'application/json',
+        'mcp-session-id': 'session-1',
+      },
+    });
+  };
+  return { calls, fetchImpl };
+}
+
+/** Answers t3_thread_list like T3: status filter, newest first, paged. */
+export function threadLister(threads) {
+  return (args) => {
+    const matching = threads
+      .filter((t) => !args.statuses || args.statuses.includes(t.status))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const start = args.cursor ?? 0;
+    const end = start + (args.limit ?? 20);
+    return {
+      threads: matching.slice(start, end),
+      nextCursor: end < matching.length ? end : null,
+      total: matching.length,
+    };
+  };
 }

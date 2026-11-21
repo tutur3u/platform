@@ -4,8 +4,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fixtureDatabase } from './fixture.mjs';
-import { parseDecision, readSecret, runOnce, signRequest } from './publish.mjs';
+import { fakePeers, fixtureDatabase, threadLister } from './fixture.mjs';
+import {
+  fitToBudget,
+  parseDecision,
+  readDecisions,
+  readSecret,
+  runOnce,
+  signRequest,
+} from './publish.mjs';
 
 const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
 const NOW = new Date('2026-11-20T03:00:00.000Z');
@@ -20,8 +27,11 @@ function sandbox() {
     openDir: path.join(root, 'decisions/open'),
     answersDir: path.join(root, 'decisions/answers'),
     stampFile: path.join(root, 'last-publish.json'),
+    peerSecretsDir: path.join(root, 't3-secrets'),
+    peerCacheFile: path.join(root, 'peer-cache.json'),
   };
   fs.writeFileSync(paths.secretFile, SECRET, { mode: 0o600 });
+  fs.mkdirSync(paths.peerSecretsDir, { recursive: true });
   fs.mkdirSync(paths.openDir, { recursive: true });
   return paths;
 }
@@ -111,6 +121,96 @@ test('parses decision files and drops unusable ones', () => {
   );
 });
 
+test('clips decision text to the contract caps the edge guard accepts', () => {
+  const decision = parseDecision({
+    id: 'long',
+    title: 'Ship the release '.repeat(18),
+    body: 'Body text '.repeat(300),
+    urgency: 'urgent',
+    options: [{ id: 'go', label: 'Approve it '.repeat(30) }],
+    recommendedOptionId: 'go',
+    createdAt: '2026-11-21T09:00:00+07:00',
+  });
+  assert.ok(decision.title.length <= 120);
+  assert.ok(decision.title.endsWith('...'));
+  assert.ok(decision.body.length <= 600);
+  assert.ok(decision.options[0].label.length <= 60);
+  assert.equal(decision.recommendedOptionId, 'go');
+  assert.equal(decision.createdAt, '2026-11-21T02:00:00.000Z');
+});
+
+test('skips decision files the contract would reject and counts them', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fleet-open-'));
+  const write = (name, value) =>
+    fs.writeFileSync(
+      path.join(dir, name),
+      typeof value === 'string' ? value : JSON.stringify(value)
+    );
+  const base = { title: 'Ship?', createdAt: NOW.toISOString() };
+  write('ok.json', { id: 'ok', ...base });
+  write('upper.json', { id: 'Iris-Upper', ...base });
+  write('long-id.json', { id: 'x'.repeat(65), ...base });
+  write('no-time.json', { id: 'no-time', title: 'Ship?' });
+  write('bad-time.json', { id: 'bad-time', title: 'Ship?', createdAt: 'soon' });
+  write('broken.json', '{nope');
+  write('notes.txt', 'ignored');
+  const { decisions, skipped } = readDecisions(dir);
+  assert.deepEqual(
+    decisions.map((d) => d.id),
+    ['ok']
+  );
+  assert.equal(skipped, 5);
+});
+
+test('publishes lanes from linked machines with their machine ids', async () => {
+  const paths = sandbox();
+  fs.writeFileSync(
+    path.join(paths.peerSecretsDir, 'peer-link-kept-out.bin'),
+    'peer-token-0123456789abcdef',
+    { mode: 0o600 }
+  );
+  const peers = fakePeers({
+    'https://relay.example.test': {
+      environmentId: 'env-1',
+      token: 'peer-token-0123456789abcdef',
+      list: threadLister([
+        {
+          threadId: 'studio-1',
+          title: 'Studio lane',
+          status: 'running',
+          latestRunId: 'run-1',
+          projectId: 'p',
+          updatedAt: '2026-11-20T02:59:00.000Z',
+        },
+      ]),
+    },
+  });
+  const server = fakeServer([]);
+  const result = await runOnce({
+    paths,
+    origin: 'https://tuturuuu.com',
+    now: NOW,
+    fetchImpl: server.fetchImpl,
+    peerFetchImpl: peers.fetchImpl,
+    openDatabase: () => fixtureDatabase(),
+  });
+  const published = JSON.parse(server.calls[0].body);
+  const studio = published.lanes.find((lane) => lane.title === 'Studio lane');
+  assert.equal(studio.machineId, 'macstudio1');
+  assert.equal(
+    published.machines.find((m) => m.id === 'macstudio1').status,
+    'online'
+  );
+  assert.equal(published.counts.running, 3);
+  assert.deepEqual(result.machines.macstudio1, {
+    status: 'online',
+    active: 1,
+    lanes: 1,
+  });
+  assert.equal(fs.statSync(paths.peerCacheFile).mode & 0o777, 0o600);
+  assert.ok(!server.calls[0].body.includes('peer-token'));
+});
+
 test('publishes on change, heartbeats, and stores then acks answers', async () => {
   const paths = sandbox();
   fs.writeFileSync(
@@ -189,4 +289,93 @@ test('refuses a cleartext or path-bearing origin', async () => {
       /origin_must_be_https/
     );
   }
+});
+
+test('fits the body budget without dropping active lanes first', () => {
+  const lane = (i, state) => ({
+    id: `lane-${String(i).padStart(16, '0')}`,
+    title: 'x'.repeat(70),
+    machineId: 'macstudio1',
+    state,
+    updatedAt: NOW.toISOString(),
+  });
+  const state = {
+    version: 1,
+    lanes: [
+      ...Array.from({ length: 250 }, (_, i) => lane(i, 'running')),
+      ...Array.from({ length: 50 }, (_, i) => lane(300 + i, 'idle')),
+    ],
+    decisions: Array.from({ length: 50 }, (_, i) => ({
+      id: `d${i}`,
+      title: 'Decision',
+      body: '部'.repeat(600),
+    })),
+  };
+  const { state: fitted, bytes } = fitToBudget(state, 80 * 1024);
+  assert.ok(bytes <= 80 * 1024);
+  assert.equal(fitted.lanes.filter((l) => l.state === 'running').length, 250);
+  assert.equal(fitted.lanes.filter((l) => l.state === 'idle').length, 0);
+  assert.ok(fitted.decisions.every((d) => d.body === undefined));
+  assert.equal(fitted.decisions.length, 50);
+});
+
+test('compacts lane detail before dropping any active lane', () => {
+  const lane = (i) => ({
+    id: `lane-${String(i).padStart(16, '0')}`,
+    title: 'Running lane title',
+    project: '部'.repeat(40),
+    provider: 'p'.repeat(24),
+    model: 'm'.repeat(40),
+    machineId: 'macstudio1',
+    state: 'running',
+    updatedAt: NOW.toISOString(),
+  });
+  const state = {
+    version: 1,
+    lanes: Array.from({ length: 280 }, (_, i) => lane(i)),
+    decisions: Array.from({ length: 50 }, (_, i) => ({
+      id: `d${i}`,
+      title: '部'.repeat(118),
+      body: '部'.repeat(598),
+    })),
+  };
+  const { state: fitted, bytes } = fitToBudget(state, 96 * 1024);
+  assert.ok(bytes <= 96 * 1024);
+  assert.equal(fitted.lanes.length, 280);
+  assert.equal(fitted.lanes[0].project, undefined);
+});
+
+test('skips Web calls once the run budget is spent', async (t) => {
+  const paths = sandbox();
+  const server = fakeServer([]);
+  const realNow = Date.now;
+  let calls = 0;
+  t.mock.method(Date, 'now', () => realNow() + (calls++ > 0 ? 60_000 : 0));
+  await assert.rejects(
+    runOnce({
+      paths,
+      origin: 'https://tuturuuu.com',
+      now: NOW,
+      fetchImpl: server.fetchImpl,
+      openDatabase: () => fixtureDatabase(),
+    }),
+    /tick_budget_exhausted/
+  );
+  assert.equal(server.calls.length, 0);
+});
+
+test('skips a FIFO decision file without blocking', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fleet-fifo-'));
+  const { execFileSync } = await import('node:child_process');
+  execFileSync('mkfifo', [path.join(dir, 'stuck.json')]);
+  fs.writeFileSync(
+    path.join(dir, 'ok.json'),
+    JSON.stringify({ id: 'ok', title: 'Ship?', createdAt: NOW.toISOString() })
+  );
+  const { decisions, skipped } = readDecisions(dir);
+  assert.deepEqual(
+    decisions.map((d) => d.id),
+    ['ok']
+  );
+  assert.equal(skipped, 1);
 });
