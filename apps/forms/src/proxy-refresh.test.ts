@@ -45,7 +45,10 @@ describe('mounted Forms shared-session boundary', () => {
       new NextRequest(`https://tuturuuu.com${path}`, {
         method: path.includes('/api/') ? 'POST' : 'GET',
         nextConfig: { basePath: '/forms' },
-        headers: { cookie: 'sb-fixture-auth-token=shared' },
+        headers:
+          path.includes('/workspace/private') || path.includes('/verify-token')
+            ? {}
+            : { cookie: 'sb-fixture-auth-token=shared' },
       })
     );
     expect(pageAdapterMocks.refresh).not.toHaveBeenCalled();
@@ -60,11 +63,16 @@ describe('mounted Forms shared-session boundary', () => {
       expect(response.headers.get('location')).toBe(
         'https://tuturuuu.com/forms/f/share'
       );
-    else if (path.includes('/verify-token'))
-      expect(response.headers.get('location')).toBe(
-        'https://tuturuuu.com/forms/login'
+    else if (
+      path.includes('/verify-token') ||
+      path.includes('/workspace/private')
+    ) {
+      const login = new URL(response.headers.get('location') ?? '');
+      expect(login.origin + login.pathname).toBe('https://tuturuuu.com/login');
+      expect(new URL(login.searchParams.get('returnUrl') ?? '').pathname).toBe(
+        '/forms/verify-token'
       );
-    else expect(response.headers.get('x-middleware-next')).toBe('1');
+    } else expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
   it.each(['GET', 'POST'])(
@@ -85,15 +93,19 @@ describe('mounted Forms shared-session boundary', () => {
     }
   );
 
-  it('redirects an anonymous operator to the mounted login', async () => {
+  it('redirects an anonymous operator through Web login', async () => {
     const response = await proxy(
       new NextRequest('https://tuturuuu.com/forms/workspace/private?tab=one', {
         nextConfig: { basePath: '/forms' },
       })
     );
     const location = new URL(response.headers.get('location') ?? '');
-    expect(location.pathname).toBe('/forms/login');
-    expect(location.searchParams.get('next')).toBe(
+    expect(location.origin + location.pathname).toBe(
+      'https://tuturuuu.com/login'
+    );
+    const callback = new URL(location.searchParams.get('returnUrl') ?? '');
+    expect(callback.pathname).toBe('/forms/verify-token');
+    expect(callback.searchParams.get('nextUrl')).toBe(
       '/workspace/private?tab=one'
     );
     expect(pageAdapterMocks.continuation).not.toHaveBeenCalled();

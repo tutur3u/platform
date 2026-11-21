@@ -11,6 +11,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -80,7 +81,10 @@ function isProtectedPage(pathname: string) {
   return stripLocale(pathname).startsWith('/-/');
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'git' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = mountedAuth.isMounted(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     if (isPublicBuildInfoRequest(request)) return NextResponse.next();
 
@@ -89,10 +93,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
     const appSessionRefresh = isLocalAuthApi
       ? null
-      : await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'git',
-        });
+      : mounted
+        ? await mountedAuth.resolveSession(request)
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'git',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -131,6 +137,23 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
     return clearSupabaseAuthCookies(request, response);
+  }
+
+  if (mounted) {
+    if (
+      isProtectedPage(request.nextUrl.pathname) ||
+      ['/login', '/verify-token'].includes(
+        stripLocale(request.nextUrl.pathname)
+      )
+    ) {
+      const auth = await mountedAuth.auth(request);
+      if (auth.status >= 400 || auth.headers.has('location')) return auth;
+      const canonical = getCanonicalLocaleRedirect(request);
+      const response = canonical ?? intlMiddleware(request);
+      propagateAuthCookies(auth, response);
+      return response;
+    }
+    return getCanonicalLocaleRedirect(request) ?? intlMiddleware(request);
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

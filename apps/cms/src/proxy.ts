@@ -1,4 +1,3 @@
-import { mountedLogin } from './start-bridge/mounted-login';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -9,6 +8,7 @@ import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   preserveMfaRecoveryCookies,
@@ -73,10 +73,10 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'cms' });
+
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
-  const login = mountedLogin(req);
-  if (login) return login;
-  const mounted = Boolean(req.nextUrl.basePath);
+  const mounted = mountedAuth.isMounted(req);
   if (
     mounted &&
     [
@@ -111,12 +111,14 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       if (isBuildInfoRead) req.headers.delete('authorization');
     }
     const appSessionRefresh =
-      mounted || isLocalAuthApi || isBuildInfoRead || hasMachineKey
+      isLocalAuthApi || isBuildInfoRead || hasMachineKey
         ? null
-        : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
-            targetApp: 'cms',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(req)
+          : await refreshAppSessionForRequest(req, {
+              sessionMode: 'supabase-first',
+              targetApp: 'cms',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -147,13 +149,6 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (
-    mounted &&
-    /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
-  )
-    return NextResponse.redirect(
-      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
-    );
   const verifyTokenResponse = mounted
     ? null
     : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
@@ -162,7 +157,11 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = mounted ? NextResponse.next() : await authProxy(req);
+  const authRes = mounted
+    ? /^\/(?:en\/|vi\/)?play\//u.test(req.nextUrl.pathname)
+      ? NextResponse.next()
+      : await mountedAuth.auth(req)
+    : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it

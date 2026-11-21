@@ -1740,3 +1740,16 @@ For external script loaders, pass exact URLs through
 query parameters and cover rejection of sibling URLs. The default policy runs
 even during report-only rollout, so an incompatible loader needs this explicit
 configuration before traffic acceptance.
+
+### Mounted satellite proxy authentication
+
+Use `createMountedAppAuth` from `@tuturuuu/auth/proxy` for shared-origin page
+and API admission. Select it with `isMounted(request)`, resolve protected APIs
+with `resolveSession`, and send page/verify-token requests through `auth`.
+Keep public routes and machine transport exceptions explicit in the owning
+proxy. The factory requires the registered base and shared origin; it retains
+LMS aliases in the login callback. Its dependency argument accepts the shared
+resolver and verify consumer for focused tests. Do not refresh an access-token-only
+mounted session or create a separate mounted login redirect. See
+`apps/docs/platform/architecture/shared-session.mdx` and
+`packages/auth/src/proxy/mounted-app-auth.test.ts` for behavior and coverage.

@@ -21,7 +21,14 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasSupportedSupabaseAuthCookie: mocks.hasSession,
   hasWebAppSessionTokenFromRequest: () => false,
 }));
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async (actual) => ({
+  ...(await actual<typeof import('@tuturuuu/auth/proxy')>()),
+  createMountedAppAuth: () => ({
+    isMounted: (request: NextRequest) =>
+      request.nextUrl.origin === 'https://tuturuuu.com' &&
+      request.nextUrl.basePath === '/drive',
+    auth: async () => NextResponse.next(),
+  }),
   createCentralizedAuthProxy: () => async () => NextResponse.next(),
   consumeVerifyTokenRequest: async () => null,
   getRequestHeadersWithResponseCookies: (request: NextRequest) =>

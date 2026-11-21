@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
   resolveMountedSharedSession: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async (actual) => ({
+  ...(await actual<typeof import('@tuturuuu/auth/proxy')>()),
   consumeMountedSharedSession: (
     ...args: Parameters<typeof mocks.consumeMountedSharedSession>
   ) => mocks.consumeMountedSharedSession(...args),

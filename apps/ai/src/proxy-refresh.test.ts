@@ -46,8 +46,16 @@ const mountedHandler = createBridgeHandler({
 const ctx = { waitUntil(_work: Promise<unknown>) {} };
 describe('ai mount isolation', () => {
   it.each([
-    ['https://ai.tuturuuu.com/en/x', '/', 'https://ai.tuturuuu.com/x'],
-    ['https://tuturuuu.com/ai/en/x', '/ai', 'https://tuturuuu.com/ai/x'],
+    [
+      'https://ai.tuturuuu.com/en/auth-error',
+      '/',
+      'https://ai.tuturuuu.com/auth-error',
+    ],
+    [
+      'https://tuturuuu.com/ai/en/auth-error',
+      '/ai',
+      'https://tuturuuu.com/ai/auth-error',
+    ],
   ])(
     'canonicalizes locale with host-only cookies at %s',
     async (url, path, location) => {
@@ -72,7 +80,7 @@ describe('ai mount isolation', () => {
     );
     expect(await result.text()).toBe('/assets/chunk.js');
     const rendered = await mountedHandler(
-      new Request('https://tuturuuu.com/ai/login'),
+      new Request('https://tuturuuu.com/ai/auth-error'),
       {},
       ctx
     );

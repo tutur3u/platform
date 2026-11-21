@@ -11,7 +11,8 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   hasAuthenticatedBearerToken: () => false,
   isTrustedProxyBypassRequest: () => false,
 }));
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async (actual) => ({
+  ...(await actual<typeof import('@tuturuuu/auth/proxy')>()),
   appSessionFailureResponse: () =>
     NextResponse.json({ error: 'Missing app session' }, { status: 401 }),
   consumeVerifyTokenRequest: vi.fn(),

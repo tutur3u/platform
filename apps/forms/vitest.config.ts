@@ -20,6 +20,20 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/next',
+        replacement: new URL(
+          '../../packages/supabase/src/next',
+          import.meta.url
+        ).pathname,
+      },
+      {
+        find: '#secret-env',
+        replacement: new URL(
+          '../../packages/supabase/src/next/secret-env.ts',
+          import.meta.url
+        ).pathname,
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       // Resolve the mocked server boundary without building shared packages.
       {

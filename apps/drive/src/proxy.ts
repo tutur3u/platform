@@ -1,4 +1,3 @@
-import { mountedLogin } from './start-bridge/mounted-login';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -9,6 +8,7 @@ import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   preserveMfaRecoveryCookies,
@@ -55,9 +55,10 @@ function workspaceRedirectUrl(req: NextRequest, path: string) {
   return url;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'drive' });
+
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
-  const login = mountedLogin(req);
-  if (login) return login;
+  const mounted = mountedAuth.isMounted(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -76,10 +77,12 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     }
     const appSessionRefresh = isLocalAuthApi
       ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'drive',
-        });
+      : mounted
+        ? await mountedAuth.resolveSession(req)
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'drive',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -105,15 +108,17 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  const verifyTokenResponse = mounted
+    ? null
+    : await consumeVerifyTokenRequest(req, {
+        locales: supportedLocales,
+      });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted ? await mountedAuth.auth(req) : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it

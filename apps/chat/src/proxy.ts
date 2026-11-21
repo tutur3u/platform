@@ -1,4 +1,3 @@
-import { mountedLogin } from './start-bridge/mounted-login';
 import {
   getCanonicalLocaleCookieOptions,
   withCanonicalLocaleCookie,
@@ -11,6 +10,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -91,9 +91,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'chat' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
-  const login = mountedLogin(request);
-  if (login) return login;
+  const mounted = mountedAuth.isMounted(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
     const isBuildInfoRead =
@@ -108,10 +109,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'chat',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'chat',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -135,6 +138,15 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(request, NextResponse.next())
     );
+  }
+
+  if (mounted) {
+    const auth = await mountedAuth.auth(request);
+    if (auth.status >= 400 || auth.headers.has('location')) return auth;
+    const canonical = getCanonicalLocaleRedirect(request);
+    const response = canonical ?? intlMiddleware(request);
+    propagateAuthCookies(auth, response);
+    return response;
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

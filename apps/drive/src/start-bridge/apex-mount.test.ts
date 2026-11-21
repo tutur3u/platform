@@ -14,9 +14,11 @@ import { mountedLogin } from './mounted-login';
 vi.hoisted(() => {
   vi.stubEnv('VITE_DRIVE_NATIVE_PROFILE', 'production');
 });
-vi.mock('@tuturuuu/auth/proxy', async () =>
-  vi.importActual('../../../../packages/auth/src/proxy/redirect-path')
-);
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual(
+    '../../../../packages/auth/src/proxy/mounted-app-auth'
+  )),
+}));
 
 const app = 'drive';
 const base = '/drive';
@@ -34,7 +36,7 @@ function fixture() {
   };
   const proxy = vi.fn(async (request: NextRequest) => {
     seen.push(request);
-    const login = mountedLogin(request);
+    const login = await mountedLogin(request);
     if (login) return login;
     const response = NextResponse.next();
     response.cookies.set('NEXT_LOCALE', 'vi', {
@@ -157,10 +159,10 @@ describe('drive apex mount', () => {
       destination.pathname === base ||
         destination.pathname.startsWith(`${base}/`)
     ).toBe(true);
-    if (next === '/workspace?tab=one')
-      expect(destination.toString()).toBe(
-        `https://tuturuuu.com${base}/workspace?tab=one`
-      );
+    expect(destination.pathname).toBe(`${base}/verify-token`);
+    expect(destination.searchParams.get('nextUrl')).toBe(
+      next === '/workspace?tab=one' ? next : '/'
+    );
   });
 
   it('keeps root-mode URL and login handling intact', () => {

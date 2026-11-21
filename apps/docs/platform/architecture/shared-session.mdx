@@ -171,3 +171,27 @@ PostgREST and auth SDK clients with synthetic HTTP responses, exact CAS predicat
 version advancement and actual response Set-Cookie absence on failed CAS.
 `account-switch-auth.test.ts` covers pure expired-cookie reads, bounded refresh,
 and buffered installation. These fixtures do not establish deployed provider behavior.
+
+
+## Mounted satellite session readers
+
+Drive, Chat, CMS, Forms, Git, AI, Tasks, Learn, Nova and Teach use
+`createMountedAppAuth` from `@tuturuuu/auth/proxy` on the registered
+`https://tuturuuu.com` mount only. Admission requires both the shared origin and
+an app's registered base, including `/lms/learn` and `/lms/teach`. Subdomain
+requests retain their app-session authentication and refresh behavior.
+
+The mount reads Web's access-token-only provider session behind the app logout
+fence. It does not own a refresh token. Missing or expired credentials go to
+Web's `/login`, returning through the request's mounted `/verify-token` with an
+app-relative `nextUrl`. MFA refusal adds `mfa=required`; unavailable assurance
+returns a failure response instead of a login loop. Protected mounted APIs use
+the same resolver. Public Forms shares, CMS play pages, Git public pages, build
+metadata and independently authenticated machine endpoints retain their own
+access rules.
+
+`packages/auth/src/proxy/mounted-app-auth.test.ts` exercises the real shared
+resolver and mount registry with isolated provider and assurance suppliers.
+App `proxy-mounted.test.ts` suites cover page, verify-token and API wiring,
+expired-session refusal and subdomain refresh selection. Emitted Worker,
+staging and production acceptance remain separate delivery gates.

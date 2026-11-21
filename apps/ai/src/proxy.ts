@@ -10,6 +10,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -77,7 +78,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'ai' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = mountedAuth.isMounted(request);
   // Public AI endpoints authenticate exclusively with hash-only ttr_ai_ keys
   // or scoped, registered external-app tokens. They never inherit or refresh a
   // human browser session, but still pass the shared API abuse guard before
@@ -105,10 +109,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'ai',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'ai',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -135,6 +141,18 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(request, NextResponse.next())
     );
+  }
+
+  if (mounted) {
+    if (stripLocale(request.nextUrl.pathname) !== '/auth-error') {
+      const auth = await mountedAuth.auth(request);
+      if (auth.status >= 400 || auth.headers.has('location')) return auth;
+      const canonical = getCanonicalLocaleRedirect(request);
+      const response = canonical ?? intlMiddleware(request);
+      propagateAuthCookies(auth, response);
+      return response;
+    }
+    return getCanonicalLocaleRedirect(request) ?? intlMiddleware(request);
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

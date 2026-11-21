@@ -1,4 +1,3 @@
-import { mountedLogin } from './start-bridge/mounted-login';
 import { match } from '@formatjs/intl-localematcher';
 import {
   getCanonicalLocaleCookieOptions,
@@ -16,6 +15,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -223,10 +223,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'forms' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
-  const login = mountedLogin(request);
-  if (login) return login;
-  const mounted = Boolean(request.nextUrl.basePath);
+  const mounted = mountedAuth.isMounted(request);
   if (
     mounted &&
     [
@@ -254,15 +254,16 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
     const isPublicSharedFormApi = isPublicSharedFormApiRequest(request);
     const shouldRefreshAppSession =
-      !mounted &&
       !isBuildInfoRead &&
       !isLocalAuthApi &&
       (!isPublicSharedFormApi || hasApiSessionCredentials(request));
     const appSessionRefresh = shouldRefreshAppSession
-      ? await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'forms',
-        })
+      ? mounted
+        ? await mountedAuth.resolveSession(request)
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'forms',
+          })
       : null;
 
     if (appSessionRefresh && !appSessionRefresh.ok && !isPublicSharedFormApi) {
@@ -310,20 +311,17 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (mounted) {
     const path = stripLocale(request.nextUrl.pathname);
     if (
-      path === '/verify-token' ||
-      (!isPublicFormsPath(path) && !hasSupportedSupabaseAuthCookie(request))
+      !isPublicFormsPath(path) ||
+      path === '/login' ||
+      path === '/verify-token'
     ) {
-      const url = new URL(
-        withAppBase('/login', request.nextUrl.basePath),
-        request.nextUrl.origin
-      );
-      if (path !== '/verify-token') {
-        const next = getNextValue(request);
-        if (next) url.searchParams.set('next', next);
-      }
-      return NextResponse.redirect(url);
+      const auth = await mountedAuth.auth(request);
+      if (auth.status >= 400 || auth.headers.has('location')) return auth;
+      const response = intlMiddleware(request);
+      setLocaleCookie(response, request, getPreferredLocale(request));
+      propagateAuthCookies(auth, response);
+      return response;
     }
-    // Page loaders and API handlers validate the shared actor and membership.
     const response = intlMiddleware(request);
     setLocaleCookie(response, request, getPreferredLocale(request));
     return response;

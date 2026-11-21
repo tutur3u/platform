@@ -76,6 +76,7 @@ export {
   preserveMfaRecoveryCookies,
 } from './mfa-failure';
 export { consumeMountedSharedSession, resolveMountedSharedSession };
+export { createMountedAppAuth } from './mounted-app-auth';
 export {
   normalizeAuthRedirectPath,
   withRequestBasePath,
@@ -84,7 +85,6 @@ export {
   getRequestHeadersWithResponseCookies,
   propagateAuthCookies,
 } from './response-cookies';
-
 function shouldPreserveCentralLoopbackCookies(
   req: NextRequest,
   webAppUrl: string

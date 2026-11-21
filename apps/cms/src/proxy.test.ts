@@ -1,3 +1,5 @@
+import { createMountedAppAuth } from '../../../packages/auth/src/proxy/mounted-app-auth';
+import { consumeMountedSharedSession } from '../../../packages/auth/src/proxy/mounted-shared-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
@@ -8,6 +10,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     authProxy,
+    mountedSession: vi.fn(),
     providerUser: vi.fn(),
     providerClaims: vi.fn(),
     centralizedAuthOptions,
@@ -55,6 +58,17 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
   ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
     '@tuturuuu/auth/proxy'
   )),
+  createMountedAppAuth: (
+    options: Parameters<
+      typeof import('@tuturuuu/auth/proxy').createMountedAppAuth
+    >[0]
+  ) => {
+    const mounted = createMountedAppAuth(options, {
+      resolveMountedSharedSession: mocks.mountedSession,
+      consumeMountedSharedSession,
+    });
+    return mounted;
+  },
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),
@@ -135,6 +149,10 @@ describe('CMS proxy auth mode', () => {
     vi.clearAllMocks();
     mocks.guardApiProxyRequest.mockReset();
     mocks.authProxy.mockReturnValue(NextResponse.next());
+    mocks.mountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
@@ -183,9 +201,7 @@ describe('CMS proxy auth mode', () => {
     if (path.includes('/api/'))
       expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
     if (path.includes('verify-token'))
-      expect(response.headers.get('location')).toBe(
-        'https://tuturuuu.com/cms/login'
-      );
+      expect(response.headers.get('location')).toBe('https://tuturuuu.com/cms');
   });
 
   it.each(['refresh-app-session', 'verify-app-token', 'logout'])(
