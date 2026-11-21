@@ -62,6 +62,109 @@ const indirectIntlUsers = appDirectories
   .filter((file) => !intlEntryFiles.includes(file))
   .filter(usesNextIntlMiddleware);
 
+const LOCALE_COOKIE_HELPER = /with(?:Canonical|Secure)LocaleCookie\s*\(/u;
+const ENTRY_NAMES = ['proxy', 'middleware'] as const;
+
+/** Adoption is the exported proxy calling the helper, whatever the binding is called. */
+function exportsLocaleCookieProxy(source: string): boolean {
+  const bindings = [
+    ...source.matchAll(
+      /(?:export\s+)?(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*with(?:Canonical|Secure)LocaleCookie\s*\(/gu
+    ),
+  ].map((match) => match[1] ?? '');
+  const exportedBinding = bindings.some((name) => {
+    if (!ENTRY_NAMES.includes(name as (typeof ENTRY_NAMES)[number]))
+      return false;
+    return (
+      new RegExp(
+        `export\\s+(?:const|let)\\s+${name}\\s*=\\s*with(?:Canonical|Secure)LocaleCookie\\s*\\(`,
+        'u'
+      ).test(source) ||
+      new RegExp(`export\\s+default\\s+${name}\\b`, 'u').test(source) ||
+      new RegExp(`export\\s*\\{[^}]*\\b${name}\\b`, 'u').test(source)
+    );
+  });
+  if (exportedBinding) return true;
+  return ['proxy', 'middleware'].some((name) =>
+    exportedFunctionBodies(source, name).some(
+      (body) =>
+        LOCALE_COOKIE_HELPER.test(body) ||
+        bindings.some((binding) =>
+          new RegExp(`\\b${binding}\\s*\\(`, 'u').test(body)
+        )
+    )
+  );
+}
+
+function exportedFunctionBodies(source: string, name: string): string[] {
+  const header = new RegExp(
+    `export\\s+(?:default\\s+)?(?:async\\s+)?function\\s+${name}\\b[^{]*\\{`,
+    'gu'
+  );
+  const bodies: string[] = [];
+  for (const match of source.matchAll(header)) {
+    const open = (match.index ?? 0) + match[0].length - 1;
+    const body = braceBody(source, open);
+    if (body !== undefined) bodies.push(body);
+  }
+  return bodies;
+}
+
+function braceBody(source: string, open: number): string | undefined {
+  let depth = 0;
+  let quote: "'" | '"' | '`' | null = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let i = open; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (lineComment) {
+      if (ch === '\n') lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      if (ch === '*' && next === '/') {
+        blockComment = false;
+        i++;
+      }
+      continue;
+    }
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '/' && next === '/') {
+      lineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      blockComment = true;
+      i++;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return source.slice(open + 1, i);
+    }
+  }
+  return undefined;
+}
+
 describe('locale cookie scope adoption', () => {
   it('matches single- and double-quoted next-intl middleware imports', () => {
     expect(
@@ -86,15 +189,62 @@ describe('locale cookie scope adoption', () => {
     expect(intlEntryFiles.length).toBeGreaterThan(20);
   });
 
+  it('accepts a direct helper export', () => {
+    expect(
+      exportsLocaleCookieProxy(
+        'export const proxy = withCanonicalLocaleCookie(handle, origins);'
+      )
+    ).toBe(true);
+    expect(
+      exportsLocaleCookieProxy(
+        'export const middleware = withSecureLocaleCookie(handle, () => url);'
+      )
+    ).toBe(true);
+  });
+
+  it('accepts a default export of the helper binding', () => {
+    expect(
+      exportsLocaleCookieProxy(`
+        const proxy = withCanonicalLocaleCookie(handleProxy, origins);
+        export default proxy;
+      `)
+    ).toBe(true);
+  });
+
+  it('accepts an exported function that calls the helper binding', () => {
+    expect(
+      exportsLocaleCookieProxy(`
+        const localeProxy = withCanonicalLocaleCookie(handleProxy, origins);
+        export async function proxy(request: NextRequest) {
+          const response = await localeProxy(request);
+          return response;
+        }
+      `)
+    ).toBe(true);
+  });
+
+  it('rejects an exported function that does not call the helper', () => {
+    expect(
+      exportsLocaleCookieProxy(`
+        export async function proxy(request: NextRequest) {
+          return handle(request);
+        }
+      `)
+    ).toBe(false);
+    expect(
+      exportsLocaleCookieProxy(`
+        const localeProxy = withCanonicalLocaleCookie(handleProxy, origins);
+        export async function proxy(request: NextRequest) {
+          return handle(request);
+        }
+      `)
+    ).toBe(false);
+  });
+
   it.each(intlEntryFiles)('%s exports a locale-cookie-scoped proxy', (file) => {
     const source = readSource(file);
 
-    expect(source).toMatch(
-      /(?:export const (?:proxy|middleware)|const (?:proxy|middleware)) = with(?:Canonical|Secure)LocaleCookie\(/u
-    );
-    expect(source).not.toMatch(
-      /export (?:default )?(?:async )?function (?:proxy|middleware)\b/u
-    );
+    expect(exportsLocaleCookieProxy(source)).toBe(true);
     expect(source).not.toMatch(
       /getTuturuuuSharedCookieOptions\(\s*LOCALE_COOKIE_OPTIONS,\s*request\s*\)/u
     );

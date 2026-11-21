@@ -228,10 +228,10 @@
       "uses": 6,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7976",
-        "reason": "REV-7976: cutover workflow sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/0ffc9f660d10afd4f10647f4e1ee7631323ef198",
+        "reason": "The Admin move renames apps/infrastructure paths to apps/admin, including the emitted wrangler.json path. The token count stays 6, the workflow does not invoke wrangler, and the void-wave1 publication gap is unchanged."
       },
-      "digest": "efa9031808f00ca86fbcab9b90fd79bb1fa61fed456a8f144f50ebedae8968a6"
+      "digest": "f1bbb79935789b9bb7a8106062bfcb59bde67051151af1cd05b9f48c0c4c2fe9"
     },
     ".github/workflows/inventory-cloudflare.yaml": {
       "lines": 2,
@@ -523,6 +523,66 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "84a45aa3eccd3adcc2055ee0aa8ebc6fd719a2be57fd2643c383b7d3d61d0506"
+    },
+    "apps/admin/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/admin/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/admin/cloudflare/build-info-admin.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/admin/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/admin/cloudflare/production.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/admin/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7963",
+        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/ai/.gitignore": {
       "lines": 1,
@@ -924,6 +984,16 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/gateway/src/subdomain-redirect-worker.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/17ad3c716a4d27ddba972966804afa9d24f1d58a",
+        "reason": "The Worker entry comment names wrangler.subdomain-redirect.jsonc. That is a filename mention, not a CLI invocation, and the file makes no publish call. The pending-migration gap stays until this config moves to cf + Void."
+      },
+      "digest": "ec9875927d1f3f4874e828d176a1e5a5c75dd96bac40bb9a6354b7067b5c7d2a"
+    },
     "apps/gateway/wrangler.jsonc": {
       "lines": 1,
       "uses": 1,
@@ -933,6 +1003,16 @@
         "reason": "Gateway config comments describe binding-only Web routing: no WEB_ORIGIN, no passthrough mode, rollback by previous gateway version. No Wrangler command or publish call is added, so the file stays one config use and the pending-migration gap is unchanged."
       },
       "digest": "58d7cfc1d8d2debd2523b3a210736feaace8cd104371780e9dfa8815c98b356e"
+    },
+    "apps/gateway/wrangler.subdomain-redirect.jsonc": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/17ad3c716a4d27ddba972966804afa9d24f1d58a",
+        "reason": "New gateway config for the legacy apex redirect Worker. The filename is the only Wrangler use: the content has no wrangler token and the file makes no publish call. It stays on the pending-migration gap until cf + Void replaces it."
+      },
+      "digest": "bc94b232d9dc6689796e4159b6091eaf5bd823e2bcc77c171d8db58b035a8e36"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -1001,66 +1081,6 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/7950",
         "reason": "Start + Void candidate (#7950) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
-      },
-      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
-    },
-    "apps/admin/.gitignore": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7963",
-        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
-      },
-      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
-    },
-    "apps/admin/cloudflare/auth-redirect.runtime.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
-        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
-      },
-      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
-    },
-    "apps/admin/cloudflare/build-info-admin.runtime.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
-        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
-      },
-      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
-    },
-    "apps/admin/cloudflare/native-built-worker.runtime.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7963",
-        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
-      },
-      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
-    },
-    "apps/admin/cloudflare/production.runtime.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
-        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
-      },
-      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
-    },
-    "apps/admin/package.json": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7963",
-        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
@@ -2351,6 +2371,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "39ea56e901d0145136a7cb3a3f03a23fb34db384262143f6fab8fecd44c02beb"
+    },
+    "scripts/active-app-mounts.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "pending-migration",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/0547511481417732b2a68f7d2a8e3e9868fbdebb",
+        "reason": "The script comment and CONFIG path name apps/gateway/wrangler.jsonc. Both are path mentions, not CLI invocations, and the script makes no publish call. The mentions leave when that pending-migration config is renamed."
+      },
+      "digest": "1fa26a5dd1befe6553266c97ccc6a79b236fb460663f05257688c16efdadfb2e"
     },
     "scripts/cf-migration/app-safety.py": {
       "lines": 2,

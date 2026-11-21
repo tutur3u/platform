@@ -99,6 +99,28 @@ export async function loadWorker(app, result) {
       const values = { ...mocks };
       if (specifier === '../start-bridge.config')
         values.default = { mounts: {} };
+      if (specifier === '@tuturuuu/start-bridge/start/app-config') {
+        values.CSP_REPORT_PATH = '/api/csp-report';
+        values.collectDocumentSecurityReport = () =>
+          new Response(null, {
+            status: 204,
+            headers: { 'Cache-Control': 'no-store' },
+          });
+        values.secureBridgeDocument = (response) => response;
+      } else if (specifier === '@tuturuuu/start-bridge/csp') {
+        values.createNonce = () => 'fixture-nonce';
+        values.defaultContentSecurityPolicy = () => "default-src 'none'";
+      } else if (specifier === '@tuturuuu/start-bridge/mount-isolation') {
+        values.hasAmbiguousSupabaseSession = () => false;
+        values.isolateMountedRequest = (request) => request;
+        values.scopeMountedResponseCookies = (response) => response;
+        values.stripMountedSupabaseWrites = (response) => response;
+      } else if (specifier === '@tuturuuu/start-bridge/start/csrf-admission')
+        values.admitMountedMutation = () => null;
+      else if (
+        specifier === '@tuturuuu/start-bridge/start/mounted-session-guard'
+      )
+        values.stripMountedSessionWrites = (response) => response;
       return new SyntheticModule(Object.keys(values), function () {
         for (const [key, value] of Object.entries(values))
           this.setExport(key, value);
