@@ -31,6 +31,11 @@ import {
   routing,
   supportedLocales,
 } from './i18n/routing';
+import {
+  isMountedTeach,
+  mountedTeachAuth,
+  resolveMountedTeachSession,
+} from './lib/mounted-auth';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -154,6 +159,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = isMountedTeach(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -173,10 +179,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'teach',
-          });
+        : mounted
+          ? await resolveMountedTeachSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'teach',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -200,6 +208,17 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(request, NextResponse.next())
     );
+  }
+
+  if (mounted) {
+    const authRes = await mountedTeachAuth(request);
+    if (authRes.status >= 400 || authRes.headers.has('Location')) {
+      return authRes;
+    }
+    const response = intlMiddleware(request);
+    setLocaleCookie(response, request, getPreferredLocale(request));
+    propagateAuthCookies(authRes, response);
+    return response;
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

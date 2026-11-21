@@ -310,6 +310,13 @@ noindex. Git and AI mount regression coverage lives in their
 `src/proxy-refresh.test.ts` and login page tests; Apps covers its Worker boundary
 in `cloudflare/apex-mount.test.ts`.
 
+Learn, Nova and Teach read Web's shared access-token session on the apex mounts
+(`/learn`, `/nova`, `/teach`, and Learn's `/lms/learn` alias). They never refresh
+that session. Missing or expired sessions return through Web login and the same
+mount's `verify-token` callback; MFA challenges also go through Web. Subdomain
+requests retain their app-session authentication flow. Each app covers this
+boundary in `src/lib/mounted-auth.test.ts` and `src/proxy-mounted.test.ts`.
+
 ## Migrating the old subdomains
 
 ### Redirect rules

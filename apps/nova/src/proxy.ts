@@ -21,6 +21,11 @@ import {
 } from './constants/common';
 import { novaLegacyRedirect } from './start-bridge/legacy-redirect.mjs';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import {
+  isMountedNova,
+  mountedNovaAuth,
+  resolveMountedNovaSession,
+} from './lib/mounted-auth';
 
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
@@ -36,6 +41,7 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = isMountedNova(req);
   const legacy = novaLegacyRedirect(req);
   if (legacy) {
     return new NextResponse(null, {
@@ -60,10 +66,12 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead
         ? null
-        : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
-            targetApp: 'nova',
-          });
+        : mounted
+          ? await resolveMountedNovaSession(req)
+          : await refreshAppSessionForRequest(req, {
+              sessionMode: 'supabase-first',
+              targetApp: 'nova',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -92,15 +100,15 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
-  if (verifyTokenResponse) {
-    return verifyTokenResponse;
+  if (!mounted) {
+    const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
+      locales: supportedLocales,
+    });
+    if (verifyTokenResponse) return verifyTokenResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted ? await mountedNovaAuth(req) : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it

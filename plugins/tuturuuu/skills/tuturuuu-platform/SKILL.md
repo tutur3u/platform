@@ -11,6 +11,8 @@ load only the reference section needed by the affected surface.
 - `references/web-start-candidate.md`: default-off native Web slices, static HTML, staging acceptance and rollback.
 - `references/platform-patterns.md`: Cache Components, satellite actors, shared API
   boundaries, dashboard interaction, translations, and navigation.
+- `references/mounted-shared-session.md`: apex mount auth, Web login callbacks,
+  shared-session reads and subdomain refresh regression coverage.
 - `references/repository-workflows.md`: app ownership, settings shells, package
   commands, task capture, and coordination metadata.
 - `references/citation-integration.md`: citation snapshots, formatter injection,

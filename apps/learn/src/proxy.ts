@@ -22,6 +22,11 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+import {
+  isMountedLearn,
+  mountedLearnAuth,
+  resolveMountedLearnSession,
+} from './lib/mounted-auth';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -122,6 +127,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = isMountedLearn(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -152,10 +158,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead || verifiedBootstrapBearer
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'learn',
-          });
+        : mounted
+          ? await resolveMountedLearnSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'learn',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -179,6 +187,16 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(request, NextResponse.next())
     );
+  }
+
+  if (mounted) {
+    const authRes = await mountedLearnAuth(request);
+    if (authRes.status >= 400 || authRes.headers.has('Location')) {
+      return withInviteReferrerPolicy(request, authRes);
+    }
+    const response = withInviteReferrerPolicy(request, intlMiddleware(request));
+    propagateAuthCookies(authRes, response);
+    return response;
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

@@ -222,8 +222,15 @@ describe('Teach proxy local auth API guard', () => {
         nextConfig: { basePath: base },
       })
     );
-    expect(response.headers.get('location')).toBe(
-      `${origin}${base}/login?next=${encodeURIComponent(destination)}`
-    );
+    const expected = new URL(`${origin}${base}/login`);
+    if (base) {
+      expected.pathname = '/login';
+      const callback = new URL(`${base}/verify-token`, origin);
+      callback.searchParams.set('nextUrl', destination);
+      expected.searchParams.set('returnUrl', callback.href);
+    } else {
+      expected.searchParams.set('next', destination);
+    }
+    expect(response.headers.get('location')).toBe(expected.href);
   });
 });

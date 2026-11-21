@@ -235,10 +235,16 @@ describe('Learn proxy local auth API guard', () => {
         })
       );
 
-      const location = response.headers.get('location');
-      expect(location).toBe(
-        `${origin}${base}/login?next=${encodeURIComponent(invite)}`
-      );
+      const expected = new URL(`${origin}${base}/login`);
+      if (base) {
+        expected.pathname = '/login';
+        const callback = new URL(`${base}/verify-token`, origin);
+        callback.searchParams.set('nextUrl', invite);
+        expected.searchParams.set('returnUrl', callback.href);
+      } else {
+        expected.searchParams.set('next', invite);
+      }
+      expect(response.headers.get('location')).toBe(expected.href);
       expect(response.headers.get('referrer-policy')).toBe('no-referrer');
     }
   );
