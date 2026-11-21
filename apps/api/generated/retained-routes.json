@@ -244,7 +244,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/auth/callback/route.ts",
-    "sourceSha256": "8685290c09fa41462dfdd754590e098e0e54d7ae4ef504bc43e0eded94f7c39b",
+    "sourceSha256": "f14e7124f3e47d4ef04e70171752bb144f939f9c4e29509c5b61e38522d3bd71",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

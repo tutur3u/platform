@@ -213,6 +213,8 @@ export interface CreateCrossAppReturnUrlPayload {
 
 export interface CreateCrossAppReturnUrlResponse {
   appName?: string | null;
+  /** Machine-readable refusal, such as `MFA_REQUIRED` or `PKCE_REQUIRED`. */
+  code?: string;
   error?: string;
   returnUrl?: string;
   targetApp?: string;

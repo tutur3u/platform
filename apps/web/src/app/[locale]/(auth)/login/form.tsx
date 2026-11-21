@@ -43,7 +43,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
@@ -63,11 +62,8 @@ import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
-import {
-  isManagedTuturuuuHostname,
-  isRootTuturuuuHostname,
-  normalizeManagedTuturuuuReturnUrl,
-} from '@/lib/auth/managed-tuturuuu-return-url';
+import { buildOAuthCallbackUrl } from '@/lib/auth/oauth-callback-url';
+import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
 import {
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
@@ -75,6 +71,11 @@ import {
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
+import {
+  classifyCrossAppHandoff,
+  getConfirmedReturnKey,
+  withHandoffTimeout,
+} from './cross-app-handoff-outcome';
 import {
   InvalidReturnUrlWarning,
   type ReturnUrlFailureKind,
@@ -85,6 +86,13 @@ import {
 } from './login-email-mode';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
+import {
+  buildManagedTuturuuuCurrentReturnUrl,
+  getPlatformVerifyTokenNextPath,
+  getSafeLocalReturnPath,
+  getStaticReturnApp,
+  MANAGED_TUTURUUU_RETURN_APP,
+} from './return-url-helpers';
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
 import { SocialLoginButton } from './social-login-button';
 import {
@@ -95,11 +103,6 @@ import {
 import { useTurnstileRetry } from './use-turnstile-retry';
 import { useAutoOAuthLogin } from './use-auto-oauth-login';
 import { useDeferredAuthSurfaceRecovery } from './use-deferred-auth-surface-recovery';
-
-const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
-const MANAGED_TUTURUUU_RETURN_APP = 'managed-tuturuuu';
-const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
-const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
 const Turnstile = lazy(async () => {
   const { Turnstile: TurnstileComponent } =
@@ -175,79 +178,6 @@ function InternalAppAccountConfirmationFallback({
       onUseAnotherAccount={onUseAnotherAccount}
     />
   );
-}
-
-function getSafeLocalReturnPath(returnUrl: string | null | undefined) {
-  const normalizedReturnUrl = normalizeClientRedirectPath(
-    returnUrl,
-    INVALID_LOCAL_RETURN_URL
-  );
-
-  return normalizedReturnUrl === INVALID_LOCAL_RETURN_URL
-    ? null
-    : normalizedReturnUrl;
-}
-
-function getPlatformVerifyTokenNextPath(redirectUrl: URL) {
-  const pathSegments = redirectUrl.pathname.split('/').filter(Boolean);
-
-  if (pathSegments[pathSegments.length - 1] !== VERIFY_TOKEN_ROUTE_SEGMENT) {
-    return null;
-  }
-
-  return normalizeClientRedirectPath(
-    redirectUrl.searchParams.get('nextUrl'),
-    VERIFY_TOKEN_FALLBACK_PATH
-  );
-}
-
-function isLoginPath(pathname: string) {
-  const pathSegments = pathname.split('/').filter(Boolean);
-
-  return pathSegments[pathSegments.length - 1] === 'login';
-}
-
-function buildManagedTuturuuuCurrentReturnUrl() {
-  try {
-    const currentUrl = new URL(window.location.href);
-
-    if (
-      !isManagedTuturuuuHostname(currentUrl.hostname) ||
-      isRootTuturuuuHostname(currentUrl.hostname)
-    ) {
-      return null;
-    }
-
-    const rawNextPath =
-      currentUrl.searchParams.get('nextUrl') ??
-      currentUrl.searchParams.get('next') ??
-      (isLoginPath(currentUrl.pathname)
-        ? '/'
-        : `${currentUrl.pathname}${currentUrl.search}`);
-    const nextPath = normalizeClientRedirectPath(rawNextPath, '/');
-
-    return normalizeManagedTuturuuuReturnUrl(
-      new URL(nextPath, currentUrl.origin).toString()
-    );
-  } catch {
-    return null;
-  }
-}
-
-function getStaticReturnApp(
-  returnUrl: string | null | undefined,
-  localReturnPath: string | null
-) {
-  if (!returnUrl) return null;
-  if (localReturnPath) return 'web';
-
-  const appDomain =
-    getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
-  if (appDomain?.kind === 'internal') return appDomain.name;
-
-  return normalizeManagedTuturuuuReturnUrl(returnUrl)
-    ? MANAGED_TUTURUUU_RETURN_APP
-    : null;
 }
 
 type AuthStage = 'identify' | 'otp' | 'password';
@@ -470,6 +400,9 @@ export default function LoginForm({
   const [loading, setLoading] = useState(false);
   const [redirectingAfterAuth, setRedirectingAfterAuth] = useState(false);
   const redirectingAfterAuthRef = useRef(false);
+  const mfaStepUpAttemptedRef = useRef(false);
+  const confirmedReturnRef = useRef<string | null>(null);
+  const handoffInFlightRef = useRef(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authStage, setAuthStage] = useState<AuthStage>('identify');
   const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
@@ -767,7 +700,10 @@ export default function LoginForm({
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (
+      !user ||
+      confirmedReturnRef.current === getConfirmedReturnKey(user.id, returnUrl)
+    ) {
       return false;
     }
 
@@ -843,26 +779,46 @@ export default function LoginForm({
         return;
       }
 
-      const handoff = await createCrossAppReturnUrlWithInternalApi({
-        ...getCrossAppPkceParams(searchParams),
-        returnUrl,
-      }).catch(() => null);
-      if (!handoff?.returnUrl || !handoff.targetApp) {
-        markReturnUrlValidationFailure(
+      // Bootstrap effects can call this concurrently. One mint per attempt
+      // keeps a single step-up decision, and a minted handoff is never
+      // followed by a second one-time token while the browser navigates.
+      if (handoffInFlightRef.current) return;
+      handoffInFlightRef.current = true;
+      const handoff = await withHandoffTimeout(
+        createCrossAppReturnUrlWithInternalApi({
+          ...getCrossAppPkceParams(searchParams),
           returnUrl,
-          handoff?.error === 'Invalid returnUrl' ? 'invalid' : 'handoff'
-        );
+        })
+      ).catch(() => null);
+      const outcome = classifyCrossAppHandoff(handoff, {
+        stepUpAttempted: mfaStepUpAttemptedRef.current,
+      });
+      if (outcome.kind !== 'redirect') handoffInFlightRef.current = false;
+      if (outcome.kind === 'mfa_step_up') {
+        mfaStepUpAttemptedRef.current = true;
+        setConfirmingReturn(false);
+        setRedirectingAfterAuthState(false);
+        setLoading(false);
+        setRequiresMFA(true);
         return;
       }
-      const refreshCompleted = await supabase.auth.refreshSession().then(
-        () => true,
+      if (outcome.kind === 'failure') {
+        markReturnUrlValidationFailure(returnUrl, outcome.failure);
+        return;
+      }
+      const refreshCompleted = await withHandoffTimeout(
+        supabase.auth.refreshSession()
+      ).then(
+        (result: unknown) =>
+          !(result as { error?: unknown } | null | undefined)?.error,
         () => false
       );
       if (!refreshCompleted) {
+        handoffInFlightRef.current = false;
         markReturnUrlValidationFailure(returnUrl, 'refresh');
         return;
       }
-      window.location.assign(new URL(handoff.returnUrl).toString());
+      window.location.assign(new URL(outcome.returnUrl).toString());
       return;
     }
 
@@ -875,7 +831,13 @@ export default function LoginForm({
     }
 
     router.refresh();
-  }, [markReturnUrlValidationFailure, router, searchParams, supabase]);
+  }, [
+    markReturnUrlValidationFailure,
+    router,
+    searchParams,
+    setRedirectingAfterAuthState,
+    supabase,
+  ]);
 
   const completeMfaSignIn = useCallback(async () => {
     showRedirectingAfterAuth();
@@ -989,6 +951,12 @@ export default function LoginForm({
 
   const continueToInternalApp = useCallback(async () => {
     setConfirmingReturn(true);
+    // Only this explicit Continue confirms the return, for this account and
+    // this exact returnUrl; an MFA step-up after it does not ask again.
+    confirmedReturnRef.current = getConfirmedReturnKey(
+      user?.id,
+      searchParams.get('returnUrl')
+    );
 
     try {
       await processNextUrl();
@@ -1003,7 +971,7 @@ export default function LoginForm({
       toast.error(t('login.internal_app_continue_failed'));
       setConfirmingReturn(false);
     }
-  }, [markReturnUrlValidationFailure, processNextUrl, searchParams, t]);
+  }, [markReturnUrlValidationFailure, processNextUrl, searchParams, t, user]);
 
   const switchToStoredAccount = useCallback(
     async (accountId: string) => {
@@ -1312,34 +1280,18 @@ export default function LoginForm({
     }
   };
 
-  const buildOAuthRedirectUrl = useCallback(() => {
-    const returnUrl = searchParams.get('returnUrl');
-    const nextUrl = searchParams.get('nextUrl');
-    const multiAccount = searchParams.get('multiAccount');
-    const resolvedReturnUrl =
-      returnUrl ?? buildManagedTuturuuuCurrentReturnUrl();
-    const redirectUrl = new URL(
-      '/api/auth/callback',
-      resolveAuthRedirectOrigin({
-        currentOrigin: window.location.origin,
-        preserveCurrentManagedOrigin: true,
-      })
-    );
-
-    if (resolvedReturnUrl) {
-      redirectUrl.searchParams.set('returnUrl', resolvedReturnUrl);
-    }
-
-    if (nextUrl) {
-      redirectUrl.searchParams.set('nextUrl', nextUrl);
-    }
-
-    if (multiAccount === 'true') {
-      redirectUrl.searchParams.set('multiAccount', 'true');
-    }
-
-    return redirectUrl.toString();
-  }, [searchParams]);
+  const buildOAuthRedirectUrl = useCallback(
+    () =>
+      buildOAuthCallbackUrl({
+        callbackOrigin: resolveAuthRedirectOrigin({
+          currentOrigin: window.location.origin,
+          preserveCurrentManagedOrigin: true,
+        }),
+        fallbackReturnUrl: buildManagedTuturuuuCurrentReturnUrl(),
+        searchParams,
+      }),
+    [searchParams]
+  );
 
   const handleOAuthLogin = useCallback(
     async (provider: AuthOAuthProvider) => {

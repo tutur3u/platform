@@ -13,6 +13,7 @@ import {
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
+import { copyCrossAppPkceParams } from '@/lib/auth/oauth-callback-url';
 
 const queryParamsSchema = z.object({
   code: z.string().max(MAX_NAME_LENGTH).nullable(),
@@ -264,8 +265,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       if (validated.isExternal && validated.targetApp) {
         // External app - return to the login page first so the user confirms
         // the active platform account before a cross-app token is generated.
+        // Only a registered return target carries the app's S256 challenge
+        // back; cross-app-return revalidates both before minting.
         const loginUrl = new URL('/login', redirectOrigin);
         loginUrl.searchParams.set('returnUrl', validated.url);
+        copyCrossAppPkceParams(requestUrl.searchParams, loginUrl);
         return NextResponse.redirect(loginUrl);
       }
 
