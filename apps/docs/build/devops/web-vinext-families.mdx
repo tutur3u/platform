@@ -216,6 +216,9 @@ nothing populates the R2 store yet.
 
 ## Worker runtime behavior
 
+- `cloudflare.config.ts` enables Workers observability (logs at a head
+  sampling rate of 1, with invocation logs), so every family deploy keeps
+  requests and console output queryable in Workers Logs.
 - `cloudflare/vinext/worker-entry.ts` is the Worker entrypoint. It installs
   `cloudflare/vinext/workers-fetch.ts`, because workerd's fetch rejects every
   `cache` mode except `no-store` ("Unsupported cache mode"). The bundler

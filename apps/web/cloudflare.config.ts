@@ -29,6 +29,13 @@ export default defineConfig({
     compatibilityFlags: ['nodejs_compat'],
     workersDev: false,
     previewUrls: false,
+    // Every request and its console output stay queryable in Workers Logs;
+    // a deploy applies this, so it is not lost on redeploy.
+    observability: {
+      enabled: true,
+      headSamplingRate: 1,
+      logs: { enabled: true, headSamplingRate: 1, invocationLogs: true },
+    },
     assets: {
       htmlHandling: 'none',
       notFoundHandling: 'none',
