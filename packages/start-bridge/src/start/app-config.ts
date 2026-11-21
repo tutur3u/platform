@@ -1,6 +1,5 @@
 import { defaultContentSecurityPolicy } from '../core/csp';
 import { secureBridgeDocument } from '../core/document-security';
-import { resolveAppBase } from '../core/mounts';
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import {
   isolateMountedRequest,

@@ -181,16 +181,17 @@ export function resolveMountedAppFromUrl(
   if (url.origin !== SHARED_APP_ORIGIN) return null;
 
   let best: MountedAppMatch | null = null;
-  for (const [app, basePath] of Object.entries(ONE_ORIGIN_APP_BASE_PATHS)) {
-    if (!activeMounts.has(app) || !hasSegmentPrefix(url.pathname, basePath)) {
-      continue;
+  for (const app of Object.keys(ONE_ORIGIN_APP_BASE_PATHS)) {
+    if (!activeMounts.has(app)) continue;
+    for (const basePath of getAppMountBasePaths(app)) {
+      if (!hasSegmentPrefix(url.pathname, basePath)) continue;
+      if (best && best.basePath.length >= basePath.length) continue;
+      best = {
+        app: app as MountableAppName,
+        basePath,
+        appPath: url.pathname.slice(basePath.length) || '/',
+      };
     }
-    if (best && best.basePath.length >= basePath.length) continue;
-    best = {
-      app: app as MountableAppName,
-      basePath,
-      appPath: url.pathname.slice(basePath.length) || '/',
-    };
   }
   return best;
 }

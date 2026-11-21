@@ -1,4 +1,4 @@
-import { getAppBasePath, resolveMountedAppFromUrl } from './app-mounts';
+import { getAppMountBasePaths, resolveMountedAppFromUrl } from './app-mounts';
 import {
   type AppDomainUrlMatch,
   getAppDomainByUrl,
@@ -49,13 +49,15 @@ export function getMountedAppVerifyTokenMatch(
     return null;
 
   const url = new URL(platform.canonicalUrl);
-  const [segment, ...rest] = url.pathname
-    .replace(/\/$/, '')
-    .slice(1)
-    .split('/');
+  const pathname = url.pathname.replace(/\/$/, '');
+  const [segment = ''] = pathname.slice(1).split('/');
+  // Aliases (`/lms/learn`) resolve to their app; the callback tail is read
+  // relative to the base that matched, so an alias keeps its own base.
   const resolvedMount = resolveMountedAppFromUrl(url, activeMounts);
   const app = resolvedMount?.app ?? segment;
   const basePath = resolvedMount?.basePath ?? `/${segment}`;
+  // Empty segments are kept, so `//verify-token` never matches.
+  const rest = pathname.slice(basePath.length).split('/').slice(1);
   const tail =
     rest.length === 2 && LOCALE_SEGMENTS.has(rest[0] ?? '')
       ? rest.slice(1)
@@ -63,7 +65,7 @@ export function getMountedAppVerifyTokenMatch(
   if (
     !app ||
     app === 'platform' ||
-    basePath !== (getAppBasePath(app) ?? basePath) ||
+    !getAppMountBasePaths(app).includes(basePath) ||
     !activeMounts.has(app) ||
     tail.join('/') !== 'verify-token'
   )
