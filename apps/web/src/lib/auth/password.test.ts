@@ -352,6 +352,43 @@ describe('passwordLogin', () => {
       });
     });
 
+    it('issues a session-bound mobile client credential only to native requests', async () => {
+      const { passwordLogin } = await import('./password');
+      const { verifyMobileClientCredential } =
+        await import('./mobile-client-credential');
+      const sessionJwt = `${Buffer.from('{"alg":"HS256"}').toString('base64url')}.${Buffer.from(
+        JSON.stringify({ session_id: 'sess-1', sub: 'user-1' })
+      ).toString('base64url')}.sig`;
+      mocks.browserSignInWithPassword.mockResolvedValue({
+        data: {
+          session: { access_token: sessionJwt, refresh_token: 'refresh' },
+          user: { id: 'user-1' },
+        },
+        error: null,
+      });
+
+      const native = await passwordLogin(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/mobile/password-login',
+        headers: { 'user-agent': 'Dart/3.14 (dart:io)' },
+      });
+      const credential = (native.body as { mobile_client?: { token: string } })
+        .mobile_client;
+      expect(
+        verifyMobileClientCredential(credential?.token, {
+          sessionId: 'sess-1',
+          userId: 'user-1',
+        })
+      ).toBe(true);
+
+      const browser = await passwordLogin(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/mobile/password-login',
+        headers: { origin: 'https://tuturuuu.com' },
+      });
+      expect(browser.body).not.toHaveProperty('mobile_client');
+    });
+
     it.each([
       ['Headers', new Headers({ Origin: 'https://tuturuuu.com' })],
       ['a Map', new Map([['Sec-Fetch-Mode', 'cors']])],

@@ -484,9 +484,19 @@ export async function resolveAbuseRiskDecision(
     const cleared =
       nativeCleared ||
       (eligible && (await hasRecentSessionChallenge(input.userId, subjects)));
-    tier = cleared ? 'standard' : 'challenge_required';
-    trustMultiplier = 1;
-    decisionSource = 'heuristic';
+    // A native clear keeps a stricter server tier (watch) and its multiplier;
+    // it never grants more than standard, so it adds no rate-limit trust.
+    const keepServerTier =
+      nativeCleared && serverDecision && serverDecision.tier !== 'trusted';
+    tier = keepServerTier
+      ? serverDecision.tier
+      : cleared
+        ? 'standard'
+        : 'challenge_required';
+    trustMultiplier = keepServerTier ? serverDecision.trustMultiplier : 1;
+    decisionSource = keepServerTier
+      ? serverDecision.decisionSource
+      : 'heuristic';
     subjectKey ??= subjects[0]?.subject_key ?? null;
     reasons.push(
       nativeCleared

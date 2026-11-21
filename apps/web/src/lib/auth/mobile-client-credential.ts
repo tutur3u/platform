@@ -18,15 +18,24 @@ export const MOBILE_CLIENT_HEADER = 'x-tuturuuu-mobile-client';
 export const MOBILE_CLIENT_ORIGIN_APP = 'mobile';
 export const MOBILE_CLIENT_TARGET_APP = 'platform';
 export const MOBILE_CLIENT_SCOPE = 'mobile:client';
-export const MOBILE_CLIENT_TTL_SECONDS = 7 * 24 * 60 * 60;
+/** One Turnstile pass (login or mint) buys at most one day of native trust. */
+export const MOBILE_CLIENT_TTL_SECONDS = 24 * 60 * 60;
 const MOBILE_CLIENT_SESSION_SCOPE_PREFIX = 'mobile:sid:';
 const MAX_HEADER_LENGTH = 4096;
 
 type TokenOptions = { now?: Date; secret?: string };
 
+/**
+ * SHA-256 (base64url) of the Supabase `session_id`. The credential scope
+ * carries it, and the mint endpoint requires it as the Turnstile `cData`, so
+ * a solve is bound to this one session.
+ */
+export function mobileClientSessionBinding(sessionId: string) {
+  return createHash('sha256').update(sessionId).digest('base64url');
+}
+
 function sessionBindingScope(sessionId: string) {
-  const digest = createHash('sha256').update(sessionId).digest('base64url');
-  return `${MOBILE_CLIENT_SESSION_SCOPE_PREFIX}${digest}`;
+  return `${MOBILE_CLIENT_SESSION_SCOPE_PREFIX}${mobileClientSessionBinding(sessionId)}`;
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -70,16 +79,13 @@ export function getRequestBearerToken(headers: Pick<Headers, 'get'>) {
 }
 
 export function createMobileClientCredential(
-  {
-    email,
-    sessionId,
-    userId,
-  }: { email?: string | null; sessionId: string; userId: string },
+  { sessionId, userId }: { sessionId: string; userId: string },
   options: TokenOptions = {}
 ) {
+  // No email claim: the verifier never reads it and the payload is readable.
   const { claims, expiresAt, token } = createAppCoordinationToken(
     {
-      email: email ?? null,
+      email: null,
       expiresInSeconds: MOBILE_CLIENT_TTL_SECONDS,
       originApp: MOBILE_CLIENT_ORIGIN_APP,
       scopes: [MOBILE_CLIENT_SCOPE, sessionBindingScope(sessionId)],
@@ -98,14 +104,13 @@ export function createMobileClientCredential(
  */
 export function issueMobileClientCredentialForSession(
   session: { access_token: string },
-  user: { email?: string | null; id: string } | null | undefined
+  user: { id: string } | null | undefined
 ) {
   if (!user) return undefined;
   const sessionId = readSupabaseSessionId(session.access_token, user.id);
   if (!sessionId) return undefined;
   try {
     const { expiresAt, token } = createMobileClientCredential({
-      email: user.email,
       sessionId,
       userId: user.id,
     });

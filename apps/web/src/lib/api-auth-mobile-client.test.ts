@@ -60,6 +60,12 @@ import { withSessionAuth } from './api-auth';
 const USER = { created_at: '2026-01-01T00:00:00.000Z', id: 'user-1' };
 const b64 = (value: object) =>
   Buffer.from(JSON.stringify(value)).toString('base64url');
+// Unsigned (`.sig`) bearers with a mocked session-user lookup are
+// representative: in production, Supabase (getClaims/getUser) validates this
+// exact Authorization bearer before withSessionAuth reads `session_id` from
+// it, and the reader also requires the payload `sub` to equal the user that
+// validation returned. A forged bearer never reaches the credential check,
+// because it fails authentication first (401).
 const supabaseJwt = (sub: string, sessionId: string) =>
   `${b64({ alg: 'HS256' })}.${b64({ session_id: sessionId, sub })}.sig`;
 const credential = (userId = USER.id, sessionId = 'sess-1') =>

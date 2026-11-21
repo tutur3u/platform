@@ -13,11 +13,14 @@ import {
 import {
   createMobileClientCredential,
   getRequestBearerToken,
+  mobileClientSessionBinding,
   readSupabaseSessionId,
 } from './mobile-client-credential';
 
 export const MOBILE_CLIENT_CREDENTIAL_ENDPOINT =
   '/api/v1/auth/mobile/client-credential';
+/** Turnstile `action` the mobile widget must set for this endpoint. */
+export const MOBILE_CLIENT_TURNSTILE_ACTION = 'mobile_client_credential';
 
 const MintSchema = z
   .object({ captchaToken: z.string().min(1).max(MAX_LONG_TEXT_LENGTH) })
@@ -26,21 +29,22 @@ const MintSchema = z
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
 export type MobileClientCredentialMintDeps = {
+  /** IP block and IP rate limit, checked before the user is resolved. */
+  guardIp: () => Promise<NextResponse | null>;
   rateLimit: (userId: string) => Promise<NextResponse | null>;
+  recordAuthFailure: () => void;
   resolveUser: (
     request: NextRequest
   ) => Promise<
     { ok: true; user: SupabaseUser } | { ok: false; response: NextResponse }
   >;
-  verifyTurnstile?: (request: NextRequest, token: string) => Promise<void>;
+  /** Hostname the Turnstile widget must have been solved on. */
+  turnstileHostname: () => string;
+  turnstileFetch?: typeof fetch;
 };
 
 function json(body: Record<string, unknown>, status: number) {
   return NextResponse.json(body, { headers: NO_STORE, status });
-}
-
-async function defaultVerifyTurnstile(request: NextRequest, token: string) {
-  await verifyTurnstileToken(request, token, { timeoutMs: 5000 });
 }
 
 /**
@@ -61,14 +65,23 @@ export async function mintMobileClientCredential(
     return json(refused.body, refused.status);
   }
 
+  const blocked = await deps.guardIp();
+  if (blocked) return blocked;
+
   const auth = await deps.resolveUser(request);
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    deps.recordAuthFailure();
+    return auth.response;
+  }
 
   const sessionId = readSupabaseSessionId(
     getRequestBearerToken(request.headers),
     auth.user.id
   );
-  if (!sessionId) return json({ error: 'Unauthorized' }, 401);
+  if (!sessionId) {
+    deps.recordAuthFailure();
+    return json({ error: 'Unauthorized' }, 401);
+  }
 
   const limited = await deps.rateLimit(auth.user.id);
   if (limited) return limited;
@@ -77,10 +90,17 @@ export async function mintMobileClientCredential(
   if (!parsed.success) return json({ error: 'Invalid request body' }, 400);
 
   try {
-    await (deps.verifyTurnstile ?? defaultVerifyTurnstile)(
-      request,
-      parsed.data.captchaToken
-    );
+    // Purpose-bound: the solve must name this endpoint's action and carry
+    // this session's binding as cData, so a token from login or any other
+    // widget cannot be replayed here.
+    await verifyTurnstileToken(request, parsed.data.captchaToken, {
+      devMode: false,
+      expectedAction: MOBILE_CLIENT_TURNSTILE_ACTION,
+      expectedCData: mobileClientSessionBinding(sessionId),
+      expectedHostname: deps.turnstileHostname(),
+      fetch: deps.turnstileFetch,
+      timeoutMs: 5000,
+    });
   } catch (error) {
     if (error instanceof TurnstileError && error.code === 'not_configured') {
       return json({ error: 'Verification unavailable' }, 503);
@@ -92,7 +112,6 @@ export async function mintMobileClientCredential(
   }
 
   const { expiresAt, token } = createMobileClientCredential({
-    email: auth.user.email,
     sessionId,
     userId: auth.user.id,
   });

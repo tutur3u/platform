@@ -155,16 +155,21 @@ trust signal that a spoofed User-Agent cannot produce.
 
 - **Credential:** a server-signed app-coordination token with `origin_app:
   mobile`, `target_app: platform` and exactly the scopes `mobile:client` plus
-  a SHA-256 binding to the Supabase `session_id`. It lasts seven days. It is
-  not an auth token: it never carries the app-session scope, so no route
-  accepts it as a bearer.
+  a SHA-256 binding to the Supabase `session_id`. It carries no email. It
+  lasts at most 24 hours, so one Turnstile pass buys at most one day of
+  native trust. It is not an auth token: it never carries the app-session
+  scope, so no route accepts it as a bearer.
 - **Issuance:** the mobile password-login and verify-OTP responses include
   `mobile_client: { token, expires_at }`. Both endpoints already refuse browser
   requests and sit behind a Turnstile-gated sign-in. For any other session,
   including OAuth, QR, existing installs and an expired credential, the app
-  calls `POST /api/v1/auth/mobile/client-credential`. That endpoint needs the
-  Supabase bearer and a fresh `captchaToken`, refuses browser requests, and is
-  rate limited to 10 requests per 10 minutes per user.
+  calls `POST /api/v1/auth/mobile/client-credential`. That endpoint refuses
+  browser requests, checks the IP block list and an IP rate limit (30 per 10
+  minutes) before resolving the user, records auth failures, needs the
+  Supabase bearer, and is rate limited to 10 requests per 10 minutes per user.
+  Its `captchaToken` is purpose-bound: siteverify must report action
+  `mobile_client_credential`, the Native Integrity Web origin's hostname,
+  and `cData` equal to the base64url SHA-256 of the bearer's `session_id`.
 - **Use:** the app sends it as `x-tuturuuu-mobile-client` next to
   `Authorization: Bearer <supabase access token>`. `withSessionAuth` verifies
   the signature and expiry, and checks that the token's user and session
@@ -172,14 +177,19 @@ trust signal that a spoofed User-Agent cannot produce.
   `verifiedNativeClient` to `resolveAbuseRiskDecision`.
 - **Scope of trust:** a verified credential clears only the browser-shape
   heuristic (`verified_native_client`), and only on the Supabase-bearer path.
+  It keeps a stricter server tier such as `watch` and its multiplier, and it
+  never grants more than `standard`.
   It does not clear the heuristic for a scripted, crawler, automation or
   missing User-Agent. A server `restricted` or `challenge_required` tier
   always wins, as on the session-challenge-passed path. It adds no rate-limit
   trust.
 - **Exceptions:** the fleet answer route keeps its owner-only `stepUpExempt`.
   Browser-shaped User-Agents never reach this heuristic.
-- **Future hardening:** gate the mint endpoint on the existing App Attest or
-  Play Integrity flow (`NATIVE_INTEGRITY_MODE`) instead of Turnstile.
+- **Renewal hardening:** renewal should require an App Attest or Play
+  Integrity proof through the existing Native Integrity flow
+  (`apps/web/src/lib/native-integrity`, `NATIVE_INTEGRITY_MODE`), replacing
+  the Turnstile check with a device-bound proof. That flow is off by default
+  and scoped to calendar settings today.
 
 Regression coverage: `apps/web/src/lib/api-auth-mobile-client.test.ts`
 (end-to-end through `withSessionAuth` with the real decision and step-up),

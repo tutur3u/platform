@@ -185,6 +185,42 @@ describe('adaptive abuse reputation', () => {
       }
     );
 
+    it('keeps a server watch tier and its multiplier when clearing', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            decision_source: 'reputation',
+            subject_key: 'user:caller',
+            tier: 'watch',
+            trust_multiplier: 0.75,
+          },
+        ],
+        error: null,
+      });
+      const decision = await nativeMutation();
+      expect(decision.tier).toBe('watch');
+      expect(decision.trustMultiplier).toBe(0.75);
+      expect(decision.decisionSource).toBe('reputation');
+      expect(decision.reasons).toContain('verified_native_client');
+    });
+
+    it('never grants more than standard trust when clearing', async () => {
+      mockRpc.mockResolvedValue({
+        data: [
+          {
+            decision_source: 'reputation',
+            subject_key: 'user:caller',
+            tier: 'trusted',
+            trust_multiplier: 3,
+          },
+        ],
+        error: null,
+      });
+      const decision = await nativeMutation();
+      expect(decision.tier).toBe('standard');
+      expect(decision.trustMultiplier).toBe(1);
+    });
+
     it.each(['restricted', 'challenge_required'])(
       'never overrides explicit server policy: %s',
       async (tier) => {

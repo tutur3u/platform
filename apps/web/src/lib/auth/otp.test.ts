@@ -535,6 +535,45 @@ describe('otp auth service', () => {
       });
     });
 
+    it('issues a session-bound mobile client credential only to native requests', async () => {
+      const { verifyOtp } = await import('./otp');
+      const { verifyMobileClientCredential } =
+        await import('./mobile-client-credential');
+      const sessionJwt = `${Buffer.from('{"alg":"HS256"}').toString('base64url')}.${Buffer.from(
+        JSON.stringify({ session_id: 'sess-1', sub: 'user-1' })
+      ).toString('base64url')}.sig`;
+      mocks.detachedVerifyOtp.mockResolvedValue({
+        data: {
+          session: { access_token: sessionJwt, user: { id: 'user-1' } },
+          user: { id: 'user-1' },
+        },
+        error: null,
+      });
+
+      const native = await verifyOtp(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/otp/verify',
+        headers: new Headers({ 'user-agent': 'Dart/3.14 (dart:io)' }),
+        platform: 'ios',
+      });
+      const credential = (native.body as { mobile_client?: { token: string } })
+        .mobile_client;
+      expect(
+        verifyMobileClientCredential(credential?.token, {
+          sessionId: 'sess-1',
+          userId: 'user-1',
+        })
+      ).toBe(true);
+
+      const browser = await verifyOtp(mobileInput, {
+        client: 'mobile',
+        endpoint: '/api/v1/auth/otp/verify',
+        headers: new Headers({ origin: 'https://tuturuuu.com' }),
+        platform: 'ios',
+      });
+      expect(browser.body).not.toHaveProperty('mobile_client');
+    });
+
     it.each([
       ['an Origin header', { origin: 'https://tuturuuu.com' }],
       ['a null Origin', { origin: 'null' }],

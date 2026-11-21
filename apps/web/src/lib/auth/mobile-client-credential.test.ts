@@ -2,15 +2,19 @@
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createMobileClientCredential,
   issueMobileClientCredentialForSession,
+  mobileClientSessionBinding,
   MOBILE_CLIENT_TTL_SECONDS,
   readSupabaseSessionId,
   verifyMobileClientCredential,
 } from './mobile-client-credential';
-import { mintMobileClientCredential } from './mobile-client-credential-mint';
+import {
+  MOBILE_CLIENT_TURNSTILE_ACTION,
+  mintMobileClientCredential,
+} from './mobile-client-credential-mint';
 
 const b64 = (value: object) =>
   Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -80,13 +84,17 @@ describe('mobile client credential', () => {
 });
 
 describe('mintMobileClientCredential', () => {
-  const user = { email: null, id: 'user-1' } as never;
+  const user = { email: 'user@example.com', id: 'user-1' } as never;
   const bearer = `Bearer ${jwt({ session_id: 'sess-1', sub: 'user-1' })}`;
+  const validSolve = {
+    action: MOBILE_CLIENT_TURNSTILE_ACTION,
+    cdata: mobileClientSessionBinding('sess-1'),
+    hostname: 'tuturuuu.com',
+    success: true,
+  };
   const request = (
     headers: Record<string, string> = {},
-    body: unknown = {
-      captchaToken: 'turnstile-token',
-    }
+    body: unknown = { captchaToken: 'turnstile-token' }
   ) =>
     new NextRequest(
       'https://tuturuuu.com/api/v1/auth/mobile/client-credential',
@@ -96,80 +104,108 @@ describe('mintMobileClientCredential', () => {
         method: 'POST',
       }
     );
-  const deps = (overrides = {}) => ({
+  const deps = (
+    siteverify: Record<string, unknown> = validSolve,
+    overrides = {}
+  ) => ({
+    guardIp: vi.fn(async () => null),
     rateLimit: vi.fn(async () => null),
+    recordAuthFailure: vi.fn(),
     resolveUser: vi.fn(async () => ({ ok: true as const, user })),
-    verifyTurnstile: vi.fn(async () => undefined),
+    turnstileFetch: vi.fn(
+      async () => new Response(JSON.stringify(siteverify))
+    ) as unknown as typeof fetch,
+    turnstileHostname: () => 'tuturuuu.com',
     ...overrides,
   });
 
-  it('mints a bound credential after a Turnstile pass', async () => {
+  beforeEach(() => vi.stubEnv('TURNSTILE_SECRET_KEY', 'test-secret'));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('mints a bound credential without an email claim after a purpose-bound Turnstile pass', async () => {
     const d = deps();
     const response = await mintMobileClientCredential(request(), d);
     const body = await response.json();
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(d.verifyTurnstile).toHaveBeenCalledWith(
-      expect.anything(),
-      'turnstile-token'
-    );
+    expect(d.turnstileFetch).toHaveBeenCalledOnce();
     expect(
       verifyMobileClientCredential(body.mobile_client.token, binding)
     ).toBe(true);
+    const payload = JSON.parse(
+      Buffer.from(body.mobile_client.token.split('.')[1], 'base64url').toString(
+        'utf8'
+      )
+    );
+    expect(payload.email).toBeNull();
+    expect(JSON.stringify(payload)).not.toContain('user@example.com');
   });
 
-  it('refuses browser requests before authenticating', async () => {
+  it.each([
+    ['a different action', { ...validSolve, action: 'login' }],
+    ['a different hostname', { ...validSolve, hostname: 'evil.example' }],
+    [
+      'another session binding',
+      { ...validSolve, cdata: mobileClientSessionBinding('sess-2') },
+    ],
+    ['no cdata', { ...validSolve, cdata: undefined }],
+    ['a failed solve', { ...validSolve, success: false }],
+  ])('rejects a Turnstile solve with %s', async (_label, siteverify) => {
+    const response = await mintMobileClientCredential(
+      request(),
+      deps(siteverify)
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).not.toHaveProperty('mobile_client');
+  });
+
+  it('refuses browser requests before any other check', async () => {
     const d = deps();
     const response = await mintMobileClientCredential(
       request({ origin: 'https://tuturuuu.com' }),
       d
     );
     expect(response.status).toBe(403);
+    expect(d.guardIp).not.toHaveBeenCalled();
     expect(d.resolveUser).not.toHaveBeenCalled();
   });
 
-  it('requires a fresh Turnstile pass', async () => {
-    const failed = deps({
-      verifyTurnstile: vi.fn(async () => {
-        throw new Error('invalid');
-      }),
-    });
-    expect((await mintMobileClientCredential(request(), failed)).status).toBe(
-      403
-    );
-    expect(
-      (await mintMobileClientCredential(request({}, {}), deps())).status
-    ).toBe(400);
+  it('checks the IP guard before resolving the user', async () => {
+    const blocked = NextResponse.json({}, { status: 429 });
+    const d = deps(validSolve, { guardIp: vi.fn(async () => blocked) });
+    expect((await mintMobileClientCredential(request(), d)).status).toBe(429);
+    expect(d.resolveUser).not.toHaveBeenCalled();
   });
 
-  it('requires a Supabase bearer bound to the authenticated user', async () => {
+  it('rejects a missing captcha token', async () => {
+    const response = await mintMobileClientCredential(request({}, {}), deps());
+    expect(response.status).toBe(400);
+  });
+
+  it('records an auth failure for a bearer not bound to the user', async () => {
+    const d = deps();
     const response = await mintMobileClientCredential(
       request({
         authorization: `Bearer ${jwt({ session_id: 's', sub: 'x' })}`,
       }),
-      deps()
+      d
     );
     expect(response.status).toBe(401);
+    expect(d.recordAuthFailure).toHaveBeenCalledOnce();
   });
 
-  it('honors auth failures and rate limits', async () => {
+  it('records auth failures and honors the user rate limit', async () => {
     const unauthorized = NextResponse.json({}, { status: 401 });
-    expect(
-      (
-        await mintMobileClientCredential(
-          request(),
-          deps({
-            resolveUser: vi.fn(async () => ({
-              ok: false,
-              response: unauthorized,
-            })),
-          })
-        )
-      ).status
-    ).toBe(401);
+    const failed = deps(validSolve, {
+      resolveUser: vi.fn(async () => ({ ok: false, response: unauthorized })),
+    });
+    expect((await mintMobileClientCredential(request(), failed)).status).toBe(
+      401
+    );
+    expect(failed.recordAuthFailure).toHaveBeenCalledOnce();
     const limited = NextResponse.json({}, { status: 429 });
-    const d = deps({ rateLimit: vi.fn(async () => limited) });
+    const d = deps(validSolve, { rateLimit: vi.fn(async () => limited) });
     expect((await mintMobileClientCredential(request(), d)).status).toBe(429);
-    expect(d.verifyTurnstile).not.toHaveBeenCalled();
+    expect(d.turnstileFetch).not.toHaveBeenCalled();
   });
 });
