@@ -15,6 +15,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/utils/auth_error_localization.dart';
 import 'package:mobile/features/auth/utils/login_email_mode.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
+import 'package:mobile/features/auth/widgets/auth_error_notice.dart';
 import 'package:mobile/features/auth/widgets/auth_google_button.dart'
     show AuthMethodDivider;
 import 'package:mobile/features/auth/widgets/auth_otp_field.dart';
@@ -419,8 +420,6 @@ class _LoginPageState extends State<LoginPage> {
             LoginQrSection(onPressed: _handleQrLogin),
           ],
           BlocBuilder<AuthCubit, AuthState>(
-            buildWhen: (prev, curr) =>
-                prev.error != curr.error || prev.errorCode != curr.errorCode,
             builder: (context, state) {
               final errorText =
                   resolveAuthErrorMessage(
@@ -440,10 +439,10 @@ class _LoginPageState extends State<LoginPage> {
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  errorText,
-                  style: TextStyle(color: theme.colorScheme.destructive),
-                  textAlign: TextAlign.center,
+                child: AuthErrorNotice(
+                  message: errorText,
+                  errorCode: state.errorCode,
+                  isLoading: state.isLoading,
                 ),
               );
             },

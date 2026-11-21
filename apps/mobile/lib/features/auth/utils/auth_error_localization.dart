@@ -6,7 +6,7 @@ String? resolveAuthErrorMessage({
   String? error,
   AuthErrorCode? errorCode,
 }) {
-  if (error != null && error.isNotEmpty) {
+  if (error != null && error.isNotEmpty && !_isRawExceptionText(error)) {
     return error;
   }
 
@@ -24,6 +24,17 @@ String? resolveAuthErrorMessage({
     case AuthErrorCode.githubBrowserLaunchFailed:
       return l10n.authGithubBrowserLaunchFailed;
     case null:
-      return null;
+      return error == null || error.isEmpty
+          ? null
+          : l10n.commonSomethingWentWrong;
   }
+}
+
+/// Plugin and Dart exception text (`PlatformException(...)`,
+/// `Exception: ...`, `Bad state: ...`) is diagnostic output, not a message
+/// for people.
+bool _isRawExceptionText(String error) {
+  return RegExp(
+    r"^(\w*Exception\b|\w+Error[:(]|Bad state:|Instance of ')",
+  ).hasMatch(error.trimLeft());
 }

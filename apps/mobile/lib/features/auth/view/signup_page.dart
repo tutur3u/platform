@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/widgets/auth_error_notice.dart';
 import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/features/auth/widgets/auth_section_card.dart';
@@ -62,19 +63,13 @@ class SignUpPage extends StatelessWidget {
                     l10n: l10n,
                     error: state.error,
                     errorCode: state.errorCode,
-                  ) !=
-                  null) ...[
+                  )
+                  case final errorText?) ...[
                 const shad.Gap(16),
-                Text(
-                  resolveAuthErrorMessage(
-                    l10n: l10n,
-                    error: state.error,
-                    errorCode: state.errorCode,
-                  )!,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.destructive,
-                  ),
-                  textAlign: TextAlign.center,
+                AuthErrorNotice(
+                  message: errorText,
+                  errorCode: state.errorCode,
+                  isLoading: state.isLoading,
                 ),
               ],
               const shad.Gap(16),

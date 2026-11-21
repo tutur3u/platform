@@ -23,6 +23,24 @@ Future<String?> getDeviceId() async {
   }
 }
 
+/// Whether this iOS build runs on an Apple silicon Mac ("Designed for iPad").
+///
+/// Native Google Sign-In is not supported there, so callers route Google
+/// through browser OAuth like the macOS desktop build.
+Future<bool> isIOSAppOnMac() => _isIOSAppOnMac ??= _detectIOSAppOnMac();
+
+Future<bool>? _isIOSAppOnMac;
+
+Future<bool> _detectIOSAppOnMac() async {
+  if (!Platform.isIOS) return false;
+  try {
+    final ios = await DeviceInfoPlugin().iosInfo;
+    return ios.isiOSAppOnMac;
+  } on Exception catch (_) {
+    return false;
+  }
+}
+
 /// Returns the user's locale string for auth API calls.
 String getLocale() {
   try {

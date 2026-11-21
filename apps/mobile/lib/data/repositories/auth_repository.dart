@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
-import 'package:mobile/core/config/auth_callback.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/core/utils/device_info.dart';
@@ -13,6 +11,7 @@ import 'package:mobile/data/models/auth_session.dart';
 import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/multi_account_storage_service.dart';
+import 'package:mobile/data/repositories/provider_sign_in.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
@@ -21,7 +20,6 @@ import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef PackageInfoLoader = Future<PackageInfo> Function();
@@ -42,6 +40,7 @@ class AuthRepository {
     DevicePlatform? devicePlatform,
     String? googleWebClientId,
     String? googleIosClientId,
+    Future<bool> Function()? iosAppOnMacDetector,
   }) {
     final resolvedApiClient = apiClient ?? ApiClient();
     final resolvedSupabaseClient = supabaseClient ?? supabase;
@@ -53,15 +52,21 @@ class AuthRepository {
     _apiClient = resolvedApiClient;
     _client = resolvedSupabaseClient;
     _googleIdentityClient = resolvedGoogleIdentityClient;
-    _appleIdentityClient =
-        appleIdentityClient ?? const AppleIdentityClientImpl();
     _devicePlatform = resolvedDevicePlatform;
-    _oauthUrlLauncher =
-        oauthUrlLauncher ??
-        SupabaseOAuthUrlLauncher(devicePlatform: resolvedDevicePlatform);
-    _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform;
-    _googleWebClientId = googleWebClientId ?? Env.googleWebClientId;
-    _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
+    _providerSignIn = ProviderSignIn(
+      client: resolvedSupabaseClient,
+      googleIdentityClient: resolvedGoogleIdentityClient,
+      appleIdentityClient:
+          appleIdentityClient ?? const AppleIdentityClientImpl(),
+      oauthUrlLauncher:
+          oauthUrlLauncher ??
+          SupabaseOAuthUrlLauncher(devicePlatform: resolvedDevicePlatform),
+      packageInfoLoader: packageInfoLoader ?? PackageInfo.fromPlatform,
+      devicePlatform: resolvedDevicePlatform,
+      isIOSAppOnMac: iosAppOnMacDetector ?? isIOSAppOnMac,
+      googleWebClientId: googleWebClientId ?? Env.googleWebClientId,
+      googleIosClientId: googleIosClientId ?? Env.googleIosClientId,
+    );
     _multiAccountStorageService =
         multiAccountStorageService ??
         MultiAccountStorageService(
@@ -75,12 +80,8 @@ class AuthRepository {
   late final ApiClient _apiClient;
   late final SupabaseClient _client;
   late final GoogleIdentityClient _googleIdentityClient;
-  late final AppleIdentityClient _appleIdentityClient;
-  late final OAuthUrlLauncher _oauthUrlLauncher;
-  late final PackageInfoLoader _packageInfoLoader;
+  late final ProviderSignIn _providerSignIn;
   late final DevicePlatform _devicePlatform;
-  late final String _googleWebClientId;
-  late final String _googleIosClientId;
   late final MultiAccountStorageService _multiAccountStorageService;
 
   String? get _mobileOtpPlatform {
@@ -370,263 +371,16 @@ class AuthRepository {
     }
   }
 
-  // ── Google ─────────────────────────────────────
+  // ── Providers ──────────────────────────────────
 
-  Future<AuthActionResult> signInWithGoogle() async {
-    if (_shouldTryNativeGoogleSignIn()) {
-      final nativeResult = await _tryNativeGoogleSignIn();
-      if (nativeResult != null) {
-        return nativeResult;
-      }
-    }
+  Future<AuthActionResult> signInWithGoogle() =>
+      _providerSignIn.signInWithGoogle();
 
-    return await _launchBrowserGoogleSignIn();
-  }
+  Future<AuthActionResult> signInWithApple() =>
+      _providerSignIn.signInWithApple();
 
-  Future<AuthActionResult> signInWithApple() async {
-    if (!_shouldTryNativeAppleSignIn()) {
-      return const AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage:
-            'Sign in with Apple requires native Apple authentication.',
-      );
-    }
-
-    final nativeResult = await _tryNativeAppleSignIn();
-    return nativeResult ??
-        const AuthActionResult.failure(
-          AuthErrorCode.appleSignInFailed,
-          errorMessage: 'Sign in with Apple is unavailable on this device.',
-        );
-  }
-
-  Future<AuthActionResult> signInWithGithub() {
-    return _launchBrowserOAuthSignIn(
-      provider: OAuthProvider.github,
-      queryParams: const {},
-      errorCode: AuthErrorCode.githubBrowserLaunchFailed,
-    );
-  }
-
-  bool _shouldTryNativeGoogleSignIn() {
-    if (!(_devicePlatform.isAndroid || _devicePlatform.isIOS)) {
-      return false;
-    }
-
-    if (_googleWebClientId.isEmpty) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool _shouldTryNativeAppleSignIn() => _devicePlatform.isIOS;
-
-  Future<AuthActionResult?> _tryNativeGoogleSignIn() async {
-    try {
-      await _googleIdentityClient.initialize(
-        clientId: _devicePlatform.isIOS && _googleIosClientId.isNotEmpty
-            ? _googleIosClientId
-            : null,
-        serverClientId: _googleWebClientId,
-      );
-
-      if (!_googleIdentityClient.supportsAuthenticate()) {
-        return null;
-      }
-
-      final tokens = await _googleIdentityClient.authenticate();
-      return await _completeNativeGoogleSignIn(tokens);
-    } on GoogleSignInException catch (e) {
-      if (_shouldFallbackToBrowserFromNativeError(e.code)) {
-        return null;
-      }
-
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthActionResult.cancelled();
-      }
-
-      return AuthActionResult.failure(
-        AuthErrorCode.googleSignInFailed,
-        errorMessage: e.description,
-      );
-    } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.googleSignInFailed,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-
-  Future<AuthActionResult?> _tryNativeAppleSignIn() async {
-    try {
-      if (!await _appleIdentityClient.isAvailable()) {
-        return null;
-      }
-
-      final tokens = await _appleIdentityClient.authenticate();
-      return await _completeNativeAppleSignIn(tokens);
-    } on SignInWithAppleAuthorizationException catch (e) {
-      if (e.code == AuthorizationErrorCode.canceled) {
-        return const AuthActionResult.cancelled();
-      }
-
-      return AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage: e.message,
-      );
-    } on SignInWithAppleNotSupportedException {
-      return null;
-    } on AuthException catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage: e.message,
-      );
-    } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-
-  Future<AuthActionResult> _completeNativeGoogleSignIn(
-    GoogleIdentityTokens tokens,
-  ) async {
-    try {
-      await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: tokens.idToken,
-        accessToken: tokens.accessToken,
-      );
-
-      return const AuthActionResult.success();
-    } on AuthException catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.googleSignInFailed,
-        errorMessage: e.message,
-      );
-    } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.googleSignInFailed,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-
-  Future<AuthActionResult> _completeNativeAppleSignIn(
-    AppleIdentityTokens tokens,
-  ) async {
-    try {
-      await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.apple,
-        idToken: tokens.idToken,
-        nonce: tokens.rawNonce,
-      );
-
-      final metadata = <String, dynamic>{};
-      final fullName = _buildAppleFullName(
-        givenName: tokens.givenName,
-        familyName: tokens.familyName,
-      );
-      if (fullName != null) {
-        metadata['full_name'] = fullName;
-      }
-
-      if (metadata.isNotEmpty) {
-        try {
-          await _client.auth.updateUser(UserAttributes(data: metadata));
-        } on AuthException {
-          // Apple only returns name fields on the first authorization.
-          // Do not fail sign-in if persisting that optional metadata fails.
-        }
-      }
-
-      return const AuthActionResult.success();
-    } on AuthException catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage: e.message,
-      );
-    } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.appleSignInFailed,
-        errorMessage: e.toString(),
-      );
-    }
-  }
-
-  String? _buildAppleFullName({
-    required String? givenName,
-    required String? familyName,
-  }) {
-    final parts = <String>[
-      if (givenName case final String value when value.trim().isNotEmpty)
-        value.trim(),
-      if (familyName case final String value when value.trim().isNotEmpty)
-        value.trim(),
-    ];
-
-    if (parts.isEmpty) {
-      return null;
-    }
-
-    return parts.join(' ');
-  }
-
-  bool _shouldFallbackToBrowserFromNativeError(GoogleSignInExceptionCode code) {
-    return switch (code) {
-      GoogleSignInExceptionCode.clientConfigurationError ||
-      GoogleSignInExceptionCode.providerConfigurationError ||
-      GoogleSignInExceptionCode.uiUnavailable => true,
-      // google_sign_in on Android can surface Credential Manager
-      // configuration failures as "canceled" after the user picks an account.
-      // Fall back to browser OAuth there instead of silently doing nothing.
-      GoogleSignInExceptionCode.canceled => _devicePlatform.isAndroid,
-      GoogleSignInExceptionCode.unknownError ||
-      GoogleSignInExceptionCode.interrupted ||
-      GoogleSignInExceptionCode.userMismatch => false,
-    };
-  }
-
-  Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
-    return await _launchBrowserOAuthSignIn(
-      provider: OAuthProvider.google,
-      queryParams: const {'access_type': 'offline', 'prompt': 'consent'},
-      errorCode: AuthErrorCode.googleBrowserLaunchFailed,
-    );
-  }
-
-  Future<AuthActionResult> _launchBrowserOAuthSignIn({
-    required OAuthProvider provider,
-    required Map<String, String> queryParams,
-    required AuthErrorCode errorCode,
-    String? scopes,
-  }) async {
-    try {
-      final redirectTo = await _buildAuthRedirectUrl();
-      final launched = await _oauthUrlLauncher.launchProviderSignIn(
-        authClient: _client.auth,
-        provider: provider,
-        redirectTo: redirectTo,
-        queryParams: queryParams,
-        scopes: scopes,
-      );
-
-      if (!launched) {
-        return AuthActionResult.failure(errorCode);
-      }
-
-      return const AuthActionResult.externalFlowStarted();
-    } on Exception catch (e) {
-      return AuthActionResult.failure(errorCode, errorMessage: e.toString());
-    }
-  }
-
-  Future<String> _buildAuthRedirectUrl() async {
-    final packageInfo = await _packageInfoLoader();
-    return authCallbackUrl(packageInfo.packageName);
-  }
+  Future<AuthActionResult> signInWithGithub() =>
+      _providerSignIn.signInWithGithub();
 
   // ── Session management ──────────────────────────
 
