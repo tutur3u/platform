@@ -128,8 +128,8 @@ Success is `{"result":"approved"|"removed"|"unchanged"}`.
 Refusal bodies are `{"error":"<code>"}`. `unknown_user`, `unknown_project` and
 `not_found` are `404`. `invalid_grant`, `invalid_project` and `invalid_value`
 are `400`. `grant_exists`, `generation_changed`, `already_revoked` and
-`too_many_values` are `409`. Storage or configuration failure is `503
-{"error":"owner_unavailable"}`.
+`too_many_values` are `409`. Storage or configuration failure is
+`503 {"error":"owner_unavailable"}`.
 
 The database-owner functions `fleet_grant_access`, `fleet_revoke_access` and
 `fleet_set_stopped` stay available as a fallback. They still require a

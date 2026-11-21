@@ -57,7 +57,7 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
 - **Focused external sign-in.** A hint plus a registered external return app
   shows one fixed-size card with one decision per step and no other
   providers or email form:
-  - a session: "Continue to <app>" as that account, or "Use another
+  - a session: `Continue to <app>` as that account, or "Use another
     account", which signs out locally and starts the hinted provider.
     Continue is enabled only when the browser session is the account the
     card names, and it sends that account's id with the mint; the
@@ -69,7 +69,7 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
     account";
   - neither: the hinted provider starts at once, with a manual button only
     as a fallback.
-  The header reads "Sign in to continue to <app>". While the view loads, a
+  The header reads `Sign in to continue to <app>`. While the view loads, a
   skeleton of the same size holds the card and header. When the view names
   the return app it is the only validator for it: the browser runs no second
   cross-app resolve that could disagree.
@@ -81,7 +81,7 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   when the browser cannot read the session.
 - Pending actions on the login card never sit as a silent grey button.
   Continue shows a spinner in its icon lane and steps from "Continuing…" to
-  "Securing your session…" (after 2s) and "Opening <app>…" (after 5s), with
+  "Securing your session…" (after 2s) and `Opening <app>…` (after 5s), with
   every phase label stacked in one cell so the button keeps its size; both
   card actions are disabled meanwhile. A chosen first-step provider shows a
   spinner in its icon lane. A failed handoff lands on the error card with

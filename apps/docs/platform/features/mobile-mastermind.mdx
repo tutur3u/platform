@@ -478,8 +478,8 @@ Mastermind web app has no dock Back; the browser owns it. Code lives in
   because it can carry device sign-in codes. Under "What's
   happening now" it composes a digest only from snapshot fields: running and
   failed lanes, the main freeze with its reason and queue, production down or
-  degraded, open incidents, and each open login as "<service> on
-  <machine>". Four figures follow: running lanes, need you, blocked on login
+  degraded, open incidents, and each open login as
+  `<service> on <machine>`. Four figures follow: running lanes, need you, blocked on login
   and failed lanes, each opening Work or Inbox. The release strip (main,
   production, migrations, incidents) appears only when the snapshot carries
   `release`, and shows only the parts it reports. Firing SLO burn alerts
@@ -623,12 +623,12 @@ never left stuck as "Not sent".
 
 ### Access requests
 
-- **Card:** "<service> on <machine>", the request title, its state badge,
+- **Card:** `<service> on <machine>`, the request title, its state badge,
   the expiry countdown, and Why and From rows.
 - **Flows:** a `device` request shows its code in large mono type with Copy
   (a toast confirms; the code is never logged) and opens the link. A `link`
-  request only opens the link. A `local_callback` request shows "Finish on
-  <machine>" and offers no link, because the sign-in completes only in a
+  request only opens the link. A `local_callback` request shows
+  `Finish on <machine>` and offers no link, because the sign-in completes only in a
   browser on that machine. Links open through the app link launcher, which
   honors the device browser preference; the app keeps a link only when it is
   https with a host and no credentials.
@@ -1240,8 +1240,8 @@ not configured shows "Source not configured" rather than being hidden.
 deployment environment when there is no Worker), the short SHA, the deploy
 time in ICT, the newest deploy attempt (Deployed, Deploy failed, Deploying)
 and the CI state of that SHA (passed, failed, running, unknown). A Worker
-running a different SHA from the deployment record adds "Worker runs
-<sha>". An app with staging but no production record reads "Not in
+running a different SHA from the deployment record adds
+`Worker runs <sha>`. An app with staging but no production record reads "Not in
 production yet". "Waiting to ship" counts the commits on the branch that touch
 the app's paths and are newer than the live production commit, with the
 oldest one's age; a full page reads "100+".
