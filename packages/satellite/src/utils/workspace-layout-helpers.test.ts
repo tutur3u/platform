@@ -4,6 +4,7 @@ import {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
+  parseSidebarExpandedWidth,
 } from './workspace-layout-helpers';
 
 vi.mock('../constants/common', () => ({
@@ -103,5 +104,49 @@ describe('getSidebarCollapsedState', () => {
         'expanded'
       )
     ).toBe(true);
+  });
+
+  it('ignores an invalid collapsed cookie instead of throwing', () => {
+    expect(
+      getSidebarCollapsedState(
+        cookieStoreWith({ [SIDEBAR_COLLAPSED_COOKIE_NAME]: '{' }),
+        'expanded'
+      )
+    ).toBe(false);
+    expect(
+      getSidebarCollapsedState(
+        cookieStoreWith({ [SIDEBAR_COLLAPSED_COOKIE_NAME]: '1' }),
+        'expanded'
+      )
+    ).toBe(false);
+  });
+});
+
+describe('parseSidebarExpandedWidth', () => {
+  it('keeps Mail and Calendar fallbacks until a shared length is present', () => {
+    expect(parseSidebarExpandedWidth(null, '15rem')).toBe('15rem');
+    expect(parseSidebarExpandedWidth(undefined, '16rem')).toBe('16rem');
+    expect(parseSidebarExpandedWidth('sidebar-size=28', '15rem')).toBe('15rem');
+    expect(parseSidebarExpandedWidth('sidebar-size=22rem', '15rem')).toBe(
+      '22rem'
+    );
+    expect(parseSidebarExpandedWidth('sidebar-size=22rem', '16rem')).toBe(
+      '22rem'
+    );
+  });
+
+  it('keeps the last valid length when a legacy percentage shares the name', () => {
+    expect(
+      parseSidebarExpandedWidth('sidebar-size=20rem; sidebar-size=28', '16rem')
+    ).toBe('20rem');
+    expect(
+      parseSidebarExpandedWidth('sidebar-size=28; sidebar-size=20rem', '15rem')
+    ).toBe('20rem');
+    expect(
+      parseSidebarExpandedWidth(
+        'sidebar-size=22rem; sidebar-size=15rem',
+        '16rem'
+      )
+    ).toBe('15rem');
   });
 });

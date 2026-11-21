@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -21,6 +22,21 @@ const subscribeMobile = (notify: () => void) => {
 };
 const getIsMobile = () => window.matchMedia(mobileQuery).matches;
 const getServerIsMobile = () => false;
+
+function collapsedForBehavior(
+  behavior: 'expanded' | 'collapsed' | 'hover' | 'hidden' | undefined,
+  defaultCollapsed: boolean
+) {
+  if (
+    behavior === 'collapsed' ||
+    behavior === 'hover' ||
+    behavior === 'hidden'
+  ) {
+    return true;
+  }
+
+  return defaultCollapsed;
+}
 
 export function useSatelliteShell({
   pathname,
@@ -46,9 +62,10 @@ export function useSatelliteShell({
     getIsMobile,
     getServerIsMobile
   );
-  const [desktopCollapsed, setDesktopCollapsed] = useState(
-    behavior ? behavior !== 'expanded' : defaultCollapsed
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() =>
+    collapsedForBehavior(behavior, defaultCollapsed)
   );
+  const seenBehavior = useRef(behavior);
   const [mobileCollapsed, setMobileCollapsed] = useState(true);
   const isCollapsed = isMobile ? mobileCollapsed : desktopCollapsed;
   const setIsCollapsed = isMobile ? setMobileCollapsed : setDesktopCollapsed;
@@ -71,10 +88,9 @@ export function useSatelliteShell({
   });
 
   useEffect(() => {
-    if (!behavior) return;
-    setDesktopCollapsed(
-      behavior === 'collapsed' || behavior === 'hover' || behavior === 'hidden'
-    );
+    if (seenBehavior.current === behavior) return;
+    seenBehavior.current = behavior;
+    setDesktopCollapsed(collapsedForBehavior(behavior, false));
   }, [behavior]);
 
   useEffect(() => {

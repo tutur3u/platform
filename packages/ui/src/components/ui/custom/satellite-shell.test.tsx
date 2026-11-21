@@ -265,6 +265,58 @@ describe('framework-independent satellite shell', () => {
     expect(result.current.navState.titleHistory).toEqual(['Workspace']);
   });
 
+  it('server-renders a collapsed desktop rail when behavior stays expanded', () => {
+    function ServerShell() {
+      const shell = useSatelliteShell({
+        pathname: '/',
+        links: emptyLinks,
+        backLabel: 'Back',
+        behavior: 'expanded',
+        defaultCollapsed: true,
+      });
+      return <div data-collapsed={String(shell.isCollapsed)} />;
+    }
+
+    expect(renderToString(<ServerShell />)).toContain('data-collapsed="true"');
+
+    const paints: boolean[] = [];
+    function Probe() {
+      const shell = useSatelliteShell({
+        pathname: '/',
+        links: emptyLinks,
+        backLabel: 'Back',
+        behavior: 'expanded',
+        defaultCollapsed: true,
+      });
+      paints.push(shell.isCollapsed);
+      return null;
+    }
+
+    render(<Probe />);
+    expect(paints[0]).toBe(true);
+    expect(paints.every((collapsed) => collapsed)).toBe(true);
+  });
+
+  it('applies a later desktop behavior change after the first paint', () => {
+    const paints: boolean[] = [];
+    function Probe({ behavior }: { behavior: 'expanded' | 'collapsed' }) {
+      const shell = useSatelliteShell({
+        pathname: '/',
+        links: emptyLinks,
+        backLabel: 'Back',
+        behavior,
+        defaultCollapsed: false,
+      });
+      paints.push(shell.isCollapsed);
+      return null;
+    }
+
+    const { rerender } = render(<Probe behavior="expanded" />);
+    expect(paints.every((collapsed) => collapsed === false)).toBe(true);
+    rerender(<Probe behavior="collapsed" />);
+    expect(paints.at(-1)).toBe(true);
+  });
+
   it('preserves hidden and hover behavior', () => {
     const handleBehaviorChange = vi.fn();
     const links: NavLink[] = [];

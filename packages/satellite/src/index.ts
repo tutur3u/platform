@@ -41,4 +41,5 @@ export {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
+  parseSidebarExpandedWidth,
 } from './utils/workspace-layout-helpers';

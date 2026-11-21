@@ -1,3 +1,7 @@
+import {
+  readSidebarSizeFromCookieHeader,
+  resolveSidebarExpandedWidth,
+} from '@tuturuuu/utils/sidebar-layout-preference';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -42,8 +46,27 @@ export function getSidebarCollapsedState(
     return true;
   }
 
-  const collapsed = cookies.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-  return collapsed ? JSON.parse(collapsed.value) : false;
+  const collapsed = cookies.get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value?.trim();
+  return collapsed === 'true';
+}
+
+/**
+ * Expanded width for the shell's server HTML.
+ *
+ * `cookieHeader` is the raw `Cookie` request header (`headers().get('cookie')`).
+ * Next's `cookies()` jar keeps one value per name before `get` and `getAll`,
+ * so a later legacy `sidebar-size=28` hides an earlier `sidebar-size=20rem`.
+ * This reader keeps the last valid length instead. Mail passes `15rem`.
+ * Calendar and Meet pass `16rem`.
+ */
+export function parseSidebarExpandedWidth(
+  cookieHeader: string | null | undefined,
+  fallback = '16rem'
+): string {
+  return resolveSidebarExpandedWidth(
+    readSidebarSizeFromCookieHeader(cookieHeader),
+    fallback
+  );
 }
 
 /**

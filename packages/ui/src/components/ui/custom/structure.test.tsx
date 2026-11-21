@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../dialog';
 import { Popover } from '../popover';
@@ -18,6 +19,38 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Structure', () => {
+  it('server-renders the passed width and does not correct it or inject a script', () => {
+    const markup = renderToString(
+      <Structure
+        isCollapsed={false}
+        setIsCollapsed={vi.fn()}
+        sidebarExpandedWidth="22rem"
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+    expect(markup).toContain('--sidebar-expanded-width:22rem');
+    expect(markup).not.toContain('<script');
+
+    const { container } = render(
+      <Structure
+        isCollapsed={false}
+        setIsCollapsed={vi.fn()}
+        sidebarExpandedWidth="22rem"
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+    const aside = container.querySelector('aside');
+    const painted = aside?.getAttribute('style');
+    expect(painted).toContain('--sidebar-expanded-width: 22rem');
+
+    act(() => {});
+
+    expect(aside?.getAttribute('style')).toBe(painted);
+    expect(container.querySelector('script')).toBeNull();
+  });
+
   it('removes sidebar chrome and desktop padding when the sidebar is hidden', () => {
     const { container } = render(
       <Structure

@@ -560,7 +560,21 @@ file should be a thin wrapper around
 `@tuturuuu/satellite/sidebar-structure`. The shared structure owns the
 collapsible sidebar behavior, `SidebarProvider` cookies, workspace switcher
 placement, mobile header, footer actions, hover expansion, back navigation, and
-user-nav slots. App wrappers should only provide app-specific navigation links,
+user-nav slots. The first paint uses the server-parsed collapsed state.
+Collapsed, hover, and hidden behavior start collapsed. Expanded behavior keeps
+the `sidebar-collapsed` cookie, including `true`, on the desktop rail. The
+expanded width is the `sidebarExpandedWidth` prop. Layouts that read a saved
+width set it from
+`parseSidebarExpandedWidth(cookieHeader, fallback)` in
+`@tuturuuu/satellite/workspace-layout-helpers`. `cookieHeader` is the raw
+`Cookie` header from `headers().get('cookie')`. Next's `cookies()` jar keeps
+one value per name before `get` and `getAll`, so a later legacy
+`sidebar-size=28` would hide an earlier `sidebar-size=20rem`. The helper keeps
+the last valid length from 12rem to 32rem (192px to 512px). Otherwise it uses
+the app rail: `15rem` for Mail and `16rem` for Calendar and Meet. The shell
+uses the server-supplied width as part of the initial markup.
+Below `sm` the expanded sidebar is full width. Below `md` a collapsed sidebar
+is hidden. App wrappers should only provide app-specific navigation links,
 workspace-select routing, billing URL shape, or small brand/content additions
 such as Mind boards and Rewise branding. This applies to workspace product apps
 such as Calendar, CMS, Drive, Finance, Inventory, Mind, Rewise, Tasks, Track,
