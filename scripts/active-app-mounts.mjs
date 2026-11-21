@@ -22,10 +22,11 @@ const CONFIG = `${ROOT}apps/gateway/wrangler.jsonc`;
 const REGISTRY = `${ROOT}packages/utils/src/app-mounts.ts`;
 
 /**
- * Mounted Workers that serve no signed-in app: Web never returns a login to
- * them, so they are never listed.
+ * Mounted Workers that have no `/<base>/verify-token` route (no signed-in
+ * app, or none yet): Web never returns a login to them, so they are never
+ * listed. Tools moves out of this set once it serves /tools/verify-token.
  */
-export const SESSIONLESS_MOUNTS = new Set(['/roadmap', '/lms']);
+export const SESSIONLESS_MOUNTS = new Set(['/roadmap', '/lms', '/tools']);
 
 /** Parses JSONC: line and block comments and trailing commas. */
 export function parseJsonc(text) {
@@ -72,9 +73,10 @@ export function resolveActiveMounts(bases, registry) {
   const apps = new Set();
   const unresolved = [];
   for (const base of bases) {
+    if (SESSIONLESS_MOUNTS.has(base)) continue;
     const app = byBase.get(base);
     if (app) apps.add(app);
-    else if (!SESSIONLESS_MOUNTS.has(base)) unresolved.push(base);
+    else unresolved.push(base);
   }
   if (unresolved.length)
     throw new Error(
