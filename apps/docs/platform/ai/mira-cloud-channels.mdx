@@ -63,7 +63,7 @@ and fetch.
 
 | Component | Primitive | Responsibility |
 | --- | --- | --- |
-| `mira-router` | Worker, service binding only | Receives only verified, normalized `InboundEvent`s from the signers, applies per-account and per-sender rate limits, and routes to conversation objects. It never sees a raw provider request, header, secret or proof; its routing and rate state holds identifiers only. |
+| `mira-router` | Worker, service binding only | Has no public route. Exposes one entrypoint per signer domain, each bound only to that signer's script, and accepts an event only when the account belongs to the calling domain and the event matches the strict `InboundEvent` schema. Receives only verified, normalized `InboundEvent`s from the signers, applies per-account and per-sender rate limits, and routes to conversation objects. It never sees a raw provider request, header, secret or proof; its routing and rate state holds identifiers only. |
 | `mira-tenant-signer` | Worker with its own public webhook routes | Verifies tenant channel events with the tenant provider credentials and signs People registry operations. Holds no Fleet material. See [event evidence](#event-evidence). |
 | `mira-fleet-signer` | Worker with its own public webhook routes | Verifies the internal tenant's desk accounts and signs Fleet operations with the per-desk keys and bearers. Holds no tenant or registry material. |
 | `DiscordGatewayDO` | Durable Object | Holds one outbound Gateway WebSocket per Discord application (and per shard when sharded). Heartbeats, resumes and identifies inside Discord's session budget. Runs inside the signer domain that owns the application, which treats its authenticated session as native verification, and forwards `MESSAGE_CREATE` events for linked guilds and DMs to the router. |
@@ -824,7 +824,11 @@ with the first deployable slice.
    2. Reconcile every started send and issued token from provider receipts
       (message ids, delivery or status events). Promotion is blocked while
       any started send could still take effect; an outcome that cannot be
-      established is resolved by the operator before promotion.
+      established is resolved by the operator before promotion. If
+      reconciliation does not finish within 15 minutes, the default is to
+      abort: the current owner resumes under a fresh generation and the
+      unresolved send stays marked uncertain for the operator, so a channel
+      is never left without a sender.
    3. Replace the desk-owner row and the channel's send owner, and verify
       both by readback.
    4. Enable the new owner under a fresh generation.
