@@ -272,15 +272,17 @@ base.
 Connected-account OAuth state is host-bound by design: the state cookie is set
 and read on the host that started the flow, so the apex and the subdomain each
 need their own registered callback and the legacy subdomain callback is never
-reused for an apex start. The subdomain flow is unchanged. Enabling the apex
-flow needs, per provider (Google and Microsoft), the redirect URI
-`https://tuturuuu.com/mail/api/v1/mail/connected/callback` registered with the
-OAuth client and `MAIL_GOOGLE_APEX_REDIRECT_URI` /
-`MAIL_MICROSOFT_APEX_REDIRECT_URI` set to it, with the existing
-`MAIL_*_REDIRECT_URI` subdomain registration kept. Until then a connect attempt
-on the apex answers `400 Mail authorization host is not registered`; connect
-accounts on `mail.tuturuuu.com` meanwhile, and shared-origin `shadow` or `on`
-exposes only that one limitation.
+reused for an apex start. The subdomain flow is unchanged. Each provider
+(Google and Microsoft) registers both callbacks with its OAuth client:
+`https://mail.tuturuuu.com/api/v1/mail/connected/callback` through
+`MAIL_*_REDIRECT_URI`, and
+`https://tuturuuu.com/mail/api/v1/mail/connected/callback` through
+`MAIL_GOOGLE_APEX_REDIRECT_URI` / `MAIL_MICROSOFT_APEX_REDIRECT_URI`. A host
+without a registered callback answers `400 Mail authorization host is not
+registered`. Mail registers its internal-api base resolver for app `mail`, so its
+own helpers resolve under the mount and connected-account requests on the apex
+stay same-origin; the connected route rejects any other `Origin` exactly
+(`mail-api-client.test.ts`).
 Regression coverage: `mounted-routing.test.ts`, `mounted-isolation.test.ts`,
 `one-origin.test.ts`, `login-model.test.ts`, `mounted-session-endpoints.test.ts`,
 `page-model.test.ts`, `proxy-auth.test.ts`, `oauth-callback-url.test.ts`.
@@ -1570,6 +1572,48 @@ Root-mode Mail keeps its existing satellite session behavior. The required
 `NEXT_PUBLIC_SUPABASE_URL` Worker secret is declared in the native artifact
 profile and remains separate from browser build-time configuration. See
 `proxy-auth.test.ts` for the no-session-cookie-write regression.
+
+### Google restricted-scope verification
+
+Mail requests `https://www.googleapis.com/auth/gmail.modify`, a Google
+**restricted** scope. Until Google approves the OAuth client, only accounts listed
+as Test users on the consent screen (or Internal users) can complete consent;
+everyone else sees an "app not verified / access blocked" screen. Approval needs
+OAuth verification plus a CASA security assessment, renewed yearly.
+
+Prerequisites before submitting:
+- The public Privacy Policy discloses Gmail access and the Limited Use
+  commitments (the "Google user data in Tuturuuu Mail" section), and the claims
+  match the code: encrypted credentials, revoke on disconnect, and automatic
+  credential deletion on `invalid_grant` (see above).
+- The consent screen carries the production home, privacy and terms URLs, the
+  authorized domain and the logo, and lists only `gmail.modify` for this client.
+
+Scope justification, in substance: Mail is an email client the user connects to
+their own Gmail account. `gmail.modify` is the narrowest scope covering reading
+threads, changing labels (read/unread, archive, star, move), moving to Trash and
+sending. `gmail.readonly` cannot modify or send, `gmail.send` cannot read, and
+`gmail.labels` and `gmail.metadata` cannot read bodies. Full `mail.google.com`
+access is not requested. Data serves only the connecting user's features. It is
+never used for advertising, sold, or used to train generalized AI or ML models.
+
+Demo video (unlisted, 2-3 minutes, demo data only):
+1. Sign in to `tuturuuu.com/mail` with the URL bar visible.
+2. Connect Gmail from settings, showing the consent screen with the app name,
+   `client_id` and permission text.
+3. Show the inbox loading, then each scope use (read, mark unread, archive,
+   label, star, Trash, reply), with the effect visible in Gmail's own UI.
+4. Disconnect, then show the revoked access at
+   `https://myaccount.google.com/permissions`.
+5. End on the Privacy Policy URL.
+
+CASA: after submission Google assigns a tier (usually Tier 2). Run an
+assessor-accepted DAST scan against `tuturuuu.com/mail` with a test account, and
+fix high or critical findings first; the security default holds releases on them.
+Then submit the report and SAQ through a Google-authorized assessor portal. Paid
+assessments need owner approval. Microsoft Graph delegated mail permissions have
+no equivalent review; optional publisher verification only removes the
+"unverified" label.
 
 ## Pending Meet drafts
 
