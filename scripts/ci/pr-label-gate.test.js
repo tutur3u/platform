@@ -131,6 +131,9 @@ const PROTECTED_TRIGGERS = {
 
 const EXTRA_PROTECTED_INPUTS = {
   'ai-cloudflare.yaml': ['scripts/ci/ai-cutover-smoke.mjs'],
+  // The registry check must run for a Web API handler pushed straight to
+  // main, which the pull-request trigger never sees.
+  'api-worker.yaml': ['apps/web/src/app/api/**'],
   'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
   'contacts-cloudflare.yaml': ['scripts/ci/contacts-native-artifact.test.py'],
   'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],

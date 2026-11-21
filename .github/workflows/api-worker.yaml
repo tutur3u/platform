@@ -14,6 +14,9 @@ on:
     branches: [main]
     paths:
       - apps/api/**
+      # The route registry records a hash of every Web API handler, and work
+      # that is pushed straight to main never passes the pull-request trigger.
+      - apps/web/src/app/api/**
       - packages/utils/src/abuse-protection/**
       - bun.lock
       - .github/workflows/api-worker.yaml
