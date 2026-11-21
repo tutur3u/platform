@@ -244,6 +244,12 @@ each current or retired board key for its original board, including after board
 deletion. An eligible board cannot use a key reserved by another board or a
 project. The excluded legacy workspace retains its board keys and numbering.
 
+In the CLI, use `ttr boards key <board-id>` to read the current board key and
+`ttr boards key <board-id> --set F` to set it. Both commands use the selected
+workspace. Pass `--workspace <id>` to target a different workspace or `--json`
+to return the board ID and saved key for scripts. The CLI regression coverage
+is in `packages/sdk/src/cli/board-key-command.test.ts`.
+
 Each board advances its own task counter. Backfill assigns missing numbers in
 creation order with task ID as the tiebreaker and preserves assigned numbers,
 including for tasks in the recycle bin. Changing the board key keeps the task

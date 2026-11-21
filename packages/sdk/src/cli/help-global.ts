@@ -22,7 +22,7 @@ export function getGlobalHelp() {
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
-    '  boards [list]|use|create|update|delete',
+    '  boards [list]|use|key|create|update|delete',
     '  board <list|show|claim|release|add-dependency|add-follow-up>  Fleet Board',
     '  lists [list]|use|create|update --board <id>',
     '  tasks [list]|search|use|get|create|update|done|close|delete|move|bulk',

@@ -20,6 +20,8 @@ import {
   readTokenFromStdin,
   receiveTokenFromBrowser,
 } from './auth';
+import { runBoardKeyCliCommand } from './board-key-command';
+import { getBoardListStatus } from './board-list-status';
 import {
   getBlockerFlags,
   getTaskFleetFlags,
@@ -171,17 +173,6 @@ function getWorkspaceId(config: CliConfig, flags: Record<string, FlagValue>) {
   }
 
   return workspaceId;
-}
-
-function getBoardListStatus(
-  flags: Record<string, FlagValue>
-): 'active' | 'archived' | 'deleted' | 'all' {
-  if (flags.all === true || flags['include-archived'] === true) return 'all';
-  if (flags.archived === true) return 'archived';
-  if (flags.deleted === true || flags['recently-deleted'] === true) {
-    return 'deleted';
-  }
-  return 'active';
 }
 
 function resolveWorkspace(workspaceId: string, workspaces: ListedWorkspace[]) {
@@ -1072,6 +1063,7 @@ async function runBoardsCliCommand(context: WorkspaceCommandContext) {
   } = context;
   let { config } = context;
 
+  if (action === 'key') return runBoardKeyCliCommand(context);
   if (action === 'list') {
     render(
       await client.tasks.listBoards(workspaceId, {
