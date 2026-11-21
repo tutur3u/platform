@@ -46,10 +46,10 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
       thumbnails: boolean
     ) {
       smallMode = thumbnails;
-      if (sample) {
-        receiver = sample;
-        freezes += sample.freezes;
-      }
+      // No sample means no camera is being measured: report none, not the
+      // last reading.
+      receiver = sample;
+      if (sample) freezes += sample.freezes;
       layers = { high: 0, mid: 0, low: 0 };
       for (const layer of requested) layers[layer]++;
       publish();

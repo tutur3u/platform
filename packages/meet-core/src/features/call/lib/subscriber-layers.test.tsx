@@ -13,7 +13,8 @@ function setup(
   capabilities: string[] = ['ascii-simulcast', 'layer-update'],
   reply: (message: { tracks: Array<{ mid: string }> }) => unknown = (
     message
-  ) => ({ tracks: message.tracks.map(({ mid }) => ({ mid })) })
+  ) => ({ tracks: message.tracks.map(({ mid }) => ({ mid })) }),
+  extra: Partial<Parameters<typeof useSubscriberLayers>[0]> = {}
 ) {
   const pc = {
     connectionState: 'connected',
@@ -62,7 +63,7 @@ function setup(
     },
   };
   renderHook(() =>
-    useSubscriberLayers({ active: true, resetSubscriber, ...refs })
+    useSubscriberLayers({ active: true, resetSubscriber, ...refs, ...extra })
   );
   return { pc, request, refs, resetSubscriber };
 }
@@ -158,4 +159,43 @@ it('keeps a paused camera state across a receiver rebuild and probes later', asy
   expect(policy.getSnapshot().audioOnly).toBe(false);
   expect(request).not.toHaveBeenCalled();
   unmount();
+});
+
+it('ends an audio-only pause even when no receiver exists', async () => {
+  const { refs } = setup();
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  policy.setAudioOnly(true);
+  refs.peer.current = null;
+  refs.sessionRef.current = null;
+  refs.owners.current.clear();
+  const { unmount } = renderHook(() =>
+    useSubscriberLayers({
+      active: true,
+      resetSubscriber: vi.fn(),
+      policy,
+      ...refs,
+    })
+  );
+  await act(() => vi.advanceTimersByTimeAsync(32_000));
+  expect(policy.getSnapshot().audioOnly).toBe(false);
+  expect(policy.quality.take(policy.getSnapshot()).recvVideoKbps).toBeNull();
+  unmount();
+});
+
+it('keeps a rebuilt receiver at the link ceiling until it earns an upgrade', async () => {
+  const ceilingRef = { current: 'low' as 'high' | 'mid' | 'low' };
+  const { refs, request } = setup(undefined, undefined, { ceilingRef });
+  refs.stageWindow.current = {
+    cameraUserIds: ['a'],
+    spotlightUserId: 'a',
+    changedAt: 0,
+    tileHeights: new Map([['a', 720]]),
+  };
+  refs.requestedLayers.current.set('pub:a-video', {
+    layer: 'low',
+    peer: refs.peer.current!,
+  });
+  await act(() => vi.advanceTimersByTimeAsync(4000));
+  expect(request).not.toHaveBeenCalled();
+  expect(ceilingRef.current).toBe('low');
 });

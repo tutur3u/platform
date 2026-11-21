@@ -9,6 +9,8 @@ import {
   meetRealtimeClientMessageSchema,
   meetRealtimeTokenPayloadSchema,
 } from './index';
+import { MeetCommandExecutor } from './command-executor';
+import type { MeetRoomOutcome } from './room';
 import {
   applyMediaQualityReport,
   summarizeRoomMediaQuality,
@@ -143,5 +145,94 @@ describe('room media quality', () => {
     expect(gate(state, refused)).toBe(true);
     clock = 60_000;
     expect(gate(state, refused)).toBe(true);
+  });
+});
+
+describe('media quality admission', () => {
+  const run = async (
+    executor: MeetCommandExecutor,
+    actor: ReturnType<typeof token>,
+    state: ReturnType<typeof createMeetRoomSnapshot>,
+    message: Parameters<MeetCommandExecutor['run']>[0]['message']
+  ) => {
+    let committed: MeetRoomOutcome | undefined;
+    await executor.run(
+      { token: actor, now, message },
+      {
+        read: () => state,
+        commit: (result) => void (committed = result),
+        runSfu: async () => ({}),
+      }
+    );
+    return committed!;
+  };
+
+  it('drops reports beyond the per-minute limit before room processing', async () => {
+    const executor = new MeetCommandExecutor();
+    const speaker = { ...token(3, 'speaker'), roomId: 'test:quality-limit' };
+    const state = admitOrHold(createMeetRoomSnapshot(), speaker, now).state;
+    for (let n = 0; n < 4; n++) {
+      const accepted = await run(executor, speaker, state, {
+        type: 'media.quality',
+        sample,
+      });
+      expect(accepted.state.mediaQuality?.[speaker.userId]).toBeDefined();
+    }
+    const dropped = await run(executor, speaker, state, {
+      type: 'media.quality',
+      sample,
+    });
+    expect(dropped.state).toBe(state);
+    expect(dropped.reply).toEqual([]);
+  });
+
+  it('refuses excess manager reads with a correlated reply and no write', async () => {
+    const executor = new MeetCommandExecutor();
+    const host = { ...token(4, 'host'), roomId: 'test:quality-read' };
+    const state = admitOrHold(createMeetRoomSnapshot(), host, now).state;
+    let last: MeetRoomOutcome | undefined;
+    for (let n = 0; n <= 10; n++)
+      last = await run(executor, host, state, {
+        type: 'media.quality.read',
+        requestId: `q${n}`,
+      });
+    expect(last?.reply).toEqual([
+      { type: 'error', requestId: 'q10', error: 'media_quality_rate_limited' },
+    ]);
+    let clock = 60_000;
+    const gate = createMeetSnapshotWriteGate(15_000, () => clock);
+    expect(gate(state, last!)).toBe(true);
+    clock = 120_000;
+    expect(gate(state, last!)).toBe(true);
+  });
+
+  it('coalesces report writes by interval and persists real changes', () => {
+    const host = token(5, 'host');
+    const state = admitOrHold(createMeetRoomSnapshot(), host, now).state;
+    const report = applyMeetRoomCommand(state, {
+      token: host,
+      now,
+      message: { type: 'media.quality', sample },
+    });
+    let clock = 0;
+    const gate = createMeetSnapshotWriteGate(15_000, () => clock);
+    expect(gate(state, report)).toBe(false);
+    clock = 5000;
+    expect(gate(state, report)).toBe(true);
+    clock = 20_000;
+    expect(gate(state, report)).toBe(false);
+    const settled = {
+      ...report,
+      state: { ...report.state, classTimer: null },
+    };
+    clock = 21_000;
+    expect(isMeetStatelessSfuOutcome(state, settled)).toBe(false);
+    expect(gate(state, settled)).toBe(false);
+    const denied = applyMeetRoomCommand(state, {
+      token: token(6, 'speaker'),
+      now,
+      message: { type: 'media.quality.read', requestId: 'r' },
+    });
+    expect(isMeetStatelessSfuOutcome(state, denied)).toBe(true);
   });
 });

@@ -299,26 +299,19 @@ export function useSubscriberLayers({
       }
     };
 
+    /** Camera readings stop counting once nothing is being sampled. */
+    const idle = () => {
+      lastSampleAt = 0;
+      counters.clear();
+      policy?.quality.recordReceiver(null, [], false);
+    };
     const tick = async () => {
-      const pc = peer.current;
-      const sessionId = sessionRef.current;
-      if (busy || !pc || !sessionId || pc.connectionState !== 'connected')
-        return;
-      if (pc !== currentPeer) {
-        currentPeer = pc;
-        governor = initialReceiverGovernor();
-        counters.clear();
-        pendingUpgrades.clear();
-        pausedUntil = 0;
-        lastSampleAt = 0;
-        // The audio-only pause belongs to the link, not the peer: keep it.
-      }
+      if (busy) return;
       const now = Date.now();
-      if (!capable() || now < pausedUntil) return;
-      const phase = policy?.getSnapshot().visibility ?? 'visible';
-      if (phase === 'background') return;
-      // The store and this loop agree on the pause; a pause without a probe
-      // deadline gets one.
+      // The audio-only pause belongs to the link, not to any receiving peer:
+      // its probe runs even while no receiver exists, because closing every
+      // camera may leave nothing to subscribe to. A pause in the store
+      // without a probe deadline gets one.
       if (policy?.getSnapshot().audioOnly && !audio.active)
         audio = startAudioOnly(audio, now);
       if (audio.active) {
@@ -326,11 +319,30 @@ export function useSubscriberLayers({
         audio = policy?.getSnapshot().audioOnly
           ? nextAudioOnly(audio, null, now)
           : { ...initialAudioOnly(), probedAt: now };
-        if (!audio.active) {
-          counters.clear();
-          lastSampleAt = 0;
-          policy?.setAudioOnly(false);
-        }
+        if (!audio.active) policy?.setAudioOnly(false);
+        idle();
+        return;
+      }
+      const pc = peer.current;
+      const sessionId = sessionRef.current;
+      if (!pc || !sessionId || pc.connectionState !== 'connected') return;
+      if (pc !== currentPeer) {
+        currentPeer = pc;
+        // A rebuilt receiver inherits the link's ceiling and must earn any
+        // upgrade with fresh healthy samples.
+        governor = {
+          ...initialReceiverGovernor(),
+          ceiling: ceilingRef?.current ?? 'high',
+        };
+        counters.clear();
+        pendingUpgrades.clear();
+        pausedUntil = 0;
+        lastSampleAt = 0;
+      }
+      if (!capable() || now < pausedUntil) return;
+      const phase = policy?.getSnapshot().visibility ?? 'visible';
+      if (phase === 'background') {
+        idle();
         return;
       }
       const cameras = currentCameras(
@@ -339,8 +351,7 @@ export function useSubscriberLayers({
       );
       // No simulcast camera means nothing to switch and nothing to sample.
       if (!cameras.length) {
-        lastSampleAt = 0;
-        counters.clear();
+        idle();
         return;
       }
       busy = true;
@@ -360,11 +371,12 @@ export function useSubscriberLayers({
           if (ceilingRef) ceilingRef.current = governor.ceiling;
           // Severe congestion counts only once every camera is confirmed on
           // the lowest layer, not merely requested there.
-          const confirmedLow = cameras.every(
-            ({ owner }) =>
-              requestedLayers.current.get(owner.subscriptionKey)?.layer ===
-              'low'
-          );
+          const confirmedLow = cameras.every(({ owner }) => {
+            const confirmed = requestedLayers.current.get(
+              owner.subscriptionKey
+            );
+            return confirmed?.peer === pc && confirmed.layer === 'low';
+          });
           audio = nextAudioOnly(
             audio,
             {

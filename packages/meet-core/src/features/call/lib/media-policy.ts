@@ -124,7 +124,18 @@ export function visibilityPhaseAfter(hiddenMs: number | null): VisibilityPhase {
 type VisibilityDocument = Pick<
   Document,
   'visibilityState' | 'addEventListener' | 'removeEventListener'
-> & { pictureInPictureElement?: Element | null };
+> & {
+  pictureInPictureElement?: Element | null;
+  querySelectorAll?: (selector: 'video') => ArrayLike<HTMLVideoElement>;
+};
+
+/** WebKit exposes Picture-in-Picture as a per-video presentation mode. */
+const webkitPipOpen = (doc: VisibilityDocument) =>
+  Array.from(doc.querySelectorAll?.('video') ?? []).some(
+    (video) =>
+      (video as HTMLVideoElement & { webkitPresentationMode?: string })
+        .webkitPresentationMode === 'picture-in-picture'
+  );
 
 /** Events that open or close a Picture-in-Picture view while hidden. */
 const PIP_EVENTS = [
@@ -151,7 +162,9 @@ export function watchPageVisibility(
     ? undefined
     : document,
   pipOpen: () => boolean = () =>
-    !!doc?.pictureInPictureElement || !!documentPip()?.window,
+    !!doc?.pictureInPictureElement ||
+    !!documentPip()?.window ||
+    (!!doc && webkitPipOpen(doc)),
   clock: () => number = Date.now
 ) {
   if (!doc) return () => undefined;
@@ -177,16 +190,19 @@ export function watchPageVisibility(
   for (const name of PIP_EVENTS) doc.addEventListener(name, update, true);
   const pip = documentPip();
   pip?.addEventListener('enter', update);
-  // A document Picture-in-Picture window reports its own close.
+  // A document Picture-in-Picture window reports its own close; recheck
+  // after it is gone.
+  let pipWindow: EventTarget | undefined;
+  const onPipHide = () => timers.push(setTimeout(update, 0));
   const onPipEnter = (event: Event) => {
-    const window = (event as Event & { window?: EventTarget }).window;
-    window?.addEventListener('pagehide', () => setTimeout(update, 0), {
-      once: true,
-    });
+    pipWindow?.removeEventListener('pagehide', onPipHide);
+    pipWindow = (event as Event & { window?: EventTarget }).window;
+    pipWindow?.addEventListener('pagehide', onPipHide, { once: true });
   };
   pip?.addEventListener('enter', onPipEnter);
   return () => {
     clear();
+    pipWindow?.removeEventListener('pagehide', onPipHide);
     doc.removeEventListener('visibilitychange', update);
     for (const name of PIP_EVENTS) doc.removeEventListener(name, update, true);
     pip?.removeEventListener('enter', update);

@@ -114,7 +114,8 @@ peers are not torn down again.
 
 New subscriptions also start at or below the receiver's congestion ceiling. A
 receiver that has just recovered from congestion therefore never reopens a
-camera above the layer its link could carry.
+camera above the layer its link could carry. A rebuilt receiving peer inherits
+that ceiling and must earn any upgrade with fresh healthy samples.
 
 ## Thumbnail mode
 
@@ -144,7 +145,8 @@ With no camera to measure, recovery is a timed probe on the lowest layer after
 30 seconds. A probe that relapses within 30 seconds doubles the next pause, up
 to four minutes. Resuming manually starts a fresh probe. The pause belongs to
 the link rather than the receiving peer, so it and its probe deadline survive
-a receiver rebuild.
+a receiver rebuild. The probe runs even when no receiver exists, because
+closing every camera can leave nothing to subscribe to.
 
 ## Hidden tab
 
@@ -163,7 +165,8 @@ anything.
 
 Opening or closing Picture-in-Picture while hidden is reconciled immediately.
 This covers the standard, WebKit presentation-mode and document
-Picture-in-Picture events. Phases are derived from wall time, so a page the
+Picture-in-Picture events. WebKit's per-video `webkitPresentationMode` is read
+directly. Phases are derived from wall time, so a page the
 browser suspended lands in the right phase when it resumes. iOS may suspend a
 hidden page entirely, so its thresholds are best effort.
 
@@ -231,8 +234,17 @@ The numbers come from the publisher and subscriber loops above, so reporting
 adds no `getStats()` call.
 
 The room keeps the latest report per participant, at most 150, and drops
-reports older than two minutes. Reports never trigger more than one durable
-snapshot write every 15 seconds.
+reports older than two minutes. Each device's reports beyond four a minute are
+dropped before room processing. Manager reads are limited to ten a minute, and
+excess reads get a correlated refusal.
+
+Layer switches, reports, reads and refusals change only time accounting and
+diagnostics. Together they cause at most one durable snapshot write every 15
+seconds, and a refusal made at admission never causes one. Any other change to
+room state is always persisted.
+
+A camera that is not being measured reports no receive rate, loss or layers.
+That covers a hidden tab, an audio-only pause and a receiver with no cameras.
 
 Hosts and co-hosts see an anonymous room aggregate under **Settings →
 Connection**:

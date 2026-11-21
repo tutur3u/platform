@@ -353,44 +353,75 @@ export function recordMeetSubscriptionOperation(
 
 export const LAYER_UPDATE_RATE_LIMITED = 'layer_update_rate_limited';
 
+/** Snapshot fields that only diagnostics or time accounting change. */
+const DIAGNOSTIC_KEYS = new Set(['budget', 'mediaQuality']);
+/** Budget fields that time accounting advances on every command. */
+const ACCOUNTING_KEYS = new Set([
+  'accountedAt',
+  'participantMilliseconds',
+  'largeRoomPresenceMilliseconds',
+]);
+/** Refusals issued at admission, before any room processing. */
+export const MEET_ADMISSION_REFUSALS = new Set([
+  LAYER_UPDATE_RATE_LIMITED,
+  'media_quality_rate_limited',
+]);
+
+function onlyAccountingChanged(
+  previous: MeetRoomSnapshot['budget'],
+  next: MeetRoomSnapshot['budget']
+) {
+  if (previous === next) return true;
+  if (!previous || !next) return false;
+  const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  return [...keys].every(
+    (key) =>
+      ACCOUNTING_KEYS.has(key) ||
+      previous[key as keyof typeof previous] === next[key as keyof typeof next]
+  );
+}
+
 /**
- * A layer switch or media quality report changes no tracks, presence,
- * settings, attendance or lifecycle; only time accounting and diagnostics
- * advance. Those outcomes may skip the durable write.
+ * Outcomes that change nothing durable: layer switches, media quality reports
+ * and reads, and refusals. Every snapshot field except time accounting and
+ * media diagnostics must be unchanged by reference, and nothing may be sent
+ * beyond the reply. These outcomes may coalesce their durable write.
  */
 export function isMeetStatelessSfuOutcome(
   previous: MeetRoomSnapshot,
   result: MeetRoomOutcome
 ) {
   const next = result.state;
-  return (
-    !result.broadcast.length &&
-    !result.toManagers.length &&
-    !result.direct.length &&
-    !result.disconnect.length &&
-    next.tracks === previous.tracks &&
-    next.presence === previous.presence &&
-    next.waiting === previous.waiting &&
-    next.settings === previous.settings &&
-    next.ended === previous.ended &&
-    next.lifecycle === previous.lifecycle &&
-    next.attendance === previous.attendance &&
-    // A media quality report changes only diagnostic state and replies nothing.
-    ((!result.reply.length && next.mediaQuality !== previous.mediaQuality) ||
-      (result.reply.length > 0 &&
-        result.reply.every(
-          (reply) =>
-            (reply.type === 'sfu.response' &&
-              reply.action === 'sfu.tracks.update') ||
-            (reply.type === 'error' &&
-              reply.error === LAYER_UPDATE_RATE_LIMITED)
-        )))
+  if (
+    result.broadcast.length ||
+    result.toManagers.length ||
+    result.direct.length ||
+    result.disconnect.length ||
+    result.sfu
+  )
+    return false;
+  const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  for (const key of keys) {
+    if (DIAGNOSTIC_KEYS.has(key)) continue;
+    if (
+      previous[key as keyof MeetRoomSnapshot] !==
+      next[key as keyof MeetRoomSnapshot]
+    )
+      return false;
+  }
+  if (!onlyAccountingChanged(previous.budget, next.budget)) return false;
+  return result.reply.every(
+    (reply) =>
+      (reply.type === 'sfu.response' && reply.action === 'sfu.tracks.update') ||
+      reply.type === 'media.quality.summary' ||
+      reply.type === 'error'
   );
 }
 
 /**
- * Coalesces durable snapshot writes for layer switches: at most one per
- * interval, so time accounting lost on an eviction is bounded by it.
+ * Coalesces durable writes for stateless outcomes to at most one per
+ * interval, so time accounting lost on an eviction is bounded by it. A
+ * refusal issued at admission never earns a write.
  */
 export function createMeetSnapshotWriteGate(
   intervalMs = 15_000,
@@ -399,20 +430,19 @@ export function createMeetSnapshotWriteGate(
   let lastWrite = -Infinity;
   return (previous: MeetRoomSnapshot, result: MeetRoomOutcome) => {
     const now = clock();
-    // A refused, rate-limited request never earns a durable write.
+    if (!isMeetStatelessSfuOutcome(previous, result)) {
+      lastWrite = now;
+      return false;
+    }
     if (
-      isMeetStatelessSfuOutcome(previous, result) &&
+      result.reply.length > 0 &&
       result.reply.every(
         (reply) =>
-          reply.type === 'error' && reply.error === LAYER_UPDATE_RATE_LIMITED
+          reply.type === 'error' && MEET_ADMISSION_REFUSALS.has(reply.error)
       )
     )
       return true;
-    if (
-      isMeetStatelessSfuOutcome(previous, result) &&
-      now - lastWrite < intervalMs
-    )
-      return true;
+    if (now - lastWrite < intervalMs) return true;
     lastWrite = now;
     return false;
   };

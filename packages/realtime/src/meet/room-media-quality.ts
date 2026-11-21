@@ -33,6 +33,9 @@ export type RoomMediaQuality = Record<
   MeetMediaQualitySample & { at: number }
 >;
 
+/** Reports a device may send per minute; clients send one every 30 s. */
+export const MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE = 4;
+
 /** Reports older than this no longer describe a live device. */
 const STALE_MS = 120_000;
 // Rooms admit at most 100 participants; leave headroom for rejoining devices.

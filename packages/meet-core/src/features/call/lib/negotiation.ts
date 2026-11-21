@@ -416,7 +416,6 @@ export function useWindowedSubscriber({
         )
       );
       let requestedPeer: RTCPeerConnection | null = null;
-      const sentCapabilities = stateRef.current.mediaCapabilities;
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
         requestedPeer = pc;
@@ -426,11 +425,30 @@ export function useWindowedSubscriber({
           resetSubscriber
         );
         if (subscribePcRef.current !== pc) return;
-        const answer = await signalingRef.current?.request<SfuTracksResponse>({
-          sessionId,
-          tracks: pending,
-          type: 'sfu.tracks.subscribe',
-        });
+        // An older room server drops a request it cannot parse without a
+        // correlated reply, so only this request timing out after asking for
+        // current RIDs, under the same advertisement, marks a rollback.
+        const sentCapabilities = stateRef.current.mediaCapabilities;
+        const answer = await signalingRef.current
+          ?.request<SfuTracksResponse>({
+            sessionId,
+            tracks: pending,
+            type: 'sfu.tracks.subscribe',
+          })
+          .catch((error: unknown) => {
+            if (
+              error instanceof Error &&
+              error.message === 'signaling_timeout' &&
+              sentCapabilities === stateRef.current.mediaCapabilities &&
+              pending.some(
+                ({ simulcast }) =>
+                  simulcast?.preferredRid === 'f' ||
+                  simulcast?.preferredRid === 'q'
+              )
+            )
+              rejectedCapabilities.current = sentCapabilities ?? null;
+            throw error;
+          });
         if (subscribePcRef.current !== pc) return;
         recordSubscribedLayers(
           requestedLayers.current,
@@ -469,19 +487,6 @@ export function useWindowedSubscriber({
           setRemoteMedia
         );
       } catch (error) {
-        // An older room server drops a request it cannot parse without a
-        // correlated reply, so only a timeout on a request that used current
-        // RIDs, under the same advertisement, is evidence of a rollback.
-        if (
-          error instanceof Error &&
-          error.message === 'signaling_timeout' &&
-          sentCapabilities === stateRef.current.mediaCapabilities &&
-          pending.some(
-            ({ simulcast }) =>
-              simulcast?.preferredRid === 'f' || simulcast?.preferredRid === 'q'
-          )
-        )
-          rejectedCapabilities.current = sentCapabilities ?? null;
         if (requestedPeer && subscribePcRef.current === requestedPeer)
           resetSubscriber();
         throw error;

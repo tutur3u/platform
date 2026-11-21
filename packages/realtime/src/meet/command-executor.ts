@@ -9,10 +9,53 @@ import {
 import { queueUncommittedPublication } from './room-cleanup';
 import { outcome } from './room-outcome';
 import { takeActorRateLimit } from './actor-rate-limit';
+import { MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE } from './room-media-quality';
 import { LAYER_UPDATE_RATE_LIMITED } from './room-sfu';
 
 /** Layer update batches a receiver may send per minute. */
 export const MEET_LAYER_UPDATES_PER_MINUTE = 40;
+/** Room media health reads a manager may make per minute (UI polls at 15 s). */
+export const MEET_MEDIA_QUALITY_READS_PER_MINUTE = 10;
+
+/** Replies for a request over its per-actor limit, or undefined to admit it. */
+function admissionRefusal(
+  command: MeetRoomCommand
+): MeetRealtimeServerMessage[] | undefined {
+  const { message, token } = command;
+  const limit =
+    message.type === 'sfu.tracks.update'
+      ? MEET_LAYER_UPDATES_PER_MINUTE
+      : message.type === 'media.quality'
+        ? MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE
+        : message.type === 'media.quality.read'
+          ? MEET_MEDIA_QUALITY_READS_PER_MINUTE
+          : null;
+  if (
+    limit === null ||
+    takeActorRateLimit(
+      `${message.type}:${token.roomId}:${token.userId}`,
+      limit,
+      60_000
+    )
+  )
+    return undefined;
+  // A dropped health report needs no answer; requests get a correlated one.
+  if (
+    message.type !== 'sfu.tracks.update' &&
+    message.type !== 'media.quality.read'
+  )
+    return [];
+  return [
+    {
+      type: 'error',
+      requestId: message.requestId,
+      error:
+        message.type === 'sfu.tracks.update'
+          ? LAYER_UPDATE_RATE_LIMITED
+          : 'media_quality_rate_limited',
+    },
+  ];
+}
 
 type CommandOptions = {
   read: () => MeetRoomSnapshot;
@@ -35,28 +78,12 @@ function assertSfuSuccess(result: unknown, allowPartialTracks: boolean) {
 export class MeetCommandExecutor {
   private pending = new Map<string, Promise<void>>();
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
-    // Charged once at admission, before any provider call or queue wait.
-    // Clients send at most one batch per two-second sample.
-    if (
-      command.message.type === 'sfu.tracks.update' &&
-      !takeActorRateLimit(
-        `layers:${command.token.roomId}:${command.token.userId}`,
-        MEET_LAYER_UPDATES_PER_MINUTE,
-        60_000
-      )
-    )
+    // Charged once at admission, before room processing, any provider call
+    // or queue wait. Refusals change no room state.
+    const refusal = admissionRefusal(command);
+    if (refusal !== undefined)
       return Promise.resolve(
-        options.commit(
-          outcome(options.read(), {
-            reply: [
-              {
-                type: 'error',
-                requestId: command.message.requestId,
-                error: LAYER_UPDATE_RATE_LIMITED,
-              },
-            ],
-          })
-        )
+        options.commit(outcome(options.read(), { reply: refusal }))
       );
     if (
       !command.message.type.startsWith('sfu.') &&

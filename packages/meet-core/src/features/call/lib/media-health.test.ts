@@ -194,6 +194,29 @@ describe('page visibility with Picture-in-Picture', () => {
   });
 });
 
+describe('WebKit Picture-in-Picture', () => {
+  it('reads the video presentation mode with the default detector', () => {
+    const listeners = new Map<string, () => void>();
+    const video = { webkitPresentationMode: 'picture-in-picture' };
+    const doc = {
+      visibilityState: 'hidden' as DocumentVisibilityState,
+      querySelectorAll: () => [video],
+      addEventListener: (name: string, listener: () => void) =>
+        listeners.set(name, listener),
+      removeEventListener: () => undefined,
+    };
+    const policy = createMediaPolicy(null);
+    const stop = watchPageVisibility(policy, doc as never);
+    vi.advanceTimersByTime(30_000);
+    expect(policy.getSnapshot().visibility).toBe('visible');
+    video.webkitPresentationMode = 'inline';
+    listeners.get('webkitpresentationmodechanged')?.();
+    vi.advanceTimersByTime(1500);
+    expect(policy.getSnapshot().visibility).toBe('dimmed');
+    stop();
+  });
+});
+
 describe('subscription ceiling', () => {
   it('opens new camera subscriptions no higher than the receiver ceiling', () => {
     const plan = planWindowedRemoteSubscriptions({
@@ -269,5 +292,18 @@ describe('media quality recorder', () => {
     expect(
       (globalThis as { __meetMediaStats?: unknown }).__meetMediaStats
     ).toBeDefined();
+    // Once cameras stop being measured, the last reading is not reported.
+    recorder.recordReceiver(null, [], false);
+    expect(
+      recorder.take({
+        smallModePreference: 'auto',
+        audioOnly: true,
+        visibility: 'visible',
+      })
+    ).toMatchObject({
+      recvVideoKbps: null,
+      recvLoss: null,
+      layers: { high: 0, mid: 0, low: 0 },
+    });
   });
 });
