@@ -3,8 +3,13 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-workspace';
+import {
+  PLAN_PANEL_COOKIE_NAME,
+  parsePlanPanelOpen,
+} from '@tuturuuu/ui/lib/calendar/plan-panel-state';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { CalendarWorkspacePage } from '@/components/calendar-workspace-page';
@@ -110,9 +115,13 @@ export default async function CalendarPage({
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = !!workspace.personal;
+  const defaultPlanPanelOpen = parsePlanPanelOpen(
+    (await cookies()).get(PLAN_PANEL_COOKIE_NAME)?.value
+  );
 
   return (
     <CalendarWorkspacePage
+      defaultPlanPanelOpen={defaultPlanPanelOpen}
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}
       initialDate={initialDate}

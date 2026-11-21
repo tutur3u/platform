@@ -6,6 +6,7 @@ interface TasksSidebarProps {
   locale: string;
   userId: string;
   tasks?: ExtendedWorkspaceTask[];
+  defaultPlanPanelOpen?: boolean;
 }
 
 export default function TasksSidebar({
@@ -13,6 +14,7 @@ export default function TasksSidebar({
   locale,
   userId,
   tasks = [],
+  defaultPlanPanelOpen,
 }: TasksSidebarProps) {
   // Personal workspace = workspace ID matches user ID (no need for auto-assignment)
   const isPersonalWorkspace = resolvedWsId === userId;
@@ -26,6 +28,7 @@ export default function TasksSidebar({
       tasks={tasks}
       locale={locale}
       isPersonalWorkspace={isPersonalWorkspace}
+      defaultPlanPanelOpen={defaultPlanPanelOpen}
     />
   );
 }

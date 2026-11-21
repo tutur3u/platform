@@ -47,6 +47,9 @@ vi.mock(
   })
 );
 vi.mock('next/server', () => ({ connection: async () => undefined }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined }),
+}));
 vi.mock('next/navigation', () => ({
   redirect: (value: string) => {
     throw new Error(`Unexpected redirect ${value}`);

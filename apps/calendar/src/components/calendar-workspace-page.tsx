@@ -12,6 +12,7 @@ import { type ComponentProps, useEffect, useMemo, useRef } from 'react';
 import { useCalendarNavigation } from './calendar-navigation-provider';
 
 export function CalendarWorkspacePage({
+  defaultPlanPanelOpen,
   enableSmartScheduling,
   experimentalGoogleToken,
   initialDate,
@@ -22,6 +23,7 @@ export function CalendarWorkspacePage({
   userId,
   workspace,
 }: {
+  defaultPlanPanelOpen?: boolean;
   enableSmartScheduling: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   initialDate?: string;
@@ -67,6 +69,7 @@ export function CalendarWorkspacePage({
     <TaskCalendarPageShell
       className="h-[calc(100dvh-2rem)]"
       calendarConnections={[]}
+      defaultPlanPanelOpen={defaultPlanPanelOpen}
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={experimentalGoogleToken}
       initialEventId={initialEventId}

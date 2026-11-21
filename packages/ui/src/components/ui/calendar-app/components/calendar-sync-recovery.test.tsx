@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CalendarSyncAttentionButton } from './calendar-sync-attention-button';
 import {
@@ -187,18 +187,36 @@ it('shows neutral progress for an automatic sync instead of an attention warning
   ).toBeDisabled();
 });
 
-it('keeps an open settings dialog neutral when automatic syncing finishes', () => {
+it('keeps account management neutral and focus on the chip when syncing finishes', async () => {
   const value = state();
   value.syncHealth!.currentlyRunning = true;
   value.syncHealth!.state = 'syncing';
   const view = render(<CalendarSyncAttentionButton state={value} />);
   fireEvent.click(screen.getByRole('button', { name: 'syncing_calendars' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'manage_calendar_accounts' })
+  );
+  const settings = await screen.findByRole('dialog', {
+    name: 'manage_calendar_accounts',
+  });
   value.syncHealth!.currentlyRunning = false;
   value.syncHealth!.state = 'healthy';
   view.rerender(<CalendarSyncAttentionButton state={value} />);
-  expect(screen.getByRole('dialog')).toBeVisible();
+  expect(screen.getByText('manage_calendar_accounts_desc')).toBeVisible();
   expect(screen.queryByText('sync_recovery.attention')).toBeNull();
   expect(screen.queryByText('syncing_calendars')).toBeNull();
+
+  fireEvent.keyDown(settings, { key: 'Escape' });
+  const chip = await screen.findByRole('button', {
+    name: 'manage_calendar_accounts',
+  });
+  await waitFor(() => expect(chip).toHaveFocus());
+  fireEvent.blur(chip);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'manage_calendar_accounts' })
+    ).toBeNull()
+  );
 });
 
 it('keeps reconnection warnings prominent while another calendar syncs', () => {
@@ -251,4 +269,124 @@ it('explains a failed status request instead of a sync failure', () => {
     'sync_recovery.status_failed'
   );
   expect(screen.queryByText('sync_recovery.stalled')).toBeNull();
+});
+
+it('opens attention actions inline and account management from there', async () => {
+  const value = state({
+    accounts: [
+      {
+        id: 'google-account',
+        provider: 'google',
+        account_email: 'test@example.com',
+      } as never,
+    ],
+    providerAccountStatuses: {
+      'google-account': { state: 'reconnect_required' },
+    },
+  });
+  render(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'sync_recovery.attention' })
+  );
+  expect(
+    screen.getByRole('button', { name: 'sync_recovery.reconnect_google' })
+  ).toBeVisible();
+  expect(
+    screen.getByRole('dialog', { name: 'sync_recovery.attention' })
+  ).toBeVisible();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'manage_calendar_accounts' })
+  );
+  const settings = await screen.findByRole('dialog', {
+    name: 'manage_calendar_accounts',
+  });
+  expect(screen.getByText('manage_calendar_accounts_desc')).toBeVisible();
+  await waitFor(() =>
+    expect(settings).toContainElement(document.activeElement as HTMLElement)
+  );
+  fireEvent.keyDown(settings, { key: 'Escape' });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'sync_recovery.attention' })
+    ).toHaveFocus()
+  );
+});
+
+it('returns focus to the chip when the popover closes with Escape', async () => {
+  const value = state({
+    accounts: [
+      {
+        id: 'google-account',
+        provider: 'google',
+        account_email: 'test@example.com',
+      } as never,
+    ],
+    providerAccountStatuses: {
+      'google-account': { state: 'reconnect_required' },
+    },
+  });
+  render(<CalendarSyncAttentionButton state={value} />);
+  const chip = screen.getByRole('button', { name: 'sync_recovery.attention' });
+  fireEvent.click(chip);
+  fireEvent.keyDown(
+    screen.getByRole('dialog', { name: 'sync_recovery.attention' }),
+    { key: 'Escape' }
+  );
+  await waitFor(() => expect(chip).toHaveFocus());
+});
+
+it('returns focus to the chip when sync recovers while its popover is open', async () => {
+  const value = state();
+  value.syncHealth!.currentlyRunning = true;
+  value.syncHealth!.state = 'syncing';
+  const view = render(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.click(screen.getByRole('button', { name: 'syncing_calendars' }));
+  const popover = screen.getByRole('dialog', { name: 'syncing_calendars' });
+  value.syncHealth!.currentlyRunning = false;
+  value.syncHealth!.state = 'healthy';
+  view.rerender(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.keyDown(popover, { key: 'Escape' });
+  const chip = await screen.findByRole('button', {
+    name: 'manage_calendar_accounts',
+  });
+  await waitFor(() => expect(chip).toHaveFocus());
+  fireEvent.blur(chip);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'manage_calendar_accounts' })
+    ).toBeNull()
+  );
+});
+
+it('keeps the healthy chip while its reopened popover is open', async () => {
+  const value = state();
+  value.syncHealth!.currentlyRunning = true;
+  value.syncHealth!.state = 'syncing';
+  const view = render(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.click(screen.getByRole('button', { name: 'syncing_calendars' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'manage_calendar_accounts' })
+  );
+  const settings = await screen.findByRole('dialog', {
+    name: 'manage_calendar_accounts',
+  });
+  value.syncHealth!.currentlyRunning = false;
+  value.syncHealth!.state = 'healthy';
+  view.rerender(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.keyDown(settings, { key: 'Escape' });
+  const chip = await screen.findByRole('button', {
+    name: 'manage_calendar_accounts',
+  });
+  await waitFor(() => expect(chip).toHaveFocus());
+  fireEvent.click(chip);
+  fireEvent.blur(chip);
+  const popover = await screen.findByRole('dialog', {
+    name: 'manage_calendar_accounts',
+  });
+  fireEvent.keyDown(popover, { key: 'Escape' });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'manage_calendar_accounts' })
+    ).toHaveFocus()
+  );
 });

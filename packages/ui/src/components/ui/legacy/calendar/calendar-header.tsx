@@ -18,6 +18,10 @@ import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { calendarToday } from '../../../../lib/calendar-day';
 import { CalendarHeaderDateProvider } from './calendar-header-new-event';
 import { useCalendarSettings } from './settings/settings-context';
+import {
+  CALENDAR_PERIOD_KEYS,
+  useCalendarPeriodShortcuts,
+} from './use-calendar-period-shortcuts';
 import { CALENDAR_VIEW_KEYS } from './use-calendar-view-shortcuts';
 
 /**
@@ -60,10 +64,12 @@ function ToolbarIconButton({
   label,
   icon: Icon,
   onClick,
+  shortcut,
 }: {
   label: string;
   icon: ComponentType<{ className?: string }>;
   onClick: () => void;
+  shortcut: string;
 }) {
   return (
     <Tooltip>
@@ -78,7 +84,10 @@ function ToolbarIconButton({
           <Icon className="size-4" />
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent className="flex items-center gap-2">
+        {label}
+        <Kbd>{shortcut}</Kbd>
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -138,6 +147,13 @@ export function CalendarHeader({
       date.getFullYear() === today.getFullYear()) ||
     (view === 'year' && date.getFullYear() === today.getFullYear());
   const todayLabel = t(todayLabelKey(view));
+  useCalendarPeriodShortcuts({
+    previous: () => shift(-1),
+    next: () => shift(1),
+    today: () => {
+      if (!isCurrentPeriod) selectToday();
+    },
+  });
 
   return (
     <CalendarHeaderDateProvider value={date}>
@@ -153,11 +169,13 @@ export function CalendarHeader({
             label={t('toolbar.previous_period')}
             icon={ChevronLeft}
             onClick={() => shift(-1)}
+            shortcut={CALENDAR_PERIOD_KEYS.previous}
           />
           <ToolbarIconButton
             label={t('toolbar.next_period')}
             icon={ChevronRight}
             onClick={() => shift(1)}
+            shortcut={CALENDAR_PERIOD_KEYS.next}
           />
           <Tooltip>
             <TooltipTrigger asChild>
@@ -175,7 +193,10 @@ export function CalendarHeader({
                 <span className="@max-3xl/toolbar:hidden">{todayLabel}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{todayLabel}</TooltipContent>
+            <TooltipContent className="flex items-center gap-2">
+              {todayLabel}
+              <Kbd>{CALENDAR_PERIOD_KEYS.today}</Kbd>
+            </TooltipContent>
           </Tooltip>
         </div>
 

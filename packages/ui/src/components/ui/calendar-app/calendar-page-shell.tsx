@@ -14,6 +14,7 @@ import {
 } from './calendar-client-page';
 
 export interface CalendarTasksSidebarProps {
+  defaultPlanPanelOpen?: boolean;
   locale: string;
   resolvedWsId: string;
   tasks?: ExtendedWorkspaceTask[];
@@ -25,6 +26,8 @@ export type CalendarTasksSidebarComponent =
 
 interface CalendarPageShellProps {
   calendarConnections: CalendarConnection[] | null;
+  /** Plan panel state read from its cookie on the server. */
+  defaultPlanPanelOpen?: boolean;
   enableSmartScheduling: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   initialEventId?: string;
@@ -48,6 +51,7 @@ interface CalendarPageShellProps {
 
 export function CalendarPageShell({
   calendarConnections,
+  defaultPlanPanelOpen,
   enableSmartScheduling,
   experimentalGoogleToken,
   initialEventId,
@@ -75,6 +79,7 @@ export function CalendarPageShell({
       />
       {enableSmartScheduling && (
         <TasksSidebar
+          defaultPlanPanelOpen={defaultPlanPanelOpen}
           resolvedWsId={workspace.id}
           locale={locale}
           userId={userId}

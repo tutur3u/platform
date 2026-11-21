@@ -9,12 +9,15 @@ import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useState } from 'react';
+import {
+  planPanelCookie,
+  readPlanPanelOpenFromDocument,
+} from '@tuturuuu/ui/lib/calendar/plan-panel-state';
+import { type ReactNode, useState, useSyncExternalStore } from 'react';
 import { HabitsPanel } from '../habits-panel';
 import PriorityView from '../priority-view';
 import TimeTracker from '../time-tracker';
 
-const SIDEBAR_COLLAPSED_KEY = 'calendar-sidebar-collapsed';
 /** The plan panel sits beside the grid from this width; below it, a sheet. */
 const INLINE_PANEL_QUERY = '(min-width: 1280px)';
 /**
@@ -32,9 +35,17 @@ interface CalendarSidebarProps {
   onEventCreated?: () => void;
   /** If true, skip auto-assignment when creating tasks (personal workspace) */
   isPersonalWorkspace?: boolean;
+  /** Server-read panel state; hosts without it fall back to the cookie. */
+  defaultPlanPanelOpen?: boolean;
 }
 
-type PanelBodyProps = Omit<CalendarSidebarProps, 'locale'>;
+/** The cookie only changes through this panel's own setter. */
+const subscribeToNothing = () => () => {};
+
+type PanelBodyProps = Omit<
+  CalendarSidebarProps,
+  'locale' | 'defaultPlanPanelOpen'
+>;
 
 function PlanPanelBody({
   wsId,
@@ -121,18 +132,23 @@ export function CalendarSidebar({
   tasks = [],
   onEventCreated,
   isPersonalWorkspace = false,
+  defaultPlanPanelOpen,
 }: CalendarSidebarProps) {
   const t = useTranslations('calendar.plan_panel');
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-    return saved === null ? true : saved === 'true';
-  });
+  // Hosts without server state hydrate closed, then apply the cookie, so the
+  // server and client trees always match.
+  const cookieOpen = useSyncExternalStore(
+    subscribeToNothing,
+    readPlanPanelOpenFromDocument,
+    () => false
+  );
+  const [chosenOpen, setChosenOpen] = useState<boolean | null>(null);
+  const isCollapsed = !(chosenOpen ?? defaultPlanPanelOpen ?? cookieOpen);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
-  }, [isCollapsed]);
+  const setIsCollapsed = (collapsed: boolean) => {
+    setChosenOpen(!collapsed);
+    document.cookie = planPanelCookie(!collapsed);
+  };
 
   const openPanel = () => {
     if (window.matchMedia(INLINE_PANEL_QUERY).matches) setIsCollapsed(false);

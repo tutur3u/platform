@@ -38,6 +38,9 @@ vi.mock('next/navigation', () => ({
   notFound: mocks.notFound,
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined }),
+}));
 vi.mock('@/components/calendar-workspace-page', () => ({
   CalendarWorkspacePage: () => null,
 }));

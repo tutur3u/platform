@@ -4,10 +4,15 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-workspace';
+import {
+  PLAN_PANEL_COOKIE_NAME,
+  parsePlanPanelOpen,
+} from '@tuturuuu/ui/lib/calendar/plan-panel-state';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { schedulingTaskTransport } from './page-transport';
+import { cookies } from './request-context';
 
 interface PageProps {
   params: Promise<{
@@ -103,7 +108,12 @@ export async function calendarPageModel({ params, searchParams }: PageProps) {
   const enableSmartScheduling = true;
   const isPersonalWorkspace = !!workspace.personal;
 
+  const defaultPlanPanelOpen = parsePlanPanelOpen(
+    (await cookies()).get(PLAN_PANEL_COOKIE_NAME)?.value
+  );
+
   return {
+    defaultPlanPanelOpen,
     enableSmartScheduling,
     experimentalGoogleToken: googleToken,
     initialDate,

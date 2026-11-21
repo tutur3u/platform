@@ -173,3 +173,42 @@ describe('nextHalfHourOn', () => {
     );
   });
 });
+
+describe('CalendarHeader period shortcuts', () => {
+  const shifted = (setDate: ReturnType<typeof vi.fn>) => {
+    const update = setDate.mock.calls.at(-1)?.[0] as
+      | ((d: Date) => Date)
+      | undefined;
+    if (!update) throw new Error('setDate was not called');
+    return update(new Date(2026, 10, 18));
+  };
+
+  it('moves to the next and previous period with J/N and K/P', () => {
+    const props = renderHeader();
+    const setDate = props.setDate as ReturnType<typeof vi.fn>;
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(shifted(setDate).getDate()).toBe(25);
+    fireEvent.keyDown(window, { key: 'n' });
+    expect(shifted(setDate).getDate()).toBe(25);
+    fireEvent.keyDown(window, { key: 'k' });
+    expect(shifted(setDate).getDate()).toBe(11);
+    fireEvent.keyDown(window, { key: 'p' });
+    expect(shifted(setDate).getDate()).toBe(11);
+  });
+
+  it('ignores modified keys and typing in fields', () => {
+    const props = renderHeader();
+    fireEvent.keyDown(window, { key: 'j', metaKey: true });
+    const input = document.createElement('input');
+    document.body.append(input);
+    fireEvent.keyDown(input, { key: 'j' });
+    expect(props.setDate).not.toHaveBeenCalled();
+    input.remove();
+  });
+
+  it('jumps to today with T when another period is shown', () => {
+    const props = renderHeader({ date: new Date(2020, 0, 1) });
+    fireEvent.keyDown(window, { key: 't' });
+    expect(props.setDate).toHaveBeenCalled();
+  });
+});

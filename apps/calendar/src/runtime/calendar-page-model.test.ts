@@ -37,6 +37,15 @@ vi.mock('next/navigation', () => ({
   },
 }));
 vi.mock('next/server', () => ({ connection: async () => {} }));
+const requestCookies = new Map<string, string>();
+vi.mock('./request-context', () => ({
+  cookies: async () => ({
+    get: (name: string) =>
+      requestCookies.has(name)
+        ? { name, value: requestCookies.get(name) }
+        : undefined,
+  }),
+}));
 
 import { calendarPageModel } from './calendar-page-model.server';
 
@@ -46,6 +55,7 @@ const props = (search: { date?: string; eventId?: string } = {}) => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  requestCookies.clear();
   ports.actor.mockResolvedValue({ id: 'actor' });
   ports.workspace.mockResolvedValue({
     id: 'resolved-workspace',
@@ -105,5 +115,10 @@ describe('native Calendar permission and deep-link model', () => {
       ['ws_id', 'resolved-workspace'],
     ]);
     expect(result.initialDate).toBe('2026-10-19T10:00:00.000Z');
+  });
+  it('reads the Plan panel state from its cookie, closed by default', async () => {
+    expect((await calendarPageModel(props())).defaultPlanPanelOpen).toBe(false);
+    requestCookies.set('calendar-plan-panel', 'open');
+    expect((await calendarPageModel(props())).defaultPlanPanelOpen).toBe(true);
   });
 });

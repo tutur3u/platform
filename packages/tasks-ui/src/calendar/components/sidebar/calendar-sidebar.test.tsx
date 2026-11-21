@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarSidebar } from './calendar-sidebar';
 
@@ -27,14 +29,28 @@ function setWideViewport(wide: boolean) {
   );
 }
 
-function renderSidebar() {
+function renderSidebar(defaultPlanPanelOpen?: boolean) {
   return render(
-    <CalendarSidebar wsId="ws-1" assigneeId="user-1" tasks={[]} locale="en" />
+    <CalendarSidebar
+      wsId="ws-1"
+      assigneeId="user-1"
+      tasks={[]}
+      locale="en"
+      defaultPlanPanelOpen={defaultPlanPanelOpen}
+    />
   );
 }
 
+const panelCookie = () =>
+  document.cookie
+    .split('; ')
+    .find((entry) => entry.startsWith('calendar-plan-panel='))
+    ?.split('=')[1];
+
 describe('CalendarSidebar', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    document.cookie = 'calendar-plan-panel=; Path=/; Max-Age=0';
+  });
   afterEach(() => vi.unstubAllGlobals());
 
   it('starts collapsed to a rail with a labelled open control', () => {
@@ -53,11 +69,11 @@ describe('CalendarSidebar', () => {
     expect(screen.getByRole('tab', { name: 'tasks' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'habits' })).toBeTruthy();
     expect(screen.getByText('priority-view')).toBeTruthy();
-    expect(localStorage.getItem('calendar-sidebar-collapsed')).toBe('false');
+    expect(panelCookie()).toBe('open');
 
     fireEvent.click(screen.getByRole('button', { name: 'collapse' }));
     expect(screen.queryByRole('complementary')).toBeNull();
-    expect(localStorage.getItem('calendar-sidebar-collapsed')).toBe('true');
+    expect(panelCookie()).toBe('closed');
   });
 
   it('opens as a sheet below the wide breakpoint without expanding inline', () => {
@@ -68,6 +84,35 @@ describe('CalendarSidebar', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('priority-view')).toBeTruthy();
     expect(screen.queryByRole('complementary')).toBeNull();
-    expect(localStorage.getItem('calendar-sidebar-collapsed')).toBe('true');
+    expect(panelCookie()).toBeUndefined();
+  });
+
+  it('renders open on first paint from the server-read state', () => {
+    renderSidebar(true);
+    expect(screen.getByRole('complementary', { name: 'title' })).toBeTruthy();
+  });
+
+  it('hydrates a host without server state without a mismatch', async () => {
+    document.cookie = 'calendar-plan-panel=open; Path=/';
+    const element = (
+      <CalendarSidebar wsId="ws-1" assigneeId="user-1" tasks={[]} locale="en" />
+    );
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(element);
+    expect(container.querySelector('aside')).toBeNull();
+    document.body.append(container);
+    const recoverable = vi.fn();
+    await act(async () => {
+      hydrateRoot(container, element, { onRecoverableError: recoverable });
+    });
+    expect(recoverable).not.toHaveBeenCalled();
+    expect(container.querySelector('aside')).not.toBeNull();
+    container.remove();
+  });
+
+  it('falls back to the browser cookie when the host passes no state', () => {
+    document.cookie = 'calendar-plan-panel=open; Path=/';
+    renderSidebar();
+    expect(screen.getByRole('complementary', { name: 'title' })).toBeTruthy();
   });
 });
