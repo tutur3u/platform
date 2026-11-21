@@ -22,8 +22,8 @@ export const Route = createRootRoute({
     const copy = loaderData === 'vi' ? vi : en;
     return {
       scripts: [
-        trustedTypesHeadScript(),
         securityAppBaseHeadScript(),
+        trustedTypesHeadScript(),
         {
           children:
             "document.documentElement.classList.toggle('dark',matchMedia('(prefers-color-scheme: dark)').matches)",

@@ -15,7 +15,7 @@ export const Route = createRootRoute({
   component: Outlet,
   errorComponent: TasksError,
   head: () => ({
-    scripts: [trustedTypesHeadScript(), appBaseHeadScript()],
+    scripts: [appBaseHeadScript(), trustedTypesHeadScript()],
     meta: [
       { charSet: 'utf-8' },
       {

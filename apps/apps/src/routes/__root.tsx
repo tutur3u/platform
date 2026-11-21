@@ -26,7 +26,7 @@ export const Route = createRootRoute({
     const copy = (locale === 'vi' ? vi : en).appsGateway.metadata;
     const canonical = 'https://apps.tuturuuu.com/';
     return {
-      scripts: [trustedTypesHeadScript(), appBaseHeadScript()],
+      scripts: [appBaseHeadScript(), trustedTypesHeadScript()],
       meta: [
         { charSet: 'utf-8' },
         {
