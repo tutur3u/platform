@@ -23,6 +23,7 @@ import {
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
+import { createLoopbackTlsFixture } from './runtime-fixture-crypto.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -98,6 +99,9 @@ test(
     assert.match(source ?? '', /^[a-f0-9]{40}$/);
     const staged = await stageArtifact();
     t.after(() => rm(staged.scratch, { recursive: true, force: true }));
+    const { ca, httpsCertPath, httpsKeyPath } = await createLoopbackTlsFixture(
+      staged.scratch
+    );
     const { config } = staged;
     assert.equal(config.name, WORKER);
     assert.equal(config.no_bundle, true);
@@ -168,7 +172,13 @@ test(
         generateTypes: false,
         enableContainers: false,
         registry: staged.registry,
-        server: { hostname: '127.0.0.1', port: 0, secure: true },
+        server: {
+          hostname: '127.0.0.1',
+          port: 0,
+          secure: true,
+          httpsCertPath,
+          httpsKeyPath,
+        },
         origin: { secure: true },
         inferOriginFromRoutes: false,
         routeRequestsByRoutes: false,
@@ -200,8 +210,9 @@ test(
             port: target.port,
             path,
             headers: { host },
-            // The loopback listener uses a self-signed certificate.
-            rejectUnauthorized: false,
+            ca,
+            // Validate the socket IP even when the probe supplies a logical Host.
+            servername: '',
           },
           (response) => {
             const chunks = [];
