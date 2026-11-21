@@ -7,9 +7,17 @@ audience: developers
 
 The platform admin surface is served at `https://tuturuuu.com/admin` by the
 `tuturuuu-infrastructure` Cloudflare Worker behind the apex gateway (binding
-`MOUNT_ADMIN`). The source lives in `apps/admin` and moves to
-`apps/admin` once the mount is live; `infrastructure.tuturuuu.com` then redirects
-(301) to `tuturuuu.com/admin`.
+`MOUNT_ADMIN`). The source lives in `apps/admin` (package `@tuturuuu/admin`);
+the app key, Worker name and legacy host keep `infrastructure`, and
+`scripts/app-directories.json` maps that key to the directory for CI tooling.
+`infrastructure.tuturuuu.com` answers page navigations with a 301 to
+`tuturuuu.com/admin`.
+
+A checkout that existed before the move can keep an ignored
+`apps/infrastructure/` directory (usually only `node_modules`). Delete it with
+`rm -rf apps/infrastructure` before running tests or generators; the docs
+inventory generator skips such build-output-only directories, but other tools
+may still treat it as an app.
 
 ## Access
 

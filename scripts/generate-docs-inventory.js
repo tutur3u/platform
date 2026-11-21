@@ -88,13 +88,21 @@ function routePath(relative) {
   return `/${segments.join('/')}`;
 }
 
+// Ignored build output that can outlive a moved or deleted workspace.
+const LEFTOVER_ENTRIES = new Set(['node_modules', '.turbo', '.next', 'dist']);
+
+/** Whether a directory holds only ignored build output (no workspace). */
+function isLeftoverDirectory(dir) {
+  return fs.readdirSync(dir).every((entry) => LEFTOVER_ENTRIES.has(entry));
+}
+
 function collect(root = ROOT) {
   const manifests = [];
   const apps = [];
   for (const base of ['apps', 'packages']) {
     for (const name of fs.readdirSync(path.join(root, base)).sort()) {
       const dir = path.join(root, base, name);
-      if (!fs.statSync(dir).isDirectory()) continue;
+      if (!fs.statSync(dir).isDirectory() || isLeftoverDirectory(dir)) continue;
       if (base === 'apps' && PAUSED_APP_DIRECTORIES.has(name)) {
         apps.push({
           name,
