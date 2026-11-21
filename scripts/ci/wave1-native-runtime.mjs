@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -51,6 +52,39 @@ export function calendarProductionRuntimeTarget(profile) {
       },
     ],
   };
+}
+
+/** A browser document navigation, which fetch() cannot express. */
+function documentNavigation(url, host, path) {
+  return new Promise((resolveNavigation, reject) => {
+    const request = httpRequest(
+      {
+        hostname: url.hostname,
+        port: url.port,
+        path,
+        method: 'GET',
+        headers: {
+          host,
+          accept: 'text/html',
+          'sec-fetch-mode': 'navigate',
+          'sec-fetch-dest': 'document',
+        },
+      },
+      (response) => {
+        response.on('error', reject);
+        response.resume();
+        resolveNavigation({
+          status: response.statusCode,
+          location: response.headers.location ?? null,
+        });
+      }
+    );
+    request.setTimeout(15_000, () =>
+      request.destroy(new Error('Document navigation timed out'))
+    );
+    request.on('error', reject);
+    request.end();
+  });
 }
 
 async function runRuntimeAcceptance() {
@@ -199,12 +233,16 @@ async function runRuntimeAcceptance() {
           });
         if (calendarOn) {
           const path = '/vi/personal?view=week&tag=1&tag=2';
-          const navigation = await fetchWorker(path, {
-            headers: { 'sec-fetch-mode': 'navigate' },
-          });
+          // fetch() always stamps Sec-Fetch-Mode: cors, so the document
+          // navigation goes over raw HTTP to the local server.
+          const navigation = await documentNavigation(
+            await worker.url,
+            host,
+            path
+          );
           assert.equal(navigation.status, 301);
           assert.equal(
-            navigation.headers.get('location'),
+            navigation.location,
             `https://tuturuuu.com/calendar${path}`
           );
           // Only document navigations move; a fetch stays on the subdomain.
