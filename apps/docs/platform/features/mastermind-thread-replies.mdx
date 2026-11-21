@@ -1,0 +1,108 @@
+---
+title: Mastermind thread replies
+description: How a message from Mastermind tooling reaches a T3 thread on the orchestrator Mac steered, never queued, with its sign-in, idempotency, limits, install and rollback.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+Product decision (owner, 21 Nov 2026): every message Mastermind sends into a
+fleet thread is **steered**. It is injected into the running turn, or starts a
+turn when the thread is idle. It is never queued behind a running turn, and
+that is the default with no opt-out. When steering is impossible the receipt
+says `queued`; nothing claims a delivery that did not happen.
+
+Scope: owner answers relayed by the orchestrator's ask tool (`iris-ask`) and
+replies the owner posts into a thread from Mastermind web or the mobile app.
+Out of scope: attachments, commands and new threads. Only text reaches an
+existing thread.
+
+## Steered delivery
+
+- **Why.** The `t3 thread send` CLI always sends with mode `queue`, so an
+  answer to a busy orchestrator waited for the whole turn to end. The T3 MCP
+  tool `t3_thread_send` takes a `mode`;
+  `scripts/mastermind-fleet/t3-steer.mjs` calls it with `auto`, which T3
+  resolves in one step: steer the running turn, or start the idle thread. If
+  T3 still answers `queued` (the turn cannot take input at that instant) and
+  another run is active, the helper promotes the queued message with
+  `t3_queue` `promote_to_steer`.
+- **Receipt.** `steered`, `started` or `queued`, plus the message and run
+  ids. `delivered` appears only for an interrupted send that was later found
+  in the thread, where the manner is no longer knowable. The message text is
+  never printed or logged.
+- **Idempotency.** `--request-id` is passed as T3's `clientRequestId`. T3
+  remembers that id per MCP sign-in (bearer), so the helper keeps its own
+  send journal (`~/.local/share/fleet-sync/t3-steer-journal.jsonl`): a
+  request is recorded with a fingerprint of the bearer it used before it is
+  sent, and with its receipt once it lands. Every decision and write happens
+  under one lock file and re-reads the journal, so two processes cannot both
+  claim an id. A retry returns the recorded receipt and sends nothing. A
+  retry of a send that never reported back is sent again under the same
+  bearer, where T3 itself recognises the id (measured: one delivery). Under
+  a new bearer it first waits out a 60-second window (`steer_in_flight`),
+  then looks for the message in the thread's timeline (T3 derives the
+  message id from the request id; up to 500 newest items) and sends only
+  when it is not there. `iris-ask` uses `iris-ask:answer:<id>` for owner
+  answers.
+- **Known limit.** T3 does not show a steer it has accepted but not yet
+  injected (the target is in the middle of a tool call), neither in the
+  timeline nor in the queue. If a send is cut off before it reports back, the
+  bearer then changes, and the retry comes while that first copy is still
+  waiting, the message arrives twice. The same holds if the first copy has
+  scrolled past the 500 newest timeline items. The helper accepts that over
+  losing an owner message.
+- **Sign-in** (`scripts/mastermind-fleet/t3-mcp.mjs`). The local `/mcp`
+  endpoint refuses `t3 auth session issue` bearers; it accepts only an MCP
+  client session from T3's OAuth endpoints (`/oauth/mcp/register`,
+  `approval`, `decision`, `token`; authorization code with PKCE). The helper
+  runs that flow against `http://127.0.0.1:<port>` only: the origin comes
+  from `~/.t3/userdata/server-runtime.json` and anything but loopback is
+  refused before a request is made. A five-minute local session minted by
+  the `t3` CLI approves it and is revoked in a `finally`. The MCP token is
+  cached in `~/.local/share/fleet-sync/t3-mcp-token.json`, bound to origin
+  and access level and replaced a minute before expiry, and one fresh sign-in
+  is made when the server stops accepting it.
+- **Access level.** `full-access`: T3 refuses a sender narrower than the
+  target thread, and orchestrator threads run with full access. The cached
+  token therefore carries the same reach as the local `t3` CLI, which any
+  process of this user can already invoke.
+- **Private files** (`scripts/mastermind-fleet/private-files.mjs`). The
+  token, the journal and the bridge files are opened without following
+  symlinks and without blocking on a FIFO, read only when they are regular
+  files this user owns with no group or world access, and written through an
+  exclusively created mode-0600 temp file.
+- **Limits.** Existing threads only (a thread id, optionally a linked
+  machine's `environmentId`), text only up to 16,000 characters. Ids never
+  start with a dash. Failures are a closed set of codes on stderr.
+
+### Install and rollback
+
+Copy `private-files.mjs`, `t3-mcp.mjs` and `t3-steer.mjs` from `main` next to
+the publisher in `~/.local/share/fleet-sync/bin/`. `iris-ask` calls the
+helper for every thread message and falls back to the `t3 thread send` CLI
+when the helper file is missing or fails before anything was sent (server not
+running, sign-in refused, journal unusable). Removing the three files restores
+the old queueing behaviour. A failure that may have happened after the send is
+reported as failed and retried with the same request id; it is never resent
+through the CLI.
+
+### Verify
+
+`node t3-steer.mjs <threadId> "ping" --request-id test-1 --json` against a
+thread that is mid-turn prints `"delivery":"steered"`; repeating the command
+prints the same receipt and the thread shows one message. Measured on the
+orchestrator Mac on 21 Nov 2026: about 0.6 s with a fresh sign-in, under 0.1 s
+with the cached token.
+
+### Regression coverage
+
+`scripts/mastermind-fleet/t3-mcp.test.mjs` and `t3-steer.test.mjs`: PKCE sign-in with the verifier
+matching its challenge, loopback-only origin, the approving session always
+revoked and never sent to another endpoint, the code taken only from the
+helper's own redirect path and state, the private origin-bound token cache,
+symlink and FIFO refusal, one re-sign-in on 401, one `auto` call with the
+idempotency key, a retry that never sends twice even after a new sign-in, an
+interrupted send resolved from the timeline (including a later page), two
+processes unable to claim one request id, no send when the journal is locked
+or cannot be written, promotion of a queued message, a truthful `queued` receipt, closed
+error codes and input validation before any call.
