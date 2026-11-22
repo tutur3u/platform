@@ -103,3 +103,39 @@ it.each(['returned failure', 'rejected request'])(
     queryClient.clear();
   }
 );
+
+it('saves the mounted browser path and query at the time of the switch', async () => {
+  const previousUrl = window.location.href;
+  const previousState = window.history.state;
+  const queryClient = new QueryClient();
+  mocks.switchAccount.mockResolvedValue({ success: true });
+  const onAccountChanged = vi.fn();
+
+  try {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SatelliteAccountSwitcherMenu
+          centralUrl="https://example.test"
+          t={(key) => key}
+          onAccountChanged={onAccountChanged}
+        />
+      </QueryClientProvider>
+    );
+    const button = await screen.findByRole('button', {
+      name: /Fixture target\s*target@example\.test/,
+    });
+    const mountedRoute = '/contacts/personal/users?view=all&view=active';
+    window.history.replaceState(null, '', mountedRoute + '#row');
+    fireEvent.click(button);
+
+    await waitFor(() => expect(onAccountChanged).toHaveBeenCalledOnce());
+    expect(mocks.switchAccount).toHaveBeenCalledWith(
+      'target',
+      { currentRoute: mountedRoute },
+      { baseUrl: 'https://example.test' }
+    );
+  } finally {
+    window.history.replaceState(previousState, '', previousUrl);
+    queryClient.clear();
+  }
+});

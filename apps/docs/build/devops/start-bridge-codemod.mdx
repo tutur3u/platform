@@ -69,6 +69,12 @@ compiled once, in `rsc`; the request store is global, so `next/headers`,
 cookies and the mount see the same request. Never alias or disable plugin-rsc's
 import validation to make a build pass.
 
+The bridge's `usePathname()` returns an app-relative pathname even when Start
+hydrates the router with its build-time base. Workspace navigation can replace
+the workspace segment before the bridge adds the runtime mount to the target.
+Saved account return routes use the browser pathname and query so Web can
+restore the mounted URL.
+
 `redirect()` from `next/navigation` keeps an absolute URL absolute, as in
 Next. Start's router reduces a same-origin absolute href to its path, and on
 the apex Web's `https://tuturuuu.com/login` is same-origin with

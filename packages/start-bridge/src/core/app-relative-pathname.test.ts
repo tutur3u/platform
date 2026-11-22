@@ -8,12 +8,12 @@ import { appRelativePathname } from './app-url';
 // to `/<ws>/x/users`, which the app proxy handed to Web as a 404.
 describe('appRelativePathname', () => {
   it('strips the mount when the browser router does not apply it', () => {
-    expect(appRelativePathname('/contacts/personal/users', '', '/contacts')).toBe(
-      '/personal/users'
-    );
-    expect(appRelativePathname('/contacts/personal/users', '/', '/contacts')).toBe(
-      '/personal/users'
-    );
+    expect(
+      appRelativePathname('/contacts/personal/users', '', '/contacts')
+    ).toBe('/personal/users');
+    expect(
+      appRelativePathname('/contacts/personal/users', '/', '/contacts')
+    ).toBe('/personal/users');
     expect(appRelativePathname('/contacts', '', '/contacts')).toBe('/');
     expect(appRelativePathname('/contacts/', '', '/contacts')).toBe('/');
   });

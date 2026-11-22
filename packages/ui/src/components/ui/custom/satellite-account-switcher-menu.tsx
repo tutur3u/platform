@@ -24,7 +24,7 @@ import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 interface SatelliteAccountSwitcherMenuProps {
   centralUrl: string;
   workspaceId?: string;
-  currentRoute: string;
+  currentRoute?: string;
   t: (
     key:
       | 'accounts'
@@ -84,7 +84,8 @@ export function SatelliteAccountSwitcherMenu({
       switchWebAccountWithInternalApi(
         accountId,
         {
-          currentRoute,
+          currentRoute:
+            currentRoute ?? window.location.pathname + window.location.search,
         },
         { baseUrl: centralUrl }
       ),

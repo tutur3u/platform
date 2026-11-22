@@ -1,33 +1,29 @@
-import { readFileSync } from 'node:fs';
+import {
+  ONE_ORIGIN_APP_ALIAS_BASE_PATHS,
+  ONE_ORIGIN_APP_BASE_PATHS,
+} from '@tuturuuu/utils/app-mounts';
 import { describe, expect, it } from 'vitest';
 import { appRelativePathname, withAppBase } from './app-url';
 
-// Every apex mount the gateway serves (`/contacts`, `/meet`, ...). A shared
-// workspace switcher rewrites the first segment of `usePathname()` and pushes
-// the result through `withAppBase`; the target must stay inside the mount.
-const gatewayConfig = readFileSync(
-  new URL('../../../../apps/gateway/wrangler.jsonc', import.meta.url),
-  'utf8'
-);
-const mountedPaths =
-  /"GATEWAY_MOUNTED_PATHS":\s*"([^"]+)"/u.exec(gatewayConfig)?.[1] ?? '';
+// Every app that can be mounted on the shared origin (`/contacts`, `/meet`,
+// ...). A shared workspace switcher rewrites the first segment of
+// `usePathname()` and pushes the result through `withAppBase`; the target
+// must stay inside the mount.
 const mounts = [
-  ...new Set(
-    mountedPaths
-      .split(',')
-      .map((path) => path.trim().replace(/\/\*$/u, ''))
-      .filter((path) => /^\/[a-z][a-z0-9-]*$/u.test(path))
-  ),
-];
+  ...new Set([
+    ...Object.values(ONE_ORIGIN_APP_BASE_PATHS),
+    ...Object.values(ONE_ORIGIN_APP_ALIAS_BASE_PATHS).flat(),
+  ]),
+].filter((path): path is string => typeof path === 'string');
 
 function switchTarget(pathname: string, nextSlug: string, base: string) {
   return withAppBase(pathname.replace(/^\/[^/]+/u, `/${nextSlug}`), base);
 }
 
-describe('workspace switch under every apex mount', () => {
-  it('reads the mounted apps from the gateway', () => {
+describe('workspace switch under every shared-origin mount', () => {
+  it('covers the mounted apps', () => {
     expect(mounts).toContain('/contacts');
-    expect(mounts.length).toBeGreaterThan(5);
+    expect(mounts).toContain('/meet');
   });
 
   it.each(mounts)('%s keeps its mount and the equivalent page', (base) => {
