@@ -118,9 +118,14 @@ records the product rules of the shell entry and every tab.
 - **Decisions:** the orchestrator writes one JSON file per open decision to
   `~/.local/share/fleet-sync/decisions/open/<id>.json` with `id` (lowercase
   slug), `title`, optional `body`, `urgency` (`urgent`, `high`, `normal`,
-  `fyi`), up to six `options` (`{id, label}`), optional `recommendedOptionId`,
+  `fyi`), up to six `options` (`{id, label, description?}`), optional `recommendedOptionId`,
   `laneId`, `deadlineAt`, and `createdAt` (any parseable timestamp; sent as
-  UTC ISO). Files with a bad id, no title, or no usable `createdAt`, and
+  UTC ISO). Optional option descriptions are single-line scrubbed text, at most
+  280 characters; empty scrubbed descriptions are omitted. Optional `body` is
+  scrubbed at 2,000 characters with paragraphs, `**bold**`, backtick code and
+  list markers preserved. Secret, URL, email, path, UUID and opaque-value
+  removal applies to bodies too. Blank lines collapse to one and spaces within
+  each line collapse to one. Files with a bad id, no title, or no usable `createdAt`, and
   unparseable files, are skipped and only counted (`skippedDecisions` in the
   log); an unknown urgency becomes `normal`, and an option whose label
   scrubs to nothing, an invalid recommendation, or a timestamp outside the
@@ -177,7 +182,21 @@ records the product rules of the shell entry and every tab.
 - **Design-review asks (`kind: "review"`):** <a id="design-review-asks"></a>
   the orchestrator asks the owner to approve a design. The decision's
   `title` names it and `why` summarizes it; `review` holds `mockupUrl` and an
-  optional `preview`. Neither link may point at an arbitrary origin.
+  optional `preview` and `document`. Neither link may point at an arbitrary origin.
+  A local document is `{ document: { file: "<bare-name>.html" } }` in the
+  review input. The publisher uses the image upload budget, ownership checks,
+  200 KiB size cap, SHA-256 addressing, seven-day TTL and 24-live-asset limit.
+  HTML must be valid UTF-8 and begin with `<!doctype html` or `<html`, ignoring
+  an optional BOM, leading whitespace and case. Published documents use
+  `document: { source: "asset", assetId, contentType: "text/html" }`.
+  A document-only review gets the owner-authenticated asset URL as `mockupUrl`
+  for older clients. If that upload fails, the decision waits for the next run.
+  With an existing mockup URL, a failed document upload only omits the document.
+  HTML downloads are owner-only, `application/octet-stream`, `attachment`,
+  `private, no-store`, `nosniff`, same-site CORP and a sandboxing CSP; Web never
+  renders HTML on its origin. Reviews can carry options and descriptions;
+  `approve` with `optionId` selects an option, while `request_changes` still
+  requires notes.
   `mockupUrl` must be https with no credentials, port or fragment, on a
   `claude.ai` artifact path (`/artifact/`, `/code/artifact/`,
   `/public/artifacts/`) or on `tuturuuu.com` or a subdomain. The preview is
@@ -194,7 +213,7 @@ records the product rules of the shell entry and every tab.
   their nonces; a new one past the cap gets `429 asset_limit` and the
   review publishes without it. Uploading a live id again renews it. The snapshot names it
   as `{ source: "asset", assetId, contentType }`. The publisher uploads at
-  most three images per run, records them in `review-assets.json` and
+  most three assets per run, records them in `review-assets.json` and
   uploads again after three days while the review is open. A preview that
   cannot be read, checked or uploaded is dropped; the review stays. `GET` on
   the asset route serves the image only to the fleet owner (same admission as

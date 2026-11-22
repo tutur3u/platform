@@ -135,7 +135,7 @@ test('clips decision text to the contract caps the edge guard accepts', () => {
   });
   assert.ok(decision.title.length <= 120);
   assert.ok(decision.title.endsWith('...'));
-  assert.ok(decision.body.length <= 600);
+  assert.ok(decision.body.length <= 2000);
   assert.ok(decision.options[0].label.length <= 60);
   assert.equal(decision.recommendedOptionId, 'go');
   assert.equal(decision.createdAt, '2026-11-21T02:00:00.000Z');

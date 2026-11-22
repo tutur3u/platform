@@ -23,12 +23,16 @@ async function worstCaseSnapshot() {
     parseDecision({
       id: `iris-decision-${i}`,
       title: `${'🚀'.repeat(14)} ${CJK.repeat(30)}`,
-      body: `${'🔥'.repeat(20)} ${CJK.repeat(80)}`,
+      body: `**Context**\n\n- ${'🔥'.repeat(20)} ${CJK.repeat(80)}`,
       urgency: i % 2 ? 'urgent' : 'nonsense',
       options: [
         { id: 'stars', label: '***' },
         { id: 'bearer', label: 'bearer#example' },
-        { id: 'go', label: `${'✅'.repeat(12)} ${CJK.repeat(10)}` },
+        {
+          id: 'go',
+          label: `${'✅'.repeat(12)} ${CJK.repeat(10)}`,
+          description: `${'🔥'.repeat(20)} Context https://example.com ${CJK.repeat(20)}`,
+        },
         ...Array.from({ length: 6 }, (_, j) => ({
           id: `o${j}`,
           label: CJK.repeat(10),

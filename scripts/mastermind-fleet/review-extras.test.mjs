@@ -5,7 +5,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { baseFleetState, parseDecisionExtras } from './decision-extras.mjs';
-import { attachReviewAssets, readReviewImage } from './review-extras.mjs';
+import {
+  attachReviewAssets,
+  parseReview,
+  readReviewDocument,
+  readReviewImage,
+} from './review-extras.mjs';
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2]);
 const MOCKUP = 'https://claude.ai/code/artifact/0f6a2b1c';
@@ -116,4 +121,78 @@ test('the v1 fallback leaves reviews and the failure split out', () => {
   });
   assert.deepEqual(base.lanes, [{ id: 'lane-a', state: 'idle' }]);
   assert.deepEqual(base.decisions, [{ id: 'b', title: 'Plain ask' }]);
+});
+
+test('uploads HTML with a fallback URL, shares budget, and retries failed document-only reviews', async () => {
+  const dir = tempDir();
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'mock.html'),
+      '<!DOCTYPE html><html><body>Mock</body></html>'
+    );
+    const asset = readReviewDocument(path.join(dir, 'mock.html'));
+    assert.equal(asset.contentType, 'text/html');
+    assert.equal(parseReview({ document: { file: '../mock.html' } }), null);
+    const make = () => ({
+      kind: 'review',
+      review: parseReview({ document: { file: 'mock.html' } }),
+    });
+    const decisions = [make(), make(), make(), make()];
+    let uploads = 0;
+    await attachReviewAssets(decisions, {
+      dir,
+      origin: 'https://tuturuuu.com',
+      put: async () => {
+        uploads++;
+      },
+      now: NOW,
+    });
+    assert.equal(uploads, 3);
+    assert.equal(decisions.length, 3);
+    assert.deepEqual(decisions[0].review.document, {
+      source: 'asset',
+      assetId: asset.assetId,
+      contentType: 'text/html',
+    });
+    assert.equal(
+      decisions[0].review.mockupUrl,
+      `https://tuturuuu.com/api/v1/mastermind/fleet/review-assets/${asset.assetId}`
+    );
+    const failed = [make()];
+    await attachReviewAssets(failed, {
+      dir,
+      origin: 'https://tuturuuu.com',
+      put: async () => {
+        throw new Error('offline');
+      },
+    });
+    assert.equal(failed.length, 0);
+    const fallback = [
+      {
+        kind: 'review',
+        review: parseReview({
+          mockupUrl: MOCKUP,
+          document: { file: 'mock.html' },
+        }),
+      },
+    ];
+    await attachReviewAssets(fallback, {
+      dir,
+      put: async () => {
+        throw new Error('offline');
+      },
+    });
+    assert.deepEqual(fallback[0].review, { mockupUrl: MOCKUP });
+    fs.symlinkSync(path.join(dir, 'mock.html'), path.join(dir, 'link.html'));
+    assert.equal(readReviewDocument(path.join(dir, 'link.html')), null);
+    fs.writeFileSync(path.join(dir, 'bad.html'), Buffer.from([0xff, 0x3c]));
+    assert.equal(readReviewDocument(path.join(dir, 'bad.html')), null);
+    fs.writeFileSync(
+      path.join(dir, 'big.html'),
+      '<html>' + 'x'.repeat(200 * 1024)
+    );
+    assert.equal(readReviewDocument(path.join(dir, 'big.html')), null);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

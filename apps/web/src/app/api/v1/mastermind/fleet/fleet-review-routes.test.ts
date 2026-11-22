@@ -263,4 +263,67 @@ describe('Mastermind fleet design reviews', () => {
       202
     );
   });
+  it('serves HTML only as an owner-authenticated inert download and refuses type confusion', async () => {
+    const html = Buffer.from(
+      '\ufeff \n<!DOCTYPE html><html><script>alert(1)</script></html>'
+    );
+    const id = createHash('sha256').update(html).digest('hex');
+    const path = `/api/v1/mastermind/fleet/review-assets/${id}`;
+    const body = JSON.stringify({
+      contentType: 'text/html',
+      data: html.toString('base64'),
+    });
+    expect((await uploadAsset(signed('PUT', path, body), id)).status).toBe(201);
+    const response = await readAsset(id);
+    expect(response.headers.get('content-type')).toBe(
+      'application/octet-stream'
+    );
+    expect(response.headers.get('content-disposition')).toBe('attachment');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('content-security-policy')).toBe(
+      "default-src 'none'; sandbox"
+    );
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(response.headers.get('cross-origin-resource-policy')).toBe(
+      'same-site'
+    );
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(html);
+    mocks.user = { id: NO_PERMISSION };
+    expect((await readAsset(id)).status).toBe(403);
+    const mismatch = JSON.stringify({
+      contentType: 'text/html',
+      data: Buffer.from(PNG).toString('base64'),
+    });
+    expect(
+      (await uploadAsset(signed('PUT', ASSET_PATH, mismatch))).status
+    ).toBe(422);
+  });
+
+  it('accepts an option approval and request_changes on a review with options', async () => {
+    const decision = {
+      ...review,
+      options: [{ id: 'one', label: 'One', description: 'First design' }],
+    };
+    expect(
+      (
+        await publish(
+          sampleFleetState({
+            generatedAt: new Date().toISOString(),
+            decisions: [decision],
+          })
+        )
+      ).status
+    ).toBe(200);
+    expect(
+      (await answer(decision.id, { action: 'approve', optionId: 'one' })).status
+    ).toBe(202);
+    expect(
+      (
+        await answer(decision.id, {
+          action: 'request_changes',
+          text: 'Wider cards',
+        })
+      ).status
+    ).toBe(202);
+  });
 });

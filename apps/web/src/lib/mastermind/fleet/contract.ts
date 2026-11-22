@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fleetLoginSchema } from './login';
 import { fleetReviewSchema } from './review';
-import { scrubFleetText } from './scrub';
+import { scrubFleetBody, scrubFleetText } from './scrub';
 import {
   fleetOwnerProofSchema,
   fleetPairAnswerSchema,
@@ -95,10 +95,16 @@ export const fleetMachineSchema = z.object({
     .optional(),
 });
 
-export const fleetDecisionOptionSchema = z.object({
-  id: slug,
-  label: requiredText(60),
-});
+export const fleetDecisionOptionSchema = z
+  .object({
+    id: slug,
+    label: requiredText(60),
+    description: text(280).optional(),
+  })
+  .transform(({ description, ...option }) => ({
+    ...option,
+    ...(description ? { description } : {}),
+  }));
 
 export const fleetDecisionKinds = ['ask', 'login', 'review', 'secret'] as const;
 export type FleetDecisionKind = (typeof fleetDecisionKinds)[number];
@@ -115,7 +121,11 @@ export const fleetDecisionSchema = z
     id: slug,
     kind: z.enum(fleetDecisionKinds).default('ask'),
     title: requiredText(120),
-    body: text(600).optional(),
+    body: z
+      .string()
+      .max(8000)
+      .transform((value) => scrubFleetBody(value, 2000))
+      .optional(),
     /** Why the orchestrator is asking now. */
     why: text(240).optional(),
     /** What happens at the deadline without an answer. */

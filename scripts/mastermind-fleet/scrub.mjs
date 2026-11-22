@@ -64,7 +64,7 @@ export function countEmoji(text) {
  * can join its neighbours into a new grapheme (two regional indicators make
  * a flag), so it re-segments until the result itself is within the limit.
  */
-export function limitEmoji(text) {
+export function limitEmoji(text, multiline = false) {
   let current = text;
   for (let pass = 0; pass < 8; pass++) {
     let seen = 0;
@@ -73,18 +73,17 @@ export function limitEmoji(text) {
       if (isEmoji(segment) && ++seen > MAX_EMOJIS_PER_FIELD) continue;
       out += segment;
     }
-    current = out.replace(/\s+/g, ' ').trim();
+    current = multiline ? out.trim() : out.replace(/\s+/g, ' ').trim();
     if (countEmoji(current) <= MAX_EMOJIS_PER_FIELD) return current;
   }
   // Pathological input: keep no emoji at all.
-  return [...segmenter.segment(current)]
+  const fallback = [...segmenter.segment(current)]
     .map(({ segment }) => segment)
     .filter(
       (segment) => !isEmoji(segment) && !/\p{Regional_Indicator}/u.test(segment)
     )
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .join('');
+  return multiline ? fallback.trim() : fallback.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -105,6 +104,42 @@ export function fleetText(value, max) {
     text = next;
   }
   return scrubFleetText(text, max) === text &&
+    countEmoji(text) <= MAX_EMOJIS_PER_FIELD
+    ? text
+    : '';
+}
+
+export function scrubFleetBody(value, maxLength) {
+  let text = value
+    .normalize('NFKC')
+    .replace(/\r\n?/g, '\n')
+    .replace(INVISIBLE, '');
+  for (const pattern of PATTERNS) text = text.replace(pattern, ' ');
+  text = text
+    .replace(/[#>|[\]_~]+/g, ' ')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (text.length <= maxLength) return text;
+  const cut = text.slice(0, maxLength - 1);
+  const space = Math.max(cut.lastIndexOf(' '), cut.lastIndexOf('\n'));
+  return `${(space > maxLength * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
+export function fleetBody(value, max) {
+  if (typeof value !== 'string') return '';
+  // The scrub's "…" becomes "..." under NFKC on the server's pass; leaving
+  // room for those two characters keeps that pass from cutting again.
+  const cap = Math.max(1, max - 2);
+  let text = value;
+  for (let pass = 0; pass < 6; pass++) {
+    const next = limitEmoji(scrubFleetBody(text, cap), true).normalize('NFKC');
+    if (next === text) break;
+    text = next;
+  }
+  return scrubFleetBody(text, max) === text &&
     countEmoji(text) <= MAX_EMOJIS_PER_FIELD
     ? text
     : '';

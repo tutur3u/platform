@@ -129,6 +129,13 @@ const assetPreview = z.object({
 });
 
 export const fleetReviewSchema = z.object({
+  document: z
+    .object({
+      source: z.literal('asset'),
+      assetId: z.string().regex(FLEET_REVIEW_ASSET_ID),
+      contentType: z.literal('text/html'),
+    })
+    .optional(),
   mockupUrl: z
     .string()
     .max(FLEET_REVIEW_URL_MAX)
@@ -146,3 +153,18 @@ export const fleetReviewSchema = z.object({
 });
 
 export type FleetReview = z.infer<typeof fleetReviewSchema>;
+
+export const FLEET_REVIEW_DOCUMENT_TYPES = ['text/html'] as const;
+export const FLEET_REVIEW_DOCUMENT_MAX_BYTES = 200 * 1024;
+export function sniffReviewDocument(bytes: Uint8Array): 'text/html' | null {
+  try {
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return /^(?:<!doctype html|<html)/i.test(
+      text.replace(/^\uFEFF/, '').trimStart()
+    )
+      ? 'text/html'
+      : null;
+  } catch {
+    return null;
+  }
+}

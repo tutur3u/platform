@@ -6,6 +6,9 @@ import {
   FLEET_REVIEW_IMAGE_MAX_BYTES,
   FLEET_REVIEW_IMAGE_TYPES,
   type FleetReviewImageType,
+  FLEET_REVIEW_DOCUMENT_TYPES,
+  FLEET_REVIEW_DOCUMENT_MAX_BYTES,
+  sniffReviewDocument,
   sniffReviewImage,
 } from './review';
 
@@ -17,12 +20,15 @@ export const FLEET_REVIEW_UPLOAD_MAX_BYTES =
   Math.ceil((FLEET_REVIEW_IMAGE_MAX_BYTES * 4) / 3) + 1024;
 
 const uploadSchema = z.object({
-  contentType: z.enum(FLEET_REVIEW_IMAGE_TYPES),
+  contentType: z.enum([
+    ...FLEET_REVIEW_IMAGE_TYPES,
+    ...FLEET_REVIEW_DOCUMENT_TYPES,
+  ]),
   data: z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/),
 });
 
 export interface FleetReviewAsset {
-  contentType: FleetReviewImageType;
+  contentType: FleetReviewImageType | 'text/html';
   bytes: Uint8Array;
 }
 
@@ -49,9 +55,18 @@ export function parseReviewUpload(
   if (!parsed.success) return { ok: false, error: 'invalid_asset' };
   const bytes = new Uint8Array(Buffer.from(parsed.data.data, 'base64'));
   if (bytes.byteLength === 0) return { ok: false, error: 'invalid_asset' };
-  if (bytes.byteLength > FLEET_REVIEW_IMAGE_MAX_BYTES)
+  if (
+    bytes.byteLength >
+    (parsed.data.contentType === 'text/html'
+      ? FLEET_REVIEW_DOCUMENT_MAX_BYTES
+      : FLEET_REVIEW_IMAGE_MAX_BYTES)
+  )
     return { ok: false, error: 'asset_too_large' };
-  if (sniffReviewImage(bytes) !== parsed.data.contentType)
+  if (
+    (parsed.data.contentType === 'text/html'
+      ? sniffReviewDocument(bytes)
+      : sniffReviewImage(bytes)) !== parsed.data.contentType
+  )
     return { ok: false, error: 'asset_type_mismatch' };
   if (createHash('sha256').update(bytes).digest('hex') !== assetId)
     return { ok: false, error: 'asset_id_mismatch' };

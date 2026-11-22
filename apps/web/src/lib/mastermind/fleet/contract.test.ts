@@ -144,3 +144,21 @@ describe('fleetAnswerInputSchema', () => {
     ).toBe(true);
   });
 });
+
+it('preserves scrubbed descriptions and multiline bodies, omitting empty descriptions', () => {
+  const decision = {
+    ...sampleFleetState().decisions[0],
+    body: '**Context**\n\n- item `code`\n1. item',
+    options: [
+      { id: 'one', label: 'One', description: 'Helpful https://example.com' },
+      { id: 'two', label: 'Two', description: 'https://example.com' },
+    ],
+    recommendedOptionId: 'one',
+  };
+  const parsed = fleetStateSchema.parse(
+    sampleFleetState({ decisions: [decision] })
+  ).decisions[0]!;
+  expect(parsed.body).toBe(decision.body);
+  expect(parsed.options[0]?.description).toBe('Helpful');
+  expect(parsed.options[1]).not.toHaveProperty('description');
+});

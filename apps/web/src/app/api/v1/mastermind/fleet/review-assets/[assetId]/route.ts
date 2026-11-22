@@ -21,9 +21,9 @@ import {
 } from '@/lib/mastermind/fleet/review-assets';
 
 /**
- * Design-review preview images. The orchestrator publisher uploads one
+ * Design-review images and HTML attachments. The orchestrator publisher uploads one
  * (HMAC-signed, size-capped, type-sniffed, content-addressed); only the
- * fleet owner reads it back. Served as an inert image: no sniffing, no
+ * fleet owner reads it back. HTML is always an inert download: no sniffing, no
  * scripts, never cached by shared caches.
  */
 export const GET = withSessionAuth<{ assetId: string }>(
@@ -43,12 +43,19 @@ export const GET = withSessionAuth<{ assetId: string }>(
     if (!asset) return fleetError('not_found', 404);
     return new NextResponse(Buffer.from(asset.bytes), {
       headers: {
-        'content-type': asset.contentType,
+        'content-type':
+          asset.contentType === 'text/html'
+            ? 'application/octet-stream'
+            : asset.contentType,
         'content-length': String(asset.bytes.byteLength),
         // Content-addressed: the id never names other bytes.
-        'cache-control': 'private, max-age=86400, immutable',
+        'cache-control':
+          asset.contentType === 'text/html'
+            ? 'private, no-store'
+            : 'private, max-age=86400, immutable',
         'content-security-policy': "default-src 'none'; sandbox",
-        'content-disposition': 'inline',
+        'content-disposition':
+          asset.contentType === 'text/html' ? 'attachment' : 'inline',
         'x-content-type-options': 'nosniff',
         'cross-origin-resource-policy': 'same-site',
       },
@@ -60,7 +67,7 @@ export const GET = withSessionAuth<{ assetId: string }>(
   }
 );
 
-/** Publisher upload: `{ contentType, data }` with base64 image bytes. */
+/** Publisher upload: `{ contentType, data }` with base64 asset bytes. */
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ assetId: string }> }

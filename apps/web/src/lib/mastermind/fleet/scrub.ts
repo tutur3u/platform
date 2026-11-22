@@ -41,3 +41,22 @@ export function scrubFleetText(value: string, maxLength: number): string {
   const space = cut.lastIndexOf(' ');
   return `${(space > maxLength * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
+
+export function scrubFleetBody(value: string, maxLength: number): string {
+  let text = value
+    .normalize('NFKC')
+    .replace(/\r\n?/g, '\n')
+    .replace(INVISIBLE, '');
+  for (const pattern of PATTERNS) text = text.replace(pattern, ' ');
+  text = text
+    .replace(/[#>|[\]_~]+/g, ' ')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  if (text.length <= maxLength) return text;
+  const cut = text.slice(0, maxLength - 1);
+  const space = Math.max(cut.lastIndexOf(' '), cut.lastIndexOf('\n'));
+  return `${(space > maxLength * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}

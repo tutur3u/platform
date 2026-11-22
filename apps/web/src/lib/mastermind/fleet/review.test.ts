@@ -12,6 +12,9 @@ import {
 } from '../../../../../../scripts/mastermind-fleet/review-extras.mjs';
 import { fleetAnswerInputSchema, fleetDecisionSchema } from './contract';
 import {
+  FLEET_REVIEW_DOCUMENT_TYPES,
+  FLEET_REVIEW_DOCUMENT_MAX_BYTES,
+  sniffReviewDocument,
   FLEET_REVIEW_ARTIFACT_HOST,
   FLEET_REVIEW_ARTIFACT_PATHS,
   FLEET_REVIEW_FIRST_PARTY_HOSTS,
@@ -83,7 +86,15 @@ describe('review links', () => {
     }
   });
 
-  it('keeps the publisher mirror in step', () => {
+  it('keeps the publisher mirror in step', async () => {
+    const mirror =
+      await import('../../../../../../scripts/mastermind-fleet/review-extras.mjs');
+    expect(mirror.REVIEW_DOCUMENT_TYPES).toEqual([
+      ...FLEET_REVIEW_DOCUMENT_TYPES,
+    ]);
+    expect(mirror.REVIEW_DOCUMENT_MAX_BYTES).toBe(
+      FLEET_REVIEW_DOCUMENT_MAX_BYTES
+    );
     expect(REVIEW_FIRST_PARTY_HOSTS).toEqual([
       ...FLEET_REVIEW_FIRST_PARTY_HOSTS,
     ]);
@@ -201,4 +212,31 @@ describe('review asset uploads', () => {
     });
     expect(parseReviewUpload('../x', upload(PNG)).ok).toBe(false);
   });
+});
+
+it('sniffs only UTF-8 HTML documents and validates their upload type', () => {
+  for (const text of ['<!DOCTYPE html><html>', '\ufeff \n<HTML lang="en">']) {
+    const bytes = new TextEncoder().encode(text);
+    expect(sniffReviewDocument(bytes)).toBe('text/html');
+    expect(parseReviewUpload(sha(bytes), upload(bytes, 'text/html')).ok).toBe(
+      true
+    );
+    expect(parseReviewUpload(sha(bytes), upload(bytes, 'image/png')).ok).toBe(
+      false
+    );
+  }
+  expect(sniffReviewDocument(new Uint8Array([0xff, 0xfe, 0x3c]))).toBeNull();
+  expect(
+    sniffReviewDocument(new TextEncoder().encode('<script>x</script>'))
+  ).toBeNull();
+  expect(
+    fleetReviewSchema.safeParse({
+      mockupUrl: 'https://tuturuuu.com/mock',
+      document: {
+        source: 'asset',
+        assetId: 'a'.repeat(64),
+        contentType: 'text/html',
+      },
+    }).success
+  ).toBe(true);
 });

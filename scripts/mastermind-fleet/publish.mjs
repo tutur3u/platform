@@ -27,7 +27,7 @@ import {
 } from './fleet-state.mjs';
 import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
 import { sendPoke } from './poke.mjs';
-import { fleetText } from './scrub.mjs';
+import { fleetBody, fleetText } from './scrub.mjs';
 import { attachReviewAssets } from './review-extras.mjs';
 import { purgeSecretSpools } from './secret-spool.mjs';
 import { readTodayOutcomes } from './today-outcomes.mjs';
@@ -48,7 +48,7 @@ const URGENCY = new Set(['urgent', 'high', 'normal', 'fyi']);
 // graphemes or any field with more than ten emoji, and a required field the
 // route scrubs to nothing fails the whole snapshot (422).
 const DECISION_TITLE_MAX = 120;
-const DECISION_BODY_MAX = 600;
+const DECISION_BODY_MAX = 2000;
 const OPTION_LABEL_MAX = 60;
 /** Under the route's 256 KiB body cap (413), with room to spare. */
 export const BODY_BUDGET_BYTES = 240 * 1024;
@@ -163,6 +163,9 @@ export function parseDecision(raw, now = new Date()) {
         .map((option) => ({
           id: option?.id,
           label: fleetText(option?.label, OPTION_LABEL_MAX),
+          ...(fleetText(option?.description, 280)
+            ? { description: fleetText(option.description, 280) }
+            : {}),
         }))
         .filter(
           (option) =>
@@ -172,7 +175,7 @@ export function parseDecision(raw, now = new Date()) {
         )
         .slice(0, 6)
     : [];
-  const cleanBody = fleetText(body, DECISION_BODY_MAX);
+  const cleanBody = fleetBody(body, DECISION_BODY_MAX);
   const deadlineAt = optionalIso(raw.deadlineAt);
   return {
     id,
@@ -506,6 +509,7 @@ export async function runOnce({
   const priorAssets = readJson(assetsFile);
   const assets = await attachReviewAssets(decisions, {
     dir: path.join(paths.root, 'reviews'),
+    origin: web.origin,
     put: (assetPath, body) => callWeb(web, 'PUT', assetPath, body),
     uploaded: priorAssets,
     now,

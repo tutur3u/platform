@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { scrubFleetText as webScrub } from '../../apps/web/src/lib/mastermind/fleet/scrub.ts';
-import { countEmoji, fleetText, limitEmoji, scrubFleetText } from './scrub.mjs';
+import fs from 'node:fs';
+import {
+  scrubFleetBody as webBody,
+  scrubFleetText as webScrub,
+} from '../../apps/web/src/lib/mastermind/fleet/scrub.ts';
+import {
+  countEmoji,
+  fleetBody,
+  scrubFleetBody,
+  fleetText,
+  limitEmoji,
+  scrubFleetText,
+} from './scrub.mjs';
 
 const SAMPLES = [
   'Ship the release? see https://example.com/x and ~/repo/file.ts',
@@ -52,4 +63,40 @@ test('settles text the scrub reshapes and flags formed by removal', () => {
       assert.ok(countEmoji(sent) <= 10, sample);
       assert.equal(webScrub(sent, max), sent, sample);
     }
+});
+
+test('body preserves paragraphs and Markdown and mirrors Web at a fixed point', () => {
+  const body = '**Bold**  text\r\n\r\n\r\n- item `code`\r1. item # _ ~ [x] > |';
+  const expected = '**Bold** text\n\n- item `code`\n1. item x';
+  assert.equal(scrubFleetBody(body, 2000), expected);
+  for (const sample of [...SAMPLES, body, 'word '.repeat(600)]) {
+    for (const cap of [60, 2000]) {
+      assert.equal(scrubFleetBody(sample, cap), webBody(sample, cap));
+      const sent = fleetBody(sample, cap);
+      assert.equal(webBody(sent, cap), sent);
+      assert.ok(countEmoji(sent) <= 10);
+    }
+  }
+});
+
+test('body scrubber implementation remains identical on both sides', () => {
+  const web = fs.readFileSync(
+    new URL(
+      '../../apps/web/src/lib/mastermind/fleet/scrub.ts',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const mirror = fs.readFileSync(
+    new URL('./scrub.mjs', import.meta.url),
+    'utf8'
+  );
+  const body = (source) =>
+    source
+      .slice(source.indexOf('export function scrubFleetBody'))
+      .split('\n}')[0]
+      .replace(/value: string/g, 'value')
+      .replace(/maxLength: number/g, 'maxLength')
+      .replace(/\): string/g, ')');
+  assert.equal(body(web), body(mirror));
 });
