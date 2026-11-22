@@ -2,6 +2,7 @@
  * Error classes for the Tuturuuu SDK
  */
 
+import { parseRetryAfterSeconds } from './retry-after-header';
 import type { ApiErrorResponse } from './types';
 
 /**
@@ -107,9 +108,26 @@ export class RateLimitError extends TuturuuuError {
  * Internal server error (500)
  */
 export class InternalServerError extends TuturuuuError {
-  constructor(message: string, code?: string) {
-    super(message, code, 500);
+  constructor(message: string, code?: string, statusCode = 500) {
+    super(message, code, statusCode);
     this.name = 'InternalServerError';
+  }
+}
+
+/**
+ * Service unavailable error (503)
+ */
+export class ServiceUnavailableError extends InternalServerError {
+  /** Number of seconds to wait before retrying (from Retry-After header) */
+  public readonly retryAfter?: number;
+
+  constructor(
+    message: string,
+    options?: { code?: string; retryAfter?: number }
+  ) {
+    super(message, options?.code, 503);
+    this.name = 'ServiceUnavailableError';
+    this.retryAfter = options?.retryAfter;
   }
 }
 
@@ -165,12 +183,16 @@ export function createErrorFromResponse(
     case 429:
       return new RateLimitError(message, {
         code,
-        retryAfter: parseIntSafe(rateLimitHeaders?.retryAfter),
+        retryAfter: parseRetryAfterSeconds(rateLimitHeaders?.retryAfter),
         resetTime: parseIntSafe(rateLimitHeaders?.resetTime),
+      });
+    case 503:
+      return new ServiceUnavailableError(message, {
+        code,
+        retryAfter: parseRetryAfterSeconds(rateLimitHeaders?.retryAfter),
       });
     case 500:
     case 502:
-    case 503:
     case 504:
       return new InternalServerError(message, code);
     default:

@@ -1763,7 +1763,16 @@ console.log(
 
 ### Handling Rate Limits
 
-When you exceed the rate limit, the API returns a `429 Too Many Requests` response:
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response.
+
+Storage calls retry a `429`, or a `503` (`ServiceUnavailableError`, with
+`statusCode` 503), that carries `Retry-After` as delta seconds or an HTTP date.
+Each retry waits that long plus 0-25% jitter, at most 30 seconds per wait, 2
+retries and 60 seconds in total. A response without a readable header, or
+asking for more than 30 seconds, is not retried. Only idempotent requests retry, plus the upload-URL
+calls, which only mint a URL. `retry.maxRetries` and `retry.maxDelayMs` can
+lower these bounds, and `retry.retryOn429: false` turns retries off. When the
+retries run out, the error is thrown:
 
 ```typescript
 try {

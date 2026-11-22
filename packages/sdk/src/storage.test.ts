@@ -93,7 +93,7 @@ describe('TuturuuuClient', () => {
     it('should use default retry config', () => {
       const client = new TuturuuuClient('ttr_test_key');
       expect(client.retryConfig).toEqual({
-        maxRetries: 3,
+        maxRetries: 2,
         initialDelayMs: 1000,
         maxDelayMs: 30000,
         retryOn429: true,
@@ -363,151 +363,92 @@ describe('TuturuuuClient', () => {
   });
 
   describe('requestWithRetry', () => {
-    it('should retry on rate limit and succeed', async () => {
-      // First call: rate limit
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        statusText: 'Too Many Requests',
-        headers: new Headers({ 'content-type': 'text/html' }),
-        text: async () => 'Rate limit',
-      });
+    const limited = (status: number, retryAfter?: string) => ({
+      ok: false,
+      status,
+      statusText: 'Limited',
+      headers: new Headers({
+        'content-type': 'text/html',
+        ...(retryAfter ? { 'Retry-After': retryAfter } : {}),
+      }),
+      text: async () => 'Limited',
+    });
+    const retryClient = (retry: Record<string, unknown> = {}) =>
+      new TuturuuuClient({ apiKey: 'ttr_test_key', retry });
 
-      // Second call: success
-      const mockResponse = { data: 'success' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
-
-      const client = new TuturuuuClient({
-        apiKey: 'ttr_test_key',
-        retry: {
-          maxRetries: 3,
-          initialDelayMs: 10, // Short delay for tests
-          maxDelayMs: 100,
-          retryOn429: true,
-        },
-      });
-
-      const result = await client.requestWithRetry('/test');
-
-      expect(result).toEqual(mockResponse);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+    beforeEach(() => {
+      mockFetch.mockReset();
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
-    it('should use retryAfter header for delay', async () => {
-      mockFetch.mockClear();
+    it('retries a GET on 429 and 503 with Retry-After, then succeeds', async () => {
+      mockFetch
+        .mockResolvedValueOnce(limited(429, '1'))
+        .mockResolvedValueOnce(limited(503, '1'))
+        .mockResolvedValueOnce(createMockResponse({ data: 'success' }));
 
-      // First call: rate limit with very short retry-after
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        statusText: 'Too Many Requests',
-        headers: new Headers({
-          'content-type': 'text/html',
-          'Retry-After': '1', // 1 second for fast test
-        }),
-        text: async () => 'Rate limit',
-      });
+      const pending = retryClient().requestWithRetry('/test');
+      await vi.advanceTimersByTimeAsync(2500);
 
-      // Second call: success
-      const mockResponse = { data: 'success' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
-
-      const client = new TuturuuuClient({
-        apiKey: 'ttr_test_key',
-        retry: {
-          maxRetries: 1,
-          initialDelayMs: 100, // Short default delay
-          maxDelayMs: 2000, // Cap at 2 seconds
-          retryOn429: true,
-        },
-      });
-
-      const start = Date.now();
-      await client.requestWithRetry('/test');
-      const elapsed = Date.now() - start;
-
-      // Should have waited approximately 1s (retryAfter value)
-      expect(elapsed).toBeGreaterThanOrEqual(900);
-      expect(elapsed).toBeLessThan(3000);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      await expect(pending).resolves.toEqual({ data: 'success' });
+      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
-    it('should exhaust retries and throw last error', async () => {
-      mockFetch.mockClear();
+    it('stops after two retries even when configured for more', async () => {
+      mockFetch.mockImplementation(async () => limited(429, '1'));
 
-      // All calls return 429
-      mockFetch.mockImplementation(() =>
-        Promise.resolve({
-          ok: false,
-          status: 429,
-          statusText: 'Too Many Requests',
-          headers: new Headers({ 'content-type': 'text/html' }),
-          text: async () => 'Rate limit',
-        })
-      );
+      const pending = retryClient({ maxRetries: 5 })
+        .requestWithRetry('/test')
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(5000);
 
-      const client = new TuturuuuClient({
-        apiKey: 'ttr_test_key',
-        retry: {
-          maxRetries: 3,
-          initialDelayMs: 1, // Very short delay for tests
-          retryOn429: true,
-        },
-      });
-
-      await expect(client.requestWithRetry('/test')).rejects.toThrow(
-        RateLimitError
-      );
-      expect(mockFetch).toHaveBeenCalledTimes(4); // 1 initial + 3 retries
+      expect(await pending).toBeInstanceOf(RateLimitError);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
-    it('should not retry when retryOn429 is false', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        statusText: 'Too Many Requests',
-        headers: new Headers({ 'content-type': 'text/html' }),
-        text: async () => 'Rate limit',
-      });
+    it('does not retry without a Retry-After header', async () => {
+      mockFetch.mockResolvedValueOnce(limited(429));
 
-      const client = new TuturuuuClient({
-        apiKey: 'ttr_test_key',
-        retry: {
-          retryOn429: false,
-        },
-      });
-
-      await expect(client.requestWithRetry('/test')).rejects.toThrow(
+      await expect(retryClient().requestWithRetry('/test')).rejects.toThrow(
         RateLimitError
       );
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-    it('should not retry non-429 errors', async () => {
-      mockFetch.mockClear();
+    it('does not retry a POST unless the call site opts in', async () => {
+      mockFetch.mockResolvedValueOnce(limited(429, '1'));
+      await expect(
+        retryClient().requestWithRetry('/test', { method: 'POST' })
+      ).rejects.toThrow(RateLimitError);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      mockFetch
+        .mockResolvedValueOnce(limited(429, '1'))
+        .mockResolvedValueOnce(createMockResponse({ data: 'minted' }));
+      const pending = retryClient().requestWithRetry('/test', {
+        method: 'POST',
+        retrySafe: true,
+      });
+      await vi.advanceTimersByTimeAsync(1500);
+      await expect(pending).resolves.toEqual({ data: 'minted' });
+    });
+
+    it('does not retry when retryOn429 is false or the error is not limited', async () => {
+      mockFetch.mockResolvedValueOnce(limited(429, '1'));
+      await expect(
+        retryClient({ retryOn429: false }).requestWithRetry('/test')
+      ).rejects.toThrow(RateLimitError);
 
       mockFetch.mockResolvedValueOnce(
-        createMockResponse(
-          {
-            error: 'Not Found',
-            message: 'Resource not found',
-          },
-          404
-        )
+        createMockResponse({ error: 'Not Found', message: 'Missing' }, 404)
       );
-
-      const client = new TuturuuuClient({
-        apiKey: 'ttr_test_key',
-        retry: {
-          maxRetries: 3,
-          retryOn429: true,
-        },
-      });
-
-      await expect(client.requestWithRetry('/test')).rejects.toThrow(
+      await expect(retryClient().requestWithRetry('/test')).rejects.toThrow(
         NotFoundError
       );
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
   });
 });

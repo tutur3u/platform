@@ -2,6 +2,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  type InternalApiFetchInit,
 } from './client';
 
 export type ExternalAppDriveProvider = 'r2' | 'supabase';
@@ -51,12 +52,17 @@ function drivePath(workspaceId: string, suffix = '') {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-apps/drive${suffix}`;
 }
 
-function jsonInit(method: 'DELETE' | 'POST', payload: unknown): RequestInit {
+function jsonInit(
+  method: 'DELETE' | 'POST',
+  payload: unknown,
+  { retrySafe = false } = {}
+): InternalApiFetchInit {
   return {
     body: JSON.stringify(payload),
     cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     method,
+    retrySafe,
   };
 }
 
@@ -67,7 +73,8 @@ export function createExternalAppDriveUploadUrl(
 ) {
   return getInternalApiClient(options).json<ExternalAppDriveUploadPayload>(
     drivePath(workspaceId, '/upload-url'),
-    jsonInit('POST', payload)
+    // Minting an upload URL has no side effect, so a limited call may retry.
+    jsonInit('POST', payload, { retrySafe: true })
   );
 }
 
@@ -90,7 +97,8 @@ export function createExternalAppDriveReadUrl(
 ) {
   return getInternalApiClient(options).json<ExternalAppDriveReadPayload>(
     drivePath(workspaceId, '/read-url'),
-    jsonInit('POST', payload)
+    // Minting a read URL has no side effect, so a limited call may retry.
+    jsonInit('POST', payload, { retrySafe: true })
   );
 }
 

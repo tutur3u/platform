@@ -32,10 +32,13 @@ import {
   isApiErrorResponse,
   NetworkError,
   RateLimitError,
+  ServiceUnavailableError,
   ValidationError,
 } from './errors';
 import { ExternalProjectsClient } from './external-projects';
 import { bindGlobalFetch } from './fetch-receiver';
+import { isRetrySafeRequest, runWithRetryAfter } from './retry';
+import { parseRetryAfterSeconds } from './retry-after-header';
 import type {
   AnalyticsResponse,
   BatchShareResponse,
@@ -160,16 +163,17 @@ function appendImageTransformParams(
 }
 
 /**
- * Retry configuration for rate limit handling
+ * Retry configuration for 429 and 503 answers that carry `Retry-After`
+ * (see `RETRY_AFTER_POLICY` in `./retry`)
  */
 export interface RetryConfig {
-  /** Maximum number of retry attempts (default: 3) */
+  /** Maximum number of retry attempts (default and ceiling: 2) */
   maxRetries?: number;
-  /** Initial delay in milliseconds before first retry (default: 1000) */
+  /** @deprecated Retries wait only for the server's `Retry-After`. */
   initialDelayMs?: number;
-  /** Maximum delay in milliseconds between retries (default: 30000) */
+  /** Maximum delay in milliseconds between retries (default and ceiling: 30000) */
   maxDelayMs?: number;
-  /** Whether to automatically retry on 429 rate limit errors (default: true) */
+  /** Whether to retry 429 and 503 answers with `Retry-After` (default: true) */
   retryOn429?: boolean;
 }
 
@@ -278,6 +282,8 @@ export class StorageClient {
       import('./types').SignedUploadUrlResponse
     >('/storage/upload-url', {
       method: 'POST',
+      // Minting an upload URL has no side effect, so a limited call may retry.
+      retrySafe: true,
       body: JSON.stringify({
         filename,
         path: validatedOptions.path || '',
@@ -372,6 +378,8 @@ export class StorageClient {
       '/storage/upload-url',
       {
         method: 'POST',
+        // Minting an upload URL has no side effect, so a limited call may retry.
+        retrySafe: true,
         body: JSON.stringify({
           filename: validatedOptions.filename,
           path: validatedOptions.path || '',
@@ -780,7 +788,7 @@ export class DocumentsClient {
  * Default retry configuration
  */
 const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
-  maxRetries: 3,
+  maxRetries: 2,
   initialDelayMs: 1000,
   maxDelayMs: 30000,
   retryOn429: true,
@@ -935,9 +943,17 @@ export class TuturuuuClient {
 
           throw new RateLimitError(message, {
             code: 'RATE_LIMIT_EXCEEDED',
-            retryAfter: retryAfter ? parseInt(retryAfter, 10) : undefined,
+            retryAfter: parseRetryAfterSeconds(retryAfter),
             resetTime: resetTime ? parseInt(resetTime, 10) : undefined,
           });
+        }
+        if (response.status === 503 && retryAfter) {
+          throw new ServiceUnavailableError(
+            'Service temporarily unavailable.',
+            {
+              retryAfter: parseRetryAfterSeconds(retryAfter),
+            }
+          );
         }
 
         // Check if response is JSON before attempting to parse
@@ -996,7 +1012,9 @@ export class TuturuuuClient {
   }
 
   /**
-   * Internal method to make HTTP requests with automatic retry on rate limit errors
+   * Internal method to make HTTP requests that retries 429 and 503 answers
+   * with `Retry-After` under the SDK retry policy. Only idempotent requests
+   * retry unless the call site passes `retrySafe`.
    * @internal
    */
   async requestWithRetry<T>(
@@ -1005,46 +1023,20 @@ export class TuturuuuClient {
       method?: string;
       body?: string | FormData;
       skipJsonContentType?: boolean;
+      retrySafe?: boolean;
+      signal?: AbortSignal;
     } = {}
   ): Promise<T> {
-    const { maxRetries, initialDelayMs, maxDelayMs, retryOn429 } =
-      this.retryConfig;
-
-    if (!retryOn429) {
-      return this.request<T>(endpoint, options);
+    const { retrySafe, signal, ...request } = options;
+    const { maxRetries, maxDelayMs, retryOn429 } = this.retryConfig;
+    if (!retryOn429 || !isRetrySafeRequest(request.method, retrySafe)) {
+      return this.request<T>(endpoint, request);
     }
-
-    let lastError: Error | undefined;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await this.request<T>(endpoint, options);
-      } catch (error) {
-        if (error instanceof RateLimitError && attempt < maxRetries) {
-          // Calculate delay: use retryAfter if available, otherwise exponential backoff
-          const baseDelay = error.retryAfter
-            ? error.retryAfter * 1000
-            : initialDelayMs * 2 ** attempt;
-          const delay = Math.min(baseDelay, maxDelayMs);
-
-          await this.sleep(delay);
-          lastError = error;
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    // This should never be reached, but TypeScript needs it
-    throw lastError ?? new Error('Unexpected retry loop exit');
-  }
-
-  /**
-   * Sleep helper for retry delays
-   * @internal
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return runWithRetryAfter(() => this.request<T>(endpoint, request), {
+      maxDelayMs,
+      maxRetries,
+      signal,
+    });
   }
 }
 

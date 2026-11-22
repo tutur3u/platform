@@ -34,6 +34,7 @@ export {
   NetworkError,
   NotFoundError,
   RateLimitError,
+  ServiceUnavailableError,
   TuturuuuError,
   ValidationError,
 } from './errors';

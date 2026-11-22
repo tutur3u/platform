@@ -12,6 +12,7 @@ import {
   resolveConfiguredOrigin,
 } from './origin-policy';
 import { mergeHeaders } from './request-headers';
+import { type RetryAfterInit, withRetryAfter } from './retry-after';
 
 export type InternalApiQueryValue =
   | string
@@ -20,11 +21,12 @@ export type InternalApiQueryValue =
   | null
   | undefined;
 export type InternalApiQuery = Record<string, InternalApiQueryValue>;
-export type InternalApiFetchInit = Omit<RequestInit, 'headers'> & {
-  baseUrl?: string;
-  headers?: HeadersInit;
-  query?: InternalApiQuery;
-};
+export type InternalApiFetchInit = Omit<RequestInit, 'headers'> &
+  Pick<RetryAfterInit, 'retrySafe'> & {
+    baseUrl?: string;
+    headers?: HeadersInit;
+    query?: InternalApiQuery;
+  };
 
 export type InternalApiClientOptions = {
   appBaseResolver?: InternalApiAppBaseResolver;
@@ -584,26 +586,29 @@ function sanitizeForwardedCookieHeader(
 export function createInternalApiClient(
   options: InternalApiClientOptions = {}
 ) {
-  const doFetch = (path: string, init: InternalApiFetchInit = {}) => {
-    const fetchImpl = options.fetch ?? globalThis.fetch;
-    const { baseUrl, headers: requestHeaders, query, ...requestInit } = init;
-    const requestPath = appendQuery(path, query);
-    const url = resolveInternalApiUrlWithAppBase(
-      requestPath,
-      baseUrl || options.baseUrl,
-      options.appBaseResolver,
-      typeof window === 'undefined'
-        ? getConfiguredInternalApiBaseUrl()
-        : undefined,
-      options.crossAppBaseUrl
-    );
-    const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
+  // Eligible 429 and 503 answers with Retry-After are retried (see retry-after).
+  const doFetch = withRetryAfter(
+    (path: string, init: InternalApiFetchInit = {}) => {
+      const fetchImpl = options.fetch ?? globalThis.fetch;
+      const { baseUrl, headers: requestHeaders, query, ...requestInit } = init;
+      const requestPath = appendQuery(path, query);
+      const url = resolveInternalApiUrlWithAppBase(
+        requestPath,
+        baseUrl || options.baseUrl,
+        options.appBaseResolver,
+        typeof window === 'undefined'
+          ? getConfiguredInternalApiBaseUrl()
+          : undefined,
+        options.crossAppBaseUrl
+      );
+      const headers = mergeHeaders(options.defaultHeaders, requestHeaders);
 
-    return fetchImpl(url, {
-      ...requestInit,
-      headers,
-    });
-  };
+      return fetchImpl(url, {
+        ...requestInit,
+        headers,
+      });
+    }
+  );
 
   return {
     fetch: doFetch,
@@ -644,53 +649,17 @@ export function withForwardedInternalApiAuth(
     allowedOrigins.add(configuredBaseUrl.origin);
   }
 
-  const configuredTasksBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredTasksApiBaseUrl()
-  );
-  if (configuredTasksBaseUrl) {
-    allowedOrigins.add(configuredTasksBaseUrl.origin);
-  }
-
-  const configuredMailBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredMailApiBaseUrl()
-  );
-  if (configuredMailBaseUrl) {
-    allowedOrigins.add(configuredMailBaseUrl.origin);
-  }
-
-  const configuredLearnBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredLearnApiBaseUrl()
-  );
-  if (configuredLearnBaseUrl) {
-    allowedOrigins.add(configuredLearnBaseUrl.origin);
-  }
-
-  const configuredTeachBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredTeachApiBaseUrl()
-  );
-  if (configuredTeachBaseUrl) {
-    allowedOrigins.add(configuredTeachBaseUrl.origin);
-  }
-
-  const configuredFinanceBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredFinanceApiBaseUrl()
-  );
-  if (configuredFinanceBaseUrl) {
-    allowedOrigins.add(configuredFinanceBaseUrl.origin);
-  }
-
-  const configuredPayBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredPayApiBaseUrl()
-  );
-  if (configuredPayBaseUrl) {
-    allowedOrigins.add(configuredPayBaseUrl.origin);
-  }
-
-  const configuredContactsBaseUrl = tryParseAbsoluteUrl(
-    getConfiguredContactsApiBaseUrl()
-  );
-  if (configuredContactsBaseUrl) {
-    allowedOrigins.add(configuredContactsBaseUrl.origin);
+  for (const configuredApiBaseUrl of [
+    getConfiguredTasksApiBaseUrl(),
+    getConfiguredMailApiBaseUrl(),
+    getConfiguredLearnApiBaseUrl(),
+    getConfiguredTeachApiBaseUrl(),
+    getConfiguredFinanceApiBaseUrl(),
+    getConfiguredPayApiBaseUrl(),
+    getConfiguredContactsApiBaseUrl(),
+  ]) {
+    const configured = tryParseAbsoluteUrl(configuredApiBaseUrl);
+    if (configured) allowedOrigins.add(configured.origin);
   }
 
   const targetOrigin =

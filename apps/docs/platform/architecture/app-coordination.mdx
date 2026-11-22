@@ -588,6 +588,18 @@ unavailable, writes, upload URLs, invitations and exchanges get HTTP 503 with
 non-production runtime with no counter store configured lets those requests
 through; production always refuses.
 
+The `@tuturuuu/internal-api` client retries a 429 or 503 that carries
+`Retry-After`, for idempotent requests and for calls that opt in with
+`retrySafe`. The external-app Drive `upload-url` and `read-url` helpers opt
+in, because they only mint URLs. Each wait is `Retry-After` (delta seconds or
+an HTTP date) plus 0-25% jitter, capped at 30 seconds, with at most 2 retries
+and 60 seconds in total, or 10 seconds in total on the server. A response
+without the header, or asking for more than 30 seconds, is returned at once,
+and the request's abort signal ends the wait
+(`packages/internal-api/src/retry-after.ts`). The SDK storage client applies
+the same per-wait, retry and 60-second total bounds
+(`packages/sdk/src/retry.ts`).
+
 `ABUSE_GUARD_BACKEND=off` is the abuse guard's kill switch, and these limits
 treat it as an unavailable store: while it is set on web, every external-app
 write, upload URL, invitation and token or refresh exchange returns 503, so
