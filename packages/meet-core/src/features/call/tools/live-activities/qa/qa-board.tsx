@@ -92,11 +92,16 @@ export function QaBoard({
   const hiddenCount = snapshot.questions.filter((q) => q.hidden).length;
   const error = localError ?? view.error;
   const allowAnonymous = !!settings?.anonymous;
-  // In a short pane the controls scroll away with the questions, so the list
-  // gets the height.
-  const scrollsControls = pane && short;
+  // The controls always sit at the top of the list's own container, so crossing
+  // the short-pane height changes a class and never remounts them: they stay in
+  // view in a tall pane, and scroll away with the questions in a short one.
   const controls = (
-    <>
+    <div
+      className={cn(
+        'space-y-3',
+        pane && !short && 'sticky top-0 z-10 mb-0 bg-card pb-3'
+      )}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Tabs
           value={sort}
@@ -166,18 +171,17 @@ export function QaBoard({
           {t(`errors.${ERRORS[error] ?? 'generic'}`)}
         </p>
       ) : null}
-    </>
+    </div>
   );
   return (
     <>
-      {!scrollsControls && controls}
       <div
         className={cn(
           'space-y-3',
           pane && '-mx-4 min-h-0 flex-1 overflow-y-auto px-4'
         )}
       >
-        {scrollsControls && controls}
+        {controls}
         {questions.length ? (
           <ul className="space-y-3">
             {questions.map((question) => (
@@ -201,7 +205,7 @@ export function QaBoard({
         )}
       >
         <QaComposer
-          compact={short}
+          compact={pane && short}
           foldedPlaceholder={t('composer_placeholder_short')}
           meetingId={board.meetingId}
           label={t('composer_label')}

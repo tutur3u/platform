@@ -71,7 +71,11 @@ export function QaComposer({
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [within, setWithin] = useState(false);
-  const folded = compact && !within && !draft && files.length === 0;
+  // A press inside the form keeps it open: Safari and iOS do not focus a
+  // button, so the field blurs with no related target before the click lands.
+  const pressing = useRef(false);
+  const folded =
+    compact && !within && !draft && files.length === 0 && !pressing.current;
   const imageInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploaded = useRef(new Map<File, Upload>());
@@ -133,7 +137,23 @@ export function QaComposer({
     <form
       className="space-y-2"
       onFocus={() => setWithin(true)}
+      onPointerDownCapture={(event) => {
+        const form = event.currentTarget;
+        pressing.current = true;
+        const release = () => {
+          pressing.current = false;
+          window.removeEventListener('pointerup', release);
+          window.removeEventListener('pointercancel', release);
+          // After the click has landed, fold if focus is no longer inside.
+          setTimeout(() => {
+            if (!form.contains(document.activeElement)) setWithin(false);
+          }, 0);
+        };
+        window.addEventListener('pointerup', release);
+        window.addEventListener('pointercancel', release);
+      }}
       onBlur={(event) => {
+        if (pressing.current) return;
         if (!event.currentTarget.contains(event.relatedTarget))
           setWithin(false);
       }}
@@ -201,17 +221,6 @@ export function QaComposer({
             </ul>
           ) : null}
         </div>
-        {folded && (
-          <Button
-            type="submit"
-            size="icon"
-            className="size-9 shrink-0 rounded-full pointer-coarse:size-11"
-            aria-label={submitLabel}
-            disabled
-          >
-            <Send className="size-4" />
-          </Button>
-        )}
       </div>
       <input
         ref={imageInput}

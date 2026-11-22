@@ -6,6 +6,8 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
+  within,
 } from '@testing-library/react';
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
@@ -25,18 +27,32 @@ vi.mock('@tuturuuu/internal-api', () => ({
 const t = messages.meet.call.live_activities.qa;
 // The size a pane body measures; the pane adds 2 for its border and 45 for
 // its header.
-let body = { width: 600, height: 435 };
+const TALL = { width: 600, height: 435 };
+const SHORT = { width: 600, height: 300 };
+let body = TALL;
+const observers: { target: Element; run: () => void }[] = [];
+const resize = (size: typeof body) => {
+  body = size;
+  act(() => {
+    for (const observer of observers) observer.run();
+  });
+};
 beforeEach(() => {
+  body = TALL;
+  observers.length = 0;
   vi.stubGlobal(
     'ResizeObserver',
     class {
       constructor(private callback: ResizeObserverCallback) {}
       observe(target: Element) {
-        if ((target as HTMLElement).dataset.activityId)
+        if (!(target as HTMLElement).dataset.activityId) return;
+        const run = () =>
           this.callback(
             [{ target, contentRect: body } as ResizeObserverEntry],
             this as unknown as ResizeObserver
           );
+        observers.push({ target, run });
+        run();
       }
       unobserve() {}
       disconnect() {}
@@ -168,17 +184,63 @@ it('folds an idle composer to one line in a short pane and opens it on focus', (
   expect(composer().getAttribute('rows')).toBe('1');
 });
 
-it('scrolls the sort tabs with the questions only in a short pane', () => {
-  const sortInList = () => {
-    const list = screen.getByText('First question?').closest('ul')
-      ?.parentElement as HTMLElement;
-    return list.contains(screen.getByRole('tablist'));
-  };
-  body = { width: 600, height: 435 };
+it('keeps the controls mounted across the short-pane height', () => {
   mount();
-  expect(sortInList()).toBe(false);
-  cleanup();
-  body = { width: 600, height: 300 };
+  const tabs = screen.getByRole('tablist');
+  const wrapper = tabs.closest('div[class*="space-y-3"]') as HTMLElement;
+  const list = screen.getByText('First question?').closest('ul')
+    ?.parentElement as HTMLElement;
+  // In both sizes the controls live in the list's container.
+  expect(list.contains(tabs)).toBe(true);
+  expect(wrapper.className).toContain('sticky');
+  resize(SHORT);
+  expect(screen.getByRole('tablist')).toBe(tabs);
+  expect(list.contains(tabs)).toBe(true);
+  expect(wrapper.className).not.toContain('sticky');
+  resize(TALL);
+  expect(screen.getByRole('tablist')).toBe(tabs);
+  expect(wrapper.className).toContain('sticky');
+});
+
+it('keeps the full composer in the full-screen dialog opened from a short pane', () => {
+  body = SHORT;
   mount();
-  expect(sortInList()).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+  const dialog = screen.getByRole('dialog');
+  const field = within(dialog).getByLabelText(t.composer_label);
+  expect(field.getAttribute('rows')).toBe('2');
+  expect(field.getAttribute('placeholder')).toBe(t.composer_placeholder);
+  const attach = within(dialog).getByRole('button', { name: t.attach_file });
+  expect(attach.parentElement?.className).not.toContain('hidden');
+});
+
+it('stays open while a button is pressed and the field blurs with no related target', async () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  const attach = screen.getByRole('button', { name: t.attach_file });
+  // Safari and iOS: pressing a button blurs the field without focusing it.
+  fireEvent.pointerDown(attach);
+  fireEvent.blur(composer(), { relatedTarget: null });
+  expect(composer().getAttribute('rows')).toBe('2');
+  expect(attach.parentElement?.className).not.toContain('hidden');
+  // Releasing with focus outside the form folds it again.
+  fireEvent.pointerUp(window);
+  await waitFor(() => expect(composer().getAttribute('rows')).toBe('1'));
+});
+
+it('keeps the composer open when Tab moves from the field to Attach', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  expect(composer().getAttribute('rows')).toBe('2');
+  const attach = screen.getByRole('button', { name: t.attach_image });
+  // What a browser reports for Tab: the field blurs toward the button.
+  fireEvent.blur(composer(), { relatedTarget: attach });
+  fireEvent.focus(attach);
+  expect(composer().getAttribute('rows')).toBe('2');
+  expect(attach.parentElement?.className).not.toContain('hidden');
+  // Leaving the form altogether folds it.
+  fireEvent.blur(attach, { relatedTarget: document.body });
+  expect(composer().getAttribute('rows')).toBe('1');
 });

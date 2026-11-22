@@ -4890,6 +4890,7 @@
           "attachments_sign_in": "Đăng nhập để xem {count} tệp đính kèm",
           "composer_label": "Câu hỏi của bạn",
           "composer_placeholder": "Đặt câu hỏi. Hỏi cụ thể để mọi người có thể bình chọn.",
+          "composer_placeholder_short": "Đặt câu hỏi",
           "counter": "{count}/{max} ký tự",
           "counts": "{open} đang mở · {answered} đã trả lời",
           "delete_answer": "Xóa câu trả lời",
@@ -4935,8 +4936,7 @@
           "title": "Hỏi đáp",
           "unpin": "Bỏ ghim",
           "upvote": "Bình chọn. {count} lượt bình chọn",
-          "you_voted": "Bạn đã bình chọn",
-          "composer_placeholder_short": "Đặt câu hỏi"
+          "you_voted": "Bạn đã bình chọn"
         },
         "penboard": {
           "title": "Bảng vẽ bút"

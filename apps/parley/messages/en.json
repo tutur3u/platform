@@ -4890,6 +4890,7 @@
           "attachments_sign_in": "{count, plural, one {Sign in to see the attachment} other {Sign in to see # attachments}}",
           "composer_label": "Your question",
           "composer_placeholder": "Ask a question. Be specific so others can upvote it.",
+          "composer_placeholder_short": "Ask a question",
           "counter": "{count} of {max} characters",
           "counts": "{open} open · {answered} answered",
           "delete_answer": "Delete answer",
@@ -4935,8 +4936,7 @@
           "title": "Q&A",
           "unpin": "Unpin",
           "upvote": "Upvote. {count, plural, one {# vote} other {# votes}}",
-          "you_voted": "You voted",
-          "composer_placeholder_short": "Ask a question"
+          "you_voted": "You voted"
         },
         "penboard": {
           "title": "Pen whiteboard"
