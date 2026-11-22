@@ -1822,7 +1822,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mira Live'**
+  /// **'Mira'**
   String get assistantLiveTitle;
 
   /// No description provided for @assistantLiveTranscriptPending.
@@ -13144,7 +13144,7 @@ abstract class AppLocalizations {
   /// No description provided for @meetLiveCost.
   ///
   /// In en, this message translates to:
-  /// **'Mira Live'**
+  /// **'Mira'**
   String get meetLiveCost;
 
   /// No description provided for @meetLockRoom.
@@ -13252,19 +13252,19 @@ abstract class AppLocalizations {
   /// No description provided for @meetMiraAudioMute.
   ///
   /// In en, this message translates to:
-  /// **'Mute Mira Live audio'**
+  /// **'Mute Mira audio'**
   String get meetMiraAudioMute;
 
   /// No description provided for @meetMiraAudioRetry.
   ///
   /// In en, this message translates to:
-  /// **'Retry Mira Live audio'**
+  /// **'Retry Mira audio'**
   String get meetMiraAudioRetry;
 
   /// No description provided for @meetMiraAudioUnmute.
   ///
   /// In en, this message translates to:
-  /// **'Unmute Mira Live audio'**
+  /// **'Unmute Mira audio'**
   String get meetMiraAudioUnmute;
 
   /// No description provided for @meetMiraCost.
@@ -13924,7 +13924,7 @@ abstract class AppLocalizations {
   /// No description provided for @miraLiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mira Live'**
+  /// **'Mira'**
   String get miraLiveTitle;
 
   /// No description provided for @navApps.

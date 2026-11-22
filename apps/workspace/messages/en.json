@@ -6833,8 +6833,8 @@
       "insufficient_credits": "You need at least 500 AI credits to start Live mode.",
       "listening": "Hearing you",
       "live_mode": "Live",
-      "live_session_ready": "Mira Live is ready",
-      "live_stage_label": "Mira Live",
+      "live_session_ready": "Mira is ready",
+      "live_stage_label": "Mira",
       "microphone_denied": "Microphone access was denied. Allow microphone access in your browser settings and try again.",
       "microphone_error_title": "Microphone unavailable",
       "microphone_unavailable": "No usable microphone was found, or another app is using it. Check your device and try again.",
@@ -6923,7 +6923,7 @@
           "running": "Working"
         },
         "subtitle": "A conversation connected to your workspace",
-        "title": "Mira Live",
+        "title": "Mira",
         "tools": {
           "capture_session_note": "Capture session note",
           "create_calendar_event": "Create calendar event",

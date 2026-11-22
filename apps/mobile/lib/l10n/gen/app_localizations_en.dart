@@ -917,7 +917,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
 
   @override
-  String get assistantLiveTitle => 'Mira Live';
+  String get assistantLiveTitle => 'Mira';
 
   @override
   String get assistantLiveTranscriptPending => 'Transcript changes are not yet synchronized.';
@@ -6963,7 +6963,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetLeaveOrEnd => 'Leave or end meeting?';
 
   @override
-  String get meetLiveCost => 'Mira Live';
+  String get meetLiveCost => 'Mira';
 
   @override
   String get meetLockRoom => 'Lock room';
@@ -7019,13 +7019,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMiraApprove => 'Approve actions';
 
   @override
-  String get meetMiraAudioMute => 'Mute Mira Live audio';
+  String get meetMiraAudioMute => 'Mute Mira audio';
 
   @override
-  String get meetMiraAudioRetry => 'Retry Mira Live audio';
+  String get meetMiraAudioRetry => 'Retry Mira audio';
 
   @override
-  String get meetMiraAudioUnmute => 'Unmute Mira Live audio';
+  String get meetMiraAudioUnmute => 'Unmute Mira audio';
 
   @override
   String get meetMiraCost => 'Mira';
@@ -7381,7 +7381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get miraChatTitle => 'Mira Chat';
 
   @override
-  String get miraLiveTitle => 'Mira Live';
+  String get miraLiveTitle => 'Mira';
 
   @override
   String get navApps => 'Apps';

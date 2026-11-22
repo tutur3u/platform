@@ -102,7 +102,7 @@ it('renders dimmed 2-tile preview, rounded-t-[28px] dialog, Poll tab voting, and
   expect(onSubmitVote).toHaveBeenCalledWith(['opt-a']);
   expect(screen.getAllByRole('progressbar').length).toBe(2);
   expect(screen.getByTestId('poll-mira-summary').textContent).toContain(
-    'Mira live summary'
+    'Mira summary'
   );
 
   // Switch to Docs tab

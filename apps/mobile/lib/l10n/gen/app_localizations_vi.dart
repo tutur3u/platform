@@ -917,7 +917,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
 
   @override
-  String get assistantLiveTitle => 'Mira Live';
+  String get assistantLiveTitle => 'Mira';
 
   @override
   String get assistantLiveTranscriptPending => 'Các thay đổi trong bản ghi chưa được đồng bộ.';
@@ -6885,7 +6885,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetLeaveOrEnd => 'Rời hoặc kết thúc cuộc họp?';
 
   @override
-  String get meetLiveCost => 'Mira Live';
+  String get meetLiveCost => 'Mira';
 
   @override
   String get meetLockRoom => 'Khóa phòng họp';
@@ -6941,13 +6941,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMiraApprove => 'Duyệt hành động';
 
   @override
-  String get meetMiraAudioMute => 'Tắt âm thanh Mira Live';
+  String get meetMiraAudioMute => 'Tắt âm thanh Mira';
 
   @override
-  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira Live';
+  String get meetMiraAudioRetry => 'Thử lại âm thanh Mira';
 
   @override
-  String get meetMiraAudioUnmute => 'Bật âm thanh Mira Live';
+  String get meetMiraAudioUnmute => 'Bật âm thanh Mira';
 
   @override
   String get meetMiraCost => 'Mira';
@@ -7302,7 +7302,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get miraChatTitle => 'Mira Chat';
 
   @override
-  String get miraLiveTitle => 'Mira Live';
+  String get miraLiveTitle => 'Mira';
 
   @override
   String get navApps => 'Ứng dụng';

@@ -6833,8 +6833,8 @@
       "insufficient_credits": "Bạn cần ít nhất 500 tín dụng AI để bắt đầu chế độ Trực tiếp.",
       "listening": "Đang nghe bạn",
       "live_mode": "Trực tiếp",
-      "live_session_ready": "Mira Trực tiếp đã sẵn sàng",
-      "live_stage_label": "Mira Trực tiếp",
+      "live_session_ready": "Mira đã sẵn sàng",
+      "live_stage_label": "Mira",
       "microphone_denied": "Quyền truy cập micrô đã bị từ chối. Hãy cho phép micrô trong cài đặt trình duyệt rồi thử lại.",
       "microphone_error_title": "Micrô không khả dụng",
       "microphone_unavailable": "Không tìm thấy micrô khả dụng hoặc micrô đang được ứng dụng khác sử dụng. Hãy kiểm tra thiết bị rồi thử lại.",
@@ -6923,7 +6923,7 @@
           "running": "Đang thực hiện"
         },
         "subtitle": "Cuộc trò chuyện kết nối với không gian làm việc",
-        "title": "Mira Live",
+        "title": "Mira",
         "tools": {
           "capture_session_note": "Ghi chú phiên",
           "create_calendar_event": "Tạo sự kiện lịch",
