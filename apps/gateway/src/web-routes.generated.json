@@ -3497,6 +3497,11 @@
     {
       "family": "public-auth",
       "localized": true,
+      "pattern": "/onboarding"
+    },
+    {
+      "family": "public-auth",
+      "localized": true,
       "pattern": "/signup"
     },
     {
@@ -3653,11 +3658,6 @@
       "family": "public-auth",
       "localized": true,
       "pattern": "/models"
-    },
-    {
-      "family": "public-auth",
-      "localized": true,
-      "pattern": "/onboarding"
     },
     {
       "family": "public-auth",

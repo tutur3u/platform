@@ -67,6 +67,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/onboarding",
+      "source": "apps/web/src/app/[locale]/(auth)/onboarding/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/[locale]/signup",
       "source": "apps/web/src/app/[locale]/(auth)/signup/page.tsx",
       "category": "page",
@@ -956,14 +964,6 @@
     {
       "pattern": "/[locale]/models",
       "source": "apps/web/src/app/[locale]/(marketing)/models/page.tsx",
-      "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
-    },
-    {
-      "pattern": "/[locale]/onboarding",
-      "source": "apps/web/src/app/[locale]/(marketing)/onboarding/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
