@@ -209,6 +209,7 @@ jobs:
           CRON_CONTROL_SERVING_PROOF: ${{ secrets.CRON_CONTROL_SERVING_PROOF }}
           CRON_COORDINATOR_PUBLISH: ${{ steps.coordinator.outputs.publish }}
           CRON_COORDINATOR_CHECK: ${{ steps.coordinator-lease.outcome }}
+          CRON_COORDINATOR_MODE: ${{ vars.DEPLOY_COORDINATOR_MODE }}
           CRON_COORDINATOR_DEPLOYMENT_ID: ${{ steps.coordinator.outputs.deployment-id }}
           DEPLOY_COORDINATOR_ORIGIN: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
         run: node apps/cron-control/scripts/verify-already-serving.mjs check apps/cron-control scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json"
@@ -258,6 +259,7 @@ jobs:
           CRON_CONTROL_PROOF_DIGEST: ${{ steps.already-serving.outputs.proof-digest }}
           CRON_COORDINATOR_PUBLISH: ${{ steps.coordinator.outputs.publish }}
           CRON_COORDINATOR_CHECK: ${{ steps.coordinator-lease.outcome }}
+          CRON_COORDINATOR_MODE: ${{ vars.DEPLOY_COORDINATOR_MODE }}
           CRON_COORDINATOR_DEPLOYMENT_ID: ${{ steps.coordinator.outputs.deployment-id }}
           DEPLOY_COORDINATOR_ORIGIN: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
         run: node apps/cron-control/scripts/verify-already-serving.mjs confirm apps/cron-control scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json" "$RUNNER_TEMP/cron-control-settings-after.json"

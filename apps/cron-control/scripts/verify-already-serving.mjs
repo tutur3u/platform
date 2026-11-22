@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import {
+  closeSync,
+  constants,
   existsSync,
+  fstatSync,
   lstatSync,
+  openSync,
   readFileSync,
   readdirSync,
+  readSync,
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
@@ -112,17 +117,34 @@ function readQualifiedModule(appDir, proof) {
     'qualified Cron Control module inventory differs'
   );
   const file = join(directory, ENTRY);
-  const stat = lstatSync(file);
-  assert.ok(
-    stat.isFile() && stat.size > 0 && stat.size <= MAX_MODULE_BYTES,
-    'qualified Cron Control module bytes unavailable'
+  // A FIFO must not block before fstat can reject it.
+  const fd = openSync(
+    file,
+    constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
   );
-  const bytes = readFileSync(file);
-  assert.ok(
-    digest(bytes) === proof.moduleSha256,
-    'qualified Cron Control module differs from the approved digest'
-  );
-  return bytes;
+  try {
+    const stat = fstatSync(fd);
+    assert.ok(
+      stat.isFile() && stat.size > 0 && stat.size <= MAX_MODULE_BYTES,
+      'qualified Cron Control module bytes unavailable'
+    );
+    const buffer = Buffer.allocUnsafe(stat.size + 1);
+    let size = 0;
+    while (size < buffer.length) {
+      const count = readSync(fd, buffer, size, buffer.length - size, null);
+      if (count === 0) break;
+      size += count;
+    }
+    assert.ok(size === stat.size, 'qualified Cron Control module size changed');
+    const bytes = buffer.subarray(0, size);
+    assert.ok(
+      digest(bytes) === proof.moduleSha256,
+      'qualified Cron Control module differs from the approved digest'
+    );
+    return bytes;
+  } finally {
+    closeSync(fd);
+  }
 }
 
 async function readJson(fetchImpl, url, label, headers = {}) {
@@ -261,12 +283,25 @@ export async function renewServingLease(
   });
   const { stateFile, origin, workerId } = client.config;
   const fenced = () => existsSync(`${stateFile}.fenced`);
+  // Name the exact missing condition. A job that never registered with the
+  // coordinator holds no lease at all, which is not the same as a fenced lease.
   assert.ok(
-    env.CRON_COORDINATOR_CHECK === 'success' &&
-      UUID.test(env.CRON_COORDINATOR_DEPLOYMENT_ID) &&
-      !fenced() &&
-      existsSync(stateFile),
-    'Cron Control serving approval requires an unfenced coordinator lease'
+    UUID.test(env.CRON_COORDINATOR_DEPLOYMENT_ID ?? ''),
+    'Cron Control serving approval requires the deployment coordinator: this job registered no lease ' +
+      `(DEPLOY_COORDINATOR_MODE=${JSON.stringify(env.CRON_COORDINATOR_MODE || 'unset')} must be observe or enforce, ` +
+      'with DEPLOY_COORDINATOR_ORIGIN set)'
+  );
+  assert.ok(
+    env.CRON_COORDINATOR_CHECK === 'success',
+    `Cron Control serving approval requires a successful coordinator lease check (outcome: ${env.CRON_COORDINATOR_CHECK || 'unset'})`
+  );
+  assert.ok(
+    !fenced(),
+    'Cron Control serving approval requires an unfenced coordinator lease: the coordinator fenced this job'
+  );
+  assert.ok(
+    existsSync(stateFile),
+    'Cron Control serving approval requires the registered coordinator lease state'
   );
   const state = JSON.parse(readFileSync(stateFile, 'utf8'));
   const { grant } = state;

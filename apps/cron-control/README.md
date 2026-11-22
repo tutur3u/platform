@@ -52,7 +52,13 @@ operations in the release approval.
    checks for the relay binding. Obtain these from readback and keep secret
    names and values out of the record. Store the canonical single-line
    base64 encoding of its UTF-8 JSON in the masked environment secret.
-3. Start the approved production planner for that exact SHA. The workflow
+3. Confirm the production deploy job registers with the deployment
+   coordinator: `DEPLOY_COORDINATOR_MODE` must be `observe` or `enforce` and
+   `DEPLOY_COORDINATOR_ORIGIN` must be set. With the coordinator off the job
+   holds no lease and the proof fails closed with "registered no lease"; a
+   fenced lease fails with "the coordinator fenced this job". Neither
+   falls back to the strict publisher.
+4. Start the approved production planner for that exact SHA. The workflow
    renews its exact coordinator lease, checks public artifact and run
    metadata, and compares the qualified module with the exact deployed
    version's code bytes. After uploading the settings evidence, it renews

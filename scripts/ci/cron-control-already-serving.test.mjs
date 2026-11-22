@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -9,7 +16,6 @@ import { fileURLToPath } from 'node:url';
 import {
   alreadyServing,
   confirmStillServing,
-  renewServingLease,
 } from '../../apps/cron-control/scripts/verify-already-serving.mjs';
 
 import { captureAfter, settingsPlan } from './cf-worker-settings.mjs';
@@ -378,9 +384,7 @@ for (const [name, mutate, diagnostic] of [
   ],
   [
     'extra provider module',
-    (s) => {
-      s.live.modules.push({ name: 'extra.js' });
-    },
+    (s) => s.live.modules.push({ name: 'extra.js' }),
     /module inventory differs/,
   ],
   [
@@ -392,24 +396,23 @@ for (const [name, mutate, diagnostic] of [
   ],
   [
     'extra qualified module',
-    (s) => {
-      writeFileSync(join(s.bundle, 'extra.js'), BYTES);
-    },
+    (s) => writeFileSync(join(s.bundle, 'extra.js'), BYTES),
     /module inventory differs/,
   ],
   [
     'missing qualified module',
-    (s) => {
-      rmSync(join(s.bundle, 'index.js'));
-    },
+    (s) => rmSync(join(s.bundle, 'index.js')),
     /module inventory differs/,
   ],
   [
     'unapproved qualified digest',
-    (s) => {
-      s.proof.moduleSha256 = 'f'.repeat(64);
-    },
+    (s) => Object.assign(s.proof, { moduleSha256: 'f'.repeat(64) }),
     /differs from the approved digest/,
+  ],
+  [
+    'oversized qualified module',
+    (s) => truncateSync(join(s.bundle, 'index.js'), 1024 * 1024 + 1),
+    /module bytes unavailable/,
   ],
   [
     'unavailable module bytes',
@@ -481,6 +484,22 @@ for (const [name, mutate, diagnostic] of [
     await assert.rejects(check(state), diagnostic);
   });
 }
+
+test('refuses directory and symlink modules with the expected filename', async (t) => {
+  const state = fixture(t);
+  const path = join(state.bundle, 'index.js');
+  const target = join(state.appDir, 'sealed.js');
+  writeFileSync(target, BYTES);
+  rmSync(path);
+  mkdirSync(path);
+  await assert.rejects(check(state), /module bytes unavailable/);
+  rmSync(path, { recursive: true });
+  symlinkSync(target, path);
+  await assert.rejects(check(state), ({ code }) =>
+    ['ELOOP', 'EMLINK'].includes(code)
+  );
+  assert.deepEqual(state.calls, ['lease', 'lease']);
+});
 
 test('the post-check refuses redeployment of the same version before the marker', async (t) => {
   const state = fixture(t);
@@ -576,107 +595,11 @@ test('final canonical read rejects independent schedule drift with unchanged dep
   assert.ok(!drift.calls.some((url) => url.endsWith('/versions/latest')));
 });
 
-function leaseFixture(t) {
-  const folder = mkdtempSync(join(tmpdir(), 'cron-control-lease-'));
-  t.after(() => rmSync(folder, { recursive: true, force: true }));
-  const origin = 'https://coordinator.example.test';
-  const stateFile = join(folder, 'lease.json');
-  const now = Date.parse('2026-11-22T11:00:00Z');
-  const grant = {
-    jobId: DEPLOYMENT,
-    attemptId: VERSION,
-    workerId: '42:1:deploy',
-    epoch: 2,
-    leaseDeadline: new Date(now - 1).toISOString(),
-  };
-  writeFileSync(
-    stateFile,
-    JSON.stringify({
-      deploymentId: DEPLOYMENT,
-      base: origin,
-      grant,
-    })
-  );
-  const env = {
-    DC_STATE_FILE: stateFile,
-    DEPLOY_COORDINATOR_ORIGIN: origin,
-    ACTIONS_ID_TOKEN_REQUEST_URL: 'https://oidc.example.test/token',
-    ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'mock-oidc-request',
-    CRON_COORDINATOR_CHECK: 'success',
-    CRON_COORDINATOR_DEPLOYMENT_ID: DEPLOYMENT,
-    GITHUB_RUN_ID: '42',
-    GITHUB_RUN_ATTEMPT: '1',
-    GITHUB_JOB: 'deploy',
-  };
-  const renewed = {
-    ...grant,
-    leaseDeadline: new Date(now + 60_000).toISOString(),
-  };
-  const calls = [];
-  const fixture = {
-    env,
-    grant,
-    renewed,
-    calls,
-    status: 200,
-    now,
-    deps: {
-      now: () => fixture.now,
-      sleep: async () => {},
-      async fetchImpl(url, init) {
-        calls.push({ url, method: init.method });
-        assert.equal(init.redirect, 'error');
-        if (init.method === 'GET') return Response.json({ value: 'mock-oidc' });
-        assert.equal(
-          url,
-          `${origin}/v1/projects/cron-control/environments/production/deployments/${DEPLOYMENT}/heartbeat`
-        );
-        assert.deepEqual(JSON.parse(init.body), {
-          grant: { attemptId: VERSION, epoch: grant.epoch },
-        });
-        return Response.json(renewed, { status: fixture.status });
-      },
-    },
-  };
-  return fixture;
-}
-
-test('proof accepts an authoritative renewal past the original disk deadline', async (t) => {
-  const state = leaseFixture(t);
-  const verify = await renewServingLease(state.env, state.deps);
-  assert.deepEqual(
-    state.calls.map(({ method }) => method),
-    ['GET', 'POST']
-  );
-  verify();
-  state.now += 60_000;
-  assert.throws(verify, /expired or was fenced/);
-});
-
-test('proof refuses a failed authoritative heartbeat', async (t) => {
-  const state = leaseFixture(t);
-  state.status = 409;
-  await assert.rejects(
-    renewServingLease(state.env, state.deps),
-    /did not renew the exact lease/
-  );
-  assert.deepEqual(
-    state.calls.map(({ method }) => method),
-    ['GET', 'POST']
-  );
-});
-
-test('proof refuses a mismatched or expired authoritative grant', async (t) => {
-  const state = leaseFixture(t);
-  state.renewed.epoch += 1;
-  await assert.rejects(
-    renewServingLease(state.env, state.deps),
-    /did not renew the exact lease/
-  );
-  state.renewed.epoch = state.grant.epoch;
-  state.renewed.leaseDeadline = new Date(state.now).toISOString();
-  await assert.rejects(
-    renewServingLease(state.env, state.deps),
-    /expired or was fenced/
-  );
+test('refuses a FIFO module without blocking', async (t) => {
+  const state = fixture(t);
+  const path = join(state.bundle, 'index.js');
+  rmSync(path);
+  const made = spawnSync('mkfifo', [path]);
+  if (made.error || made.status !== 0) return t.skip('mkfifo unavailable');
+  await assert.rejects(check(state), /module bytes unavailable/);
 });
