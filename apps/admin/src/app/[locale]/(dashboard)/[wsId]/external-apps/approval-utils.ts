@@ -1,3 +1,4 @@
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import type {
   ExternalAppRegistration,
   SaveExternalAppPayload,
@@ -162,17 +163,7 @@ function normalizeStringList(values: string[]) {
 }
 
 function scopeIsCovered(scope: string, allowedScopes: string[]) {
-  for (const allowedScope of allowedScopes) {
-    if (allowedScope === '*' || allowedScope === scope) return true;
-    if (
-      allowedScope.endsWith(':*') &&
-      scope.startsWith(allowedScope.slice(0, -1))
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  return hasGrantedScope(allowedScopes, scope);
 }
 
 function firstValue(value: string | string[] | undefined) {

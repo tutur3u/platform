@@ -56,6 +56,72 @@ export function isInternalAppScope(scope: string) {
   return scope.trim().toLowerCase().startsWith(INTERNAL_APP_SCOPE_PREFIX);
 }
 
+/**
+ * What each wildcard grant covers. `external-projects:*` covers the external
+ * project scopes that existed when apps were first granted it. A scope added
+ * later, a bare `*` and every other wildcard cover nothing, so adding a scope
+ * never widens an app that already holds a wildcard: it needs an explicit
+ * grant and an explicit request.
+ */
+export const WILDCARD_SCOPE_COVERAGE: Readonly<
+  Record<string, readonly string[]>
+> = Object.freeze({
+  'external-projects:*': Object.freeze([
+    'external-projects:manage',
+    'external-projects:publish',
+    'external-projects:read',
+  ]),
+});
+
+/** Whether one granted scope (exact or wildcard) covers `scope`. */
+export function scopeGrantCovers(grant: string, scope: string) {
+  if (grant === scope) return true;
+  return WILDCARD_SCOPE_COVERAGE[grant]?.includes(scope) ?? false;
+}
+
+/** Whether any of `grants` covers `scope`. */
+export function hasGrantedScope(grants: readonly string[], scope: string) {
+  return grants.some((grant) => scopeGrantCovers(grant, scope));
+}
+
+const SCOPE_PATTERN = /^[a-z0-9:*._-]{1,80}$/u;
+
+function normalizeRequestedScopes(values: readonly string[]) {
+  const scopes = values
+    .map((scope) => scope.trim())
+    .filter((scope) => SCOPE_PATTERN.test(scope));
+  return [...new Set(scopes)].sort();
+}
+
+/**
+ * The scopes an app token carries. First-party session scopes are never
+ * issued to an external app, even when a registration saved before they were
+ * refused lists them. With no requested scopes the token carries the app's
+ * allowed scopes; otherwise every requested scope must be covered by an
+ * allowed one, or the whole request fails with `app_scope_not_allowed`.
+ */
+export function getAllowedAppTokenScopes({
+  allowedScopes,
+  requestedScopes,
+}: {
+  allowedScopes: readonly string[];
+  requestedScopes: readonly string[];
+}) {
+  const allowed = normalizeRequestedScopes(allowedScopes).filter(
+    (scope) => !isInternalAppScope(scope)
+  );
+  const requested = normalizeRequestedScopes(requestedScopes);
+
+  if (requested.some(isInternalAppScope)) {
+    throw new Error('app_scope_not_allowed');
+  }
+  if (requested.length === 0) return allowed;
+  if (requested.some((scope) => !hasGrantedScope(allowed, scope))) {
+    throw new Error('app_scope_not_allowed');
+  }
+  return requested;
+}
+
 export const EXTERNAL_APP_BEARER_TTL_BOUNDS = {
   max: 86_400,
   min: 300,

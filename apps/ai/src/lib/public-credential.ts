@@ -8,7 +8,10 @@ import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
+import {
+  hasGrantedScope,
+  wasIssuedBeforeSecretRotation,
+} from '@tuturuuu/utils/external-app-registry-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
 const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
@@ -43,8 +46,8 @@ function externalAppField(appId: string, field: string) {
   return `${EXTERNAL_APP_SECRET_PREFIX}:${appId}:${field}`;
 }
 
-function parseStringArray(value: string | null | undefined): string[] {
-  if (!value) return [];
+function parseStringArray(value: unknown): string[] {
+  if (typeof value !== 'string' || !value) return [];
 
   try {
     const parsed = JSON.parse(value) as unknown;
@@ -54,15 +57,6 @@ function parseStringArray(value: string | null | undefined): string[] {
   } catch {
     return [];
   }
-}
-
-function scopeAllowed(scopes: readonly string[], requiredScope: string) {
-  return scopes.some(
-    (scope) =>
-      scope === '*' ||
-      scope === requiredScope ||
-      (scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1)))
-  );
 }
 
 function invalidExternalCredential(message: string, status = 403) {
@@ -155,7 +149,7 @@ export function externalAppRegistrationAllows(
 ) {
   return (
     externalAppRegistrationLinks(registration, workspaceId) &&
-    scopeAllowed(registration.allowedScopes, requiredScope)
+    hasGrantedScope(registration.allowedScopes, requiredScope)
   );
 }
 

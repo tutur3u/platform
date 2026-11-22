@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertExternalAppRegistrationAllowed,
+  getAllowedAppTokenScopes,
   getReservedInternalAppNames,
+  hasGrantedScope,
   INTERNAL_TOKEN_TARGETS,
   isInternalAppScope,
   isReservedExternalAppId,
@@ -9,6 +11,8 @@ import {
   parseExternalAppLogoUrl,
   parseMaxBearerTtlSeconds,
   resolveMaxBearerTtlFieldValue,
+  scopeGrantCovers,
+  WILDCARD_SCOPE_COVERAGE,
   wasIssuedBeforeSecretRotation,
 } from './external-app-registry-policy';
 import { APP_DOMAIN_MAP } from './internal-domains';
@@ -139,5 +143,151 @@ describe('external app logo URL', () => {
     `https://example.com/${'a'.repeat(2100)}`,
   ])('refuses %s', (value) => {
     expect(parseExternalAppLogoUrl(value)).toBeNull();
+  });
+});
+
+describe('scope coverage', () => {
+  it('freezes what each wildcard covers', () => {
+    // Adding a scope here widens every app that holds the wildcard; grant new
+    // scopes explicitly instead.
+    expect(WILDCARD_SCOPE_COVERAGE).toEqual({
+      'external-projects:*': [
+        'external-projects:manage',
+        'external-projects:publish',
+        'external-projects:read',
+      ],
+    });
+    expect(Object.isFrozen(WILDCARD_SCOPE_COVERAGE)).toBe(true);
+    expect(
+      Object.isFrozen(WILDCARD_SCOPE_COVERAGE['external-projects:*'])
+    ).toBe(true);
+  });
+
+  it('covers exact grants and the frozen external-projects list only', () => {
+    expect(
+      scopeGrantCovers('workspace:cron:write', 'workspace:cron:write')
+    ).toBe(true);
+    for (const scope of [
+      'external-projects:read',
+      'external-projects:publish',
+      'external-projects:manage',
+    ]) {
+      expect(scopeGrantCovers('external-projects:*', scope)).toBe(true);
+    }
+    expect(
+      scopeGrantCovers('external-projects:*', 'external-projects:export')
+    ).toBe(false);
+  });
+
+  it('never lets a bare or other wildcard cover a scope', () => {
+    for (const scope of [
+      'workspace:cron:write',
+      'workspace:members:write',
+      'workspace:drive:write',
+      'drive.files:read',
+      'ai:use',
+    ]) {
+      expect(hasGrantedScope(['*'], scope)).toBe(false);
+      expect(hasGrantedScope(['workspace:*'], scope)).toBe(false);
+      expect(hasGrantedScope(['drive.files:*'], scope)).toBe(false);
+    }
+  });
+});
+
+describe('getAllowedAppTokenScopes', () => {
+  it('refuses first-party session scopes under any grant', () => {
+    expect(() =>
+      getAllowedAppTokenScopes({
+        allowedScopes: ['*', 'internal-app:session'],
+        requestedScopes: ['internal-app:session'],
+      })
+    ).toThrow('app_scope_not_allowed');
+    expect(
+      getAllowedAppTokenScopes({
+        allowedScopes: ['internal-app:session', 'workspace:session'],
+        requestedScopes: [],
+      })
+    ).toEqual(['workspace:session']);
+  });
+
+  it('refuses a scope that only a wildcard would have covered', () => {
+    expect(() =>
+      getAllowedAppTokenScopes({
+        allowedScopes: ['*'],
+        requestedScopes: ['workspace:cron:write'],
+      })
+    ).toThrow('app_scope_not_allowed');
+    expect(() =>
+      getAllowedAppTokenScopes({
+        allowedScopes: ['external-projects:*'],
+        requestedScopes: ['external-projects:export'],
+      })
+    ).toThrow('app_scope_not_allowed');
+  });
+
+  it('keeps every scope the registered apps request today', () => {
+    // Registry listing from the admin API; each app must still be able to
+    // request each of its allowed scopes, alone and all together.
+    const registry: Record<string, string[]> = {
+      chunli: ['external-projects:*'],
+      cybershield35: [
+        'ai:use',
+        'external-projects:manage',
+        'tts:use',
+        'users:profile:read',
+        'users:profile:write',
+        'workspace:cron:read',
+        'workspace:cron:write',
+        'workspace:drive:read',
+        'workspace:drive:write',
+        'workspace:members:read',
+        'workspace:members:write',
+        'workspace:roles:read',
+        'workspace:roles:write',
+        'workspace:session',
+      ],
+      exocorpse: [
+        'external-projects:*',
+        'users:profile:read',
+        'users:profile:write',
+      ],
+      fysh: [
+        'external-projects:manage',
+        'external-projects:publish',
+        'external-projects:read',
+        'users:profile:read',
+        'users:profile:write',
+      ],
+      'ieeai-stats': ['workspace:session'],
+      rennu: [
+        'external-projects:manage',
+        'external-projects:publish',
+        'external-projects:read',
+        'users:profile:read',
+        'users:profile:write',
+      ],
+      sono2010: ['users:profile:read'],
+    };
+    for (const allowedScopes of Object.values(registry)) {
+      const requestable = allowedScopes.flatMap((scope) =>
+        scope === 'external-projects:*'
+          ? [scope, ...WILDCARD_SCOPE_COVERAGE[scope]!]
+          : [scope]
+      );
+      for (const scope of requestable) {
+        expect(
+          getAllowedAppTokenScopes({ allowedScopes, requestedScopes: [scope] })
+        ).toEqual([scope]);
+      }
+      expect(
+        getAllowedAppTokenScopes({ allowedScopes, requestedScopes: [] })
+      ).toEqual([...allowedScopes].sort());
+      expect(
+        getAllowedAppTokenScopes({
+          allowedScopes,
+          requestedScopes: requestable,
+        })
+      ).toEqual([...new Set(requestable)].sort());
+    }
   });
 });

@@ -224,40 +224,7 @@ export async function getExternalAppByReturnUrl(
   );
 }
 
-export function getAllowedAppTokenScopes({
-  allowedScopes,
-  requestedScopes,
-}: {
-  allowedScopes: string[];
-  requestedScopes: string[];
-}) {
-  const allowed = normalizeScopes(allowedScopes, []);
-  const requested = normalizeScopes(requestedScopes, []);
-
-  if (requested.length === 0) {
-    return allowed;
-  }
-
-  const invalidScope = requested.find((scope) => {
-    if (allowed.includes(scope) || allowed.includes('*')) {
-      return false;
-    }
-
-    return !allowed.some((allowedScope) => {
-      if (!allowedScope.endsWith(':*')) {
-        return false;
-      }
-
-      return scope.startsWith(allowedScope.slice(0, -1));
-    });
-  });
-
-  if (invalidScope) {
-    throw new Error('app_scope_not_allowed');
-  }
-
-  return requested;
-}
+export { getAllowedAppTokenScopes } from '@tuturuuu/utils/external-app-registry-policy';
 
 export async function upsertExternalApp({
   actorUserId,

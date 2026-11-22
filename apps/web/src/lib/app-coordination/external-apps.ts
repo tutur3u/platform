@@ -3,7 +3,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   assertExternalAppRegistrationAllowed,
-  isInternalAppScope,
   parseExternalAppLogoUrl,
   parseMaxBearerTtlSeconds,
   resolveMaxBearerTtlFieldValue,
@@ -246,48 +245,7 @@ export async function getExternalAppByReturnUrl(
   );
 }
 
-export function getAllowedAppTokenScopes({
-  allowedScopes,
-  requestedScopes,
-}: {
-  allowedScopes: string[];
-  requestedScopes: string[];
-}) {
-  // First-party session scopes are never issued to an external app, even
-  // under a wildcard grant or a registration saved before they were refused.
-  const allowed = normalizeScopes(allowedScopes, []).filter(
-    (scope) => !isInternalAppScope(scope)
-  );
-  const requested = normalizeScopes(requestedScopes, []);
-
-  if (requested.some(isInternalAppScope)) {
-    throw new Error('app_scope_not_allowed');
-  }
-
-  if (requested.length === 0) {
-    return allowed;
-  }
-
-  const invalidScope = requested.find((scope) => {
-    if (allowed.includes(scope) || allowed.includes('*')) {
-      return false;
-    }
-
-    return !allowed.some((allowedScope) => {
-      if (!allowedScope.endsWith(':*')) {
-        return false;
-      }
-
-      return scope.startsWith(allowedScope.slice(0, -1));
-    });
-  });
-
-  if (invalidScope) {
-    throw new Error('app_scope_not_allowed');
-  }
-
-  return requested;
-}
+export { getAllowedAppTokenScopes } from '@tuturuuu/utils/external-app-registry-policy';
 
 export async function upsertExternalApp({
   actorUserId,
