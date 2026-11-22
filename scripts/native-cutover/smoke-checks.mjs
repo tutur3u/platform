@@ -2,6 +2,22 @@
 // subdomain (root mode). Pure: `runSmoke` takes an injected fetch, so the same
 // checks run against production, staging or a local workerd, and in tests.
 
+/**
+ * True when the response's CSP forbids all framing: in at least one
+ * comma-separated policy (browsers enforce every policy), the first
+ * `frame-ancestors` directive (CSP3 ignores later ones) has the single source
+ * `'none'`. Lookalikes such as `frame-ancestors 'none' https://x` fail.
+ */
+export function cspDeniesFraming(csp) {
+  return csp.split(',').some((policy) => {
+    const directive = policy
+      .split(';')
+      .map((part) => part.trim().split(/\s+/u))
+      .find(([name]) => name?.toLowerCase() === 'frame-ancestors');
+    return directive?.length === 2 && directive[1].toLowerCase() === "'none'";
+  });
+}
+
 const CRAWLER_UA = 'facebookexternalhit/1.1';
 /** A browser-like default; the wildcard case has its own check. */
 const ACCEPT_LANGUAGE = 'en-US,en;q=0.9';
@@ -126,14 +142,21 @@ export async function runSmoke(options, fetchImpl = fetch) {
       if (!native && runtime === 'native')
         failures.push('served by the native Worker, expected legacy');
       frameOptions = headers.get('x-frame-options');
-      if (frameOptions !== 'DENY')
-        failures.push('missing X-Frame-Options: DENY');
-      if (
-        !/frame-ancestors 'none'/u.test(
-          headers.get('content-security-policy') ?? ''
-        )
-      )
-        failures.push("missing CSP frame-ancestors 'none'");
+      const framingDenied = cspDeniesFraming(
+        headers.get('content-security-policy') ?? ''
+      );
+      // The tuturuuu.com zone has the managed transform
+      // `add_security_headers` enabled. It rewrites X-Frame-Options to
+      // SAMEORIGIN after the Worker responds, although repo code sends DENY.
+      // Until that transform is disabled and replaced by a Transform Rule,
+      // accept SAMEORIGIN only when the same response's CSP still enforces
+      // frame-ancestors 'none'. Any other value, or a missing header, fails.
+      const normalizedFrameOptions = frameOptions?.trim().toUpperCase();
+      const frameOptionsOk =
+        normalizedFrameOptions === 'DENY' ||
+        (normalizedFrameOptions === 'SAMEORIGIN' && framingDenied);
+      if (!frameOptionsOk) failures.push('missing X-Frame-Options: DENY');
+      if (!framingDenied) failures.push("missing CSP frame-ancestors 'none'");
       if (check.expect.loginReturn) {
         const problem = checkLoginReturn(
           headers.get('location'),
@@ -183,10 +206,15 @@ export async function runSmoke(options, fetchImpl = fetch) {
 
 export function matchesTasksPublicationSmoke(report, baseline) {
   return report.results.every((result, index) => {
-    if (result.ok) return true;
+    const before = baseline.results[index];
+    // Never loosen a baseline that served DENY, even though SAMEORIGIN with an
+    // enforced CSP now passes the smoke on its own.
+    if (result.ok)
+      return !(
+        before?.frameOptions === 'DENY' && result.frameOptions !== 'DENY'
+      );
     // Cloudflare can replace this legacy header on every version. Allow
     // the same edge value only when the enforced CSP check still passes.
-    const before = baseline.results[index];
     return (
       before?.name === result.name &&
       before.frameOptions === 'SAMEORIGIN' &&

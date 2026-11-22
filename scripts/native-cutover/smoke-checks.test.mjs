@@ -118,7 +118,7 @@ test('Tasks release permits only the inherited edge framing header with enforced
     });
   const baseline = await runSmoke(base, robots('SAMEORIGIN'));
   const strict = await runSmoke(base, nativeFetch());
-  assert.equal(baseline.ok, false);
+  assert.equal(baseline.ok, true);
   assert.equal(matchesTasksPublicationSmoke(baseline, baseline), true);
   assert.equal(matchesTasksPublicationSmoke(strict, baseline), true);
   assert.equal(matchesTasksPublicationSmoke(baseline, strict), false);
@@ -129,6 +129,47 @@ test('Tasks release permits only the inherited edge framing header with enforced
   assert.equal(matchesTasksPublicationSmoke(openFrame, baseline), false);
   const differentHeader = await runSmoke(base, robots('ALLOWALL'));
   assert.equal(matchesTasksPublicationSmoke(differentHeader, baseline), false);
+});
+
+// The zone managed transform `add_security_headers` forces SAMEORIGIN, so the
+// smoke check accepts it only alongside CSP frame-ancestors 'none'.
+test('X-Frame-Options passes only as DENY or SAMEORIGIN with CSP frame-ancestors none', async () => {
+  const none = "frame-ancestors 'none'";
+  const robotsReport = async (xfo, csp) => {
+    const report = await runSmoke(
+      base,
+      nativeFetch({
+        '/robots.txt': (headers) => {
+          const next = { ...headers };
+          if (xfo === undefined) delete next['x-frame-options'];
+          else next['x-frame-options'] = xfo;
+          if (csp === undefined) delete next['content-security-policy'];
+          else next['content-security-policy'] = csp;
+          return new Response('ok', { headers: next });
+        },
+      })
+    );
+    return report.results.find((r) => r.name === 'robots');
+  };
+  assert.equal((await robotsReport('DENY', none)).ok, true);
+  assert.equal((await robotsReport('SAMEORIGIN', none)).ok, true);
+  assert.equal((await robotsReport('SAMEORIGIN', undefined)).ok, false);
+  assert.equal(
+    (await robotsReport('SAMEORIGIN', "frame-ancestors 'self'")).ok,
+    false
+  );
+  assert.equal(
+    (await robotsReport('ALLOW-FROM https://a.test', none)).ok,
+    false
+  );
+  assert.equal((await robotsReport('ALLOWALL', none)).ok, false);
+  assert.equal((await robotsReport(undefined, none)).ok, false);
+  assert.match(
+    (
+      await robotsReport('SAMEORIGIN', "frame-ancestors 'self'")
+    ).failures.join(),
+    /X-Frame-Options/u
+  );
 });
 
 test('legacy mode expects the guarded build-info and skips the server-function probe', () => {
