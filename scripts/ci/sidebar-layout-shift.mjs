@@ -148,6 +148,7 @@ function installProbes() {
 
 let server;
 let browser;
+const pageErrors = [];
 try {
   server = await createServer({
     root: harness,
@@ -157,7 +158,19 @@ try {
       `sidebar-layout-shift-vite-${process.pid}`
     ),
     plugins: [react()],
-    resolve: { alias: sourceAliases(), dedupe: ['react', 'react-dom'] },
+    resolve: {
+      alias: [
+        {
+          find: /^next\/image$/u,
+          replacement: path.join(
+            repo,
+            'packages/start-bridge/src/next/image.tsx'
+          ),
+        },
+        ...sourceAliases(),
+      ],
+      dedupe: ['react', 'react-dom'],
+    },
     css: { postcss: { plugins: [tailwind()] } },
     logLevel: 'warn',
     server: {
@@ -173,7 +186,6 @@ try {
     viewport: { width: 1440, height: 900 },
   });
   page.setDefaultTimeout(20000);
-  const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(installProbes);
   await page.goto(`http://127.0.0.1:${port}/?behavior=${behavior}`);
@@ -361,6 +373,8 @@ try {
   }
 } catch (error) {
   console.error('FAIL', error.message);
+  for (const pageError of pageErrors)
+    console.error('Browser error:', pageError);
   process.exitCode = 1;
 } finally {
   await browser?.close();

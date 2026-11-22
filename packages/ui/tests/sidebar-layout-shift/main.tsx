@@ -33,6 +33,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { type ReactNode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import workspaceAvatar from '../../../../apps/calendar/public/media/logos/light-rounded.png?url';
 import { WorkspaceSelectTrigger } from '../../src/components/ui/custom/workspace-select-trigger';
 import './style.css';
 
@@ -178,7 +179,9 @@ function WorkspacePickerFixture({ isCollapsed }: { isCollapsed: boolean }) {
       <DialogTrigger asChild>
         <WorkspaceSelectTrigger
           appearance="switch"
+          avatarUrl={workspaceAvatar}
           compact={isCollapsed}
+          fallbackLogoUrl={workspaceAvatar}
           invitationCount={1}
           labels={{
             invitations: 'pending invitation',
