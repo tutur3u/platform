@@ -10,11 +10,13 @@ select no_plan();
 insert into auth.users(id) values
   ('00000000-0000-4000-8000-000000009871'),
   ('00000000-0000-4000-8000-000000009872'),
-  ('00000000-0000-4000-8000-000000009873');
+  ('00000000-0000-4000-8000-000000009873'),
+  ('00000000-0000-4000-8000-000000009874');
 insert into public.users(id) values
   ('00000000-0000-4000-8000-000000009871'),
   ('00000000-0000-4000-8000-000000009872'),
-  ('00000000-0000-4000-8000-000000009873')
+  ('00000000-0000-4000-8000-000000009873'),
+  ('00000000-0000-4000-8000-000000009874')
 on conflict do nothing;
 
 -- Structure: private relations, RLS on, caller-bound definers, pinned paths.
@@ -244,6 +246,9 @@ reset role;
 select is((select count(*)::integer from private.user_product_email_consent_events
   where user_id = '00000000-0000-4000-8000-000000009871'), 4,
   'four decisions, four audit rows');
+select ok((select granted and granted_at is not null and withdrawn_at is null
+  from private.user_product_email_consent where user_id = '00000000-0000-4000-8000-000000009871'),
+  're-granting clears the withdrawal time');
 
 -- User B cannot read or change user A.
 set local role authenticated;
@@ -337,6 +342,44 @@ select throws_ok($$insert into private.user_product_email_consent
   (user_id, source, policy_version)
   values ('00000000-0000-4000-8000-000000009873', 'newsletter_form', 'v1')$$,
   '23514', null, 'the source CHECK rejects an unknown surface');
+
+-- Append-only evidence: no truncate, no delete while the user exists, and
+-- actor_id can only be cleared by the erasure of the acting user.
+select throws_ok($$truncate private.user_product_email_consent_events$$,
+  '55000', 'Product email consent evidence is append-only', 'audit rows cannot be truncated');
+select throws_ok($$delete from private.user_product_email_consent_events
+  where user_id = '00000000-0000-4000-8000-000000009871'$$, '55000', 'Product email consent evidence is append-only',
+  'audit rows cannot be deleted while the user exists');
+insert into private.user_product_email_consent_events
+  (user_id, granted, source, policy_version, actor_id)
+values ('00000000-0000-4000-8000-000000009871', true, 'web_settings', 'v-staff', '00000000-0000-4000-8000-000000009874');
+select throws_ok($$update private.user_product_email_consent_events
+  set actor_id = null where policy_version = 'v-staff'$$,
+  '55000', 'Product email consent evidence is append-only',
+  'actor_id cannot be cleared while the acting user exists');
+select set_config('request.jwt.claims', '{}', true);
+delete from auth.users where id = '00000000-0000-4000-8000-000000009874';
+delete from public.workspaces where personal and creator_id = '00000000-0000-4000-8000-000000009874';
+select lives_ok($$delete from public.users where id = '00000000-0000-4000-8000-000000009874'$$,
+  'erasing a user who acted on another user''s consent succeeds');
+select ok((select actor_id is null and user_id = '00000000-0000-4000-8000-000000009871'
+  from private.user_product_email_consent_events where policy_version = 'v-staff'),
+  'the evidence stays, with actor_id cleared by the cascade');
+
+-- p_limit: capped at 200, and null falls back to the default of 50.
+insert into private.user_product_email_consent_events
+  (user_id, granted, source, policy_version)
+select '00000000-0000-4000-8000-000000009871', true, 'web_settings', 'bulk' from generate_series(1, 205);
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-000000009871","role":"authenticated"}', true);
+select is((select count(*)::integer from public.list_product_email_consent_events(1000)), 200,
+  'a limit above 200 is capped at 200 rows');
+select is((select count(*)::integer from public.list_product_email_consent_events(null)), 50,
+  'a null limit falls back to 50 rows');
+select is((select count(*)::integer from public.list_product_email_consent_events()), 50,
+  'the default limit is 50 rows');
+reset role;
 
 -- Erasure removes both the state and the evidence.
 set local role authenticated;

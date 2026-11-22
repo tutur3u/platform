@@ -15,8 +15,9 @@ begin
   end if;
 end;
 $$;
--- Restore should_send_notification to the 20261029050200 body (no marketing
--- consent rule) before the consent view it reads is dropped.
+-- Restore should_send_notification to the 20261029050200 body, keeping a
+-- fail-closed marketing_communications email rule. It is replaced before the
+-- consent view it currently reads is dropped.
 create or replace function public.should_send_notification(
   p_user_id uuid,
   p_event_type text,
@@ -34,6 +35,12 @@ declare
 begin
   if p_channel = 'email'
     and p_event_type in ('topic_due_soon', 'topic_late') then
+    return false;
+  end if;
+  -- Fail closed: rolling back the consent tables must not turn marketing email
+  -- back on. Without this clause the default below would answer true for every
+  -- user who has no notification_preferences row.
+  if p_channel = 'email' and p_event_type = 'marketing_communications' then
     return false;
   end if;
   if p_scope = 'workspace' and p_ws_id is not null then
@@ -59,4 +66,5 @@ drop function public.set_product_email_consent(boolean, text, text);
 drop view private.product_email_recipients;
 drop table private.user_product_email_consent_events;
 drop table private.user_product_email_consent;
-drop function private.reject_product_email_consent_event_update();
+drop function private.guard_product_email_consent_event_change();
+drop function private.reject_product_email_consent_event_truncate();

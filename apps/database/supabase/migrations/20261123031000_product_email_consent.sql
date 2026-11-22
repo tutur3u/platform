@@ -90,9 +90,45 @@ create policy user_product_email_consent_events_service_read
   on private.user_product_email_consent_events
   for select to service_role using (true);
 
--- The audit trail is append-only, even for privileged updates. Deletion is
--- reserved for the account-erasure cascade, which no client can reach.
-create function private.reject_product_email_consent_event_update()
+-- The audit trail is append-only for client and service roles. Two changes are
+-- allowed, both only as the account-erasure cascade (a foreign-key action):
+--   * DELETE, once the parent user row is gone;
+--   * UPDATE of actor_id to NULL with every other column unchanged, when the
+--     acting user row is gone (ON DELETE SET NULL on actor_id).
+-- TRUNCATE is always rejected.
+create function private.guard_product_email_consent_event_change()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, pg_temp
+as $$
+begin
+  if tg_op = 'DELETE'
+    and pg_trigger_depth() > 1
+    and not exists (select 1 from public.users u where u.id = old.user_id) then
+    return old;
+  end if;
+  if tg_op = 'UPDATE'
+    and pg_trigger_depth() > 1
+    and old.actor_id is not null
+    and new.actor_id is null
+    and (to_jsonb(new) - 'actor_id') = (to_jsonb(old) - 'actor_id')
+    and not exists (select 1 from public.users u where u.id = old.actor_id) then
+    return new;
+  end if;
+  raise exception 'Product email consent evidence is append-only'
+    using errcode = '55000';
+end;
+$$;
+
+revoke all on function private.guard_product_email_consent_event_change()
+  from public, anon, authenticated, service_role;
+-- tuturuuu: no-grant (trigger)
+
+create trigger guard_product_email_consent_event_change
+  before update or delete on private.user_product_email_consent_events
+  for each row execute function private.guard_product_email_consent_event_change();
+
+create function private.reject_product_email_consent_event_truncate()
 returns trigger
 language plpgsql
 set search_path = pg_catalog, pg_temp
@@ -103,13 +139,13 @@ begin
 end;
 $$;
 
-revoke all on function private.reject_product_email_consent_event_update()
+revoke all on function private.reject_product_email_consent_event_truncate()
   from public, anon, authenticated, service_role;
 -- tuturuuu: no-grant (trigger)
 
-create trigger reject_product_email_consent_event_update
-  before update on private.user_product_email_consent_events
-  for each row execute function private.reject_product_email_consent_event_update();
+create trigger reject_product_email_consent_event_truncate
+  before truncate on private.user_product_email_consent_events
+  for each statement execute function private.reject_product_email_consent_event_truncate();
 
 -- The sender exclusion rule: only a user whose current state is an explicit
 -- grant appears here. Anyone without a row, or who withdrew, is excluded.
@@ -192,8 +228,9 @@ begin
       source = excluded.source,
       policy_version = excluded.policy_version,
       granted_at = case when excluded.granted then excluded.granted_at else c.granted_at end,
+      -- A re-grant clears the withdrawal time; the audit keeps both events.
       withdrawn_at = case
-        when excluded.granted then c.withdrawn_at
+        when excluded.granted then null
         when c.granted then now()
         else c.withdrawn_at
       end,
