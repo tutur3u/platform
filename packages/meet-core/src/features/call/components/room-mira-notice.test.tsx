@@ -54,10 +54,15 @@ it('asks for a choice and records Continue for the current notice', async () => 
   });
   show();
   await screen.findByText(call.room_mira_prompt);
-  fireEvent.click(
-    screen.getByRole('button', { name: call.room_mira_continue })
-  );
+  // The 18+ rule is part of what Continue accepts.
+  const proceed = screen.getByRole('button', { name: call.room_mira_continue });
+  expect(
+    document.getElementById(proceed.getAttribute('aria-describedby') ?? '')
+      ?.textContent
+  ).toBe(messages.meet.mira_adults.consent);
+  fireEvent.click(proceed);
   await screen.findByText('Waiting for 1 person to choose Continue.');
+  expect(screen.queryByText(messages.meet.mira_adults.consent)).toBeNull();
   expect(f.choose).toHaveBeenCalledWith('room', 'continue', version);
   expect(
     screen.getByRole('button', { name: call.room_mira_pause })

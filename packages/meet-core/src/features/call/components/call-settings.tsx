@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Mic,
   Settings2,
+  Sparkles,
   Video,
 } from '@tuturuuu/icons';
 import { MeetMemorySettings } from '@tuturuuu/meet-core/features/live-assistant/memory-settings';
@@ -30,7 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { MiraAudienceSettings } from '../../live-assistant/mira-audience-settings';
+import { MIRA_SETTINGS_TAB } from '../../live-assistant/use-mira-audience';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { RoomPermissionToggles } from './participants-panel';
 import { useTranslations } from 'next-intl';
@@ -38,6 +41,7 @@ import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
 import { AiCosts } from './ai-costs';
 import { CallActivitySettings } from './call-activity-settings';
+import { useCallSettingsDialog } from './call-settings-link';
 import type { RoomToolsMode } from './call-room-tools';
 import { ChatSettings } from './chat-settings';
 import { ClassroomSettings } from './classroom-settings';
@@ -53,6 +57,7 @@ import { ThumbnailModeSetting } from './thumbnail-mode-setting';
 export function CallSettings({
   room,
   meetingId,
+  wsId,
   telemetry,
   ai,
   canManage,
@@ -71,6 +76,8 @@ export function CallSettings({
   };
   room: MeetRoomController;
   meetingId: string;
+  /** The meeting workspace, whose owner decides whether Mira is on. */
+  wsId?: string;
   telemetry?: MediaDiagnostics;
   ai: ReturnType<typeof useMeetingAi>;
   canManage: boolean;
@@ -80,11 +87,25 @@ export function CallSettings({
   onOutput: (id: string) => void;
 }) {
   const t = useTranslations('meet.call');
+  const miraT = useTranslations('meet.mira_adults');
   const labels = useLargeRoomLabels();
-  const [activeTab, setActiveTab] = useState('devices');
+  const {
+    open,
+    setOpen,
+    tab: activeTab,
+    setTab: setActiveTab,
+  } = useCallSettingsDialog();
+  // A call shell shares this state, so it outlives the dialog: close it with
+  // the call, or settings left open would reopen on the next join.
+  useEffect(() => () => setOpen(false), [setOpen]);
   const [bandwidth, setBandwidth] = useState(room.getBandwidthMode);
   const bandwidthId = useId();
   const managesMedia = room.state.canManageParticipants ?? canManage;
+  const accountId = room.state.selfUserId
+    ? room.state.participants[room.state.selfUserId]?.accountId
+    : undefined;
+  // Signed-in participants see who decides whether Mira is on; guests do not.
+  const miraWorkspaceId = accountId ? wsId : undefined;
   const navItems: SettingsNavGroup[] = [
     {
       label: t('devices'),
@@ -142,6 +163,16 @@ export function CallSettings({
             ]
           : []),
         { name: 'chat', label: labels('settings_chat'), icon: MessageSquare },
+        ...(miraWorkspaceId
+          ? [
+              {
+                name: MIRA_SETTINGS_TAB,
+                label: miraT('settings_tab'),
+                icon: Sparkles,
+                keywords: [miraT('toggle'), miraT('badge')],
+              },
+            ]
+          : []),
         ...(canManage || room.state.selfUserId
           ? [{ name: 'public', label: labels('settings_public'), icon: Globe }]
           : []),
@@ -149,11 +180,8 @@ export function CallSettings({
     },
   ];
   const data = ai.data;
-  const accountId = room.state.selfUserId
-    ? room.state.participants[room.state.selfUserId]?.accountId
-    : undefined;
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <MeetingActionHint label={t('settings_title')}>
         <DialogTrigger asChild>
           <Button
@@ -272,6 +300,9 @@ export function CallSettings({
               canManage={canManage}
             />
           </SettingsSection>
+        )}
+        {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
+          <MiraAudienceSettings wsId={miraWorkspaceId} meetingId={meetingId} />
         )}
         {activeTab === 'public' && (
           <SettingsSection surface="plain">

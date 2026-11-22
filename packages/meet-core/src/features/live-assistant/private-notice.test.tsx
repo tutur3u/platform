@@ -10,10 +10,18 @@ import {
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../apps/meet/messages/en.json';
-const f = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn() }));
+const f = vi.hoisted(() => ({
+  read: vi.fn(),
+  write: vi.fn(),
+  audience: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   readPrivateMiraPolicy: f.read,
   setPrivateMiraChoice: f.write,
+}));
+vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
+  getMiraAudienceAttestation: f.audience,
+  updateMiraAudienceAttestation: vi.fn(),
 }));
 import { PrivateMiraNotice } from './private-notice';
 const accepted = vi.fn();
@@ -189,6 +197,52 @@ it('shows a reason instead of admitting when the server confirms no choice or an
       live.choice_unavailable
     )
   );
+  expect(accepted).not.toHaveBeenCalledWith(true);
+});
+it('states the 18+ rule beside Continue as part of the choice', async () => {
+  show();
+  const button = await enabledContinue();
+  expect(
+    document.getElementById(button.getAttribute('aria-describedby') ?? '')
+      ?.textContent
+  ).toBe(messages.meet.mira_adults.consent);
+  expect(screen.getByText(messages.meet.mira_adults.consent)).toBeTruthy();
+  for (const name of [live.phase_mute, live.phase_leave])
+    expect(
+      screen.getByRole('button', { name }).getAttribute('aria-describedby')
+    ).toBeNull();
+  expect(f.write).not.toHaveBeenCalled();
+});
+it('names the workspace 18+ setting when the workspace has not turned Mira on', async () => {
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: false,
+    unavailableReason: 'workspace',
+    choice: null,
+  });
+  show();
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain(messages.meet.mira_adults.workspace_off);
+  expect(alert.textContent).not.toContain(live.choice_unavailable);
+  expect(alert.textContent).not.toContain(
+    messages.meet.call.personal_workspace_unavailable
+  );
+  expect(
+    (
+      screen.getByRole('button', {
+        name: live.phase_continue,
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(true);
+  // Retry rereads the policy once the owner has turned Mira on.
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: true,
+    choice: null,
+  });
+  fireEvent.click(screen.getByRole('button', { name: live.retry }));
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  expect(f.audience).not.toHaveBeenCalled();
   expect(accepted).not.toHaveBeenCalledWith(true);
 });
 it('marks only the clicked choice as pending and blocks repeat clicks', async () => {

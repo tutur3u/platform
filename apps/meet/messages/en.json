@@ -5569,6 +5569,25 @@
       "update_failed": "Could not update the meeting. Please try again.",
       "yesterday": "Yesterday"
     },
+    "mira_adults": {
+      "ask_owner": "Ask your workspace owner to turn Mira on.",
+      "badge": "18+",
+      "confirmed_at": "Confirmed on {date}",
+      "consent": "Mira is only for people aged 18 or older. Choose Continue only if you are 18 or older.",
+      "effect": "Turning this on makes Mira available to this workspace's members. Turning it off turns Mira off for the workspace.",
+      "load_failed": "Couldn't load this setting.",
+      "notice": "Mira is only for people aged 18 or older.",
+      "open_settings": "Open Mira settings",
+      "owner_only": "Only the workspace owner can change this.",
+      "responsibility": "As the workspace owner, you are responsible for your members' access to and use of these features.",
+      "retry": "Try again",
+      "save_failed": "Couldn't save the Mira setting",
+      "settings_tab": "Mira",
+      "state_off": "Off",
+      "state_on": "On",
+      "toggle": "Everyone in this workspace is 18 or older",
+      "workspace_off": "Mira is off in this workspace until its owner confirms that everyone here is 18 or older."
+    },
     "notes_page": {
       "action_items": "Action items",
       "ai_notice": "AI-generated from the meeting transcript. Check important details against the transcript.",

@@ -28,6 +28,9 @@ vi.mock('./recording-settings', () => ({ RecordingSettings: () => null }));
 vi.mock('@tuturuuu/meet-core/features/live-assistant/memory-settings', () => ({
   MeetMemorySettings: () => null,
 }));
+vi.mock('../../live-assistant/mira-audience-settings', () => ({
+  MiraAudienceSettings: () => null,
+}));
 vi.mock(
   '../../../../../ui/src/components/ui/custom/onboarding-settings-panel',
   () => ({ OnboardingSettingsPanel: () => null })

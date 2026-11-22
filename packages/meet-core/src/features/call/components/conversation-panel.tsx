@@ -55,6 +55,7 @@ export function ConversationPanel({
         </p>
         <ChatPanel
           {...props}
+          wsId={wsId}
           onOpenPrivateMira={() => {
             setMode('personal');
             privateTab.current?.focus();

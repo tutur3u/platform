@@ -4,7 +4,6 @@ import {
   Download,
   FileText,
   Loader2,
-  LockKeyhole,
   Paperclip,
   RefreshCw,
   Send,
@@ -25,6 +24,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
 import {
@@ -33,6 +33,11 @@ import {
   miraSlashCommandDraft,
 } from '../lib/mira-slash-commands';
 import { AssistantPrivateReview } from './assistant-private-review';
+import {
+  type AssistantFailureNotice,
+  assistantFailureNotice,
+  ChatAssistantNotice,
+} from './chat-assistant-notice';
 import {
   AssistantWorkspacePicker,
   isCurrentAssistantWorkspace,
@@ -71,16 +76,7 @@ type RoomMira = {
   permissions?: MiraPermissionsProps;
 };
 
-type AssistantFailureNotice = 'room_unavailable' | 'consent_pending' | 'failed';
-/** 403: room Mira unavailable; consent code: waiting for everyone's Continue. */
-export function assistantFailureNotice(error: unknown): AssistantFailureNotice {
-  if (!error || typeof error !== 'object') return 'failed';
-  if ('code' in error && error.code === 'MIRA_ROOM_CONSENT_REQUIRED')
-    return 'consent_pending';
-  return 'status' in error && error.status === 403
-    ? 'room_unavailable'
-    : 'failed';
-}
+export { assistantFailureNotice } from './chat-assistant-notice';
 
 function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   const t = useTranslations('meet.call');
@@ -151,6 +147,7 @@ export function ChatPanel({
   selfUserId,
   accountId,
   meetingId,
+  wsId,
   mira,
 }: {
   mentionRequest?: number;
@@ -161,6 +158,8 @@ export function ChatPanel({
   selfUserId: string | null;
   accountId: string;
   meetingId: string;
+  /** The meeting workspace, whose owner decides whether Mira is on. */
+  wsId?: string;
   mira?: RoomMira;
 }) {
   const t = useTranslations('meet.call');
@@ -420,6 +419,7 @@ export function ChatPanel({
             </div>
             <p className="text-muted-foreground text-sm">{t('chat_empty')}</p>
             <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
+            <MiraAdultNotice className="justify-center" />
           </div>
         )}
         {miraTyping && (
@@ -433,32 +433,11 @@ export function ChatPanel({
           </div>
         )}
         {assistantNotice && !thinking && (
-          <div
-            role="alert"
-            className="mt-3 flex items-start gap-2 rounded-xl border p-3 text-sm"
-          >
-            <MiraAvatar size={20} />
-            <p className="min-w-0 flex-1">
-              {t(
-                assistantNotice === 'room_unavailable'
-                  ? 'assistant_private_only'
-                  : assistantNotice === 'consent_pending'
-                    ? 'assistant_consent_pending'
-                    : 'assistant_failed'
-              )}
-            </p>
-            {assistantNotice === 'room_unavailable' && onOpenPrivateMira && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={onOpenPrivateMira}
-              >
-                <LockKeyhole className="size-4" />
-                {t('personal_chat')}
-              </Button>
-            )}
-          </div>
+          <ChatAssistantNotice
+            notice={assistantNotice}
+            wsId={wsId}
+            onOpenPrivateMira={onOpenPrivateMira}
+          />
         )}
         {mira?.activity && (
           <div className="mt-3">
@@ -555,6 +534,9 @@ export function ChatPanel({
             ))}
           </div>
         )}
+        {hasMeetAssistantMention(draft) && (
+          <MiraAdultNotice id={`${paletteId}-adults`} />
+        )}
         <Textarea
           ref={composer}
           value={draft}
@@ -572,6 +554,9 @@ export function ChatPanel({
           aria-controls={commands.length ? paletteId : undefined}
           aria-activedescendant={
             activeCommand ? `${paletteId}-${activeCommand}` : undefined
+          }
+          aria-describedby={
+            hasMeetAssistantMention(draft) ? `${paletteId}-adults` : undefined
           }
           maxLength={2000}
           rows={2}

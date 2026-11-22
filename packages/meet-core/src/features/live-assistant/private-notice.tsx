@@ -7,10 +7,12 @@ import {
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
-import { MiraWorkspaceSettingsLink } from './mira-workspace-settings-link';
+import { useEffect, useId, useRef, useState } from 'react';
 import { withDeadline } from './live-errors';
+import { MiraAdultNotice } from './mira-adult-notice';
+import { MiraWorkspaceOff } from './mira-workspace-off';
 import {
   confirmPrivateChoice,
   type PrivateChoice,
@@ -65,6 +67,7 @@ export function PrivateMiraNotice({
 }) {
   const t = useTranslations('meet.live');
   const callT = useTranslations('meet.call');
+  const adultNoticeId = useId();
   const client = useQueryClient();
   const key = ['mira-private-choice', meetingId];
   const policy = useQuery({
@@ -187,6 +190,7 @@ export function PrivateMiraNotice({
   const action = (value: PrivateChoice, label: string) => (
     <Button
       autoFocus={value === 'continue'}
+      aria-describedby={value === 'continue' ? adultNoticeId : undefined}
       variant={
         value === 'continue'
           ? 'default'
@@ -239,18 +243,25 @@ export function PrivateMiraNotice({
           </PopoverContent>
         </Popover>
       </div>
+      <MiraAdultNotice consent id={adultNoticeId} />
       {problem ? (
         <div
           role="alert"
-          className="flex flex-wrap items-center gap-2 text-destructive text-sm"
+          className={cn(
+            'flex flex-wrap items-center gap-2 text-sm',
+            unavailable === 'workspace'
+              ? 'rounded-xl border bg-muted/35 p-3'
+              : 'text-destructive'
+          )}
         >
-          <span className="min-w-0 flex-1">
-            {unavailable
-              ? callT(`personal_${unavailable}_unavailable`)
-              : t(`choice_${problem}`)}
-          </span>
-          {wsId && unavailable === 'workspace' && (
-            <MiraWorkspaceSettingsLink wsId={wsId} />
+          {unavailable === 'workspace' ? (
+            <MiraWorkspaceOff wsId={wsId} className="min-w-0 flex-1" />
+          ) : (
+            <span className="min-w-0 flex-1">
+              {unavailable
+                ? callT(`personal_${unavailable}_unavailable`)
+                : t(`choice_${problem}`)}
+            </span>
           )}
           {retryable && (
             <Button

@@ -10,10 +10,21 @@ import {
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { afterEach, expect, it, vi } from 'vitest';
 
-const { ask, readPolicy, setChoice } = vi.hoisted(() => ({
-  ask: vi.fn(),
-  readPolicy: vi.fn(),
-  setChoice: vi.fn(),
+const { ask, readPolicy, setChoice, readAudience, openSettings } = vi.hoisted(
+  () => ({
+    ask: vi.fn(),
+    readPolicy: vi.fn(),
+    setChoice: vi.fn(),
+    readAudience: vi.fn(),
+    openSettings: vi.fn(),
+  })
+);
+vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
+  getMiraAudienceAttestation: readAudience,
+  updateMiraAudienceAttestation: vi.fn(),
+}));
+vi.mock('./call-settings-link', () => ({
+  useOpenCallSettings: () => openSettings,
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   askPersonalMeetAssistant: ask,
@@ -122,7 +133,7 @@ it('confirms the current account choice and retries the same private request', a
   expect(ask.mock.calls[1]?.[1]).toEqual(ask.mock.calls[0]?.[1]);
 });
 
-it('offers workspace settings without writing consent for an ineligible workspace', async () => {
+function refuseForWorkspace() {
   ask.mockRejectedValueOnce(
     new InternalApiError(
       'Workspace ineligible',
@@ -131,7 +142,11 @@ it('offers workspace settings without writing consent for an ineligible workspac
     )
   );
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
       <PersonalChat
         meetingId="room"
         accountId="actor"
@@ -144,13 +159,58 @@ it('offers workspace settings without writing consent for an ineligible workspac
     target: { value: 'Hello' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'send' }));
-  const settings = await screen.findByRole('link', {
-    name: 'personal_workspace_settings',
+}
+
+it('sends a workspace manager to the Mira settings when the workspace has not declared 18+', async () => {
+  readAudience.mockResolvedValue({
+    attested: false,
+    attestedAt: null,
+    attestedByCurrentUser: false,
   });
-  expect(settings.getAttribute('href')).toBe(
-    'https://workspace.tuturuuu.com/en/workspace/settings'
-  );
+  refuseForWorkspace();
+  fireEvent.click(await screen.findByRole('button', { name: 'open_settings' }));
+  expect(openSettings).toHaveBeenCalledExactlyOnceWith('mira');
+  expect(readAudience).toHaveBeenCalledWith('workspace');
+  expect(screen.getByRole('alert').textContent).toContain('workspace_off');
+  expect(screen.queryByText('ask_owner')).toBeNull();
+  expect(screen.queryByText('personal_workspace_unavailable')).toBeNull();
   expect(screen.queryByRole('button', { name: 'personal_enable' })).toBeNull();
+  expect(setChoice).not.toHaveBeenCalled();
+});
+
+it('tells a member to ask the workspace owner when the workspace has not declared 18+', async () => {
+  readAudience.mockRejectedValue(new InternalApiError('Denied', 403));
+  refuseForWorkspace();
+  await screen.findByText('ask_owner');
+  expect(screen.getByRole('alert').textContent).toContain('workspace_off');
+  expect(screen.queryByRole('button', { name: 'open_settings' })).toBeNull();
+  expect(screen.queryByRole('link')).toBeNull();
+  expect(openSettings).not.toHaveBeenCalled();
+  expect(setChoice).not.toHaveBeenCalled();
+});
+
+it('states the 18+ rule at the private composer and again beside Continue', async () => {
+  ask.mockRejectedValueOnce(
+    new InternalApiError('Consent required', 403, 'MIRA_CONSENT_REQUIRED')
+  );
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PersonalChat meetingId="room" accountId="actor" onShare={vi.fn()} />
+    </QueryClientProvider>
+  );
+  const described = (element: HTMLElement) =>
+    document.getElementById(element.getAttribute('aria-describedby') ?? '')
+      ?.textContent;
+  const composer = screen.getByRole('textbox', { name: 'personal_chat' });
+  expect(described(composer)).toBe('notice');
+  fireEvent.change(composer, { target: { value: 'Hello' } });
+  fireEvent.click(screen.getByRole('button', { name: 'send' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'personal_enable' })
+  );
+  expect(
+    described(screen.getByRole('button', { name: 'phase_continue' }))
+  ).toBe('consent');
   expect(setChoice).not.toHaveBeenCalled();
 });
 

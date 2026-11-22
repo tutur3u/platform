@@ -10,6 +10,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { LiveAvatar } from './live-avatar';
 import { MiraMark } from './mira-mark';
 
@@ -94,6 +95,7 @@ export function MiraProfile({
             <p className="mt-1 text-pretty text-muted-foreground text-sm">
               {t('mira_profile_hint')}
             </p>
+            <MiraAdultNotice className="mt-2" />
           </HoverCardContent>,
           document.body
         )}

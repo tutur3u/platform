@@ -129,6 +129,31 @@ it('offers only private own-microphone start after a confirmed choice for a dist
     expect(f.start).toHaveBeenCalledWith('personal', [], '', undefined, 'Aoede')
   );
 });
+it('marks the Mira control as 18+ and states the rule beside Continue', async () => {
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: true,
+    choice: null,
+  });
+  const adults = messages.meet.mira_adults;
+  const described = (element: HTMLElement) =>
+    document.getElementById(element.getAttribute('aria-describedby') ?? '')
+      ?.textContent;
+  showPanel(syntheticRoom());
+  // The open dialog hides the control behind it; it keeps its name and badge.
+  const control = screen.getByRole('button', {
+    name: messages.meet.live.title,
+    hidden: true,
+  });
+  expect(control.textContent).toContain(adults.badge);
+  expect(described(control)).toBe(adults.notice);
+  const proceed = await screen.findByRole('button', {
+    name: messages.meet.live.phase_continue,
+  });
+  expect(described(proceed)).toBe(adults.consent);
+  expect(screen.getByText(adults.consent)).toBeTruthy();
+  expect(f.choice).not.toHaveBeenCalled();
+});
 it('leaves through the call shell instead of closing the room socket directly', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',

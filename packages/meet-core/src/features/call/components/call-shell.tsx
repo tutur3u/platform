@@ -34,6 +34,7 @@ import { CallPresenceRoster } from './call-presence-roster';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
+import { CallSettingsLinkProvider } from './call-settings-link';
 import { type CallLayout, CallStage } from './call-stage';
 import { CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
@@ -414,6 +415,7 @@ function CallShellContent({
             )}
             <CallSettings
               meetingId={meetingId}
+              wsId={wsId}
               room={room}
               telemetry={telemetry.data}
               ai={ai}
@@ -643,7 +645,9 @@ export function ConnectedCallShell(
   return (
     <PlaybackVolumeProvider>
       <CallPanelOwnerContext.Provider value={props.accountId}>
-        <CallShellContent {...props} />
+        <CallSettingsLinkProvider>
+          <CallShellContent {...props} />
+        </CallSettingsLinkProvider>
       </CallPanelOwnerContext.Provider>
     </PlaybackVolumeProvider>
   );

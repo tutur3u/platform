@@ -32,12 +32,13 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { liveVoiceSchema } from './contracts';
 import { liveErrorMessageKey } from './live-errors';
 import { LiveReviewCard } from './live-review-card';
+import { MiraAdultNotice } from './mira-adult-notice';
 import { useLiveAssistant } from './use-live-assistant';
 import { PrivateMiraNotice } from './private-notice';
 
@@ -75,6 +76,7 @@ export function MeetLivePanel({
     room.getSelectedDevices().audio
   );
   const openingChat = useRef(false);
+  const adultNoticeId = useId();
   const [open, setOpen] = useState(false);
   const [choiceAccepted, setChoiceAccepted] = useState(false);
   const [draft, setDraft] = useState('');
@@ -123,9 +125,11 @@ export function MeetLivePanel({
           variant={active ? 'secondary' : 'outline'}
           size="sm"
           className="h-8 gap-1.5 rounded-full text-xs"
+          aria-describedby={adultNoticeId}
         >
           <MiraAvatar size={18} />
           <span>{t('title')}</span>
+          <MiraAdultNotice variant="compact" id={adultNoticeId} />
           {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
         </Button>
       </DialogTrigger>

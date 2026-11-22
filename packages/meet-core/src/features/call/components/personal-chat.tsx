@@ -24,8 +24,9 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
-import { MiraWorkspaceSettingsLink } from '../../live-assistant/mira-workspace-settings-link';
+import { useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
+import { MiraWorkspaceOff } from '../../live-assistant/mira-workspace-off';
 import { confirmPrivateChoice } from '../../live-assistant/private-choice';
 import { ChatMessageBody } from './chat-message-body';
 import {
@@ -83,6 +84,7 @@ export function PersonalChat({
   const t = useTranslations('meet.call');
   const liveT = useTranslations('meet.live');
   const tm = useTranslations('meet.call.miraEverywhere.tutor');
+  const adultNoticeId = useId();
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
@@ -282,16 +284,20 @@ export function PersonalChat({
           if (draft.trim() && !ask.isPending) ask.mutate(draft.trim());
         }}
       >
-        {ask.isError && (
-          <div role="alert" className="text-destructive text-sm">
-            <p>{t(personalFailureKey(ask.error))}</p>
-            {wsId &&
-              personalFailureKey(ask.error) ===
-                'personal_workspace_unavailable' && (
-                <MiraWorkspaceSettingsLink wsId={wsId} />
-              )}
-          </div>
-        )}
+        {ask.isError &&
+          (personalFailureKey(ask.error) ===
+          'personal_workspace_unavailable' ? (
+            <div
+              role="alert"
+              className="rounded-xl border bg-muted/35 p-3 text-sm"
+            >
+              <MiraWorkspaceOff wsId={wsId} />
+            </div>
+          ) : (
+            <div role="alert" className="text-destructive text-sm">
+              <p>{t(personalFailureKey(ask.error))}</p>
+            </div>
+          ))}
         {accountId &&
           personalFailureKey(ask.error) === 'personal_consent_required' && (
             <Button
@@ -307,12 +313,14 @@ export function PersonalChat({
               {t('personal_enable')}
             </Button>
           )}
+        <MiraAdultNotice id={adultNoticeId} />
         <Textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           maxLength={2000}
           disabled={ask.isPending || enable.isPending || confirmEnable}
           aria-label={t('personal_chat')}
+          aria-describedby={adultNoticeId}
           placeholder={t('personal_chat_empty')}
         />
         <Button
@@ -344,9 +352,11 @@ export function PersonalChat({
             <DialogDescription>{liveT('phase_notice')}</DialogDescription>
           </DialogHeader>
           {enable.isError && <p role="alert">{liveT('choice_failed')}</p>}
+          <MiraAdultNotice consent id={`${adultNoticeId}-consent`} />
           <Button
             type="button"
             disabled={enable.isPending}
+            aria-describedby={`${adultNoticeId}-consent`}
             onClick={() => enable.mutate()}
           >
             {liveT('phase_continue')}

@@ -14,7 +14,11 @@ import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 
-const f = vi.hoisted(() => ({ ask: vi.fn() }));
+const f = vi.hoisted(() => ({ ask: vi.fn(), audience: vi.fn() }));
+vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
+  getMiraAudienceAttestation: f.audience,
+  updateMiraAudienceAttestation: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   listMeetAssistantReviews: async () => [],
   askMeetAssistant: f.ask,
@@ -41,8 +45,10 @@ vi.mock('./assistant-private-review', () => ({
 import { assistantFailureNotice, ChatPanel } from './chat-panel';
 
 const call = messages.meet.call;
+const adults = messages.meet.mira_adults;
 beforeEach(() => {
   f.ask.mockReset();
+  f.audience.mockReset();
   Element.prototype.scrollIntoView = vi.fn();
 });
 afterEach(cleanup);
@@ -130,6 +136,50 @@ it('does not call the room assistant for plain chat', async () => {
   await waitFor(() => expect(sent).toHaveBeenCalled());
   expect(f.ask).not.toHaveBeenCalled();
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it('states the 18+ rule where room chat offers @mira and while a message mentions it', () => {
+  showChat();
+  // The empty chat invites people to ask Mira, so it carries the rule.
+  expect(screen.getAllByText(adults.notice)).toHaveLength(1);
+  const composer = screen.getByRole('textbox', { name: call.chat });
+  expect(composer.getAttribute('aria-describedby')).toBeNull();
+  fireEvent.change(composer, { target: { value: '@mira summarize' } });
+  expect(screen.getAllByText(adults.notice)).toHaveLength(2);
+  expect(
+    document.getElementById(composer.getAttribute('aria-describedby') ?? '')
+      ?.textContent
+  ).toBe(adults.notice);
+  fireEvent.change(composer, { target: { value: 'hello everyone' } });
+  expect(screen.getAllByText(adults.notice)).toHaveLength(1);
+});
+
+it('names the workspace 18+ setting, not a generic refusal, when @mira is off for the workspace', async () => {
+  f.ask.mockRejectedValue(
+    Object.assign(new Error('Room Mira needs the workspace 18+ setting'), {
+      status: 403,
+      code: 'MIRA_WORKSPACE_UNAVAILABLE',
+    })
+  );
+  f.audience.mockRejectedValue(
+    Object.assign(new Error('Denied'), { status: 403 })
+  );
+  const openPrivate = vi.fn();
+  showChat({ onOpenPrivateMira: openPrivate, wsId: 'synthetic-workspace' });
+  fireEvent.change(screen.getByRole('textbox', { name: call.chat }), {
+    target: { value: '@mira summarize' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: call.send }));
+  const alert = await screen.findByRole('alert');
+  await waitFor(() => expect(alert.textContent).toContain(adults.ask_owner));
+  expect(alert.textContent).toContain(adults.workspace_off);
+  expect(alert.textContent).not.toContain(call.assistant_private_only);
+  // Private Mira needs the same setting, so it is not offered as a way out.
+  expect(screen.queryByRole('button', { name: call.personal_chat })).toBeNull();
+  expect(f.audience).toHaveBeenCalledWith('synthetic-workspace');
+  expect(
+    assistantFailureNotice({ status: 403, code: 'MIRA_WORKSPACE_UNAVAILABLE' })
+  ).toBe('workspace_off');
 });
 
 it('inserts a slash command by keyboard and sends through the normal Room Mira mention flow', async () => {

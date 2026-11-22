@@ -10,6 +10,8 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { MiraAvatar } from './mira-profile';
 
 export const roomMiraConsentKey = (meetingId: string) => [
@@ -24,6 +26,7 @@ export const roomMiraConsentKey = (meetingId: string) => [
  */
 export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
   const t = useTranslations('meet.call');
+  const adultNoticeId = useId();
   const queryClient = useQueryClient();
   const consent = useQuery({
     queryKey: roomMiraConsentKey(meetingId),
@@ -76,6 +79,9 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
           {pausing && <Loader2 className="size-3.5 animate-spin" />}
           {status}
         </p>
+        {!pausing && data.choice !== 'continue' && (
+          <MiraAdultNotice consent id={adultNoticeId} />
+        )}
         {!pausing && (
           <div className="flex flex-wrap gap-2">
             {data.choice !== 'continue' && (
@@ -83,6 +89,7 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
                 type="button"
                 size="sm"
                 disabled={choose.isPending}
+                aria-describedby={adultNoticeId}
                 onClick={() => choose.mutate('continue')}
               >
                 <Check className="size-4" />

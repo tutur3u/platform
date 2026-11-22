@@ -4975,6 +4975,25 @@
       "time": "Ngày và giờ",
       "untitled": "Cuộc họp chưa đặt tên"
     },
+    "mira_adults": {
+      "ask_owner": "Hãy nhờ chủ sở hữu không gian làm việc bật Mira.",
+      "badge": "18+",
+      "confirmed_at": "Đã xác nhận ngày {date}",
+      "consent": "Mira chỉ dành cho người từ 18 tuổi trở lên. Chỉ chọn Tiếp tục nếu bạn đã đủ 18 tuổi.",
+      "effect": "Bật cài đặt này để các thành viên của không gian làm việc có thể dùng Mira. Tắt cài đặt này sẽ tắt Mira cho cả không gian làm việc.",
+      "load_failed": "Không thể tải cài đặt này.",
+      "notice": "Mira chỉ dành cho người từ 18 tuổi trở lên.",
+      "open_settings": "Mở cài đặt Mira",
+      "owner_only": "Chỉ chủ sở hữu không gian làm việc mới có thể thay đổi cài đặt này.",
+      "responsibility": "Là chủ sở hữu không gian làm việc, bạn chịu trách nhiệm về quyền truy cập và việc sử dụng các tính năng này của các thành viên.",
+      "retry": "Thử lại",
+      "save_failed": "Không thể lưu cài đặt Mira",
+      "settings_tab": "Mira",
+      "state_off": "Đang tắt",
+      "state_on": "Đang bật",
+      "toggle": "Mọi người trong không gian làm việc này đều từ 18 tuổi trở lên",
+      "workspace_off": "Mira đang tắt trong không gian làm việc này cho đến khi chủ sở hữu xác nhận mọi người ở đây đều từ 18 tuổi trở lên."
+    },
     "public": {
       "admission_hint": "Chủ phòng quyết định ai được tham gia. Đăng nhập không tự cấp quyền xem ghi chú riêng tư.",
       "duration_hint": "Free: 2 giờ · Plus: 10 giờ · Pro và Enterprise: 24 giờ. Thời lượng được tính từ khi người đầu tiên vào phòng.",
