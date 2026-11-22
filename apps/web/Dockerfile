@@ -34,6 +34,7 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
+COPY apps/playground-execution/package.json ./apps/playground-execution/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json

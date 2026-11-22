@@ -33,6 +33,7 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
+COPY apps/playground-execution/package.json ./apps/playground-execution/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
@@ -100,6 +101,7 @@ COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz
 COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
+COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 
