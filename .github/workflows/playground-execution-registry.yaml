@@ -1,0 +1,142 @@
+name: Playground execution registry upload
+
+# Manual upload of one qualified Playground execution image to the Cloudflare
+# Containers registry. It accepts only the archive a successful
+# `Playground execution image` run built on main for the same commit, and it
+# runs behind the reviewer-gated `playground-registry` environment, which holds
+# the only credential: a short-lived token limited to Containers registry write.
+on:
+  workflow_dispatch:
+    inputs:
+      image_run_id:
+        description: Run ID of the successful Playground execution image workflow
+        required: true
+        type: string
+      source_sha:
+        description: Full commit SHA that run built
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playground-execution-registry
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    environment: playground-registry
+    env:
+      IMAGE_RUN_ID: ${{ inputs.image_run_id }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+    steps:
+      - name: Accept only a successful image run on main for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_RUN_ID" =~ ^[0-9]{1,20}$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          run="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$IMAGE_RUN_ID")"
+          test "$(jq -r .repository.full_name <<<"$run")" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .path <<<"$run")" = .github/workflows/playground-execution-image.yaml
+          test "$(jq -r .status <<<"$run")" = completed
+          test "$(jq -r .head_branch <<<"$run")" = main
+          test "$(jq -r .event <<<"$run")" = workflow_dispatch
+          test "$(jq -r .conclusion <<<"$run")" = success
+          test "$(jq -r .head_sha <<<"$run")" = "$SOURCE_SHA"
+          # The image commit must be on main at or before the dispatched tip,
+          # whose code (not the older commit's) runs with the credential.
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/$SOURCE_SHA...$GITHUB_SHA" --jq .status)"
+          [[ "$status" == identical || "$status" == ahead ]]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: playground-execution-image-${{ inputs.source_sha }}
+          path: ${{ runner.temp }}/playground-image
+          run-id: ${{ inputs.image_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify the archive against its receipt and load it
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/playground-image"
+          receipt="$dir/receipt.json"
+          test "$(jq -r .sourceSha "$receipt")" = "$SOURCE_SHA"
+          test "$(jq -r .tag "$receipt")" = "tuturuuu-playground:$SOURCE_SHA"
+          echo "$(jq -r .archiveSha256 "$receipt")  $dir/image.tar.gz" | sha256sum -c -
+          docker load -i "$dir/image.tar.gz"
+          image_id="$(jq -r .imageId "$receipt")"
+          test "$(docker image inspect --format '{{.Id}}' "tuturuuu-playground:$SOURCE_SHA")" = "$image_id"
+          echo "PLAYGROUND_IMAGE_ID=$image_id" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Install the lockfile-pinned cf CLI
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Push the image with bounded retries
+        working-directory: apps/playground-execution
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PLAYGROUND_REGISTRY_CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          bun x --no-install cf --version
+          # A layer upload can time out; the registry keeps finished layers, so
+          # a retry resumes. Four attempts at most, then fail.
+          for attempt in 1 2 3 4; do
+            if bun x --no-install cf containers push --tag "tuturuuu-playground:$SOURCE_SHA"; then
+              exit 0
+            fi
+            test "$attempt" -lt 4 || exit 1
+            sleep $((attempt * 30))
+          done
+      - name: Read back the registry digest and write the receipt
+        working-directory: apps/playground-execution
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PLAYGROUND_REGISTRY_CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[a-f0-9]{32}$ ]]
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$PLAYGROUND_IMAGE_ID" \
+            > "$RUNNER_TEMP/repo-digests.txt"
+          cat "$RUNNER_TEMP/repo-digests.txt"
+          reference="$(grep -E "^registry\.cloudflare\.com/$CLOUDFLARE_ACCOUNT_ID/tuturuuu-playground@sha256:[a-f0-9]{64}$" \
+            "$RUNNER_TEMP/repo-digests.txt" | head -n 1)"
+          # The registry listing is informational; its output format is not pinned.
+          bun x --no-install cf containers images list --filter '^tuturuuu-playground$' || true
+          jq -n \
+            --arg sourceSha "$SOURCE_SHA" \
+            --arg imageRunId "$IMAGE_RUN_ID" \
+            --arg imageId "$PLAYGROUND_IMAGE_ID" \
+            --arg reference "$reference" \
+            --arg uploadRunId "$GITHUB_RUN_ID" \
+            '{sourceSha: $sourceSha, imageRunId: $imageRunId, imageId: $imageId, registryReference: $reference, uploadRunId: $uploadRunId}' \
+            > "$RUNNER_TEMP/registry-receipt.json"
+          cat "$RUNNER_TEMP/registry-receipt.json"
+          {
+            echo '### Playground registry receipt'
+            echo '```json'
+            cat "$RUNNER_TEMP/registry-receipt.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playground-execution-registry-${{ inputs.source_sha }}
+          path: ${{ runner.temp }}/registry-receipt.json
+          retention-days: 90
+          if-no-files-found: error

@@ -24,6 +24,22 @@ archive SHA-256, run ID) as the `playground-execution-image-<sha>` artifact for
 14 days. The registry upload is a separately approved operation on that
 archive.
 
+## Upload the image to the registry
+
+Dispatch `Playground execution registry upload`
+(`playground-execution-registry.yaml`) on `main` with the image run ID and its
+full source SHA. The job accepts only a successful image run of that commit on
+`main`. It verifies the archive SHA-256 and image ID against the receipt, then
+pushes with the lockfile-pinned `cf containers push --tag`, retrying a failed
+push at most three times. It checks out the dispatched `main` tip, and the image
+commit must be an ancestor of it. It runs in the reviewer-gated `playground-registry` environment. Its
+only credential is the environment secret
+`PLAYGROUND_REGISTRY_CLOUDFLARE_API_TOKEN`: a short-lived token scoped to the
+Tuturuuu account and Containers registry write. The account comes from the
+`CLOUDFLARE_ACCOUNT_ID` variable. The job uploads a receipt with the registry
+reference `registry.cloudflare.com/<account>/tuturuuu-playground@sha256:<digest>`
+that the Worker image configuration uses. Revoke the token after the upload.
+
 The fixture uses the same stock commands that Meet and Learn load. It checks
 Python, JavaScript, TypeScript, C, C++, Java, Rust, Go, Ruby, PHP, and Shell.
 Each template runs in a fresh local container with UID and GID 65534, all
