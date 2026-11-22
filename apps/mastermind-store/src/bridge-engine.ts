@@ -63,6 +63,9 @@ function toReceipt(row: Row): BridgeReceipt {
   };
 }
 
+// Persist a distinct role so a legacy Store cannot redeem an upgraded ticket.
+const STORED_OWNER_ROLE = 'owner-v2';
+
 export function createBridgeEngine(sql: SqlLike) {
   const rows = (query: string, ...b: (string | number | null)[]) =>
     sql.exec(query, ...b).toArray();
@@ -169,6 +172,12 @@ export function createBridgeEngine(sql: SqlLike) {
     stopped,
     setStopped(value: boolean) {
       setMeta('stopped', value ? '1' : '0');
+      if (value)
+        rows(
+          'DELETE FROM tickets WHERE role IN (?, ?)',
+          'owner',
+          STORED_OWNER_ROLE
+        );
     },
     status(now: number, budget: number) {
       const day = utcDay(now);
@@ -212,7 +221,7 @@ export function createBridgeEngine(sql: SqlLike) {
       rows(
         'INSERT INTO tickets (hash, role, machine, exp, owner, lease_exp) VALUES (?, ?, ?, ?, ?, ?)',
         input.hash,
-        input.role,
+        input.role === 'machine' ? 'machine' : STORED_OWNER_ROLE,
         input.role === 'machine' ? input.machineId : null,
         expiresAt,
         input.role === 'owner' ? input.ownerId : null,

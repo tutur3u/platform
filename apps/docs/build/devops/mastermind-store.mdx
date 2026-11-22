@@ -131,7 +131,10 @@ Bounds and stop fence:
   refuses v2 owner tickets, so owner clients use their polling fallback
   during the transition. Existing sockets acquire the new fence when the
   upgraded store evaluates the next notice. Before a rollback to the old
-  Store, retire the active bridge sockets with the operator fence.
+  Store, apply the operator fence on the upgraded Store and verify it
+  retired the sockets. The upgraded fence deletes outstanding owner
+  tickets, and the old decoder cannot redeem persisted v2 tickets. Keep
+  Web's v2 issuer in service through that rollback.
   During service token rotation, the first store service token must match Web's active
   token for the outgoing authorization call. Canonical Web ingress gives
   authenticated callbacks a separate bucket of 300 a minute, 6,000 an

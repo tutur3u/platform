@@ -357,6 +357,25 @@ describe('fleet bridge engine', () => {
     expect(engine.redeemTicket('late', NOW)).toBeNull();
   });
 
+  it('persists owner tickets outside the legacy decoder and revokes them when fenced', () => {
+    const { engine, db } = setup();
+    engine.mintTicket({ hash: 'upgraded', ...ownerTicket }, NOW, BUDGET);
+    db.prepare('INSERT INTO tickets (hash, role, exp) VALUES (?, ?, ?)').run(
+      'legacy',
+      'owner',
+      NOW + BRIDGE_LIMITS.ticketTtlMs
+    );
+    expect(
+      db.prepare('SELECT role FROM tickets WHERE hash = ?').get('upgraded')
+    ).toEqual({ role: 'owner-v2' });
+    engine.setStopped(true);
+    engine.setStopped(false);
+    expect(engine.redeemTicket('upgraded', NOW + 1)).toBeNull();
+    expect(
+      db.prepare('SELECT hash FROM tickets WHERE hash = ?').get('legacy')
+    ).toBeUndefined();
+  });
+
   it('bounds a single-use owner ticket by the credential lease', () => {
     const { engine } = setup();
     expect(
