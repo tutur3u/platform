@@ -1,3 +1,4 @@
+import { safeErrorFields } from '@/lib/mail/log-safety';
 import { NextResponse } from 'next/server';
 import {
   cloudflareInboundEventSchema,
@@ -41,7 +42,9 @@ export async function POST(request: Request) {
   try {
     return NextResponse.json(await handleCloudflareInboundEvent(parsed.data));
   } catch (error) {
-    console.error('[mail] Cloudflare inbound ingestion failed', { error });
+    console.error('[mail] Cloudflare inbound ingestion failed', {
+      error: safeErrorFields(error),
+    });
     return NextResponse.json({ error: 'Ingestion failed' }, { status: 500 });
   }
 }

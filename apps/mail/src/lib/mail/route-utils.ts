@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { resolveMailRouteContext } from './auth';
+import { safeErrorFields, safeLogWorkspaceId } from './log-safety';
 import {
   MAIL_READ_REQUEST_TIMEOUT_MS,
   MAIL_READ_RETRY_AFTER_SECONDS,
@@ -82,8 +83,8 @@ export async function withMailContext(
       );
     }
     console.error('[mail] route failed', {
-      error,
-      wsId,
+      error: safeErrorFields(error),
+      wsId: safeLogWorkspaceId(wsId),
     });
 
     return NextResponse.json(

@@ -1,3 +1,4 @@
+import { safeErrorFields } from '@/lib/mail/log-safety';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
@@ -51,7 +52,9 @@ export async function GET() {
     .select('*')
     .order('domain');
   if (error) {
-    console.error('[mail] failed to list mail domains', { error });
+    console.error('[mail] failed to list mail domains', {
+      error: safeErrorFields(error),
+    });
     return NextResponse.json(
       { error: 'Failed to list mail domains' },
       { status: 500 }
@@ -104,7 +107,9 @@ export async function PUT(request: Request) {
     .select('*')
     .single();
   if (error) {
-    console.error('[mail] failed to update mail domain', { error });
+    console.error('[mail] failed to update mail domain', {
+      error: safeErrorFields(error),
+    });
     return NextResponse.json(
       { error: 'Failed to update mail domain' },
       { status: 500 }

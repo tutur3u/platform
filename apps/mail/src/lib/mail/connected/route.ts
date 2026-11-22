@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveMailRouteContext } from '../auth';
+import { safeErrorFields } from '../log-safety';
 import { attachmentBytes } from './attachment-bytes';
 import { parseConnectedBody } from './body';
 import { ConnectedMailError } from './config';
@@ -228,7 +229,7 @@ export async function connectedMailRoute(
         { status: error.status }
       );
     console.error('[mail] connected account operation failed', {
-      type: error instanceof Error ? error.name : 'unknown',
+      error: safeErrorFields(error),
     });
     return NextResponse.json(
       { error: 'Connected mail is unavailable' },

@@ -272,7 +272,7 @@ async function sendClaimedMailMessage({
 
   if (!result.success) {
     console.warn('[mail] outbound send failed', {
-      error: 'Email provider rejected delivery',
+      code: 'MAIL_PROVIDER_REJECTED',
       mailboxId,
       messageId: message.id,
       wsId: ctx.normalizedWsId,

@@ -97,16 +97,18 @@ beforeEach(() => {
     auth: { admin: { getUserById: f.getUserById } },
   });
 });
-afterEach(() => vi.unstubAllEnvs());
-it.each(cases)('%s', async (_name, user, configured, allowed) => {
-  vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', configured);
-  f.getUserById.mockResolvedValue({ data: { user }, error: null });
-  const response = await POST(
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
+
+function sendRequest(wsId: string, recipient: string) {
+  return POST(
     new NextRequest('https://mail.test/api/send', {
       method: 'POST',
       body: JSON.stringify({
         mail: {
-          to: ['recipient@example.test'],
+          to: [recipient],
           subject: 'Test',
           content: '<p>Test</p>',
         },
@@ -116,11 +118,48 @@ it.each(cases)('%s', async (_name, user, configured, allowed) => {
         },
       }),
     }),
-    { params: Promise.resolve({ wsId: 'workspace-id' }) }
+    { params: Promise.resolve({ wsId }) }
   );
+}
+
+it.each(cases)('%s', async (_name, user, configured, allowed) => {
+  vi.stubEnv('TUTURUUU_AZURE_TENANT_ID', configured);
+  f.getUserById.mockResolvedValue({ data: { user }, error: null });
+  const response = await sendRequest('workspace-id', 'recipient@example.test');
   expect(response.status).toBe(allowed ? 200 : 403);
   if (!allowed) {
     expect(f.send).not.toHaveBeenCalled();
     expect(await response.json()).not.toHaveProperty('data');
   }
+});
+
+it('logs a blocked count when provider error text includes a recipient', async () => {
+  const address = 'person@example.com';
+  const wsId = '12345678-1234-1234-1234-123456789abc';
+  f.getUserById.mockResolvedValue({ data: { user: staff }, error: null });
+  f.send.mockResolvedValue({
+    success: false,
+    error: 'Provider rejected ' + address,
+    blockedRecipients: [address],
+  });
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  const response = await sendRequest(wsId, address);
+
+  expect(response.status).toBe(500);
+  expect(warn).toHaveBeenCalledExactlyOnceWith(
+    'Some internal email recipients were blocked',
+    { blockedCount: 1, wsId }
+  );
+  expect(error).toHaveBeenCalledExactlyOnceWith(
+    'Internal email sending failed',
+    {
+      error: {},
+      wsId,
+    }
+  );
+  expect(JSON.stringify([...warn.mock.calls, ...error.mock.calls])).not.toMatch(
+    /[\w.+-]+@[\w-]+\.[\w.]+/u
+  );
 });

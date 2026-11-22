@@ -11,6 +11,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 import { sanitizeMailHtml } from '@/lib/mail/html';
+import { safeErrorFields, safeLogWorkspaceId } from '@/lib/mail/log-safety';
 
 function getDisallowedRecipients(
   recipients: string[],
@@ -29,6 +30,7 @@ export async function POST(
   }
 ) {
   const { wsId } = await params;
+  const logWsId = safeLogWorkspaceId(wsId);
 
   const data: {
     mail?: {
@@ -104,8 +106,8 @@ export async function POST(
 
   if (apiKeyError) {
     console.warn('Error fetching internal email API key', {
-      error: apiKeyError,
-      wsId,
+      error: safeErrorFields(apiKeyError),
+      wsId: logWsId,
     });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -122,8 +124,8 @@ export async function POST(
 
   if (apiKeyUserError || !apiKeyUser) {
     console.warn('Error fetching internal email API key user', {
-      error: apiKeyUserError,
-      wsId,
+      error: safeErrorFields(apiKeyUserError),
+      wsId: logWsId,
     });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -151,14 +153,10 @@ export async function POST(
 
   if (apiKey.allowed_emails && disallowedRecipients.length > 0) {
     console.warn('Internal email recipient not allowed', {
-      allowedEmails: apiKey.allowed_emails,
-      requestedEmails: {
-        bcc: data.mail.bcc,
-        cc: data.mail.cc,
-        to: data.mail.to,
-      },
-      rejectedEmails: disallowedRecipients,
-      wsId,
+      allowedCount: apiKey.allowed_emails.length,
+      requestedCount: recipients.length,
+      rejectedCount: disallowedRecipients.length,
+      wsId: logWsId,
     });
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
@@ -202,14 +200,14 @@ export async function POST(
       // Check if all recipients were blocked
       if (result.blockedRecipients && result.blockedRecipients.length > 0) {
         console.warn('Some internal email recipients were blocked', {
-          blockedRecipients: result.blockedRecipients,
-          wsId,
+          blockedCount: result.blockedRecipients.length,
+          wsId: logWsId,
         });
       }
 
       console.error('Internal email sending failed', {
-        error: result.error,
-        wsId,
+        error: safeErrorFields(result.error),
+        wsId: logWsId,
       });
       return NextResponse.json(
         { message: result.error || 'Failed to send email' },
@@ -239,8 +237,8 @@ export async function POST(
 
     if (error) {
       console.warn('Error logging sent internal email', {
-        error,
-        wsId,
+        error: safeErrorFields(error),
+        wsId: logWsId,
       });
       // Don't fail the request - email was already sent
     }
@@ -259,7 +257,10 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error sending internal email', { error, wsId });
+    console.error('Error sending internal email', {
+      error: safeErrorFields(error),
+      wsId: logWsId,
+    });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -1,3 +1,4 @@
+import { safeErrorFields } from '@/lib/mail/log-safety';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
@@ -111,7 +112,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     })
     .eq('id', domainId);
   if (error) {
-    console.error('[mail] failed to update catch-all configuration', { error });
+    console.error('[mail] failed to update catch-all configuration', {
+      error: safeErrorFields(error),
+    });
     return NextResponse.json(
       { error: 'Failed to update catch-all configuration' },
       { status: 500 }

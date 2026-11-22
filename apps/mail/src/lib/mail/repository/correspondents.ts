@@ -3,6 +3,7 @@ import {
   type CorrespondentEvent,
   rankCorrespondents,
 } from '../correspondents-ranking';
+import { safeErrorFields } from '../log-safety';
 import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { loadAllRows } from './search';
@@ -42,7 +43,7 @@ async function loadSenderBlocks(admin: AnyRecord, mailboxId: string) {
     // Blocks only narrow suggestions; a failed read must not break compose.
     console.warn('[mail] sender blocks unavailable for correspondents', {
       mailboxId,
-      error: error.message,
+      error: safeErrorFields(error),
     });
     return [];
   }

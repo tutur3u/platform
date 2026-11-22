@@ -1,3 +1,4 @@
+import { safeErrorFields } from '@/lib/mail/log-safety';
 import { google } from '@ai-sdk/google';
 import { authorizeAiWorkspace } from '@tuturuuu/ai/chat/google/route-auth';
 import { withAiMemory } from '@tuturuuu/ai/memory';
@@ -150,7 +151,9 @@ Generate the email with a compelling subject line and well-crafted content.`;
 
     return Response.json(result.object);
   } catch (error) {
-    console.error('Error in email draft generation', { error });
+    console.error('Error in email draft generation', {
+      error: safeErrorFields(error),
+    });
 
     // Handle specific auth errors
     if (error instanceof Error && error.message.includes('Unauthorized')) {

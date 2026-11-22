@@ -6,6 +6,7 @@ import { resolveForwardingMailbox } from '../automation/forwarding';
 import { autoLabelMessage } from '../automation/labels';
 import { deliverGroupMessage } from '../groups/delivery';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
+import { safeErrorFields } from '../log-safety';
 import { isSenderBlocked } from '../sender-blocks/store';
 import { normalizeAddress, parseRawEmail } from './parser';
 import { ensureMailboxForRecipient } from './provision';
@@ -627,7 +628,7 @@ export async function ingestSesNotification(notification: SesNotification) {
 
 export function logSesInboundError(error: unknown, messageId?: string) {
   console.error('[mail] SES inbound ingestion failed', {
-    error,
+    error: safeErrorFields(error),
     messageId,
   });
 }

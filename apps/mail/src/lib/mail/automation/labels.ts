@@ -1,3 +1,4 @@
+import { safeErrorFields } from '../log-safety';
 import { google } from '@ai-sdk/google';
 import {
   resolveAiMemoryWorkspaceIdForUser,
@@ -125,7 +126,7 @@ export async function autoLabelMessage(
   } catch (error) {
     console.error('[mail] Automatic labeling failed; message retained', {
       messageId: message.id,
-      error,
+      error: safeErrorFields(error),
     });
   }
 }

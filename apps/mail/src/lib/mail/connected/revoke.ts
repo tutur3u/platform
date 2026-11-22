@@ -1,3 +1,4 @@
+import { safeErrorFields } from '../log-safety';
 import { unseal } from './crypto';
 import type { ConnectedAccount, Credentials } from './repository';
 
@@ -64,7 +65,7 @@ export async function revokeProviderAccess(
     console.warn('Mail provider token revocation failed', {
       accountId: account.id,
       provider: account.provider,
-      error: error instanceof Error ? error.name : 'UnknownError',
+      error: safeErrorFields(error),
     });
     return false;
   }
