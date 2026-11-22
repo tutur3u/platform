@@ -231,33 +231,50 @@ class _Row extends StatelessWidget {
           : null,
       child: LayoutBuilder(
         builder: (context, constraints) =>
-            _content(tokens, constraints.maxWidth),
+            _content(context, tokens, constraints.maxWidth),
       ),
     );
   }
 
-  Widget _content(AppTokens tokens, double rowWidth) {
+  Widget _content(BuildContext context, AppTokens tokens, double rowWidth) {
     final c = tokens.colorScheme;
+    final labelStyle = tokens.typography.ui.copyWith(color: c.foreground);
+    final heading = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: labelStyle),
+        if (detail case final text?)
+          Text(
+            text,
+            style: tokens.typography.caption.copyWith(color: c.mutedForeground),
+          ),
+      ],
+    );
+    // A wide control stacks under its label rather than breaking the label
+    // mid-word on a narrow phone or with larger text.
+    if (trailingWidth case final width?) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: labelStyle),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final labelWidth = painter.width;
+      painter.dispose();
+      if (labelWidth + AppSpacing.md + width > rowWidth) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            heading,
+            const SizedBox(height: AppSpacing.sm),
+            trailing,
+          ],
+        );
+      }
+    }
     return Row(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: tokens.typography.ui.copyWith(color: c.foreground),
-              ),
-              if (detail case final text?)
-                Text(
-                  text,
-                  style: tokens.typography.caption.copyWith(
-                    color: c.mutedForeground,
-                  ),
-                ),
-            ],
-          ),
-        ),
+        Expanded(child: heading),
         const SizedBox(width: AppSpacing.md),
         if (trailingWidth case final width?)
           SizedBox(
