@@ -20,6 +20,7 @@ const owner = { id: 'owner', email: 'owner@example.invalid' };
 const grantee = { id: 'grantee', email: 'ops@example.invalid' };
 const secret = randomBytes(48).toString('hex');
 const host = 'https://mastermind.tuturuuu.com';
+const VERIFIER = 'v'.repeat(43);
 let env: MastermindEnvironment;
 const rootFetch = vi.fn<typeof fetch>();
 const grantFetch = vi.fn<typeof fetch>();
@@ -244,7 +245,7 @@ test('the Owner tier never admits the grantee path', async () => {
     roles: [],
   });
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, now)).toBeNull();
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
   expect(
     await refreshSession(
@@ -262,7 +263,7 @@ test('the Owner tier never admits the grantee path', async () => {
 test('an owner id cannot get a session under another email', async () => {
   env.OWNER_IDS = `${owner.id},${grantee.id}`;
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, now)).toBeNull();
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
   expect(grantFetch).not.toHaveBeenCalled();
   expect(
     await refreshSession(
@@ -312,8 +313,12 @@ test('a grantee login and callback return only to the Fleet page', async () => {
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
   const callback = await mastermindRequest(
     new Request(
-      `${host}/verify-token?token=${'b'.repeat(64)}&nextUrl=${encodeURIComponent('/en?mm_state=s')}`,
-      { headers: { cookie: '__Host-mastermind_login_state=s' } }
+      `${host}/verify-token?token=${'b'.repeat(64)}&nextUrl=${encodeURIComponent(`/en?mm_state=${'s'.repeat(22)}`)}`,
+      {
+        headers: {
+          cookie: `__Host-mastermind_login_state=${'s'.repeat(22)}.${VERIFIER}`,
+        },
+      }
     ),
     env,
     () => new Response('unreachable'),
@@ -419,12 +424,12 @@ const pair = (user: { id: string; email: string }) => {
 
 test('a grantee session is issued and rotated only with a live grant', async () => {
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, now)).toMatchObject({
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toMatchObject({
     userId: grantee.id,
   });
   grantFetch.mockImplementationOnce(async () => live(false));
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
-  expect(await exchangeHandoff('t', env, now)).toBeNull();
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
 
   const refreshing = (user: { id: string; email: string }) =>
     new Request(`${host}/en/fleet-access`, {

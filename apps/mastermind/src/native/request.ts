@@ -120,7 +120,7 @@ export async function mastermindRequest(
     const next = safeNextPath(url.searchParams.get('nextUrl') ?? '/en');
     const signedIn = sessionSubject(request, env, now);
     return secure(
-      loginRedirect(
+      await loginRedirect(
         signedIn && !isOwner(signedIn) ? fleetReturnPath(next) : next,
         // `mfa=fresh` is the step-up before a reply: the second factor is
         // verified again even when the session already holds one.
@@ -129,15 +129,16 @@ export async function mastermindRequest(
     );
   }
   if (request.method === 'GET' && url.pathname === '/verify-token') {
-    // The login state must match this browser's, and a malformed token never
-    // reaches Web.
-    const next = consumeLoginState(request, url.searchParams.get('nextUrl'));
+    // The login state must match this browser's, a malformed token never
+    // reaches Web, and Web redeems the handoff only with this browser's
+    // verifier.
+    const state = consumeLoginState(request, url.searchParams.get('nextUrl'));
     const token = url.searchParams.get('token');
     const session =
-      next && isHandoffToken(token)
-        ? await exchangeHandoff(token, env, now)
+      state && isHandoffToken(token)
+        ? await exchangeHandoff(token, state.verifier, env, now)
         : null;
-    if (!next || !session) {
+    if (!state || !session) {
       return secure(
         new Response('Forbidden', {
           status: 403,
@@ -145,6 +146,7 @@ export async function mastermindRequest(
         })
       );
     }
+    const next = state.next;
     // A grantee always returns to the Fleet page.
     const headers = new Headers({
       Location: isOwner(session.userId) ? next : fleetReturnPath(next),
@@ -199,7 +201,7 @@ export async function mastermindRequest(
       request.headers.get('Sec-Fetch-Mode') === 'navigate';
     const next = safeNextPath(`${url.pathname}${url.search}`);
     return navigation
-      ? secure(loginRedirect(fleetPath ? fleetReturnPath(next) : next))
+      ? secure(await loginRedirect(fleetPath ? fleetReturnPath(next) : next))
       : secure(new Response('Forbidden', { status: 403 }));
   }
   if (!admitsMethod(request, url, mount)) {

@@ -24,6 +24,11 @@ import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 const ROUTE = '/api/v1/auth/cross-app-token/verify';
 
 const verifyCrossAppTokenSchema = z.object({
+  /** RFC 7636 verifier for a challenge-bound handoff (Worker-only targets). */
+  codeVerifier: z
+    .string()
+    .regex(/^[A-Za-z0-9._~-]{43,128}$/)
+    .optional(),
   targetApp: z.string().min(1).max(64),
   token: z.string().min(1),
 });
@@ -59,8 +64,19 @@ async function verifyCrossAppToken(
     );
   }
 
+  const workerOnly = requiresWorkerRedeemProof(parsed.data.targetApp);
+  if (workerOnly && !parsed.data.codeVerifier) {
+    return fail(
+      'PKCE_REQUIRED',
+      jsonNoStore(
+        { code: 'PKCE_REQUIRED', error: 'Missing code verifier' },
+        { status: 400 }
+      )
+    );
+  }
+
   if (
-    requiresWorkerRedeemProof(parsed.data.targetApp) &&
+    workerOnly &&
     !verifyAppRedeemProof({
       targetApp: parsed.data.targetApp,
       credential: parsed.data.token,
@@ -78,6 +94,9 @@ async function verifyCrossAppToken(
     supabase,
     targetApp: parsed.data.targetApp,
     token: parsed.data.token,
+    // Only a Worker-only handoff redeems with its verifier; every other
+    // target keeps the anonymous validator, which refuses bound tokens.
+    ...(workerOnly ? { codeVerifier: parsed.data.codeVerifier } : {}),
   });
 
   if (!validation) {

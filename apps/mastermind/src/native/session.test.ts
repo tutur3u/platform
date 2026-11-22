@@ -11,18 +11,23 @@ import { createAppRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
 import {
   exchangeHandoff,
   loginRedirect,
+  pkceChallenge,
   refreshSession,
   safeNextPath,
 } from './session';
 
 const now = Date.now();
 const token = 'a'.repeat(64);
-const state = 'login-state';
+const state = 'loginstate0123456789abc'.slice(0, 22);
+/** This browser's PKCE verifier, kept beside the nonce in the state cookie. */
+const VERIFIER = 'v'.repeat(43);
 /** A callback carrying this browser's login state. */
 const callback = (next: string, handoff = token) =>
   new Request(
     `https://mastermind.tuturuuu.com/verify-token?token=${handoff}&nextUrl=${encodeURIComponent(`${next}${next.includes('?') ? '&' : '?'}mm_state=${state}`)}`,
-    { headers: { cookie: `__Host-mastermind_login_state=${state}` } }
+    {
+      headers: { cookie: `__Host-mastermind_login_state=${state}.${VERIFIER}` },
+    }
   );
 const email = 'owner@example.invalid';
 const secret = randomBytes(48).toString('hex');
@@ -85,14 +90,19 @@ test('return paths stay on the host and never loop through the handoff', () => {
 
 test('handoff accepts only a 300 s owner session for target mastermind with the owner email', async () => {
   web.mockResolvedValueOnce(Response.json(issued()));
-  expect(await exchangeHandoff('t', env, now)).toMatchObject({
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toMatchObject({
     userId: 'owner',
   });
   const request = web.mock.calls[0]?.[0] as Request;
   expect(request.url).toBe(
     'https://tuturuuu.com/api/v1/auth/cross-app-token/verify'
   );
-  expect(await request.json()).toEqual({ targetApp: 'mastermind', token: 't' });
+  // The verifier binds the redemption to the browser that started sign-in.
+  expect(await request.json()).toEqual({
+    targetApp: 'mastermind',
+    token: 't',
+    codeVerifier: VERIFIER,
+  });
   expect(request.headers.get('x-tuturuuu-app-redeem-proof')).toBe(
     createAppRedeemProof('mastermind', 't', secret)
   );
@@ -118,7 +128,7 @@ test('handoff accepts only a 300 s owner session for target mastermind with the 
     { ...issued(), valid: false },
   ]) {
     web.mockResolvedValueOnce(Response.json(body));
-    expect(await exchangeHandoff('t', env, now)).toBeNull();
+    expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
   }
   web.mockResolvedValueOnce(
     new Response(null, {
@@ -126,7 +136,7 @@ test('handoff accepts only a 300 s owner session for target mastermind with the 
       headers: { Location: 'https://evil.invalid' },
     })
   );
-  expect(await exchangeHandoff('t', env, now)).toBeNull();
+  expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
 });
 
 test('refresh needs a local owner refresh credential before calling Web', async () => {
@@ -275,9 +285,17 @@ test('an expired access session rotates inline; without a session a navigation g
   expect(next.pathname).toBe('/vi');
   const nonce = next.searchParams.get('mm_state') ?? '';
   expect(nonce).toMatch(/^[\w-]{22}$/);
-  expect(login.headers.getSetCookie()).toEqual([
-    `__Host-mastermind_login_state=${nonce}; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax`,
-  ]);
+  const [cookie] = login.headers.getSetCookie();
+  const verifier =
+    new RegExp(
+      `^__Host-mastermind_login_state=${nonce}\\.([\\w-]{43}); Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$`
+    ).exec(cookie ?? '')?.[1] ?? '';
+  expect(verifier).toHaveLength(43);
+  // Web binds the handoff to this browser: the challenge is the verifier's.
+  expect(location.searchParams.get('code_challenge')).toBe(
+    await pkceChallenge(verifier)
+  );
+  expect(location.searchParams.get('code_challenge_method')).toBe('S256');
 });
 
 test('shared-name session cookies a sibling host could plant are ignored', async () => {
@@ -322,9 +340,17 @@ test("a callback without this browser's login state or with a malformed token ne
     new Request(`https://mastermind.tuturuuu.com/verify-token?${handoff}`, {
       headers: { cookie: '__Host-mastermind_login_state=other-state' },
     }),
+    // The nonce alone is not enough: Web redeems only with the verifier.
+    new Request(`https://mastermind.tuturuuu.com/verify-token?${handoff}`, {
+      headers: { cookie: `__Host-mastermind_login_state=${state}` },
+    }),
     new Request(
       `https://mastermind.tuturuuu.com/verify-token?token=${token}&nextUrl=%2Fvi`,
-      { headers: { cookie: `__Host-mastermind_login_state=${state}` } }
+      {
+        headers: {
+          cookie: `__Host-mastermind_login_state=${state}.${VERIFIER}`,
+        },
+      }
     ),
     callback('/vi', 't'),
     callback('/vi', 'A'.repeat(64)),
@@ -416,7 +442,7 @@ test('a step-up sign-in asks Web for a second factor verified in the last 30 sec
   expect(web).not.toHaveBeenCalled();
 
   expect(
-    location(loginRedirect('/en', { freshMfa: true })).searchParams.get(
+    location(await loginRedirect('/en', { freshMfa: true })).searchParams.get(
       'mfaMaxAge'
     )
   ).toBe('30');

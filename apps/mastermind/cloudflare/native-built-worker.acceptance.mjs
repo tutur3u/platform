@@ -273,12 +273,20 @@ test(
     );
     assert.match(
       signIn.headers.getSetCookie().join('\n'),
-      /^__Host-mastermind_login_state=[\w-]{22}; Path=\/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$/
+      /^__Host-mastermind_login_state=[\w-]{22}\.[\w-]{43}; Path=\/; Max-Age=600; HttpOnly; Secure; SameSite=Lax$/
+    );
+    // Web binds the handoff to this browser's PKCE verifier.
+    assert.equal(
+      new URL(signIn.headers.get('Location') ?? '').searchParams.get(
+        'code_challenge_method'
+      ),
+      'S256'
     );
     // Only a callback carrying this browser's login state reaches Web.
-    const state = /^__Host-mastermind_login_state=([\w-]+);/.exec(
-      signIn.headers.getSetCookie().join('\n')
-    )?.[1];
+    const [, state, verifier] =
+      /^__Host-mastermind_login_state=([\w-]+)\.([\w-]+);/.exec(
+        signIn.headers.getSetCookie().join('\n')
+      ) ?? [];
     const callback = (cookie) =>
       worker.fetch(
         `https://mastermind.tuturuuu.com/verify-token?token=${'a'.repeat(64)}&nextUrl=${encodeURIComponent(`/en?mm_state=${state}`)}`,
@@ -289,12 +297,12 @@ test(
           redirect: 'manual',
         }
       );
-    for (const cookie of [undefined, 'other-state']) {
+    for (const cookie of [undefined, `other-state.${verifier}`, state]) {
       const refused = await callback(cookie);
       assert.equal(refused.status, 403);
       assert.equal(handoffRedemptions, 0);
     }
-    const matched = await callback(state);
+    const matched = await callback(`${state}.${verifier}`);
     assert.equal(matched.status, 403);
     assert.equal(handoffRedemptions, 1);
     // An owner session without MFA is refused with the MFA notice.

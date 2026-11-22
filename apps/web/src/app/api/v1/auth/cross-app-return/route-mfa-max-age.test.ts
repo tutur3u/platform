@@ -69,7 +69,8 @@ const session = (totpAt: number) => ({
 async function mint(body: Record<string, unknown>) {
   const response = await POST(
     new NextRequest('http://localhost/api/v1/auth/cross-app-return', {
-      body: JSON.stringify({ returnUrl: MASTERMIND, ...body }),
+      // Mastermind handoffs are always bound to the browser's PKCE verifier.
+      body: JSON.stringify({ returnUrl: MASTERMIND, ...CHALLENGE, ...body }),
       method: 'POST',
     })
   );
@@ -86,6 +87,10 @@ function mintedProof(targetApp = 'mastermind') {
 }
 
 const refused = { body: { code: 'MFA_REQUIRED' }, status: 403 };
+const CHALLENGE = {
+  codeChallenge: 'c'.repeat(43),
+  codeChallengeMethod: 'S256',
+};
 
 describe('cross-app return with a maximum second-factor age', () => {
   beforeEach(() => {
@@ -106,6 +111,22 @@ describe('cross-app return with a maximum second-factor age', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it('binds a Mastermind handoff to the PKCE challenge and refuses one without', async () => {
+    expect(
+      await mint({ codeChallenge: undefined, codeChallengeMethod: undefined })
+    ).toMatchObject({ body: { code: 'PKCE_REQUIRED' }, status: 400 });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect((await mint({})).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'generate_cross_app_token_pkce',
+      expect.objectContaining({
+        p_code_challenge: CHALLENGE.codeChallenge,
+        p_code_challenge_method: 'S256',
+        p_target_app: 'mastermind',
+      })
+    );
   });
 
   it('mints as before when no age is asked for, with the proof the session has', async () => {

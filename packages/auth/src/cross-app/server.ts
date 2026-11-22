@@ -86,22 +86,34 @@ function getFirstRow(data: unknown): CrossAppTokenRow | null {
   return firstRow as CrossAppTokenRow;
 }
 
+/**
+ * Redeems a one-time handoff. With `codeVerifier`, a challenge-bound token
+ * redeems through the service-role PKCE validator; without one, the
+ * anonymous validator refuses every challenge-bound token.
+ */
 export async function validateCrossAppTokenWithClient({
   supabase,
   targetApp,
   token,
+  codeVerifier,
 }: {
   supabase: TypedSupabaseClient;
   targetApp: AppName;
   token: string;
+  codeVerifier?: string;
 }): Promise<CrossAppTokenValidation | null> {
-  const { data, error } = await supabase.rpc(
-    'validate_cross_app_token_with_session',
-    {
-      p_token: token,
-      p_target_app: targetApp,
-    }
-  );
+  const { data, error } = codeVerifier
+    ? await (
+        await createAdminClient({ noCookie: true })
+      ).rpc('validate_cross_app_token_with_session_pkce', {
+        p_code_verifier: codeVerifier,
+        p_target_app: targetApp,
+        p_token: token,
+      })
+    : await supabase.rpc('validate_cross_app_token_with_session', {
+        p_token: token,
+        p_target_app: targetApp,
+      });
 
   if (error || !data) {
     return null;

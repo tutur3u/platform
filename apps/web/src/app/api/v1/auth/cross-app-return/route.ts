@@ -1,3 +1,4 @@
+import { requiresWorkerRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import {
   createAdminClient,
@@ -273,9 +274,14 @@ async function createCrossAppReturn(
 
   // Only registry apps redeem through the verifier-aware exchange; internal
   // verifiers would refuse a challenge-bound token, so they never get one.
-  const boundChallenge = target.kind === 'external' ? pkceChallenge : null;
+  // Worker-only targets bind their handoff to the browser that started the
+  // sign-in as well: the Worker redeems it with that browser's verifier, so a
+  // handoff URL copied from history or logs cannot mint a session elsewhere.
+  const workerOnly = requiresWorkerRedeemProof(target.targetApp);
+  const boundChallenge =
+    target.kind === 'external' || workerOnly ? pkceChallenge : null;
 
-  if (target.requirePkce && !boundChallenge) {
+  if ((target.requirePkce || workerOnly) && !boundChallenge) {
     return fail(
       'PKCE_REQUIRED',
       NextResponse.json(

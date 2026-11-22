@@ -173,10 +173,17 @@ like every other satellite. No other host, subdomain or path maps to it.
    `/login`, which answers 303 to `https://tuturuuu.com/login` with
    `returnUrl=https://mastermind.tuturuuu.com/verify-token?nextUrl=<path>`.
    Return paths must stay on the host and never point at `/login` or
-   `/verify-token`.
+   `/verify-token`. `/login` also stores a random nonce and a PKCE verifier
+   in the `__Host-mastermind_login_state` cookie (600 seconds) and sends the
+   verifier's S256 `code_challenge`.
 2. Web mints a single-use, 300-second cross-app token for target
-   `mastermind` after its own MFA policy. `/verify-token` exchanges it at
-   `POST /api/v1/auth/cross-app-token/verify` and accepts the answer only when
+   `mastermind` after its own MFA policy, bound to that challenge; it refuses
+   a Mastermind handoff without one (`PKCE_REQUIRED`). `/verify-token` checks
+   the nonce against the cookie, then exchanges the token at
+   `POST /api/v1/auth/cross-app-token/verify` with the verifier and the
+   Worker-only redeem proof. Web redeems it only through the service-role
+   PKCE validator, so a handoff URL copied from history or logs cannot be
+   redeemed from another browser. The Worker accepts the answer only when
    the access and refresh tokens verify locally for target `mastermind` and
    name the same subject, and the access session lives at most 300 seconds.
    An owner id must carry the owner email; any other subject's new session

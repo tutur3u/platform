@@ -46,19 +46,20 @@ export function safeNextPath(raw: string | null) {
 }
 
 /**
- * Login state: `/login` sets a random nonce in a `__Host-` cookie, which no
- * sibling subdomain can plant, and carries it inside the return path (Web keeps only
- * `nextUrl` across the handoff). `/verify-token` accepts a handoff only when
- * both match, so a handoff URL started in another browser cannot replace
- * this browser's session.
+ * Login state: `/login` sets a random nonce and a PKCE verifier in a
+ * `__Host-` cookie, which no sibling subdomain can plant, carries the nonce
+ * inside the return path (Web keeps only `nextUrl` across the handoff) and
+ * sends Web the verifier's S256 challenge, which Web binds to the handoff.
+ * `/verify-token` accepts a handoff only when the nonce matches, so a handoff
+ * started in another browser cannot replace this browser's session, and
+ * redeems it with the verifier, so a handoff URL copied from history or logs
+ * cannot be redeemed from another browser.
  */
 export const LOGIN_STATE_COOKIE = '__Host-mastermind_login_state';
 export const LOGIN_STATE_PARAM = 'mm_state';
 const LOGIN_STATE_SECONDS = 600;
 
-function randomState() {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
+function base64url(bytes: Uint8Array) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary)
@@ -66,6 +67,25 @@ function randomState() {
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 }
+
+function randomToken(size: number) {
+  const bytes = new Uint8Array(size);
+  crypto.getRandomValues(bytes);
+  return base64url(bytes);
+}
+
+/** RFC 7636 S256: base64url(SHA-256(verifier)). */
+export async function pkceChallenge(verifier: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(verifier)
+  );
+  return base64url(new Uint8Array(digest));
+}
+
+/** A 43-character verifier, the RFC 7636 minimum, from 32 random bytes. */
+const PKCE_VERIFIER = /^[A-Za-z0-9_-]{43}$/;
+const LOGIN_NONCE = /^[A-Za-z0-9_-]{22}$/;
 
 /**
  * How old a second-factor proof may be when Web hands the session back after
@@ -80,11 +100,12 @@ export const FRESH_MFA_MAX_AGE_SECONDS = 30;
  * verified within the last `FRESH_MFA_MAX_AGE_SECONDS`, asking for it again
  * when the session's own proof is older.
  */
-export function loginRedirect(
+export async function loginRedirect(
   nextPath: string,
   { freshMfa = false }: { freshMfa?: boolean } = {}
 ) {
-  const state = randomState();
+  const state = randomToken(16);
+  const verifier = randomToken(32);
   const next = new URL(safeNextPath(nextPath), MASTERMIND_ORIGIN);
   next.searchParams.set(LOGIN_STATE_PARAM, state);
   const verify = new URL('/verify-token', MASTERMIND_ORIGIN);
@@ -93,10 +114,12 @@ export function loginRedirect(
   login.searchParams.set('returnUrl', verify.toString());
   if (freshMfa)
     login.searchParams.set('mfaMaxAge', String(FRESH_MFA_MAX_AGE_SECONDS));
+  login.searchParams.set('code_challenge', await pkceChallenge(verifier));
+  login.searchParams.set('code_challenge_method', 'S256');
   const headers = new Headers({ Location: login.toString() });
   headers.append(
     'Set-Cookie',
-    `${LOGIN_STATE_COOKIE}=${state}; Path=/; Max-Age=${LOGIN_STATE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
+    `${LOGIN_STATE_COOKIE}=${state}.${verifier}; Path=/; Max-Age=${LOGIN_STATE_SECONDS}; HttpOnly; Secure; SameSite=Lax`
   );
   return new Response(null, { status: 303, headers });
 }
@@ -105,16 +128,20 @@ export function loginRedirect(
 export const CLEAR_LOGIN_STATE = `${LOGIN_STATE_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
 
 /**
- * The callback's return path without its login state, or null when the state
- * is missing or does not match this browser's cookie.
+ * The callback's return path without its login state, and this browser's
+ * PKCE verifier, or null when the state is missing or does not match this
+ * browser's cookie.
  */
 export function consumeLoginState(request: Request, rawNext: string | null) {
   const cookie = readCookie(request, LOGIN_STATE_COOKIE);
+  const [nonce = '', verifier = '', ...rest] = (cookie ?? '').split('.');
+  if (rest.length || !LOGIN_NONCE.test(nonce) || !PKCE_VERIFIER.test(verifier))
+    return null;
   const next = new URL(safeNextPath(rawNext), MASTERMIND_ORIGIN);
   const state = next.searchParams.get(LOGIN_STATE_PARAM);
-  if (!cookie || !state || !sameString(cookie, state)) return null;
+  if (!state || !sameString(nonce, state)) return null;
   next.searchParams.delete(LOGIN_STATE_PARAM);
-  return safeNextPath(`${next.pathname}${next.search}`);
+  return { next: safeNextPath(`${next.pathname}${next.search}`), verifier };
 }
 
 function sameString(a: string, b: string) {
@@ -246,9 +273,13 @@ async function postWeb(
   return response.json().catch(() => null);
 }
 
-/** Exchanges the single-use handoff token from `tuturuuu.com/login`. */
+/**
+ * Exchanges the single-use handoff token from `tuturuuu.com/login` with the
+ * verifier of the browser that started the sign-in.
+ */
 export async function exchangeHandoff(
   token: string,
+  codeVerifier: string,
   env: MastermindEnvironment,
   now = Date.now(),
   fetcher: typeof fetch = fetch
@@ -256,7 +287,7 @@ export async function exchangeHandoff(
   try {
     const body = await postWeb(
       '/api/v1/auth/cross-app-token/verify',
-      { targetApp: TARGET, token },
+      { targetApp: TARGET, token, codeVerifier },
       token,
       env,
       fetcher
