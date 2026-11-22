@@ -150,7 +150,9 @@ async function signedPost<T>(env: Env, payload: unknown): Promise<T> {
           'X-Tuturuuu-Mail-Timestamp': timestamp,
         },
         method: 'POST',
-        redirect: 'error',
+        // Workers reject `redirect: 'error'` at Request construction. With
+        // `manual`, a 3xx stays unfollowed and is rejected as permanent below.
+        redirect: 'manual',
       } satisfies RequestInit;
       const response = env.MAIL_INGEST
         ? await env.MAIL_INGEST.fetch(new Request(env.MAIL_INGEST_URL, init))

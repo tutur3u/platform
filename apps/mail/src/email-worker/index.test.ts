@@ -90,7 +90,7 @@ describe('Cloudflare Email Routing Worker', () => {
     const ingest = vi.fn(async (request: Request) => {
       expect(request.url).toBe('https://mail.example.test/webhook');
       expect(request.method).toBe('POST');
-      expect(request.redirect).toBe('error');
+      expect(request.redirect).toBe('manual');
       expect(request.headers.get('x-tuturuuu-mail-signature')).toMatch(
         /^[a-f0-9]{64}$/u
       );
@@ -134,6 +134,24 @@ describe('Cloudflare Email Routing Worker', () => {
       expect.anything(),
       expect.anything()
     );
+  });
+
+  it('treats an ingest redirect as a permanent failure without following it', async () => {
+    const ingest = vi.fn(
+      async () =>
+        new Response(null, {
+          status: 307,
+          headers: { Location: 'https://elsewhere.example.test/' },
+        })
+    );
+    const message = createMessage();
+    const env = { ...createEnv(), MAIL_INGEST: { fetch: ingest } };
+
+    await expect(worker.email(message, env)).rejects.toThrow(
+      'permanently rejected the event with 307'
+    );
+    expect(ingest).toHaveBeenCalledTimes(1);
+    expect(env.MAIL_R2_BUCKET.put).not.toHaveBeenCalled();
   });
 
   it('rejects a suspicious shadow mapping before storing MIME', async () => {
