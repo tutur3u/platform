@@ -590,37 +590,102 @@ Mastermind web app has no dock Back; the browser owns it. Code lives in
 
 ### Fleet Inbox
 
-- **Lanes:** a "Needs you N" / "FYI N" switch at the top of the Inbox root
-  (no extra top bar; the shell owns the title). Needs you holds open asks,
-  design reviews and open sign-in requests, most urgent first; FYI holds
-  FYI asks, this device's answers with their delivery state, and decisions
-  resolved anywhere ("Answered on WhatsApp" with the chosen option and
-  "closed here too"). "Nothing needs you" shows when no open card is left
-  after snoozes. A login request that has ended no longer counts toward
-  Need you and cannot be snoozed; one answered with "I signed in" still
-  counts as blocked on login until the agent verifies it.
-- **Ask cards:** urgency, deadline countdown ("Due in 19:00" under an hour,
-  "Due in 2 h 5 min" beyond it, "Past deadline" after it), the title, Why
-  now and If no answer. The recommended option is the filled primary
-  button; the next option sits beside More, which opens the remaining
-  options, Hold and Snooze. An inline reply box sends a free reply steered
-  to the asking lane ("send and next": the list moves to the next card).
+Scope: the mobile Fleet Inbox (`/mastermind/inbox`) and the decision detail
+page (`/mastermind/inbox/ask/<id>`). Default: every list card is compact and
+every answer is given on the detail page, in the decision's own option order.
+
+- **Lanes:** a "Needs you N" / "FYI N" / "History" switch at the top of the
+  Inbox root (no extra top bar; the shell owns the title). Needs you holds
+  open asks, design reviews and open sign-in requests, most urgent first;
+  FYI holds open FYI asks and firing SLO alerts; History holds every
+  answered or closed decision. The two counts cover only open items:
+  answered, resolved and withdrawn decisions are never counted, and a zero
+  count shows the bare lane name. "Nothing needs you" shows when no open
+  card is left after snoozes. A login request that has ended no longer
+  counts and cannot be snoozed; one answered with "I signed in" stays in
+  Needs you, uncounted, until the agent verifies it.
+- **Compact cards:** urgency, kind ("Design review", "Mockup", or the
+  sign-in state), who asks, the deadline countdown ("Due in 19:00" under an
+  hour, "Due in 2 h 5 min" beyond it, "Past deadline" after it) or the age,
+  the title in two lines, a two-line summary of the description, and one
+  footer line: the recommended option and the option count, "Approve or
+  request changes" for a review without options, or "Answer in your own
+  words". The footer has one fixed height in every state, so sending, sent
+  and failed never resize a card or move the list. Tapping a card opens its
+  detail page. Sign-in requests stay whole in the list (code, link and "I
+  signed in"), because their codes expire in minutes.
+- **Detail page:** the shell title "Decision" with up and down arrows that
+  step through Needs you and FYI, the position ("1 of 9"), the full
+  description rendered as limited markdown (paragraphs, lists, bold, code;
+  no links, images or HTML), the mockup for a review, the answers, and Why,
+  If no answer and Asked (ICT) rows. A "Next:" row opens the next decision.
+- **Answers:** the options are swipeable cards in their canonical order;
+  the recommended one is marked "Recommended" and its button is the filled
+  one, but it is never moved to the front. Each card shows the option's
+  description (Web field `options[].description`) when there is one. A
+  decision without options offers Approve; a review always ends with
+  Request changes, which asks for notes in a sheet. "Choose this option"
+  turns into Cancel and "Send to Iris" inside the same fixed-height slot,
+  and swiping to another option cancels it. Reply (a sheet), Hold and Snooze
+  sit under the cards with their names written out. Words written in a
+  sheet are sent only if the decision is still open when the sheet closes;
+  if another device answered it or it closed meanwhile, nothing is sent
+  and a toast offers Copy text. A second answer is never offered, because
+  Iris takes only the first.
+- **Optimistic send:** Send closes the decision at once: it leaves Needs you
+  for History ("Sending"), a toast says "Answered: <option>" with Undo for
+  the five-second undo window, and the detail page moves to the next
+  decision (or back to the Inbox after the last one). Delivery continues in
+  the background under one idempotency key (see Answer delivery). Undo in
+  the window drops the answer unsent and brings the card back. A refused
+  answer, or one still undelivered after four automatic attempts, returns
+  to the top of Needs you with "Not delivered: <answer>" and Retry, which
+  resends under the same key; background retries continue meanwhile.
+- **History:** grouped by ICT day (Today, Yesterday, then the date), newest
+  first. Each row shows the question, the chosen answer, who answered and
+  where ("You · Mastermind", "You · WhatsApp", or the orchestrator for a
+  decision it withdrew or settled), the time in ICT, and the delivery state:
+  Sending, Retrying, "Waiting for Iris", "Received by Iris", "Delivered to
+  Iris", "Closed, no answer needed" or "Settled outside the Inbox". Answers
+  that missed a closed decision lead the lane under "Not delivered". A row
+  opens the decision read-only: its recorded answer (Answer, How, When,
+  Status) and the options with the chosen one marked. A decision the app
+  never saw before it closed says "This decision is closed".
 - **Design reviews:** the preview image (the uploaded asset is read with the
   owner's bearer from `/api/v1/mastermind/fleet/review-assets/<id>`, at most
   200 KiB; a hosted preview must be https on a tuturuuu.com host with an
-  image path), Open full mockup through the app link launcher (claude.ai
-  artifact paths or tuturuuu.com hosts only), Approve, and Request changes,
-  which opens an inline notes box and sends `request_changes`. The app
-  declares `x-mastermind-fleet-features: login,alerts,review`.
-- **Undo:** an answer waits five seconds ("About to send") before it is
-  posted, and Undo in that window drops it unsent, even when a poll brings
-  another device's answer meanwhile: the card keeps its place and this
-  device's own submission (waiting, not sent or closed) shows over the
-  other receipt until it settles. A queued or retrying answer to a decision
-  another channel closed meanwhile, or to a login request that ended, stops
-  unsent and settles as closed. A login request that has ended offers no
-  Retry now. After posting, Web keeps every answer
-  as a revision, so there is no later undo.
+  image path) and Open full mockup through the app link launcher (claude.ai
+  artifact paths or tuturuuu.com hosts only). A review with a private HTML
+  document (`review.document`) renders it natively instead: the bytes are
+  read with the owner's bearer from the same asset route (at most 200 KiB,
+  UTF-8 HTML only), shown as a still 16:10 preview, and "Open full screen"
+  opens a full-screen viewer above the shell with Close, Reload and
+  pinch-zoom. The document never opens in a browser; when it cannot load,
+  a review that also carries its own mockup link offers that link instead.
+  The app declares `x-mastermind-fleet-features: login,alerts,review`.
+- **Mockup sandbox:** the native view runs with JavaScript off, so neither
+  page scripts nor the WebView plugin's script bridge run; private
+  browsing, no cache, no file or content access, no new windows, every
+  permission request denied, and main-frame navigation limited to the
+  document itself and its anchors. Before its own markup the document gets
+  a Content Security Policy that allows no network source and DNS
+  prefetching off; Android also blocks network loads in the WebView itself.
+  Inline styles, `data:` and `blob:` images and media, and `data:` fonts
+  render; scripts, fetches, frames, objects, forms and base URLs are
+  refused, and the referrer is never sent. The document's bytes are never
+  edited. One that contains a `<link` tag anywhere is not rendered at all
+  ("Preview unavailable"), because resource hints such as preconnect open
+  connections the policy does not govern; `iris-ask` refuses such a file
+  when the review is created. Mockups that draw their content with
+  JavaScript show only their static markup; larger or scripted mockups use a
+  claude.ai artifact link, which opens in the browser.
+- **Undo window:** an answer waits five seconds before it is posted, even
+  when a poll brings another device's answer meanwhile: History keeps this
+  device's own submission until it settles. A queued or retrying answer to
+  a decision another channel closed meanwhile, or to a login request that
+  ended, stops unsent and settles as closed. A login request that has ended
+  offers no Retry now. After posting, Web keeps every answer as a revision,
+  so there is no later undo.
 - **Snooze:** 15 minutes, 1 hour, 08:00 the next day in Mastermind time
   (UTC+7) and, while it is more than five minutes away, until 5 minutes
   before the deadline. A snooze hides the card on this device only; the
@@ -635,13 +700,12 @@ Mastermind web app has no dock Back; the browser owns it. Code lives in
   it says "Couldn't snooze on this device" with Retry. The confirmation
   offers Undo, the Snoozed row offers Show now, and a card returns on its
   own when its time passes.
-- **Answered:** answers given here show their pickup status. Decisions in
-  `resolved` show where the answer came from ("Answered on WhatsApp",
-  "Answered on Mastermind", "Answered on mobile", "Answered in the CLI",
-  or "Closed" without a channel) with the chosen outcome. A 409 from Web
-  marks the answer closed without Retry and refetches the snapshot: "This
-  request has already closed" on a login request, "This request closed
-  before your answer arrived" on an ask.
+- **Closed decisions:** Decisions in `resolved` show in History with where
+  the answer came from (Mastermind, mobile, WhatsApp, the CLI, or the
+  orchestrator for a withdrawn or settled decision) and the chosen outcome.
+  A 409 from Web marks the answer closed without Retry and refetches the
+  snapshot: "This request has already closed" on a login request, "This
+  request closed before your answer arrived" on an ask.
 
 ### Answer delivery
 
@@ -654,14 +718,18 @@ never left stuck as "Not sent".
 - **What retries.** A network error, 5xx, 429 or an unreadable 202 body
   retries on its own after 5 s, 15 s, 1 min, then every 2 min, and again at
   once when the app resumes, the device comes back online or a Mastermind
-  push arrives or is tapped. The card shows "Not sent yet · retrying in N s"
-  with Retry now.
+  push arrives or is tapped. History shows the answer as Retrying; after
+  four failed attempts the card also returns to Needs you with "Not
+  delivered yet" and Retry while the background retries continue. A
+  sign-in request shows "Not sent yet · retrying in N s" with Retry now on
+  its own card.
 - **What stops.** A 409 (`decision_closed`, `login_closed`) settles as closed
   and is never resent. Web replays the original 202 receipt instead when the
   same actor retries the same key and payload, so a lost response settles
   as delivered. Any other 4xx, such as a 422 `invalid_answer` or
-  `unknown_option`, settles as "Not delivered" with the reason and Dismiss,
-  which brings the actions back.
+  `unknown_option`, settles as refused: the card returns to Needs you with
+  "Not delivered: <answer>" and Retry, which resends under the same key, and
+  the detail page lets the owner answer again.
 - **Abuse step-up (mobile).** A 403 that asks for a browser check
   (`ABUSE_CHALLENGE_REQUIRED` or `x-abuse-challenge`) is not lost access:
   held data stays, and the answer retries every 2 min for about an hour
@@ -694,8 +762,8 @@ never left stuck as "Not sent".
   answer. It does not persist across reloads.
 - **Closed asks leave Inbox.** A decision listed in `resolved[]` is never open,
   even when a lagging publisher still lists it in `decisions[]`; it shows
-  under Answered with its channel. An answer pending on this device cannot
-  hold a decision in the open tiers once the snapshot drops it. The fleet
+  in History with its channel. An answer pending on this device cannot
+  hold a decision in Needs you once the snapshot drops it. The fleet
   snapshot is held in memory only and replaced by every successful refresh.
 - **Freshness.** "Updated 12 s ago" counts from Web's `receivedAt` (when the
   publisher's snapshot arrived) and re-renders every second. Past five
@@ -707,8 +775,14 @@ never left stuck as "Not sent".
   `apps/mobile/test/features/mastermind/fleet/fleet_delivery_test.dart`
   (same-key retry and backoff, 409, 422, abuse step-up, resume, restart,
   closed-ask settling, resolved precedence, push refresh),
-  `fleet_delivery_view_test.dart` (freshness tick, resolved display, not
-  delivered and Send to Iris), `apps/mastermind/src/fleet/model.test.ts`
+  `fleet_delivery_view_test.dart` (freshness tick, History display, not
+  delivered and Send to Iris), `fleet_inbox_groups_test.dart` (open-only
+  counts, optimistic and returned answers, History entries),
+  `fleet_card_layout_test.dart` (fixed card and choice-slot sizes in every
+  state, canonical option order), `fleet_decision_page_test.dart` (detail,
+  confirm in place, Undo, refused answer, read-only History detail),
+  `fleet_review_detail_test.dart` and `fleet_mockup_html_test.dart`
+  (native mockup document, sandbox policy, navigation allowlist), `apps/mastermind/src/fleet/model.test.ts`
   (web retry reducer), and `apps/web/src/lib/mastermind/fleet/store.test.ts`
   plus `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`
   (replay after a decision or login request closes, and actor, key and

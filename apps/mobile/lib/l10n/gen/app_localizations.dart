@@ -36444,6 +36444,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get mastermindSecretClose;
+
+  /// No description provided for @mastermindFleetInboxHistoryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get mastermindFleetInboxHistoryTab;
+
+  /// No description provided for @mastermindFleetHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No answers in the last day'**
+  String get mastermindFleetHistoryEmpty;
+
+  /// No description provided for @mastermindFleetHistoryToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get mastermindFleetHistoryToday;
+
+  /// No description provided for @mastermindFleetHistoryYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get mastermindFleetHistoryYesterday;
+
+  /// No description provided for @mastermindFleetHistoryByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You · {channel}'**
+  String mastermindFleetHistoryByYou(String channel);
+
+  /// No description provided for @mastermindFleetChannelMastermind.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind'**
+  String get mastermindFleetChannelMastermind;
+
+  /// No description provided for @mastermindFleetChannelWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get mastermindFleetChannelWhatsapp;
+
+  /// No description provided for @mastermindFleetChannelCli.
+  ///
+  /// In en, this message translates to:
+  /// **'CLI'**
+  String get mastermindFleetChannelCli;
+
+  /// No description provided for @mastermindFleetHistoryRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying'**
+  String get mastermindFleetHistoryRetrying;
+
+  /// No description provided for @mastermindFleetHistoryDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to {name}'**
+  String mastermindFleetHistoryDelivered(String name);
+
+  /// No description provided for @mastermindFleetHistoryWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn'**
+  String get mastermindFleetHistoryWithdrawn;
+
+  /// No description provided for @mastermindFleetHistoryWithdrawnStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed, no answer needed'**
+  String get mastermindFleetHistoryWithdrawnStatus;
+
+  /// No description provided for @mastermindFleetHistoryResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get mastermindFleetHistoryResolved;
+
+  /// No description provided for @mastermindFleetHistoryResolvedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled outside the Inbox'**
+  String get mastermindFleetHistoryResolvedStatus;
+
+  /// No description provided for @mastermindFleetHistoryAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get mastermindFleetHistoryAnswer;
+
+  /// No description provided for @mastermindFleetHistoryVia.
+  ///
+  /// In en, this message translates to:
+  /// **'How'**
+  String get mastermindFleetHistoryVia;
+
+  /// No description provided for @mastermindFleetHistoryWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get mastermindFleetHistoryWhen;
+
+  /// No description provided for @mastermindFleetHistoryStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get mastermindFleetHistoryStatus;
+
+  /// No description provided for @mastermindFleetHistoryTimeIct.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} ICT'**
+  String mastermindFleetHistoryTimeIct(String time);
+
+  /// No description provided for @mastermindFleetOptionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 option} other{{count} options}}'**
+  String mastermindFleetOptionsCount(int count);
+
+  /// No description provided for @mastermindFleetFreeTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer in your own words'**
+  String get mastermindFleetFreeTextHint;
+
+  /// No description provided for @mastermindFleetReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve or request changes'**
+  String get mastermindFleetReviewHint;
+
+  /// No description provided for @mastermindFleetLoginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in needed'**
+  String get mastermindFleetLoginHint;
+
+  /// No description provided for @mastermindFleetNotDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered: {answer}'**
+  String mastermindFleetNotDelivered(String answer);
+
+  /// No description provided for @mastermindFleetNotDeliveredYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered yet: {answer}'**
+  String mastermindFleetNotDeliveredYet(String answer);
+
+  /// No description provided for @mastermindFleetRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get mastermindFleetRetry;
+
+  /// No description provided for @mastermindFleetMockupBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Mockup'**
+  String get mastermindFleetMockupBadge;
+
+  /// No description provided for @mastermindFleetOpenDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Open decision'**
+  String get mastermindFleetOpenDecision;
+
+  /// No description provided for @mastermindFleetDecisionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision'**
+  String get mastermindFleetDecisionTitle;
+
+  /// No description provided for @mastermindFleetPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {total}'**
+  String mastermindFleetPosition(int index, int total);
+
+  /// No description provided for @mastermindFleetPreviousDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous decision'**
+  String get mastermindFleetPreviousDecision;
+
+  /// No description provided for @mastermindFleetNextDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Next decision'**
+  String get mastermindFleetNextDecision;
+
+  /// No description provided for @mastermindFleetUpNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {title}'**
+  String mastermindFleetUpNext(String title);
+
+  /// No description provided for @mastermindFleetYourOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Your options'**
+  String get mastermindFleetYourOptions;
+
+  /// No description provided for @mastermindFleetChooseOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose this option'**
+  String get mastermindFleetChooseOption;
+
+  /// No description provided for @mastermindFleetConfirmSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to {name}'**
+  String mastermindFleetConfirmSend(String name);
+
+  /// No description provided for @mastermindFleetCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get mastermindFleetCancel;
+
+  /// No description provided for @mastermindFleetAnsweredToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered: {answer}'**
+  String mastermindFleetAnsweredToast(String answer);
+
+  /// No description provided for @mastermindFleetDecisionGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This decision is closed'**
+  String get mastermindFleetDecisionGone;
+
+  /// No description provided for @mastermindFleetBackToInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Inbox'**
+  String get mastermindFleetBackToInbox;
+
+  /// No description provided for @mastermindFleetAsked.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked'**
+  String get mastermindFleetAsked;
+
+  /// No description provided for @mastermindFleetYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get mastermindFleetYourAnswer;
+
+  /// No description provided for @mastermindFleetApproveOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get mastermindFleetApproveOption;
+
+  /// No description provided for @mastermindFleetApproveDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell {name} to go ahead as described.'**
+  String mastermindFleetApproveDescription(String name);
+
+  /// No description provided for @mastermindFleetChangesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what should change. {name} revises it and asks again.'**
+  String mastermindFleetChangesDescription(String name);
+
+  /// No description provided for @mastermindFleetMockupPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Mockup · private to you'**
+  String get mastermindFleetMockupPrivate;
+
+  /// No description provided for @mastermindFleetMockupOpenFullScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full screen'**
+  String get mastermindFleetMockupOpenFullScreen;
+
+  /// No description provided for @mastermindFleetMockupClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close preview'**
+  String get mastermindFleetMockupClose;
+
+  /// No description provided for @mastermindFleetMockupReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get mastermindFleetMockupReload;
+
+  /// No description provided for @mastermindFleetMockupFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded with your account from a private link. Links inside stay here.'**
+  String get mastermindFleetMockupFooter;
+
+  /// No description provided for @mastermindFleetMockupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mockup preview. Opens full screen.'**
+  String get mastermindFleetMockupLabel;
+
+  /// No description provided for @mastermindFleetNotSentAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: this was answered while you wrote'**
+  String get mastermindFleetNotSentAnswered;
+
+  /// No description provided for @mastermindFleetNotSentClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent: this decision closed'**
+  String get mastermindFleetNotSentClosed;
+
+  /// No description provided for @mastermindFleetCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get mastermindFleetCopyText;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

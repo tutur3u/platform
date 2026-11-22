@@ -89,6 +89,20 @@ class FleetPendingAnswer {
       status == FleetSendStatus.sending ||
       status == FleetSendStatus.retrying;
 
+  /// Still retrying after [fleetStalledAttempts] failed attempts. Delivery
+  /// keeps going in the background, but the owner sees the card again, and
+  /// keeps seeing it while a background attempt is on the wire.
+  bool get stalled =>
+      (status == FleetSendStatus.retrying ||
+          status == FleetSendStatus.sending) &&
+      attempts >= fleetStalledAttempts;
+
+  /// The owner must act again: Web refused it, or it is stalled.
+  bool get needsOwner => status == FleetSendStatus.failed || stalled;
+
+  /// On its way: the decision has left Needs you for History.
+  bool get inFlight => outstanding && !stalled;
+
   FleetPendingAnswer copyWith({
     FleetSendStatus? status,
     int? attempts,
@@ -129,6 +143,10 @@ class FleetPendingAnswer {
     'reason': ?reason,
   };
 }
+
+/// Failed attempts after which a retrying answer counts as not delivered
+/// (about 1.5 minutes of retries); see [FleetPendingAnswer.stalled].
+const fleetStalledAttempts = 4;
 
 /// A 403 abuse step-up retries every [fleetChallengeRetryDelay], at most
 /// this many challenged attempts (about an hour), then settles as failed:

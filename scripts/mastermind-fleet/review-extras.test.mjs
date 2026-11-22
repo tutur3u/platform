@@ -196,3 +196,49 @@ test('uploads HTML with a fallback URL, shares budget, and retries failed docume
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('a failed renewal keeps an open review on its still-valid asset', async () => {
+  const dir = tempDir();
+  try {
+    fs.writeFileSync(
+      path.join(dir, 'mock.html'),
+      '<!DOCTYPE html><html><body>Mock</body></html>'
+    );
+    const asset = readReviewDocument(path.join(dir, 'mock.html'));
+    const make = () => [
+      {
+        kind: 'review',
+        review: parseReview({ document: { file: 'mock.html' } }),
+      },
+    ];
+    const offline = async () => {
+      throw new Error('offline');
+    };
+    const daysAgo = (days) =>
+      new Date(NOW.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+    // Due for renewal (4 days old), the upload fails: Web still holds it.
+    const renewing = make();
+    const kept = await attachReviewAssets(renewing, {
+      dir,
+      origin: 'https://tuturuuu.com',
+      put: offline,
+      uploaded: { [asset.assetId]: daysAgo(4) },
+      now: NOW,
+    });
+    assert.equal(renewing.length, 1);
+    assert.equal(renewing[0].review.document.assetId, asset.assetId);
+    assert.equal(kept[asset.assetId], daysAgo(4));
+    // Past Web's seven days the asset is gone, so the review waits.
+    const lapsed = make();
+    await attachReviewAssets(lapsed, {
+      dir,
+      origin: 'https://tuturuuu.com',
+      put: offline,
+      uploaded: { [asset.assetId]: daysAgo(8) },
+      now: NOW,
+    });
+    assert.equal(lapsed.length, 0);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

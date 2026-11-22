@@ -9956,5 +9956,146 @@
   "mastermindSecretOutcomeUnverified": "The machine's outcome could not be verified",
   "mastermindSecretClosed": "This request has closed",
   "mastermindSecretForget": "Forget this machine",
-  "mastermindSecretClose": "Close"
+  "mastermindSecretClose": "Close",
+  "mastermindFleetInboxHistoryTab": "History",
+  "mastermindFleetHistoryEmpty": "No answers in the last day",
+  "mastermindFleetHistoryToday": "Today",
+  "mastermindFleetHistoryYesterday": "Yesterday",
+  "mastermindFleetHistoryByYou": "You · {channel}",
+  "@mastermindFleetHistoryByYou": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetChannelMastermind": "Mastermind",
+  "mastermindFleetChannelWhatsapp": "WhatsApp",
+  "mastermindFleetChannelCli": "CLI",
+  "mastermindFleetHistoryRetrying": "Retrying",
+  "mastermindFleetHistoryDelivered": "Delivered to {name}",
+  "@mastermindFleetHistoryDelivered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetHistoryWithdrawn": "Withdrawn",
+  "mastermindFleetHistoryWithdrawnStatus": "Closed, no answer needed",
+  "mastermindFleetHistoryResolved": "Resolved",
+  "mastermindFleetHistoryResolvedStatus": "Settled outside the Inbox",
+  "mastermindFleetHistoryAnswer": "Answer",
+  "mastermindFleetHistoryVia": "How",
+  "mastermindFleetHistoryWhen": "When",
+  "mastermindFleetHistoryStatus": "Status",
+  "mastermindFleetHistoryTimeIct": "{time} ICT",
+  "@mastermindFleetHistoryTimeIct": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetOptionsCount": "{count, plural, =1{1 option} other{{count} options}}",
+  "@mastermindFleetOptionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetFreeTextHint": "Answer in your own words",
+  "mastermindFleetReviewHint": "Approve or request changes",
+  "mastermindFleetLoginHint": "Sign-in needed",
+  "mastermindFleetNotDelivered": "Not delivered: {answer}",
+  "@mastermindFleetNotDelivered": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetNotDeliveredYet": "Not delivered yet: {answer}",
+  "@mastermindFleetNotDeliveredYet": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetRetry": "Retry",
+  "mastermindFleetMockupBadge": "Mockup",
+  "mastermindFleetOpenDecision": "Open decision",
+  "mastermindFleetDecisionTitle": "Decision",
+  "mastermindFleetPosition": "{index} of {total}",
+  "@mastermindFleetPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetPreviousDecision": "Previous decision",
+  "mastermindFleetNextDecision": "Next decision",
+  "mastermindFleetUpNext": "Next: {title}",
+  "@mastermindFleetUpNext": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetYourOptions": "Your options",
+  "mastermindFleetChooseOption": "Choose this option",
+  "mastermindFleetConfirmSend": "Send to {name}",
+  "@mastermindFleetConfirmSend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetCancel": "Cancel",
+  "mastermindFleetAnsweredToast": "Answered: {answer}",
+  "@mastermindFleetAnsweredToast": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetDecisionGone": "This decision is closed",
+  "mastermindFleetBackToInbox": "Back to Inbox",
+  "mastermindFleetAsked": "Asked",
+  "mastermindFleetYourAnswer": "Your answer",
+  "mastermindFleetApproveOption": "Approve",
+  "mastermindFleetApproveDescription": "Tell {name} to go ahead as described.",
+  "@mastermindFleetApproveDescription": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetChangesDescription": "Write what should change. {name} revises it and asks again.",
+  "@mastermindFleetChangesDescription": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetMockupPrivate": "Mockup · private to you",
+  "mastermindFleetMockupOpenFullScreen": "Open full screen",
+  "mastermindFleetMockupClose": "Close preview",
+  "mastermindFleetMockupReload": "Reload",
+  "mastermindFleetMockupFooter": "Loaded with your account from a private link. Links inside stay here.",
+  "mastermindFleetMockupLabel": "Mockup preview. Opens full screen.",
+  "mastermindFleetNotSentAnswered": "Not sent: this was answered while you wrote",
+  "mastermindFleetNotSentClosed": "Not sent: this decision closed",
+  "mastermindFleetCopyText": "Copy text"
 }

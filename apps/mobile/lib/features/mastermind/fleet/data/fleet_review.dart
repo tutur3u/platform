@@ -93,11 +93,32 @@ final class FleetAssetPreview extends FleetReviewPreview {
   final String contentType;
 }
 
-/// A design-review ask: the full mockup to open and an optional preview.
-/// A review whose mockup link fails the check is dropped; a preview that
-/// fails it is left out and the review stays.
+/// A private HTML mockup the publisher uploaded. Web serves its bytes to the
+/// owner only, as an inert download; the app renders it in a sandboxed view.
+class FleetReviewDocument {
+  const FleetReviewDocument(this.assetId);
+
+  static FleetReviewDocument? parse(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final id = raw['assetId'];
+    if (raw['source'] != 'asset' || raw['contentType'] != 'text/html') {
+      return null;
+    }
+    return id is String && _reviewAssetId.hasMatch(id)
+        ? FleetReviewDocument(id)
+        : null;
+  }
+
+  /// The document's sha256, hex.
+  final String assetId;
+}
+
+/// A design-review ask: the full mockup to open, an optional preview image
+/// and an optional private HTML document. A review whose mockup link fails
+/// the check is dropped; a preview or document that fails it is left out and
+/// the review stays.
 class FleetReview {
-  const FleetReview({required this.mockupUrl, this.preview});
+  const FleetReview({required this.mockupUrl, this.preview, this.document});
 
   static FleetReview? parse(Object? raw) {
     if (raw is! Map<String, dynamic>) return null;
@@ -106,9 +127,17 @@ class FleetReview {
     return FleetReview(
       mockupUrl: mockup,
       preview: FleetReviewPreview.parse(raw['preview']),
+      document: FleetReviewDocument.parse(raw['document']),
     );
   }
 
   final Uri mockupUrl;
   final FleetReviewPreview? preview;
+  final FleetReviewDocument? document;
+
+  /// The mockup link names the document's own owner-only asset route, so
+  /// opening it in a browser could only fail; the app shows the document.
+  bool get linkIsDocument =>
+      document != null &&
+      mockupUrl.path.endsWith('/review-assets/${document!.assetId}');
 }

@@ -19860,4 +19860,196 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSecretClose => 'Close';
+
+  @override
+  String get mastermindFleetInboxHistoryTab => 'History';
+
+  @override
+  String get mastermindFleetHistoryEmpty => 'No answers in the last day';
+
+  @override
+  String get mastermindFleetHistoryToday => 'Today';
+
+  @override
+  String get mastermindFleetHistoryYesterday => 'Yesterday';
+
+  @override
+  String mastermindFleetHistoryByYou(String channel) {
+    return 'You · $channel';
+  }
+
+  @override
+  String get mastermindFleetChannelMastermind => 'Mastermind';
+
+  @override
+  String get mastermindFleetChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get mastermindFleetChannelCli => 'CLI';
+
+  @override
+  String get mastermindFleetHistoryRetrying => 'Retrying';
+
+  @override
+  String mastermindFleetHistoryDelivered(String name) {
+    return 'Delivered to $name';
+  }
+
+  @override
+  String get mastermindFleetHistoryWithdrawn => 'Withdrawn';
+
+  @override
+  String get mastermindFleetHistoryWithdrawnStatus => 'Closed, no answer needed';
+
+  @override
+  String get mastermindFleetHistoryResolved => 'Resolved';
+
+  @override
+  String get mastermindFleetHistoryResolvedStatus => 'Settled outside the Inbox';
+
+  @override
+  String get mastermindFleetHistoryAnswer => 'Answer';
+
+  @override
+  String get mastermindFleetHistoryVia => 'How';
+
+  @override
+  String get mastermindFleetHistoryWhen => 'When';
+
+  @override
+  String get mastermindFleetHistoryStatus => 'Status';
+
+  @override
+  String mastermindFleetHistoryTimeIct(String time) {
+    return '$time ICT';
+  }
+
+  @override
+  String mastermindFleetOptionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count options',
+      one: '1 option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetFreeTextHint => 'Answer in your own words';
+
+  @override
+  String get mastermindFleetReviewHint => 'Approve or request changes';
+
+  @override
+  String get mastermindFleetLoginHint => 'Sign-in needed';
+
+  @override
+  String mastermindFleetNotDelivered(String answer) {
+    return 'Not delivered: $answer';
+  }
+
+  @override
+  String mastermindFleetNotDeliveredYet(String answer) {
+    return 'Not delivered yet: $answer';
+  }
+
+  @override
+  String get mastermindFleetRetry => 'Retry';
+
+  @override
+  String get mastermindFleetMockupBadge => 'Mockup';
+
+  @override
+  String get mastermindFleetOpenDecision => 'Open decision';
+
+  @override
+  String get mastermindFleetDecisionTitle => 'Decision';
+
+  @override
+  String mastermindFleetPosition(int index, int total) {
+    return '$index of $total';
+  }
+
+  @override
+  String get mastermindFleetPreviousDecision => 'Previous decision';
+
+  @override
+  String get mastermindFleetNextDecision => 'Next decision';
+
+  @override
+  String mastermindFleetUpNext(String title) {
+    return 'Next: $title';
+  }
+
+  @override
+  String get mastermindFleetYourOptions => 'Your options';
+
+  @override
+  String get mastermindFleetChooseOption => 'Choose this option';
+
+  @override
+  String mastermindFleetConfirmSend(String name) {
+    return 'Send to $name';
+  }
+
+  @override
+  String get mastermindFleetCancel => 'Cancel';
+
+  @override
+  String mastermindFleetAnsweredToast(String answer) {
+    return 'Answered: $answer';
+  }
+
+  @override
+  String get mastermindFleetDecisionGone => 'This decision is closed';
+
+  @override
+  String get mastermindFleetBackToInbox => 'Back to Inbox';
+
+  @override
+  String get mastermindFleetAsked => 'Asked';
+
+  @override
+  String get mastermindFleetYourAnswer => 'Your answer';
+
+  @override
+  String get mastermindFleetApproveOption => 'Approve';
+
+  @override
+  String mastermindFleetApproveDescription(String name) {
+    return 'Tell $name to go ahead as described.';
+  }
+
+  @override
+  String mastermindFleetChangesDescription(String name) {
+    return 'Write what should change. $name revises it and asks again.';
+  }
+
+  @override
+  String get mastermindFleetMockupPrivate => 'Mockup · private to you';
+
+  @override
+  String get mastermindFleetMockupOpenFullScreen => 'Open full screen';
+
+  @override
+  String get mastermindFleetMockupClose => 'Close preview';
+
+  @override
+  String get mastermindFleetMockupReload => 'Reload';
+
+  @override
+  String get mastermindFleetMockupFooter => 'Loaded with your account from a private link. Links inside stay here.';
+
+  @override
+  String get mastermindFleetMockupLabel => 'Mockup preview. Opens full screen.';
+
+  @override
+  String get mastermindFleetNotSentAnswered => 'Not sent: this was answered while you wrote';
+
+  @override
+  String get mastermindFleetNotSentClosed => 'Not sent: this decision closed';
+
+  @override
+  String get mastermindFleetCopyText => 'Copy text';
 }

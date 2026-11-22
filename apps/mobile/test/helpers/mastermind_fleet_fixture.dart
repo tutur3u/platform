@@ -163,6 +163,21 @@ class FakeFleetSource implements FleetSource {
     });
     await answerGate?.future;
     if (answerError case final error?) throw error;
+    // Like Web, a recorded answer comes back as a receipt on later reads.
+    final receipts = json['answers'];
+    json = {
+      ...json,
+      'answers': <String, dynamic>{
+        if (receipts is Map<String, dynamic>) ...receipts,
+        decisionId: {
+          'action': action.wire,
+          'optionId': ?optionId,
+          'revision': 1,
+          'answeredAt': fleetTestNow.toIso8601String(),
+          'pickedUp': false,
+        },
+      },
+    };
     return FleetAnswerReceipt(
       action: action,
       revision: 1,

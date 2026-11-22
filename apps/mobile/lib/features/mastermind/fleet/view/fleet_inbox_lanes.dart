@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_alerts_panel.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_history_row.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_groups.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_rows.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The two Inbox lanes.
-enum FleetInboxLane { needsYou, fyi }
+/// The three Inbox lanes.
+enum FleetInboxLane { needsYou, fyi, history }
 
-typedef FleetInboxCardBuilder =
-    Widget Function(FleetDecision decision, {bool snoozable});
+typedef FleetInboxCardBuilder = Widget Function(FleetDecision decision);
 
-/// Needs you: every open ask, sign-in request and review in one list, most
-/// urgent first, then what is snoozed on this device.
+Widget _gap(Widget child) => Padding(
+  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+  child: child,
+);
+
+/// Needs you: every open ask, sign-in request and review as a compact card,
+/// most urgent first, then what is snoozed on this device.
 List<Widget> fleetNeedsYouLane(
   AppLocalizations l10n,
   FleetInboxGroups groups, {
@@ -23,15 +28,14 @@ List<Widget> fleetNeedsYouLane(
   required void Function(String decisionId) onWake,
 }) => [
   if (groups.needs.isEmpty)
-    Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: AppStateMessage.inline(
+    _gap(
+      AppStateMessage.inline(
         icon: LucideIcons.circleCheck,
         title: l10n.mastermindFleetInboxEmpty,
         tone: AppTone.success,
       ),
     ),
-  for (final decision in groups.needs) card(decision),
+  for (final decision in groups.needs) _gap(card(decision)),
   if (groups.snoozed.isNotEmpty) ...[
     AppSectionHeader(
       title: l10n.mastermindFleetSnoozedTitle,
@@ -48,55 +52,86 @@ List<Widget> fleetNeedsYouLane(
   ],
 ];
 
-/// FYI: what only informs (SLO alerts and FYI items), answers that did not
-/// arrive, answers with how far they got, and decisions closed on any
-/// channel.
+/// FYI: open items that only inform, and firing SLO alerts.
 List<Widget> fleetFyiLane(
   AppLocalizations l10n,
   FleetSnapshot snapshot,
   FleetInboxGroups groups, {
   required FleetInboxCardBuilder card,
-  required List<Widget> undelivered,
-  required DateTime now,
   DateTime Function()? clock,
 }) => [
-  if (groups.fyiCount == 0 && snapshot.alerts.isEmpty)
-    Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: AppStateMessage.inline(
+  if (groups.fyiCount == 0)
+    _gap(
+      AppStateMessage.inline(
         icon: LucideIcons.circleCheck,
         title: l10n.mastermindFleetInboxEmpty,
       ),
     ),
-  if (snapshot.alerts.isNotEmpty) ...[
-    FleetAlertsPanel(alerts: snapshot.alerts, now: clock),
-    const SizedBox(height: AppSpacing.md),
-  ],
-  if (groups.fyi.isNotEmpty) ...[
-    AppSectionHeader(
-      title: l10n.mastermindFleetUpdatesTitle,
-      count: groups.fyi.length,
-    ),
-    for (final decision in groups.fyi) card(decision),
-  ],
-  ...undelivered,
-  if (groups.answered.isNotEmpty || groups.resolved.isNotEmpty) ...[
-    AppSectionHeader(
-      title: l10n.mastermindFleetAnsweredTitle,
-      count: groups.answered.length + groups.resolved.length,
-    ),
-    for (final decision in groups.answered) card(decision, snoozable: false),
-    for (final resolved in groups.resolved)
-      FleetResolvedRow(
-        key: ValueKey('fleet-resolved-${resolved.id}'),
-        resolved: resolved,
-        now: now,
-      ),
-  ],
+  if (snapshot.alerts.isNotEmpty)
+    _gap(FleetAlertsPanel(alerts: snapshot.alerts, now: clock)),
+  for (final decision in groups.fyi) _gap(card(decision)),
 ];
 
-/// The Needs you / FYI switch at the top of the Inbox, with each lane's
-/// count.
+/// History: answers that did not arrive, then every answered or closed
+/// decision grouped by ICT day, newest first.
+List<Widget> fleetHistoryLane(
+  BuildContext context,
+  FleetInboxGroups groups, {
+  required String orchestrator,
+  required List<Widget> undelivered,
+  required DateTime now,
+  required void Function(FleetHistoryEntry entry) onOpen,
+  required void Function(String decisionId) onUndo,
+}) {
+  final l10n = context.l10n;
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  final days = <String, List<FleetHistoryEntry>>{};
+  for (final entry in groups.history) {
+    days
+        .putIfAbsent(fleetHistoryDay(l10n, locale, entry.at, now), () => [])
+        .add(entry);
+  }
+  return [
+    ...undelivered,
+    if (groups.history.isEmpty && undelivered.isEmpty)
+      _gap(
+        AppStateMessage.inline(
+          icon: LucideIcons.history,
+          title: l10n.mastermindFleetHistoryEmpty,
+        ),
+      ),
+    for (final MapEntry(key: day, value: entries) in days.entries) ...[
+      AppSectionHeader(title: day),
+      _gap(
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (final (index, entry) in entries.indexed) ...[
+                if (index > 0)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppTokens.of(context).colorScheme.border,
+                  ),
+                FleetHistoryRow(
+                  key: ValueKey('fleet-history-${entry.id}'),
+                  entry: entry,
+                  orchestrator: orchestrator,
+                  onTap: () => onOpen(entry),
+                  onUndo: () => onUndo(entry.id),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    ],
+  ];
+}
+
+/// The Needs you / FYI / History switch at the top of the Inbox. The two
+/// counts cover only open items.
 class FleetInboxLaneSwitch extends StatelessWidget {
   const FleetInboxLaneSwitch({
     required this.lane,
@@ -120,11 +155,19 @@ class FleetInboxLaneSwitch extends StatelessWidget {
         segments: [
           AppSegment(
             value: FleetInboxLane.needsYou,
-            label: l10n.mastermindFleetInboxNeedsYouTab(needsYou),
+            label: needsYou > 0
+                ? l10n.mastermindFleetInboxNeedsYouTab(needsYou)
+                : l10n.mastermindFleetNeedsYouTitle,
           ),
           AppSegment(
             value: FleetInboxLane.fyi,
-            label: l10n.mastermindFleetInboxFyiTab(fyi),
+            label: fyi > 0
+                ? l10n.mastermindFleetInboxFyiTab(fyi)
+                : l10n.mastermindFleetFyi,
+          ),
+          AppSegment(
+            value: FleetInboxLane.history,
+            label: l10n.mastermindFleetInboxHistoryTab,
           ),
         ],
         selected: lane,

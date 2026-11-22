@@ -19636,4 +19636,190 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSecretClose => 'Đóng';
+
+  @override
+  String get mastermindFleetInboxHistoryTab => 'Lịch sử';
+
+  @override
+  String get mastermindFleetHistoryEmpty => 'Chưa có câu trả lời nào trong ngày qua';
+
+  @override
+  String get mastermindFleetHistoryToday => 'Hôm nay';
+
+  @override
+  String get mastermindFleetHistoryYesterday => 'Hôm qua';
+
+  @override
+  String mastermindFleetHistoryByYou(String channel) {
+    return 'Bạn · $channel';
+  }
+
+  @override
+  String get mastermindFleetChannelMastermind => 'Mastermind';
+
+  @override
+  String get mastermindFleetChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get mastermindFleetChannelCli => 'CLI';
+
+  @override
+  String get mastermindFleetHistoryRetrying => 'Đang thử lại';
+
+  @override
+  String mastermindFleetHistoryDelivered(String name) {
+    return 'Đã gửi tới $name';
+  }
+
+  @override
+  String get mastermindFleetHistoryWithdrawn => 'Đã rút lại';
+
+  @override
+  String get mastermindFleetHistoryWithdrawnStatus => 'Đã đóng, không cần trả lời';
+
+  @override
+  String get mastermindFleetHistoryResolved => 'Đã xử lý';
+
+  @override
+  String get mastermindFleetHistoryResolvedStatus => 'Đã xử lý ngoài Hộp thư';
+
+  @override
+  String get mastermindFleetHistoryAnswer => 'Câu trả lời';
+
+  @override
+  String get mastermindFleetHistoryVia => 'Qua';
+
+  @override
+  String get mastermindFleetHistoryWhen => 'Lúc';
+
+  @override
+  String get mastermindFleetHistoryStatus => 'Trạng thái';
+
+  @override
+  String mastermindFleetHistoryTimeIct(String time) {
+    return '$time (giờ VN)';
+  }
+
+  @override
+  String mastermindFleetOptionsCount(int count) {
+    return '$count lựa chọn';
+  }
+
+  @override
+  String get mastermindFleetFreeTextHint => 'Trả lời bằng lời của bạn';
+
+  @override
+  String get mastermindFleetReviewHint => 'Duyệt hoặc yêu cầu chỉnh sửa';
+
+  @override
+  String get mastermindFleetLoginHint => 'Cần đăng nhập';
+
+  @override
+  String mastermindFleetNotDelivered(String answer) {
+    return 'Chưa gửi được: $answer';
+  }
+
+  @override
+  String mastermindFleetNotDeliveredYet(String answer) {
+    return 'Chưa gửi tới nơi: $answer';
+  }
+
+  @override
+  String get mastermindFleetRetry => 'Thử lại';
+
+  @override
+  String get mastermindFleetMockupBadge => 'Bản mẫu';
+
+  @override
+  String get mastermindFleetOpenDecision => 'Mở quyết định';
+
+  @override
+  String get mastermindFleetDecisionTitle => 'Quyết định';
+
+  @override
+  String mastermindFleetPosition(int index, int total) {
+    return '$index/$total';
+  }
+
+  @override
+  String get mastermindFleetPreviousDecision => 'Quyết định trước';
+
+  @override
+  String get mastermindFleetNextDecision => 'Quyết định tiếp theo';
+
+  @override
+  String mastermindFleetUpNext(String title) {
+    return 'Tiếp theo: $title';
+  }
+
+  @override
+  String get mastermindFleetYourOptions => 'Các lựa chọn';
+
+  @override
+  String get mastermindFleetChooseOption => 'Chọn phương án này';
+
+  @override
+  String mastermindFleetConfirmSend(String name) {
+    return 'Gửi cho $name';
+  }
+
+  @override
+  String get mastermindFleetCancel => 'Hủy';
+
+  @override
+  String mastermindFleetAnsweredToast(String answer) {
+    return 'Đã trả lời: $answer';
+  }
+
+  @override
+  String get mastermindFleetDecisionGone => 'Quyết định này đã đóng';
+
+  @override
+  String get mastermindFleetBackToInbox => 'Về Hộp thư';
+
+  @override
+  String get mastermindFleetAsked => 'Đã hỏi';
+
+  @override
+  String get mastermindFleetYourAnswer => 'Câu trả lời của bạn';
+
+  @override
+  String get mastermindFleetApproveOption => 'Duyệt';
+
+  @override
+  String mastermindFleetApproveDescription(String name) {
+    return 'Báo $name tiến hành như mô tả.';
+  }
+
+  @override
+  String mastermindFleetChangesDescription(String name) {
+    return 'Viết điều cần sửa. $name sẽ chỉnh lại và hỏi lại bạn.';
+  }
+
+  @override
+  String get mastermindFleetMockupPrivate => 'Bản mẫu · chỉ bạn xem được';
+
+  @override
+  String get mastermindFleetMockupOpenFullScreen => 'Mở toàn màn hình';
+
+  @override
+  String get mastermindFleetMockupClose => 'Đóng bản xem trước';
+
+  @override
+  String get mastermindFleetMockupReload => 'Tải lại';
+
+  @override
+  String get mastermindFleetMockupFooter => 'Tải bằng tài khoản của bạn từ liên kết riêng. Liên kết bên trong không mở ra ngoài.';
+
+  @override
+  String get mastermindFleetMockupLabel => 'Bản xem trước. Mở toàn màn hình.';
+
+  @override
+  String get mastermindFleetNotSentAnswered => 'Chưa gửi: đã có câu trả lời khác trong lúc bạn viết';
+
+  @override
+  String get mastermindFleetNotSentClosed => 'Chưa gửi: quyết định này đã đóng';
+
+  @override
+  String get mastermindFleetCopyText => 'Sao chép nội dung';
 }

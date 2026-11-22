@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/mastermind/fleet/view/detail/fleet_decision_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_page.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
@@ -72,6 +73,13 @@ final List<GoRoute> mastermindTabRoutes = [
     },
     // The live fleet decisions inbox; see FleetInboxPage.
     builder: (context, state) => const FleetInboxPage(),
+  ),
+  GoRoute(
+    path: Routes.mastermindFleetDecision,
+    builder: (context, state) => FleetDecisionPage(
+      key: ValueKey(state.uri.toString()),
+      decisionId: state.pathParameters['decisionId'] ?? '',
+    ),
   ),
   GoRoute(
     path: Routes.mastermindIrisDevices,

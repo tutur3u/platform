@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -220,7 +222,13 @@ class _NeedsYouPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final open = snapshot.needsYouAt((now ?? DateTime.now)().toUtc());
+    // An answer travelling from this device has already left Needs you.
+    final open = [
+      for (final decision in snapshot.needsYouAt(
+        (now ?? DateTime.now)().toUtc(),
+      ))
+        if (!(state.pending[decision.id]?.inFlight ?? false)) decision,
+    ];
     return AppPanel(
       title: l10n.mastermindFleetNeedsYouTitle,
       actionLabel: open.length > 3 ? l10n.mastermindFleetSeeAll : null,
@@ -249,7 +257,11 @@ class _NeedsYouPanel extends StatelessWidget {
                           ? AppTone.destructive
                           : AppTone.warning,
                     ),
-                    onTap: () => context.go(Routes.mastermindInbox),
+                    onTap: () => unawaited(
+                      context.push(
+                        Routes.mastermindFleetDecisionPath(decision.id),
+                      ),
+                    ),
                   ),
               ],
             ),

@@ -79,17 +79,19 @@ void main() {
     },
   );
 
-  testWidgets('an ask listed as resolved leaves Urgent for Answered', (
+  testWidgets('an ask listed as resolved leaves Needs you for History', (
     tester,
   ) async {
     source.json = fleetSampleJson(resolved: [whatsapp]);
     await pump(tester, FleetInboxPage(now: () => clock));
     expect(find.text('Urgent'), findsNothing);
-    expect(find.text('Ship now'), findsNothing);
-    await tester.tap(find.text('FYI 1'));
+    expect(find.text('Needs you 1'), findsOneWidget);
+    expect(find.text('Ship fleet sync to production?'), findsNothing);
+    await tester.tap(find.text('History'));
     await tester.pump();
-    expect(find.text('Answered on WhatsApp'), findsOneWidget);
-    expect(find.textContaining('closed here too'), findsOneWidget);
+    expect(find.text('Ship fleet sync to production?'), findsOneWidget);
+    expect(find.text('You · WhatsApp'), findsOneWidget);
+    expect(find.text('Delivered to Iris'), findsOneWidget);
   });
 
   testWidgets('a reply that missed a closed ask is not delivered, not stuck', (
@@ -103,15 +105,17 @@ void main() {
       text: 'Already resolved',
     );
     await tester.pump();
-    expect(find.textContaining('retrying in 5 s'), findsOneWidget);
+    // On its way: the card left Needs you and History says it retries.
+    expect(find.text('Needs you 1'), findsOneWidget);
+    await tester.tap(find.text('History'));
+    await tester.pump();
+    expect(find.text('Retrying'), findsOneWidget);
 
     // A publisher that lags keeps the ask in decisions[]; resolved[] wins.
     source.json = fleetSampleJson(resolved: [whatsapp]);
     await harness.runtime.fleet.refresh();
     await tester.pump();
-    expect(find.text('Urgent'), findsNothing);
-    await tester.tap(find.text('FYI 2'));
-    await tester.pump();
+    expect(find.text('Retrying'), findsNothing);
     expect(find.text('Not delivered'), findsOneWidget);
     expect(
       find.text('This request closed before your answer arrived'),

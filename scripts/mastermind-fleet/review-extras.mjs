@@ -25,6 +25,7 @@ const ASSET_PATH = '/api/v1/mastermind/fleet/review-assets/';
 /** Uploads per run, so a burst of new reviews cannot eat the tick budget. */
 const UPLOADS_PER_RUN = 3;
 /** Web keeps an asset 7 days; upload again well before it lapses. */
+const ASSET_TTL_MS = 7 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
 const REUPLOAD_MS = 3 * 24 * 60 * 60 * 1000;
 
 const { O_RDONLY, O_NOFOLLOW, O_NONBLOCK } = fs.constants;
@@ -190,21 +191,27 @@ export async function attachReviewAssets(
       if (!asset) continue;
       const last = Date.parse(uploaded[asset.assetId] ?? '');
       let at = Number.isNaN(last) ? undefined : uploaded[asset.assetId];
+      // A renewal that cannot run or fails keeps an upload Web still holds,
+      // so an open review never drops out of the snapshot (which the phone
+      // would read as closed) while its asset is valid.
+      const live = at !== undefined && now.getTime() - last < ASSET_TTL_MS;
       if (!at || now.getTime() - last >= REUPLOAD_MS) {
-        if (budget <= 0) continue;
-        budget--;
-        try {
-          await put(
-            `${ASSET_PATH}${asset.assetId}`,
-            JSON.stringify({
-              contentType: asset.contentType,
-              data: asset.bytes.toString('base64'),
-            })
-          );
-          at = now.toISOString();
-        } catch {
-          continue;
+        let renewed = false;
+        if (budget > 0) {
+          budget--;
+          try {
+            await put(
+              `${ASSET_PATH}${asset.assetId}`,
+              JSON.stringify({
+                contentType: asset.contentType,
+                data: asset.bytes.toString('base64'),
+              })
+            );
+            at = now.toISOString();
+            renewed = true;
+          } catch {}
         }
+        if (!renewed && !live) continue;
       }
       kept[asset.assetId] = at;
       decision.review[field] = {

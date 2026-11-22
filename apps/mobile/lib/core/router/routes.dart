@@ -73,6 +73,19 @@ abstract final class Routes {
   static const mastermindInboxDecision =
       '/mastermind/inbox/decision/:decisionId';
 
+  /// One live fleet decision in full: its description, options and answer.
+  static const mastermindFleetDecision = '/mastermind/inbox/ask/:decisionId';
+
+  /// Fleet decision ids are opaque slugs from the snapshot; route parameters
+  /// only, never part of an external deep link.
+  static String mastermindFleetDecisionPath(String decisionId) =>
+      '$mastermindInbox/ask/${Uri.encodeComponent(decisionId)}';
+
+  /// A fleet decision is pushed over the Inbox, so Back pops to it with its
+  /// lane intact.
+  static bool isMastermindFleetDecisionLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindInbox/ask/');
+
   /// An item detail is pushed over the Inbox or Home, so Back pops to whichever
   /// opened it rather than falling back to the Inbox.
   static bool isMastermindInboxItemLocation(String location) =>

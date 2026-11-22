@@ -109,6 +109,25 @@ class FleetCubit extends Cubit<FleetViewState> {
   Future<void>? _restored;
   int _generation = 0;
 
+  /// Decisions seen this session, newest last, so History can still show a
+  /// decision in full after it leaves the snapshot.
+  final _seen = <String, FleetDecision>{};
+  static const _seenLimit = 60;
+
+  /// [decisionId] as this session last saw it, open or not.
+  FleetDecision? seenDecision(String decisionId) => _seen[decisionId];
+
+  void _remember(FleetSnapshot snapshot) {
+    for (final decision in snapshot.decisions) {
+      _seen
+        ..remove(decision.id)
+        ..[decision.id] = decision;
+    }
+    while (_seen.length > _seenLimit) {
+      _seen.remove(_seen.keys.first);
+    }
+  }
+
   DateTime _now() => _clock().toUtc();
 
   void attach() {
@@ -172,6 +191,7 @@ class FleetCubit extends Cubit<FleetViewState> {
       final snapshot = await _source.fetch();
       if (isClosed || generation != _generation) return;
       final fetchedAt = _now();
+      _remember(snapshot);
       emit(
         state.copyWith(
           status: FleetLoadStatus.ready,
@@ -359,9 +379,20 @@ class FleetCubit extends Cubit<FleetViewState> {
     _setPending({...state.pending}..remove(decisionId));
   }
 
-  /// Sends a retrying answer now instead of at its scheduled time.
+  /// Sends a retrying answer now instead of at its scheduled time, or a
+  /// refused one again. Either way it reuses the answer's idempotency key,
+  /// so Web records it at most once.
   Future<void> retry(String decisionId) async {
-    if (state.pending[decisionId]?.status != FleetSendStatus.retrying) return;
+    final entry = state.pending[decisionId];
+    if (entry == null) return;
+    if (entry.status == FleetSendStatus.failed) {
+      _put(
+        decisionId,
+        entry.copyWith(status: FleetSendStatus.retrying, clearReason: true),
+      );
+    } else if (entry.status != FleetSendStatus.retrying) {
+      return;
+    }
     await _attempt(decisionId);
   }
 
@@ -378,6 +409,7 @@ class FleetCubit extends Cubit<FleetViewState> {
   void clear() {
     _generation++;
     _restored = null;
+    _seen.clear();
     _clockRead = null;
     _cancelAllTimers();
     // Queued behind any write still in flight, so nothing recreates the

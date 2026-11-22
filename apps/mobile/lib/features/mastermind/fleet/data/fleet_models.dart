@@ -169,18 +169,25 @@ class FleetMachine {
 enum FleetLaneCoverage { complete, partial, unavailable }
 
 class FleetOption {
-  const FleetOption({required this.id, required this.label});
+  const FleetOption({required this.id, required this.label, this.description});
 
   static FleetOption? parse(Map<String, dynamic> json) {
     final id = _string(json['id']);
     final label = _string(json['label']);
     return id == null || label == null
         ? null
-        : FleetOption(id: id, label: label);
+        : FleetOption(
+            id: id,
+            label: label,
+            description: _string(json['description']),
+          );
   }
 
   final String id;
   final String label;
+
+  /// What choosing this option means and what happens next; optional.
+  final String? description;
 }
 
 class FleetDecision {
