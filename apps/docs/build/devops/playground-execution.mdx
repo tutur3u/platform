@@ -105,6 +105,16 @@ cleanup stays unconfirmed, the slot remains occupied for operator
 reconciliation. Clients stop polling at the run deadline. Terminal jobs clear their deadline work. Result polling
 uses only the journal. A new admission prunes up to 64 expired receipts.
 
+The Node tests in `apps/playground-execution/src` pin these counts.
+`admission.test.mjs` covers the ledger: statements per reservation, restart
+deduplication, daily and rolling limits, the pause fence and the cleanup
+budget. `slot.test.mjs` covers the slot: the normal path's fetch, start,
+command and storage writes, no replay after a restart in the started phase,
+an unconfirmed teardown that keeps the slot occupied, and Stop or pause before
+the guest starts. `container-run.test.mjs` covers the guest: egress disabled,
+output bounds and confirmed destruction. Run them with
+`bun run --cwd apps/playground-execution test`.
+
 ## Usage and cost
 
 The initial instance size is 0.5 vCPU, 4 GiB of memory, and an 8 GB disk.
