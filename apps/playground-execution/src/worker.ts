@@ -40,7 +40,7 @@ export default {
       path === '/control'
         ? env.PLAYGROUND_OPERATOR_SECRET
         : env.PLAYGROUND_INGRESS_SECRET;
-    if (!(await authenticated(request, secret))) {
+    if (!authenticated(request, secret)) {
       return json({ error: 'Unauthorized' }, 401);
     }
     let body: unknown;

@@ -297,3 +297,41 @@ test('expired feedback stays terminal while resource reconciliation continues', 
   assert.equal(restarted.read(input(1)).output, '');
   assert.equal(restarted.active().length, 0);
 });
+
+test('a confirmed checkpoint response finishes a run after lost settlement calls', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.claimWriteback(run, 'claim-1', 2), true);
+  const restarted = store.create();
+  assert.equal(
+    restarted.finish(run, 'succeeded', 3, {
+      exitCode: 0,
+      output: 'hello',
+      savedRevision: 2,
+    }),
+    'succeeded'
+  );
+  const receipt = restarted.read(input(1));
+  assert.equal(receipt.result_revision, 2);
+  assert.equal(receipt.output, 'hello');
+  assert.equal(receipt.writeback_state, 2);
+  assert.equal(restarted.active().length, 0);
+});
+
+test('settlement preserves an acknowledged revision after the export response is lost', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.claimWriteback(run, 'claim-1', 2), true);
+  assert.equal(ledger.settleWriteback(run, 'unrelated', 3, 9), false);
+  assert.equal(ledger.settleWriteback(run, 'claim-1', 4, 2), true);
+  const restarted = store.create();
+  assert.equal(restarted.finish(run, 'failed', run.deadline), 'failed');
+  assert.equal(restarted.read(input(1)).result_revision, 2);
+  assert.equal(restarted.active().length, 0);
+});

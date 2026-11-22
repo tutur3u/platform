@@ -390,21 +390,30 @@ export class PlaygroundAdmission {
     return Boolean(claim);
   }
 
-  settleWriteback(run: RunRow, claimId: string, now: number) {
+  settleWriteback(
+    run: RunRow,
+    claimId: string,
+    now: number,
+    savedRevision?: number
+  ) {
     const [settled] = this.storage.query<{ run_id: string }>(
       `UPDATE playground_runs
        SET writeback_state = 2,
            writeback_claim_id = ?,
+           result_revision = COALESCE(?, result_revision),
            cleanup_at = COALESCE(cleanup_at, ?),
            cleanup_attempts = CASE WHEN cleanup_at IS NULL THEN 2 ELSE cleanup_attempts END
        WHERE run_id = ? AND generation = ?
-         AND (writeback_state = 0 OR (writeback_state = 1 AND writeback_claim_id = ?))
+         AND ((writeback_state = 0 AND ? IS NULL)
+              OR (writeback_state = 1 AND writeback_claim_id = ?))
          AND ${ACTIVE}
        RETURNING run_id`,
       claimId,
+      savedRevision ?? null,
       now,
       run.run_id,
       run.generation,
+      savedRevision ?? null,
       claimId
     );
     return Boolean(settled);
@@ -460,12 +469,20 @@ export class PlaygroundAdmission {
     return this.storage.transaction(() => {
       const [run] = this.storage.query<RunRow>(
         `SELECT * FROM playground_runs WHERE run_id = ? AND generation = ?
-           AND slot = ? AND ${ACTIVE} AND writeback_state <> 1`,
+           AND slot = ? AND ${ACTIVE}`,
         input.run_id,
         input.generation,
         input.slot
       );
       if (!run) return undefined;
+      // An authenticated slot only reports a revision from the successful
+      // checkpoint response. That receipt also confirms the one allowed claim.
+      const confirmedRevision =
+        run.writeback_state === 1 && result?.savedRevision !== undefined
+          ? result.savedRevision
+          : run.result_revision;
+      if (run.writeback_state === 1 && confirmedRevision === null)
+        return undefined;
       const gate = this.gate();
       const expired = Boolean(run.client_expired) || run.deadline <= now;
       const cancelled =
@@ -478,13 +495,14 @@ export class PlaygroundAdmission {
       this.storage.query(
         `UPDATE playground_runs
          SET state = ?, finished_at = ?, cleanup_at = NULL, client_expired = ?,
-             exit_code = ?, result_revision = ?, output = ?
+             exit_code = ?, result_revision = ?, output = ?,
+             writeback_state = CASE WHEN writeback_state = 1 THEN 2 ELSE writeback_state END
          WHERE run_id = ? AND generation = ? AND slot = ?`,
         finalState,
         now,
         Number(expired),
         receipt?.exitCode ?? null,
-        receipt?.savedRevision ?? null,
+        confirmedRevision,
         receipt?.output ?? '',
         input.run_id,
         input.generation,

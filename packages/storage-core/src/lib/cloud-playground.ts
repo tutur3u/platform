@@ -95,7 +95,8 @@ async function callCloudPlayground(
     | '/stop'
     | '/result'
     | `/writeback/${'verify' | 'claim' | 'settle'}`,
-  payload: unknown
+  payload: unknown,
+  timeoutMs = 8000
 ) {
   const origin = process.env.PLAYGROUND_EXECUTION_ORIGIN;
   const secret = process.env.PLAYGROUND_INGRESS_SECRET;
@@ -114,7 +115,7 @@ async function callCloudPlayground(
       body: JSON.stringify(payload),
       cache: 'no-store',
       redirect: 'error',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
     throw new AccountServiceError(503);
@@ -244,16 +245,18 @@ export async function cloudPlaygroundWriteback(
   scope: Scope,
   runId: string,
   revision: number,
-  claimId?: string
+  claimId?: string,
+  savedRevision?: number
 ) {
-  const receipt = z.object({ accepted: z.literal(true) }).safeParse(
-    await callCloudPlayground(`/writeback/${action}`, {
-      ...scope,
-      runId,
-      revision,
-      claimId,
-    })
-  );
+  const receipt = z
+    .object({ accepted: z.literal(true) })
+    .safeParse(
+      await callCloudPlayground(
+        `/writeback/${action}`,
+        { ...scope, runId, revision, claimId, savedRevision },
+        action === 'settle' ? 600 : 2000
+      )
+    );
   if (!receipt.success) {
     throw new AccountServiceError(
       409,

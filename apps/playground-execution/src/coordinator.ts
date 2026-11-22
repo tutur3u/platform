@@ -164,11 +164,24 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
           this.admission.claimWriteback(run, lookup.claimId, now)
         );
       if (!lookup.claimId) return false;
-      const settled = this.admission.settleWriteback(run, lookup.claimId, now);
+      if (
+        lookup.savedRevision !== undefined &&
+        lookup.savedRevision < lookup.revision
+      )
+        return false;
+      const settled = this.admission.settleWriteback(
+        run,
+        lookup.claimId,
+        now,
+        lookup.savedRevision
+      );
       if (settled) await this.schedule();
       return (
         settled ||
-        (run.writeback_state === 2 && run.writeback_claim_id === lookup.claimId)
+        (run.writeback_state === 2 &&
+          run.writeback_claim_id === lookup.claimId &&
+          (lookup.savedRevision === undefined ||
+            run.result_revision === lookup.savedRevision))
       );
     });
   }

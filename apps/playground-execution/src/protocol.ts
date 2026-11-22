@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { cloudPlaygroundRunId } from '@tuturuuu/utils/playground-cloud-run-id';
 import { PlaygroundJob } from '@tuturuuu/utils/playground-schema';
 import { z } from 'zod';
@@ -22,6 +23,7 @@ export const RunLookup = RunIdentity.extend({ runId: z.uuid() });
 export const RunWriteback = RunLookup.extend({
   revision: z.number().int().nonnegative(),
   claimId: z.uuid().optional(),
+  savedRevision: z.number().int().nonnegative().optional(),
 });
 export const GuestJob = PlaygroundJob.refine((job) => job.operation === 'run');
 
@@ -46,8 +48,8 @@ export function hex(input: Uint8Array) {
   );
 }
 
-async function digest(text: string) {
-  return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes(text)));
+function digest(text: string) {
+  return createHash('sha256').update(text).digest();
 }
 
 export function projectScope(identity: RunIdentity) {
@@ -66,20 +68,13 @@ export async function identifyRun(
   };
 }
 
-export async function authenticated(
-  request: Request,
-  secret: string | undefined
-) {
+export function authenticated(request: Request, secret: string | undefined) {
   const bearer = request.headers.get('Authorization');
   if (!secret || secret.length < 32 || !bearer?.startsWith('Bearer '))
     return false;
   const presented = bearer.slice(7);
   if (!presented || presented.length > 256) return false;
-  const [expectedHash, presentedHash] = await Promise.all([
-    digest(secret),
-    digest(presented),
-  ]);
-  return crypto.subtle.timingSafeEqual(expectedHash, presentedHash);
+  return timingSafeEqual(digest(secret), digest(presented));
 }
 
 export async function readBoundedJson(

@@ -54,6 +54,7 @@ export default defineConfig({
     name: worker,
     entrypoint: 'src/worker.ts',
     compatibilityDate: '2026-11-22',
+    compatibilityFlags: ['nodejs_compat'],
     workersDev: false,
     previewUrls: false,
     ...(ingress ? { domains: [ingress] } : {}),
@@ -88,7 +89,7 @@ export default defineConfig({
       PlaygroundCoordinator: exports.durableObject({ storage: 'sqlite' }),
       PlaygroundSlot: exports.durableObject({
         storage: 'sqlite',
-        container: slot.name,
+        container: slot,
       }),
     },
   },
