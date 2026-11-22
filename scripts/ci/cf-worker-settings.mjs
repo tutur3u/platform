@@ -381,7 +381,7 @@ function verifyBindings(settings, identity) {
 function verifySettings(
   raw,
   identity,
-  { bindings = false, dashboardAdmission } = {}
+  { bindings = false, dashboardAdmission, transitionFields = [] } = {}
 ) {
   verifyDashboardAdmission(raw, identity, dashboardAdmission, verifyBindings);
   const { settings, subdomain } = raw;
@@ -452,6 +452,8 @@ function verifySettings(
   );
   const { annotations: _annotations, ...stableSettings } = settings;
   const { bindings: _bindings, ...unboundSettings } = stableSettings;
+  if (transitionFields.includes('compatibilityFlags'))
+    delete unboundSettings.compatibility_flags;
   return {
     accountId: identity.accountId,
     worker: identity.name,
@@ -476,7 +478,6 @@ export async function captureSettings(options) {
   });
 }
 
-/** Snapshot keys a reviewed transition may change; everything else must hold. */
 const TRANSITION_SNAPSHOT_KEYS = [
   'settingsHash',
   'bindings',
@@ -506,6 +507,7 @@ export function compareSettings(before, after, mutable = []) {
 
 /** Identity fields a reviewed settings transition may change. */
 const TRANSITION_FIELDS = new Set([
+  'compatibilityFlags',
   'crons',
   'vars',
   'durableObjects',
@@ -611,6 +613,7 @@ function transitionSnapshot(raw, plan, stage, identity) {
     ...verifySettings(raw, identity, {
       bindings: true,
       dashboardAdmission: plan.dashboardAdmission,
+      transitionFields: plan.transition.fields,
     }),
     stage,
     transition: plan.transition.decision,

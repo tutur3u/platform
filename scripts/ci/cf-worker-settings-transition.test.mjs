@@ -6,7 +6,12 @@ import {
   compareTransition,
   settingsPlan,
 } from './cf-worker-settings.mjs';
-import { BASELINE, LIVE } from './cf-worker-settings-transition.fixture.mjs';
+import {
+  BASELINE,
+  LIVE,
+  bindingsFor,
+  liveWorker,
+} from './cf-worker-settings-transition.fixture.mjs';
 
 const CRON_CONTROL = {
   identity: {
@@ -22,24 +27,6 @@ const CRON_CONTROL = {
 const plan = settingsPlan(CRON_CONTROL);
 const accountId = CRON_CONTROL.identity.accountId;
 
-/** Cloudflare settings bindings for a recorded identity. */
-function bindingsFor(identity) {
-  return [
-    ...Object.entries(identity.vars).map(([name, text]) => ({
-      name,
-      type: 'plain_text',
-      text,
-    })),
-    ...identity.secrets.map((name) => ({ name, type: 'secret_text' })),
-    ...Object.entries(identity.durableObjects).map(([name, { className }]) => ({
-      name,
-      type: 'durable_object_namespace',
-      class_name: className,
-      namespace_id: `namespace-${className}`,
-    })),
-  ];
-}
-
 /** Target bindings with extra attributes on the declared WEB_ORIGIN var. */
 function withWebOrigin(attributes) {
   return bindingsFor(plan.target).map((binding) =>
@@ -47,60 +34,6 @@ function withWebOrigin(attributes) {
   );
 }
 
-/** Fake read-only API whose live Worker matches `identity` (plus overrides). */
-function liveWorker(identity, { settings = {}, ...overrides } = {}) {
-  const responses = {
-    service: {
-      default_environment: { script: { last_deployed_from: 'cf' } },
-    },
-    settings: {
-      compatibility_date: identity.compatibilityDate,
-      compatibility_flags: identity.compatibilityFlags,
-      usage_model: 'standard',
-      observability: {
-        enabled: true,
-        head_sampling_rate: 0.05,
-        ...(identity.observability.traces && {
-          traces: { enabled: false, head_sampling_rate: 0.05, persist: true },
-        }),
-      },
-      bindings: bindingsFor(identity),
-      ...settings,
-    },
-    subdomain: {
-      enabled: identity.workersDev,
-      previews_enabled: identity.previewUrls,
-    },
-    schedules: { schedules: identity.crons.map((cron) => ({ cron })) },
-    secrets: identity.secrets.map((name) => ({ name })),
-    domains: [],
-    zones: [],
-    deployments: {
-      deployments: [
-        { id: 'live', versions: [{ version_id: 'v', percentage: 100 }] },
-      ],
-    },
-    ...overrides,
-  };
-  const calls = [];
-  return {
-    calls,
-    fetchImpl: async (url, init) => {
-      assert.equal(init.method, 'GET');
-      calls.push(url);
-      const key = url.includes('/workers/services/')
-        ? 'service'
-        : url.includes('/zones?')
-          ? 'zones'
-          : url.split('/').at(-1);
-      assert.ok(Object.hasOwn(responses, key), `unexpected endpoint ${url}`);
-      return {
-        ok: true,
-        json: async () => ({ success: true, result: responses[key] }),
-      };
-    },
-  };
-}
 const credentials = (api) => ({
   accountId,
   token: 'disposable-fixture',
@@ -718,5 +651,38 @@ test('unrecorded dashboard deployments fail even with matching settings', async 
       ...credentials(dashboardWorker()),
     }),
     /no reviewed admission/
+  );
+});
+
+test('a reviewed compatibility flag transition preserves unrelated settings', async () => {
+  const compatibilityPlan = settingsPlan({
+    previousIdentity: LIVE,
+    identity: { ...LIVE, compatibilityFlags: ['global_fetch_strictly_public'] },
+    transition: {
+      decision: 'Route apex subrequests through the public Gateway',
+      fields: ['compatibilityFlags'],
+    },
+  });
+  const before = await captureBefore({
+    plan: compatibilityPlan,
+    ...credentials(liveWorker(LIVE)),
+  });
+  const target = compatibilityPlan.target;
+  const after = await captureAfter({
+    plan: compatibilityPlan,
+    ...credentials(liveWorker(target)),
+  });
+  compareTransition(compatibilityPlan, before, after);
+
+  const changed = await captureAfter({
+    plan: compatibilityPlan,
+    ...credentials(
+      liveWorker(target, { settings: { usage_model: 'bundled' } })
+    ),
+  });
+  assert.throws(() => compareTransition(compatibilityPlan, before, changed));
+  await assert.rejects(
+    captureAfter({ plan: compatibilityPlan, ...credentials(liveWorker(LIVE)) }),
+    /compatibility flags differ/
   );
 });

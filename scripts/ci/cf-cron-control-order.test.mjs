@@ -20,7 +20,7 @@ const LIVE_ORDER = [
   '43 19 * * *',
 ];
 // MEET-ATTENDANCE-RETENTION-1 added one daily trigger (01:17 GMT+7); it is
-// live, and WEB-CRON-HANDOVER-1 changes only vars.
+// live, and the current transition does not change the schedules.
 const TARGET_ORDER = [...LIVE_ORDER, '17 18 * * *'];
 const app = new URL('../../apps/cron-control/', import.meta.url);
 const cfPackage = pathToFileURL(
@@ -74,7 +74,11 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assertCronSet(baseline.previousIdentity.crons, TARGET_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['vars']);
+  assert.deepEqual(baseline.transition.fields, ['vars', 'compatibilityFlags']);
+  assert.deepEqual(
+    emitted.compatibility_flags,
+    baseline.identity.compatibilityFlags
+  );
   assert.equal(validated.worker.env.CRON_LEDGER.worker, validated.worker.name);
   assert.deepEqual(emitted.durable_objects.bindings, [
     { name: 'CRON_LEDGER', class_name: 'CronLedger' },
@@ -91,11 +95,7 @@ test('same-Worker omission preserves cross-Worker Durable Object targets', () =>
   );
 });
 
-test('installed cf bE reports EMPTY drift against the recorded dbe3ed29 live fields', async () => {
-  assert.equal(
-    baseline.dashboardAdmission.versionId,
-    'dbe3ed29-0d78-47fe-908e-0095c689f68d'
-  );
+test('installed cf reports no drift against the reviewed target settings', async () => {
   const { i: resolveBuildOutputWorkerConfig } = await import(
     new URL('dist/build-BJHRK6qE.mjs', cfPackage).href
   );
@@ -134,6 +134,7 @@ test('installed cf bE reports EMPTY drift against the recorded dbe3ed29 live fie
   const live = {
     ...structuredClone(remote),
     vars: baseline.previousIdentity.vars,
+    compatibility_flags: baseline.previousIdentity.compatibilityFlags,
   };
   assert.notEqual(diff(live, local).diff, null);
   const unpatched = structuredClone(local);

@@ -40,6 +40,9 @@ before(async () => {
     secrets: {
       CRON_CONTROL_DELIVERY_TOKEN: randomUUID() + randomUUID(),
       CRON_CONTROL_OPERATOR_TOKEN: operatorToken,
+      CRON_SECRET_INFRASTRUCTURE: randomUUID() + randomUUID(),
+      CRON_SECRET_INVENTORY: randomUUID() + randomUUID(),
+      CRON_SECRET_PAY: randomUUID() + randomUUID(),
       SUPABASE_SECRET_KEY: 'isolated-cron-runtime-fixture',
       SUPABASE_URL: 'https://unreachable.example.invalid',
     },
@@ -49,7 +52,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every schedule and enables the two retention jobs, five web jobs, exchange rates and the Mastermind ship collector, AI retention in dry-run', async () => {
+test('source config keeps every schedule and enables the two retention jobs, five web jobs, exchange rates, the Mastermind ship collector, checkout expiry and Calendar sync, AI retention in dry-run', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -60,7 +63,7 @@ test('source config keeps every schedule and enables the two retention jobs, fiv
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
     value:
-      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship',
+      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync',
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WEB_MODE, {
     type: 'text',
@@ -73,7 +76,7 @@ test('source config keeps every schedule and enables the two retention jobs, fiv
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
     type: 'text',
-    value: '',
+    value: 'inventory-checkout-expiry',
   });
   assert.equal(config.worker.env.CRON_CONTROL_OPERATOR_TOKEN.type, 'secret');
   assert.equal(config.worker.env.CRON_LEDGER.type, 'durable-object');

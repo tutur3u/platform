@@ -4,7 +4,7 @@
     "name": "tuturuuu-cron-control",
     "accountId": "e8912e2867beecc673d171907bf09649",
     "compatibilityDate": "2026-09-28",
-    "compatibilityFlags": [],
+    "compatibilityFlags": ["global_fetch_strictly_public"],
     "workersDev": false,
     "previewUrls": false,
     "observability": {
@@ -38,9 +38,9 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync",
       "CRON_CONTROL_WEB_MODE": "active",
-      "CRON_CONTROL_WORKER_PROCESSORS": "",
+      "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
       "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
       "PAY_ORIGIN": "https://pay.tuturuuu.com",
@@ -51,6 +51,9 @@
     "secrets": [
       "CRON_CONTROL_DELIVERY_TOKEN",
       "CRON_CONTROL_OPERATOR_TOKEN",
+      "CRON_SECRET_INFRASTRUCTURE",
+      "CRON_SECRET_INVENTORY",
+      "CRON_SECRET_PAY",
       "SUPABASE_SECRET_KEY",
       "SUPABASE_URL"
     ],
@@ -102,7 +105,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
@@ -115,6 +118,9 @@
     "secrets": [
       "CRON_CONTROL_DELIVERY_TOKEN",
       "CRON_CONTROL_OPERATOR_TOKEN",
+      "CRON_SECRET_INFRASTRUCTURE",
+      "CRON_SECRET_INVENTORY",
+      "CRON_SECRET_PAY",
       "SUPABASE_SECRET_KEY",
       "SUPABASE_URL"
     ],
@@ -129,12 +135,8 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "MASTERMIND-SHIP-CRON-CONTROL-1: enable mastermind-ship (every second minute of the existing trigger, bounded requests, durable stop) so Cron Control collects the Mastermind Ship snapshot; the previous stage is the live FX-RATES-CRON-CONTROL-1 identity",
-    "fields": ["vars"]
+    "decision": "CHG-20261122-1110-CRON-SECRETS: enable bounded checkout expiry and Calendar provider sync through Cron Control while preserving rotated secrets. Route apex fetches through public Gateway routing.",
+    "fields": ["vars", "compatibilityFlags"]
   },
-  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication.",
-  "dashboardAdmission": {
-    "versionId": "dbe3ed29-0d78-47fe-908e-0095c689f68d",
-    "decision": "CRON-DASH-ADMIT-1: admit only this unchanged live version and exact fixture settings; strict CLI publication restores the CLI deployment source. Disabled traces retain the live 0.05 sampling rate; absent WEB_MODE keeps web jobs off."
-  }
+  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
 }

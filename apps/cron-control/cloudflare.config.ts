@@ -10,6 +10,7 @@ export default defineConfig({
   worker: {
     name: 'tuturuuu-cron-control',
     compatibilityDate: '2026-09-28',
+    compatibilityFlags: ['global_fetch_strictly_public'],
     entrypoint: 'src/worker.ts',
     workersDev: false,
     previewUrls: false,
@@ -44,7 +45,7 @@ export default defineConfig({
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship'
+        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync'
       ),
       // Cron Control is web's only scheduler (apps/web/vercel.json has no
       // crons). 'active' dispatches the five web-* jobs; 'off' stops only
@@ -53,7 +54,9 @@ export default defineConfig({
       // Counts only until a reviewed change sets 'delete'; 'off' is the kill
       // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
-      CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
+      CRON_CONTROL_WORKER_PROCESSORS: bindings.text(
+        'inventory-checkout-expiry'
+      ),
       TASKS_RECURRENCE_MODE: bindings.text('off'),
       // Read by the observability-cloudflare collector with the optional
       // CLOUDFLARE_ANALYTICS_API_TOKEN secret (Account Analytics Read).
@@ -62,6 +65,9 @@ export default defineConfig({
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),
       CRON_CONTROL_OPERATOR_TOKEN: bindings.secret(),
+      CRON_SECRET_INFRASTRUCTURE: bindings.secret(),
+      CRON_SECRET_INVENTORY: bindings.secret(),
+      CRON_SECRET_PAY: bindings.secret(),
       CRON_LEDGER: bindings.durableObject({
         worker: 'tuturuuu-cron-control',
         exportName: 'CronLedger',
