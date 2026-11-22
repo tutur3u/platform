@@ -263,3 +263,21 @@ e34bb0320437291226babacb4ec5170a5a9e3c4a:scripts/ci/release-vercel-queue.test.mj
 6ff56ad4435ad27099ffa129dab575c7bff6af4c:scripts/mastermind-fleet/secret-fixture.json:generic-api-key:48
 6ff56ad4435ad27099ffa129dab575c7bff6af4c:scripts/mastermind-fleet/secret-fixture.json:generic-api-key:52
 6ff56ad4435ad27099ffa129dab575c7bff6af4c:apps/mobile/test/features/mastermind/fleet/fleet_secret_flow_test.dart:generic-api-key:107
+# The same all-0x22 fixture owner public key, repeated as a second signer key in two mobile
+# secret-entry tests; the tests now read it from the fixture. Exact fingerprints only.
+a6cb1f22be3debb725f49aae9a42e3d939ca7655:apps/mobile/test/features/mastermind/fleet/fleet_secret_dispatch_guard_test.dart:generic-api-key:74
+a6cb1f22be3debb725f49aae9a42e3d939ca7655:apps/mobile/test/features/mastermind/fleet/fleet_secret_repair_test.dart:generic-api-key:128
+# Mastermind test data: deterministic public keys, an idempotency UUID, a synthetic HMAC key, and Cloudflare Access negative-test inputs
+ef36a330b0f458ba3bd61a7f329a910e9c2dcff4:apps/mastermind/src/projects/model.test.ts:generic-api-key:226
+ef36a330b0f458ba3bd61a7f329a910e9c2dcff4:apps/mastermind/src/projects/projects-page.test.tsx:generic-api-key:271
+631edf3ca8287328e108a1167ba13b190a0bf94f:apps/mastermind/src/projects/model.test.ts:generic-api-key:244
+bb0a750f3a63b925d40407227d149d031ad88fd7:apps/web/src/app/api/v1/mastermind/fleet/fleet-review-routes.test.ts:generic-api-key:13
+80418170c76220fdc3cade3e9c2cc87e00f95dc2:apps/web/src/app/api/v1/mastermind/fleet/fleet-bridge-live.test.ts:generic-api-key:11
+80418170c76220fdc3cade3e9c2cc87e00f95dc2:scripts/mastermind-fleet/bridge-test-fixture.mjs:generic-api-key:23
+80418170c76220fdc3cade3e9c2cc87e00f95dc2:apps/web/src/app/api/v1/mastermind/fleet/fleet-bridge.test.ts:generic-api-key:30
+6c92da2aaea25c88cb015531c1cdb2296cb7afb2:apps/mastermind/cloudflare/fleet-admission.acceptance-cases.mjs:generic-api-key:248
+6c92da2aaea25c88cb015531c1cdb2296cb7afb2:apps/mastermind/src/native/fleet-admission.test.ts:generic-api-key:198
+6c92da2aaea25c88cb015531c1cdb2296cb7afb2:apps/mastermind/cloudflare/native-built-worker.acceptance.mjs:generic-api-key:243
+6c92da2aaea25c88cb015531c1cdb2296cb7afb2:apps/mastermind/src/native/auth.test.ts:generic-api-key:111
+bc96e939a32a89f8ae5fecd76fb279a1bfa80289:scripts/mastermind-fleet/alerts-pull.test.mjs:generic-api-key:14
+bc96e939a32a89f8ae5fecd76fb279a1bfa80289:apps/web/src/app/api/v1/mastermind/fleet/fleet-alerts.test.ts:generic-api-key:16

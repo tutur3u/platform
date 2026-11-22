@@ -125,7 +125,8 @@ void main() {
   var current = now;
   final signerKey =
       (secretFixture['request'] as Map<String, dynamic>)['signerKey'] as String;
-  const oldKey = 'oJql9HpnWYAv-VX43C0qFKXJnSO-l_hkEn_5ODRVpPA';
+  // A valid Ed25519 key other than the machine's: the fixture owner key.
+  final oldKey = secretFixture['ownerKey'] as String;
   const firstId = 'pair-0123456789abcdef01234567';
   const repairId = 'pair-fedcba9876543210fedcba98';
   const goodCode = '008j 4ct4 ank7 f24s';
