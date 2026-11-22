@@ -139,8 +139,12 @@ export function ProgrammingPanel({
       } catch (error) {
         // Only a playground the service says is gone or no longer matches is
         // replaced. A passing failure keeps the mapping so a retry reopens it.
-        const status =
-          error instanceof InternalApiError ? error.status : undefined;
+        if (
+          !(error instanceof Error && 'status' in error) ||
+          !(error instanceof InternalApiError)
+        )
+          throw error;
+        const { status } = error;
         if (status !== 400 && status !== 404 && status !== 409) throw error;
         forgetRoomPlayground(meetingId, next);
       }
