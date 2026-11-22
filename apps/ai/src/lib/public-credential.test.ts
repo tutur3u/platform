@@ -104,6 +104,7 @@ describe('public AI credential policy', () => {
         scopes: ['ai:use', 'workspace:session'],
         sub: '11111111-1111-4111-8111-111111111111',
         target_app: 'cybershield35',
+        workspace_id: WORKSPACE_ID,
       },
       ok: true,
     });
@@ -153,6 +154,45 @@ describe('public AI credential policy', () => {
     ).rejects.toMatchObject({ status: 403 });
   });
 
+  it.each([
+    ['bound to another workspace', '77777777-7777-4777-8777-777777777777'],
+    ['bound to no workspace', undefined],
+  ])('rejects an external app bearer %s', async (_case, workspace_id) => {
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: {
+        scopes: ['ai:use', 'workspace:session'],
+        sub: '11111111-1111-4111-8111-111111111111',
+        target_app: 'cybershield35',
+        workspace_id,
+      },
+      ok: true,
+    });
+
+    await expect(
+      authenticatePublicAiRequest(externalRequest())
+    ).rejects.toMatchObject({
+      message: 'Token is not valid for this workspace',
+      status: 403,
+    });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('accepts the bound workspace in any letter case', async () => {
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: {
+        scopes: ['ai:use', 'workspace:session'],
+        sub: '11111111-1111-4111-8111-111111111111',
+        target_app: 'cybershield35',
+        workspace_id: WORKSPACE_ID.toUpperCase(),
+      },
+      ok: true,
+    });
+
+    await expect(
+      authenticatePublicAiRequest(externalRequest())
+    ).resolves.toMatchObject({ workspaceId: WORKSPACE_ID });
+  });
+
   it('rejects an external app bearer once the app is disabled', async () => {
     mocks.createAdminClient.mockResolvedValue(
       registryClient({ enabled: 'false' })
@@ -175,6 +215,7 @@ describe('public AI credential policy', () => {
       scopes: ['ai:use', 'workspace:session'],
       sub: '11111111-1111-4111-8111-111111111111',
       target_app: 'cybershield35',
+      workspace_id: WORKSPACE_ID,
     };
     mocks.verifyAppSessionRequest.mockReturnValue({ claims, ok: true });
 

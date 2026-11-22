@@ -188,6 +188,12 @@ async function authenticateExternalAppRequest(
       'The external-app token is not authorized for a workspace session.'
     );
   }
+  // The exchange binds every workspace-session token to the workspace it
+  // authorized; the header must name that workspace (ids compared lowercased,
+  // as in apps/web), and a token bound to none is refused.
+  if (claims.workspace_id?.trim().toLowerCase() !== workspaceId) {
+    throw invalidExternalCredential('Token is not valid for this workspace');
+  }
 
   const appId = claims.target_app;
   const sbAdmin = await createAdminClient({ noCookie: true });

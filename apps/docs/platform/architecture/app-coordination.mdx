@@ -237,7 +237,8 @@ of its membership checks:
 - external-project CMS access and setup;
 - the external-app Drive, members, cron and AI routes in `apps/web`;
 - the `apps/ai` public routes (`/v1/models`, `/usage`, `/provider-costs`,
-  `/provider-invoices`);
+  `/provider-invoices`), which also require the bearer's `workspace_id` to
+  match the `x-tuturuuu-workspace-id` header;
 - every route that accepts a scope-only app session, such as the current-user
   profile, banner, full-name, avatar and profile-media routes.
 
