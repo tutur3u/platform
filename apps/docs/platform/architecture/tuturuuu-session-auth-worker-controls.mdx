@@ -310,7 +310,7 @@ same way.
 | Census cron | 1 fence read, 1 identity registry read, 1 `CensusEntry` call, one report per published verifier, at most 40 Cloudflare API calls (deployment reads plus one version read per new version), 1 key guard fetch, 1 JWKS fetch, 2 s timeouts, no retry; 1 `KeyObservations` write per completed class and 1 KV write | One minute | Stale after 300 s, minting stops; a `429` keeps every last good census |
 | Observer (`tuturuuu-auth-observer`) | Auth check at most 20 API calls; gateway check at most 20; key-plane check at most 40; grant check at most 30; inventory check at most 300 | Every 5 minutes, inventory every 15 | Halt, block or alert per finding; a run that reaches its cap with a page or, for the inventory check, a script still unread is `incomplete` or a failed read, and one that reached its cap with nothing left unread is a success |
 | Fence purge cron | 1 fence read, 1 Hyperdrive call deleting at most 1,000 rows, no retry | Hourly | Skipped while parked |
-| Audit alert (`auth-audit-alert.yaml`, outside Cloudflare) | 1 Audit Logs v2 window from the earlier of its validated cursor, inclusive, and 45 minutes back, at most 10 API calls, 1 ledger read, 1 compare-and-swap cursor write, no retry | Every 5 minutes | Alert or notice per event, keyed by event id; a failed or capped run alerts and the next run resumes from the cursor; a cursor with a bad or missing MAC, or not written by this workflow, alerts and is ignored; a cursor more than 20 minutes behind alerts; a missing run alerts after 30 minutes |
+| Audit alert (`auth-audit-alert.yaml`, outside Cloudflare) | 1 Audit Logs v2 window from the earlier of its validated cursor, inclusive, and 45 minutes back, at most 10 Audit Logs API calls; ledger activity paged back to the checkpoint plus one commit read per new push, and one tree read when starting from a pin, at most 10 GitHub API calls, past which the ledger check fails; 1 compare-and-swap cursor write, no retry | Every 5 minutes | Alert or notice per event, keyed by event id; a failed or capped run alerts and the next run resumes from the cursor; a cursor with a bad or missing MAC, or not written by this workflow, alerts and is ignored; a failed ledger check alerts, counts no ledger entry and leaves the whole cursor unchanged; a cursor more than 20 minutes behind alerts; a missing run alerts after 30 minutes |
 | Key guard fetch | 1 HTTPS request in the census tick, `no-store`, 2 s timeout, no retry | Once per minute per environment | Held list kept until 300 s old; then `kids` read empty and `mintHalt` false, while `gatewayVersions` and `identityBlocked` keep their values |
 | `SessionBudget` | One flush per isolate per minute; one reset alarm a day | One park and one clear per category per day | Flush dropped on failure |
 | Audit consumer | Batches of at most 100 | 5 retries | Dead-letter queue |
@@ -578,9 +578,19 @@ decision for the items it touches:
 | 6 AI validation cost | Accepted |
 | 7 Budget exhaustion | Accepted |
 | 8 Script-scoped deploy tokens and the token policy | Accepted as modified: short-lived script-scoped user tokens allowed, recorded in the ledger |
-| 9 Global API keys | Banned: never a deploy credential; disabled where the account allows, otherwise rolled and unused; the audit alert reports a watched change made with one. Pending release-authority confirmation |
+| 9 Global API keys | Banned: never a deploy credential; disabled where the account allows, otherwise rolled and unused; the audit alert reports a watched change made with one |
 
 The scoped gateway deploy token is in the Web release lane's custody.
+
+Owner decisions on the key guard, recorded 2026-11-22 with the owner's answer
+"Confirm all as proposed", under the same scope and review date:
+
+| Question | Decision |
+| --- | --- |
+| (a) Global API keys | Banned as a deploy credential: disabled where the account allows, otherwise rotated and unused (item 9) |
+| (b) User token lifetime | A user token's lifetime is at most 24 hours; separately, the audit alert counts its use only from its entry's `recordedAt` to its expiry, at most 24 hours later (item 8) |
+| (c) Credential ledger | An append-only private GitHub repository, `tutur3u/tuturuuu-credential-ledger`, with routine writes only by the `security-operators` team, outside the platform Cloudflare account and this public repository; append-only is enforced by the audit workflow's checks on the keys page |
+| (d) GitHub administrator residual | Accepted: an administrator of `tutur3u/platform` can change the keyguard environments, their secrets and the audit workflow; an administrator of the ledger repository, which includes every organization owner, can rewrite the ledger, which the audit workflow detects but does not prevent |
 
 1. **G5 bounds.** The ordinary-read bounds above (5, 35, 70 and 100 seconds)
    for `read` routes only.
@@ -638,9 +648,12 @@ The scoped gateway deploy token is in the Web release lane's custody.
    `Super Administrator - All Privileges` role is the only accepted standing
    residual. Short-lived user tokens minted with the cf CLI may deploy
    scripts other than `tuturuuu-auth` and the key-plane scripts:
-   script-scoped where Cloudflare allows it, expiring within 24 hours, and
-   each entered in the append-only credential ledger, whose store stamps
-   `recordedAt`, before use. The observer cannot list user tokens, so a
+   script-scoped where Cloudflare allows it, with a lifetime of at most 24
+   hours, and each entered in the append-only credential ledger before use.
+   The entry's `recordedAt` is GitHub's server timestamp for the push that
+   added it, as the keys page defines; the alert counts a token's use only
+   between that `recordedAt` and the entry's expiry, and never counts an
+   entry whose expiry is more than 24 hours after its `recordedAt`. The observer cannot list user tokens, so a
    Worker-wide user token is invisible to it and is detected only by the
    audit alert after use, and neither can verify a token's real lifetime or
    scope. The alert treats as positive a change to a watched script by a

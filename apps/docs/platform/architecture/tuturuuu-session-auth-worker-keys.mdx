@@ -47,8 +47,8 @@ residual stated below.
   `keyguard-observer-staging` and `keyguard-observer-production`. Each holds
   only its script's deploy token and the App key below, so a job never sees
   another script's token. Every keyguard environment allows deployments
-  from the `main` branch only, requires a security operator as reviewer,
-  refuses self-review, and has administrator bypass turned off.
+  from the `main` branch only, requires a reviewer from the
+  `security-operators` team, refuses self-review, and has administrator bypass turned off.
   `keyguard-cloudflare.yaml` triggers on `push` to `main` only.
   No steady-state CI deploy identity spans `tuturuuu-auth` and the gateway,
   or `tuturuuu-auth` and a key-plane script.
@@ -104,11 +104,48 @@ residual stated below.
   token that needs a Worker-wide grant is minted only under a creation waiver
   below, names that waiver in its ledger entry and expires no later than the
   waiver.
-- **Credential ledger.** An append-only store in security-operator custody,
-  outside the platform Cloudflare account and outside this public repository,
-  because its entries name members. The store stamps each entry's
-  `recordedAt` with its own clock, and no writer supplies it. Security
-  operators append entries; the audit alert workflow has read-only access.
+- **Credential ledger.** The private repository
+  `tutur3u/tuturuuu-credential-ledger`, outside the platform Cloudflare
+  account and outside this public repository, because its entries name
+  members. Routine writes come only from the `security-operators` team.
+  Each entry is one new file at its canonical path `entries/<tokenId>.json`
+  on `main`, the only ref the reader trusts; a token id is used once, ever,
+  even after its entry expires.
+  - **`recordedAt`.** GitHub's repository activity API is the clock: an
+    entry's `recordedAt` is the server timestamp of the `push` activity on
+    `refs/heads/main` whose `before`..`after` range contains the commit
+    that added the entry file, and that commit must be the only commit in
+    the range that touches the path. Author and committer dates are
+    writer-supplied and never count.
+  - **Checkpoint.** The organization's plan has no branch rules for private
+    repositories, so the reader enforces append-only. The audit workflow
+    keeps the last verified activity id and `main` head, with each verified
+    entry's path, blob SHA and `recordedAt`, in the `ledgerCheckpoint` of
+    its MACed [audit cursor](/platform/architecture/tuturuuu-session-auth-worker-audit),
+    outside the ledger. Each run pages through every `refs/heads/main`
+    activity newer than the stored activity id, even when the head is
+    unchanged, until it reaches that id. Every such activity must be a
+    direct `push` whose `before` is the previous `after`, starting from the
+    stored head, and must carry exactly one commit: `after` itself, whose
+    only parent is `before`. The run reads that commit with the commits API, one call per
+    push, and the commit must add exactly one file, at its canonical path
+    under `entries/` with a token id not in `usedIds`, and change nothing
+    else; a one-file commit cannot be truncated, so the listing is
+    complete.
+    Entries are written by direct push only; a pull request merge, a merge
+    queue merge, a branch creation, a branch deletion and a force push are
+    outside the write path.
+  - **Failure.** Any activity other than a direct `push`, a broken
+    `before`/`after` chain, a deletion or recreation of `main`, an
+    edit, deletion or rename of an entry, a file outside its canonical
+    path, a reused token id, or a gap in the activity (an entry or head
+    the activity API no longer returns, since GitHub states no retention
+    for it) is a positive alert. The ledger then counts no entry until a
+    security operator reconciles it and pins a new checkpoint. The audit
+    workflow runs this check before it evaluates any audit event and
+    leaves its whole cursor unchanged on a failed check.
+  - **Access.** Security operators append entries; the audit alert
+    workflow reads with a read-only token.
   The audit alert raises a positive alert when a ledgered token's event comes
   before its entry's `recordedAt` or after its expiry, and an entry whose
   expiry is more than 24 hours after its `recordedAt` never counts. The

@@ -30,8 +30,13 @@ silence the observer cannot silence it from inside the account.
 - **Cursor.** The audit cursor store is a durable record outside the
   platform Cloudflare account with versioned conditional writes, written
   through `TTR_AUTH_AUDIT_CURSOR_TOKEN`. Its value is
-  `{ at, idsAt, runId, runAttempt, mac }`: `at` is an event time, `idsAt`
-  the ids of the events at exactly `at` already consumed, and `mac` an
+  `{ at, idsAt, ledgerCheckpoint, runId, runAttempt, mac }`: `at` is an
+  event time, `idsAt` the ids of the events at exactly `at` already
+  consumed, `ledgerCheckpoint` the last verified state of the
+  [credential ledger](/platform/architecture/tuturuuu-session-auth-worker-keys#key-guard)
+  (`{ pinSeq, activityId, headSha, entries, usedIds }`, where `entries`
+  maps each verified token id to its path, blob SHA and `recordedAt`, and
+  `usedIds` lists every token id the ledger has ever held), and `mac` an
   HMAC-SHA-256 over the canonical JSON of the other members with
   `TTR_AUTH_AUDIT_CURSOR_MAC_KEY`. That key is a secret of the `auth-audit`
   GitHub environment, which allows the `main` branch only and which no
@@ -40,12 +45,38 @@ silence the observer cannot silence it from inside the account.
     its `runId` and `runAttempt` name a run of `auth-audit-alert.yaml` on
     `main` in the GitHub Actions run API. A missing value, a missing or bad
     MAC, or a value this workflow did not write alerts and is ignored, and
-    that run reads only the 45-minute lookback.
+    that run reads only the 45-minute lookback and starts the ledger from
+    the pin below.
+  - **Ledger pin.** The trusted starting checkpoint is pinned in the
+    workflow's configuration on `main` as `{ pinSeq, activityId, headSha }`
+    with no entries, so changing it is a reviewed commit. A run uses the
+    pin in place of the stored checkpoint when no valid cursor exists or
+    when the pin's `pinSeq` is greater than the stored one; a pin with a
+    smaller `pinSeq` alerts and is ignored. The first run and every
+    recovery start this way: a security operator reconciles the ledger
+    after a failed check and pins its current activity id and head with
+    the next `pinSeq`. Reconciliation restores entry files and never
+    deletes one. Entries added at or before a pinned head never count,
+    which costs little because each lives at most 24 hours, but their ids
+    stay used: a run starting from a pin sets `usedIds` to the stored
+    `usedIds`, when a valid cursor exists, together with every entry file
+    name in the pinned head's tree, read with one recursive tree call that
+    fails the check if truncated. The pinned activity must be a `push` on
+    `refs/heads/main` whose `after` is `headSha`, checked even when no push
+    follows it. When the ledger check from the pin passes, the run writes
+    the new cursor with that checkpoint in the usual compare-and-swap.
+  - **Ledger failure.** When the ledger check fails, from the stored
+    checkpoint or from the pin, the run alerts, evaluates the window with no ledger entry
+    counting, so every user-token event is positive, and leaves the whole
+    cursor unchanged. The same events are re-read once the checkpoint is
+    trusted again; alerts are keyed by event id, so each posts once, and
+    the lag alert covers a ledger left unreconciled.
   - **Window.** Each run reads from the earlier of `at`, inclusive, and 45
     minutes before its start, and skips events whose id is in `idsAt`. That
     lookback exceeds the 30-minute missing-run threshold and re-reads events
     the audit log delivers late.
-  - **Advance.** The run moves `at` only to the greatest event time T for
+  - **Advance.** The run writes `at`, `idsAt` and the new
+    `ledgerCheckpoint` together in one compare-and-swap, and moves `at` only to the greatest event time T for
     which it consumed every event at or before T, and stores the ids of the
     events at T in `idsAt`. A run that reaches its cap with a page unread
     alerts as a capped run, and the next run continues from that `at`.
@@ -117,10 +148,14 @@ silence the observer cannot silence it from inside the account.
   to the observer, so an observer outage does not stop it and an alert
   outage does not change minting. The response is the containment under the
   key guard's accepted residual.
-- **Its own residual.** A GitHub repository administrator, or anyone who can
-  change the workflow on `main`, could stop it, change its secrets, or
-  rewrite it to report nothing or to report falsely; the same access reaches
-  the `auth-audit` environment and so the cursor MAC key. The missing-run alert
+- **Its own residual, accepted by the owner on 2026-11-22.** An
+  administrator of this repository, who can also edit the keyguard
+  environments, or anyone who can change the workflow on `main`, could stop
+  it, change its secrets, or rewrite it to report nothing or to report
+  falsely; the same access reaches the `auth-audit` environment and so the
+  cursor MAC key. An administrator of the ledger repository, which includes
+  every organization owner, could rewrite the ledger; the workflow's
+  ledger checks detect that but do not prevent it. The missing-run alert
   covers only a stopped workflow. A rewritten workflow is a commit in
   `main`'s history and GitHub's audit log records secret and settings
   changes, but both are found after the fact. The observer's provenance
