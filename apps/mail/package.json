@@ -87,6 +87,7 @@
     "@types/sanitize-html": "^2.16.2",
     "@vitejs/plugin-react": "6.1.2",
     "babel-plugin-react-compiler": "^1.0.0",
+    "miniflare": "5.20261019.2-beta",
     "postcss": "^8.5.31",
     "typescript": "7.0.2",
     "vitest": "^5.0.5",

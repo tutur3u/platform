@@ -1,3 +1,4 @@
+import { dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite-plus';
 
 const modulePrefix = '\0mail:node-require:';
@@ -23,6 +24,8 @@ type BuiltinImport = {
   conditions: readonly string[];
 };
 
+const awsXmlBuilderEntry =
+  /[/\\]@aws-sdk[/\\]xml-builder[/\\]dist-es[/\\]index\.js$/u;
 const iconvEntry = /[/\\]iconv-lite[/\\]lib[/\\]index\.js$/u;
 const iconvStreamHint =
   "Use iconv.enableStreamingAPI(require('stream')); to enable it.";
@@ -74,15 +77,29 @@ export function mailWorkerBuiltins() {
     resolveId: {
       order: 'pre',
       filter: {
-        id: /^(?:node:)?(?:buffer|crypto|dns|events|fs|https|path|stream|string_decoder|url|util)$/u,
+        id: /^(?:(?:node:)?(?:buffer|crypto|dns|events|fs|https|path|stream|string_decoder|url|util)|\.\/xml-parser)$/u,
       },
-      handler(source, _importer, options) {
-        return resolveMailWorkerBuiltin({
-          source,
-          kind: options.kind,
+      handler(source, importer, options) {
+        const environment = {
           mode: this.environment.mode,
           consumer: this.environment.config.consumer,
           conditions: this.environment.config.resolve.conditions,
+        };
+
+        // The browser entry requires DOMParser, which workerd does not provide.
+        if (
+          source === './xml-parser' &&
+          importer &&
+          awsXmlBuilderEntry.test(importer) &&
+          isWorkerBuild(environment)
+        ) {
+          return resolve(dirname(importer), 'xml-parser.js');
+        }
+
+        return resolveMailWorkerBuiltin({
+          ...environment,
+          source,
+          kind: options.kind,
         });
       },
     },

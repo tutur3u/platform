@@ -111,6 +111,21 @@ subjects and are fixture data.
 The evidence JSON lists each step with its status, header names, counts and
 hashes. It never contains a message body, a header value or a secret.
 
+## Focused SES send regression
+
+From the repository root, run the fixture with Node after installing workspace
+dependencies.
+
+```bash
+node --test apps/mail/cloudflare/send-runtime/send.test.mjs
+```
+
+The fixture bundles Mail's send repository with the Worker resolver and starts
+Miniflare on loopback using Mail's compatibility settings. Its Supabase and SES
+responses are local fixtures. It checks that Mail sends once and records the
+provider message ID on both the message and outbound job. The SDK XML parser
+used by the Worker's server bundle must run without browser DOM APIs.
+
 ## Browser paste
 
 The paste event handlers run in a browser, which this harness does not provide:
