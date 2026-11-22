@@ -515,6 +515,21 @@ export function createHandler(deps: HandlerDeps) {
         });
       }
     }
+    const { pathname } = new URL(request.url);
+    const financeLocale = /^\/(en|vi)\/finance\/?$/u.exec(pathname)?.[1];
+    if (
+      financeLocale &&
+      (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+      const url = new URL(request.url);
+      url.pathname = `/finance/${financeLocale}`;
+      if (mountedAppBinding(new Request(url), env)) {
+        return new Response(null, {
+          status: 307,
+          headers: { Location: url.href, 'Cache-Control': 'no-store' },
+        });
+      }
+    }
     // Admitted mounts precede the Web manifest and cache.
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
@@ -528,7 +543,7 @@ export function createHandler(deps: HandlerDeps) {
         return plain(502, 'gateway mounted app unreachable');
       }
     }
-    const match = matchRoute(new URL(request.url).pathname, deps.manifest);
+    const match = matchRoute(pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);
     const origin = chosen.url;
     // Web paths go to a flagged and bound family (vinext route table, then

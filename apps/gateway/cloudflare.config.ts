@@ -6,6 +6,7 @@ export default defineConfig({
     name: 'tuturuuu-gateway',
     entrypoint: 'src/worker.ts',
     compatibilityDate: '2026-09-28',
+    compatibilityFlags: ['global_fetch_strictly_public'],
     workersDev: false,
     previewUrls: false,
     observability: {

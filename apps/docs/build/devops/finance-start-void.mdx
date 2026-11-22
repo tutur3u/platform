@@ -20,9 +20,20 @@ values the release owner needs.
 | Vars (production profile, names) | `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`; values live in `cloudflare/native-profiles.json`, never mixed with the staging profile |
 | Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`. The Worker refuses to serve without them |
 | Build | `bun turbo:local run build --filter=@tuturuuu/finance^...`, then `VITE_FINANCE_NATIVE_PROFILE=production bun run --cwd apps/finance build:cloudflare`. `finance-cloudflare.yaml` builds the same profile and uploads the sealed `finance-cutover-production-<sha>` artifact; it never publishes |
-| Routing | Capture separate rollback targets for the canonical host and apex gateway. The gateway operator activates `/finance` and `/finance/*` only after private smoke. |
+| Routing | Capture the active Finance and Gateway versions and the legacy host's attachment. Stage `/finance` and `/finance/*` at 0% before promoting them. A GET or HEAD to `/vi/finance` redirects to `/finance/vi` with its query intact. |
 | Web login | Add `finance` to Web's comma-separated `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` and capture the prior Web build and list. Coordinate the Web build with gateway activation so the mounted callback uses a direct same-origin return. |
 | Prior Vercel deployment | Not recorded in the repository. Capture the production deployment id, source SHA and the DNS record id, content, proxy state and TTL before the flip |
+
+## Legacy hostname
+
+Keep the Finance Worker serving the legacy hostname through apex smoke and
+signed-in verification of the overview and workspace switcher. Then attach
+the hostname to the [legacy redirect Worker](/build/devops/gateway-worker#legacy-subdomain-redirect)
+with `APP_FINANCE` bound to Finance and `finance` in `SUBDOMAIN_REDIRECT_APPS`.
+Check that `/vi/personal/wallets?ref=a&ref=b` redirects once to
+`/finance/vi/personal/wallets?ref=a&ref=b`. Check that legacy API requests,
+auth callbacks and assets still reach Finance. Restore the captured legacy
+attachment first if rolling back the cutover after enabling the 301.
 
 ## Rollback
 

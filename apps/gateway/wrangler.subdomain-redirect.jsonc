@@ -13,10 +13,11 @@
   "observability": { "enabled": true, "head_sampling_rate": 0.01 },
   "vars": {
     "SHARED_HOST": "tuturuuu.com",
-    "SUBDOMAIN_REDIRECT_APPS": "",
+    "SUBDOMAIN_REDIRECT_APPS": "apps,finance",
   },
   "services": [
     { "binding": "APP_TASKS", "service": "tuturuuu-tasks" },
     { "binding": "APP_APPS", "service": "tuturuuu-apps" },
+    { "binding": "APP_FINANCE", "service": "tuturuuu-finance" },
   ],
 }

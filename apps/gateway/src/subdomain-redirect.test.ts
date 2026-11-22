@@ -15,6 +15,36 @@ function setup(apps = 'tasks') {
 const navigation = { 'sec-fetch-mode': 'navigate', accept: 'text/html' };
 
 describe('handleSubdomainRedirect', () => {
+  it('301s a Finance deep link with its query and leaves its callback in place', async () => {
+    const { fetch } = setup();
+    const env = {
+      SUBDOMAIN_REDIRECT_APPS: 'apps,finance',
+      APP_FINANCE: { fetch },
+    };
+    const response = await handleSubdomainRedirect(
+      new Request(
+        'https://finance.tuturuuu.com/vi/personal/wallets?ref=a&ref=b',
+        {
+          headers: { accept: 'text/html' },
+        }
+      ),
+      env
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/finance/vi/personal/wallets?ref=a&ref=b'
+    );
+    expect(fetch).not.toHaveBeenCalled();
+
+    const callback =
+      'https://finance.tuturuuu.com/verify-token?nextUrl=%2Fpersonal';
+    await handleSubdomainRedirect(
+      new Request(callback, { headers: navigation }),
+      env
+    );
+    expect(fetch.mock.calls[0]?.[0].url).toBe(callback);
+  });
+
   it('301s a listed app navigation to its mount with path and query', async () => {
     const { env, fetch } = setup();
     const response = await handleSubdomainRedirect(

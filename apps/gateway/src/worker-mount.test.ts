@@ -426,6 +426,55 @@ describe('LMS cutover', () => {
   });
 });
 
+describe('Finance mount', () => {
+  const fetch = vi.fn(async (request: Request) => new Response(request.url));
+  const env = {
+    ...ENV,
+    GATEWAY_MOUNTED_PATHS: '/finance,/finance/*',
+    MOUNT_FINANCE: { fetch },
+  };
+
+  it.each([
+    '/finance',
+    '/finance/vi/personal/wallets',
+    '/finance/assets/app.js',
+  ])('dispatches %s to Finance with its original URL', async (path) => {
+    const { handle } = handler();
+    const url = `https://tuturuuu.com${path}?ref=a&ref=b`;
+    const response = await handle(new Request(url), env);
+    expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+    expect(await response.text()).toBe(url);
+  });
+
+  it.each(['GET', 'HEAD'])(
+    'keeps the locale and query for a %s to the localized entry',
+    async (method) => {
+      const { handle } = handler();
+      const response = await handle(
+        new Request('https://tuturuuu.com/vi/finance?ref=a&ref=b', { method }),
+        env
+      );
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/finance/vi?ref=a&ref=b'
+      );
+    }
+  );
+
+  it('leaves the alias with Web when Finance is not mounted', async () => {
+    const { handle } = handler();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('web'))
+    );
+    const response = await handle(
+      new Request('https://tuturuuu.com/vi/finance'),
+      ENV
+    );
+    expect(await response.text()).toBe('web');
+  });
+});
+
 describe('Meet mount', () => {
   it.each([
     '/meet',

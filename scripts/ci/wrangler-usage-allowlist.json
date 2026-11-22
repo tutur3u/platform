@@ -1000,9 +1000,9 @@
       "gap": "pending-migration",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
-        "reason": "The gateway config enables global_fetch_strictly_public so same-zone fetches reach zone Worker routes. The filename stays the only Wrangler use; counts are unchanged."
+        "reason": "The gateway config keeps global_fetch_strictly_public and adds Finance to the mount inventory through MOUNT_FINANCE. The filename remains the only Wrangler use."
       },
-      "digest": "5849629786baa5b58007f28c829e5ebcf7006e4b65a660a1c1ed84b139e26b91"
+      "digest": "0314cbe81004cd0913195332f51b8892aca4bcb3243327662ef830b8880b6801"
     },
     "apps/gateway/wrangler.subdomain-redirect.jsonc": {
       "lines": 1,
@@ -1010,9 +1010,9 @@
       "gap": "pending-migration",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/commit/6eaebe139ccf51fa3e1579edf87ff6aa53e80818",
-        "reason": "The legacy subdomain redirect binds the Apps Worker. The filename stays the only Wrangler use, so counts stay 1/1."
+        "reason": "The legacy redirect binds Finance and retains the live Apps redirect. The filename remains the only Wrangler use."
       },
-      "digest": "948c1fab075030230b4f0523014036bbae13495e0682b73e19416a61b14c12d1"
+      "digest": "8f9e72fd785158ec0ba92f540ccdfebb45b888d63c4fe8561b87e539e52f3a09"
     },
     "apps/git/.gitignore": {
       "lines": 1,
