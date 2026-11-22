@@ -141,7 +141,9 @@ describe('product news by email', () => {
     renderFlow({ hasProductNewsRow: true, initialProductNews: true });
     expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     click('continue');
-    await waitFor(() => expect(lastProgress()).toMatchObject({ current_step: 'space' }));
+    await waitFor(() =>
+      expect(lastProgress()).toMatchObject({ current_step: 'space' })
+    );
     expect(mocks.updateAccountPreferences).not.toHaveBeenCalled();
   });
 });
@@ -214,10 +216,9 @@ describe('skipping', () => {
       current_step: 'done',
       completed_at: expect.any(String),
     });
-    expect(screen.getByRole('link', { name: 'go_to_workspace' })).toHaveAttribute(
-      'href',
-      '/personal'
-    );
+    expect(
+      screen.getByRole('link', { name: 'go_to_workspace' })
+    ).toHaveAttribute('href', '/personal');
   });
 
   it('skips the whole flow, records it and opens the workspace', async () => {
@@ -307,7 +308,9 @@ describe('space step', () => {
     fireEvent.change(emails, { target: { value: 'an@example.com' } });
     fireEvent.keyDown(emails, { key: 'Enter' });
     click('continue');
-    expect(await screen.findByRole('alert')).toHaveTextContent('invites_failed');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'invites_failed'
+    );
 
     click('continue');
     await screen.findByText('interests_title');
@@ -324,7 +327,9 @@ describe('space step', () => {
     });
     renderFlow({ initialStep: 'space' });
     fireEvent.click(await screen.findByRole('button', { name: 'join' }));
-    await waitFor(() => expect(mocks.acceptInvite).toHaveBeenCalledWith('ws-9'));
+    await waitFor(() =>
+      expect(mocks.acceptInvite).toHaveBeenCalledWith('ws-9')
+    );
     expect(await screen.findByRole('status')).toHaveTextContent('joined');
   });
 });
@@ -332,8 +337,12 @@ describe('space step', () => {
 describe('interests step', () => {
   it('saves the picks as journey goals and finishes the flow', async () => {
     renderFlow({ initialStep: 'interests' });
-    fireEvent.click(screen.getByRole('checkbox', { name: /interest_calendar_label/ }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /interest_finance_label/ }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: /interest_calendar_label/ })
+    );
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: /interest_finance_label/ })
+    );
     click('finish');
 
     await screen.findByText('done_title');
@@ -350,7 +359,9 @@ describe('interests step', () => {
 
   it('maps Teach or learn to the education audience mode when none is set', async () => {
     renderFlow({ initialStep: 'interests' });
-    fireEvent.click(screen.getByRole('checkbox', { name: /interest_education_label/ }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: /interest_education_label/ })
+    );
     click('finish');
     await screen.findByText('done_title');
     expect(mocks.updateProgress).toHaveBeenCalledWith({ goals: ['learn'] });
@@ -363,7 +374,9 @@ describe('interests step', () => {
   it('keeps an audience mode the person already chose', async () => {
     mocks.getUserConfig.mockResolvedValue({ value: 'general' });
     renderFlow({ initialStep: 'interests' });
-    fireEvent.click(screen.getByRole('checkbox', { name: /interest_education_label/ }));
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: /interest_education_label/ })
+    );
     click('finish');
     await screen.findByText('done_title');
     expect(mocks.updateUserConfig).not.toHaveBeenCalled();

@@ -108,7 +108,11 @@ export function WelcomeDone({
               {content}
             </a>
           ) : (
-            <Link className={cn(ROW, FOCUS_RING)} href={step.href} key={step.key}>
+            <Link
+              className={cn(ROW, FOCUS_RING)}
+              href={step.href}
+              key={step.key}
+            >
               {content}
             </Link>
           );

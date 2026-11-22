@@ -152,9 +152,7 @@ export function WelcomeFlow(props: WelcomeFlowProps) {
         <StepSpace
           created={created}
           draft={space}
-          onAdvance={(teamWorkspaceId) =>
-            advance('space', { teamWorkspaceId })
-          }
+          onAdvance={(teamWorkspaceId) => advance('space', { teamWorkspaceId })}
           onChange={setSpace}
           onCreated={setCreated}
           onJoined={setJoined}

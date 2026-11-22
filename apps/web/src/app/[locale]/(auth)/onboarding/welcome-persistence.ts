@@ -41,7 +41,9 @@ export function saveStepPosition(input: {
     ...(input.teamWorkspaceId
       ? { team_workspace_id: input.teamWorkspaceId }
       : {}),
-    ...(input.next === 'done' ? { completed_at: new Date().toISOString() } : {}),
+    ...(input.next === 'done'
+      ? { completed_at: new Date().toISOString() }
+      : {}),
   });
 }
 

@@ -68,7 +68,9 @@ export function StepInterests({
               className={cn(
                 FOCUS_RING,
                 'flex min-h-[88px] flex-col justify-between gap-3 rounded-2xl border p-3.5 text-left transition-colors motion-reduce:transition-none',
-                selected ? 'border-primary bg-calendar-bg-pink' : 'hover:bg-accent'
+                selected
+                  ? 'border-primary bg-calendar-bg-pink'
+                  : 'hover:bg-accent'
               )}
               key={id}
               onClick={() => toggle(id)}
