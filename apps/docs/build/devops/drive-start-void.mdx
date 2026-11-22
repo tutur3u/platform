@@ -17,12 +17,14 @@ stable, so the canonical host keeps a one-step route back.
 | Staging (default) | no profile variable | the staging Worker name | `src/start-candidate/staging-policy.ts`; the build refuses a non-staging value |
 | Production | `VITE_DRIVE_NATIVE_PROFILE=production` | `tuturuuu-drive` | `cloudflare/production-profile.json` |
 
-The production profile sets `TTR_CSP_DRIVE=enforce`. The Worker refuses a
-production request whose bindings differ from this file, so a Worker deployed
-without the marker answers 503 instead of serving. The script policy itself comes
-from the bridge's nonce CSP and is on in both profiles. Trusted Types is
-report-only until `TTR_TRUSTED_TYPES_DRIVE=enforce` is set, which waits for a
-clean signed-in crawl. The profile carries no `TUTURUUU_NOINDEX` or
+The script policy comes from the bridge's nonce CSP (`strict-dynamic`) and is
+enforced in both profiles. The production profile sets
+`TTR_TRUSTED_TYPES_DRIVE=report`, which the bridge reads: Trusted Types reports
+violations without blocking. The Worker refuses a production request whose
+bindings differ from this file, so it answers 503 when the var is missing or
+different. Enforcing Trusted Types is a reviewed profile change to `enforce`,
+made after a signed-in crawl of every Drive route shows zero violations, and it
+ships before `tuturuuu.com/drive` is mounted. The profile carries no `TUTURUUU_NOINDEX` or
 `TTR_ONE_ORIGIN_DRIVE`: the response policy always sends `noindex`, and the apex
 mount is served from the profile alone.
 

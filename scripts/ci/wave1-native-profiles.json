@@ -883,7 +883,7 @@
         "WEB_APP_URL": "https://tuturuuu.com",
         "TTR_URL": "https://tuturuuu.com",
         "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-        "TTR_CSP_DRIVE": "enforce"
+        "TTR_TRUSTED_TYPES_DRIVE": "report"
       },
       "secrets": [
         "NEXT_PUBLIC_SUPABASE_URL",
@@ -912,7 +912,7 @@
           "WEB_APP_URL": "https://tuturuuu.com",
           "TTR_URL": "https://tuturuuu.com",
           "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-          "TTR_CSP_DRIVE": "enforce"
+          "TTR_TRUSTED_TYPES_DRIVE": "report"
         },
         "publicInputPins": [],
         "publicationPolicyKey": "productionPublicationPolicy",
@@ -961,7 +961,7 @@
             "WEB_APP_URL": "https://tuturuuu.com",
             "TTR_URL": "https://tuturuuu.com",
             "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-            "TTR_CSP_DRIVE": "enforce"
+            "TTR_TRUSTED_TYPES_DRIVE": "report"
           },
           "stagingPublicationVars": {},
           "admittedSourceServices": []

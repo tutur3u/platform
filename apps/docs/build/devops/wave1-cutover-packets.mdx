@@ -182,7 +182,7 @@ sealed archive. The staging profile serves only its own root host.
 | Canonical host | `drive.tuturuuu.com` |
 | Admitted apex mount | `https://tuturuuu.com/drive`; the production Worker rejects other apex paths, `drive.tutur3u.com` and unknown hosts with 404 |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker answers 503 until all four are present |
-| Vars | `apps/drive/cloudflare/production-profile.json`: `DRIVE_NATIVE_PROFILE`, the app and web URLs, `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` and `TTR_CSP_DRIVE=enforce`. The Worker rejects any other value of a listed var |
+| Vars | `apps/drive/cloudflare/production-profile.json`: `DRIVE_NATIVE_PROFILE`, the app and web URLs, `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` and `TTR_TRUSTED_TYPES_DRIVE=report` (`enforce` after a clean signed-in crawl, before the apex mount). The Worker rejects any other value of a listed var |
 | Bindings | `ASSETS` only |
 | Compatibility | `2026-10-12`, `nodejs_compat` and `global_fetch_strictly_public`, from `apps/drive/void.config.ts` |
 | Publication | Held: `tuturuuu.ci.ts` has no Drive entry, so only the `release-artifact` path runs until an explicit cutover PR admits it. Environment `wave1-drive-production` |

@@ -84,11 +84,12 @@ test('Drive secrets are exactly the Worker bindings it refuses to start without'
     assert.ok(!Object.hasOwn(productionVars, name), name);
 });
 
-test('the Drive production vars enforce the script policy and keep Trusted Types report-only', () => {
+test('the Drive production vars keep Trusted Types report-only', () => {
   const vars = releaseRecipes.drive.allowedVars;
-  assert.equal(vars.TTR_CSP_DRIVE, 'enforce');
-  // Trusted Types stays in report-only mode until a signed-in crawl is clean.
-  assert.ok(!Object.hasOwn(vars, 'TTR_TRUSTED_TYPES_DRIVE'));
+  // The bridge always enforces the nonce script policy. Trusted Types stays
+  // report-only until a signed-in crawl is clean; enforcing it is a reviewed
+  // profile change.
+  assert.equal(vars.TTR_TRUSTED_TYPES_DRIVE, 'report');
   // No one-origin flag: the subdomain keeps serving and the mount is always on.
   assert.ok(
     !Object.keys(vars).some((name) => name.startsWith('TTR_ONE_ORIGIN'))
@@ -179,19 +180,21 @@ for (const [name, change, message] of [
     /Unexpected original Worker identity/,
   ],
   [
-    'a report-only script policy',
+    'an unknown Trusted Types mode',
     (base) => ({
       ...base,
-      vars: { ...base.vars, TTR_CSP_DRIVE: 'report' },
+      vars: { ...base.vars, TTR_TRUSTED_TYPES_DRIVE: 'off' },
     }),
     /Source vars require explicit profile review/,
   ],
   [
-    'a missing script policy var',
+    'a missing Trusted Types var',
     (base) => ({
       ...base,
       vars: Object.fromEntries(
-        Object.entries(base.vars).filter(([key]) => key !== 'TTR_CSP_DRIVE')
+        Object.entries(base.vars).filter(
+          ([key]) => key !== 'TTR_TRUSTED_TYPES_DRIVE'
+        )
       ),
     }),
     /Source vars require explicit profile review/,
@@ -282,8 +285,8 @@ test('Drive secret names never duplicate a bound var and the source must be exac
   };
   const options = { main: 'index.js', assets: 'client', sourceSha: sha };
   assert.equal(
-    publicationConfig(base, profile, options).vars.TTR_CSP_DRIVE,
-    'enforce'
+    publicationConfig(base, profile, options).vars.TTR_TRUSTED_TYPES_DRIVE,
+    'report'
   );
   assert.throws(
     () =>

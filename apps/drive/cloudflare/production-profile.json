@@ -7,5 +7,5 @@
   "WEB_APP_URL": "https://tuturuuu.com",
   "TTR_URL": "https://tuturuuu.com",
   "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-  "TTR_CSP_DRIVE": "enforce"
+  "TTR_TRUSTED_TYPES_DRIVE": "report"
 }
