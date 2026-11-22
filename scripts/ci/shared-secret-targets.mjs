@@ -195,7 +195,26 @@ export const SHARED_SECRETS = Object.freeze({
         root,
         environment
       ),
+      // The ship collector writes the Ship snapshot with the same token.
+      target(
+        forEnvironment('tuturuuu-cron-control', environment),
+        'MASTERMIND_STORE_TOKEN',
+        'sender'
+      ),
       ...vinextTargets(root, environment, 'MASTERMIND_STORE_TOKEN'),
+    ],
+  },
+  // Web's api-core relays Mastermind Ship's Check now to Cron Control over
+  // its CRON_CONTROL service binding with this bearer.
+  MASTERMIND_SHIP_CHECK_TOKEN: {
+    mode: 'mint',
+    environments: ['production'],
+    targets: (root, environment) => [
+      ...peer('tuturuuu-cron-control', 'MASTERMIND_SHIP_CHECK_TOKEN')(
+        root,
+        environment
+      ),
+      ...vinextTargets(root, environment, 'MASTERMIND_SHIP_CHECK_TOKEN'),
     ],
   },
   MEET_REALTIME_TOKEN_SECRET: {

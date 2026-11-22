@@ -54,6 +54,16 @@ export const ROTATION = Object.freeze({
     impact:
       'Mint only: fleet and push-event routes on a not-yet-written web Worker answer 503 for the seconds of the job; the phone keeps its last snapshot with a refresh warning; push events retry.',
   },
+  MASTERMIND_SHIP_CHECK_TOKEN: {
+    dualAccept:
+      'no: Cron Control compares one bearer; the mint writes both sides in one run.',
+    source: 'none outside the Workers: shared-secret-write mints it',
+    order: [
+      'Mint with shared-secret-write (Cron Control and the web Workers in one run).',
+    ],
+    impact:
+      'Mastermind Ship Check now answers failed for the seconds between the two writes; the two-minute collector is unaffected.',
+  },
   MEET_REALTIME_TOKEN_SECRET: {
     dualAccept: 'no: a bare HMAC with one secret on every issuer and verifier.',
     source:

@@ -55,8 +55,9 @@ separate store key that Web never serves.
 | `MASTERMIND_SHIP_GITHUB_TOKEN` | Cron Control secret | Fallback when no App is set: one read-only token for every tracked owner. Never the shared fleet token. |
 | `MASTERMIND_SHIP_CLOUDFLARE_TOKEN` | Cron Control secret | Account token with Workers Scripts Read. |
 | `MASTERMIND_SHIP_REPOS` | Cron Control text | `app=owner/name[@branch]`, comma-separated, for the apps tracked outside this repository (catalog ids). Other app ids and malformed entries are ignored. |
-| `MASTERMIND_SHIP_CHECK_TOKEN` | Cron Control and Web secret | At least 32 characters; authorizes `POST /mastermind-ship/check`. |
-| `MASTERMIND_SHIP_CHECK_ORIGIN` | Web | Cron Control's HTTPS origin; defaults to `WEB_CRON_GATE_ORIGIN`. |
+| `MASTERMIND_SHIP_CHECK_TOKEN` | Cron Control and Web secret | At least 32 characters; authorizes `POST /mastermind-ship/check`. Mint it with [shared-secret-write](/build/devops/shared-secret-write), which writes Cron Control and the web Workers in one run; the store token's mint also writes Cron Control. |
+| `CRON_CONTROL` | Web service binding (api-core family only) | Reaches `tuturuuu-cron-control`, which has no public ingress (no workers.dev, no routes). Declared in `apps/web/cloudflare.config.ts`; Cron Control's own config needs no binding to receive it. |
+| `MASTERMIND_SHIP_CHECK_ORIGIN` | Web | Only without the binding (local runs): an HTTPS origin for Cron Control; defaults to `WEB_CRON_GATE_ORIGIN`. |
 
 Without GitHub or Cloudflare credentials the job still writes a snapshot in
 which those sources read `unconfigured`, and makes no provider request.
@@ -83,7 +84,9 @@ which those sources read `unconfigured`, and makes no provider request.
   credential stops the job after five slots. One failing source beside a
   working one is `degraded`.
 - Durable stops: `POST /control/jobs/mastermind-ship/stop` with the operator
-  token (survives restarts; resume opens a new generation), five consecutive
+  token (Cron Control has no public ingress, so this runs only from an
+  operator session with access to the Worker, never from Web; Web holds only
+  the check token) (survives restarts; resume opens a new generation), five consecutive
   failed or unknown slots, or the store's own fence (`stopped` ends the run
   without charging the failure budget). The fence is checked before each
   owner, each Worker read and the write.
@@ -114,8 +117,13 @@ failure stop.
 
 1. Create the GitHub App (or token) and the Cloudflare token; set the Cron
    Control secrets above and add the store token to the store's rotation list.
-2. Set `MASTERMIND_SHIP_CHECK_TOKEN` on both Workers and
-   `MASTERMIND_SHIP_CHECK_ORIGIN` on Web.
+2. Set `MASTERMIND_SHIP_CHECK_TOKEN` on Cron Control and on Web's
+   `tuturuuu-web-vinext-api-core` Worker, and deploy api-core with its
+   `CRON_CONTROL` binding.
 3. Add `mastermind-ship` to `CRON_CONTROL_ENABLED_JOBS` and deploy Cron
-   Control. Confirm `GET /control/jobs` shows the job and the Ship screen
+   Control. Press **Check now**; it answers `checked` and the Ship screen
    shows fresh `okAt` stamps.
+
+To stop the job without operator access, remove it from
+`CRON_CONTROL_ENABLED_JOBS` and deploy Cron Control: disabled jobs make no
+ledger or network call, and Check now answers `disabled`.

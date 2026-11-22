@@ -1,3 +1,4 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare/cloudflare-context';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
@@ -5,20 +6,38 @@ import {
   MASTERMIND_APP_SESSION,
 } from '@/lib/mastermind/fleet/auth';
 import { FLEET_NO_STORE, fleetError } from '@/lib/mastermind/fleet/http';
-import { requestShipCheck } from '@/lib/mastermind/ship/check';
+import {
+  requestShipCheck,
+  type ShipCheckBinding,
+} from '@/lib/mastermind/ship/check';
 
-/**
- * Owner "Check now": runs the ship collector immediately. Cron Control
- * refuses a second run within 30 seconds (429 with `retryAfterMs`).
- */
+declare global {
+  interface CloudflareEnv {
+    /** Service binding to tuturuuu-cron-control (api-core family only). */
+    CRON_CONTROL?: ShipCheckBinding;
+  }
+}
+
+/** Web's CRON_CONTROL service binding, or null outside a Worker. */
+function cronControl(): ShipCheckBinding | null {
+  try {
+    return getCloudflareContext().env.CRON_CONTROL ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const POST = withSessionAuth(
   async (_request, { user }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
-    const { status, ...result } = await requestShipCheck({
-      MASTERMIND_SHIP_CHECK_ORIGIN: process.env.MASTERMIND_SHIP_CHECK_ORIGIN,
-      MASTERMIND_SHIP_CHECK_TOKEN: process.env.MASTERMIND_SHIP_CHECK_TOKEN,
-      WEB_CRON_GATE_ORIGIN: process.env.WEB_CRON_GATE_ORIGIN,
-    });
+    const { status, ...result } = await requestShipCheck(
+      {
+        MASTERMIND_SHIP_CHECK_ORIGIN: process.env.MASTERMIND_SHIP_CHECK_ORIGIN,
+        MASTERMIND_SHIP_CHECK_TOKEN: process.env.MASTERMIND_SHIP_CHECK_TOKEN,
+        WEB_CRON_GATE_ORIGIN: process.env.WEB_CRON_GATE_ORIGIN,
+      },
+      cronControl()
+    );
     if (status >= 500)
       console.warn('Mastermind ship check failed', { state: result.state });
     // `code` and `retryAfter` (seconds) are the shared API error fields the

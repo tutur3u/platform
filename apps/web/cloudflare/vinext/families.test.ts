@@ -91,6 +91,25 @@ describe('vinext route families', () => {
     }
   });
 
+  it('binds Cron Control on api-core only', async () => {
+    const workerEnv = async (family?: string) => {
+      vi.resetModules();
+      vi.stubEnv('WEB_VINEXT_FAMILY', family ?? '');
+      const { default: config } = await import('../../cloudflare.config');
+      vi.unstubAllEnvs();
+      return (config as { worker: { env: Record<string, unknown> } }).worker
+        .env;
+    };
+    expect((await workerEnv('api-core')).CRON_CONTROL).toMatchObject({
+      type: 'worker',
+      worker: 'tuturuuu-cron-control',
+    });
+    expect((await workerEnv()).CRON_CONTROL).toMatchObject({ type: 'worker' });
+    for (const family of ['api-ops', 'public-auth', 'dashboard', 'web-rest']) {
+      expect((await workerEnv(family)).CRON_CONTROL, family).toBeFalsy();
+    }
+  });
+
   it('places the API families in a Gemini-supported region', async () => {
     const placement = async (family?: string) => {
       vi.resetModules();

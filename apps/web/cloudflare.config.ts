@@ -65,6 +65,12 @@ export default defineConfig({
         exportName: 'AbuseGuardEntrypoint',
       }),
       ABUSE_GUARD_FAMILIES: bindings.text('proxy,ratelimit,integrity'),
+      // Cron Control has no public ingress. api-core serves Mastermind Ship's
+      // Check now and relays it over this binding; Cron Control still checks
+      // the MASTERMIND_SHIP_CHECK_TOKEN bearer.
+      CRON_CONTROL:
+        (!family || family === 'api-core') &&
+        bindings.worker({ worker: 'tuturuuu-cron-control' }),
       // Private per-user ChatGPT credential stores for the api-ops routes
       // under /api/ai/chatgpt and /api/v1/users/chatgpt.
       CHATGPT_FILES:

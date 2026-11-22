@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   user: { id: '' },
   permission: false,
   store: null as ReturnType<typeof createMemoryMastermindStore> | null,
+  cronControl: undefined as { fetch: typeof fetch } | undefined,
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -45,6 +46,12 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 vi.mock('@/lib/mastermind/store', () => ({
   getMastermindStore: async () => mocks.store,
+}));
+vi.mock('@opennextjs/cloudflare/cloudflare-context', () => ({
+  getCloudflareContext: () => {
+    if (!mocks.cronControl) throw new Error('not in a Worker');
+    return { env: { CRON_CONTROL: mocks.cronControl } };
+  },
 }));
 
 /** One real collector run against the fake providers. */
@@ -166,6 +173,46 @@ describe('ship routes', () => {
     calls.length = 0;
     expect((await check()).status).toBe(403);
     expect(calls).toEqual([]);
+  });
+
+  it('relays Check now over the CRON_CONTROL binding with the token', async () => {
+    vi.stubEnv('MASTERMIND_SHIP_CHECK_TOKEN', CHECK_TOKEN);
+    // The binding wins over any configured origin.
+    vi.stubEnv('MASTERMIND_SHIP_CHECK_ORIGIN', 'https://cron.example.test');
+    const calls: { url: string; auth: string | null }[] = [];
+    mocks.cronControl = {
+      fetch: (async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push({
+          url: String(input),
+          auth: new Headers(init?.headers).get('authorization'),
+        });
+        return Response.json({ state: 'checked', outcome: 'ok' });
+      }) as typeof fetch,
+    };
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('public fetch must not be used');
+    });
+    try {
+      const response = await POST(
+        new NextRequest(`${URL}/check`, { method: 'POST' })
+      );
+      expect(response.status).toBe(200);
+      expect(calls).toEqual([
+        {
+          url: 'https://cron-control.internal/mastermind-ship/check',
+          auth: `Bearer ${CHECK_TOKEN}`,
+        },
+      ]);
+      // Without the token the binding is not called at all.
+      vi.stubEnv('MASTERMIND_SHIP_CHECK_TOKEN', '');
+      calls.length = 0;
+      expect(
+        (await POST(new NextRequest(`${URL}/check`, { method: 'POST' }))).status
+      ).toBe(503);
+      expect(calls).toEqual([]);
+    } finally {
+      mocks.cronControl = undefined;
+    }
   });
 
   it('is unconfigured without an HTTPS origin and a token', async () => {

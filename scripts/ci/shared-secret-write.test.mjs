@@ -34,6 +34,7 @@ const WORKFLOWS = {
         'ABUSE_GUARD_KEY_PEPPER',
         'CLOUDFLARE_COORDINATION_TOKEN',
         'MASTERMIND_STORE_TOKEN',
+        'MASTERMIND_SHIP_CHECK_TOKEN',
       ],
       environment: ['staging', 'production'],
     },
