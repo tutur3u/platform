@@ -13,7 +13,16 @@ vi.mock('@tuturuuu/internal-api/playgrounds', () => ({
 
 const refused = () => Object.assign(new Error('api'), { status: 503 });
 
-function mount(run: (operation: 'run' | 'stop') => Promise<{ runId: string }>) {
+type Payload = Parameters<
+  NonNullable<Parameters<typeof useWorkbenchRun>[0]['execution']>['run']
+>[0];
+
+function mount(
+  run: (
+    operation: 'run' | 'stop',
+    payload: Payload
+  ) => Promise<{ runId: string }>
+) {
   const onRunnerUnavailable = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -27,7 +36,7 @@ function mount(run: (operation: 'run' | 'stop') => Promise<{ runId: string }>) {
         projectId: 'project',
         roomKey: 'room',
         execution: {
-          run: (payload) => run(payload.operation),
+          run: (payload) => run(payload.operation, payload),
           read: vi.fn(async () => ({
             runId: 'run',
             status: 'succeeded',
@@ -49,12 +58,12 @@ it('marks the runner unavailable when a run is refused, not when a stop is', asy
   const { result, onRunnerUnavailable } = mount(async () => {
     throw refused();
   });
-  act(() => result.current.run.mutate('stop'));
+  act(() => result.current.runOperation('stop'));
   await waitFor(() => expect(result.current.run.isError).toBe(true));
   expect(result.current.runner.unavailable).toBeUndefined();
   expect(onRunnerUnavailable).not.toHaveBeenCalled();
 
-  act(() => result.current.run.mutate('run'));
+  act(() => result.current.runOperation('run'));
   await waitFor(() => expect(result.current.runner.unavailable).toBeTruthy());
   expect(onRunnerUnavailable).toHaveBeenLastCalledWith(true);
 });
@@ -65,15 +74,40 @@ it('re-enables Run once a run starts, but a stop that succeeds does not', async 
     if (refuse) throw refused();
     return { runId: 'run' };
   });
-  act(() => result.current.run.mutate('run'));
+  act(() => result.current.runOperation('run'));
   await waitFor(() => expect(result.current.runner.unavailable).toBeTruthy());
   refuse = false;
-  act(() => result.current.run.mutate('stop'));
+  act(() => result.current.runOperation('stop'));
   await waitFor(() => expect(result.current.run.isSuccess).toBe(true));
   expect(result.current.runner.unavailable).toBeTruthy();
-  act(() => result.current.run.mutate('run'));
+  act(() => result.current.runOperation('run'));
   await waitFor(() =>
     expect(result.current.runner.unavailable).toBeUndefined()
   );
   expect(onRunnerUnavailable).toHaveBeenLastCalledWith(false);
+});
+
+it('stops the current Run by id and reuses the request id only on retry', async () => {
+  const payloads: Payload[] = [];
+  let fail = false;
+  const { result } = mount(async (_, payload) => {
+    payloads.push(payload);
+    if (fail) throw refused();
+    return { runId: 'run-1' };
+  });
+  act(() => result.current.runOperation('run'));
+  await waitFor(() => expect(result.current.run.isSuccess).toBe(true));
+  act(() => result.current.runOperation('stop'));
+  await waitFor(() => expect(payloads).toHaveLength(2));
+  expect(payloads[1]).toMatchObject({ operation: 'stop', runId: 'run-1' });
+  expect(payloads[0]?.runId).toBeUndefined();
+  expect(payloads[1]?.requestId).not.toBe(payloads[0]?.requestId);
+
+  fail = true;
+  act(() => result.current.runOperation('run'));
+  await waitFor(() => expect(result.current.run.isError).toBe(true));
+  const variables = result.current.run.variables!;
+  act(() => result.current.run.mutate(variables));
+  await waitFor(() => expect(payloads).toHaveLength(4));
+  expect(payloads[3]?.requestId).toBe(payloads[2]?.requestId);
 });

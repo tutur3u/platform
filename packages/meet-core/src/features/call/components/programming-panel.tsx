@@ -108,7 +108,7 @@ export function ProgrammingPanel({
   const createPlayground = async (next: ProgrammingLanguage) => {
     const project = await api.create(meetingId, {
       name: t('meetingPlaygroundName', {
-        language: PROGRAMMING_LANGUAGE_LABELS[next],
+        language: PROGRAMMING_LANGUAGE_LABELS[next] ?? next,
       }),
       empty: false,
       language: next,
@@ -280,7 +280,9 @@ export function ProgrammingPanel({
             key={`${accountId ?? 'native'}:${meetingId}:${active.selection.id}:${active.selection.language}`}
             projectId={active.project.id}
             sharedRunId={
-              selection?.id === active.project.id ? selection.runId : undefined
+              selection && selection.id === active.project.id
+                ? selection.runId
+                : undefined
             }
             roomKey={`meeting:${meetingId}:${active.selection.id}:${active.selection.language}`}
             join={join}
