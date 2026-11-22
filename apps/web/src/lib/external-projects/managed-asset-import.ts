@@ -1,4 +1,8 @@
-import { uploadWorkspaceStorageFileDirect } from '@tuturuuu/storage-core/workspace-storage-provider';
+import {
+  deleteWorkspaceStorageObjectByPath,
+  uploadWorkspaceStorageFileDirect,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { ExternalProjectImportJob, Json } from '@tuturuuu/types';
@@ -279,12 +283,14 @@ async function importAsset(
     safePathSegment(adapter, 'external'),
     safePathSegment(collection.slug, 'collection'),
     safePathSegment(entry.slug, entry.id),
-    `${checksum}-${filename}`,
+    // A fresh key per import: no import can overwrite an existing object,
+    // including one an earlier import of the same bytes still references.
+    `${generateRandomUUID()}-${filename}`,
   ].join('/');
 
   await uploadWorkspaceStorageFileDirect(workspaceId, path, sanitized.bytes, {
     contentType: downloaded.contentType,
-    upsert: true,
+    upsert: false,
   });
   const metadata =
     asset.metadata &&
@@ -298,12 +304,22 @@ async function importAsset(
     importedAt: new Date().toISOString(),
     sourceUrl,
   };
-  const { error: updateError } = await admin
+  // Conditional on the source URL read above: a concurrent import or a
+  // deleted asset updates no row, and the new object is then unreferenced.
+  const { data: updatedRows, error: updateError } = await admin
     .from('workspace_external_project_assets')
     .update({ metadata, source_url: null, storage_path: path })
     .eq('ws_id', workspaceId)
-    .eq('id', assetId);
-  if (updateError) throw new Error(updateError.message);
+    .eq('id', assetId)
+    .eq('source_url', sourceUrl)
+    .select('id');
+  if (updateError || !updatedRows?.length) {
+    // Nothing references the new object, so it must not be left behind.
+    await deleteWorkspaceStorageObjectByPath(workspaceId, path).catch(
+      () => undefined
+    );
+    if (updateError) throw new Error(updateError.message);
+  }
 }
 
 export async function processManagedAssetImportJob(
