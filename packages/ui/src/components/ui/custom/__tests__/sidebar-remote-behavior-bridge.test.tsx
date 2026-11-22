@@ -147,7 +147,7 @@ describe('SidebarRemoteBehaviorBridge', () => {
     expect(onApplyRemoteBehavior).toHaveBeenCalledExactlyOnceWith('minimal');
   });
 
-  it('reads a retired hidden account preference as minimal and rewrites it', async () => {
+  it('reads a retired hidden account preference as minimal without writing it', async () => {
     mockConfigState.remoteBehavior = 'hidden';
     const { onApplyRemoteBehavior, onRemoteBehaviorAvailable } = renderBridge({
       behavior: 'collapsed',
@@ -159,10 +159,21 @@ describe('SidebarRemoteBehaviorBridge', () => {
     );
     expect(onRemoteBehaviorAvailable).toHaveBeenCalledWith('minimal');
     expect(onApplyRemoteBehavior).not.toHaveBeenCalledWith('hidden');
-    expect(mockUpdateConfigMutate).toHaveBeenCalledTimes(1);
-    expect(mockUpdateConfigMutate).toHaveBeenCalledWith({
+    expect(mockUpdateConfigMutate).not.toHaveBeenCalled();
+  });
+
+  it('only writes the user selection when the account still stores hidden', () => {
+    mockConfigState.remoteBehavior = 'hidden';
+    const { onApplyRemoteBehavior } = renderBridge({
+      behavior: 'expanded',
+      behaviorUpdatedAt: Date.now(),
+      userChangeVersion: 1,
+    });
+
+    expect(onApplyRemoteBehavior).not.toHaveBeenCalled();
+    expect(mockUpdateConfigMutate).toHaveBeenCalledExactlyOnceWith({
       configId: 'SIDEBAR_BEHAVIOR',
-      value: 'minimal',
+      value: 'expanded',
     });
   });
 

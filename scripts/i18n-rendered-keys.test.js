@@ -200,7 +200,6 @@ test('real Mind closure rejects pre-fix bundles and preserves canonical values',
   const added = [
     'common.dark',
     'common.guest_access',
-    'common.hidden',
     'common.home',
     'common.light',
     'common.members',

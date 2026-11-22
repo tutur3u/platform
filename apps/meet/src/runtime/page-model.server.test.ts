@@ -7,7 +7,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 const mocks = vi.hoisted(() => ({
   sessionUser: vi.fn(),
-  badgeSession: vi.fn(),
   legacyPlans: vi.fn(),
   currentUser: vi.fn(),
   invitation: vi.fn(),
@@ -51,7 +50,6 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-duration', () => ({
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.sessionUser,
   getSatelliteCurrentUser: mocks.currentUser,
-  getSatelliteSupabaseSessionUser: mocks.badgeSession,
 }));
 vi.mock('@tuturuuu/satellite/workspace-invitation', () => ({
   getPendingWorkspaceInvitation: mocks.invitation,
@@ -149,7 +147,6 @@ function signIn(id: string | null) {
 beforeEach(() => {
   mocks.responseHeaders.delete('cache-control');
   vi.clearAllMocks();
-  mocks.badgeSession.mockResolvedValue(null);
   mocks.tables = {};
   const queries: Record<string, unknown> = {
     workspace_meetings: table('workspace_meetings', {
@@ -347,13 +344,13 @@ describe('room page', () => {
 describe('workspace pages', () => {
   it('skips the staff check and hides the badge for an external account', async () => {
     signIn('member');
-    await expect(loadPageModel('/personal/meetings')).resolves.toMatchObject({
+    await expect(loadPageModel('/verify-token')).resolves.toMatchObject({
       showVersionBadge: false,
     });
-    expect(mocks.badgeSession).not.toHaveBeenCalled();
+    expect(mocks.hostIdentity).not.toHaveBeenCalled();
   });
 
-  it('only mounts the badge for a verified staff session of the same actor', async () => {
+  it('allows verified staff with a signed app session to use the badge', async () => {
     mocks.sessionUser.mockResolvedValue({
       id: 'member',
       email: 'staff@tuturuuu.com',
@@ -364,20 +361,34 @@ describe('workspace pages', () => {
       email_confirmed_at: '2026-11-01T00:00:00Z',
       identities: [{ provider: 'email', identity_data: {} }],
     };
-    for (const session of [
+    for (const identity of [
       null,
       { ...verified, id: 'another-user' },
+      { ...verified, email_confirmed_at: undefined },
       { ...verified, app_metadata: { qa_test: true } },
     ]) {
-      mocks.badgeSession.mockResolvedValueOnce(session);
-      await expect(loadPageModel('/personal/meetings')).resolves.toMatchObject({
+      mocks.hostIdentity.mockResolvedValueOnce({
+        data: { user: identity },
+        error: null,
+      });
+      await expect(loadPageModel('/verify-token')).resolves.toMatchObject({
         showVersionBadge: false,
       });
     }
-    mocks.badgeSession.mockResolvedValueOnce(verified);
-    await expect(loadPageModel('/personal/meetings')).resolves.toMatchObject({
+    mocks.hostIdentity.mockRejectedValueOnce(new Error('Auth unavailable'));
+    await expect(loadPageModel('/verify-token')).resolves.toMatchObject({
+      showVersionBadge: false,
+    });
+    mocks.hostIdentity.mockResolvedValueOnce({
+      data: { user: verified },
+      error: null,
+    });
+    await expect(loadPageModel('/verify-token')).resolves.toMatchObject({
       showVersionBadge: true,
     });
+    expect(mocks.hostIdentity.mock.calls.every(([id]) => id === 'member')).toBe(
+      true
+    );
   });
 
   it('shows a pending invitation instead of the workspace', async () => {

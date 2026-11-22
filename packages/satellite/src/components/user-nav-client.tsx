@@ -42,22 +42,98 @@ import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 import { useWorkspaceSelector } from './workspace-selector-context';
 import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 
-interface UserNavClientProps {
+interface SettingsDialogProps {
   user: WorkspaceUser | null;
-  locale: string | undefined;
-  hideMetadata?: boolean;
-  /** The app name used in the logout redirect URL (e.g., "Rewise", "Tasks") */
-  appName?: string;
-  /** The URL of the central Tuturuuu web app */
-  ttrUrl?: string;
   /** Optional settings dialog component. Receives wsId and user as props. */
   settingsDialog?: ReactNode;
   /** Sidebar tab for apps using the shared settings dialog. */
   sidebarSettingsTab?: SatelliteSidebarSettingsTab;
   /** Verified server-side eligibility for app-owned settings. */
   canManageVersionBadge?: boolean;
+}
+
+interface UserNavClientProps extends SettingsDialogProps {
+  locale: string | undefined;
+  hideMetadata?: boolean;
+  /** The app name used in the logout redirect URL (e.g., "Rewise", "Tasks") */
+  appName?: string;
+  /** The URL of the central Tuturuuu web app */
+  ttrUrl?: string;
   /** Let an app-level host own settings URL state, shortcuts, and rendering. */
   externalSettingsHost?: boolean;
+}
+
+const defaultCentralUrl =
+  process.env.NODE_ENV === 'production'
+    ? 'https://tuturuuu.com'
+    : `http://localhost:${process.env.CENTRAL_PORT || 7803}`;
+
+export function SatelliteSettingsDialogHost({
+  canManageVersionBadge,
+  centralUrl = defaultCentralUrl,
+  settingsDialog,
+  sidebarSettingsTab,
+  user,
+}: SettingsDialogProps & { centralUrl?: string }) {
+  const { closeSettings, open, openSettings, tab } =
+    useSettingsDialogUrlState();
+  const signedIn = Boolean(user);
+  const openDefaultSettings = useCallback(() => {
+    openSettings(null);
+  }, [openSettings]);
+  useSettingsDialogShortcut({
+    enabled: signedIn,
+    onOpen: openDefaultSettings,
+  });
+
+  useEffect(() => {
+    if (!signedIn) return;
+
+    const handleSettingsIntent = (event: Event) => {
+      if (!claimSettingsDialogIntent(event)) return;
+
+      const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
+        ?.settingsTab;
+      openSettings(tab ?? null);
+    };
+
+    window.addEventListener(
+      SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+      handleSettingsIntent
+    );
+    return () =>
+      window.removeEventListener(
+        SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+        handleSettingsIntent
+      );
+  }, [openSettings, signedIn]);
+
+  if (!user) return null;
+
+  const content = settingsDialog ?? (
+    <SatelliteDefaultSettingsDialog
+      canManageVersionBadge={canManageVersionBadge}
+      centralUrl={centralUrl}
+      sidebarTab={sidebarSettingsTab}
+      user={user}
+    />
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) closeSettings();
+      }}
+    >
+      {isValidElement(content)
+        ? cloneElement(content, {
+            defaultTab: tab ?? undefined,
+            key: tab ?? 'default',
+          } as Record<string, unknown>)
+        : content}
+    </Dialog>
+  );
 }
 
 export default function UserNavClient({
@@ -77,45 +153,13 @@ export default function UserNavClient({
   const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
   const { modKey } = usePlatform();
-  const {
-    closeSettings,
-    open: settingsOpen,
-    openSettings: openSettingsTab,
-    tab: settingsTab,
-  } = useSettingsDialogUrlState();
+  const { closeSettings, openSettings: openSettingsTab } =
+    useSettingsDialogUrlState();
   const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
-  // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
-  // once here so every satellite app (calendar/tasks/finance/…) gets it.
   const openSettings = useCallback(() => {
     openSettingsTab(null);
   }, [openSettingsTab]);
-  useSettingsDialogShortcut({
-    enabled: Boolean(user) && ownsSettingsDialog,
-    onOpen: openSettings,
-  });
-
-  useEffect(() => {
-    if (!ownsSettingsDialog) return;
-
-    const handleSettingsIntent = (event: Event) => {
-      if (!claimSettingsDialogIntent(event)) return;
-
-      const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
-        ?.settingsTab;
-      openSettingsTab(tab ?? null);
-    };
-
-    window.addEventListener(
-      SETTINGS_DIALOG_OPEN_INTENT_EVENT,
-      handleSettingsIntent
-    );
-    return () =>
-      window.removeEventListener(
-        SETTINGS_DIALOG_OPEN_INTENT_EVENT,
-        handleSettingsIntent
-      );
-  }, [openSettingsTab, ownsSettingsDialog]);
 
   useEffect(() => {
     const openFeedback = () => setReportOpen(true);
@@ -137,27 +181,7 @@ export default function UserNavClient({
     };
   }, [closeSettings]);
 
-  const centralUrl =
-    ttrUrl ??
-    (process.env.NODE_ENV === 'production'
-      ? 'https://tuturuuu.com'
-      : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
-  // Apps without their own dialog still get the shared account tabs.
-  const effectiveSettingsDialog = settingsDialog ?? (
-    <SatelliteDefaultSettingsDialog
-      canManageVersionBadge={canManageVersionBadge}
-      centralUrl={centralUrl}
-      sidebarTab={sidebarSettingsTab}
-      user={user}
-    />
-  );
-  const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
-    ? cloneElement(effectiveSettingsDialog, {
-        defaultTab: settingsTab ?? undefined,
-        key: settingsTab ?? 'default',
-      } as Record<string, unknown>)
-    : effectiveSettingsDialog;
-
+  const centralUrl = ttrUrl ?? defaultCentralUrl;
   const publicProfileUrl = getPublicProfileUrl(user?.handle, centralUrl);
   const secondaryLabel = resolveUserNavSecondaryLabel({
     email: user?.email,
@@ -186,16 +210,14 @@ export default function UserNavClient({
       />
       <AppGuideOverlay />
 
-      {user && ownsSettingsDialog && (
-        <Dialog
-          open={settingsOpen}
-          onOpenChange={(open) => {
-            if (open) return;
-            closeSettings();
-          }}
-        >
-          {renderedSettingsDialog}
-        </Dialog>
+      {ownsSettingsDialog && (
+        <SatelliteSettingsDialogHost
+          canManageVersionBadge={canManageVersionBadge}
+          centralUrl={centralUrl}
+          settingsDialog={settingsDialog}
+          sidebarSettingsTab={sidebarSettingsTab}
+          user={user}
+        />
       )}
 
       <SatelliteUserMenu

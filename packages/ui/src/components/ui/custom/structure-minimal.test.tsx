@@ -250,6 +250,14 @@ describe('Structure in minimal mode', () => {
 
     fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' });
     expect(document.activeElement).toBe(trigger());
+    expect(sidebar()).toHaveAttribute('data-overlay-state', 'closing');
+    expect(
+      sidebar().querySelector('[data-sidebar-overlay-surface]')
+    ).toHaveAttribute('inert');
+    expect(fireEvent.keyDown(trigger(), { key: 'Tab', shiftKey: true })).toBe(
+      true
+    );
+    expect(document.activeElement).toBe(trigger());
     finishClosing();
 
     expect(isOpen()).toBe(false);

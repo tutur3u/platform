@@ -92,13 +92,17 @@ describe('[wsId] structure compile graph', () => {
       'currentWorkspace={currentWorkspace}'
     );
     expect(structureImplSource).toContain('WorkspaceSelectVisibilityToggle');
+  });
+
+  it('uses the shared workspace selector section behind the shell split point', () => {
+    const modulePath = '@tuturuuu/ui/custom/satellite-workspace-section';
+    expect(structureSource).not.toMatch(staticImportPattern(modulePath));
+    expect(structureImplSource).toMatch(staticImportPattern(modulePath));
+    expect(structureImplSource).toContain('<SidebarWorkspaceSelectSection');
+    expect(structureImplSource).toContain('controls={workspaceSection.id}');
     expect(structureImplSource).toContain(
-      "'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'"
+      'openRequest={workspaceSection.openRequest}'
     );
-    expect(structureImplSource).toContain(
-      "'grid-rows-[1fr] border-b pb-2 opacity-100'"
-    );
-    expect(structureImplSource).not.toContain('SidebarWorkspaceSelectSection');
   });
 
   it('loads optional sidebar helpers after hydration instead of preloading them through next/dynamic', () => {

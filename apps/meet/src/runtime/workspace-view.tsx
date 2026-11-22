@@ -1,6 +1,8 @@
 import { Calendar, Video } from '@tuturuuu/icons';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
-import UserNavClient from '@tuturuuu/satellite/user-nav-client';
+import UserNavClient, {
+  SatelliteSettingsDialogHost,
+} from '@tuturuuu/satellite/user-nav-client';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useTranslations } from 'next-intl';
@@ -35,11 +37,10 @@ export function WorkspaceView({
   };
   const userPopover = (
     <UserNavClient
-      canManageVersionBadge={canManageVersionBadge}
+      externalSettingsHost
       user={profile}
       locale={locale}
       hideMetadata
-      sidebarSettingsTab={sidebarSettingsTab}
     />
   );
   const notificationPopover = <NotificationPopover userId={user.id} />;
@@ -49,6 +50,11 @@ export function WorkspaceView({
         initialBehavior={workspace.behavior}
         initialBehaviorUpdatedAt={workspace.behaviorUpdatedAt}
       >
+        <SatelliteSettingsDialogHost
+          canManageVersionBadge={canManageVersionBadge}
+          sidebarSettingsTab={sidebarSettingsTab}
+          user={profile}
+        />
         <Structure
           actions={
             <div className="flex w-full items-center gap-1">

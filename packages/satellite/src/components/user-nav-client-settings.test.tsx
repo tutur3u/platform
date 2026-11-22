@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -98,7 +99,7 @@ vi.mock('./workspace-selector-context', () => ({
   useWorkspaceSelector: () => null,
 }));
 
-import UserNavClient from './user-nav-client';
+import UserNavClient, { SatelliteSettingsDialogHost } from './user-nav-client';
 
 const user = { email: 'ada@example.com', id: 'user-1' } as never;
 
@@ -167,5 +168,36 @@ describe('satellite UserNavClient shared settings', () => {
     expect(
       screen.queryByRole('button', { name: 'common.settings' })
     ).toBeNull();
+  });
+
+  it('keeps app-owned settings open when the sidebar account menu unmounts', async () => {
+    const onUrlUpdate = vi.fn();
+    const host = (
+      <SatelliteSettingsDialogHost
+        centralUrl="https://tuturuuu.com"
+        user={user}
+      />
+    );
+    const { rerender } = render(
+      <>
+        {host}
+        <UserNavClient externalSettingsHost locale="en" user={user} />
+      </>,
+      { wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }) }
+    );
+
+    fireEvent(
+      window,
+      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+        cancelable: true,
+        detail: { settingsTab: 'sidebar' },
+      })
+    );
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    rerender(<>{host}</>);
+    expect(screen.getByTestId('default-settings').textContent).toBe(
+      'https://tuturuuu.com|sidebar'
+    );
   });
 });

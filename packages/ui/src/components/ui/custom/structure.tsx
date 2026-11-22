@@ -251,6 +251,9 @@ export function Structure({
                     key={overlay ? (isCollapsed ? 'rail' : 'panel') : 'static'}
                     id={isMinimal ? panelId : undefined}
                     data-sidebar-overlay-surface={isMinimal ? '' : undefined}
+                    inert={
+                      isMinimal && overlayClose.isClosing ? true : undefined
+                    }
                     className={cn(
                       'flex min-h-0 flex-1 flex-col',
                       overlayOpen &&

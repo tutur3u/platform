@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/ui/hooks/use-user-config';
 import { useEffect, useRef } from 'react';
 import {
-  LEGACY_HIDDEN_SIDEBAR_BEHAVIOR,
   normalizeSidebarBehavior,
   type SidebarBehavior,
 } from './sidebar-behavior';
@@ -40,23 +39,6 @@ export function SidebarRemoteBehaviorBridge({
   // An account still storing the retired "hidden" mode reads as "minimal".
   const remoteBehavior = normalizeSidebarBehavior(storedBehavior);
   const updateConfig = useUpdateUserConfig();
-  const migratedLegacyValue = useRef(false);
-
-  useEffect(() => {
-    if (
-      !remoteLoaded ||
-      migratedLegacyValue.current ||
-      storedBehavior !== LEGACY_HIDDEN_SIDEBAR_BEHAVIOR
-    ) {
-      return;
-    }
-
-    migratedLegacyValue.current = true;
-    updateConfig.mutate({
-      configId: SIDEBAR_BEHAVIOR_CONFIG_KEY,
-      value: 'minimal',
-    });
-  }, [remoteLoaded, storedBehavior, updateConfig]);
   const hasAppliedRemote = useRef(false);
   const persistedUserChangeVersion = useRef(0);
   const handledLocalOverrideVersion = useRef(0);

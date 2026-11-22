@@ -32,7 +32,6 @@ import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
   getSatelliteAppSessionUser,
   getSatelliteCurrentUser,
-  getSatelliteSupabaseSessionUser,
 } from '@tuturuuu/satellite/auth';
 import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
 import {
@@ -41,6 +40,7 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
@@ -381,9 +381,12 @@ async function loadResolvedPageModel(url: URL) {
     markSignedInDocument();
     recordMeetPhase('actor', performance.now() - actorStartedAt);
   }
-  const badgeSession =
+  const badgeIdentity =
     actor && isExactTuturuuuDotComEmail(actor.email)
-      ? await getSatelliteSupabaseSessionUser()
+      ? await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          actor.id
+        )
       : null;
   const params: Record<string, string> = { locale };
   if (segments[0] === 'r' && segments[1]) params.code = segments[1];
@@ -396,10 +399,7 @@ async function loadResolvedPageModel(url: URL) {
     params,
     locale,
     actorId: actor?.id,
-    showVersionBadge:
-      badgeSession !== null &&
-      badgeSession.id === actor?.id &&
-      isVerifiedTuturuuuStaffSession(badgeSession),
+    showVersionBadge: isVerifiedTuturuuuStaffSession(badgeIdentity),
     meta: {
       title: 'Tuturuuu Meet',
       description:

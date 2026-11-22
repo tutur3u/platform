@@ -212,7 +212,7 @@ export function useSidebarOverlayClose({
   });
 
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (!panel || isCollapsed) return;
+    if (!panel || isCollapsed || isClosing) return;
     if (event.key === 'Escape') {
       // An overlay opened from the sidebar takes the first Escape.
       if (!event.defaultPrevented && !isPinned) dismiss(true);
