@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   resolveWebAbuseDecision: vi.fn(),
   setLogDrainUserContext: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
-  verifyAppSessionRequest: vi.fn(),
+  verifyAppSessionRequestWithToken: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   writeVerifiedSessionCacheForSubjects: vi.fn(),
 }));
@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   attachSupabaseAuthUser: mocks.attachSupabaseAuthUser,
   createAppSessionUser: mocks.createAppSessionUser,
   getAppSessionTokenFromRequest: mocks.getAppSessionTokenFromRequest,
-  verifyAppSessionRequest: mocks.verifyAppSessionRequest,
+  verifyAppSessionRequestWithToken: mocks.verifyAppSessionRequestWithToken,
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
@@ -162,8 +162,9 @@ beforeEach(() => {
     created_at: '2026-01-01T00:00:00Z',
   });
   mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_synthetic');
-  mocks.verifyAppSessionRequest.mockReturnValue({
+  mocks.verifyAppSessionRequestWithToken.mockReturnValue({
     ok: true,
+    token: 'ttr_app_synthetic',
     claims: {
       target_app: 'finance',
       origin_app: 'web',
@@ -195,10 +196,10 @@ describe('exchange rates with real session middleware', () => {
     });
     expect(mocks.createClient).not.toHaveBeenCalled();
     expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
-    expect(mocks.verifyAppSessionRequest).toHaveBeenCalled();
+    expect(mocks.verifyAppSessionRequestWithToken).toHaveBeenCalled();
   });
   it('rejects an invalid app session before reading rates', async () => {
-    mocks.verifyAppSessionRequest.mockReturnValue({ ok: false });
+    mocks.verifyAppSessionRequestWithToken.mockReturnValue({ ok: false });
     expect((await GET(request())).status).toBe(401);
     expect(from).not.toHaveBeenCalled();
     expect(mocks.createAdminClient).not.toHaveBeenCalled();

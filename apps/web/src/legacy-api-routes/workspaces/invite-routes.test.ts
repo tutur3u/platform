@@ -20,7 +20,8 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
     request.headers.get('cookie')?.includes('tuturuuu_app_session=')
       ? 'app-session-token'
       : null,
-  verifyAppSessionRequest: () => ({
+  verifyAppSessionRequestWithToken: () => ({
+    token: 'app-session-token',
     claims: {
       email: 'app-session@example.com',
       scopes: ['internal-app:session'],
