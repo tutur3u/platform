@@ -621,8 +621,10 @@ game rounds in the panel and save them to the room before opening or starting.
 A refusal from the room, such as a rate limit or a full activity, shows as a
 quiet line in the panel of the person whose action it refused.
 
-A brief reconnect keeps the last activity state on screen until the room is read
-again, and the panel says to try again if someone acts meanwhile. The state
+A brief reconnect keeps the last activity state on screen and marks it as
+waiting: the panel says it is reconnecting and sends nothing until the room has
+answered the read of the new connection. A refused read shows its reason and is
+retried a few times, then again when the person acts. The state
 clears only when the connection gives up, the room ends or the person returns to
 the waiting room. Questions, decks, rounds and written answers in progress follow
 what the room stored until the person edits them; after that a late answer, a

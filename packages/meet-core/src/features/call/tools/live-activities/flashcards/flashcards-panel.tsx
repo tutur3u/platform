@@ -182,7 +182,7 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
           )}
         </ActivitySection>
       )}
-      <ActivityNotice error={activity.error} />
+      <ActivityNotice error={activity.error} stale={activity.stale} />
     </LiveActivityPanelFrame>
   );
 }

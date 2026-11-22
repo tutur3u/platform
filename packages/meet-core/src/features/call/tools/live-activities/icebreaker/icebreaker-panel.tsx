@@ -218,7 +218,7 @@ export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
           )}
         </>
       )}
-      <ActivityNotice error={activity.error} />
+      <ActivityNotice error={activity.error} stale={activity.stale} />
     </LiveActivityPanelFrame>
   );
 }

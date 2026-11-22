@@ -25,6 +25,11 @@ export type LiveActivitiesView = {
   host: LiveActivitiesHost | null;
   /** Why the room refused this person's last command; cleared by the next one. */
   error: string | null;
+  /**
+   * True while the state on screen comes from before a reconnect and the room
+   * has not answered this connection's read yet. Nothing can be sent until then.
+   */
+  stale: boolean;
 };
 
 const EMPTY: LiveActivitiesView = {
@@ -32,12 +37,15 @@ const EMPTY: LiveActivitiesView = {
   mine: EMPTY_LIVE_ACTIVITIES_MINE,
   host: null,
   error: null,
+  stale: false,
 };
 
 type Send = (message: MeetRealtimeClientMessage) => boolean;
 
-/** Shown when the person acts while the room socket is still coming back. */
+/** Shown when the person acts before the room has confirmed its state. */
 export const LIVE_ACTIVITIES_OFFLINE = 'activity_offline';
+/** Waits before a refused read is sent again; after the last one it is manual. */
+export const LIVE_ACTIVITIES_READ_RETRY_MS = [2_000, 4_000, 8_000] as const;
 
 export function createLiveActivitiesStore() {
   let view = EMPTY;
@@ -45,6 +53,12 @@ export function createLiveActivitiesStore() {
   let manager = false;
   // True while a room that was open waits for its socket to come back.
   let suspended = false;
+  // The room answered this connection's read: commands may go out.
+  let fresh = false;
+  let readRequest: string | undefined;
+  let readError: string | undefined;
+  let readRetries = 0;
+  let retry: ReturnType<typeof setTimeout> | undefined;
   // Only a refusal of the command this person just sent is theirs to see.
   let lastRequest: string | undefined;
   const listeners = new Set<() => void>();
@@ -52,6 +66,17 @@ export function createLiveActivitiesStore() {
     if (view === next) return;
     view = next;
     for (const listener of listeners) listener();
+  };
+  const stopReading = () => {
+    clearTimeout(retry);
+    retry = undefined;
+    readRequest = undefined;
+  };
+  const requestRead = () => {
+    stopReading();
+    if (!send) return;
+    const requestId = `activity-read:${crypto.randomUUID()}`;
+    if (send({ type: 'activity.read', requestId })) readRequest = requestId;
   };
   return {
     read: () => view,
@@ -66,15 +91,29 @@ export function createLiveActivitiesStore() {
     open(channel: Send) {
       send = channel;
       suspended = false;
-      if (view.error === LIVE_ACTIVITIES_OFFLINE)
-        publish({ ...view, error: null });
-      send({ type: 'activity.read' });
+      fresh = false;
+      readRetries = 0;
+      requestRead();
     },
     receive(message: MeetRealtimeServerMessage) {
       if (!send) return;
       switch (message.type) {
         case 'activity.snapshot':
-          publish({ ...view, snapshot: message.snapshot });
+          if (message.requestId && message.requestId === readRequest) {
+            // The answer to this connection's read: the screen is current.
+            stopReading();
+            fresh = true;
+            const waiting =
+              view.error === LIVE_ACTIVITIES_OFFLINE ||
+              view.error === readError;
+            readError = undefined;
+            publish({
+              ...view,
+              snapshot: message.snapshot,
+              stale: false,
+              error: waiting ? null : view.error,
+            });
+          } else publish({ ...view, snapshot: message.snapshot });
           break;
         case 'activity.mine':
           publish({ ...view, mine: message.mine });
@@ -83,15 +122,27 @@ export function createLiveActivitiesStore() {
           if (manager) publish({ ...view, host: message.host });
           break;
         case 'error':
-          if (message.requestId && message.requestId === lastRequest)
+          if (message.requestId && message.requestId === readRequest) {
+            // The room refused the read. Say so, and ask again shortly.
+            stopReading();
+            readError = message.error;
+            publish({ ...view, error: message.error });
+            const delay = LIVE_ACTIVITIES_READ_RETRY_MS[readRetries];
+            if (delay !== undefined) {
+              readRetries += 1;
+              retry = setTimeout(requestRead, delay);
+            }
+          } else if (message.requestId && message.requestId === lastRequest)
             publish({ ...view, error: message.error });
           break;
       }
     },
     send(command: LiveActivityCommand) {
-      if (!send) {
-        // The last state is still on screen, so say why nothing happened.
-        if (suspended && view.error !== LIVE_ACTIVITIES_OFFLINE)
+      if (!send || !fresh) {
+        // What is on screen is not confirmed yet, so nothing is sent on it.
+        // Acting again after the automatic retries ran out asks once more.
+        if (send && !readRequest && !retry) requestRead();
+        if ((send || suspended) && !view.error)
           publish({ ...view, error: LIVE_ACTIVITIES_OFFLINE });
         return false;
       }
@@ -105,19 +156,26 @@ export function createLiveActivitiesStore() {
     },
     /**
      * The socket dropped and is recovering. The last state stays on screen, so
-     * a brief reconnect does not blank the panels or the drafts built on them;
-     * the read sent when the socket opens again replaces it.
+     * a brief reconnect does not blank the panels or the drafts built on them.
+     * It is marked stale and takes no commands until the room answers the read
+     * sent when the socket opens again.
      */
     suspend() {
       if (!send) return;
       send = undefined;
       suspended = true;
+      fresh = false;
+      stopReading();
+      publish({ ...view, stale: true });
     },
     close() {
       send = undefined;
       suspended = false;
+      fresh = false;
       manager = false;
       lastRequest = undefined;
+      readError = undefined;
+      stopReading();
       publish(EMPTY);
       return listeners.size === 0;
     },

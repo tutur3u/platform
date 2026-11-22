@@ -35,7 +35,7 @@ export function AssessmentPanel({ onClose }: MeetToolPanelProps) {
       ) : (
         <AssessmentHost activity={activity} />
       )}
-      <ActivityNotice error={activity.error} />
+      <ActivityNotice error={activity.error} stale={activity.stale} />
     </LiveActivityPanelFrame>
   );
 }

@@ -51,13 +51,23 @@ export function useActivity() {
 
 export type Activity = ReturnType<typeof useActivity>;
 
-/** The room's refusal of this person's last action, said quietly in place. */
-export function ActivityNotice({ error }: { error: string | null }) {
+/**
+ * The room's refusal of this person's last action, said quietly in place.
+ * While the state on screen waits for the room to confirm it after a
+ * reconnect, the line says so, because nothing can be sent until then.
+ */
+export function ActivityNotice({
+  error,
+  stale,
+}: {
+  error: string | null;
+  stale: boolean;
+}) {
   const t = useTranslations('meet.call.live_activities.errors');
-  if (!error) return null;
+  if (!error && !stale) return null;
   return (
     <p role="status" className="text-muted-foreground text-sm">
-      {t(ERRORS[error] ?? 'generic')}
+      {t(error ? (ERRORS[error] ?? 'generic') : 'reconnecting')}
     </p>
   );
 }

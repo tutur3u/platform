@@ -182,10 +182,20 @@ it('fills in a reply that arrives late and keeps typed text through a reconnect'
       strings.errors.reconnecting
     );
   });
-  expect(screen.queryByRole('status')).toBeNull();
-  room({ snapshot: asked, mine });
-  expect(input().value).toBe('Quick sort');
+  // The socket is back, but the room has not confirmed the state on screen:
+  // the reply still cannot go out.
+  fireEvent.click(screen.getByRole('button', { name: t.update }));
   expect(sent()).toEqual([]);
+  expect(screen.getByRole('status').textContent).toBe(
+    strings.errors.reconnecting
+  );
+  room({ snapshot: asked, mine });
+  expect(screen.queryByRole('status')).toBeNull();
+  expect(input().value).toBe('Quick sort');
+  fireEvent.click(screen.getByRole('button', { name: t.update }));
+  expect(sent()).toEqual([
+    { kind: 'icebreaker.respond', promptId: PROMPT, text: 'Quick sort' },
+  ]);
 });
 
 it('does not start the next question from the reply to the last one', () => {

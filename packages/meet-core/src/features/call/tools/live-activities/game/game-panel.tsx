@@ -84,7 +84,7 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
           {game.phase !== 'question' && <GameScoreboard activity={activity} />}
         </>
       )}
-      <ActivityNotice error={activity.error} />
+      <ActivityNotice error={activity.error} stale={activity.stale} />
     </LiveActivityPanelFrame>
   );
 }

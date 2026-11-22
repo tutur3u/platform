@@ -49,7 +49,17 @@ export function lastRequestId() {
   return message && 'requestId' in message ? message.requestId : undefined;
 }
 
-/** Puts the room in a state as its messages would, for one viewer. */
+/** The id of the read the store last sent, which its answer has to carry. */
+function readId() {
+  for (const [message] of [...socket.mock.calls].reverse())
+    if (message.type === 'activity.read') return message.requestId;
+  return undefined;
+}
+
+/**
+ * Puts the room in a state as its messages would, for one viewer. The snapshot
+ * answers the store's read, so the panel may send commands afterwards.
+ */
 export function room(state: {
   manager?: boolean;
   snapshot?: Partial<LiveActivitiesSnapshot>;
@@ -62,6 +72,7 @@ export function room(state: {
     store.receive({
       type: 'activity.snapshot',
       snapshot: { ...EMPTY_LIVE_ACTIVITIES_SNAPSHOT, ...state.snapshot },
+      requestId: readId(),
     });
     store.receive({
       type: 'activity.mine',
@@ -78,7 +89,8 @@ export function room(state: {
 
 /**
  * A brief reconnect: the socket drops, comes back and the room is read again.
- * `whileOffline` runs in between, with the last state still on screen.
+ * `whileOffline` runs in between, with the last state still on screen. The
+ * read stays unanswered until the test calls `room` again.
  */
 export function reconnectRoom(whileOffline?: () => void) {
   const store = liveActivitiesRoom(MEETING_ID);
@@ -93,6 +105,12 @@ export function openRoom(manager: boolean) {
   const store = liveActivitiesRoom(MEETING_ID);
   store.setManager(manager);
   store.open(socket);
+  // The room answers the first read with its empty state.
+  store.receive({
+    type: 'activity.snapshot',
+    snapshot: EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
+    requestId: readId(),
+  });
   socket.mockClear();
   return store;
 }
