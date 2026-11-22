@@ -112,6 +112,39 @@ Revealing Vercel values can require a step-up `vercel login`; a human runs it.
 A missing optional secret degrades only its own page (for example, Deployments
 reports the coordinator as unavailable).
 
+### Mobile Calendar gateway credential
+
+The same server credential serves native Calendar forwarding and Calendar cron
+forwarding. Use the credential that matches Calendar's exact-header hosting
+rule. Coordinate rotation with the Calendar firewall owner so the previous
+credential stays valid during rollout and rollback.
+
+Use the [Admin delivery path](#delivery-order) to stage the candidate without
+traffic. Before a versioned secret write, verify that the latest uploaded Admin
+version is the intended candidate and coordinate exclusive upload ownership.
+The authorized secret custodian runs the versioned write with the credential on
+stdin from the approved private input:
+
+```bash
+bun wrangler versions secret put MOBILE_CALENDAR_GATEWAY_SECRET \
+  --name tuturuuu-infrastructure < "$calendar_gateway_credential_file"
+```
+
+Verify the resulting version's code identity and `secret_text` binding by name,
+and confirm the production assignment has not changed. Qualify a signed-in
+mobile Calendar events read on the staged candidate, an invalid session that
+returns 401, and the existing offline bulk guard. Retain the verified rollback
+version and coordinate promotion with the Admin release owner.
+
+For a gateway 503, look for `Mobile Calendar gateway failure` in the Admin
+Worker logs. The `stage` identifies session verification, credential loading,
+or the upstream request or response. When available, `reason` distinguishes
+an invalid Worker binding from an envelope read error, missing envelope, invalid
+envelope, decryption failure, or invalid credential. A separate
+`Mobile Calendar gateway upstream failure` message records only the upstream
+HTTP status. A guard rejection such as `offline-download-inactive` is emitted
+before the gateway and applies to the marked bulk request.
+
 ## Smoke checks
 
 ```bash

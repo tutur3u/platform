@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
+import { CalendarGatewayCredentialError } from './credential';
 import {
   forwardCalendarRequest,
   GATEWAY_HEADER,
@@ -436,6 +437,44 @@ describe('authenticated native Calendar gateway', () => {
     expect((await forwardCalendarRequest(request(), deps)).status).toBe(503);
     expect(deps.fetch).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {
+      dependency: 'verifyToken',
+      error: new Error(secret),
+      diagnostic: { stage: 'session-verification' },
+    },
+    {
+      dependency: 'loadSecret',
+      error: new CalendarGatewayCredentialError('envelope-missing'),
+      diagnostic: { stage: 'credential', reason: 'envelope-missing' },
+    },
+    {
+      dependency: 'fetch',
+      error: new Error(secret),
+      diagnostic: { stage: 'upstream-fetch' },
+    },
+  ] as const)(
+    'logs only the failure stage and safe reason when $dependency rejects',
+    async ({ dependency, error, diagnostic }) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const deps = dependencies();
+        deps[dependency].mockRejectedValue(error);
+        const response = await forwardCalendarRequest(request(), deps);
+        expect(response.status).toBe(503);
+        expect(await response.json()).toEqual({
+          message: 'Calendar gateway unavailable',
+        });
+        expect(warn).toHaveBeenCalledExactlyOnceWith(
+          'Mobile Calendar gateway failure',
+          diagnostic
+        );
+      } finally {
+        warn.mockRestore();
+      }
+    }
+  );
 
   it('enforces method, body type and byte limits', async () => {
     const deps = dependencies();

@@ -669,12 +669,15 @@ Authenticated requests preserve `x-tuturuuu-offline-download` and
 protection and verification flow. Ordinary reads stay unmarked. Regression coverage
 lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts`.
 
-The server credential is stored as a versioned encrypted envelope in the root
-workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data
-key is encrypted with the infrastructure app's existing `ENCRYPTION_MASTER_KEY`.
-The envelope contains `version: 1`, `encryptedDataKey`, and `encryptedSecret`.
-Only the server decrypts it; it must never enter mobile build configuration,
-logs, source control, or the signing bundle.
+Provision the server credential as the Infrastructure Worker secret
+`MOBILE_CALENDAR_GATEWAY_SECRET`. When that binding is absent, the gateway reads
+the existing root workspace `workspace_secrets` row named
+`mobile_calendar_gateway:v1`. Its version 1 envelope contains
+`encryptedDataKey` and `encryptedSecret`, and the data key is wrapped with the
+Infrastructure app's `ENCRYPTION_MASTER_KEY`. An invalid configured binding
+fails closed. Keep the credential out of mobile build configuration, logs,
+source control, and the signing bundle. See the [Admin credential
+runbook](/build/devops/admin-app#mobile-calendar-gateway-credential).
 
 Configure Calendar's custom WAF exception to require both its API path and an
 exact `x-tuturuuu-calendar-gateway` header value matching that private credential.
@@ -691,12 +694,14 @@ challenge. Older clients that call Calendar directly need the mobile update.
 Keep publication on hold if gateway verification fails. Inspect the exact project's
 active rules and unpublished draft before changing or publishing its WAF config.
 
-For credential rotation, create a new encrypted envelope, temporarily allow both
-old and new **server credentials** at the WAF, update the secret row, verify a live
-Calendar read, then remove the old credential. Never restore the public Bearer
-exception as a fallback. Missing or invalid secret configuration fails closed with
-JSON 503. Responses use `private, no-store`; request bodies are limited to 512 KiB,
-response bodies to 8 MiB, and forwarding to 20 seconds.
+For credential rotation, temporarily allow both old and new **server credentials**
+at the WAF, stage and promote a Worker with the new secret, verify a live Calendar
+read, then remove the old credential once the rollback window closes. A deployment
+still using the envelope rotates it through the root workspace secret custodian.
+Missing or invalid credential configuration fails closed with JSON 503. The
+gateway does not fall back to the public Bearer exception. Responses use
+`private, no-store`, with a 512 KiB request limit, an 8 MiB response limit, and
+a 20-second forwarding deadline.
 
 ## Locked Notes
 

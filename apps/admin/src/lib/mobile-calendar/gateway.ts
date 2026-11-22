@@ -1,4 +1,8 @@
 import { Effect } from '@tuturuuu/utils/effect';
+import {
+  CalendarGatewayCredentialError,
+  isCalendarGatewayCredential,
+} from './credential';
 
 export const GATEWAY_PREFIX = '/api/v1/mobile-calendar';
 export const GATEWAY_HEADER = 'x-tuturuuu-calendar-gateway';
@@ -130,6 +134,8 @@ async function boundedBody(
 }
 
 export function forwardCalendarRequest(request: Request, deps: Dependencies) {
+  let stage = 'request';
+
   return Effect.runPromise(
     Effect.tryPromise({
       try: async () => {
@@ -147,14 +153,16 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
         const match = /^Bearer ([^\s]+)$/i.exec(
           request.headers.get('authorization') ?? ''
         );
-        if (!match || !(await deps.verifyToken(match[1]!))) {
+        stage = 'session-verification';
+        if (!match?.[1] || !(await deps.verifyToken(match[1]))) {
           return jsonError(401, 'Unauthorized');
         }
         // Verification precedes both secret access and the upstream request.
         // Calendar independently verifies this same token and workspace access.
+        stage = 'credential';
         const secret = await deps.loadSecret();
-        if (!/^[a-zA-Z0-9_-]{43,}$/.test(secret)) {
-          return jsonError(503, 'Calendar gateway unavailable');
+        if (!isCalendarGatewayCredential(secret)) {
+          throw new CalendarGatewayCredentialError('credential-invalid');
         }
         const signal = AbortSignal.any([
           request.signal,
@@ -173,6 +181,7 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
           if (value !== null) headers.set(name, value);
         }
         let body: Uint8Array<ArrayBuffer> | undefined;
+        stage = 'request-body';
         if (request.body) {
           if (
             !/^application\/json(?:;|$)/i.test(
@@ -189,6 +198,7 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
           );
           headers.set('Content-Type', 'application/json');
         }
+        stage = 'upstream-fetch';
         const upstream = await deps.fetch(
           `${CALENDAR_ORIGIN}${path}${incoming.search}`,
           {
@@ -200,6 +210,12 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
             cache: 'no-store',
           }
         );
+        stage = 'upstream-response';
+        if (upstream.status >= 500) {
+          console.warn('Mobile Calendar gateway upstream failure', {
+            status: upstream.status,
+          });
+        }
         // Never forward the credentials through a redirect or relay HTML challenges.
         if (
           (upstream.status >= 300 && upstream.status < 400) ||
@@ -246,13 +262,18 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
       },
       catch: (error) => error,
     }).pipe(
-      Effect.catchAll((error) =>
-        Effect.succeed(
-          error instanceof GatewayError
-            ? jsonError(error.status, error.message)
-            : jsonError(503, 'Calendar gateway unavailable')
-        )
-      )
+      Effect.catchAll((error) => {
+        if (error instanceof GatewayError) {
+          return Effect.succeed(jsonError(error.status, error.message));
+        }
+        console.warn('Mobile Calendar gateway failure', {
+          stage,
+          ...(error instanceof CalendarGatewayCredentialError
+            ? { reason: error.reason }
+            : {}),
+        });
+        return Effect.succeed(jsonError(503, 'Calendar gateway unavailable'));
+      })
     )
   );
 }

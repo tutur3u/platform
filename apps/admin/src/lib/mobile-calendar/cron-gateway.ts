@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { Effect } from '@tuturuuu/utils/effect';
+import { isCalendarGatewayCredential } from './credential';
 import { GATEWAY_HEADER } from './gateway';
 
 type Dependencies = {
@@ -35,7 +36,7 @@ export function forwardCalendarCron(request: Request, deps: Dependencies) {
       // Authenticate the scheduler before accessing the vault. Calendar verifies
       // cron authentication again; its private hosting credential never leaves Infra.
       const secret = await deps.loadSecret();
-      if (!/^[a-zA-Z0-9_-]{43,}$/.test(secret))
+      if (!isCalendarGatewayCredential(secret))
         return response(503, 'Calendar gateway unavailable');
       const signal = AbortSignal.any([
         request.signal,
