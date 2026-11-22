@@ -175,12 +175,13 @@ it('folds an idle composer to one line in a short pane and opens it on focus', (
   fireEvent.focus(composer());
   expect(composer().getAttribute('rows')).toBe('2');
   expect(composer().getAttribute('placeholder')).toBe(t.composer_placeholder);
-  // A draft keeps it open when focus moves away.
+  // A draft keeps it open when the person presses elsewhere.
   fireEvent.change(composer(), { target: { value: 'My question' } });
-  fireEvent.blur(composer());
+  fireEvent.pointerDown(document.body);
   expect(composer().getAttribute('rows')).toBe('2');
+  // With the draft gone, the next press outside folds it.
   fireEvent.change(composer(), { target: { value: '' } });
-  fireEvent.blur(composer());
+  fireEvent.pointerDown(document.body);
   expect(composer().getAttribute('rows')).toBe('1');
 });
 
@@ -214,33 +215,116 @@ it('keeps the full composer in the full-screen dialog opened from a short pane',
   expect(attach.parentElement?.className).not.toContain('hidden');
 });
 
-it('stays open while a button is pressed and the field blurs with no related target', async () => {
+const attach = () => screen.getByRole('button', { name: t.attach_file });
+const rowHidden = () => attach().parentElement?.className.includes('hidden');
+
+it('opens on a press inside the form and lets an Attach click land', () => {
   body = SHORT;
   mount();
-  fireEvent.focus(composer());
-  const attach = screen.getByRole('button', { name: t.attach_file });
-  // Safari and iOS: pressing a button blurs the field without focusing it.
-  fireEvent.pointerDown(attach);
-  fireEvent.blur(composer(), { relatedTarget: null });
+  const click = vi
+    .spyOn(HTMLInputElement.prototype, 'click')
+    .mockImplementation(() => {});
+  expect(composer().getAttribute('rows')).toBe('1');
+  // Safari and iOS: the button takes a press, the field never gets a blur
+  // that could fold the row before the click.
+  fireEvent.pointerDown(attach());
   expect(composer().getAttribute('rows')).toBe('2');
-  expect(attach.parentElement?.className).not.toContain('hidden');
-  // Releasing with focus outside the form folds it again.
-  fireEvent.pointerUp(window);
-  await waitFor(() => expect(composer().getAttribute('rows')).toBe('1'));
+  expect(rowHidden()).toBe(false);
+  fireEvent.click(attach());
+  expect(click).toHaveBeenCalledTimes(1);
+  expect(rowHidden()).toBe(false);
+  click.mockRestore();
 });
 
-it('keeps the composer open when Tab moves from the field to Attach', () => {
+it('never folds from anything inside the form', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  fireEvent.blur(composer(), { relatedTarget: null });
+  fireEvent.pointerUp(attach());
+  fireEvent.blur(attach(), { relatedTarget: null });
+  expect(composer().getAttribute('rows')).toBe('2');
+  // Moving between the field and its buttons keeps it open too.
+  fireEvent.blur(composer(), { relatedTarget: attach() });
+  fireEvent.focus(attach());
+  expect(composer().getAttribute('rows')).toBe('2');
+});
+
+it('folds on a press outside the form', () => {
   body = SHORT;
   mount();
   fireEvent.focus(composer());
   expect(composer().getAttribute('rows')).toBe('2');
-  const attach = screen.getByRole('button', { name: t.attach_image });
-  // What a browser reports for Tab: the field blurs toward the button.
-  fireEvent.blur(composer(), { relatedTarget: attach });
-  fireEvent.focus(attach);
-  expect(composer().getAttribute('rows')).toBe('2');
-  expect(attach.parentElement?.className).not.toContain('hidden');
-  // Leaving the form altogether folds it.
-  fireEvent.blur(attach, { relatedTarget: document.body });
+  fireEvent.pointerDown(document.body);
   expect(composer().getAttribute('rows')).toBe('1');
+});
+
+it('folds when focus moves to something outside the form', () => {
+  body = SHORT;
+  mount();
+  const outside = document.createElement('button');
+  document.body.append(outside);
+  fireEvent.focus(composer());
+  act(() => {
+    outside.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+  });
+  expect(composer().getAttribute('rows')).toBe('1');
+  outside.remove();
+});
+
+it('folds on Escape in the composer', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  fireEvent.keyDown(composer(), { key: 'Escape' });
+  expect(composer().getAttribute('rows')).toBe('1');
+});
+
+it('stays open while there is a draft, whatever happens outside', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  fireEvent.change(composer(), { target: { value: 'My question' } });
+  fireEvent.pointerDown(document.body);
+  fireEvent.keyDown(composer(), { key: 'Escape' });
+  expect(composer().getAttribute('rows')).toBe('2');
+});
+
+it('listens outside the form only while it is open and removes its listeners', () => {
+  body = SHORT;
+  const add = vi.spyOn(document, 'addEventListener');
+  const remove = vi.spyOn(document, 'removeEventListener');
+  const added = () =>
+    add.mock.calls.filter(
+      ([type]) => type === 'pointerdown' || type === 'focusin'
+    ).length;
+  const removed = () =>
+    remove.mock.calls.filter(
+      ([type]) => type === 'pointerdown' || type === 'focusin'
+    ).length;
+  mount();
+  const before = added();
+  fireEvent.focus(composer());
+  expect(added()).toBeGreaterThan(before);
+  // Folding removes them...
+  const afterOpen = removed();
+  fireEvent.pointerDown(document.body);
+  expect(removed()).toBeGreaterThan(afterOpen);
+  // ...and so does unmounting while open.
+  fireEvent.focus(composer());
+  const beforeUnmount = removed();
+  cleanup();
+  expect(removed()).toBeGreaterThan(beforeUnmount);
+  add.mockRestore();
+  remove.mockRestore();
+});
+
+it('scrolls a focused card below the sticky controls in a tall pane only', () => {
+  mount();
+  const list = screen.getByText('First question?').closest('ul')
+    ?.parentElement as HTMLElement;
+  expect(list.className).toContain('scroll-pt-(--qa-controls-height)');
+  expect(list.style.getPropertyValue('--qa-controls-height')).not.toBe('');
+  resize(SHORT);
+  expect(list.style.getPropertyValue('--qa-controls-height')).toBe('');
 });

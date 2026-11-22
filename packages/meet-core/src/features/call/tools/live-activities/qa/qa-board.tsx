@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useActivityPane } from '../../../stage-layout/activity-pane-context';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ToolAction } from '../../tool-ui';
 import { QaComposer } from './qa-composer';
 import type { QaBoardContext } from './qa-parts';
@@ -71,6 +71,28 @@ export function QaBoard({
   const t = useTranslations('meet.call.live_activities.qa');
   const short = !!useActivityPane()?.short;
   const pane = layout === 'pane';
+  const scroller = useRef<HTMLDivElement>(null);
+  const header = useRef<HTMLDivElement>(null);
+  const sticky = pane && !short;
+  // A focused card scrolls into view below the sticky controls, not under them.
+  useEffect(() => {
+    const list = scroller.current;
+    const controls = header.current;
+    if (!list) return;
+    if (!sticky || !controls || typeof ResizeObserver === 'undefined') {
+      list.style.removeProperty('--qa-controls-height');
+      return;
+    }
+    const measure = () =>
+      list.style.setProperty(
+        '--qa-controls-height',
+        `${controls.offsetHeight}px`
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(controls);
+    return () => observer.disconnect();
+  }, [sticky]);
   const [sort, setSort] = useState<LiveQaSort>('top');
   const [moderating, setModerating] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -97,9 +119,10 @@ export function QaBoard({
   // view in a tall pane, and scroll away with the questions in a short one.
   const controls = (
     <div
+      ref={header}
       className={cn(
         'space-y-3',
-        pane && !short && 'sticky top-0 z-10 mb-0 bg-card pb-3'
+        sticky && 'sticky top-0 z-10 mb-0 bg-card pb-3'
       )}
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -176,14 +199,16 @@ export function QaBoard({
   return (
     <>
       <div
+        ref={scroller}
         className={cn(
           'space-y-3',
-          pane && '-mx-4 min-h-0 flex-1 overflow-y-auto px-4'
+          pane &&
+            '-mx-4 min-h-0 flex-1 scroll-pt-(--qa-controls-height) overflow-y-auto px-4'
         )}
       >
         {controls}
         {questions.length ? (
-          <ul className="space-y-3">
+          <ul className="-my-1 space-y-3 py-1">
             {questions.map((question) => (
               <li key={question.id}>
                 <QaQuestionCard question={question} board={context} />

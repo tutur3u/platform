@@ -70,12 +70,25 @@ export function QaComposer({
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
-  const [within, setWithin] = useState(false);
-  // A press inside the form keeps it open: Safari and iOS do not focus a
-  // button, so the field blurs with no related target before the click lands.
-  const pressing = useRef(false);
-  const folded =
-    compact && !within && !draft && files.length === 0 && !pressing.current;
+  // Focus or a press inside the form opens a folded composer. Nothing inside
+  // the form folds it, so a tap on Attach or Send always lands, on every
+  // platform. It folds only for what happens outside: a press, focus moving
+  // away, or Escape, and never while there is a draft or a file.
+  const [open, setOpen] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
+  const folded = compact && !open && !draft && files.length === 0;
+  useEffect(() => {
+    if (!compact || !open) return;
+    const away = (event: Event) => {
+      if (!form.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', away, true);
+    document.addEventListener('focusin', away, true);
+    return () => {
+      document.removeEventListener('pointerdown', away, true);
+      document.removeEventListener('focusin', away, true);
+    };
+  }, [compact, open]);
   const imageInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploaded = useRef(new Map<File, Upload>());
@@ -135,28 +148,10 @@ export function QaComposer({
 
   return (
     <form
+      ref={form}
       className="space-y-2"
-      onFocus={() => setWithin(true)}
-      onPointerDownCapture={(event) => {
-        const form = event.currentTarget;
-        pressing.current = true;
-        const release = () => {
-          pressing.current = false;
-          window.removeEventListener('pointerup', release);
-          window.removeEventListener('pointercancel', release);
-          // After the click has landed, fold if focus is no longer inside.
-          setTimeout(() => {
-            if (!form.contains(document.activeElement)) setWithin(false);
-          }, 0);
-        };
-        window.addEventListener('pointerup', release);
-        window.addEventListener('pointercancel', release);
-      }}
-      onBlur={(event) => {
-        if (pressing.current) return;
-        if (!event.currentTarget.contains(event.relatedTarget))
-          setWithin(false);
-      }}
+      onFocus={() => setOpen(true)}
+      onPointerDownCapture={() => setOpen(true)}
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -193,6 +188,9 @@ export function QaComposer({
               if (event.key === 'Escape' && onCancel) {
                 event.stopPropagation();
                 onCancel();
+              } else if (event.key === 'Escape') {
+                setOpen(false);
+                event.currentTarget.blur();
               }
             }}
           />
