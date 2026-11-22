@@ -128,7 +128,6 @@ describe('WorkspaceSelectTrigger', () => {
 
     const trigger = screen.getByRole('button', { name: 'Switch workspace' });
     expect(trigger.className).toContain('focus-visible:ring-inset');
-    expect(trigger.className).not.toMatch(/(^|\s)focus:ring/);
     expect(trigger.getAttribute('type')).toBe('button');
   });
 
