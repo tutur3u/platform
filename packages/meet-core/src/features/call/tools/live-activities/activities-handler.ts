@@ -6,6 +6,7 @@ import {
   closeLiveActivitiesRoom,
   liveActivitiesRoom,
 } from './activities-store';
+import { runsRoomActivities } from './activity-manager';
 
 export function handleLiveActivitiesMessage(
   meetingId: string,
@@ -16,7 +17,7 @@ export function handleLiveActivitiesMessage(
     case 'ready': {
       const room = liveActivitiesRoom(meetingId);
       room.close();
-      room.setManager(message.canManageParticipants ?? message.role === 'host');
+      room.setManager(runsRoomActivities(message));
       if (message.admission === 'admitted') room.open(send);
       break;
     }

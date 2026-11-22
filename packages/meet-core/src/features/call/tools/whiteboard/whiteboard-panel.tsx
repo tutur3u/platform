@@ -40,7 +40,7 @@ export function WhiteboardPanel({
   onClose,
 }: MeetToolPanelProps) {
   const t = useTranslations('meet.classroom_tools');
-  const { strokes, canUndo } = useSyncExternalStore(
+  const { strokes, canUndo, canClear } = useSyncExternalStore(
     (onStoreChange) => subscribeWhiteboard(meetingId, onStoreChange),
     () => readWhiteboard(meetingId),
     () => readWhiteboard(meetingId)
@@ -85,7 +85,8 @@ export function WhiteboardPanel({
               disabled={!canUndo}
               onClick={() => undoWhiteboardStroke(meetingId, participantId)}
             />
-            {roomRole === 'host' ? (
+            {/* The room decides who clears: hosts, co-hosts, participant managers. */}
+            {roomRole === 'host' || canClear ? (
               <ToolIconAction
                 icon={Trash2}
                 label={t('whiteboard.clear')}

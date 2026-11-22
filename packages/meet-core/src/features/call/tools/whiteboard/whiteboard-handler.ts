@@ -2,6 +2,7 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from '@tuturuuu/realtime/meet';
+import { runsRoomActivities } from '../live-activities/activity-manager';
 import { closeWhiteboardRoom, whiteboardRoom } from './whiteboard-store';
 
 export function handlePenboardMessage(
@@ -13,10 +14,7 @@ export function handlePenboardMessage(
     case 'ready': {
       const room = whiteboardRoom(meetingId);
       room.close();
-      room.identify(
-        message.userId,
-        message.canManageParticipants ?? message.role === 'host'
-      );
+      room.identify(message.userId, runsRoomActivities(message));
       if (message.admission === 'admitted') room.open(send);
       break;
     }

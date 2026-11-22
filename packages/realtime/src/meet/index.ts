@@ -155,6 +155,7 @@ export {
   MEET_MEDIA_CONTROLS,
   meetTrackKind,
   canMeetRealtimeManageParticipants,
+  canMeetRealtimeRunActivities,
   canMeetRealtimePublish,
   canMeetRealtimeUpdateStage,
   getMeetRealtimeScopesForRole,

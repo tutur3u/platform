@@ -6,6 +6,7 @@ import type { ClassTimer } from './class-timer';
 import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import {
   canMeetRealtimeManageParticipants,
+  canMeetRealtimeRunActivities,
   meetNonClassMedia,
 } from './permissions';
 import type { RoomBudget } from './room-budget';
@@ -346,7 +347,7 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
         !state.presence[token.userId] ||
         state.waiting[token.userId] ||
         (message.type === 'activity.host' &&
-          !canMeetRealtimeManageParticipants(token))
+          !canMeetRealtimeRunActivities(token))
       )
         return;
     }
@@ -434,8 +435,14 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     if (!messages.length) return;
     for (const socket of sockets()) {
       const token = tokenOf(socket);
-      if (!token || !canMeetRealtimeManageParticipants(token)) continue;
-      for (const message of messages) sendTo(socket, message);
+      if (!token) continue;
+      const manages = canMeetRealtimeManageParticipants(token);
+      // The activity view also goes to workspace co-hosts, who run activities
+      // without managing participants. Nothing else here reaches them.
+      const runs = canMeetRealtimeRunActivities(token);
+      for (const message of messages)
+        if (manages || (runs && message.type === 'activity.host'))
+          sendTo(socket, message);
     }
   }
 

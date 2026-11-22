@@ -9,6 +9,11 @@ export type MeetToolContextValue = {
   requiresAccount: boolean;
   /** Host or co-host: may start and run activities for the room. */
   canManage: boolean;
+  /**
+   * May run the room-shared live activities. Wider than `canManage`: it also
+   * covers a workspace admin in someone else's meeting, as the room decides.
+   */
+  canRunActivities?: boolean;
   /** False when the call is not live; tools must not query the room then. */
   enabled: boolean;
   /** This person's id in the room, which room-shared tools record as the author. */

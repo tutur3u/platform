@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
 import { MeetCommandExecutor } from './command-executor';
 import {
   applyLiveActivities,
@@ -11,6 +12,7 @@ import {
 } from './live-activity-rate';
 import { MEET_MAX_MESSAGE_BYTES } from './message-size';
 import { meetRealtimeClientMessageSchema } from './messages';
+import { getMeetRealtimeScopesForRole } from './permissions';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 import {
   createMeetPresence,
@@ -23,20 +25,29 @@ import { endMeetRoom } from './room-ending';
 
 const time = Date.parse('2026-11-22T08:00:00Z');
 const now = new Date(time).toISOString();
+// Tokens shaped like the ones the join route mints (call-session.ts): the
+// creator is the host, everyone else is a speaker, and a workspace admin in
+// someone else's meeting is a speaker with the co-host scope.
 const host = meetRealtimeTokenPayloadSchema.parse({
   roomId: 'room-activities',
   wsId: crypto.randomUUID(),
   meetingId: crypto.randomUUID(),
   userId: crypto.randomUUID(),
   role: 'host',
+  scopes: getMeetRealtimeScopesForRole('host'),
   exp: 2_000_000_000,
 });
-const guest = { ...host, role: 'viewer' as const, userId: crypto.randomUUID() };
+const guest = {
+  ...host,
+  role: 'speaker' as const,
+  scopes: getMeetRealtimeScopesForRole('speaker'),
+  userId: crypto.randomUUID(),
+};
 const other = { ...guest, userId: crypto.randomUUID() };
 const cohost = {
   ...guest,
   userId: crypto.randomUUID(),
-  scopes: ['participants:manage'],
+  scopes: [...getMeetRealtimeScopesForRole('speaker'), MEET_CLASS_COHOST_SCOPE],
 };
 const room = () => ({
   ...createMeetRoomSnapshot(),
@@ -635,11 +646,42 @@ it('rechecks manager and actor admission at socket delivery', () => {
   expect(manager.send).toHaveBeenCalledTimes(1);
   expect(participant.send).not.toHaveBeenCalled();
   expect(absent.send).not.toHaveBeenCalled();
+  // A workspace co-host gets the activity view and no other manager notice.
+  delivery.sendToManagers([
+    { type: 'room.title.changed', title: 'Managers only' },
+  ]);
+  expect(manager.send).toHaveBeenCalledTimes(1);
   delivery.sendToUser(
     absent.deserializeAttachment().token.userId,
     managerRead.filter(({ type }) => type === 'activity.mine')
   );
   expect(absent.send).not.toHaveBeenCalled();
+});
+
+it('lets a workspace co-host run activities with the token the join route mints', () => {
+  // No participant-management scope: only the role and the co-host scope.
+  expect(cohost.role).toBe('speaker');
+  expect(cohost.scopes).not.toContain('participants:manage');
+  const deck = action(room(), cohost, {
+    kind: 'flashcards.set',
+    cards: [{ front: 'Front', back: 'Back' }],
+  });
+  expect(deck.state.liveActivities?.flashcards.cards).toHaveLength(1);
+  const game = action(deck.state, cohost, {
+    kind: 'game.set',
+    rounds: [{ prompt: 'Ready?', options: ['Yes', 'No'], answer: 0, seconds: 10 }],
+  });
+  expect(game.state.liveActivities?.game.rounds).toHaveLength(1);
+  expect(read(game.state, cohost).reply.map(({ type }) => type)).toContain(
+    'activity.host'
+  );
+  // A participant with the same speaker scopes stays a participant.
+  expect(
+    action(game.state, guest, { kind: 'game.start' }).reply
+  ).toMatchObject(error('permission_denied'));
+  expect(read(game.state, guest).reply.map(({ type }) => type)).not.toContain(
+    'activity.host'
+  );
 });
 
 it('gives managers the answer keys and prepared rounds, and nobody else', () => {

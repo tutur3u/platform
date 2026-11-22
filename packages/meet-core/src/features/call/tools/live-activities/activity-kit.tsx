@@ -34,7 +34,8 @@ export function useActivity() {
       : tool.people?.[participantId]?.displayName?.trim() || t('someone');
   return {
     ...activities,
-    canManage: tool.canManage,
+    // The room's rule for live activities, which also covers workspace co-hosts.
+    canManage: tool.canRunActivities ?? tool.canManage,
     selfUserId: tool.selfUserId ?? null,
     nameOf,
   };

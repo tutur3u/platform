@@ -8,10 +8,16 @@ import type { WhiteboardStroke } from './stroke';
 export type WhiteboardSnapshot = {
   strokes: readonly WhiteboardStroke[];
   canUndo: boolean;
+  /** The room lets hosts, co-hosts and participant managers clear the board. */
+  canClear: boolean;
 };
 
 type Send = (message: MeetRealtimeClientMessage) => boolean;
-const EMPTY: WhiteboardSnapshot = { strokes: [], canUndo: false };
+const EMPTY: WhiteboardSnapshot = {
+  strokes: [],
+  canUndo: false,
+  canClear: false,
+};
 const MAX_PENDING_STROKES = 16;
 
 function createWhiteboardStore() {
@@ -32,6 +38,7 @@ function createWhiteboardStore() {
     snapshot = {
       strokes,
       canUndo: strokes.some(({ authorId }) => manager || authorId === selfId),
+      canClear: manager,
     };
     for (const notify of listeners) notify();
   };

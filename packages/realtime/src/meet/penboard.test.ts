@@ -196,3 +196,21 @@ it('keeps drawing after the receipt ledger fills, forgetting strokes no longer o
     next.state.penboard!.strokes.map(({ id }) => id).sort()
   );
 });
+
+it('lets a workspace co-host clear the board, with the token the join route mints', () => {
+  // A workspace admin in someone else's meeting: a speaker with the co-host
+  // scope and no participant-management scope.
+  const cohost = {
+    ...guest,
+    userId: crypto.randomUUID(),
+    scopes: ['class:cohost'],
+  };
+  const state: MeetRoomSnapshot = room();
+  state.presence[cohost.userId] = createMeetPresence(cohost, now);
+  const drawn = run(state, guest, draw());
+  expect(
+    run(drawn.state, guest, { type: 'penboard.clear' }).reply
+  ).toMatchObject(fail('permission_denied'));
+  const cleared = run(drawn.state, cohost, { type: 'penboard.clear' });
+  expect(cleared.state.penboard?.strokes).toEqual([]);
+});

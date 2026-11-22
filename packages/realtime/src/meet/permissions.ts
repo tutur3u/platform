@@ -1,3 +1,4 @@
+import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
 import type { MeetRoomSettings } from './room-options';
 import type {
   MeetMediaState,
@@ -69,6 +70,21 @@ export function canMeetRealtimeManageParticipants(
   token: Pick<MeetRealtimeTokenPayload, 'role' | 'scopes'>
 ) {
   return hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.participantsManage);
+}
+
+/**
+ * Who runs the room's live activities and moderates the pen board: the host,
+ * anyone who manages participants, and a workspace admin in someone else's
+ * meeting. That admin joins as a speaker with the co-host scope and holds no
+ * participant-management scope, so both are checked.
+ */
+export function canMeetRealtimeRunActivities(
+  token: Pick<MeetRealtimeTokenPayload, 'role' | 'scopes'>
+) {
+  return (
+    canMeetRealtimeManageParticipants(token) ||
+    token.scopes.includes(MEET_CLASS_COHOST_SCOPE)
+  );
 }
 
 export function canMeetRealtimeControlRecording(

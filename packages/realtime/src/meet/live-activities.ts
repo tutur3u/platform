@@ -16,7 +16,7 @@ import {
   publicView,
 } from './live-activity-views';
 import type { MeetRealtimeServerMessage } from './messages';
-import { canMeetRealtimeManageParticipants } from './permissions';
+import { canMeetRealtimeRunActivities } from './permissions';
 import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
@@ -263,7 +263,7 @@ export function applyLiveActivities(
     (state.budget && timestamp >= state.budget.expiresAt)
   )
     return denied(state, 'awaiting_admission', requestId);
-  const manager = canMeetRealtimeManageParticipants(token);
+  const manager = canMeetRealtimeRunActivities(token);
   const current = state.liveActivities ?? EMPTY_ACTIVITIES;
   if (message.type === 'activity.read') {
     const reply: MeetRealtimeServerMessage[] = [

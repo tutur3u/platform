@@ -6,7 +6,7 @@ import {
   PENBOARD_ACTIONS_PER_MINUTE,
   serializedMeetBytes,
 } from './live-activity-rate';
-import { canMeetRealtimeManageParticipants } from './permissions';
+import { canMeetRealtimeRunActivities } from './permissions';
 import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
@@ -115,7 +115,7 @@ export function applyPenboard(
   if (message.type === 'penboard.read')
     return outcome(state, { reply: [boardSnapshot(board, requestId)] });
 
-  const manager = canMeetRealtimeManageParticipants(token);
+  const manager = canMeetRealtimeRunActivities(token);
   if (message.type === 'penboard.clear' && !manager)
     return denied(state, 'permission_denied', requestId);
   const limits = nextLiveActivityLimit(

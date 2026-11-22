@@ -57,6 +57,7 @@ import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
+import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { meetTools } from '../tools/registry';
 import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
@@ -255,7 +256,9 @@ function CallShellContent({
     requiresAccount,
     canManage,
     enabled: liveTools,
-    available: roomTools.canUse,
+    // Whoever runs activities must reach them even when browsing is hosts-only.
+    available: roomTools.canUse || runsRoomActivities(state),
+    canRunActivities: runsRoomActivities(state),
     selfUserId: state.selfUserId,
     people: state.participants,
   });

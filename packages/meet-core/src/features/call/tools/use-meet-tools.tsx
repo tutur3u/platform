@@ -27,6 +27,7 @@ export function useMeetTools<A extends string>({
   accountId,
   requiresAccount,
   canManage,
+  canRunActivities,
   enabled,
   available,
   selfUserId,
@@ -39,6 +40,8 @@ export function useMeetTools<A extends string>({
   accountId: string;
   requiresAccount: boolean;
   canManage: boolean;
+  /** The room's rule for who runs live activities; includes workspace co-hosts. */
+  canRunActivities?: boolean;
   enabled: boolean;
   /** This person's room id and the room's people, for room-shared tools. */
   selfUserId?: string | null;
@@ -79,6 +82,7 @@ export function useMeetTools<A extends string>({
           accountId,
           requiresAccount,
           canManage,
+          canRunActivities,
           enabled,
           selfUserId,
           people,
