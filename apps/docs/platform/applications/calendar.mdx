@@ -157,7 +157,9 @@ While an input method is composing (for example Vietnamese Telex), Enter never
 saves and Escape only cancels the candidate. Repeated keypresses while a save,
 delete or generation is pending are ignored. Saving, the source choice, provider colours, guests, all-day ranges, the
 AI prompt (text, voice and image) and the draft recovery notice behave as
-before. Coverage: `event-dialog/event-dialog-keys.test.ts`,
+before. Every string the dialog shows, including its notifications, date and
+overlap warnings and AI suggestions, is in English and Vietnamese
+(`calendar.event_dialog`). Coverage: `event-dialog/event-dialog-keys.test.ts`,
 `event-dialog/event-dialog-frame.test.tsx` and
 `event-dialog/event-quick-entry.test.tsx` under
 `packages/ui/src/components/ui/legacy/calendar/`.

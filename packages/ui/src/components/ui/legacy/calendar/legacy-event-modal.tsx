@@ -12,6 +12,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { notifySave } from '@tuturuuu/ui/save-notification';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import { useTranslations } from 'next-intl';
 import {
   useCallback,
   useEffect,
@@ -51,6 +52,7 @@ import { useEventDraftSession } from './use-event-draft-session';
 
 export function LegacyEventModal() {
   const toast = notifySave;
+  const t = useTranslations('calendar.event_dialog');
   const startPickerRef = useRef<HTMLButtonElement>(null);
   const endPickerRef = useRef<HTMLButtonElement>(null);
 
@@ -123,7 +125,7 @@ export function LegacyEventModal() {
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
-  const aiForm = useEventAiForm(userTimezone);
+  const aiForm = useEventAiForm(userTimezone, t('ai_prompt_required'));
   const capture = useEventPromptCapture((text) =>
     aiForm.setValue('prompt', text)
   );
@@ -261,8 +263,8 @@ export function LegacyEventModal() {
     wsId,
     onError: () =>
       toast({
-        title: 'Error',
-        description: 'Failed to save or sync event. Please try again.',
+        title: t('error_title'),
+        description: t('save_failed'),
         variant: 'destructive',
       }),
   });
@@ -271,7 +273,7 @@ export function LegacyEventModal() {
     if (isSaving || isDeleting || isLoading) return;
     if (!event.start_at || !event.end_at) return;
     if (new Date(event.end_at) <= new Date(event.start_at)) {
-      setDateError('End date must be after start date');
+      setDateError(t('date_error'));
       return;
     }
     setDateError(null);
@@ -290,10 +292,10 @@ export function LegacyEventModal() {
 
       // Generate helpful suggestions based on the prompt
       const suggestions = [
-        'Consider adding a buffer time before/after these events',
-        'These events might benefit from reminder notifications',
-        'Based on your schedule, early morning might be better for focus',
-        'Consider adding meeting agenda or preparation notes',
+        t('suggestion_buffer'),
+        t('suggestion_reminders'),
+        t('suggestion_morning'),
+        t('suggestion_agenda'),
       ];
 
       // Add category-based suggestions
@@ -302,7 +304,7 @@ export function LegacyEventModal() {
           .map((cat) => cat.name)
           .join(', ');
         suggestions.push(
-          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
+          t('suggestion_categories', { categories: categoryNames })
         );
       }
 
@@ -325,8 +327,8 @@ export function LegacyEventModal() {
       });
     } catch (_) {
       toast({
-        title: 'Error generating events',
-        description: 'Please try again with a different prompt',
+        title: t('ai_error_title'),
+        description: t('generate_failed'),
         variant: 'destructive',
       });
     }
@@ -350,8 +352,11 @@ export function LegacyEventModal() {
       // Show success notification
       if (savedEvents.length > 0) {
         toast({
-          title: 'Success',
-          description: `${savedEvents.length}/${eventsToSave?.length || 0} event${savedEvents.length > 1 ? 's' : ''} saved`,
+          title: t('success_title'),
+          description: t('generated_saved', {
+            saved: savedEvents.length,
+            total: eventsToSave?.length || 0,
+          }),
         });
         if (failedEvents.length === 0) closeModal();
       }
@@ -359,15 +364,15 @@ export function LegacyEventModal() {
       // If there are failed events, show an error notification
       if (failedEvents.length > 0) {
         toast({
-          title: 'Warning',
-          description: `${failedEvents.length} event${failedEvents.length > 1 ? 's' : ''} failed to save`,
+          title: t('warning_title'),
+          description: t('generated_failed', { count: failedEvents.length }),
           variant: 'destructive',
         });
       }
     } catch (_) {
       toast({
-        title: 'Error',
-        description: 'Failed to save or sync AI-generated events.',
+        title: t('error_title'),
+        description: t('generated_save_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -394,8 +399,8 @@ export function LegacyEventModal() {
       closeModal();
     } catch (_) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete event. Please try again.',
+        title: t('error_title'),
+        description: t('delete_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -410,6 +415,7 @@ export function LegacyEventModal() {
       setIsAllDay,
       setEvent,
       setDateError,
+      dateErrorMessage: t('date_error'),
     });
 
   // Handle navigation between multiple events in preview
@@ -458,13 +464,13 @@ export function LegacyEventModal() {
 
       setEvent(updatedEvent);
       toast({
-        title: 'Success',
-        description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
+        title: t('success_title'),
+        description: t(checked ? 'lock_on' : 'lock_off'),
       });
     } catch (_) {
       toast({
-        title: 'Error',
-        description: 'Failed to update event lock status',
+        title: t('error_title'),
+        description: t('lock_failed'),
         variant: 'destructive',
       });
       // Revert the toggle if update fails

@@ -11,6 +11,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import React, { type ReactNode } from 'react';
 import { ColorPicker, colorMap } from './settings/color-picker';
 
@@ -496,15 +497,15 @@ export const OverlapWarning = ({
 }: {
   overlappingEvents: any[];
 }) => {
+  const t = useTranslations('calendar.event_dialog');
   if (overlappingEvents.length === 0) return null;
 
   return (
     <Alert className="mt-4">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Scheduling Conflict</AlertTitle>
+      <AlertTitle>{t('overlap_title')}</AlertTitle>
       <AlertDescription className="text-sm">
-        This event overlaps with {overlappingEvents.length} other{' '}
-        {overlappingEvents.length === 1 ? 'event' : 'events'}.
+        {t('overlap_description', { count: overlappingEvents.length })}
         <ul className="mt-2 list-inside list-disc">
           {overlappingEvents.slice(0, 3).map((event, index) => (
             <li key={index} className="text-xs">
@@ -523,7 +524,7 @@ export const OverlapWarning = ({
           ))}
           {overlappingEvents.length > 3 && (
             <li className="text-xs">
-              ...and {overlappingEvents.length - 3} more
+              {t('overlap_more', { count: overlappingEvents.length - 3 })}
             </li>
           )}
         </ul>
@@ -534,12 +535,13 @@ export const OverlapWarning = ({
 
 // Date error component
 export const DateError = ({ error }: { error: string | null }) => {
+  const t = useTranslations('calendar.event_dialog');
   if (!error) return null;
 
   return (
     <Alert variant="destructive" className="mt-4">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Invalid Date Range</AlertTitle>
+      <AlertTitle>{t('date_error_title')}</AlertTitle>
       <AlertDescription>{error}</AlertDescription>
     </Alert>
   );

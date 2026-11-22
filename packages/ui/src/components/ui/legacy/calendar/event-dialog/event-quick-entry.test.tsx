@@ -109,6 +109,26 @@ describe('EventQuickEntry', () => {
     expect(props.onToggleLock).toHaveBeenCalledOnce();
   });
 
+  it('shows the date error and overlap warning with localized titles', () => {
+    renderEntry({
+      dateError: 'date_error',
+      showOverlapWarning: true,
+      overlappingEvents: [
+        {
+          id: 'e1',
+          title: 'Standup',
+          start_at: '2026-11-22T02:00:00.000Z',
+          end_at: '2026-11-22T02:30:00.000Z',
+        } as never,
+      ],
+    });
+
+    expect(screen.getByText('date_error_title')).toBeTruthy();
+    expect(screen.getByText('date_error')).toBeTruthy();
+    expect(screen.getByText('overlap_title')).toBeTruthy();
+    expect(screen.getByText(/Standup/)).toBeTruthy();
+  });
+
   it('disables every action while saving', () => {
     renderEntry({ isSaving: true });
     for (const name of ['cancel', /saving/]) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { notifySave } from '@tuturuuu/ui/save-notification';
+import { useTranslations } from 'next-intl';
 import { type ChangeEvent, useRef, useState } from 'react';
 
 /**
@@ -9,6 +10,7 @@ import { type ChangeEvent, useRef, useState } from 'react';
  */
 export function useEventPromptCapture(onText: (text: string) => void) {
   const toast = notifySave;
+  const t = useTranslations('calendar.event_dialog');
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -38,15 +40,15 @@ export function useEventPromptCapture(onText: (text: string) => void) {
         onText(result.text);
       } else {
         toast({
-          title: 'Transcription Error',
-          description: result.error || 'Failed to transcribe audio',
+          title: t('audio_failed_title'),
+          description: result.error || t('audio_failed'),
           variant: 'destructive',
         });
       }
     } catch (_) {
       toast({
-        title: 'API Error',
-        description: 'Failed to process audio recording',
+        title: t('audio_failed_title'),
+        description: t('audio_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -130,15 +132,15 @@ export function useEventPromptCapture(onText: (text: string) => void) {
           onText(result.text);
         } else {
           toast({
-            title: 'Image Processing Error',
-            description: result.error || 'Failed to extract text from image',
+            title: t('image_failed_title'),
+            description: result.error || t('image_failed'),
             variant: 'destructive',
           });
         }
       } catch (_) {
         toast({
-          title: 'API Error',
-          description: 'Failed to process uploaded image',
+          title: t('image_failed_title'),
+          description: t('image_failed'),
           variant: 'destructive',
         });
       } finally {

@@ -21,12 +21,15 @@ export function useEventDateHandlers({
   setIsAllDay,
   setEvent,
   setDateError,
+  dateErrorMessage,
 }: {
   tz?: string;
   isAllDay: boolean;
   setIsAllDay: Dispatch<SetStateAction<boolean>>;
   setEvent: Dispatch<SetStateAction<CalendarEventCreationDraft>>;
   setDateError: Dispatch<SetStateAction<string | null>>;
+  /** Shown when the end is not after the start. */
+  dateErrorMessage: string;
 }) {
   // Store previous time values for toggling all-day
   const [prevTimes, setPrevTimes] = useState<{
@@ -76,7 +79,7 @@ export function useEventDateHandlers({
         dayjs(newEvent.end_at).isSame(dayjs(newEvent.start_at)) ||
         dayjs(newEvent.end_at).isBefore(dayjs(newEvent.start_at))
       ) {
-        setDateError('End time must be after start time.');
+        setDateError(dateErrorMessage);
       } else {
         setDateError(null);
       }
@@ -116,7 +119,7 @@ export function useEventDateHandlers({
       }
 
       if (!dayjs(newEvent.end_at).isAfter(dayjs(newEvent.start_at))) {
-        setDateError('End time must be after start time.');
+        setDateError(dateErrorMessage);
       } else {
         setDateError(null);
       }
