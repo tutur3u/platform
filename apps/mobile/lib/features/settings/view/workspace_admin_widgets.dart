@@ -5,12 +5,18 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Localized removal refusals and server messages for other request failures.
-String describeWorkspaceAdminError(BuildContext context, Object error) {
+String describeWorkspaceAdminError(
+  BuildContext context,
+  Object error, {
+  bool isLeaving = false,
+}) {
   final l10n = context.l10n;
   if (error is ApiException) {
     switch (error.code) {
       case 'WORKSPACE_LAST_MANAGER':
-        return l10n.settingsWorkspaceMembersLastManagerRemovalRefused;
+        return isLeaving
+            ? l10n.settingsWorkspaceMembersLastManagerLeaveRefused
+            : l10n.settingsWorkspaceMembersLastManagerRemovalRefused;
       case 'WORKSPACE_CREATOR_PROTECTED':
         return l10n.settingsWorkspaceMembersCreatorRemovalRefused;
     }

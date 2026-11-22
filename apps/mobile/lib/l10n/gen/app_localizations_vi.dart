@@ -9278,6 +9278,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
 
   @override
+  String get settingsWorkspaceMembersLastManagerLeaveRefused => 'Bạn là người duy nhất có quyền quản lý thành viên trong không gian làm việc này. Hãy cấp quyền đó cho một thành viên khác trước.';
+
+  @override
   String get settingsWorkspaceMembersLastManagerRemovalRefused => 'Phải có ít nhất một thành viên có quyền quản lý thành viên. Hãy cấp quyền đó cho một thành viên khác trước.';
 
   @override

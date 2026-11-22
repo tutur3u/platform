@@ -153,6 +153,7 @@ export function SatelliteWorkspaceSettingsPanel({
             canManageMembers,
             canManageRoles: permissions?.manage_workspace_roles ?? false,
             currentUserEmail: user?.email ?? null,
+            currentUserId: user?.id ?? null,
             workspaceId: workspace.id,
           }}
           initialTab="people"

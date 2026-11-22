@@ -1320,6 +1320,7 @@
     "invite_submit": "Send invitation",
     "invited": "Invited",
     "joined": "Joined",
+    "last_manager_leave_refused": "You are the only person who can manage members here. Give another member that access first.",
     "last_manager_removal_refused": "At least one member must be able to manage members. Give another member that access first.",
     "member_since": "Member since",
     "no_invited_members_found": "No pending invitations found",

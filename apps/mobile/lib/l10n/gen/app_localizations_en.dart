@@ -9385,6 +9385,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
 
   @override
+  String get settingsWorkspaceMembersLastManagerLeaveRefused => 'You are the only person who can manage members here. Give another member that access first.';
+
+  @override
   String get settingsWorkspaceMembersLastManagerRemovalRefused => 'At least one member must be able to manage members. Give another member that access first.';
 
   @override

@@ -1,11 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
+import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceAccessAdapter } from './types';
 import { WorkspaceAccessPage } from './workspace-access-page';
 
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: { error: vi.fn() },
+}));
+
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
 }));
 
@@ -49,6 +56,7 @@ function renderPage(canManageRoles: boolean, adapter: WorkspaceAccessAdapter) {
           canManageMembers: true,
           canManageRoles: props.canManageRoles,
           currentUserEmail: 'admin@example.com',
+          currentUserId: 'admin-id',
           workspaceId: WS_ID,
         }}
         initialTab="people"
@@ -72,6 +80,47 @@ function rolesTab() {
 }
 
 describe('WorkspaceAccessPage permission context', () => {
+  it.each([
+    ['admin-id', 'ws-members.last_manager_leave_refused'],
+    ['colleague-id', 'ws-members.last_manager_removal_refused'],
+  ])('uses the refusal for the member targeted by %s', async (userId, key) => {
+    const member = {
+      id: userId,
+      display_name: 'Manager',
+      email: 'member@example.com',
+      is_creator: false,
+      roles: [],
+      workspace_member_type: 'MEMBER',
+    } as InternalApiEnhancedWorkspaceMember;
+    const error = Object.assign(new Error('Manager floor'), {
+      code: 'WORKSPACE_LAST_MANAGER',
+    });
+    const removeMember = vi.fn().mockRejectedValue(error);
+    renderPage(
+      false,
+      createAdapter({
+        listMembers: vi.fn().mockResolvedValue([member]),
+        removeMember,
+      })
+    );
+
+    fireEvent.pointerDown(
+      await screen.findByRole('button', { name: 'common.actions' }),
+      {
+        button: 0,
+        ctrlKey: false,
+      }
+    );
+    fireEvent.click(await screen.findByText('ws-members.remove_member'));
+
+    await waitFor(() => expect(toast.error).toHaveBeenLastCalledWith(key));
+    expect(removeMember).toHaveBeenCalledExactlyOnceWith(WS_ID, {
+      userId,
+      email: 'member@example.com',
+    });
+    expect(screen.getByText('Manager')).toBeInTheDocument();
+  });
+
   // Regression: callers resolve `manage_workspace_roles` asynchronously, so the
   // first render says false. The context used to be seeded into a disabled query
   // and served from there forever, which left admins with a Roles tab that never

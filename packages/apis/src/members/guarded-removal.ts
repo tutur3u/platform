@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export const WORKSPACE_CREATOR_PROTECTED = 'WORKSPACE_CREATOR_PROTECTED';
 export const WORKSPACE_LAST_MANAGER = 'WORKSPACE_LAST_MANAGER';
-export const GUARD_WORKSPACE_SELF_REMOVAL = false;
+// A workspace with full members must retain a member manager even on self-removal.
+export const GUARD_WORKSPACE_SELF_REMOVAL = true;
 
 /**
  * Answers of `remove_workspace_member_guarded` and

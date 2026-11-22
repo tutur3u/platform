@@ -70,6 +70,7 @@ export default async function WorkspaceMembersPage({
               canManageMembers,
               canManageRoles,
               currentUserEmail: user?.email ?? null,
+              currentUserId: user?.id ?? null,
               workspaceId: wsId,
             }}
             initialTab={resolveInitialTab(tab)}

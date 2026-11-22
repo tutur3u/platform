@@ -139,6 +139,7 @@ export function getExternalProjectTeamContext(
     canManageMembers: access.canManageMembers,
     canManageRoles: access.canManageRoles,
     currentUserEmail: access.user.email ?? null,
+    currentUserId: access.user.id,
     workspaceId: access.normalizedWorkspaceId,
   };
 }

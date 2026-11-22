@@ -134,6 +134,16 @@ describe('external app member removal target identity', () => {
       expect(await response.json()).toEqual({
         message: 'Cannot change your own access',
       });
+      expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: actor,
+          p_guard_self: true,
+          p_mode: 'external_app',
+          p_user_id: actor,
+          p_ws_id: 'ws-a',
+        }
+      );
       expect(admin.from).not.toHaveBeenCalled();
       expect(writes).toEqual([]);
     }
@@ -171,7 +181,7 @@ describe('external app member removal target identity', () => {
         'remove_workspace_member_guarded_in_mode',
         {
           p_actor_id: actor,
-          p_guard_self: false,
+          p_guard_self: true,
           p_mode: 'external_app',
           p_user_id: member,
           p_ws_id: 'ws-a',

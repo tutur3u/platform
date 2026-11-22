@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ admin: vi.fn(), permissions: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  admin: vi.fn(),
+  permissions: vi.fn(),
+  polar: vi.fn(),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
   createClient: vi.fn(),
@@ -11,7 +15,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.permissions,
 }));
 vi.mock('@tuturuuu/payment/polar/server', () => ({
-  createPolarClient: vi.fn(),
+  createPolarClient: mocks.polar,
 }));
 
 import { GUARD_WORKSPACE_SELF_REMOVAL } from './guarded-removal';
@@ -19,6 +23,9 @@ import { DELETE } from './route';
 
 const creator = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
 const member = 'fedcbafe-dcba-4fed-8cba-fedcbafedcba';
+const otherFullMember = '00000000-0000-4000-8000-000000000001';
+let personalWorkspace: boolean;
+let workspaceMembers: string[];
 type Row = Record<string, unknown>;
 const filters: Array<[string, string, unknown]> = [];
 const writes: string[] = [];
@@ -28,8 +35,10 @@ const uuidValue = (value: unknown) =>
 function query(table: string) {
   let rows: Row[] =
     table === 'workspaces'
-      ? [{ id: 'ws-a', creator_id: creator, personal: true }]
-      : [];
+      ? [{ id: 'ws-a', creator_id: creator, personal: personalWorkspace }]
+      : table === 'workspace_members'
+        ? workspaceMembers.map((user_id) => ({ ws_id: 'ws-a', user_id }))
+        : [];
   const q = {
     select: () => q,
     delete: () => {
@@ -41,6 +50,7 @@ function query(table: string) {
       rows = rows.filter((row) => uuidValue(row[key]) === uuidValue(value));
       return q;
     },
+    neq: () => q,
     in: () => q,
     ilike: () => q,
     single: async () => ({ data: rows[0] ?? null, error: null }),
@@ -64,7 +74,7 @@ function query(table: string) {
 }
 const admin = { from: vi.fn(query), rpc: vi.fn() };
 
-function call(userId: string | null, email?: string) {
+function call(userId: string | null, email?: string, actorId = 'actor') {
   const params = new URLSearchParams();
   if (userId !== null) params.set('id', userId);
   if (email) params.set('email', email);
@@ -73,7 +83,7 @@ function call(userId: string | null, email?: string) {
       method: 'DELETE',
     }),
     { params: Promise.resolve({ wsId: 'ws-a' }) },
-    { supabase: {} as never, user: { id: 'actor' } }
+    { supabase: {} as never, user: { id: actorId } }
   );
 }
 describe('member removal target identity', () => {
@@ -82,6 +92,8 @@ describe('member removal target identity', () => {
     filters.length = 0;
     writes.length = 0;
     tableErrors.clear();
+    personalWorkspace = true;
+    workspaceMembers = [];
     admin.rpc.mockReset();
     admin.rpc.mockImplementation(
       async (_name, input: { p_user_id: string }) => ({
@@ -129,7 +141,7 @@ describe('member removal target identity', () => {
           p_ws_id: 'ws-a',
         }
       );
-      expect(GUARD_WORKSPACE_SELF_REMOVAL).toBe(false);
+      expect(GUARD_WORKSPACE_SELF_REMOVAL).toBe(true);
       expect(filters).toContainEqual(['workspace_invites', 'user_id', member]);
       expect(admin.rpc.mock.invocationCallOrder[0]).toBeLessThan(
         admin.from.mock.invocationCallOrder[0]!
@@ -163,6 +175,105 @@ describe('member removal target identity', () => {
     expect(await response.json()).toEqual(body);
     expect(admin.from).not.toHaveBeenCalled();
     expect(writes).toEqual([]);
+  });
+
+  it('blocks a sole manager from leaving and allows retry after another member gains access', async () => {
+    personalWorkspace = false;
+    workspaceMembers = [member, otherFullMember];
+    const managers = new Set([member]);
+    admin.rpc.mockImplementation(
+      async (
+        _name,
+        input: { p_actor_id: string; p_guard_self: boolean; p_user_id: string }
+      ) => {
+        const target = input.p_user_id;
+        if (
+          input.p_actor_id === target &&
+          input.p_guard_self &&
+          workspaceMembers.some((id) => id !== target) &&
+          [...managers].every((id) => id === target)
+        ) {
+          return { data: 'last_manager', error: null };
+        }
+
+        workspaceMembers = workspaceMembers.filter((id) => id !== target);
+        return { data: 'removed', error: null };
+      }
+    );
+
+    const refused = await call(
+      member.toUpperCase(),
+      'member@example.invalid',
+      member
+    );
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({
+      code: 'WORKSPACE_LAST_MANAGER',
+      message: 'At least one member must be able to manage members',
+    });
+    expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+      'remove_workspace_member_guarded_in_mode',
+      {
+        p_actor_id: member,
+        p_guard_self: true,
+        p_mode: 'workspace',
+        p_user_id: member,
+        p_ws_id: 'ws-a',
+      }
+    );
+    expect(workspaceMembers).toEqual([member, otherFullMember]);
+    expect(mocks.polar).not.toHaveBeenCalled();
+    expect(mocks.admin).toHaveBeenCalledTimes(1);
+    expect(admin.from).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
+
+    managers.add(otherFullMember);
+    const allowed = await call(member, undefined, member);
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toEqual({
+      message: 'success',
+      workspace_deleted: false,
+    });
+    expect(workspaceMembers).toEqual([otherFullMember]);
+    expect(writes).toEqual(['workspace_invites']);
+  });
+
+  it('still deletes an empty non-personal workspace after the last full member leaves', async () => {
+    personalWorkspace = false;
+    workspaceMembers = [member];
+    admin.rpc.mockImplementation(async () => {
+      workspaceMembers = [];
+      return { data: 'removed', error: null };
+    });
+
+    const response = await call(member, undefined, member);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      message: 'success',
+      workspace_deleted: true,
+    });
+    expect(admin.rpc).toHaveBeenCalledWith(
+      'remove_workspace_member_guarded_in_mode',
+      expect.objectContaining({
+        p_actor_id: member,
+        p_guard_self: true,
+        p_user_id: member,
+      })
+    );
+    expect(writes).toEqual(['workspace_invites', 'workspaces']);
+  });
+
+  it('preserves the existing permission gate on self-removal', async () => {
+    mocks.permissions.mockResolvedValue({ withoutPermission: () => true });
+
+    const response = await call(member, undefined, member);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ message: 'Forbidden' });
+    expect(mocks.admin).not.toHaveBeenCalled();
+    expect(admin.rpc).not.toHaveBeenCalled();
+    expect(mocks.polar).not.toHaveBeenCalled();
   });
 
   it('halts on an RPC error even if a success result is present', async () => {

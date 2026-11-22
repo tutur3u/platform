@@ -225,8 +225,17 @@ export function WorkspaceAccessPage({
   const removeMemberMutation = useMutation({
     mutationFn: (payload: { email?: null | string; userId?: null | string }) =>
       adapter.removeMember(workspaceId, payload),
-    onError: (error) =>
-      toast.error(describeWorkspaceAccessRemovalError(error, removalErrorText)),
+    onError: (error, { userId }) => {
+      const isLeaving = userId != null && userId === context.currentUserId;
+      toast.error(
+        describeWorkspaceAccessRemovalError(error, {
+          ...removalErrorText,
+          lastManager: isLeaving
+            ? t('ws-members.last_manager_leave_refused')
+            : removalErrorText.lastManager,
+        })
+      );
+    },
     onSuccess: async () => {
       toast.success(t('common.deleted'));
       await invalidateAccessData();

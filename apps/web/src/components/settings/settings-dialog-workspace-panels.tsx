@@ -125,12 +125,14 @@ interface WorkspaceMembersSettingsPanelProps extends WorkspacePanelStateProps {
   canManageWorkspaceMembers: boolean;
   canManageWorkspaceRoles: boolean;
   currentUserEmail: string | null;
+  currentUserId: string | null;
 }
 
 export function WorkspaceMembersSettingsPanel({
   canManageWorkspaceMembers,
   canManageWorkspaceRoles,
   currentUserEmail,
+  currentUserId,
   isLoadingWorkspace,
   workspace,
   workspaceError,
@@ -179,6 +181,7 @@ export function WorkspaceMembersSettingsPanel({
             canManageMembers: canManageWorkspaceMembers,
             canManageRoles: canManageWorkspaceRoles,
             currentUserEmail,
+            currentUserId,
             workspaceId: workspace.id,
           }}
           initialTab="people"

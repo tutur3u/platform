@@ -93,6 +93,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
         canManageWorkspaceMembers
         canManageWorkspaceRoles
         currentUserEmail="ada@example.com"
+        currentUserId="ada-id"
         isLoadingWorkspace={false}
         workspace={workspace}
         workspaceError={null}
@@ -118,6 +119,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
           canManageMembers: true,
           canManageRoles: true,
           currentUserEmail: 'ada@example.com',
+          currentUserId: 'ada-id',
           workspaceId: 'ws_1',
         },
         initialTab: 'people',
@@ -132,6 +134,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
         canManageWorkspaceMembers
         canManageWorkspaceRoles={false}
         currentUserEmail="ada@example.com"
+        currentUserId="ada-id"
         isLoadingWorkspace={false}
         workspace={workspace}
         workspaceError={null}
@@ -144,6 +147,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
           canManageMembers: true,
           canManageRoles: false,
           currentUserEmail: 'ada@example.com',
+          currentUserId: 'ada-id',
           workspaceId: 'ws_1',
         },
       })
@@ -157,6 +161,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
         canManageWorkspaceMembers={false}
         canManageWorkspaceRoles
         currentUserEmail="ada@example.com"
+        currentUserId="ada-id"
         isLoadingWorkspace={false}
         workspace={workspace}
         workspaceError={null}
@@ -175,6 +180,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
         canManageWorkspaceMembers
         canManageWorkspaceRoles
         currentUserEmail="ada@example.com"
+        currentUserId="ada-id"
         isLoadingWorkspace={false}
         workspace={{ ...workspace, personal: true }}
         workspaceError={null}

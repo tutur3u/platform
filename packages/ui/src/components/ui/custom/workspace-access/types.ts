@@ -19,6 +19,7 @@ export type WorkspaceAccessContext = {
   canManageMembers: boolean;
   canManageRoles: boolean;
   currentUserEmail?: null | string;
+  currentUserId?: null | string;
   workspaceId: string;
 };
 

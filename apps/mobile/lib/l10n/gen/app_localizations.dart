@@ -17785,6 +17785,12 @@ abstract class AppLocalizations {
   /// **'Invite sent.'**
   String get settingsWorkspaceMembersInviteSent;
 
+  /// No description provided for @settingsWorkspaceMembersLastManagerLeaveRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the only person who can manage members here. Give another member that access first.'**
+  String get settingsWorkspaceMembersLastManagerLeaveRefused;
+
   /// No description provided for @settingsWorkspaceMembersLastManagerRemovalRefused.
   ///
   /// In en, this message translates to:

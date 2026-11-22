@@ -266,7 +266,7 @@ describe('workspace members delete route', () => {
         'remove_workspace_member_guarded_in_mode',
         {
           p_actor_id: 'admin-user',
-          p_guard_self: false,
+          p_guard_self: true,
           p_mode: 'workspace',
           p_user_id: '00000000-0000-4000-8000-000000000001',
           p_ws_id: ROOT_WORKSPACE_ID,

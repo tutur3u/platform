@@ -90,7 +90,10 @@ export function MemberSettingsButton({
         description:
           getWorkspaceAccessRemovalRefusalMessage(error, {
             creator: t('creator_removal_refused'),
-            lastManager: t('last_manager_removal_refused'),
+            lastManager:
+              user.id && currentUser?.id === user.id
+                ? t('last_manager_leave_refused')
+                : t('last_manager_removal_refused'),
           }) ??
           (invited
             ? t('revoke_error')

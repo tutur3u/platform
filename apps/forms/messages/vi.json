@@ -8515,6 +8515,7 @@
     "invite_submit": "Gửi lời mời",
     "invited": "Đã mời",
     "joined": "Đã tham gia",
+    "last_manager_leave_refused": "Bạn là người duy nhất có quyền quản lý thành viên trong không gian làm việc này. Hãy cấp quyền đó cho một thành viên khác trước.",
     "last_manager_removal_refused": "Phải có ít nhất một thành viên có quyền quản lý thành viên. Hãy cấp quyền đó cho một thành viên khác trước.",
     "member_since": "Thành viên từ",
     "member-settings": "Cài đặt thành viên",

@@ -62,11 +62,12 @@ member can manage members, removing another person must leave a full member
 with that permission while any full members remain. Guests and creators
 without full membership do not count toward this rule.
 
-The workspace creator remains protected. The
-`GUARD_WORKSPACE_SELF_REMOVAL` switch defaults to `false`, so an authorized
-member can leave even if they are the sole manager. If the departure leaves
-the workspace empty, the API runs its existing workspace cleanup. Invite-only
-revocation does not change membership.
+The workspace creator remains protected. The manager rule also applies when
+an authorized member leaves. If no full member would remain, the manager rule
+allows the departure. The API runs its existing cleanup when the workspace
+is empty. Invite-only revocation does not change membership.
+
+See the [last member-manager self-removal decision](/platform/architecture/workspaces-permissions#last-member-manager-self-removal).
 
 The API returns `WORKSPACE_LAST_MANAGER` with HTTP 409 when the manager
 rule blocks a removal. The screen shows the translated refusal and keeps
@@ -87,8 +88,8 @@ Role membership removal in Web, Workspace and mobile uses the same member
 manager rule and workspace lock. A missing role returns HTTP 404. An already
 absent assignment returns success. When the manager rule refuses removal, the
 API returns HTTP 409 with `WORKSPACE_LAST_MANAGER`, and the settings surface
-shows the translated refusal. The workspace self-removal switch also controls
-the manager check when a person removes their own role assignment.
+shows the translated refusal. The rule also applies when a person removes
+their own role assignment.
 
 Regression coverage lives in the
 [standard role-member route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/roles/%5BroleId%5D/members/%5BuserId%5D/route.test.ts).

@@ -72,7 +72,7 @@ export default function RemoveYourself({ workspace, currentUserId }: Props) {
       toast.error(
         getWorkspaceAccessRemovalRefusalMessage(error, {
           creator: tMembers('creator_removal_refused'),
-          lastManager: tMembers('last_manager_removal_refused'),
+          lastManager: tMembers('last_manager_leave_refused'),
         }) ?? t('leave_workspace_failed')
       );
     }

@@ -116,6 +116,7 @@ export function SettingsDialogContent({
           canManageWorkspaceMembers={canManageWorkspaceMembers}
           canManageWorkspaceRoles={canManageWorkspaceRoles}
           currentUserEmail={user?.email ?? null}
+          currentUserId={user?.id ?? null}
           isLoadingWorkspace={isLoadingWorkspace}
           workspace={workspace}
           workspaceError={workspaceError}

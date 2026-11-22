@@ -254,6 +254,32 @@ Not yet covered: the new owner does not accept a transfer, and the transfer func
 
 Regression coverage: `apps/database/supabase/tests/workspace-ownership-protection.sql`.
 
+## Last member-manager self-removal
+
+**Product decision, 22 Nov 2026.** The last member manager cannot leave while
+other full members remain.
+
+> Yes, block it (recommended)
+>
+> — Workspace product owner
+
+The standard members API refuses a last member manager who tries to leave while
+other full members remain. The database function enforces the same rule for
+every removal. The API returns HTTP 409 with `WORKSPACE_LAST_MANAGER` before
+revoking seats, invitations, or board access. Web, Workspace, and mobile show
+the localized refusal, including “Give another member that access first” in
+English.
+
+The floor does not block a departure that would leave zero full members.
+Existing cleanup applies when the workspace has no membership rows. Creator
+protection and the existing member-management permission gate still apply.
+CMS removals already apply their manager floor to self-removal. The external-app
+members API refuses self-removal with HTTP 403.
+
+Regression coverage lives in the
+[standard members API tests](https://github.com/tutur3u/platform/blob/main/packages/apis/src/members/route.remove-authorization.test.ts)
+and [database removal tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
+
 ## `workspace_members.role` Is Not The Current Permission Source
 
 This is the most important corrective note for anyone reading older docs or legacy schema assumptions.

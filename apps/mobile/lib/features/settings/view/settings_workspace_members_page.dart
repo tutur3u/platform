@@ -10,6 +10,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace_management.dart';
 import 'package:mobile/data/repositories/workspace_management_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dock_search.dart';
 import 'package:mobile/features/settings/view/settings_workspace_member_sheets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_members_view.dart';
@@ -345,6 +346,9 @@ class _SettingsWorkspaceMembersViewState
     if (wsId == null) return;
     final l10n = context.l10n;
     final repository = _repository;
+    final isLeaving =
+        !member.pending &&
+        member.id == context.read<AuthCubit?>()?.state.user?.id;
     final title = member.pending
         ? l10n.settingsWorkspaceMembersRevokeTitle
         : l10n.settingsWorkspaceMembersRemoveTitle;
@@ -358,7 +362,8 @@ class _SettingsWorkspaceMembersViewState
           : l10n.settingsWorkspaceMembersRemoveMessage(member.label),
       confirmLabel: title,
       cancelLabel: l10n.commonCancel,
-      describeError: (error) => describeWorkspaceAdminError(context, error),
+      describeError: (error) =>
+          describeWorkspaceAdminError(context, error, isLeaving: isLeaving),
       onConfirm: () => repository.removeMember(
         wsId: wsId,
         userId: member.pending ? null : member.id,

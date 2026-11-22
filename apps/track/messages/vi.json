@@ -12601,6 +12601,7 @@
     "invited_on": "Được mời vào",
     "joined": "Đã tham gia",
     "lacks_permission": "Thiếu quyền",
+    "last_manager_leave_refused": "Bạn là người duy nhất có quyền quản lý thành viên trong không gian làm việc này. Hãy cấp quyền đó cho một thành viên khác trước.",
     "last_manager_removal_refused": "Phải có ít nhất một thành viên có quyền quản lý thành viên. Hãy cấp quyền đó cho một thành viên khác trước.",
     "leave": "Rời khỏi",
     "manage-billing": "Quản lý thanh toán",

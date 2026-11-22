@@ -4591,6 +4591,7 @@
   "settingsWorkspaceMembersEmpty": "No members yet.",
   "settingsWorkspaceMembersInviteAction": "Invite",
   "settingsWorkspaceMembersInviteSent": "Invite sent.",
+  "settingsWorkspaceMembersLastManagerLeaveRefused": "You are the only person who can manage members here. Give another member that access first.",
   "settingsWorkspaceMembersLastManagerRemovalRefused": "At least one member must be able to manage members. Give another member that access first.",
   "settingsWorkspaceMembersLinkAction": "New link",
   "settingsWorkspaceMembersLinkActive": "Active",
