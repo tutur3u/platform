@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const logoutMocks = vi.hoisted(() => ({
@@ -171,20 +171,28 @@ describe('satellite UserNavClient shared settings', () => {
   });
 
   it('keeps app-owned settings open when the sidebar account menu unmounts', async () => {
+    function SidebarWithSettings() {
+      const [showMenu, setShowMenu] = useState(true);
+      return (
+        <>
+          <SatelliteSettingsDialogHost
+            centralUrl="https://tuturuuu.com"
+            user={user}
+          />
+          {showMenu && (
+            <UserNavClient externalSettingsHost locale="en" user={user} />
+          )}
+          <button type="button" onClick={() => setShowMenu(false)}>
+            Hide account menu
+          </button>
+        </>
+      );
+    }
+
     const onUrlUpdate = vi.fn();
-    const host = (
-      <SatelliteSettingsDialogHost
-        centralUrl="https://tuturuuu.com"
-        user={user}
-      />
-    );
-    const { rerender } = render(
-      <>
-        {host}
-        <UserNavClient externalSettingsHost locale="en" user={user} />
-      </>,
-      { wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }) }
-    );
+    render(<SidebarWithSettings />, {
+      wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }),
+    });
 
     fireEvent(
       window,
@@ -195,7 +203,10 @@ describe('satellite UserNavClient shared settings', () => {
     );
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
     expect(screen.getAllByRole('dialog')).toHaveLength(1);
-    rerender(<>{host}</>);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide account menu' }));
+    expect(
+      screen.queryByRole('button', { name: 'common.settings' })
+    ).toBeNull();
     expect(screen.getByTestId('default-settings').textContent).toBe(
       'https://tuturuuu.com|sidebar'
     );
