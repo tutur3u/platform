@@ -44,6 +44,10 @@ type Send = (message: MeetRealtimeClientMessage) => boolean;
 
 /** Shown when the person acts before the room has confirmed its state. */
 export const LIVE_ACTIVITIES_OFFLINE = 'activity_offline';
+/** How long a read may go unanswered before it counts as refused. */
+export const LIVE_ACTIVITIES_READ_DEADLINE_MS = 10_000;
+/** Shown when the room did not answer a read in time. */
+export const LIVE_ACTIVITIES_READ_TIMEOUT = 'activity_read_timeout';
 /** Waits before a refused read is sent again; after the last one it is manual. */
 export const LIVE_ACTIVITIES_READ_RETRY_MS = [2_000, 4_000, 8_000] as const;
 
@@ -59,6 +63,7 @@ export function createLiveActivitiesStore() {
   let readError: string | undefined;
   let readRetries = 0;
   let retry: ReturnType<typeof setTimeout> | undefined;
+  let deadline: ReturnType<typeof setTimeout> | undefined;
   // Only a refusal of the command this person just sent is theirs to see.
   let lastRequest: string | undefined;
   const listeners = new Set<() => void>();
@@ -69,14 +74,33 @@ export function createLiveActivitiesStore() {
   };
   const stopReading = () => {
     clearTimeout(retry);
+    clearTimeout(deadline);
     retry = undefined;
+    deadline = undefined;
     readRequest = undefined;
   };
   const requestRead = () => {
     stopReading();
     if (!send) return;
     const requestId = `activity-read:${crypto.randomUUID()}`;
-    if (send({ type: 'activity.read', requestId })) readRequest = requestId;
+    if (!send({ type: 'activity.read', requestId })) return;
+    readRequest = requestId;
+    // A read the room never answers must not leave the panel waiting forever.
+    deadline = setTimeout(
+      () => failRead(LIVE_ACTIVITIES_READ_TIMEOUT),
+      LIVE_ACTIVITIES_READ_DEADLINE_MS
+    );
+  };
+  /** The read was refused or went unanswered: say so, and ask again shortly. */
+  const failRead = (error: string) => {
+    stopReading();
+    readError = error;
+    publish({ ...view, error });
+    const delay = LIVE_ACTIVITIES_READ_RETRY_MS[readRetries];
+    if (delay !== undefined) {
+      readRetries += 1;
+      retry = setTimeout(requestRead, delay);
+    }
   };
   return {
     read: () => view,
@@ -122,17 +146,9 @@ export function createLiveActivitiesStore() {
           if (manager) publish({ ...view, host: message.host });
           break;
         case 'error':
-          if (message.requestId && message.requestId === readRequest) {
-            // The room refused the read. Say so, and ask again shortly.
-            stopReading();
-            readError = message.error;
-            publish({ ...view, error: message.error });
-            const delay = LIVE_ACTIVITIES_READ_RETRY_MS[readRetries];
-            if (delay !== undefined) {
-              readRetries += 1;
-              retry = setTimeout(requestRead, delay);
-            }
-          } else if (message.requestId && message.requestId === lastRequest)
+          if (message.requestId && message.requestId === readRequest)
+            failRead(message.error);
+          else if (message.requestId && message.requestId === lastRequest)
             publish({ ...view, error: message.error });
           break;
       }

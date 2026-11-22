@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MeetCommandExecutor } from './command-executor';
-import { liveActivityCommandSchema } from './live-activities';
+import {
+  liveActivityCommandSchema,
+  malformedMeetEventReply,
+} from './live-activities';
 import {
   action,
   cohost,
@@ -13,6 +16,7 @@ import {
   room,
 } from './live-activities.fixtures';
 import { LIVE_ACTIVITY_ACTIONS_PER_MINUTE } from './live-activity-rate';
+import { meetRealtimeClientMessageSchema } from './messages';
 import { receivesMeetManagerMessage } from './permissions';
 import {
   createMeetRoomSnapshot,
@@ -419,4 +423,34 @@ it('delivers manager messages by one rule on every transport', () => {
   expect(receivesMeetManagerMessage(cohost, notice)).toBe(false);
   expect(receivesMeetManagerMessage(guest, view)).toBe(false);
   expect(receivesMeetManagerMessage(guest, notice)).toBe(false);
+});
+
+it('refuses an activity frame it cannot read under the sender\'s request id', () => {
+  // What a page from before reveals named their card would send.
+  const outdated = {
+    type: 'activity.command',
+    requestId: 'request-1',
+    command: { kind: 'flashcards.show', index: 0, flipped: true },
+  };
+  expect(meetRealtimeClientMessageSchema.safeParse(outdated).success).toBe(
+    false
+  );
+  expect(malformedMeetEventReply(outdated)).toEqual({
+    type: 'error',
+    error: 'malformed_event',
+    requestId: 'request-1',
+  });
+  // An id the room would not accept is not echoed, and neither is the id of
+  // a frame that is not about activities.
+  for (const frame of [
+    { ...outdated, requestId: 'x'.repeat(121) },
+    { ...outdated, requestId: 7 },
+    { ...outdated, type: 'chat.send' },
+    'not an object',
+    null,
+  ])
+    expect(malformedMeetEventReply(frame)).toEqual({
+      type: 'error',
+      error: 'malformed_event',
+    });
 });

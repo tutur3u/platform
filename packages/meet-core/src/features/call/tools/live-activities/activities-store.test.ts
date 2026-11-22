@@ -12,6 +12,7 @@ import {
 import {
   closeLiveActivitiesRoom,
   createLiveActivitiesStore,
+  LIVE_ACTIVITIES_READ_DEADLINE_MS,
   LIVE_ACTIVITIES_READ_RETRY_MS,
   liveActivitiesRoom,
 } from './activities-store';
@@ -268,4 +269,32 @@ it('clears the state when the transport gives up or the reconnect lands in the w
     expect(room.send(command)).toBe(false);
     expect(room.read().error).toBeNull();
   }
+});
+
+it('treats a read the room never answers as refused, so later clicks are not lost', () => {
+  vi.useFakeTimers();
+  const room = createLiveActivitiesStore();
+  room.open(send);
+  const unanswered = readId();
+  expect(room.send(command)).toBe(false);
+  vi.advanceTimersByTime(LIVE_ACTIVITIES_READ_DEADLINE_MS - 1);
+  expect(reads()).toHaveLength(1);
+  expect(room.read().error).toBe('activity_offline');
+  // The deadline passes: the person is told, and the read goes out again.
+  vi.advanceTimersByTime(1);
+  expect(room.read().error).toBe('activity_read_timeout');
+  vi.advanceTimersByTime(LIVE_ACTIVITIES_READ_RETRY_MS[0]);
+  expect(reads()).toHaveLength(2);
+  expect(readId()).not.toBe(unanswered);
+  // A late answer to the first read does not count; the second one does.
+  room.receive({ type: 'activity.snapshot', snapshot, requestId: unanswered });
+  expect(room.send(command)).toBe(false);
+  answer(room);
+  expect(room.read()).toMatchObject({ error: null, stale: false });
+  expect(room.send(command)).toBe(true);
+  // An answered read leaves no deadline behind.
+  vi.advanceTimersByTime(LIVE_ACTIVITIES_READ_DEADLINE_MS * 2);
+  expect(reads()).toHaveLength(2);
+  expect(room.read().error).toBeNull();
+  room.close();
 });

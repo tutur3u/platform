@@ -1,6 +1,7 @@
 import {
   LIVE_ACTIVITY_LIMITS,
   type LiveActivityCommand,
+  liveActivityRequestIdSchema,
   MEET_LIVE_ASSESSMENT_ENABLED,
 } from './live-activities-schema';
 import { applyLiveActivityGame } from './live-activity-game';
@@ -418,4 +419,27 @@ export function applyLiveActivities(
       direct,
     }
   );
+}
+
+/**
+ * The reply to a frame the room could not read. An activity frame keeps its
+ * request id when that id is valid, so the sender shows the refusal: a command
+ * from a page older than the room fails visibly instead of silently.
+ */
+export function malformedMeetEventReply(
+  json: unknown
+): MeetRealtimeServerMessage {
+  const frame =
+    typeof json === 'object' && json !== null
+      ? (json as { type?: unknown; requestId?: unknown })
+      : {};
+  const requestId =
+    typeof frame.type === 'string' && frame.type.startsWith('activity.')
+      ? liveActivityRequestIdSchema.safeParse(frame.requestId).data
+      : undefined;
+  return {
+    type: 'error',
+    error: 'malformed_event',
+    ...(requestId ? { requestId } : {}),
+  };
 }

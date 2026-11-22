@@ -633,8 +633,10 @@ hosts.
 
 A brief reconnect keeps the last activity state on screen and marks it as
 waiting: the panel says it is reconnecting and sends nothing until the room has
-answered the read of the new connection. A refused read shows its reason and is
-retried a few times, then again when the person acts. The state
+answered the read of the new connection. A refused read, or one the room
+does not answer within ten seconds, shows its reason and is retried a few times,
+then again when the person acts. A command the room cannot read, such as one
+from an out-of-date page, is refused with a visible line instead of silence. The state
 clears only when the connection gives up, the room ends or the person returns to
 the waiting room. Questions, decks, rounds and written answers in progress follow
 what the room stored until the person edits them; after that a late answer, a

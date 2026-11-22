@@ -10,6 +10,7 @@ import {
   type MeetRoomOutcome,
   type MeetSfuIntent,
   meetPresenceMessage,
+  malformedMeetEventReply,
   meetRealtimeClientMessageSchema,
   mergePublicationCleanup,
   pruneMeetPresence,
@@ -95,7 +96,7 @@ async function handleMessage(
 
   const parsed = meetRealtimeClientMessageSchema.safeParse(json);
   if (!parsed.success) {
-    send(ws, { error: 'malformed_event', type: 'error' });
+    send(ws, malformedMeetEventReply(json));
     return;
   }
 

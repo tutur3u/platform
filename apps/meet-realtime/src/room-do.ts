@@ -16,6 +16,7 @@ import {
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
+  malformedMeetEventReply,
   meetRealtimeClientMessageSchema,
   pruneMeetPresence,
   releaseParticipant,
@@ -448,7 +449,7 @@ export class MeetRoomDurableObject implements DurableObject {
     this.snapshot.usage.webSocketMessages++;
     const parsed = meetRealtimeClientMessageSchema.safeParse(json);
     if (!parsed.success) {
-      this.delivery.sendTo(socket, { error: 'malformed_event', type: 'error' });
+      this.delivery.sendTo(socket, malformedMeetEventReply(json));
       return;
     }
 
