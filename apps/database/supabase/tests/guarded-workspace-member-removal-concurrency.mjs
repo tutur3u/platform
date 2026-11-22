@@ -180,7 +180,7 @@ async function runRace(metadata) {
     label,
     operationA,
     operationB,
-    expectedManagers = 1
+    { expectedManagers = 1, leaderResult = 'removed' } = {}
   ) {
     const [leader, follower] = clients;
     const [{ pid }] = await follower`select pg_backend_pid() as pid`;
@@ -218,7 +218,7 @@ async function runRace(metadata) {
         await asServiceRole(sql);
         return operationA(sql);
       });
-      assert.equal(result, 'removed', label);
+      assert.equal(result, leaderResult, label);
       const [{ result: refusal }] = await pending;
       assert.equal(refusal, 'last_manager', label);
       const [{ count }] = await leader`
@@ -228,7 +228,7 @@ async function runRace(metadata) {
       `;
       assert.equal(count, expectedManagers, label);
       console.log(
-        `ok - ${label}: one removal committed, ${count} member manager(s) remaining`
+        `ok - ${label}: one reduction committed, ${count} member manager(s) remaining`
       );
     } finally {
       if (pending) await Promise.allSettled([pending]);
@@ -266,6 +266,24 @@ async function runRace(metadata) {
         sql`select public.remove_workspace_member_guarded(${workspace}, ${first}, ${second}) as result`
     );
 
+    const selfLeave = (sql) =>
+      sql`select public.remove_workspace_member_guarded_in_mode(${workspace}, ${first}, ${first}, 'workspace') as result`;
+    const removeMember = (sql) =>
+      sql`select public.remove_workspace_member_guarded_in_mode(${workspace}, ${second}, ${creator}, 'workspace') as result`;
+
+    await clients[0].begin(insertManagers);
+    await raceAcrossPaths(
+      'member removal vs manager self-leave',
+      removeMember,
+      selfLeave
+    );
+    await clients[0].begin(insertManagers);
+    await raceAcrossPaths(
+      'manager self-leave vs member removal',
+      selfLeave,
+      removeMember
+    );
+
     async function prepareRoleDeleteRace(sql) {
       await insertManagers(sql);
       await sql`insert into public.workspace_roles (id, ws_id, name)
@@ -279,8 +297,6 @@ async function runRace(metadata) {
 
     const deleteRole = (sql) =>
       sql`select public.delete_workspace_role_guarded(${workspace}, ${separateRole}, ${first}, 'cms') as result`;
-    const removeMember = (sql) =>
-      sql`select public.remove_workspace_member_guarded_in_mode(${workspace}, ${second}, ${creator}, 'workspace') as result`;
 
     await clients[0].begin(prepareRoleDeleteRace);
     await raceAcrossPaths(
@@ -327,11 +343,83 @@ async function runRace(metadata) {
         sql`select public.reduce_external_app_workspace_admin_guarded(
           ${workspace}, ${ordinaryMember}, true, ${second}
         ) as result`,
-      2
+      { expectedManagers: 2 }
     );
     await clients[0]`delete from public.workspace_default_permissions
       where ws_id = ${workspace} and member_type = 'MEMBER'
         and permission in ('manage_workspace_members', 'manage_workspace_roles')`;
+  }
+
+  async function permissionEditRaces() {
+    const [manager, second] = actors;
+    const reduction = clients[0].json([
+      { id: 'manage_workspace_members', enabled: false },
+    ]);
+
+    function editRole(sql) {
+      return sql`select private.update_workspace_role_guarded(
+        ${workspace}, ${managerRole}, ${creator}, 'workspace', ${reduction}, 'Role after edit'
+      ) as result`;
+    }
+
+    function editDefaults(sql) {
+      return sql`select private.update_workspace_default_permissions_guarded(
+        ${workspace}, ${second}, 'cms', 'MEMBER', ${reduction}
+      ) as result`;
+    }
+
+    for (const [label, first, second] of [
+      ['role edit vs default edit', editRole, editDefaults],
+      ['default edit vs role edit', editDefaults, editRole],
+    ]) {
+      await clients[0].begin(async (sql) => {
+        await sql`insert into public.workspace_members (ws_id, user_id, type)
+          values (${workspace}, ${manager}, 'MEMBER') on conflict do nothing`;
+        await sql`update public.workspace_roles set name = 'Guarded race manager'
+          where id = ${managerRole}`;
+        await sql`update public.workspace_role_permissions set enabled = true
+          where role_id = ${managerRole} and permission = 'manage_workspace_members'`;
+        await sql`delete from public.workspace_role_members where role_id = ${managerRole}`;
+        await sql`insert into public.workspace_role_members (role_id, user_id)
+          values (${managerRole}, ${manager})`;
+        await sql`insert into public.workspace_default_permissions (ws_id, permission, member_type, enabled)
+          values (${workspace}, 'manage_workspace_members', 'MEMBER', true)
+          on conflict (ws_id, permission, member_type) do update set enabled = true`;
+      });
+      const roleWasFirst = first === editRole;
+      const [{ count: fullMembers }] = await clients[0]`
+        select count(*)::int from public.workspace_members
+        where ws_id = ${workspace} and type = 'MEMBER'
+      `;
+      await raceAcrossPaths(label, first, second, {
+        expectedManagers: roleWasFirst ? fullMembers : 1,
+        leaderResult: 'updated',
+      });
+      const [{ name }] =
+        await clients[0]`select name from public.workspace_roles where id = ${managerRole}`;
+      assert.equal(
+        name,
+        roleWasFirst ? 'Role after edit' : 'Guarded race manager'
+      );
+    }
+
+    await clients[0].begin(async (sql) => {
+      await sql`delete from public.workspace_default_permissions
+        where ws_id = ${workspace} and member_type = 'MEMBER' and permission = 'manage_workspace_members'`;
+      await sql`insert into public.workspace_members (ws_id, user_id, type)
+        values (${workspace}, ${second}, 'MEMBER') on conflict do nothing`;
+      await sql`insert into public.workspace_role_members (role_id, user_id)
+        values (${managerRole}, ${second}) on conflict do nothing`;
+    });
+
+    await raceAcrossPaths(
+      'guarded self-leave vs role edit',
+      (sql) =>
+        sql`select public.remove_workspace_member_guarded_in_mode(
+          ${workspace}, ${manager}, ${manager}, 'workspace', true
+        ) as result`,
+      editRole
+    );
   }
 
   async function enableRecurrence() {
@@ -478,6 +566,7 @@ async function runRace(metadata) {
       );
     }
     await crossPathRaces();
+    await permissionEditRaces();
     await enableRecurrence();
     await recurrenceRace('legacy CMS member removal', (sql, actor, owner) =>
       remove(sql, 'member', actor, owner)
@@ -540,6 +629,14 @@ async function runNegativeControls(metadata) {
       [
         'public.reduce_external_app_workspace_admin_guarded(uuid,uuid,boolean,uuid)',
         'workspace member removal vs external-app demotion did not wait for the advisory lock',
+      ],
+      [
+        'private.update_workspace_default_permissions_guarded(uuid,uuid,text,public.workspace_member_type,jsonb)',
+        'role edit vs default edit did not wait for the advisory lock',
+      ],
+      [
+        'private.update_workspace_role_guarded(uuid,uuid,uuid,text,jsonb,text)',
+        'default edit vs role edit did not wait for the advisory lock',
       ],
     ];
 

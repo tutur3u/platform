@@ -127,7 +127,7 @@ select is(remove_workspace_member_guarded_in_mode(:'missing', :'plain', :'creato
 select is(remove_workspace_member_guarded_in_mode(:'ws', :'creator', :'admin', 'external_app'),
   'creator_protected', 'external member removal protects the creator without a membership');
 select is(remove_workspace_member_guarded_in_mode(:'ws', :'admin', :'admin', 'external_app', true),
-  'self_protected', 'external member removal prohibits self-removal regardless of the switch');
+  'self_protected', 'external member removal prohibits self-removal');
 select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'admin_role', :'plain', :'admin', 'workspace'),
   'not_found', 'a missing role membership is distinguished from an actual removal');
 select is(delete_workspace_role_guarded(:'ws', :'other_role', :'creator', 'workspace'),
@@ -159,16 +159,16 @@ select ok(exists (select 1 from workspace_members where ws_id = :'ws' and user_i
   'refused member removal restores its cascading role memberships');
 
 select is(remove_workspace_member_guarded_in_mode(:'ws', :'admin', :'admin', 'workspace', true),
-  'last_manager', 'the enabled switch guards a manager leaving');
+  'last_manager', 'the manager floor guards a manager leaving');
 select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'admin_role', :'admin', :'admin', 'workspace', true),
-  'last_manager', 'the enabled switch guards a manager removing their own role membership');
+  'last_manager', 'the manager floor guards self-removal from a role');
 select is(remove_workspace_member_guarded_in_mode(:'ws', :'admin', :'admin', 'cms'),
-  'last_manager', 'CMS guards a manager leaving with the default switch');
+  'last_manager', 'CMS guards a manager leaving');
 select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'admin_role', :'admin', :'admin', 'cms', false),
-  'last_manager', 'CMS guards self-removal from an access level with the switch off');
+  'last_manager', 'CMS guards self-removal from an access level');
 
-select is(remove_workspace_member_guarded_in_mode(:'solo_ws', :'plain', :'plain', 'workspace', true),
-  'removed', 'the enabled switch allows the last full member to leave');
+select is(remove_workspace_member_guarded_in_mode(:'solo_ws', :'plain', :'plain', 'workspace'),
+  'removed', 'the last full member can leave a workspace with guests');
 select is((select count(*) from workspace_members where ws_id = :'solo_ws' and type = 'MEMBER'), 0::bigint,
   'only guest rows remain after removal of the last full member');
 select is((select count(*) from workspace_role_members wrm join workspace_roles wr on wr.id = wrm.role_id
@@ -215,12 +215,23 @@ select is(reduce_external_app_workspace_admin_guarded(:'ws', :'members_only', fa
 select is((select count(*) from workspace_role_members where role_id = :'admin_role'), 0::bigint,
   'successful external demotion removes the qualifying role membership');
 
--- Both disabled and omitted switches preserve self-removal.
+select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'members_role', :'members_only', :'members_only', 'workspace'),
+  'last_manager', 'omitting the compatibility flag cannot bypass the role-membership floor');
+select is(remove_workspace_member_guarded_in_mode(:'ws', :'members_only', :'members_only', 'workspace'),
+  'last_manager', 'omitting the compatibility flag cannot bypass the member floor');
+select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'members_role', :'members_only', :'members_only', 'workspace', flag),
+  'last_manager', 'a sole manager cannot remove their own role with flag ' || coalesce(flag::text, 'null'))
+from (values (false), (null::boolean)) flags(flag);
+select is(remove_workspace_member_guarded_in_mode(:'ws', :'members_only', :'members_only', 'workspace', flag),
+  'last_manager', 'a sole manager cannot leave with flag ' || coalesce(flag::text, 'null'))
+from (values (false), (null::boolean)) flags(flag);
+
+insert into public.workspace_role_members (role_id, user_id) values (:'members_role', :'roles_only');
 select is(remove_workspace_role_member_guarded_in_mode(:'ws', :'members_role', :'members_only', :'members_only', 'workspace', false),
-  'removed', 'the disabled switch permits self-removal from a role');
+  'removed', 'a manager can drop their own grant after another member gains the permission');
 insert into public.workspace_role_members (role_id, user_id) values (:'members_role', :'members_only');
 select is(remove_workspace_member_guarded_in_mode(:'ws', :'members_only', :'members_only', 'workspace'),
-  'removed', 'the omitted switch permits a sole manager to leave while full members remain');
+  'removed', 'a manager can leave after another member gains the permission');
 
 delete from private.mastermind_access_role;
 insert into private.mastermind_access_role (role_id) values (:'root_role');

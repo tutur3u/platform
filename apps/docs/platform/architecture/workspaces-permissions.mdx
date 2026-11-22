@@ -294,6 +294,29 @@ covers client access and workspace creation. The
 [rollback check](https://github.com/tutur3u/platform/blob/main/apps/database/verification/workspace-client-membership-writes-rollback-roundtrip.sql)
 compares the policy and privilege catalogs on a disposable replay.
 
+## Account deletion and workspaces without a member manager
+
+On 22 Nov 2026, Iris decided that self-service account deletion checks for
+workspaces that depend on the account as their only member manager. The rule
+calls for a check before billing changes and a second check immediately before
+calling Auth. A
+personal workspace or a workspace with no other full member does not block
+deletion. Platform operators can still remove an account through the admin path.
+
+Each check reads a snapshot. The Auth service removes the account in a separate
+transaction. If two managers delete their accounts at the same time, both can
+pass the final check before either account is removed. A concurrent leave or
+permission edit can also change who manages the workspace before Auth completes.
+
+The detector supports a read-only orphaned-workspace report for Admin. The
+report checks current data when opened. It lists shared workspaces that have
+full members and lack a member manager, with no automatic repairs.
+
+Database regression coverage includes the
+[account-deletion snapshot](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-manager-reducers.sql)
+and the
+[orphaned-workspace detector](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/workspaces-without-member-manager.sql).
+
 ## Permission Catalog
 
 The permission catalog is defined in `packages/utils/src/permissions.tsx`.
