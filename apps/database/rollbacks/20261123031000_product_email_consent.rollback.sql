@@ -1,8 +1,10 @@
 -- Rollback for 20261123031000_product_email_consent.sql.
 -- Apply as a new forward migration through the gated database workflow. It
 -- refuses while any consent decision or audit row exists: consent evidence
--- must never be destroyed by a rollback. Export or erase the rows deliberately
--- first, and stop every sender that reads private.product_email_recipients.
+-- must never be destroyed by a rollback. The audit guard rejects any delete
+-- other than a user-erasure cascade, so the rows can only go by erasing their
+-- users (or by a reviewed owner-level trigger disable). Export them first, and
+-- stop every sender that reads private.product_email_recipients.
 -- tuturuuu: reviewed(dynamic-sql-review): fixed evidence guard with no EXECUTE, interpolation or caller input.
 do $$
 begin
