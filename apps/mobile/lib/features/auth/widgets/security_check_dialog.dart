@@ -135,8 +135,8 @@ Future<String?> showSecurityCheckPanel(
 }
 
 /// The open non-blocking card. System Back closes it before it navigates
-/// the page or offers to exit the app, as it closed the dialog this card
-/// replaced; the shell asks here because the card is not a route.
+/// the page or offers to exit the app, like any open dialog. The card is an
+/// overlay entry, not a route, so the shell asks here.
 abstract final class SecurityCheckCard {
   static VoidCallback? _dismiss;
 

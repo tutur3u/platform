@@ -79,7 +79,7 @@ void main() {
       expect(ResponsivePadding.maxContentWidth(DeviceClass.medium), 600);
       expect(ResponsivePadding.maxContentWidth(DeviceClass.expanded), 720);
       expect(ResponsivePadding.rootContentWidth(DeviceClass.medium), 1120);
-      // Root canvases grew from 1440 so wide desktops fit four Home columns.
+      // Root canvases cap at 1600 so wide desktops fit four Home columns.
       expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1600);
       expect(
         ResponsivePadding.maxFormWidth(DeviceClass.compact),
