@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { uploadWorkspaceStorageFileDirect } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -14,6 +13,10 @@ import {
   createManagedAssetPinnedDispatcher,
   resolveSafeManagedAssetAddress,
 } from './managed-asset-url-policy';
+import {
+  MALFORMED_IMAGE_MESSAGE,
+  sanitizeExternalProjectUpload,
+} from './upload-sanitize';
 
 type AdminDb = TypedSupabaseClient;
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -265,7 +268,11 @@ async function importAsset(
 
   const sourceUrl = asset.source_url;
   const downloaded = await fetchManagedAsset(sourceUrl);
-  const checksum = createHash('sha256').update(downloaded.buffer).digest('hex');
+  const sanitized = sanitizeExternalProjectUpload(downloaded.buffer);
+  if (!sanitized.ok) {
+    throw new ManagedAssetImportValidationError(MALFORMED_IMAGE_MESSAGE);
+  }
+  const checksum = sanitized.contentSha256;
   const filename = sourceFilename(downloaded.finalUrl, downloaded.contentType);
   const path = [
     'external-projects',
@@ -275,7 +282,7 @@ async function importAsset(
     `${checksum}-${filename}`,
   ].join('/');
 
-  await uploadWorkspaceStorageFileDirect(workspaceId, path, downloaded.buffer, {
+  await uploadWorkspaceStorageFileDirect(workspaceId, path, sanitized.bytes, {
     contentType: downloaded.contentType,
     upsert: true,
   });

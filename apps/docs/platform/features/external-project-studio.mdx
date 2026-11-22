@@ -379,6 +379,40 @@ including WebGL signed-URL requests, keep the default 512 KiB proxy limit.
 the two multipart paths and verifies that other methods, content types and
 paths keep the default.
 
+## Upload image metadata
+
+Multipart uploads to the same two paths, and managed asset imports from a
+source URL, store JPEG, PNG and WebP images without EXIF (including GPS
+location and camera serials), XMP, IPTC, MPF previews, comments, text chunks,
+embedded JFIF thumbnails, HDR gain maps (which then display as standard
+range) or bytes after the image end. The container is
+rewritten from an allowlist without decoding pixels, so quality does not
+change. ICC colour profiles, the fixed Adobe colour header and PNG colour
+chunks are kept. A non-default orientation is kept in a replacement EXIF block
+that holds only the Orientation tag.
+
+- Scope: the bytes decide the format, whatever type the client declares, so a
+  JPEG labelled `application/octet-stream` is stripped too.
+- Refusals: bytes that look like JPEG, PNG or WebP but do not parse (for
+  example a missing end marker, JPEG extension markers, unknown PNG critical
+  chunks, metadata inside WebP animation frames, or files built from thousands
+  of tiny blocks) are refused with 415. Managed imports record the same message
+  as the asset's failure.
+- Signed-URL uploads send bytes straight to storage and are not stripped. A
+  signed upload request with `upsert: true` whose declared type or file
+  extension is JPEG, PNG or WebP is refused with 400; replace images with a
+  multipart upload.
+- Not stripped: GIF, AVIF, HEIC, SVG, audio and video are stored as received.
+  HEIC, AVIF and MP4 files from phones can carry GPS location; keep them private
+  or convert them to JPEG before publishing.
+- Responses include `contentSha256` (SHA-256 of the stored bytes) and
+  `metadataStripped`; the asset upload response also includes the stored `size`.
+
+`packages/storage-core/src/lib/image-metadata-strip.test.ts` covers the
+fixtures, malformed containers, bounded work on adversarial files and fast-check
+fuzzing; `apps/web/src/lib/external-projects/upload-sanitize.test.ts` decodes the
+stored bytes with sharp to check dimensions, orientation and the colour profile.
+
 ## Edge WAF exception for media uploads
 
 Bearer-authenticated multipart uploads from linked sites can trip the

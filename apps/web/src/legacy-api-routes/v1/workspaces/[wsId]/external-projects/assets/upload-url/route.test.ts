@@ -1,3 +1,4 @@
+import { TAGGED_JPEG } from '@tuturuuu/storage-core/image-metadata-strip.fixtures';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -50,11 +51,13 @@ function createJsonRequest(payload: unknown) {
   );
 }
 
-function createMultipartRequest() {
+function createMultipartRequest(
+  file = new File(['voice'], 'voice.wav', { type: 'audio/wav' })
+) {
   const formData = new FormData();
   formData.set('collectionType', 'voice-reels');
   formData.set('entrySlug', 'demo');
-  formData.set('file', new File(['voice'], 'voice.wav', { type: 'audio/wav' }));
+  formData.set('file', file);
 
   const request = new Request(
     'http://localhost/api/v1/workspaces/workspace-1/external-projects/assets/upload-url',
@@ -163,12 +166,16 @@ describe('external project asset upload-url route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      contentSha256:
+        'c57d7e92019708b614c90fa3685cd644f543a60153fb99ec9b67c381a245fb2a',
       contentType: 'audio/wav',
       filename: 'upload-id-voice.wav',
       fullPath:
         'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
+      metadataStripped: false,
       path: 'external-projects/yoola/voice-reels/demo/voice.wav',
       provider: 'supabase',
+      size: 5,
     });
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
     expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
@@ -184,6 +191,69 @@ describe('external project asset upload-url route', () => {
       | Uint8Array
       | undefined;
     expect(buffer?.byteLength).toBe(5);
+  });
+
+  it.each([
+    { contentType: 'image/jpeg', filename: 'photo.jpg' },
+    { contentType: 'image/jpg', filename: 'photo.jpg' },
+    { contentType: 'application/octet-stream', filename: 'photo.jpg' },
+    { filename: 'photo.webp' },
+  ])(
+    'refuses signed uploads that would replace an image in place: %o',
+    async (file) => {
+      const response = await postAssetUploadJson({
+        collectionType: 'gallery',
+        entrySlug: 'demo',
+        size: 5,
+        upsert: true,
+        ...file,
+      });
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Replace images with a multipart upload',
+      });
+      expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    }
+  );
+
+  it('refuses multipart images that do not parse', async () => {
+    const response = await postAssetUploadMultipart(
+      createMultipartRequest(
+        new File([TAGGED_JPEG.subarray(0, 10)], 'photo.jpg', {
+          type: 'image/jpeg',
+        })
+      )
+    );
+
+    expect(response.status).toBe(415);
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('stores multipart images without EXIF, GPS or XMP', async () => {
+    const response = await postAssetUploadMultipart(
+      createMultipartRequest(
+        new File([TAGGED_JPEG], 'photo.jpg', {
+          type: 'application/octet-stream',
+        })
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const stored = mocks.uploadWorkspaceStorageFileDirect.mock.calls[0]?.[2] as
+      | Uint8Array
+      | undefined;
+    expect(stored).toBeDefined();
+    expect(stored!.byteLength).toBeLessThan(TAGGED_JPEG.byteLength);
+    expect(Buffer.from(stored!).toString('latin1')).not.toMatch(
+      /SerialABC123|TestCam|SecretCity/
+    );
+    expect(body).toMatchObject({
+      metadataStripped: true,
+      size: stored!.byteLength,
+    });
+    expect(body.contentSha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it.each([

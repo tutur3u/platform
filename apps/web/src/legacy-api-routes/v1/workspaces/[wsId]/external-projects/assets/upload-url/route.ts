@@ -10,6 +10,11 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import {
+  MALFORMED_IMAGE_MESSAGE,
+  mayCarryImage,
+  sanitizeExternalProjectUpload,
+} from '@/lib/external-projects/upload-sanitize';
 
 const uploadUrlSchema = z.object({
   collectionType: z.string().min(1).max(120),
@@ -124,10 +129,19 @@ async function uploadExternalProjectAssetDirect(
 
   if (!target.ok) return target.response;
 
+  const sanitized = sanitizeExternalProjectUpload(
+    new Uint8Array(await file.arrayBuffer())
+  );
+  if (!sanitized.ok) {
+    return NextResponse.json(
+      { error: MALFORMED_IMAGE_MESSAGE },
+      { status: 415 }
+    );
+  }
   const uploaded = await uploadWorkspaceStorageFileDirect(
     access.normalizedWorkspaceId,
     target.storagePath,
-    new Uint8Array(await file.arrayBuffer()),
+    sanitized.bytes,
     {
       contentType: target.contentType,
       upsert: target.upsert,
@@ -135,11 +149,14 @@ async function uploadExternalProjectAssetDirect(
   );
 
   return NextResponse.json({
+    contentSha256: sanitized.contentSha256,
     contentType: target.contentType,
     filename: target.filename,
     fullPath: uploaded.fullPath,
+    metadataStripped: sanitized.metadataStripped,
     path: uploaded.path,
     provider: uploaded.provider,
+    size: sanitized.bytes.byteLength,
   });
 }
 
@@ -172,6 +189,13 @@ export async function POST(
     }
 
     const payload = uploadUrlSchema.parse(body);
+    // Signed uploads skip metadata stripping, so they never replace an image in place.
+    if (payload.upsert && mayCarryImage(payload)) {
+      return NextResponse.json(
+        { error: 'Replace images with a multipart upload' },
+        { status: 400 }
+      );
+    }
     const target = buildExternalProjectAssetUploadTarget({
       access,
       collectionType: payload.collectionType,

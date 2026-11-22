@@ -20,6 +20,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { externalProjectSignedReadPath } from '@/lib/external-projects/signed-read-path';
+import {
+  MALFORMED_IMAGE_MESSAGE,
+  sanitizeExternalProjectUpload,
+} from '@/lib/external-projects/upload-sanitize';
 
 const SIGNED_READ_URL_TTL_SECONDS = 900;
 
@@ -358,20 +362,24 @@ async function handleUpload({
       409
     );
   }
-  const buffer = new Uint8Array(await file.arrayBuffer());
+  const contentType =
+    uploadValidation.contentType || 'application/octet-stream';
+  const sanitized = sanitizeExternalProjectUpload(
+    new Uint8Array(await file.arrayBuffer())
+  );
+  if (!sanitized.ok) return errorJson(MALFORMED_IMAGE_MESSAGE, 415);
   const data = await uploadWorkspaceStorageFileDirect(
     access.normalizedWorkspaceId,
     storagePath,
-    buffer,
-    {
-      contentType: uploadValidation.contentType || 'application/octet-stream',
-      upsert,
-    }
+    sanitized.bytes,
+    { contentType, upsert }
   );
 
   return NextResponse.json({
     data: {
+      contentSha256: sanitized.contentSha256,
       fullPath: data.fullPath,
+      metadataStripped: sanitized.metadataStripped,
       name: sanitizedFilename,
       path: toRelativePath(prefix, data.path),
       provider: data.provider,
