@@ -243,6 +243,16 @@ async function createWorkspaceStorageUploadUrl(
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
     audit.set({ path: requestedStoragePath });
+    if (isReservedExternalProjectPath(sanitizedPath)) {
+      return NextResponse.json(
+        {
+          message:
+            'External project uploads must use the external project asset upload route',
+        },
+        { status: 400 }
+      );
+    }
+
     // Topic Announcement attachments live in a private root that Drive
     // excludes; they are authorized below by the feature gate and
     // manage_users instead of Drive permissions.
@@ -253,16 +263,6 @@ async function createWorkspaceStorageUploadUrl(
       isExcludedDrivePath(normalizedWsId, requestedStoragePath)
     ) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    if (isReservedExternalProjectPath(sanitizedPath)) {
-      return NextResponse.json(
-        {
-          message:
-            'External project uploads must use the external project asset upload route',
-        },
-        { status: 400 }
-      );
     }
 
     let uploadContentType: typeof parsed.data.contentType;

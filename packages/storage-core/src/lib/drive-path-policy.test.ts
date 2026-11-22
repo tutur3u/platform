@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { filterDriveEntries, isExcludedDrivePath } from './drive-path-policy';
+import {
+  filterDriveEntries,
+  filterDriveListingEntries,
+  isExcludedDriveListingPath,
+  isExcludedDrivePath,
+} from './drive-path-policy';
 
 describe('Drive excludes private chat namespaces', () => {
   it.each([
     'external-apps/example/chat/conversation/attachment/file.pdf',
+    'external-projects/shared/blog/draft-cover.png',
+    'External-Projects/shared/blog/draft-cover.png',
+    'external%2Dprojects/shared/blog/draft-cover.png',
+    'project-updates/update-a/file.pdf',
+    'template-backgrounds/background.png',
     'chat',
     'chat/chat-a/file.pdf',
     '%63hat/chat-a/file.pdf',
@@ -50,6 +60,9 @@ describe('Drive excludes private chat namespaces', () => {
         { name: 'AI Agent Imports' },
         { name: 'recordings' },
         { name: 'topic-announcements' },
+        { name: 'external-projects' },
+        { name: 'project-updates' },
+        { name: 'template-backgrounds' },
         { name: 'chats' },
         { name: '%63hats' },
         { name: 'documents' },
@@ -76,6 +89,9 @@ describe('private root case normalization', () => {
     'CHAT/x',
     'Chats/x',
     'External-Apps/x',
+    'External-Projects/x',
+    'Project-Updates/x',
+    'Template-Backgrounds/x',
     'ai agent imports/x',
     'Mira/Images/x',
     'RECORDINGS/x',
@@ -119,5 +135,49 @@ describe('private root case normalization', () => {
     ...privatePaths.map((path) => `documents/${path}`),
   ])('keeps the ordinary Drive path %s', (path) => {
     expect(isExcludedDrivePath('ws-1', path)).toBe(false);
+  });
+});
+
+describe('owning-API listings of a service-only root', () => {
+  it('lists only inside the literal service root it names', () => {
+    expect(
+      isExcludedDriveListingPath(
+        'ws-1',
+        'external-projects/shared/blog',
+        'external-projects'
+      )
+    ).toBe(false);
+    for (const path of [
+      '',
+      'documents',
+      'External-Projects/shared',
+      'external%2Dprojects/shared',
+      'recordings/meeting',
+    ]) {
+      expect(
+        isExcludedDriveListingPath('ws-1', path, 'external-projects')
+      ).toBe(true);
+    }
+  });
+
+  it('keeps entries inside the owned root and Drive filtering elsewhere', () => {
+    const entries = [{ name: 'cover.png' }, { name: 'gallery' }];
+    expect(
+      filterDriveListingEntries(
+        'ws-1',
+        'external-projects/shared',
+        entries,
+        'external-projects'
+      )
+    ).toEqual(entries);
+    expect(
+      filterDriveEntries('ws-1', 'external-projects/shared', entries)
+    ).toEqual([]);
+    expect(
+      filterDriveListingEntries('ws-1', '', [
+        { name: 'external-projects' },
+        { name: 'documents' },
+      ])
+    ).toEqual([{ name: 'documents' }]);
   });
 });

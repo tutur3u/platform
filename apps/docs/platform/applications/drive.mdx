@@ -144,7 +144,8 @@ acceptance remain release checks.
 Drive permissions apply to ordinary Drive files. They do not grant access to
 application-owned chat attachments. In every workspace, Drive share, download,
 list, export, upload, rename, and delete boundaries reserve the root names `chat`,
-`chats`, `external-apps`, `AI Agent Imports`, `recordings`, `.tuturuuu`, and
+`chats`, `external-apps`, `external-projects`, `AI Agent Imports`,
+`project-updates`, `recordings`, `template-backgrounds`, `.tuturuuu`, and
 `topic-announcements` for their owning applications. Root matching is
 case-insensitive, including both segments of `mira/images`, in every workspace.
 The Drive and signing policies share `workspace-storage-roots.ts`, matching
@@ -154,7 +155,12 @@ matching name prefixes. Drive keeps its existing relative-path sanitization
 RLS validate exact full object names and reject empty slash-delimited segments.
 Only the two-segment prefix `mira/images` is reserved for Mira image results; `mira` itself and ordinary files such as `mira/notes.txt` remain available.
 Root/directory listings and Drive analytics omit private objects; quota accounting
-continues to count their bytes. Exports omit private descendants. Recursive Drive
+continues to count their bytes. The Drive usage overview
+(`getWorkspaceStorageOverview` with `includeReservedForQuota=false`) therefore
+reports less than quota enforcement counts whenever a workspace stores CMS media,
+project update attachments, template backgrounds or other private-root objects,
+and an upload can hit the quota before the displayed usage reaches the limit.
+Exports omit private descendants. Recursive Drive
 renames/deletes validate every enumerated object before any mutation, so a parent
 operation cannot expose or remove `mira/images`. A `mira` folder containing only
 ordinary files can be renamed or deleted normally.
@@ -188,6 +194,9 @@ These source locations are the upload contracts for the separate Storage RLS lan
 | `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
 | `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:113` (upload at 127) |
 | `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:129`; sibling `chunks/route.ts:158` |
+| `external-projects/<adapter>/` | CMS media, WebGL packages and managed imports | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/upload-url/route.ts`, `.../external-projects/storage/route.ts`, `.../webgl-packages/shared.ts` and `apps/web/src/lib/external-projects/managed-asset-import.ts` (service-role storage after `requireWorkspaceExternalProjectAccess`) |
+| `project-updates/<updateId>/` | Task project update attachments | `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/attachments/route.ts` (membership and update/project checks, then service-role upload, preview signing and uploader-only delete inside the update folder) |
+| `template-backgrounds/` | Board template backgrounds | `apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/upload-url/route.ts` and Web's `legacy-api-routes/v1/workspaces/[wsId]/templates/upload-url/route.ts` (service-role signed upload) |
 | `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts` (reached through the generated `app/api` wrapper; topic branch at 76 and 269-280: feature flag and `manage_users`, signed upload) |
 
 Mobile voice attachments use the same AI/native upload flow through

@@ -4,11 +4,13 @@
  * This is the server-side mirror of the database helper
  * `workspace_storage.object_access` (migration
  * 20261026170000_least_privilege_workspace_storage_rls.sql, last redefined by
- * 20261026192000_topic_announcements_private_storage_root.sql). Service-role
- * routes that sign or list objects on a user's behalf must apply the same
- * rules, otherwise they widen what RLS allows. Keep both in sync: a change
- * to a root here needs the same change in SQL and in the pgTAP matrix
- * (supabase/tests/workspace-storage-least-privilege-rls.sql).
+ * 20261122181200_workspace_storage_ascii_roots.sql). Service-role routes
+ * that sign or list objects on a user's behalf must apply the same rules,
+ * otherwise they widen what RLS allows. Keep both in sync: a change to a root
+ * here needs the same change in SQL and in the pgTAP matrix
+ * (supabase/tests/workspace-storage-least-privilege-rls.sql). The mirror may
+ * be stricter than RLS, never weaker: only their owning APIs sign
+ * `external-projects`, `project-updates` and `template-backgrounds` objects.
  *
  * Framework-independent: identity, membership, permission and chat lookups
  * are injected by the caller.
@@ -28,10 +30,6 @@ export type WorkspaceStorageOperation =
 export type WorkspaceStoragePathClass =
   /** Drive object, including root-level files. */
   | { kind: 'drive'; wsId: string }
-  /** `project-updates/**`: any workspace member. */
-  | { kind: 'project-updates'; wsId: string }
-  /** `template-backgrounds/**`: members read, Drive managers write. */
-  | { kind: 'template-backgrounds'; wsId: string }
   /** `chat/<chatId>/**` or `chats/ai/resources/<chatId>/**`. */
   | { kind: 'ai-chat'; wsId: string; chatId: string }
   /** `chats/ai/resources/temp/<userId>/**`. */
@@ -117,10 +115,6 @@ function classifyLiteral(name: string): WorkspaceStoragePathClass | null {
       : { kind: 'private', wsId };
   }
 
-  if (root === 'project-updates') return { kind: 'project-updates', wsId };
-  if (root === 'template-backgrounds') {
-    return { kind: 'template-backgrounds', wsId };
-  }
   return { kind: 'drive', wsId };
 }
 
@@ -178,13 +172,6 @@ export async function resolveWorkspaceStorageAccess(
     }
     case 'ai-chat-temp':
       return readOrDelete && target.userId === context.userId
-        ? 'allowed'
-        : 'forbidden';
-    case 'project-updates':
-      return 'allowed';
-    case 'template-backgrounds':
-      if (operation === 'select') return 'allowed';
-      return (await context.getDrivePermissions(target.wsId)).manage
         ? 'allowed'
         : 'forbidden';
     case 'drive': {

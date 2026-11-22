@@ -6,6 +6,7 @@ import {
 import {
   isServiceOnlyWorkspaceStorageRoot,
   normalizeWorkspaceStorageRoot,
+  type WorkspaceStorageServiceListingRoot,
 } from './workspace-storage-roots';
 
 /** Private resources require their owning application API, never Drive permissions. */
@@ -49,4 +50,44 @@ export function filterDriveEntries<T extends { name?: string | null }>(
       !entry.name ||
       !isPrivateAppStoragePath(path ? `${path}/${entry.name}` : entry.name)
   );
+}
+
+/**
+ * Whether `path` lies inside `serviceRoot`, a service-only root that its
+ * owning application API lists after authorizing the actor itself. The root
+ * segment must match literally, so encoded or case aliases never qualify.
+ */
+function isOwnedServiceRootPath(
+  path: string,
+  serviceRoot: WorkspaceStorageServiceListingRoot
+) {
+  return (
+    isServiceOnlyWorkspaceStorageRoot(serviceRoot) &&
+    sanitizePath(path)?.split('/')[0] === serviceRoot
+  );
+}
+
+/**
+ * Listing boundary: Drive listings exclude private roots; an owning API that
+ * passes `serviceRoot` may list only inside that root.
+ */
+export function isExcludedDriveListingPath(
+  wsId: string,
+  path: string,
+  serviceRoot?: WorkspaceStorageServiceListingRoot
+): boolean {
+  return serviceRoot === undefined
+    ? isExcludedDrivePath(wsId, path)
+    : !isOwnedServiceRootPath(path, serviceRoot);
+}
+
+export function filterDriveListingEntries<T extends { name?: string | null }>(
+  wsId: string,
+  path: string,
+  entries: T[],
+  serviceRoot?: WorkspaceStorageServiceListingRoot
+): T[] {
+  return serviceRoot !== undefined && isOwnedServiceRootPath(path, serviceRoot)
+    ? entries
+    : filterDriveEntries(wsId, path, entries);
 }

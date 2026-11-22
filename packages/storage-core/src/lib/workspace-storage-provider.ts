@@ -26,7 +26,11 @@ import {
   sanitizePath,
 } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
-import { filterDriveEntries, isExcludedDrivePath } from './drive-path-policy';
+import {
+  filterDriveListingEntries,
+  isExcludedDriveListingPath,
+  isExcludedDrivePath,
+} from './drive-path-policy';
 import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
 import { WorkspaceStorageError } from './storage-download-error';
@@ -46,6 +50,12 @@ import {
   WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
+import {
+  matchesSearch,
+  sortStorageObjects,
+  toNumber,
+  type WorkspaceStorageSortBy,
+} from './workspace-storage-listing';
 import {
   assertWorkspaceStorageMutationPathsAllowed,
   assertWorkspaceStoragePathAllowed,
@@ -91,10 +101,12 @@ export interface WorkspaceStorageOverview {
 export interface WorkspaceStorageListOptions {
   allowReservedMobileDeploymentVault?: boolean;
   path?: string;
+  /** Owning-API listing inside this service-only root; see drive-path-policy. */
+  serviceRoot?: 'external-projects';
   search?: string;
   limit?: number;
   offset?: number;
-  sortBy?: 'name' | 'created_at' | 'updated_at' | 'size';
+  sortBy?: WorkspaceStorageSortBy;
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -282,63 +294,6 @@ function parseWorkspaceStorageProvider(
     : WORKSPACE_STORAGE_PROVIDER_SUPABASE;
 }
 
-function toNumber(value: unknown) {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function sortStorageObjects(
-  entries: StorageObject[],
-  sortBy: NonNullable<WorkspaceStorageListOptions['sortBy']>,
-  sortOrder: NonNullable<WorkspaceStorageListOptions['sortOrder']>
-) {
-  const factor = sortOrder === 'asc' ? 1 : -1;
-
-  return [...entries].sort((left, right) => {
-    const leftFolder = !left.id;
-    const rightFolder = !right.id;
-
-    if (leftFolder !== rightFolder) {
-      return leftFolder ? -1 : 1;
-    }
-
-    if (sortBy === 'size') {
-      return (
-        factor *
-        (toNumber(left.metadata?.size) - toNumber(right.metadata?.size))
-      );
-    }
-
-    if (sortBy === 'created_at' || sortBy === 'updated_at') {
-      const leftValue =
-        new Date(
-          sortBy === 'created_at'
-            ? (left.created_at ?? 0)
-            : (left.updated_at ?? 0)
-        ).getTime() || 0;
-      const rightValue =
-        new Date(
-          sortBy === 'created_at'
-            ? (right.created_at ?? 0)
-            : (right.updated_at ?? 0)
-        ).getTime() || 0;
-
-      return factor * (leftValue - rightValue);
-    }
-
-    return factor * (left.name ?? '').localeCompare(right.name ?? '');
-  });
-}
-
-function matchesSearch(name: string | undefined, search?: string) {
-  const normalizedSearch = search?.trim().toLowerCase();
-  if (!normalizedSearch) {
-    return true;
-  }
-
-  return (name ?? '').toLowerCase().includes(normalizedSearch);
-}
-
 function mapR2FileToStorageObject(entry: R2ListEntry): StorageObject {
   return {
     id: entry.etag ? `${entry.key}:${entry.etag}` : entry.key,
@@ -497,10 +452,12 @@ async function listR2Directory(
   } while (continuationToken);
 
   const sorted = sortStorageObjects(
-    filterDriveEntries(wsId, options.path ?? '', [
-      ...folders.values(),
-      ...files,
-    ]),
+    filterDriveListingEntries(
+      wsId,
+      options.path ?? '',
+      [...folders.values(), ...files],
+      options.serviceRoot
+    ),
     options.sortBy ?? 'name',
     options.sortOrder ?? 'asc'
   );
@@ -679,7 +636,10 @@ async function copyR2Object(
 async function countSupabaseDirectoryEntries(
   supabase: TypedSupabaseClient,
   storagePath: string,
-  search?: string
+  {
+    search,
+    serviceRoot,
+  }: Pick<WorkspaceStorageListOptions, 'search' | 'serviceRoot'>
 ) {
   const [wsId = '', ...segments] = storagePath.split('/');
   let offset = 0;
@@ -696,9 +656,12 @@ async function countSupabaseDirectoryEntries(
       throw new WorkspaceStorageError(error.message || 'Failed to list files');
     }
     const page = data ?? [];
-    total += filterDriveEntries(wsId, segments.join('/'), page).filter(
-      (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
-    ).length;
+    total += filterDriveListingEntries(
+      wsId,
+      segments.join('/'),
+      page,
+      serviceRoot
+    ).filter((entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME).length;
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return total;
     }
@@ -885,7 +848,8 @@ export async function listWorkspaceStorageDirectory(
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options.path);
   assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
-  if (isExcludedDrivePath(wsId, relativePath))
+  const { serviceRoot } = options;
+  if (isExcludedDriveListingPath(wsId, relativePath, serviceRoot))
     throw new WorkspaceStorageError('Forbidden', 403);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
@@ -915,25 +879,25 @@ export async function listWorkspaceStorageDirectory(
     throw new WorkspaceStorageError(error.message || 'Failed to list files');
   }
 
-  const filtered = filterDriveEntries(
+  const filtered = filterDriveListingEntries(
     wsId,
     relativePath,
     (data ?? [])
       .slice(0, limit)
       .filter(
         (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
-      ) as StorageObject[]
+      ) as StorageObject[],
+    serviceRoot
   );
 
   return {
     data: filtered,
     hasMore: (data?.length ?? 0) > limit,
     total: relativePath
-      ? await countSupabaseDirectoryEntries(
-          supabase,
-          storagePath,
-          options.search?.trim() || undefined
-        )
+      ? await countSupabaseDirectoryEntries(supabase, storagePath, {
+          search: options.search?.trim() || undefined,
+          serviceRoot,
+        })
       : filtered.length,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };

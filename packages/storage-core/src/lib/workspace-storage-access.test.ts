@@ -31,9 +31,10 @@ function contextFor(actor: Actor): WorkspaceStorageAccessContext {
   };
 }
 
-// Same objects and expectations as the pgTAP matrix in
-// apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql
-// (service_role is not modelled here: it bypasses RLS and these checks).
+// Objects shared with the pgTAP matrix in
+// apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql. The
+// mirror may be stricter than RLS, never weaker (service_role is not modelled
+// here: it bypasses RLS and these checks).
 const OBJECTS: Record<string, string> = {
   drive_root: `${WS}/drive.txt`,
   drive_folder: `${WS}/docs/report.pdf`,
@@ -43,6 +44,7 @@ const OBJECTS: Record<string, string> = {
   chats_temp: `${WS}/chats/ai/resources/temp/${OWNER}/d.pdf`,
   chats_other: `${WS}/chats/conversations/e.bin`,
   external_apps: `${WS}/external-apps/app/chat/conv/att`,
+  external_projects: `${WS}/external-projects/shared/blog/cover.png`,
   reserved: `${WS}/.tuturuuu/mobile-deployment-vault/v/app.ipa`,
   recordings: `${WS}/recordings/m/s/r.webm`,
   project_updates: `${WS}/project-updates/u/p.png`,
@@ -55,11 +57,9 @@ const OBJECTS: Record<string, string> = {
 
 function expectedFlags(actor: Actor, key: string): string {
   if (actor === 'nonmember') return '----';
-  if (key === 'project_updates') return 'SIUD';
   if (['drive_root', 'drive_folder', 'drive_mira_qr'].includes(key)) {
     return actor === 'manager' ? 'SIUD' : actor === 'viewer' ? 'S---' : '----';
   }
-  if (key === 'template_bg') return actor === 'manager' ? 'SIUD' : 'S---';
   if (['chat_owner', 'chats_owner', 'chats_temp'].includes(key)) {
     return actor === 'owner' ? 'S--D' : '----';
   }
@@ -248,6 +248,9 @@ describe('private root normalization matches literal RLS segments', () => {
       'CHAT/x',
       'Chats/x',
       'External-Apps/x',
+      'External-Projects/x',
+      'Project-Updates/x',
+      'Template-Backgrounds/x',
       'ai agent imports/x',
       'Mira/Images/x',
       'RECORDINGS/x',
@@ -267,6 +270,8 @@ describe('private root normalization matches literal RLS segments', () => {
     'chatter/x',
     'recordings-public/x',
     'external-apps-backup/x',
+    'external-projects-public/x',
+    'documents/project-updates/x',
     '.tuturuuu-public/x',
     'topic-announcements-public/x',
     'AI  Agent Imports/x',

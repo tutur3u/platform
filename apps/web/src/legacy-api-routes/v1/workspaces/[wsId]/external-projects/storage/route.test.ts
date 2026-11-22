@@ -224,6 +224,7 @@ describe('external project storage route', () => {
       expect.objectContaining({
         limit: 20,
         path: 'external-projects/yashie/blog',
+        serviceRoot: 'external-projects',
       })
     );
   });

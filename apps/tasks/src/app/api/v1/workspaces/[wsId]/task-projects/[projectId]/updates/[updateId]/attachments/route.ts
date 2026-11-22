@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -6,6 +8,64 @@ import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
 // Private attachment links last at most 15 minutes.
 const ATTACHMENT_SIGNED_URL_TTL_SECONDS = 15 * 60;
+
+/**
+ * storage-core treats `project-updates/**` as service-only: this route
+ * authorizes the actor, then reads and writes objects through the
+ * service-role client.
+ */
+async function getProjectUpdateStorage() {
+  return (await createDynamicAdminClient()).storage.from('workspaces');
+}
+
+const FILE_EXTENSION_PATTERN = /^[a-z0-9]{1,10}$/;
+
+/**
+ * Storage folder of one update. Built from database ids, never from URL
+ * params: Postgres accepts brace, unhyphenated and uppercase UUID spellings
+ * that would otherwise escape the canonical `<wsId>/` workspace folder.
+ */
+function getProjectUpdateFolder(wsId: string, updateId: string) {
+  return `${wsId}/project-updates/${updateId}`;
+}
+
+function getAttachmentFileName(originalName: string) {
+  const lastDotIndex = originalName.lastIndexOf('.');
+  const extension =
+    lastDotIndex === -1
+      ? ''
+      : originalName.slice(lastDotIndex + 1).toLowerCase();
+  const uuid = randomUUID();
+  return FILE_EXTENSION_PATTERN.test(extension) ? `${uuid}.${extension}` : uuid;
+}
+
+/** Storage error code for logs; paths and messages stay out of them. */
+function getStorageErrorCode(error: object) {
+  const { statusCode, status, name } = error as {
+    name?: unknown;
+    status?: unknown;
+    statusCode?: unknown;
+  };
+  const code = statusCode ?? status ?? name;
+  return typeof code === 'string' || typeof code === 'number'
+    ? code
+    : 'unknown';
+}
+
+/** Stored attachment paths must stay inside their own update's folder. */
+function isProjectUpdateAttachmentPath(
+  path: unknown,
+  wsId: string,
+  updateId: string
+): path is string {
+  const prefix = `${getProjectUpdateFolder(wsId, updateId)}/`;
+  return (
+    typeof path === 'string' &&
+    path.length > prefix.length &&
+    path.startsWith(prefix) &&
+    sanitizePathStrict(path) === path
+  );
+}
 
 export async function POST(
   request: NextRequest,
@@ -98,22 +158,21 @@ export async function POST(
     }
 
     // Generate unique file path with UUID
-    const uuid = randomUUID();
-    const lastDotIndex = file.name.lastIndexOf('.');
-    const fileExt =
-      lastDotIndex !== -1
-        ? file.name.substring(lastDotIndex + 1).toLowerCase()
-        : null;
-    const fileName = fileExt ? `${uuid}.${fileExt}` : uuid;
-    const filePath = `${wsId}/project-updates/${updateId}/${fileName}`;
+    const filePath = `${getProjectUpdateFolder(
+      projectRecord.ws_id,
+      updateRecord.id
+    )}/${getAttachmentFileName(file.name)}`;
 
     // Upload file to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('workspaces')
-      .upload(filePath, file, {
+    const storage = await getProjectUpdateStorage();
+    const { data: uploadData, error: uploadError } = await storage.upload(
+      filePath,
+      file,
+      {
         contentType: file.type,
         upsert: false,
-      });
+      }
+    );
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
@@ -127,7 +186,7 @@ export async function POST(
     const { data: attachment, error: createError } = await supabase
       .from('task_project_update_attachments')
       .insert({
-        update_id: updateId,
+        update_id: updateRecord.id,
         file_name: file.name,
         file_path: uploadData.path,
         file_size: file.size,
@@ -148,7 +207,12 @@ export async function POST(
 
     if (createError) {
       // Clean up uploaded file if database insert fails
-      await supabase.storage.from('workspaces').remove([uploadData.path]);
+      const { error: cleanupError } = await storage.remove([uploadData.path]);
+      if (cleanupError) {
+        console.error('PROJECT_UPDATE_ATTACHMENT_CLEANUP_FAILED', {
+          code: getStorageErrorCode(cleanupError),
+        });
+      }
       console.error('Error creating attachment record:', createError);
       return NextResponse.json(
         { error: 'Failed to create attachment' },
@@ -159,9 +223,10 @@ export async function POST(
     // A short-lived link for the uploader's immediate preview; readers list
     // attachments by file_path, so nothing persists this URL.
     const { data: signedUrlData, error: signedUrlError } =
-      await supabase.storage
-        .from('workspaces')
-        .createSignedUrl(uploadData.path, ATTACHMENT_SIGNED_URL_TTL_SECONDS);
+      await storage.createSignedUrl(
+        uploadData.path,
+        ATTACHMENT_SIGNED_URL_TTL_SECONDS
+      );
 
     if (signedUrlError) {
       console.error('Error generating signed URL:', signedUrlError);
@@ -313,10 +378,17 @@ export async function DELETE(
       );
     }
 
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from('workspaces')
-      .remove([existingAttachment.file_path]);
+    // Delete from storage; a path outside this update's folder is never
+    // removed with the service-role client.
+    const { error: storageError } = isProjectUpdateAttachmentPath(
+      existingAttachment.file_path,
+      projectRecord.ws_id,
+      updateRecord.id
+    )
+      ? await (
+          await getProjectUpdateStorage()
+        ).remove([existingAttachment.file_path])
+      : { error: new Error('Attachment path is outside its update folder') };
 
     if (storageError) {
       console.error('Error deleting file from storage:', storageError);

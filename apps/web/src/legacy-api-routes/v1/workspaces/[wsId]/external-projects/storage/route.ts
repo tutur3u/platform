@@ -457,6 +457,7 @@ export async function GET(
         offset: parsed.data.offset,
         path: toScopedPath(prefix, sanitizedPath),
         search: parsed.data.search,
+        serviceRoot: 'external-projects',
         sortBy: parsed.data.sortBy,
         sortOrder: parsed.data.sortOrder,
       }
