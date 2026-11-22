@@ -325,7 +325,7 @@ product rules of the shell entry and every tab.
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
-  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, and
+  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`, and
   `private-files.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
   `StartInterval` 15, `ThrottleInterval` 10 and `WatchPaths` on
@@ -338,6 +338,32 @@ product rules of the shell entry and every tab.
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
+- **Publisher rate limits:** the Web API proxy gives signed publisher calls
+  their own per-address bucket (`fleet-publisher` in
+  `apps/web/src/lib/proxy-route-policies.ts`): the answers and alerts pulls,
+  the answer acknowledgements, the bridge ticket, the state and usage
+  snapshots and review asset uploads. Reads allow 30 a minute, 1,200 an hour
+  and 24,000 a day; writes 30, 1,200 and 12,000. A run makes two pulls, so a
+  15-second cadence needs 11,520 reads a day. The proxy selects the bucket
+  from the method, path and a well-formed `x-mm-signature`; the route still
+  verifies the HMAC and claims the nonce. An unsigned call to the same paths
+  stays in the anonymous bucket (1,200 reads and 600 writes a day per
+  address), which every unauthenticated request from that address shares.
+  The Durable Object guard store charges a request against every window or
+  none, so a refused request costs nothing, but its windows slide: a spent
+  day budget
+  carries into the next day and returns gradually, and a 429 names the
+  window boundary in `Retry-After`. When Web answers 429 the
+  publisher records a pause for that method and path in
+  `~/.local/share/fleet-sync/web-backoff.json`, honoring `Retry-After`
+  between 15 seconds and 5 minutes, and sends nothing to that route until it
+  passes. A rate-limited state publish, answers pull or alerts pull is
+  skipped and the rest of the run continues; the log line lists the state
+  publish and the answers pull in `rateLimited`, and the alerts pull reports
+  `skipped: "rate_limited"`. Unacknowledged
+  answers are served again at the next pull. Regression coverage:
+  `apps/web/src/lib/proxy-route-policies.test.ts` and
+  `scripts/mastermind-fleet/web-call.test.mjs`.
 - **Fleet usage endpoint:** `/api/v1/mastermind/fleet/usage` stores a bounded
   usage snapshot separately from lanes and decisions. The existing fleet
   publisher signature authorizes writes. Reads require the fleet owner

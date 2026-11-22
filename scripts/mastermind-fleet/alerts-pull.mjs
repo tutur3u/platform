@@ -68,7 +68,9 @@ export async function pullAlerts({ get, write, file, tickEnd, now }) {
       firing: alerts.length,
       pages: alerts.filter((alert) => alert.severity === 'page').length,
     };
-  } catch {
-    return { failed: true };
+  } catch (error) {
+    return error?.name === 'RateLimitedError'
+      ? { skipped: 'rate_limited' }
+      : { failed: true };
   }
 }

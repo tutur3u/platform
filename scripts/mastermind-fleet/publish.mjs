@@ -31,6 +31,7 @@ import { fleetText } from './scrub.mjs';
 import { attachReviewAssets } from './review-extras.mjs';
 import { readTodayOutcomes } from './today-outcomes.mjs';
 import { usageCollector } from './usage-snapshot.mjs';
+import { callWeb, createWebBackoff, isRateLimited } from './web-call.mjs';
 
 const HEARTBEAT_MS = 60_000;
 const USAGE_HEARTBEAT_MS = 60_000;
@@ -50,7 +51,6 @@ const DECISION_BODY_MAX = 600;
 const OPTION_LABEL_MAX = 60;
 /** Under the route's 256 KiB body cap (413), with room to spare. */
 export const BODY_BUDGET_BYTES = 240 * 1024;
-const WEB_TIMEOUT_MS = 6_000;
 const TICK_BUDGET_MS = 25_000;
 const WEB_RESERVE_MS = 12_000;
 /** Hard stop for synchronous work the deadlines cannot interrupt. */
@@ -400,31 +400,6 @@ export function storeAnswers(answersDir, answers) {
   return written;
 }
 
-async function call(
-  { fetchImpl, origin, secret, tickEnd },
-  method,
-  pathWithQuery,
-  body = ''
-) {
-  const remaining = tickEnd - Date.now();
-  if (remaining < 500) throw new Error('tick_budget_exhausted');
-  const response = await fetchImpl(`${origin}${pathWithQuery}`, {
-    method,
-    headers: {
-      ...signRequest(secret, method, pathWithQuery, body),
-      ...(body ? { 'content-type': 'application/json' } : {}),
-    },
-    ...(body ? { body } : {}),
-    redirect: 'error',
-    signal: AbortSignal.timeout(Math.min(WEB_TIMEOUT_MS, remaining)),
-  });
-  if (!response.ok)
-    throw new Error(
-      `${method} ${pathWithQuery.split('?')[0]} ${response.status}`
-    );
-  return response.json();
-}
-
 export async function runOnce({
   paths = defaultPaths(),
   origin,
@@ -442,7 +417,21 @@ export async function runOnce({
   if (!origin || !(HTTPS_ORIGIN.test(origin) || LOOPBACK_ORIGIN.test(origin)))
     throw new Error('origin_must_be_https');
   const secret = readSecret(paths.secretFile);
-  const web = { fetchImpl, origin, secret, tickEnd };
+  const backoff = createWebBackoff({
+    file: path.join(paths.root, 'web-backoff.json'),
+    read: readJson,
+    write: writePrivateJson,
+  });
+  const web = {
+    fetchImpl,
+    origin,
+    secret,
+    sign: signRequest,
+    tickEnd,
+    backoff,
+  };
+  /** Routes Web rate limited this run; the rest of the run continues. */
+  const rateLimited = [];
   const config = readJson(paths.configFile);
   const pokeDir = path.join(paths.root, 'pokes');
   const observedAt = now.toISOString();
@@ -509,7 +498,7 @@ export async function runOnce({
   const priorAssets = readJson(assetsFile);
   const assets = await attachReviewAssets(decisions, {
     dir: path.join(paths.root, 'reviews'),
-    put: (assetPath, body) => call(web, 'PUT', assetPath, body),
+    put: (assetPath, body) => callWeb(web, 'PUT', assetPath, body),
     uploaded: priorAssets,
     now,
   });
@@ -540,23 +529,39 @@ export async function runOnce({
     stamp.hash !== hash ||
     now.getTime() - Date.parse(stamp.at ?? 0) >= HEARTBEAT_MS;
   let degraded = due ? false : stamp.degraded === true;
+  let published = due;
   if (due) {
     try {
-      await call(web, 'PUT', STATE_PATH, JSON.stringify(state));
+      await callWeb(web, 'PUT', STATE_PATH, JSON.stringify(state));
     } catch (error) {
       // An addition Web refuses (edge guard, size, schema) must not stop
       // lanes and asks: publish the v1 core once more without the additions.
       // The full snapshot is retried at the next heartbeat or change.
       const base = baseFleetState(state);
       const message = String(error?.message);
-      if (
-        base === state ||
-        !REFUSED_BODY.some((code) => message.endsWith(code))
-      )
-        throw error;
-      await call(web, 'PUT', STATE_PATH, JSON.stringify(base));
-      degraded = true;
+      let limited = isRateLimited(error);
+      if (!limited) {
+        if (
+          base === state ||
+          !REFUSED_BODY.some((code) => message.endsWith(code))
+        )
+          throw error;
+        try {
+          await callWeb(web, 'PUT', STATE_PATH, JSON.stringify(base));
+          degraded = true;
+        } catch (retryError) {
+          if (!isRateLimited(retryError)) throw retryError;
+          limited = true;
+        }
+      }
+      if (limited) {
+        // The stamp stays, so the snapshot is due again at the next run.
+        published = false;
+        rateLimited.push('state');
+      }
     }
+  }
+  if (published) {
     writePrivateJson(paths.stampFile, {
       hash,
       at: observedAt,
@@ -567,19 +572,26 @@ export async function runOnce({
 
   // Web serves answers to decisions open in the last 48 hours too, so an
   // answer survives this publish dropping its decision.
-  const pulled = await call(
-    web,
-    'GET',
-    `${ANSWERS_PATH}?nonce=${randomUUID()}`
-  );
-  const written = storeAnswers(paths.answersDir, pulled.answers ?? []);
-  for (let i = 0; i < written.length; i += ACK_BATCH)
-    await call(
+  let written = [];
+  try {
+    const pulled = await callWeb(
       web,
-      'POST',
-      ANSWERS_PATH,
-      JSON.stringify({ acks: written.slice(i, i + ACK_BATCH) })
+      'GET',
+      `${ANSWERS_PATH}?nonce=${randomUUID()}`
     );
+    written = storeAnswers(paths.answersDir, pulled.answers ?? []);
+    for (let i = 0; i < written.length; i += ACK_BATCH)
+      await callWeb(
+        web,
+        'POST',
+        ANSWERS_PATH,
+        JSON.stringify({ acks: written.slice(i, i + ACK_BATCH) })
+      );
+  } catch (error) {
+    // Unacknowledged answers are served again, so a paused pull loses none.
+    if (!isRateLimited(error)) throw error;
+    rateLimited.push('answers');
+  }
 
   const usageSnapshot = await usage;
   let usagePublished;
@@ -592,7 +604,7 @@ export async function runOnce({
       now.getTime() - Date.parse(usageStamp.at ?? 0) >= USAGE_HEARTBEAT_MS)
   ) {
     try {
-      const receipt = await call(
+      const receipt = await callWeb(
         web,
         'PUT',
         usageSnapshot.path,
@@ -614,7 +626,7 @@ export async function runOnce({
 
   const alerts = paths.alertsFile
     ? await pullAlerts({
-        get: (pathWithQuery) => call(web, 'GET', pathWithQuery),
+        get: (pathWithQuery) => callWeb(web, 'GET', pathWithQuery),
         write: writePrivateJson,
         file: paths.alertsFile,
         tickEnd,
@@ -623,7 +635,7 @@ export async function runOnce({
     : undefined;
 
   return {
-    published: due,
+    published,
     degraded,
     counts: state.counts,
     lanes: state.lanes.length,
@@ -635,6 +647,7 @@ export async function runOnce({
     answers: written.length,
     ...(usagePublished === undefined ? {} : { usagePublished }),
     ...(alerts ? { alerts } : {}),
+    ...(rateLimited.length ? { rateLimited } : {}),
   };
 }
 
