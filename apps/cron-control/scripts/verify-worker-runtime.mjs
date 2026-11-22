@@ -49,7 +49,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every schedule and enables the two retention jobs, five web jobs and exchange rates, AI retention in dry-run', async () => {
+test('source config keeps every schedule and enables the two retention jobs, five web jobs, exchange rates and the Mastermind ship collector, AI retention in dry-run', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -60,7 +60,7 @@ test('source config keeps every schedule and enables the two retention jobs, fiv
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
     value:
-      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates',
+      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship',
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WEB_MODE, {
     type: 'text',
