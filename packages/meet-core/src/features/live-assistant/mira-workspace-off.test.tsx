@@ -123,7 +123,10 @@ it('keeps a control name intact and reads the compact 18+ badge as its descripti
       <MiraAdultNotice consent />
     </NextIntlClientProvider>
   );
-  const control = screen.getByRole('button', { name: 'Mira' });
+  const control = screen.getByRole('button', {
+    name: 'Mira',
+    description: copy.notice,
+  });
   expect(control.textContent).toContain(copy.badge);
   expect(document.getElementById('adults')?.textContent).toBe(copy.notice);
   // The badge description and the inline sentence carry the same rule.

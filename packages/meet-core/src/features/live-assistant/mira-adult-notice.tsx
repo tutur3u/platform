@@ -33,7 +33,7 @@ export function MiraAdultNotice({
         )}
       >
         <span aria-hidden>{t('badge')}</span>
-        <span id={id} className="sr-only">
+        <span id={id} className="sr-only" aria-hidden>
           {t('notice')}
         </span>
       </span>
