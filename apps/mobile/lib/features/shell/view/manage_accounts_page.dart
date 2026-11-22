@@ -41,6 +41,28 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
       _removingAccountId != null ||
       _loggingOutAccountId != null;
 
+  /// One account mutation at a time: false while this page runs one, or while
+  /// the cubit loads, switches or adds an account.
+  bool _canMutate(AuthState state) =>
+      !_isMutating && !state.isLoading && state.switchingAccountId == null;
+
+  /// Runs a cubit mutation. A throw is reported and read as a failure, so the
+  /// caller always clears its busy flag and shows the failure toast.
+  Future<bool> _guardMutation(Future<bool> Function() run) async {
+    try {
+      return await run();
+    } on Object catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'manage accounts',
+        ),
+      );
+      return false;
+    }
+  }
+
   /// Add account, or sign an expired saved account in again ([email]
   /// prefills the form), through the same add-account flow.
   Future<void> _startAddAccountFlow({String? email}) async {
@@ -73,6 +95,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
   }
 
   Future<void> _removeAccount(StoredAuthAccount account) async {
+    if (!_canMutate(context.read<AuthCubit>().state)) return;
     final accountLabel = accountPrimaryLabel(account);
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
@@ -83,18 +106,25 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
       isDestructive: true,
     );
 
-    if (confirmed != true || !mounted) {
+    // A switch or add-account may have started while the dialog was open.
+    if (confirmed != true ||
+        !mounted ||
+        !_canMutate(context.read<AuthCubit>().state)) {
       return;
     }
 
-    setState(() => _removingAccountId = account.id);
     final authCubit = context.read<AuthCubit>();
-    final success = await authCubit.removeAccount(account.id);
+    setState(() => _removingAccountId = account.id);
+    final bool success;
+    try {
+      success = await _guardMutation(() => authCubit.removeAccount(account.id));
+    } finally {
+      if (mounted) setState(() => _removingAccountId = null);
+    }
     if (!mounted) {
       return;
     }
 
-    setState(() => _removingAccountId = null);
     _showMutationToast(
       success: success,
       fallbackError: context.l10n.authRemoveAccountFailed,
@@ -103,6 +133,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
   }
 
   Future<void> _logOutCurrentAccount(StoredAuthAccount account) async {
+    if (!_canMutate(context.read<AuthCubit>().state)) return;
     final confirmed = await showSettingsConfirmationDialog(
       context: context,
       title: context.l10n.authLogOutConfirmDialogTitle,
@@ -112,18 +143,25 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
       isDestructive: true,
     );
 
-    if (confirmed != true || !mounted) {
+    // A switch or add-account may have started while the dialog was open.
+    if (confirmed != true ||
+        !mounted ||
+        !_canMutate(context.read<AuthCubit>().state)) {
       return;
     }
 
-    setState(() => _loggingOutAccountId = account.id);
     final authCubit = context.read<AuthCubit>();
-    final success = await authCubit.signOutCurrentAccount();
+    setState(() => _loggingOutAccountId = account.id);
+    final bool success;
+    try {
+      success = await _guardMutation(authCubit.signOutCurrentAccount);
+    } finally {
+      if (mounted) setState(() => _loggingOutAccountId = null);
+    }
     if (!mounted) {
       return;
     }
 
-    setState(() => _loggingOutAccountId = null);
     _showMutationToast(
       success: success,
       fallbackError: context.l10n.authLogOutCurrentFailed,
@@ -157,8 +195,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
     final l10n = context.l10n;
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
-        final busy =
-            _isMutating || state.isLoading || state.switchingAccountId != null;
+        final busy = !_canMutate(state);
         final accounts = sortStoredAccountsByRecent(state.accounts);
         final activeAccount = accounts
             .where((account) => account.id == state.user?.id)
