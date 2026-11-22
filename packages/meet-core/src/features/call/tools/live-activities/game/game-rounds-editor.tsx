@@ -143,6 +143,7 @@ export function GameRoundsEditor({
                 min={5}
                 max={120}
                 value={round.seconds}
+                placeholder={t('placeholder_seconds')}
                 className="w-24"
                 onChange={(event) =>
                   update(round.key, { seconds: event.target.value })

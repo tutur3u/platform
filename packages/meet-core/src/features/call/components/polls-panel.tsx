@@ -294,6 +294,9 @@ function PollComposer({
           maxLength={mode === 'manual' ? 240 : 600}
           required
           rows={2}
+          placeholder={t(
+            mode === 'manual' ? 'placeholder_question' : 'placeholder_topic'
+          )}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />
@@ -306,6 +309,7 @@ function PollComposer({
               maxLength={1210}
               required
               rows={3}
+              placeholder={t('placeholder_options')}
               value={options}
               onChange={(event) => setOptions(event.target.value)}
             />
@@ -319,6 +323,7 @@ function PollComposer({
             min={1}
             max={10}
             required
+            placeholder={t('placeholder_limit')}
             value={limit || ''}
             onChange={(event) => setLimit(Number(event.target.value))}
           />
@@ -629,6 +634,7 @@ function PollBallot({
                 <Input
                   value={text}
                   maxLength={60}
+                  placeholder={t('placeholder_short')}
                   onChange={(event) =>
                     setResponse({
                       type: 'word_cloud',
@@ -641,6 +647,7 @@ function PollBallot({
                   value={text}
                   rows={3}
                   maxLength={500}
+                  placeholder={t('placeholder_long')}
                   onChange={(event) =>
                     setResponse({ type: 'open_text', text: event.target.value })
                   }

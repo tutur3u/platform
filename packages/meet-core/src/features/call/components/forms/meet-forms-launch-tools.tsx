@@ -129,6 +129,7 @@ export function MeetFormsLaunchTools({
               id={`${fieldId}-title`}
               value={title}
               maxLength={120}
+              placeholder={copy.formTitlePlaceholder}
               onChange={(event) => setTitle(event.target.value)}
             />
           </div>
@@ -138,6 +139,7 @@ export function MeetFormsLaunchTools({
               id={`${fieldId}-question`}
               value={question}
               maxLength={120}
+              placeholder={copy.firstQuestionPlaceholder}
               onChange={(event) => setQuestion(event.target.value)}
             />
           </div>
@@ -165,6 +167,7 @@ export function MeetFormsLaunchTools({
               id={`${fieldId}-prompt`}
               value={prompt}
               maxLength={600}
+              placeholder={copy.draftPromptPlaceholder}
               onChange={(event) => setPrompt(event.target.value)}
             />
             <Button

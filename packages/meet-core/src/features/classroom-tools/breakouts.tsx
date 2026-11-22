@@ -77,6 +77,7 @@ export function Breakouts({
                 required
                 min={2}
                 max={MAX_BREAKOUT_GROUPS}
+                placeholder={t('placeholder_count')}
                 value={count}
                 onChange={(event) => setCount(event.target.value)}
               />
@@ -88,6 +89,7 @@ export function Breakouts({
                 required
                 min={1}
                 max={MAX_BREAKOUT_DURATION_MINUTES}
+                placeholder={t('placeholder_minutes')}
                 value={minutes}
                 onChange={(event) => setMinutes(event.target.value)}
               />

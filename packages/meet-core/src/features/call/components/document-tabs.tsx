@@ -98,6 +98,7 @@ export function DocumentTabs({
                 key={tab.id}
                 autoFocus
                 aria-label={t('rename_document')}
+                placeholder={t('placeholder_rename_document')}
                 defaultValue={title(tab)}
                 maxLength={80}
                 className="mb-1 h-8 w-44"

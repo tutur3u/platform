@@ -11,6 +11,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
+import {
+  ActivitiesRequestProvider,
+  useActivitiesRequest,
+} from './activities-request';
 import { ActivityShell } from './activity-shell';
 import { useActivityActive } from './activity-pane-context';
 import type { ViewportTier } from './layout-model';
@@ -425,4 +429,27 @@ it('drops a drag preview when the separator goes away mid-drag', () => {
   expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
     '50'
   );
+});
+
+it('offers Open another activity on the phone switcher', () => {
+  let requests = 0;
+  function Count() {
+    requests = useActivitiesRequest()?.count ?? 0;
+    return null;
+  }
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ActivitiesRequestProvider>
+        <Count />
+        <Harness tier="phone" />
+      </ActivitiesRequestProvider>
+    </NextIntlClientProvider>
+  );
+  open('a', 'b');
+  fireEvent.click(screen.getByRole('button', { name: 'b' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Open another activity' })
+  );
+  expect(requests).toBe(1);
+  expect(screen.queryByRole('dialog')).toBeNull();
 });

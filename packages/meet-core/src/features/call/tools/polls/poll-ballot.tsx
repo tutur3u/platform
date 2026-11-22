@@ -127,6 +127,7 @@ export function PollBallot({
                 <Input
                   value={text}
                   maxLength={60}
+                  placeholder={t('placeholder_short')}
                   onChange={(event) =>
                     setResponse({
                       type: 'word_cloud',
@@ -139,6 +140,7 @@ export function PollBallot({
                   value={text}
                   rows={3}
                   maxLength={500}
+                  placeholder={t('placeholder_long')}
                   onChange={(event) =>
                     setResponse({ type: 'open_text', text: event.target.value })
                   }

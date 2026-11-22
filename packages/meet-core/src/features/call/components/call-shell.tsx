@@ -30,6 +30,7 @@ import { CallEnded } from './call-ended';
 import { useRoomTools } from './call-room-tools';
 import { CallControlDock } from './call-control-dock';
 import { CallHeader } from './call-header';
+import { ActivitiesRequestProvider } from '../stage-layout/activities-request';
 import { PresenceStage } from '../stage-layout/presence-stage';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
@@ -639,7 +640,9 @@ export function ConnectedCallShell(
     <PlaybackVolumeProvider>
       <CallPanelOwnerContext.Provider value={props.accountId}>
         <CallSettingsLinkProvider siteKey={props.formsTurnstileSiteKey}>
-          <CallShellContent {...props} />
+          <ActivitiesRequestProvider>
+            <CallShellContent {...props} />
+          </ActivitiesRequestProvider>
         </CallSettingsLinkProvider>
       </CallPanelOwnerContext.Provider>
     </PlaybackVolumeProvider>

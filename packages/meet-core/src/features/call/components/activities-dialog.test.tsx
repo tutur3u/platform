@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -13,6 +14,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { MeetToolDefinition } from '../tools/registry';
 import { activityGroup, groupActivities } from './activities-catalog';
+import {
+  ActivitiesRequestProvider,
+  useActivitiesRequest,
+} from '../stage-layout/activities-request';
 import { ActivitiesMenu } from './activities-menu';
 
 const icon = () => null;
@@ -237,4 +242,35 @@ it('marks open activities with a neutral badge', () => {
   if (!badge) throw new Error('missing open badge');
   expect(badge.className).toContain('bg-muted');
   expect(badge.className).not.toContain('dynamic-');
+});
+
+it('opens when the stage asks for it and not before', () => {
+  let ask: () => void = () => {};
+  function Ask() {
+    ask = useActivitiesRequest()?.request ?? ask;
+    return null;
+  }
+  const action = { active: false, toggle: vi.fn() };
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter>
+        <ActivitiesRequestProvider>
+          <Ask />
+          <ActivitiesMenu
+            tools={[polls, flashcards]}
+            openToolIds={[]}
+            onTool={vi.fn()}
+            collaboration={{ programming: action, document: action }}
+          />
+        </ActivitiesRequestProvider>
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  expect(dialog()).toBeNull();
+  act(() => ask());
+  expect(dialog()).not.toBeNull();
+  fireEvent.keyDown(dialog() as HTMLElement, { key: 'Escape' });
+  expect(dialog()).toBeNull();
+  act(() => ask());
+  expect(dialog()).not.toBeNull();
 });

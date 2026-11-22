@@ -1,5 +1,7 @@
 'use client';
 
+import { Plus } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -21,12 +23,15 @@ export function PhoneSwitcher({
   items,
   currentId,
   onSelect,
+  onBrowse,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   items: readonly ActivityMeta[];
   currentId: string | null;
   onSelect: (id: string) => void;
+  /** Opens the Activities dialog to add another activity. */
+  onBrowse?: () => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   return (
@@ -78,6 +83,20 @@ export function PhoneSwitcher({
             );
           })}
         </ul>
+        {onBrowse && (
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-2 h-11 gap-2 rounded-full"
+            onClick={() => {
+              onOpenChange(false);
+              onBrowse();
+            }}
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            {t('open_another')}
+          </Button>
+        )}
       </SheetContent>
     </Sheet>
   );

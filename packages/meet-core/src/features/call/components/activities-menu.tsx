@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useState } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
+import { useActivitiesRequest } from '../stage-layout/activities-request';
 import { ActivitiesDialog } from './activities-dialog';
 import {
   ActivitiesNavigationContext,
@@ -61,6 +62,14 @@ export function ActivitiesMenu({
   const collaborationT = useTranslations('meet.collaboration');
   const all = useTranslations();
   const [open, setOpen] = useState(false);
+  // The stage can ask for the dialog (its phone switcher lists "Open another
+  // activity"); a new request opens it.
+  const request = useActivitiesRequest();
+  const [handled, setHandled] = useState(request?.count ?? 0);
+  if (request && request.count !== handled) {
+    setHandled(request.count);
+    setOpen(true);
+  }
   const [persistedTab, setPersistedTab] = useQueryState(
     'activitiesTab',
     parseAsString.withOptions({

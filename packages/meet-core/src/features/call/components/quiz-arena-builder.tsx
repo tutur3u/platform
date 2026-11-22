@@ -243,6 +243,7 @@ export function QuizArenaBuilder({
         <Input
           value={topic}
           maxLength={200}
+          placeholder={t('placeholder_topic')}
           onChange={(event) => setTopic(event.target.value)}
         />
       </Field>

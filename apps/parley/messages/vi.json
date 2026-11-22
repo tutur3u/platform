@@ -5050,7 +5050,8 @@
           "finish": "Kết thúc",
           "next_round": "Vòng tiếp theo",
           "play_again": "Chơi lại",
-          "end_game": "Dừng trò chơi"
+          "end_game": "Dừng trò chơi",
+          "placeholder_seconds": "30"
         },
         "icebreaker": {
           "title": "Phá băng",
@@ -5129,6 +5130,7 @@
         "needs_room_action": "Phóng to",
         "needs_room_description": "Mở rộng khung này hoặc phóng to nó",
         "needs_room_title": "Cần thêm không gian",
+        "open_another": "Mở hoạt động khác",
         "region": "Hoạt động đang mở",
         "resize": "Đổi kích thước {first} và {second}",
         "restore": "Thu nhỏ {title}",
@@ -5160,7 +5162,8 @@
       "unavailable_connection": "Meet không thể kết nối với tài liệu chung. Hãy thử lại.",
       "unavailable_missing": "Tài liệu này không còn trong cuộc họp. Hãy chọn thẻ khác hoặc thử lại.",
       "unavailable_permission": "Tài khoản của bạn chưa có quyền truy cập. Bạn có thể hỏi chủ trì trong cuộc trò chuyện của cuộc họp.",
-      "unavailable_sign_in": "Phiên đăng nhập của bạn đã hết hạn. Hãy đăng nhập lại rồi thử lại."
+      "unavailable_sign_in": "Phiên đăng nhập của bạn đã hết hạn. Hãy đăng nhập lại rồi thử lại.",
+      "placeholder_rename_document": "Tên tài liệu"
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",

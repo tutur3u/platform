@@ -284,6 +284,7 @@ export function MeetFormsActivity({
             value={guestName}
             maxLength={MAX_DISPLAY_NAME_LENGTH}
             autoComplete="off"
+            placeholder={copy.guestNamePlaceholder}
             onChange={(event) => setGuestName(event.target.value)}
           />
         </div>
@@ -291,7 +292,7 @@ export function MeetFormsActivity({
       {choices.length > 1 && (
         <Select value={launchId} onValueChange={choose}>
           <SelectTrigger className="w-full" aria-label={copy.openForm}>
-            <SelectValue />
+            <SelectValue placeholder={copy.chooseForm} />
           </SelectTrigger>
           <SelectContent>
             {choices.map((item) => (

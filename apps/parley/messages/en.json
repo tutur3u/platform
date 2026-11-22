@@ -5050,7 +5050,8 @@
           "finish": "Finish",
           "next_round": "Next round",
           "play_again": "Play again",
-          "end_game": "End game"
+          "end_game": "End game",
+          "placeholder_seconds": "30"
         },
         "icebreaker": {
           "title": "Icebreaker",
@@ -5129,6 +5130,7 @@
         "needs_room_action": "Maximize",
         "needs_room_description": "Widen this pane or maximize it",
         "needs_room_title": "Needs more room",
+        "open_another": "Open another activity",
         "region": "Open activities",
         "resize": "Resize {first} and {second}",
         "restore": "Restore {title}",
@@ -5160,7 +5162,8 @@
       "unavailable_connection": "Meet could not connect to the shared document. Try again.",
       "unavailable_missing": "This document is no longer in the meeting. Choose another tab or retry.",
       "unavailable_permission": "Your account does not have access. You can ask the host in meeting chat.",
-      "unavailable_sign_in": "Your session has expired. Sign in again, then retry."
+      "unavailable_sign_in": "Your session has expired. Sign in again, then retry.",
+      "placeholder_rename_document": "Document name"
     },
     "details": {
       "back": "Back to meetings",

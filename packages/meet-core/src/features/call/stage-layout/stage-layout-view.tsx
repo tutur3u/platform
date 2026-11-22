@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useActivitiesRequest } from './activities-request';
 import { ActivityLayer } from './activity-layer';
 import { layoutGeometry, type Rect, rectStyle } from './layout-geometry';
 import { countPanes, paneLeaves, resizeBoundary } from './layout-model';
@@ -69,6 +70,7 @@ export function StageLayoutView({
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const { tier } = controller;
+  const activitiesRequest = useActivitiesRequest();
   // A drag previews here and is saved on release, so the call around the
   // stage does not re-render for every pointer move.
   const [drag, setDrag] = useState<{
@@ -318,6 +320,7 @@ export function StageLayoutView({
           items={switchItems}
           currentId={focusedPane?.active ?? null}
           onSelect={open}
+          onBrowse={activitiesRequest?.request}
         />
       )}
     </div>

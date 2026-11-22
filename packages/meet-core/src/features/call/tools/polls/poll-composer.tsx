@@ -173,6 +173,9 @@ export function PollComposer({
           maxLength={mode === 'manual' ? 240 : 600}
           required
           rows={2}
+          placeholder={t(
+            mode === 'manual' ? 'placeholder_question' : 'placeholder_topic'
+          )}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />
@@ -185,6 +188,7 @@ export function PollComposer({
               <Input
                 aria-label={t('option_label', { number: index + 1 })}
                 maxLength={120}
+                placeholder={t('placeholder_option', { number: index + 1 })}
                 value={choice.label}
                 onChange={(event) =>
                   setChoices((current) =>
@@ -234,6 +238,7 @@ export function PollComposer({
             min={1}
             max={MAX_CHOICES}
             required
+            placeholder={t('placeholder_limit')}
             value={limit || ''}
             onChange={(event) => setLimit(Number(event.target.value))}
           />
