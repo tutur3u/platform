@@ -4611,6 +4611,7 @@
           "answer_changed": "That answer changed after you read it. Check it again before grading.",
           "closed": "That is closed now.",
           "full": "This activity is full. Remove something before adding more.",
+          "game_running": "A game is running. End it before changing the rounds.",
           "generic": "That did not go through. Try again.",
           "not_closed": "Close answers first.",
           "permission": "Only hosts and co-hosts can do that.",

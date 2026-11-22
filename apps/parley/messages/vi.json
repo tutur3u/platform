@@ -4829,7 +4829,8 @@
           "closed": "Phần này đã đóng.",
           "generic": "Thao tác chưa thành công. Hãy thử lại.",
           "not_closed": "Hãy đóng nhận câu trả lời trước.",
-          "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm."
+          "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
+          "game_running": "Trò chơi đang diễn ra. Hãy dừng trò chơi trước khi sửa các vòng."
         },
         "options": {
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",

@@ -4829,7 +4829,8 @@
           "closed": "That is closed now.",
           "generic": "That did not go through. Try again.",
           "not_closed": "Close answers first.",
-          "answer_changed": "That answer changed after you read it. Check it again before grading."
+          "answer_changed": "That answer changed after you read it. Check it again before grading.",
+          "game_running": "A game is running. End it before changing the rounds."
         },
         "options": {
           "legend": "Options, with the correct one selected",

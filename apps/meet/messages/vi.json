@@ -4611,6 +4611,7 @@
           "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
           "closed": "Phần này đã đóng.",
           "full": "Hoạt động này đã đầy. Hãy xóa bớt trước khi thêm.",
+          "game_running": "Trò chơi đang diễn ra. Hãy dừng trò chơi trước khi sửa các vòng.",
           "generic": "Thao tác chưa thành công. Hãy thử lại.",
           "not_closed": "Hãy đóng nhận câu trả lời trước.",
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",

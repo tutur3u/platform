@@ -547,6 +547,44 @@ describe('game', () => {
       { snapshot: { game: { phase: 'done', round: { correct: 1 } } } },
     ]);
   });
+
+  it('refuses new rounds while a game is running, so a late save cannot wipe it', () => {
+    const round = {
+      prompt: 'Pick',
+      options: ['A', 'B'],
+      answer: 1,
+      seconds: 5,
+    };
+    const late = { kind: 'game.set', rounds: [{ ...round, prompt: 'New' }] };
+    const ready = action(room(), host, {
+      kind: 'game.set',
+      rounds: [round],
+    }).state;
+    // Still idle: the rounds can be replaced.
+    expect(
+      action(ready, cohost, late).state.liveActivities?.game.rounds[0]?.prompt
+    ).toBe('New');
+    const started = action(ready, host, { kind: 'game.start' }).state;
+    const roundId = started.liveActivities?.game.rounds[0]?.id;
+    const answered = action(started, guest, {
+      kind: 'game.answer',
+      roundId,
+      choice: 1,
+    }).state;
+    const revealed = action(answered, host, { kind: 'game.reveal' }).state;
+    const done = action(revealed, host, { kind: 'game.next' }).state;
+    for (const running of [answered, revealed, done]) {
+      const refused = action(running, cohost, late);
+      expect(refused.reply).toMatchObject(error('activity_game_running'));
+      expect(refused.state).toBe(running);
+      expect(refused.broadcast).toEqual([]);
+    }
+    // Ending the game returns it to idle, where rounds can change again.
+    const reset = action(done, host, { kind: 'game.reset' }).state;
+    expect(
+      action(reset, host, late).state.liveActivities?.game.rounds[0]?.prompt
+    ).toBe('New');
+  });
 });
 
 describe('icebreaker', () => {

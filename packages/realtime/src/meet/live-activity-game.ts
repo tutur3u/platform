@@ -52,6 +52,8 @@ export function applyLiveActivityGame(
 ): LiveActivityGame | string {
   switch (command.kind) {
     case 'game.set':
+      // Rounds change only between games: a late save must not end a running one.
+      if (game.phase !== 'idle') return 'activity_game_running';
       return {
         ...EMPTY_ACTIVITY_GAME,
         rounds: command.rounds.map((round) => ({

@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   ANA,
   closeRoom,
+  lastRequestId,
   renderPanel,
   room,
   SELF,
@@ -31,6 +32,19 @@ const round = {
   endsAt: Date.now() + 60_000,
 };
 const idle = { phase: 'idle' as const, answered: 0, scores: [] };
+const prepared = {
+  game: {
+    rounds: [
+      {
+        id: ROUND,
+        prompt: round.prompt,
+        options: round.options,
+        answer: 1,
+        seconds: 20,
+      },
+    ],
+  },
+};
 
 afterEach(() => {
   cleanup();
@@ -69,19 +83,6 @@ it('lets the host prepare rounds, start once the room has them and pace the game
     },
   ]);
 
-  const prepared = {
-    game: {
-      rounds: [
-        {
-          id: ROUND,
-          prompt: round.prompt,
-          options: round.options,
-          answer: 1,
-          seconds: 20,
-        },
-      ],
-    },
-  };
   room({ manager: true, snapshot: { game: idle }, host: prepared });
   fireEvent.click(screen.getByRole('button', { name: t.start }));
   room({
@@ -115,6 +116,36 @@ it('lets the host prepare rounds, start once the room has them and pace the game
     { kind: 'game.reveal' },
     { kind: 'game.next' },
   ]);
+});
+
+it('says when a late save is refused and offers no round editor while a game runs', () => {
+  renderPanel(GamePanel, true);
+  const store = room({
+    manager: true,
+    snapshot: { game: idle },
+    host: prepared,
+  });
+  fireEvent.change(screen.getByLabelText(t.prompt), {
+    target: { value: 'Slowest average sort?' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: t.save_rounds }));
+  // Another host started the game before this save arrived: the room keeps it.
+  act(() =>
+    store.receive({
+      type: 'error',
+      error: 'activity_game_running',
+      requestId: lastRequestId(),
+    })
+  );
+  expect(screen.getByRole('status').textContent).toBe(
+    strings.errors.game_running
+  );
+  room({
+    manager: true,
+    snapshot: { game: { phase: 'question', round, answered: 0, scores: [] } },
+  });
+  expect(screen.queryByRole('button', { name: t.save_rounds })).toBeNull();
+  expect(screen.queryByLabelText(t.prompt)).toBeNull();
 });
 
 it('lets a player answer once and shows the key and scores on reveal', () => {
