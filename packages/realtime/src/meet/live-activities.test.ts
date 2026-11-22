@@ -541,16 +541,18 @@ it('lets a workspace co-host run activities with the token the join route mints'
   expect(deck.state.liveActivities?.flashcards.cards).toHaveLength(1);
   const game = action(deck.state, cohost, {
     kind: 'game.set',
-    rounds: [{ prompt: 'Ready?', options: ['Yes', 'No'], answer: 0, seconds: 10 }],
+    rounds: [
+      { prompt: 'Ready?', options: ['Yes', 'No'], answer: 0, seconds: 10 },
+    ],
   });
   expect(game.state.liveActivities?.game.rounds).toHaveLength(1);
   expect(read(game.state, cohost).reply.map(({ type }) => type)).toContain(
     'activity.host'
   );
   // A participant with the same speaker scopes stays a participant.
-  expect(
-    action(game.state, guest, { kind: 'game.start' }).reply
-  ).toMatchObject(error('permission_denied'));
+  expect(action(game.state, guest, { kind: 'game.start' }).reply).toMatchObject(
+    error('permission_denied')
+  );
   expect(read(game.state, guest).reply.map(({ type }) => type)).not.toContain(
     'activity.host'
   );

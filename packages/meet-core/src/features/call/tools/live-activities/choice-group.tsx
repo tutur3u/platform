@@ -89,7 +89,8 @@ export function ChoiceGroup({
           className={cn(
             'flex min-h-11 w-full items-center gap-2 rounded-full border px-4 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
             'enabled:hover:bg-accent disabled:cursor-default',
-            selected === position && 'border-foreground bg-accent font-semibold',
+            selected === position &&
+              'border-foreground bg-accent font-semibold',
             correct === position &&
               'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
           )}

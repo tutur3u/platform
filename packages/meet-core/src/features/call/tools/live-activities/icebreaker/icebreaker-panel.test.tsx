@@ -166,7 +166,8 @@ it('fills in a reply that arrives late and keeps typed text through a reconnect'
   renderPanel(IcebreakerPanel, false);
   const asked = { icebreaker: { prompt, promptId: PROMPT, responses: [] } };
   const mine = { icebreaker: { text: 'Binary search' } };
-  const input = () => screen.getByLabelText(t.your_response) as HTMLInputElement;
+  const input = () =>
+    screen.getByLabelText(t.your_response) as HTMLInputElement;
   room({ snapshot: asked });
   expect(input().value).toBe('');
   // Their own reply reaches the panel after the question did.

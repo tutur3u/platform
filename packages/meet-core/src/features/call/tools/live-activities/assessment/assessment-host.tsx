@@ -116,11 +116,7 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
         <ToolAction
           icon={open ? Lock : Play}
           label={t(
-            open
-              ? 'close_answers'
-              : confirmReopen
-                ? 'reopen_confirm'
-                : 'reopen'
+            open ? 'close_answers' : confirmReopen ? 'reopen_confirm' : 'reopen'
           )}
           variant={confirmReopen ? 'destructive' : 'outline'}
           onClick={() => {
