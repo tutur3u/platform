@@ -305,6 +305,9 @@ to mean a first-party session, so external registrations may use neither:
   also covers every satellite session audience and the CLI target.
 - Saving an app whose `allowedScopes` include an `internal-app:*` scope is
   refused.
+- Saving an app whose `allowedScopes` include a wildcard (`*` or any scope
+  ending in `:*`) other than `external-projects:*` is refused. Grant each
+  scope by name.
 - The exchange never issues `internal-app:*` scopes to an external app, even
   under a `*` grant or a registration saved before these checks.
 

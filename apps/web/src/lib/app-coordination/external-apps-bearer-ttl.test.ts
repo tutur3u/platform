@@ -190,6 +190,18 @@ describe('external app registration boundary with first-party apps', () => {
     expect(mocks.inserted).toEqual([]);
   });
 
+  it('refuses wildcard scopes other than external-projects:* on save', async () => {
+    for (const scope of ['*', 'workspace:*', ' ai:* ']) {
+      await expect(
+        upsertExternalApp({
+          actorUserId: 'root-admin',
+          payload: { ...basePayload, allowedScopes: [scope] },
+        })
+      ).rejects.toThrow('wildcard_scope_not_allowed');
+    }
+    expect(mocks.inserted).toEqual([]);
+  });
+
   it('never issues first-party session scopes, even under a wildcard grant', () => {
     expect(() =>
       getAllowedAppTokenScopes({

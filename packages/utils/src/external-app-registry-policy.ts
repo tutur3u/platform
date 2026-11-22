@@ -182,7 +182,8 @@ export function resolveMaxBearerTtlFieldValue({
 
 /**
  * Throws for a registration an external app must not have: a reserved
- * internal app name, or a first-party session scope.
+ * internal app name, a first-party session scope, or a wildcard scope
+ * without a frozen coverage list (only `external-projects:*` has one).
  */
 export function assertExternalAppRegistrationAllowed({
   allowedScopes,
@@ -194,6 +195,14 @@ export function assertExternalAppRegistrationAllowed({
   if (isReservedExternalAppId(appId)) throw new Error('reserved_app_id');
   if (allowedScopes?.some(isInternalAppScope)) {
     throw new Error('internal_scope_not_allowed');
+  }
+  if (
+    allowedScopes?.some(
+      (scope) =>
+        isWildcardScope(scope.trim()) && !WILDCARD_SCOPE_COVERAGE[scope.trim()]
+    )
+  ) {
+    throw new Error('wildcard_scope_not_allowed');
   }
 }
 

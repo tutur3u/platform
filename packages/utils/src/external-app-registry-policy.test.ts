@@ -78,6 +78,30 @@ describe('reserved internal app names', () => {
       })
     ).not.toThrow();
   });
+
+  it('refuses every wildcard scope except external-projects:*', () => {
+    for (const scope of ['*', 'workspace:*', 'workspace:drive:*', 'ai:*']) {
+      expect(() =>
+        assertExternalAppRegistrationAllowed({
+          allowedScopes: ['workspace:drive:read', scope],
+          appId: 'fysh',
+        })
+      ).toThrow('wildcard_scope_not_allowed');
+    }
+    expect(() =>
+      assertExternalAppRegistrationAllowed({
+        allowedScopes: [
+          'external-projects:*',
+          'workspace.members.email:read',
+          'workspace:drive:read',
+        ],
+        appId: 'fysh',
+      })
+    ).not.toThrow();
+    expect(() =>
+      assertExternalAppRegistrationAllowed({ appId: 'fysh' })
+    ).not.toThrow();
+  });
 });
 
 describe('bearer TTL cap field', () => {
