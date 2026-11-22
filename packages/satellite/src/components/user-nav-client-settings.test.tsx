@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, type Ref, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const logoutMocks = vi.hoisted(() => ({
@@ -32,8 +32,19 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   logoutCurrentWebAccountWithInternalApi: logoutMocks.centralLogout,
 }));
 vi.mock('@tuturuuu/ui/custom/satellite-user-menu', () => ({
-  SatelliteUserMenu: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
+  SatelliteUserMenu: ({
+    children,
+    triggerRef,
+  }: {
+    children: ReactNode;
+    triggerRef?: Ref<HTMLButtonElement>;
+  }) => (
+    <div>
+      <button type="button" ref={triggerRef}>
+        Account
+      </button>
+      {children}
+    </div>
   ),
 }));
 vi.mock('@tuturuuu/ui/custom/satellite-user-menu-items', () => ({
@@ -162,7 +173,25 @@ describe('satellite UserNavClient shared settings', () => {
     ).toBeNull();
   });
 
-  it('keeps app-owned settings open across menu unmount and returns focus on close', async () => {
+  it('returns focus to the account trigger when Settings is opened from its menu', async () => {
+    render(
+      <>
+        <SatelliteSettingsDialogHost user={user} />
+        <UserNavClient externalSettingsHost locale="en" user={user} />
+      </>,
+      { wrapper: withNuqsTestingAdapter({ hasMemory: true }) }
+    );
+    const account = screen.getByRole('button', { name: 'Account' });
+    const item = screen.getByRole('button', { name: 'common.settings' });
+    item.focus();
+    fireEvent.click(item);
+    fireEvent.keyDown(await screen.findByRole('dialog'), { key: 'Escape' });
+
+    await waitFor(() => expect(document.activeElement).toBe(account));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('keeps Settings open when switching to Minimal and returns focus to the logo', async () => {
     function SidebarWithSettings() {
       const [showMenu, setShowMenu] = useState(true);
       return (
@@ -171,22 +200,27 @@ describe('satellite UserNavClient shared settings', () => {
             centralUrl="https://tuturuuu.com"
             user={user}
           />
-          {showMenu && (
-            <UserNavClient externalSettingsHost locale="en" user={user} />
-          )}
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-                  cancelable: true,
-                  detail: { settingsTab: 'sidebar' },
-                })
-              )
-            }
-          >
-            Open sidebar settings
-          </button>
+          <aside data-slot="app-sidebar">
+            {showMenu ? (
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+                      cancelable: true,
+                      detail: { settingsTab: 'sidebar' },
+                    })
+                  )
+                }
+              >
+                Open sidebar settings
+              </button>
+            ) : (
+              <button type="button" data-sidebar-reveal-trigger="">
+                Open sidebar
+              </button>
+            )}
+          </aside>
           <button type="button" onClick={() => setShowMenu(false)}>
             Hide account menu
           </button>
@@ -216,10 +250,14 @@ describe('satellite UserNavClient shared settings', () => {
       'https://tuturuuu.com|sidebar'
     );
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-    await waitFor(() => expect(document.activeElement).toBe(opener));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Open sidebar' })
+      )
+    );
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(
-      screen.queryByRole('button', { name: 'common.settings' })
+      screen.queryByRole('button', { name: 'Open sidebar settings' })
     ).toBeNull();
   });
 });

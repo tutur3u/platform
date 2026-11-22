@@ -3,7 +3,7 @@
 import { User } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import {
   DropdownMenu,
@@ -24,6 +24,7 @@ export function SatelliteUserMenu({
   online = false,
   label,
   loading = false,
+  triggerRef,
   children,
 }: {
   name: string;
@@ -34,12 +35,14 @@ export function SatelliteUserMenu({
   online?: boolean;
   label?: string;
   loading?: boolean;
+  triggerRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           aria-label={label}
           aria-busy={loading || undefined}

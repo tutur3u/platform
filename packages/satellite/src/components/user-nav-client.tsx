@@ -83,18 +83,17 @@ export function SatelliteSettingsDialogHost({
   const dialogOpen = useRef(open);
   const returnFocus = useRef<{
     origin: HTMLElement;
-    minimalSidebar: HTMLElement | null;
+    sidebar: HTMLElement | null;
   } | null>(null);
   useLayoutEffect(() => {
     dialogOpen.current = open;
   }, [open]);
   const openFromCurrentControl = useCallback(
-    (nextTab: string | null) => {
-      const origin = document.activeElement;
+    (nextTab: string | null, origin = document.activeElement) => {
       if (!open && origin instanceof HTMLElement && origin !== document.body) {
         returnFocus.current = {
           origin,
-          minimalSidebar: origin.closest('[data-minimal-sidebar]'),
+          sidebar: origin.closest('[data-slot="app-sidebar"]'),
         };
       }
       openSettings(nextTab);
@@ -115,9 +114,13 @@ export function SatelliteSettingsDialogHost({
     const handleSettingsIntent = (event: Event) => {
       if (!claimSettingsDialogIntent(event)) return;
 
-      const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
-        ?.settingsTab;
-      openFromCurrentControl(tab ?? null);
+      const detail = (
+        event as CustomEvent<{
+          settingsTab?: string;
+          returnFocus?: HTMLElement;
+        }>
+      ).detail;
+      openFromCurrentControl(detail?.settingsTab ?? null, detail?.returnFocus);
     };
 
     window.addEventListener(
@@ -139,17 +142,21 @@ export function SatelliteSettingsDialogHost({
       centralUrl={centralUrl}
       onCloseAutoFocus={(event) => {
         if (dialogOpen.current || !returnFocus.current) return;
-        const { origin, minimalSidebar } = returnFocus.current;
+        const { origin, sidebar } = returnFocus.current;
         returnFocus.current = null;
-        const target =
-          origin.isConnected &&
-          !origin.closest('[inert]') &&
-          origin.checkVisibility?.({ visibilityProperty: true }) !== false
-            ? origin
-            : minimalSidebar?.querySelector<HTMLElement>(
-                '[data-sidebar-reveal-trigger]'
-              );
-        if (!target?.isConnected) return;
+        const target = [
+          origin,
+          sidebar?.querySelector<HTMLElement>('[data-sidebar-reveal-trigger]'),
+          sidebar?.querySelector<HTMLElement>(
+            '[data-slot="sidebar-settings-button"]'
+          ),
+        ].find(
+          (control) =>
+            control?.isConnected &&
+            !control.closest('[inert]') &&
+            control.checkVisibility?.({ visibilityProperty: true }) !== false
+        );
+        if (!target) return;
         event.preventDefault();
         target.focus({ preventScroll: true });
       }}
@@ -192,12 +199,19 @@ export default function UserNavClient({
   const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
   const { modKey } = usePlatform();
+  const menuTrigger = useRef<HTMLButtonElement>(null);
   const { closeSettings, openSettings: openSettingsTab } =
     useSettingsDialogUrlState();
   const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
   const openSettings = useCallback(() => {
-    openSettingsTab(null);
+    const unhandled = window.dispatchEvent(
+      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+        cancelable: true,
+        detail: { returnFocus: menuTrigger.current ?? undefined },
+      })
+    );
+    if (unhandled) openSettingsTab(null);
   }, [openSettingsTab]);
 
   useEffect(() => {
@@ -265,6 +279,7 @@ export default function UserNavClient({
         avatarUrl={user?.avatar_url}
         secondaryLabel={secondaryLabel}
         hideMetadata={hideMetadata}
+        triggerRef={menuTrigger}
         online={Boolean(user)}
       >
         <SatelliteUserMenuItems
