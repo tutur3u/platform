@@ -53,6 +53,38 @@ void main() {
     },
   );
 
+  test('repeated Calendar reads fetch only the requested range', () async {
+    repository.dispose();
+    repository = CalendarRepository(
+      apiClient: api,
+      currentUserId: () => 'calendar-reader',
+    );
+    final requestedPaths = <String>[];
+    when(() => api.getJson(any())).thenAnswer((invocation) async {
+      final path = invocation.positionalArguments.single as String;
+      requestedPaths.add(path);
+      final start = Uri.parse(path).queryParameters['start_at'];
+      if (start?.startsWith('2026-01-15') != true) {
+        throw const ApiException(message: 'Download inactive', statusCode: 503);
+      }
+      return {'data': <Object>[]};
+    });
+
+    for (var read = 0; read < 8; read++) {
+      await CacheStore.awaitRevalidation(
+        () => repository.getEvents(
+          'ws',
+          start: DateTime.utc(2026, 1, 15),
+          end: DateTime.utc(2026, 1, 16),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    expect(requestedPaths, hasLength(8));
+    expect(requestedPaths, everyElement(contains('start_at=2026-01-15')));
+  });
+
   test(
     'transport failure retains the stored calendar for offline reads',
     () async {

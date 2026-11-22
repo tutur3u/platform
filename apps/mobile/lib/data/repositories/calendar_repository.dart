@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -53,8 +51,6 @@ class CalendarRepository {
     _checkOwner(userId);
     return value;
   }
-
-  final Map<String, DateTime> _historyWarmups = {};
 
   /// Download supported calendar years in bounded cursor pages and preserve
   /// every page plus the lookup metadata required for offline event editing.
@@ -278,9 +274,6 @@ class CalendarRepository {
       }
     }
     checkOwner();
-    if (start != null && !start.isAfter(DateTime.now())) {
-      unawaited(_warmEarlierEvents(wsId, start));
-    }
     final pending = await OfflineMutationQueue.instance.listPending();
     checkOwner();
     return overlayPendingCalendarEvents(
@@ -290,64 +283,6 @@ class CalendarRepository {
       start: start,
       end: end,
     );
-  }
-
-  /// Warm three earlier months after a calendar visit, independently of the
-  /// visible range. This is bounded and never delays the stored projection.
-  Future<void> _warmEarlierEvents(String wsId, DateTime start) =>
-      ApiClient.offlinePreparation(
-        () => _warmEarlierEventsImpl(wsId, start),
-        allowChallenge: false,
-      );
-
-  Future<void> _warmEarlierEventsImpl(String wsId, DateTime start) async {
-    final userId = _owner();
-    if (userId == null) {
-      return;
-    }
-    final earlier = DateTime.utc(start.year, start.month - 3);
-    final key = '$userId:$wsId:${earlier.toIso8601String()}';
-    final last = _historyWarmups[key];
-    if (last != null &&
-        DateTime.now().difference(last) < const Duration(minutes: 15)) {
-      return;
-    }
-    final query = Uri(
-      queryParameters: {
-        'start_at': earlier.toIso8601String(),
-        'end_at': start.toUtc().toIso8601String(),
-      },
-    ).query;
-    try {
-      if (!await hasNetworkConnection() || userId != _owner()) {
-        return;
-      }
-      _historyWarmups[key] = DateTime.now();
-      if (_historyWarmups.length > 64) {
-        _historyWarmups.remove(_historyWarmups.keys.first);
-      }
-      await CacheStore.instance.prefetch<List<CalendarEvent>>(
-        key: _listKey(wsId, '?$query', userId: userId),
-        checkScope: () {
-          if (userId != _owner()) throw StateError('Calendar account changed.');
-        },
-        policy: CachePolicies.moduleData,
-        decode: _decodeEvents,
-        forceRefresh: true,
-        fetch: () async {
-          if (userId != _owner()) throw StateError('Calendar account changed.');
-          final response = await ApiClient.runForUser(
-            userId,
-            () => _api.getJson('${_basePath(wsId)}?$query'),
-          );
-          if (userId != _owner()) throw StateError('Calendar account changed.');
-          return response['data'] as List<dynamic>? ?? const [];
-        },
-        tags: ['module:calendar', 'workspace:$wsId'],
-      );
-    } on Object {
-      _historyWarmups.remove(key);
-    }
   }
 
   Future<CalendarEvent?> getEventById(String wsId, String eventId) async {
