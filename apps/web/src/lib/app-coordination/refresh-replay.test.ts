@@ -86,3 +86,51 @@ it('fences a token once and preserves grace, replay, expiry and fail-closed outc
   ).toBe('replayed');
   expect(transport).toHaveBeenCalledTimes(calls);
 });
+
+it('judges an overlapping claim by its claim time, not its start time, when the grant check is slow', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+  const store = new Map<string, string>();
+  const redis = {
+    get: vi.fn(async (key: string) => store.get(key) ?? null),
+    set: vi.fn(
+      async (key: string, value: string, options?: { nx?: boolean }) => {
+        if (options?.nx && store.has(key)) return null;
+        store.set(key, value);
+        return 'OK';
+      }
+    ),
+  };
+  vi.mocked(getUpstashRestRedisClient).mockResolvedValue(redis as never);
+  const input = {
+    exp: Math.floor(Date.now() / 1000) + 600,
+    graceSeconds: 0,
+    ip: '203.0.113.1',
+    jti: crypto.randomUUID(),
+    keyPrefix: 'app-session:refresh:used',
+    onError: vi.fn(),
+    sub: crypto.randomUUID(),
+  };
+
+  // A starts first; its grant check takes 5 s. B starts 3 s later and wins.
+  let releaseSlow: () => void = () => {};
+  const slowAdmit = new Promise<void>((resolve) => {
+    releaseSlow = resolve;
+  });
+  const first = consumeRefreshTokenWithGrace({
+    ...input,
+    admit: async () => {
+      await slowAdmit;
+      return 'admit';
+    },
+  });
+  await vi.advanceTimersByTimeAsync(3000);
+  expect(
+    await consumeRefreshTokenWithGrace({ ...input, admit: async () => 'admit' })
+  ).toBe('consumed');
+  await vi.advanceTimersByTimeAsync(2000);
+  releaseSlow();
+
+  // With zero grace the later claim is a replay, never a second mint.
+  expect(await first).toBe('replayed');
+});

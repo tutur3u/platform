@@ -197,6 +197,7 @@ async function resolveExchangeTarget({
 
     return {
       allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+      app: verification.app,
       maxBearerTtlSeconds: verification.app.maxBearerTtlSeconds,
       requirePkce: verification.app.requirePkce === true,
       scopes: getAllowedAppTokenScopesWithWorkspaceSession({
@@ -425,7 +426,8 @@ async function exchangeAppToken(request: NextRequest) {
 
   if (refreshToken) {
     const refreshResult = await verifyExternalAppRefreshToken({
-      failClosed: resolvedTarget.maxBearerTtlSeconds != null,
+      admin: sbAdmin,
+      app: resolvedTarget.app,
       familyTtlSeconds: policy.internalAppRefreshTtlSeconds,
       ip: extractIPFromRequest(request.headers),
       replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
@@ -441,7 +443,10 @@ async function exchangeAppToken(request: NextRequest) {
     }
     if (refreshResult === 'unavailable') {
       return NextResponse.json(
-        { error: 'Refresh temporarily unavailable' },
+        {
+          code: 'REFRESH_UNAVAILABLE',
+          error: 'Refresh temporarily unavailable',
+        },
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }

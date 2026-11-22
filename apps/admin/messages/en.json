@@ -6858,6 +6858,7 @@
     "actions": {
       "approve_scopes": "Approve scopes",
       "approve_setup": "Approve setup",
+      "cancel": "Cancel",
       "collapse": "Collapse {app}",
       "create": "Create app",
       "expand": "Expand {app}",
@@ -6883,6 +6884,10 @@
       "setup_success": "External app setup approved",
       "success": "External app scopes approved",
       "title": "Approve external app scopes"
+    },
+    "confirm_rotate": {
+      "description": "Rotating signs out this app's users. They sign in again at their next refresh.",
+      "title": "Rotate the secret for {app}?"
     },
     "description": "Register external app origins and issue one-time app secrets for centralized Tuturuuu login and API coordination.",
     "fields": {

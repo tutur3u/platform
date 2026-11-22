@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Loader2, RotateCw, Save } from '@tuturuuu/icons';
+import { ChevronDown, Loader2, Save } from '@tuturuuu/icons';
 import type {
   ExternalAppRegistration,
   SaveExternalAppPayload,
@@ -19,6 +19,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { RotateSecretButton } from './rotate-secret-dialog';
 
 const SCOPE_PRESETS = [
   'workspace:session',
@@ -339,19 +340,11 @@ export function ExternalAppCard({
           </div>
           <p className="font-mono text-muted-foreground text-sm">{app.id}</p>
         </div>
-        <Button
-          disabled={isPending}
-          onClick={() => onRotate(app.id)}
-          type="button"
-          variant="secondary"
-        >
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RotateCw className="h-4 w-4" />
-          )}
-          {t('actions.rotate_secret')}
-        </Button>
+        <RotateSecretButton
+          appName={app.displayName}
+          isPending={isPending}
+          onConfirm={() => onRotate(app.id)}
+        />
       </div>
 
       <div className="mt-4 grid gap-3 text-sm md:grid-cols-4">

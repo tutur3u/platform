@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +22,14 @@ import {
 } from './external-app-refresh';
 
 const appServerIp = '203.0.113.7';
+const app = {
+  allowedWorkspaceIds: [],
+  enabled: true,
+  id: 'fysh',
+  secretIssuedAt: null,
+};
+// Tokens here carry no workspace, so the grant check reads nothing.
+const admin = {} as TypedSupabaseClient;
 
 function token(scopes: string[], userId = randomUUID()) {
   return createAppCoordinationToken(
@@ -36,6 +45,8 @@ function token(scopes: string[], userId = randomUUID()) {
 
 function verify(refreshToken: string) {
   return verifyExternalAppRefreshToken({
+    admin,
+    app,
     familyTtlSeconds: 2_592_000,
     ip: appServerIp,
     refreshToken,
@@ -100,6 +111,8 @@ describe('external app refresh rate limiting', () => {
     expect(await verify(token(['external-projects:*']))).toBeNull();
     expect(
       await verifyExternalAppRefreshToken({
+        admin,
+        app,
         familyTtlSeconds: 60,
         ip: appServerIp,
         refreshToken: token(['app-token:refresh']),

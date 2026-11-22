@@ -211,9 +211,24 @@ CLI-only APIs.
    `workspaceId` and, when known, the session's `aal` and `amr` (see
    [Session assurance](#session-assurance)). Refresh before
    `expiresIn - refreshEarlySeconds` by calling the same route with
-   `refreshToken` and the app secret. Each refresh re-checks the app
-   registration and, for external-project scopes, the workspace membership and
-   EPM permission.
+   `refreshToken` and the app secret. Each refresh re-checks Postgres before
+   minting: the app is enabled, the refresh token postdates the app's current
+   secret, and for a workspace-bound token the user is still a direct `MEMBER`
+   and the workspace still links the app (its `allowedWorkspaceIds` or its
+   external-project binding). External-project scopes also re-check the EPM
+   permission. Only a positive finding (app disabled, secret rotated, user not
+   a member, workspace not linked) answers `401` and revokes the token's
+   family. Any failed lookup, including the binding and canonical project
+   reads, or an unreadable secret rotation time, answers `503` with
+   `code: "REFRESH_UNAVAILABLE"` and revokes nothing. These checks run before
+   the replay fence records the token's first use, so after such a `503` the
+   same refresh token can be retried at any time within its lifetime.
+
+   Failures later in the exchange (a workspace authorization `500`, an
+   identity or profile read error) happen after the first use is recorded. A
+   retry inside the replay grace succeeds; a retry after it is judged a reuse,
+   revokes the family and sends the user back to sign-in. Coverage:
+   `apps/web/src/lib/auth/external-app-refresh-grant.test.ts`.
 
 Every external-app (`ttr_app_`) bearer route re-checks the app registry on top
 of its membership checks:
@@ -225,9 +240,21 @@ of its membership checks:
 - every route that accepts a scope-only app session, such as the current-user
   profile, banner, full-name, avatar and profile-media routes.
 
-Disabling the app answers its bearers with `403` immediately. Rotating the app
-secret answers bearers issued before the rotation with `401`; refresh tokens
-keep working because refresh requires the current secret. A bearer counts as an
+Disabling the app answers its bearers with `403` immediately.
+
+**Rotating an app secret signs out every user of that app.** Bearers issued
+before the rotation answer `401`. Refresh tokens issued before it are refused
+with `401` and their families revoked, so each user signs in again at their
+next refresh. The Infrastructure external apps screen asks the operator to
+confirm this before it rotates (coverage:
+`apps/admin/src/app/[locale]/(dashboard)/[wsId]/external-apps/external-apps-client.test.tsx`).
+The rotation time comes from the rotating server's clock and a token's `iat`
+from the minting server's clock, compared at whole-second precision. A
+refresh that completes, with the old secret, in the same second as the
+rotation or within clock skew between servers mints a token the rotation does
+not revoke, so that one family survives the rotation.
+
+A bearer counts as an
 external app's when it lacks `internal-app:session` and its `target_app` is not
 a reserved internal app name. Coverage:
 `apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
@@ -285,14 +312,22 @@ same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
   this change and is then reused has no successor carrying its derived family;
   that chain stays exposed for at most one refresh-token lifetime after the
   change ships.
-- **Replay store outages.** Capped apps fail closed: a configured replay store
-  that is unavailable answers their refresh with `503`. Apps without a cap keep
-  the legacy replay policy, which continues without the fence and the family
-  check unless the guard store owns replay fences. Outside production, an
-  environment with no replay store at all (no Upstash and no assigned guard, as
-  in local, preview or staging setups) applies the legacy policy to every app.
-  Production never takes that exemption: without a replay store, capped apps
-  get `503` on refresh until the replay family is served by the guard store.
+- **Replay store outages.** Every app fails closed: when the replay store is
+  unavailable, refresh answers `503` with `code: "REFRESH_UNAVAILABLE"` and
+  `Retry-After: 30`, and mints nothing. Apps should retry after the delay and
+  re-run sign-in if refresh keeps failing; bearers already issued stay valid
+  until they expire. The only exemption is a non-production environment with
+  no replay store at all (no Upstash and no assigned guard, as in local,
+  preview or staging setups), where refresh continues without the fence and
+  the family check but still runs the Postgres checks above. Production never
+  takes that exemption.
+- **Replay store in production.** The Web `api-core` Worker, which serves the
+  exchange, assigns the `replay` abuse-guard family and binds `ABUSE_GUARD`.
+  With `ABUSE_GUARD_REPLAY_LEGACY_UNTIL` unset, the fence and family
+  revocation read and write the abuse-guard Durable Object through that
+  binding only; Upstash is never consulted, even when configured. A binding
+  error or an unusable binding answers `503`. Coverage:
+  `apps/web/src/lib/auth/external-app-refresh-binding.test.ts`.
 - **Reserved app ids.** A registration may not use an internal app domain name
   or an internal token target without a domain (`managed-tuturuuu`,
   `mastermind`, `profile-media-upload`), case-folded.

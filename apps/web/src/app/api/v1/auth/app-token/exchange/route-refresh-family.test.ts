@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deriveLegacyRefreshFamily } from '@/lib/app-coordination/refresh-family';
 import { POST } from './route';
 import {
+  createAdminClientMock,
   createExchangeRequest,
   mocks,
   registerExchangeTestSetup,
@@ -274,11 +275,83 @@ describe('external app refresh lifetimes and families', () => {
     }
   });
 
-  it('keeps the legacy fail-open policy for an uncapped app', async () => {
+  it('refuses a refresh token minted before the app secret rotated', async () => {
+    optIn(null);
+    const app = (await mocks.verifyExternalAppSecret()).app;
+    mocks.verifyExternalAppSecret.mockResolvedValue({
+      app: {
+        ...app,
+        secretIssuedAt: new Date(Date.now() + 5_000).toISOString(),
+      },
+      ok: true,
+    });
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(401);
+    expect(mocks.redisSet).toHaveBeenCalledWith(
+      `app-token:refresh:family-revoked:yoola:${family}`,
+      expect.any(String),
+      { ex: expect.any(Number) }
+    );
+  });
+
+  it('answers 503 without revoking when a grant lookup fails', async () => {
+    optIn(null);
+    const base = createAdminClientMock();
+    const failed = { data: null, error: { message: 'db down' } };
+    const failing: Record<string, unknown> = {
+      eq: () => failing,
+      in: () => failing,
+      maybeSingle: async () => failed,
+      select: () => failing,
+    };
+    mocks.createAdminClient.mockResolvedValue({
+      ...base,
+      from: (table: string) =>
+        table === 'canonical_external_projects' ? failing : base.from(table),
+    });
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'REFRESH_UNAVAILABLE',
+    });
+    expect(mocks.redisSet).not.toHaveBeenCalledWith(
+      `app-token:refresh:family-revoked:yoola:${family}`,
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it('fails closed for an uncapped app when the replay store is unavailable', async () => {
     optIn(null);
     vi.mocked(getUpstashRestRedisClient).mockRejectedValueOnce(
       new Error('store down')
     );
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'REFRESH_UNAVAILABLE',
+    });
+  });
+
+  it('lets an uncapped app refresh outside production where no replay store is configured', async () => {
+    optIn(null);
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.mocked(hasUpstashRestEnv).mockReturnValueOnce(false);
+    vi.mocked(getUpstashRestRedisClient).mockResolvedValueOnce(null);
 
     const response = await refresh(
       refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])

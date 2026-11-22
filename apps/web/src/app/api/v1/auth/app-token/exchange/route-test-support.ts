@@ -73,6 +73,8 @@ type AdminState = {
   pendingDirectInvite?: boolean;
   pendingEmailInvite?: boolean;
   privateEmail?: string | null;
+  /** Further workspaces the user is a direct member of. */
+  memberWorkspaceIds?: string[];
   workspacePersonal?: boolean;
   workspaceMember?: boolean;
   workspacePermissions?: PermissionId[];
@@ -133,7 +135,11 @@ function createAdminClientMock(state: AdminState = {}) {
     if (table === 'workspace_members') {
       const requestedWorkspaceIds = Array.isArray(wsId) ? wsId : [wsId];
       const isKnownWorkspace = requestedWorkspaceIds.some(
-        (id) => id === workspaceId || id === ROOT_WORKSPACE_ID
+        (id) =>
+          id === workspaceId ||
+          id === ROOT_WORKSPACE_ID ||
+          (typeof id === 'string' &&
+            (adminState.memberWorkspaceIds ?? []).includes(id))
       );
       const isKnownUser = userId === victimUserId;
       const isMember = wsId === ROOT_WORKSPACE_ID || adminState.workspaceMember;

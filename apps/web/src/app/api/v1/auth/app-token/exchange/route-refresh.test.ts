@@ -171,13 +171,19 @@ describe('app token exchange route', () => {
   });
 
   it('cannot rotate a refresh bearer into another authorized workspace', async () => {
-    mockRegisteredApp(['external-projects:*']);
+    const boundWorkspaceId = '77777777-7777-4777-8777-777777777777';
+    // The bound workspace still links the app and keeps the user as a member,
+    // so the refresh grant passes and the workspace match decides.
+    mockRegisteredApp(['external-projects:*'], 'yoola', [boundWorkspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ memberWorkspaceIds: [boundWorkspaceId] })
+    );
     const { token: refreshToken } = createAppCoordinationToken(
       {
         targetApp: 'yoola',
         userId: victimUserId,
         scopes: ['app-token:refresh'],
-        workspaceId: '77777777-7777-4777-8777-777777777777',
+        workspaceId: boundWorkspaceId,
       },
       { secret: 'test-secret' }
     );

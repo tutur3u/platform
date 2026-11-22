@@ -6858,6 +6858,7 @@
     "actions": {
       "approve_scopes": "Duyệt phạm vi",
       "approve_setup": "Duyệt thiết lập",
+      "cancel": "Hủy",
       "collapse": "Thu gọn {app}",
       "create": "Tạo ứng dụng",
       "expand": "Mở {app}",
@@ -6883,6 +6884,10 @@
       "setup_success": "Đã duyệt thiết lập ứng dụng bên ngoài",
       "success": "Đã duyệt phạm vi ứng dụng bên ngoài",
       "title": "Duyệt phạm vi ứng dụng bên ngoài"
+    },
+    "confirm_rotate": {
+      "description": "Xoay vòng sẽ đăng xuất người dùng của ứng dụng này. Họ đăng nhập lại ở lần làm mới tiếp theo.",
+      "title": "Xoay vòng secret của {app}?"
     },
     "description": "Đăng ký origin của ứng dụng bên ngoài và cấp app secret dùng một lần cho đăng nhập tập trung và điều phối API qua Tuturuuu.",
     "fields": {

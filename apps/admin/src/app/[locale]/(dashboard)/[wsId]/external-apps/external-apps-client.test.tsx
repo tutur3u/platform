@@ -64,7 +64,11 @@ vi.mock('next-intl', () => ({
   useTranslations:
     () => (key: string, values?: Record<string, string | number>) => {
       const messages: Record<string, string> = {
+        'actions.cancel': 'Cancel',
         'actions.collapse': 'Collapse {app}',
+        'confirm_rotate.description':
+          "Rotating signs out this app's users. They sign in again at their next refresh.",
+        'confirm_rotate.title': 'Rotate the secret for {app}?',
         'actions.approve_setup': 'Approve setup',
         'actions.approve_scopes': 'Approve scopes',
         'actions.create': 'Create app',
@@ -190,6 +194,46 @@ describe('ExternalAppsClient', () => {
     );
 
     expect(within(card).getByDisplayValue('Workspace App')).toBeInTheDocument();
+  });
+
+  it('rotates a secret only after confirming that it signs users out', async () => {
+    mocks.rotateExternalAppSecret.mockResolvedValue({
+      app: workspaceApp,
+      secret: 'ttr_app_secret_rotated',
+    });
+    renderClient();
+    const card = screen.getByTestId('external-app-card-workspace-app');
+
+    fireEvent.click(
+      within(card).getByRole('button', { name: 'Rotate secret' })
+    );
+    const dialog = await screen.findByRole('alertdialog');
+    expect(
+      within(dialog).getByText('Rotate the secret for Workspace App?')
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "Rotating signs out this app's users. They sign in again at their next refresh."
+      )
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(mocks.rotateExternalAppSecret).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(card).getByRole('button', { name: 'Rotate secret' })
+    );
+    fireEvent.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', {
+        name: 'Rotate secret',
+      })
+    );
+
+    await waitFor(() =>
+      expect(mocks.rotateExternalAppSecret).toHaveBeenCalledWith(
+        'workspace-app'
+      )
+    );
   });
 
   it('offers workspace, member, role, and profile scopes as registration presets', () => {

@@ -14,6 +14,13 @@ export type RefreshConsumeResult =
   | 'revoked'
   | 'unavailable';
 
+/**
+ * A caller's decision on a token the fence has not proven replayed: `admit`
+ * lets the claim proceed, `refuse` revokes the family, and `unavailable`
+ * answers without recording a first use, so a retry is judged afresh.
+ */
+export type RefreshAdmission = 'admit' | 'refuse' | 'unavailable';
+
 export type RefreshFamilyFence = {
   /** Store key marking the family revoked. */
   key: string;
@@ -31,8 +38,15 @@ export type RefreshFamilyFence = {
  * proven outside grace revokes the family so every later rotation of the
  * stolen chain fails too. `preLimit` replaces the default per-principal and
  * per-IP pre-limit keys for callers that already authenticated the client.
+ *
+ * `admit` runs after the pre-limit and the family check, before the first use
+ * is recorded (and again for a retry inside the grace). A proven replay never
+ * reaches it, so its cost is paid only by first uses and retries. That cost is
+ * bounded per principal only while the `replay` guard family is assigned,
+ * because the pre-limit applies only then.
  */
 export async function consumeRefreshTokenWithGrace({
+  admit,
   exp,
   family,
   graceSeconds,
@@ -43,6 +57,7 @@ export async function consumeRefreshTokenWithGrace({
   preLimit,
   sub,
 }: {
+  admit?: () => Promise<RefreshAdmission>;
   exp: number;
   family?: RefreshFamilyFence;
   graceSeconds: number;
@@ -92,23 +107,39 @@ export async function consumeRefreshTokenWithGrace({
         ? firstUsedAt
         : Number.parseInt(firstUsedAt ?? '', 10);
     };
-    const judge = async (
-      firstUsedAtSeconds: number
-    ): Promise<RefreshConsumeResult> => {
-      if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
-      rememberReplay(key, exp);
-      if (family) {
-        // The reuse is already proven: a failed revocation write must not turn
-        // it into `unavailable`, which the legacy policy lets through.
-        try {
-          await redis.set(family.key, String(nowSeconds), {
-            ex: family.ttlSeconds,
-          });
-          rememberReplay(family.key, nowSeconds + family.ttlSeconds);
-        } catch (error) {
-          onError(error);
-        }
+    // A proven refusal must not turn into a retryable `unavailable` when the
+    // revocation write fails.
+    const revokeFamily = async () => {
+      if (!family) return;
+      try {
+        await redis.set(family.key, String(nowSeconds), {
+          ex: family.ttlSeconds,
+        });
+        rememberReplay(family.key, nowSeconds + family.ttlSeconds);
+      } catch (error) {
+        onError(error);
       }
+    };
+    /** Null when the caller admits the token. */
+    const decide = async (): Promise<RefreshConsumeResult | null> => {
+      const admission = admit ? await admit() : 'admit';
+      if (admission === 'unavailable') return 'unavailable';
+      if (admission === 'refuse') {
+        await revokeFamily();
+        return 'revoked';
+      }
+      return null;
+    };
+    const judge = async (
+      firstUsedAtSeconds: number,
+      admitted = false,
+      atSeconds = nowSeconds
+    ): Promise<RefreshConsumeResult> => {
+      if (firstUsedAtSeconds + graceSeconds >= atSeconds) {
+        return (admitted ? null : await decide()) ?? 'grace';
+      }
+      rememberReplay(key, exp);
+      await revokeFamily();
       return 'replayed';
     };
 
@@ -117,7 +148,13 @@ export async function consumeRefreshTokenWithGrace({
       return await judge(firstUsedAtSeconds);
     }
 
-    const consumed = await redis.set(key, String(nowSeconds), {
+    const decision = await decide();
+    if (decision) return decision;
+
+    // The claim time is taken after the grant check, so slow lookups cannot
+    // widen the window in which two overlapping requests both count as grace.
+    const claimSeconds = Math.floor(Date.now() / 1000);
+    const consumed = await redis.set(key, String(claimSeconds), {
       ex: ttlSeconds,
       nx: true,
     });
@@ -127,7 +164,7 @@ export async function consumeRefreshTokenWithGrace({
     // unreadable winner is replayed without caching, so a retry re-checks.
     const winnerSeconds = await readFirstUse();
     return Number.isFinite(winnerSeconds)
-      ? await judge(winnerSeconds)
+      ? await judge(winnerSeconds, true, claimSeconds)
       : 'replayed';
   } catch (error) {
     onError(error);
