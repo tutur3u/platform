@@ -295,6 +295,7 @@ try {
     await picker.waitFor({ state: 'hidden' });
     await page.mouse.move(900, 450);
     await switcher.locator('[data-invitation-dot]').waitFor();
+    await switcher.locator('[data-slot="avatar-image"]').waitFor();
     assert.equal(
       await switcher
         .locator('span')

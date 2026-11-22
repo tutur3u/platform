@@ -33,7 +33,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { type ReactNode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import workspaceAvatar from '../../../../apps/calendar/public/media/logos/light-rounded.png?url';
 import { WorkspaceSelectTrigger } from '../../src/components/ui/custom/workspace-select-trigger';
 import './style.css';
 
@@ -49,6 +48,9 @@ const behavior =
     ? 'minimal'
     : 'hover';
 const pathname = '/ws/calendar';
+const workspaceAvatar = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="black"/><path d="M6 10h12v8H6zM8 6h8v3H8z" fill="white"/></svg>'
+)}`;
 
 const links: NavLink[] = [
   {
