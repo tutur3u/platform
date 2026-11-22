@@ -24,6 +24,8 @@ function putFile(
   onProgress: (loaded: number) => void
 ) {
   return new Promise<void>((resolve, reject) => {
+    // A cancel can land between a refused attempt and its retry.
+    if (signal.aborted) return reject(new DriveUploadAbortedError());
     const xhr = new XMLHttpRequest();
     const abort = () => xhr.abort();
     signal.addEventListener('abort', abort, { once: true });

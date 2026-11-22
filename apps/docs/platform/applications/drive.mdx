@@ -67,8 +67,9 @@ type not allowed, no permission, storage rejected the upload, storage
 unavailable, connection lost) and offers retry. The signed PUT is retried
 without a `Content-Type` only after a 400 or 415 from the storage provider.
 Folders dropped from the operating system are skipped with a notice, because
-the upload chain takes files only. While uploads run, leaving the page asks for
-confirmation. A failed
+the upload chain takes files only. While uploads run, closing or reloading the
+tab asks for confirmation; moving elsewhere inside Drive keeps the uploads
+running in the background. A failed
 `finalize-upload` does not fail the upload, because the object is already
 stored and finalize only runs post-processing such as archive extraction.
 

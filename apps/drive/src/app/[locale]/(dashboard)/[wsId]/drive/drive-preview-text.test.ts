@@ -36,6 +36,22 @@ describe('text preview cap', () => {
     );
   });
 
+  it('stops reading a body without a declared length at the cap', async () => {
+    const chunk = new Uint8Array(256 * 1024);
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        controller.enqueue(chunk);
+      },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body)));
+    await expect(fetchPreviewText('https://r2.test/a')).rejects.toBeInstanceOf(
+      PreviewTooLargeError
+    );
+    expect(pulls).toBeLessThan(10);
+  });
+
   it('returns small text', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('hello')));
     await expect(fetchPreviewText('https://r2.test/a')).resolves.toBe('hello');

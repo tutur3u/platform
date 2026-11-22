@@ -160,7 +160,11 @@ export function useDriveUploads({
   const uploading = summary.activeCount > 0;
   useEffect(() => {
     if (!uploading) return;
-    const guard = (event: BeforeUnloadEvent) => event.preventDefault();
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Older Chromium shows the prompt only when returnValue is set.
+      event.returnValue = '';
+    };
     window.addEventListener('beforeunload', guard);
     return () => window.removeEventListener('beforeunload', guard);
   }, [uploading]);

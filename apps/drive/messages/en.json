@@ -4163,7 +4163,7 @@
       "description": "Choose the destination folder.",
       "failed": "Couldn’t move the items.",
       "failed_conflict": "An item with the same name is already in that folder.",
-      "failed_missing": "That folder no longer exists. Choose another destination.",
+      "failed_missing": "Something in this move no longer exists. Refresh and try again.",
       "failed_provider": "Moving isn’t available for this workspace’s storage yet.",
       "failed_size": "This move is too large. Move fewer or smaller items.",
       "load_failed": "Couldn’t load folders.",

@@ -4163,7 +4163,7 @@
       "description": "Chọn thư mục đích.",
       "failed": "Không di chuyển được các mục.",
       "failed_conflict": "Thư mục đích đã có mục cùng tên.",
-      "failed_missing": "Thư mục đó không còn tồn tại. Hãy chọn nơi khác.",
+      "failed_missing": "Một mục trong lần di chuyển này không còn tồn tại. Hãy làm mới và thử lại.",
       "failed_provider": "Kho lưu trữ của không gian làm việc này chưa hỗ trợ di chuyển.",
       "failed_size": "Lượt di chuyển quá lớn. Hãy di chuyển ít mục hơn hoặc mục nhỏ hơn.",
       "load_failed": "Không tải được danh sách thư mục.",

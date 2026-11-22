@@ -54,6 +54,9 @@ export function useDrivePreviewUrl(
         { fetch }
       ),
     staleTime: (query) => getSignedLinkStaleTime(query.state.data?.expiresIn),
+    // An open preview keeps its link fresh instead of waiting for a remount.
+    refetchInterval: (query) =>
+      getSignedLinkStaleTime(query.state.data?.expiresIn),
     gcTime: SIGNED_LINK_GC_TIME_MS,
     retry: 1,
     select: (link) => link.url,

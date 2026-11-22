@@ -18,7 +18,31 @@ export async function fetchPreviewText(url: string) {
     await response.body?.cancel();
     throw new PreviewTooLargeError();
   }
-  const text = await response.text();
-  if (text.length > TEXT_PREVIEW_MAX_BYTES) throw new PreviewTooLargeError();
-  return text;
+  // Size metadata and Content-Length can both be absent, so stop reading at
+  // the cap instead of buffering an unbounded body.
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const text = await response.text();
+    if (text.length > TEXT_PREVIEW_MAX_BYTES) throw new PreviewTooLargeError();
+    return text;
+  }
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > TEXT_PREVIEW_MAX_BYTES) {
+      await reader.cancel();
+      throw new PreviewTooLargeError();
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
 }
