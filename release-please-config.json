@@ -363,6 +363,10 @@
       "component": "utils",
       "package-name": "@tuturuuu/utils"
     },
+    "packages/whiteboard": {
+      "component": "whiteboard",
+      "package-name": "@tuturuuu/whiteboard"
+    },
     "packages/workflows": {
       "component": "workflows",
       "package-name": "@tuturuuu/workflows"

@@ -83,6 +83,7 @@
   "packages/users-core": "0.12.0",
   "packages/users-ui": "0.7.9",
   "packages/utils": "0.39.0",
+  "packages/whiteboard": "0.1.0",
   "packages/workflows": "0.0.2",
   "apps/lettin": "1.6.0",
   "apps/parley": "1.6.0",
