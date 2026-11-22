@@ -40,6 +40,8 @@ export interface OutputView {
   text: string;
   exitCode: number | null;
   running: boolean;
+  /** Before a meeting's Run runs: waiting for a free runner, or the runner starting. */
+  phase?: 'waiting' | 'starting';
 }
 /** The output pane shows real run text or an explicit empty state, never a stale frame. */
 export function outputView(
@@ -51,7 +53,11 @@ export function outputView(
   const running = isRunActive(result?.status);
   return {
     text: result?.output ?? '',
-    exitCode: running || result?.exitCode == null ? null : result.exitCode,
+    // A Run the service could not start has no exit code of the program's own.
+    exitCode:
+      running || result?.exitCode == null || result.reason === 'sandbox_failed'
+        ? null
+        : result.exitCode,
     running,
   };
 }

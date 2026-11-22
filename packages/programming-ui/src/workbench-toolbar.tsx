@@ -37,6 +37,8 @@ export type WorkbenchControls =
       onStop: () => void;
       onSave?: () => void;
       pending: boolean;
+      /** The Run is only waiting for a free runner, so Stop cancels the wait. */
+      cancellable?: boolean;
       /** Id of the card explaining that runs are unavailable; Run stays visible but disabled. */
       unavailable?: string;
     }
@@ -151,7 +153,9 @@ export function WorkbenchToolbar({
               aria-label={t('stop')}
               title={t('stop')}
               disabled={
-                controls.pending || !controls.editable || !!controls.unavailable
+                (controls.pending && !controls.cancellable) ||
+                !controls.editable ||
+                !!controls.unavailable
               }
               onClick={controls.onStop}
             >

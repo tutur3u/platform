@@ -397,6 +397,43 @@ export function runMeetPlayground(
     }
   );
 }
+export type MeetProgrammingCheckLanguage = 'c' | 'cpp' | 'java' | 'go' | 'rust';
+export interface MeetProgrammingDiagnostic {
+  path: string;
+  /** 1-based, like Monaco positions. */
+  line: number;
+  column: number;
+  endLine?: number;
+  endColumn?: number;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  code?: string;
+  source: string;
+}
+/** Compiler diagnostics for the room's files; nothing runs. */
+export function checkMeetProgramming(
+  id: string,
+  payload: {
+    requestId: string;
+    language: MeetProgrammingCheckLanguage;
+    files: { path: string; content: string }[];
+    entry?: string;
+  },
+  signal?: AbortSignal
+) {
+  return getInternalApiClient().json<{
+    requestId: string;
+    diagnostics: MeetProgrammingDiagnostic[];
+    truncated: boolean;
+    durationMs: number;
+  }>(`${programmingCallPath(id)}?check`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+    signal,
+  });
+}
 export function getMeetPlaygroundRun(id: string, run: string) {
   return getInternalApiClient().json<
     import('@tuturuuu/types/primitives/playgrounds').PlaygroundExecutionResult

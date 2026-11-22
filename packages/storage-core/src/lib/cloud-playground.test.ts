@@ -238,6 +238,27 @@ describe('cloud Playground checks', () => {
     });
   });
 
+  it('waits at least 10 s for C and C++ and 15 s for Java', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const ok = () =>
+      Response.json({
+        requestId: request.requestId,
+        diagnostics: [],
+        truncated: false,
+        durationMs: 1,
+      });
+    for (const [language, ms] of [
+      ['c', 10_000],
+      ['cpp', 10_000],
+      ['java', 15_000],
+    ] as const) {
+      fetchMock.mockResolvedValueOnce(ok());
+      await checkCloudPlayground(scope.meetingId, { ...check, language });
+      expect(timeout).toHaveBeenLastCalledWith(ms);
+    }
+    timeout.mockRestore();
+  });
+
   it('sends the room and request and validates the diagnostics', async () => {
     const result = {
       requestId: request.requestId,

@@ -5,10 +5,22 @@ import {
   runHostedPlayground,
 } from '@tuturuuu/internal-api/playgrounds';
 import type { PlaygroundExecutionResult } from '@tuturuuu/types/primitives/playgrounds';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRunnerAvailability } from './use-runner-availability';
-import { WorkbenchStepError } from './workbench-errors';
+import {
+  errorCode,
+  failureReason,
+  retryAfterSeconds,
+  WorkbenchStepError,
+} from './workbench-errors';
 import { isRunActive } from './workbench-layout';
+
+/** Longest a Run waits on its own for a free runner before asking the person. */
+const BUSY_WAIT_MAX_S = 30;
+const BUSY_WAIT_DEFAULT_S = 5;
+
+/** What the console says while a Run is not yet running: waiting for a slot, or the runner booting. */
+export type WorkbenchRunPhase = 'waiting' | 'starting';
 
 /** A host-owned runner, e.g. Meet's call-scoped endpoints; Learn uses the hosted playground API. */
 export interface WorkbenchExecution {
@@ -91,6 +103,37 @@ export function useWorkbenchRun({
   const checkpointRoom =
     checkpoint ?? (() => checkpointHostedPlayground(projectId));
   const save = useMutation({ mutationFn: checkpointRoom });
+  // Meetings wait once for a free runner; Stop or unmounting ends the wait without sending.
+  const [waiting, setWaiting] = useState(false);
+  const wake = useRef<() => void>(undefined);
+  useEffect(() => () => wake.current?.(), []);
+  // Resolves false when Stop or unmounting ends the wait early.
+  const waitFor = (seconds: number) =>
+    new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => {
+        wake.current = undefined;
+        resolve(true);
+      }, seconds * 1000);
+      wake.current = () => {
+        clearTimeout(timer);
+        wake.current = undefined;
+        resolve(false);
+      };
+    });
+  const send = async (
+    input: { operation: 'run' | 'stop'; stdin: string; runId?: string },
+    requestId: string
+  ) => {
+    const { operation, stdin } = input;
+    if (operation === 'run' && owner)
+      await checkpointRoom().catch((error: unknown) => {
+        throw new WorkbenchStepError('save', error);
+      });
+    const payload = { operation, requestId, stdin };
+    return execution
+      ? execution.run({ ...payload, runId: input.runId })
+      : runHostedPlayground(projectId, payload);
+  };
   const run = useMutation({
     mutationFn: async (input: {
       operation: 'run' | 'stop';
@@ -98,24 +141,62 @@ export function useWorkbenchRun({
       stdin: string;
       runId?: string;
     }) => {
-      const { operation, requestId, stdin } = input;
-      if (operation === 'run' && owner)
-        await checkpointRoom().catch((error: unknown) => {
-          throw new WorkbenchStepError('save', error);
-        });
-      const payload = { operation, requestId, stdin };
+      const { operation } = input;
       const startedAt = Date.now();
-      const queued = execution
-        ? await execution.run({ ...payload, runId: input.runId })
-        : await runHostedPlayground(projectId, payload);
+      let requestId = input.requestId;
+      let conflictRetried = false;
+      let busyRetried = false;
+      let queued: { runId: string };
+      for (;;) {
+        try {
+          queued = await send(input, requestId);
+          break;
+        } catch (error) {
+          if (error instanceof WorkbenchStepError) throw error;
+          // A reused request ID that no longer matches: send once more as a new request.
+          if (
+            errorCode(error) === 'PLAYGROUND_REQUEST_CONFLICT' &&
+            !conflictRetried
+          ) {
+            conflictRetried = true;
+            requestId = crypto.randomUUID();
+            continue;
+          }
+          // Every runner is in use: wait as told, then try once more before asking.
+          if (
+            meeting &&
+            operation === 'run' &&
+            !busyRetried &&
+            failureReason(error) === 'busy'
+          ) {
+            busyRetried = true;
+            setWaiting(true);
+            const elapsed = await waitFor(
+              Math.min(
+                retryAfterSeconds(error) ?? BUSY_WAIT_DEFAULT_S,
+                BUSY_WAIT_MAX_S
+              )
+            );
+            // Stop ends the wait without a Run and without a failure.
+            if (!elapsed) return { cancelled: true as const };
+            setWaiting(false);
+            requestId = crypto.randomUUID();
+            continue;
+          }
+          throw error;
+        }
+      }
       if (operation === 'run')
         timing.current = { runId: queued.runId, startedAt };
       setLocalRun({ id: queued.runId, sharedAtStart: sharedRunId });
       onStarted();
+      return { cancelled: false as const };
     },
+    onSettled: () => setWaiting(false),
     // A run saves the room first, so an older save failure no longer applies.
     // Only a run speaks for the runner; a refused stop leaves Run as it is.
-    onSuccess: (_, { operation }) => {
+    onSuccess: (outcome, { operation }) => {
+      if (outcome.cancelled) return;
       save.reset();
       if (operation === 'run') runner.onRunStarted();
     },
@@ -124,17 +205,37 @@ export function useWorkbenchRun({
     },
   });
   // Each new Run or Stop gets its own request ID; a retry reuses the last one.
-  const runOperation = (operation: 'run' | 'stop') =>
+  const runOperation = (operation: 'run' | 'stop') => {
+    // Stop while waiting for a free runner cancels the wait; there is no run to stop yet.
+    if (operation === 'stop' && waiting) return wake.current?.();
     run.mutate({
       operation,
       requestId: crypto.randomUUID(),
       stdin,
       runId: operation === 'stop' ? runId : undefined,
     });
+  };
   const finished = timing.current;
+  const status = result.data?.status;
+  // Meetings name the wait for a runner and its cold start; Learn keeps "Running…".
+  const phase: WorkbenchRunPhase | undefined = !meeting
+    ? undefined
+    : waiting
+      ? 'waiting'
+      : status === 'queued'
+        ? 'starting'
+        : undefined;
   return {
     result,
     busy,
+    phase,
+    /** A Run is waiting for a free runner; Stop cancels it. */
+    waiting,
+    /** The service, not the program, failed: the Run never started. */
+    sandboxFailed:
+      !problem &&
+      !isRunActive(status) &&
+      result.data?.reason === 'sandbox_failed',
     save,
     run,
     runOperation,

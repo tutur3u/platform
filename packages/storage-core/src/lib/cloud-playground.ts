@@ -363,6 +363,9 @@ const checkResult = z.object({
 });
 export type CloudPlaygroundCheckResult = z.infer<typeof checkResult>;
 
+/** A slow compile is waited out, not failed; Java starts a JVM first. */
+const CHECK_TIMEOUT_MS = { c: 10_000, cpp: 10_000, java: 15_000 } as const;
+
 /** Compile-only diagnostics for unsaved room files; no program runs. */
 export async function checkCloudPlayground(
   meetingId: string,
@@ -375,6 +378,10 @@ export async function checkCloudPlayground(
   }
 ): Promise<CloudPlaygroundCheckResult> {
   return checkResult.parse(
-    await callCloudPlayground('/check', { meetingId, ...request }, 7000)
+    await callCloudPlayground(
+      '/check',
+      { meetingId, ...request },
+      CHECK_TIMEOUT_MS[request.language]
+    )
   );
 }

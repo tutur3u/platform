@@ -62,6 +62,12 @@ function api(
     test: vi.fn() as never,
     readTest: vi.fn() as never,
     checkpoint: vi.fn() as never,
+    check: vi.fn(async () => ({
+      requestId: 'request',
+      diagnostics: [],
+      truncated: false,
+      durationMs: 1,
+    })) as never,
   };
 }
 function mount(props: {
@@ -317,4 +323,27 @@ it('keeps a refused runner disabled for the call across workbench remounts', asy
   );
   expect(firstRoom).toBe('meeting:meeting:project:python');
   expect(meeting().runnerUnavailable).toBe(true);
+});
+
+it('binds compiler checks to this meeting and leaves them out without a checker', async () => {
+  const client = api(true);
+  mount({ canManage: true, active: true, client });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  const check = (
+    workbench.calls.at(-1)!.meeting as {
+      check?: (payload: unknown, signal: AbortSignal) => Promise<unknown>;
+    }
+  ).check!;
+  const signal = new AbortController().signal;
+  const payload = { requestId: 'r', language: 'c', files: [] };
+  await check(payload, signal);
+  expect(client.check).toHaveBeenCalledWith('meeting', payload, signal);
+  cleanup();
+  workbench.calls.length = 0;
+  const { check: _, ...withoutCheck } = api(true);
+  mount({ canManage: true, active: true, client: withoutCheck as never });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  expect(
+    (workbench.calls.at(-1)!.meeting as { check?: unknown }).check
+  ).toBeUndefined();
 });

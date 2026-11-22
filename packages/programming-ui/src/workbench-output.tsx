@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  Loader2,
   TerminalSquare,
   X,
 } from '@tuturuuu/icons';
@@ -101,8 +102,16 @@ export function WorkbenchOutput({
   const stdinId = useId();
   const [stdinOpen, setStdinOpen] = useState(false);
   const port = preview ? previewPort(preview.port) : null;
-  const status = view.running
-    ? t('running')
+  const running = view.running || !!view.phase;
+  const runningLabel = t(
+    view.phase === 'waiting'
+      ? 'runnerWaiting'
+      : view.phase === 'starting'
+        ? 'runnerStarting'
+        : 'running'
+  );
+  const status = running
+    ? runningLabel
     : save === 'failed'
       ? t('saveFailed')
       : save === 'saved'
@@ -112,7 +121,7 @@ export function WorkbenchOutput({
     <output
       className={cn(
         'truncate text-xs',
-        save === 'failed' && !view.running
+        save === 'failed' && !running
           ? 'text-destructive'
           : 'text-muted-foreground'
       )}
@@ -267,8 +276,14 @@ export function WorkbenchOutput({
               {preview && !port
                 ? t('webPreviewPortHint')
                 : view.text || (
-                    <span className="text-muted-foreground">
-                      {t(view.running ? 'running' : 'outputEmpty')}
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                      {view.phase && (
+                        <Loader2
+                          aria-hidden="true"
+                          className="size-3.5 animate-spin motion-reduce:animate-none"
+                        />
+                      )}
+                      {running ? runningLabel : t('outputEmpty')}
                     </span>
                   )}
             </pre>

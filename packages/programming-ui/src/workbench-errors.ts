@@ -1,17 +1,45 @@
 /** Which request failed, so the message names the step instead of "Request failed". */
-export type WorkbenchFailureStep = 'save' | 'run' | 'result' | 'test';
+/** `start`: the run was accepted but the service could not start or sandbox it. */
+export type WorkbenchFailureStep = 'save' | 'run' | 'start' | 'result' | 'test';
 export type WorkbenchFailureReason =
   | 'access'
   | 'changed'
   | 'busy'
   | 'capacity'
   | 'unavailable'
+  | 'sandbox'
   | 'offline'
   | 'unknown';
 
 export interface WorkbenchFailure {
   step: WorkbenchFailureStep;
   reason: WorkbenchFailureReason;
+  /** From `Retry-After`: when a refused request may succeed again. */
+  retryAfterSeconds?: number;
+}
+
+/** The refusal code of an API error, e.g. `PLAYGROUND_BUSY`. */
+export function errorCode(error: unknown): string | undefined {
+  const source =
+    error instanceof WorkbenchStepError ? error.reasonSource : error;
+  return source && typeof source === 'object' && 'code' in source
+    ? String(source.code)
+    : undefined;
+}
+
+/** Whole seconds from the error's retry hint (`Retry-After` or the body), if any. */
+export function retryAfterSeconds(error: unknown): number | undefined {
+  const source =
+    error instanceof WorkbenchStepError ? error.reasonSource : error;
+  if (!source || typeof source !== 'object') return undefined;
+  const value = Number(
+    'retryAfter' in source
+      ? source.retryAfter
+      : 'retryAfterSeconds' in source
+        ? source.retryAfterSeconds
+        : Number.NaN
+  );
+  return Number.isFinite(value) && value > 0 ? Math.ceil(value) : undefined;
 }
 
 /** Tags an error from a multi-step request (a run first saves the room) with the step that failed. */
@@ -63,9 +91,12 @@ export function workbenchFailure(errors: {
   for (const step of ['save', 'run', 'result', 'test'] as const) {
     const error = errors[step];
     if (!error) continue;
-    return error instanceof WorkbenchStepError
-      ? { step: error.step, reason: failureReason(error.reasonSource) }
-      : { step, reason: failureReason(error) };
+    const failure: WorkbenchFailure =
+      error instanceof WorkbenchStepError
+        ? { step: error.step, reason: failureReason(error.reasonSource) }
+        : { step, reason: failureReason(error) };
+    const retryAfter = retryAfterSeconds(error);
+    return retryAfter ? { ...failure, retryAfterSeconds: retryAfter } : failure;
   }
   return null;
 }

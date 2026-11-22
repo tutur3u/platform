@@ -13,18 +13,14 @@ import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, useEffect, useState } from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
-import {
-  MiraCodeReview,
-  MiraEditorBar,
-  type WorkbenchMira,
-} from './mira-code-presence';
+import { MiraCodeReview, MiraEditorBar, miraFocus } from './mira-code-presence';
 import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
 import { runnerGate } from './use-runner-availability';
+import { useWorkbenchDiagnostics } from './use-workbench-diagnostics';
 import { useWorkbenchRun, type WorkbenchExecution } from './use-workbench-run';
 import { WorkbenchEditorStage } from './workbench-editor-stage';
 import { WorkbenchEditorStatus } from './workbench-editor-status';
-import { workbenchFailure } from './workbench-errors';
 import { WorkbenchFiles, WorkbenchFileTree } from './workbench-files';
 import {
   outputView,
@@ -36,8 +32,10 @@ import {
   WorkbenchMeetingOutput,
   type WorkbenchTestRun,
 } from './workbench-meeting-output';
+import type { WorkbenchMeeting } from './workbench-meeting';
 import { WorkbenchOutput } from './workbench-output';
 import { workbenchPermissions } from './workbench-permissions';
+import { workbenchRunFailure } from './workbench-run-failure';
 import { WorkbenchShareDialog } from './workbench-share-dialog';
 import { WorkbenchToolbar } from './workbench-toolbar';
 
@@ -66,17 +64,7 @@ export function ProgrammingWorkbench({
   execution?: WorkbenchExecution;
   problem?: { title: string; prompt: string };
   onTest?: (source: string) => Promise<string>;
-  meeting?: {
-    mira: WorkbenchMira;
-    runTests?: (source: string) => Promise<WorkbenchTestRun>;
-    onRuntime?: (
-      language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage
-    ) => void;
-    runtimePending?: boolean;
-    /** The runner refused a run earlier in this call, so Run starts disabled. */
-    runnerUnavailable?: boolean;
-    onRunnerUnavailable?: (unavailable: boolean) => void;
-  };
+  meeting?: WorkbenchMeeting;
   /** Host-owned entries for the overflow menu, e.g. changing or closing the meeting resource. */
   actions?: WorkbenchAction[];
 }) {
@@ -128,22 +116,39 @@ export function ProgrammingWorkbench({
       });
     }
   }, [activePath, collaborationClient, collaborationOpen]);
-  const { result, busy, save, run, runOperation, runner, durationMs } =
-    useWorkbenchRun({
-      projectId,
-      roomKey,
-      execution,
-      sharedRunId,
-      checkpoint,
-      problem: !!problem,
-      owner,
-      stdin,
-      meeting,
-      onStarted: () => {
-        setOutputTab('console');
-        setOutputOpen(true);
-      },
-    });
+  const diagnostics = useWorkbenchDiagnostics({
+    roomKey,
+    language: project?.language,
+    files: room.snapshot.files,
+    check: meeting?.check,
+    enabled: !!meeting,
+  });
+  const {
+    result,
+    busy,
+    phase,
+    waiting,
+    sandboxFailed,
+    save,
+    run,
+    runOperation,
+    runner,
+    durationMs,
+  } = useWorkbenchRun({
+    projectId,
+    roomKey,
+    execution,
+    sharedRunId,
+    checkpoint,
+    problem: !!problem,
+    owner,
+    stdin,
+    meeting,
+    onStarted: () => {
+      setOutputTab('console');
+      setOutputOpen(true);
+    },
+  });
   const test = useMutation({
     mutationFn: async (): Promise<WorkbenchTestRun | undefined> => {
       setOutputTab('tests');
@@ -171,14 +176,7 @@ export function ProgrammingWorkbench({
   );
   const mira = meeting?.mira;
   const sharedPresence = mira?.presence;
-  const miraFile =
-    sharedPresence?.active || sharedPresence?.proposedFix?.status === 'proposed'
-      ? sharedPresence?.filePath
-      : undefined;
-  const filePresence =
-    sharedPresence && sharedPresence.filePath === active?.path
-      ? sharedPresence
-      : undefined;
+  const { miraFile, filePresence } = miraFocus(sharedPresence, active?.path);
   const tests = test.data;
   const failedCases = tests?.cases.filter((item) => !item.passed);
   const failedIndex =
@@ -197,21 +195,18 @@ export function ProgrammingWorkbench({
   const selectedSave = save.isError
     ? 'failed'
     : saveState(room.saveError, room.savedRevision);
-  const runFailure = workbenchFailure({
-    save: save.error,
-    run: run.error,
-    result: result.error,
-    test: test.error,
+  const { failure: runFailure, retry } = workbenchRunFailure({
+    save,
+    run,
+    result,
+    test,
+    sandboxFailed,
+    retrySave: () => save.mutate(),
+    retryTest: () => test.mutate(),
+    retryResult: () => void result.refetch(),
+    retryRun: () => run.variables && run.mutate(run.variables),
+    runAgain: () => runOperation('run'),
   });
-  const retry = () => {
-    if (!runFailure) return;
-    if (runFailure.step === 'save' && !run.error) save.mutate();
-    else if (runFailure.step === 'test') test.mutate();
-    else if (runFailure.step === 'result') void result.refetch();
-    // A retry reuses the request ID, so a Run that was accepted is not repeated.
-    else if (run.variables) run.mutate(run.variables);
-    else runOperation('run');
-  };
   const gate = runnerGate(
     runner.unavailable,
     !problem && canExecute,
@@ -220,7 +215,7 @@ export function ProgrammingWorkbench({
   );
   const runnerDown = gate.id;
   const output = {
-    view: outputView(!!problem, testOutput, result.data),
+    view: { ...outputView(!!problem, testOutput, result.data), phase },
     save: selectedSave,
     failure: gate.failure,
     onRetry: retry,
@@ -342,6 +337,7 @@ export function ProgrammingWorkbench({
                   editable,
                   busy,
                   pending: run.isPending || save.isPending,
+                  cancellable: waiting,
                   onRun: () => runOperation('run'),
                   onStop: () => runOperation('stop'),
                   onSave: canCheckpoint ? () => save.mutate() : undefined,
@@ -438,6 +434,7 @@ export function ProgrammingWorkbench({
             mira={filePresence}
             jump={jump?.path === active?.path ? jump : undefined}
             onRunShortcut={runFromShortcut}
+            scriptDiagnostics={!!meeting}
             onSelection={
               meeting && active
                 ? (selection) => setCursor({ path: active.path, selection })
@@ -448,6 +445,7 @@ export function ProgrammingWorkbench({
             <WorkbenchEditorStatus
               language={project.language}
               editable={editable}
+              diagnostics={diagnostics}
             />
           )}
           {mira && (

@@ -30,6 +30,13 @@ export function WorkbenchFailureNotice({
           {t(`failureReason.${failure.reason}`)}
           {failure.step !== 'test' && ` ${t('failureSafe')}`}
         </p>
+        {failure.reason === 'capacity' && !!failure.retryAfterSeconds && (
+          <p className="text-muted-foreground text-xs">
+            {t('failureRetryIn', {
+              minutes: Math.max(1, Math.ceil(failure.retryAfterSeconds / 60)),
+            })}
+          </p>
+        )}
       </div>
       {onRetry && (
         <Button

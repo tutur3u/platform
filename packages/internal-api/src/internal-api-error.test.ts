@@ -102,6 +102,18 @@ describe('retry hints', () => {
       )
     ).toMatchObject({ code: 'PROFILE_UPLOAD_LIMIT', retryAfter: 90 });
   });
+  it('reads the room action envelope retryAfterSeconds field', async () => {
+    const { parseInternalApiError } = await import('./internal-api-error');
+    expect(
+      await parseInternalApiError(
+        respond({
+          error: 'Busy',
+          code: 'PLAYGROUND_BUSY',
+          retryAfterSeconds: 5,
+        })
+      )
+    ).toMatchObject({ code: 'PLAYGROUND_BUSY', retryAfter: 5 });
+  });
   it('ignores missing or non-numeric retry hints', async () => {
     const { parseInternalApiError } = await import('./internal-api-error');
     expect(

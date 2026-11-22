@@ -36,6 +36,21 @@ const errorLabels = {
 const pill =
   'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-dynamic-purple/30 px-2 py-1 font-bold text-dynamic-purple text-xs';
 
+/** The file Mira marks in the tree, and Mira's presence when it is on the open file. */
+export function miraFocus(
+  presence: ProgrammingMiraPresence | null | undefined,
+  activePath: string | undefined
+) {
+  return {
+    miraFile:
+      presence?.active || presence?.proposedFix?.status === 'proposed'
+        ? presence.filePath
+        : undefined,
+    filePresence:
+      presence && presence.filePath === activePath ? presence : undefined,
+  };
+}
+
 export function MiraFileBadge({
   label,
   mark,

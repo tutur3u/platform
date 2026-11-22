@@ -5,6 +5,7 @@ import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 import { useEditorTheme } from './editor-colors';
+import { configureScriptDiagnostics } from './editor-markers';
 import { EDITOR_THEME_NAME } from './editor-theme';
 import { useMiraCodeLabels } from './mira-code-presence';
 
@@ -52,6 +53,7 @@ export function ProgrammingEditor({
   onCursor,
   onSelection,
   onRunShortcut,
+  scriptDiagnostics = false,
 }: {
   path: string;
   language: string;
@@ -67,6 +69,8 @@ export function ProgrammingEditor({
   ) => void;
   /** Cmd/Ctrl+Enter inside the editor; Monaco consumes the key before the page sees it. */
   onRunShortcut?: () => void;
+  /** Meetings only: TypeScript and JavaScript problems tuned for a Node playground. */
+  scriptDiagnostics?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const theme = useEditorTheme(host);
@@ -211,14 +215,15 @@ export function ProgrammingEditor({
       <style>{miraEditorStyles}</style>
       <Editor
         height="100%"
-        language={language === 'shell' ? 'shell' : language}
+        language={language}
         path={path}
         value={value}
         onChange={(next) => onChange(next ?? '')}
         onMount={onMount}
-        beforeMount={(instance) =>
-          instance.editor.defineTheme(EDITOR_THEME_NAME, theme)
-        }
+        beforeMount={(instance) => {
+          if (scriptDiagnostics) configureScriptDiagnostics(instance);
+          instance.editor.defineTheme(EDITOR_THEME_NAME, theme);
+        }}
         theme={EDITOR_THEME_NAME}
         options={{
           readOnly,

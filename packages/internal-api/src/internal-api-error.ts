@@ -43,6 +43,7 @@ export async function parseInternalApiError(response: Response) {
       error?: string;
       message?: string;
       retryAfter?: number;
+      retryAfterSeconds?: number;
       existingId?: unknown;
       billingStatus?: unknown;
     };
@@ -59,7 +60,8 @@ export async function parseInternalApiError(response: Response) {
     )
       existingId = data.existingId;
     const header = Number(response.headers?.get?.('retry-after'));
-    const body = Number(data.retryAfter);
+    // Room action envelopes name the hint `retryAfterSeconds`.
+    const body = Number(data.retryAfter ?? data.retryAfterSeconds);
     retryAfter = [header, body].find((n) => Number.isFinite(n) && n > 0);
     const challenge = response.headers?.get?.('x-abuse-challenge');
     if (code === 'ABUSE_CHALLENGE_REQUIRED' || challenge) {

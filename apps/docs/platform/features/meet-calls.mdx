@@ -2395,8 +2395,8 @@ Learn uses the same workbench without the meeting-only controls.
   Learn retains its existing provider during the Meet rollout of Cloudflare
   execution. [Playground execution runbook](/build/devops/playground-execution)
 - **Runner unavailable.** In a meeting playground, once starting a run answers
-  502, 503 or 504, Run stays visible and focusable but `aria-disabled` for the
-  rest of the call, including after a language switch; its tooltip and
+  502, 503 or 504, Run stays visible and focusable but `aria-disabled` while the
+  coding panel stays open, including after a language switch; its tooltip and
   `aria-describedby` point at a status card above the output tabs. The card says
   running code is not available yet and that the code is saved with the meeting
   (not while the last save failed), and offers Copy code, Download for the
@@ -2436,12 +2436,60 @@ Learn uses the same workbench without the meeting-only controls.
   `PLAYGROUND_SUPERSEDED` (a newer check from the same person replaced it).
   BUSY for checks retries after 2 seconds. Checks are unavailable until Meet
   uses Cloudflare execution.
+- **Run states.** A meeting Run follows the execution contract above and
+  names each state instead of showing an exit code:
+  - A `queued` read says the runner is starting (the Console shows "Starting
+    runner…"); Learn keeps "Running…".
+  - `PLAYGROUND_BUSY` shows "Waiting for a free runner…" and retries once after
+    `retryAfterSeconds` (5 seconds when absent, at most 30) under a new request
+    ID, inside the same Run. Stop cancels the wait without sending a stop
+    request or showing a failure. If the retry is busy too, the failure notice
+    says the service is busy and offers Retry, which does not wait again on its
+    own.
+  - `PLAYGROUND_QUOTA` shows a card that says when to try again ("Try again in
+    N min.") and leaves Run enabled.
+  - `PLAYGROUND_REQUEST_CONFLICT` is sent once more under a new request ID with
+    no notice.
+  - A read with `reason: 'sandbox_failed'` shows "Run couldn't start" with
+    Retry rather than an exit code.
+- **Editor diagnostics.** The editor footer shows the problem count for the
+  room's language, meetings only. Learn's playground keeps Monaco's defaults.
+  - TypeScript and JavaScript problems come from Monaco's own worker using its
+    bundled libraries, with no network type fetch. The "cannot find module or
+    name" family (codes 2307, 2580, 2591, 2792, 7016 and 80001) is ignored,
+    because a playground runs on Node without installed packages. JavaScript
+    reports syntax errors only.
+  - C, C++ and Java problems come from the room's `?check` endpoint (compiler
+    diagnostics, nothing runs). A check starts 1.5 seconds after the last edit
+    (2.5 seconds for Java) while the panel is mounted and the page is visible.
+    The server waits up to 10 seconds for a C or C++ check and 15 seconds for a
+    Java check, and the footer stays on "Checking…" meanwhile; a slow check is
+    never reported as a failure. An edit aborts the check
+    in flight, and an unchanged room is not checked twice. Limits are enforced
+    in the browser: at most 20 files, 128 KiB per file and 200 KiB in total;
+    over them, markers from the `playground-check` owner are cleared and the
+    footer says "Too large to check".
+  - A warming checker is retried quietly up to three times (each attempt,
+    including a retry under the same request ID, costs one unit of the check
+    quota) and then counts as unavailable. Unavailable pauses checks ("Checks paused") until the language
+    changes or the panel reopens; a quota refusal pauses them until its retry
+    time; busy waits as told, up to three times per edit; a conflict is retried
+    once; a superseded check is ignored. While Meet does not use Cloudflare
+    execution every check answers 503 `PLAYGROUND_UNAVAILABLE`: the footer
+    shows "Checks paused" once, with no error notice and no further requests
+    until the language changes or the panel reopens. A 400, 404 or 405 turns checking off
+    without a message, for a checker that is not deployed or does not take the
+    language.
+  - Other languages show no problem status. A Python worker plugs in beside
+    the TypeScript provider in `code-diagnostics.ts`.
 
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-errors.test.ts`, `workbench-language.test.ts`,
 `workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,
 `workbench-runner-unavailable.test.tsx`, `use-workbench-run.test.tsx`,
-`programming-panel.test.tsx`, `room-service.test.ts`, `programming.test.ts`,
+`use-workbench-run-contract.test.tsx`, `use-remote-diagnostics.test.tsx`,
+`code-diagnostics.test.ts`, `programming-editor-scope.test.tsx`,
+`workbench-editor-status.test.tsx`, `programming-panel.test.tsx`, `room-service.test.ts`, `programming.test.ts`,
 `cloud-playground.test.ts` and the `apps/playground-execution` Node tests.
 
 Web screen capture depends on browser getDisplayMedia support. Android and iOS

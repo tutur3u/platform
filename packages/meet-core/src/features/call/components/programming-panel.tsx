@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActivityActive } from '../stage-layout/activity-pane-context';
 import {
+  checkMeetProgramming,
   checkpointMeetProgramming,
   createMeetPlayground,
   getMeetPlaygroundRun,
@@ -49,6 +50,7 @@ export const meetingProgrammingApi = {
   checkpoint: checkpointMeetProgramming,
   readMira: getMeetProgrammingMira,
   changeMira: updateMeetProgrammingMira,
+  check: checkMeetProgramming,
 };
 const ACTIVE_TEST = ['queued', 'running', 'cancel_requested'];
 
@@ -68,8 +70,13 @@ export function ProgrammingPanel({
   preparing?: boolean;
   canManage: boolean;
   selection: MeetingProgramming | null;
-  api?: Omit<typeof meetingProgrammingApi, 'readMira' | 'changeMira'> &
-    Partial<Pick<typeof meetingProgrammingApi, 'readMira' | 'changeMira'>>;
+  api?: Omit<
+    typeof meetingProgrammingApi,
+    'readMira' | 'changeMira' | 'check'
+  > &
+    Partial<
+      Pick<typeof meetingProgrammingApi, 'readMira' | 'changeMira' | 'check'>
+    >;
   previewUrl?: (port: number) => string;
 }) {
   const t = useTranslations('programmingPlayground');
@@ -83,7 +90,7 @@ export function ProgrammingPanel({
   // Hosts land in the open dialog when nothing is open yet.
   const [setupOpen, setSetupOpen] = useState(canManage && !selection);
   // Survives the workbench remount on a language switch, so a runner that
-  // refused a run keeps Run disabled for the rest of the call.
+  // refused a run keeps Run disabled while this coding panel stays open.
   const [runnerUnavailable, setRunnerUnavailable] = useState(false);
   const key = [
     'meet-programming',
@@ -164,6 +171,7 @@ export function ProgrammingPanel({
   });
   const active = query.data?.selection ? query.data : null;
   const readMira = api.readMira;
+  const runCheck = api.check;
   const changeMira = api.changeMira;
   const miraKey = [
     ...key,
@@ -341,6 +349,9 @@ export function ProgrammingPanel({
               runtimePending: switchRuntime.isPending,
               runnerUnavailable,
               onRunnerUnavailable: setRunnerUnavailable,
+              check: runCheck
+                ? (payload, signal) => runCheck(meetingId, payload, signal)
+                : undefined,
             }}
             actions={
               canManage
