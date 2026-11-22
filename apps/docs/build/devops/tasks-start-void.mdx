@@ -17,6 +17,24 @@ describes the runtime and artifact format.
 | Required secrets | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Optional bindings are listed in `apps/tasks/env.example`. |
 | Offline behavior | The native shell does not register the legacy Next.js service worker. |
 
+## API forwarding and authorization
+
+The Tasks API catch-all forwards Calendar-owned paths to Calendar and other
+unowned paths to Web. The Calendar path inventory is shared with the Next
+rewrites. Task-owned requests without a local handler return 404, and routed
+dot segments return 400 before the proxy contacts an upstream.
+
+Tasks forwards the request method, query, body and supported credentials.
+The proxy strips Supabase cookies and incoming client IP headers, rebuilds the
+forwarded host and protocol from the request, and relays upstream redirects
+without following them. Calendar and Web own authentication, workspace checks
+and permission decisions for the requests they receive. The proxy passes their
+refusals through. It filters Supabase cookies from upstream responses and
+preserves the shared root session on the apex Tasks mount.
+
+The catch-all route's colocated `route.test.ts` covers these forwarding and
+refusal boundaries.
+
 ## Publish from production
 
 The Production Deployment Planner selects `tasks-cloudflare.yaml` for Tasks.

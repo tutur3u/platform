@@ -1,10 +1,53 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GET, sanitizeTasksApiProxyCookieHeader } from './route';
+import { GET, POST, sanitizeTasksApiProxyCookieHeader } from './route';
 
 describe('Tasks API proxy', () => {
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it('forwards Calendar requests to Calendar with the original request state', async () => {
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 403 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const body = JSON.stringify({ title: 'Planning' });
+
+    const response = await POST(
+      new NextRequest(
+        'https://tasks.tuturuuu.com/api/v1/calendar/events?limit=5',
+        {
+          body,
+          headers: {
+            authorization: 'Bearer fixture-token',
+            'content-type': 'application/json',
+            host: 'tasks.tuturuuu.com',
+            'x-forwarded-host': 'untrusted.example',
+            'x-forwarded-proto': 'http',
+          },
+          method: 'POST',
+        }
+      ),
+      { params: Promise.resolve({ path: ['v1', 'calendar', 'events'] }) }
+    );
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [targetUrl, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(targetUrl)).toBe(
+      'https://calendar.tuturuuu.com/api/v1/calendar/events?limit=5'
+    );
+    expect(init?.method).toBe('POST');
+    expect(init?.redirect).toBe('manual');
+    expect(await new Response(init?.body).text()).toBe(body);
+    const headers = new Headers(init?.headers);
+    expect(headers.get('authorization')).toBe('Bearer fixture-token');
+    expect(headers.get('host')).toBeNull();
+    expect(headers.get('x-forwarded-host')).toBe('tasks.tuturuuu.com');
+    expect(headers.get('x-forwarded-proto')).toBe('https');
+    expect(response.status).toBe(403);
   });
 
   it('strips Supabase auth cookies while preserving internal app-session cookies', () => {
