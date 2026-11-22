@@ -19,7 +19,9 @@ void main() {
     title: 'Team planning',
     dueAt: DateTime.utc(2026, 9, 30, 12),
     offset: offset,
-    scheduledAt: DateTime(2026, 9, 27),
+    scheduledAt: offset == taskOverdueOffset
+        ? DateTime.utc(2026, 9, 30, 13)
+        : DateTime.utc(2026, 9, 30, 11),
     notificationId: 1,
     isAllDay: allDay,
     timezone: timezone,
@@ -68,12 +70,38 @@ void main() {
     });
   }
 
-  test('task alert uses the task name in the title', () {
+  test('task alert gives the lead time and deadline in its zone', () {
     final l10n = AppLocalizationsEn();
-    expect(reminderNotificationCopy(entry(ReminderKind.task, '3d'), l10n), (
-      title: 'Task: Team planning',
-      body: l10n.remindersTaskTitle,
-    ));
+    expect(
+      reminderNotificationCopy(
+        entry(ReminderKind.task, '1h', timezone: 'Asia/Ho_Chi_Minh'),
+        l10n,
+      ),
+      (
+        title: 'Task: Team planning',
+        body: 'Due in 1 hour · Sep 30, 2026 7:00\u202fPM',
+      ),
+    );
+  });
+  test('task alert distinguishes today from overdue in both languages', () {
+    final today = entry(ReminderKind.task, '1h', allDay: true);
+    final overdue = entry(ReminderKind.task, taskOverdueOffset);
+    expect(
+      reminderNotificationCopy(today, AppLocalizationsEn()).body,
+      'Due today',
+    );
+    expect(
+      reminderNotificationCopy(today, AppLocalizationsVi()).body,
+      'Đến hạn hôm nay',
+    );
+    expect(
+      reminderNotificationCopy(overdue, AppLocalizationsEn()).body,
+      'Overdue since Sep 30, 2026 12:00\u202fPM',
+    );
+    expect(
+      reminderNotificationCopy(overdue, AppLocalizationsVi()).body,
+      'Quá hạn từ 30 thg 9, 2026 12:00',
+    );
   });
   for (final allDay in [false, true]) {
     test('occurrence copy shows '

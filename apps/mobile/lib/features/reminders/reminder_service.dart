@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -12,6 +14,7 @@ import 'package:mobile/features/reminders/reminder_notification_copy.dart';
 import 'package:mobile/features/reminders/reminder_plan.dart';
 import 'package:mobile/features/reminders/reminder_settings.dart';
 import 'package:mobile/features/reminders/reminder_timezone_resolver.dart';
+import 'package:mobile/features/reminders/task_reminder_delivery.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
@@ -167,6 +170,16 @@ class ReminderService extends ChangeNotifier {
         }
       }
       await store.remove(key);
+      final receiptKey = 'reminders.$userId.taskReceipts';
+      final now = _now();
+      final elapsed = readTaskReminderReceipts(
+        store.getStringList(receiptKey) ?? const [],
+        now,
+      )..removeWhere((_, receipt) => receipt.at.isAfter(now));
+      await store.setStringList(
+        receiptKey,
+        encodeTaskReminderReceipts(elapsed),
+      );
     }
     settings = const ReminderSettings();
     status = const ReminderStatus();
@@ -255,11 +268,30 @@ class ReminderService extends ChangeNotifier {
     status = status.copyWith(isRefreshing: true, clearError: true);
     notifyListeners();
     try {
-      final allEntries = <ReminderPlanEntry>[];
+      final sources =
+          <({String id, String? timezone, List<CalendarEvent> events})>[];
+      final taskCandidates = {
+        for (final workspace in _workspaces)
+          workspace.id: <String, UserTask?>{},
+      };
       final now = _now();
+      final store = await SharedPreferences.getInstance();
+      final receiptKey = 'reminders.$userId.taskReceipts';
+      final receipts = readTaskReminderReceipts(
+        store.getStringList(receiptKey) ?? const [],
+        now,
+      );
+      Future<void> saveReceipts() async {
+        final saved = await store.setStringList(
+          receiptKey,
+          encodeTaskReminderReceipts(receipts),
+        );
+        if (!saved) throw StateError('Unable to record task reminders');
+      }
+
       for (final workspace in _workspaces) {
         if (!_isCurrent(userId, generation)) return;
-        final timezone = settings.eventsEnabled
+        final timezone = settings.eventsEnabled || settings.tasksEnabled
             ? await _timezoneResolver.resolve(
                 userId: userId,
                 workspaceId: workspace.id,
@@ -287,30 +319,29 @@ class ReminderService extends ChangeNotifier {
           isPersonal: workspace.personal,
         );
         final calendarState = CalendarCubit.seedStateForWorkspace(workspace.id);
-        allEntries.addAll(
-          buildReminderPlan(
-            now: now,
-            workspaceId: workspace.id,
-            tasks: settings.tasksEnabled
-                ? [...?taskState?.todayTasks, ...?taskState?.upcomingTasks]
-                : const [],
-            events: settings.eventsEnabled
-                ? calendarState?.events ?? const []
-                : const [],
-            taskOffsets: settings.taskOffsets,
-            eventOffsets: settings.eventOffsets,
-            timezone: timezone,
-          ),
+        final tasks = settings.tasksEnabled
+            ? [
+                ...?taskState?.overdueTasks,
+                ...?taskState?.todayTasks,
+                ...?taskState?.upcomingTasks,
+              ]
+            : const <UserTask>[];
+        collectTaskReminderCandidates(
+          taskCandidates,
+          workspace.id,
+          tasks,
+          userId: userId,
+          inactive: taskState?.completedTasks ?? const [],
         );
+        sources.add((
+          id: workspace.id,
+          timezone: timezone,
+          events: settings.eventsEnabled
+              ? calendarState?.events ?? const []
+              : const [],
+        ));
       }
       if (!_isCurrent(userId, generation)) return;
-      allEntries.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      final seenIds = <int>{};
-      final entries = allEntries
-          .where((entry) => seenIds.add(entry.notificationId))
-          .take(60)
-          .toList(growable: false);
-      final scheduledIds = entries.map((entry) => entry.notificationId).toSet();
       final language =
           await _settingsRepository.getLocale() ??
           PlatformDispatcher.instance.locale.languageCode;
@@ -319,13 +350,73 @@ class ReminderService extends ChangeNotifier {
       final l10n = language == 'vi'
           ? AppLocalizationsVi()
           : AppLocalizationsEn();
-      final store = await SharedPreferences.getInstance();
-      if (!_isCurrent(userId, generation)) return;
+      final plannedAt = _now();
       final key = 'reminders.$userId.scheduledIds';
       final previousIds = (store.getStringList(key) ?? const <String>[])
           .map(int.tryParse)
           .whereType<int>()
           .toSet();
+      // An inexact native alert can still be pending after its requested time.
+      // Leave that native request queued while every member is still eligible.
+      final elapsed = receipts.entries.where(
+        (entry) => !entry.value.at.isAfter(plannedAt),
+      );
+      final pendingIds =
+          elapsed.any(
+            (entry) => previousIds.contains(entry.value.notificationId),
+          )
+          ? await _notifications.pendingLocalReminderIds()
+          : const <int>{};
+      if (!_isCurrent(userId, generation)) return;
+      final eligibleTasks = {
+        for (final workspace in taskCandidates.entries)
+          workspace.key: workspace.value.values
+              .whereType<UserTask>()
+              .where((task) => isTaskReminderEligible(task, workspace.key))
+              .toList(growable: false),
+      };
+      final delayed = reconcileDelayedTaskReminders(
+        elapsed: elapsed,
+        eligibleTasks: eligibleTasks,
+        offsets: settings.taskOffsets,
+        pendingIds: pendingIds.intersection(previousIds),
+        now: plannedAt,
+      );
+      final excludedKeys = {
+        for (final entry in elapsed)
+          if (!entry.value.retry &&
+              (!pendingIds.contains(entry.value.notificationId) ||
+                  delayed.retain.contains(entry.value.notificationId)))
+            entry.key,
+      };
+      final pendingOverdueTimes = {
+        for (final entry in receipts.entries)
+          if (!entry.value.retry && entry.value.at.isAfter(plannedAt))
+            entry.key: entry.value.at,
+      };
+      final retryKeys = {
+        ...delayed.retry,
+        for (final entry in receipts.entries)
+          if (entry.value.retry) entry.key,
+      };
+      final availableSlots = (60 - delayed.retain.length).clamp(0, 60);
+      final groups = groupReminderEntries([
+        for (final source in sources)
+          ...buildReminderPlan(
+            now: plannedAt,
+            workspaceId: source.id,
+            tasks: eligibleTasks[source.id]!,
+            events: source.events,
+            taskOffsets: settings.taskOffsets,
+            eventOffsets: settings.eventOffsets,
+            timezone: source.timezone,
+            deliveredTaskKeys: excludedKeys,
+            retryPendingTaskKeys: retryKeys,
+            pendingOverdueTimes: pendingOverdueTimes,
+            limit: 1 << 31,
+          ),
+      ], limit: availableSlots);
+      final scheduledIds = {...groups.map(reminderGroupId), ...delayed.retain};
       // Record intended IDs before the OS can accept a notification. A session
       // change must be able to reconcile effects even while scheduling awaits.
       final recorded = await store.setStringList(
@@ -335,28 +426,109 @@ class ReminderService extends ChangeNotifier {
       if (!recorded) {
         throw StateError('Unable to record reminder reconciliation IDs');
       }
-      for (final entry in entries) {
+      // A replacement can reuse the old native ID. Cancel that request
+      // before retrying so a failed native schedule cannot leave it behind.
+      final cancelIds = previousIds
+          .difference(scheduledIds)
+          .union(delayed.cancel);
+      for (final id in cancelIds) {
         if (!_isCurrent(userId, generation)) return;
-        final copy = reminderNotificationCopy(entry, l10n);
-        await _notifications.scheduleLocalReminder(
-          id: entry.notificationId,
-          scheduledAt: entry.scheduledAt,
-          title: copy.title,
-          body: copy.body,
-          request: PushNavigationRequest(
-            notificationId: '',
-            openTarget: entry.kind == ReminderKind.task ? 'task' : 'calendar',
-            wsId: entry.workspaceId,
-            entityId: entry.entityId,
-            boardId: entry.boardId,
-            userId: userId,
-          ),
+        final canceled = receipts.entries
+            .where(
+              (entry) =>
+                  entry.value.notificationId == id &&
+                  !excludedKeys.contains(entry.key),
+            )
+            .toList(growable: false);
+        final retrying = canceled.where(
+          (entry) => retryKeys.contains(entry.key),
         );
-      }
-      for (final id in previousIds.difference(scheduledIds)) {
+        for (final entry in retrying) {
+          receipts[entry.key] = (
+            notificationId: id,
+            at: entry.value.at,
+            retry: true,
+          );
+        }
+        if (retrying.isNotEmpty) await saveReceipts();
         if (!_isCurrent(userId, generation)) return;
-        await _notifications.cancelLocalReminder(id);
+        try {
+          await _notifications.cancelLocalReminder(id);
+        } on Object {
+          for (final entry in retrying) {
+            receipts[entry.key] = entry.value;
+          }
+          if (retrying.isNotEmpty) await saveReceipts();
+          rethrow;
+        }
+        for (final entry in canceled) {
+          if (!retryKeys.contains(entry.key)) receipts.remove(entry.key);
+        }
+        if (canceled.isNotEmpty) await saveReceipts();
       }
+      for (final group in groups) {
+        if (!_isCurrent(userId, generation)) return;
+        final entry = group.first;
+        final copy = reminderGroupCopy(group, l10n);
+        final id = reminderGroupId(group);
+        final previousReceipts = {
+          for (final task in group)
+            if (task.kind == ReminderKind.task)
+              task.taskReceiptKey: receipts[task.taskReceiptKey],
+        };
+        Future<void> rollbackReceipts() async {
+          if (previousReceipts.isEmpty) return;
+          for (final record in previousReceipts.entries) {
+            if (record.value case final receipt?) {
+              receipts[record.key] = receipt;
+            } else {
+              receipts.remove(record.key);
+            }
+          }
+          await saveReceipts();
+        }
+
+        if (previousReceipts.isNotEmpty) {
+          for (final key in previousReceipts.keys) {
+            receipts[key] = (
+              notificationId: id,
+              at: entry.scheduledAt,
+              retry: false,
+            );
+          }
+          // Persist the intent across a process exit. A reported native
+          // failure rolls it back so a known failed alert remains retryable.
+          await saveReceipts();
+          if (!_isCurrent(userId, generation)) {
+            await rollbackReceipts();
+            return;
+          }
+        }
+        try {
+          await _notifications.scheduleLocalReminder(
+            id: id,
+            scheduledAt: entry.scheduledAt,
+            title: copy.title,
+            body: copy.body,
+            request: PushNavigationRequest(
+              notificationId: '',
+              openTarget: switch (entry.kind) {
+                ReminderKind.event => 'calendar',
+                ReminderKind.task =>
+                  group.length > 1 || entry.boardId == null ? 'tasks' : 'task',
+              },
+              wsId: entry.workspaceId,
+              entityId: group.length == 1 ? entry.entityId : null,
+              boardId: group.length == 1 ? entry.boardId : null,
+              userId: userId,
+            ),
+          );
+        } on Object {
+          await rollbackReceipts();
+          rethrow;
+        }
+      }
+      await saveReceipts();
       if (!_isCurrent(userId, generation)) return;
       await store.setStringList(key, scheduledIds.map((id) => '$id').toList());
       final finishedAt = _now();
@@ -364,7 +536,7 @@ class ReminderService extends ChangeNotifier {
         'reminders.$userId.lastSuccessAt',
         finishedAt.millisecondsSinceEpoch,
       );
-      final nextReminder = entries.firstOrNull?.scheduledAt;
+      final nextReminder = groups.firstOrNull?.first.scheduledAt;
       if (nextReminder == null) {
         await store.remove('reminders.$userId.nextReminderAt');
       } else {
@@ -376,7 +548,7 @@ class ReminderService extends ChangeNotifier {
       if (!_isCurrent(userId, generation)) return;
       status = ReminderStatus(
         lastSuccessAt: finishedAt,
-        scheduledCount: entries.length,
+        scheduledCount: scheduledIds.length,
         nextReminderAt: nextReminder,
         notificationsEnabled: await _notifications.notificationsEnabled,
       );

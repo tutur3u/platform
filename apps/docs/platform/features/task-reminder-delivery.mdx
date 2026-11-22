@@ -1,9 +1,23 @@
 ---
 title: "Task reminder delivery"
 description: "Current-task revision and cancellation checks before deadline reminder dispatch"
-updatedAt: "2026-10-12"
+updatedAt: "2026-11-22"
 audience: users
 ---
+
+## Deadline alerts
+
+On mobile, task reminders show the deadline in the effective personal or
+workspace timezone, with device timezone as a fallback. End-of-day deadlines
+show “Due today” on that day. Nearby reminders in one workspace share a single
+alert with up to three task names and deadline details. Tap a single alert to
+open its task or tap a summary to open Tasks in that workspace. An active task
+can receive one overdue alert during the first day after its deadline. The
+device keeps elapsed reminder receipts for each task, offset and deadline
+revision through replanning and restart.
+
+Mobile planner, copy and receipt coverage lives in
+`apps/mobile/test/features/reminders`.
 
 ## Queued deadline reminder cancellation
 

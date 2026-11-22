@@ -364,7 +364,7 @@ class PushNotificationService {
         launchPayload.isNotEmpty) {
       final request = requestFromLocalNotificationPayload(launchPayload);
       if (request != null) {
-        if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+        if (request.opensReminder) {
           _pendingReminder = request;
         } else {
           unawaited(_handleLocalNotificationPayload(launchPayload));
@@ -433,7 +433,7 @@ class PushNotificationService {
 
   Future<void> _openRequest(PushNavigationRequest request) async {
     if (_isDisposed) return;
-    if (request.openTarget == 'task' || request.openTarget == 'calendar') {
+    if (request.opensReminder) {
       if (request.userId == null) return;
       if (_currentUserId == null) {
         _pendingReminder = request;

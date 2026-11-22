@@ -76,6 +76,9 @@ class PushNavigationRequest {
   bool get opensMfaApproval =>
       openTarget == 'mfa_approval' && entityId != null && userId != null;
 
+  bool get opensReminder =>
+      openTarget == 'task' || openTarget == 'tasks' || openTarget == 'calendar';
+
   bool get opensTask =>
       openTarget == 'task' &&
       entityId != null &&

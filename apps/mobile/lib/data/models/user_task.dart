@@ -67,12 +67,19 @@ class TaskBoardInfo extends Equatable {
 
 /// Task list info with nested board data.
 class TaskListInfo extends Equatable {
-  const TaskListInfo({required this.id, this.name, this.status, this.board});
+  const TaskListInfo({
+    required this.id,
+    this.name,
+    this.status,
+    this.board,
+    this.archived = false,
+  });
 
   factory TaskListInfo.fromJson(Map<String, dynamic> json) => TaskListInfo(
     id: json['id'] as String,
     name: json['name'] as String?,
     status: json['status'] as String?,
+    archived: json['archived'] == true || json['deleted'] == true,
     board: json['board'] != null
         ? TaskBoardInfo.fromJson(json['board'] as Map<String, dynamic>)
         : null,
@@ -84,16 +91,18 @@ class TaskListInfo extends Equatable {
   /// One of `'not_started'`, `'active'`, `'done'`.
   final String? status;
   final TaskBoardInfo? board;
+  final bool archived;
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'status': status,
+    'archived': archived,
     'board': board?.toJson(),
   };
 
   @override
-  List<Object?> get props => [id, name, status, board];
+  List<Object?> get props => [id, name, status, board, archived];
 }
 
 /// Enriched task model mirroring the web's `TaskWithRelations`.
@@ -109,6 +118,8 @@ class UserTask extends Equatable {
     this.createdAt,
     this.list,
     this.completed,
+    this.closedAt,
+    this.deletedAt,
     this.assignees = const [],
     this.labels = const [],
   });
@@ -123,6 +134,8 @@ class UserTask extends Equatable {
     endDate: _parseDateTime(json['task_end_date']),
     listId: json['task_list_id'] as String?,
     createdAt: _parseDateTime(json['task_created_at']),
+    closedAt: _parseDateTime(json['task_closed_at']),
+    deletedAt: _parseDateTime(json['task_deleted_at']),
     completed: _parseDateTime(json['task_completed_at']) != null ? true : null,
   );
 
@@ -136,9 +149,11 @@ class UserTask extends Equatable {
     endDate: _parseDateTime(json['end_date']),
     listId: json['list_id'] as String?,
     createdAt: _parseDateTime(json['created_at']),
-    completed:
-        json['completed'] as bool? ??
-        (_parseDateTime(json['completed_at']) != null ? true : null),
+    closedAt: _parseDateTime(json['closed_at']),
+    deletedAt: _parseDateTime(json['deleted_at']),
+    completed: _parseDateTime(json['completed_at']) != null
+        ? true
+        : json['completed'] as bool?,
     assignees: TaskBoardTaskAssignee.parseList(json['assignees']),
     labels: TaskBoardTaskLabel.parseList(json['labels']),
     list: json['list'] is Map<String, dynamic>
@@ -170,6 +185,8 @@ class UserTask extends Equatable {
       list?.status == 'done' || list?.status == 'review' || completed == true;
 
   final bool? completed;
+  final DateTime? closedAt;
+  final DateTime? deletedAt;
   final List<TaskBoardTaskAssignee> assignees;
   final List<TaskBoardTaskLabel> labels;
 
@@ -184,6 +201,8 @@ class UserTask extends Equatable {
     createdAt: createdAt,
     list: list,
     completed: completed,
+    closedAt: closedAt,
+    deletedAt: deletedAt,
     assignees: assignees,
     labels: labels,
   );
@@ -200,6 +219,8 @@ class UserTask extends Equatable {
     createdAt: createdAt,
     list: listInfo,
     completed: completed,
+    closedAt: closedAt,
+    deletedAt: deletedAt,
     assignees: assignees,
     labels: labels,
   );
@@ -210,11 +231,13 @@ class UserTask extends Equatable {
     'description': description,
     'priority': priority,
     'start_date': startDate?.toIso8601String(),
-    'end_date': endDate?.toIso8601String(),
+    'end_date': endDate?.toUtc().toIso8601String(),
     'list_id': listId,
     'created_at': createdAt?.toIso8601String(),
     'list': list?.toJson(),
     'completed': completed,
+    'closed_at': closedAt?.toUtc().toIso8601String(),
+    'deleted_at': deletedAt?.toUtc().toIso8601String(),
     'assignees': assignees.map((item) => item.toJson()).toList(),
     'labels': labels.map((item) => item.toJson()).toList(),
   };
@@ -231,6 +254,8 @@ class UserTask extends Equatable {
     createdAt,
     list,
     completed,
+    closedAt,
+    deletedAt,
     assignees,
     labels,
   ];

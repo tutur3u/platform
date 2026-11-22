@@ -16369,6 +16369,48 @@ abstract class AppLocalizations {
   /// **'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.'**
   String get remindersSystemNote;
 
+  /// No description provided for @remindersTaskDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {occurrence}'**
+  String remindersTaskDue(String occurrence);
+
+  /// No description provided for @remindersTaskDueIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {leadTime} · {occurrence}'**
+  String remindersTaskDueIn(String leadTime, String occurrence);
+
+  /// No description provided for @remindersTaskDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get remindersTaskDueToday;
+
+  /// No description provided for @remindersTaskGroupMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String remindersTaskGroupMore(int count);
+
+  /// No description provided for @remindersTaskGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 task due soon} other{{count} tasks due soon}}'**
+  String remindersTaskGroupTitle(int count);
+
+  /// No description provided for @remindersTaskOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue since {occurrence}'**
+  String remindersTaskOverdue(String occurrence);
+
+  /// No description provided for @remindersTaskOverdueGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 overdue task} other{{count} overdue tasks}}'**
+  String remindersTaskOverdueGroupTitle(int count);
+
   /// No description provided for @remindersTaskTitle.
   ///
   /// In en, this message translates to:

@@ -8693,6 +8693,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remindersSystemNote => 'Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.';
 
   @override
+  String remindersTaskDue(String occurrence) {
+    return 'Due $occurrence';
+  }
+
+  @override
+  String remindersTaskDueIn(String leadTime, String occurrence) {
+    return 'Due $leadTime · $occurrence';
+  }
+
+  @override
+  String get remindersTaskDueToday => 'Due today';
+
+  @override
+  String remindersTaskGroupMore(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String remindersTaskGroupTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks due soon',
+      one: '1 task due soon',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String remindersTaskOverdue(String occurrence) {
+    return 'Overdue since $occurrence';
+  }
+
+  @override
+  String remindersTaskOverdueGroupTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count overdue tasks',
+      one: '1 overdue task',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get remindersTaskTitle => 'Task deadlines';
 
   @override

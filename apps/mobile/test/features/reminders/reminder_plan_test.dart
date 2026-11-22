@@ -36,7 +36,7 @@ void main() {
     expect(plan.map((entry) => entry.notificationId).toSet(), hasLength(5));
   });
 
-  test('skips completed and past items and caps pending alerts', () {
+  test('skips resolved and old deadlines, allows one recent overdue alert', () {
     final now = DateTime(2026, 9, 24, 10);
     const doneList = TaskListInfo(id: 'done', status: 'done');
     final plan = buildReminderPlan(
@@ -49,6 +49,17 @@ void main() {
           list: doneList,
         ),
         UserTask(id: 'past', endDate: now.subtract(const Duration(hours: 1))),
+        UserTask(id: 'old', endDate: now.subtract(const Duration(days: 1))),
+        UserTask(
+          id: 'closed',
+          endDate: now.add(const Duration(days: 5)),
+          closedAt: now,
+        ),
+        UserTask(
+          id: 'archived',
+          endDate: now.add(const Duration(days: 5)),
+          list: const TaskListInfo(id: 'archived', archived: true),
+        ),
         UserTask(id: 'active', endDate: now.add(const Duration(days: 4))),
       ],
       events: const [],
@@ -58,7 +69,8 @@ void main() {
     );
 
     expect(plan, hasLength(2));
-    expect(plan.every((entry) => entry.entityId == 'active'), isTrue);
+    expect(plan.map((entry) => entry.entityId), ['past', 'active']);
+    expect(plan.first.offset, taskOverdueOffset);
   });
 
   test('does not remind for Google working locations', () {

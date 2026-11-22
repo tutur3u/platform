@@ -20,7 +20,9 @@ the existing Calendar contract.
 Calendar notification bodies retain the localized lead time and add the actual
 occurrence date/time without a timezone label. Timezone resolution and
 wall-clock projection still use the effective zone. All-day bodies show the date without the reminder's
-09:00 delivery time. Task notification copy retains its existing behavior. Equal
+09:00 delivery time. Task notification bodies use the same timezone resolution
+for deadline copy. A single window can contain several task reminders in one
+workspace. Equal
 titles are not deduplicated: identity still includes kind, workspace, entity and
 offset. Different recurrence rows may legitimately have the same title and
 delivery clock.

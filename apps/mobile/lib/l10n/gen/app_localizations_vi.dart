@@ -8584,6 +8584,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get remindersSystemNote => 'Thông báo đã lên lịch có thể xuất hiện khi ứng dụng đóng. Mục mới hoặc thay đổi được kiểm tra khi mở hay quay lại ứng dụng; thời điểm cập nhật nền tùy thuộc thiết bị.';
 
   @override
+  String remindersTaskDue(String occurrence) {
+    return 'Hạn $occurrence';
+  }
+
+  @override
+  String remindersTaskDueIn(String leadTime, String occurrence) {
+    return 'Đến hạn $leadTime · $occurrence';
+  }
+
+  @override
+  String get remindersTaskDueToday => 'Đến hạn hôm nay';
+
+  @override
+  String remindersTaskGroupMore(int count) {
+    return '+$count nhiệm vụ khác';
+  }
+
+  @override
+  String remindersTaskGroupTitle(int count) {
+    return '$count nhiệm vụ sắp đến hạn';
+  }
+
+  @override
+  String remindersTaskOverdue(String occurrence) {
+    return 'Quá hạn từ $occurrence';
+  }
+
+  @override
+  String remindersTaskOverdueGroupTitle(int count) {
+    return '$count nhiệm vụ quá hạn';
+  }
+
+  @override
   String get remindersTaskTitle => 'Hạn công việc';
 
   @override

@@ -12,6 +12,9 @@ const reminderIntervals = <String, Duration>{
   '1h': Duration(hours: 1),
 };
 
+const taskOverdueOffset = 'overdue';
+const taskOverdueWindow = Duration(days: 1);
+
 const defaultReminderOffsets = ['3d', '1d', '12h', '3h', '1h'];
 
 class ReminderPlanEntry {
@@ -25,6 +28,7 @@ class ReminderPlanEntry {
     required this.scheduledAt,
     required this.notificationId,
     this.boardId,
+    this.taskLocation,
     this.isAllDay = false,
     this.timezone,
   });
@@ -38,8 +42,33 @@ class ReminderPlanEntry {
   final DateTime scheduledAt;
   final int notificationId;
   final String? boardId;
+  final String? taskLocation;
+
+  String get taskReceiptKey =>
+      taskReminderReceiptKey(workspaceId, entityId, offset, dueAt);
   final bool isAllDay;
   final String? timezone;
+}
+
+String taskReminderReceiptKey(
+  String workspaceId,
+  String entityId,
+  String offset,
+  DateTime dueAt,
+) => '$workspaceId:$entityId:$offset:${dueAt.millisecondsSinceEpoch}';
+
+String taskReminderWorkspaceId(UserTask task, String fallback) {
+  final board = task.list?.board;
+  return board?.workspace?.id ?? board?.wsId ?? fallback;
+}
+
+bool isTaskReminderEligible(UserTask task, String workspaceId) {
+  return taskReminderWorkspaceId(task, workspaceId) == workspaceId &&
+      !task.isDone &&
+      task.closedAt == null &&
+      task.deletedAt == null &&
+      task.list?.status != 'closed' &&
+      task.list?.archived != true;
 }
 
 int reminderNotificationId(String key) {
@@ -59,6 +88,9 @@ List<ReminderPlanEntry> buildReminderPlan({
   required List<String> eventOffsets,
   int limit = 60,
   String? timezone,
+  Set<String> deliveredTaskKeys = const {},
+  Map<String, DateTime> pendingOverdueTimes = const {},
+  Set<String> retryPendingTaskKeys = const {},
 }) {
   final entries = <ReminderPlanEntry>[];
 
@@ -69,13 +101,35 @@ List<ReminderPlanEntry> buildReminderPlan({
     required DateTime dueAt,
     required List<String> offsets,
     String? boardId,
+    String? taskLocation,
     bool isAllDay = false,
   }) {
-    if (!dueAt.isAfter(now)) return;
-    for (final offset in offsets.toSet()) {
+    final isOverdue = !dueAt.isAfter(now);
+    final availableOffsets = isOverdue
+        ? kind == ReminderKind.task &&
+                  offsets.isNotEmpty &&
+                  now.difference(dueAt) < taskOverdueWindow
+              ? const [taskOverdueOffset]
+              : const <String>[]
+        : offsets.toSet();
+    for (final offset in availableOffsets) {
       final duration = reminderIntervals[offset];
-      if (duration == null) continue;
-      final scheduledAt = dueAt.subtract(duration);
+      if (duration == null && offset != taskOverdueOffset) continue;
+      final key = taskReminderReceiptKey(workspaceId, entityId, offset, dueAt);
+      final DateTime scheduledAt;
+      if (duration == null) {
+        scheduledAt =
+            pendingOverdueTimes[key] ?? now.add(const Duration(minutes: 1));
+      } else {
+        final original = dueAt.subtract(duration);
+        final retryAt = now.add(const Duration(seconds: 10));
+        scheduledAt =
+            !original.isAfter(now) &&
+                retryPendingTaskKeys.contains(key) &&
+                retryAt.isBefore(dueAt)
+            ? retryAt
+            : original;
+      }
       if (!scheduledAt.isAfter(now)) continue;
       entries.add(
         ReminderPlanEntry(
@@ -87,9 +141,12 @@ List<ReminderPlanEntry> buildReminderPlan({
           offset: offset,
           scheduledAt: scheduledAt,
           notificationId: reminderNotificationId(
-            '${kind.name}:$workspaceId:$entityId:$offset',
+            kind == ReminderKind.task
+                ? 'task:$key'
+                : 'event:$workspaceId:$entityId:$offset',
           ),
           boardId: boardId,
+          taskLocation: taskLocation,
           isAllDay: isAllDay,
           timezone: timezone,
         ),
@@ -98,14 +155,20 @@ List<ReminderPlanEntry> buildReminderPlan({
   }
 
   for (final task in tasks) {
-    if (task.isDone || task.endDate == null) continue;
+    final board = task.list?.board;
+    final dueAt = task.endDate;
+    if (!isTaskReminderEligible(task, workspaceId) || dueAt == null) continue;
+    final wall = calendarWallDate(dueAt, timezone);
     addEntries(
       kind: ReminderKind.task,
       entityId: task.id,
       title: task.name ?? 'Task',
-      dueAt: task.endDate!,
+      dueAt: dueAt,
       offsets: taskOffsets,
-      boardId: task.list?.board?.id,
+      boardId: board?.id,
+      taskLocation: board?.name ?? task.list?.name,
+      // Date-only task editors store the end of the selected day.
+      isAllDay: wall.hour == 23 && wall.minute == 59 && wall.second == 59,
     );
   }
   for (final event in events) {
@@ -133,7 +196,12 @@ List<ReminderPlanEntry> buildReminderPlan({
   entries.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
   final ids = <int>{};
   return entries
-      .where((entry) => ids.add(entry.notificationId))
+      .where(
+        (entry) =>
+            (entry.kind != ReminderKind.task ||
+                !deliveredTaskKeys.contains(entry.taskReceiptKey)) &&
+            ids.add(entry.notificationId),
+      )
       .take(limit)
       .toList(growable: false);
 }

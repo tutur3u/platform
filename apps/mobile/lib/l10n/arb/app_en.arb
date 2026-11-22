@@ -1,4 +1,49 @@
 {
+  "@remindersTaskDue": {
+      "placeholders": {
+        "occurrence": {
+          "type": "String"
+        }
+      }
+    },
+  "@remindersTaskDueIn": {
+      "placeholders": {
+        "leadTime": {
+          "type": "String"
+        },
+        "occurrence": {
+          "type": "String"
+        }
+      }
+    },
+  "@remindersTaskGroupMore": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+  "@remindersTaskGroupTitle": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+  "@remindersTaskOverdue": {
+      "placeholders": {
+        "occurrence": {
+          "type": "String"
+        }
+      }
+    },
+  "@remindersTaskOverdueGroupTitle": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
   "mastermindAskedBy": "From {by}",
   "@mastermindAskedBy": {
     "placeholders": {
@@ -4384,6 +4429,13 @@
   "remindersScheduledCount": "{count} scheduled",
   "remindersStatusTitle": "Reminder status",
   "remindersSystemNote": "Scheduled alerts can arrive while the app is closed. New or changed items are checked when the app opens or resumes; background refresh timing depends on the device.",
+  "remindersTaskDue": "Due {occurrence}",
+  "remindersTaskDueIn": "Due {leadTime} · {occurrence}",
+  "remindersTaskDueToday": "Due today",
+  "remindersTaskGroupMore": "+{count} more",
+  "remindersTaskGroupTitle": "{count, plural, one{1 task due soon} other{{count} tasks due soon}}",
+  "remindersTaskOverdue": "Overdue since {occurrence}",
+  "remindersTaskOverdueGroupTitle": "{count, plural, one{1 overdue task} other{{count} overdue tasks}}",
   "remindersTaskTitle": "Task deadlines",
   "remindersTiming": "Remind me",
   "remindersTitle": "Reminders",

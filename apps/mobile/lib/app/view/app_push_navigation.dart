@@ -171,9 +171,9 @@ extension _AppPushNavigation on _AppState {
   }
 
   Future<void> _handlePushNavigation(PushNavigationRequest request) async {
-    if (request.userId != null && request.userId != _authCubit.state.user?.id) {
-      return;
-    }
+    final actor = _authCubit.state.user?.id;
+    bool isCurrentActor() => mounted && actor == _authCubit.state.user?.id;
+    if (request.userId != null && request.userId != actor) return;
     // A tapped notification opens where it points, like a deep link.
     OnboardingGate.instance.deferForSession();
     if (request.opensMfaApproval) {
@@ -217,6 +217,7 @@ extension _AppPushNavigation on _AppState {
       if (_workspaceCubit.state.workspaces.isEmpty) {
         await _workspaceCubit.loadWorkspaces();
       }
+      if (!isCurrentActor()) return;
       Workspace? targetWorkspace;
       for (final workspace in _workspaceCubit.state.workspaces) {
         if (workspace.id == targetWorkspaceId) {
@@ -230,9 +231,14 @@ extension _AppPushNavigation on _AppState {
       }
       await _workspaceCubit.selectWorkspace(targetWorkspace);
     }
+    if (!isCurrentActor()) return;
     // A device Pomodoro phase ended; the Timer shows what is next.
     if (request.openTarget == 'timer') {
       _router.go(Routes.timer);
+      return;
+    }
+    if (request.openTarget == 'tasks') {
+      _router.go(Routes.tasks);
       return;
     }
     if (request.opensTask) {
