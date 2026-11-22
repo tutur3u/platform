@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { isRunnerUnavailable, type WorkbenchFailure } from './workbench-errors';
+import type { SaveState } from './workbench-layout';
 
 export type RunnerAvailability = 'ready' | 'unavailable';
 
@@ -41,16 +42,20 @@ export function useRunnerAvailability(
  * Where the runner state applies: only a playground the person can run.
  * Problems run tests, so a refusal seen on an earlier playground never
  * reaches them. The card replaces only the refused run's notice; save,
- * result and test failures keep theirs.
+ * result and test failures keep theirs. `saveFailed` covers both a failed
+ * checkpoint and the save a retried run makes first, so the card never says
+ * the code is saved when it is not.
  */
 export function runnerGate(
   unavailable: string | undefined,
   playground: boolean,
-  failure: WorkbenchFailure | null
+  failure: WorkbenchFailure | null,
+  save: SaveState = 'idle'
 ) {
   const id = playground ? unavailable : undefined;
   return {
     id,
+    saveFailed: save === 'failed' || failure?.step === 'save',
     failure:
       id && failure?.step === 'run' && failure.reason === 'unavailable'
         ? null

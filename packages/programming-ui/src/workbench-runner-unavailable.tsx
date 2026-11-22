@@ -2,7 +2,7 @@
 import { Check, CloudOff, Copy, Download, RotateCcw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface WorkbenchRunner {
   /** Referenced by the Run button's aria-describedby. */
@@ -55,11 +55,26 @@ export function WorkbenchRunnerUnavailable({
   const source = file ? `${file.path}\n${file.content}` : '';
   const copyState = copy?.source === source ? copy.state : 'idle';
   const name = file ? file.path.split('/').at(-1) || file.path : '';
+  // One reset timer at a time, so a second copy keeps its full confirmation;
+  // a clipboard answer that lands after unmount is dropped.
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(resetTimer.current);
+    };
+  }, []);
   const copyCode = (value: { path: string; content: string }) => {
     const done = (state: 'copied' | 'failed') => {
+      if (!mounted.current) return;
+      clearTimeout(resetTimer.current);
       setCopy({ state, source });
       if (state === 'copied')
-        setTimeout(
+        resetTimer.current = setTimeout(
           () => setCopy((last) => (last?.source === source ? null : last)),
           COPIED_MS
         );

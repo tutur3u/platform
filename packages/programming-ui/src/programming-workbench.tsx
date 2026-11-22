@@ -208,7 +208,8 @@ export function ProgrammingWorkbench({
   const gate = runnerGate(
     runner.unavailable,
     !problem && canExecute,
-    runFailure
+    runFailure,
+    selectedSave
   );
   const runnerDown = gate.id;
   const output = {
@@ -501,7 +502,7 @@ export function ProgrammingWorkbench({
                     onRetry: editable ? () => run.mutate('run') : undefined,
                     retryDisabled:
                       !editable || busy || run.isPending || save.isPending,
-                    saveFailed: selectedSave === 'failed',
+                    saveFailed: gate.saveFailed,
                   }
                 : undefined
             }

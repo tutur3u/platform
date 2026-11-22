@@ -18,7 +18,24 @@ import { WorkbenchMeetingOutput } from './workbench-meeting-output';
 import type { WorkbenchRunner } from './workbench-runner-unavailable';
 import { WorkbenchToolbar } from './workbench-toolbar';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: undefined,
+  });
+});
+
+function stubClipboard(writeText: (value: string) => Promise<void>) {
+  const spy = vi.fn(writeText);
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: spy },
+  });
+  return spy;
+}
 const t = messages.programmingPlayground;
 const unavailable = Object.assign(new Error('api'), { status: 503 });
 const file = { path: 'src/main.py', content: 'print("hi")\n' };
@@ -140,11 +157,7 @@ it('does not claim the code is saved while the last save failed', () => {
 });
 
 it('copies the code, confirms briefly, and drops the confirmation on edits', async () => {
-  const writeText = vi.fn(async () => undefined);
-  Object.defineProperty(navigator, 'clipboard', {
-    configurable: true,
-    value: { writeText },
-  });
+  const writeText = stubClipboard(async () => undefined);
   vi.useFakeTimers();
   const { rerender } = render(output());
   await act(async () => {
@@ -160,14 +173,55 @@ it('copies the code, confirms briefly, and drops the confirmation on edits', asy
   });
   rerender(output({ file: { ...file, content: 'print("edited")\n' } }));
   expect(screen.getByRole('button', { name: t.copyCode })).toBeTruthy();
-  vi.useRealTimers();
+});
+
+it('gives a second copy its full confirmation', async () => {
+  stubClipboard(async () => undefined);
+  vi.useFakeTimers();
+  render(output());
+  const copy = async () =>
+    act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: /^(Copy code|Copied)$/ })
+      );
+    });
+  await copy();
+  act(() => vi.advanceTimersByTime(1600));
+  await copy();
+  act(() => vi.advanceTimersByTime(1000));
+  expect(screen.getByRole('button', { name: t.codeCopied })).toBeTruthy();
+  act(() => vi.advanceTimersByTime(1000));
+  expect(screen.getByRole('button', { name: t.copyCode })).toBeTruthy();
+});
+
+it('cancels the copy reset on unmount and ignores a late clipboard answer', async () => {
+  vi.useFakeTimers();
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  stubClipboard(async () => undefined);
+  const first = render(output());
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: t.copyCode }));
+  });
+  expect(vi.getTimerCount()).toBe(1);
+  first.unmount();
+  expect(vi.getTimerCount()).toBe(0);
+
+  let settle = () => {};
+  stubClipboard(
+    () =>
+      new Promise<void>((resolve) => {
+        settle = resolve;
+      })
+  );
+  const second = render(output());
+  fireEvent.click(screen.getByRole('button', { name: t.copyCode }));
+  second.unmount();
+  await act(async () => settle());
+  expect(vi.getTimerCount()).toBe(0);
+  expect(errors).not.toHaveBeenCalled();
 });
 
 it('says copying failed where the clipboard API is missing', () => {
-  Object.defineProperty(navigator, 'clipboard', {
-    configurable: true,
-    value: undefined,
-  });
   render(output());
   fireEvent.click(screen.getByRole('button', { name: t.copyCode }));
   expect(screen.getByRole('alert').textContent).toBe(t.copyFailed);
@@ -194,13 +248,11 @@ it('downloads through an attached link and revokes the URL afterwards', () => {
   expect(revokeObjectURL).not.toHaveBeenCalled();
   act(() => vi.advanceTimersByTime(1000));
   expect(revokeObjectURL).toHaveBeenCalledWith('blob:code');
-  click.mockRestore();
-  vi.useRealTimers();
 });
 
 it('keeps the runner state off problems and keeps other failures visible', () => {
   const refused = { step: 'run', reason: 'unavailable' } as const;
-  expect(runnerGate('card', true, refused)).toEqual({
+  expect(runnerGate('card', true, refused)).toMatchObject({
     id: 'card',
     failure: null,
   });
@@ -210,11 +262,22 @@ it('keeps the runner state off problems and keeps other failures visible', () =>
   }
   const other = { step: 'run', reason: 'access' } as const;
   expect(runnerGate('card', true, other).failure).toEqual(other);
-  expect(runnerGate('card', false, refused)).toEqual({
+  expect(runnerGate('card', false, refused)).toMatchObject({
     id: undefined,
     failure: refused,
   });
   expect(runnerGate(undefined, true, refused).failure).toEqual(refused);
+});
+
+it('treats a failed checkpoint or the save before a retried run as unsaved', () => {
+  const beforeRun = { step: 'save', reason: 'unavailable' } as const;
+  expect(runnerGate('card', true, beforeRun).saveFailed).toBe(true);
+  expect(runnerGate('card', true, null, 'failed').saveFailed).toBe(true);
+  expect(
+    runnerGate('card', true, { step: 'run', reason: 'unavailable' }, 'saved')
+      .saveFailed
+  ).toBe(false);
+  expect(runnerGate('card', true, null).saveFailed).toBe(false);
 });
 
 it('names the language in full in the editor footer and flags read-only', () => {
