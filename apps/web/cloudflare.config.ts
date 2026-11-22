@@ -26,7 +26,10 @@ export default defineConfig({
     name: family ? `tuturuuu-web-vinext-${family}` : 'tuturuuu-web-vinext',
     entrypoint: './cloudflare/vinext/worker-entry.ts',
     compatibilityDate: '2026-11-21',
-    compatibilityFlags: ['nodejs_compat'],
+    // Same-zone fetches (for example rewrites to calendar.tuturuuu.com or
+    // server calls to tuturuuu.com) must run through the public path so
+    // zone Worker routes apply instead of reaching the DNS origin.
+    compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workersDev: false,
     previewUrls: false,
     // The API families call the Gemini API, which rejects requests from
