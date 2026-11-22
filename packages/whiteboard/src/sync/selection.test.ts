@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  getSelectionSignature,
-  sanitizeSelectedElementIds,
-} from '@/utils/excalidraw-selection';
+import { getSelectionSignature, sanitizeSelectedElementIds } from './selection';
 
 describe('excalidraw selection helpers', () => {
   describe('sanitizeSelectedElementIds', () => {

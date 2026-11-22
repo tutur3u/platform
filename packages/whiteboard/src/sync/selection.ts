@@ -1,4 +1,6 @@
-export type SelectedElementIds = Readonly<Record<string, true>>;
+import type { SelectedElementIds } from '../types';
+
+export type { SelectedElementIds };
 
 export function sanitizeSelectedElementIds(
   selectedElementIds?: Record<string, boolean | undefined> | null

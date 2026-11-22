@@ -2361,7 +2361,6 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@emotion/react": "^11.14.0",
         "@emotion/server": "^11.11.0",
-        "@excalidraw/excalidraw": "^0.18.1",
         "@formatjs/intl-localematcher": "^0.9.0",
         "@google/genai": "^2.30.0",
         "@google/generative-ai": "^0.24.1",
@@ -2437,6 +2436,7 @@
         "@tuturuuu/users-core": "workspace:*",
         "@tuturuuu/users-ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/whiteboard": "workspace:*",
         "@upstash/qstash": "^2.12.1",
         "@upstash/ratelimit": "^2.2.0",
         "@upstash/redis": "^1.39.0",
@@ -4170,6 +4170,26 @@
       },
       "devDependencies": {
         "typescript": "7.0.2",
+      },
+    },
+    "packages/whiteboard": {
+      "name": "@tuturuuu/whiteboard",
+      "version": "0.1.0",
+      "dependencies": {
+        "@excalidraw/excalidraw": "^0.18.1",
+        "react": "^19.2.9",
+        "react-dom": "^19.2.9",
+      },
+      "devDependencies": {
+        "@testing-library/react": "^16.3.3",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.6.5",
+        "@types/react": "~19.2.18",
+        "@types/react-dom": "~19.2.7",
+        "@vitejs/plugin-react": "^6.1.2",
+        "jsdom": "^30.1.3",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
       },
     },
     "packages/workflows": {
@@ -6325,6 +6345,8 @@
     "@tuturuuu/vault-witness": ["@tuturuuu/vault-witness@workspace:apps/vault-witness"],
 
     "@tuturuuu/web": ["@tuturuuu/web@workspace:apps/web"],
+
+    "@tuturuuu/whiteboard": ["@tuturuuu/whiteboard@workspace:packages/whiteboard"],
 
     "@tuturuuu/workflows": ["@tuturuuu/workflows@workspace:packages/workflows"],
 

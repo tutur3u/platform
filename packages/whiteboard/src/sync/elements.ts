@@ -1,13 +1,8 @@
-import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
-
-export interface ElementChange {
-  element: ExcalidrawElement;
-  type: 'insert' | 'update' | 'delete';
-}
+import type { ElementChange, ExcalidrawElement } from '../types';
 
 /**
- * Detects changes between two element arrays
- * Returns only the elements that have changed (added, updated, or deleted)
+ * Detects changes between two element arrays.
+ * Returns only the elements that were added, updated or deleted.
  */
 export function detectElementChanges(
   previous: readonly ExcalidrawElement[],
@@ -17,34 +12,28 @@ export function detectElementChanges(
   const previousMap = new Map(previous.map((el) => [el.id, el]));
   const currentMap = new Map(current.map((el) => [el.id, el]));
 
-  // Detect inserts and updates
   for (const element of current) {
     const previousElement = previousMap.get(element.id);
 
     if (!previousElement) {
-      // New element
       changes.push({ element, type: 'insert' });
     } else if (
       element.version !== previousElement.version ||
       element.versionNonce !== previousElement.versionNonce
     ) {
-      // Updated element (version or versionNonce changed)
       changes.push({ element, type: 'update' });
     }
   }
 
-  // Detect deletes (elements that were in previous but not in current, or marked as deleted)
   for (const element of previous) {
     const currentElement = currentMap.get(element.id);
 
     if (!currentElement) {
-      // Element was removed entirely
       changes.push({
         element: { ...element, isDeleted: true } as ExcalidrawElement,
         type: 'delete',
       });
     } else if (!element.isDeleted && currentElement.isDeleted) {
-      // Element was soft-deleted
       changes.push({ element: currentElement, type: 'delete' });
     }
   }
@@ -52,39 +41,68 @@ export function detectElementChanges(
   return changes;
 }
 
+/** Whether `candidate` supersedes `existing`: higher version, then higher nonce. */
+function supersedesChange(
+  candidate: ExcalidrawElement,
+  existing: ExcalidrawElement
+) {
+  return (
+    candidate.version > existing.version ||
+    (candidate.version === existing.version &&
+      candidate.versionNonce > existing.versionNonce)
+  );
+}
+
 /**
- * Merges remote elements with local elements using Excalidraw's conflict resolution:
- * - Higher version wins
- * - If versions are equal, lower versionNonce wins (deterministic)
+ * Collapses a list of pending changes so only the newest change of each
+ * element remains. Used to build an outgoing broadcast.
+ */
+export function dedupeElementChanges(
+  changes: readonly ElementChange[]
+): ElementChange[] {
+  const byId = new Map<string, ElementChange>();
+
+  for (const change of changes) {
+    const existing = byId.get(change.element.id);
+
+    if (!existing || supersedesChange(change.element, existing.element)) {
+      byId.set(change.element.id, change);
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
+/**
+ * Merges remote elements into the local scene:
+ * - a higher version wins;
+ * - on equal versions the lower versionNonce wins, so every peer converges on
+ *   the same element regardless of the order updates arrive in.
+ * Applying the same remote batch twice yields the same result.
  */
 export function mergeElements(
-  localElements: ExcalidrawElement[],
-  remoteElements: ExcalidrawElement[]
+  localElements: readonly ExcalidrawElement[],
+  remoteElements: readonly ExcalidrawElement[]
 ): ExcalidrawElement[] {
   const elementMap = new Map<string, ExcalidrawElement>();
 
-  // Start with local elements
   for (const el of localElements) {
     elementMap.set(el.id, el);
   }
 
-  // Merge remote elements
   for (const remoteEl of remoteElements) {
     const localEl = elementMap.get(remoteEl.id);
 
     if (!localEl) {
-      // New element from remote - add it
       elementMap.set(remoteEl.id, remoteEl);
     } else if (remoteEl.version > localEl.version) {
-      // Remote has newer version - use remote
       elementMap.set(remoteEl.id, remoteEl);
-    } else if (remoteEl.version === localEl.version) {
-      // Same version - use lower versionNonce (deterministic winner)
-      if (remoteEl.versionNonce < localEl.versionNonce) {
-        elementMap.set(remoteEl.id, remoteEl);
-      }
+    } else if (
+      remoteEl.version === localEl.version &&
+      remoteEl.versionNonce < localEl.versionNonce
+    ) {
+      elementMap.set(remoteEl.id, remoteEl);
     }
-    // If local version > remote version, keep local (already in map)
   }
 
   return Array.from(elementMap.values());

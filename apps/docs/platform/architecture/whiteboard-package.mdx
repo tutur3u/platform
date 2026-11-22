@@ -1,0 +1,70 @@
+---
+title: 'Whiteboard package'
+description: 'How @tuturuuu/whiteboard packages the Excalidraw editor, the element sync engine and the adapters apps inject.'
+updatedAt: '2026-11-23'
+audience: developers
+---
+
+`@tuturuuu/whiteboard` holds the Excalidraw-based whiteboard editor so any app
+can render it. Workspace Whiteboards in `apps/web` is the first consumer; Meet
+can reuse it without copying code. The package is framework independent: it
+imports no Next.js, React Router or Cloudflare runtime code and reads no request
+globals. Hosts inject identity, storage, transport and notifications.
+
+## Entry points
+
+| Import | Contents |
+| --- | --- |
+| `@tuturuuu/whiteboard` | Adapter interfaces, snapshot helpers, the pure sync engine. No React at runtime. |
+| `@tuturuuu/whiteboard/sync` | `detectElementChanges`, `mergeElements`, `dedupeElementChanges`, `createElementSyncEngine`, collaborator helpers. |
+| `@tuturuuu/whiteboard/react` | `WhiteboardEditor`, `useWhiteboardCollaboration`, notice and status types. |
+| `@tuturuuu/whiteboard/realtime` | `createRealtimeWhiteboardTransport`, a broadcast-channel transport that takes the channel client from the host. |
+| `@tuturuuu/whiteboard/testing` | Contract checks and in-memory reference adapters for tests. |
+
+`WhiteboardEditor` loads Excalidraw and its stylesheet with a dynamic import
+after mount, so importing the package costs nothing until a board renders. It
+renders nothing on the server.
+
+## Adapters
+
+The host passes these to `WhiteboardEditor`; all are optional.
+
+- `WhiteboardPersistence`: `load()` returns the stored snapshot and an opaque
+  revision; `save(snapshot)` stores it and returns the new revision. The editor
+  debounces saves, saves on Cmd/Ctrl+S, and re-reads the snapshot when the window
+  regains focus, the network returns or the live connection resumes. A stored
+  snapshot is applied only when its revision is new and no local edit is unsaved.
+- `WhiteboardAssets`: `upload(file)` returns the file id the scene stores;
+  `resolveUrl(fileId)` returns a fetchable URL or `null`. Without it the editor
+  offers no image upload.
+- `WhiteboardTransport`: `connect(handlers)` returns a disconnect function;
+  `sendElementChanges`, `sendCursor` and `sendSelection` publish to peers. The
+  collaboration `user` object must be referentially stable, because a new
+  identity reconnects the transport.
+
+Workspace Whiteboards wires these in `apps/web/src/lib/whiteboards/workspace-adapters.ts`
+(HTTP persistence and the `workspaces` storage bucket) and
+`apps/web/src/hooks/useWhiteboardCollaboration.ts` (identity, presence roster and
+the realtime transport on the channel `whiteboard-<wsId>-<boardId>`).
+
+## Element sync rules
+
+Merging is deterministic so peers converge regardless of arrival order:
+
+1. The element with the higher `version` wins.
+2. On equal versions the lower `versionNonce` wins.
+3. On a full tie the local element stays.
+
+Applying the same remote batch twice gives the same scene. Local edits are
+diffed against the previous scene into insert, update and delete changes, queued,
+deduplicated to the newest change per element and flushed after 100 ms. A failed
+flush requeues the batch; after three consecutive failures sends stop until a
+success resets the count.
+
+## Tests
+
+Package tests cover the sync engine, merge rules, collaborator building, the
+realtime transport, the collaboration hook and the editor. `expectPersistenceContract`,
+`expectAssetsContract` and `expectTransportContract` in `@tuturuuu/whiteboard/testing`
+are the adapter contract: run them against any new adapter. Run the suite with
+`ttr resources run -- bun --cwd packages/whiteboard test`.

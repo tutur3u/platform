@@ -373,6 +373,7 @@
                   "platform/architecture/tanstack-rust-migration-plan",
                   "platform/architecture/data-fetching",
                   "platform/architecture/effect",
+                  "platform/architecture/whiteboard-package",
                   "platform/architecture/api-routes",
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
