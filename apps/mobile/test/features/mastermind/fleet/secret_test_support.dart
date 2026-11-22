@@ -53,6 +53,39 @@ class FakeSecretPlatform {
   /// Runs before each call is answered, to interleave work with it.
   Future<void> Function(String method)? onCall;
 
+  /// The secret-entry Keychain items, as `MastermindSecretStore` keeps
+  /// them. A refused call fails like a locked Keychain and changes nothing.
+  final store = <String, String>{};
+  bool refuseStoreReads = false;
+  bool refuseStoreWrites = false;
+  bool refuseStoreDeletes = false;
+
+  Object? _store(String method, Map<Object?, Object?> args) {
+    PlatformException refused() =>
+        PlatformException(code: 'keychain', details: -25308);
+    final key = args['key'] as String?;
+    switch (method) {
+      case 'storeRead':
+        if (refuseStoreReads) throw refused();
+        return store[key];
+      case 'storeKeys':
+        if (refuseStoreReads) throw refused();
+        return store.keys.toList();
+      case 'storeReadAll':
+        if (refuseStoreReads) throw refused();
+        return Map<String, String>.of(store);
+      case 'storeWrite':
+        if (refuseStoreWrites) throw refused();
+        store[key!] = args['value']! as String;
+        return null;
+      case 'storeDelete':
+        if (refuseStoreDeletes) throw refused();
+        store.remove(key);
+        return null;
+    }
+    throw MissingPluginException();
+  }
+
   static final _ed = Ed25519();
 
   void install() => TestDefaultBinaryMessengerBinding
@@ -77,6 +110,8 @@ class FakeSecretPlatform {
     await onCall?.call(call.method);
     final args = (call.arguments as Map<Object?, Object?>?) ?? const {};
     Uint8List bytes(String name) => args[name]! as Uint8List;
+    // The store works on every iOS version, like the plugin's.
+    if (call.method.startsWith('store')) return _store(call.method, args);
     if (!supported && call.method != 'supported') {
       throw PlatformException(code: 'unsupported');
     }

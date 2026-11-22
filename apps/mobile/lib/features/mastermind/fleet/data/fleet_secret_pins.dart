@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_keychain.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
 
 /// A pin starts [pending] when the owner types a correct pairing code and
@@ -482,25 +483,26 @@ class FleetSecretPins {
   /// wrong-code counts are deleted by their own queue
   /// ([FleetPairingAttempts.eraseSaved]).
   Future<void> eraseAll() => _serial(() async {
-    final names = (await _storage.readAll()).keys
-        .where((name) => name.startsWith(keyPrefix))
-        .toList();
+    final storage = _storage;
+    // The Keychain lists names without reading any value.
+    final all = storage is FleetSecretKeychain
+        ? await storage.keys()
+        : (await storage.readAll()).keys;
+    final names = all.where((name) => name.startsWith(keyPrefix)).toList();
     for (final name in names) {
       await _storage.delete(key: name);
     }
   });
 }
 
-/// The pins' Keychain items: this device only, readable only while unlocked,
-/// never backed up, in an account of their own. Raw storage on purpose:
-/// `deviceSecureStorage` keeps its items readable while the phone is locked
-/// and refuses the listing that erasing every user's pins needs.
-const fleetSecretStorage = FlutterSecureStorage(
-  iOptions: IOSOptions(
-    accessibility: KeychainAccessibility.unlocked_this_device,
-    accountName: 'tuturuuu.mastermind-secret',
-  ),
-);
+/// The Keychain items of secret entry (pins with their used pairings, and
+/// the saved wrong-code counts): this device only, readable only while
+/// unlocked, never backed up, in a service of their own, through the app's
+/// own plugin. Not `deviceSecureStorage`, which keeps its items readable
+/// while the phone is locked and refuses the listing that erasing every
+/// user's pins needs; and not the secure-storage plugin, which deletes and
+/// re-adds an item whose update fails.
+const fleetSecretStorage = FleetSecretKeychain();
 
 /// Bumped whenever the owner keys and pins are erased: an open secret page
 /// clears its field and closes.

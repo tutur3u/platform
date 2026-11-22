@@ -9,6 +9,7 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_binding.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_keychain.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
@@ -611,22 +612,27 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           outcome.outcome == FleetSecretOutcomeKind.paired &&
           outcome.answerDigest == _keyId;
       if (mine && !_ended) {
-        pin = await _pins.activate(
-          machineId: secret.machineId,
-          pairingId: secret.pairingId,
-          signerKey: secret.signerKey,
-          clock: _now,
-          account: _account,
-        );
-        // Another screen may have applied the same confirmation already.
-        if (pin == null) {
-          final current = (await _pins.read())[secret.machineId];
-          if (current != null &&
-              current.active &&
-              current.signerKey == secret.signerKey) {
-            pin = current;
+        final stored = await fleetSecretStored(() async {
+          pin = await _pins.activate(
+            machineId: secret.machineId,
+            pairingId: secret.pairingId,
+            signerKey: secret.signerKey,
+            clock: _now,
+            account: _account,
+          );
+          // Another screen may have applied the same confirmation already.
+          if (pin == null) {
+            final current = (await _pins.read())[secret.machineId];
+            if (current != null &&
+                current.active &&
+                current.signerKey == secret.signerKey) {
+              pin = current;
+            }
           }
-        }
+        });
+        // A refused Keychain keeps the pending pin; a later request from
+        // this machine applies the confirmation.
+        if (!stored) return _fail(FleetSecretBlock.failed);
         // Paired only when this phone now trusts the requested key.
         mine = pin != null;
       }
@@ -652,7 +658,11 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   /// pairing.
   Future<void> forgetMachine() async {
     if (_ended) return;
-    await _pins.forget(secret.machineId, account: _account);
+    final forgotten = await fleetSecretStored(
+      () => _pins.forget(secret.machineId, account: _account),
+    );
+    // The pin is still stored: say so instead of closing as forgotten.
+    if (!forgotten) return _fail(FleetSecretBlock.failed);
     // On a pairing page the owner may still pair afresh: only the old trust
     // goes, and the page stays open.
     if (secret is FleetSecretPairing) {

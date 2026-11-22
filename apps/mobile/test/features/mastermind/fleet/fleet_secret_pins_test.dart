@@ -35,15 +35,6 @@ void main() {
   late FakeSecretPlatform platform;
   tearDown(() => platform.uninstall());
 
-  test('pins live unlocked-only in a Keychain account of their own', () {
-    platform = FakeSecretPlatform()..install();
-    final options = fleetSecretStorage.iOptions;
-    expect(options.accessibility, KeychainAccessibility.unlocked_this_device);
-    expect(options.accountName, 'tuturuuu.mastermind-secret');
-    expect(options.accountName, isNot(AppleOptions.defaultAccountName));
-    expect(options.synchronizable, isFalse);
-  });
-
   test('an erase removes every pin entry and nothing else', () async {
     FlutterSecureStorage.setMockInitialValues({
       pinKey: '{}',

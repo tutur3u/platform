@@ -10,8 +10,10 @@ import Security
 /// The owner key is a CryptoKit `Curve25519.Signing.PrivateKey` stored as a
 /// generic password (this device only, readable while unlocked, never
 /// synced); it never crosses the channel. Below iOS 17 `supported` is false
-/// and every other method fails with `unsupported`. Errors are fixed codes;
-/// nothing here logs keys, messages or plaintext.
+/// and every crypto method fails with `unsupported`. The `store*` methods
+/// reach the pins and saved counts through `MastermindSecretStore` on every
+/// iOS version, so an erase works wherever items could exist. Errors are
+/// fixed codes; nothing here logs keys, messages or plaintext.
 /// Design: apps/docs/build/devops/mastermind-secret-entry.mdx.
 final class MastermindSecretPlugin: NSObject, FlutterPlugin {
   private let queue = DispatchQueue(label: "com.tuturuuu.mobile.mastermind-secret")
@@ -23,6 +25,10 @@ final class MastermindSecretPlugin: NSObject, FlutterPlugin {
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method.hasPrefix("store") {
+      handleStore(call, result: result)
+      return
+    }
     guard #available(iOS 17.0, *) else {
       result(call.method == "supported" ? false : Self.failure("unsupported"))
       return
@@ -101,10 +107,49 @@ final class MastermindSecretPlugin: NSObject, FlutterPlugin {
     }
   }
 
+  /// `storeRead`, `storeWrite`, `storeDelete`, `storeKeys` and
+  /// `storeReadAll`. A Keychain failure crosses as `keychain` with the
+  /// OSStatus in `details`.
+  private func handleStore(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let args = call.arguments as? [String: Any] ?? [:]
+    let store = MastermindSecretStore()
+    switch call.method {
+    case "storeRead":
+      guard let key = Self.storeKey(args) else { result(Self.failure("bad_arguments")); return }
+      run(result) { try store.read(key) }
+    case "storeWrite":
+      guard let key = Self.storeKey(args), let value = args["value"] as? String,
+            value.utf8.count <= MastermindSecretStore.maxValueBytes
+      else { result(Self.failure("bad_arguments")); return }
+      run(result) { try store.write(key, value); return nil }
+    case "storeDelete":
+      guard let key = Self.storeKey(args) else { result(Self.failure("bad_arguments")); return }
+      run(result) { try store.delete(key); return nil }
+    case "storeKeys":
+      run(result) { try store.keys() }
+    case "storeReadAll":
+      run(result) { try store.readAll() }
+    default: result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private static func storeKey(_ args: [String: Any]) -> String? {
+    guard let key = args["key"] as? String, !key.isEmpty,
+          key.utf8.count <= MastermindSecretStore.maxKeyBytes
+    else { return nil }
+    return key
+  }
+
   private func run(_ result: @escaping FlutterResult, _ body: @escaping () throws -> Any?) {
     queue.async {
       let value: Any?
-      do { value = try body() } catch let error as SecretError { value = Self.failure(error.code) } catch {
+      do { value = try body() } catch let error as SecretError { value = Self.failure(error.code) } catch let error
+        as MastermindSecretStore.Failure
+      {
+        value = FlutterError(
+          code: "keychain", message: "Mastermind secret entry unavailable",
+          details: Int(error.status))
+      } catch {
         value = Self.failure("failed")
       }
       DispatchQueue.main.async { result(value) }

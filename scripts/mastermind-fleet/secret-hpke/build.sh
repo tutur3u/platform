@@ -26,6 +26,11 @@ swiftc -O -parse-as-library -target "$(uname -m)-apple-macos14.0" \
 swiftc -O -parse-as-library -target "$(uname -m)-apple-macos14.0" \
   -o "$out/mm-secret-seal-test" "$core" "$here/seal-tool.swift"
 "$out/mm-secret-hpke-selftest" "$root/scripts/mastermind-fleet/secret-fixture.json"
+# The phone's Keychain store against a stand-in Keychain; never installed.
+swiftc -O -parse-as-library -target "$(uname -m)-apple-macos14.0" \
+  -o "$out/mm-secret-store-selftest" \
+  "$root/apps/mobile/ios/Runner/MastermindSecretStore.swift" "$here/store-selftest.swift"
+"$out/mm-secret-store-selftest"
 "$out/mm-secret-hpke" version
 
 shasum -a 256 "$out/mm-secret-hpke" | awk '{print $1}' >"$out/mm-secret-hpke.sha256"
