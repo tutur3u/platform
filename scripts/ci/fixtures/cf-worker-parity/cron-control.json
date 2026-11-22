@@ -38,7 +38,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
