@@ -85,7 +85,10 @@ export function useSetMiraAudience(wsId: string, onFailed: () => void) {
     },
     onSuccess: (setting) => {
       if (!actor?.lifetime.active) return;
-      client.setQueryData<MiraAudience>(key, { kind: 'owner', setting });
+      client.setQueryData<MiraAudience>(key, (): MiraAudience => ({
+        kind: 'owner',
+        setting,
+      }));
       void client.invalidateQueries({ queryKey: ['mira-private-choice'] });
       void client.invalidateQueries({ queryKey: ['room-mira-consent'] });
     },
