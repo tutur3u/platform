@@ -32,6 +32,7 @@ import {
 import { applyChatMessage } from './room-chat';
 import { applyRoomControl, approvedParticipantsMessage } from './room-controls';
 import { lobbyDisplayName } from './room-display-name';
+import { applyRoomNavigation } from './room-navigation';
 import {
   hasMeetMediaContextConflict,
   promoteMeetViewer,
@@ -128,6 +129,8 @@ function dispatchMeetRoomCommand(
     classFeatures
   );
   if (control) return control;
+  const navigation = applyRoomNavigation(state, message, token, now);
+  if (navigation) return navigation;
   switch (message.type) {
     case 'participant.promote':
       return promoteMeetViewer(state, token, message.userId, message.requestId);

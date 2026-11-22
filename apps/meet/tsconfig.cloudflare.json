@@ -104,6 +104,7 @@
     "../../packages/realtime/src/meet/room-mira-consent.ts",
     "../../packages/realtime/src/meet/room-media-role.ts",
     "../../packages/realtime/src/meet/room-mira-private.ts",
+    "../../packages/realtime/src/meet/room-navigation.ts",
     "../../packages/realtime/src/meet/room-options.ts",
     "../../packages/realtime/src/meet/room-outcome.ts",
     "../../packages/realtime/src/meet/room-polls.ts",

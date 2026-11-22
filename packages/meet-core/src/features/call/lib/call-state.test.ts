@@ -641,3 +641,49 @@ it('holds a gapped sequence until a full snapshot and ignores a foreign room del
   expect(state.presenceNeedsResync).toBe(false);
   expect(reduceCallState(state, frame(13)).presenceSeq).toBe(13);
 });
+
+describe('Follow and Summon requests', () => {
+  const summon = (createdAt: string): MeetRealtimeServerMessage => ({
+    type: 'navigation',
+    mode: 'summon',
+    from: OTHER,
+    view: { surface: 'programming' },
+    forced: true,
+    createdAt,
+  });
+
+  it('records each request once with a deterministic id', () => {
+    const once = reduceCallState(
+      INITIAL_CALL_STATE,
+      summon('2026-11-22T05:00:00.000Z')
+    );
+    expect(once.navigation).toEqual([
+      {
+        type: 'navigation',
+        mode: 'summon',
+        from: OTHER,
+        view: { surface: 'programming' },
+        forced: true,
+        createdAt: '2026-11-22T05:00:00.000Z',
+        id: `2026-11-22T05:00:00.000Z:${OTHER}:summon`,
+      },
+    ]);
+    expect(reduceCallState(once, summon('2026-11-22T05:00:00.000Z'))).toBe(
+      once
+    );
+  });
+
+  it('keeps the newest twelve and clears them when the room ends', () => {
+    let state = INITIAL_CALL_STATE;
+    for (let second = 0; second < 15; second++)
+      state = reduceCallState(
+        state,
+        summon(`2026-11-22T05:00:${String(second).padStart(2, '0')}.000Z`)
+      );
+    expect(state.navigation).toHaveLength(12);
+    expect(state.navigation[0]?.createdAt).toBe('2026-11-22T05:00:03.000Z');
+    expect(reduceCallState(state, { type: 'room.ended' }).navigation).toEqual(
+      []
+    );
+  });
+});

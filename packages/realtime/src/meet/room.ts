@@ -55,6 +55,10 @@ export interface MeetRoomSnapshot
   settings?: MeetRoomSettings;
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
+  /** Sender user id -> last accepted Follow/Summon request (epoch ms). */
+  lastNavigationAt?: Record<string, number>;
+  /** Sender user id -> last relayed follow stop (epoch ms). */
+  lastNavigationStopAt?: Record<string, number>;
   retiredTracks?: Record<string, true>;
   retiredSessions?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
@@ -219,6 +223,10 @@ export function releaseParticipant(
   const waiting = { ...state.waiting };
   const lastReactionAt = { ...state.lastReactionAt };
   delete lastReactionAt[userId];
+  const lastNavigationAt = { ...state.lastNavigationAt };
+  delete lastNavigationAt[userId];
+  const lastNavigationStopAt = { ...state.lastNavigationStopAt };
+  delete lastNavigationStopAt[userId];
   delete presence[userId];
   delete waiting[userId];
 
@@ -234,6 +242,8 @@ export function releaseParticipant(
       : state),
     ...(attendance === state.attendance ? {} : { attendance }),
     lastReactionAt,
+    ...(state.lastNavigationAt ? { lastNavigationAt } : {}),
+    ...(state.lastNavigationStopAt ? { lastNavigationStopAt } : {}),
     retiredSessions: Object.fromEntries(
       Object.entries(state.retiredSessions ?? {}).filter(
         ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)

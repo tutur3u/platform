@@ -130,10 +130,14 @@ export function applyRoomControl(
           'mediaOverrides',
         ].includes(key)
       ));
+  const activityKeys = Object.keys(
+    message.type === 'room.settings.update' ? message.settings : {}
+  );
   const managesAdvancedTools =
-    message.type === 'room.settings.update' &&
-    Object.keys(message.settings).length === 1 &&
-    message.settings.advancedTools !== undefined;
+    activityKeys.length > 0 &&
+    activityKeys.every((key) =>
+      ['advancedTools', 'participantNavigation'].includes(key)
+    );
   const requiresParticipantManagement = managesMedia || managesAdvancedTools;
   if (
     (requiresParticipantManagement &&

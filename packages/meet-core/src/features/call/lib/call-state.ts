@@ -49,6 +49,18 @@ export interface CallChatMessage {
   userId: string;
 }
 
+/** A Follow or Summon request the room delivered to this person. */
+export type MeetNavigationEvent = Extract<
+  MeetRealtimeServerMessage,
+  { type: 'navigation' }
+> & { id: string };
+
+export function navigationEventId(
+  message: Pick<MeetNavigationEvent, 'createdAt' | 'from' | 'mode'>
+) {
+  return `${message.createdAt}:${message.from}:${message.mode}`;
+}
+
 export interface CallState {
   liveAssistant?: { sessionId: string; ownerId: string };
   title?: string;
@@ -73,6 +85,8 @@ export interface CallState {
     userId: string;
     createdAt: string;
   }>;
+  /** Follow and Summon requests addressed to this person, newest last. */
+  navigation: MeetNavigationEvent[];
   admission: CallAdmission;
   admissionReason?: 'denied' | 'removed';
   chat: CallChatMessage[];
@@ -101,6 +115,7 @@ export const INITIAL_CALL_STATE: CallState = {
   settings: { shareNotes: false },
   approved: [],
   reactions: [],
+  navigation: [],
   admission: 'connecting',
   chat: [],
   error: null,
@@ -150,6 +165,7 @@ export function reduceCallState(
       return {
         ...state,
         ended: true,
+        navigation: [],
         liveAssistant: undefined,
         participants: {},
         remoteTracks: {},
@@ -160,6 +176,11 @@ export function reduceCallState(
       return { ...state, approved: message.participants };
     case 'reaction':
       return { ...state, reactions: [...state.reactions, message].slice(-24) };
+    case 'navigation': {
+      const event = { ...message, id: navigationEventId(message) };
+      if (state.navigation.some((entry) => entry.id === event.id)) return state;
+      return { ...state, navigation: [...state.navigation, event].slice(-12) };
+    }
     case 'ready':
       return {
         ...state,

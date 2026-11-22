@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import { type CallState, localMediaLocks } from './call-state';
 import type {
   MeetMediaState,
+  MeetNavigationMode,
   MeetReaction,
   MeetRealtimeTrackKind,
   MeetRoomMediaQualitySummary,
   MeetRoomSettings,
+  MeetRoomView,
 } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
 import { createMediaPolicy } from './media-policy';
@@ -172,6 +174,17 @@ export function createRoomActions(
     },
     react: (reaction: MeetReaction) =>
       signaling.current?.send({ type: 'reaction.send', reaction }),
+    /** Follow and Summon: relay this person's view to chosen people. */
+    requestNavigation: (request: {
+      mode: MeetNavigationMode;
+      targets: 'everyone' | string[];
+      view?: MeetRoomView;
+    }) =>
+      signaling.current?.send({
+        type: 'navigation.request',
+        requestId: crypto.randomUUID(),
+        ...request,
+      }),
     setRecordingState: (state: 'recording' | 'idle', sessionId?: string) =>
       signaling.current?.send({
         type: 'recording.state',

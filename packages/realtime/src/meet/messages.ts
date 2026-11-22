@@ -45,6 +45,43 @@ import {
 const requestId = z.string().trim().min(1).max(120).optional();
 const participantId = z.string().uuid();
 
+/** Where a person is in the room: the call stage, a collaboration surface, or a hub tool. */
+export const meetRoomViewSchema = z.discriminatedUnion('surface', [
+  z.object({ surface: z.literal('stage') }),
+  z.object({ surface: z.literal('programming') }),
+  z.object({ surface: z.literal('document') }),
+  z.object({
+    surface: z.literal('tool'),
+    toolId: z.string().regex(/^[a-z0-9-]{1,40}$/),
+  }),
+]);
+export type MeetRoomView = z.infer<typeof meetRoomViewSchema>;
+
+export const MEET_NAVIGATION_MODES = [
+  'summon',
+  'follow',
+  'follow.update',
+  'follow.stop',
+] as const;
+export type MeetNavigationMode = (typeof MEET_NAVIGATION_MODES)[number];
+export const MEET_NAVIGATION_MAX_TARGETS = 200;
+
+const navigationRequestSchema = z
+  .object({
+    type: z.literal('navigation.request'),
+    requestId,
+    mode: z.enum(MEET_NAVIGATION_MODES),
+    targets: z.union([
+      z.literal('everyone'),
+      z.array(participantId).min(1).max(MEET_NAVIGATION_MAX_TARGETS),
+    ]),
+    view: meetRoomViewSchema.optional(),
+  })
+  .refine((message) => message.mode === 'follow.stop' || !!message.view, {
+    message: 'view is required',
+    path: ['view'],
+  });
+
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionStateMessageSchema,
   transcriptionConsentMessageSchema,
@@ -235,6 +272,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     requestId,
     type: z.literal('classTimer.command'),
   }),
+  navigationRequestSchema,
 ]);
 
 export type MeetRealtimeClientMessage = z.infer<
@@ -281,6 +319,16 @@ export type MeetRealtimeServerMessage =
       type: 'reaction';
       reaction: MeetReaction;
       userId: string;
+      createdAt: string;
+    }
+  | {
+      type: 'navigation';
+      mode: MeetNavigationMode;
+      /** Sender user id. */
+      from: string;
+      view?: MeetRoomView;
+      /** Hosts and co-hosts move people directly; others ask for consent. */
+      forced: boolean;
       createdAt: string;
     }
   | { type: 'room.settings'; settings: MeetRoomSettings }

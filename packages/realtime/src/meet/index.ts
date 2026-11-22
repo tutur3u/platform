@@ -26,12 +26,24 @@ export { retainRoomChat } from './chat-retention';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
 export type {
+  MeetNavigationMode,
   MeetRealtimeClientMessage,
   MeetRealtimeRoomTrack,
   MeetRealtimeServerMessage,
   MeetRealtimeSfuClientMessage,
+  MeetRoomView,
 } from './messages';
-export { meetRealtimeClientMessageSchema } from './messages';
+export {
+  MEET_NAVIGATION_MAX_TARGETS,
+  MEET_NAVIGATION_MODES,
+  meetRealtimeClientMessageSchema,
+  meetRoomViewSchema,
+} from './messages';
+export {
+  applyRoomNavigation,
+  MEET_NAVIGATION_REQUEST_INTERVAL_MS,
+  MEET_NAVIGATION_UPDATE_INTERVAL_MS,
+} from './room-navigation';
 export type { MeetRealtimeScope } from './permissions';
 export type {
   AttendanceInterval,

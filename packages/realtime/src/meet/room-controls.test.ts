@@ -51,6 +51,25 @@ function admitted() {
 }
 
 describe('persistent room controls', () => {
+  it('lets room managers decide whether participants may summon each other', () => {
+    const state = admitted();
+    const patch = {
+      type: 'room.settings.update',
+      settings: { participantNavigation: false, advancedTools: 'everyone' },
+    } satisfies MeetRealtimeClientMessage;
+    const cohost = {
+      ...guest,
+      scopes: [...guest.scopes, 'participants:manage'],
+    };
+    expect(
+      run(state, patch, guest).state.settings?.participantNavigation
+    ).toBeUndefined();
+    expect(run(state, patch, cohost).state.settings).toMatchObject({
+      participantNavigation: false,
+      advancedTools: 'everyone',
+    });
+  });
+
   it('limits activity visibility changes to admitted room managers', () => {
     const state = admitted();
     const patch = {
