@@ -4,7 +4,7 @@
     "name": "tuturuuu-gateway",
     "accountId": "e8912e2867beecc673d171907bf09649",
     "compatibilityDate": "2026-09-28",
-    "compatibilityFlags": [],
+    "compatibilityFlags": ["global_fetch_strictly_public"],
     "workersDev": false,
     "previewUrls": false,
     "observability": {
