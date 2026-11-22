@@ -4,6 +4,7 @@ import {
   EMPTY_LAYOUT,
   type LayoutNode,
   MAX_PANES,
+  MIN_SHARE,
   paneLeaves,
   type StageLayout,
 } from './layout-model';
@@ -22,6 +23,9 @@ export interface StoredStage {
 }
 
 const VERSION = 1;
+/** Rooms whose layouts are kept per browser; the least recently used go first. */
+export const MAX_STORED_ROOMS = 30;
+const INDEX_KEY = `meet:stage-layout:v${VERSION}:index`;
 const MAX_DEPTH = 4;
 const MAX_TABS = 24;
 
@@ -31,6 +35,23 @@ export const stageLayoutKey = (accountId: string, meetingId: string) =>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Scales sizes to sum to 100. A pane that would fall below the least share is
+ * a sign of a damaged value, so the split falls back to equal shares.
+ */
+export function normalizeSizes(sizes: readonly number[]) {
+  const total = sizes.reduce((sum, size) => sum + size, 0);
+  const equal = Math.round((100 / sizes.length) * 100) / 100;
+  let shares = sizes.map((size) => Math.round((size / total) * 10_000) / 100);
+  if (shares.some((share) => !(share >= MIN_SHARE)))
+    shares = sizes.map(() => equal);
+  const drift =
+    Math.round((100 - shares.reduce((a, b) => a + b, 0)) * 100) / 100;
+  shares[shares.length - 1] =
+    Math.round(((shares[shares.length - 1] ?? 0) + drift) * 100) / 100;
+  return shares;
+}
 
 function parseNode(
   raw: unknown,
@@ -67,9 +88,10 @@ function parseNode(
     raw.children.length !== raw.sizes.length
   )
     return null;
-  const sizes = raw.sizes as unknown[];
-  if (sizes.some((size) => typeof size !== 'number' || !(size > 0)))
+  const given = raw.sizes as unknown[];
+  if (given.some((size) => typeof size !== 'number' || !(size > 0)))
     return null;
+  const sizes = normalizeSizes(given as number[]);
   const children = raw.children.map((child) =>
     parseNode(child, seenIds, seenTabs, depth + 1)
   );
@@ -79,7 +101,7 @@ function parseNode(
     id,
     axis: raw.axis as Axis,
     children: children as LayoutNode[],
-    sizes: sizes as number[],
+    sizes,
   };
 }
 
@@ -130,10 +152,38 @@ function parseViews(raw: unknown, desktop: StageLayout): NarrowViews {
 const preference = (value: unknown): VideoStripPreference =>
   value === 'row' || value === 'pill' ? value : 'auto';
 
+/** Notes that `key` was used now, and forgets the oldest layouts past the cap. */
+function touchIndex(key: string, keep: boolean) {
+  try {
+    rewriteIndex(key, keep);
+  } catch {
+    // Housekeeping only; the layout itself is already read or written.
+  }
+}
+
+function rewriteIndex(key: string, keep: boolean) {
+  const raw: unknown = JSON.parse(
+    window.localStorage.getItem(INDEX_KEY) ?? '[]'
+  );
+  const entries = (Array.isArray(raw) ? raw : []).filter(
+    (entry): entry is { key: string; at: number } =>
+      isRecord(entry) &&
+      typeof entry.key === 'string' &&
+      typeof entry.at === 'number' &&
+      entry.key !== key
+  );
+  if (keep) entries.push({ key, at: Date.now() });
+  entries.sort((a, b) => b.at - a.at);
+  for (const old of entries.splice(MAX_STORED_ROOMS))
+    window.localStorage.removeItem(old.key);
+  window.localStorage.setItem(INDEX_KEY, JSON.stringify(entries));
+}
+
 export function readStoredStage(key: string): StoredStage {
   try {
     const text = window.localStorage.getItem(key);
     if (!text) return { layout: EMPTY_LAYOUT, views: {}, strip: 'auto' };
+    touchIndex(key, true);
     const raw: unknown = JSON.parse(text);
     const layout = parseStageLayout(raw);
     return {
@@ -149,13 +199,14 @@ export function readStoredStage(key: string): StoredStage {
 
 export function writeStoredStage(key: string, stored: StoredStage) {
   try {
-    if (!stored.layout.root && stored.strip === 'auto')
-      window.localStorage.removeItem(key);
+    const empty = !stored.layout.root && stored.strip === 'auto';
+    if (empty) window.localStorage.removeItem(key);
     else
       window.localStorage.setItem(
         key,
         JSON.stringify({ v: VERSION, ...stored })
       );
+    touchIndex(key, !empty);
   } catch {
     // Keep the layout in memory for this visit.
   }

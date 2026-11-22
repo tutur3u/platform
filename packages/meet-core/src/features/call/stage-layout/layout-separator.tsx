@@ -19,14 +19,18 @@ export function LayoutSeparator({
   boundary,
   label,
   extent,
-  onResize,
+  onPreview,
+  onCommit,
   onReset,
 }: {
   boundary: Boundary;
   label: string;
   /** The split's length in pixels along the boundary's axis, read on demand. */
   extent: () => number;
-  onResize: (position: number) => void;
+  /** Shows a position while dragging, without saving it. */
+  onPreview: (position: number) => void;
+  /** Saves a position: the end of a drag, or one keyboard step. */
+  onCommit: (position: number) => void;
   onReset: () => void;
 }) {
   const drag = useRef<{
@@ -34,8 +38,18 @@ export function LayoutSeparator({
     start: number;
     origin: number;
     percentPerPixel: number;
+    latest: number;
+    scheduled: boolean;
+    frame: number;
   } | null>(null);
   const vertical = boundary.axis === 'row';
+  const finish = (pointer: number) => {
+    const active = drag.current;
+    if (!active || active.pointer !== pointer) return;
+    drag.current = null;
+    cancelAnimationFrame(active.frame);
+    onCommit(active.latest);
+  };
   const decrease = vertical ? 'ArrowLeft' : 'ArrowUp';
   const increase = vertical ? 'ArrowRight' : 'ArrowDown';
   return (
@@ -62,6 +76,9 @@ export function LayoutSeparator({
           start: vertical ? event.clientX : event.clientY,
           origin: boundary.now,
           percentPerPixel: 100 / length,
+          latest: boundary.now,
+          scheduled: false,
+          frame: 0,
         };
         event.currentTarget.focus();
         event.preventDefault();
@@ -70,29 +87,35 @@ export function LayoutSeparator({
         const active = drag.current;
         if (!active || active.pointer !== event.pointerId) return;
         const at = vertical ? event.clientX : event.clientY;
-        onResize(active.origin + (at - active.start) * active.percentPerPixel);
+        active.latest =
+          active.origin + (at - active.start) * active.percentPerPixel;
+        // One preview per frame, however fast the pointer reports.
+        if (!active.scheduled) {
+          active.scheduled = true;
+          active.frame = requestAnimationFrame(() => {
+            active.scheduled = false;
+            onPreview(active.latest);
+          });
+        }
       }}
-      onPointerUp={(event) => {
-        if (drag.current?.pointer === event.pointerId) drag.current = null;
-      }}
-      onLostPointerCapture={() => {
-        drag.current = null;
-      }}
+      onPointerUp={(event) => finish(event.pointerId)}
+      onPointerCancel={(event) => finish(event.pointerId)}
+      onLostPointerCapture={(event) => finish(event.pointerId)}
       onDoubleClick={onReset}
       onKeyDown={(event) => {
         const step = event.shiftKey ? BIG_STEP : STEP;
         switch (event.key) {
           case decrease:
-            onResize(boundary.now - step);
+            onCommit(boundary.now - step);
             break;
           case increase:
-            onResize(boundary.now + step);
+            onCommit(boundary.now + step);
             break;
           case 'Home':
-            onResize(boundary.min);
+            onCommit(boundary.min);
             break;
           case 'End':
-            onResize(boundary.max);
+            onCommit(boundary.max);
             break;
           case 'Enter':
             onReset();

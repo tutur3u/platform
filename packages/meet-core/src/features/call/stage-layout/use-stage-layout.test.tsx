@@ -189,3 +189,125 @@ it('applies opening and closing to every arrangement', () => {
   expect(mount({ tier: 'tablet' }).result.current.openIds).toEqual(['c']);
   expect(mount().result.current.openIds).toEqual(['c']);
 });
+
+it('restores the desktop pane count and sizes after arranging on a narrow screen', () => {
+  const desktop = mount();
+  act(() => {
+    desktop.result.current.open('a');
+    desktop.result.current.open('b');
+    desktop.result.current.open('c');
+  });
+  const root = desktop.result.current.layout.root;
+  act(() =>
+    desktop.result.current.resize(root?.kind === 'split' ? root.id : '', 0, 70)
+  );
+  const sizes = (layout: typeof desktop.result.current.layout) =>
+    JSON.stringify(layout.root?.kind === 'split' ? layout.root.sizes : null);
+  const before = sizes(desktop.result.current.layout);
+  expect(before).toBe('[70,30]');
+  flush();
+  desktop.unmount();
+
+  const phone = mount({ tier: 'phone' });
+  expect(phone.result.current.openIds).toEqual(['a', 'b', 'c']);
+  act(() =>
+    phone.result.current.activate(
+      phone.result.current.layout.focusedPaneId ?? '',
+      'a'
+    )
+  );
+  act(() => phone.result.current.maximize(null));
+  flush();
+  phone.unmount();
+
+  const wide = mount();
+  expect(wide.result.current.layout.root?.kind).toBe('split');
+  expect(sizes(wide.result.current.layout)).toBe(before);
+  expect(wide.result.current.openIds).toEqual(['a', 'b', 'c']);
+});
+
+it('keeps an unavailable activity through edits and returns it with its pane', () => {
+  let blocked: string[] = [];
+  const { result, rerender, unmount } = renderHook(() =>
+    useStageLayout({
+      accountId: 'u1',
+      meetingId: 'm1',
+      tier: 'desktop',
+      isAvailable: blocked.length ? (id) => !blocked.includes(id) : available,
+    })
+  );
+  act(() => {
+    result.current.open('a');
+    result.current.open('b');
+    result.current.open('c');
+  });
+  const paneOfB = result.current.layout.root;
+  expect(paneOfB).not.toBeNull();
+  // A role change hides b and c while the person keeps working.
+  blocked = ['b', 'c'];
+  rerender();
+  expect(result.current.openIds).toEqual(['a']);
+  act(() => result.current.open('d'));
+  act(() => result.current.close('a'));
+  act(() => result.current.maximize(result.current.layout.focusedPaneId));
+  expect(result.current.openIds).toEqual(['d']);
+  flush();
+  unmount();
+  // Reloading while still unavailable shows only what may be shown.
+  blocked = ['b', 'c'];
+  const reloaded = renderHook(() =>
+    useStageLayout({
+      accountId: 'u1',
+      meetingId: 'm1',
+      tier: 'desktop',
+      isAvailable: (id) => !blocked.includes(id),
+    })
+  );
+  expect(reloaded.result.current.openIds).toEqual(['d']);
+  // Access returns: b and c are back.
+  blocked = [];
+  reloaded.rerender();
+  expect(reloaded.result.current.openIds.sort()).toEqual(['b', 'c', 'd']);
+});
+
+it('reads the layout of another room when the room changes', () => {
+  const first = mount({ meetingId: 'm1' });
+  act(() => first.result.current.open('a'));
+  flush();
+  first.unmount();
+  let meetingId = 'm1';
+  const { result, rerender } = renderHook(() =>
+    useStageLayout({
+      accountId: 'u1',
+      meetingId,
+      isAvailable: available,
+      tier: 'desktop',
+    })
+  );
+  expect(result.current.openIds).toEqual(['a']);
+  meetingId = 'm2';
+  rerender();
+  expect(result.current.openIds).toEqual([]);
+  act(() => result.current.open('z'));
+  meetingId = 'm1';
+  rerender();
+  expect(result.current.openIds).toEqual(['a']);
+  meetingId = 'm2';
+  rerender();
+  expect(result.current.openIds).toEqual(['z']);
+});
+
+it('stores nothing for an edit that changes nothing', () => {
+  const { result } = mount();
+  act(() => result.current.open('a'));
+  flush();
+  const write = vi.spyOn(Storage.prototype, 'setItem');
+  const pane = result.current.layout.focusedPaneId ?? '';
+  act(() => result.current.focusPane(pane));
+  act(() => result.current.activate(pane, 'a'));
+  act(() => result.current.maximize(null));
+  act(() => result.current.open('a'));
+  flush();
+  expect(write).not.toHaveBeenCalled();
+  write.mockRestore();
+});

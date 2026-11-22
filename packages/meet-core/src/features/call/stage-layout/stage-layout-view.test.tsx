@@ -318,3 +318,75 @@ it('renders the shared loading, empty and error states', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   expect(retry).toHaveBeenCalledTimes(1);
 });
+
+it('links each tab to its panel', () => {
+  view('tablet');
+  open('a', 'b', 'c');
+  const tab = screen.getByRole('tab', { name: 'b' });
+  const panel = document.getElementById(
+    tab.getAttribute('aria-controls') ?? ''
+  );
+  expect(panel?.getAttribute('role')).toBe('tabpanel');
+  expect(panel?.getAttribute('aria-labelledby')).toBe(tab.id);
+  // A pane with one activity has no tabs and so no tab panel.
+  expect(
+    document.querySelector('[data-activity-id="a"]')?.getAttribute('role')
+  ).toBeNull();
+});
+
+it('previews a drag locally and saves the split once on release', () => {
+  vi.stubGlobal('requestAnimationFrame', (run: () => void) => {
+    run();
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  view();
+  open('a', 'b');
+  const stage = document.querySelector('[role="group"]') as HTMLElement;
+  vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue({
+    width: 1000,
+    height: 600,
+    top: 0,
+    left: 0,
+    right: 1000,
+    bottom: 600,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  });
+  const setItem = vi.spyOn(Storage.prototype, 'setItem');
+  const separator = () => screen.getByRole('separator');
+  const saved = controller.layout;
+  Object.assign(separator(), {
+    setPointerCapture: () => {},
+    focus: () => {},
+  });
+  fireEvent.pointerDown(separator(), { pointerId: 1, button: 0, clientX: 500 });
+  fireEvent.pointerMove(separator(), { pointerId: 1, clientX: 600 });
+  // The separator follows the pointer; nothing has been saved or re-rendered
+  // through the call's layout state.
+  expect(separator().getAttribute('aria-valuenow')).toBe('60');
+  expect(controller.layout).toBe(saved);
+  fireEvent.pointerMove(separator(), { pointerId: 1, clientX: 700 });
+  expect(separator().getAttribute('aria-valuenow')).toBe('70');
+  expect(controller.layout).toBe(saved);
+  expect(setItem).not.toHaveBeenCalled();
+  fireEvent.pointerUp(separator(), { pointerId: 1 });
+  expect(separator().getAttribute('aria-valuenow')).toBe('70');
+  expect(
+    controller.layout.root?.kind === 'split' && controller.layout.root.sizes
+  ).toEqual([70, 30]);
+  setItem.mockRestore();
+});
+
+it('does not touch the saved layout when the only pane is pressed', () => {
+  view();
+  open('a');
+  const setItem = vi.spyOn(Storage.prototype, 'setItem');
+  const pane = document.querySelector('[data-pane-id]') as HTMLElement;
+  fireEvent.pointerDown(pane);
+  fireEvent.pointerDown(pane);
+  fireEvent.focus(pane);
+  expect(setItem.mock.calls).toEqual([]);
+  setItem.mockRestore();
+});

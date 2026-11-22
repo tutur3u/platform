@@ -5,6 +5,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore } from 'react';
 import { ResizableCallPanel } from '../../components/resizable-call-panel';
+import { useActivityActive } from '../../stage-layout/activity-pane-context';
 import type { MeetToolPanelProps } from '../live-activities/meet-tool';
 import { CallPanelHeader, ToolIconAction } from '../tool-ui';
 import { type WhiteboardColor, whiteboardColors } from './stroke';
@@ -40,8 +41,12 @@ export function WhiteboardPanel({
   onClose,
 }: MeetToolPanelProps) {
   const t = useTranslations('meet.classroom_tools');
+  // A hidden pane stops redrawing from the room's strokes and catches up when
+  // shown, because resubscribing reads the current strokes.
+  const active = useActivityActive();
   const { strokes, canUndo, canClear } = useSyncExternalStore(
-    (onStoreChange) => subscribeWhiteboard(meetingId, onStoreChange),
+    (onStoreChange) =>
+      active ? subscribeWhiteboard(meetingId, onStoreChange) : () => {},
     () => readWhiteboard(meetingId),
     () => readWhiteboard(meetingId)
   );

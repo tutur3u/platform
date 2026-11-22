@@ -25,6 +25,7 @@ export function ActivityLayer({
   maximized,
   slot,
   canMaximize,
+  tab,
   onToggleMaximize,
   onClose,
   children,
@@ -37,6 +38,8 @@ export function ActivityLayer({
   maximized: boolean;
   slot: HTMLElement | null;
   canMaximize: boolean;
+  /** Set when the pane lists its activities as tabs: this is that tab's panel. */
+  tab?: { panelId: string; tabId: string };
   onToggleMaximize: () => void;
   onClose: () => void;
   children: ReactNode;
@@ -72,6 +75,9 @@ export function ActivityLayer({
   return (
     <div
       ref={setElement}
+      id={tab?.panelId}
+      role={tab ? 'tabpanel' : undefined}
+      aria-labelledby={tab?.tabId}
       data-activity-id={activityId}
       data-size={sizeClass}
       inert={!visible || undefined}

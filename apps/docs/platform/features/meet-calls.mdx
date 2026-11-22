@@ -1376,7 +1376,18 @@ media, or tool access.
   you arrange panes there, which saves a separate tablet or phone arrangement;
   arranging, resizing, maximizing or reordering on a narrow screen never changes
   the desktop split. Opening or closing an activity applies to every
-  arrangement, so they all hold the same activities. Activities that
+  arrangement, so they all hold the same activities. Each room keeps its own
+  layout and the browser keeps the 30 most recently used rooms.
+- **Hidden activities are kept.** Editing never discards an activity that is
+  only out of sight. One that is unavailable (the call is not live, access was
+  lost) returns to its pane when it is available again, or joins the focused
+  pane as a background tab if its pane is gone.
+- **Access follows the person's role.** A saved layout can only reopen tools
+  the person may use now: the tools they can browse, the poll and quiz
+  shortcuts, and tools a host or co-host opened for them during this session.
+  Those host-opened tools are not saved. A person who loses host access, or
+  whose room settings narrow the tools, does not get host-only tools back from
+  a saved layout. Activities that
   are not available right now (the call is not live, no access) are hidden, not
   forgotten, and return with their pane when available.
 - **No remounting.** Panes are placed from fractions of the stage, not nested,
@@ -1384,13 +1395,18 @@ media, or tool access.
   maximizing, switching tabs and reordering keep editors such as Co-Programming
   and the whiteboard mounted with their collaboration state. Hidden tabs and
   panes receive `active = false` through `useActivityActive()` so heavy work can
-  pause.
+  pause: the pen board stops redrawing from room strokes, and the classroom
+  whiteboard, breakouts and Co-Programming stop polling, until shown again. The
+  Co-Programming editor itself keeps running and keeps its collaboration state.
+  Resizing is previewed inside the stage and saved once on release.
 - **Follow and Summon.** The view a person shares is the activity in their
   focused pane. A summoned or followed view opens that activity or focuses the
   pane that already has it, and never closes the activities the person has open.
-  Going to the stage leaves open activities as they are. Follow and Summon
+  Following a leader who is on the stage keeps the follower on what they have
+  open and keeps following until they move on their own. Follow and Summon
   carry the focused activity, not the arrangement of panes.
-- **Intentional exceptions.** In-call forms remain a dialog. Presence-only rooms
+- **Intentional exceptions.** In-call forms remain a dialog; once opened it
+  stays mounted, so closing it keeps a draft, its receipt and the submission. Presence-only rooms
   have no video strip; the roster shows only while nothing is open.
 
 Regression coverage: `layout-model.test.ts` (open, close, split, stack,
@@ -1399,8 +1415,11 @@ and `use-stage-layout.test.tsx` (per-room persistence and reconnect restore),
 `stage-layout-view.test.tsx` (separator keyboard resize, hidden panes staying
 mounted, the minimum-size card, the phone switcher, size classes),
 `stage-layout-media.test.tsx` (participant media staying mounted),
-`pane-adapters.test.tsx` and `use-stage-navigation.test.tsx` (Follow and
-Summon focusing a pane).
+`pane-adapters.test.tsx`, `use-stage-navigation.test.tsx` and
+`stage-follow.test.tsx` (Follow and Summon focusing a pane, and Follow from the
+stage), `availability.test.ts` (role changes), and `qa-pane.test.tsx`,
+`call-activities.test.tsx` and `whiteboard-pause.test.tsx` (activities inside a
+pane).
 
 ### Presence-only layout
 

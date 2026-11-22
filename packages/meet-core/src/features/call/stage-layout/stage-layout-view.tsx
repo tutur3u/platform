@@ -15,12 +15,14 @@ import {
 } from 'react';
 import { ActivityLayer } from './activity-layer';
 import { layoutGeometry, type Rect, rectStyle } from './layout-geometry';
-import { countPanes, paneLeaves } from './layout-model';
+import { countPanes, paneLeaves, resizeBoundary } from './layout-model';
 import { LayoutSeparator, STAGE_GUTTER } from './layout-separator';
 import {
   type ActivityMeta,
   PANE_HEADER_HEIGHT,
   PaneChrome,
+  panelId,
+  tabId,
 } from './pane-chrome';
 import { PhoneSwitcher } from './phone-switcher';
 import type { StageLayoutController } from './use-stage-layout';
@@ -66,7 +68,26 @@ export function StageLayoutView({
   peopleCount: number;
 }) {
   const t = useTranslations('meet.call.stage_layout');
-  const { layout, tier } = controller;
+  const { tier } = controller;
+  // A drag previews here and is saved on release, so the call around the
+  // stage does not re-render for every pointer move.
+  const [drag, setDrag] = useState<{
+    splitId: string;
+    index: number;
+    position: number;
+  } | null>(null);
+  const layout = useMemo(
+    () =>
+      drag
+        ? resizeBoundary(
+            controller.layout,
+            drag.splitId,
+            drag.index,
+            drag.position
+          )
+        : controller.layout,
+    [controller.layout, drag]
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
   const [switcher, setSwitcher] = useState(false);
@@ -189,6 +210,7 @@ export function StageLayoutView({
               meta={meta}
               style={rectStyle(rectOf(pane.id), gutter)}
               focused={paneCount > 1 && pane.id === layout.focusedPaneId}
+              current={pane.id === layout.focusedPaneId}
               hidden={hiddenPane(pane.id)}
               maximized={pane.id === maximizedId}
               reorderable={paneCount > 1 && !phone}
@@ -230,9 +252,17 @@ export function StageLayoutView({
                     ? box.width * boundary.span.w
                     : box.height * boundary.span.h;
                 }}
-                onResize={(position) =>
-                  controller.resize(boundary.splitId, boundary.index, position)
+                onPreview={(position) =>
+                  setDrag({
+                    splitId: boundary.splitId,
+                    index: boundary.index,
+                    position,
+                  })
                 }
+                onCommit={(position) => {
+                  setDrag(null);
+                  controller.resize(boundary.splitId, boundary.index, position);
+                }}
                 onReset={() =>
                   controller.reset(boundary.splitId, boundary.index)
                 }
@@ -262,6 +292,14 @@ export function StageLayoutView({
                   slot={slots[pane.id] ?? null}
                   canMaximize={
                     paneCount > 1 && !phone && pane.id !== maximizedId
+                  }
+                  tab={
+                    pane.tabs.length > 1 && !(phone && switchItems.length > 1)
+                      ? {
+                          panelId: panelId(activity.id),
+                          tabId: tabId(pane.id, activity.id),
+                        }
+                      : undefined
                   }
                   onToggleMaximize={() => toggleMaximize(pane.id)}
                   onClose={() => controller.close(activity.id)}

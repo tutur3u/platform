@@ -186,6 +186,12 @@ export function openActivity(
 ): StageLayout {
   const existing = paneOfActivity(layout, activityId);
   if (existing) {
+    const unchanged =
+      existing.active === activityId &&
+      layout.focusedPaneId === existing.id &&
+      (layout.maximizedPaneId === null ||
+        layout.maximizedPaneId === existing.id);
+    if (unchanged) return layout;
     return {
       ...withRoot(
         layout,
@@ -277,6 +283,8 @@ export function activateTab(
 ): StageLayout {
   const pane = findPane(layout, paneId);
   if (!pane || !pane.tabs.includes(activityId) || !layout.root) return layout;
+  if (pane.active === activityId && layout.focusedPaneId === paneId)
+    return layout;
   return {
     ...layout,
     root: mapPanes(layout.root, (leaf) =>
@@ -297,6 +305,11 @@ export function maximizePane(
   paneId: string | null
 ): StageLayout {
   if (paneId && !findPane(layout, paneId)) return layout;
+  if (
+    layout.maximizedPaneId === paneId &&
+    (!paneId || layout.focusedPaneId === paneId)
+  )
+    return layout;
   return {
     ...layout,
     maximizedPaneId: paneId,
@@ -338,18 +351,19 @@ export function resizeBoundary(
   position: number
 ): StageLayout {
   if (!layout.root) return layout;
-  return {
-    ...layout,
-    root: updateSplit(layout.root, splitId, (split) => {
-      if (index < 0 || index >= split.sizes.length - 1) return split;
-      const range = boundaryRange(split.sizes, index);
-      const target = Math.min(range.max, Math.max(range.min, position));
-      const sizes = [...split.sizes];
-      sizes[index] = round(target - range.before);
-      sizes[index + 1] = round(range.pair - sizes[index]);
-      return { ...split, sizes };
-    }),
-  };
+  let changed = false;
+  const root = updateSplit(layout.root, splitId, (split) => {
+    if (index < 0 || index >= split.sizes.length - 1) return split;
+    const range = boundaryRange(split.sizes, index);
+    const target = Math.min(range.max, Math.max(range.min, position));
+    const sizes = [...split.sizes];
+    sizes[index] = round(target - range.before);
+    sizes[index + 1] = round(range.pair - sizes[index]);
+    if (sizes[index] === split.sizes[index]) return split;
+    changed = true;
+    return { ...split, sizes };
+  });
+  return changed ? { ...layout, root } : layout;
 }
 
 /** Shares the two panes beside a boundary equally. */
@@ -358,20 +372,20 @@ export function resetBoundary(
   splitId: string,
   index: number
 ): StageLayout {
-  if (!layout.root) return layout;
-  return {
-    ...layout,
-    root: updateSplit(layout.root, splitId, (split) => {
-      if (index < 0 || index >= split.sizes.length - 1) return split;
-      const range = boundaryRange(split.sizes, index);
-      return resizeBoundary(
-        { ...layout, root: split },
-        split.id,
-        index,
-        range.before + range.pair / 2
-      ).root as SplitNode;
-    }),
-  };
+  const split = layout.root ? findSplit(layout.root, splitId) : null;
+  if (!split || index < 0 || index >= split.sizes.length - 1) return layout;
+  const range = boundaryRange(split.sizes, index);
+  return resizeBoundary(layout, splitId, index, range.before + range.pair / 2);
+}
+
+function findSplit(node: LayoutNode, splitId: string): SplitNode | null {
+  if (node.kind === 'pane') return null;
+  if (node.id === splitId) return node;
+  for (const child of node.children) {
+    const found = findSplit(child, splitId);
+    if (found) return found;
+  }
+  return null;
 }
 
 /** Exchanges two panes' places, each keeping its own tabs. */
@@ -493,4 +507,61 @@ export function alignLayout(
         }),
       trimmed
     );
+}
+
+/**
+ * Puts activities that were left out of what a person edited (unavailable
+ * ones) back where `base` had them. One whose pane survived returns to its
+ * tab position; one whose pane is gone joins the focused pane as a background
+ * tab, so an edit never loses an activity that is only out of sight.
+ */
+export function restoreHidden(
+  edited: StageLayout,
+  base: StageLayout,
+  hidden: readonly string[]
+): StageLayout {
+  let next = edited;
+  const homeless: string[] = [];
+  for (const id of hidden) {
+    if (isActivityOpen(next, id)) continue;
+    const home = paneOfActivity(base, id);
+    const target = home ? findPane(next, home.id) : null;
+    if (!target || !next.root) {
+      homeless.push(id);
+      continue;
+    }
+    const at = Math.min(home?.tabs.indexOf(id) ?? 0, target.tabs.length);
+    next = {
+      ...next,
+      root: mapPanes(next.root, (pane) =>
+        pane.id === target.id
+          ? { ...pane, tabs: pane.tabs.toSpliced(at, 0, id) }
+          : pane
+      ),
+    };
+  }
+  if (!homeless.length) return next;
+  const focus = findPane(next, next.focusedPaneId) ?? paneLeaves(next.root)[0];
+  if (!focus || !next.root) {
+    const pane: PaneNode = {
+      kind: 'pane',
+      id: `p${next.nextId}`,
+      tabs: homeless,
+      active: homeless[0] as string,
+    };
+    return {
+      ...next,
+      root: pane,
+      focusedPaneId: pane.id,
+      nextId: next.nextId + 1,
+    };
+  }
+  return {
+    ...next,
+    root: mapPanes(next.root, (pane) =>
+      pane.id === focus.id
+        ? { ...pane, tabs: [...pane.tabs, ...homeless] }
+        : pane
+    ),
+  };
 }

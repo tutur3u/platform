@@ -4,6 +4,7 @@ import { X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { ResizableCallPanel } from '../call/components/resizable-call-panel';
+import { useActivityActive } from '../call/stage-layout/activity-pane-context';
 import { Breakouts } from './breakouts';
 import { type ClassroomTool, useClassroomTool } from './classroom-client';
 import { Whiteboard } from './whiteboard';
@@ -20,7 +21,12 @@ export function ClassroomPanel({
   close: () => void;
 }) {
   const t = useTranslations('meet.classroom_tools');
-  const { query, action } = useClassroomTool(tool, meetingId, accountId);
+  const { query, action } = useClassroomTool(
+    tool,
+    meetingId,
+    accountId,
+    useActivityActive()
+  );
   const label = t(`${tool}.title`);
   return (
     <ResizableCallPanel label={label}>

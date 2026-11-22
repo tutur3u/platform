@@ -1,5 +1,6 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useActivityActive } from '../stage-layout/activity-pane-context';
 import {
   checkpointMeetProgramming,
   createMeetPlayground,
@@ -74,6 +75,8 @@ export function ProgrammingPanel({
   const t = useTranslations('programmingPlayground');
   const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const cache = useQueryClient();
+  // A hidden tab or pane keeps its editor and room state but stops polling.
+  const onScreen = useActivityActive();
   const [kind, setKind] = useState<ProgrammingKind>('playground');
   const [id, setId] = useState('');
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
@@ -92,7 +95,7 @@ export function ProgrammingPanel({
   const query = useQuery({
     queryKey: key,
     queryFn: () => api.read(meetingId),
-    refetchInterval: 45000,
+    refetchInterval: onScreen ? 45000 : false,
     retry: false,
   });
   const select = useMutation({
@@ -172,7 +175,8 @@ export function ProgrammingPanel({
     queryKey: miraKey,
     queryFn: () => readMira!(meetingId),
     enabled: !!active && !!readMira,
-    refetchInterval: (query) => (query.state.data?.voiceDraft ? 3000 : 12000),
+    refetchInterval: (query) =>
+      onScreen ? (query.state.data?.voiceDraft ? 3000 : 12000) : false,
     refetchIntervalInBackground: false,
     retry: false,
   });

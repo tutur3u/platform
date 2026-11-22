@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   EMPTY_LAYOUT,
   MAX_PANES,
@@ -8,6 +8,8 @@ import {
   type StageLayout,
 } from './layout-model';
 import {
+  MAX_STORED_ROOMS,
+  normalizeSizes,
   parseStageLayout,
   readStoredStage,
   stageLayoutKey,
@@ -129,5 +131,61 @@ describe('narrow screen arrangements', () => {
     const key = stageLayoutKey('u1', 'm1');
     writeStoredStage(key, { layout, views: { phone: layout }, strip: 'auto' });
     expect(readStoredStage(key).views.phone).toBeUndefined();
+  });
+});
+
+describe('stored sizes and the room cap', () => {
+  const pane = (id: string, tab: string) => ({
+    kind: 'pane',
+    id,
+    tabs: [tab],
+    active: tab,
+  });
+  const split = (sizes: number[]) => ({
+    layout: {
+      root: {
+        kind: 'split',
+        id: 's1',
+        axis: 'row',
+        sizes,
+        children: sizes.map((_, index) => pane(`p${index + 1}`, `t${index}`)),
+      },
+    },
+  });
+
+  it('scales sizes to sum to 100 when parsing', () => {
+    const root = parseStageLayout(split([1, 3])).root;
+    expect(root?.kind === 'split' && root.sizes).toEqual([25, 75]);
+    const three = parseStageLayout(split([1, 1, 1])).root;
+    expect(
+      three?.kind === 'split' &&
+        Math.round(three.sizes.reduce((a, b) => a + b, 0) * 100) / 100
+    ).toBe(100);
+  });
+
+  it('falls back to equal shares when a pane would be squeezed away', () => {
+    const root = parseStageLayout(split([1000, 1])).root;
+    expect(root?.kind === 'split' && root.sizes).toEqual([50, 50]);
+    expect(normalizeSizes([30, 30, 40])).toEqual([30, 30, 40]);
+  });
+
+  it('keeps only the most recently used rooms', () => {
+    let clock = 1_000;
+    const now = vi.spyOn(Date, 'now').mockImplementation(() => clock++);
+    for (let room = 0; room < MAX_STORED_ROOMS + 5; room++)
+      writeStoredStage(stageLayoutKey('u1', `room-${room}`), {
+        layout,
+        views: {},
+        strip: 'auto',
+      });
+    now.mockRestore();
+    const kept = Object.keys(localStorage).filter((key) =>
+      key.includes(':u1:room-')
+    );
+    expect(kept).toHaveLength(MAX_STORED_ROOMS);
+    expect(localStorage.getItem(stageLayoutKey('u1', 'room-0'))).toBeNull();
+    expect(
+      localStorage.getItem(stageLayoutKey('u1', `room-${MAX_STORED_ROOMS + 4}`))
+    ).not.toBeNull();
   });
 });

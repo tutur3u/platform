@@ -29,7 +29,9 @@ function isWhiteboard(view?: View[ClassroomTool]): view is View['whiteboard'] {
 export function useClassroomTool(
   tool: ClassroomTool,
   meetingId: string,
-  accountId: string
+  accountId: string,
+  /** False while its pane is hidden: the polling pauses and resumes on show. */
+  active = true
 ) {
   const client = useQueryClient();
   const key = ['meet-classroom-tool', meetingId, accountId, tool] as const;
@@ -54,8 +56,9 @@ export function useClassroomTool(
       throw new Error('Whiteboard response is missing the drawing');
     },
     refetchInterval: ({ state }) =>
-      state.error instanceof InternalApiError &&
-      [401, 403, 404].includes(state.error.status)
+      !active ||
+      (state.error instanceof InternalApiError &&
+        [401, 403, 404].includes(state.error.status))
         ? false
         : 3000,
     gcTime: 0,

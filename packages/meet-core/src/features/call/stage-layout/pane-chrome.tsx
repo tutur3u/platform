@@ -34,6 +34,7 @@ export function PaneChrome({
   meta,
   style,
   focused,
+  current,
   hidden,
   maximized,
   reorderable,
@@ -51,7 +52,10 @@ export function PaneChrome({
   pane: PaneNode;
   meta: (id: string) => ActivityMeta;
   style: CSSProperties;
+  /** Drawn with the focus ring: the focused pane among several. */
   focused: boolean;
+  /** The layout's focused pane, even when it is the only one. */
+  current: boolean;
   hidden: boolean;
   maximized: boolean;
   reorderable: boolean;
@@ -121,8 +125,8 @@ export function PaneChrome({
         'focus-visible:ring-2 focus-visible:ring-ring',
         hidden && 'invisible'
       )}
-      onPointerDownCapture={() => !focused && onFocus(pane.id)}
-      onFocusCapture={() => !focused && onFocus(pane.id)}
+      onPointerDownCapture={() => !current && onFocus(pane.id)}
+      onFocusCapture={() => !current && onFocus(pane.id)}
       onDragOver={dragOver}
       onDrop={drop}
     >
@@ -175,6 +179,7 @@ export function PaneChrome({
                   type="button"
                   role="tab"
                   aria-selected={selected}
+                  aria-controls={panelId(id)}
                   tabIndex={selected ? 0 : -1}
                   className={cn(
                     'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-semibold text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -219,6 +224,9 @@ export function PaneChrome({
     </section>
   );
 }
+
+export const panelId = (activityId: string) =>
+  `stage-panel-${activityId.replace(/[^a-z0-9_-]/gi, '_')}`;
 
 export const tabId = (paneId: string, activityId: string) =>
   `stage-tab-${paneId}-${activityId.replace(/[^a-z0-9_-]/gi, '_')}`;
