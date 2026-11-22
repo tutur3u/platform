@@ -4353,6 +4353,7 @@
       "class_timer_start": "Start",
       "class_timer_started": "Timer started",
       "class_timer_stop": "Stop",
+      "class_timer_stopped": "Timer stopped",
       "class_viewers": "Admit new participants as viewers",
       "class_viewers_hint": "Viewers can watch, listen, and chat. Make a viewer a speaker from the People panel to let them use their microphone, camera, or screen sharing.",
       "close_panel": "Close panel",

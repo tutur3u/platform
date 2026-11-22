@@ -5,7 +5,19 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
-import { type ComponentType, type ReactNode, useId } from 'react';
+import {
+  type ComponentType,
+  createContext,
+  type ReactNode,
+  useContext,
+  useId,
+} from 'react';
+
+/**
+ * Whether this person may Follow and Summon. Only then does a launch action
+ * explain that it opens the activity for them and Summon brings others.
+ */
+export const ActivitiesNavigationContext = createContext(false);
 
 /** One entry in the Activities dialog. */
 export type ActivityTile = {
@@ -26,10 +38,10 @@ export type ActivityTile = {
 function OpenBadge() {
   const t = useTranslations('meet.call.activities');
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-dynamic-green/15 px-2 py-0.5 font-medium text-dynamic-green text-xs">
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 font-medium text-foreground text-xs">
       <span
         aria-hidden="true"
-        className="size-1.5 rounded-full bg-dynamic-green"
+        className="size-1.5 rounded-full bg-foreground"
       />
       {t('open_state')}
     </span>
@@ -44,6 +56,7 @@ function LaunchButton({
   onLaunch: (tile: ActivityTile) => void;
 }) {
   const t = useTranslations('meet.call.activities');
+  const navigationAllowed = useContext(ActivitiesNavigationContext);
   if (!tile.open && !tile.page) return null;
   const opens = tile.active || !!tile.page;
   const button = (
@@ -62,7 +75,7 @@ function LaunchButton({
   );
   // Starting an activity opens it for this person only; Summon brings
   // others to it.
-  if (tile.page) return button;
+  if (tile.page || !navigationAllowed) return button;
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>

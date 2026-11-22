@@ -25,19 +25,20 @@ function renderClock(state: CallState) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const view = render(
+  const tree = (next: CallState) => (
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
         <TooltipProvider>
           <CallClock
             meetingId="5e5217de-9bb3-4e20-8d99-526ad3e7e34f"
-            state={state}
+            state={next}
           />
         </TooltipProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
-  return view;
+  const view = render(tree(state));
+  return { ...view, update: (next: CallState) => view.rerender(tree(next)) };
 }
 
 const NOW = '2026-09-15T10:00:00.000Z';
@@ -69,18 +70,32 @@ it('shows everyone a read-only synced timer chip in the top bar', () => {
     const chip = screen.getByTitle('05:00 left');
     expect(chip.textContent).toBe('Timer: 05:00');
     expect(chip.getAttribute('aria-live')).toBeNull();
-    // One polite region reports the state, not every tick.
-    expect(screen.getByRole('status').textContent).toBe('Timer started');
+    // A timer already running on join is not re-announced.
+    expect(screen.getByRole('status').textContent).toBe('');
     expect(screen.queryByRole('button', { name: /Timer/ })).toBeNull();
     expect(container.querySelector('audio, video')).toBeNull();
     cleanup();
   }
 });
 
-it('shows the end cue without sound and no chip without a timer', () => {
+it('announces each timer change in one always-mounted polite status', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
-  const { container } = renderClock({
+  const idle = { ...running('host'), classTimer: null };
+  const view = renderClock(idle);
+  const status = screen.getByRole('status');
+  expect(status.getAttribute('aria-live')).toBe('polite');
+  expect(status.textContent).toBe('');
+  expect(screen.queryByTitle('05:00 left')).toBeNull();
+  view.update(running('host'));
+  expect(screen.getByRole('status')).toBe(status);
+  expect(status.textContent).toBe('Timer started');
+  view.update({
+    ...running('host'),
+    classTimer: { ...running('host').classTimer!, status: 'paused' },
+  });
+  expect(status.textContent).toBe('Timer paused');
+  view.update({
     ...running('host'),
     classTimer: {
       ...running('host').classTimer!,
@@ -89,20 +104,14 @@ it('shows the end cue without sound and no chip without a timer', () => {
       endsAt: undefined,
     },
   });
-  expect(screen.getByRole('status').textContent).toBe("Time's up");
+  expect(status.textContent).toBe("Time's up");
   expect(screen.getByTitle("Time's up").className).toContain(
     'motion-safe:animate-pulse'
   );
-  expect(container.querySelector('audio, video')).toBeNull();
-  cleanup();
-  renderClock({
-    ...running('host'),
-    classTimer: { ...running('host').classTimer!, status: 'paused' },
-  });
-  expect(screen.getByRole('status').textContent).toBe('Timer paused');
-  cleanup();
-  renderClock({ ...running('host'), classTimer: null });
-  expect(screen.queryByRole('status')).toBeNull();
+  expect(view.container.querySelector('audio, video')).toBeNull();
+  view.update(idle);
+  expect(status.textContent).toBe('Timer stopped');
+  expect(screen.getAllByRole('status')).toHaveLength(1);
 });
 
 it('offers attendance only to the host and a co-host', () => {
@@ -130,6 +139,7 @@ it('hides the timer and attendance while the server switches are off', () => {
     classAttendanceEnabled: false,
     classTimerEnabled: false,
   });
-  expect(screen.queryByRole('status')).toBeNull();
+  expect(screen.queryByTitle('05:00 left')).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe('');
   expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
 });

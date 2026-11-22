@@ -9,7 +9,10 @@ import { parseAsString, useQueryState } from 'nuqs';
 import { useState } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesDialog } from './activities-dialog';
-import type { ActivityTile } from './activities-pages';
+import {
+  ActivitiesNavigationContext,
+  type ActivityTile,
+} from './activities-pages';
 import type { ActivityEntry } from './call-activities';
 import { controlPillClass } from './control-button';
 
@@ -35,6 +38,7 @@ export function ActivitiesMenu({
   extra = [],
   pages = [],
   preview,
+  navigationAllowed = false,
 }: {
   tools: readonly MeetToolDefinition[];
   activeToolId: string | null;
@@ -48,6 +52,8 @@ export function ActivitiesMenu({
     document: { active: boolean; toggle: () => void };
   };
   preview?: { onFeedback: () => void };
+  /** Whether this person may Follow and Summon (`nav.allowed`). */
+  navigationAllowed?: boolean;
 }) {
   const t = useTranslations('meet.call.activities');
   const programmingT = useTranslations('programmingPlayground');
@@ -156,20 +162,22 @@ export function ActivitiesMenu({
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
       {open && (
-        <ActivitiesDialog
-          tiles={tiles}
-          persistedTab={persistedTab}
-          setPersistedTab={setPersistedTab}
-          onClose={() => changeOpen(false)}
-          onFeedback={
-            preview
-              ? () => {
-                  preview.onFeedback();
-                  changeOpen(false);
-                }
-              : undefined
-          }
-        />
+        <ActivitiesNavigationContext.Provider value={navigationAllowed}>
+          <ActivitiesDialog
+            tiles={tiles}
+            persistedTab={persistedTab}
+            setPersistedTab={setPersistedTab}
+            onClose={() => changeOpen(false)}
+            onFeedback={
+              preview
+                ? () => {
+                    preview.onFeedback();
+                    changeOpen(false);
+                  }
+                : undefined
+            }
+          />
+        </ActivitiesNavigationContext.Provider>
       )}
     </Dialog>
   );

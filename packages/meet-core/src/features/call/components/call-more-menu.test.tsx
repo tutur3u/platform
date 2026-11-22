@@ -190,6 +190,18 @@ it('words the hints as invitations for people who cannot move others', () => {
   ).toBe(call.navigation.summon_hint);
 });
 
+it('adds no live shortcut rows to More while nothing is live', () => {
+  renderDock({
+    activities: {
+      liveControl: null,
+      controls: <span data-testid="idle-controls" />,
+      entries: [],
+    },
+  });
+  openMore();
+  expect(screen.queryByTestId('idle-controls')).toBeNull();
+});
+
 it('lists every live shortcut in More for people without tool access', () => {
   renderDock({
     activities: {

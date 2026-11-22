@@ -519,6 +519,7 @@ function CallShellContent({
                         tools={tools.shown}
                         activeToolId={tools.activeId}
                         onTool={tools.toggle}
+                        navigationAllowed={nav.allowed}
                       />
                     ) : null
                   }

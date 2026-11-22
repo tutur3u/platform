@@ -5055,7 +5055,8 @@
         "email_hint": "Chọn người trong không gian làm việc"
       },
       "class_timer_paused": "Đã tạm dừng hẹn giờ",
-      "class_timer_started": "Đã bắt đầu hẹn giờ"
+      "class_timer_started": "Đã bắt đầu hẹn giờ",
+      "class_timer_stopped": "Đã dừng hẹn giờ"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

@@ -213,10 +213,28 @@ it('clears its tab when it closes so the next open starts on the overview', asyn
   expect(screen.getByRole('heading', { name: a.all })).toBeTruthy();
 });
 
-it('explains on a Start action that it opens the activity for this person', async () => {
-  renderMenu({});
+it('explains Start only to people who may Follow and Summon', async () => {
+  renderMenu({ navigationAllowed: true });
   open();
   fireEvent.focus(screen.getByRole('button', { name: `Start ${pollsLabel}` }));
   expect((await screen.findByRole('tooltip')).textContent).toContain(a.hint);
   expect(a.hint).toBe('Opens for you; Summon brings others');
+  cleanup();
+  renderMenu({});
+  open();
+  const start = screen.getByRole('button', { name: `Start ${pollsLabel}` });
+  fireEvent.focus(start);
+  expect(start.getAttribute('data-state')).toBeNull();
+  expect(screen.queryByRole('tooltip')).toBeNull();
+});
+
+it('marks open activities with a neutral badge', () => {
+  renderMenu({ activeToolId: 'polls' });
+  open('Activities, 1 open');
+  const badge = screen
+    .getAllByText(a.open_state)
+    .find((element) => element.tagName === 'SPAN');
+  if (!badge) throw new Error('missing open badge');
+  expect(badge.className).toContain('bg-muted');
+  expect(badge.className).not.toContain('dynamic-');
 });

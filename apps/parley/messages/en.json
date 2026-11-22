@@ -5055,7 +5055,8 @@
         "email_hint": "Pick people from your workspace"
       },
       "class_timer_paused": "Timer paused",
-      "class_timer_started": "Timer started"
+      "class_timer_started": "Timer started",
+      "class_timer_stopped": "Timer stopped"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

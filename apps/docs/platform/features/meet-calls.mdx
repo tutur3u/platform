@@ -231,8 +231,10 @@ Its controls are an activity: the host, or a workspace admin co-host, opens
 from 1 to 180 minutes. Everyone admitted to the room sees the same remaining
 time in a read-only chip (clock icon and mm:ss) in the call header while a
 timer is set, so participants see it without opening Activities. The ticking
-time is not a live region; one polite status announces only changes (Timer
-started, Timer paused, Time's up). The server
+time is not a live region. One polite status stays mounted in the header,
+empty until the timer changes, and announces only changes (Timer started,
+Timer paused, Time's up, Timer stopped); a timer already running when someone
+joins is not re-announced. The server
 clock is the source of truth, and each client corrects its
 display from the server timestamp on the timer message. When the timer reaches
 zero, the room shows a quiet "Time's up" / "Hết giờ" cue. The cue does not
@@ -1178,8 +1180,9 @@ never hidden; the device-only **Private timer** ("Hẹn giờ riêng") sits ther
 it is never confused with the room's Timer. Every sidebar entry has a distinct
 name. All activities lists **Open now** first, then **Start an activity** as
 cards with an icon, name, one-line description and a Start or Open action.
-Start and Open carry the tooltip "Opens for you; Summon brings others":
-starting an activity opens it for this person only. Starting closes the dialog
+For people who may use Follow and Summon, Start and Open on launchable
+activities carry the tooltip "Opens for you; Summon brings others": starting
+an activity opens it for this person only. Others see no tooltip. Starting closes the dialog
 and opens the activity; an activity that is already open stays open. Timer and
 Room activities render inside the dialog. While open, the dialog keeps its tab
 in the `activitiesTab` URL parameter, apart from Settings' `settingsTab`;

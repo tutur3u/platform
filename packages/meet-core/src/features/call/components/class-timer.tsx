@@ -54,54 +54,78 @@ export function canStartClassTimer(state: CallState) {
   );
 }
 
+type TimerPhase = 'none' | 'running' | 'paused' | 'ended';
+
+/**
+ * Text for the room's one polite timer status: empty at first, then the
+ * latest change (started, paused, Time's up, stopped). The ticking time is
+ * never announced, and a timer already running on join is not re-announced.
+ */
+export function useClassTimerAnnouncement(
+  timer: Timer,
+  serverNow: string | null
+) {
+  const t = useTranslations('meet.call');
+  const { ended } = useRemaining(timer, serverNow);
+  const phase: TimerPhase = !timer
+    ? 'none'
+    : ended
+      ? 'ended'
+      : timer.status === 'paused'
+        ? 'paused'
+        : 'running';
+  const [seen, setSeen] = useState(phase);
+  const [text, setText] = useState('');
+  if (phase !== seen) {
+    setSeen(phase);
+    setText(
+      t(
+        phase === 'none'
+          ? 'class_timer_stopped'
+          : phase === 'ended'
+            ? 'class_timer_ended'
+            : phase === 'paused'
+              ? 'class_timer_paused'
+              : 'class_timer_started'
+      )
+    );
+  }
+  return text;
+}
+
 /**
  * The read-only timer chip everyone sees while the room has a timer. Hosts
- * set and change it from Activities. The ticking time is not announced; with
- * `announce`, one polite live region reports only state changes (started,
- * paused, Time's up).
+ * set and change it from Activities. It is not a live region; the header's
+ * status announces changes (see `useClassTimerAnnouncement`).
  */
 export function ClassTimerChip({
   timer,
   serverNow,
-  announce = false,
 }: {
   timer: NonNullable<Timer>;
   serverNow: string | null;
-  announce?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const { remaining, ended } = useRemaining(timer, serverNow);
   const label = ended
     ? t('class_timer_ended')
     : t('class_timer_remaining', { time: formatClassTimer(remaining ?? 0) });
-  const status = ended
-    ? t('class_timer_ended')
-    : timer.status === 'paused'
-      ? t('class_timer_paused')
-      : t('class_timer_started');
   return (
-    <>
-      <span
-        className={cn(
-          'inline-flex h-8 max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 font-medium text-sm tabular-nums',
-          ended &&
-            'motion-safe:animate-pulse bg-dynamic-orange/15 text-dynamic-orange'
-        )}
-        data-slot="class-timer-chip"
-        title={label}
-      >
-        <Clock3 className="size-4 shrink-0" aria-hidden="true" />
-        <span className="sr-only">{t('class_timer')}: </span>
-        <span className="truncate">
-          {ended ? label : formatClassTimer(remaining ?? 0)}
-        </span>
-      </span>
-      {announce && (
-        <span aria-live="polite" className="sr-only" role="status">
-          {status}
-        </span>
+    <span
+      className={cn(
+        'inline-flex h-8 max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 font-medium text-sm tabular-nums',
+        ended &&
+          'motion-safe:animate-pulse bg-dynamic-orange/15 text-dynamic-orange'
       )}
-    </>
+      data-slot="class-timer-chip"
+      title={label}
+    >
+      <Clock3 className="size-4 shrink-0" aria-hidden="true" />
+      <span className="sr-only">{t('class_timer')}: </span>
+      <span className="truncate">
+        {ended ? label : formatClassTimer(remaining ?? 0)}
+      </span>
+    </span>
   );
 }
 
