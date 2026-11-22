@@ -434,7 +434,8 @@ records the product rules of the shell entry and every tab.
   with that reason. A peer silent past the two-minute limit shows Stale, as
   on the Machines card. Each linked machine carries `laneCoverage`:
   `complete` for its whole recent listing, `partial` when the peer listing
-  hit its 300-lane cap or page limit, and `unavailable` when the peer answered
+  hit its 300-lane cap or page limit (and for a cached listing recorded
+  without coverage), and `unavailable` when the peer answered
   its heartbeat but no lane listing was read or cached. An unavailable
   listing reads "Lanes not read yet", never zero failures. The row also says
   partial coverage when the snapshot's own 300-lane cap may have cut today's

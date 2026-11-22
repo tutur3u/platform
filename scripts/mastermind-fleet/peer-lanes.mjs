@@ -545,7 +545,9 @@ export async function readPeers({
           ? 'partial'
           : 'complete'
         : keepCached
-          ? (previous?.laneCoverage ?? 'complete')
+          ? // A cache written before coverage was recorded may hold a
+            // page-limited listing; the next live read replaces it.
+            (previous?.laneCoverage ?? 'partial')
           : 'unavailable';
       nextCache[link.environment_id] = {
         linkKey,

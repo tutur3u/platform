@@ -260,7 +260,8 @@ test('probes peers live, keeps a stale peer, drops an offline one', async () => 
   assert.equal(byId['env-c'].live, false);
   // A live or cached listing covers the lanes; a heartbeat alone does not.
   assert.equal(byId['env-a'].laneCoverage, 'complete');
-  assert.equal(byId['env-c'].laneCoverage, 'complete');
+  // A cache entry written without coverage may be page-limited.
+  assert.equal(byId['env-c'].laneCoverage, 'partial');
   assert.equal(byId['env-f'].laneCoverage, 'unavailable');
   assert.equal(result.cache['env-a'].laneCoverage, 'complete');
   assert.equal(result.cache['env-a'].lastSeenAt, NOW.toISOString());
