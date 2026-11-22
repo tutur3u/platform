@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { createHmac, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { createClient } from '@supabase/supabase-js';
@@ -18,6 +18,7 @@ const exec = promisify(execFile);
 const suffix = z
   .uuid()
   .parse(process.env.EMPLOYEE_GOOGLE_PROVIDER_FIXTURE_ID ?? randomUUID());
+const fixtureFingerprint = createHash('sha256').update(suffix).digest('hex');
 const network = `employee-gotrue-${suffix}`;
 const database = `${network}-db`;
 const auth = `${network}-auth`;
@@ -172,7 +173,7 @@ async function cleanup() {
   );
   console.log(
     JSON.stringify({
-      cleanup: { containers: [auth, database], network, absent: result.absent },
+      cleanup: { fixtureFingerprint, absent: result.absent === true },
     })
   );
   if (!result.absent) failing = true;
@@ -332,7 +333,7 @@ try {
         puts: () => adminUserPuts,
         password,
       },
-      suffix
+      fixtureFingerprint
     );
   } else {
     const createdSnapshot = await snapshot(userId);

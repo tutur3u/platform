@@ -19,7 +19,7 @@ export async function qualifyGoogleDestination(
     destinationAddress: string;
     puts(): number;
   },
-  fixtureId: string
+  fixtureFingerprint: string
 ) {
   const { client, sql, userId, sourceAddress, destinationAddress } = options;
   assert.match(userId, /^[a-f0-9-]{36}$/);
@@ -104,7 +104,7 @@ export async function qualifyGoogleDestination(
   console.log(
     JSON.stringify({
       stage: 'google_destination_provider',
-      fixtureId,
+      fixtureFingerprint,
       qualification: 'PASS',
       migrationPuts: 1,
       preservationNegativeControls,

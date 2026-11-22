@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -90,7 +91,9 @@ function fixture(t, mode = '') {
       assert.equal(settings.timeoutMs, 360000);
       assert.equal(settings.env.GITHUB_TOKEN, undefined);
       const suffix = settings.env.EMPLOYEE_GOOGLE_PROVIDER_FIXTURE_ID;
-      const prefix = `employee-gotrue-${suffix}`;
+      const fixtureFingerprint = createHash('sha256')
+        .update(suffix)
+        .digest('hex');
       return {
         status: mode === 'child-failure' ? 1 : 0,
         signal: null,
@@ -100,7 +103,8 @@ function fixture(t, mode = '') {
           {
             stage: 'google_destination_provider',
             qualification: 'PASS',
-            fixtureId: mode === 'other-run' ? 'wrong' : suffix,
+            fixtureFingerprint:
+              mode === 'other-run' ? 'wrong' : fixtureFingerprint,
             migrationPuts: 1,
             preservationNegativeControls: mode === 'missing-controls' ? 0 : 4,
             preservedSessionRows: mode === 'empty-sessions' ? 0 : 1,
@@ -113,8 +117,8 @@ function fixture(t, mode = '') {
           {
             cleanup: {
               absent: true,
-              containers: [`${prefix}-auth`, `${prefix}-db`],
-              network: prefix,
+              fixtureFingerprint:
+                mode === 'other-cleanup' ? 'wrong' : fixtureFingerprint,
             },
           },
         ]
@@ -163,6 +167,7 @@ for (const mode of [
   'empty-tokens',
   'missing-controls',
   'other-run',
+  'other-cleanup',
   'timeout',
   'survivor',
   'child-failure',

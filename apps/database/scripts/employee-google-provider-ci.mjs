@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -175,6 +175,7 @@ function bound(env, sourceRoot, controlRoot, readGit) {
   return binding;
 }
 function providerObservation(stdout, suffix) {
+  const fixtureFingerprint = createHash('sha256').update(suffix).digest('hex');
   const rows = stdout
     .split('\n')
     .filter((line) => line.trim())
@@ -186,7 +187,7 @@ function providerObservation(stdout, suffix) {
   const value = pass[0];
   assert.equal(value.qualification, 'PASS');
   assert.equal(value.actualGoTrue, true);
-  assert.equal(value.fixtureId, suffix);
+  assert.equal(value.fixtureFingerprint, fixtureFingerprint);
   assert.equal(value.googleClaims, 'SQL_SEEDED_FIXTURE');
   assert.equal(value.migrationPuts, 1);
   assert.equal(value.preservationNegativeControls, 4);
@@ -203,12 +204,7 @@ function providerObservation(stdout, suffix) {
   const cleanup = rows.filter((row) => row.cleanup);
   assert.equal(cleanup.length, 1);
   assert.equal(cleanup[0].cleanup.absent, true);
-  const prefix = `employee-gotrue-${suffix}`;
-  assert.deepEqual(cleanup[0].cleanup.containers, [
-    `${prefix}-auth`,
-    `${prefix}-db`,
-  ]);
-  assert.equal(cleanup[0].cleanup.network, prefix);
+  assert.equal(cleanup[0].cleanup.fixtureFingerprint, fixtureFingerprint);
   return {
     migrationPuts: 1,
     preservedSessionRows: value.preservedSessionRows,
