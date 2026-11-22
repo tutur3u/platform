@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { mastermindFleetNativeSessionRequired } from '@/lib/mastermind/fleet/auth';
 import { recordFleetAnswer } from '@/lib/mastermind/fleet/store';
 import { createMemoryMastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { sampleFleetState } from '@/lib/mastermind/fleet/sample-state.fixture';
@@ -118,10 +119,21 @@ describe('Mastermind fleet sync routes', () => {
         targetApp: 'mastermind',
         requiredScope: 'internal-app:session',
       },
-      requireMastermindMobileSessionForSupabase: true,
+      requireMastermindMobileSessionForSupabase:
+        mastermindFleetNativeSessionRequired,
       appSessionMfaMaxAgeSeconds: 86_400,
     });
     expect(mocks.authOptions).toEqual([fleetAuth, fleetAuth]);
+  });
+
+  it('holds the native-session requirement until its flag is on', () => {
+    vi.stubEnv('MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED', '');
+    expect(mastermindFleetNativeSessionRequired()).toBe(false);
+    vi.stubEnv('MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED', '1');
+    expect(mastermindFleetNativeSessionRequired()).toBe(false);
+    vi.stubEnv('MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED', 'true');
+    expect(mastermindFleetNativeSessionRequired()).toBe(true);
+    vi.unstubAllEnvs();
   });
 
   beforeEach(() => {

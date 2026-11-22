@@ -15,8 +15,20 @@ export const FLEET_SIGNATURE_HEADER = MASTERMIND_PUSH_SIGNATURE_HEADER;
 export const FLEET_TIMESTAMP_HEADER = MASTERMIND_PUSH_TIMESTAMP_HEADER;
 
 /**
- * Fleet routes admit the Mastermind Worker's dedicated app session, or a
- * native mobile bearer paired with its signed, session-bound client credential.
+ * Whether Fleet routes refuse a Supabase session that is not a native
+ * Mastermind mobile sign-in (`MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED=true`).
+ * Off by default: it turns on only after the owner runs an app build that
+ * records native provenance and has signed in again on it. Until then the
+ * earlier Supabase session admission applies to these routes.
+ */
+export function mastermindFleetNativeSessionRequired() {
+  return process.env.MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED === 'true';
+}
+
+/**
+ * Fleet routes admit the Mastermind Worker's dedicated app session, or (once
+ * required) only a native mobile bearer paired with its signed,
+ * session-bound client credential.
  */
 export const MASTERMIND_FLEET_SESSIONS = {
   allowAppSessionAuth: {
@@ -24,7 +36,8 @@ export const MASTERMIND_FLEET_SESSIONS = {
     requiredScope: 'internal-app:session',
   },
   appSessionMfaMaxAgeSeconds: 24 * 60 * 60,
-  requireMastermindMobileSessionForSupabase: true,
+  requireMastermindMobileSessionForSupabase:
+    mastermindFleetNativeSessionRequired,
 } as const;
 
 export function fleetOwnerIds(

@@ -404,9 +404,13 @@ records the product rules of the shell entry and every tab.
   Mastermind Worker uses its own
   Mastermind access session with a recent MFA proof. The routes recheck
   owner allowlist and root permission, and thread replies retain their
-  fresh MFA requirement. Before activating Web enforcement, verify a
+  fresh MFA requirement. The native-session requirement is held behind
+  `MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED=true` on Web (off by default);
+  while it is off, the earlier Supabase session admission still applies to
+  these routes, and the dedicated Worker session's 24-hour MFA bound applies
+  either way. Before turning it on, verify a
   compatible mobile release and a newly recorded owner session on the
-  owner's device. Previous sessions and direct provider sign-ins do not
+  owner's device; turning it off is the rollback. Previous sessions and direct provider sign-ins do not
   have this record. The owner can sign back in with a native password or
   email code. The signed publisher and separate Fleet grantee APIs keep
   their own authorization. Regression tests cover plain Web cookies,

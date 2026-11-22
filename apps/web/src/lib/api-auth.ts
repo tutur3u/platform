@@ -320,8 +320,8 @@ interface SessionAuthOptions {
   allowAppSessionAuth?: AppSessionAuthOptions;
   preferSupabaseSessionAuth?: boolean;
   appSessionMfaMaxAgeSeconds?: number;
-  /** Only accept Supabase bearers marked by the verified native Mastermind sign-in. */
-  requireMastermindMobileSessionForSupabase?: boolean;
+  /** Only accept Supabase bearers marked by the verified native Mastermind sign-in; a function is read per request. */
+  requireMastermindMobileSessionForSupabase?: boolean | (() => boolean);
   /** Verified app-session requests skip browser step-up (scoped server-to-server routes only). */
   skipAppSessionStepUpChallenge?: boolean;
   /** Waives the browser-shape step-up (never a server reputation challenge) for admitted users: native clients cannot solve Turnstile. Rate limits still apply. */
@@ -687,8 +687,9 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
+    const nativeRule = options?.requireMastermindMobileSessionForSupabase;
     const requireNative =
-      options?.requireMastermindMobileSessionForSupabase === true;
+      typeof nativeRule === 'function' ? nativeRule() : nativeRule === true;
     if (
       requireNative &&
       (isBrowserRequest(request.headers) ||
