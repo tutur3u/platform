@@ -5,6 +5,7 @@ import {
   type MeetRealtimeTokenPayload,
   type MeetRoomSnapshot,
   receivesMeetManagerMessage,
+  receivesMeetToolFrame,
 } from '../../../packages/realtime/src/meet';
 
 export type MeetWebSocket = ServerWebSocket<{
@@ -17,6 +18,8 @@ type RoomState = {
 };
 
 export const rooms = new Map<string, RoomState>();
+/** What a socket without a room is measured against: nobody is admitted. */
+const NO_ROOM = { presence: {}, waiting: {} };
 
 export function getRoom(roomId: string): RoomState {
   const existing = rooms.get(roomId);
@@ -31,6 +34,11 @@ export function getRoom(roomId: string): RoomState {
 }
 
 export function send(ws: MeetWebSocket, message: MeetRealtimeServerMessage) {
+  // The same rule as the Durable Object: private activity views and the board
+  // reach only people admitted at this moment, in a room that has not ended.
+  const { token } = ws.data;
+  const snapshot = rooms.get(token.roomId)?.snapshot ?? NO_ROOM;
+  if (!receivesMeetToolFrame(snapshot, token, message)) return;
   ws.send(JSON.stringify(message));
 }
 

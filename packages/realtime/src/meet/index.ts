@@ -158,6 +158,7 @@ export {
   canMeetRealtimeManageParticipants,
   canMeetRealtimeRunActivities,
   receivesMeetManagerMessage,
+  receivesMeetToolFrame,
   canMeetRealtimePublish,
   canMeetRealtimeUpdateStage,
   getMeetRealtimeScopesForRole,

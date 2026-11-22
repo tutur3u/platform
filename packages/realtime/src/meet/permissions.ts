@@ -195,3 +195,39 @@ export function receivesMeetManagerMessage(
     (message.type === 'activity.host' && canMeetRealtimeRunActivities(token))
   );
 }
+
+const PRIVATE_TOOL_FRAMES = new Set([
+  'activity.mine',
+  'activity.host',
+  'penboard.snapshot',
+  'penboard.stroke',
+]);
+
+/** Frames that carry one person's or the managers' activity data. */
+export const isMeetPrivateToolFrame = (message: { type: string }) =>
+  PRIVATE_TOOL_FRAMES.has(message.type);
+
+/**
+ * Whether a frame may reach this token right now. Private activity views and
+ * the board go only to people who are admitted at the moment of delivery, in a
+ * room that has not ended, and the manager view only to those who run
+ * activities. Every other frame is unaffected. Every transport delivers
+ * through this one rule.
+ */
+export function receivesMeetToolFrame(
+  state: {
+    ended?: boolean;
+    presence: Readonly<Record<string, unknown>>;
+    waiting: Readonly<Record<string, unknown>>;
+  },
+  token: Pick<MeetRealtimeTokenPayload, 'role' | 'scopes' | 'userId'>,
+  message: { type: string }
+) {
+  if (!PRIVATE_TOOL_FRAMES.has(message.type)) return true;
+  return (
+    !state.ended &&
+    !!state.presence[token.userId] &&
+    !state.waiting[token.userId] &&
+    (message.type !== 'activity.host' || canMeetRealtimeRunActivities(token))
+  );
+}
