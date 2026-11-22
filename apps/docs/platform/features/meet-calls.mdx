@@ -2012,7 +2012,9 @@ Learn uses the same workbench without the meeting-only controls.
 - **Output.** Run output stays in the Console tab with the exit status. A
   failure names what failed (saving the room's files, starting the run, reading
   the result, or running tests), says that the room's edits are kept, and offers
-  a retry.
+  a retry. The reason follows the HTTP status of the failed step: 502, 503 and
+  504 say that running code is temporarily unavailable (a Playground pool with
+  no ready runner answers a run with 503), and 429 says the service is busy.
 
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-errors.test.ts` and `programming-panel.test.tsx`.

@@ -4,6 +4,7 @@ export type WorkbenchFailureReason =
   | 'access'
   | 'changed'
   | 'busy'
+  | 'unavailable'
   | 'offline'
   | 'unknown';
 
@@ -31,8 +32,9 @@ export function failureReason(error: unknown): WorkbenchFailureReason {
       : Number.NaN;
   if (status === 401 || status === 403) return 'access';
   if (status === 409 || status === 412) return 'changed';
-  if (status === 429 || status === 502 || status === 503 || status === 504)
-    return 'busy';
+  if (status === 429) return 'busy';
+  // No runner can take the job (or the service is down): a quick retry does not help.
+  if (status === 502 || status === 503 || status === 504) return 'unavailable';
   if (
     Number.isNaN(status) &&
     (error instanceof TypeError ||

@@ -13,8 +13,10 @@ describe('workbench failures', () => {
     expect(failureReason(status(403))).toBe('access');
     expect(failureReason(status(401))).toBe('access');
     expect(failureReason(status(409))).toBe('changed');
-    expect(failureReason(status(503))).toBe('busy');
     expect(failureReason(status(429))).toBe('busy');
+    expect(failureReason(status(502))).toBe('unavailable');
+    expect(failureReason(status(503))).toBe('unavailable');
+    expect(failureReason(status(504))).toBe('unavailable');
     expect(failureReason(status(500))).toBe('unknown');
     expect(failureReason(new TypeError('Failed to fetch'))).toBe('offline');
   });
@@ -22,7 +24,7 @@ describe('workbench failures', () => {
   it('reports the checkpoint step when a run fails while saving the room', () => {
     expect(
       workbenchFailure({ run: new WorkbenchStepError('save', status(503)) })
-    ).toEqual({ step: 'save', reason: 'busy' });
+    ).toEqual({ step: 'save', reason: 'unavailable' });
     expect(workbenchFailure({ run: status(409) })).toEqual({
       step: 'run',
       reason: 'changed',

@@ -6534,6 +6534,7 @@
       "busy": "Dịch vụ lập trình đang bận. Hãy thử lại sau giây lát.",
       "changed": "Phòng đã thay đổi trong lúc bạn làm việc. Hãy thử lại.",
       "offline": "Có vẻ bạn đang ngoại tuyến.",
+      "unavailable": "Tính năng chạy mã tạm thời chưa khả dụng. Hãy thử lại sau.",
       "unknown": "Đã xảy ra lỗi từ phía chúng tôi."
     },
     "failureSafe": "Các chỉnh sửa của bạn vẫn an toàn trong phòng này.",
