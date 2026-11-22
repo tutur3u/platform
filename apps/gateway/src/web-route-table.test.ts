@@ -229,6 +229,38 @@ describe('vinext family dispatch', () => {
     expect(web).not.toHaveBeenCalled();
   });
 
+  it('preserves verification proofs for a Mira mutation bound to API Core', async () => {
+    const core = vi.fn(async (_request: Request) => new Response('api-core'));
+    const { call } = setup('api-core', {
+      WEB_FAMILY_API_CORE: { fetch: core },
+    });
+    const path = '/api/v1/workspaces/ws/chat/conversations/chat/messages';
+    const headers = {
+      authorization: 'Bearer fixture-only',
+      'x-tuturuuu-mobile-client': 'fixture-mobile-proof',
+      'x-tuturuuu-turnstile-token': 'fixture-turnstile-proof',
+      'x-tuturuuu-app-base': '/untrusted',
+    };
+    const response = await call(path, { method: 'POST', headers });
+
+    expect(response.headers.get('x-gateway-family')).toBe('api-core');
+    expect(core).toHaveBeenCalledTimes(1);
+    const sent = core.mock.calls[0]?.[0];
+    expect(sent?.headers.get('authorization')).toBe(headers.authorization);
+    expect(sent?.headers.get('x-tuturuuu-mobile-client')).toBe(
+      headers['x-tuturuuu-mobile-client']
+    );
+    expect(sent?.headers.get('x-tuturuuu-turnstile-token')).toBe(
+      headers['x-tuturuuu-turnstile-token']
+    );
+    expect(sent?.headers.has('x-tuturuuu-app-base')).toBe(false);
+
+    await call(path, { headers });
+    const read = core.mock.calls[1]?.[0];
+    expect(read?.headers.has('x-tuturuuu-mobile-client')).toBe(false);
+    expect(read?.headers.has('x-tuturuuu-turnstile-token')).toBe(false);
+  });
+
   it('serves an unflagged path from web-rest with no family flagged', async () => {
     const { web, calls, call } = setup('');
     const response = await call('/personal/tasks');

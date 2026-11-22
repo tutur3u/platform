@@ -31,6 +31,12 @@ The whole app is 17.3 MiB gzip as one Worker (`cf deploy --dry-run`), over the
 owns. It is empty. `families.test.ts` checks that every route entry has exactly
 one family and that only `api-ops` owns denied paths.
 
+The gateway passes `x-tuturuuu-mobile-client` and `x-tuturuuu-turnstile-token`
+to Web family bindings on API mutations. Web verifies the session binding or
+Turnstile proof before handling the request. The gateway still strips other
+client-supplied forwarding headers. The Mira dispatch case in
+`apps/gateway/src/web-route-table.test.ts` covers this boundary.
+
 ## Building a family
 
 Builds run in a disposable checkout, because they delete unowned routes and

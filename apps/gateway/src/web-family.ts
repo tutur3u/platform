@@ -17,6 +17,11 @@ export const FAMILY_PARITY_HEADERS: Readonly<Record<string, string>> = {
 };
 
 const BINDING_PATTERN = /^WEB_FAMILY_[A-Z0-9_]+$/u;
+const API_MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const API_MUTATION_PROOF_HEADERS = new Set([
+  'x-tuturuuu-mobile-client',
+  'x-tuturuuu-turnstile-token',
+]);
 
 export interface WebFamilyTarget {
   id: string;
@@ -147,7 +152,11 @@ export function familyRequest(
   const target = new URL(request.url);
   target.pathname = path;
   const outgoing = new Request(target, request);
+  const apiMutation =
+    path.startsWith('/api/') && API_MUTATION_METHODS.has(request.method);
   for (const name of [...outgoing.headers.keys()]) {
+    // Web independently verifies these proofs against the session or Turnstile.
+    if (apiMutation && API_MUTATION_PROOF_HEADERS.has(name)) continue;
     if (isClientForwardingHeader(name)) outgoing.headers.delete(name);
   }
   outgoing.headers.set('x-forwarded-host', publicHost);
