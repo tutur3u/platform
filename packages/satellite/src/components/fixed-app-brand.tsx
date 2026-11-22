@@ -21,7 +21,8 @@ export function FixedAppBrand({ appId, ...props }: FixedAppBrandProps) {
       {...props}
       appName={t(`app_names.${appId}`)}
       LinkComponent={Link}
-      logo={<TuturuuLogo alt="" className="size-8" height={32} width={32} />}
+      // Same size as the rail logo, so expanding keeps the logo still.
+      logo={<TuturuuLogo alt="" className="size-7" height={32} width={32} />}
     />
   );
 }

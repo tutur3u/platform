@@ -65,8 +65,14 @@ choice follows the account across browsers unless **Local Override** is on.
 
 **Minimal** (decided 2026-11-22) is the mode for the most room: the rail, its
 border and the account controls are gone and only the logo floats at the top
-left. A fixed 3.5rem gutter keeps page content clear of the logo while the panel
-opens and closes.
+left. The logo sits on a 48px rounded-square button (the theme's row radius, so
+Sorbet's Corners option scales it; never a pill) with 10px around the logo, 8px
+from the top and left edges. The button is a floating control, not a docked
+rail: it keeps the same position, size and look whether the panel is open or
+closed, and the open panel reserves its square in the header. Page content
+starts 8px past the button (a 4rem gutter derived from the button's size and
+inset) at every desktop width, and never moves when the panel opens or closes
+(decided 2026-11-23).
 
 - **Hover**: resting the pointer on the logo or anywhere along the left edge
   for 120 ms opens the sidebar as a floating panel over the page. A pointer
@@ -80,8 +86,12 @@ opens and closes.
   destination, closes it.
 - **Overlays**: a menu, dialog or popover opened from the panel keeps it open
   and takes the first Escape.
-- **Motion**: the panel fades and slides in over 180 ms, and appears at once
-  when reduced motion is preferred.
+- **Motion**: the panel and its labels fade in and out in place over 150 ms;
+  nothing slides or scales. The panel appears at once when reduced motion is
+  preferred. **Hover** mode fades the same way, and its rail icons and logo
+  keep their exact position while the labels fade in beside them
+  (decided 2026-11-23). With **Show navigation labels** on, rail captions make
+  rail rows taller than panel rows, so the icon column does not line up then.
 - **Phones**: the top bar and drawer are the same as in every other mode.
 
 Minimal takes the place of a mode named Hidden, which removed the sidebar and
@@ -98,9 +108,13 @@ if the selected mode replaced that control.
 
 Scope: Web, Workspace, Colab and every satellite sidebar. Exception: Nova has a
 single fixed sidebar and no modes. Coverage: `sidebar-behavior.test.ts`,
-`structure-minimal.test.tsx`, and the cookie and account-preference cases in
-`sidebar-context.test.tsx` and `sidebar-remote-behavior-bridge.test.tsx` under
-`packages/ui/src/components/ui/custom/`.
+`structure-minimal.test.tsx`, `use-sidebar-rail-underlay.test.tsx`, and the
+cookie and account-preference cases in `sidebar-context.test.tsx` and
+`sidebar-remote-behavior-bridge.test.tsx` under
+`packages/ui/src/components/ui/custom/`. The Chromium layout-shift harness
+(`scripts/ci/sidebar-layout-shift.mjs`, both modes) asserts zero layout shift,
+the fixed logo and icon positions, the fade-only reveal and the content
+clearance at 768 to 1920px.
 
 ## Workspace switcher
 

@@ -108,7 +108,7 @@ export function SatelliteBrand({
     <div className={cn('flex min-w-0 flex-1 items-center gap-2.5', className)}>
       <Link
         aria-label="Tuturuuu"
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl pointer-coarse:size-11 transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:group-data-[minimal-sidebar=true]:invisible"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl pointer-coarse:size-11 transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:group-data-[minimal-sidebar=true]:hidden"
         href={centralHref}
       >
         {logo}

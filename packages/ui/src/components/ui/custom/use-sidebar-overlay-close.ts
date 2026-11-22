@@ -7,8 +7,8 @@ import {
 } from 'react';
 import { readFocusModality } from './focus-modality';
 
-/** Matches the reveal and conceal keyframe duration in globals.css. */
-export const SIDEBAR_OVERLAY_CLOSE_MS = 180;
+/** Matches the reveal and conceal fade duration in globals.css. */
+export const SIDEBAR_OVERLAY_CLOSE_MS = 150;
 /** Closes anyway if the animation never reports its end (hidden tab, mobile). */
 const CLOSE_FALLBACK_MS = SIDEBAR_OVERLAY_CLOSE_MS + 80;
 

@@ -167,23 +167,53 @@ and the expanded panel is a fixed layer above the content, so expanding it never
 resizes or moves the page. Rules for any change to it:
 
 - No width, margin, or padding transition on anything in normal flow. The panel's
-  box changes size in one frame; a paint-only `clip-path` wipe and an opacity fade
-  (`sidebar-overlay-reveal`, `sidebar-overlay-content` in `globals.css`, 180 ms,
-  disabled under `prefers-reduced-motion`) reveal it.
+  box changes size in one frame and only opacity animates: the panel surface
+  (`data-sidebar-overlay-surface`, which draws the open panel's background and
+  edge) fades in and out (`sidebar-overlay-content` and
+  `sidebar-overlay-content-out` in `globals.css`, 150 ms, matching
+  `SIDEBAR_OVERLAY_CLOSE_MS`, disabled under `prefers-reduced-motion`). Labels
+  fade; nothing slides, wipes or scales.
+- Icons keep their place. Rail and panel headers have the same height, the
+  panel brand's 36px logo slot is centered on the rail
+  (`pl-[calc((var(--sidebar-collapsed-width)-2.25rem)/2)]`), rail and panel nav
+  rows are both 36px tall, and the panel's icon column is the rail's center
+  (`satelliteNavigationItemClass` uses `pl-4` when expanded). A section label
+  keeps its space in the rail as an invisible row. Trailing row actions use a
+  negative margin so they do not grow the row. The rail logo and the brand logo
+  are the same size (28px, `size-7`) in every shell. An item that shares its row
+  with other controls (the footer Settings button) passes `tightEnd` so its
+  label still fits.
+- Submenu levels slide only for navigation that happens while mounted
+  (`SidebarNavSlide` from `@tuturuuu/ui/custom/sidebar-nav-slide`, and
+  `SatelliteContent`), because overlay sidebars remount their content on every
+  reveal and that must fade, not slide.
+- While the panel fades, `useSidebarRailUnderlay` shows a static, inert copy of
+  the last rail under it (`data-slot="sidebar-rail-underlay"`), so the icons,
+  which sit at the same pixels in both, read as still. The copy is taken when
+  React detaches the rail, keeps scroll offsets, drops non-SVG ids, and is
+  removed when the reveal ends or the rail mounts again. Reduced motion skips it.
 - Shared popovers, menus and dialogs inside the sidebar register while open,
   including when their content renders in a portal. Shells pass the open state
   of sidebar dialogs rendered alongside the sidebar. When the last overlay closes,
-  the panel starts its usual 180 ms conceal animation if the pointer is outside.
+  the panel starts its usual 150 ms conceal fade if the pointer is outside.
   Re-entering cancels the close, reduced motion collapses at once, and a timeout
   closes it if no `animationend` arrives. The sidebar and notification popover
   tests cover overlay dismissal, portal movement and overlapping overlays.
 - The rail and the expanded panel are separate subtrees (keyed remount), because an
   element that exists in both states and changes position counts as a layout shift.
 - Minimal mode (`sidebarMinimal`) is the same overlay with no rail: at rest the
-  `aside` is a transparent 3.5rem hover area holding `SidebarMinimalTrigger` (the logo),
-  and the open panel is a floating card inside it
-  (`data-sidebar-overlay-surface`, `sidebar-minimal-reveal` and
-  `sidebar-minimal-conceal`). The `aside` keeps its left edge and full height in
+  `aside` is a transparent hover area as wide as the page gutter, holding
+  `SidebarMinimalTrigger` (the logo button), and the open panel is a floating
+  card inside it (`data-sidebar-overlay-surface`, `sidebar-minimal-reveal` and
+  `sidebar-minimal-conceal`, the same opacity fade). One set of custom
+  properties in `structure.tsx` (`MINIMAL_GEOMETRY`) derives everything from the
+  button: `--sidebar-minimal-inset` and `--sidebar-minimal-trigger` place it,
+  `--sidebar-minimal-gutter` offsets the page, and the panel header's height and
+  start (`--sidebar-minimal-header-height`, `--sidebar-minimal-header-inset`)
+  reserve the button's square so the button never moves or restyles on open.
+  The panel radius is concentric with the button's `--radius`. Change the
+  geometry there, not in callers. `SatelliteBrand` hides its own logo link in
+  minimal mode. The `aside` keeps its left edge and full height in
   both states, so a pointer resting on the screen edge cannot oscillate between
   open and closed. `useSidebarOverlayClose` owns every way in and out: hover
   with an open and a close delay, keyboard focus, tap, Escape, a press outside
@@ -213,10 +243,16 @@ ttr resources run -- node scripts/ci/sidebar-layout-shift.mjs
 
 In hover mode the harness also checks that the collapsed workspace avatar
 expands to the labeled row without reopening the workspace picker.
+In both modes it also fails if the logo or any navigation icon moves by more
+than 0.5px between rest and open, or if anything in the sidebar animates a
+property other than opacity or color during the reveal.
 Set `SIDEBAR_SHIFT_BEHAVIOR=minimal` to run the same check in minimal mode; it
 also asserts that keyboard focus on the logo opens the panel and Escape closes
-it. Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed, mid-reveal, and expanded
-screenshots. It needs the installed workspace and a Playwright Chromium; it uses no
+it, and that at 768, 1024, 1280, 1440 and 1920px the logo button stays in one
+place, is a rounded square with room around the logo, and the page starts at
+least 8px past it. Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed,
+mid-reveal, and expanded screenshots, and `SIDEBAR_SHIFT_VIDEO=<dir>` to record
+the run. It needs the installed workspace and a Playwright Chromium; it uses no
 network and no authentication, so it does not cover signed-in data states.
 
 ## Fields and focus

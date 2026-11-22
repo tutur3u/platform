@@ -10,10 +10,10 @@ import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sideb
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarWorkspaceSelectSection } from '@tuturuuu/ui/custom/satellite-workspace-section';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
+import { SidebarNavSlide } from '@tuturuuu/ui/custom/sidebar-nav-slide';
 import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useWorkspaceSelectSection } from '@tuturuuu/ui/custom/workspace-select-reveal';
-import { cn } from '@tuturuuu/utils/format';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import dynamic from 'next/dynamic';
@@ -848,14 +848,10 @@ export function StructureImpl({
       )}
 
       <div className="relative min-h-0 flex-1">
-        <div
-          key={navState.history.length}
-          className={cn(
-            'absolute inset-0 flex min-h-0 flex-col transition-transform duration-300 ease-in-out',
-            navState.direction === 'forward'
-              ? 'slide-in-from-right animate-in'
-              : 'slide-in-from-left animate-in'
-          )}
+        <SidebarNavSlide
+          className="absolute inset-0 flex min-h-0 flex-col transition-transform duration-300 ease-in-out"
+          depth={navState.history.length}
+          direction={navState.direction}
         >
           {navState.history.length === 0 ? (
             <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
@@ -918,7 +914,7 @@ export function StructureImpl({
               )}
             </>
           )}
-        </div>
+        </SidebarNavSlide>
       </div>
     </div>
   );

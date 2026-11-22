@@ -2,9 +2,9 @@
 
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { SidebarNavSlide } from '@tuturuuu/ui/custom/sidebar-nav-slide';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { type Dispatch, type SetStateAction, Suspense } from 'react';
 import { Nav } from './nav';
@@ -68,14 +68,10 @@ export function getStructurePanels({
 
   const sidebarContent = (
     <div className="relative h-full overflow-hidden">
-      <div
-        key={navState.history.length}
-        className={cn(
-          'absolute flex h-full min-h-0 w-full flex-col transition-transform duration-300 ease-in-out',
-          navState.direction === 'forward'
-            ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in'
-        )}
+      <SidebarNavSlide
+        className="absolute flex h-full min-h-0 w-full flex-col transition-transform duration-300 ease-in-out"
+        depth={navState.history.length}
+        direction={navState.direction}
       >
         {navState.history.length === 0 ? (
           <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
@@ -122,7 +118,7 @@ export function getStructurePanels({
             )}
           </>
         )}
-      </div>
+      </SidebarNavSlide>
     </div>
   );
 

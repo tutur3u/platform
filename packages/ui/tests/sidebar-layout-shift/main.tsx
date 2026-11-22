@@ -64,11 +64,17 @@ const links: NavLink[] = [
     href: '/ws/time',
     icon: <Clock className="h-4 w-4" />,
   },
-  { title: 'People', href: '/ws/people', icon: <Users className="h-4 w-4" /> },
+  {
+    title: 'People',
+    href: '/ws/people',
+    icon: <Users className="h-4 w-4" />,
+    sectionLabel: 'Team',
+  },
   {
     title: 'Workspace analytics',
     href: '/ws/analytics',
     icon: <ChartColumn className="h-4 w-4" />,
+    sectionLabel: 'Team',
   },
 ];
 
@@ -212,7 +218,9 @@ function Harness() {
     backLabel: 'Back',
   });
   const workspace = useWorkspaceSelectSection(shell.isCollapsed);
-  const logo = <div className="size-8 rounded-lg bg-foreground" />;
+  const logo = (
+    <div className="size-7 rounded-lg bg-foreground" data-testid="brand-logo" />
+  );
   return (
     <SatelliteShell
       actions={
@@ -284,6 +292,7 @@ function Harness() {
           aria-label="Settings"
           className={satelliteNavigationItemClass({
             isCollapsed: shell.isCollapsed,
+            tightEnd: true,
           })}
           type="button"
         >

@@ -602,19 +602,13 @@
   }
 }
 
-/* Hover-expand sidebar overlay. The panel's box jumps to its expanded size in
-   one frame while a paint-only clip-path wipe and an opacity fade reveal it, so
-   nothing in normal flow is resized or animated through layout. */
-@keyframes sidebar-overlay-reveal {
-  from {
-    clip-path: inset(0 calc(100% - var(--sidebar-collapsed-width, 4rem)) 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes sidebar-overlay-content {
+/* Sidebar overlays (expand-on-hover and minimal mode) fade in place. The
+   panel's box changes size in one frame and only opacity animates, so no label
+   slides, nothing in normal flow is resized, and the logo and rail icons keep
+   their positions. Expand-on-hover keeps a static copy of the rail under the
+   fading panel (use-sidebar-rail-underlay.ts). The duration matches
+   SIDEBAR_OVERLAY_CLOSE_MS. */
+@keyframes sidebar-overlay-fade-in {
   from {
     opacity: 0;
   }
@@ -623,73 +617,29 @@
   }
 }
 
-/* The close mirrors the reveal: same duration and easing, clipped back to the rail. */
-@keyframes sidebar-overlay-conceal {
-  from {
-    clip-path: inset(0 0 0 0);
-  }
-  to {
-    clip-path: inset(0 calc(100% - var(--sidebar-collapsed-width, 4rem)) 0 0);
-  }
-}
-
-@keyframes sidebar-overlay-content-out {
+@keyframes sidebar-overlay-fade-out {
   from {
     opacity: 1;
   }
   to {
     opacity: 0;
-  }
-}
-
-/* Minimal mode's panel floats over the page, so it fades and slides in from
-   the logo instead of wiping open from a rail. */
-@keyframes sidebar-minimal-reveal {
-  from {
-    opacity: 0;
-    transform: translate3d(-0.5rem, 0, 0) scale(0.985);
-  }
-}
-
-@keyframes sidebar-minimal-conceal {
-  to {
-    opacity: 0;
-    transform: translate3d(-0.5rem, 0, 0) scale(0.985);
   }
 }
 
 @media (min-width: 48rem) {
+  .sidebar-overlay-content,
   .sidebar-minimal-reveal {
-    transform-origin: top left;
-    animation: sidebar-minimal-reveal 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: sidebar-overlay-fade-in 150ms ease-out both;
   }
 
+  .sidebar-overlay-content-out,
   .sidebar-minimal-conceal {
-    transform-origin: top left;
-    animation: sidebar-minimal-conceal 180ms ease-in forwards;
-  }
-
-  .sidebar-overlay-reveal {
-    animation: sidebar-overlay-reveal 180ms ease-out both;
-  }
-
-  .sidebar-overlay-content {
-    animation: sidebar-overlay-content 180ms ease-out both;
-  }
-
-  .sidebar-overlay-conceal {
-    animation: sidebar-overlay-conceal 180ms ease-out both;
-  }
-
-  .sidebar-overlay-content-out {
-    animation: sidebar-overlay-content-out 180ms ease-out both;
+    animation: sidebar-overlay-fade-out 150ms ease-in both;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar-overlay-reveal,
   .sidebar-overlay-content,
-  .sidebar-overlay-conceal,
   .sidebar-overlay-content-out,
   .sidebar-minimal-reveal,
   .sidebar-minimal-conceal {

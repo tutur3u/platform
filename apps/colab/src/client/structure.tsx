@@ -12,10 +12,10 @@ import {
 } from '@tuturuuu/icons';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { AppsLauncherCoreDialog } from '@tuturuuu/satellite/apps-launcher-core';
-import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
+import { satelliteNavigationItemClass } from '@tuturuuu/ui/custom/satellite-navigation';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
 import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
@@ -240,8 +240,9 @@ export function Structure({
           appHref: '/',
           centralHref: 'https://tuturuuu.com',
           launcherLabel: c.appMenu,
+          // Same size as the rail logo, so expanding keeps the logo still.
           logo: (
-            <img src={logo} alt="" width={32} height={32} className="size-8" />
+            <img src={logo} alt="" width={28} height={28} className="size-7" />
           ),
           onAppClick: () => setAppsOpen(true),
         }}
@@ -261,16 +262,21 @@ export function Structure({
           />
         }
         sidebarUtility={
-          <Button
-            variant="ghost"
+          <button
+            type="button"
             aria-label={c.settings}
             data-slot="sidebar-settings-button"
-            className={`h-9 rounded-lg ${collapsed ? 'w-9 px-0' : 'w-full justify-start px-3'}`}
+            className={satelliteNavigationItemClass({
+              isCollapsed: collapsed,
+              tightEnd: true,
+            })}
             onClick={(event) => openSettings(event.currentTarget)}
           >
-            <Settings className="size-4 shrink-0" />
-            {!collapsed && c.settings}
-          </Button>
+            <span className="flex min-h-5 min-w-0 items-center gap-2">
+              <Settings className="size-4 shrink-0" />
+              {!collapsed && <span className="truncate">{c.settings}</span>}
+            </span>
+          </button>
         }
         feedbackButton={
           <SatelliteFooterActions

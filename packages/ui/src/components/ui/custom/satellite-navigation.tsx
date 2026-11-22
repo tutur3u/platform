@@ -54,9 +54,17 @@ export function SidebarNavigation({
 
           return (
             <div key={`nav-item-${link.href || link.title}-${index}`}>
-              {shouldShowSectionLabel && !isCollapsed && (
-                <div className="px-2 pt-3 pb-1 first:pt-0">
-                  <span className="font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-wider">
+              {/* The rail keeps the label's space, so items sit at the same
+                  height in the rail and the expanded panel. */}
+              {shouldShowSectionLabel && (
+                <div
+                  aria-hidden={isCollapsed || undefined}
+                  className={cn(
+                    'px-4 pt-3 pb-1 first:pt-0',
+                    isCollapsed && 'invisible'
+                  )}
+                >
+                  <span className="block truncate font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-wider">
                     {link.sectionLabel}
                   </span>
                 </div>
@@ -74,14 +82,21 @@ export function satelliteNavigationItemClass({
   isCollapsed,
   isActive,
   isDisabled,
+  tightEnd = false,
 }: {
   isCollapsed: boolean;
   isActive?: boolean;
   isDisabled?: boolean;
+  /** Less end padding for an item that shares its row with other controls. */
+  tightEnd?: boolean;
 }) {
   return cn(
     'group/navlink flex w-full cursor-pointer items-center rounded-md py-2 font-medium text-sm',
-    isCollapsed ? 'flex-col justify-center px-1' : 'justify-between px-2',
+    // Rail and panel rows share a height, and the panel's icon column lines
+    // up with the rail's centered icons, so expanding moves no icon.
+    isCollapsed
+      ? 'flex-col justify-center px-1'
+      : cn('justify-between pl-4', tightEnd ? 'pr-1' : 'pr-2'),
     isActive && 'bg-accent text-accent-foreground',
     isDisabled
       ? 'cursor-not-allowed opacity-50'
@@ -112,7 +127,9 @@ export function SidebarNavigationItemContent({
     <span
       className={cn(
         'flex min-w-0 items-center',
-        isCollapsed ? 'w-full flex-col gap-1' : 'flex-1 gap-2'
+        isCollapsed
+          ? 'min-h-5 w-full flex-col justify-center gap-1'
+          : 'flex-1 gap-2'
       )}
     >
       {icon && <span className="flex shrink-0">{icon}</span>}

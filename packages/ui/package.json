@@ -532,6 +532,10 @@
       "types": "./src/components/ui/custom/satellite-navigation.tsx",
       "import": "./src/components/ui/custom/satellite-navigation.tsx"
     },
+    "./custom/sidebar-nav-slide": {
+      "types": "./src/components/ui/custom/sidebar-nav-slide.tsx",
+      "import": "./src/components/ui/custom/sidebar-nav-slide.tsx"
+    },
     "./custom/satellite-content": {
       "types": "./src/components/ui/custom/satellite-content.tsx",
       "import": "./src/components/ui/custom/satellite-content.tsx"

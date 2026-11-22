@@ -232,8 +232,9 @@ export function SidebarStructure({
             launcherLabel: t('command_launcher.apps'),
             onAppClick: () => setAppsLauncherOpen(true),
             LinkComponent: Link,
+            // Same size as the rail logo, so expanding keeps the logo still.
             logo: (
-              <TuturuuLogo alt="" className="size-8" height={32} width={32} />
+              <TuturuuLogo alt="" className="size-7" height={32} width={32} />
             ),
             actions: (
               <div className="flex items-center gap-1">

@@ -177,7 +177,7 @@ export function NavLink({
       />
 
       {!isCollapsed && (
-        <div className="ml-auto flex h-6 shrink-0 items-center gap-0.5">
+        <div className="-my-0.5 ml-auto flex h-6 shrink-0 items-center gap-0.5">
           {preferenceArchiveAction && (
             <Tooltip>
               <TooltipTrigger asChild>

@@ -27,7 +27,7 @@ describe('SidebarSettingsButton', () => {
 
       expect(
         within(container).getByRole('button', { name: 'Settings' }).className
-      ).toBe(satelliteNavigationItemClass({ isCollapsed }));
+      ).toBe(satelliteNavigationItemClass({ isCollapsed, tightEnd: true }));
       unmount();
     }
   );

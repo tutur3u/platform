@@ -242,7 +242,30 @@ describe('Structure', () => {
         expect(main.className).not.toContain('transition');
         expect(aside.className).not.toContain('transition-all');
       }
-      expect(aside).toHaveClass('sidebar-overlay-reveal', 'md:z-40');
+      expect(aside).toHaveClass('md:z-40');
+      // The panel fades in as its own surface; the aside never wipes or slides.
+      expect(aside.className).not.toMatch(/sidebar-overlay-(reveal|conceal)/);
+      const surface = aside.querySelector('[data-sidebar-overlay-surface]');
+      expect(surface).toHaveClass(
+        'sidebar-overlay-content',
+        'md:bg-background',
+        'md:border-r'
+      );
+      expect(aside).toHaveClass('md:bg-transparent', 'md:border-r-0');
+    });
+
+    it('keeps an inert underlay slot for the rail beneath the fading panel', () => {
+      const { container } = render(renderStructure(false, true));
+      const underlay = container.querySelector(
+        '[data-slot="sidebar-rail-underlay"]'
+      ) as HTMLElement;
+      expect(underlay).toHaveAttribute('aria-hidden', 'true');
+      expect(underlay).toHaveAttribute('inert');
+      expect(underlay).toHaveClass(
+        'pointer-events-none',
+        'w-[var(--sidebar-collapsed-width)]',
+        'md:empty:hidden'
+      );
     });
 
     it('remounts the sidebar body between rail and panel so no element is repositioned', () => {
@@ -279,17 +302,17 @@ describe('Structure', () => {
       fireEvent.mouseLeave(aside);
       expect(onMouseLeave).not.toHaveBeenCalled();
       expect(aside).toHaveAttribute('data-overlay-state', 'closing');
-      expect(aside).toHaveClass('sidebar-overlay-conceal');
-      expect(aside).not.toHaveClass('sidebar-overlay-reveal');
 
       const content = aside.querySelector(
         '.sidebar-overlay-content-out'
       ) as HTMLElement;
-      fireEvent.animationEnd(content);
+      expect(content).toHaveAttribute('data-sidebar-overlay-surface');
+      // A nested animation ending does not close the panel early.
+      fireEvent.animationEnd(content.firstElementChild as HTMLElement);
       expect(onMouseLeave).not.toHaveBeenCalled();
 
-      fireEvent.animationEnd(aside, {
-        animationName: 'sidebar-overlay-conceal',
+      fireEvent.animationEnd(content, {
+        animationName: 'sidebar-overlay-fade-out',
       });
       expect(onMouseLeave).toHaveBeenCalledTimes(1);
       expect(aside).toHaveAttribute('data-overlay-state', 'open');
@@ -305,9 +328,10 @@ describe('Structure', () => {
 
       fireEvent.mouseLeave(aside);
       fireEvent.mouseEnter(aside);
-      fireEvent.animationEnd(aside, {
-        animationName: 'sidebar-overlay-conceal',
-      });
+      fireEvent.animationEnd(
+        aside.querySelector('[data-sidebar-overlay-surface]') as HTMLElement,
+        { animationName: 'sidebar-overlay-fade-out' }
+      );
 
       expect(onMouseEnter).toHaveBeenCalledTimes(1);
       expect(onMouseLeave).not.toHaveBeenCalled();
@@ -391,9 +415,12 @@ describe('Structure', () => {
 
       expect(mounts).toHaveBeenCalledTimes(1);
       expect(container.querySelector('aside')).toHaveClass('transition-all');
-      expect(container.querySelector('aside')).not.toHaveClass(
-        'sidebar-overlay-reveal'
-      );
+      expect(
+        container.querySelector('[data-sidebar-overlay-surface]')
+      ).toBeNull();
+      expect(
+        container.querySelector('[data-slot="sidebar-rail-underlay"]')
+      ).toBeNull();
       expect(container.querySelector('main')).toHaveClass('transition-all');
     });
   });

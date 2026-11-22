@@ -8,13 +8,18 @@
  * satellite-shell, satellite-content, use-satellite-shell) with static
  * fixtures through Vite, hovers the collapsed rail so it expands, and asserts
  * that the expand/collapse cycle never moves or resizes the calendar grid and
- * accumulates no meaningful Layout Instability score.
+ * accumulates no meaningful Layout Instability score. It also checks that the
+ * logo and every navigation icon keep the same position when the panel opens,
+ * that the reveal animates opacity only (labels fade, nothing slides), and in
+ * minimal mode that the page keeps clear of the floating logo button at
+ * several desktop widths.
  *
  *   node scripts/ci/sidebar-layout-shift.mjs
  *
  * Environment: SIDEBAR_SHIFT_PORT (default 4191), SIDEBAR_SHIFT_OUT (JSON
  * evidence path), SIDEBAR_SHIFT_TOLERANCE (default 0.001),
  * SIDEBAR_SHIFT_SHOTS (directory for screenshots of the three states),
+ * SIDEBAR_SHIFT_VIDEO (directory for a recording of the run),
  * SIDEBAR_SHIFT_NO_ASSERT=1 to print numbers without failing.
  */
 import assert from 'node:assert/strict';
@@ -125,6 +130,75 @@ function installProbes() {
       });
     }
   }).observe({ type: 'layout-shift', buffered: true });
+  // Logo, reveal trigger and icons as the user sees them; the inert copy of
+  // the rail under a fading panel is not part of the page.
+  window.__geometry = () => {
+    const aside = document.querySelector('aside');
+    const shown = (el) =>
+      !el.closest('[data-slot="sidebar-rail-underlay"]') &&
+      (typeof el.checkVisibility !== 'function' ||
+        el.checkVisibility({ visibilityProperty: true }));
+    const box = (el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    const out = { icons: {}, extras: {} };
+    const trigger = aside.querySelector('[data-sidebar-reveal-trigger]');
+    if (trigger && shown(trigger)) {
+      out.trigger = box(trigger);
+      out.triggerRadius = Number.parseFloat(
+        getComputedStyle(trigger).borderTopLeftRadius
+      );
+    }
+    const logo = [...aside.querySelectorAll('[data-testid="brand-logo"]')].find(
+      shown
+    );
+    if (logo) out.logo = box(logo);
+    for (const link of aside.querySelectorAll('nav a[href]')) {
+      const icon = link.querySelector('svg');
+      if (icon && shown(link)) out.icons[link.getAttribute('href')] = box(icon);
+    }
+    const settings = aside.querySelector('[aria-label="Settings"] svg');
+    if (settings && shown(settings)) out.extras.settings = box(settings);
+    // Labels that do not fit (the fixture's labels all fit the panel).
+    out.truncatedLabels = [
+      ...aside.querySelectorAll('[data-slot="sidebar-item-label"]'),
+    ]
+      .filter((label) => shown(label) && label.clientWidth > 0)
+      .filter((label) => label.scrollWidth > label.clientWidth + 0.5)
+      .map((label) => label.textContent);
+    const grid = document.querySelector('[data-testid="calendar-grid"]');
+    out.grid = box(grid);
+    return out;
+  };
+  // Properties animated inside the sidebar right now.
+  window.__animatedProperties = () => {
+    const aside = document.querySelector('aside');
+    return document
+      .getAnimations()
+      .filter((animation) => aside.contains(animation.effect?.target ?? null))
+      .map((animation) => ({
+        name:
+          animation.animationName ?? animation.transitionProperty ?? 'unknown',
+        properties: [
+          ...new Set(
+            animation.effect
+              .getKeyframes()
+              .flatMap((frame) =>
+                Object.keys(frame).filter(
+                  (key) =>
+                    ![
+                      'offset',
+                      'computedOffset',
+                      'easing',
+                      'composite',
+                    ].includes(key)
+                )
+              )
+          ),
+        ],
+      }));
+  };
   window.__sample = (label, ms) =>
     new Promise((resolve) => {
       const frames = [];
@@ -182,9 +256,14 @@ try {
   });
   await server.listen();
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({
+  const video = process.env.SIDEBAR_SHIFT_VIDEO;
+  const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
+    ...(video
+      ? { recordVideo: { dir: video, size: { width: 1440, height: 900 } } }
+      : {}),
   });
+  const page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(installProbes);
@@ -235,6 +314,91 @@ try {
   }
   await page.waitForTimeout(300);
   const shifts = await page.evaluate(() => window.__shifts);
+
+  // The logo and every icon keep their place when the panel opens, and the
+  // reveal only fades.
+  const overlayState = () =>
+    page.evaluate(() => document.querySelector('aside').dataset.overlayState);
+  const openPoint = async () => {
+    if (behavior !== 'minimal') return { x: 24, y: 400 };
+    const bounds = await page
+      .locator('[data-sidebar-reveal-trigger]')
+      .boundingBox();
+    return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  };
+  await page.mouse.move(900, 450);
+  await page.waitForTimeout(600);
+  const restingGeometry = await page.evaluate(() => window.__geometry());
+  const point = await openPoint();
+  await page.mouse.move(point.x, point.y);
+  await page.locator('aside[data-overlay-state="open"]').waitFor();
+  await page.waitForTimeout(40);
+  const revealAnimations = await page.evaluate(() =>
+    window.__animatedProperties()
+  );
+  await page.waitForTimeout(600);
+  const openGeometry = await page.evaluate(() => window.__geometry());
+  await page.mouse.move(900, 450);
+  await page.waitForFunction(
+    () => !document.querySelector('aside').dataset.overlayState
+  );
+  await page.waitForTimeout(300);
+  const moved = (a, b) =>
+    !a ||
+    !b ||
+    Math.abs(a.x - b.x) > 0.5 ||
+    Math.abs(a.y - b.y) > 0.5 ||
+    Math.abs(a.width - b.width) > 0.5 ||
+    Math.abs(a.height - b.height) > 0.5;
+  const iconKeys = Object.keys(restingGeometry.icons);
+  const geometry = {
+    resting: restingGeometry,
+    open: openGeometry,
+    stillOverlayAfterLeave: (await overlayState()) ?? null,
+    logoMoved: moved(restingGeometry.logo, openGeometry.logo),
+    triggerMoved:
+      behavior === 'minimal'
+        ? moved(restingGeometry.trigger, openGeometry.trigger)
+        : false,
+    movedIcons: iconKeys.filter((key) =>
+      moved(restingGeometry.icons[key], openGeometry.icons[key])
+    ),
+    movedExtras: Object.keys(restingGeometry.extras).filter((key) =>
+      moved(restingGeometry.extras[key], openGeometry.extras[key])
+    ),
+    revealAnimations,
+    nonFadeAnimations: revealAnimations.filter((animation) =>
+      animation.properties.some(
+        (property) =>
+          !['opacity', 'color', 'backgroundColor', 'borderColor'].includes(
+            property
+          )
+      )
+    ),
+  };
+
+  // Minimal mode: the page keeps clear of the floating logo at every desktop
+  // width, and the logo has room around it.
+  let clearance = null;
+  if (behavior === 'minimal') {
+    clearance = [];
+    for (const width of [768, 1024, 1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.waitForTimeout(200);
+      const g = await page.evaluate(() => window.__geometry());
+      clearance.push({
+        width,
+        trigger: g.trigger,
+        triggerRadius: g.triggerRadius,
+        logo: g.logo,
+        gridLeft: g.grid.x,
+        gap: g.grid.x - (g.trigger.x + g.trigger.width),
+        padding: (g.trigger.width - g.logo.width) / 2,
+      });
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(300);
+  }
 
   // Minimal mode: the logo is the first stop, and focusing it by keyboard
   // opens the panel without moving focus; Escape closes it again.
@@ -357,11 +521,22 @@ try {
     pageErrors,
     behavior,
     keyboard,
+    geometry: {
+      logoMoved: geometry.logoMoved,
+      triggerMoved: geometry.triggerMoved,
+      checkedIcons: iconKeys.length,
+      openIcons: Object.keys(openGeometry.icons).length,
+      movedIcons: geometry.movedIcons,
+      movedExtras: geometry.movedExtras,
+      truncatedLabels: openGeometry.truncatedLabels,
+      nonFadeAnimations: geometry.nonFadeAnimations,
+    },
+    clearance,
   };
   const outPath = sidebarEvidencePath(process.env.SIDEBAR_SHIFT_OUT);
   fs.writeFileSync(
     outPath,
-    `${JSON.stringify({ result, shifts, cycles }, null, 2)}\n`
+    `${JSON.stringify({ result, geometry, shifts, cycles }, null, 2)}\n`
   );
   console.log(JSON.stringify(result, null, 2));
   console.log(`evidence: ${outPath}`);
@@ -392,6 +567,54 @@ try {
         'keyboard focus must open the minimal sidebar and Escape must close it'
       );
     }
+    assert.equal(geometry.logoMoved, false, 'the logo must not move on open');
+    assert.equal(
+      geometry.triggerMoved,
+      false,
+      'the minimal logo button must not move on open'
+    );
+    // Minimal mode has no rail: its icons exist only in the open panel.
+    assert.ok(
+      (behavior === 'minimal'
+        ? Object.keys(openGeometry.icons).length
+        : iconKeys.length) >= 5,
+      'every navigation icon is measured'
+    );
+    assert.deepEqual(
+      geometry.movedIcons,
+      [],
+      'navigation icons must keep their position on open'
+    );
+    assert.deepEqual(
+      openGeometry.truncatedLabels,
+      [],
+      'labels in the open panel must fit'
+    );
+    assert.ok(geometry.revealAnimations.length > 0, 'the open panel fades in');
+    assert.deepEqual(
+      geometry.nonFadeAnimations,
+      [],
+      'the reveal may only fade (no slide, wipe or scale)'
+    );
+    for (const row of clearance ?? []) {
+      assert.ok(
+        row.gap >= 7.5,
+        `page content must keep clear of the logo button at ${row.width}px (gap ${row.gap}px)`
+      );
+      assert.ok(
+        row.padding >= 9.5,
+        `the logo button needs room around the logo at ${row.width}px (padding ${row.padding}px)`
+      );
+      assert.ok(
+        row.triggerRadius < row.trigger.height / 2 - 4,
+        `the logo button is a rounded square, not a pill (radius ${row.triggerRadius}px)`
+      );
+      assert.deepEqual(
+        [row.trigger.x, row.trigger.y],
+        [clearance[0].trigger.x, clearance[0].trigger.y],
+        'the logo button keeps one position at every width'
+      );
+    }
     console.log(`PASS sidebar ${behavior} expand is a pure overlay`);
   }
 } catch (error) {
@@ -401,5 +624,8 @@ try {
   process.exitCode = 1;
 } finally {
   await browser?.close();
+  if (process.env.SIDEBAR_SHIFT_VIDEO) {
+    console.log(`video: ${process.env.SIDEBAR_SHIFT_VIDEO}`);
+  }
   await server?.close();
 }

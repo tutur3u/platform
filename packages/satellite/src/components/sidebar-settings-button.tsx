@@ -24,7 +24,7 @@ export function SidebarSettingsButton({
   const button = (
     <button
       aria-label={label}
-      className={satelliteNavigationItemClass({ isCollapsed })}
+      className={satelliteNavigationItemClass({ isCollapsed, tightEnd: true })}
       data-slot="sidebar-settings-button"
       onClick={(event) =>
         window.dispatchEvent(

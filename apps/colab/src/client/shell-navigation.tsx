@@ -32,7 +32,7 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
                 (current.endsWith(link.href) ||
                   (!current.includes('#') && link.href === '#mission'));
         const content = (
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-h-5 min-w-0 items-center gap-2">
             {link.icon}
             {!isCollapsed && <span className="truncate">{link.title}</span>}
           </span>

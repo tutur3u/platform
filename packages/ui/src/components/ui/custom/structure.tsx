@@ -17,12 +17,37 @@ import { observeMobileHeaderHeight } from './mobile-header-height';
 import { SidebarMinimalTrigger } from './sidebar-minimal-trigger';
 import { SidebarOverlayContext } from './sidebar-overlay-context';
 import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
+import { useSidebarRailUnderlay } from './use-sidebar-rail-underlay';
 
 /** Hover intent for minimal mode: a pointer passing the edge opens nothing. */
 const MINIMAL_OPEN_DELAY_MS = 120;
 /** Grace for a pointer that slips off the floating panel and comes back. */
 const MINIMAL_CLOSE_DELAY_MS = 240;
-const MINIMAL_GUTTER = '3.5rem';
+
+/**
+ * Minimal mode geometry. The logo button floats at a fixed inset and never
+ * moves; the page keeps clear of it, and the open panel's header reserves the
+ * same square, so opening and closing shift nothing.
+ */
+const MINIMAL_GEOMETRY = {
+  // Distance of the logo button from the top and left edges.
+  '--sidebar-minimal-inset': '0.5rem',
+  '--sidebar-minimal-trigger': '3rem',
+  // Distance of the open panel from the edges; the button sits inside it.
+  '--sidebar-minimal-panel-inset': '0.25rem',
+  // Page offset: the button plus the same inset on both sides.
+  '--sidebar-minimal-gutter':
+    'calc(var(--sidebar-minimal-inset) * 2 + var(--sidebar-minimal-trigger))',
+  // Panel header centered on the button (inside the panel's 1px border).
+  '--sidebar-minimal-header-height':
+    'calc((var(--sidebar-minimal-inset) - var(--sidebar-minimal-panel-inset) - 1px) * 2 + var(--sidebar-minimal-trigger))',
+  // Header content starts one brand gap after the button.
+  '--sidebar-minimal-header-inset':
+    'calc(var(--sidebar-minimal-inset) - var(--sidebar-minimal-panel-inset) - 1px + var(--sidebar-minimal-trigger) + 0.625rem)',
+  // Concentric with the button's corners.
+  '--sidebar-minimal-panel-radius':
+    'calc(var(--radius) + var(--sidebar-minimal-inset) - var(--sidebar-minimal-panel-inset))',
+} as const;
 
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
@@ -106,6 +131,15 @@ export function Structure({
     closeDelayMs: revealTrigger ? MINIMAL_CLOSE_DELAY_MS : 0,
   });
   const overlayOpen = overlay && !isCollapsed;
+  // Expand-on-hover with a rail; minimal mode has no rail to keep in place.
+  const hoverRail = overlay && !isMinimal;
+  const hoverPanelOpen = hoverRail && !isCollapsed;
+  const minimalPanelOpen = isMinimal && !isCollapsed;
+  const railUnderlay = useSidebarRailUnderlay({
+    enabled: hoverRail && !isMobile,
+    isOpen: hoverPanelOpen,
+    isClosing: overlayClose.isClosing,
+  });
   const mobileNavRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   // Content clears the measured top bar, which grows with the top safe area
@@ -120,7 +154,7 @@ export function Structure({
   const sidebarStyle = {
     '--sidebar-collapsed-width': sidebarCollapsedWidth,
     '--sidebar-expanded-width': sidebarExpandedWidth,
-    '--sidebar-minimal-gutter': MINIMAL_GUTTER,
+    ...MINIMAL_GEOMETRY,
     ...(sidebarHeaderHeight
       ? { '--sidebar-header-height': sidebarHeaderHeight }
       : {}),
@@ -199,8 +233,8 @@ export function Structure({
                     ? 'max-md:overflow-hidden max-md:border-l max-md:backdrop-blur-lg'
                     : 'overflow-hidden border-l backdrop-blur-lg md:border-r md:border-l-0',
                   // The hover overlay never animates width: a width transition
-                  // reflows the panel on every frame. The reveal is a paint-only
-                  // clip-path/opacity animation instead (see globals.css).
+                  // reflows the panel on every frame. The reveal is an
+                  // opacity-only fade instead (see globals.css).
                   overlay
                     ? 'max-md:transition-transform max-md:duration-300 max-md:ease-in-out'
                     : 'transition-all duration-300 ease-in-out',
@@ -210,18 +244,17 @@ export function Structure({
                   isMinimal
                     ? isCollapsed
                       ? 'max-md:bg-background/50 md:w-[var(--sidebar-minimal-gutter)]'
-                      : 'max-md:bg-background md:w-[calc(var(--sidebar-expanded-width)+1rem)]'
+                      : 'max-md:bg-background md:w-[calc(var(--sidebar-expanded-width)+var(--sidebar-minimal-panel-inset)*2)]'
                     : isCollapsed
                       ? 'bg-background/50'
                       : 'bg-background',
+                  // The open hover panel draws its own surface and edge, so
+                  // both fade in over the rail instead of appearing at once.
+                  hoverPanelOpen &&
+                    'md:border-r-0 md:bg-transparent md:backdrop-blur-none',
                   isCollapsed && 'max-md:translate-x-full',
                   mobileSidebarOpen === false && 'max-md:hidden',
-                  overlayOpen && 'md:z-40',
-                  overlayOpen &&
-                    !isMinimal &&
-                    (overlayClose.isClosing
-                      ? 'sidebar-overlay-conceal'
-                      : 'sidebar-overlay-reveal')
+                  overlayOpen && 'md:z-40'
                 )}
                 data-minimal-sidebar={isMinimal || undefined}
                 data-slot="app-sidebar"
@@ -245,6 +278,17 @@ export function Structure({
                     logo={minimalLogo}
                   />
                 )}
+                {/* A static copy of the last rail sits under the hover panel
+                    while it fades, so rail icons never blink. */}
+                {hoverRail && (
+                  <div
+                    ref={railUnderlay.hostRef}
+                    aria-hidden
+                    inert
+                    data-slot="sidebar-rail-underlay"
+                    className="pointer-events-none absolute inset-y-0 left-0 hidden w-[var(--sidebar-collapsed-width)] flex-col overflow-hidden border-r bg-background/50 backdrop-blur-lg md:flex md:empty:hidden"
+                  />
+                )}
                 {/* In overlay mode the rail and the expanded panel are different
                     subtrees: remounting on the state flip means no element is
                     ever repositioned, so the swap cannot register as a layout
@@ -252,41 +296,58 @@ export function Structure({
                 {isMinimal && isCollapsed ? null : (
                   <div
                     key={overlay ? (isCollapsed ? 'rail' : 'panel') : 'static'}
+                    ref={
+                      hoverRail && !isMobile && isCollapsed
+                        ? railUnderlay.railRef
+                        : null
+                    }
                     id={isMinimal ? panelId : undefined}
-                    data-sidebar-overlay-surface={isMinimal ? '' : undefined}
+                    data-sidebar-overlay-surface={
+                      isMinimal || hoverPanelOpen ? '' : undefined
+                    }
                     inert={
                       isMinimal && overlayClose.isClosing ? true : undefined
                     }
                     className={cn(
                       'flex min-h-0 flex-1 flex-col',
-                      overlayOpen &&
-                        !isMinimal &&
+                      hoverPanelOpen && 'relative md:border-r md:bg-background',
+                      minimalPanelOpen &&
+                        'group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-2 group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-ring md:m-[var(--sidebar-minimal-panel-inset)] md:overflow-hidden md:rounded-[var(--sidebar-minimal-panel-radius)] md:border md:bg-background md:shadow-xl',
+                      hoverPanelOpen &&
                         (overlayClose.isClosing
                           ? 'sidebar-overlay-content-out'
                           : 'sidebar-overlay-content'),
-                      overlayOpen &&
-                        isMinimal &&
-                        'group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-2 group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-ring md:m-2 md:overflow-hidden md:rounded-2xl md:border md:bg-background md:shadow-xl',
-                      overlayOpen &&
-                        isMinimal &&
+                      minimalPanelOpen &&
                         (overlayClose.isClosing
                           ? 'sidebar-minimal-conceal'
                           : 'sidebar-minimal-reveal')
                     )}
                   >
+                    {/* Rail and panel headers have the same height, and the panel
+                        brand's logo is centered on the rail, so the logo and
+                        the icons below stay put when the rail expands. */}
                     <div
                       className={cn(
                         sidebarHeaderHeight
-                          ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
-                          : 'flex min-h-12 items-center p-2 md:px-0',
-                        isCollapsed ? 'justify-center' : 'py-1',
+                          ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center px-2 py-1'
+                          : 'flex min-h-12 items-center px-2 py-1',
+                        isCollapsed && 'justify-center',
+                        // The floating logo button stays above this header;
+                        // its square is reserved and the brand starts after it.
+                        minimalPanelOpen
+                          ? 'md:h-[var(--sidebar-minimal-header-height)] md:min-h-0 md:shrink-0 md:py-0 md:pr-2 md:pl-[var(--sidebar-minimal-header-inset)]'
+                          : 'md:px-0',
                         sidebarHeaderClassName
                       )}
                     >
                       <div
                         className={cn(
-                          'flex min-h-13 w-full items-center md:px-2',
-                          isCollapsed ? 'justify-center' : ''
+                          'flex min-h-13 w-full items-center',
+                          isCollapsed
+                            ? 'justify-center md:px-2'
+                            : minimalPanelOpen
+                              ? 'md:min-h-0'
+                              : 'md:pr-2 md:pl-[calc((var(--sidebar-collapsed-width)-2.25rem)/2)]'
                         )}
                       >
                         <div

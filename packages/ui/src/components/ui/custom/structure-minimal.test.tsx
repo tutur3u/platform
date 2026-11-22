@@ -158,15 +158,65 @@ describe('Structure in minimal mode', () => {
     ) as HTMLElement;
     expect(surface).toHaveClass(
       'sidebar-minimal-reveal',
-      'md:rounded-2xl',
+      'md:m-[var(--sidebar-minimal-panel-inset)]',
+      'md:rounded-[var(--sidebar-minimal-panel-radius)]',
       'md:border',
       'md:shadow-xl'
     );
-    expect(sidebar()).not.toHaveClass('sidebar-overlay-reveal');
     expect(sidebar()).toHaveClass(
       'md:z-40',
-      'md:w-[calc(var(--sidebar-expanded-width)+1rem)]'
+      'md:w-[calc(var(--sidebar-expanded-width)+var(--sidebar-minimal-panel-inset)*2)]'
     );
+  });
+
+  it('keeps the floating logo button in one place, shape and look', () => {
+    render(<MinimalShell />);
+    const resting = trigger().className;
+    expect(trigger()).toHaveClass(
+      'absolute',
+      'top-[var(--sidebar-minimal-inset)]',
+      'left-[var(--sidebar-minimal-inset)]',
+      'size-[var(--sidebar-minimal-trigger)]',
+      'rounded-[var(--radius)]',
+      'bg-card'
+    );
+    expect(resting).not.toMatch(/rounded-(full|xl|2xl)|translate/);
+
+    fireEvent.mouseEnter(sidebar());
+    advance(120);
+    expect(isOpen()).toBe(true);
+    // Only the focus ring moves to the panel; position, size and chrome stay.
+    expect(
+      trigger()
+        .className.replace(/\S*focus-visible:\S*/g, '')
+        .trim()
+    ).toBe(resting.replace(/\S*focus-visible:\S*/g, '').trim());
+
+    // The open panel's header reserves the button's square.
+    const header = sidebar().querySelector(
+      '[data-sidebar-overlay-surface] > div'
+    );
+    expect(header).toHaveClass(
+      'md:h-[var(--sidebar-minimal-header-height)]',
+      'md:pl-[var(--sidebar-minimal-header-inset)]'
+    );
+  });
+
+  it('derives the page gutter and panel header from the button geometry', () => {
+    const { container } = render(<MinimalShell />);
+    const style = (container.querySelector('main') as HTMLElement).style;
+    expect(style.getPropertyValue('--sidebar-minimal-gutter')).toBe(
+      'calc(var(--sidebar-minimal-inset) * 2 + var(--sidebar-minimal-trigger))'
+    );
+    for (const name of [
+      '--sidebar-minimal-inset',
+      '--sidebar-minimal-trigger',
+      '--sidebar-minimal-panel-inset',
+      '--sidebar-minimal-header-height',
+      '--sidebar-minimal-header-inset',
+    ]) {
+      expect(sidebar().style.getPropertyValue(name)).not.toBe('');
+    }
   });
 
   it('waits before closing and stays open when the pointer returns', () => {
