@@ -12,6 +12,14 @@ import {
   workspaceId,
 } from './route-test-support';
 
+// These tests count the replay store's own reads, so exchange admission and
+// failure pacing (covered in route-rate-limit.test.ts) stay out of the way.
+vi.mock('@/lib/external-apps/exchange-rate-limit', () => ({
+  admitExternalAppExchange: async () => null,
+  limitVerifiedExternalAppExchange: async () => null,
+  paceExternalAppExchangeFailure: async () => null,
+}));
+
 function refreshToken(userId = victimUserId) {
   return createAppCoordinationToken(
     {

@@ -517,26 +517,47 @@ Every external-app workspace route under
 `/api/v1/workspaces/{wsId}/external-apps/` is counted once, at the route
 group's entry (`route-guard.ts`, wired by the wrapper generator's guarded-group
 list), after the app bearer's signature is verified. A request without a valid
-bearer is left to the handler, which refuses it. Each bucket is counted per app
-and user, so no spelling of a workspace in the URL can raise a bearer's limit.
-A bearer whose `workspace_id` claim names the requested workspace, by its id or
-the `internal` alias, is also counted per app and workspace; other bearers,
-handles and `personal` count per user only, so a token never spends another
-workspace's budget. Limits live in
-`apps/web/src/lib/external-apps/rate-limit-policy.ts`:
+bearer is left to the handler, which refuses it.
 
-| Counter | Keys | Limit |
+Every request counts per app and user, so no spelling of a workspace in the
+URL raises a bearer's limit. A request also counts per app and workspace only
+when the bearer's `workspace_id` claim names the requested workspace (by its id
+or the `internal` alias) and the bearer holds every scope the route requires,
+by exact grant. Other bearers, handles and `personal` count per user only, so a
+token never spends another workspace's budget and a member without the route's
+scope never spends it either. Workspace caps sit above the per-user caps, so
+one member cannot exhaust a workspace alone.
+
+Limits live in `apps/web/src/lib/external-apps/rate-limit-policy.ts`:
+
+| Requests | Per app and user | Per app and bound workspace |
 | --- | --- | --- |
-| Reads (`GET`, `drive/read-url`) | app and user; app and bound workspace | 600 per minute |
-| Writes (every other method) | app and user; app and bound workspace | 60 per minute |
-| `drive/upload-url`, besides the write | app and user | 10 per minute |
-| `members/invitations`, besides the write | app and user; app and bound workspace | 5 per hour |
-| `token` exchange | app and client IP (`cf-connecting-ip`, IPv6 per /64) | 30 per minute |
-| `token` exchange without a trusted client IP | app | 300 per minute |
+| Reads (`GET`, `drive/read-url`) | 300 per minute | 600 per minute |
+| Writes (every other route, including `cron/.../run-now`) | 30 per minute | 60 per minute |
+| `drive/upload-url`, besides the write | 10 per minute | none |
+| `members/invitations`, besides the write | 5 per hour | 30 per hour |
 
-The app-token exchange counts `token` exchanges before the app secret is
-checked; `refreshToken` exchanges keep their own per-family pre-limit. An
-exchange without a trusted client IP logs `EXCHANGE_CLIENT_IP_UNKNOWN`. A
+The app-token exchange is called by an app's servers, so one client IP carries
+all of that app's users:
+
+| Exchange counter | Key | Limit |
+| --- | --- | --- |
+| Every attempt, before the app secret is checked | app and client IP | 600 per minute |
+| Every attempt without a trusted client IP | app | 300 per minute |
+| Failed app secret | app and client IP | 30 per minute, then the source is refused until the window ends |
+| Failed handoff or refresh token | app and client IP | 30 per minute, then those failures answer 429 |
+| `token` exchange of a verified app | app | 600 per minute |
+
+A failed token never blocks the source, because an app's servers forward the
+tokens their users bring; junk tokens sent through an app cannot lock out its
+valid exchanges. Refresh exchanges also keep their own per-family pre-limit.
+IPv6 clients are counted per /64. The client IP comes only from the trusted
+proxy headers of the configured runtime (`TRUSTED_PROXY`): `cf-connecting-ip`
+on Cloudflare Workers, the signed `x-tuturuuu-origin-auth` proof or an
+authenticated origin's `cf-connecting-ip` behind the Cloudflare proxy, and
+`x-vercel-forwarded-for`, then `x-real-ip` and `x-forwarded-for`, on Vercel.
+An exchange without a trusted client IP logs `EXCHANGE_CLIENT_IP_UNKNOWN`,
+and its failures count per app. A
 request counts even when the limiter or its handler then refuses it.
 
 Counts use the web `ratelimit` abuse-guard family (the `ABUSE_GUARD` service
@@ -546,9 +567,18 @@ initialize after 30 seconds. An over-limit request gets HTTP 429 with
 unavailable, writes, upload URLs, invitations and exchanges get HTTP 503 with
 `Retry-After: 30` and code `RATE_LIMIT_UNAVAILABLE`, while reads continue. A
 non-production runtime with no counter store configured lets those requests
-through; production always refuses. Regression coverage lives in
+through; production always refuses.
+
+`ABUSE_GUARD_BACKEND=off` is the abuse guard's kill switch, and these limits
+treat it as an unavailable store: while it is set on web, every external-app
+write, upload URL, invitation and token or refresh exchange returns 503, so
+external apps cannot sign users in or change workspace data until the guard is
+restored. External-app reads keep working.
+
+Regression coverage lives in
 `apps/web/src/lib/external-apps/rate-limit.test.ts`,
 `apps/web/src/lib/external-apps/rate-limit-exchange.test.ts`,
+`apps/web/src/lib/external-apps/rate-limit-backend-off.test.ts`,
 `apps/web/src/lib/rate-limit-guard.test.ts`,
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-rate-limit.test.ts` and
 `scripts/generate-web-api-route-wrappers.test.js`.

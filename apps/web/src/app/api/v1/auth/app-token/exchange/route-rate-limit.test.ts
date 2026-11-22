@@ -12,10 +12,14 @@ import {
 } from './route-test-support';
 
 const limiter = vi.hoisted(() => ({
-  limitExternalAppTokenExchange: vi.fn(),
+  admitExternalAppExchange: vi.fn(),
+  limitVerifiedExternalAppExchange: vi.fn(),
+  paceExternalAppExchangeFailure: vi.fn(),
 }));
 
-vi.mock('@/lib/external-apps/rate-limit', () => limiter);
+vi.mock('@/lib/external-apps/exchange-rate-limit', () => limiter);
+
+const source = { appId: 'yoola', ip: '203.0.113.7' };
 
 function exchange(body: Record<string, unknown>) {
   return POST(
@@ -27,11 +31,29 @@ function exchange(body: Record<string, unknown>) {
         workspaceId,
         ...body,
       }),
-      headers: { 'cf-connecting-ip': '203.0.113.7' },
+      headers: { 'cf-connecting-ip': source.ip },
       method: 'POST',
     })
   );
 }
+
+function refreshToken() {
+  return createAppCoordinationToken(
+    {
+      email: 'victim@example.com',
+      expiresInSeconds: 86_400,
+      originApp: 'web',
+      scopes: ['app-token:refresh'],
+      targetApp: 'other-app',
+      userId: victimUserId,
+      workspaceId,
+    },
+    { secret: 'test-secret' }
+  ).token;
+}
+
+const refusal = (status: number) =>
+  NextResponse.json({ code: `refused-${status}` }, { status });
 
 describe('app token exchange rate limit', () => {
   registerExchangeTestSetup();
@@ -39,58 +61,89 @@ describe('app token exchange rate limit', () => {
   beforeEach(() => {
     vi.stubEnv('TRUSTED_PROXY', 'cloudflare');
     mockRegisteredApp();
-    limiter.limitExternalAppTokenExchange.mockResolvedValue(null);
+    limiter.admitExternalAppExchange.mockResolvedValue(null);
+    limiter.limitVerifiedExternalAppExchange.mockResolvedValue(null);
+    limiter.paceExternalAppExchangeFailure.mockResolvedValue(null);
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('counts a token exchange once per app and trusted client IP', async () => {
+  it('admits per app and IP, then counts the verified app once', async () => {
     const response = await exchange({ token: 'handoff-token' });
 
     expect(response.status).toBe(200);
-    expect(limiter.limitExternalAppTokenExchange).toHaveBeenCalledTimes(1);
-    expect(limiter.limitExternalAppTokenExchange).toHaveBeenCalledWith({
-      appId: 'yoola',
-      ip: '203.0.113.7',
-    });
+    expect(limiter.admitExternalAppExchange).toHaveBeenCalledTimes(1);
+    expect(limiter.admitExternalAppExchange).toHaveBeenCalledWith(source);
+    expect(limiter.limitVerifiedExternalAppExchange).toHaveBeenCalledTimes(1);
+    expect(limiter.limitVerifiedExternalAppExchange).toHaveBeenCalledWith(
+      'yoola'
+    );
+    expect(limiter.paceExternalAppExchangeFailure).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [429, 'RATE_LIMIT_EXCEEDED'],
-    [503, 'RATE_LIMIT_UNAVAILABLE'],
-  ])(
-    'returns a %i refusal before checking the app secret',
-    async (status, code) => {
-      limiter.limitExternalAppTokenExchange.mockResolvedValue(
-        NextResponse.json({ code }, { status })
-      );
+  it.each([429, 503])(
+    'returns a %i admission refusal before checking the app secret',
+    async (status) => {
+      limiter.admitExternalAppExchange.mockResolvedValue(refusal(status));
 
       const response = await exchange({ token: 'handoff-token' });
 
       expect(response.status).toBe(status);
-      await expect(response.json()).resolves.toEqual({ code });
       expect(mocks.verifyExternalAppSecret).not.toHaveBeenCalled();
     }
   );
 
-  it('leaves refresh to its own limiter', async () => {
-    const refreshToken = createAppCoordinationToken(
-      {
-        email: 'victim@example.com',
-        expiresInSeconds: 86_400,
-        originApp: 'web',
-        scopes: ['app-token:refresh'],
-        targetApp: 'yoola',
-        userId: victimUserId,
-        workspaceId,
-      },
-      { secret: 'test-secret' }
-    ).token;
+  it('refuses an over-limit verified app before redeeming the token', async () => {
+    limiter.limitVerifiedExternalAppExchange.mockResolvedValue(refusal(429));
 
-    await exchange({ refreshToken });
+    const response = await exchange({ token: 'handoff-token' });
 
-    expect(limiter.limitExternalAppTokenExchange).not.toHaveBeenCalled();
+    expect(response.status).toBe(429);
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it('paces a failed app secret and answers 429 once paced', async () => {
+    mocks.verifyExternalAppSecret.mockResolvedValue({
+      error: 'Invalid app credentials',
+      ok: false,
+    });
+
+    expect((await exchange({ token: 'handoff-token' })).status).toBe(401);
+    expect(limiter.paceExternalAppExchangeFailure).toHaveBeenCalledWith(
+      source,
+      'secret'
+    );
+    expect(limiter.limitVerifiedExternalAppExchange).not.toHaveBeenCalled();
+
+    limiter.paceExternalAppExchangeFailure.mockResolvedValue(refusal(429));
+    expect((await exchange({ token: 'handoff-token' })).status).toBe(429);
+  });
+
+  it('paces a failed handoff token as a token failure', async () => {
+    mocks.createClient.mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { message: 'x' } }),
+    });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect((await exchange({ token: 'handoff-token' })).status).toBe(401);
+    expect(limiter.paceExternalAppExchangeFailure).toHaveBeenCalledWith(
+      source,
+      'token'
+    );
+  });
+
+  it('admits and paces refresh exchanges without the verified-app count', async () => {
+    // A refresh token for another app fails verification for this one.
+    const response = await exchange({ refreshToken: refreshToken() });
+
+    expect(response.status).toBe(401);
+    expect(limiter.admitExternalAppExchange).toHaveBeenCalledWith(source);
+    expect(limiter.limitVerifiedExternalAppExchange).not.toHaveBeenCalled();
+    expect(limiter.paceExternalAppExchangeFailure).toHaveBeenCalledWith(
+      source,
+      'token'
+    );
   });
 });

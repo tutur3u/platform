@@ -36,7 +36,11 @@ import {
 } from '@/lib/auth/external-app-exchange-profile';
 import { createExchangeTokenResponse } from '@/lib/auth/external-app-exchange-response';
 import { verifyExternalAppRefreshToken } from '@/lib/auth/external-app-refresh';
-import { limitExternalAppTokenExchange } from '@/lib/external-apps/rate-limit';
+import {
+  admitExternalAppExchange,
+  limitVerifiedExternalAppExchange,
+  paceExternalAppExchangeFailure,
+} from '@/lib/external-apps/exchange-rate-limit';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
@@ -351,16 +355,22 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
-  // Refresh keeps its own per-family pre-limit. A token exchange is counted
-  // before the app secret is checked, so guessing secrets is paced too.
+  // Token and refresh exchanges are admitted before the app secret is
+  // checked, and failed secret or token checks are paced per app and IP on
+  // both paths; failed secrets also block the source. Refresh also keeps its
+  // own per-family pre-limit.
   const exchangeAppId = appId ?? targetApp;
-  if (token && exchangeAppId) {
-    const refusal = await limitExternalAppTokenExchange({
-      appId: exchangeAppId,
-      ip: extractIPFromRequest(request.headers),
-    });
+  const exchange = exchangeAppId
+    ? { appId: exchangeAppId, ip: extractIPFromRequest(request.headers) }
+    : null;
+  if (exchange) {
+    const refusal = await admitExternalAppExchange(exchange);
     if (refusal) return refusal;
   }
+  const failed = async (error: string, credential: 'secret' | 'token') =>
+    (exchange &&
+      (await paceExternalAppExchangeFailure(exchange, credential))) ||
+    NextResponse.json({ error }, { status: 401 });
 
   let resolvedTarget: Awaited<ReturnType<typeof resolveExchangeTarget>>;
 
@@ -384,10 +394,19 @@ async function exchangeAppToken(request: NextRequest) {
   }
 
   if ('error' in resolvedTarget) {
+    if (resolvedTarget.status === 401)
+      return failed(resolvedTarget.error, 'secret');
     return NextResponse.json(
       { error: resolvedTarget.error },
       { status: resolvedTarget.status }
     );
+  }
+
+  if (token) {
+    const refusal = await limitVerifiedExternalAppExchange(
+      resolvedTarget.targetApp
+    );
+    if (refusal) return refusal;
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
@@ -422,12 +441,8 @@ async function exchangeAppToken(request: NextRequest) {
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
-    if (!refreshResult) {
-      return NextResponse.json(
-        { error: 'Invalid or expired refresh token' },
-        { status: 401 }
-      );
-    }
+    if (!refreshResult)
+      return failed('Invalid or expired refresh token', 'token');
 
     const refreshClaims = refreshResult.claims;
     refreshFamily = refreshResult.family;
@@ -492,10 +507,7 @@ async function exchangeAppToken(request: NextRequest) {
         error: error.message,
         targetApp: resolvedTarget.targetApp,
       });
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
+      return failed('Invalid or expired token', 'token');
     }
 
     const validationRow = getValidationRow(data);
@@ -511,12 +523,7 @@ async function exchangeAppToken(request: NextRequest) {
       resolvedTarget.targetApp
     );
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
-    }
+    if (!userId) return failed('Invalid or expired token', 'token');
 
     authIdentity = await getAuthUserIdentity({
       sbAdmin,

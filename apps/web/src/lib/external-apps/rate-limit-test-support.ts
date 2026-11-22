@@ -7,10 +7,21 @@ const store = vi.hoisted(() => ({
   calls: [] as string[],
   counts: new Map<string, number>(),
   down: false,
+  values: new Map<string, unknown>(),
   guardAssigned: true,
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
+  getRedisClient: async () =>
+    store.down
+      ? null
+      : {
+          get: async (key: string) => store.values.get(key) ?? null,
+          set: async (key: string, value: unknown) => {
+            store.values.set(key, value);
+            return 'OK';
+          },
+        },
   checkRateLimitRedis: async (
     key: string,
     config: RateLimitConfig,
@@ -70,6 +81,7 @@ export function registerRateLimitStore() {
     store.calls.length = 0;
     store.counts.clear();
     store.down = false;
+    store.values.clear();
     store.guardAssigned = true;
   });
 
