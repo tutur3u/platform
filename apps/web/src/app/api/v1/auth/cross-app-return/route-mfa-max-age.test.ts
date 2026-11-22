@@ -141,6 +141,7 @@ describe('cross-app return with a maximum second-factor age', () => {
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', LOGIN_SECRET);
+    vi.stubEnv('MASTERMIND_SIGNIN_TRANSACTION_REQUIRED', 'true');
     mocks.account = { proof: null, status: 'allowed', userId: 'user-1' };
     mocks.rpc.mockResolvedValue({ data: 'handoff-token', error: null });
     mocks.getClaims.mockResolvedValue({

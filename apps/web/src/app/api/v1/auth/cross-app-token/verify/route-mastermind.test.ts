@@ -64,6 +64,7 @@ describe('Mastermind handoff redemption', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+    vi.stubEnv('MASTERMIND_SIGNIN_TRANSACTION_REQUIRED', 'true');
     const redeemed = {
       data: [
         { session_data: { email: 'owner@example.com' }, user_id: 'owner' },
@@ -132,6 +133,34 @@ describe('Mastermind handoff redemption', () => {
     }
     expect(mocks.adminRpc).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('before the requirement is on, redeems a token without issuer proof but checks any proof sent', async () => {
+    vi.stubEnv('MASTERMIND_SIGNIN_TRANSACTION_REQUIRED', '');
+    expect(
+      (
+        await verify(proof(), {
+          codeVerifier: VERIFIER,
+          issuerProof: undefined,
+        })
+      ).status
+    ).toBe(200);
+    expect(mocks.adminRpc).toHaveBeenCalledTimes(1);
+    mocks.adminRpc.mockClear();
+    expect(
+      (
+        await verify(proof(), {
+          codeVerifier: VERIFIER,
+          issuerProof: createMastermindHandoffIssuerProof('other-token'),
+        })
+      ).status
+    ).toBe(401);
+    // The Worker proof stays required either way.
+    expect(
+      (await verify({}, { codeVerifier: VERIFIER, issuerProof: undefined }))
+        .status
+    ).toBe(401);
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
   it('mints a 300 s session for the Worker even under a looser policy', async () => {

@@ -120,6 +120,7 @@ describe('signed-in continue for a first-party app', () => {
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', LOGIN_SECRET);
+    vi.stubEnv('MASTERMIND_SIGNIN_TRANSACTION_REQUIRED', 'true');
     mocks.claim.mockReset().mockResolvedValue('OK');
     mocks.account = { proof: null, status: 'allowed', userId: 'user-1' };
     mocks.rpc.mockResolvedValue({ data: 'handoff-token', error: null });
@@ -253,6 +254,43 @@ describe('signed-in continue for a first-party app', () => {
       '1',
       { ex: 600, nx: true }
     );
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.mock.calls[0]?.[1].p_code_challenge).toBe(CHALLENGE);
+  });
+
+  it('before the requirement is on, keeps the PKCE handoff only for a return without a transaction', async () => {
+    vi.stubEnv('MASTERMIND_SIGNIN_TRANSACTION_REQUIRED', '');
+    const legacy = new URLSearchParams({
+      returnUrl: MASTERMIND,
+      code_challenge: CHALLENGE,
+      code_challenge_method: 'S256',
+    });
+    const { response, location } = await open(legacy);
+    expect(response.status).toBe(303);
+    expect(location.searchParams.get('token')).toBe('handoff-token');
+    expect(location.searchParams.has(MASTERMIND_HANDOFF_ISSUER_PARAM)).toBe(
+      false
+    );
+    expect(mocks.claim).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'generate_cross_app_token_pkce',
+      expect.objectContaining({ p_code_challenge: CHALLENGE })
+    );
+    mocks.rpc.mockClear();
+
+    // A transaction that is present is always verified.
+    const changed = new URL(query().get('returnUrl')!);
+    changed.searchParams.set('nextUrl', '/projects');
+    expect(
+      (await open(query({ returnUrl: changed.href }))).response.status
+    ).toBe(403);
+    // A signed transaction still takes the claimed, issuer-proved path.
+    const signed = await open(query({ code_challenge: 'd'.repeat(43) }));
+    expect(signed.response.status).toBe(303);
+    expect(
+      signed.location.searchParams.get(MASTERMIND_HANDOFF_ISSUER_PARAM)
+    ).toBe(createMastermindHandoffIssuerProof('handoff-token'));
+    expect(mocks.claim).toHaveBeenCalledTimes(1);
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
     expect(mocks.rpc.mock.calls[0]?.[1].p_code_challenge).toBe(CHALLENGE);
   });

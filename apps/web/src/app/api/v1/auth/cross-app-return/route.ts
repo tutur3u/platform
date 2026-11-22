@@ -1,6 +1,7 @@
 import {
   createMastermindHandoffIssuerProof,
   MASTERMIND_HANDOFF_ISSUER_PARAM,
+  MASTERMIND_LOGIN_TRANSACTION_PARAM,
   requiresWorkerRedeemProof,
   verifyMastermindLoginTransaction,
 } from '@tuturuuu/auth/app-redeem-proof';
@@ -25,6 +26,7 @@ import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { mastermindSignInTransactionRequired } from '@/lib/auth/mastermind-signin-transaction';
 import {
   matchesRegisteredCallbackPath,
   parseCrossAppPkceChallenge,
@@ -80,6 +82,16 @@ async function claimMastermindTransaction(
       { ex: ttl, nx: true }
     )) === 'OK'
   );
+}
+
+function hasMastermindTransactionParam(returnUrl: string) {
+  try {
+    return new URL(returnUrl).searchParams.has(
+      MASTERMIND_LOGIN_TRANSACTION_PARAM
+    );
+  } catch {
+    return true;
+  }
 }
 
 function decodeReturnUrl(returnUrl: string) {
@@ -252,7 +264,15 @@ async function createCrossAppReturn(
     mastermind && parsed.data.generateToken
       ? verifyMastermindLoginTransaction(target.canonicalReturnUrl)
       : null;
-  if (mastermind && parsed.data.generateToken && !transaction) {
+  // A Mastermind return that carries a transaction must carry a valid one.
+  // Until the signing Worker serves, one without it keeps the PKCE handoff.
+  if (
+    mastermind &&
+    parsed.data.generateToken &&
+    !transaction &&
+    (mastermindSignInTransactionRequired() ||
+      hasMastermindTransactionParam(target.canonicalReturnUrl))
+  ) {
     return fail(
       'INVALID_CODE_CHALLENGE',
       NextResponse.json(
@@ -570,6 +590,9 @@ async function continueSignedInReturn(
 
   const rawMfaMaxAge = params.get('mfaMaxAge');
   const response = await createCrossAppReturn(request, fail, {
+    // Used only while a transaction is not required and none is present.
+    codeChallenge: params.get('code_challenge') ?? undefined,
+    codeChallengeMethod: params.get('code_challenge_method') ?? undefined,
     expectedUserId: params.get('expectedUserId') ?? undefined,
     ...(rawMfaMaxAge === null ? {} : { mfaMaxAge: Number(rawMfaMaxAge) }),
     returnUrl,

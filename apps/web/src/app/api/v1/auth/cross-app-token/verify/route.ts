@@ -20,6 +20,7 @@ import {
   type ReportHandoffFailure,
   withAuthHandoffDiagnostics,
 } from '@/lib/auth/handoff-diagnostics';
+import { mastermindSignInTransactionRequired } from '@/lib/auth/mastermind-signin-transaction';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const ROUTE = '/api/v1/auth/cross-app-token/verify';
@@ -94,8 +95,12 @@ async function verifyCrossAppToken(
     );
   }
 
+  // Every issuer proof is checked. Its absence is refused once the signing
+  // Worker serves and the transaction requirement is on.
   if (
     parsed.data.targetApp === 'mastermind' &&
+    (parsed.data.issuerProof !== undefined ||
+      mastermindSignInTransactionRequired()) &&
     !verifyMastermindHandoffIssuerProof(
       parsed.data.token,
       parsed.data.issuerProof

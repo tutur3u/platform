@@ -265,6 +265,12 @@ under those names is never read.
 
 Deploy the Mastermind Worker with transaction signing and issuer-proof
 forwarding before activating the new Web issuer and redemption routes.
+Web enforces both only with `MASTERMIND_SIGNIN_TRANSACTION_REQUIRED=true`
+(off by default). While it is off, Web still verifies any transaction or
+issuer proof it receives and refuses a return whose transaction is invalid,
+but a return without one keeps the earlier PKCE handoff, so the serving
+Worker can sign in during the overlap. Turn it on only after the signing
+Worker serves; turning it off is the rollback.
 Start a fresh sign-in from Mastermind when a transaction expires or was
 already used. Regression tests cover unsigned requests, callback changes,
 browser fetch, prefetch, concurrent replay, and tokens missing Web issuer proof.
