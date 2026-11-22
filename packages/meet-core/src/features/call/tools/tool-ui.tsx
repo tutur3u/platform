@@ -95,7 +95,7 @@ export function CallPanelHeader({
     <header className="flex items-center gap-3 border-b px-4 py-2.5">
       <span
         aria-hidden="true"
-        className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+        className="grid size-8 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"
       >
         <Icon className="size-4" />
       </span>

@@ -4609,6 +4609,7 @@
           "no_responses": "Chưa có câu trả lời.",
           "not_answered": "Bạn chưa trả lời câu này.",
           "open": "Mở nhận câu trả lời",
+          "placeholder_answer": "Nhập câu trả lời của bạn",
           "prompt": "Câu hỏi",
           "prompt_placeholder": "Bạn muốn hỏi điều gì?",
           "question_number": "Câu hỏi {number}",
@@ -4724,6 +4725,7 @@
           "ask": "Hỏi",
           "clear_prompt": "Xóa câu hỏi",
           "custom_prompt": "Đặt câu hỏi của riêng bạn",
+          "custom_prompt_placeholder": "Ví dụ: Bạn đang đọc gì?",
           "empty_participant": "Chủ phòng chưa đặt câu hỏi nào.",
           "hidden": "{count, plural, other {# câu trả lời đã ẩn}}",
           "hide_response": "Ẩn câu trả lời của {name}",
@@ -4739,7 +4741,8 @@
           },
           "title": "Phá băng",
           "update": "Cập nhật",
-          "your_response": "Câu trả lời của bạn"
+          "your_response": "Câu trả lời của bạn",
+          "your_response_placeholder": "Nhập câu trả lời ngắn"
         },
         "options": {
           "add": "Thêm lựa chọn",
@@ -4747,6 +4750,7 @@
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
           "mark_correct": "Đánh dấu lựa chọn {number} là đúng",
           "option": "Lựa chọn {number}",
+          "placeholder": "Nhập một lựa chọn",
           "remove": "Xóa lựa chọn {number}"
         },
         "penboard": {
@@ -5208,6 +5212,7 @@
         "correct_count": "{count}/{total} trả lời đúng",
         "course": "Khóa học",
         "custom_points": "Tùy chỉnh",
+        "custom_points_placeholder": "Ví dụ: 50",
         "empty_participant": "Người dẫn chưa thiết lập bảng câu hỏi.",
         "end_game": "Kết thúc trò chơi",
         "explanation": "Vì sao?",
@@ -5611,6 +5616,7 @@
         "group": "Nhóm {number}",
         "manual": "Phân nhóm thủ công",
         "message": "Tin nhắn cho tất cả các nhóm",
+        "message_placeholder": "Ví dụ: Còn hai phút nữa nhé",
         "mode": "Cách phân nhóm",
         "open": "Mở các nhóm",
         "placeholder_count": "4",
@@ -5636,6 +5642,7 @@
         "drawing_surface": "Bảng vẽ chung",
         "drawing_tools": "Công cụ vẽ",
         "label": "Nhãn",
+        "label_placeholder": "Ví dụ: Bước 1",
         "shape": "Hình chữ nhật",
         "sticky": "Ghi chú dán",
         "stroke": "Bút",

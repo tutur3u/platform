@@ -92,7 +92,10 @@ export function QaBoard({
           onValueChange={(value) => setSort(value as LiveQaSort)}
           className="min-w-0 flex-1"
         >
-          <TabsList aria-label={t('sort_label')} className="w-full sm:w-auto">
+          <TabsList
+            aria-label={t('sort_label')}
+            className="w-full @min-[360px]:w-auto"
+          >
             {LIVE_QA_SORTS.map((value) => (
               <TabsTrigger
                 key={value}
@@ -167,7 +170,7 @@ export function QaBoard({
       )}
       <div
         className={cn(
-          'sticky bottom-0 z-10 border-t bg-background py-3',
+          'sticky bottom-0 z-10 border-t bg-card py-3',
           composerClassName
         )}
       >

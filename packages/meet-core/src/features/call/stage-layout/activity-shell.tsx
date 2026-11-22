@@ -1,6 +1,6 @@
 'use client';
 
-import { Maximize2, Minimize2, RefreshCw, X } from '@tuturuuu/icons';
+import { Maximize, Minimize, RefreshCw, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
@@ -31,7 +31,7 @@ export function ActivityStatus({
   return (
     <span
       className={cn(
-        'inline-flex h-5 shrink-0 items-center gap-1.5 rounded-full px-2 font-mono text-[10px] uppercase tracking-widest',
+        'inline-flex h-5 min-w-0 shrink items-center gap-1.5 truncate rounded-full px-2 font-mono text-[10px] uppercase tracking-widest',
         live
           ? 'bg-dynamic-green/15 text-dynamic-green'
           : 'bg-muted text-muted-foreground'
@@ -69,7 +69,7 @@ export function PaneHeaderExtras({
     typeof status === 'string' ? (
       <ActivityStatus live={live}>{status}</ActivityStatus>
     ) : status ? (
-      <span className="flex min-w-0 shrink items-center gap-2 overflow-hidden">
+      <span className="flex min-w-0 shrink items-center gap-2 overflow-hidden whitespace-nowrap text-muted-foreground text-xs">
         {status}
       </span>
     ) : null;
@@ -215,7 +215,9 @@ export function PaneWindowActions({
   canMaximize?: boolean;
 }) {
   const t = useTranslations('meet.call.stage_layout');
-  const Maximize = maximized ? Minimize2 : Maximize2;
+  // Corner brackets: the pane fills the stage. Activities with their own full
+  // screen use the diagonal arrows, so the two are told apart.
+  const MaximizeIcon = maximized ? Minimize : Maximize;
   const maximizeLabel = t(maximized ? 'restore' : 'maximize', { title });
   return (
     <>
@@ -230,7 +232,7 @@ export function PaneWindowActions({
           title={maximizeLabel}
           onClick={onToggleMaximize}
         >
-          <Maximize aria-hidden="true" className="size-4" />
+          <MaximizeIcon aria-hidden="true" className="size-4" />
         </Button>
       )}
       <Button

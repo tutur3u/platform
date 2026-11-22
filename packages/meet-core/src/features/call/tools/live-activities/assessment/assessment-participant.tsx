@@ -42,7 +42,7 @@ function WrittenAnswer({
     value: draft,
     maxLength: 2000,
     'aria-label': t('your_answer'),
-    placeholder: t('your_answer'),
+    placeholder: t('placeholder_answer'),
   };
   return (
     <form

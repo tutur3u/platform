@@ -51,7 +51,7 @@ function PromptPicker({ send }: { send: Activity['send'] }) {
           value={custom}
           maxLength={200}
           aria-label={t('custom_prompt')}
-          placeholder={t('custom_prompt')}
+          placeholder={t('custom_prompt_placeholder')}
           onChange={(event) => setCustom(event.target.value)}
         />
         <ToolAction
@@ -94,7 +94,7 @@ function ResponseForm({
         value={draft}
         maxLength={200}
         aria-label={t('your_response')}
-        placeholder={t('your_response')}
+        placeholder={t('your_response_placeholder')}
         onChange={(event) => setDraft(event.target.value)}
       />
       <ToolAction

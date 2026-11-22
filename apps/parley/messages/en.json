@@ -4870,7 +4870,8 @@
           "option": "Option {number}",
           "remove": "Remove option {number}",
           "add": "Add option",
-          "correct_choice": "Correct answer"
+          "correct_choice": "Correct answer",
+          "placeholder": "Type an option"
         },
         "qa": {
           "allow_anonymous": "Allow anonymous questions",
@@ -4986,7 +4987,8 @@
           "reopen_confirm": "Clear answers and start again",
           "reopen_hint": "Results were released, so this attempt is final. A new attempt clears every answer and grade.",
           "release_hint": "Close answers to grade and release results.",
-          "new_attempt": "New attempt"
+          "new_attempt": "New attempt",
+          "placeholder_answer": "Type your answer"
         },
         "flashcards": {
           "title": "Flashcards",
@@ -5072,7 +5074,9 @@
           "hide_response": "Hide the answer from {name}",
           "show_response": "Show the answer from {name}",
           "no_responses": "No answers yet. Be the first.",
-          "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}"
+          "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}",
+          "custom_prompt_placeholder": "For example, What are you reading?",
+          "your_response_placeholder": "Type a short answer"
         },
         "cancel": "Cancel",
         "fullscreen": "Full screen",

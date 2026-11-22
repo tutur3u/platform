@@ -8,6 +8,9 @@ export interface PaneSize {
   tooSmall: boolean;
 }
 
+/** What a pane's frame takes from the body measured inside it. */
+const PANE_CHROME = { width: 2, height: 45 };
+
 const UNMEASURED: PaneSize = { sizeClass: 'medium', tooSmall: false };
 
 /**
@@ -25,7 +28,13 @@ export function usePaneSize(element: HTMLElement | null): PaneSize {
       if (!box) return;
       const next: PaneSize = {
         sizeClass: sizeClassOf(box.width),
-        tooSmall: box.width > 0 && isTooSmall(box),
+        // The least usable size is the pane's: its border and header count.
+        tooSmall:
+          box.width > 0 &&
+          isTooSmall({
+            width: box.width + PANE_CHROME.width,
+            height: box.height + PANE_CHROME.height,
+          }),
       };
       setSize((current) =>
         current.sizeClass === next.sizeClass &&

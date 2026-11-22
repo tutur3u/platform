@@ -143,7 +143,7 @@ export function OptionsEditor({
             value={option}
             maxLength={120}
             aria-label={t('option', { number: index + 1 })}
-            placeholder={t('option', { number: index + 1 })}
+            placeholder={t('placeholder')}
             onChange={(event) =>
               onChange(
                 options.map((value, position) =>

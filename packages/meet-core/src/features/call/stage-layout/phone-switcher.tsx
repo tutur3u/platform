@@ -12,6 +12,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { activityTone } from './activity-tones';
 import type { ActivityMeta } from './pane-chrome';
 
 /**
@@ -78,7 +79,10 @@ export function PhoneSwitcher({
                 >
                   <span
                     aria-hidden="true"
-                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"
+                    className={cn(
+                      'grid size-9 shrink-0 place-items-center rounded-xl',
+                      activityTone(item.id)
+                    )}
                   >
                     <item.icon className="size-4" />
                   </span>

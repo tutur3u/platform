@@ -122,7 +122,7 @@ export function QaQuestionCard({
     <article
       aria-label={question.text}
       className={cn(
-        'space-y-3 rounded-2xl border bg-card p-3 md:p-4',
+        'space-y-3 rounded-2xl border bg-card p-3 @min-[360px]:p-4',
         question.pinned && 'border-dynamic-blue/40',
         question.hidden && 'border-dashed opacity-75'
       )}
@@ -152,7 +152,7 @@ export function QaQuestionCard({
               <QaChip tone="hidden">{t('qa.hidden_chip')}</QaChip>
             ) : null}
           </div>
-          <p className="wrap-break-word whitespace-pre-wrap font-medium text-sm md:text-base">
+          <p className="wrap-break-word whitespace-pre-wrap font-medium text-sm @min-[360px]:text-base">
             {question.text}
           </p>
           <QaAttachments

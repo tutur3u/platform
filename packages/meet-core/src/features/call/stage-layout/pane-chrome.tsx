@@ -12,6 +12,7 @@ import {
   useCallback,
 } from 'react';
 import { PaneWindowActions } from './activity-shell';
+import { activityTone } from './activity-tones';
 import type { PaneNode } from './layout-model';
 
 export const PANE_HEADER_HEIGHT = 44;
@@ -120,7 +121,7 @@ export function PaneChrome({
       inert={hidden || undefined}
       style={style}
       className={cn(
-        'absolute flex flex-col overflow-hidden rounded-2xl border bg-card shadow-elevation-1 outline-none',
+        '@container absolute flex flex-col overflow-hidden rounded-2xl border bg-card shadow-elevation-1 outline-none',
         focused ? 'border-ring ring-2 ring-ring' : 'border-border',
         'focus-visible:ring-2 focus-visible:ring-ring',
         hidden && 'invisible'
@@ -200,7 +201,10 @@ export function PaneChrome({
           <>
             <span
               aria-hidden="true"
-              className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"
+              className={cn(
+                'grid size-7 shrink-0 place-items-center rounded-lg',
+                activityTone(pane.active)
+              )}
             >
               <active.icon className="size-4" />
             </span>

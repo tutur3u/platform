@@ -33,7 +33,7 @@ function QaAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   const { url, name, contentType } = file.data;
   if (PREVIEWABLE.has(contentType) && !previewFailed)
     return (
-      <li className="basis-full sm:basis-auto">
+      <li className="basis-full @min-[360px]:basis-auto">
         <a
           href={url}
           target="_blank"
@@ -47,7 +47,7 @@ function QaAttachment({ meetingId, id }: { meetingId: string; id: string }) {
             height={180}
             loading="lazy"
             decoding="async"
-            className="max-h-44 w-full object-contain sm:w-56"
+            className="max-h-44 w-full object-contain @min-[360px]:w-56"
             onError={() => setPreviewFailed(true)}
           />
         </a>

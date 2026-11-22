@@ -478,3 +478,17 @@ it('asks for the Activities dialog only after the switcher sheet has closed', as
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.body.style.pointerEvents).not.toBe('none');
 });
+
+it('counts the pane frame toward the 280 by 220 minimum', () => {
+  // Bodies measured inside the pane: its border and header take 2 and 45.
+  sizes.set('a', { width: 278, height: 175 });
+  sizes.set('b', { width: 277, height: 175 });
+  sizes.set('c', { width: 278, height: 174 });
+  view();
+  open('a', 'b', 'c');
+  const small = (id: string) =>
+    document
+      .querySelector(`[data-activity-id="${id}"]`)
+      ?.textContent?.includes('Needs more room');
+  expect([small('a'), small('b'), small('c')]).toEqual([false, true, true]);
+});

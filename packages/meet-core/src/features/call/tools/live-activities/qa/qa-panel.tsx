@@ -41,7 +41,7 @@ export function QaPanel({
   const meta = (
     <>
       <QaLiveChip />
-      <span className="text-muted-foreground text-xs">
+      <span className="hidden whitespace-nowrap text-muted-foreground text-xs @min-[420px]:inline">
         {t('counts', { open: counts.open, answered: counts.answered })}
       </span>
     </>
@@ -68,7 +68,7 @@ export function QaPanel({
             />
           }
         >
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 md:px-6">
+          <div className="@container min-h-0 flex-1 overflow-y-auto px-4 pt-4 md:px-6">
             <div className="mx-auto max-w-3xl space-y-4">
               <QaBoard view={view} board={board} />
             </div>
@@ -78,7 +78,7 @@ export function QaPanel({
         <QaBoard
           view={view}
           board={board}
-          composerClassName="-mx-3 -mb-3 px-3 @min-[360px]:-mx-4 @min-[360px]:-mb-4 @min-[360px]:px-4"
+          composerClassName="-mx-4 -mb-4 px-4"
         />
       )}
     </LiveActivityPanelFrame>

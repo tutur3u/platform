@@ -4870,7 +4870,8 @@
           "option": "Lựa chọn {number}",
           "remove": "Xóa lựa chọn {number}",
           "add": "Thêm lựa chọn",
-          "correct_choice": "Đáp án đúng"
+          "correct_choice": "Đáp án đúng",
+          "placeholder": "Nhập một lựa chọn"
         },
         "qa": {
           "allow_anonymous": "Cho phép hỏi ẩn danh",
@@ -4986,7 +4987,8 @@
           "reopen_confirm": "Xóa câu trả lời và bắt đầu lại",
           "reopen_hint": "Kết quả đã được công bố nên lượt làm này đã kết thúc. Lượt làm mới sẽ xóa mọi câu trả lời và điểm.",
           "release_hint": "Hãy đóng nhận câu trả lời để chấm điểm và công bố kết quả.",
-          "new_attempt": "Lượt làm mới"
+          "new_attempt": "Lượt làm mới",
+          "placeholder_answer": "Nhập câu trả lời của bạn"
         },
         "flashcards": {
           "title": "Thẻ ghi nhớ",
@@ -5072,7 +5074,9 @@
           "hide_response": "Ẩn câu trả lời của {name}",
           "show_response": "Hiện câu trả lời của {name}",
           "no_responses": "Chưa có câu trả lời. Hãy là người đầu tiên.",
-          "hidden": "{count, plural, other {# câu trả lời đã ẩn}}"
+          "hidden": "{count, plural, other {# câu trả lời đã ẩn}}",
+          "custom_prompt_placeholder": "Ví dụ: Bạn đang đọc gì?",
+          "your_response_placeholder": "Nhập câu trả lời ngắn"
         },
         "cancel": "Hủy",
         "fullscreen": "Toàn màn hình",

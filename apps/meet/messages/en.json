@@ -4609,6 +4609,7 @@
           "no_responses": "No answers yet.",
           "not_answered": "You did not answer this one.",
           "open": "Open for answers",
+          "placeholder_answer": "Type your answer",
           "prompt": "Question",
           "prompt_placeholder": "What do you want to ask?",
           "question_number": "Question {number}",
@@ -4724,6 +4725,7 @@
           "ask": "Ask",
           "clear_prompt": "Clear the question",
           "custom_prompt": "Ask your own question",
+          "custom_prompt_placeholder": "For example, What are you reading?",
           "empty_participant": "The host has not asked a question yet.",
           "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}",
           "hide_response": "Hide the answer from {name}",
@@ -4739,7 +4741,8 @@
           },
           "title": "Icebreaker",
           "update": "Update",
-          "your_response": "Your answer"
+          "your_response": "Your answer",
+          "your_response_placeholder": "Type a short answer"
         },
         "options": {
           "add": "Add option",
@@ -4747,6 +4750,7 @@
           "legend": "Options, with the correct one selected",
           "mark_correct": "Mark option {number} as correct",
           "option": "Option {number}",
+          "placeholder": "Type an option",
           "remove": "Remove option {number}"
         },
         "penboard": {
@@ -5208,6 +5212,7 @@
         "correct_count": "{count} of {total} correct",
         "course": "Course",
         "custom_points": "Custom",
+        "custom_points_placeholder": "For example, 50",
         "empty_participant": "The host hasn't set up a board yet.",
         "end_game": "End game",
         "explanation": "Why?",
@@ -5611,6 +5616,7 @@
         "group": "Group {number}",
         "manual": "Manual assignment",
         "message": "Message to all groups",
+        "message_placeholder": "For example, Wrap up in two minutes",
         "mode": "Assignment method",
         "open": "Open groups",
         "placeholder_count": "4",
@@ -5636,6 +5642,7 @@
         "drawing_surface": "Shared drawing surface",
         "drawing_tools": "Drawing tools",
         "label": "Label",
+        "label_placeholder": "For example, Step 1",
         "shape": "Rectangle",
         "sticky": "Sticky note",
         "stroke": "Pen",
