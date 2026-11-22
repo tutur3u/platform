@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Mail, PenLine, Settings } from '@tuturuuu/icons';
 import { listMailThreads } from '@tuturuuu/internal-api';
 import {
-  mailHistoryHref,
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -29,6 +28,7 @@ import {
   applyMailSelection,
   getSourceFolderHref,
   isConnectedMailFolder,
+  mailHistoryHref,
   type MailSelection,
   resolveConnectedAccountId,
   resolveSelectionPathname,

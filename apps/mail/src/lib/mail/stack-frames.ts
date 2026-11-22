@@ -5,7 +5,7 @@
  * expected shape are dropped.
  */
 const FRAME =
-  /^\s*at (?:(?<fn>[\w$.<>\[\] ]{1,80}) \()?(?:[^()\s]*\/)?(?<file>[\w.-]{1,80}):(?<line>\d{1,7}):(?<col>\d{1,7})\)?\s*$/u;
+  /^\s*at (?:(?<fn>[\w$.<>[\] ]{1,80}) \()?(?:[^()\s]*\/)?(?<file>[\w.-]{1,80}):(?<line>\d{1,7}):(?<col>\d{1,7})\)?\s*$/u;
 
 export function safeStackFrames(error: unknown, limit = 6): string[] {
   let stack: unknown;
