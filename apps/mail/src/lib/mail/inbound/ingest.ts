@@ -6,10 +6,9 @@ import { resolveForwardingMailbox } from '../automation/forwarding';
 import { autoLabelMessage } from '../automation/labels';
 import { deliverGroupMessage } from '../groups/delivery';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
-import { linkPersonalMailboxWorkspace } from '../repository/shared';
 import { isSenderBlocked } from '../sender-blocks/store';
-import { resolveInternalMailboxName } from '../identity';
 import { normalizeAddress, parseRawEmail } from './parser';
+import { ensureMailboxForRecipient } from './provision';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
 
 function privateTable(client: AnyRecord, table: string) {
@@ -48,62 +47,7 @@ function resolveS3Object(notification: SesNotification) {
   return bucket && key ? { bucket, key } : null;
 }
 
-export async function ensureMailboxForRecipient(
-  admin: AnyRecord,
-  address: string,
-  domainId: string
-) {
-  const normalizedAddress = address.toLowerCase();
-  const { data: existing, error: existingError } = await privateTable(
-    admin,
-    'mail_mailboxes'
-  )
-    .select('*')
-    .eq('address', normalizedAddress)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-  if (existing) return existing.status === 'active' ? existing : null;
-
-  const { data: user } = await admin
-    .from('users')
-    .select('id, email, display_name')
-    .eq('email', normalizedAddress)
-    .maybeSingle();
-
-  if (!user?.id) return null;
-
-  const senderName = resolveInternalMailboxName(
-    user.display_name,
-    normalizedAddress
-  );
-  const { data: mailbox, error } = await privateTable(admin, 'mail_mailboxes')
-    .insert({
-      address: normalizedAddress,
-      created_by: user.id,
-      display_name: senderName,
-      domain_id: domainId,
-      sender_name: senderName,
-      type: 'personal',
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-
-  await privateTable(admin, 'mail_mailbox_members').upsert(
-    {
-      created_by: user.id,
-      mailbox_id: mailbox.id,
-      role: 'owner',
-      user_id: user.id,
-    },
-    { onConflict: 'mailbox_id,user_id' }
-  );
-  await linkPersonalMailboxWorkspace(admin, mailbox.id);
-
-  return mailbox;
-}
+export { ensureMailboxForRecipient } from './provision';
 
 export async function resolveInboundMailbox({
   admin,
