@@ -16,7 +16,7 @@ object TelemetryConsentDecision {
     const val CHOICE_KEY = "flutter.telemetry-consent-choice"
     const val NOTICE_VERSION_KEY = "flutter.telemetry-consent-notice-version"
     const val COPY_VERSION_KEY = "flutter.telemetry-consent-copy-version"
-    const val CURRENT_COPY_VERSION = "telemetry-fid-copy-v1"
+    const val CURRENT_COPY_VERSION = "telemetry-network-copy-v2"
     const val CURRENT_NOTICE_VERSION = "telemetry-consent-v1"
 
     fun allowsCollection(stored: Map<String, *>): Boolean =

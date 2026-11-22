@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:mobile/data/sources/native_integrity/native_integrity_turnstile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -162,7 +163,16 @@ class MobileClientCredentials {
   /// The stored entries, or a [TimeoutException] when secure storage does
   /// not answer in time. A late read still completes and fills the cache;
   /// nothing empty is cached in its place, so stored credentials survive.
-  Future<Map<String, _Credential>> _read() => _load().timeout(_storageTimeout);
+  Future<Map<String, _Credential>> _read() async {
+    try {
+      return await _load().timeout(_storageTimeout);
+    } on TimeoutException {
+      MobileDiagnostics.instance.recordSignal(
+        MobileDiagnosticSignal.credentialReadTimeout,
+      );
+      rethrow;
+    }
+  }
 
   /// Waits for a write at most [_storageTimeout]. The write stays queued and
   /// may still land; the caller just stops waiting for it.

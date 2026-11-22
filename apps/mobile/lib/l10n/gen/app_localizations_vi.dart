@@ -8534,6 +8534,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAppPreferences => 'Tùy chọn ứng dụng';
 
   @override
+  String get settingsDiagnostics => 'Chẩn đoán';
+
+  @override
+  String get settingsDiagnosticActionFailed => 'Không thể thực hiện thao tác. Vui lòng thử lại.';
+
+  @override
+  String get settingsDiagnosticEnvironment => 'Môi trường';
+
+  @override
+  String get settingsDiagnosticUser => 'ID người dùng đang đăng nhập';
+
+  @override
+  String get settingsDiagnosticWorkspace => 'ID không gian làm việc';
+
+  @override
+  String get settingsDiagnosticFlags => 'Tính năng thử nghiệm đang bật';
+
+  @override
+  String get settingsDiagnosticOrigins => 'Địa chỉ API';
+
+  @override
+  String get settingsDiagnosticVerbose => 'Ghi nhật ký chi tiết';
+
+  @override
+  String get settingsDiagnosticSlowNetwork => 'Mô phỏng mạng chậm';
+
+  @override
+  String get settingsDiagnosticNetwork => 'Yêu cầu gần đây';
+
+  @override
+  String get settingsDiagnosticLogs => 'Nhật ký';
+
+  @override
+  String get settingsDiagnosticExport => 'Xuất dữ liệu chẩn đoán';
+
+  @override
+  String get settingsDiagnosticSend => 'Gửi dữ liệu chẩn đoán';
+
+  @override
+  String get settingsDiagnosticQueued => 'Dữ liệu chẩn đoán đang chờ tải lên.';
+
+  @override
+  String get settingsDiagnosticOptInFirst => 'Hãy bật báo cáo độ ổn định trong Cài đặt trước.';
+
+  @override
+  String get settingsDiagnosticSendUnavailable => 'Dữ liệu chẩn đoán không khả dụng hoặc vừa được đưa vào hàng đợi. Vui lòng thử lại sau.';
+
+  @override
+  String get settingsDiagnosticEmpty => 'Không có mục nào gần đây.';
+
+  @override
   String get settingsAppVersion => 'Phiên bản ứng dụng';
 
   @override
@@ -15840,7 +15891,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentTitle => 'Giúp cải thiện Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase Analytics và Crashlytics để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase Analytics và Crashlytics để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, thời gian khởi động và thông tin yêu cầu API lỗi (máy chủ, mẫu đường dẫn, trạng thái và thời lượng). Dữ liệu cũng gồm thông tin thiết bị và hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
 
   @override
   String get telemetryFirebaseInstallationDisclosure => 'Cho phép phân tích và báo cáo sự cố cũng tạo một mã định danh bản cài đặt Firebase (Firebase Installation ID) trên thiết bị này (iOS và Android), giúp Google phân biệt các bản cài đặt ứng dụng. Chúng tôi không gửi thông tin tài khoản của bạn cho Google cùng với mã này.';

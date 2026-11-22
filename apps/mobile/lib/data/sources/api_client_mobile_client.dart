@@ -27,7 +27,11 @@ final class _MobileClientRedirectGuard extends http.BaseClient {
     if (request.headers.containsKey(mobileClientHeader)) {
       request.followRedirects = false;
     }
-    return _inner.send(request);
+    return MobileDiagnostics.instance.observe(
+      request.method,
+      request.url,
+      () => _inner.send(request),
+    );
   }
 
   @override
@@ -36,6 +40,59 @@ final class _MobileClientRedirectGuard extends http.BaseClient {
 
 extension _ApiClientMobileClient on ApiClient {
   MobileClientCredentials get _mobileClient => MobileClientCredentials.instance;
+
+  Future<Map<String, String>> _getHeaders({
+    String accept = 'application/json',
+    String? contentType,
+    bool requiresAuth = true,
+    bool offlineRead = false,
+  }) async {
+    String? token;
+    final userId = requiresAuth ? _auth.currentUser?.id : null;
+
+    // Simulate latency before credentials are read. The call paths still
+    // perform their normal account and mutation admission checks.
+    if (MobileDiagnostics.instance.slowNetwork) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+    if (requiresAuth) {
+      _checkRequestUser(userId);
+      token = _auth.currentSession?.accessToken;
+      final hadTokenBeforeRefresh = token != null && token.isNotEmpty;
+
+      try {
+        await _ensureValidSession();
+        token = _auth.currentSession?.accessToken ?? token;
+      } on ApiException catch (error, stackTrace) {
+        if (!hadTokenBeforeRefresh) {
+          rethrow;
+        }
+
+        developer.log(
+          'token refresh suppressed, using existing token',
+          name: 'ApiClient',
+          error: error,
+          stackTrace: stackTrace,
+          level: 500,
+        );
+
+        token = _auth.currentSession?.accessToken ?? token;
+      }
+    }
+
+    if (requiresAuth) _checkRequestUser(userId);
+    return {
+      if (contentType != null) 'Content-Type': contentType,
+      'Accept': accept,
+      if (requiresAuth && offlineRead && OfflineApiRequest.active)
+        'x-tuturuuu-offline-download': '1',
+      if (token != null) 'Authorization': 'Bearer $token',
+      // Reads pass offlineRead; every other authenticated request mutates.
+      ...await _mobileClientHeaders(userId, token, mutation: !offlineRead),
+      if (requiresAuth && ApiVerification.token != null)
+        'x-tuturuuu-turnstile-token': ApiVerification.token!,
+    };
+  }
 
   /// Attaches the stored native client credential to an authenticated
   /// mutation; the server ignores it on reads. Without a fresh one a mint

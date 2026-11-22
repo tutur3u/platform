@@ -316,7 +316,7 @@ private enum TelemetryConsentGate {
   static func allowsCollection(_ stored: (String) -> Any?) -> Bool {
     stored("flutter.telemetry-consent-choice") as? Bool == true
       && stored("flutter.telemetry-consent-notice-version") as? String == "telemetry-consent-v1"
-      && stored("flutter.telemetry-consent-copy-version") as? String == "telemetry-fid-copy-v1"
+      && stored("flutter.telemetry-consent-copy-version") as? String == "telemetry-network-copy-v2"
   }
 
   static func clearPersistedCrashCollection() {

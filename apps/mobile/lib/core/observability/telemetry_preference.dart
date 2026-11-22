@@ -20,8 +20,8 @@ class TelemetryPreference extends ChangeNotifier {
 
   /// Legal notice version is unchanged for the FID copy clarification.
   static const currentNoticeVersion = 'telemetry-consent-v1';
-  // Separate copy revision re-prompts Allows from unreleased dev/QA screens.
-  static const currentCopyVersion = 'telemetry-fid-copy-v1';
+  // Reconfirm previous Allows when the notice describes additional fields.
+  static const currentCopyVersion = 'telemetry-network-copy-v2';
   static const copyVersionKey = 'telemetry-consent-copy-version';
   static const choiceKey = 'telemetry-consent-choice';
   static const noticeVersionKey = 'telemetry-consent-notice-version';

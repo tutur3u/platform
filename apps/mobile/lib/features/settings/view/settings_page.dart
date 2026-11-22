@@ -26,6 +26,7 @@ import 'package:mobile/features/settings/view/link_browser_settings_tile.dart';
 import 'package:mobile/features/settings/view/product_settings_registry.dart';
 import 'package:mobile/features/settings/view/push_settings_tile.dart';
 import 'package:mobile/features/settings/view/settings_account_section.dart';
+import 'package:mobile/features/settings/view/settings_diagnostics.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_dock_search.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';

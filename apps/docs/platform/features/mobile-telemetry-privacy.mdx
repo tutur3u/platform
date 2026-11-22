@@ -1,7 +1,7 @@
 ---
 title: Mobile analytics and crash report privacy
 description: Device consent for Firebase telemetry in the Flutter app.
-updatedAt: "2026-10-31"
+updatedAt: "2026-11-22"
 audience: users
 ---
 
@@ -16,14 +16,19 @@ locale or region default and no region list: Firebase Analytics and Crashlytics
 collect nothing before an explicit Allow, from the first-run prompt or from
 Settings. The app works fully either way. The answer is stored on the device
 together with the notice version it was given under (`telemetry-consent-v1`) and
-the time. Changing the prompt or Settings wording bumps the version, which voids
-stored answers and asks again; nothing is collected in between. An answer stored
-by an older build (including the earlier regional-default key) is never trusted:
-those users see the prompt once on the first launch after the update, with no
-collection until they answer. The FID clarification keeps the legal notice at
-telemetry-consent-v1. A separate telemetry-consent-copy-version value,
-telemetry-fid-copy-v1, re-prompts Allows from earlier unreleased dev/QA screens
-once; there was no distributed Allow screen requiring a production re-prompt.
+the time. The legal notice remains `telemetry-consent-v1`. The separate copy
+version `telemetry-network-copy-v2` includes first-frame timing and failed API
+request metadata. An Allow from an earlier copy version needs a new explicit
+Allow before this collection resumes. Stored declines remain in effect. The
+earlier regional-default key does not establish consent.
+
+Failed API metadata includes the allowlisted host and route pattern, HTTP
+status, and time to response headers. Request headers, queries, bodies,
+account IDs, and workspace IDs are excluded. Settings > About > Diagnostics
+can share a redacted bundle through Crashlytics while sharing is enabled.
+The opt-out in Settings stops new reports and starts the existing cleanup of
+unsent reports. See the [mobile diagnostics runbook](/build/devops/mobile-store-deployment#production-mobile-diagnostics).
+
 The EN/VI FID sentence is maintained in telemetryFirebaseInstallationDisclosure,
 shared by the prompt and Settings. The prompt explicitly names Google Firebase
 Analytics and Crashlytics and links the privacy policy at /privacy for English
@@ -42,7 +47,7 @@ stays outside the app. Other platforms use the link browser preference.
 Closing the prompt with
 the back gesture counts as **Don't allow**, never as consent. An answer persists
 exactly like the Settings switch (declining revokes before persisting) and the
-prompt is not shown again until the notice version changes. Settings stays the
+prompt returns if an updated notice needs a new answer. Settings stays the
 place to change the choice, and choosing there first also ends the prompt.
 Settings routes are never interrupted, and a deep link is restored after the
 answer. Development and staging builds default to no prompt and no collection; the QA override below is the only exception.

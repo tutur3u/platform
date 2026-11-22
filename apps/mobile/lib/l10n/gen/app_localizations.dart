@@ -16327,6 +16327,108 @@ abstract class AppLocalizations {
   /// **'App preferences'**
   String get settingsAppPreferences;
 
+  /// No description provided for @settingsDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get settingsDiagnostics;
+
+  /// No description provided for @settingsDiagnosticActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete this action. Try again.'**
+  String get settingsDiagnosticActionFailed;
+
+  /// No description provided for @settingsDiagnosticEnvironment.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment'**
+  String get settingsDiagnosticEnvironment;
+
+  /// No description provided for @settingsDiagnosticUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed-in user ID'**
+  String get settingsDiagnosticUser;
+
+  /// No description provided for @settingsDiagnosticWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace ID'**
+  String get settingsDiagnosticWorkspace;
+
+  /// No description provided for @settingsDiagnosticFlags.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled experimental features'**
+  String get settingsDiagnosticFlags;
+
+  /// No description provided for @settingsDiagnosticOrigins.
+  ///
+  /// In en, this message translates to:
+  /// **'API base addresses'**
+  String get settingsDiagnosticOrigins;
+
+  /// No description provided for @settingsDiagnosticVerbose.
+  ///
+  /// In en, this message translates to:
+  /// **'Verbose logging'**
+  String get settingsDiagnosticVerbose;
+
+  /// No description provided for @settingsDiagnosticSlowNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Simulate slow network'**
+  String get settingsDiagnosticSlowNetwork;
+
+  /// No description provided for @settingsDiagnosticNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent requests'**
+  String get settingsDiagnosticNetwork;
+
+  /// No description provided for @settingsDiagnosticLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get settingsDiagnosticLogs;
+
+  /// No description provided for @settingsDiagnosticExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export diagnostics'**
+  String get settingsDiagnosticExport;
+
+  /// No description provided for @settingsDiagnosticSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send diagnostics'**
+  String get settingsDiagnosticSend;
+
+  /// No description provided for @settingsDiagnosticQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics queued for upload.'**
+  String get settingsDiagnosticQueued;
+
+  /// No description provided for @settingsDiagnosticOptInFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable stability reports in Settings first.'**
+  String get settingsDiagnosticOptInFirst;
+
+  /// No description provided for @settingsDiagnosticSendUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics are unavailable or were just queued. Try again shortly.'**
+  String get settingsDiagnosticSendUnavailable;
+
+  /// No description provided for @settingsDiagnosticEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent entries.'**
+  String get settingsDiagnosticEmpty;
+
   /// No description provided for @settingsAppVersion.
   ///
   /// In en, this message translates to:
@@ -29800,7 +29902,7 @@ abstract class AppLocalizations {
   /// No description provided for @telemetryConsentBody.
   ///
   /// In en, this message translates to:
-  /// **'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
+  /// **'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, app startup timing, and failed API request details (host, route pattern, status, and duration). It also includes device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
   String get telemetryConsentBody;
 
   /// No description provided for @telemetryFirebaseInstallationDisclosure.

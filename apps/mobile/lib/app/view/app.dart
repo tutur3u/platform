@@ -16,6 +16,7 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/feature_flags/mobile_flags.dart';
+import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
@@ -555,6 +556,7 @@ class _AppState extends State<App> {
               listenWhen: (prev, curr) =>
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
+                MobileDiagnostics.instance.clearSession();
                 _appLockLifecycle.accountOrLockChanged();
                 SmartSyncRuntime.accountChanged(
                   signedIn: state.status == AuthStatus.authenticated,

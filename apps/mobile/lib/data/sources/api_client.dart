@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/data/sources/api_error_payload.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/data/sources/api_multipart_file.dart';
@@ -151,54 +152,6 @@ class ApiClient {
         failureKind: ApiFailureKind.session,
       );
     }
-  }
-
-  Future<Map<String, String>> _getHeaders({
-    String accept = 'application/json',
-    String? contentType,
-    bool requiresAuth = true,
-    bool offlineRead = false,
-  }) async {
-    String? token;
-    final userId = requiresAuth ? _auth.currentUser?.id : null;
-
-    if (requiresAuth) {
-      _checkRequestUser(userId);
-      token = _auth.currentSession?.accessToken;
-      final hadTokenBeforeRefresh = token != null && token.isNotEmpty;
-
-      try {
-        await _ensureValidSession();
-        token = _auth.currentSession?.accessToken ?? token;
-      } on ApiException catch (error, stackTrace) {
-        if (!hadTokenBeforeRefresh) {
-          rethrow;
-        }
-
-        developer.log(
-          'token refresh suppressed, using existing token',
-          name: 'ApiClient',
-          error: error,
-          stackTrace: stackTrace,
-          level: 500,
-        );
-
-        token = _auth.currentSession?.accessToken ?? token;
-      }
-    }
-
-    if (requiresAuth) _checkRequestUser(userId);
-    return {
-      if (contentType != null) 'Content-Type': contentType,
-      'Accept': accept,
-      if (requiresAuth && offlineRead && OfflineApiRequest.active)
-        'x-tuturuuu-offline-download': '1',
-      if (token != null) 'Authorization': 'Bearer $token',
-      // Reads pass offlineRead; every other authenticated request mutates.
-      ...await _mobileClientHeaders(userId, token, mutation: !offlineRead),
-      if (requiresAuth && ApiVerification.token != null)
-        'x-tuturuuu-turnstile-token': ApiVerification.token!,
-    };
   }
 
   /// GET JSON from [path] (relative to [_baseUrl]).

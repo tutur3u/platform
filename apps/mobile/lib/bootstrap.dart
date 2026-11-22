@@ -41,14 +41,14 @@ class AppBlocObserver extends BlocObserver {
   @override
   void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
     super.onChange(bloc, change);
-    if (logChanges) log('onChange(${bloc.runtimeType}, $change)');
+    if (logChanges) log('onChange(${bloc.runtimeType})');
   }
 
   @override
   void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
     MobileObservability.instance.recordNonFatal('bloc', error, stackTrace);
     if (logChanges) {
-      log('onError(${bloc.runtimeType}, $error, $stackTrace)');
+      log('onError(${bloc.runtimeType}, ${mobileCrashSignature(error)})');
     }
     super.onError(bloc, error, stackTrace);
   }
@@ -64,6 +64,7 @@ Future<void> bootstrap(
   })
   builder,
 ) async {
+  final startup = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
   // Release builds must never fall back to cleartext localhost backends.
   Env.assertSecureForRelease();
@@ -80,6 +81,9 @@ Future<void> bootstrap(
       details.stack,
     );
   };
+
+  PlatformDispatcher.instance.onError = (error, stack) =>
+      MobileObservability.instance.recordFatal('platform', error, stack);
 
   Bloc.observer = AppBlocObserver(
     logChanges: appFlavor != AppFlavor.production,
@@ -148,8 +152,6 @@ Future<void> bootstrap(
             );
           },
         );
-        PlatformDispatcher.instance.onError = (error, stack) =>
-            MobileObservability.instance.recordFatal('platform', error, stack);
       } on Object catch (e, st) {
         log('Failed to initialize Firebase: $e', stackTrace: st);
       }
@@ -189,6 +191,9 @@ Future<void> bootstrap(
     },
   );
 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    MobileObservability.instance.recordFirstFrame(startup.elapsed);
+  });
   runApp(
     await builder(
       appFlavor: appFlavor,

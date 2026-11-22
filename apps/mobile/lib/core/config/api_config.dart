@@ -1,53 +1,6 @@
-import 'dart:io' show Platform;
-
-import 'package:mobile/core/config/api_origins.dart';
-import 'package:mobile/core/config/app_flavor.dart';
-import 'package:mobile/core/config/env.dart';
-
+export 'api_base_config.dart' show ApiConfig;
 export 'meet_endpoints.dart' show MeetEndpoints;
 export 'profile_endpoints.dart' show ProfileEndpoints;
-
-class ApiConfig {
-  const ApiConfig._();
-
-  static ApiOrigins _origins = _originsFor(AppFlavor.development);
-
-  static void configure(AppFlavor flavor) {
-    _origins = _originsFor(flavor);
-  }
-
-  static ApiOrigins _originsFor(AppFlavor flavor) => ApiOrigins.forFlavor(
-    flavor,
-    platformOverride: Env.apiBaseUrl,
-    financeOverride: Env.financeApiBaseUrl,
-    inventoryOverride: Env.inventoryApiBaseUrl,
-    tasksOverride: Env.tasksApiBaseUrl,
-    contactsOverride: Env.contactsApiBaseUrl,
-    calendarOverride: Env.calendarApiBaseUrl,
-    teachOverride: Env.teachApiBaseUrl,
-    trackOverride: Env.trackApiBaseUrl,
-    infrastructureOverride: Env.infrastructureApiBaseUrl,
-    mailOverride: Env.mailApiBaseUrl,
-  );
-
-  /// Base URL with Android emulator localhost rewriting.
-  static String get baseUrl {
-    return _forDevice(_origins.urlFor(ApiOrigin.platform));
-  }
-
-  static String get tasksBaseUrl =>
-      _forDevice(_origins.urlFor(ApiOrigin.tasks));
-
-  static String baseUrlForPath(String path) =>
-      _forDevice(_origins.baseUrlForPath(path));
-
-  static String _forDevice(String url) {
-    if (Platform.isAndroid && url.contains('localhost')) {
-      return url.replaceAll('localhost', '10.0.2.2');
-    }
-    return url;
-  }
-}
 
 /// Auth endpoint paths (called via the mobile auth API on the web backend).
 abstract final class AuthEndpoints {

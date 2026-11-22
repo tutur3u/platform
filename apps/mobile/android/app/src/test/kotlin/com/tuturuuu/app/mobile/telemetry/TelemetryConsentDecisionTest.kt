@@ -32,6 +32,12 @@ class TelemetryConsentDecisionTest {
     }
 
     @Test
+    fun anAllowFromAnEarlierCopyVersionIsVoid() {
+        assertFalse(TelemetryConsentDecision.allowsCollection(mapOf(choice to true, version to current,
+            TelemetryConsentDecision.COPY_VERSION_KEY to "telemetry-fid-copy-v1")))
+    }
+
+    @Test
     fun malformedValuesAreNeverConsent() {
         assertFalse(TelemetryConsentDecision.allowsCollection(mapOf(choice to "true", version to current)))
         assertFalse(TelemetryConsentDecision.allowsCollection(mapOf(choice to 1, version to current)))

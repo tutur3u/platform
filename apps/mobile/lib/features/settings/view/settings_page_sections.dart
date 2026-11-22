@@ -31,14 +31,7 @@ class _AboutSection extends StatelessWidget {
             applicationVersion: _formatVersionLabel(packageInfo),
           ),
         ),
-        SettingsTile(
-          grouped: true,
-          icon: LucideIcons.info,
-          title: l10n.settingsAppVersion,
-          value: _formatVersionLabel(packageInfo),
-          subtitle: l10n.settingsVersionTileDescription,
-          showChevron: false,
-        ),
+        SettingsDiagnostics(version: _formatVersionLabel(packageInfo)),
       ],
     );
   }

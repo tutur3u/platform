@@ -8640,6 +8640,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppPreferences => 'App preferences';
 
   @override
+  String get settingsDiagnostics => 'Diagnostics';
+
+  @override
+  String get settingsDiagnosticActionFailed => 'Could not complete this action. Try again.';
+
+  @override
+  String get settingsDiagnosticEnvironment => 'Environment';
+
+  @override
+  String get settingsDiagnosticUser => 'Signed-in user ID';
+
+  @override
+  String get settingsDiagnosticWorkspace => 'Workspace ID';
+
+  @override
+  String get settingsDiagnosticFlags => 'Enabled experimental features';
+
+  @override
+  String get settingsDiagnosticOrigins => 'API base addresses';
+
+  @override
+  String get settingsDiagnosticVerbose => 'Verbose logging';
+
+  @override
+  String get settingsDiagnosticSlowNetwork => 'Simulate slow network';
+
+  @override
+  String get settingsDiagnosticNetwork => 'Recent requests';
+
+  @override
+  String get settingsDiagnosticLogs => 'Logs';
+
+  @override
+  String get settingsDiagnosticExport => 'Export diagnostics';
+
+  @override
+  String get settingsDiagnosticSend => 'Send diagnostics';
+
+  @override
+  String get settingsDiagnosticQueued => 'Diagnostics queued for upload.';
+
+  @override
+  String get settingsDiagnosticOptInFirst => 'Enable stability reports in Settings first.';
+
+  @override
+  String get settingsDiagnosticSendUnavailable => 'Diagnostics are unavailable or were just queued. Try again shortly.';
+
+  @override
+  String get settingsDiagnosticEmpty => 'No recent entries.';
+
+  @override
   String get settingsAppVersion => 'App version';
 
   @override
@@ -16015,7 +16066,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentTitle => 'Help improve Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, app startup timing, and failed API request details (host, route pattern, status, and duration). It also includes device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
 
   @override
   String get telemetryFirebaseInstallationDisclosure => 'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.';

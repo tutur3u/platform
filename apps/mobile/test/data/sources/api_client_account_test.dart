@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/api_verification.dart';
@@ -67,6 +68,29 @@ void main() {
     expect(() => api.checkUser('user-a'), throwsA(isA<ApiException>()));
     api.dispose();
   });
+  test('slow network does not dispatch after an account switch', () async {
+    final diagnostics = MobileDiagnostics.instance
+      ..setSlowNetwork(enabled: true);
+    addTearDown(diagnostics.clearSession);
+    var requests = 0;
+    final api = ApiClient(
+      baseUrl: 'https://example.test',
+      authClient: client,
+      httpClient: MockClient((_) async {
+        requests++;
+        return http.Response('{}', 200);
+      }),
+    );
+    addTearDown(api.dispose);
+
+    final pending = api.getJson('/tasks');
+    await Future<void>.delayed(Duration.zero);
+    when(() => auth.currentUser).thenReturn(null);
+
+    await expectLater(pending, throwsA(isA<ApiException>()));
+    expect(requests, 0);
+  });
+
   test('nested owner scope restores the outer injected client owner', () async {
     var requests = 0;
     final api = ApiClient(

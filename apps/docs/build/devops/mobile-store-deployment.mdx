@@ -175,9 +175,13 @@ The two development workflows run these controls before preparing configuration.
 
 The production Flutter flavor uses the existing Firebase configuration for
 [Crashlytics](https://console.firebase.google.com/) and Google Analytics.
-Development and staging flavors disable collection. Crashlytics captures native
-crashes, uncaught Flutter and platform errors, and throttled nonfatal Bloc and
-Meet media failures. Analytics records automatic app usage plus `mobile_error`,
+Production collection is off until the user allows it in Settings >
+Preferences > Privacy. Previous opt-ins are asked again when the disclosure
+changes. Development and staging keep collection off except in explicitly
+configured consent QA. Crashlytics captures native crashes, supported Android
+ANRs, uncaught Dart errors, and throttled nonfatal Bloc and Meet failures. The
+startup signal measures time to the first Flutter frame and reports starts
+taking at least five seconds in duration buckets. Analytics records automatic app usage plus `mobile_error`,
 `meet_media_published`, and `meet_media_received` events. Meet failure sources
 identify capture, publish, send, receive, or connection stages without recording
 room IDs, user IDs, SDP, ICE credentials, message contents, or media.
@@ -185,9 +189,9 @@ room IDs, user IDs, SDP, ICE credentials, message contents, or media.
 For a gray release-build body, inspect Crashlytics `flutter_framework` events
 for the exact version and build before attributing the failure. Compare the
 uploaded source SHA from `mobile-beta-release-history` with the investigated tree;
-the pubspec version alone is not the store build identity. Framework errors already
-retain their original stacks through `FlutterError.onError`. Keep raw event
-payloads private and avoid adding a second reporting integration.
+the pubspec version alone is not the store build identity. Framework error
+reports retain filtered Dart frames. Keep event payloads inside the restricted
+diagnostics system.
 
 The authenticated Firebase CLI exposes official Crashlytics tools through
 `firebase mcp --only core,crashlytics`. Read its Crashlytics reports guide, obtain
@@ -196,6 +200,59 @@ fetch events for the issue. `firebase login:list` shows stored accounts but does
 not prove credentials are current; an authentication error requires
 `firebase login --reauth --interactive`. Complete OAuth in the browser rather
 than copying credentials or authorization codes into a transcript.
+
+### Troubleshoot Mira and other mobile requests
+
+Open Settings > About and tap **App version** seven times. An authenticated
+account with the server-managed `mobile_diagnostics_access` flag can also open
+Diagnostics directly from About. Access and simulation reset on an account
+change, when debug mode is closed, or on app restart. The panel shows the
+flavor, app build, configured HTTP origins, enabled experimental features and
+the current account and workspace IDs. IDs and configured origins stay on the
+screen. The export includes up to 50 recent request summaries and fixed log
+signals from the last 15 minutes. The inspector measures time to response
+headers for each API-client attempt. A missing status means the transport
+failed before response headers. Request headers, bodies, query values and
+dynamic route segments are excluded. Verbose mode includes successful
+requests in Logs. Slow network adds a one-second delay before credential
+preparation, so operators can walk through other screens with it enabled.
+
+**Send diagnostics** queues a redacted Crashlytics report with up to ten
+recent requests and ten signals. It requires active consent and has a one-minute
+cooldown. The in-app confirmation means the SDK recorded the report. Confirm
+receipt on Firebase separately, since nonfatal reports can arrive on a later
+startup. Failed API calls capture only a fixed method, allowlisted host, route
+template, status and latency. The device deduplicates and caps automatically
+reported failures. Firebase's native reports still include its disclosed app
+installation identifier and device metadata. The app does not set a Firebase
+account identifier.
+
+For an authenticated Mira issue, record the installed build, reproduction
+time, and the first failing route and status. For native Mira messages, look
+for the workspace conversation create or messages route. For Live start, look
+for the assistant token request. A successful token HTTP response still needs
+a provider session handshake. A successful chat HTTP response still needs a
+completed response stream. Match the exact build using the release ledger and
+verify both journeys before resolving the issue.
+
+### Fleet Crashlytics triage
+
+An operator with existing Crashlytics read access can use
+[the Firebase MCP reports tool](https://firebase.google.com/docs/crashlytics/ai-assistance-mcp)
+without opening the console. Query `topIssues` for the production iOS or Android
+app and the affected build over the last 24 hours. Compare the previous window
+and build for new or regressed fatal, ANR, or nonfatal clusters. Use
+`crashlytics_get_issue` by exact issue ID when the aggregate is insufficient.
+Keep individual reports within the restricted incident lane. Fleet handoffs
+include only platform, version/build, issue ID, severity, coarse impact and the
+allowlisted route template when applicable. Do not put raw event samples, native
+installation IDs, names, or stack traces into the Inbox.
+
+The current signed Fleet alerts endpoint pulls a fixed SLO burn-alert schema.
+Use the existing incident handoff for a Crashlytics cluster until a mobile
+source and receiver schema are approved. Any future Cloudflare exporter must
+map only aggregate fields, deduplicate by issue and build, and prove query and
+retry limits, expiry, and a durable stop fence before activation.
 
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's
