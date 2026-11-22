@@ -21,6 +21,7 @@ type Env = WebGateEnv &
   ImmediateNotificationsEnv &
   ShipCheckEnv & {
     CRON_CONTROL_OPERATOR_TOKEN?: string;
+    CRON_CONTROL_RELAY_TOKEN?: string;
     CRON_LEDGER: DurableObjectNamespace<CronLedger>;
   };
 

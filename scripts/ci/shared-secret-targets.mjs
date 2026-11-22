@@ -217,6 +217,38 @@ export const SHARED_SECRETS = Object.freeze({
       ...vinextTargets(root, environment, 'MASTERMIND_SHIP_CHECK_TOKEN'),
     ],
   },
+  // Web's api-core relays a platform operator's job listing and resume to
+  // Cron Control over its CRON_CONTROL service binding with this bearer. It
+  // is not the operator token, which no web Worker holds.
+  CRON_CONTROL_RELAY_TOKEN: {
+    mode: 'mint',
+    environments: ['production'],
+    targets: (root, environment) => {
+      // Only api-core has the CRON_CONTROL binding and serves the relay
+      // routes, so no other web Worker receives the bearer.
+      const apiCore = vinextTargets(
+        root,
+        environment,
+        'CRON_CONTROL_RELAY_TOKEN'
+      ).filter(
+        ({ name }) =>
+          name === forEnvironment('tuturuuu-web-vinext-api-core', environment)
+      );
+      // Without api-core a mint would rotate Cron Control alone.
+      assert.equal(
+        apiCore.length,
+        1,
+        'api-core is not an activated vinext Worker'
+      );
+      return [
+        ...peer('tuturuuu-cron-control', 'CRON_CONTROL_RELAY_TOKEN')(
+          root,
+          environment
+        ),
+        ...apiCore,
+      ];
+    },
+  },
   // Cron Control signs Admin's cron routes with CRON_SECRET_INFRASTRUCTURE;
   // Admin (deployed as tuturuuu-infrastructure) checks it as CRON_SECRET and
   // forwards it to Calendar, which checks the same value as CRON_SECRET.

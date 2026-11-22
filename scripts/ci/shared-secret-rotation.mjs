@@ -64,6 +64,16 @@ export const ROTATION = Object.freeze({
     impact:
       'Mastermind Ship Check now answers failed for the seconds between the two writes; the two-minute collector is unaffected.',
   },
+  CRON_CONTROL_RELAY_TOKEN: {
+    dualAccept:
+      'no: Cron Control compares one relay bearer; the mint writes both sides in one run.',
+    source: 'none outside the Workers: shared-secret-write mints it',
+    order: [
+      'Mint with shared-secret-write (Cron Control and the api-core web Worker in one run).',
+    ],
+    impact:
+      'The operator job listing and resume on Web answer 502 or 404 for the seconds between the writes; no scheduled job is affected. The writes run in order and stop at the first failure: re-dispatch shared-secret-write for this secret, which mints one new value for both sides.',
+  },
   CRON_SECRET_INFRASTRUCTURE: {
     dualAccept:
       'no: Admin and Calendar each compare one CRON_SECRET; the mint writes Cron Control, Admin and Calendar in one run.',

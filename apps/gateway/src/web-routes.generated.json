@@ -832,6 +832,16 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/cron-control/jobs/[id]/resume"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/cron-control/jobs"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/documents/[documentId]"
     },
     {

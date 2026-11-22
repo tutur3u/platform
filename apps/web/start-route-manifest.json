@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 882,
+    "total": 884,
     "categories": {
-      "api": 682,
+      "api": 684,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 870 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 872 }
   },
   "routes": [
     {
@@ -2472,6 +2472,22 @@
     {
       "pattern": "/api/v1/cms/workspaces",
       "source": "apps/web/src/app/api/v1/cms/workspaces/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/cron-control/jobs/[id]/resume",
+      "source": "apps/web/src/app/api/v1/cron-control/jobs/[id]/resume/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/cron-control/jobs",
+      "source": "apps/web/src/app/api/v1/cron-control/jobs/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

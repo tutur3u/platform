@@ -36,6 +36,7 @@ const WORKFLOWS = {
         'MASTERMIND_STORE_TOKEN',
         'MASTERMIND_SHIP_CHECK_TOKEN',
         'CRON_SECRET_INFRASTRUCTURE',
+        'CRON_CONTROL_RELAY_TOKEN',
       ],
       environment: ['staging', 'production'],
     },

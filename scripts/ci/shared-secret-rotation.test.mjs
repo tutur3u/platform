@@ -2,7 +2,7 @@
 // secret tooling. The original write path is covered by
 // shared-secret-scripts.test.mjs; the workflows by shared-secret-write.test.mjs.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -290,6 +290,57 @@ test('the infrastructure cron secret reaches Cron Control, Admin and Calendar in
   assert.throws(() =>
     resolveSharedSecret({
       secret: 'CRON_SECRET_INFRASTRUCTURE',
+      environment: 'staging',
+      root: ROOT,
+      scope: 'all',
+    })
+  );
+});
+
+test('the Cron Control relay token reaches only Cron Control and api-core', async () => {
+  const resolved = resolveSharedSecret({
+    secret: 'CRON_CONTROL_RELAY_TOKEN',
+    environment: 'production',
+    root: ROOT,
+    scope: 'all',
+  });
+  assert.equal(resolved.mode, 'mint');
+  assert.deepEqual(
+    resolved.workers.map(({ name, binding }) => `${name} ${binding}`).sort(),
+    [
+      'tuturuuu-cron-control CRON_CONTROL_RELAY_TOKEN',
+      'tuturuuu-web-vinext-api-core CRON_CONTROL_RELAY_TOKEN',
+    ]
+  );
+  // A table without an activated api-core refuses the mint instead of
+  // rotating Cron Control alone.
+  const bare = mkdtempSync(join(tmpdir(), 'relay-token-'));
+  try {
+    assert.throws(
+      () =>
+        resolveSharedSecret({
+          secret: 'CRON_CONTROL_RELAY_TOKEN',
+          environment: 'production',
+          root: bare,
+          scope: 'all',
+        }),
+      /api-core is not an activated vinext Worker/
+    );
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+  }
+  // The operator token is never a shared secret: no web Worker receives it.
+  assert.throws(() =>
+    resolveSharedSecret({
+      secret: 'CRON_CONTROL_OPERATOR_TOKEN',
+      environment: 'production',
+      root: ROOT,
+      scope: 'all',
+    })
+  );
+  assert.throws(() =>
+    resolveSharedSecret({
+      secret: 'CRON_CONTROL_RELAY_TOKEN',
       environment: 'staging',
       root: ROOT,
       scope: 'all',

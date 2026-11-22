@@ -1290,6 +1290,26 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/cron-control/jobs/{id}/resume",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cron-control/jobs/[id]/resume/route.ts",
+    "sourceSha256": "300b72d6544502f66ebb8cfd624be564aaedde5b3ea22ec16803599ea0a6a0ae",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cron-control/jobs",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cron-control/jobs/route.ts",
+    "sourceSha256": "6b4c53f5d0cfa2f271d35b1f248c72f496c5843f3e6cf477c1a98a5c63f0efe0",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/devboxes/agents/events",
     "sideEffects": "unknown",
     "shadow": "never",

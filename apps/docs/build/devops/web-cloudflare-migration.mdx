@@ -41,8 +41,8 @@ requires turning Cloudflare web mode off and draining it first.
   bound after each Cron Control publication: without it web jobs skip, and a
   mismatched value returns 401 until the failure stop trips.
 - **Failure stop:** five consecutive failed or unknown slots durably stop a job.
-  Resuming uses `/control/jobs/<job-id>/resume`, which needs a reviewed HTTPS
-  route to the Worker.
+  Resume it through Web (see [Operator resume through Web](#operator-resume-through-web));
+  Cron Control itself has no public ingress.
 - **Verification:** the Worker's log tail (`wrangler tail tuturuuu-cron-control`;
   the pinned cf CLI has no tail command) shows `Cron Control jobs completed`
   with each job's outcome per slot. Log head sampling is 5%, so check several
@@ -55,6 +55,46 @@ requires turning Cloudflare web mode off and draining it first.
 - **Target runtime:** `WEB_ORIGIN` (`https://tuturuuu.com`) is served by the web
   vinext Worker, so that Worker's `CRON_SECRET` must equal Cron Control's
   `CRON_SECRET_WEB`; re-mint both together.
+
+### Operator resume through Web
+
+Cron Control keeps `workers.dev`, preview URLs and routes off. A platform
+operator lists jobs and resumes a failure-stopped job through Web's `api-core`
+Worker, which relays over its `CRON_CONTROL` service binding:
+
+| Web route | Gate | Cron Control call |
+| --- | --- | --- |
+| `GET /api/v1/cron-control/jobs` | Signed-in session with the root workspace's `manage_workspace_secrets` permission, and the account second-factor policy | `GET /control/jobs` (run and stop state only) |
+| `POST /api/v1/cron-control/jobs/<job-id>/resume` | The same, plus a second-factor proof of that session at most 15 minutes old (`401 mfa_required` otherwise) | `POST /control/jobs/<job-id>/resume` |
+
+- **Bearer:** the relay sends `CRON_CONTROL_RELAY_TOKEN`, minted on both sides
+  with [shared-secret-write](/build/devops/shared-secret-write). It is not
+  `CRON_CONTROL_OPERATOR_TOKEN`, which no web Worker holds. The relay bearer
+  cannot stop a job or reach `/control/web-crons`.
+- **Resume rule:** only an enabled job stopped with
+  `failure-budget-exhausted` resumes, on a new generation with a cleared
+  failure count (`200`, `result: "resumed"`). Cron Control answers `409` with
+  `disabled`, `operator_stopped` or `not_stopped` otherwise and changes
+  nothing, and `404` for an unknown job. An operator stop is lifted only with
+  the operator token.
+- **Fix the cause first:** a resumed job that still fails stops again after
+  five slots.
+- **Unavailable:** `503 unconfigured` means the binding or the token is
+  missing on the Worker that served the request. Cron Control answers `404`
+  to a bearer it does not accept, so after a one-sided rotation the listing
+  answers `502 failed` and a resume answers `404 not_found`, the same as an
+  unknown job: check the listing first, then re-dispatch the mint.
+- **Request rules:** a resume that carries a session cookie needs proof it
+  came from Web's own origin whatever `TTR_CSRF_MODE` says, with no satellite
+  or same-site exception; a cookie-less bearer request is exempt. The account
+  second-factor policy and the fresh proof are both read from the provider
+  session that authenticated the request, never from an app session token
+  beside it. Each operator has six resumes and thirty listings a minute,
+  counted apart from other routes; without the counter store both routes
+  answer `503 unavailable`.
+- **Routing:** the routes must stay outside the `api-ops` deny list
+  (`/api/v1/infrastructure`), because only `api-core` has the binding;
+  `cron-relay.test.ts` checks the generated gateway table.
 
 ## Cron migration
 
