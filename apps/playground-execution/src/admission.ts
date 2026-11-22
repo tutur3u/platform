@@ -96,10 +96,12 @@ export interface RunRow extends SqlRow {
   deadline: number;
   state: RunState;
   finished_at: number | null;
+  client_expired: number;
   cleanup_at: number | null;
   cleanup_attempts: number;
   stop_requested: number;
   writeback_state: 0 | 1 | 2;
+  writeback_claim_id: string | null;
   exit_code: number | null;
   result_revision: number | null;
   output: string;
@@ -145,10 +147,12 @@ export class PlaygroundAdmission {
         deadline INTEGER NOT NULL,
         state TEXT NOT NULL,
         finished_at INTEGER,
+        client_expired INTEGER NOT NULL,
         cleanup_at INTEGER,
         cleanup_attempts INTEGER NOT NULL,
         stop_requested INTEGER NOT NULL,
         writeback_state INTEGER NOT NULL,
+        writeback_claim_id TEXT,
         exit_code INTEGER,
         result_revision INTEGER,
         output TEXT NOT NULL
@@ -282,17 +286,19 @@ export class PlaygroundAdmission {
         deadline: now + MAX_JOB_AGE_MS,
         state: 'reserved',
         finished_at: null,
+        client_expired: 0,
         cleanup_at: now + MAX_JOB_AGE_MS,
         cleanup_attempts: 0,
         stop_requested: 0,
         writeback_state: 0,
+        writeback_claim_id: null,
         exit_code: null,
         result_revision: null,
         output: '',
       };
       this.storage.query(
         `INSERT INTO playground_runs VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, ?, 0, 0, 0, NULL, NULL, ''
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, 0, ?, 0, 0, 0, NULL, NULL, NULL, ''
         )`,
         run.run_id,
         run.requester,
@@ -365,9 +371,9 @@ export class PlaygroundAdmission {
     return Boolean(valid);
   }
 
-  claimWriteback(run: RunRow, now: number) {
+  claimWriteback(run: RunRow, claimId: string, now: number) {
     const [claim] = this.storage.query<{ run_id: string }>(
-      `UPDATE playground_runs SET writeback_state = 1
+      `UPDATE playground_runs SET writeback_state = 1, writeback_claim_id = ?
        WHERE run_id = ? AND generation = ? AND state = 'starting'
          AND writeback_state = 0 AND stop_requested = 0 AND deadline > ?
          AND EXISTS (
@@ -375,6 +381,7 @@ export class PlaygroundAdmission {
              AND generation = ?
          )
        RETURNING run_id`,
+      claimId,
       run.run_id,
       run.generation,
       now,
@@ -383,18 +390,22 @@ export class PlaygroundAdmission {
     return Boolean(claim);
   }
 
-  settleWriteback(run: RunRow, now: number) {
+  settleWriteback(run: RunRow, claimId: string, now: number) {
     const [settled] = this.storage.query<{ run_id: string }>(
       `UPDATE playground_runs
        SET writeback_state = 2,
+           writeback_claim_id = ?,
            cleanup_at = COALESCE(cleanup_at, ?),
            cleanup_attempts = CASE WHEN cleanup_at IS NULL THEN 2 ELSE cleanup_attempts END
-       WHERE run_id = ? AND generation = ? AND writeback_state = 1
+       WHERE run_id = ? AND generation = ?
+         AND (writeback_state = 0 OR (writeback_state = 1 AND writeback_claim_id = ?))
          AND ${ACTIVE}
        RETURNING run_id`,
+      claimId,
       now,
       run.run_id,
-      run.generation
+      run.generation,
+      claimId
     );
     return Boolean(settled);
   }
@@ -426,7 +437,20 @@ export class PlaygroundAdmission {
     );
   }
 
-  // Release only after the slot owner confirms teardown.
+  expireFeedback(run: RunRow, now: number): RunRow {
+    if (run.finished_at !== null || run.client_expired || run.deadline > now)
+      return run;
+    const [expired] = this.storage.query<RunRow>(
+      `UPDATE playground_runs SET client_expired = 1
+       WHERE run_id = ? AND generation = ? AND ${ACTIVE}
+       RETURNING *`,
+      run.run_id,
+      run.generation
+    );
+    return expired ?? run;
+  }
+
+  // Release only after the slot owner confirms guest and writeback settlement.
   finish(
     input: Pick<RunRow, 'run_id' | 'generation' | 'slot'>,
     state: TerminalState,
@@ -434,31 +458,39 @@ export class PlaygroundAdmission {
     result?: { exitCode: number; output: string; savedRevision?: number }
   ) {
     return this.storage.transaction(() => {
-      const gate = this.gate();
-      const finalState =
-        gate.enabled && gate.generation === input.generation
-          ? state
-          : 'cancelled';
-      const [finished] = this.storage.query<{ state: TerminalState }>(
-        `UPDATE playground_runs
-         SET state = CASE stop_requested WHEN 1 THEN 'cancelled' ELSE ? END,
-             finished_at = ?, cleanup_at = NULL,
-             exit_code = CASE stop_requested WHEN 1 THEN NULL ELSE ? END,
-             result_revision = CASE stop_requested WHEN 1 THEN NULL ELSE ? END,
-             output = CASE stop_requested WHEN 1 THEN '' ELSE ? END
-         WHERE run_id = ? AND generation = ? AND slot = ? AND ${ACTIVE}
-           AND writeback_state <> 1
-         RETURNING state`,
-        finalState,
-        now,
-        finalState === 'cancelled' ? null : (result?.exitCode ?? null),
-        finalState === 'cancelled' ? null : (result?.savedRevision ?? null),
-        finalState === 'cancelled' ? '' : (result?.output ?? ''),
+      const [run] = this.storage.query<RunRow>(
+        `SELECT * FROM playground_runs WHERE run_id = ? AND generation = ?
+           AND slot = ? AND ${ACTIVE} AND writeback_state <> 1`,
         input.run_id,
         input.generation,
         input.slot
       );
-      return finished?.state;
+      if (!run) return undefined;
+      const gate = this.gate();
+      const expired = Boolean(run.client_expired) || run.deadline <= now;
+      const cancelled =
+        !gate.enabled ||
+        gate.generation !== input.generation ||
+        Boolean(run.stop_requested) ||
+        state === 'cancelled';
+      const finalState = expired ? 'failed' : cancelled ? 'cancelled' : state;
+      const receipt = expired || cancelled ? undefined : result;
+      this.storage.query(
+        `UPDATE playground_runs
+         SET state = ?, finished_at = ?, cleanup_at = NULL, client_expired = ?,
+             exit_code = ?, result_revision = ?, output = ?
+         WHERE run_id = ? AND generation = ? AND slot = ?`,
+        finalState,
+        now,
+        Number(expired),
+        receipt?.exitCode ?? null,
+        receipt?.savedRevision ?? null,
+        receipt?.output ?? '',
+        input.run_id,
+        input.generation,
+        input.slot
+      );
+      return finalState;
     });
   }
 }

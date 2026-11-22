@@ -238,14 +238,14 @@ test('stop waits for the scoped writeback claim across restarts', (t) => {
   ledger.setEnabled(true);
   const run = reserve(ledger, input(1));
   assert.equal(ledger.claimStart(run, 1), true);
-  assert.equal(ledger.claimWriteback(run, 2), true);
-  assert.equal(ledger.claimWriteback(run, 3), false);
+  assert.equal(ledger.claimWriteback(run, 'claim-1', 2), true);
+  assert.equal(ledger.claimWriteback(run, 'claim-2', 3), false);
   ledger.setEnabled(false);
   const restarted = store.create();
   assert.equal(restarted.finish(run, 'cancelled', 4), undefined);
   assert.equal(restarted.active().length, 1);
   assert.equal(restarted.setEnabled(true).enabled, false);
-  assert.equal(restarted.settleWriteback(run, 5), true);
+  assert.equal(restarted.settleWriteback(run, 'claim-1', 5), true);
   assert.equal(
     restarted.finish(run, 'succeeded', 6, {
       savedRevision: 2,
@@ -259,5 +259,41 @@ test('stop waits for the scoped writeback claim across restarts', (t) => {
   assert.equal(restarted.setEnabled(true).enabled, true);
   const late = reserve(restarted, input(2), 7);
   assert.equal(restarted.claimStart(late, 8), true);
-  assert.equal(restarted.claimWriteback(late, late.deadline), false);
+  assert.equal(restarted.claimWriteback(late, 'late', late.deadline), false);
+});
+
+test('settlement fences a delayed claim with an unknown response', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.settleWriteback(run, 'unknown', 2), true);
+  assert.equal(store.create().claimWriteback(run, 'unknown', 3), false);
+  const next = reserve(ledger, input(2));
+  assert.equal(ledger.claimStart(next, 4), true);
+  assert.equal(ledger.claimWriteback(next, 'owned', 5), true);
+  assert.equal(ledger.settleWriteback(next, 'unrelated', 6), false);
+  assert.equal(ledger.finish(next, 'cancelled', 7), undefined);
+  assert.equal(ledger.settleWriteback(next, 'owned', 8), true);
+});
+
+test('expired feedback stays terminal while resource reconciliation continues', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.expireFeedback(run, run.deadline).client_expired, 1);
+  assert.equal(ledger.active().length, 1);
+  const restarted = store.create();
+  assert.equal(
+    restarted.finish(run, 'succeeded', run.deadline - 1, {
+      exitCode: 0,
+      output: 'late',
+    }),
+    'failed'
+  );
+  assert.equal(restarted.read(input(1)).output, '');
+  assert.equal(restarted.active().length, 0);
 });

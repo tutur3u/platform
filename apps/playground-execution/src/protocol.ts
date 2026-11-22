@@ -21,6 +21,7 @@ export const RunSubmission = RunIdentity.extend({
 export const RunLookup = RunIdentity.extend({ runId: z.uuid() });
 export const RunWriteback = RunLookup.extend({
   revision: z.number().int().nonnegative(),
+  claimId: z.uuid().optional(),
 });
 export const GuestJob = PlaygroundJob.refine((job) => job.operation === 'run');
 

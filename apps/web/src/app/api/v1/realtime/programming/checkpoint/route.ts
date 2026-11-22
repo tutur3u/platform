@@ -59,8 +59,15 @@ export async function POST(request: Request) {
       } = token.data;
       const scope = { meetingId, ownerId, projectId };
       const revision = parsed.data.revision;
-      await cloudPlaygroundWriteback('claim', scope, runId, revision);
+      const claimId = crypto.randomUUID();
       try {
+        await cloudPlaygroundWriteback(
+          'claim',
+          scope,
+          runId,
+          revision,
+          claimId
+        );
         return NextResponse.json(
           await saveProgrammingRoomCheckpoint(
             ownerId,
@@ -70,7 +77,19 @@ export async function POST(request: Request) {
           )
         );
       } finally {
-        await cloudPlaygroundWriteback('settle', scope, runId, revision);
+        await cloudPlaygroundWriteback(
+          'settle',
+          scope,
+          runId,
+          revision,
+          claimId
+        )
+          .catch(() =>
+            cloudPlaygroundWriteback('settle', scope, runId, revision, claimId)
+          )
+          .catch(() =>
+            console.warn('Playground writeback settlement unconfirmed')
+          );
       }
     }
     return NextResponse.json(

@@ -29,6 +29,9 @@ const sourceClaims = scopeSchema.extend({
   exp: z.number().int(),
 });
 const runReceipt = z.object({ runId: z.uuid() });
+const cloudRunReceipt = runReceipt.extend({
+  startedAt: z.number().int().nonnegative(),
+});
 const runResult = runReceipt.extend({
   status: z.enum([
     'queued',
@@ -156,7 +159,7 @@ export async function startCloudPlayground(
       secret
     );
   }
-  return runReceipt.parse(
+  return cloudRunReceipt.parse(
     await callCloudPlayground('/run', {
       ...scope,
       ...request,
@@ -240,17 +243,17 @@ export async function cloudPlaygroundWriteback(
   action: 'verify' | 'claim' | 'settle',
   scope: Scope,
   runId: string,
-  revision: number
+  revision: number,
+  claimId?: string
 ) {
-  const receipt = z
-    .object({ accepted: z.literal(true) })
-    .safeParse(
-      await callCloudPlayground(`/writeback/${action}`, {
-        ...scope,
-        runId,
-        revision,
-      })
-    );
+  const receipt = z.object({ accepted: z.literal(true) }).safeParse(
+    await callCloudPlayground(`/writeback/${action}`, {
+      ...scope,
+      runId,
+      revision,
+      claimId,
+    })
+  );
   if (!receipt.success) {
     throw new AccountServiceError(
       409,

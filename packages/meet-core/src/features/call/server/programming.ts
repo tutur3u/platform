@@ -403,7 +403,6 @@ export async function executeMeetingPlayground(
           'PLAYGROUND_CAPACITY'
         );
       }
-      const startedAt = Date.now();
       const queued = await startCloudPlayground(
         scope,
         {
@@ -418,10 +417,15 @@ export async function executeMeetingPlayground(
         action: 'programming.run',
         projectId: project.projectId,
         runId: queued.runId,
-        startedAt,
-      }).catch(() =>
-        console.warn('Could not publish the Playground run receipt to the room')
-      );
+        startedAt: queued.startedAt,
+      }).catch((error: unknown) => {
+        if (error instanceof MeetCallAccessError && error.status === 409)
+          return;
+        throw new MeetCallAccessError(
+          503,
+          'Could not share the run receipt. Retry to recover it.'
+        );
+      });
       return queued;
     } catch (error) {
       if (error instanceof CloudPlaygroundRefusal)

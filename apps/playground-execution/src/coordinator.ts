@@ -17,7 +17,7 @@ type Terminal = 'succeeded' | 'failed' | 'cancelled';
 function present(row: RunRow) {
   const active = row.state === 'reserved' || row.state === 'starting';
   const status =
-    active && Date.now() >= row.deadline
+    active && row.client_expired
       ? 'failed'
       : active && row.stop_requested
         ? 'cancel_requested'
@@ -84,7 +84,11 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
         // The deadline alarm reconciles the original reservation.
       }
     }
-    return { kind: 'accepted' as const, runId: run.run_id };
+    return {
+      kind: 'accepted' as const,
+      runId: run.run_id,
+      startedAt: run.created_at,
+    };
   }
 
   read(lookup: RunLookup) {
@@ -93,7 +97,7 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
       projectId: lookup.projectId,
       scopeId: projectScope(lookup),
     });
-    return row ? present(row) : null;
+    return row ? present(this.admission.expireFeedback(row, Date.now())) : null;
   }
 
   async stop(identity: RunIdentity & { runId?: string }) {
@@ -154,10 +158,18 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
       if (!run || run.revision !== lookup.revision) return false;
       const now = Date.now();
       if (action === 'verify') return this.admission.mayExecute(run, now);
-      if (action === 'claim') return this.admission.claimWriteback(run, now);
-      const settled = this.admission.settleWriteback(run, now);
+      if (action === 'claim')
+        return (
+          !!lookup.claimId &&
+          this.admission.claimWriteback(run, lookup.claimId, now)
+        );
+      if (!lookup.claimId) return false;
+      const settled = this.admission.settleWriteback(run, lookup.claimId, now);
       if (settled) await this.schedule();
-      return settled || run.writeback_state === 2;
+      return (
+        settled ||
+        (run.writeback_state === 2 && run.writeback_claim_id === lookup.claimId)
+      );
     });
   }
 

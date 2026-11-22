@@ -56,7 +56,10 @@ export default {
         if (!input.success) return json(REJECTED, 400);
         const admission = await service.enqueue(input.data);
         if (admission.kind === 'accepted')
-          return json({ runId: admission.runId }, 202);
+          return json(
+            { runId: admission.runId, startedAt: admission.startedAt },
+            202
+          );
         const code = admission.reason;
         const status =
           code === 'execution_paused'
