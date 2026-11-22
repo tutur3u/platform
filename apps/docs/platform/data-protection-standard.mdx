@@ -41,9 +41,9 @@ Decision by the owner on 2026-11-23: sign-in no longer asks for product-update e
 
 Product email becomes a separate opt-in during onboarding, **off by default**. Only an explicit switch turned on by the user grants it, and it records the consent evidence listed above. A Terms acceptance, account creation, sign-in or an existing subscription never turns it on.
 
-- **Scope:** Web `/login` (every locale and partner co-brand) and mobile sign-in. The onboarding switch is delivered with the onboarding revamp on Web and mobile.
+- **Scope:** Web `/login` (every locale and partner co-brand), the Workspace app's sign-in, and mobile sign-in. The shared `auth` and `signup` notices in every app message bundle read "By continuing, you agree to the Terms of Service and Privacy Policy of Tuturuuu." The onboarding switch is delivered with the onboarding revamp on Web and mobile.
 - **Exceptions:** transactional and security email (sign-in codes, account recovery, MFA and billing receipts) is not product email and needs no opt-in.
-- **Regression coverage:** `apps/web/src/app/[locale]/(auth)/login/login-consent-copy.test.ts` checks both locales' footer copy names Terms and Privacy and never email, and `page.test.tsx` checks the rendered footer. The onboarding switch's default-off test ships with that switch.
+- **Regression coverage:** `apps/web/src/app/[locale]/(auth)/login/login-consent-copy.test.ts` checks both locales' footer copy names Terms and Privacy and never email, `page.test.tsx` checks the rendered footer, `sign-in-consent-bundles.test.ts` checks the shared notice in every app bundle (EN and VI), and the Workspace login `page.test.tsx` checks its rendered notice. The onboarding switch's default-off test ships with that switch.
 
 ## Retention defaults and precedence
 

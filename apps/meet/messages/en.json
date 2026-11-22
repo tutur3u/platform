@@ -732,8 +732,8 @@
   },
   "aurora_select_model": "Select model",
   "auth": {
-    "notice-p1": "By continuing, you agree to Tuturuuu's",
-    "notice-p2": " to receive periodic emails with updates",
+    "notice-p1": "By continuing, you agree to the",
+    "notice-p2": "of Tuturuuu",
     "password": "Password",
     "privacy": "Privacy Policy",
     "tos": "Terms of Service"
@@ -7538,7 +7538,7 @@
     "get-started-desc": "Create a new account",
     "login": "Login",
     "notice-p1": "By continuing, you agree to the",
-    "notice-p2": "of Tuturuuu and receive periodic emails with new updates",
+    "notice-p2": "of Tuturuuu",
     "password": "Password",
     "privacy": "Privacy Policy",
     "signing-up": "Signing up",

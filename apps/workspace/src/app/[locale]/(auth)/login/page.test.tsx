@@ -74,28 +74,31 @@ vi.mock('./form', () => ({
   },
 }));
 
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string, values?: Record<string, string>) => {
-    const messages: Record<string, string> = {
-      'account_switcher.add_account': 'Add account',
-      'account_switcher.add_account_description':
-        'Add another account to continue',
-      'auth.notice-p1': 'By continuing, you agree to Tuturuuu',
-      'auth.notice-p2': 'to receive periodic emails with updates',
-      'auth.privacy': 'Privacy Policy',
-      'auth.tos': 'Terms of Service',
-      'common.and': 'and',
-      'login.sign_in_to_your_account': 'Sign in to your account to continue',
-      'login.welcome': 'Welcome Back',
-    };
+vi.mock('next-intl', async () => {
+  const { default: en } = await import('../../../../../messages/en.json');
+  return {
+    useTranslations: () => (key: string, values?: Record<string, string>) => {
+      const messages: Record<string, string> = {
+        'account_switcher.add_account': 'Add account',
+        'account_switcher.add_account_description':
+          'Add another account to continue',
+        'auth.notice-p1': en.auth['notice-p1'],
+        'auth.notice-p2': en.auth['notice-p2'],
+        'auth.privacy': 'Privacy Policy',
+        'auth.tos': 'Terms of Service',
+        'common.and': 'and',
+        'login.sign_in_to_your_account': 'Sign in to your account to continue',
+        'login.welcome': 'Welcome Back',
+      };
 
-    if (key === 'login.powered-by') {
-      return `Powered by ${values?.domain ?? ''}`;
-    }
+      if (key === 'login.powered-by') {
+        return `Powered by ${values?.domain ?? ''}`;
+      }
 
-    return messages[key] ?? key;
-  },
-}));
+      return messages[key] ?? key;
+    },
+  };
+});
 
 function setSearchParams(
   searchParams: Record<string, string | string[] | undefined> = {}
@@ -234,5 +237,20 @@ describe('Login page', () => {
       );
     });
     expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
+  });
+
+  it('agrees to the Terms and Privacy Policy only, with no email consent', async () => {
+    await renderLoginPage();
+
+    const terms = screen.getByRole('link', { name: 'Terms of Service' });
+    expect(terms).toHaveAttribute('href', '/terms');
+    expect(
+      screen.getByRole('link', { name: 'Privacy Policy' })
+    ).toHaveAttribute('href', '/privacy');
+    const notice = terms.parentElement?.textContent ?? '';
+    expect(notice).toBe(
+      'By continuing, you agree to the Terms of Service and Privacy Policy of Tuturuuu.'
+    );
+    expect(notice).not.toMatch(/email/iu);
   });
 });
