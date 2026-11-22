@@ -1239,10 +1239,10 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/b6a194eef819809bc23a3093a8955287484d1d80",
-        "reason": "Email Routing config content changed when the Mail Worker binding landed. The only Wrangler token is the config schema path, lines and uses stay 2, and there is no publish command. The pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/39698b316a00d01993772518c39deb6797d27db5",
+        "reason": "Email Routing config content changed to enable Workers Observability. The only Wrangler token is the config schema path, lines and uses stay 2, and there is no publish command. The pending-migration gap and its removal condition remain."
       },
-      "digest": "bf7bf2d6572c24aab8648db3bdac6a7ffc43eaf070c363e493aeff18ade87c71"
+      "digest": "079ba19a8e1b4f2d7e3d1a5d10b7831e2ed1046c0ebba862b978f7da6cacfd71"
     },
     "apps/marketing/.gitignore": {
       "lines": 1,
