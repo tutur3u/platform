@@ -1,7 +1,11 @@
 import { expect, it } from 'vitest';
 import en from '../../../../../../apps/meet/messages/en.json';
 import vi from '../../../../../../apps/meet/messages/vi.json';
-import { meetTools } from './registry';
+import { meetToolsFor } from './registry';
+
+// Every tool the hub can offer, the assessment included, whatever the room is
+// configured to offer now.
+const meetTools = meetToolsFor({ assessment: true });
 
 const read = (bundle: unknown, key: string) =>
   key

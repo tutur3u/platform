@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyLiveActivities, LIVE_ACTIVITY_LIMITS } from './live-activities';
+import {
+  applyLiveActivities,
+  LIVE_ACTIVITY_LIMITS,
+  MEET_LIVE_ASSESSMENT_ENABLED,
+} from './live-activities';
 import {
   action as dispatch,
   cohost,
@@ -648,4 +652,25 @@ it('refuses every assessment command and shows none of it when switched off', ()
   ).not.toContain('Question');
   // The stored attempt is untouched, so switching back on brings it back.
   expect(prompted.state.liveActivities?.assessment.responses).toHaveLength(1);
+});
+
+it('follows the configured switch when a room names no features', () => {
+  const set = applyLiveActivities(room(), {
+    message: meetRealtimeClientMessageSchema.parse({
+      type: 'activity.command',
+      command: { kind: 'assessment.set', items: [] },
+    }),
+    token: host,
+    now: new Date().toISOString(),
+  });
+  // The room as deployed: it takes assessment commands only when switched on.
+  expect(
+    set?.reply.some(
+      (frame) =>
+        frame.type === 'error' && frame.error === 'activity_assessment_disabled'
+    )
+  ).toBe(!MEET_LIVE_ASSESSMENT_ENABLED);
+  expect(set?.state.liveActivities !== undefined).toBe(
+    MEET_LIVE_ASSESSMENT_ENABLED
+  );
 });

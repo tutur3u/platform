@@ -48,6 +48,11 @@ export const room = () => ({
     ])
   ),
 });
+/**
+ * The protocol tests cover every activity, whatever the room is configured to
+ * offer, so they name the features instead of taking the configured default.
+ */
+export const EVERY_ACTIVITY = { assessment: true };
 export const run = (
   state: MeetRoomSnapshot,
   token: typeof host,
@@ -55,11 +60,11 @@ export const run = (
   offset = 0
 ) => {
   const message = meetRealtimeClientMessageSchema.parse(input);
-  const result = applyLiveActivities(state, {
-    message,
-    token,
-    now: new Date(time + offset).toISOString(),
-  });
+  const result = applyLiveActivities(
+    state,
+    { message, token, now: new Date(time + offset).toISOString() },
+    EVERY_ACTIVITY
+  );
   if (!result) throw new Error('Expected an activity outcome');
   return result;
 };

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MEET_LIVE_ASSESSMENT_ENABLED } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import en from '../../../../../../apps/meet/messages/en.json';
@@ -128,13 +129,14 @@ it('hides the hub list when tools are not available but keeps an open panel', ()
 
 it('lets someone who only runs activities browse those and the pen board, nothing else', () => {
   const shown = () => screen.getByTestId('shown').textContent;
-  const all = meetTools.map(({ id }) => id).join(' ');
+  const tools = meetToolsFor({ assessment: true });
+  const all = tools.map(({ id }) => id).join(' ');
   // A workspace co-host in a room whose tools are for hosts only.
   const cohost = renderHarness({
     drawer: null,
     onDrawer: vi.fn(),
     activitiesOnly: true,
-    registry: meetTools,
+    registry: tools,
   });
   expect(shown()).toBe(
     'live-assessment live-flashcards live-game live-icebreaker pen-whiteboard'
@@ -146,7 +148,7 @@ it('lets someone who only runs activities browse those and the pen board, nothin
   const member = renderHarness({
     drawer: null,
     onDrawer: vi.fn(),
-    registry: meetTools,
+    registry: tools,
   });
   expect(shown()).toBe(all);
   member.unmount();
@@ -156,13 +158,20 @@ it('lets someone who only runs activities browse those and the pen board, nothin
     onDrawer: vi.fn(),
     available: false,
     activitiesOnly: true,
-    registry: meetTools,
+    registry: tools,
   });
   expect(shown()).toBe('');
 });
 
 it('registers polls, timer, quiz, the live activities and the pen board in order', () => {
-  expect(meetTools.map((tool) => tool.id)).toEqual([
+  // The default registry is the one for the configured switch.
+  expect(meetTools).toEqual(
+    meetToolsFor({ assessment: MEET_LIVE_ASSESSMENT_ENABLED })
+  );
+  expect(meetTools.some((tool) => tool.id === 'live-assessment')).toBe(
+    MEET_LIVE_ASSESSMENT_ENABLED
+  );
+  expect(meetToolsFor({ assessment: true }).map((tool) => tool.id)).toEqual([
     'polls',
     'timers',
     'quiz',
@@ -193,8 +202,10 @@ it('offers the assessment in the menu and to co-hosts only while it is switched 
   ]);
   // Nothing else leaves the menu with it.
   expect(ids(off)).toEqual(ids(on).filter((id) => id !== 'live-assessment'));
-  // The switch is on.
-  expect(ids(meetTools)).toEqual(ids(on));
+  // What the call offers by default follows the configured switch.
+  expect(ids(meetTools)).toEqual(
+    ids(MEET_LIVE_ASSESSMENT_ENABLED ? on : off)
+  );
   renderHarness({ drawer: null, onDrawer: vi.fn(), registry: off });
   expect(screen.getByTestId('shown').textContent).not.toContain(
     'live-assessment'

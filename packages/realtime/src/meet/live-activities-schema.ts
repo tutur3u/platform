@@ -17,7 +17,7 @@ export const LIVE_ACTIVITY_LIMITS = {
  * Activities menu and the co-host list no longer offer it. The other
  * activities and the pen board do not depend on it.
  */
-export const MEET_LIVE_ASSESSMENT_ENABLED: boolean = true;
+export const MEET_LIVE_ASSESSMENT_ENABLED: boolean = false;
 
 export const liveActivityRequestIdSchema = z
   .string()
