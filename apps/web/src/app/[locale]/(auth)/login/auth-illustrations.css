@@ -1,0 +1,43 @@
+/*
+  Auth state illustrations: extra token roles beside auth-stage.css. SVG
+  presentation attributes cannot read var(), so colours are classes.
+*/
+.auth-il-calm-blue {
+  fill: var(--calendar-bg-blue);
+}
+.auth-il-calm-green {
+  fill: var(--calendar-bg-green);
+}
+.auth-il-calm-cyan {
+  fill: var(--calendar-bg-cyan);
+}
+.auth-il-calm-purple {
+  fill: var(--calendar-bg-purple);
+}
+.auth-il-calm-orange {
+  fill: var(--calendar-bg-orange);
+}
+.auth-il-calm-red {
+  fill: var(--calendar-bg-red);
+}
+.auth-il-purple {
+  fill: color-mix(in oklab, var(--purple) 18%, var(--calendar-bg-purple));
+}
+.auth-il-orange {
+  fill: color-mix(in oklab, var(--orange) 18%, var(--calendar-bg-orange));
+}
+.auth-il-red {
+  fill: color-mix(in oklab, var(--red) 18%, var(--calendar-bg-red));
+}
+.auth-il-red-ink {
+  fill: var(--red);
+}
+.auth-il-red-stroke {
+  stroke: var(--red);
+}
+.auth-il-purple-stroke {
+  stroke: var(--purple);
+}
+.auth-il-dash {
+  stroke-dasharray: 4 6;
+}

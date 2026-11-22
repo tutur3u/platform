@@ -94,4 +94,25 @@ describe('LoginForm /login?mfa=required', () => {
       screen.queryByText('login.two_factor_authentication')
     ).not.toBeInTheDocument();
   });
+
+  it('offers no mobile approval under the hint, since the step-up needs a code, and signs out through /logout', async () => {
+    renderLoginFormSearch(stepUpSearch(consentPath));
+
+    await screen.findByText('login.mfa_step_up_description');
+    expect(
+      screen.queryByRole('button', { name: 'login.mobile_mfa_button' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'login.required_mfa_sign_out' })
+    ).toHaveAttribute('href', '/logout');
+  });
+
+  it('keeps mobile approval on an ordinary challenge', async () => {
+    renderLoginFormSearch('');
+
+    await screen.findByText('login.enter_authenticator_code');
+    expect(
+      await screen.findByRole('button', { name: 'login.mobile_mfa_button' })
+    ).toBeInTheDocument();
+  });
 });

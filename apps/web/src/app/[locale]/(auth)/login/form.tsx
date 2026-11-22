@@ -12,7 +12,6 @@ import {
   EyeOff,
   Lock,
   Mail,
-  Smartphone,
 } from '@tuturuuu/icons/lucide-static';
 import {
   createCrossAppReturnUrlWithInternalApi,
@@ -39,7 +38,6 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -85,7 +83,8 @@ import {
   processEmailInput,
 } from './login-email-mode';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
-import { useLoginMfaCheck } from './mfa-step-up';
+import { readMfaStepUpHint, useLoginMfaCheck } from './mfa-step-up';
+import { MfaChallengeStep } from './mfa-challenge-step';
 import {
   buildManagedTuturuuuCurrentReturnUrl,
   getPlatformVerifyTokenNextPath,
@@ -562,6 +561,7 @@ export default function LoginForm({
     </div>
   );
 
+  const mfaStepUpRequested = readMfaStepUpHint(searchParams);
   const needsMFA = useLoginMfaCheck(supabase, searchParams);
 
   const prepareReturnAppConfirmation = useCallback(async () => {
@@ -1632,156 +1632,21 @@ export default function LoginForm({
   if (requiresMFA) {
     return (
       <RequiredMfaEnrollment key={user?.id} onVerified={completeMfaSignIn}>
-        <div>
-          <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
-            <CardContent className="space-y-6 p-6 sm:p-8">
-              <div className="space-y-2 text-center">
-                <h2 className="font-semibold text-2xl tracking-tight">
-                  {t('login.two_factor_authentication')}
-                </h2>
-                <p className="text-balance text-muted-foreground text-sm">
-                  {t('login.enter_authenticator_code')}
-                </p>
-              </div>
-
-              <Form {...totpForm}>
-                <form
-                  onSubmit={totpForm.handleSubmit(verifyTOtp)}
-                  className="space-y-6"
-                >
-                  <FormField
-                    control={totpForm.control}
-                    name="totp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-medium text-sm">
-                          {t('login.verification_code_label')}
-                        </FormLabel>
-                        <FormControl>
-                          <Suspense fallback={<InputOTPRowFallback />}>
-                            <InputOTP
-                              maxLength={6}
-                              {...field}
-                              disabled={loading}
-                              className="justify-center"
-                            >
-                              <InputOTPGroup className="w-full gap-2">
-                                {Array.from({ length: 6 }).map((_, index) => (
-                                  <InputOTPSlot
-                                    key={`totp-${index + 1}`}
-                                    index={index}
-                                    className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-                                  />
-                                ))}
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </Suspense>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    type="submit"
-                    className="h-12 w-full rounded-2xl font-medium"
-                    disabled={loading || totpForm.watch('totp').length !== 6}
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingIndicator className="h-4 w-4" />
-                        <span>{t('common.loading')}...</span>
-                      </div>
-                    ) : (
-                      t('login.verify_button')
-                    )}
-                  </Button>
-                </form>
-              </Form>
-
-              <div className="space-y-4">
-                <Separator />
-
-                <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Smartphone className="size-5" />
-                    </div>
-                    <div className="min-w-0 flex-1 space-y-3">
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">
-                          {t('login.mobile_mfa_title')}
-                        </p>
-                        <p className="text-muted-foreground text-xs leading-relaxed">
-                          {t('login.mobile_mfa_description')}
-                        </p>
-                      </div>
-
-                      {mobileMfaChallenge ? (
-                        <div className="space-y-3">
-                          <div className="rounded-xl border border-border bg-background px-3 py-2">
-                            <p className="text-muted-foreground text-xs">
-                              {t('login.mobile_mfa_pair_code_label')}
-                            </p>
-                            <p className="font-mono font-semibold text-2xl tracking-[0.18em]">
-                              {mobileMfaChallenge.pairCode}
-                            </p>
-                          </div>
-                          <div className="flex flex-col gap-2 sm:flex-row">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="h-10 rounded-xl"
-                              disabled={
-                                createMobileMfaChallengeMutation.isPending ||
-                                loading
-                              }
-                              onClick={() =>
-                                createMobileMfaChallengeMutation.mutate()
-                              }
-                            >
-                              {createMobileMfaChallengeMutation.isPending ? (
-                                <LoadingIndicator className="size-4" />
-                              ) : (
-                                t('login.mobile_mfa_new_code')
-                              )}
-                            </Button>
-                            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                              <LoadingIndicator className="size-3.5" />
-                              <span>{t('login.mobile_mfa_waiting')}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="h-10 rounded-xl"
-                          disabled={
-                            createMobileMfaChallengeMutation.isPending ||
-                            loading
-                          }
-                          onClick={() =>
-                            createMobileMfaChallengeMutation.mutate()
-                          }
-                        >
-                          {createMobileMfaChallengeMutation.isPending ? (
-                            <div className="flex items-center gap-2">
-                              <LoadingIndicator className="size-4" />
-                              <span>{t('common.loading')}...</span>
-                            </div>
-                          ) : (
-                            t('login.mobile_mfa_button')
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <MfaChallengeStep
+          form={totpForm}
+          loading={loading}
+          mobile={
+            mfaStepUpRequested
+              ? null
+              : {
+                  challenge: mobileMfaChallenge,
+                  onRequest: () => createMobileMfaChallengeMutation.mutate(),
+                  pending: createMobileMfaChallengeMutation.isPending,
+                }
+          }
+          onSubmit={verifyTOtp}
+          stepUp={mfaStepUpRequested}
+        />
       </RequiredMfaEnrollment>
     );
   }
