@@ -42,7 +42,10 @@ vi.mock('@tuturuuu/storage-core/programming-collaboration', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
-vi.mock('@tuturuuu/utils/account-benefits-server', () => ({
+vi.mock('@tuturuuu/utils/account-benefits-server', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/utils/account-benefits-server')
+  >()),
   accountPrivateRpc: mocks.elevated,
 }));
 vi.mock('./room-service', () => ({ callRoomService: mocks.room }));
