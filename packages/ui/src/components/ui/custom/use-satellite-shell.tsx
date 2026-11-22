@@ -4,7 +4,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -39,7 +38,8 @@ export function useSatelliteShell({
   pathname,
   links,
   defaultCollapsed = false,
-  behavior,
+  behavior: configuredBehavior,
+  holdBehavior = false,
   handleBehaviorChange,
   persistCollapsed,
   backLabel,
@@ -48,6 +48,7 @@ export function useSatelliteShell({
   links: (NavLink | null)[];
   defaultCollapsed?: boolean;
   behavior?: SidebarBehavior;
+  holdBehavior?: boolean;
   handleBehaviorChange?: (behavior: SidebarBehavior) => void;
   persistCollapsed?: (collapsed: boolean) => void;
   backLabel: string;
@@ -57,10 +58,10 @@ export function useSatelliteShell({
     getIsMobile,
     getServerIsMobile
   );
+  const [behavior, setBehavior] = useState(configuredBehavior);
   const [desktopCollapsed, setDesktopCollapsed] = useState(() =>
     collapsedForBehavior(behavior, defaultCollapsed)
   );
-  const seenBehavior = useRef(behavior);
   const [mobileCollapsed, setMobileCollapsed] = useState(true);
   const isCollapsed = isMobile ? mobileCollapsed : desktopCollapsed;
   const setIsCollapsed = isMobile ? setMobileCollapsed : setDesktopCollapsed;
@@ -82,10 +83,10 @@ export function useSatelliteShell({
   });
 
   useEffect(() => {
-    if (seenBehavior.current === behavior) return;
-    seenBehavior.current = behavior;
-    setDesktopCollapsed(collapsedForBehavior(behavior, false));
-  }, [behavior]);
+    if (holdBehavior || behavior === configuredBehavior) return;
+    setBehavior(configuredBehavior);
+    setDesktopCollapsed(collapsedForBehavior(configuredBehavior, false));
+  }, [behavior, configuredBehavior, holdBehavior]);
 
   useEffect(() => {
     setNavState((prevState) => {
@@ -166,6 +167,7 @@ export function useSatelliteShell({
   }, []);
 
   return {
+    behavior,
     isCollapsed,
     mobileSidebarOpen: !mobileCollapsed,
     setIsCollapsed,

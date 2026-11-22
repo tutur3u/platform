@@ -27,14 +27,12 @@ export function SatelliteDefaultSettingsDialog({
   centralUrl,
   canManageVersionBadge,
   defaultTab = 'profile',
-  onCloseAutoFocus,
   sidebarTab,
   user,
 }: {
   centralUrl: string;
   canManageVersionBadge?: boolean;
   defaultTab?: string;
-  onCloseAutoFocus?: (event: Event) => void;
   sidebarTab?: SatelliteSidebarSettingsTab;
   user: WorkspaceUser | null;
 }) {
@@ -73,7 +71,6 @@ export function SatelliteDefaultSettingsDialog({
       keyboardNavigation
       navItems={navItems}
       onActiveTabChange={setActiveTab}
-      onCloseAutoFocus={onCloseAutoFocus}
     >
       <SatelliteAccountSettingsPanel
         activeTab={activeTab}

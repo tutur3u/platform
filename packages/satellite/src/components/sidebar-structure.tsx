@@ -102,8 +102,9 @@ export function SidebarStructure({
   const t = useTranslations();
   const pathname = usePathname();
   const { open: settingsDialogOpen } = useSettingsDialogUrlState();
-  const { behavior, handleBehaviorChange } = useSidebar();
+  const { behavior: configuredBehavior, handleBehaviorChange } = useSidebar();
   const {
+    behavior,
     isCollapsed,
     mobileSidebarOpen,
     setIsCollapsed,
@@ -121,7 +122,9 @@ export function SidebarStructure({
     pathname,
     links,
     defaultCollapsed,
-    behavior,
+    behavior: configuredBehavior,
+    // The account footer can own Settings, so keep it mounted while open.
+    holdBehavior: settingsDialogOpen,
     handleBehaviorChange,
     backLabel: t('common.back'),
     persistCollapsed,

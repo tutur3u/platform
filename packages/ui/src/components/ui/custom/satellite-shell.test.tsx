@@ -317,6 +317,34 @@ describe('framework-independent satellite shell', () => {
     expect(paints.at(-1)).toBe(true);
   });
 
+  it('keeps the expanded footer mounted until Settings closes', () => {
+    const { result, rerender } = renderHook(
+      ({
+        behavior,
+        settingsOpen,
+      }: {
+        behavior: 'expanded' | 'minimal';
+        settingsOpen: boolean;
+      }) =>
+        useSatelliteShell({
+          pathname: '/',
+          links: emptyLinks,
+          backLabel: 'Back',
+          behavior,
+          holdBehavior: settingsOpen,
+        }),
+      { initialProps: { behavior: 'expanded', settingsOpen: true } }
+    );
+
+    rerender({ behavior: 'minimal', settingsOpen: true });
+    expect(result.current.behavior).toBe('expanded');
+    expect(result.current.isCollapsed).toBe(false);
+
+    rerender({ behavior: 'minimal', settingsOpen: false });
+    expect(result.current.behavior).toBe('minimal');
+    expect(result.current.isCollapsed).toBe(true);
+  });
+
   it.each(['hover', 'minimal'] as const)(
     'rests collapsed and opens as an overlay in %s mode',
     (behavior) => {

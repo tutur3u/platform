@@ -9,6 +9,10 @@ import {
   SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
   SETTINGS_DIALOG_OPEN_INTENT_EVENT,
 } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
+  SettingsDialogFocusContext,
+  useSettingsDialogFocusReturn,
+} from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
@@ -24,7 +28,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -80,25 +83,13 @@ export function SatelliteSettingsDialogHost({
   const { closeSettings, open, openSettings, tab } =
     useSettingsDialogUrlState();
   const signedIn = Boolean(user);
-  const dialogOpen = useRef(open);
-  const returnFocus = useRef<{
-    origin: HTMLElement;
-    sidebar: HTMLElement | null;
-  } | null>(null);
-  useLayoutEffect(() => {
-    dialogOpen.current = open;
-  }, [open]);
+  const { rememberFocus, restoreFocus } = useSettingsDialogFocusReturn(open);
   const openFromCurrentControl = useCallback(
-    (nextTab: string | null, origin = document.activeElement) => {
-      if (!open && origin instanceof HTMLElement && origin !== document.body) {
-        returnFocus.current = {
-          origin,
-          sidebar: origin.closest('[data-slot="app-sidebar"]'),
-        };
-      }
+    (nextTab: string | null, origin?: HTMLElement) => {
+      rememberFocus(origin);
       openSettings(nextTab);
     },
-    [open, openSettings]
+    [openSettings, rememberFocus]
   );
   const openDefaultSettings = useCallback(() => {
     openFromCurrentControl(null);
@@ -140,45 +131,27 @@ export function SatelliteSettingsDialogHost({
     <SatelliteDefaultSettingsDialog
       canManageVersionBadge={canManageVersionBadge}
       centralUrl={centralUrl}
-      onCloseAutoFocus={(event) => {
-        if (dialogOpen.current || !returnFocus.current) return;
-        const { origin, sidebar } = returnFocus.current;
-        returnFocus.current = null;
-        const target = [
-          origin,
-          sidebar?.querySelector<HTMLElement>('[data-sidebar-reveal-trigger]'),
-          sidebar?.querySelector<HTMLElement>(
-            '[data-slot="sidebar-settings-button"]'
-          ),
-        ].find(
-          (control) =>
-            control?.isConnected &&
-            !control.closest('[inert]') &&
-            control.checkVisibility?.({ visibilityProperty: true }) !== false
-        );
-        if (!target) return;
-        event.preventDefault();
-        target.focus({ preventScroll: true });
-      }}
       sidebarTab={sidebarSettingsTab}
       user={user}
     />
   );
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) closeSettings();
-      }}
-    >
-      {isValidElement(content)
-        ? cloneElement(content, {
-            defaultTab: tab ?? undefined,
-            key: tab ?? 'default',
-          } as Record<string, unknown>)
-        : content}
-    </Dialog>
+    <SettingsDialogFocusContext value={restoreFocus}>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) closeSettings();
+        }}
+      >
+        {isValidElement(content)
+          ? cloneElement(content, {
+              defaultTab: tab ?? undefined,
+              key: tab ?? 'default',
+            } as Record<string, unknown>)
+          : content}
+      </Dialog>
+    </SettingsDialogFocusContext>
   );
 }
 

@@ -11,8 +11,9 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import { SettingsDialogFocusContext } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
-import { type ReactNode, type Ref, useState } from 'react';
+import { type ReactNode, type Ref, useContext, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const logoutMocks = vi.hoisted(() => ({
@@ -71,20 +72,21 @@ vi.mock('./account-settings/default-settings-dialog', () => ({
   SatelliteDefaultSettingsDialog: ({
     centralUrl,
     defaultTab,
-    onCloseAutoFocus,
   }: {
     centralUrl: string;
     defaultTab?: string;
-    onCloseAutoFocus?: (event: Event) => void;
-  }) => (
-    <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
-      <DialogTitle>Settings</DialogTitle>
-      <DialogDescription>Account settings</DialogDescription>
-      <div data-testid="default-settings">
-        {centralUrl}|{defaultTab ?? 'default'}
-      </div>
-    </DialogContent>
-  ),
+  }) => {
+    const restoreFocus = useContext(SettingsDialogFocusContext);
+    return (
+      <DialogContent onCloseAutoFocus={restoreFocus}>
+        <DialogTitle>Settings</DialogTitle>
+        <DialogDescription>Account settings</DialogDescription>
+        <div data-testid="default-settings">
+          {centralUrl}|{defaultTab ?? 'default'}
+        </div>
+      </DialogContent>
+    );
+  },
 }));
 vi.mock('@tuturuuu/ui/report-problem-dialog', () => ({
   ReportProblemDialog: () => null,

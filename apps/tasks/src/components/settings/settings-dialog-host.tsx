@@ -5,6 +5,10 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
+  SettingsDialogFocusContext,
+  useSettingsDialogFocusReturn,
+} from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useCallback, useEffect } from 'react';
@@ -18,6 +22,7 @@ interface SettingsDialogHostProps {
 }
 
 type SettingsOpenIntent = {
+  returnFocus?: HTMLElement;
   settingsBoardId?: string;
   settingsTab?: string;
 };
@@ -36,10 +41,13 @@ export function SettingsDialogHost({
     openSettings,
     tab,
   } = useSettingsDialogUrlState(SETTINGS_EXTRA_KEYS);
+  const { rememberFocus, restoreFocus } =
+    useSettingsDialogFocusReturn(settingsOpen);
 
   const openDefaultSettings = useCallback(() => {
+    rememberFocus();
     openSettings(null);
-  }, [openSettings]);
+  }, [openSettings, rememberFocus]);
   useSettingsDialogShortcut({
     enabled: Boolean(user),
     onOpen: openDefaultSettings,
@@ -56,6 +64,7 @@ export function SettingsDialogHost({
           ? (event.detail as SettingsOpenIntent)
           : {};
 
+      rememberFocus(detail.returnFocus);
       openSettings(
         typeof detail.settingsTab === 'string' ? detail.settingsTab : null,
         {
@@ -78,7 +87,7 @@ export function SettingsDialogHost({
         handleSettingsIntent
       );
     };
-  }, [openSettings]);
+  }, [openSettings, rememberFocus]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) return;
@@ -86,24 +95,27 @@ export function SettingsDialogHost({
   };
 
   const handleBoardSettingsOpen = (boardId: string) => {
+    rememberFocus();
     openSettings('task_board', { settingsBoardId: boardId });
   };
 
   if (!user) return null;
 
   return (
-    <Dialog open={settingsOpen} onOpenChange={handleOpenChange}>
-      {settingsOpen && (
-        <SettingsDialog
-          centralUrl={TTR_URL}
-          boardId={extras.settingsBoardId ?? undefined}
-          defaultTab={tab ?? undefined}
-          onBoardSettingsOpen={handleBoardSettingsOpen}
-          user={user}
-          workspace={workspace}
-          wsId={wsId}
-        />
-      )}
-    </Dialog>
+    <SettingsDialogFocusContext value={restoreFocus}>
+      <Dialog open={settingsOpen} onOpenChange={handleOpenChange}>
+        {settingsOpen && (
+          <SettingsDialog
+            centralUrl={TTR_URL}
+            boardId={extras.settingsBoardId ?? undefined}
+            defaultTab={tab ?? undefined}
+            onBoardSettingsOpen={handleBoardSettingsOpen}
+            user={user}
+            workspace={workspace}
+            wsId={wsId}
+          />
+        )}
+      </Dialog>
+    </SettingsDialogFocusContext>
   );
 }

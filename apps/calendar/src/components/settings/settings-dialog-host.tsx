@@ -4,6 +4,10 @@ import { claimSettingsDialogIntent } from '@tuturuuu/satellite/settings-dialog-i
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
+  SettingsDialogFocusContext,
+  useSettingsDialogFocusReturn,
+} from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useCallback, useEffect } from 'react';
@@ -20,9 +24,11 @@ export function SettingsDialogHost({
 }) {
   const { closeSettings, open, openSettings, tab } =
     useSettingsDialogUrlState();
+  const { rememberFocus, restoreFocus } = useSettingsDialogFocusReturn(open);
   const openDefaultSettings = useCallback(() => {
+    rememberFocus();
     openSettings(null);
-  }, [openSettings]);
+  }, [openSettings, rememberFocus]);
   useSettingsDialogShortcut({
     enabled: Boolean(user),
     onOpen: openDefaultSettings,
@@ -32,6 +38,7 @@ export function SettingsDialogHost({
     const onIntent = (event: Event) => {
       if (!claimSettingsDialogIntent(event)) return;
       const detail = event instanceof CustomEvent ? event.detail : null;
+      rememberFocus(detail?.returnFocus);
       openSettings(
         typeof detail?.settingsTab === 'string' ? detail.settingsTab : null
       );
@@ -39,24 +46,26 @@ export function SettingsDialogHost({
     window.addEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent);
     return () =>
       window.removeEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent);
-  }, [user, openSettings]);
+  }, [user, openSettings, rememberFocus]);
   if (!user) return null;
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) closeSettings();
-      }}
-    >
-      {open && (
-        <SettingsDialog
-          centralUrl={TTR_URL}
-          key={`${user.id}:${wsId}:${tab ?? 'default'}`}
-          user={user}
-          wsId={wsId}
-          defaultTab={tab ?? undefined}
-        />
-      )}
-    </Dialog>
+    <SettingsDialogFocusContext value={restoreFocus}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) closeSettings();
+        }}
+      >
+        {open && (
+          <SettingsDialog
+            centralUrl={TTR_URL}
+            key={`${user.id}:${wsId}:${tab ?? 'default'}`}
+            user={user}
+            wsId={wsId}
+            defaultTab={tab ?? undefined}
+          />
+        )}
+      </Dialog>
+    </SettingsDialogFocusContext>
   );
 }

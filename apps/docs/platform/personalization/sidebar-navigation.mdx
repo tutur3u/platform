@@ -92,6 +92,10 @@ current value to the account. Cmd/Ctrl+Alt+B switches to Minimal and
 Cmd/Ctrl+B switches from it to Collapsed. The tasks board's **Minimal sidebar**
 action and the account menu use the same mode.
 
+In satellite Settings, the sidebar keeps its current layout until the dialog
+closes. Focus returns to the control that opened Settings or to the reveal logo
+if the selected mode replaced that control.
+
 Scope: Web, Workspace, Colab and every satellite sidebar. Exception: Nova has a
 single fixed sidebar and no modes. Coverage: `sidebar-behavior.test.ts`,
 `structure-minimal.test.tsx`, and the cookie and account-preference cases in

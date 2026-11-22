@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { SettingsDialogFocusContext } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +18,7 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import type { ComponentType, ReactNode } from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useContext, useRef, useState } from 'react';
 import { SettingsDialogHeader } from './settings-dialog-header';
 import { SettingsMobileNav } from './settings-mobile-nav';
 import { SettingsPageHeading } from './settings-section';
@@ -67,7 +68,6 @@ export interface SettingsDialogShellProps {
   activeTab: string;
   /** Callback when active tab changes */
   onActiveTabChange: (tab: string) => void;
-  onCloseAutoFocus?: (event: Event) => void;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
   /** Optional context control that replaces the active group breadcrumb */
@@ -91,12 +91,12 @@ export function SatelliteSettingsDialogShell({
   navItems,
   activeTab,
   onActiveTabChange,
-  onCloseAutoFocus,
   keyboardNavigation = false,
   activeGroupBreadcrumb,
   children,
 }: SettingsDialogShellProps) {
   const isMobile = useIsMobile();
+  const restoreFocus = useContext(SettingsDialogFocusContext);
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -159,7 +159,7 @@ export function SatelliteSettingsDialogShell({
     <DialogContent
       presentation="fullscreen"
       className="settings-surface flex-col md:inset-8 md:h-auto md:max-h-none md:w-auto md:rounded-2xl md:border md:shadow-2xl"
-      onCloseAutoFocus={onCloseAutoFocus}
+      onCloseAutoFocus={restoreFocus}
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >
