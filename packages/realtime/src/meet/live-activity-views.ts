@@ -70,17 +70,32 @@ const resultsOut = ({ status, released }: Activities['assessment']) =>
   released && status === 'closed';
 
 /**
+ * The id of a prompt stored before prompts had ids. It is fixed, so every
+ * read agrees on it and people can still reply; the next prompt gets its own.
+ */
+export const LEGACY_ICEBREAKER_PROMPT_ID =
+  '00000000-0000-4000-8000-000000000001';
+
+/**
  * Stored state as the rules read it. A release ends its attempt, so an
  * assessment stored as released while still open is closed, and any released
- * one is sealed.
+ * one is sealed. An active prompt always has an id.
  */
 export function settleActivities(state: Activities): Activities {
-  const { assessment } = state;
-  if (!assessment.released) return state;
-  if (assessment.status === 'closed' && assessment.sealed) return state;
+  const { assessment, icebreaker } = state;
+  const unsettled =
+    assessment.released &&
+    !(assessment.status === 'closed' && assessment.sealed);
+  const unnamed = icebreaker.prompt !== null && !icebreaker.promptId;
+  if (!unsettled && !unnamed) return state;
   return {
     ...state,
-    assessment: { ...assessment, status: 'closed', sealed: true },
+    assessment: unsettled
+      ? { ...assessment, status: 'closed', sealed: true }
+      : assessment,
+    icebreaker: unnamed
+      ? { ...icebreaker, promptId: LEGACY_ICEBREAKER_PROMPT_ID }
+      : icebreaker,
   };
 }
 
@@ -140,6 +155,9 @@ export function mineView(
   actor: string
 ): LiveActivitiesMine {
   const choice = game.phase === 'idle' ? undefined : game.answers[actor];
+  const reply = icebreaker.responses.find(
+    ({ participantId }) => participantId === actor
+  );
   return {
     assessment: Object.fromEntries(
       assessment.responses
@@ -161,11 +179,9 @@ export function mineView(
             roundId: game.rounds[game.index]?.id,
             choice,
           },
-    icebreaker: {
-      text: icebreaker.responses.find(
-        ({ participantId }) => participantId === actor
-      )?.text,
-    },
+    icebreaker: reply
+      ? { promptId: icebreaker.promptId ?? undefined, text: reply.text }
+      : {},
   };
 }
 

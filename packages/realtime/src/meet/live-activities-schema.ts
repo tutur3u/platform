@@ -210,7 +210,11 @@ export const liveActivitiesMineSchema = z.object({
     known: z.array(id).max(LIVE_ACTIVITY_LIMITS.flashcards),
   }),
   game: z.object({ roundId: id.optional(), choice: optionIndex.optional() }),
-  icebreaker: z.object({ text: text(200).optional() }),
+  // The reply names its prompt, so it is never read as one to a later prompt.
+  icebreaker: z.object({
+    promptId: id.optional(),
+    text: text(200).optional(),
+  }),
 });
 export const liveActivitiesHostSchema = z.object({
   assessment: z.object({

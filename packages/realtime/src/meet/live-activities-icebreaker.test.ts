@@ -10,9 +10,52 @@ import {
   read,
   room,
 } from './live-activities.fixtures';
+import { LEGACY_ICEBREAKER_PROMPT_ID } from './live-activity-views';
 import type { MeetRoomSnapshot } from './room';
 
 describe('icebreaker', () => {
+  it('gives a prompt stored without an id a fixed one, so people can still reply', () => {
+    const asked = action(room(), host, {
+      kind: 'icebreaker.prompt',
+      text: 'Hi?',
+    }).state;
+    const activities = asked.liveActivities;
+    if (!activities) throw new Error('Missing activities');
+    const stored: MeetRoomSnapshot = {
+      ...asked,
+      liveActivities: {
+        ...activities,
+        icebreaker: { prompt: 'Hi?', responses: [] },
+      },
+    };
+    // Every read agrees on the id, without anything being written first.
+    for (const token of [guest, other])
+      expect(read(stored, token).reply).toMatchObject([
+        {
+          snapshot: {
+            icebreaker: { prompt: 'Hi?', promptId: LEGACY_ICEBREAKER_PROMPT_ID },
+          },
+        },
+        {},
+      ]);
+    const replied = action(stored, guest, {
+      kind: 'icebreaker.respond',
+      promptId: LEGACY_ICEBREAKER_PROMPT_ID,
+      text: 'Still here',
+    });
+    expect(replied.broadcast).toMatchObject([
+      { snapshot: { icebreaker: { responses: [{ text: 'Still here' }] } } },
+    ]);
+    // The id is stored with that first change, and the next prompt gets its own.
+    expect(replied.state.liveActivities?.icebreaker.promptId).toBe(
+      LEGACY_ICEBREAKER_PROMPT_ID
+    );
+    expect(
+      action(replied.state, host, { kind: 'icebreaker.prompt', text: 'Next?' })
+        .state.liveActivities?.icebreaker.promptId
+    ).not.toBe(LEGACY_ICEBREAKER_PROMPT_ID);
+  });
+
   it('hides a response from public views and preserves moderation across edits', () => {
     expect(
       action(room(), guest, { kind: 'icebreaker.prompt', text: 'Hi?' }).reply
@@ -111,6 +154,15 @@ describe('icebreaker', () => {
     expect(reply(cleared, secondId).reply).toMatchObject(
       error('activity_icebreaker_unavailable')
     );
+    // Their own reply names its prompt, and is gone once the prompt changes.
+    const replied = reply(second, secondId).state;
+    expect(read(replied, guest).reply).toMatchObject([
+      {},
+      { mine: { icebreaker: { promptId: secondId, text: 'Late reply' } } },
+    ]);
+    const [, afterNext] = read(ask(replied, 'Next?'), guest).reply;
+    expect(afterNext).toMatchObject({ mine: { icebreaker: {} } });
+    expect(JSON.stringify(afterNext)).not.toMatch(/Late reply|promptId/);
     // The wire refuses a reply that names no prompt.
     expect(
       liveActivityCommandSchema.safeParse({

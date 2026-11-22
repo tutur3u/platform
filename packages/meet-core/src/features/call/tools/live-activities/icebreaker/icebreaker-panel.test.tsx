@@ -105,7 +105,7 @@ it('lets a participant answer once, replace it and read the visible answers', ()
         ],
       },
     },
-    mine: { icebreaker: { text: 'Binary search' } },
+    mine: { icebreaker: { promptId: PROMPT, text: 'Binary search' } },
   });
   expect(screen.getByText('Ana')).toBeTruthy();
   expect(screen.getByText('2 answers')).toBeTruthy();
@@ -165,7 +165,7 @@ it('ties each reply to the question on screen and says when it arrived too late'
 it('fills in a reply that arrives late and keeps typed text through a reconnect', () => {
   renderPanel(IcebreakerPanel, false);
   const asked = { icebreaker: { prompt, promptId: PROMPT, responses: [] } };
-  const mine = { icebreaker: { text: 'Binary search' } };
+  const mine = { icebreaker: { promptId: PROMPT, text: 'Binary search' } };
   const input = () =>
     screen.getByLabelText(t.your_response) as HTMLInputElement;
   room({ snapshot: asked });
@@ -186,4 +186,26 @@ it('fills in a reply that arrives late and keeps typed text through a reconnect'
   room({ snapshot: asked, mine });
   expect(input().value).toBe('Quick sort');
   expect(sent()).toEqual([]);
+});
+
+it('does not start the next question from the reply to the last one', () => {
+  renderPanel(IcebreakerPanel, false);
+  const reply = { icebreaker: { promptId: PROMPT, text: 'Binary search' } };
+  room({
+    snapshot: { icebreaker: { prompt, promptId: PROMPT, responses: [] } },
+    mine: reply,
+  });
+  const input = () =>
+    screen.getByLabelText(t.your_response) as HTMLInputElement;
+  expect(input().value).toBe('Binary search');
+  // The next question arrives before the room refreshes this person's reply.
+  room({
+    snapshot: {
+      icebreaker: { prompt: 'Next?', promptId: NEXT_PROMPT, responses: [] },
+    },
+    mine: reply,
+  });
+  expect(input().value).toBe('');
+  expect(screen.getByRole('button', { name: t.send })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: t.update })).toBeNull();
 });

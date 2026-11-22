@@ -116,6 +116,10 @@ export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
   const activity = useActivity();
   const t = useTranslations('meet.call.live_activities.icebreaker');
   const { prompt, promptId, responses } = activity.snapshot.icebreaker;
+  // The room sends the question before it refreshes this person's own reply,
+  // so only a reply that names this question is theirs to start from.
+  const own = activity.mine.icebreaker;
+  const mine = own.promptId === promptId ? own.text : undefined;
   const hidden = activity.host?.icebreaker.hidden ?? [];
   const hide = (responseId: string, value: boolean) =>
     activity.send({ kind: 'icebreaker.hide', responseId, hidden: value });
@@ -151,7 +155,7 @@ export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
             // A new question starts from an empty reply.
             key={promptId}
             promptId={promptId}
-            mine={activity.mine.icebreaker.text}
+            mine={mine}
             send={activity.send}
           />
           <ActivitySection title={t('responses', { count: responses.length })}>
