@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import {
   cleanup,
+  configure,
   fireEvent,
   render,
   screen,
@@ -8,6 +9,10 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { CallDisplayNameCard } from './call-display-name-card';
+
+// The save and check steps chain several promises; give async queries more
+// room so a busy runner does not time out a passing flow.
+configure({ asyncUtilTimeout: 5000 });
 
 const mocks = vi.hoisted(() => {
   class InternalApiError extends Error {
