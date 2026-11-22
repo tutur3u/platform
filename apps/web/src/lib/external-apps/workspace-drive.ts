@@ -18,7 +18,10 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
@@ -27,6 +30,7 @@ import { rejectExternalAppTokenWorkspace } from '@/lib/app-coordination/external
 
 const DRIVE_READ_SCOPE = 'workspace:drive:read';
 const DRIVE_WRITE_SCOPE = 'workspace:drive:write';
+const MISSING_DRIVE_PERMISSION_ERROR = 'Missing workspace Drive permission';
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const READ_URL_TTL_SECONDS = 15 * 60;
 const MIME_TYPES = new Set([
@@ -185,6 +189,18 @@ export async function requireExternalAppWorkspaceDriveAccess({
     return accessError('Failed to verify workspace membership', 500);
   }
   if (!membership.ok) return accessError('Forbidden', 403);
+
+  // Same rule as workspace Drive: reads need view_drive or manage_drive,
+  // writes need manage_drive.
+  const permissions = await getPermissions({
+    user: { email: verification.claims.email, id: verification.claims.sub },
+    wsId: normalizedWorkspaceId,
+  });
+  const canManageDrive = permissions?.containsPermission('manage_drive');
+  const allowed = requiredScopes.includes(DRIVE_WRITE_SCOPE)
+    ? canManageDrive
+    : canManageDrive || permissions?.containsPermission('view_drive');
+  if (!allowed) return accessError(MISSING_DRIVE_PERMISSION_ERROR, 403);
 
   return {
     admin,

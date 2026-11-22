@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getBearerToken: vi.fn(),
   getExternalAppById: vi.fn(),
   getMetadata: vi.fn(),
+  getPermissions: vi.fn(),
   resolveProvider: vi.fn(),
   verifyMembership: vi.fn(),
   verifyToken: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: mocks.getPermissions,
   verifyWorkspaceMembershipType: mocks.verifyMembership,
 }));
 vi.mock('@/lib/app-coordination/external-apps', () => ({
@@ -60,6 +62,22 @@ const conversationId = '33333333-3333-4333-8333-333333333333';
 const attachmentId = '44444444-4444-4444-8444-444444444444';
 const path = `external-apps/cybershield35/chat/${conversationId}/${attachmentId}/brief.pdf`;
 
+function grantDrivePermissions(granted: string[]) {
+  mocks.getPermissions.mockResolvedValue({
+    containsPermission: (permission: string) => granted.includes(permission),
+  });
+}
+
+function driveAccess(scope: 'workspace:drive:read' | 'workspace:drive:write') {
+  return requireExternalAppWorkspaceDriveAccess({
+    request: new Request('https://tuturuuu.com', {
+      headers: { Authorization: 'Bearer app-token' },
+    }),
+    requiredScopes: [scope],
+    wsId: workspaceId,
+  });
+}
+
 describe('external app workspace Drive', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,22 +98,53 @@ describe('external app workspace Drive', () => {
       id: 'cybershield35',
     });
     mocks.verifyMembership.mockResolvedValue({ ok: true });
+    grantDrivePermissions(['manage_drive']);
     mocks.resolveProvider.mockResolvedValue({ provider: 'r2' });
   });
 
-  it('authorizes any linked workspace MEMBER without broad Drive permission', async () => {
-    const result = await requireExternalAppWorkspaceDriveAccess({
-      request: new Request('https://tuturuuu.com', {
-        headers: { Authorization: 'Bearer app-token' },
-      }),
-      requiredScopes: ['workspace:drive:write'],
-      wsId: workspaceId,
-    });
+  it('authorizes a linked workspace MEMBER with manage_drive for writes', async () => {
+    const result = await driveAccess('workspace:drive:write');
 
     expect(result.ok).toBe(true);
     expect(mocks.verifyMembership).toHaveBeenCalledWith(
       expect.objectContaining({ requiredType: 'MEMBER', wsId: workspaceId })
     );
+    expect(mocks.getPermissions).toHaveBeenCalledWith(
+      expect.objectContaining({ wsId: workspaceId })
+    );
+  });
+
+  it('refuses writes without manage_drive', async () => {
+    for (const granted of [['view_drive'], []]) {
+      grantDrivePermissions(granted);
+      const result = await driveAccess('workspace:drive:write');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.response.status).toBe(403);
+        await expect(result.response.json()).resolves.toEqual({
+          error: 'Missing workspace Drive permission',
+        });
+      }
+    }
+  });
+
+  it('authorizes reads with view_drive or manage_drive', async () => {
+    for (const granted of [['view_drive'], ['manage_drive']]) {
+      grantDrivePermissions(granted);
+      expect((await driveAccess('workspace:drive:read')).ok).toBe(true);
+    }
+  });
+
+  it('refuses reads without a Drive permission', async () => {
+    grantDrivePermissions([]);
+    const denied = await driveAccess('workspace:drive:read');
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.response.status).toBe(403);
+
+    mocks.getPermissions.mockResolvedValue(null);
+    const noPermissions = await driveAccess('workspace:drive:read');
+    expect(noPermissions.ok).toBe(false);
+    if (!noPermissions.ok) expect(noPermissions.response.status).toBe(403);
   });
 
   it('rejects missing scopes and unlinked workspaces', async () => {

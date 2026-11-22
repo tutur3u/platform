@@ -490,10 +490,15 @@ and after the step-up, malformed values dropped).
 ### App-owned Drive attachments
 
 Registered external apps can request `workspace:drive:read` and
-`workspace:drive:write` without granting their members the broad `manage_drive`
-workspace permission. The app must be enabled and linked to the requested
-workspace, and every call still requires the token actor to be a direct
-`MEMBER`. These scopes expose only the external-app Drive boundary:
+`workspace:drive:write`; `cybershield35` uses these scopes for chat
+attachments. The app must be enabled and linked to the requested workspace,
+and the token actor must be a direct `MEMBER` with the workspace Drive
+permission for the call, the same rule as workspace Drive: `read-url` needs
+`view_drive` or `manage_drive`, and `upload-url`, `finalize` and `DELETE` need
+`manage_drive`. A caller without it gets `403`
+`Missing workspace Drive permission`. Coverage:
+`apps/web/src/lib/external-apps/workspace-drive.test.ts`. These scopes expose
+only the external-app Drive boundary:
 
 - `POST /api/v1/workspaces/{wsId}/external-apps/drive/upload-url`
 - `POST /api/v1/workspaces/{wsId}/external-apps/drive/finalize`
