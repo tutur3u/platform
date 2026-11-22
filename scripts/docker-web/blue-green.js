@@ -3361,7 +3361,7 @@ async function finalizeBlueGreenComposeMigration({
     });
 
     console.error(
-      `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed; legacy proxy was restored: ${failureMessage}`
+      'Compose project proxy migration failed; the legacy proxy was restored.'
     );
 
     return {

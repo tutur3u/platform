@@ -3,6 +3,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline');
+const {
+  safeToolingFailure,
+  ToolingDiagnosticError,
+} = require('./ci/secret-safe-diagnostics.js');
 
 const {
   BLUE_GREEN_COLORS,
@@ -385,7 +389,7 @@ function parseArgs(argv) {
   const action = args.shift() ?? 'up';
 
   if (action !== 'up' && action !== 'down') {
-    throw new Error(`Unsupported action "${action}". Use "up" or "down".`);
+    throw new ToolingDiagnosticError('docker-action');
   }
 
   const composeGlobalArgs = [];
@@ -436,7 +440,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error('Expected an env file path after --env-file.');
+        throw new ToolingDiagnosticError('docker-env-file');
       }
 
       envFilePath = value;
@@ -453,7 +457,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error('Expected a profile name after --profile.');
+        throw new ToolingDiagnosticError('docker-profile');
       }
 
       composeGlobalArgs.push(arg, value);
@@ -465,7 +469,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error(`Expected a project name after ${arg}.`);
+        throw new ToolingDiagnosticError('docker-project');
       }
 
       composeGlobalArgs.push(arg, value);
@@ -477,7 +481,7 @@ function parseArgs(argv) {
       const value = arg.slice('--project-name='.length).trim();
 
       if (!value) {
-        throw new Error('Expected a project name after --project-name=.');
+        throw new ToolingDiagnosticError('docker-project');
       }
 
       composeGlobalArgs.push(arg);
@@ -488,7 +492,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (value !== 'dev' && value !== 'prod') {
-        throw new Error('Expected --mode to be either "dev" or "prod".');
+        throw new ToolingDiagnosticError('docker-mode');
       }
 
       mode = value;
@@ -500,7 +504,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error('Expected a memory value after --build-memory.');
+        throw new ToolingDiagnosticError('docker-memory');
       }
 
       buildMemory = value;
@@ -512,7 +516,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error('Expected a CPU value after --build-cpus.');
+        throw new ToolingDiagnosticError('docker-cpus');
       }
 
       buildCpus = value;
@@ -524,9 +528,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error(
-          'Expected an integer value after --build-max-parallelism.'
-        );
+        throw new ToolingDiagnosticError('docker-parallelism');
       }
 
       buildMaxParallelism = value;
@@ -538,7 +540,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (!value) {
-        throw new Error('Expected a builder name after --build-builder-name.');
+        throw new ToolingDiagnosticError('docker-builder');
       }
 
       buildBuilderName = value;
@@ -550,9 +552,7 @@ function parseArgs(argv) {
       const value = args[index + 1];
 
       if (value !== 'in-place' && value !== 'blue-green') {
-        throw new Error(
-          'Expected --strategy to be either "in-place" or "blue-green".'
-        );
+        throw new ToolingDiagnosticError('docker-strategy');
       }
 
       strategy = value;
@@ -959,7 +959,8 @@ async function ensureLogDrainPostgresReady({
 
     if (!shouldRetry) {
       const diagnostics = await collectLogDrainPostgresDiagnostics(options);
-      throw new Error(
+      throw new ToolingDiagnosticError(
+        'log-drain-startup',
         createLogDrainPostgresFailureMessage(error, {
           continuing: false,
           diagnostics,
@@ -989,17 +990,15 @@ async function ensureLogDrainPostgresReady({
   } catch (error) {
     const diagnostics = await collectLogDrainPostgresDiagnostics(options);
     const required = isTruthyEnv(env?.[LOG_DRAIN_REQUIRED_ENV]);
-    const message = createLogDrainPostgresFailureMessage(error, {
-      diagnostics,
-      required,
-    });
-
     if (required) {
-      throw new Error(message);
+      throw new ToolingDiagnosticError(
+        'log-drain-startup',
+        createLogDrainPostgresFailureMessage(error, { diagnostics, required })
+      );
     }
-
-    stderr.write(`[docker-web] Warning: ${message}\n`);
-
+    stderr.write(
+      `[docker-web] Warning: Log-drain Postgres did not start; continuing with log-drain telemetry disabled (${LOG_DRAIN_ENABLED_ENV}=false).\n`
+    );
     return {
       diagnostics,
       env: createLogDrainPostgresDegradedEnvironment(env),
@@ -1074,7 +1073,8 @@ async function resolveManualBlueGreenBuildConflict({
     (await promptForActiveDeploymentCancellation(conflict, promptOptions));
 
   if (!confirmed) {
-    throw new Error(
+    throw new ToolingDiagnosticError(
+      'deployment-active',
       `Active blue/green deployment build detected (${describeActiveDeploymentConflict(conflict)}). Re-run with --cancel-active-build or DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 to cancel it before starting a fresh deployment.`
     );
   }
@@ -1543,11 +1543,11 @@ async function main(argv = process.argv.slice(2), options = {}) {
     const parsed = parseArgs(argv);
     await runDockerWebWorkflow(parsed, options);
   } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
     process.exitCode =
       error && typeof error === 'object' && typeof error.exitCode === 'number'
         ? error.exitCode
         : 1;
+    console.error(safeToolingFailure(error, 'Web Docker command'));
   }
 }
 

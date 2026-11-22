@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 const { ensureLocalE2EEnvFile } = require('./ci/hosted-web-e2e-admission');
+const {
+  safeToolingFailure,
+  ToolingDiagnosticError,
+} = require('./ci/secret-safe-diagnostics.js');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const https = require('node:https');
@@ -307,9 +311,7 @@ function parseE2EFrontendArgs(playwrightArgs = [], env = process.env) {
   }
 
   if (!E2E_FRONTENDS.has(frontend)) {
-    throw new Error(
-      `Unsupported Docker web E2E frontend "${frontend}". Expected next, tanstack, or compare.`
-    );
+    throw new ToolingDiagnosticError('e2e-frontend');
   }
 
   return {
@@ -895,9 +897,7 @@ function formatBlueGreenStages(stages) {
       parts.push(`services=${stage.serviceNames.join(',')}`);
     }
 
-    if (stage.failureReason) {
-      parts.push(`failure=${stage.failureReason}`);
-    } else if (stage.skippedReason) {
+    if (stage.skippedReason) {
       parts.push(`skipped=${stage.skippedReason}`);
     }
 
@@ -983,7 +983,7 @@ async function printE2EFailureDiagnostics({
   startDiagnosticGroup('E2E failure summary', { env, output });
   writeDiagnosticLine(
     output,
-    `[e2e-diagnostics] Primary failure: ${getErrorMessage(error)}`
+    `[e2e-diagnostics] ${safeToolingFailure(error, 'Web E2E Docker run')}`
   );
 
   const stageLines = formatBlueGreenStages(error?.blueGreenStages);
@@ -1917,22 +1917,18 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       reportPath,
     });
 
-    if (!report.passed) {
-      const failures = Object.entries(frontends)
-        .filter(([, result]) => result.passed !== true)
-        .map(
-          ([frontend, result]) =>
-            `${frontend}: ${result.error ?? 'unknown failure'}`
-        );
-      throw new Error(
-        `Docker E2E compare failed. See ${path.relative(
-          ROOT_DIR,
-          reportPath
-        )}. ${failures.join(' ')}`
+    if (report.passed) return;
+    const failures = Object.entries(frontends)
+      .filter(([, result]) => result.passed !== true)
+      .map(
+        ([frontend, result]) =>
+          `${frontend}: ${result.error ?? 'unknown failure'}`
       );
-    }
-
-    return;
+    const location = path.relative(ROOT_DIR, reportPath);
+    throw new ToolingDiagnosticError(
+      'e2e-compare',
+      `Docker E2E compare failed. See ${location}. ${failures.join(' ')}`
+    );
   }
 
   const envFilePath = options.envFilePath ?? DEFAULT_ENV_FILE;
@@ -2122,10 +2118,14 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       });
     } catch (cleanupError) {
       if (!runError) {
-        runError = cleanupError;
+        runError = new ToolingDiagnosticError(
+          'e2e-cleanup',
+          getErrorMessage(cleanupError),
+          { cause: cleanupError }
+        );
       } else {
         console.error(
-          cleanupError instanceof Error ? cleanupError.message : cleanupError
+          'Web E2E Docker cleanup failed after the test run failed.'
         );
       }
     }
@@ -2140,7 +2140,7 @@ async function main() {
   try {
     await runWebE2E();
   } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
+    console.error(safeToolingFailure(error, 'Web E2E Docker run'));
     process.exitCode = 1;
   }
 }

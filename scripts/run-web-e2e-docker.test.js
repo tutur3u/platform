@@ -1904,7 +1904,7 @@ test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {
   );
 });
 
-test('formatBlueGreenStages keeps failed stage details readable', () => {
+test('formatBlueGreenStages keeps the failed stage and omits exception text', () => {
   assert.deepEqual(
     formatBlueGreenStages([
       {
@@ -1924,7 +1924,7 @@ test('formatBlueGreenStages keeps failed stage details readable', () => {
     ]),
     [
       '- web-build | succeeded | color=green | build=web-green | services=web-green | durationMs=123',
-      '- proxy-reload | failed | services=web-proxy | failure=web-proxy returned 502',
+      '- proxy-reload | failed | services=web-proxy',
     ]
   );
 });
@@ -2032,8 +2032,8 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
 
     const text = chunks.join('');
     assert.match(text, /::group::E2E failure summary/u);
-    assert.match(text, /Primary failure: web stack failed/u);
-    assert.match(text, /proxy route check failed/u);
+    assert.match(text, /Web E2E Docker run failed/u);
+    assert.doesNotMatch(text, /web stack failed|proxy route check failed/u);
     assert.match(text, /\{"status":"failed"\}/u);
     assert.match(text, /Diagnostic command failed: docker logs unavailable/u);
   } finally {

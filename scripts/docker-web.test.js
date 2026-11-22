@@ -477,12 +477,12 @@ test('ensureLogDrainPostgresReady degrades log-drain after an unhealthy retry wi
       },
     },
   });
-
   assert.equal(upAttempts, 2);
   assert.equal(result.ready, false);
   assert.equal(result.env.PLATFORM_LOG_DRAIN_ENABLED, 'false');
   assert.match(result.diagnostics, /database files are incompatible/u);
-  assert.match(stderr.join(''), /Continuing this deploy/u);
+  assert.match(stderr.join(''), /log-drain telemetry disabled/u);
+  assert.doesNotMatch(stderr.join(''), /database files are incompatible/u);
   assert.equal(
     calls.some(
       ([command, args]) =>
