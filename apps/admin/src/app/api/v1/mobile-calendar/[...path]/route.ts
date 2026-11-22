@@ -15,7 +15,7 @@ async function handle(request: Request) {
       return !error && Boolean(data.user);
     },
     loadSecret: loadCalendarGatewaySecret,
-    fetch,
+    fetch: globalThis.fetch.bind(globalThis),
   });
 }
 

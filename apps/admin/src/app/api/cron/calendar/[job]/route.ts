@@ -9,6 +9,6 @@ export async function GET(request: Request) {
   return forwardCalendarCron(request, {
     cronSecret: process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET,
     loadSecret: loadCalendarGatewaySecret,
-    fetch,
+    fetch: globalThis.fetch.bind(globalThis),
   });
 }
