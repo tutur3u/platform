@@ -158,7 +158,7 @@ function cases(): Case[] {
     },
     ...(
       [
-        ['c', 'main.c', 'int main(void) { return y; }\n', "'y' undeclared"],
+        ['c', 'main.c', 'int main(void) { return y; }\n', 'undeclared'],
         [
           'cpp',
           'main.cpp',

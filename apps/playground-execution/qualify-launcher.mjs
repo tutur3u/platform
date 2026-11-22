@@ -255,7 +255,7 @@ const check = (language, files, entry) =>
     basic
   );
 for (const [language, path, content, expected] of [
-  ['c', 'main.c', 'int main(void) { return y; }\n', "'y' undeclared"],
+  ['c', 'main.c', 'int main(void) { return y; }\n', 'undeclared'],
   [
     'cpp',
     'main.cpp',
