@@ -27,6 +27,9 @@ const MIGRATIONS = 'apps/database/supabase/migrations/';
 const RISK_ACCEPTANCES = '.github/security/risk-acceptances.json';
 const MIGRATION_PATH =
   /^apps\/database\/supabase\/migrations\/(\d{14})_[\w-]+\.sql$/;
+// The Supabase CLI orders every `<version>_<name>.sql` file, dotted names included.
+const MIGRATION_VERSION =
+  /^apps\/database\/supabase\/migrations\/(\d{14})_[^/]+\.sql$/;
 const RECORD_KEYS = [
   'file',
   'line',
@@ -418,10 +421,31 @@ function remediationValid(entry, paths, read, verify) {
   const versions = new Set(ordered.map((file) => MIGRATION_PATH.exec(file)[1]));
   if (versions.size !== ordered.length) return false;
   const intervening = ordered.slice(1, -1).map(read);
-  return (
-    intervening.every((source) => source !== undefined) &&
-    verify(sql, { original, entry, intervening })
-  );
+  if (intervening.some((source) => source === undefined)) return false;
+  const proof = { original, entry, intervening };
+  if (entry.remediationMode === 'acl-only') {
+    const sqlPaths = paths.filter((file) => file.endsWith('.sql'));
+    if (sqlPaths.some((file) => !MIGRATION_VERSION.test(file))) return false;
+    const version = (file) => MIGRATION_VERSION.exec(file)[1];
+    if (
+      sqlPaths.filter(
+        (file) =>
+          version(file) >= originalVersion &&
+          version(file) <= remediationVersion
+      ).length !== ordered.length
+    )
+      return false;
+    const later = sqlPaths
+      .filter(
+        (file) =>
+          version(file) >= remediationVersion &&
+          file !== entry.remediationMigration
+      )
+      .map(read);
+    if (later.some((source) => source === undefined)) return false;
+    return verify(sql, { ...proof, later });
+  }
+  return verify(sql, proof);
 }
 
 function trustedRecordsForScan(

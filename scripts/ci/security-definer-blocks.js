@@ -172,10 +172,55 @@ function rollbackControl(ts) {
   );
 }
 
+// Schemas of the routine's custom input types (`qualified:["schema","type"]`).
+function customInputSchemas(target) {
+  return new Set(
+    target.args
+      .filter(({ key }) => key.startsWith('qualified:'))
+      .map(({ key }) => JSON.parse(key.slice(10).replace(/\[\]$/, ''))[0])
+  );
+}
+
+// Relation DDL on a schema-qualified object outside every custom input type's
+// schema cannot drop or move those types; anything else stays unproven.
+function relationOutsideSchemas(ts, schemas) {
+  if (
+    hidesIdentifiers(ts) ||
+    ts.some((token) => keyword(token, 'cascade') || schemas.has(token.value)) ||
+    (keyword(ts[0], 'drop') && ts.some((token) => keyword(token, ',')))
+  )
+    return false;
+  let index = ['foreign', 'materialized'].some((kind) => keyword(ts[1], kind))
+    ? 3
+    : 2;
+  while (
+    ['if', 'not', 'exists', 'only'].some((word) => keyword(ts[index], word))
+  )
+    index += 1;
+  return (
+    ts[index]?.kind === 'word' &&
+    keyword(ts[index + 1], '.') &&
+    ts[index + 2]?.kind === 'word' &&
+    !keyword(ts[index + 3], '.') &&
+    !schemas.has(ts[index].value)
+  );
+}
+
+// `U&"..."` identifiers carry escapes the token scan does not decode.
+function hidesIdentifiers(ts) {
+  return ts.some(
+    (token, index) =>
+      keyword(token, 'u') &&
+      keyword(ts[index + 1], '&') &&
+      ts[index + 2]?.start === token.end + 1
+  );
+}
+
 function replayRoutineIdentity(target, migrations, routineTarget) {
   const hasCustomInput = target.args.some(({ key }) =>
     key.startsWith('qualified:')
   );
+  const customSchemas = customInputSchemas(target);
   for (const sql of migrations) {
     for (const ts of statements(sql)) {
       const alter = keyword(ts[0], 'alter');
@@ -192,8 +237,14 @@ function replayRoutineIdentity(target, migrations, routineTarget) {
       if (
         ['create', 'alter', 'drop'].some((verb) => keyword(ts[0], verb)) &&
         typeKinds.some((kind) => keyword(ts[1], kind))
-      )
-        return null;
+      ) {
+        if (
+          ['type', 'domain'].some((kind) => keyword(ts[1], kind)) ||
+          !relationOutsideSchemas(ts, customSchemas)
+        )
+          return null;
+        continue;
+      }
       if (!alter && !drop) continue;
       if (
         drop &&
@@ -240,10 +291,213 @@ function replayRoutineIdentity(target, migrations, routineTarget) {
   return target;
 }
 
+const storageAclProof = {
+  file: 'apps/database/supabase/migrations/20261122181200_workspace_storage_ascii_roots.sql',
+  line: 6,
+  rule: 'public-execute',
+  signature:
+    'workspace_storage.object_access(text,text,workspace_storage . actor_access)',
+  sourceDigest:
+    '71caf459cd0aa9b657f2f02319f0df45ed77f783d089bda39fa792ba2d789cdc',
+  remediationMigration:
+    'apps/database/supabase/migrations/20261122182652_workspace_storage_ascii_root_grants.sql',
+  remediationDigest:
+    'f44dbb1fc517cf0aae39a38fe87a37806c5d62ae5dd734a17b17c1ff64fe374b',
+};
+
+// Statements around the follow-up that name the routine, its schema or its
+// input types may only be revokes or exact two-part grants to the allowed
+// roles.
+function storageAclStaysScoped(sources, target, parseAcl, targetMatches) {
+  const allowed = ['authenticated', 'service_role'];
+  const names = [
+    ...target.parts,
+    ...target.args
+      .filter(({ key }) => key.startsWith('qualified:'))
+      .flatMap(({ key }) => JSON.parse(key.slice(10).replace(/\[\]$/, ''))),
+  ];
+  return sources.every((source) =>
+    statements(source).every((ts) => {
+      const text = source.slice(ts[0].start, ts.at(-1).end).toLowerCase();
+      if (/u&\s*['"]/.test(text) || hidesIdentifiers(ts)) return false;
+      const nested = nestedStatements(ts, names);
+      if (
+        !nested ||
+        nested.some(
+          (nested) =>
+            changesMembership(nested) && !(nested === ts && grantsPrivilege(ts))
+        )
+      )
+        return false;
+      if (!names.some((name) => text.includes(name))) return true;
+      if (keyword(ts[0], 'revoke')) return true;
+      if (!keyword(ts[0], 'grant')) return false;
+      let acl;
+      try {
+        acl = parseAcl(ts);
+      } catch {
+        return false;
+      }
+      return Boolean(
+        acl?.action === 'grant' &&
+        !acl.schemas?.length &&
+        acl.targets?.length &&
+        acl.targets.every(
+          (routine) =>
+            routine.parts?.length === 2 &&
+            targetMatches(routine, { target }, acl.action)
+        ) &&
+        acl.roles.every((name) => allowed.includes(name)) &&
+        !ts.some(
+          (token) =>
+            keyword(token, 'with') || (token.quoted && token.value === 'public')
+        )
+      );
+    })
+  );
+}
+
+// Routine bodies and string literals are lexed again so comments and quoting
+// inside them cannot split keywords. Adjacent string literals are joined as
+// PostgreSQL joins them. A body that does not lex, nesting deeper than eight
+// levels, or a string that does not lex but carries escapes or membership
+// keywords leaves the proof unproven (`null`). So does any literal that names
+// the routine or carries `U&` or `E` escapes, and dynamic `EXECUTE` below the
+// first body level, which the repository scan does not reach.
+function nestedStatements(ts, names, depth = 0) {
+  if (depth >= 2 && ts.some((token) => keyword(token, 'execute'))) return null;
+  const literals = [];
+  for (const [index, token] of ts.entries()) {
+    if (token.kind !== 'body' && token.kind !== 'string') continue;
+    const before = ts[index - 1];
+    if (
+      token.kind === 'string' &&
+      keyword(before, 'e') &&
+      before.end === token.start &&
+      token.value.includes('\\')
+    )
+      return null;
+    if (token.kind === 'string' && before?.kind === 'string')
+      literals.at(-1).value += token.value;
+    else literals.push({ value: token.value, body: token.kind === 'body' });
+  }
+  const nested = [ts];
+  for (const literal of literals) {
+    const text = literal.value.toLowerCase();
+    if (/u&\s*['"]/.test(text) || names.some((name) => text.includes(name)))
+      return null;
+    let inner;
+    try {
+      inner = statements(literal.value);
+    } catch {
+      if (literal.body || mayChangeMembership(literal.value)) return null;
+      continue;
+    }
+    if (inner.length && depth >= 8) return null;
+    for (const statement of inner) {
+      const more = nestedStatements(statement, names, depth + 1);
+      if (!more) return null;
+      nested.push(...more);
+    }
+  }
+  return nested;
+}
+
+function mayChangeMembership(text) {
+  if (text.includes('\\')) return true;
+  const words = new Set(text.toLowerCase().match(/[a-z_]+/g) ?? []);
+  return (
+    (words.has('alter') && words.has('group')) ||
+    (words.has('create') &&
+      ['role', 'user', 'group'].some((word) => words.has(word))) ||
+    (words.has('grant') && words.has('to'))
+  );
+}
+
+// Role membership changes are never proven here, whatever role they name.
+function changesMembership(ts) {
+  return ts.some((token, index) => {
+    if (keyword(token, 'alter') && keyword(ts[index + 1], 'group')) return true;
+    if (
+      keyword(token, 'create') &&
+      ['role', 'user', 'group'].some((kind) => keyword(ts[index + 1], kind))
+    )
+      return true;
+    if (!keyword(token, 'grant')) return false;
+    for (const next of ts.slice(index + 1)) {
+      if (keyword(next, 'on')) return false;
+      if (keyword(next, 'to')) return true;
+    }
+    return false;
+  });
+}
+
+function grantsPrivilege(ts) {
+  return keyword(ts[0], 'grant') && ts.some((token) => keyword(token, 'on'));
+}
+
+function verifyStorageAcl(
+  sql,
+  { entry, target, intervening = [], later },
+  parseAcl,
+  targetMatches
+) {
+  if (
+    Object.entries(storageAclProof).some(([key, value]) => entry[key] !== value)
+  )
+    return false;
+  const revoked = new Set();
+  const granted = new Set();
+  const allowed = ['authenticated', 'service_role'];
+  for (const ts of statements(sql)) {
+    if (
+      ts.length === 1 &&
+      ['begin', 'commit'].some((word) => keyword(ts[0], word))
+    )
+      continue;
+    const acl = parseAcl(ts);
+    const routine = acl?.targets?.[0];
+    if (
+      acl?.targets?.length !== 1 ||
+      !routine?.qualified ||
+      !routine.args ||
+      routine.args.some((argument) => argument.ambiguous) ||
+      routineKey(routine) !== routineKey(target) ||
+      ts.some(
+        (token) =>
+          keyword(token, 'with') ||
+          keyword(token, 'granted') ||
+          (token.quoted && token.value === 'public')
+      )
+    )
+      return false;
+    for (const role of acl.roles) {
+      if (acl.action === 'grant') {
+        if (!allowed.includes(role)) return false;
+        granted.add(role);
+      } else {
+        if (!['public', 'anon'].includes(role)) return false;
+        revoked.add(role);
+      }
+    }
+  }
+  return (
+    revoked.has('public') &&
+    revoked.has('anon') &&
+    allowed.every((role) => granted.has(role)) &&
+    storageAclStaysScoped(
+      [...intervening, ...later],
+      target,
+      parseAcl,
+      targetMatches
+    )
+  );
+}
+
 // Fix-forward proof is restricted to static routine definitions and ACLs.
 function verifyRemediation(
   sql,
-  { original, entry, intervening },
+  { original, entry, intervening, later = [] },
   { catalogEntry, lintMigration, parseAcl, routineTarget, targetMatches }
 ) {
   if (statements(original).some(rollbackControl)) return false;
@@ -255,6 +509,14 @@ function verifyRemediation(
     routineTarget
   );
   if (!target) return false;
+  if (entry.remediationMode === 'acl-only')
+    return verifyStorageAcl(
+      sql,
+      { entry, target, intervening, later },
+      parseAcl,
+      targetMatches
+    );
+  if (entry.remediationMode !== undefined) return false;
   const defs = definitions(sql);
   const matches = defs
     .map(catalogEntry)
