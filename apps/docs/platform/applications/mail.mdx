@@ -655,7 +655,9 @@ Check the script's event count per invocation during an ingest outage or spam
 burst, and before onboarding a high-volume domain.
 
 **Stop.** No workflow deploys this Worker. Every deploy is a manual release
-from `main`, so a committed value is the durable state.
+from `main`, so a committed value is the durable state. Each production write
+below (a deploy or a settings `PATCH`) needs the release authority's ACK on an
+exact-hash write packet first.
 
 1. **Immediate stop, no build.** Send
    `PATCH /accounts/{account_id}/workers/scripts/tuturuuu-mail-email-routing/script-settings`
@@ -663,15 +665,18 @@ from `main`, so a committed value is the durable state.
    Scripts Write. Read back `GET …/script-settings`; it must show
    observability disabled. New invocations stop producing logs. Logs already
    stored expire after the 7-day retention.
-2. **Durable stop.** Commit `"enabled": false` in
+2. **Durable stop.** Only when the release authority decides that logging
+   stays off, commit `"enabled": false` in
    `apps/mail/wrangler.email-routing.jsonc` before the next deploy of this
-   Worker. A deploy of the checked-in `true` would resume logging.
+   Worker. Until then the checked-in value is `true`, so a deploy resumes
+   logging; after an immediate stop, hold deploys of this Worker or repeat the
+   `PATCH` after each one.
 
 Lowering `head_sampling_rate` reduces ingestion but does not stop it.
 Delivery does not depend on logging.
 
 **Stop verification.** The production stop check exercises the immediate
-stop:
+stop, under one ACKed packet for all three writes:
 
 1. Deploy from `main` with logging on, then confirm that a delivery is
    ingested and logged.
@@ -680,7 +685,8 @@ stop:
 3. Turn logging back on with the same `PATCH`, then confirm that logging
    resumes.
 
-Production keeps logging on, so `main` never carries `"enabled": false`. For
+The current decision keeps logging on in production, so `main` carries
+`"enabled": true`. For
 that reason the check does not deploy a committed `false`. That path is an
 ordinary config change plus a manual deploy, and its effect is visible in the
 same settings readback.
