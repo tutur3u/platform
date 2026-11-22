@@ -28,14 +28,16 @@ final class FleetClassifiedOutcome extends FleetMachineOutcome {
 
 /// A linked machine's lanes in the snapshot: T3's peer link lists thread
 /// status but not failure kinds, so failures are counted, not classified.
+/// [retried] counts failures a newer attempt superseded; that attempt may
+/// still be running, so it is not a confirmed recovery.
 final class FleetLaneOutcome extends FleetMachineOutcome {
   const FleetLaneOutcome({
     required this.failed,
-    required this.recovered,
+    required this.retried,
     this.partial = false,
   });
   final int failed;
-  final int recovered;
+  final int retried;
 
   /// The snapshot's lane cap may have left out some of today's lanes.
   final bool partial;
@@ -49,7 +51,7 @@ final class FleetNoOutcome extends FleetMachineOutcome {
 
 /// Today's outcome for [machine]. Machines without classified outcomes (every
 /// linked machine, whose failure records stay on that machine) fall back to
-/// their failed and recovered lanes updated since the ICT day began.
+/// their failed and retried lanes updated since the ICT day began.
 FleetMachineOutcome fleetMachineOutcome(
   FleetSnapshot snapshot,
   FleetMachine machine,
@@ -66,7 +68,7 @@ FleetMachineOutcome fleetMachineOutcome(
   }
   final dayStart = fleetIctDayStart(now);
   var failed = 0;
-  var recovered = 0;
+  var retried = 0;
   for (final lane in snapshot.lanes) {
     if (lane.machineId != machine.id || lane.updatedAt.isBefore(dayStart)) {
       continue;
@@ -76,23 +78,28 @@ FleetMachineOutcome fleetMachineOutcome(
     } else if (lane.state == FleetLaneState.idle &&
         (lane.resolution == FleetLaneResolution.recovered ||
             lane.resolution == FleetLaneResolution.quotaRecovered)) {
-      // A retry still running has not recovered yet.
-      recovered++;
+      retried++;
     }
   }
   return FleetLaneOutcome(
     failed: failed,
-    recovered: recovered,
+    retried: retried,
     partial:
         !_coversToday(snapshot, FleetLaneState.failed, dayStart) ||
         !_coversToday(snapshot, FleetLaneState.idle, dayStart),
   );
 }
 
+/// The publisher's lane cap (`MAX_LANES` in
+/// scripts/mastermind-fleet/fleet-state.mjs; a peer listing stops there too).
+const _laneCap = 300;
+
 /// Whether the snapshot lists every lane in [state] updated since
 /// [dayStart]. The publisher keeps each state's newest lanes under its cap,
 /// so the listed ones cover today when all of them are listed or the oldest
-/// listed one predates the day.
+/// listed one predates the day. A full snapshot with none in [state] may have
+/// cut them before they were counted: a peer with as many active lanes as
+/// the cap lists no failed or idle ones at all.
 bool _coversToday(
   FleetSnapshot snapshot,
   FleetLaneState state,
@@ -104,6 +111,7 @@ bool _coversToday(
     _ => 0,
   };
   final listed = snapshot.lanes.where((lane) => lane.state == state);
+  if (listed.isEmpty && snapshot.lanes.length >= _laneCap) return false;
   if (listed.length >= total) return true;
   return listed.any((lane) => lane.updatedAt.isBefore(dayStart));
 }
@@ -171,8 +179,8 @@ class FleetTodayOutcomesPanel extends StatelessWidget {
         return outcomes.partial
             ? '$summary · ${l10n.mastermindFleetOutcomesPartial}'
             : summary;
-      case FleetLaneOutcome(:final failed, :final recovered, :final partial):
-        final lanes = l10n.mastermindFleetOutcomesLanes(failed, recovered);
+      case FleetLaneOutcome(:final failed, :final retried, :final partial):
+        final lanes = l10n.mastermindFleetOutcomesLanes(failed, retried);
         return partial
             ? '$lanes · ${l10n.mastermindFleetOutcomesPartial}'
             : lanes;

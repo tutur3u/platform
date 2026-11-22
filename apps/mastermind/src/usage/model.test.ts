@@ -94,6 +94,35 @@ describe('usage readiness', () => {
     expect(readiness(partial, partial.accounts, NOW).kind).toBe('unconfirmed');
   });
 
+  it('needs a block, not a missing reading, on every machine account', () => {
+    const silent = machine({
+      accounts: [
+        account({
+          status: { kind: 'unknown', reason: 'not_reported' },
+          windows: [],
+        }),
+      ],
+    });
+    expect(readiness(silent, silent.accounts, NOW).kind).toBe('unconfirmed');
+    const signedOut = machine({
+      accounts: [
+        account({ status: { kind: 'unknown', reason: 'not_authenticated' } }),
+      ],
+    });
+    expect(readiness(signedOut, signedOut.accounts, NOW).kind).toBe(
+      'none_available'
+    );
+    // A provider filter narrows the list, not the machine-wide verdict.
+    const capped = account({
+      provider: 'claudeAgent',
+      status: { kind: 'limited', reason: 'weekly' },
+    });
+    const mixed = machine({
+      accounts: [capped, account({ id: 'codex', provider: 'codex' })],
+    });
+    expect(readiness(mixed, [capped], NOW).kind).toBe('unconfirmed');
+  });
+
   it('draws a monthly row only when the provider reports one', () => {
     expect(windowKinds(account())).toEqual(['session', 'weekly']);
     expect(

@@ -35110,7 +35110,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindUsageNoAccountAvailable.
   ///
   /// In en, this message translates to:
-  /// **'No account can run now. Each one is limited, signed out or not reporting quota.'**
+  /// **'No account can run now. Each one is limited, signed out or disabled.'**
   String get mastermindUsageNoAccountAvailable;
 
   /// No description provided for @mastermindUsageReaderNotConfigured.
@@ -35206,8 +35206,8 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindFleetOutcomesLanes.
   ///
   /// In en, this message translates to:
-  /// **'{failed} failed · {recovered} recovered today. Counted from lanes: this linked machine does not share failure kinds.'**
-  String mastermindFleetOutcomesLanes(int failed, int recovered);
+  /// **'{failed} failed · {retried} retried today. Counted from lanes: this linked machine does not share failure kinds.'**
+  String mastermindFleetOutcomesLanes(int failed, int retried);
 
   /// No description provided for @mastermindFleetOutcomesOffline.
   ///

@@ -9438,7 +9438,7 @@
   "mastermindUsageMonthlyLimited": "Monthly limit reached.",
   "mastermindUsageNotReported": "Signed in, but the provider has not reported a quota window.",
   "mastermindUsageProviderUnavailable": "The provider reported its quota as unavailable.",
-  "mastermindUsageNoAccountAvailable": "No account can run now. Each one is limited, signed out or not reporting quota.",
+  "mastermindUsageNoAccountAvailable": "No account can run now. Each one is limited, signed out or disabled.",
   "mastermindUsageReaderNotConfigured": "No usage reader is set up for this machine, so its quota is not read.",
   "mastermindUsageReaderMissing": "This machine's usage reader credential is missing on the publisher.",
   "mastermindUsageReaderRefused": "This machine refused the usage reader credential. Issue a new reader token.",
@@ -9482,13 +9482,13 @@
   "mastermindFleetStopped": "Stopped lanes",
   "mastermindFleetOutcomesTitle": "Today’s outcomes by machine",
   "mastermindFleetOutcomesPartial": "Partial coverage",
-  "mastermindFleetOutcomesLanes": "{failed} failed · {recovered} recovered today. Counted from lanes: this linked machine does not share failure kinds.",
+  "mastermindFleetOutcomesLanes": "{failed} failed · {retried} retried today. Counted from lanes: this linked machine does not share failure kinds.",
   "@mastermindFleetOutcomesLanes": {
     "placeholders": {
       "failed": {
         "type": "int"
       },
-      "recovered": {
+      "retried": {
         "type": "int"
       }
     }

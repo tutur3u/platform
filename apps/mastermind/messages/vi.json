@@ -279,7 +279,7 @@
       "missing": "Chưa có dữ liệu",
       "model": "Mô hình",
       "noConfirmedQuota": "Chưa xác nhận được hạn mức hiện tại",
-      "noneAvailable": "Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc không báo hạn mức.",
+      "noneAvailable": "Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc bị tắt.",
       "output": "Đầu ra",
       "partial": "Thiếu một phần dữ liệu sử dụng hoặc giá. Tổng chi phí gồm các bản ghi đã có giá.",
       "provider": "Nhà cung cấp",

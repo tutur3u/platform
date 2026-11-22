@@ -18888,7 +18888,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsageProviderUnavailable => 'Nhà cung cấp báo hạn mức hiện không khả dụng.';
 
   @override
-  String get mastermindUsageNoAccountAvailable => 'Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc không báo hạn mức.';
+  String get mastermindUsageNoAccountAvailable => 'Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc bị tắt.';
 
   @override
   String get mastermindUsageReaderNotConfigured => 'Máy này chưa được thiết lập trình đọc mức dùng, nên hạn mức của máy không được đọc.';
@@ -18949,8 +18949,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFleetOutcomesPartial => 'Dữ liệu một phần';
 
   @override
-  String mastermindFleetOutcomesLanes(int failed, int recovered) {
-    return '$failed lỗi · $recovered đã khôi phục hôm nay. Đếm theo luồng: máy liên kết này không chia sẻ loại lỗi.';
+  String mastermindFleetOutcomesLanes(int failed, int retried) {
+    return '$failed lỗi · $retried đã thử lại hôm nay. Đếm theo luồng: máy liên kết này không chia sẻ loại lỗi.';
   }
 
   @override

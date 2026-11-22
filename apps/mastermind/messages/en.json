@@ -279,7 +279,7 @@
       "missing": "Unavailable",
       "model": "Model",
       "noConfirmedQuota": "No current quota confirmed",
-      "noneAvailable": "No account can run now. Each one is limited, signed out or not reporting quota.",
+      "noneAvailable": "No account can run now. Each one is limited, signed out or disabled.",
       "output": "Output",
       "partial": "Some usage or prices are missing. Totals include the priced records available.",
       "provider": "Provider",

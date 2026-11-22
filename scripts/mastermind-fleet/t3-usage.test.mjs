@@ -200,3 +200,42 @@ test('reports an unreachable descriptor as unreachable, not a mismatch', async (
   assert.equal(calls.length, 1);
   assert.equal(calls[0][1].authorization, undefined);
 });
+
+test('a descriptor body cut off after its headers reads as unreachable', async () => {
+  const error = await readT3Usage({
+    origin: 'https://t3.example.com',
+    environmentId: 'fixture-environment',
+    bearer: 'test-local-bearer',
+    async fetchImpl() {
+      const body = new ReadableStream({
+        start(controller) {
+          controller.error(new DOMException('aborted', 'AbortError'));
+        },
+      });
+      return new Response(body, {
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+    openSocket() {
+      assert.fail('should not connect');
+    },
+  }).catch((caught) => caught);
+  assert.equal(error.message, 'usage_rpc_unreachable');
+});
+
+test('a descriptor that is not JSON reads as another environment', async () => {
+  await assert.rejects(
+    readT3Usage({
+      origin: 'https://t3.example.com',
+      environmentId: 'fixture-environment',
+      bearer: 'test-local-bearer',
+      async fetchImpl() {
+        return new Response('<html></html>');
+      },
+      openSocket() {
+        assert.fail('should not connect');
+      },
+    }),
+    /usage_environment_mismatch/
+  );
+});

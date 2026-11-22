@@ -29,15 +29,20 @@ export function windowKinds(account: Account) {
   );
 }
 
+/** Statuses that show an account cannot run, not merely that it is unread. */
+const BLOCKED_UNKNOWN = new Set(['not_authenticated', 'disabled']);
+
 /**
- * The account was checked recently, is not available, and no window it
- * reports has reached its reset, so the limit still holds.
+ * The account was checked recently, is limited, signed out or disabled, and
+ * no window it reports has reached its reset, so the block still holds.
  */
 function confirmedUnavailable(account: Account, now: number) {
+  const status = account.status;
   return (
     account.checkedAt !== null &&
     !accountStale(account, now) &&
-    account.status.kind !== 'available' &&
+    (status.kind === 'limited' ||
+      (status.kind === 'unknown' && BLOCKED_UNKNOWN.has(status.reason))) &&
     account.windows.every(
       (window) => window.resetsAt === null || Date.parse(window.resetsAt) > now
     )
@@ -50,7 +55,11 @@ export type Readiness =
   | { kind: 'none_available' }
   | { kind: 'unconfirmed' };
 
-/** What the readiness line says for one machine, and why when it is empty. */
+/**
+ * What the readiness line says for one machine, and why when it is empty.
+ * `accounts` may be narrowed by a provider filter; whether no account can run
+ * is judged on every account the machine reports.
+ */
 export function readiness(
   machine: Machine,
   accounts: Account[],
@@ -78,8 +87,8 @@ export function readiness(
   if (
     current &&
     quota.kind === 'complete' &&
-    accounts.length &&
-    accounts.every((account) => confirmedUnavailable(account, now))
+    machine.accounts.length &&
+    machine.accounts.every((account) => confirmedUnavailable(account, now))
   ) {
     return { kind: 'none_available' };
   }

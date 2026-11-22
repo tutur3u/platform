@@ -168,6 +168,24 @@ void main() {
     );
     // A partial reading may have left an available account out.
     expect(usageNoneAvailable('partial', [limited()], now), isFalse);
+    // Signed in without a quota window is unread, not blocked.
+    final silent = limited();
+    expect(
+      usageNoneAvailable('complete', [
+        (
+          id: silent.id,
+          provider: silent.provider,
+          instance: silent.instance,
+          email: null,
+          plan: null,
+          checkedAt: silent.checkedAt,
+          status: 'unknown',
+          reason: 'not_reported',
+          windows: const <UsageWindow>[],
+        ),
+      ], now),
+      isFalse,
+    );
     expect(usageNoneAvailable('complete', const [], now), isFalse);
   });
 
@@ -183,8 +201,8 @@ void main() {
     expect(find.text('personal'), findsWidgets);
     expect(
       find.text(
-        'No account can run now. Each one is limited, signed out or not '
-        'reporting quota.',
+        'No account can run now. Each one is limited, signed out or '
+        'disabled.',
       ),
       findsOneWidget,
     );

@@ -187,7 +187,11 @@ export function UsageSection({ now }: { now: number }) {
           <Card className="gap-2 p-4">
             <h3 className="font-semibold">{t('usage.readiness')}</h3>
             {filtered.map((machine) => {
-              const line = readiness(machine, machine.accounts, now);
+              const line = readiness(
+                machines.find((full) => full.id === machine.id) ?? machine,
+                machine.accounts,
+                now
+              );
               return (
                 <p key={machine.id} className="text-sm">
                   <span className="font-medium">{machine.label}</span>

@@ -34,8 +34,9 @@ String? usageAccountReason(AppLocalizations l10n, String? reason) =>
     };
 
 /// Whether a complete quota reading confirms that no account can run now:
-/// every account was checked within [quotaCheckStaleAfter], is not
-/// available, and reports no window whose reset has already passed.
+/// every account was checked within [quotaCheckStaleAfter], is limited,
+/// signed out or disabled, and reports no window whose reset has passed.
+/// Pass every account the machine reports, not a provider-filtered subset.
 bool usageNoneAvailable(
   String quotaKind,
   List<UsageAccount> accounts,
@@ -47,7 +48,10 @@ bool usageNoneAvailable(
       final checkedAt = account.checkedAt;
       return checkedAt != null &&
           now.difference(checkedAt) <= quotaCheckStaleAfter &&
-          account.status != 'available' &&
+          (account.status == 'limited' ||
+              (account.status == 'unknown' &&
+                  (account.reason == 'not_authenticated' ||
+                      account.reason == 'disabled'))) &&
           account.windows.every(
             (window) => window.resetsAt?.isAfter(now) ?? true,
           );

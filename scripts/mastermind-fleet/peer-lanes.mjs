@@ -54,8 +54,10 @@ export async function describeEnvironment(
   try {
     const descriptor = await response.json();
     return descriptor?.environmentId === environmentId ? 'match' : 'mismatch';
-  } catch {
-    return 'mismatch';
+  } catch (error) {
+    // A body that is not JSON is another service; one cut off by a timeout
+    // or a dropped connection never answered.
+    return error instanceof SyntaxError ? 'mismatch' : 'unreachable';
   }
 }
 

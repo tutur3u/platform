@@ -101,7 +101,7 @@ void main() {
     );
   });
 
-  test('a linked machine counts its own failed and recovered lanes today', () {
+  test('a linked machine counts its own failed and retried lanes today', () {
     final snapshot = _snapshot();
     final outcome = fleetMachineOutcome(
       snapshot,
@@ -111,10 +111,10 @@ void main() {
     expect(outcome, isA<FleetLaneOutcome>());
     outcome as FleetLaneOutcome;
     expect(outcome.failed, 2);
-    expect(outcome.recovered, 1);
+    expect(outcome.retried, 1);
   });
 
-  test('a retry that is still running is not counted as recovered', () {
+  test('a running lane is not a retried failure', () {
     final snapshot = _snapshot(
       counts: const {'running': 5, 'idle': 2, 'failed': 4},
       extraLanes: [
@@ -130,7 +130,7 @@ void main() {
     final outcome =
         fleetMachineOutcome(snapshot, _machine(snapshot, 'macstudio1'), _now)
             as FleetLaneOutcome;
-    expect(outcome.recovered, 1);
+    expect(outcome.retried, 1);
     expect(outcome.partial, isFalse);
   });
 
@@ -152,6 +152,32 @@ void main() {
       isTrue,
       reason: 'an idle lane was cut and every listed idle lane is from today',
     );
+  });
+
+  test('a full snapshot of active lanes reads as partial coverage', () {
+    // A peer with as many running lanes as the cap lists none of its
+    // failures, and its failed total never reaches the snapshot.
+    final full = FleetSnapshot.parse({
+      'receivedAt': '2026-11-22T02:58:40.000Z',
+      'state': {
+        'version': 1,
+        'generatedAt': '2026-11-22T02:58:38.000Z',
+        'orchestrator': {'label': 'Iris', 'state': 'running'},
+        'counts': {'running': 300},
+        'machines': [
+          {'id': 'macstudio1', 'label': 'MacStudio1', 'status': 'online'},
+        ],
+        'lanes': [
+          for (var i = 0; i < 300; i++)
+            _lane('r$i', 'macstudio1', 'running', '2026-11-22T02:50:00.000Z'),
+        ],
+      },
+    });
+    final outcome =
+        fleetMachineOutcome(full, full.machines.single, _now)
+            as FleetLaneOutcome;
+    expect(outcome.failed, 0);
+    expect(outcome.partial, isTrue);
   });
 
   testWidgets('a peer last seen past the stale limit shows Stale', (
@@ -225,14 +251,14 @@ void main() {
     );
     expect(
       find.text(
-        '2 failed · 1 recovered today. Counted from lanes: this linked '
+        '2 failed · 1 retried today. Counted from lanes: this linked '
         'machine does not share failure kinds.',
       ),
       findsOneWidget,
     );
     expect(
       find.text(
-        '1 failed · 0 recovered today. Counted from lanes: this linked '
+        '1 failed · 0 retried today. Counted from lanes: this linked '
         'machine does not share failure kinds.',
       ),
       findsOneWidget,

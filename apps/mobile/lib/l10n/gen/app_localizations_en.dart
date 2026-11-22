@@ -19111,7 +19111,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsageProviderUnavailable => 'The provider reported its quota as unavailable.';
 
   @override
-  String get mastermindUsageNoAccountAvailable => 'No account can run now. Each one is limited, signed out or not reporting quota.';
+  String get mastermindUsageNoAccountAvailable => 'No account can run now. Each one is limited, signed out or disabled.';
 
   @override
   String get mastermindUsageReaderNotConfigured => 'No usage reader is set up for this machine, so its quota is not read.';
@@ -19173,8 +19173,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFleetOutcomesPartial => 'Partial coverage';
 
   @override
-  String mastermindFleetOutcomesLanes(int failed, int recovered) {
-    return '$failed failed · $recovered recovered today. Counted from lanes: this linked machine does not share failure kinds.';
+  String mastermindFleetOutcomesLanes(int failed, int retried) {
+    return '$failed failed · $retried retried today. Counted from lanes: this linked machine does not share failure kinds.';
   }
 
   @override
