@@ -1303,6 +1303,8 @@ describe('web proxy api handling', () => {
       '/3f9a1c2e-1b2c-4d5e-8f90-0123456789ab',
       '/acme-handle/tasks',
       '/en/acme-handle/settings/members',
+      '/settings',
+      '/vi/settings/security',
     ])
       expect(authOptions?.isPublicPath?.(pathname), pathname).toBe(false);
   });
@@ -1407,22 +1409,20 @@ describe('web proxy api handling', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps a neighbouring private path behind login', async () => {
-    vi.useRealTimers();
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-    mocks.authProxy.mockResolvedValue(
-      NextResponse.redirect('http://localhost/login')
-    );
+  it.each([
+    ['/personal', 307, 'http://localhost/login'],
+    ['/vi/settings/security', 503, null],
+  ])('preserves the auth response on %s', async (path, status, location) => {
+    const authResponse = location
+      ? NextResponse.redirect(location)
+      : new NextResponse('MFA unavailable', { status });
+    mocks.authProxy.mockResolvedValue(authResponse);
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/personal'));
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('http://localhost/login');
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(mocks.authProxy).toHaveBeenCalledTimes(1);
-    vi.unstubAllGlobals();
+    expect(await proxy(new NextRequest(`http://localhost${path}`))).toBe(
+      authResponse
+    );
+    expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
   });
 
   it('keeps the legacy signup entry public for its login redirect', async () => {
@@ -1440,12 +1440,9 @@ describe('web proxy api handling', () => {
     );
   });
 
-  it('does not redirect an incomplete user to onboarding', async () => {
+  it('opens Profile for an incomplete user visiting legacy settings', async () => {
     mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient({
-        email: 'new-user@example.com',
-        id: 'user-1',
-      })
+      createAuthenticatedSupabaseClient({ id: 'user-1' })
     );
 
     const { proxy } = await import('../proxy');
@@ -1453,8 +1450,10 @@ describe('web proxy api handling', () => {
       createSessionRequest('http://localhost/settings')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('location')).toBeNull();
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/personal?settingsDialog=open&settingsTab=profile'
+    );
     expect(mocks.hasPendingWorkspaceInvitations).not.toHaveBeenCalled();
   });
 
@@ -1478,18 +1477,12 @@ describe('web proxy api handling', () => {
   });
 
   it('keeps protected routes available when an invite is pending', async () => {
-    mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient({
-        email: 'invitee@example.com',
-        id: 'user-1',
-      })
-    );
-    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
     mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      createSessionRequest('http://localhost/settings')
+      createSessionRequest('http://localhost/personal')
     );
 
     expect(response.status).toBe(200);
@@ -1497,34 +1490,34 @@ describe('web proxy api handling', () => {
     expect(mocks.hasPendingWorkspaceInvitations).not.toHaveBeenCalled();
   });
 
-  it('redirects the legacy dashboard alias to the default workspace home', async () => {
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-    };
+  it.each([
+    ['/dashboard', '/ws-1'],
+    [
+      '/vi/settings/SeCuRiTy?x=1&x=2&settingsTab=appearance',
+      '/vi/ws-1?x=1&x=2&settingsTab=security&settingsDialog=open',
+    ],
+    [
+      '/another-workspace/settings/account/notifications?ref=email',
+      '/ws-1?ref=email&settingsDialog=open&settingsTab=notifications',
+    ],
+  ])(
+    'redirects %s to the default workspace dashboard',
+    async (path, target) => {
+      mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+      mocks.getUserDefaultWorkspace.mockResolvedValue({ id: 'ws-1' });
 
-    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
-    mocks.getUserDefaultWorkspace.mockResolvedValue({
-      id: 'ws-1',
-      personal: false,
-    });
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        createSessionRequest(`http://localhost${path}`)
+      );
 
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      createSessionRequest('http://localhost/dashboard')
-    );
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
-    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalledWith(
-      'dashboard',
-      expect.anything()
-    );
-  });
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        `http://localhost${target}`
+      );
+      expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    }
+  );
 
   it('ignores task navigation preferences when redirecting personal workspace roots', async () => {
     const workspaceConfigBuilder = {

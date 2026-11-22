@@ -69,6 +69,13 @@ satellite user menu, plus the dedicated Calendar and Tasks hosts).
   workspace, settings params are carried over. Other root query params are still
   dropped, as before.
 
+- Legacy Web bookmarks such as `/settings`, `/vi/settings/security`, and
+  `/<wsId>/settings/account/notifications` redirect to the signed-in user's
+  default dashboard with the dialog open. The redirect keeps the locale and
+  query parameters. Bare links open Profile unless they specify a tab.
+  Workspace General, Notifications, and Reports pages retain their routes.
+  Redirect coverage lives in `apps/web/src/__tests__/proxy.test.ts`.
+
 ## History
 
 - Opening a closed dialog pushes a history entry, so Back closes it and Forward

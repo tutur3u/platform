@@ -21,6 +21,10 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  buildSettingsDialogHref,
+  SHARED_SETTINGS_TAB_IDS,
+} from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -105,7 +109,10 @@ export function ColabSettings({
           <SettingsSectionBlock>
             <Button variant="outline" asChild>
               <a
-                href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
+                href={buildSettingsDialogHref(
+                  'https://tuturuuu.com/personal',
+                  SHARED_SETTINGS_TAB_IDS.profile
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
               >

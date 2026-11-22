@@ -28,7 +28,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { guardBrowserApiSession } from '@tuturuuu/utils/required-mfa-api-session';
-import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
   isPersonalWorkspace,
   isWorkspaceUuidLiteral,
@@ -58,6 +57,10 @@ import {
   applyAuthShellCacheHeaders,
   CACHEABLE_AUTH_SHELL_PATHS,
 } from './lib/auth-shell-cache';
+import {
+  legacySettingsRedirectResponse,
+  legacySettingsTab,
+} from './lib/legacy-settings-redirect';
 import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
@@ -72,7 +75,7 @@ import { withWebProxyGuards } from './lib/web-identity-abuse-guard';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { isUnknownRouteShape } from './lib/route-shape';
-import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
+import { defaultWorkspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -214,6 +217,10 @@ function isAuthProxyPublicPath(pathname: string): boolean {
 
   if (isRoadmapPublicPath(pathname)) {
     return true;
+  }
+
+  if (legacySettingsTab(pathnameWithoutLocale)) {
+    return false;
   }
 
   // USER M-6: a path that matches no known route shape renders the not-found
@@ -1112,12 +1119,21 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     return authRes;
   }
 
-  // Handle /home path - redirect to root without workspace redirect
   const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
   const activeLocalePrefix =
     pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale)
       ? `/${pathSegments[0]}`
       : '';
+  const localize = (path: string) =>
+    prependLocalePrefix(path, activeLocalePrefix);
+  const settingsResponse = await legacySettingsRedirectResponse(
+    req,
+    authRes,
+    req.nextUrl.pathname.slice(activeLocalePrefix.length),
+    localize
+  );
+  if (settingsResponse) return settingsResponse;
+
   const isHomePath =
     req.nextUrl.pathname === '/home' ||
     (pathSegments.length === 2 &&
@@ -1301,39 +1317,19 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
-  const isRootPath = req.nextUrl.pathname === '/';
-
-  const isLocaleRootPath =
-    pathSegments.length === 1 &&
-    supportedLocales.includes(pathSegments[0] as Locale);
-
   if (
-    (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
+    (req.nextUrl.pathname === '/' ||
+      (hasLocaleInPath && pathSegments.length === 1) ||
+      isDashboardRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow &&
-    hasSupabaseSessionCookie(req)
+    !isMultiAccountFlow
   ) {
-    try {
-      const supabase = await createClient();
-      const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-      if (user) {
-        const defaultWorkspace = await getUserDefaultWorkspace();
-
-        if (defaultWorkspace) {
-          const wsRedirect = NextResponse.redirect(
-            workspaceHomeRedirectUrl(defaultWorkspace, req.nextUrl, (path) =>
-              prependLocalePrefix(path, activeLocalePrefix)
-            )
-          );
-          propagateAuthCookies(authRes, wsRedirect);
-          return wsRedirect;
-        }
-      }
-    } catch (error) {
-      console.error('Error handling root path redirect:', error);
+    const url = await defaultWorkspaceHomeRedirectUrl(req, localize);
+    if (url) {
+      const response = NextResponse.redirect(url);
+      propagateAuthCookies(authRes, response);
+      return response;
     }
   }
 
