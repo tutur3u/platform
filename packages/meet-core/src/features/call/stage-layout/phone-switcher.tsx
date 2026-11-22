@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { activityTone } from './activity-tones';
 import type { ActivityMeta } from './pane-chrome';
@@ -37,6 +37,10 @@ export function PhoneSwitcher({
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const handoff = useRef(false);
+  // A handoff that never completed must not open the dialog on a later close.
+  useEffect(() => {
+    if (open) handoff.current = false;
+  }, [open]);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent

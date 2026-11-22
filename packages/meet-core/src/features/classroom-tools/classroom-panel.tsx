@@ -35,6 +35,7 @@ export function ClassroomPanel({
         kind: 'error',
         title: t('unavailable'),
         onRetry: () => void query.refetch(),
+        retrying: query.isFetching,
       }
     : query.data
       ? { kind: 'ready' }

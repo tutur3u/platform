@@ -139,6 +139,7 @@ export function QuizArenaPanel({
           kind: 'error',
           title: t('load_error'),
           onRetry: () => void query.refetch(),
+          retrying: query.isFetching,
         }
       : { kind: 'ready' };
   return (
@@ -229,6 +230,22 @@ export function QuizArenaPanel({
       state={state}
       busy={busy}
     >
+      {query.isError && query.data && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 text-sm"
+        >
+          {t('load_error')}
+          <Button
+            disabled={query.isFetching}
+            onClick={() => void query.refetch()}
+            size="sm"
+            variant="outline"
+          >
+            {t('retry')}
+          </Button>
+        </div>
+      )}
       {mutation.isError && (
         <p role="alert" className="text-destructive text-sm">
           {t(errorKey(mutation.error))}

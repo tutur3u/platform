@@ -4935,7 +4935,8 @@
           "title": "Hỏi đáp",
           "unpin": "Bỏ ghim",
           "upvote": "Bình chọn. {count} lượt bình chọn",
-          "you_voted": "Bạn đã bình chọn"
+          "you_voted": "Bạn đã bình chọn",
+          "composer_placeholder_short": "Đặt câu hỏi"
         },
         "penboard": {
           "title": "Bảng vẽ bút"

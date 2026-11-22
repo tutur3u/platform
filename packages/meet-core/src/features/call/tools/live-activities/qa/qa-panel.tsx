@@ -41,7 +41,7 @@ export function QaPanel({
   const meta = (
     <>
       <QaLiveChip />
-      <span className="hidden whitespace-nowrap text-muted-foreground text-xs @min-[420px]:inline">
+      <span className="min-w-0 truncate whitespace-nowrap text-muted-foreground text-xs">
         {t('counts', { open: counts.open, answered: counts.answered })}
       </span>
     </>
@@ -54,6 +54,7 @@ export function QaPanel({
       subtitle={meta}
       actions={<ActivityFullscreenButton onOpen={() => setFullscreen(true)} />}
       onClose={onClose}
+      fixedBody={!fullscreen}
     >
       {fullscreen ? (
         <ActivityFullscreen
@@ -75,11 +76,7 @@ export function QaPanel({
           </div>
         </ActivityFullscreen>
       ) : (
-        <QaBoard
-          view={view}
-          board={board}
-          composerClassName="-mx-4 -mb-4 px-4"
-        />
+        <QaBoard view={view} board={board} layout="pane" />
       )}
     </LiveActivityPanelFrame>
   );

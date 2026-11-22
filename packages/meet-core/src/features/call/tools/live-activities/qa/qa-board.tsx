@@ -6,6 +6,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useActivityPane } from '../../../stage-layout/activity-pane-context';
 import { useId, useState } from 'react';
 import { ToolAction } from '../../tool-ui';
 import { QaComposer } from './qa-composer';
@@ -56,13 +57,20 @@ function SettingSwitch({
 export function QaBoard({
   view,
   board,
-  composerClassName,
+  layout = 'page',
 }: {
   view: LiveQaView;
   board: Omit<QaBoardContext, 'onUploadError' | 'canAnswer' | 'isHost'>;
-  composerClassName?: string;
+  /**
+   * `pane` fills a stage pane whose body does not scroll: the controls stay
+   * on top, the questions scroll, and the composer stays at the bottom.
+   * `page` flows in a scrolling page, with the composer stuck to its end.
+   */
+  layout?: 'page' | 'pane';
 }) {
   const t = useTranslations('meet.call.live_activities.qa');
+  const short = !!useActivityPane()?.short;
+  const pane = layout === 'pane';
   const [sort, setSort] = useState<LiveQaSort>('top');
   const [moderating, setModerating] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -84,7 +92,10 @@ export function QaBoard({
   const hiddenCount = snapshot.questions.filter((q) => q.hidden).length;
   const error = localError ?? view.error;
   const allowAnonymous = !!settings?.anonymous;
-  return (
+  // In a short pane the controls scroll away with the questions, so the list
+  // gets the height.
+  const scrollsControls = pane && short;
+  const controls = (
     <>
       <div className="flex flex-wrap items-center gap-2">
         <Tabs
@@ -155,26 +166,43 @@ export function QaBoard({
           {t(`errors.${ERRORS[error] ?? 'generic'}`)}
         </p>
       ) : null}
-      {questions.length ? (
-        <ul className="space-y-3">
-          {questions.map((question) => (
-            <li key={question.id}>
-              <QaQuestionCard question={question} board={context} />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
-          {t(sort === 'answered' ? 'empty_answered' : 'empty')}
-        </p>
-      )}
+    </>
+  );
+  return (
+    <>
+      {!scrollsControls && controls}
       <div
         className={cn(
-          'sticky bottom-0 z-10 border-t bg-card py-3',
-          composerClassName
+          'space-y-3',
+          pane && '-mx-4 min-h-0 flex-1 overflow-y-auto px-4'
+        )}
+      >
+        {scrollsControls && controls}
+        {questions.length ? (
+          <ul className="space-y-3">
+            {questions.map((question) => (
+              <li key={question.id}>
+                <QaQuestionCard question={question} board={context} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
+            {t(sort === 'answered' ? 'empty_answered' : 'empty')}
+          </p>
+        )}
+      </div>
+      <div
+        className={cn(
+          'z-10 border-t py-3',
+          pane
+            ? '-mx-4 -mb-4 shrink-0 bg-card px-4'
+            : 'sticky bottom-0 bg-background'
         )}
       >
         <QaComposer
+          compact={short}
+          foldedPlaceholder={t('composer_placeholder_short')}
           meetingId={board.meetingId}
           label={t('composer_label')}
           placeholder={t('composer_placeholder')}

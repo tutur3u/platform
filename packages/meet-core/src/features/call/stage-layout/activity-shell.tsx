@@ -19,6 +19,8 @@ export type ActivityState =
       title?: string;
       description?: string;
       onRetry?: () => void;
+      /** The retry is already running. */
+      retrying?: boolean;
     };
 
 export function ActivityStatus({
@@ -83,16 +85,24 @@ export function PaneHeaderExtras({
 }
 
 /** The loading, empty and error body of an activity. Ready renders nothing. */
-export function ActivityStateView({ state }: { state: ActivityState }) {
+export function ActivityStateView({
+  state,
+  title,
+}: {
+  state: ActivityState;
+  /** Names the activity where no pane does, for the loading label. */
+  title?: string;
+}) {
   const t = useTranslations('meet.call.stage_layout');
   const pane = useActivityPane();
+  const name = pane?.title ?? title ?? '';
   switch (state.kind) {
     case 'loading':
       return (
         <div
           role="status"
           aria-busy="true"
-          aria-label={t('loading', { title: pane?.title ?? '' })}
+          aria-label={t('loading', { title: name })}
           className="flex flex-col gap-3 p-4"
         >
           <Skeleton className="h-20 w-full rounded-xl" />
@@ -120,7 +130,7 @@ export function ActivityStateView({ state }: { state: ActivityState }) {
           className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center"
         >
           <p className="font-semibold text-sm">
-            {state.title ?? t('error', { title: pane?.title ?? '' })}
+            {state.title ?? t('error', { title: name })}
           </p>
           {state.description && (
             <p className="text-muted-foreground text-sm">{state.description}</p>
@@ -131,6 +141,7 @@ export function ActivityStateView({ state }: { state: ActivityState }) {
               size="sm"
               variant="outline"
               className="h-8 gap-1.5 rounded-full px-3.5"
+              disabled={state.retrying}
               onClick={state.onRetry}
             >
               <RefreshCw className="size-4" />
@@ -194,7 +205,7 @@ export function ActivityShell({
           {children}
         </div>
       ) : (
-        <ActivityStateView state={state} />
+        <ActivityStateView state={state} title={title} />
       )}
     </section>
   );

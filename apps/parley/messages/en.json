@@ -4935,7 +4935,8 @@
           "title": "Q&A",
           "unpin": "Unpin",
           "upvote": "Upvote. {count, plural, one {# vote} other {# votes}}",
-          "you_voted": "You voted"
+          "you_voted": "You voted",
+          "composer_placeholder_short": "Ask a question"
         },
         "penboard": {
           "title": "Pen whiteboard"

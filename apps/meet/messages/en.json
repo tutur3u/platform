@@ -4773,6 +4773,7 @@
           "attachments_sign_in": "{count, plural, one {Sign in to see the attachment} other {Sign in to see # attachments}}",
           "composer_label": "Your question",
           "composer_placeholder": "Ask a question. Be specific so others can upvote it.",
+          "composer_placeholder_short": "Ask a question",
           "counter": "{count} of {max} characters",
           "counts": "{open} open · {answered} answered",
           "delete_answer": "Delete answer",
@@ -5239,7 +5240,6 @@
         "leaderboard_teams": "Teams",
         "live_indicator": "Quiz Arena (live)",
         "load_error": "Quiz Arena could not load.",
-        "loading": "Loading Quiz Arena…",
         "lock_buzzers": "Lock buzzers",
         "lock_buzzers_hint": "Stops new buzzes",
         "lock_team_wager": "Lock our wager",
@@ -5631,7 +5631,6 @@
         "waiting": "Waiting for the host to open groups."
       },
       "close_panel": "Close panel",
-      "loading": "Loading…",
       "unavailable": "This classroom tool is unavailable.",
       "whiteboard": {
         "clear": "Clear board",

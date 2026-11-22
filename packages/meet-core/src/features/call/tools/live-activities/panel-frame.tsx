@@ -11,6 +11,7 @@ export function LiveActivityPanelFrame({
   subtitle,
   actions,
   state,
+  fixedBody,
   onClose,
   children,
 }: {
@@ -21,6 +22,8 @@ export function LiveActivityPanelFrame({
   actions?: ReactNode;
   /** Shows the shared loading, empty or error body in place of `children`. */
   state?: ActivityState;
+  /** The body does not scroll; one child does, beside a footer that stays. */
+  fixedBody?: boolean;
   onClose?: () => void;
   children: ReactNode;
 }) {
@@ -34,6 +37,7 @@ export function LiveActivityPanelFrame({
       closeLabel={t('close')}
       onClose={() => onClose?.()}
       state={state}
+      fixedBody={fixedBody}
     >
       {children}
     </ActivityPanel>

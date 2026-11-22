@@ -1,17 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { isTooSmall, type SizeClass, sizeClassOf } from './layout-geometry';
+import {
+  isTooSmall,
+  SHORT_PANE_HEIGHT,
+  type SizeClass,
+  sizeClassOf,
+} from './layout-geometry';
 
 export interface PaneSize {
   sizeClass: SizeClass;
   tooSmall: boolean;
+  short: boolean;
 }
 
 /** What a pane's frame takes from the body measured inside it. */
 const PANE_CHROME = { width: 2, height: 45 };
 
-const UNMEASURED: PaneSize = { sizeClass: 'medium', tooSmall: false };
+const UNMEASURED: PaneSize = {
+  sizeClass: 'medium',
+  tooSmall: false,
+  short: false,
+};
 
 /**
  * A pane's container-query tier and whether it is below the least usable
@@ -35,10 +45,13 @@ export function usePaneSize(element: HTMLElement | null): PaneSize {
             width: box.width + PANE_CHROME.width,
             height: box.height + PANE_CHROME.height,
           }),
+        short:
+          box.height > 0 && box.height + PANE_CHROME.height < SHORT_PANE_HEIGHT,
       };
       setSize((current) =>
         current.sizeClass === next.sizeClass &&
-        current.tooSmall === next.tooSmall
+        current.tooSmall === next.tooSmall &&
+        current.short === next.short
           ? current
           : next
       );

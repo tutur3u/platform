@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType, ReactNode } from 'react';
 import { ResizableCallPanel } from '../components/resizable-call-panel';
 import {
@@ -16,19 +17,32 @@ export type { ActivityState };
  * ready shows the standard loading, empty or error body instead.
  */
 export function ActivityBody({
+  title,
   state = { kind: 'ready' },
   busy,
+  fixed = false,
   children,
 }: {
+  /** The activity's name, for the loading label. */
+  title?: string;
   state?: ActivityState;
   busy?: boolean;
+  /**
+   * The body does not scroll: its children share the height, and one of them
+   * scrolls. For a list with a footer that stays in view.
+   */
+  fixed?: boolean;
   children?: ReactNode;
 }) {
-  if (state.kind !== 'ready') return <ActivityStateView state={state} />;
+  if (state.kind !== 'ready')
+    return <ActivityStateView state={state} title={title} />;
   return (
     <div
       aria-busy={busy || undefined}
-      className="@container flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+      className={cn(
+        '@container flex min-h-0 flex-1 flex-col gap-3 p-4',
+        fixed ? 'overflow-hidden' : 'overflow-y-auto'
+      )}
     >
       {children}
     </div>
@@ -49,6 +63,7 @@ export function ActivityPanel({
   onClose,
   state,
   busy,
+  fixedBody,
   children,
 }: {
   title: string;
@@ -60,6 +75,8 @@ export function ActivityPanel({
   onClose: () => void;
   state?: ActivityState;
   busy?: boolean;
+  /** See `ActivityBody`'s `fixed`. */
+  fixedBody?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -72,7 +89,7 @@ export function ActivityPanel({
         closeLabel={closeLabel}
         onClose={onClose}
       />
-      <ActivityBody state={state} busy={busy}>
+      <ActivityBody title={title} state={state} busy={busy} fixed={fixedBody}>
         {children}
       </ActivityBody>
     </ResizableCallPanel>

@@ -62,6 +62,7 @@ export function PollsToolPanel() {
           kind: 'error',
           title: t('load_error'),
           onRetry: () => void query.refetch(),
+          retrying: query.isFetching,
         }
       : { kind: 'ready' };
 

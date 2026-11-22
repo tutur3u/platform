@@ -149,6 +149,9 @@ export function sizeClassOf(width: number): SizeClass {
   return width > 720 ? 'wide' : 'medium';
 }
 
+/** Panes shorter than this fold composers and footers into one line. */
+export const SHORT_PANE_HEIGHT = 420;
+
 export const MIN_USABLE_WIDTH = 280;
 export const MIN_USABLE_HEIGHT = 220;
 

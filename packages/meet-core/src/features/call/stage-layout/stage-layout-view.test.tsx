@@ -19,6 +19,7 @@ import {
 import { ActivityShell } from './activity-shell';
 import { useActivityActive } from './activity-pane-context';
 import type { ViewportTier } from './layout-model';
+import { PhoneSwitcher } from './phone-switcher';
 import { StageLayoutView } from './stage-layout-view';
 import { useStageLayout } from './use-stage-layout';
 
@@ -491,4 +492,48 @@ it('counts the pane frame toward the 280 by 220 minimum', () => {
       .querySelector(`[data-activity-id="${id}"]`)
       ?.textContent?.includes('Needs more room');
   expect([small('a'), small('b'), small('c')]).toEqual([false, true, true]);
+});
+
+it('tints the phone switcher rows with each activity tone', () => {
+  phone(true);
+  open('tool:polls', 'tool:timers');
+  fireEvent.click(screen.getByRole('button', { name: 'tool:timers' }));
+  const sheet = screen.getByRole('dialog', { name: 'Open activities' });
+  const tiles = [...sheet.querySelectorAll('li span[aria-hidden="true"]')];
+  expect(
+    tiles.map(
+      (tile) => /bg-dynamic-(blue|orange)\/15/.exec(tile.className)?.[1]
+    )
+  ).toEqual(['blue', 'orange']);
+});
+
+it('does not open the Activities dialog for a handoff that never completed', async () => {
+  const onBrowse = vi.fn();
+  const items = [
+    { id: 'a', title: 'a', icon: () => null },
+    { id: 'b', title: 'b', icon: () => null },
+  ];
+  const tree = (open: boolean) => (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <PhoneSwitcher
+        open={open}
+        onOpenChange={() => {}}
+        items={items}
+        currentId="a"
+        onSelect={() => {}}
+        onBrowse={onBrowse}
+      />
+    </NextIntlClientProvider>
+  );
+  const view = render(tree(true));
+  // The parent ignores the close, so the handoff stays pending...
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Open another activity' })
+  );
+  // ...and opening the sheet again clears it before a later close.
+  view.rerender(tree(false));
+  view.rerender(tree(true));
+  view.rerender(tree(false));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(onBrowse).not.toHaveBeenCalled();
 });

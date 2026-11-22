@@ -67,8 +67,18 @@ it('tints every activity from the shared tokens and never with a raw hue', () =>
   ];
   for (const id of ids) {
     const tone = activityTone(id);
-    expect(tone).toMatch(/bg-dynamic-[a-z]+\/15 text-dynamic-[a-z]+/);
+    // One hue for the tile and its icon, from the shared tokens.
+    expect(tone).toMatch(/^bg-dynamic-([a-z]+)\/15 text-dynamic-\1$/);
     expect(tone).not.toMatch(/-(red|green|blue|slate|gray)-\d/);
   }
+  expect(activityTone('tool:polls')).toBe(
+    'bg-dynamic-blue/15 text-dynamic-blue'
+  );
+  expect(activityTone('tool:timers')).toBe(
+    'bg-dynamic-orange/15 text-dynamic-orange'
+  );
+  expect(activityTone('tool:live-qa')).toBe(
+    'bg-dynamic-purple/15 text-dynamic-purple'
+  );
   expect(activityTone('unknown')).toBe('bg-muted text-muted-foreground');
 });

@@ -2,9 +2,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import messages from '../../../../apps/meet/messages/en.json';
+import vi from '../../../../apps/meet/messages/vi.json';
 
 // Every text field in the activity panels carries a placeholder with a value,
-// and a translated one names a key the English bundle defines. The panels are
+// and a translated one names a key the English and Vietnamese bundles define. The panels are
 // the tools, the polls and quiz components, the forms launcher, the classroom
 // tools and the document tabs. Choice controls (radio, checkbox), native
 // selects that always hold a value, and a field that spreads shared props
@@ -19,6 +20,8 @@ const FILES = [
   join(FEATURES, 'call/components/polls-panel.tsx'),
   join(FEATURES, 'call/components/quiz-arena-builder.tsx'),
   join(FEATURES, 'call/components/document-tabs.tsx'),
+  join(FEATURES, 'call/components/quiz-arena-host-controls.tsx'),
+  join(FEATURES, 'call/components/quiz-arena-play.tsx'),
 ];
 
 function sources(dir: string): string[] {
@@ -41,7 +44,7 @@ function tagAt(source: string, start: number) {
   return source.slice(start);
 }
 
-function lookup(path: string): unknown {
+function lookup(path: string, bundle: unknown = messages): unknown {
   return path
     .split('.')
     .reduce<unknown>(
@@ -49,9 +52,13 @@ function lookup(path: string): unknown {
         node && typeof node === 'object'
           ? (node as Record<string, unknown>)[part]
           : undefined,
-      messages
+      bundle
     );
 }
+
+/** A key both languages define as text. */
+const defined = (path: string) =>
+  typeof lookup(path) === 'string' && typeof lookup(path, vi) === 'string';
 
 /** What the placeholder expression asks for: a literal or translation keys. */
 function placeholderOf(tag: string) {
@@ -98,14 +105,14 @@ it('gives every text field a valued placeholder that its bundle defines', () => 
       ].map((m) => m[1] ?? '');
       for (const key of found.keys) {
         const candidates = [key, ...namespaces.map((ns) => `${ns}.${key}`)];
-        if (!candidates.some((path) => typeof lookup(path) === 'string'))
+        if (!candidates.some(defined))
           unresolved.push(`${where(match.index)} ${key}`);
       }
       for (const name of found.copy ?? []) {
         const key = new RegExp(`${name}: t\\('(\\w+)'\\)`).exec(
           copySource
         )?.[1];
-        if (!key || typeof lookup(`meet.call.forms.${key}`) !== 'string')
+        if (!key || !defined(`meet.call.forms.${key}`))
           unresolved.push(`${where(match.index)} copy.${name}`);
       }
     }

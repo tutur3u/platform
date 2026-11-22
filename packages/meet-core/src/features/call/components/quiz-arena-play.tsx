@@ -176,7 +176,7 @@ export function AnswerArea({
     tile.results?.tally.reduce((sum, { count }) => sum + count, 0) ?? 0;
   if (question.type === 'single_choice')
     return (
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 @min-[360px]:grid-cols-2">
         {(question.options ?? []).map((option, index) => {
           const chosen =
             tile.myAnswer &&

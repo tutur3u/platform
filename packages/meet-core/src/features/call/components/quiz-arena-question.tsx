@@ -131,7 +131,7 @@ export function QuizArenaQuestion({
       )}
 
       {buzzMode && tile.status === 'active' && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="flex flex-col gap-3 @min-[360px]:flex-row @min-[360px]:items-start">
           <BuzzQueue view={view} tile={tile} busy={busy} onAction={onAction} />
           {!canManage && (
             <div className="flex flex-col items-center gap-1">
@@ -193,7 +193,7 @@ function FinalTeams({
 }) {
   const t = useTranslations('meet.call.quizArena');
   return (
-    <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid gap-2 @min-[360px]:grid-cols-2 @min-[720px]:grid-cols-3">
       {view.teams.map((team, index) => {
         const locked = tile.wageredTeamIds.includes(team.id);
         return (

@@ -33,6 +33,8 @@ export function QaComposer({
   leading,
   extra,
   autoFocus,
+  compact = false,
+  foldedPlaceholder,
   onCancel,
   cancelLabel,
   onSubmit,
@@ -50,6 +52,13 @@ export function QaComposer({
   leading?: ReactNode;
   extra?: ReactNode;
   autoFocus?: boolean;
+  /**
+   * A short pane folds an idle composer into one line so the questions keep
+   * the room; it opens on focus and stays open while there is a draft.
+   */
+  compact?: boolean;
+  /** A one-line prompt for the folded state, where the full one would wrap. */
+  foldedPlaceholder?: string;
   onCancel?: () => void;
   cancelLabel?: string;
   onSubmit: (text: string, attachmentIds: string[]) => void;
@@ -61,6 +70,8 @@ export function QaComposer({
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  const [within, setWithin] = useState(false);
+  const folded = compact && !within && !draft && files.length === 0;
   const imageInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploaded = useRef(new Map<File, Upload>());
@@ -121,13 +132,18 @@ export function QaComposer({
   return (
     <form
       className="space-y-2"
+      onFocus={() => setWithin(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setWithin(false);
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}
     >
       <div className="flex items-start gap-2.5">
-        {leading}
+        {!folded && leading}
         <div className="min-w-0 flex-1 space-y-2">
           <label htmlFor={textId} className="sr-only">
             {label}
@@ -136,11 +152,18 @@ export function QaComposer({
             id={textId}
             value={draft}
             maxLength={maxLength}
-            rows={2}
+            rows={folded ? 1 : 2}
             autoFocus={autoFocus}
-            placeholder={placeholder}
+            placeholder={
+              folded && foldedPlaceholder ? foldedPlaceholder : placeholder
+            }
             aria-describedby={counterId}
-            className="min-h-16 resize-none text-sm"
+            className={cn(
+              'resize-none text-sm',
+              folded
+                ? 'h-9 min-h-9 overflow-hidden [field-sizing:fixed]'
+                : 'min-h-16'
+            )}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -178,6 +201,17 @@ export function QaComposer({
             </ul>
           ) : null}
         </div>
+        {folded && (
+          <Button
+            type="submit"
+            size="icon"
+            className="size-9 shrink-0 rounded-full pointer-coarse:size-11"
+            aria-label={submitLabel}
+            disabled
+          >
+            <Send className="size-4" />
+          </Button>
+        )}
       </div>
       <input
         ref={imageInput}
@@ -200,7 +234,9 @@ export function QaComposer({
           event.target.value = '';
         }}
       />
-      <div className="flex flex-wrap items-center gap-1">
+      <div
+        className={cn('flex flex-wrap items-center gap-1', folded && 'hidden')}
+      >
         {canAttach ? (
           <>
             <ToolIconAction

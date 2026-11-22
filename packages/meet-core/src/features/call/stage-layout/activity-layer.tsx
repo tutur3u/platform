@@ -46,7 +46,7 @@ export function ActivityLayer({
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const [element, setElement] = useState<HTMLDivElement | null>(null);
-  const { sizeClass, tooSmall } = usePaneSize(element);
+  const { sizeClass, tooSmall, short } = usePaneSize(element);
   const active = visible && !tooSmall;
   const value = useMemo<ActivityPaneValue>(
     () => ({
@@ -55,6 +55,7 @@ export function ActivityLayer({
       active,
       visible,
       sizeClass,
+      short,
       maximized,
       headerSlot: slot,
       toggleMaximize: onToggleMaximize,
@@ -66,6 +67,7 @@ export function ActivityLayer({
       active,
       visible,
       sizeClass,
+      short,
       maximized,
       slot,
       onToggleMaximize,

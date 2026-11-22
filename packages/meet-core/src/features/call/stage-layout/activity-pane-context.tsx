@@ -13,6 +13,8 @@ export interface ActivityPaneValue {
   visible: boolean;
   /** Container-query tier of the pane's own width. */
   sizeClass: SizeClass;
+  /** The pane is short: activities fold secondary controls to keep content. */
+  short: boolean;
   maximized: boolean;
   /** The pane header's slot for this activity's status and actions. */
   headerSlot: HTMLElement | null;

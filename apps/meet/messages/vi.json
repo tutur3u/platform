@@ -4773,6 +4773,7 @@
           "attachments_sign_in": "Đăng nhập để xem {count} tệp đính kèm",
           "composer_label": "Câu hỏi của bạn",
           "composer_placeholder": "Đặt câu hỏi. Hỏi cụ thể để mọi người có thể bình chọn.",
+          "composer_placeholder_short": "Đặt câu hỏi",
           "counter": "{count}/{max} ký tự",
           "counts": "{open} đang mở · {answered} đã trả lời",
           "delete_answer": "Xóa câu trả lời",
@@ -5239,7 +5240,6 @@
         "leaderboard_teams": "Đội",
         "live_indicator": "Đấu trường kiến thức (đang diễn ra)",
         "load_error": "Không tải được Đấu trường kiến thức.",
-        "loading": "Đang tải Đấu trường kiến thức…",
         "lock_buzzers": "Khóa chuông",
         "lock_buzzers_hint": "Ngừng nhận lượt bấm mới",
         "lock_team_wager": "Khóa mức cược của đội",
@@ -5631,7 +5631,6 @@
         "waiting": "Đang chờ chủ trì mở các nhóm."
       },
       "close_panel": "Đóng bảng",
-      "loading": "Đang tải…",
       "unavailable": "Công cụ lớp học này hiện không khả dụng.",
       "whiteboard": {
         "clear": "Xóa bảng",
