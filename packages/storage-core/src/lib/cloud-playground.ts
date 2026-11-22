@@ -363,7 +363,11 @@ const checkResult = z.object({
 });
 export type CloudPlaygroundCheckResult = z.infer<typeof checkResult>;
 
-/** A slow compile is waited out, not failed; Java starts a JVM first. */
+/**
+ * A slow compile is waited out, not failed; Java starts a JVM first. These
+ * must stay above the checker's own limits (8 s for C and C++, 12 s for
+ * Java), so the checker reports a timeout before this call gives up.
+ */
 const CHECK_TIMEOUT_MS = { c: 10_000, cpp: 10_000, java: 15_000 } as const;
 
 /** Compile-only diagnostics for unsaved room files; no program runs. */

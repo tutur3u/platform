@@ -120,15 +120,13 @@ export function useWorkbenchRun({
         resolve(false);
       };
     });
+  // Request IDs already sent: a Retry reuses its ID, which the service may have accepted.
+  const sentIds = useRef(new Set<string>());
   const send = async (
     input: { operation: 'run' | 'stop'; stdin: string; runId?: string },
     requestId: string
   ) => {
     const { operation, stdin } = input;
-    if (operation === 'run' && owner)
-      await checkpointRoom().catch((error: unknown) => {
-        throw new WorkbenchStepError('save', error);
-      });
     const payload = { operation, requestId, stdin };
     return execution
       ? execution.run({ ...payload, runId: input.runId })
@@ -144,7 +142,14 @@ export function useWorkbenchRun({
       const { operation } = input;
       const startedAt = Date.now();
       let requestId = input.requestId;
-      let conflictRetried = false;
+      // A conflicting Retry is shown, never re-sent under a new ID: the first
+      // attempt may already be running, and sending again would run twice.
+      let conflictRetried = sentIds.current.has(input.requestId);
+      sentIds.current.add(input.requestId);
+      if (operation === 'run' && owner)
+        await checkpointRoom().catch((error: unknown) => {
+          throw new WorkbenchStepError('save', error);
+        });
       let busyRetried = false;
       let queued: { runId: string };
       for (;;) {
@@ -152,8 +157,7 @@ export function useWorkbenchRun({
           queued = await send(input, requestId);
           break;
         } catch (error) {
-          if (error instanceof WorkbenchStepError) throw error;
-          // A reused request ID that no longer matches: send once more as a new request.
+          // A fresh request that the service reports as a conflict: send once more as a new request.
           if (
             errorCode(error) === 'PLAYGROUND_REQUEST_CONFLICT' &&
             !conflictRetried

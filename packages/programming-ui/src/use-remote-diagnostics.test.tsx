@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   CHECK_IDLE_MS,
   CHECK_LIMITS,
+  CHECK_WARMING_BUDGET_MS,
   type CodeDiagnostic,
   MARKER_SEVERITY,
   type WorkbenchCheck,
@@ -34,8 +35,20 @@ type Payload = Parameters<WorkbenchCheck>[0];
 
 function mount(
   respond: (payload: Payload, signal: AbortSignal) => Promise<unknown>,
-  initial: { content?: string; language?: PlaygroundLanguage } = {}
+  initial: {
+    content?: string | null;
+    language?: PlaygroundLanguage;
+    localOnly?: boolean;
+  } = {}
 ) {
+  const listeners = new Set<() => void>();
+  const localEdits = initial.localOnly
+    ? (onEdit: () => void) => {
+        listeners.add(onEdit);
+        return () => void listeners.delete(onEdit);
+      }
+    : undefined;
+  const typed = () => act(() => listeners.forEach((listener) => listener()));
   const calls: { payload: Payload; signal: AbortSignal }[] = [];
   const check = vi.fn((payload: Payload, signal: AbortSignal) => {
     calls.push({ payload, signal });
@@ -51,27 +64,29 @@ function mount(
       content,
       language,
     }: {
-      content: string;
+      content: string | null;
       language: PlaygroundLanguage;
     }) =>
       useRemoteDiagnostics({
         roomKey: 'room',
         language,
-        files: [{ path: 'main.c', content }],
+        files: content === null ? [] : [{ path: 'main.c', content }],
         check,
         sink,
+        localEdits,
       }),
     {
       wrapper,
       initialProps: {
-        content: initial.content ?? 'int main(){}',
+        content:
+          initial.content === undefined ? 'int main(){}' : initial.content,
         language: initial.language ?? 'c',
       },
     }
   );
-  const edit = (content: string, language: PlaygroundLanguage = 'c') =>
+  const edit = (content: string | null, language: PlaygroundLanguage = 'c') =>
     hook.rerender({ content, language });
-  return { ...hook, calls, sink, edit };
+  return { ...hook, calls, sink, edit, typed };
 }
 // A little past the idle delay, so React Query's batched notifications land too.
 const IDLE = CHECK_IDLE_MS.c;
@@ -139,18 +154,40 @@ it('skips an unchanged room and aborts the check in flight on a new edit', async
   expect(calls).toHaveLength(2);
 });
 
-it('retries a warming checker quietly three times, then pauses checks', async () => {
+it('retries a warming checker quietly for 20 s, then pauses checks', async () => {
   const { result, calls, edit } = mount(() =>
     Promise.reject(refused(503, 'PLAYGROUND_WARMING', 2))
   );
   await idle();
   expect(result.current).toEqual({ kind: 'checking' });
-  await idle(2000 * 3);
-  expect(calls).toHaveLength(4);
+  await idle(CHECK_WARMING_BUDGET_MS);
+  // One attempt every 2 s from the first, the last at 20 s.
+  expect(calls).toHaveLength(11);
   expect(result.current).toEqual({ kind: 'paused' });
   edit('int x;');
   await idle(IDLE * 2);
-  expect(calls).toHaveLength(4);
+  expect(calls).toHaveLength(11);
+});
+
+it('resumes after an unavailable pause of at least a minute, on the next edit', async () => {
+  let unavailable = true;
+  const { result, calls, edit } = mount((payload) =>
+    unavailable
+      ? Promise.reject(refused(503, 'PLAYGROUND_UNAVAILABLE', 30))
+      : ok(payload)
+  );
+  await idle();
+  expect(result.current).toEqual({ kind: 'paused' });
+  await idle(50_000);
+  expect(result.current).toEqual({ kind: 'paused' });
+  await idle(10_000);
+  // The pause ended, but the paused edit is not sent again on its own.
+  expect(calls).toHaveLength(1);
+  unavailable = false;
+  edit('int y;');
+  await idle();
+  expect(calls).toHaveLength(2);
+  expect(result.current).toEqual({ kind: 'ready', problems: 0 });
 });
 
 it('pauses on an unavailable checker until the language changes, and clears markers then', async () => {
@@ -317,4 +354,36 @@ it('pauses once on an unavailable service and sends no further checks', async ()
   await idle(IDLE * 4);
   expect(calls).toHaveLength(1);
   expect(result.current).toEqual({ kind: 'paused' });
+});
+
+it('checks only after a local edit, never for a change that arrives from the room', async () => {
+  const { result, calls, edit, typed } = mount((payload) => ok(payload), {
+    localOnly: true,
+  });
+  await idle(IDLE * 2);
+  expect(calls).toHaveLength(0);
+  edit('int remote(){}');
+  await idle(IDLE * 2);
+  expect(calls).toHaveLength(0);
+  expect(result.current).toEqual({ kind: 'off' });
+  await typed();
+  edit('int local(){}');
+  await idle();
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.payload.files[0]!.content).toBe('int local(){}');
+  edit('int remote_again(){}');
+  await idle(IDLE * 2);
+  expect(calls).toHaveLength(1);
+});
+
+it('treats an empty room as idle: no check, no markers cleared, no size notice', async () => {
+  const { result, calls, sink, edit } = mount((payload) => ok(payload));
+  await idle();
+  expect(calls).toHaveLength(1);
+  sink.clear.mockClear();
+  edit(null);
+  await idle(IDLE * 2);
+  expect(calls).toHaveLength(1);
+  expect(sink.clear).not.toHaveBeenCalled();
+  expect(result.current).toEqual({ kind: 'off' });
 });

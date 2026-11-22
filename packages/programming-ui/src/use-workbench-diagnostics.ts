@@ -38,12 +38,14 @@ export function useWorkbenchDiagnostics({
   files,
   check,
   enabled,
+  localEdits,
 }: {
   roomKey: string;
   language: PlaygroundLanguage | undefined;
   files: CheckFiles;
   check?: WorkbenchCheck;
   enabled: boolean;
+  localEdits?: (onEdit: () => void) => () => void;
 }): DiagnosticsStatus {
   const provider = enabled ? diagnosticsProvider(language, !!check) : null;
   const script = useScriptProblems(roomKey, files, provider === 'script');
@@ -54,6 +56,7 @@ export function useWorkbenchDiagnostics({
     check,
     sink: monacoCheckMarkers,
     enabled: provider === 'remote',
+    localEdits,
   });
   return provider === 'script' ? { kind: 'ready', problems: script } : remote;
 }

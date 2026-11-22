@@ -39,6 +39,7 @@ type Payload = Parameters<
   NonNullable<Parameters<typeof useWorkbenchRun>[0]['execution']>['run']
 >[0];
 
+const checkpoint = vi.fn(async () => undefined);
 function mount(
   run: (payload: Payload) => Promise<{ runId: string }>,
   read: (runId: string) => Promise<Partial<PlaygroundExecutionResult>> = async (
@@ -65,7 +66,7 @@ function mount(
           },
           read: read as never,
         },
-        checkpoint: vi.fn(async () => undefined),
+        checkpoint,
         problem: false,
         owner: true,
         stdin: '',
@@ -114,7 +115,7 @@ it('waits once for a free runner under a new request id, then asks', async () =>
     step: 'run',
     reason: 'busy',
   });
-  // The manual retry does not wait again on its own.
+  // A manual Retry gets its own single wait and resend.
   act(() => result.current.run.mutate(result.current.run.variables!));
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10);
@@ -273,4 +274,33 @@ it('cancels the wait for a free runner when Stop is pressed, without a failure o
     await vi.advanceTimersByTimeAsync(30_000);
   });
   expect(payloads.map((payload) => payload.operation)).toEqual(['run']);
+});
+
+it('saves the room once for a Run that waits for a runner', async () => {
+  vi.useFakeTimers();
+  checkpoint.mockClear();
+  const { result, payloads } = mount(async () => {
+    throw refused(429, 'PLAYGROUND_BUSY', 2);
+  });
+  act(() => result.current.runOperation('run'));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2500);
+  });
+  expect(payloads).toHaveLength(2);
+  expect(checkpoint).toHaveBeenCalledTimes(1);
+});
+
+it('shows a conflicting manual Retry instead of sending it again under a new id', async () => {
+  const { result, payloads } = mount(async () => {
+    throw refused(409, 'PLAYGROUND_REQUEST_CONFLICT');
+  });
+  act(() => result.current.runOperation('run'));
+  await waitFor(() => expect(result.current.run.isError).toBe(true));
+  // The fresh Run was re-sent once; the Retry reuses its ID and is not.
+  expect(payloads).toHaveLength(2);
+  act(() => result.current.run.mutate(result.current.run.variables!));
+  await waitFor(() => expect(payloads).toHaveLength(3));
+  await waitFor(() => expect(result.current.run.isError).toBe(true));
+  expect(payloads).toHaveLength(3);
+  expect(payloads[2]!.requestId).toBe(payloads[0]!.requestId);
 });

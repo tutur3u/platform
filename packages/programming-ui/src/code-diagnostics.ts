@@ -32,10 +32,17 @@ export const CHECK_IDLE_MS: Readonly<Record<'c' | 'cpp' | 'java', number>> = {
 };
 export const checkIdleMs = (language: PlaygroundLanguage | undefined) =>
   CHECK_IDLE_MS[language as keyof typeof CHECK_IDLE_MS] ?? CHECK_IDLE_MS.c;
-/** A warming checker is retried quietly this many times before checks pause. */
-export const CHECK_WARMING_RETRIES = 3;
+/**
+ * A warming checker is retried quietly for this long, matching its container
+ * warm-up, before checks pause. Every attempt is charged to the room's check
+ * quota, so the budget is time rather than a count.
+ */
+export const CHECK_WARMING_BUDGET_MS = 20_000;
+/** An unavailable checker pauses checks for at least this long. */
+export const CHECK_PAUSE_MIN_S = 60;
 export const CHECK_LIMITS = {
   files: 20,
+  pathLength: 240,
   fileBytes: 128 * 1024,
   totalBytes: 200 * 1024,
 };
@@ -89,23 +96,28 @@ export function checkHash(language: string, files: CheckFiles) {
 }
 
 const encoder = new TextEncoder();
-export function withinCheckLimits(files: CheckFiles) {
-  if (files.length === 0 || files.length > CHECK_LIMITS.files) return false;
+/** An empty room has nothing to check; one over the limits is never sent. */
+export function checkSize(files: CheckFiles): 'empty' | 'ok' | 'large' {
+  if (files.length === 0) return 'empty';
+  if (files.length > CHECK_LIMITS.files) return 'large';
   let total = 0;
   for (const file of files) {
+    if (file.path.length > CHECK_LIMITS.pathLength) return 'large';
     const size = encoder.encode(file.content).length;
-    if (size > CHECK_LIMITS.fileBytes) return false;
+    if (size > CHECK_LIMITS.fileBytes) return 'large';
     total += size;
   }
-  return total <= CHECK_LIMITS.totalBytes;
+  return total <= CHECK_LIMITS.totalBytes ? 'ok' : 'large';
 }
+export const withinCheckLimits = (files: CheckFiles) =>
+  checkSize(files) === 'ok';
 
 /** What a refused or failed check means for the next one. */
 export type CheckRefusal =
   | { kind: 'warming'; retryAfterSeconds: number }
   | { kind: 'busy'; retryAfterSeconds: number }
   | { kind: 'quota'; retryAfterSeconds: number }
-  | { kind: 'unavailable' }
+  | { kind: 'unavailable'; retryAfterSeconds: number }
   | { kind: 'conflict' }
   | { kind: 'superseded' }
   | { kind: 'unsupported' }
@@ -117,6 +129,7 @@ export function checkRefusal(error: unknown): CheckRefusal {
     return { kind: 'aborted' };
   const source = (error && typeof error === 'object' ? error : {}) as {
     name?: unknown;
+    message?: unknown;
     status?: unknown;
     code?: unknown;
     retryAfter?: unknown;
@@ -134,16 +147,24 @@ export function checkRefusal(error: unknown): CheckRefusal {
     case 'PLAYGROUND_QUOTA':
       return { kind: 'quota', retryAfterSeconds: after(60) };
     case 'PLAYGROUND_UNAVAILABLE':
-      return { kind: 'unavailable' };
+      return { kind: 'unavailable', retryAfterSeconds: after(30) };
     case 'PLAYGROUND_REQUEST_CONFLICT':
       return { kind: 'conflict' };
     case 'PLAYGROUND_SUPERSEDED':
       return { kind: 'superseded' };
   }
-  // Not deployed yet (404/405) or a language the checker does not take (400).
-  if (status === 400 || status === 404 || status === 405)
+  // Not deployed yet (404/405), or a 400 that says the language is not taken;
+  // any other 400 is a request problem that the next edit may not repeat.
+  if (status === 404 || status === 405) return { kind: 'unsupported' };
+  if (
+    status === 400 &&
+    /language.*(unsupported|not supported)|unsupported language/i.test(
+      String(source.message)
+    )
+  )
     return { kind: 'unsupported' };
-  if (status === 503) return { kind: 'unavailable' };
+  if (status === 503)
+    return { kind: 'unavailable', retryAfterSeconds: after(30) };
   return { kind: 'failed' };
 }
 

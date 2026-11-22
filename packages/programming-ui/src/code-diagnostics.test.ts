@@ -5,6 +5,7 @@ import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
 import { expect, it } from 'vitest';
 import {
   CHECK_LIMITS,
+  checkSize,
   checkHash,
   checkRefusal,
   diagnosticsProvider,
@@ -65,6 +66,14 @@ it('keeps checks within the file count and size limits', () => {
   });
   expect(withinCheckLimits([file('x')])).toBe(true);
   expect(withinCheckLimits([])).toBe(false);
+  expect(checkSize([])).toBe('empty');
+  expect(checkSize([file('x')])).toBe('ok');
+  expect(
+    checkSize([{ path: 'p'.repeat(CHECK_LIMITS.pathLength + 1), content: 'x' }])
+  ).toBe('large');
+  expect(
+    checkSize([{ path: 'p'.repeat(CHECK_LIMITS.pathLength), content: 'x' }])
+  ).toBe('ok');
   expect(
     withinCheckLimits(
       Array.from({ length: CHECK_LIMITS.files + 1 }, (_, i) => file('x', i))
@@ -175,8 +184,15 @@ it('reads the check refusal envelope and treats a missing endpoint as unsupporte
   expect(checkRefusal(refused(409, 'PLAYGROUND_REQUEST_CONFLICT')).kind).toBe(
     'conflict'
   );
-  for (const status of [400, 404, 405])
+  for (const status of [404, 405])
     expect(checkRefusal(refused(status)).kind).toBe('unsupported');
+  // Only a 400 that names the language is unsupported; any other is transient.
+  expect(checkRefusal(refused(400)).kind).toBe('failed');
+  expect(
+    checkRefusal(
+      Object.assign(new Error('Unsupported language'), { status: 400 })
+    ).kind
+  ).toBe('unsupported');
   expect(checkRefusal(new DOMException('stopped', 'AbortError')).kind).toBe(
     'aborted'
   );

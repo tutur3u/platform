@@ -9,8 +9,8 @@ import { WorkbenchEditorStatus } from './workbench-editor-status';
 afterEach(cleanup);
 const t = messages.programmingPlayground;
 
-function footer(diagnostics?: DiagnosticsStatus) {
-  render(
+function ui(diagnostics?: DiagnosticsStatus) {
+  return (
     <NextIntlClientProvider locale="en" messages={messages}>
       <WorkbenchEditorStatus
         language="cpp"
@@ -19,21 +19,38 @@ function footer(diagnostics?: DiagnosticsStatus) {
       />
     </NextIntlClientProvider>
   );
+}
+function footer(diagnostics?: DiagnosticsStatus) {
+  render(ui(diagnostics));
   return screen.getByRole('status');
 }
 
-it('says whether problems are being checked, found or paused', () => {
-  expect(footer({ kind: 'checking' }).textContent).toBe(t.diagnosticsChecking);
+it('shows and announces whether problems were found, paused or too large', () => {
+  for (const [status, text] of [
+    [{ kind: 'ready', problems: 2 }, '2 problems'],
+    [{ kind: 'ready', problems: 0 }, 'No problems'],
+    [{ kind: 'paused' }, t.diagnosticsPaused],
+    [{ kind: 'tooLarge' }, t.diagnosticsTooLarge],
+  ] as const) {
+    expect(footer(status).textContent).toBe(text);
+    expect(screen.getAllByText(text)).toHaveLength(2);
+    cleanup();
+  }
+});
+
+it('shows Checking only visually and keeps the last announcement meanwhile', () => {
+  const { rerender } = render(ui({ kind: 'ready', problems: 2 }));
+  const live = screen.getByRole('status');
+  expect(live.textContent).toBe('2 problems');
+  rerender(ui({ kind: 'checking' }));
+  expect(screen.getByText(t.diagnosticsChecking)).toBeTruthy();
+  expect(live.textContent).toBe('2 problems');
+  rerender(ui({ kind: 'ready', problems: 2 }));
+  expect(live.textContent).toBe('2 problems');
+  rerender(ui({ kind: 'ready', problems: 1 }));
+  expect(live.textContent).toBe('1 problem');
   cleanup();
-  expect(footer({ kind: 'ready', problems: 2 }).textContent).toBe('2 problems');
-  cleanup();
-  expect(footer({ kind: 'ready', problems: 0 }).textContent).toBe(
-    'No problems'
-  );
-  cleanup();
-  expect(footer({ kind: 'paused' }).textContent).toBe(t.diagnosticsPaused);
-  cleanup();
-  expect(footer({ kind: 'tooLarge' }).textContent).toBe(t.diagnosticsTooLarge);
+  expect(footer({ kind: 'checking' }).textContent).toBe('');
 });
 
 it('shows nothing about problems where no checker applies', () => {

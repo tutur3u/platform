@@ -2448,8 +2448,10 @@ Learn uses the same workbench without the meeting-only controls.
     own.
   - `PLAYGROUND_QUOTA` shows a card that says when to try again ("Try again in
     N min.") and leaves Run enabled.
-  - `PLAYGROUND_REQUEST_CONFLICT` is sent once more under a new request ID with
-    no notice.
+  - `PLAYGROUND_REQUEST_CONFLICT` on a fresh Run is sent once more under a new
+    request ID with no notice. A conflict on Retry is shown, never re-sent,
+    because the first attempt may already be running. The room is saved once
+    per Run, before the first send, not again for the wait's resend.
   - A read with `reason: 'sandbox_failed'` shows "Run couldn't start" with
     Retry rather than an exit code.
 - **Editor diagnostics.** The editor footer shows the problem count for the
@@ -2460,26 +2462,37 @@ Learn uses the same workbench without the meeting-only controls.
     because a playground runs on Node without installed packages. JavaScript
     reports syntax errors only.
   - C, C++ and Java problems come from the room's `?check` endpoint (compiler
-    diagnostics, nothing runs). A check starts 1.5 seconds after the last edit
-    (2.5 seconds for Java) while the panel is mounted and the page is visible.
-    The server waits up to 10 seconds for a C or C++ check and 15 seconds for a
-    Java check, and the footer stays on "Checking…" meanwhile; a slow check is
-    never reported as a failure. An edit aborts the check
-    in flight, and an unchanged room is not checked twice. Limits are enforced
-    in the browser: at most 20 files, 128 KiB per file and 200 KiB in total;
-    over them, markers from the `playground-check` owner are cleared and the
-    footer says "Too large to check".
-  - A warming checker is retried quietly up to three times (each attempt,
-    including a retry under the same request ID, costs one unit of the check
-    quota) and then counts as unavailable. Unavailable pauses checks ("Checks paused") until the language
-    changes or the panel reopens; a quota refusal pauses them until its retry
-    time; busy waits as told, up to three times per edit; a conflict is retried
-    once; a superseded check is ignored. While Meet does not use Cloudflare
-    execution every check answers 503 `PLAYGROUND_UNAVAILABLE`: the footer
-    shows "Checks paused" once, with no error notice and no further requests
-    until the language changes or the panel reopens. A 400, 404 or 405 turns checking off
-    without a message, for a checker that is not deployed or does not take the
-    language.
+    diagnostics, nothing runs). Only an edit made in this browser starts a
+    check, 1.5 seconds after the last keystroke (2.5 seconds for Java) while
+    the panel is mounted and the page is visible. A change that arrives from
+    another participant never does: every check is charged to the room's
+    quota, so each participant's markers come from their own edits and stay as
+    they are when someone else types. An edit aborts the check in flight, and
+    an unchanged room is not checked twice.
+  - The server waits up to 10 seconds for a C or C++ check and 15 seconds for
+    a Java check (above the checker's own 8 and 12 second limits), and the
+    footer stays on "Checking…" meanwhile; a slow check is never reported as a
+    failure.
+  - Limits are enforced in the browser: at most 20 files, 240 characters per
+    path, 128 KiB per file and 200 KiB in total. Over them, markers from the
+    `playground-check` owner are cleared and the footer says "Too large to
+    check". A room with no files is idle: nothing is checked and no markers
+    change.
+  - A warming checker is retried quietly for up to 20 seconds in total (every
+    attempt, including a retry, costs one unit of the check quota), then
+    counts as unavailable. Unavailable pauses checks ("Checks paused") for
+    the longer of its retry time and one minute, and a quota refusal for its
+    retry time; the next edit made in this browser resumes them, and the
+    paused edit is not sent again on its own. Busy waits as told, up to three
+    times per edit; a conflict is retried once; a superseded check is ignored.
+    While Meet does not use Cloudflare execution every check answers 503
+    `PLAYGROUND_UNAVAILABLE`: the footer shows "Checks paused" once, with no
+    error notice and no further requests until the pause ends and the person
+    edits again. A 404 or 405, or a 400 that says the language is not
+    supported, turns checking off without a message; any other 400 is treated
+    as a failed check and keeps the last markers.
+  - The footer's status is visual while a check runs; assistive technology
+    hears the problem count only when it changes.
   - Other languages show no problem status. A Python worker plugs in beside
     the TypeScript provider in `code-diagnostics.ts`.
 
@@ -2488,6 +2501,7 @@ Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,
 `workbench-runner-unavailable.test.tsx`, `use-workbench-run.test.tsx`,
 `use-workbench-run-contract.test.tsx`, `use-remote-diagnostics.test.tsx`,
+`collaboration/client.test.ts`,
 `code-diagnostics.test.ts`, `programming-editor-scope.test.tsx`,
 `workbench-editor-status.test.tsx`, `programming-panel.test.tsx`, `room-service.test.ts`, `programming.test.ts`,
 `cloud-playground.test.ts` and the `apps/playground-execution` Node tests.

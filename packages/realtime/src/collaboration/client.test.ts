@@ -89,3 +89,34 @@ it('refuses to expose a join capability to an insecure external endpoint', () =>
   expect(Socket.instances).toHaveLength(0);
   client.destroy();
 });
+
+it('reports local edits but not updates that arrive from the room', () => {
+  const client = new ProgrammingCollaborationClient(vi.fn());
+  const edits = vi.fn();
+  const stop = client.onLocalEdit(edits);
+  try {
+    client.connect('wss://example.com/collaboration', 'ticket');
+    const socket = Socket.instances[0]!;
+    const remote = new Y.Doc();
+    remote.getText('command').insert(0, 'ls');
+    socket.sync(remote);
+    const next = new Y.Doc();
+    Y.applyUpdate(next, Y.encodeStateAsUpdate(remote));
+    next.getText('command').insert(2, ' -a');
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'update',
+        update: Buffer.from(Y.encodeStateAsUpdate(next)).toString('base64'),
+      }),
+    });
+    expect(client.doc.getText('command').toString()).toBe('ls -a');
+    expect(edits).not.toHaveBeenCalled();
+    client.doc.getText('command').insert(0, 'x');
+    expect(edits).toHaveBeenCalledTimes(1);
+    stop();
+    client.doc.getText('command').insert(0, 'y');
+    expect(edits).toHaveBeenCalledTimes(1);
+  } finally {
+    client.destroy();
+  }
+});

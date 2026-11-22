@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import type { PlaygroundLanguage } from '@tuturuuu/types/primitives/playgrounds';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import type { DiagnosticsStatus } from './code-diagnostics';
 import { LANGUAGE_LABELS } from './workbench-language';
 
@@ -53,6 +54,32 @@ function ProblemsStatus({ status }: { status: DiagnosticsStatus }) {
   }
 }
 
+/**
+ * What a screen reader hears: the settled state, once per change. Checking is
+ * visual only and keeps the last announcement, so an unchanged count is not
+ * read out again after every check.
+ */
+function ProblemsAnnouncement({ status }: { status: DiagnosticsStatus }) {
+  const t = useTranslations('programmingPlayground');
+  const text =
+    status.kind === 'checking'
+      ? undefined
+      : status.kind === 'off'
+        ? ''
+        : status.kind === 'paused'
+          ? t('diagnosticsPaused')
+          : status.kind === 'tooLarge'
+            ? t('diagnosticsTooLarge')
+            : t('diagnosticsProblems', { count: status.problems });
+  const [announced, setAnnounced] = useState('');
+  if (text !== undefined && text !== announced) setAnnounced(text);
+  return (
+    <output aria-live="polite" className="sr-only">
+      {announced}
+    </output>
+  );
+}
+
 /** The editor footer: the room's runtime by its full name, its problems, and whether this person can type. */
 export function WorkbenchEditorStatus({
   language,
@@ -74,9 +101,12 @@ export function WorkbenchEditorStatus({
         <span className="sr-only">{t('language')}: </span>
         {LANGUAGE_LABELS[language]}
       </span>
-      <output aria-live="polite" className="contents">
-        <ProblemsStatus status={diagnostics} />
-      </output>
+      <span className="inline-flex items-center">
+        <span aria-hidden="true">
+          <ProblemsStatus status={diagnostics} />
+        </span>
+        <ProblemsAnnouncement status={diagnostics} />
+      </span>
       {!editable && (
         <span className="ml-auto flex items-center gap-1">
           <Lock aria-hidden="true" className="size-3" />

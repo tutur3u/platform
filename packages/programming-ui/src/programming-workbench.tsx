@@ -10,7 +10,7 @@ import {
   replaceProgrammingText,
 } from '@tuturuuu/realtime';
 import { useTranslations } from 'next-intl';
-import { type KeyboardEvent, useEffect, useState } from 'react';
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
 import { MiraCodeReview, MiraEditorBar, miraFocus } from './mira-code-presence';
@@ -116,12 +116,19 @@ export function ProgrammingWorkbench({
       });
     }
   }, [activePath, collaborationClient, collaborationOpen]);
+  // Only this browser's own edits start a compiler check.
+  const localEdits = useMemo(
+    () => (onEdit: () => void) =>
+      collaborationClient?.onLocalEdit(onEdit) ?? (() => undefined),
+    [collaborationClient]
+  );
   const diagnostics = useWorkbenchDiagnostics({
     roomKey,
     language: project?.language,
     files: room.snapshot.files,
     check: meeting?.check,
     enabled: !!meeting,
+    localEdits,
   });
   const {
     result,

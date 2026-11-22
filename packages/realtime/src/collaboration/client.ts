@@ -155,6 +155,15 @@ export class ProgrammingCollaborationClient {
     this.presenceAt = Date.now();
   }
 
+  /** Calls back for changes made in this browser; updates from the room are not local. */
+  onLocalEdit(listener: () => void) {
+    const handler = (_update: Uint8Array, origin: unknown) => {
+      if (origin !== REMOTE) listener();
+    };
+    this.doc.on('update', handler);
+    return () => this.doc.off('update', handler);
+  }
+
   destroy() {
     this.stopped = true;
     if (this.presenceTimer) clearTimeout(this.presenceTimer);
