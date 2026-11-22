@@ -117,7 +117,7 @@ describe('LoginForm focused external sign-in', () => {
     expect(screen.getByText('Person Example')).toBeInTheDocument();
     expectOnlyFocusedCard();
     const continueButton = screen.getByRole('button', {
-      name: 'login.continue_to_internal_app',
+      name: 'login.continue_as',
     });
     await waitFor(() => expect(continueButton).toBeEnabled());
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
@@ -319,7 +319,7 @@ describe('LoginForm focused external sign-in', () => {
     });
 
     const continueButton = await screen.findByRole('button', {
-      name: 'login.continue_to_internal_app',
+      name: 'login.continue_as',
     });
     await waitFor(() => expect(continueButton).toBeEnabled());
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
@@ -354,7 +354,7 @@ describe('LoginForm focused external sign-in', () => {
     });
 
     const continueButton = await screen.findByRole('button', {
-      name: 'login.continue_to_internal_app',
+      name: 'login.continue_as',
     });
     await waitFor(() => expect(continueButton).toBeEnabled());
     await act(async () => {

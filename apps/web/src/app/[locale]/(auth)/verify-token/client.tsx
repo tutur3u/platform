@@ -1,11 +1,13 @@
 'use client';
 
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { AuthProgressCard } from '../login/continue-card-parts';
 
 export function BasicTokenVerifier() {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,10 +22,10 @@ export function BasicTokenVerifier() {
   }, [searchParams, router]);
 
   return (
-    <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
-      <div className="flex h-full w-full items-center justify-center">
-        <LoadingIndicator className="h-10 w-10" />
+    <main className="fixed inset-0 flex items-center justify-center bg-background p-4 text-foreground">
+      <div className="w-full max-w-[400px]">
+        <AuthProgressCard label={t('account_switcher.redirecting')} />
       </div>
-    </div>
+    </main>
   );
 }

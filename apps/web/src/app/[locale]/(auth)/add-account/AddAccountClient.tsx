@@ -1,20 +1,21 @@
 'use client';
 
 import { describeWebAccountSaveError } from '@tuturuuu/internal-api/auth';
-import { Loader2 } from '@tuturuuu/icons';
-import { Check } from '@tuturuuu/icons/lucide';
+import { Check } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type JSX,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
+import { AuthStateCard } from '../login/auth-state-card';
+import { AuthProgressCard } from '../login/continue-card-parts';
 
 export function AddAccountContent(): JSX.Element {
   const t = useTranslations();
@@ -61,68 +62,65 @@ export function AddAccountContent(): JSX.Element {
   }, [handleAddAccount, isInitialized]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{t('account_switcher.adding_account')}</CardTitle>
-          <CardDescription role="status" aria-live="polite" aria-atomic="true">
-            {status === 'loading' &&
-              t('account_switcher.adding_account_description')}
-            {status === 'success' &&
-              t('account_switcher.account_added_success')}
-            {status === 'error' && t('account_switcher.account_added_error')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {status === 'loading' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="text-foreground/60 text-sm">
-                {t('account_switcher.please_wait')}
-              </p>
-            </div>
-          )}
+    <AddAccountFrame>
+      {status === 'loading' ? (
+        <AuthProgressCard
+          description={t('account_switcher.please_wait')}
+          label={t('account_switcher.adding_account')}
+        />
+      ) : status === 'success' ? (
+        <AuthStateCard
+          description={
+            <span aria-atomic="true" aria-live="polite" role="status">
+              {t('account_switcher.redirecting')}
+            </span>
+          }
+          illustration={
+            <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-calendar-bg-green">
+              <Check aria-hidden className="size-7 text-dynamic-green" />
+            </span>
+          }
+          title={t('account_switcher.account_added_success')}
+        />
+      ) : (
+        <AuthStateCard title={t('account_switcher.account_added_error')}>
+          <p
+            className="rounded-2xl bg-dynamic-red/10 px-3.5 py-3 text-dynamic-red text-sm leading-relaxed"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+          <Button
+            className="h-12 w-full rounded-2xl font-bold"
+            onClick={() => {
+              setStatus('loading');
+              setErrorMessage('');
+              void handleAddAccount();
+            }}
+            type="button"
+          >
+            {t('account_switcher.retry')}
+          </Button>
+          <Button
+            className="h-12 w-full rounded-2xl font-bold"
+            onClick={() => router.push('/')}
+            type="button"
+            variant="outline"
+          >
+            {t('common.back-to-home')}
+          </Button>
+        </AuthStateCard>
+      )}
+    </AddAccountFrame>
+  );
+}
 
-          {status === 'success' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dynamic-green/20">
-                <Check className="h-6 w-6 text-dynamic-green" />
-              </div>
-              <p className="text-foreground/60 text-sm">
-                {t('account_switcher.redirecting')}
-              </p>
-            </div>
-          )}
-
-          {status === 'error' && (
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4">
-                <p className="text-dynamic-red text-sm">{errorMessage}</p>
-              </div>
-              <Button
-                type="button"
-                onClick={() => {
-                  setStatus('loading');
-                  setErrorMessage('');
-                  void handleAddAccount();
-                }}
-                className="w-full"
-              >
-                {t('account_switcher.retry')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/')}
-                className="w-full"
-              >
-                {t('common.back-to-home')}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+/** The add-account page: the same centred 400px auth column. */
+function AddAccountFrame({ children }: { children: ReactNode }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background p-4 text-foreground">
+      <div className="flex w-full max-w-[400px] flex-col gap-4">{children}</div>
+    </main>
   );
 }
 
@@ -130,23 +128,11 @@ export function AddAccountFallback(): JSX.Element {
   const t = useTranslations();
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{t('account_switcher.adding_account')}</CardTitle>
-          <CardDescription>
-            {t('account_switcher.adding_account_description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-4 py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="text-foreground/60 text-sm">
-              {t('account_switcher.please_wait')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AddAccountFrame>
+      <AuthProgressCard
+        description={t('account_switcher.please_wait')}
+        label={t('account_switcher.adding_account')}
+      />
+    </AddAccountFrame>
   );
 }

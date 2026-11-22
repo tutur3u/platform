@@ -3,6 +3,7 @@
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { CoBrandRow } from './continue-card-parts';
 import {
   ConfirmationCard,
   StoredAccountSwitchList,
@@ -31,8 +32,9 @@ export function SavedAccountChooser({
 
   return (
     <ConfirmationCard>
-      <div className="space-y-2 text-center">
-        <h2 className="font-semibold text-2xl tracking-tight">
+      {appName ? <CoBrandRow appName={appName} /> : null}
+      <div className="flex flex-col gap-1.5 text-center">
+        <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
           {t('login.choose_account_title')}
         </h2>
         {appName ? (
@@ -52,7 +54,7 @@ export function SavedAccountChooser({
       />
 
       <Button
-        className="h-11 w-full rounded-2xl"
+        className="h-12 w-full rounded-2xl font-bold"
         disabled={disabled}
         onClick={onUseAnotherAccount}
         type="button"

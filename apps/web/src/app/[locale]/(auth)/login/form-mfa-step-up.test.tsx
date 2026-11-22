@@ -146,7 +146,7 @@ describe('LoginForm cross-app handoff MFA step-up', () => {
     await act(async () => {
       fireEvent.click(
         await screen.findByRole('button', {
-          name: /login\.continue_to_internal_app/,
+          name: /login\.continue_as/,
         })
       );
     });

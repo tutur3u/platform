@@ -1,16 +1,18 @@
 'use client';
 
-import { ArrowRight, ShieldCheck } from '@tuturuuu/icons/lucide-static';
+import { ShieldCheck } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import {
+  AccountAvatarCard,
+  CoBrandRow,
+  StatusChip,
+} from './continue-card-parts';
+import {
   ConfirmationCard,
-  getAvatarUrl,
   getDisplayName,
-  getInitials,
   ProfileLoadingState,
   type ProfileState,
   ProfileUnavailableState,
@@ -82,29 +84,13 @@ export function InternalAppAccountConfirmation({
     email: currentEmail,
     fallback: fallbackAccountName,
   });
-  const currentAccountAvatarUrl = getAvatarUrl(currentAvatarUrl);
-  const currentAccountInitials = getInitials(currentAccountName);
   const showCurrentEmail = currentEmail && currentEmail !== currentAccountName;
 
   return (
     <ConfirmationCard>
-      <div className="space-y-2 text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 font-medium text-muted-foreground text-xs">
-          <ShieldCheck className="size-3.5" />
-          {t('login.profile_source_label')}
-        </div>
-        <div className="mx-auto size-20">
-          <Avatar className="size-20 border border-border">
-            <AvatarImage
-              alt={currentAccountName}
-              src={currentAccountAvatarUrl}
-            />
-            <AvatarFallback className="bg-muted font-semibold text-xl">
-              {currentAccountInitials}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <h2 className="font-semibold text-2xl tracking-tight">
+      <CoBrandRow appName={appName} />
+      <div className="flex flex-col gap-1.5 text-center">
+        <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
           {t('login.confirm_internal_app_account_title', {
             app: appName,
             name: currentAccountName,
@@ -118,51 +104,37 @@ export function InternalAppAccountConfirmation({
         </p>
       </div>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 p-4">
-        <Avatar className="size-12 border border-border/70">
-          <AvatarImage alt={currentAccountName} src={currentAccountAvatarUrl} />
-          <AvatarFallback className="bg-foreground/10 font-semibold">
-            {currentAccountInitials}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
-            <ShieldCheck className="size-3 text-dynamic-green" />
-            {t('login.signed_in_as')}
-          </p>
-          <p className="truncate font-semibold text-foreground">
-            {currentAccountName}
-          </p>
-          {showCurrentEmail ? (
-            <p className="truncate text-muted-foreground text-sm">
-              {currentEmail}
-            </p>
-          ) : null}
-        </div>
-      </div>
+      <AccountAvatarCard
+        avatarUrl={currentAvatarUrl}
+        chip={
+          <StatusChip>
+            <ShieldCheck aria-hidden className="mr-1.5 size-3.5" />
+            {t('login.profile_source_label')}
+          </StatusChip>
+        }
+        detail={showCurrentEmail ? currentEmail : null}
+        name={currentAccountName}
+      />
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-2.5">
         <Button
-          className="group h-12 w-full rounded-2xl font-medium"
+          className="h-12 w-full rounded-2xl font-bold"
           disabled={controlsDisabled}
           onClick={onContinue}
         >
           {confirming ? (
-            <div className="flex items-center gap-2">
+            <span className="flex items-center gap-2">
               <LoadingIndicator className="size-4" />
-              <span>{t('common.loading')}...</span>
-            </div>
+              {t('login.securing_session')}
+            </span>
           ) : (
-            <>
-              <span>
-                {t('login.continue_to_internal_app', { app: appName })}
-              </span>
-              <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
-            </>
+            <span className="min-w-0 truncate">
+              {t('login.continue_as', { name: currentAccountName })}
+            </span>
           )}
         </Button>
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-12 w-full rounded-2xl font-bold"
           disabled={controlsDisabled}
           onClick={onUseAnotherAccount}
           type="button"

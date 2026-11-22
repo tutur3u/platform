@@ -1,16 +1,14 @@
 'use client';
 
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { AccountAvatarCard, StatusChip } from './continue-card-parts';
 import {
   ConfirmationCard,
-  getAvatarUrl,
   getDisplayName,
-  getInitials,
   StoredAccountSwitchList,
 } from './internal-app-account-confirmation-parts';
 import type { FocusedSignInStep } from './login-view';
@@ -25,7 +23,7 @@ function FocusedFrame({ children }: { children: ReactNode }) {
     <ConfirmationCard>
       <div
         aria-live="polite"
-        className="flex h-80 flex-col justify-center gap-6 overflow-hidden"
+        className="flex h-[22rem] flex-col justify-center gap-4 overflow-hidden"
       >
         {children}
       </div>
@@ -85,15 +83,15 @@ export function FocusedSignInCard({
     return (
       <FocusedFrame>
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-full border border-border bg-muted/40">
+          <div className="flex size-16 items-center justify-center rounded-full bg-muted">
             <LoadingIndicator className="size-6" />
           </div>
-          <p className="font-medium text-foreground">
+          <p className="font-bold text-foreground" role="status">
             {t('login.continuing_with_provider', { provider: providerName })}
           </p>
         </div>
         <Button
-          className="h-12 w-full rounded-2xl font-medium"
+          className="h-12 w-full rounded-2xl font-bold"
           disabled={startingProvider}
           onClick={onStartProvider}
           type="button"
@@ -108,7 +106,7 @@ export function FocusedSignInCard({
   if (step === 'choose') {
     return (
       <FocusedFrame>
-        <h2 className="text-center font-semibold text-xl tracking-tight">
+        <h2 className="text-center font-extrabold text-2xl tracking-[-0.02em]">
           {t('login.choose_account_title')}
         </h2>
         <div className="min-h-0 overflow-y-auto">
@@ -122,7 +120,7 @@ export function FocusedSignInCard({
           />
         </div>
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-12 w-full shrink-0 rounded-2xl font-bold"
           disabled={busy}
           onClick={onUseAnotherAccount}
           type="button"
@@ -141,23 +139,17 @@ export function FocusedSignInCard({
 
   return (
     <FocusedFrame>
-      <div className="flex flex-col items-center gap-3 text-center">
-        <Avatar className="size-16 border border-border">
-          <AvatarImage alt={name} src={getAvatarUrl(session?.avatarUrl)} />
-          <AvatarFallback className="bg-muted font-semibold text-lg">
-            {getInitials(name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 space-y-0.5">
-          <p className="text-muted-foreground text-xs">
-            {t('login.signed_in_as')}
-          </p>
-          <p className="truncate font-semibold text-lg">{name}</p>
-        </div>
-      </div>
-      <div className="space-y-3">
+      <p className="text-center text-muted-foreground text-sm">
+        {t('login.signed_in_on_browser')}
+      </p>
+      <AccountAvatarCard
+        avatarUrl={session?.avatarUrl}
+        chip={<StatusChip>{t('login.signed_in_chip')}</StatusChip>}
+        name={name}
+      />
+      <div className="flex flex-col gap-2.5">
         <Button
-          className="relative h-12 w-full rounded-2xl px-12 font-medium"
+          className="relative h-12 w-full rounded-2xl px-12 font-bold"
           disabled={!canContinue || busy}
           onClick={onContinue}
           type="button"
@@ -181,12 +173,12 @@ export function FocusedSignInCard({
             </>
           ) : (
             <span className="min-w-0 truncate">
-              {t('login.continue_to_internal_app', { app: appName })}
+              {t('login.continue_as', { name })}
             </span>
           )}
         </Button>
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-12 w-full rounded-2xl font-bold"
           disabled={busy}
           onClick={onUseAnotherAccount}
           type="button"

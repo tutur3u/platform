@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { Separator } from '@tuturuuu/ui/separator';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -42,11 +41,14 @@ export function getInitials(value: string) {
   return initials || '?';
 }
 
+/** The Sorbet auth card: one 400px column, 24px padding, 16px rhythm. */
 export function ConfirmationCard({ children }: { children: ReactNode }) {
   return (
     <div>
-      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
-        <CardContent className="space-y-6 p-6 sm:p-8">{children}</CardContent>
+      <Card className="overflow-hidden rounded-[28px] border bg-card">
+        <CardContent className="flex flex-col gap-4 p-6">
+          {children}
+        </CardContent>
       </Card>
     </div>
   );
@@ -54,13 +56,10 @@ export function ConfirmationCard({ children }: { children: ReactNode }) {
 
 function LoginMethodSeparator({ label }: { label: string }) {
   return (
-    <div className="relative py-0.5">
-      <Separator className="bg-border/60" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="bg-card px-3 text-muted-foreground text-xs">
-          {label}
-        </span>
-      </div>
+    <div className="flex items-center gap-3 font-semibold text-muted-foreground text-xs">
+      <span aria-hidden className="h-px flex-1 bg-border" />
+      <span>{label}</span>
+      <span aria-hidden className="h-px flex-1 bg-border" />
     </div>
   );
 }
@@ -79,11 +78,11 @@ export function ProfileLoadingState({
   return (
     <ConfirmationCard>
       <div className="space-y-4 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-border bg-muted">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-muted">
           <LoadingIndicator className="size-5 text-muted-foreground" />
         </div>
-        <div className="space-y-2">
-          <h2 className="font-semibold text-2xl tracking-tight">
+        <div className="space-y-1.5">
+          <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
             {t('login.loading_account_profile_title')}
           </h2>
           <p className="text-balance text-muted-foreground text-sm">
@@ -92,8 +91,8 @@ export function ProfileLoadingState({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-        <div className="flex animate-pulse items-center gap-3">
+      <div className="rounded-2xl border p-4">
+        <div className="flex animate-pulse items-center gap-3 motion-reduce:animate-none">
           <div className="size-11 rounded-full bg-muted" />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="h-3 w-24 rounded-full bg-muted" />
@@ -104,7 +103,7 @@ export function ProfileLoadingState({
       </div>
 
       <div className="space-y-3">
-        <Button className="h-12 w-full rounded-2xl font-medium" disabled>
+        <Button className="h-12 w-full rounded-2xl font-bold" disabled>
           <LoadingIndicator className="mr-2 size-4" />
           {t('login.loading_profile')}
         </Button>
@@ -136,11 +135,11 @@ export function ProfileUnavailableState({
   return (
     <ConfirmationCard>
       <div className="space-y-4 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10">
-          <RefreshCcw className="size-6 text-dynamic-orange" />
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-calendar-bg-orange">
+          <RefreshCcw aria-hidden className="size-6 text-dynamic-orange" />
         </div>
-        <div className="space-y-2">
-          <h2 className="font-semibold text-2xl tracking-tight">
+        <div className="space-y-1.5">
+          <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
             {t('login.profile_unavailable_title')}
           </h2>
           <p className="text-balance text-muted-foreground text-sm">
@@ -151,7 +150,7 @@ export function ProfileUnavailableState({
 
       <div className="space-y-3">
         <Button
-          className="h-12 w-full rounded-2xl font-medium"
+          className="h-12 w-full rounded-2xl font-bold"
           disabled={disabled}
           onClick={onRetryProfile}
           type="button"
@@ -215,29 +214,27 @@ export function StoredAccountSwitchList({
 
           return (
             <Button
-              className="h-auto min-h-11 w-full justify-start rounded-2xl px-4 py-3 text-left"
+              className="h-auto min-h-14 w-full justify-start gap-3 rounded-2xl border bg-card px-4 py-3 text-left hover:bg-muted"
               disabled={disabled}
               key={account.id}
               onClick={() => onSwitchAccount(account.id)}
               type="button"
-              variant="secondary"
+              variant="ghost"
             >
               {switchingAccountId === account.id ? (
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
                   <LoadingIndicator className="size-4" />
                 </span>
               ) : (
-                <Avatar className="size-8 shrink-0">
+                <Avatar className="size-9 shrink-0">
                   <AvatarImage alt={displayName} src={avatarUrl} />
-                  <AvatarFallback className="bg-foreground/10 text-xs">
+                  <AvatarFallback className="bg-calendar-bg-pink font-bold text-dynamic-pink text-xs">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">
-                  {displayName}
-                </span>
+                <span className="block truncate font-bold">{displayName}</span>
                 {showEmail ? (
                   <span className="block truncate text-muted-foreground text-xs">
                     {account.email}

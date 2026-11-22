@@ -1,5 +1,4 @@
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { AuthProgressCard } from './continue-card-parts';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import type { ReturnUrlFailureKind } from './invalid-return-url-warning';
 
@@ -59,16 +58,7 @@ export function InternalAppAccountConfirmationFallback({
 }
 
 export function RedirectingAfterAuthCard({ label }: { label: string }) {
-  return (
-    <div>
-      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
-        <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-          <LoadingIndicator className="size-6" />
-          <p className="font-medium text-muted-foreground text-sm">{label}</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <AuthProgressCard label={label} />;
 }
 
 export function getReturnAppName(returnApp: string | null) {
