@@ -232,6 +232,8 @@ export type ParsedGuardRpc = z.infer<typeof guardRpcSchema>;
 const windowResultSchema = z.object({
   remaining: z.number().int(),
   resetAt: z.number().int(),
+  /** Earliest retry for a denied sliding window if no further hits are charged. */
+  retryAt: z.number().int().optional(),
 });
 
 export const guardResultSchema = z.union([

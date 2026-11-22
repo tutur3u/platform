@@ -91,6 +91,34 @@ describe('win.hit', () => {
     expect(hit(105_000)).toMatchObject({ ok: true });
   });
 
+  it('reports the first millisecond a sliding day can admit a hit', () => {
+    const { run } = setup();
+    const day = 86_400_000;
+    const hit = (now: number) =>
+      run(now, {
+        op: 'win.hit',
+        windows: [{ ...minute('sliding', 4, 'day'), windowMs: day }],
+      })[0];
+    for (const now of [1000, 2000, 3000, 4000]) {
+      expect(hit(now)).toMatchObject({ ok: true });
+    }
+    expect(hit(day - 1)).toMatchObject({
+      ok: false,
+      windows: [{ resetAt: day, retryAt: day + 1 }],
+    });
+    expect(hit(day)).toMatchObject({
+      ok: false,
+      windows: [{ resetAt: 2 * day, retryAt: day + 1 }],
+    });
+    expect(hit(day + 1)).toMatchObject({ ok: true });
+    const nextRetry = day + day / 4 + 1;
+    expect(hit(nextRetry - 1)).toMatchObject({
+      ok: false,
+      windows: [{ resetAt: 2 * day, retryAt: nextRetry }],
+    });
+    expect(hit(nextRetry)).toMatchObject({ ok: true });
+  });
+
   it('is all-or-nothing across windows', () => {
     const { run } = setup();
     const both = (now: number) =>

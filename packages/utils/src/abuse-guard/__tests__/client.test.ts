@@ -338,6 +338,40 @@ describe('hitWindows', () => {
     ).resolves.toMatchObject({ ok: false, resetAt: 90_000, subjectIndex: 1 });
   });
 
+  it('preserves the sliding retry time alongside the bucket boundary', async () => {
+    const client = createAbuseGuardClient({
+      family: 'proxy',
+      pepper: PEPPER,
+      transport: async () => ({
+        v: 1,
+        steps: [
+          {
+            results: [
+              {
+                op: 'win.hit',
+                ok: false,
+                resetAt: 120_000,
+                windows: [{ remaining: 0, resetAt: 120_000, retryAt: 60_001 }],
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    await expect(
+      client.hitWindows([
+        {
+          partition: 'ip:a',
+          windows: [{ key: '1m', limit: 1, windowMs: 60_000, algo: 'sliding' }],
+        },
+      ])
+    ).resolves.toMatchObject({
+      ok: false,
+      resetAt: 120_000,
+      windows: [{ remaining: 0, resetAt: 120_000, retryAt: 60_001 }],
+    });
+  });
+
   it('sends a weighted cost only when one is given', async () => {
     const sent: GuardRpc[] = [];
     const client = createAbuseGuardClient({

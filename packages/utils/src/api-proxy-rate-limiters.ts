@@ -62,7 +62,7 @@ const RATE_LIMIT_DURATION_MS: Record<RateLimitConfig['duration'], number> = {
   '1 d': 24 * 60 * 60_000,
 };
 
-/** Denials remembered per instance until their window resets. */
+/** Denials remembered per instance until the next store check. */
 const guardDenials = createExpiringMap<{
   window: RateLimitWindow;
   limit: number;
@@ -76,8 +76,8 @@ let nextOutageWarningAt = 0;
  * Durable Object limiter for one prefix, kind and caller. Every window is
  * charged in a single all-or-nothing `win.hit` (one operation), with the
  * window and limit in each key so distinct limits never share a window. A
- * denial is remembered locally until it resets, so repeated blocked requests
- * cost no store operations. While the store is unavailable the same limits
+ * denial is remembered locally until capacity can return or the shortest
+ * window elapses. While the store is unavailable the same limits
  * apply per instance instead of none.
  */
 function createGuardRateLimitBuckets(
@@ -90,6 +90,9 @@ function createGuardRateLimitBuckets(
   if (!first) return [];
   const tightest = configs.reduce((low, config) =>
     config.limit < low.limit ? config : low
+  );
+  const shortestWindowMs = Math.min(
+    ...configs.map((config) => RATE_LIMIT_DURATION_MS[config.duration])
   );
   return [
     {
@@ -133,28 +136,40 @@ function createGuardRateLimitBuckets(
                 reset: outcome.resetAt,
               };
             }
-            const deniedIndex = Math.max(
-              0,
-              outcome.windows.findIndex(
-                (window) =>
-                  window.remaining === 0 && window.resetAt === outcome.resetAt
-              )
+            let deniedIndex = outcome.windows.findIndex(
+              (window) =>
+                window.remaining === 0 && window.resetAt === outcome.resetAt
             );
+            let retryAt: number | undefined;
+            for (const [index, window] of outcome.windows.entries()) {
+              if (
+                window.retryAt !== undefined &&
+                (retryAt === undefined || window.retryAt > retryAt)
+              ) {
+                deniedIndex = index;
+                retryAt = window.retryAt;
+              }
+            }
             const denied = configs[deniedIndex] ?? first;
-            guardDenials.set(
-              partition,
-              {
-                window: denied.window,
-                limit: denied.limit,
-                reset: outcome.resetAt,
-              },
-              outcome.resetAt
+            // Older Workers report only the bucket boundary. Use the next
+            // bounded recheck for those responses.
+            const recheckAt = Math.min(
+              retryAt ?? outcome.resetAt,
+              now + shortestWindowMs
             );
+            const reset = retryAt ?? recheckAt;
+            if (recheckAt > Date.now()) {
+              guardDenials.set(
+                partition,
+                { window: denied.window, limit: denied.limit, reset },
+                recheckAt
+              );
+            }
             return {
               success: false,
               limit: denied.limit,
               remaining: 0,
-              reset: outcome.resetAt,
+              reset,
               window: denied.window,
             };
           } catch (error) {

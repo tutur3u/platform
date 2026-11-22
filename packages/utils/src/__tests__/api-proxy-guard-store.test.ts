@@ -128,6 +128,7 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   async function guard(
@@ -141,7 +142,9 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
   }
 
   it('returns the route 429 when the store denies a window', async () => {
-    const resetAt = Date.now() + 42_000;
+    const start = 60_000;
+    const now = vi.spyOn(Date, 'now').mockReturnValue(start);
+    const resetAt = start + 42_000;
     mocks.hitWindows.mockResolvedValue({
       ok: false,
       resetAt,
@@ -156,7 +159,7 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
     );
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('1');
     expect(response?.headers.get('X-RateLimit-Window')).toBe('minute');
-    expect(Number(response?.headers.get('Retry-After'))).toBeGreaterThan(0);
+    expect(response?.headers.get('Retry-After')).toBe('42');
     const [subjects] = mocks.hitWindows.mock.calls[0]!;
     expect(subjects).toEqual([
       {
@@ -170,22 +173,29 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
     expect(mocks.redis).not.toHaveBeenCalled();
 
     // A repeat inside the denied window is answered locally: no store call.
-    expect((await guard())?.status).toBe(429);
+    now.mockReturnValue(resetAt - 1);
+    expect((await guard())?.headers.get('Retry-After')).toBe('1');
     expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
+    now.mockReturnValue(resetAt);
+    mocks.hitWindows.mockResolvedValue({ ok: true, remaining: 0, resetAt });
+    await expect(guard()).resolves.toBeNull();
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(2);
   });
 
   it('charges every window in one operation and reports the denied one', async () => {
-    const resetAt = Date.now() + 3_600_000;
+    const start = 3_600_000;
+    const now = vi.spyOn(Date, 'now').mockReturnValue(start);
+    const resetAt = start + 3_600_000;
     mocks.hitWindows.mockResolvedValue({
       ok: false,
       resetAt,
       subjectIndex: 0,
       windows: [
-        { remaining: 3, resetAt: Date.now() + 60_000 },
+        { remaining: 3, resetAt: start + 60_000 },
         { remaining: 0, resetAt },
       ],
     });
-    const response = await guard([
+    const routePolicies: ProxyRoutePolicy[] = [
       {
         key: 'two-window-test',
         matches: () => true,
@@ -197,12 +207,77 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
           mutate: [],
         },
       },
-    ]);
+    ];
+    const response = await guard(routePolicies);
     expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
     expect(mocks.hitWindows.mock.calls[0]?.[0]?.[0]?.windows).toHaveLength(2);
     expect(response?.status).toBe(429);
     expect(response?.headers.get('X-RateLimit-Window')).toBe('hour');
     expect(response?.headers.get('X-RateLimit-Limit')).toBe('1');
+    expect(response?.headers.get('Retry-After')).toBe('60');
+
+    now.mockReturnValue(start + 59_999);
+    expect((await guard(routePolicies))?.headers.get('Retry-After')).toBe('1');
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(1);
+    now.mockReturnValue(start + 60_000);
+    expect((await guard(routePolicies))?.status).toBe(429);
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(2);
+  });
+
+  it('expires a sliding day denial across isolates when capacity returns', async () => {
+    const start = 86_400_000;
+    const retryAt = start + 5500;
+    const now = vi.spyOn(Date, 'now').mockReturnValue(start);
+    const routePolicies: ProxyRoutePolicy[] = [
+      {
+        key: 'sliding-day-test',
+        matches: () => true,
+        rateLimits: {
+          get: [
+            { duration: '1 m', limit: 5, window: 'minute' },
+            { duration: '1 d', limit: 10, window: 'day' },
+          ],
+          mutate: [],
+        },
+      },
+    ];
+    const request = makeRequest('/api/test', 'GET');
+    const options = { prefixBase: 'proxy:test:day', routePolicies };
+    const first = (await import('../api-proxy-guard.js')).guardApiProxyRequest;
+    vi.resetModules();
+    const second = (await import('../api-proxy-guard.js')).guardApiProxyRequest;
+    mocks.hitWindows.mockImplementation(async () =>
+      Date.now() < retryAt
+        ? {
+            ok: false,
+            resetAt: 2 * start,
+            windows: [
+              { remaining: 0, resetAt: start + 60_000 },
+              { remaining: 0, resetAt: 2 * start, retryAt },
+            ],
+          }
+        : { ok: true, remaining: 0, resetAt: 2 * start }
+    );
+
+    const denials = await Promise.all([
+      first(request, options),
+      second(request, options),
+    ]);
+    for (const denial of denials) {
+      expect(denial?.status).toBe(429);
+      expect(denial?.headers.get('Retry-After')).toBe('6');
+      expect(denial?.headers.get('X-RateLimit-Window')).toBe('day');
+    }
+    now.mockReturnValue(retryAt - 1);
+    expect((await first(request, options))?.headers.get('Retry-After')).toBe(
+      '1'
+    );
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(2);
+    now.mockReturnValue(retryAt);
+    await expect(
+      Promise.all([first(request, options), second(request, options)])
+    ).resolves.toEqual([null, null]);
+    expect(mocks.hitWindows).toHaveBeenCalledTimes(4);
   });
 
   it('admits a request the store allows', async () => {

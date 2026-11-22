@@ -67,6 +67,40 @@ export function isMutatingStep(cmds: ParsedGuardCommand[]) {
 type Row = { v: string; exp: number };
 type WindowState = { i: number; c: number; p: number };
 
+type EvaluatedWindow = {
+  window: GuardWindow;
+  resetAt: number;
+  current: number;
+  previous: number;
+  cost: number;
+};
+
+function weightedPrevious(previous: number, elapsed: number, duration: number) {
+  return Math.floor(previous * (1 - elapsed / duration));
+}
+
+function slidingRetryAt(entry: EvaluatedWindow, now: number) {
+  const { window, resetAt, current, previous, cost } = entry;
+  if (window.algo !== 'sliding' || cost > window.limit) return undefined;
+
+  // Without new hits the count only decreases. At rollover the current
+  // bucket becomes the previous one, and the following bucket starts empty.
+  const duration = window.windowMs;
+  const available = window.limit - cost;
+  let low = current > available ? resetAt : now + 1;
+  let high = resetAt + duration;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const total =
+      middle < resetAt
+        ? current + weightedPrevious(previous, middle % duration, duration)
+        : weightedPrevious(current, middle - resetAt, duration);
+    if (total <= available) high = middle;
+    else low = middle + 1;
+  }
+  return low;
+}
+
 export function createGuardEngine(sql: SqlRunner) {
   // `deleteAll()` drops the tables of a SQLite-backed object; a still-warm
   // instance recreates them before its next use instead of failing.
@@ -136,9 +170,8 @@ export function createGuardEngine(sql: SqlRunner) {
     // share of it still inside the window.
     const total =
       window.algo === 'sliding'
-        ? Math.floor(
-            previous * (1 - (now % window.windowMs) / window.windowMs)
-          ) + current
+        ? weightedPrevious(previous, now % window.windowMs, window.windowMs) +
+          current
         : current;
     const cost = window.cost ?? 1;
     return {
@@ -166,8 +199,9 @@ export function createGuardEngine(sql: SqlRunner) {
             ok: false,
             resetAt: Math.max(...denied.map((entry) => entry.resetAt)),
             windows: evaluated.map((entry) => ({
-              remaining: entry.allowed ? entry.remaining : 0,
+              remaining: entry.remaining,
               resetAt: entry.resetAt,
+              retryAt: entry.allowed ? undefined : slidingRetryAt(entry, now),
             })),
           };
         }

@@ -200,7 +200,10 @@ export type GuardWindowSubject = {
 };
 
 /** One window's state, in the order the subject listed its windows. */
-export type GuardWindowState = { remaining: number; resetAt: number };
+export type GuardWindowState = Extract<
+  GuardResult,
+  { op: 'win.hit' }
+>['windows'][number];
 
 export type GuardWindowOutcome =
   | {
