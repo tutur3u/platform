@@ -9,6 +9,8 @@ import {
 const secret = 'disposable-test-secret';
 const DOCUMENT = '/api/v1/realtime/documents/checkpoint';
 const PROGRAMMING = '/api/v1/realtime/programming/checkpoint';
+const SOURCE = '/api/v1/internal/playground-execution/source';
+const EXPORT = '/api/v1/internal/playground-execution/export';
 const future = Math.floor(Date.now() / 1000) + 30;
 function sign(payload: Record<string, unknown>, key = secret) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -187,6 +189,8 @@ describe('isTrustedRealtimeServiceRequest', () => {
     ])
       expect(trusted(pathname, documentTicket, 'POST'), pathname).toBe(false);
     expect([...REALTIME_SERVICE_TICKET_ROUTES].sort()).toEqual([
+      EXPORT,
+      SOURCE,
       DOCUMENT,
       PROGRAMMING,
     ]);
@@ -236,4 +240,49 @@ describe('isTrustedRealtimeServiceRequest', () => {
       )
     ).toBe(false);
   });
+});
+
+it('authenticates exact Playground callbacks with a bounded lifetime', () => {
+  const scopedKey = 'synthetic-playground-ticket-key-long-enough';
+  const source = sign(
+    {
+      aud: 'tuturuuu.meet.playground-source',
+      kind: 'playground-source',
+      exp: future,
+    },
+    scopedKey
+  );
+  const writeback = sign(
+    {
+      aud: 'tuturuuu.meet.playground-export',
+      kind: 'playground-export',
+      exp: future,
+    },
+    scopedKey
+  );
+  const trustedCallback = (path: string, value: string, method = 'POST') =>
+    isTrustedRealtimeServiceRequest(path, headers(value), method, scopedKey);
+  expect(trustedCallback(SOURCE, source)).toBe(true);
+  expect(trustedCallback(EXPORT, writeback)).toBe(true);
+  expect(trustedCallback(EXPORT, source)).toBe(false);
+  expect(trustedCallback(SOURCE, source, 'GET')).toBe(false);
+  expect(trustedCallback(PROGRAMMING, writeback)).toBe(false);
+  const long = sign(
+    {
+      aud: 'tuturuuu.meet.playground-source',
+      kind: 'playground-source',
+      exp: future + 60,
+    },
+    scopedKey
+  );
+  expect(trustedCallback(SOURCE, long)).toBe(false);
+  const weak = sign(
+    {
+      aud: 'tuturuuu.meet.playground-source',
+      kind: 'playground-source',
+      exp: future,
+    },
+    secret
+  );
+  expect(trusted(SOURCE, weak, 'POST')).toBe(false);
 });

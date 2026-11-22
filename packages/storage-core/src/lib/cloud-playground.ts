@@ -22,6 +22,7 @@ const sourceClaims = scopeSchema.extend({
     'tuturuuu.meet.playground-source',
     'tuturuuu.meet.playground-export',
   ]),
+  kind: z.enum(['playground-source', 'playground-export']),
   runId: z.uuid(),
   roomMeetingId: z.uuid().optional(),
   revision: z.number().int().nonnegative(),
@@ -86,7 +87,11 @@ export function isCloudPlaygroundRun(id: string) {
 }
 
 async function callCloudPlayground(
-  path: '/run' | '/stop' | '/result',
+  path:
+    | '/run'
+    | '/stop'
+    | '/result'
+    | `/writeback/${'verify' | 'claim' | 'settle'}`,
   payload: unknown
 ) {
   const origin = process.env.PLAYGROUND_EXECUTION_ORIGIN;
@@ -117,7 +122,9 @@ async function callCloudPlayground(
     .safeParse(await response.json().catch(() => null));
   if (parsed.success)
     throw new CloudPlaygroundRefusal(response.status, parsed.data.code);
-  throw new AccountServiceError(response.status === 404 ? 404 : 503);
+  throw new AccountServiceError(
+    response.status === 404 || response.status === 409 ? response.status : 503
+  );
 }
 
 export async function startCloudPlayground(
@@ -140,7 +147,14 @@ export async function startCloudPlayground(
     exp: Math.floor(Date.now() / 1000) + 60,
   };
   function ticket(aud: z.infer<typeof sourceClaims>['aud']) {
-    return signRealtimePayload(sourceClaims.parse({ ...claims, aud }), secret);
+    const kind =
+      aud === 'tuturuuu.meet.playground-source'
+        ? 'playground-source'
+        : 'playground-export';
+    return signRealtimePayload(
+      sourceClaims.parse({ ...claims, aud, kind }),
+      secret
+    );
   }
   return runReceipt.parse(
     await callCloudPlayground('/run', {
@@ -152,8 +166,10 @@ export async function startCloudPlayground(
   );
 }
 
-export async function stopCloudPlayground(scope: Scope) {
-  return runReceipt.parse(await callCloudPlayground('/stop', scope));
+export async function stopCloudPlayground(scope: Scope, runId?: string) {
+  return runReceipt.parse(
+    await callCloudPlayground('/stop', { ...scope, runId })
+  );
 }
 
 export async function readCloudPlayground(
@@ -176,6 +192,10 @@ export async function authorizeCloudPlaygroundTicket(
   if (
     !parsed.success ||
     parsed.data.aud !== aud ||
+    parsed.data.kind !==
+      (aud === 'tuturuuu.meet.playground-source'
+        ? 'playground-source'
+        : 'playground-export') ||
     parsed.data.exp <= now ||
     parsed.data.exp > now + 60
   ) {
@@ -216,13 +236,22 @@ export async function readCloudPlaygroundSource(token: string) {
   };
 }
 
-export async function verifyActiveCloudPlayground(
+export async function cloudPlaygroundWriteback(
+  action: 'verify' | 'claim' | 'settle',
   scope: Scope,
   runId: string,
   revision: number
 ) {
-  const run = await readCloudPlayground(scope, runId);
-  if (run.status !== 'running' || run.revision !== revision || run.saved) {
+  const receipt = z
+    .object({ accepted: z.literal(true) })
+    .safeParse(
+      await callCloudPlayground(`/writeback/${action}`, {
+        ...scope,
+        runId,
+        revision,
+      })
+    );
+  if (!receipt.success) {
     throw new AccountServiceError(
       409,
       'Playground run or saved revision changed'

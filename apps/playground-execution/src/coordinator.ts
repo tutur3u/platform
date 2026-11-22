@@ -9,21 +9,23 @@ import {
   type RunIdentity,
   type RunLookup,
   type RunSubmission,
+  type RunWriteback,
 } from './protocol';
 
 type Terminal = 'succeeded' | 'failed' | 'cancelled';
 
 function present(row: RunRow) {
+  const active = row.state === 'reserved' || row.state === 'starting';
   const status =
-    row.state === 'reserved'
-      ? row.stop_requested
+    active && Date.now() >= row.deadline
+      ? 'failed'
+      : active && row.stop_requested
         ? 'cancel_requested'
-        : 'queued'
-      : row.state === 'starting'
-        ? row.stop_requested
-          ? 'cancel_requested'
-          : 'running'
-        : row.state;
+        : row.state === 'reserved'
+          ? 'queued'
+          : row.state === 'starting'
+            ? 'running'
+            : row.state;
   return {
     runId: row.run_id,
     status,
@@ -94,13 +96,24 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
     return row ? present(row) : null;
   }
 
-  async stop(identity: RunIdentity) {
+  async stop(identity: RunIdentity & { runId?: string }) {
+    if (identity.runId) {
+      const receipt = this.admission.read({
+        runId: identity.runId,
+        projectId: identity.projectId,
+        scopeId: projectScope(identity),
+      });
+      if (receipt && receipt.finished_at !== null) {
+        return { runId: receipt.run_id };
+      }
+    }
     const run = this.admission
       .active()
       .find(
         (row) =>
           row.project_id === identity.projectId &&
-          row.scope_id === projectScope(identity)
+          row.scope_id === projectScope(identity) &&
+          (!identity.runId || row.run_id === identity.runId)
       );
     if (!run) return null;
     await this.ctx.blockConcurrencyWhile(async () => {
@@ -118,10 +131,33 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
     return this.admission.mayExecute(claim, Date.now());
   }
 
-  async complete(claim: RunClaim, state: Terminal, result?: GuestResult) {
+  async complete(
+    claim: RunClaim,
+    state: Terminal,
+    result?: Pick<GuestResult, 'exitCode' | 'output'> & {
+      savedRevision?: number;
+    }
+  ) {
     await this.ctx.blockConcurrencyWhile(async () => {
       this.admission.finish(claim, state, Date.now(), result);
       await this.schedule();
+    });
+  }
+
+  async writeback(lookup: RunWriteback, action: 'verify' | 'claim' | 'settle') {
+    return this.ctx.blockConcurrencyWhile(async () => {
+      const run = this.admission.read({
+        runId: lookup.runId,
+        projectId: lookup.projectId,
+        scopeId: projectScope(lookup),
+      });
+      if (!run || run.revision !== lookup.revision) return false;
+      const now = Date.now();
+      if (action === 'verify') return this.admission.mayExecute(run, now);
+      if (action === 'claim') return this.admission.claimWriteback(run, now);
+      const settled = this.admission.settleWriteback(run, now);
+      if (settled) await this.schedule();
+      return settled || run.writeback_state === 2;
     });
   }
 

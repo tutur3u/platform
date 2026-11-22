@@ -1,6 +1,6 @@
 import {
   authorizeCloudPlaygroundTicket,
-  verifyActiveCloudPlayground,
+  cloudPlaygroundWriteback,
 } from '@tuturuuu/storage-core/cloud-playground';
 import { syncCloudPlaygroundFiles } from '@tuturuuu/storage-core/playground-runner-sync';
 import { AccountServiceError } from '@tuturuuu/utils/account-benefits-server';
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
       authorization.slice(7),
       'tuturuuu.meet.playground-export'
     );
-    await verifyActiveCloudPlayground(
+    await cloudPlaygroundWriteback(
+      'verify',
       {
         meetingId: claims.meetingId,
         ownerId: claims.ownerId,

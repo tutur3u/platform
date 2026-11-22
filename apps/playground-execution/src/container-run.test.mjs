@@ -132,3 +132,21 @@ test('does not report success without confirmed teardown', async () => {
     /teardown unconfirmed/u
   );
 });
+
+test('a durable pause after setup fences command dispatch', async () => {
+  const { container, calls } = containerFixture();
+  await assert.rejects(
+    runInFreshContainer(
+      container,
+      input,
+      Date.now() + 1000,
+      undefined,
+      async () => false
+    ),
+    /stopped before dispatch/u
+  );
+  assert.deepEqual(
+    calls.map(([what]) => what),
+    ['start', 'idle', 'destroy']
+  );
+});

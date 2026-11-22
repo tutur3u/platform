@@ -15,6 +15,8 @@ export interface WorkbenchExecution {
   run: (payload: {
     operation: 'run' | 'stop';
     requestId: string;
+    /** For Stop: the Run to stop, so a newer Run is never stopped by mistake. */
+    runId?: string;
     stdin?: string;
   }) => Promise<{ runId: string }>;
   read: (runId: string) => Promise<PlaygroundExecutionResult>;
@@ -25,6 +27,7 @@ export function useWorkbenchRun({
   projectId,
   roomKey,
   execution,
+  sharedRunId,
   checkpoint,
   problem,
   owner,
@@ -35,6 +38,7 @@ export function useWorkbenchRun({
   projectId: string;
   roomKey: string;
   execution?: WorkbenchExecution;
+  sharedRunId?: string;
   checkpoint?: () => Promise<unknown>;
   problem: boolean;
   owner: boolean;
@@ -43,7 +47,15 @@ export function useWorkbenchRun({
   onStarted: () => void;
 }) {
   const runner = useRunnerAvailability(meeting);
-  const [runId, setRunId] = useState<string | null>(null);
+  // A Run this browser started wins until the room shares a different one.
+  const [localRun, setLocalRun] = useState<{
+    id: string;
+    sharedAtStart?: string;
+  }>();
+  const runId =
+    localRun?.sharedAtStart === sharedRunId
+      ? (localRun?.id ?? sharedRunId)
+      : (sharedRunId ?? localRun?.id);
   // Wall time for runs this browser started; the run record has no timestamps.
   const timing = useRef<{
     runId: string;
@@ -80,40 +92,55 @@ export function useWorkbenchRun({
     checkpoint ?? (() => checkpointHostedPlayground(projectId));
   const save = useMutation({ mutationFn: checkpointRoom });
   const run = useMutation({
-    mutationFn: async (operation: 'run' | 'stop') => {
+    mutationFn: async (input: {
+      operation: 'run' | 'stop';
+      requestId: string;
+      stdin: string;
+      runId?: string;
+    }) => {
+      const { operation, requestId, stdin } = input;
       if (operation === 'run' && owner)
         await checkpointRoom().catch((error: unknown) => {
           throw new WorkbenchStepError('save', error);
         });
-      const payload = { operation, requestId: crypto.randomUUID(), stdin };
+      const payload = { operation, requestId, stdin };
       const startedAt = Date.now();
       const queued = execution
-        ? await execution.run(payload)
+        ? await execution.run({ ...payload, runId: input.runId })
         : await runHostedPlayground(projectId, payload);
       if (operation === 'run')
         timing.current = { runId: queued.runId, startedAt };
-      setRunId(queued.runId);
+      setLocalRun({ id: queued.runId, sharedAtStart: sharedRunId });
       onStarted();
     },
     // A run saves the room first, so an older save failure no longer applies.
     // Only a run speaks for the runner; a refused stop leaves Run as it is.
-    onSuccess: (_, operation) => {
+    onSuccess: (_, { operation }) => {
       save.reset();
       if (operation === 'run') runner.onRunStarted();
     },
-    onError: (error, operation) => {
+    onError: (error, { operation }) => {
       if (operation === 'run') runner.onRunError(error);
     },
   });
+  // Each new Run or Stop gets its own request ID; a retry reuses the last one.
+  const runOperation = (operation: 'run' | 'stop') =>
+    run.mutate({
+      operation,
+      requestId: crypto.randomUUID(),
+      stdin,
+      runId: operation === 'stop' ? runId : undefined,
+    });
   const finished = timing.current;
   return {
     result,
     busy,
     save,
     run,
+    runOperation,
     runner,
     durationMs:
-      finished?.runId === runId && finished.finishedAt
+      finished && finished.runId === runId && finished.finishedAt
         ? finished.finishedAt - finished.startedAt
         : null,
   };

@@ -19,11 +19,15 @@ export const RunSubmission = RunIdentity.extend({
 });
 
 export const RunLookup = RunIdentity.extend({ runId: z.uuid() });
+export const RunWriteback = RunLookup.extend({
+  revision: z.number().int().nonnegative(),
+});
 export const GuestJob = PlaygroundJob.refine((job) => job.operation === 'run');
 
 export type RunIdentity = z.infer<typeof RunIdentity>;
 export type RunSubmission = z.infer<typeof RunSubmission>;
 export type RunLookup = z.infer<typeof RunLookup>;
+export type RunWriteback = z.infer<typeof RunWriteback>;
 export type RunClaim = Pick<
   RunRow,
   'run_id' | 'generation' | 'slot' | 'deadline'

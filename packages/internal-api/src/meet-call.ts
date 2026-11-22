@@ -381,7 +381,12 @@ export function createMeetPlayground(
 }
 export function runMeetPlayground(
   id: string,
-  payload: { operation: 'run' | 'stop'; requestId: string; stdin?: string }
+  payload: {
+    operation: 'run' | 'stop';
+    requestId: string;
+    stdin?: string;
+    runId?: string;
+  }
 ) {
   return getInternalApiClient().json<{ runId: string }>(
     `${programmingCallPath(id)}?run`,

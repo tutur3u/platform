@@ -1,3 +1,4 @@
+import { isTrustedRealtimeServiceRequest } from '@tuturuuu/utils/realtime-service-ticket';
 import type { NextRequest } from 'next/server';
 import { externalProjectUploadProxyPayloadLimit } from './external-projects/upload-proxy-payload-limit';
 import { feedbackProxyPayloadLimit } from './product-feedback-limits';
@@ -7,6 +8,14 @@ import { profileMediaProxyPayloadLimit } from './profile-media-proxy';
 export function webProxyPayloadLimit(
   req: Pick<NextRequest, 'headers' | 'method' | 'nextUrl'>
 ) {
+  const { pathname } = req.nextUrl;
+  if (
+    (pathname === '/api/v1/internal/playground-execution/export' ||
+      pathname === '/api/v1/realtime/programming/checkpoint') &&
+    isTrustedRealtimeServiceRequest(pathname, req.headers, req.method)
+  ) {
+    return 3 * 1024 * 1024;
+  }
   return (
     profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
     feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname) ??

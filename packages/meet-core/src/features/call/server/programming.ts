@@ -86,7 +86,10 @@ export async function setMeetingProgramming(access: Access, payload: unknown) {
   if (!access.isHost)
     throw new MeetCallAccessError(403, 'Host access required');
   await selected(access); // Lifecycle and admission must succeed before resource lookup.
-  const selection = meetingProgrammingSchema.nullable().parse(payload);
+  const selection = meetingProgrammingSchema
+    .omit({ runId: true, runStartedAt: true })
+    .nullable()
+    .parse(payload);
   if (selection?.kind === 'playground') {
     if (
       !(await elevated(access)) &&
@@ -132,6 +135,7 @@ async function authorizePlayground(
     ownerId,
     projectId: selection.id,
     revision: project.revision,
+    legacyRun: project.activeRun,
     meetingId: override ? access.meeting.id : undefined,
   };
 }
@@ -373,29 +377,52 @@ export async function executeMeetingPlayground(
     .object({
       operation: z.enum(['run', 'stop']),
       requestId: z.uuid(),
+      runId: z.uuid().optional(),
       stdin: z.string().max(65536).optional(),
     })
     .strict()
     .parse(payload);
-  if (useCloudMeetPlayground()) {
+  const cloud =
+    parsed.operation === 'stop' && parsed.runId
+      ? isCloudPlaygroundRun(parsed.runId)
+      : useCloudMeetPlayground() &&
+        !(parsed.operation === 'stop' && project.legacyRun);
+  if (cloud) {
     const scope = {
       meetingId: access.meeting.id,
       ownerId: project.ownerId,
       projectId: project.projectId,
     };
     try {
-      return parsed.operation === 'stop'
-        ? await stopCloudPlayground(scope)
-        : await startCloudPlayground(
-            scope,
-            {
-              requester: access.user.id,
-              requestId: parsed.requestId,
-              revision: project.revision,
-              stdin: parsed.stdin,
-            },
-            project.meetingId
-          );
+      if (parsed.operation === 'stop')
+        return await stopCloudPlayground(scope, parsed.runId);
+      if (project.legacyRun) {
+        throw new MeetCallAccessError(
+          429,
+          'Playground project already has an active run',
+          'PLAYGROUND_CAPACITY'
+        );
+      }
+      const startedAt = Date.now();
+      const queued = await startCloudPlayground(
+        scope,
+        {
+          requester: access.user.id,
+          requestId: parsed.requestId,
+          revision: project.revision,
+          stdin: parsed.stdin,
+        },
+        project.meetingId
+      );
+      await callRoomService(access, {
+        action: 'programming.run',
+        projectId: project.projectId,
+        runId: queued.runId,
+        startedAt,
+      }).catch(() =>
+        console.warn('Could not publish the Playground run receipt to the room')
+      );
+      return queued;
     } catch (error) {
       if (error instanceof CloudPlaygroundRefusal)
         throw new MeetCallAccessError(error.status, error.message, error.code);

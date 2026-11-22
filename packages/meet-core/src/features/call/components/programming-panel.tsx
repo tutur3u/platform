@@ -279,6 +279,9 @@ export function ProgrammingPanel({
           <Workbench
             key={`${accountId ?? 'native'}:${meetingId}:${active.selection.id}:${active.selection.language}`}
             projectId={active.project.id}
+            sharedRunId={
+              selection?.id === active.project.id ? selection.runId : undefined
+            }
             roomKey={`meeting:${meetingId}:${active.selection.id}:${active.selection.language}`}
             join={join}
             checkpoint={() => api.checkpoint(meetingId)}

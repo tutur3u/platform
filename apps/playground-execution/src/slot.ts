@@ -156,7 +156,8 @@ export class PlaygroundSlot extends DurableObject<Env> {
         this.ctx.container,
         input,
         claim.deadline,
-        stop.signal
+        stop.signal,
+        () => coordinator(this.env).mayExecute(claim)
       );
       if (result.outcome === 'exited' && result.files !== undefined) {
         savedRevision = await this.saveFiles(

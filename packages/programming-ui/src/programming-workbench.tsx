@@ -49,6 +49,7 @@ export function ProgrammingWorkbench({
   join,
   checkpoint,
   execution,
+  sharedRunId,
   previewUrl,
   problem,
   onTest,
@@ -59,6 +60,8 @@ export function ProgrammingWorkbench({
   roomKey?: string;
   join?: () => Promise<ProgrammingCollaborationJoin>;
   checkpoint?: () => Promise<unknown>;
+  /** The room's current Run, so every participant follows the same result. */
+  sharedRunId?: string;
   previewUrl?: (port: number) => string;
   execution?: WorkbenchExecution;
   problem?: { title: string; prompt: string };
@@ -125,20 +128,22 @@ export function ProgrammingWorkbench({
       });
     }
   }, [activePath, collaborationClient, collaborationOpen]);
-  const { result, busy, save, run, runner, durationMs } = useWorkbenchRun({
-    projectId,
-    roomKey,
-    execution,
-    checkpoint,
-    problem: !!problem,
-    owner,
-    stdin,
-    meeting,
-    onStarted: () => {
-      setOutputTab('console');
-      setOutputOpen(true);
-    },
-  });
+  const { result, busy, save, run, runOperation, runner, durationMs } =
+    useWorkbenchRun({
+      projectId,
+      roomKey,
+      execution,
+      sharedRunId,
+      checkpoint,
+      problem: !!problem,
+      owner,
+      stdin,
+      meeting,
+      onStarted: () => {
+        setOutputTab('console');
+        setOutputOpen(true);
+      },
+    });
   const test = useMutation({
     mutationFn: async (): Promise<WorkbenchTestRun | undefined> => {
       setOutputTab('tests');
@@ -203,7 +208,9 @@ export function ProgrammingWorkbench({
     if (runFailure.step === 'save' && !run.error) save.mutate();
     else if (runFailure.step === 'test') test.mutate();
     else if (runFailure.step === 'result') void result.refetch();
-    else run.mutate(run.variables ?? 'run');
+    // A retry reuses the request ID, so a Run that was accepted is not repeated.
+    else if (run.variables) run.mutate(run.variables);
+    else runOperation('run');
   };
   const gate = runnerGate(
     runner.unavailable,
@@ -288,7 +295,7 @@ export function ProgrammingWorkbench({
       !run.isPending &&
       !save.isPending
     )
-      run.mutate('run');
+      runOperation('run');
   };
   const onShortcut = (event: KeyboardEvent<HTMLElement>) => {
     // Monaco handles the shortcut itself and marks the event as handled.
@@ -335,8 +342,8 @@ export function ProgrammingWorkbench({
                   editable,
                   busy,
                   pending: run.isPending || save.isPending,
-                  onRun: () => run.mutate('run'),
-                  onStop: () => run.mutate('stop'),
+                  onRun: () => runOperation('run'),
+                  onStop: () => runOperation('stop'),
                   onSave: canCheckpoint ? () => save.mutate() : undefined,
                   unavailable: runnerDown,
                 }
@@ -499,7 +506,7 @@ export function ProgrammingWorkbench({
                 ? {
                     id: runnerDown,
                     file: active,
-                    onRetry: editable ? () => run.mutate('run') : undefined,
+                    onRetry: editable ? () => runOperation('run') : undefined,
                     retryDisabled:
                       !editable || busy || run.isPending || save.isPending,
                     saveFailed: gate.saveFailed,

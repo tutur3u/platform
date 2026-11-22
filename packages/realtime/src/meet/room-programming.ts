@@ -12,6 +12,8 @@ export const meetingProgrammingSchema = z
   .object({
     kind: z.enum(['playground', 'problem']),
     id: z.uuid(),
+    runId: z.uuid().optional(),
+    runStartedAt: z.number().int().nonnegative().optional(),
     language: z.enum([
       'python',
       'javascript',
@@ -39,6 +41,12 @@ export function applyRoomProgramming(
       z.object({
         action: z.literal('programming.read'),
         mira: z.literal(true).optional(),
+      }),
+      z.object({
+        action: z.literal('programming.run'),
+        projectId: z.uuid(),
+        runId: z.uuid(),
+        startedAt: z.number().int().nonnegative(),
       }),
       z.object({
         action: z.literal('programming.set'),
@@ -85,6 +93,43 @@ export function applyRoomProgramming(
         ...(parsed.data.mira ? programmingMiraRead(snapshot, token) : {}),
       },
     };
+  if (parsed.data.action === 'programming.run') {
+    const selection = snapshot.settings?.programming;
+    if (
+      selection?.kind !== 'playground' ||
+      selection.id !== parsed.data.projectId
+    ) {
+      return {
+        state: snapshot,
+        body: { error: 'Playground selection changed' },
+        status: 409,
+      };
+    }
+    if (
+      selection.runId === parsed.data.runId ||
+      (selection.runStartedAt !== undefined &&
+        selection.runStartedAt > parsed.data.startedAt)
+    ) {
+      return { state: snapshot, body: { selection } };
+    }
+    const state = {
+      ...snapshot,
+      settings: {
+        ...snapshot.settings,
+        shareNotes: snapshot.settings?.shareNotes ?? false,
+        programming: {
+          ...selection,
+          runId: parsed.data.runId,
+          runStartedAt: parsed.data.startedAt,
+        },
+      },
+    };
+    return {
+      state,
+      body: { selection: state.settings.programming },
+      messages: [roomSettingsMessage(state)],
+    };
+  }
   if (programmingMiraResolutionPending(snapshot))
     return {
       state: snapshot,

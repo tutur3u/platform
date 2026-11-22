@@ -80,11 +80,15 @@ The active project limit protects shared rooms where two participants can ask to
 run the same revision. The current Meet adapter handles Run, Stop and Console
 results. File changes use the existing collaborative merge and revision-checked
 Drive checkpoint. Preview and Learn retain their current provider. Qualify the
-writeback and concurrent editor behavior before production activation.
+writeback and concurrent editor behavior before production activation. Verify
+that the legacy runner pool has no eligible Playground capacity while Meet uses
+Cloudflare and Learn still uses the legacy provider.
 
 The operator calls `POST /control` with the operator credential and
 `{"enabled":false}`. The response records the new generation and the number of
-active reservations. Admission then refuses new work. Confirm there are zero
+active reservations. Admission then refuses new work. A draining response uses
+HTTP 202. A claimed Drive writeback keeps the reservation active until the
+checkpoint confirms settlement. Confirm there are zero
 active reservations and zero running instances before rolling back the
 application route or rotating service secrets. The same control request is
 idempotent. Re-enable only after a scoped approval and verified teardown.
@@ -97,7 +101,7 @@ start, one command, one finalization, and at most one file export. The slot jour
 fetching source. Interrupted execution is reconciled without launching the
 command again. Cleanup makes at most three attempts per reservation. If
 cleanup stays unconfirmed, the slot remains occupied for operator
-reconciliation. Terminal jobs clear their deadline work. Result polling
+reconciliation. Clients stop polling at the run deadline. Terminal jobs clear their deadline work. Result polling
 uses only the journal. A new admission prunes up to 64 expired receipts.
 
 ## Usage and cost

@@ -99,6 +99,7 @@ export interface RunRow extends SqlRow {
   cleanup_at: number | null;
   cleanup_attempts: number;
   stop_requested: number;
+  writeback_state: 0 | 1 | 2;
   exit_code: number | null;
   result_revision: number | null;
   output: string;
@@ -147,6 +148,7 @@ export class PlaygroundAdmission {
         cleanup_at INTEGER,
         cleanup_attempts INTEGER NOT NULL,
         stop_requested INTEGER NOT NULL,
+        writeback_state INTEGER NOT NULL,
         exit_code INTEGER,
         result_revision INTEGER,
         output TEXT NOT NULL
@@ -228,8 +230,7 @@ export class PlaygroundAdmission {
       if (previous) {
         return previous.requester === request.requester &&
           previous.project_id === request.projectId &&
-          previous.scope_id === request.scopeId &&
-          previous.revision === request.revision
+          previous.scope_id === request.scopeId
           ? { kind: 'existing', run: previous }
           : { kind: 'refused', reason: 'request_conflict' };
       }
@@ -284,13 +285,14 @@ export class PlaygroundAdmission {
         cleanup_at: now + MAX_JOB_AGE_MS,
         cleanup_attempts: 0,
         stop_requested: 0,
+        writeback_state: 0,
         exit_code: null,
         result_revision: null,
         output: '',
       };
       this.storage.query(
         `INSERT INTO playground_runs VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, ?, 0, 0, NULL, NULL, ''
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, ?, 0, 0, 0, NULL, NULL, ''
         )`,
         run.run_id,
         run.requester,
@@ -363,6 +365,40 @@ export class PlaygroundAdmission {
     return Boolean(valid);
   }
 
+  claimWriteback(run: RunRow, now: number) {
+    const [claim] = this.storage.query<{ run_id: string }>(
+      `UPDATE playground_runs SET writeback_state = 1
+       WHERE run_id = ? AND generation = ? AND state = 'starting'
+         AND writeback_state = 0 AND stop_requested = 0 AND deadline > ?
+         AND EXISTS (
+           SELECT 1 FROM playground_gate WHERE singleton = 1 AND enabled = 1
+             AND generation = ?
+         )
+       RETURNING run_id`,
+      run.run_id,
+      run.generation,
+      now,
+      run.generation
+    );
+    return Boolean(claim);
+  }
+
+  settleWriteback(run: RunRow, now: number) {
+    const [settled] = this.storage.query<{ run_id: string }>(
+      `UPDATE playground_runs
+       SET writeback_state = 2,
+           cleanup_at = COALESCE(cleanup_at, ?),
+           cleanup_attempts = CASE WHEN cleanup_at IS NULL THEN 2 ELSE cleanup_attempts END
+       WHERE run_id = ? AND generation = ? AND writeback_state = 1
+         AND ${ACTIVE}
+       RETURNING run_id`,
+      now,
+      run.run_id,
+      run.generation
+    );
+    return Boolean(settled);
+  }
+
   claimCleanup(run: RunRow, now: number): boolean {
     const [claimed] = this.storage.query<{ run_id: string }>(
       `UPDATE playground_runs
@@ -411,6 +447,7 @@ export class PlaygroundAdmission {
              result_revision = CASE stop_requested WHEN 1 THEN NULL ELSE ? END,
              output = CASE stop_requested WHEN 1 THEN '' ELSE ? END
          WHERE run_id = ? AND generation = ? AND slot = ? AND ${ACTIVE}
+           AND writeback_state <> 1
          RETURNING state`,
         finalState,
         now,

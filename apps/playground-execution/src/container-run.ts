@@ -74,7 +74,8 @@ export async function runInFreshContainer(
   container: Container,
   input: GuestInput,
   deadline: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  mayExecute: () => Promise<boolean> = async () => true
 ): Promise<GuestResult> {
   if (container.running) throw new Error('Playground slot is not clean');
   const image = container.images.toolchain;
@@ -104,7 +105,13 @@ export async function runInFreshContainer(
       expiration,
       (async () => {
         await container.setInactivityTimeout(IDLE_TIMEOUT_MS);
-        if (cancelled || Date.now() >= deadline) {
+        if (
+          cancelled ||
+          Date.now() >= deadline ||
+          !(await mayExecute()) ||
+          cancelled ||
+          Date.now() >= deadline
+        ) {
           throw new Error('Playground execution stopped before dispatch');
         }
         const stdin = new Blob([JSON.stringify(input)]).stream();

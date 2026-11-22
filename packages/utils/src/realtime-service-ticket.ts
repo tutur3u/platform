@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Service tickets minted by the Meet realtime Worker for its platform
+ * Service tickets minted by Meet and its realtime Worker for platform
  * callbacks. The API proxy otherwise treats every bearer token as a Supabase
  * access token and answers 401 before the route can verify the ticket, so a
  * verified ticket on exactly its own route is a trusted service request.
@@ -10,13 +10,23 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * match one of the pairs below; the ticket must be unexpired. The route
  * verifies the same ticket again (and its topic, ids and version), so this only
  * exempts the proxy's session and anonymous-scanner checks. A ticket can be
- * replayed within its lifetime (30 s); the route's own checks decide the
+ * replayed within its lifetime; the route's own checks decide the
  * outcome of a replay, and tickets are not single-use.
  */
 const SERVICE_ROUTES: Record<
   string,
-  { audience: string; kinds: ReadonlySet<string> }
+  { audience: string; kinds: ReadonlySet<string>; playground?: true }
 > = {
+  '/api/v1/internal/playground-execution/source': {
+    audience: 'tuturuuu.meet.playground-source',
+    kinds: new Set(['playground-source']),
+    playground: true,
+  },
+  '/api/v1/internal/playground-execution/export': {
+    audience: 'tuturuuu.meet.playground-export',
+    kinds: new Set(['playground-export']),
+    playground: true,
+  },
   '/api/v1/realtime/documents/checkpoint': {
     audience: 'tuturuuu.channels',
     kinds: new Set(['document-checkpoint']),
@@ -72,6 +82,8 @@ export function verifyRealtimeServiceTicket(
 ): { kind: string; exp: number } | null {
   const route = SERVICE_ROUTES[pathname];
   if (!route || !token || !secret?.trim()) return null;
+  if (route.playground && (secret.trim().length < 32 || token.length > 2048))
+    return null;
   const payload = decodeSignedPayload(token, secret.trim());
   if (!payload) return null;
   const { aud, kind, exp } = payload;
@@ -81,7 +93,8 @@ export function verifyRealtimeServiceTicket(
     !route.kinds.has(kind) ||
     typeof exp !== 'number' ||
     !Number.isFinite(exp) ||
-    exp * 1000 <= now
+    exp * 1000 <= now ||
+    (route.playground && (!Number.isInteger(exp) || exp * 1000 > now + 60_000))
   )
     return null;
   return { kind, exp };
@@ -91,9 +104,14 @@ export function isTrustedRealtimeServiceRequest(
   pathname: string,
   headers: Headers,
   method: string | undefined,
-  secret = process.env.MEET_REALTIME_TOKEN_SECRET
+  secret?: string
 ) {
   if (method !== 'POST') return false;
   const token = headers.get('authorization')?.match(/^Bearer (\S+)$/)?.[1];
-  return verifyRealtimeServiceTicket(pathname, token, secret) !== null;
+  const routeSecret =
+    secret ??
+    (SERVICE_ROUTES[pathname]?.playground
+      ? process.env.PLAYGROUND_SOURCE_TICKET_SECRET
+      : process.env.MEET_REALTIME_TOKEN_SECRET);
+  return verifyRealtimeServiceTicket(pathname, token, routeSecret) !== null;
 }

@@ -116,9 +116,16 @@ test('deduplicates after restart and limits each reservation to seven statements
   assert.deepEqual(restarted.reserve(input(1), 5), { kind: 'existing', run });
   assert.equal(store.statements() - count, 1);
   assert.deepEqual(restarted.reserve({ ...input(1), revision: 2 }, 6), {
-    kind: 'refused',
-    reason: 'request_conflict',
+    kind: 'existing',
+    run,
   });
+  assert.deepEqual(
+    restarted.reserve({ ...input(1), scopeId: 'other-room' }, 6),
+    {
+      kind: 'refused',
+      reason: 'request_conflict',
+    }
+  );
   count = store.statements();
   assert.equal(
     restarted.read({ ...input(1), scopeId: 'room-elsewhere' }),
@@ -223,4 +230,34 @@ test('cleanup exhausts its persisted budget without reopening the slot', (t) => 
     kind: 'refused',
     reason: 'global_capacity',
   });
+});
+
+test('stop waits for the scoped writeback claim across restarts', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.claimWriteback(run, 2), true);
+  assert.equal(ledger.claimWriteback(run, 3), false);
+  ledger.setEnabled(false);
+  const restarted = store.create();
+  assert.equal(restarted.finish(run, 'cancelled', 4), undefined);
+  assert.equal(restarted.active().length, 1);
+  assert.equal(restarted.setEnabled(true).enabled, false);
+  assert.equal(restarted.settleWriteback(run, 5), true);
+  assert.equal(
+    restarted.finish(run, 'succeeded', 6, {
+      savedRevision: 2,
+      exitCode: 0,
+      output: 'late',
+    }),
+    'cancelled'
+  );
+  assert.equal(restarted.read(input(1)).result_revision, null);
+  assert.equal(restarted.active().length, 0);
+  assert.equal(restarted.setEnabled(true).enabled, true);
+  const late = reserve(restarted, input(2), 7);
+  assert.equal(restarted.claimStart(late, 8), true);
+  assert.equal(restarted.claimWriteback(late, late.deadline), false);
 });

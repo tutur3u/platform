@@ -186,3 +186,40 @@ it('keeps live drafts private until the host publishes and serializes resolution
     miraPresence: { proposedFix: { status: 'accepted', acceptedBy: 'Editor' } },
   });
 });
+
+it('shares a scoped Playground run with the room and ignores stale receipts', () => {
+  const project = '00000000-0000-4000-8000-000000000101';
+  const runId = '00000000-0000-8000-8000-000000000102';
+  const state = {
+    ...snapshot,
+    approved: { guest: { userId: 'guest', displayName: 'Guest' } },
+    settings: {
+      shareNotes: false,
+      programming: {
+        kind: 'playground',
+        id: project,
+        language: 'python',
+      } as const,
+    },
+  };
+  const input = {
+    action: 'programming.run',
+    projectId: project,
+    runId,
+    startedAt: 10,
+  };
+  const receipt = roomService(state, token, input);
+  expect(receipt?.messages?.[0]).toMatchObject({
+    type: 'room.settings',
+    settings: { programming: { id: project, runId } },
+  });
+  expect(receipt?.state).toBeDefined();
+  if (!receipt) throw new Error('Missing room receipt');
+  expect(
+    roomService(receipt.state, token, { ...input, startedAt: 9 })?.messages
+  ).toBeUndefined();
+  expect(
+    roomService(state, token, { ...input, projectId: runId })?.status
+  ).toBe(409);
+  expect(roomService(state, { ...token, scopes: [] }, input)?.status).toBe(403);
+});
