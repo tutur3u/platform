@@ -60,3 +60,42 @@ test('Cloudflare app workflows that build the shared closure watch packages/clou
     );
   }
 });
+
+// Cron Control's qualified artifact and its already-serving proof come from a
+// push run at the exact production SHA, so the workflow must run whenever a
+// workspace package bundled into the Worker changes.
+test('Cron Control watches every workspace dependency in both pull_request and push paths', () => {
+  const readJson = (file) =>
+    JSON.parse(fs.readFileSync(path.join(repoRoot, file), 'utf8'));
+  const manifest = readJson('apps/cron-control/package.json');
+  const workspaceNames = Object.entries({
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+  })
+    .filter(([, version]) => String(version).startsWith('workspace:'))
+    .map(([name]) => name);
+  assert.ok(workspaceNames.length > 0, 'expected a workspace dependency');
+  const packageDirs = new Map(
+    fs
+      .readdirSync(path.join(repoRoot, 'packages'))
+      .filter((dir) =>
+        fs.existsSync(path.join(repoRoot, 'packages', dir, 'package.json'))
+      )
+      .map((dir) => [readJson(`packages/${dir}/package.json`).name, dir])
+  );
+  const source = fs.readFileSync(
+    path.join(workflowsDir, 'cron-control-cloudflare.yaml'),
+    'utf8'
+  );
+  for (const name of workspaceNames) {
+    const dir = packageDirs.get(name);
+    assert.ok(dir, `${name} should be a packages/ workspace`);
+    const filters =
+      source.match(new RegExp(`^\\s+- 'packages/${dir}/\\*\\*'$`, 'gmu')) ?? [];
+    assert.equal(
+      filters.length,
+      2,
+      `cron-control-cloudflare.yaml should list packages/${dir}/** in both pull_request and push paths`
+    );
+  }
+});

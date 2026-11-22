@@ -4,6 +4,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'apps/cron-control/**'
+      - 'packages/realtime/**'
       - '.github/workflows/cron-control-cloudflare.yaml'
       - 'scripts/ci/cf-worker-settings.mjs'
       - 'scripts/ci/cf-vite-worker.mjs'
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - 'apps/cron-control/**'
+      - 'packages/realtime/**'
       - '.github/workflows/cron-control-cloudflare.yaml'
       - 'scripts/ci/cf-worker-settings.mjs'
       - 'scripts/ci/cf-vite-worker.mjs'

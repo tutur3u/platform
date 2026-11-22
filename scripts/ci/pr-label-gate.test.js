@@ -55,7 +55,7 @@ const PROTECTED_TRIGGERS = {
   'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',
   'coordination-cloudflare.yaml': 'a1db663f5d528748',
   'creator-identity-contract.yaml': '0a3cc2c97958f5cd',
-  'cron-control-cloudflare.yaml': 'f9a9bce5ac1972dd',
+  'cron-control-cloudflare.yaml': '584aa4aa09577c57',
   'deploy-coordinator-cloudflare.yaml': '1940c4736adb5d8a',
   'desktop-beta.yaml': '3d1e23b37a961485',
   'devbox-control-cloudflare.yaml': 'bdd013d87e7c6568',
