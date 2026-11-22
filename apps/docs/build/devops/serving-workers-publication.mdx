@@ -92,7 +92,13 @@ regression, keep the variable unset or move that app to `held` in
 
 `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` is an environment secret on
 `cloudflare-release-production`, scoped to Workers Scripts edit on the
-production account only, with no zone permissions. `CLOUDFLARE_ACCOUNT_ID` and
+production account only, with no zone permissions. The publisher runs in the
+called workflow `serving-worker-publish.yaml`, and a called workflow reads a
+secret, environment ones included, only when its caller hands secrets over, so
+every `publish-<app>` job in `serving-workers-production.yaml` sets
+`secrets: inherit`. A publish job without it starts with an empty token and
+stops at "Cloudflare deploy credentials are not configured" before any
+Cloudflare write; `scripts/ci/serving-workers-workflow.test.mjs` guards it. `CLOUDFLARE_ACCOUNT_ID` and
 `NOVA_ABUSE_GUARD_FAMILIES` are repository variables. Rotate the token through
 the token ledger and set it with `gh secret set --env` from standard input so it
 is never printed.

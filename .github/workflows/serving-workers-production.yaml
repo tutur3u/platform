@@ -67,6 +67,10 @@ jobs:
     permissions:
       contents: read
       actions: read
+    # The publisher's token is an environment secret, and a called workflow
+    # reads no secret, environment ones included, unless the caller hands
+    # them over. Without this line the publisher starts with an empty token.
+    secrets: inherit
     with:
       app: roadmap
       artifact: roadmap-worker-${{ github.sha }}
@@ -84,6 +88,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+    secrets: inherit
     with:
       app: learn
       artifact: learn-cutover-production-${{ github.sha }}
@@ -101,6 +106,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+    secrets: inherit
     with:
       app: teach
       artifact: teach-cutover-production-${{ github.sha }}
@@ -118,6 +124,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+    secrets: inherit
     with:
       app: nova
       artifact: nova-cutover-production-${{ github.sha }}
@@ -135,6 +142,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+    secrets: inherit
     with:
       app: tools
       artifact: tools-cutover-${{ github.sha }}
@@ -152,6 +160,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+    secrets: inherit
     with:
       app: lms
       artifact: lms-worker-${{ github.sha }}
