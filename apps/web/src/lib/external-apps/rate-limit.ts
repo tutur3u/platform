@@ -190,3 +190,32 @@ export async function limitExternalAppWorkspaceRequest(
   );
   return refusal ?? undefined;
 }
+
+/**
+ * Counts running a cron job now, inside the handler after its authorization,
+ * per app, resolved workspace id and job key. Every alias of a workspace and
+ * every member of it share one budget per job.
+ */
+export function limitExternalAppCronRunNow({
+  appId,
+  jobKey,
+  workspaceId,
+}: {
+  appId: string;
+  jobKey: string;
+  workspaceId: string;
+}) {
+  const owner = `app:${keyPart(appId)}:ws:${keyPart(workspaceId)}:job:${keyPart(jobKey)}`;
+  return consume([
+    {
+      bucket: 'runNowMinute',
+      failClosed: true,
+      key: `${KEY_PREFIX}:runNowMinute:${owner}`,
+    },
+    {
+      bucket: 'runNowHour',
+      failClosed: true,
+      key: `${KEY_PREFIX}:runNowHour:${owner}`,
+    },
+  ]);
+}

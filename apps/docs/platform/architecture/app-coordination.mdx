@@ -538,9 +538,15 @@ Limits live in `apps/web/src/lib/external-apps/rate-limit-policy.ts`:
 | Requests | Per app and user | Per app and bound workspace |
 | --- | --- | --- |
 | Reads (`GET`, `drive/read-url`) | 300 per minute | 600 per minute |
-| Writes (every other route, including `cron/.../run-now`) | 30 per minute | 60 per minute |
+| Writes (every other route) | 30 per minute | 60 per minute |
 | `drive/upload-url`, besides the write | 10 per minute | none |
 | `members/invitations`, besides the write | 5 per hour | 30 per hour |
+
+`cron/jobs/{jobKey}/run-now` is a write and is also counted per job: each job
+runs now at most once per minute and 10 times per hour. The handler counts it
+after authorization, keyed by app, resolved workspace id and job key, so every
+alias of a workspace and every member of it share one budget per job. Like the
+other writes it fails closed with 503 when the limiter is unavailable.
 
 The app-token exchange is called by an app's servers, so one client IP carries
 all of that app's users, and shared egress (a Worker range, a NAT) carries

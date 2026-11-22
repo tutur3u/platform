@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 vi.mock('server-only', () => ({}));
+// The run-now per-job limit has its own tests in run-now/route.test.ts.
+vi.mock('@/lib/external-apps/rate-limit', () => ({
+  limitExternalAppCronRunNow: async () => null,
+}));
 
 vi.mock('@tuturuuu/auth/app-coordination', () => ({
   getBearerAppCoordinationToken: (

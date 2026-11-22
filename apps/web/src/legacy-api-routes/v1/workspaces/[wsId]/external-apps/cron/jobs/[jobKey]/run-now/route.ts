@@ -3,6 +3,7 @@ import {
   handleExternalAppWorkspaceCronRoute,
   runExternalAppWorkspaceCronJobNow,
 } from '@/lib/external-apps/workspace-cron';
+import { limitExternalAppCronRunNow } from '@/lib/external-apps/rate-limit';
 
 /** Scopes this route requires; the route-group rate limiter is tested against them. */
 export const requiredScopes = [
@@ -19,7 +20,13 @@ export async function POST(
 ) {
   const { jobKey, wsId } = await params;
   return handleExternalAppWorkspaceCronRoute({
-    handler: (access) => runExternalAppWorkspaceCronJobNow({ access, jobKey }),
+    // Counted per job after authorization, on the resolved workspace id.
+    handler: async (access) =>
+      (await limitExternalAppCronRunNow({
+        appId: access.targetApp.id,
+        jobKey,
+        workspaceId: access.normalizedWorkspaceId,
+      })) ?? runExternalAppWorkspaceCronJobNow({ access, jobKey }),
     operation: 'run_now',
     request,
     requiredScopes,
