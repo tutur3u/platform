@@ -203,6 +203,17 @@ a refused or failed gate (for example a disk admission refusal) would still let
 the push run. Write the output to a file and check the status instead. After a
 rebase, re-run the gate on the rebased commit before pushing.
 
+A run can leave generated output behind in the checkout: the type-check step
+writes untracked `apps/api/.cloudflare/types` and
+`apps/status-api/.cloudflare/types` and can rewrite
+`apps/cms-renderer/src/routeTree.gen.ts`. A second run in the same checkout then
+fails the source-size ceiling on those untracked type files. Before re-running
+the gate in a reused checkout, check `git status --short --untracked-files=all`
+(it lists every untracked file, not just the directory) and remove only that
+output: the two `types` directories when nothing else is untracked inside them
+(`git clean -fd apps/api/.cloudflare/types apps/status-api/.cloudflare/types`),
+and restore the route tree only when it had no edits of its own before the run.
+
 ### Bun upgrade and lock normalization
 
 Until the Bun 1.4.4 upgrade in #6427 lands, a normal `bun install` with installed
