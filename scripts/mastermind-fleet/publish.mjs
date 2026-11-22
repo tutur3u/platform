@@ -29,6 +29,7 @@ import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
 import { sendPoke } from './poke.mjs';
 import { fleetText } from './scrub.mjs';
 import { attachReviewAssets } from './review-extras.mjs';
+import { purgeSecretSpools } from './secret-spool.mjs';
 import { readTodayOutcomes } from './today-outcomes.mjs';
 import { usageCollector } from './usage-snapshot.mjs';
 import { callWeb, createWebBackoff, isRateLimited } from './web-call.mjs';
@@ -58,6 +59,8 @@ const WATCHDOG_MS = 29_000;
 /** Asks keep the full v1 budget; login requests ride on top of it. */
 const MAX_DECISIONS = 50;
 const MAX_LOGINS = 10;
+/** Secret requests and pairings ride on top too (see secret-request.mjs). */
+const MAX_SECRETS = 10;
 const OPEN_LOGIN = new Set(['waiting', 'approved']);
 /**
  * Responses that mean "this body", not "this publisher" (edge guard, size,
@@ -209,11 +212,14 @@ export function readDecisions(dir) {
   const logins = decisions
     .filter((d) => d.kind === 'login' && OPEN_LOGIN.has(d.login.state))
     .slice(-MAX_LOGINS);
+  const secrets = decisions
+    .filter((d) => d.kind === 'secret')
+    .slice(-MAX_SECRETS);
   const asks = decisions
-    .filter((d) => d.kind !== 'login')
+    .filter((d) => d.kind !== 'login' && d.kind !== 'secret')
     .slice(0, MAX_DECISIONS);
   return {
-    decisions: [...asks, ...logins].sort((a, b) =>
+    decisions: [...asks, ...logins, ...secrets].sort((a, b) =>
       a.createdAt.localeCompare(b.createdAt)
     ),
     skipped,
@@ -299,9 +305,11 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   }
   if (bytes > budget) trimLanes(() => false);
   while (bytes > budget && fitted.decisions.length > 0) {
-    // The newest login request goes first, then the newest ask.
+    // The newest login request goes first, then the newest ask, and secret
+    // requests last: a dropped one would expire unanswered.
     const decisions = fitted.decisions;
     let drop = decisions.findLastIndex((d) => d.kind === 'login');
+    if (drop < 0) drop = decisions.findLastIndex((d) => d.kind !== 'secret');
     if (drop < 0) drop = decisions.length - 1;
     fitted = {
       ...fitted,
@@ -580,6 +588,7 @@ export async function runOnce({
       `${ANSWERS_PATH}?nonce=${randomUUID()}`
     );
     written = storeAnswers(paths.answersDir, pulled.answers ?? []);
+    purgeSecretSpools(paths.answersDir, now.getTime());
     for (let i = 0; i < written.length; i += ACK_BATCH)
       await callWeb(
         web,

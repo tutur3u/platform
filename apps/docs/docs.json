@@ -268,6 +268,7 @@
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/mastermind-store",
+                  "build/devops/mastermind-secret-entry",
                   "build/devops/mastermind-ship-collector",
                   "build/devops/storage-egress-protection",
                   "build/devops/meet-transcript-retention",

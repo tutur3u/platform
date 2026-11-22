@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseReview } from './review-extras.mjs';
 import { fleetText } from './scrub.mjs';
+import { parseSecret, parseSecretOutcome } from './secret-decision.mjs';
 
 const SLUG = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const SHORT_SHA = /^[0-9a-f]{7,12}$/;
@@ -164,6 +165,11 @@ export function parseDecisionExtras(raw, now = new Date()) {
     if (!review) return null;
     extras.kind = 'review';
     extras.review = review;
+  } else if (raw.kind === 'secret') {
+    const secret = parseSecret(raw, now);
+    if (!secret) return null;
+    extras.kind = 'secret';
+    extras.secret = secret;
   } else if (raw.kind !== undefined && raw.kind !== 'ask') {
     return null;
   }
@@ -217,14 +223,19 @@ export function readResolved(dir, now = new Date(), readText = readUtf8) {
       )
         continue;
       const outcome = fleetText(raw.outcome, 60);
+      const secretOutcome =
+        raw.kind === 'secret' ? parseSecretOutcome(raw.secretOutcome) : null;
       out.push({
         id: raw.id,
-        kind: ['login', 'review'].includes(raw.kind) ? raw.kind : 'ask',
+        kind: ['login', 'review', 'secret'].includes(raw.kind)
+          ? raw.kind
+          : 'ask',
         title,
         ...(CHANNELS.has(raw.answeredVia)
           ? { answeredVia: raw.answeredVia }
           : {}),
         ...(outcome ? { outcome } : {}),
+        ...(secretOutcome ? { secretOutcome } : {}),
         resolvedAt,
       });
     } catch {
@@ -311,7 +322,8 @@ export function readRelease(file, readText = readUtf8) {
 
 /**
  * The v1 core of a snapshot: no resolved history, release status, login
- * requests, design reviews, lane resolutions or decision context. Returns the same object when there is
+ * requests, design reviews, secret requests, lane resolutions or decision
+ * context. Returns the same object when there is
  * nothing to strip.
  */
 export function baseFleetState(state) {
@@ -326,6 +338,7 @@ export function baseFleetState(state) {
         d.kind ||
         d.login ||
         d.review ||
+        d.secret ||
         d.why ||
         d.defaultOutcome ||
         d.requester
@@ -356,12 +369,15 @@ export function baseFleetState(state) {
         }
       : {}),
     decisions: state.decisions
-      .filter((d) => d.kind !== 'login' && d.kind !== 'review')
+      .filter(
+        (d) => d.kind !== 'login' && d.kind !== 'review' && d.kind !== 'secret'
+      )
       .map(
         ({
           kind: _kind,
           login: _login,
           review: _review,
+          secret: _secret,
           why: _why,
           defaultOutcome: _default,
           requester: _requester,

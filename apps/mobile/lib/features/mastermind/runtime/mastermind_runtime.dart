@@ -18,6 +18,7 @@ import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_fetch_clock_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_outbox_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_cache.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
@@ -274,8 +275,9 @@ final class MastermindRuntime {
     }
   }
 
-  /// Logout or account switch: erase the cache and re-check access for the
-  /// workspace now selected ([wsId] is null after logout).
+  /// Logout or account switch: erase the cache, the secret-entry owner keys
+  /// and machine pins, and re-check access for the workspace now selected
+  /// ([wsId] is null after logout).
   Future<void> reset({String? wsId}) async {
     // Sync first: for the root workspace it emits `loading` synchronously, so a
     // deep link on screen is held rather than redirected during the switch.
@@ -288,6 +290,7 @@ final class MastermindRuntime {
       snapshot.clear(),
       replies.clear(),
       if (irisTrust case final trust?) trust.forget(),
+      eraseFleetSecretKeys(),
     ]);
     await synced;
   }

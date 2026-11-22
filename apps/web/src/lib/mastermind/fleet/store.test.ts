@@ -4,6 +4,7 @@ import {
   acknowledgeFleetAnswers,
   answerableDecisionIds,
   claimFleetNonce,
+  FleetAnswerClosedError,
   FleetAnswerConflictError,
   pendingFleetAnswers,
   readFleetAnswers,
@@ -354,5 +355,75 @@ describe('fleet store', () => {
     expect([a.revision, b.revision].sort()).toEqual([1, 2]);
     const latest = (await readFleetAnswers(store, ['race'])).race;
     expect(latest?.revision).toBe(2);
+  });
+});
+
+// Design: apps/docs/build/devops/mastermind-secret-entry.mdx#relay-web-and-store
+describe('fleet store secret answers', () => {
+  const now = new Date('2026-11-22T10:00:00.000Z');
+  const pair = (n: number) => ({
+    action: 'pair' as const,
+    pair: {
+      ownerKey: Buffer.alloc(32, 7).toString('base64url'),
+      ownerMac: Buffer.alloc(32, n).toString('base64url'),
+    },
+  });
+  const slot = (maxRevisions: number) => ({
+    maxRevisions,
+    keepUntil: new Date(now.getTime() + 20 * 60_000),
+  });
+
+  it('lists a pending secret answer until its record expires or is acknowledged', async () => {
+    const store = createMemoryMastermindStore(() => now.getTime());
+    await recordFleetAnswer(
+      store,
+      'pair-a',
+      pair(1),
+      'k1',
+      now,
+      'actor',
+      slot(5)
+    );
+    expect(await answerableDecisionIds(store, null, now)).toEqual(['pair-a']);
+    expect(
+      await answerableDecisionIds(
+        store,
+        null,
+        new Date(now.getTime() + 21 * 60_000)
+      )
+    ).toEqual([]);
+    await acknowledgeFleetAnswers(
+      store,
+      [{ decisionId: 'pair-a', revision: 1 }],
+      now
+    );
+    expect(await answerableDecisionIds(store, null, now)).toEqual([]);
+  });
+
+  it('closes a request after its first answer and keeps plain answers unchanged', async () => {
+    const store = createMemoryMastermindStore(() => now.getTime());
+    await recordFleetAnswer(
+      store,
+      'pair-b',
+      pair(1),
+      'k1',
+      now,
+      'actor',
+      slot(1)
+    );
+    await expect(
+      recordFleetAnswer(store, 'pair-b', pair(2), 'k2', now, 'actor', slot(1))
+    ).rejects.toBeInstanceOf(FleetAnswerClosedError);
+    const plain = await recordFleetAnswer(
+      store,
+      'ship',
+      { action: 'approve', optionId: 'yes' },
+      'k3',
+      now,
+      'actor'
+    );
+    expect(plain).not.toHaveProperty('payloadDigest');
+    expect(plain).not.toHaveProperty('keepUntil');
+    expect(await answerableDecisionIds(store, null, now)).toEqual(['pair-b']);
   });
 });

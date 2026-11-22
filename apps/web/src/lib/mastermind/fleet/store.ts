@@ -5,6 +5,17 @@ import type {
   FleetAnswerRecord,
   FleetState,
 } from './contract';
+import {
+  answerPayloadDigest,
+  livePending,
+  SECRET_PENDING_KEY,
+  secretTtl,
+  updateSecretPending,
+  withoutEarlier,
+  withoutPayload,
+} from './secret-store';
+
+export { answerPayloadDigest, SECRET_PENDING_KEY };
 
 export const FLEET_STATE_KEY = 'mastermind:fleet:v1:state';
 const ANSWER_PREFIX = 'mastermind:fleet:v1:answer:';
@@ -108,21 +119,31 @@ function mergeRecent(
   return [...[...open].map((id) => byId.get(id)!), ...closed];
 }
 
-/** Ids an answers pull covers: open decisions plus recently closed ones. */
+/**
+ * Ids an answers pull covers: open decisions, recently closed ones and
+ * secret decisions with an unacknowledged answer.
+ */
 export async function answerableDecisionIds(
   store: MastermindStore,
-  stored: StoredFleetState | null
+  stored: StoredFleetState | null,
+  now = new Date()
 ) {
-  const { entries } = parseRecent(await store.get(RECENT_KEY));
+  const [recentRaw, pendingRaw] = await store.mget([
+    RECENT_KEY,
+    SECRET_PENDING_KEY,
+  ]);
+  const { entries } = parseRecent(recentRaw ?? null);
   return [
     ...new Set([
       ...(stored?.state.decisions.map(({ id }) => id) ?? []),
       ...entries.map(({ id }) => id),
+      ...livePending(pendingRaw ?? null, now).map(({ id }) => id),
     ]),
   ];
 }
 
 type StoredAnswer = Omit<FleetAnswerRecord, 'pickedUpRevision' | 'pickedUpAt'>;
+type StoredEntry = NonNullable<StoredAnswer['earlier']>[number];
 type StoredAck = { revision: number; at: string };
 
 function parseJson<T>(value: string | null): T | null {
@@ -260,13 +281,40 @@ export class FleetAnswerConflictError extends Error {
   }
 }
 
+/** A secret decision that takes no further answers. */
+export class FleetAnswerClosedError extends Error {
+  constructor() {
+    super('answer slots closed');
+  }
+}
+
 /** Same payload; empty values are not stored, so they compare as absent. */
-function samePayload(stored: StoredAnswer, input: FleetAnswerInput) {
+function samePayload(stored: StoredEntry, input: FleetAnswerInput) {
   return (
     stored.action === input.action &&
     (stored.optionId || null) === (input.optionId || null) &&
-    (stored.text || null) === (input.text || null)
+    (stored.text || null) === (input.text || null) &&
+    (stored.payloadDigest ?? null) === (answerPayloadDigest(input) ?? null)
   );
+}
+
+/** Receipt of an earlier pairing answer kept beside the latest one. */
+function mergeEntry(entry: StoredEntry, ack: StoredAck | null) {
+  const picked = ack && ack.revision >= entry.revision ? ack : null;
+  return {
+    ...entry,
+    pickedUpRevision: picked ? entry.revision : 0,
+    ...(picked ? { pickedUpAt: picked.at } : {}),
+  };
+}
+
+/**
+ * Secret answers: `maxRevisions` answers at most (1 for a request, so only
+ * the first wins), kept until `keepUntil`, each listed in the pending index.
+ */
+export interface SecretAnswerSlot {
+  maxRevisions: number;
+  keepUntil: Date;
 }
 
 /**
@@ -283,9 +331,11 @@ export async function recordFleetAnswer(
   input: FleetAnswerInput,
   idempotencyKey: string,
   now = new Date(),
-  actorId?: string
+  actorId?: string,
+  secret?: SecretAnswerSlot
 ): Promise<FleetAnswerRecord> {
   const key = `${ANSWER_PREFIX}${decisionId}`;
+  let indexed = false;
   for (let attempt = 0; attempt < CAS_ATTEMPTS; attempt++) {
     const [raw, ackRaw] = await store.mget([key, `${ACK_PREFIX}${decisionId}`]);
     const current = parseJson<StoredAnswer>(raw ?? null);
@@ -296,22 +346,52 @@ export async function recordFleetAnswer(
         throw new FleetAnswerConflictError();
       return merge(current, ack);
     }
+    const prior = current?.earlier?.find(
+      (entry) => entry.idempotencyKey === idempotencyKey
+    );
+    if (prior) {
+      if (prior.actorId !== actorId || !samePayload(prior, input))
+        throw new FleetAnswerConflictError();
+      return mergeEntry(prior, ack);
+    }
+    if (secret && (current?.revision ?? 0) >= secret.maxRevisions)
+      throw new FleetAnswerClosedError();
+    const keepUntil = secret?.keepUntil.toISOString();
+    const payloadDigest = answerPayloadDigest(input);
+    const acked = ack?.revision ?? 0;
     const next: StoredAnswer = {
       decisionId,
       revision: (current?.revision ?? 0) + 1,
       action: input.action,
       ...(input.optionId ? { optionId: input.optionId } : {}),
       ...(input.text ? { text: input.text } : {}),
+      ...(input.sealed ? { sealed: input.sealed } : {}),
+      ...(input.owner ? { owner: input.owner } : {}),
+      ...(input.pair ? { pair: input.pair } : {}),
+      ...(payloadDigest ? { payloadDigest } : {}),
       idempotencyKey,
       ...(actorId ? { actorId } : {}),
       answeredAt: now.toISOString(),
+      ...(keepUntil ? { keepUntil } : {}),
+      ...(secret && current
+        ? {
+            earlier: [...(current.earlier ?? []), withoutEarlier(current)].map(
+              (entry) => withoutPayload(entry, acked)
+            ),
+          }
+        : {}),
     };
+    // Listed before it is stored, so an accepted answer is always pulled.
+    if (secret && keepUntil && !indexed) {
+      await updateSecretPending(store, decisionId, keepUntil, now);
+      indexed = true;
+    }
     if (
       await store.compareAndSet(
         key,
         raw ?? null,
         JSON.stringify(next),
-        STATE_TTL_MS
+        secret ? secretTtl(keepUntil, now, STATE_TTL_MS) : STATE_TTL_MS
       )
     )
       return merge(next, ack);
@@ -337,17 +417,23 @@ export async function replayFleetAnswer(
     `${ACK_PREFIX}${decisionId}`,
   ]);
   const current = parseJson<StoredAnswer>(raw ?? null);
-  if (
-    !current ||
-    current.actorId !== actorId ||
-    current.idempotencyKey !== idempotencyKey ||
-    !samePayload(current, input)
-  )
-    return null;
-  return merge(current, parseJson<StoredAck>(ackRaw ?? null));
+  const ack = parseJson<StoredAck>(ackRaw ?? null);
+  const match = (entry: StoredEntry) =>
+    entry.actorId === actorId &&
+    entry.idempotencyKey === idempotencyKey &&
+    samePayload(entry, input);
+  if (!current) return null;
+  if (match(current)) return merge(current, ack);
+  const prior = current.earlier?.find(match);
+  return prior ? mergeEntry(prior, ack) : null;
 }
 
-/** Marks answers picked up; stale or repeated acks change nothing. */
+/**
+ * Marks answers picked up; stale or repeated acks change nothing. A secret
+ * answer's record is then rewritten without its payload (its digest stays,
+ * so a retry still replays the receipt), and once its latest revision is
+ * picked up its id leaves the pending index.
+ */
 export async function acknowledgeFleetAnswers(
   store: MastermindStore,
   acks: { decisionId: string; revision: number }[],
@@ -355,31 +441,58 @@ export async function acknowledgeFleetAnswers(
 ) {
   let changed = 0;
   for (const { decisionId, revision } of acks) {
+    const answerKey = `${ANSWER_PREFIX}${decisionId}`;
     const ackKey = `${ACK_PREFIX}${decisionId}`;
-    const [answerRaw, ackRaw] = await store.mget([
-      `${ANSWER_PREFIX}${decisionId}`,
-      ackKey,
-    ]);
+    const [answerRaw, ackRaw] = await store.mget([answerKey, ackKey]);
     const answer = parseJson<StoredAnswer>(answerRaw ?? null);
     const ack = parseJson<StoredAck>(ackRaw ?? null);
-    if (
-      !answer ||
-      revision > answer.revision ||
-      revision <= (ack?.revision ?? 0)
-    )
-      continue;
-    const next: StoredAck = { revision, at: now.toISOString() };
-    if (
-      await store.compareAndSet(
-        ackKey,
-        ackRaw ?? null,
-        JSON.stringify(next),
-        STATE_TTL_MS
+    if (!answer || revision > answer.revision) continue;
+    let acked = ack?.revision ?? 0;
+    if (revision > acked) {
+      const next: StoredAck = { revision, at: now.toISOString() };
+      if (
+        !(await store.compareAndSet(
+          ackKey,
+          ackRaw ?? null,
+          JSON.stringify(next),
+          STATE_TTL_MS
+        ))
       )
-    )
+        continue;
       changed++;
+      acked = revision;
+    }
+    if (answer.payloadDigest)
+      await settleSecretAnswer(store, answerRaw!, answer, acked, now);
   }
   return changed;
+}
+
+async function settleSecretAnswer(
+  store: MastermindStore,
+  raw: string,
+  answer: StoredAnswer,
+  acked: number,
+  now: Date
+) {
+  const settled: StoredAnswer = {
+    ...withoutPayload(answer, acked),
+    ...(answer.earlier
+      ? { earlier: answer.earlier.map((e) => withoutPayload(e, acked)) }
+      : {}),
+  };
+  const value = JSON.stringify(settled);
+  // A newer revision written meanwhile keeps its payload; the next ack
+  // settles it.
+  if (value !== raw)
+    await store.compareAndSet(
+      `${ANSWER_PREFIX}${answer.decisionId}`,
+      raw,
+      value,
+      secretTtl(answer.keepUntil, now, STATE_TTL_MS)
+    );
+  if (acked >= answer.revision)
+    await updateSecretPending(store, answer.decisionId, null, now);
 }
 
 /** Answers the orchestrator has not acknowledged at their current revision. */

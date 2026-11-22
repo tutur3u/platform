@@ -1,0 +1,235 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
+
+/// A pin starts [pending] when the owner types a correct pairing code and
+/// turns [active] only once the machine's signed `paired` outcome names this
+/// phone's key. Requests are answered against an active pin only.
+enum FleetSecretPinState { pending, active }
+
+/// One paired machine's Ed25519 key, as this phone trusts it.
+@immutable
+class FleetSecretPin {
+  const FleetSecretPin({
+    required this.machineId,
+    required this.signerKey,
+    required this.label,
+    required this.pairedAt,
+    required this.state,
+    this.pairingId,
+  });
+
+  static FleetSecretPin? fromJson(String machineId, Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final signerKey = json['signerKey'];
+    final label = json['label'];
+    final pairedAt = json['pairedAt'] is String
+        ? DateTime.tryParse(json['pairedAt'] as String)?.toUtc()
+        : null;
+    final state = FleetSecretPinState.values
+        .where((s) => s.name == json['state'])
+        .firstOrNull;
+    final pairingId = json['pairingId'];
+    if (signerKey is! String ||
+        label is! String ||
+        pairedAt == null ||
+        state == null) {
+      return null;
+    }
+    return FleetSecretPin(
+      machineId: machineId,
+      signerKey: signerKey,
+      label: label,
+      pairedAt: pairedAt,
+      state: state,
+      pairingId: pairingId is String ? pairingId : null,
+    );
+  }
+
+  final String machineId;
+
+  /// Base64url, compared as text with a request's signed `signerKey`.
+  final String signerKey;
+  final String label;
+  final DateTime pairedAt;
+  final FleetSecretPinState state;
+
+  /// The pairing a pending pin waits on.
+  final String? pairingId;
+
+  bool get active => state == FleetSecretPinState.active;
+
+  FleetSecretPin activated() => FleetSecretPin(
+    machineId: machineId,
+    signerKey: signerKey,
+    label: label,
+    pairedAt: pairedAt,
+    state: FleetSecretPinState.active,
+  );
+
+  Map<String, Object?> toJson() => {
+    'signerKey': signerKey,
+    'label': label,
+    'pairedAt': pairedAt.toIso8601String(),
+    'state': state.name,
+    'pairingId': ?pairingId,
+  };
+}
+
+/// Paired machines, per signed-in user, in the Keychain: this device only,
+/// readable while unlocked. Signing out or switching accounts erases every
+/// user's pins together with the owner keys ([eraseFleetSecretKeys]).
+class FleetSecretPins {
+  FleetSecretPins({
+    required String? Function() userId,
+    FlutterSecureStorage? storage,
+  }) : _userId = userId,
+       _storage = storage ?? fleetSecretStorage;
+
+  static const keyPrefix = 'mastermind-secret-pins-v1.';
+
+  final String? Function() _userId;
+  final FlutterSecureStorage _storage;
+  Future<void> _tail = Future<void>.value();
+
+  Future<T> _serial<T>(Future<T> Function() operation) {
+    final future = _tail.then((_) => operation());
+    _tail = future.then<void>((_) {}, onError: (Object _) {});
+    return future;
+  }
+
+  String? _name() {
+    final user = _userId();
+    if (user == null || user.isEmpty) return null;
+    return '$keyPrefix${sha256.convert(utf8.encode(user))}';
+  }
+
+  Future<Map<String, FleetSecretPin>> _read(String name) async {
+    final raw = await _storage.read(key: name);
+    if (raw == null) return {};
+    try {
+      final json = jsonDecode(raw);
+      if (json is! Map<String, dynamic>) return {};
+      return {
+        for (final MapEntry(:key, :value) in json.entries)
+          if (FleetSecretPin.fromJson(key, value) case final pin?) key: pin,
+      };
+    } on FormatException {
+      return {};
+    }
+  }
+
+  Future<void> _write(String name, Map<String, FleetSecretPin> pins) =>
+      pins.isEmpty
+      ? _storage.delete(key: name)
+      : _storage.write(
+          key: name,
+          value: jsonEncode({
+            for (final MapEntry(:key, :value) in pins.entries)
+              key: value.toJson(),
+          }),
+        );
+
+  /// The signed-in user's pins; empty while signed out.
+  Future<Map<String, FleetSecretPin>> read() => _serial(() async {
+    final name = _name();
+    return name == null ? <String, FleetSecretPin>{} : await _read(name);
+  });
+
+  Future<void> _update(
+    void Function(Map<String, FleetSecretPin> pins) change,
+  ) => _serial(() async {
+    final name = _name();
+    if (name == null) return;
+    final pins = await _read(name);
+    change(pins);
+    await _write(name, pins);
+  });
+
+  /// Records a pending pin after a correct pairing code. It replaces any
+  /// earlier pin for the machine: a new pairing is the only way to change it.
+  Future<void> putPending({
+    required String machineId,
+    required String signerKey,
+    required String label,
+    required String pairingId,
+    required DateTime now,
+  }) => _update(
+    (pins) => pins[machineId] = FleetSecretPin(
+      machineId: machineId,
+      signerKey: signerKey,
+      label: label,
+      pairedAt: now.toUtc(),
+      state: FleetSecretPinState.pending,
+      pairingId: pairingId,
+    ),
+  );
+
+  /// Activates the pending pin of [pairingId] when it still names
+  /// [signerKey]. Returns the active pin, or null when nothing matched.
+  Future<FleetSecretPin?> activate({
+    required String machineId,
+    required String pairingId,
+    required String signerKey,
+  }) async {
+    FleetSecretPin? result;
+    await _update((pins) {
+      final pin = pins[machineId];
+      if (pin == null ||
+          pin.state != FleetSecretPinState.pending ||
+          pin.pairingId != pairingId ||
+          pin.signerKey != signerKey) {
+        return;
+      }
+      result = pins[machineId] = pin.activated();
+    });
+    return result;
+  }
+
+  /// "Forget this machine".
+  Future<void> forget(String machineId) =>
+      _update((pins) => pins.remove(machineId));
+
+  /// Every user's pins on this device.
+  Future<void> eraseAll() => _serial(() async {
+    final all = await _storage.readAll();
+    for (final name in all.keys) {
+      if (name.startsWith(keyPrefix)) await _storage.delete(key: name);
+    }
+  });
+}
+
+/// This device only, readable only while unlocked, never backed up.
+const fleetSecretStorage = FlutterSecureStorage(
+  iOptions: IOSOptions(
+    accessibility: KeychainAccessibility.unlocked_this_device,
+  ),
+);
+
+/// Bumped whenever the owner keys and pins are erased: an open secret page
+/// clears its field and closes.
+final fleetSecretErasures = ValueNotifier<int>(0);
+
+/// Sign-out or account switch: erases every owner key and pin on this
+/// device and closes any open secret page. Failures are swallowed so the
+/// rest of the reset still runs; the next erase tries again.
+Future<void> eraseFleetSecretKeys({
+  FleetSecretCrypto? crypto,
+  FleetSecretPins? pins,
+}) async {
+  fleetSecretErasures.value++;
+  FleetPairingAttempts.shared.clear();
+  await Future.wait([
+    (crypto ?? FleetSecretCrypto.instance).deleteOwnerKeys().catchError(
+      (Object _) {},
+    ),
+    (pins ?? FleetSecretPins(userId: () => null)).eraseAll().catchError(
+      (Object _) {},
+    ),
+  ]);
+}

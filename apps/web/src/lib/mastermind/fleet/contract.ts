@@ -2,6 +2,18 @@ import { z } from 'zod';
 import { fleetLoginSchema } from './login';
 import { fleetReviewSchema } from './review';
 import { scrubFleetText } from './scrub';
+import {
+  fleetOwnerProofSchema,
+  fleetPairAnswerSchema,
+  fleetSealedSchema,
+  fleetSecretActions,
+  fleetSecretId,
+  fleetSecretOutcomeSchema,
+  fleetSecretSchema,
+  SECRET_MAX_DECISIONS,
+  SECRET_MAX_TTL_MS,
+  secretPayloadMatches,
+} from './secret-contract';
 
 /**
  * Fleet sync v1: the sanitized live fleet snapshot the orchestrator Mac
@@ -88,14 +100,15 @@ export const fleetDecisionOptionSchema = z.object({
   label: requiredText(60),
 });
 
-export const fleetDecisionKinds = ['ask', 'login', 'review'] as const;
+export const fleetDecisionKinds = ['ask', 'login', 'review', 'secret'] as const;
 export type FleetDecisionKind = (typeof fleetDecisionKinds)[number];
 
 /**
  * Optional context fields (`why`, `defaultOutcome`, `requester`) and the
- * `login` and `review` kinds are additive to v1: older clients ignore them,
- * and the owner read hides login and review items from clients that do not
- * declare the matching feature.
+ * `login`, `review` and `secret` kinds are additive to v1: older clients
+ * ignore them, and the owner read hides those items from clients that do not
+ * declare the matching feature. A `secret` decision carries a machine-signed
+ * request or pairing (see secret-contract.ts) and no options.
  */
 export const fleetDecisionSchema = z
   .object({
@@ -115,6 +128,7 @@ export const fleetDecisionSchema = z
     laneId: slug.optional(),
     login: fleetLoginSchema.optional(),
     review: fleetReviewSchema.optional(),
+    secret: fleetSecretSchema.optional(),
     createdAt: isoTime,
     deadlineAt: isoTime.optional(),
   })
@@ -133,7 +147,23 @@ export const fleetDecisionSchema = z
   .refine((decision) => (decision.kind === 'review') === !!decision.review, {
     message: 'review kind and review payload go together',
     path: ['review'],
-  });
+  })
+  .refine((decision) => (decision.kind === 'secret') === !!decision.secret, {
+    message: 'secret kind and secret payload go together',
+    path: ['secret'],
+  })
+  .refine(
+    ({ id, secret, options, createdAt }) =>
+      !secret ||
+      (options.length === 0 &&
+        fleetSecretId(secret) === id &&
+        Date.parse(secret.expiresAt) - Date.parse(createdAt) <=
+          SECRET_MAX_TTL_MS),
+    {
+      message: 'secret decisions sign their id, carry no options and expire',
+      path: ['secret'],
+    }
+  );
 
 export const fleetAnswerChannels = [
   'mastermind',
@@ -143,15 +173,22 @@ export const fleetAnswerChannels = [
 ] as const;
 
 /** A decision closed recently, kept so every surface shows where it went. */
-export const fleetResolvedDecisionSchema = z.object({
-  id: slug,
-  kind: z.enum(fleetDecisionKinds).default('ask'),
-  title: requiredText(120),
-  answeredVia: z.enum(fleetAnswerChannels).optional(),
-  /** Display label of the chosen option or outcome, never reply text. */
-  outcome: text(60).optional(),
-  resolvedAt: isoTime,
-});
+export const fleetResolvedDecisionSchema = z
+  .object({
+    id: slug,
+    kind: z.enum(fleetDecisionKinds).default('ask'),
+    title: requiredText(120),
+    answeredVia: z.enum(fleetAnswerChannels).optional(),
+    /** Display label of the chosen option or outcome, never reply text. */
+    outcome: text(60).optional(),
+    /** The machine-signed outcome of a secret request or pairing. */
+    secretOutcome: fleetSecretOutcomeSchema.optional(),
+    resolvedAt: isoTime,
+  })
+  .refine((entry) => !entry.secretOutcome || entry.kind === 'secret', {
+    message: 'secret outcome on a secret decision only',
+    path: ['secretOutcome'],
+  });
 
 const shortSha = z.string().regex(/^[0-9a-f]{7,12}$/);
 
@@ -213,15 +250,18 @@ export const fleetStateSchema = z.object({
   }),
   machines: z.array(fleetMachineSchema).max(32),
   lanes: z.array(fleetLaneSchema).max(300),
-  /** Up to 50 asks plus up to 10 login requests on top. */
+  /** Up to 50 asks plus up to 10 login and 10 secret requests on top. */
   decisions: z
     .array(fleetDecisionSchema)
-    .max(60)
+    .max(70)
     .refine(
       (decisions) =>
-        decisions.filter((d) => d.kind !== 'login').length <= 50 &&
-        decisions.filter((d) => d.kind === 'login').length <= 10,
-      { message: 'at most 50 asks and 10 login requests' }
+        decisions.filter((d) => d.kind !== 'login' && d.kind !== 'secret')
+          .length <= 50 &&
+        decisions.filter((d) => d.kind === 'login').length <= 10 &&
+        decisions.filter((d) => d.kind === 'secret').length <=
+          SECRET_MAX_DECISIONS,
+      { message: 'at most 50 asks, 10 login and 10 secret requests' }
     ),
   resolved: z.array(fleetResolvedDecisionSchema).max(20).optional(),
   release: fleetReleaseSchema.optional(),
@@ -238,6 +278,9 @@ export type FleetState = z.infer<typeof fleetStateSchema>;
  * `signed_in` is the owner's "I signed in" on a login request; the agent
  * still verifies the sign-in itself before the request reads as verified.
  * `request_changes` answers a design review and carries the owner's notes.
+ * These are the actions every client renders. The secret actions (`secret`,
+ * `decline`, `pair`; see secret-contract.ts) answer `secret` decisions only,
+ * which reach only clients declaring the `secret` feature.
  */
 export const fleetAnswerActions = [
   'approve',
@@ -246,13 +289,21 @@ export const fleetAnswerActions = [
   'signed_in',
   'request_changes',
 ] as const;
-export type FleetAnswerAction = (typeof fleetAnswerActions)[number];
+/** Every action Web accepts and stores. */
+export const fleetAnswerInputActions = [
+  ...fleetAnswerActions,
+  ...fleetSecretActions,
+] as const;
+export type FleetAnswerAction = (typeof fleetAnswerInputActions)[number];
 
 export const fleetAnswerInputSchema = z
   .object({
-    action: z.enum(fleetAnswerActions),
+    action: z.enum(fleetAnswerInputActions),
     optionId: slug.optional(),
     text: z.string().trim().max(2000).optional(),
+    sealed: fleetSealedSchema.optional(),
+    owner: fleetOwnerProofSchema.optional(),
+    pair: fleetPairAnswerSchema.optional(),
     /** Body fallback for clients that cannot set the Idempotency-Key header. */
     idempotencyKey: z.string().optional(),
   })
@@ -261,7 +312,11 @@ export const fleetAnswerInputSchema = z
       (input.action !== 'reply' && input.action !== 'request_changes') ||
       !!input.text,
     { message: 'reply needs text', path: ['text'] }
-  );
+  )
+  .refine(secretPayloadMatches, {
+    message: 'secret payload fields belong to their action',
+    path: ['action'],
+  });
 export type FleetAnswerInput = z.infer<typeof fleetAnswerInputSchema>;
 
 /**
@@ -281,6 +336,19 @@ export interface FleetAnswerRecord {
    */
   actorId?: string;
   answeredAt: string;
+  /** Secret answers, as received; dropped once the orchestrator acknowledges. */
+  sealed?: FleetAnswerInput['sealed'];
+  owner?: FleetAnswerInput['owner'];
+  pair?: FleetAnswerInput['pair'];
+  /** SHA-256 hex of a secret answer's payload, kept so retries still replay. */
+  payloadDigest?: string;
+  /** When a secret answer record expires (`expiresAt` plus 10 minutes). */
+  keepUntil?: string;
+  /** Earlier pairing answers kept beside the latest, oldest first. */
+  earlier?: Omit<
+    FleetAnswerRecord,
+    'earlier' | 'pickedUpRevision' | 'pickedUpAt'
+  >[];
   /** Revision the orchestrator acknowledged; equal to `revision` once picked up. */
   pickedUpRevision: number;
   pickedUpAt?: string;

@@ -36102,6 +36102,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That did not verify. Try again.'**
   String get mastermindProjectsStepUpFailed;
+
+  /// No description provided for @mastermindSecretRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret request'**
+  String get mastermindSecretRequestTitle;
+
+  /// No description provided for @mastermindSecretPairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair machine'**
+  String get mastermindSecretPairTitle;
+
+  /// No description provided for @mastermindSecretProvide.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide'**
+  String get mastermindSecretProvide;
+
+  /// No description provided for @mastermindSecretPairAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair'**
+  String get mastermindSecretPairAction;
+
+  /// No description provided for @mastermindSecretMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine'**
+  String get mastermindSecretMachine;
+
+  /// No description provided for @mastermindSecretPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'Purpose'**
+  String get mastermindSecretPurpose;
+
+  /// No description provided for @mastermindSecretCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Command'**
+  String get mastermindSecretCommand;
+
+  /// No description provided for @mastermindSecretRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote command, one argument per line'**
+  String get mastermindSecretRemote;
+
+  /// No description provided for @mastermindSecretOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get mastermindSecretOutput;
+
+  /// No description provided for @mastermindSecretOutputWithheld.
+  ///
+  /// In en, this message translates to:
+  /// **'Discarded. The agent never sees it.'**
+  String get mastermindSecretOutputWithheld;
+
+  /// No description provided for @mastermindSecretOutputAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed to the agent'**
+  String get mastermindSecretOutputAgent;
+
+  /// No description provided for @mastermindSecretRequester.
+  ///
+  /// In en, this message translates to:
+  /// **'Requester'**
+  String get mastermindSecretRequester;
+
+  /// No description provided for @mastermindSecretReported.
+  ///
+  /// In en, this message translates to:
+  /// **'{id}, reported by the machine'**
+  String mastermindSecretReported(String id);
+
+  /// No description provided for @mastermindSecretLaneFleetData.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane {title}, from fleet data'**
+  String mastermindSecretLaneFleetData(String title);
+
+  /// No description provided for @mastermindSecretRequestCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Request code'**
+  String get mastermindSecretRequestCode;
+
+  /// No description provided for @mastermindSecretMachineKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine key'**
+  String get mastermindSecretMachineKey;
+
+  /// No description provided for @mastermindSecretValuePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret value'**
+  String get mastermindSecretValuePlaceholder;
+
+  /// No description provided for @mastermindSecretSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Seal and send'**
+  String get mastermindSecretSend;
+
+  /// No description provided for @mastermindSecretDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get mastermindSecretDecline;
+
+  /// No description provided for @mastermindSecretTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'At most 4096 bytes.'**
+  String get mastermindSecretTooLong;
+
+  /// No description provided for @mastermindSecretStepUpReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify to answer a secret request'**
+  String get mastermindSecretStepUpReason;
+
+  /// No description provided for @mastermindSecretCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing code from the machine'**
+  String get mastermindSecretCodeLabel;
+
+  /// No description provided for @mastermindSecretCodePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'XXXX-XXXX-XXXX-XXXX'**
+  String get mastermindSecretCodePlaceholder;
+
+  /// No description provided for @mastermindSecretCodeMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter all 16 characters.'**
+  String get mastermindSecretCodeMalformed;
+
+  /// No description provided for @mastermindSecretCodeWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That code does not match. {count} tries left.'**
+  String mastermindSecretCodeWrong(int count);
+
+  /// No description provided for @mastermindSecretBlockUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret entry needs iOS 17 or later.'**
+  String get mastermindSecretBlockUnsupported;
+
+  /// No description provided for @mastermindSecretBlockSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to answer.'**
+  String get mastermindSecretBlockSignedOut;
+
+  /// No description provided for @mastermindSecretBlockIdMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The signed request id does not match this card.'**
+  String get mastermindSecretBlockIdMismatch;
+
+  /// No description provided for @mastermindSecretBlockPendingPin.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine has not confirmed the pairing yet.'**
+  String get mastermindSecretBlockPendingPin;
+
+  /// No description provided for @mastermindSecretBlockKeyChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine\'s key changed. Pair it again.'**
+  String get mastermindSecretBlockKeyChanged;
+
+  /// No description provided for @mastermindSecretBlockBadSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine\'s signature does not verify.'**
+  String get mastermindSecretBlockBadSignature;
+
+  /// No description provided for @mastermindSecretBlockNotInAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine does not accept this phone\'s key. Pair it again.'**
+  String get mastermindSecretBlockNotInAudience;
+
+  /// No description provided for @mastermindSecretBlockQuoting.
+  ///
+  /// In en, this message translates to:
+  /// **'The remote command does not match what SSH would run.'**
+  String get mastermindSecretBlockQuoting;
+
+  /// No description provided for @mastermindSecretBlockExpiring.
+  ///
+  /// In en, this message translates to:
+  /// **'Too little time is left to answer.'**
+  String get mastermindSecretBlockExpiring;
+
+  /// No description provided for @mastermindSecretBlockLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many wrong codes. Start a new pairing on the machine.'**
+  String get mastermindSecretBlockLocked;
+
+  /// No description provided for @mastermindSecretBlockNotDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'The answer was refused. Nothing reached the machine.'**
+  String get mastermindSecretBlockNotDelivered;
+
+  /// No description provided for @mastermindSecretBlockForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'This account cannot answer fleet requests.'**
+  String get mastermindSecretBlockForbidden;
+
+  /// No description provided for @mastermindSecretBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The answer could not be sealed or sent.'**
+  String get mastermindSecretBlockFailed;
+
+  /// No description provided for @mastermindSecretNeedsPairing.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair this machine before it can ask for secrets.'**
+  String get mastermindSecretNeedsPairing;
+
+  /// No description provided for @mastermindSecretRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting'**
+  String get mastermindSecretRetrying;
+
+  /// No description provided for @mastermindSecretSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get mastermindSecretSent;
+
+  /// No description provided for @mastermindSecretPairSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the machine to confirm'**
+  String get mastermindSecretPairSent;
+
+  /// No description provided for @mastermindSecretPickedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked up by the machine'**
+  String get mastermindSecretPickedUp;
+
+  /// No description provided for @mastermindSecretOutcomeDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to the command'**
+  String get mastermindSecretOutcomeDelivered;
+
+  /// No description provided for @mastermindSecretOutcomeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The command did not receive it'**
+  String get mastermindSecretOutcomeFailed;
+
+  /// No description provided for @mastermindSecretOutcomeDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get mastermindSecretOutcomeDeclined;
+
+  /// No description provided for @mastermindSecretOutcomeExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindSecretOutcomeExpired;
+
+  /// No description provided for @mastermindSecretOutcomeCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled on the machine'**
+  String get mastermindSecretOutcomeCancelled;
+
+  /// No description provided for @mastermindSecretOutcomePaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired'**
+  String get mastermindSecretOutcomePaired;
+
+  /// No description provided for @mastermindSecretOutcomeNotMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled without this phone\'s answer'**
+  String get mastermindSecretOutcomeNotMine;
+
+  /// No description provided for @mastermindSecretOutcomeUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine\'s outcome could not be verified'**
+  String get mastermindSecretOutcomeUnverified;
+
+  /// No description provided for @mastermindSecretClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This request has closed'**
+  String get mastermindSecretClosed;
+
+  /// No description provided for @mastermindSecretForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this machine'**
+  String get mastermindSecretForget;
+
+  /// No description provided for @mastermindSecretClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get mastermindSecretClose;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

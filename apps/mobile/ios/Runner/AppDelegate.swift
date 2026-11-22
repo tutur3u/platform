@@ -237,6 +237,9 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MobileApprovalKeyPlugin") {
       MobileApprovalKeyPlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MastermindSecretPlugin") {
+      MastermindSecretPlugin.register(with: registrar)
+    }
   }
 }
 

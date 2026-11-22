@@ -113,6 +113,65 @@ describe('fleet publisher output', () => {
     }
   });
 
+  it('carries secret requests and pairings the route stores unchanged', async () => {
+    const { parseDecision } = await load('publish.mjs');
+    const { buildFleetState } = await load('fleet-state.mjs');
+    const fixtureUrl = new URL(
+      '../../../../../../scripts/mastermind-fleet/secret-fixture.json',
+      import.meta.url
+    );
+    const { readFile } = await import('node:fs/promises');
+    const fixture = JSON.parse(await readFile(fixtureUrl, 'utf8'));
+    const at = new Date('2026-11-22T10:00:00.000Z');
+    const {
+      code: _code,
+      codeHex: _codeHex,
+      keyHex: _keyHex,
+      ownerKey: _ownerKey,
+      ownerMac: _ownerMac,
+      ...pairing
+    } = fixture.pairing;
+    const decisions = [
+      parseDecision(
+        {
+          id: fixture.request.requestId,
+          kind: 'secret',
+          title: fixture.request.purpose,
+          urgency: 'high',
+          createdAt: '2026-11-22T09:55:00.000Z',
+          secret: {
+            mode: 'request',
+            ...fixture.request,
+            sig: fixture.requestSig,
+          },
+        },
+        at
+      ),
+      parseDecision(
+        {
+          id: pairing.pairingId,
+          kind: 'secret',
+          title: 'Pair Skora M4',
+          urgency: 'high',
+          createdAt: '2026-11-22T10:00:00.000Z',
+          secret: { mode: 'pair', v: '1', ...pairing },
+        },
+        at
+      ),
+    ];
+    expect(decisions.every(Boolean)).toBe(true);
+    const state = buildFleetState(
+      { active: [], recent: [], threads: new Map(), peers: [] },
+      { now: at, decisions, localMachine: { id: 'skr-m4', label: 'M4' } }
+    );
+    const parsed = fleetStateSchema.safeParse(JSON.parse(JSON.stringify(state)));
+    expect(parsed.success, JSON.stringify(parsed.error?.issues[0])).toBe(true);
+    // Signed fields reach the phone byte for byte.
+    expect(parsed.data?.decisions.map((d) => d.secret)).toEqual(
+      decisions.map((d: { secret: unknown }) => d.secret)
+    );
+  });
+
   it('matches what the route stores, so a second scrub changes nothing', async () => {
     const { fitted } = await worstCaseSnapshot();
     const parsed = fleetStateSchema.parse(

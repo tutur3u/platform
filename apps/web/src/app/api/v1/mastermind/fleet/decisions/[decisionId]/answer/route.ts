@@ -16,6 +16,11 @@ import {
   readCappedText,
 } from '@/lib/mastermind/fleet/http';
 import {
+  answerSecretDecision,
+  secretAnswerAssurance,
+} from '@/lib/mastermind/fleet/secret';
+import { isFleetSecretAction } from '@/lib/mastermind/fleet/secret-contract';
+import {
   FleetAnswerConflictError,
   readFleetState,
   recordFleetAnswer,
@@ -46,10 +51,12 @@ function receipt(answer: FleetAnswerRecord) {
  * receipt even after the decision closed, so a lost response never reads as
  * closed; anything else on a closed decision is a 409. On an open decision
  * the same key from another actor or with another payload is a 409
- * `idempotency_conflict`, never another actor's receipt.
+ * `idempotency_conflict`, never another actor's receipt. Secret decisions
+ * take only their own actions, under the rules in
+ * `@/lib/mastermind/fleet/secret`.
  */
 export const POST = withSessionAuth<{ decisionId: string }>(
-  async (request, { user }, { decisionId }) => {
+  async (request, { user, supabase }, { decisionId }) => {
     if (!DECISION_ID.test(decisionId)) return fleetError('not_found', 404);
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
 
@@ -63,6 +70,15 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     }
     const parsed = fleetAnswerInputSchema.safeParse(json);
     if (!parsed.success) return fleetError('invalid_answer', 422);
+    const secretAction = isFleetSecretAction(parsed.data.action);
+    if (isFleetSecretAction(parsed.data.action)) {
+      const refused = await secretAnswerAssurance(
+        request,
+        { userId: user.id, supabase },
+        parsed.data.action
+      );
+      if (refused) return refused;
+    }
     const idempotencyKey = (
       request.headers.get('idempotency-key') ??
       parsed.data.idempotencyKey ??
@@ -76,6 +92,19 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     try {
       const stored = await readFleetState(store);
       const decision = stored?.state.decisions.find((d) => d.id === decisionId);
+      if (secretAction || decision?.kind === 'secret') {
+        const result = await answerSecretDecision(
+          store,
+          decisionId,
+          decision,
+          parsed.data,
+          idempotencyKey,
+          user.id
+        );
+        return result.ok
+          ? receipt(result.answer)
+          : fleetError(result.error, result.status);
+      }
       const closed = async (error: 'decision_closed' | 'login_closed') => {
         const replay = await replayFleetAnswer(
           store,

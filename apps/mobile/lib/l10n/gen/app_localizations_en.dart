@@ -19683,4 +19683,172 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindProjectsStepUpFailed => 'That did not verify. Try again.';
+
+  @override
+  String get mastermindSecretRequestTitle => 'Secret request';
+
+  @override
+  String get mastermindSecretPairTitle => 'Pair machine';
+
+  @override
+  String get mastermindSecretProvide => 'Provide';
+
+  @override
+  String get mastermindSecretPairAction => 'Pair';
+
+  @override
+  String get mastermindSecretMachine => 'Machine';
+
+  @override
+  String get mastermindSecretPurpose => 'Purpose';
+
+  @override
+  String get mastermindSecretCommand => 'Command';
+
+  @override
+  String get mastermindSecretRemote => 'Remote command, one argument per line';
+
+  @override
+  String get mastermindSecretOutput => 'Output';
+
+  @override
+  String get mastermindSecretOutputWithheld => 'Discarded. The agent never sees it.';
+
+  @override
+  String get mastermindSecretOutputAgent => 'Passed to the agent';
+
+  @override
+  String get mastermindSecretRequester => 'Requester';
+
+  @override
+  String mastermindSecretReported(String id) {
+    return '$id, reported by the machine';
+  }
+
+  @override
+  String mastermindSecretLaneFleetData(String title) {
+    return 'Lane $title, from fleet data';
+  }
+
+  @override
+  String get mastermindSecretRequestCode => 'Request code';
+
+  @override
+  String get mastermindSecretMachineKey => 'Machine key';
+
+  @override
+  String get mastermindSecretValuePlaceholder => 'Secret value';
+
+  @override
+  String get mastermindSecretSend => 'Seal and send';
+
+  @override
+  String get mastermindSecretDecline => 'Decline';
+
+  @override
+  String get mastermindSecretTooLong => 'At most 4096 bytes.';
+
+  @override
+  String get mastermindSecretStepUpReason => 'Verify to answer a secret request';
+
+  @override
+  String get mastermindSecretCodeLabel => 'Pairing code from the machine';
+
+  @override
+  String get mastermindSecretCodePlaceholder => 'XXXX-XXXX-XXXX-XXXX';
+
+  @override
+  String get mastermindSecretCodeMalformed => 'Enter all 16 characters.';
+
+  @override
+  String mastermindSecretCodeWrong(int count) {
+    return 'That code does not match. $count tries left.';
+  }
+
+  @override
+  String get mastermindSecretBlockUnsupported => 'Secret entry needs iOS 17 or later.';
+
+  @override
+  String get mastermindSecretBlockSignedOut => 'Sign in again to answer.';
+
+  @override
+  String get mastermindSecretBlockIdMismatch => 'The signed request id does not match this card.';
+
+  @override
+  String get mastermindSecretBlockPendingPin => 'This machine has not confirmed the pairing yet.';
+
+  @override
+  String get mastermindSecretBlockKeyChanged => 'This machine\'s key changed. Pair it again.';
+
+  @override
+  String get mastermindSecretBlockBadSignature => 'The machine\'s signature does not verify.';
+
+  @override
+  String get mastermindSecretBlockNotInAudience => 'This machine does not accept this phone\'s key. Pair it again.';
+
+  @override
+  String get mastermindSecretBlockQuoting => 'The remote command does not match what SSH would run.';
+
+  @override
+  String get mastermindSecretBlockExpiring => 'Too little time is left to answer.';
+
+  @override
+  String get mastermindSecretBlockLocked => 'Too many wrong codes. Start a new pairing on the machine.';
+
+  @override
+  String get mastermindSecretBlockNotDelivered => 'The answer was refused. Nothing reached the machine.';
+
+  @override
+  String get mastermindSecretBlockForbidden => 'This account cannot answer fleet requests.';
+
+  @override
+  String get mastermindSecretBlockFailed => 'The answer could not be sealed or sent.';
+
+  @override
+  String get mastermindSecretNeedsPairing => 'Pair this machine before it can ask for secrets.';
+
+  @override
+  String get mastermindSecretRetrying => 'Reconnecting';
+
+  @override
+  String get mastermindSecretSent => 'Sent';
+
+  @override
+  String get mastermindSecretPairSent => 'Waiting for the machine to confirm';
+
+  @override
+  String get mastermindSecretPickedUp => 'Picked up by the machine';
+
+  @override
+  String get mastermindSecretOutcomeDelivered => 'Delivered to the command';
+
+  @override
+  String get mastermindSecretOutcomeFailed => 'The command did not receive it';
+
+  @override
+  String get mastermindSecretOutcomeDeclined => 'Declined';
+
+  @override
+  String get mastermindSecretOutcomeExpired => 'Expired';
+
+  @override
+  String get mastermindSecretOutcomeCancelled => 'Cancelled on the machine';
+
+  @override
+  String get mastermindSecretOutcomePaired => 'Paired';
+
+  @override
+  String get mastermindSecretOutcomeNotMine => 'Settled without this phone\'s answer';
+
+  @override
+  String get mastermindSecretOutcomeUnverified => 'The machine\'s outcome could not be verified';
+
+  @override
+  String get mastermindSecretClosed => 'This request has closed';
+
+  @override
+  String get mastermindSecretForget => 'Forget this machine';
+
+  @override
+  String get mastermindSecretClose => 'Close';
 }

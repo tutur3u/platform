@@ -4,6 +4,10 @@
 /// screen. See apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync.
 library;
 
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
+
+export 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
+
 part 'fleet_alerts.dart';
 part 'fleet_counts.dart';
 part 'fleet_login.dart';
@@ -36,8 +40,9 @@ enum FleetAnswerAction {
 }
 
 /// `ask` is the default; `login` is an access request with a [FleetLogin];
-/// `review` asks the owner to approve a design with a [FleetReview].
-enum FleetDecisionKind { ask, login, review }
+/// `review` asks the owner to approve a design with a [FleetReview];
+/// `secret` is a machine-signed secret request or pairing ([FleetSecret]).
+enum FleetDecisionKind { ask, login, review, secret }
 
 T? _enum<T extends Enum>(List<T> values, Object? raw) {
   for (final value in values) {
@@ -195,6 +200,7 @@ class FleetDecision {
     this.requester,
     this.login,
     this.review,
+    this.secret,
   });
 
   /// A login request or review whose payload does not parse is dropped:
@@ -216,6 +222,10 @@ class FleetDecision {
         ? FleetReview.parse(json['review'])
         : null;
     if (kind == FleetDecisionKind.review && review == null) return null;
+    final secret = kind == FleetDecisionKind.secret
+        ? FleetSecret.parse(json['secret'])
+        : null;
+    if (kind == FleetDecisionKind.secret && secret == null) return null;
     final options = _list(json['options'], FleetOption.parse);
     final recommended = _string(json['recommendedOptionId']);
     return FleetDecision(
@@ -227,6 +237,7 @@ class FleetDecision {
       requester: _string(json['requester']),
       login: login,
       review: review,
+      secret: secret,
       urgency:
           _enum(FleetUrgency.values, json['urgency']) ?? FleetUrgency.normal,
       createdAt: createdAt,
@@ -265,6 +276,10 @@ class FleetDecision {
 
   /// Set exactly when [kind] is [FleetDecisionKind.review].
   final FleetReview? review;
+
+  /// Set exactly when [kind] is [FleetDecisionKind.secret]; unverified until
+  /// the secret flow checks it against the machine's pin.
+  final FleetSecret? secret;
 
   FleetOption? get recommended =>
       options.where((o) => o.id == recommendedOptionId).firstOrNull;

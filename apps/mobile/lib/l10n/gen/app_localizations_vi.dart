@@ -19459,4 +19459,172 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindProjectsStepUpFailed => 'Chưa xác minh được. Hãy thử lại.';
+
+  @override
+  String get mastermindSecretRequestTitle => 'Yêu cầu bí mật';
+
+  @override
+  String get mastermindSecretPairTitle => 'Ghép nối máy';
+
+  @override
+  String get mastermindSecretProvide => 'Cung cấp';
+
+  @override
+  String get mastermindSecretPairAction => 'Ghép nối';
+
+  @override
+  String get mastermindSecretMachine => 'Máy';
+
+  @override
+  String get mastermindSecretPurpose => 'Mục đích';
+
+  @override
+  String get mastermindSecretCommand => 'Lệnh';
+
+  @override
+  String get mastermindSecretRemote => 'Lệnh từ xa, mỗi dòng một đối số';
+
+  @override
+  String get mastermindSecretOutput => 'Đầu ra';
+
+  @override
+  String get mastermindSecretOutputWithheld => 'Bị bỏ đi. Agent không bao giờ thấy.';
+
+  @override
+  String get mastermindSecretOutputAgent => 'Chuyển cho agent';
+
+  @override
+  String get mastermindSecretRequester => 'Bên yêu cầu';
+
+  @override
+  String mastermindSecretReported(String id) {
+    return '$id, do máy báo';
+  }
+
+  @override
+  String mastermindSecretLaneFleetData(String title) {
+    return 'Luồng $title, theo dữ liệu đội máy';
+  }
+
+  @override
+  String get mastermindSecretRequestCode => 'Mã yêu cầu';
+
+  @override
+  String get mastermindSecretMachineKey => 'Khóa của máy';
+
+  @override
+  String get mastermindSecretValuePlaceholder => 'Giá trị bí mật';
+
+  @override
+  String get mastermindSecretSend => 'Mã hóa và gửi';
+
+  @override
+  String get mastermindSecretDecline => 'Từ chối';
+
+  @override
+  String get mastermindSecretTooLong => 'Tối đa 4096 byte.';
+
+  @override
+  String get mastermindSecretStepUpReason => 'Xác minh để trả lời yêu cầu bí mật';
+
+  @override
+  String get mastermindSecretCodeLabel => 'Mã ghép nối từ máy';
+
+  @override
+  String get mastermindSecretCodePlaceholder => 'XXXX-XXXX-XXXX-XXXX';
+
+  @override
+  String get mastermindSecretCodeMalformed => 'Hãy nhập đủ 16 ký tự.';
+
+  @override
+  String mastermindSecretCodeWrong(int count) {
+    return 'Mã không khớp. Còn $count lần thử.';
+  }
+
+  @override
+  String get mastermindSecretBlockUnsupported => 'Nhập bí mật cần iOS 17 trở lên.';
+
+  @override
+  String get mastermindSecretBlockSignedOut => 'Hãy đăng nhập lại để trả lời.';
+
+  @override
+  String get mastermindSecretBlockIdMismatch => 'Mã yêu cầu đã ký không khớp với thẻ này.';
+
+  @override
+  String get mastermindSecretBlockPendingPin => 'Máy này chưa xác nhận ghép nối.';
+
+  @override
+  String get mastermindSecretBlockKeyChanged => 'Khóa của máy này đã đổi. Hãy ghép nối lại.';
+
+  @override
+  String get mastermindSecretBlockBadSignature => 'Chữ ký của máy không hợp lệ.';
+
+  @override
+  String get mastermindSecretBlockNotInAudience => 'Máy này không chấp nhận khóa của điện thoại này. Hãy ghép nối lại.';
+
+  @override
+  String get mastermindSecretBlockQuoting => 'Lệnh từ xa không khớp với lệnh SSH sẽ chạy.';
+
+  @override
+  String get mastermindSecretBlockExpiring => 'Không còn đủ thời gian để trả lời.';
+
+  @override
+  String get mastermindSecretBlockLocked => 'Sai mã quá nhiều lần. Hãy bắt đầu ghép nối mới trên máy.';
+
+  @override
+  String get mastermindSecretBlockNotDelivered => 'Câu trả lời bị từ chối. Không có gì đến được máy.';
+
+  @override
+  String get mastermindSecretBlockForbidden => 'Tài khoản này không thể trả lời yêu cầu của đội máy.';
+
+  @override
+  String get mastermindSecretBlockFailed => 'Không thể mã hóa hoặc gửi câu trả lời.';
+
+  @override
+  String get mastermindSecretNeedsPairing => 'Hãy ghép nối máy này trước khi nó có thể yêu cầu bí mật.';
+
+  @override
+  String get mastermindSecretRetrying => 'Đang kết nối lại';
+
+  @override
+  String get mastermindSecretSent => 'Đã gửi';
+
+  @override
+  String get mastermindSecretPairSent => 'Đang chờ máy xác nhận';
+
+  @override
+  String get mastermindSecretPickedUp => 'Máy đã nhận';
+
+  @override
+  String get mastermindSecretOutcomeDelivered => 'Đã chuyển đến lệnh';
+
+  @override
+  String get mastermindSecretOutcomeFailed => 'Lệnh không nhận được';
+
+  @override
+  String get mastermindSecretOutcomeDeclined => 'Đã từ chối';
+
+  @override
+  String get mastermindSecretOutcomeExpired => 'Đã hết hạn';
+
+  @override
+  String get mastermindSecretOutcomeCancelled => 'Đã hủy trên máy';
+
+  @override
+  String get mastermindSecretOutcomePaired => 'Đã ghép nối';
+
+  @override
+  String get mastermindSecretOutcomeNotMine => 'Đã kết thúc mà không dùng câu trả lời từ điện thoại này';
+
+  @override
+  String get mastermindSecretOutcomeUnverified => 'Không xác minh được kết quả từ máy';
+
+  @override
+  String get mastermindSecretClosed => 'Yêu cầu này đã đóng';
+
+  @override
+  String get mastermindSecretForget => 'Quên máy này';
+
+  @override
+  String get mastermindSecretClose => 'Đóng';
 }

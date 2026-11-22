@@ -324,8 +324,9 @@ records the product rules of the shell entry and every tab.
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
-  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`, and
-  `private-files.mjs`, with the source commit in
+  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`,
+  `private-files.mjs`, `secret-decision.mjs`, `secret-protocol.mjs` and
+  `secret-spool.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
   `StartInterval` 15, `ThrottleInterval` 10 and `WatchPaths` on
   `decisions/open` and `decisions/resolved`, so a new or closed decision
@@ -1369,6 +1370,38 @@ quota and accounting.
   receipt with no machines shows **No usage data reported.**
 - **Layout.** The scroll view reserves the floating dock's space, including
   when the Vietnamese interface is displayed at 200% text size.
+
+## Secret requests
+
+- **Scope:** the Mastermind Inbox on iPhone (iOS 17 or later) and the
+  orchestrator Mac's request helper (macOS 14 or later). The
+  [design and security contract](/build/devops/mastermind-secret-entry)
+  holds the protocol and threat model.
+- **Default:** off everywhere else. Android, older iOS, the Mastermind web app
+  and older clients never declare the `secret` fleet feature, so Web never
+  shows them a secret request or a pairing.
+- **What the owner sees:** a "Secret request" card with the purpose, machine
+  and countdown, or a "Pair machine" card. The page shows the pinned machine,
+  the owner's purpose for the operation, the full command (remote arguments
+  one per line), where its output goes, the requester id reported by the
+  machine and a request code. The value field appears only after the
+  Mastermind step-up.
+- **Rules:** a machine must be paired with this phone through a code read off
+  the machine outside Mastermind; a request from an unpaired machine, a
+  changed machine key or a phone outside the request's audience shows why and
+  no field. The field has no clipboard, suggestions or autocorrect, is cleared
+  when the app goes to the background, and input stops 45 seconds before
+  expiry. The answer is sealed and signed on the phone, never stored, and
+  sent once; Decline is signed too. The final outcome ("Delivered",
+  "Declined", "Expired", "Cancelled", "Failed") comes only from the machine's
+  signed record.
+- **Exceptions:** secret requests send no push notification and never join the
+  Inbox swipe deck; they open their own full-screen page.
+- **Regression coverage:** `scripts/mastermind-fleet/secret-*.test.mjs`
+  (including the CryptoKit end-to-end test), the CryptoKit self-test in
+  `scripts/mastermind-fleet/secret-hpke/`,
+  `apps/web/src/app/api/v1/mastermind/fleet/fleet-secret.test.ts` and
+  `apps/mobile/test/features/mastermind/fleet/fleet_secret_*_test.dart`.
 
 ## Product decisions
 

@@ -13,6 +13,7 @@ class FleetResolvedDecision {
     this.kind = FleetDecisionKind.ask,
     this.answeredVia,
     this.outcome,
+    this.secretOutcome,
   });
 
   static FleetResolvedDecision? parse(Map<String, dynamic> json) {
@@ -20,15 +21,18 @@ class FleetResolvedDecision {
     final title = _string(json['title']);
     final resolvedAt = _time(json['resolvedAt']);
     if (id == null || title == null || resolvedAt == null) return null;
+    final kind =
+        _enum(FleetDecisionKind.values, json['kind']) ?? FleetDecisionKind.ask;
     return FleetResolvedDecision(
       id: id,
       title: title,
       resolvedAt: resolvedAt,
-      kind:
-          _enum(FleetDecisionKind.values, json['kind']) ??
-          FleetDecisionKind.ask,
+      kind: kind,
       answeredVia: _enum(FleetAnswerChannel.values, json['answeredVia']),
       outcome: _string(json['outcome']),
+      secretOutcome: kind == FleetDecisionKind.secret
+          ? FleetSecretOutcome.parse(json['secretOutcome'])
+          : null,
     );
   }
 
@@ -38,6 +42,9 @@ class FleetResolvedDecision {
   final FleetDecisionKind kind;
   final FleetAnswerChannel? answeredVia;
   final String? outcome;
+
+  /// The machine-signed outcome of a secret decision, still unverified.
+  final FleetSecretOutcome? secretOutcome;
 }
 
 enum FleetMainState { open, frozen }

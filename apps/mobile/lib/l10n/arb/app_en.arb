@@ -9878,5 +9878,80 @@
   "mastermindProjectsStepUpReason": "Verify to send your reply",
   "mastermindProjectsStepUpCode": "Six-digit code",
   "mastermindProjectsStepUpVerify": "Verify",
-  "mastermindProjectsStepUpFailed": "That did not verify. Try again."
+  "mastermindProjectsStepUpFailed": "That did not verify. Try again.",
+  "mastermindSecretRequestTitle": "Secret request",
+  "mastermindSecretPairTitle": "Pair machine",
+  "mastermindSecretProvide": "Provide",
+  "mastermindSecretPairAction": "Pair",
+  "mastermindSecretMachine": "Machine",
+  "mastermindSecretPurpose": "Purpose",
+  "mastermindSecretCommand": "Command",
+  "mastermindSecretRemote": "Remote command, one argument per line",
+  "mastermindSecretOutput": "Output",
+  "mastermindSecretOutputWithheld": "Discarded. The agent never sees it.",
+  "mastermindSecretOutputAgent": "Passed to the agent",
+  "mastermindSecretRequester": "Requester",
+  "mastermindSecretReported": "{id}, reported by the machine",
+  "@mastermindSecretReported": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindSecretLaneFleetData": "Lane {title}, from fleet data",
+  "@mastermindSecretLaneFleetData": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindSecretRequestCode": "Request code",
+  "mastermindSecretMachineKey": "Machine key",
+  "mastermindSecretValuePlaceholder": "Secret value",
+  "mastermindSecretSend": "Seal and send",
+  "mastermindSecretDecline": "Decline",
+  "mastermindSecretTooLong": "At most 4096 bytes.",
+  "mastermindSecretStepUpReason": "Verify to answer a secret request",
+  "mastermindSecretCodeLabel": "Pairing code from the machine",
+  "mastermindSecretCodePlaceholder": "XXXX-XXXX-XXXX-XXXX",
+  "mastermindSecretCodeMalformed": "Enter all 16 characters.",
+  "mastermindSecretCodeWrong": "That code does not match. {count} tries left.",
+  "@mastermindSecretCodeWrong": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindSecretBlockUnsupported": "Secret entry needs iOS 17 or later.",
+  "mastermindSecretBlockSignedOut": "Sign in again to answer.",
+  "mastermindSecretBlockIdMismatch": "The signed request id does not match this card.",
+  "mastermindSecretBlockPendingPin": "This machine has not confirmed the pairing yet.",
+  "mastermindSecretBlockKeyChanged": "This machine's key changed. Pair it again.",
+  "mastermindSecretBlockBadSignature": "The machine's signature does not verify.",
+  "mastermindSecretBlockNotInAudience": "This machine does not accept this phone's key. Pair it again.",
+  "mastermindSecretBlockQuoting": "The remote command does not match what SSH would run.",
+  "mastermindSecretBlockExpiring": "Too little time is left to answer.",
+  "mastermindSecretBlockLocked": "Too many wrong codes. Start a new pairing on the machine.",
+  "mastermindSecretBlockNotDelivered": "The answer was refused. Nothing reached the machine.",
+  "mastermindSecretBlockForbidden": "This account cannot answer fleet requests.",
+  "mastermindSecretBlockFailed": "The answer could not be sealed or sent.",
+  "mastermindSecretNeedsPairing": "Pair this machine before it can ask for secrets.",
+  "mastermindSecretRetrying": "Reconnecting",
+  "mastermindSecretSent": "Sent",
+  "mastermindSecretPairSent": "Waiting for the machine to confirm",
+  "mastermindSecretPickedUp": "Picked up by the machine",
+  "mastermindSecretOutcomeDelivered": "Delivered to the command",
+  "mastermindSecretOutcomeFailed": "The command did not receive it",
+  "mastermindSecretOutcomeDeclined": "Declined",
+  "mastermindSecretOutcomeExpired": "Expired",
+  "mastermindSecretOutcomeCancelled": "Cancelled on the machine",
+  "mastermindSecretOutcomePaired": "Paired",
+  "mastermindSecretOutcomeNotMine": "Settled without this phone's answer",
+  "mastermindSecretOutcomeUnverified": "The machine's outcome could not be verified",
+  "mastermindSecretClosed": "This request has closed",
+  "mastermindSecretForget": "Forget this machine",
+  "mastermindSecretClose": "Close"
 }

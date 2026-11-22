@@ -15,11 +15,15 @@ class ReplyStepUpPanel extends StatefulWidget {
   const ReplyStepUpPanel({
     required this.stepUp,
     required this.onVerified,
+    this.reason,
     super.key,
   });
 
   final FleetReplyStepUp stepUp;
   final VoidCallback onVerified;
+
+  /// The device unlock prompt; a reply's by default.
+  final String? reason;
 
   @override
   State<ReplyStepUpPanel> createState() => _ReplyStepUpPanelState();
@@ -79,7 +83,8 @@ class _ReplyStepUpPanelState extends State<ReplyStepUpPanel> {
                 onPressed: () => unawaited(
                   _verify(
                     () => widget.stepUp.withDevice(
-                      reason: l10n.mastermindProjectsStepUpReason,
+                      reason:
+                          widget.reason ?? l10n.mastermindProjectsStepUpReason,
                     ),
                   ),
                 ),

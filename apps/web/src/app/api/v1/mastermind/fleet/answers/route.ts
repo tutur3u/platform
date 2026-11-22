@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { fleetAckSchema } from '@/lib/mastermind/fleet/contract';
+import {
+  type FleetAnswerRecord,
+  fleetAckSchema,
+} from '@/lib/mastermind/fleet/contract';
 import {
   authorizeFleetPublisher,
   FLEET_NO_STORE,
@@ -13,13 +16,33 @@ import {
   readFleetState,
 } from '@/lib/mastermind/fleet/store';
 
-/** Orchestrator pull: owner answers not yet acknowledged at their revision. */
+type PulledAnswer = Omit<FleetAnswerRecord, 'pickedUpRevision' | 'earlier'>;
+
+/** What the orchestrator receives of one answer: never the actor. */
+const pulled = (answer: PulledAnswer) => ({
+  decisionId: answer.decisionId,
+  revision: answer.revision,
+  action: answer.action,
+  ...(answer.optionId ? { optionId: answer.optionId } : {}),
+  ...(answer.text ? { text: answer.text } : {}),
+  ...(answer.sealed ? { sealed: answer.sealed } : {}),
+  ...(answer.owner ? { owner: answer.owner } : {}),
+  ...(answer.pair ? { pair: answer.pair } : {}),
+  answeredAt: answer.answeredAt,
+});
+
+/**
+ * Orchestrator pull: owner answers not yet acknowledged at their revision.
+ * A pairing lists every unacknowledged revision, oldest first, because the
+ * machine accepts the first whose MAC verifies.
+ */
 export async function GET(request: Request) {
   const auth = await authorizeFleetPublisher(request, 0);
   if (!auth.ok) return auth.response;
   try {
-    // Open decisions plus those open in the last 48 hours, so an answer
-    // outlives its decision leaving the snapshot.
+    // Open decisions, those open in the last 48 hours and secret decisions
+    // with an unacknowledged answer, so an answer outlives its decision
+    // leaving the snapshot.
     const stored = await readFleetState(auth.store);
     const answers = pendingFleetAnswers(
       await readFleetAnswers(
@@ -29,14 +52,16 @@ export async function GET(request: Request) {
     );
     return NextResponse.json(
       {
-        answers: answers.map((answer) => ({
-          decisionId: answer.decisionId,
-          revision: answer.revision,
-          action: answer.action,
-          ...(answer.optionId ? { optionId: answer.optionId } : {}),
-          ...(answer.text ? { text: answer.text } : {}),
-          answeredAt: answer.answeredAt,
-        })),
+        answers: answers.flatMap((answer) => [
+          ...(answer.earlier ?? [])
+            .filter(
+              (entry) =>
+                entry.revision > answer.pickedUpRevision &&
+                (entry.sealed || entry.owner || entry.pair)
+            )
+            .map(pulled),
+          pulled(answer),
+        ]),
       },
       { headers: FLEET_NO_STORE }
     );

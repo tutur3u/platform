@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_answer.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 
 /// Why a fleet read failed, as a closed category; never a server message.
 ///
@@ -77,8 +79,15 @@ abstract interface class FleetSource {
   });
 }
 
-class FleetRepository implements FleetSource {
-  FleetRepository({ApiClient? api}) : _api = api ?? ApiClient();
+class FleetRepository implements FleetSource, FleetSecretAnswerSource {
+  FleetRepository({
+    ApiClient? api,
+    Future<bool> Function()? secretSupported,
+    bool secretCardsReady = fleetSecretCardsReady,
+  }) : _api = api ?? ApiClient(),
+       _secretSupported =
+           secretSupported ?? FleetSecretCrypto.instance.supported,
+       _secretCardsReady = secretCardsReady;
 
   static const statePath = '/api/v1/mastermind/fleet/state';
 
@@ -87,6 +96,13 @@ class FleetRepository implements FleetSource {
   /// offer answers it refuses; without `alerts`, it omits SLO burn alerts.
   static const featuresHeader = {
     'x-mastermind-fleet-features': 'login,alerts,review',
+  };
+
+  /// [featuresHeader] plus `secret` where CryptoKit secret entry runs (iOS
+  /// 17 or later with the plugin) and the Inbox renders secret cards
+  /// ([fleetSecretCardsReady]); Web hides secret decisions otherwise.
+  static const secretFeaturesHeader = {
+    'x-mastermind-fleet-features': 'login,alerts,review,secret',
   };
 
   /// Web's cap on an uploaded review preview.
@@ -98,12 +114,23 @@ class FleetRepository implements FleetSource {
       '/api/v1/mastermind/fleet/decisions/${Uri.encodeComponent(decisionId)}/answer';
 
   final ApiClient _api;
+  final Future<bool> Function() _secretSupported;
+  final bool _secretCardsReady;
+
+  Future<Map<String, String>> _features() async {
+    if (!_secretCardsReady) return featuresHeader;
+    try {
+      return await _secretSupported() ? secretFeaturesHeader : featuresHeader;
+    } on Object {
+      return featuresHeader;
+    }
+  }
 
   @override
   Future<FleetSnapshot> fetch() async {
     try {
       return FleetSnapshot.parse(
-        await _api.getJsonWithHeaders(statePath, featuresHeader),
+        await _api.getJsonWithHeaders(statePath, await _features()),
       );
     } on Object catch (error) {
       throw FleetException.from(error);
@@ -147,6 +174,25 @@ class FleetRepository implements FleetSource {
       return receipt;
     } on Object catch (error) {
       throw FleetException.from(error);
+    }
+  }
+
+  /// Posts a secret, decline or pair answer directly: never through the
+  /// answer outbox, so a sealed value is never written to disk. The caller
+  /// resends the same [answer] under the same key while its screen is open.
+  @override
+  Future<void> answerSecret({
+    required String decisionId,
+    required FleetSecretAnswer answer,
+    required String idempotencyKey,
+  }) async {
+    try {
+      await _api.postJson(answerPath(decisionId), {
+        ...answer.toJson(),
+        'idempotencyKey': idempotencyKey,
+      });
+    } on Object catch (error) {
+      throw FleetSecretSendException.from(error);
     }
   }
 }
