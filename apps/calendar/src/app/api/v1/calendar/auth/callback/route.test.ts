@@ -1,15 +1,14 @@
-import { OAuth2Client } from '@tuturuuu/google';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   fullSyncMock,
-  getTokenMock,
+  tokenFetchMock,
   resolveSessionAuthContextMock,
   verifyWorkspaceMembershipTypeMock,
 } = vi.hoisted(() => ({
   fullSyncMock: vi.fn(),
-  getTokenMock: vi.fn(),
+  tokenFetchMock: vi.fn<typeof fetch>(),
   resolveSessionAuthContextMock: vi.fn(),
   verifyWorkspaceMembershipTypeMock: vi.fn(),
 }));
@@ -17,13 +16,11 @@ const {
 vi.mock('@tuturuuu/google', () => ({
   OAuth2Client: vi.fn(function OAuth2Client(
     this: {
-      getToken: typeof getTokenMock;
       setCredentials: (tokens: unknown) => void;
       generateAuthUrl: (input: Record<string, unknown>) => string;
     },
     options?: { redirectUri?: string }
   ) {
-    this.getToken = getTokenMock;
     this.setCredentials = vi.fn();
     this.generateAuthUrl = (input) =>
       `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams(
@@ -86,15 +83,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 import { BASE_URL } from '@/constants/common';
 import { sharedFakeCalendarOAuthNonceLedger } from '@/lib/calendar/calendar-oauth-nonce-ledger.test-utils';
-import {
-  createCalendarOAuthState,
-  deriveCalendarOAuthPkce,
-} from '@/lib/calendar/calendar-oauth-state';
+import { createCalendarOAuthState } from '@/lib/calendar/calendar-oauth-state';
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import {
   createSupabaseClient,
   createTokenResponse,
-} from './fixtures.test-utils';
+  tokenExchangeFailures,
+} from './fixtures.test.fixtures';
 import { GET } from './route';
 
 const nonceLedger = sharedFakeCalendarOAuthNonceLedger();
@@ -156,13 +151,17 @@ describe('Google Calendar OAuth callback route', () => {
     vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    getTokenMock.mockResolvedValue(createTokenResponse());
+    tokenFetchMock
+      .mockReset()
+      .mockImplementation(async () => createTokenResponse());
+    vi.stubGlobal('fetch', tokenFetchMock);
     mockResolvedAuthContext(createSupabaseClient().client);
     fullSyncMock.mockResolvedValue([]);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -203,19 +202,52 @@ describe('Google Calendar OAuth callback route', () => {
     );
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toContain(`${origin}/workspace-1`);
-    expect(OAuth2Client).toHaveBeenLastCalledWith(
-      expect.objectContaining({ redirectUri })
+    expect(tokenFetchMock).toHaveBeenCalledExactlyOnceWith(
+      'https://oauth2.googleapis.com/token',
+      expect.objectContaining({ method: 'POST', redirect: 'error' })
     );
-    expect(getTokenMock).toHaveBeenCalledExactlyOnceWith({
+    const form = new URLSearchParams(
+      String(tokenFetchMock.mock.calls[0]?.[1]?.body)
+    );
+    const codeVerifier = form.get('code_verifier') ?? '';
+    expect(Object.fromEntries(form)).toEqual({
+      client_id: 'google-client-id',
+      client_secret: 'google-client-secret',
       code: 'apex-fixture-code',
-      codeVerifier: expect.any(String),
+      code_verifier: codeVerifier,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
     });
-    const { codeVerifier } = getTokenMock.mock.calls[0]![0];
     const { createHash } = await import('node:crypto');
     expect(createHash('sha256').update(codeVerifier).digest('base64url')).toBe(
       authorization.searchParams.get('code_challenge')
     );
   });
+
+  it.each(tokenExchangeFailures)(
+    'stops before writes or sync on $reason',
+    async ({ reason, status, providerResponse, message }) => {
+      tokenFetchMock.mockResolvedValueOnce(providerResponse());
+      const { client } = createSupabaseClient();
+      mockResolvedAuthContext(client);
+      const response = await GET(
+        callbackRequest(signedState(), CALENDAR_ORIGIN, {
+          'Accept-Language': 'vi',
+        })
+      );
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain('text/plain');
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(await response.text()).toMatch(message);
+      expect(console.error).toHaveBeenCalledExactlyOnceWith(
+        'calendar.oauth.google_code_exchange_failed',
+        { providerCode: reason, status }
+      );
+      expect(tokenFetchMock).toHaveBeenCalledTimes(1);
+      expect(client.from).not.toHaveBeenCalled();
+      expect(fullSyncMock).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(
     'fails closed when %s is missing',
@@ -231,7 +263,7 @@ describe('Google Calendar OAuth callback route', () => {
         code: 'google_calendar_not_configured',
         error: 'Google Calendar integration is not configured',
       });
-      expect(getTokenMock).not.toHaveBeenCalled();
+      expect(tokenFetchMock).not.toHaveBeenCalled();
       expect(fullSyncMock).not.toHaveBeenCalled();
     }
   );
@@ -241,7 +273,6 @@ describe('Google Calendar OAuth callback route', () => {
       existingToken: { id: 'another-account', refresh_token: 'stored' },
     });
     mockResolvedAuthContext(supabase.client);
-    getTokenMock.mockResolvedValue(createTokenResponse());
     const response = await GET(
       callbackRequest(signedState({ accountId: 'selected-account' }))
     );
@@ -315,12 +346,12 @@ describe('Google Calendar OAuth callback route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Calendar connection is temporarily unavailable',
     });
-    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(tokenFetchMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
   it('preserves an existing refresh token when Google omits one on reconnect', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    tokenFetchMock.mockImplementation(async () => createTokenResponse(null));
     const supabase = createSupabaseClient({
       existingToken: {
         id: 'existing-token-id',
@@ -349,7 +380,9 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('reactivates a quarantined account and clears its reason in the same update', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    tokenFetchMock.mockImplementation(async () =>
+      createTokenResponse('fresh-refresh-token')
+    );
     const supabase = createSupabaseClient({
       existingToken: {
         id: 'existing-token-id',
@@ -378,7 +411,7 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('keeps a quarantined account and asks again with consent when Google omits the refresh token', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    tokenFetchMock.mockImplementation(async () => createTokenResponse(null));
     const supabase = createSupabaseClient({
       existingToken: {
         id: 'existing-token-id',
@@ -403,7 +436,7 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('caps consent restarts across fresh OAuth flows and still accepts a fresh credential', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    tokenFetchMock.mockImplementation(async () => createTokenResponse(null));
     const supabase = createSupabaseClient({
       existingToken: {
         id: 'existing-token-id',
@@ -433,7 +466,9 @@ describe('Google Calendar OAuth callback route', () => {
         'Google chưa cấp mã làm mới. Vui lòng chờ trước khi kết nối lại tài khoản này.',
     });
     expect(supabase.tokenUpdateMock).not.toHaveBeenCalled();
-    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    tokenFetchMock.mockImplementation(async () =>
+      createTokenResponse('fresh-refresh-token')
+    );
     const recovered = await GET(callbackRequest(signedState()));
     expect(recovered.status).toBe(302);
     expect(supabase.tokenUpdateMock).toHaveBeenCalledWith(
@@ -456,7 +491,7 @@ describe('Google Calendar OAuth callback route', () => {
       },
     });
     mockResolvedAuthContext(supabase.client);
-    getTokenMock.mockImplementation(async () => {
+    tokenFetchMock.mockImplementation(async () => {
       nonceLedger.failure = { code: 'PGRST202', message: 'unavailable' };
       return createTokenResponse(null);
     });
@@ -472,7 +507,7 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('asks again with consent when sync rejected the reused token after the read', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    tokenFetchMock.mockImplementation(async () => createTokenResponse(null));
     // The callback read an active row; sync quarantined it before the write.
     const supabase = createSupabaseClient({
       existingToken: {
@@ -502,7 +537,9 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('reactivates a fresh credential without the reuse guard', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse('fresh-refresh-token'));
+    tokenFetchMock.mockImplementation(async () =>
+      createTokenResponse('fresh-refresh-token')
+    );
     const supabase = createSupabaseClient({
       existingToken: {
         id: 'existing-token-id',
@@ -519,7 +556,7 @@ describe('Google Calendar OAuth callback route', () => {
   });
 
   it('does not save an active Google connection without any refresh token', async () => {
-    getTokenMock.mockResolvedValue(createTokenResponse(null));
+    tokenFetchMock.mockImplementation(async () => createTokenResponse(null));
     const supabase = createSupabaseClient();
     mockResolvedAuthContext(supabase.client);
 
@@ -562,7 +599,7 @@ describe('Google Calendar OAuth callback route', () => {
       error: 'Invalid OAuth state',
     });
     expect(resolveSessionAuthContextMock).not.toHaveBeenCalled();
-    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(tokenFetchMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
@@ -572,7 +609,7 @@ describe('Google Calendar OAuth callback route', () => {
     );
 
     expect(response.status).toBe(403);
-    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(tokenFetchMock).not.toHaveBeenCalled();
     expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
   });
@@ -583,7 +620,7 @@ describe('Google Calendar OAuth callback route', () => {
     const response = await GET(callbackRequest(signedState()));
 
     expect(response.status).toBe(401);
-    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(tokenFetchMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
   });
 
@@ -601,7 +638,7 @@ describe('Google Calendar OAuth callback route', () => {
     expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', wsId: 'workspace-1' })
     );
-    expect(getTokenMock).not.toHaveBeenCalled();
+    expect(tokenFetchMock).not.toHaveBeenCalled();
     expect(supabase.tokenInsertMock).not.toHaveBeenCalled();
     expect(supabase.calendarConnectionsUpsertMock).not.toHaveBeenCalled();
     expect(fullSyncMock).not.toHaveBeenCalled();
@@ -622,25 +659,6 @@ describe('Google Calendar OAuth callback route', () => {
     expect(location.pathname).toBe('/workspace-1');
   });
 
-  it('exchanges the code with the PKCE verifier bound to the state', async () => {
-    const created = createCalendarOAuthState(
-      'google',
-      { userId: 'user-1', wsId: 'workspace-1' },
-      'google-client-secret'
-    );
-
-    await GET(callbackRequest(encodeURIComponent(created.state)));
-
-    expect(getTokenMock).toHaveBeenCalledWith({
-      code: 'abc',
-      codeVerifier: deriveCalendarOAuthPkce(
-        'google',
-        created.nonce,
-        'google-client-secret'
-      ).codeVerifier,
-    });
-  });
-
   it('rejects a replayed state even with a fresh code', async () => {
     const state = signedState();
 
@@ -656,7 +674,7 @@ describe('Google Calendar OAuth callback route', () => {
     await expect(replay.json()).resolves.toEqual({
       error: 'Invalid OAuth state',
     });
-    expect(getTokenMock).toHaveBeenCalledTimes(1);
+    expect(tokenFetchMock).toHaveBeenCalledTimes(1);
     expect(fullSyncMock).toHaveBeenCalledTimes(1);
     expect(nonceLedger.calls).toHaveLength(2);
     expect(nonceLedger.calls[0]).toMatchObject({

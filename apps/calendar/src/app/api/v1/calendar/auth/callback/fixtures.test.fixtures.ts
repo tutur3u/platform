@@ -10,16 +10,19 @@ interface ExistingCalendarToken {
 }
 
 export function createTokenResponse(
-  refreshToken: string | null = 'refresh-token'
+  refreshToken: string | null = 'refresh-token',
+  scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar'
 ) {
-  return {
-    tokens: {
+  return new Response(
+    JSON.stringify({
       access_token: 'access-token',
-      expiry_date: Date.now() + 3600_000,
+      expires_in: 3600,
       ...(refreshToken ? { refresh_token: refreshToken } : {}),
       token_type: 'Bearer',
-    },
-  };
+      scope,
+    }),
+    { headers: { 'Content-Type': 'text/plain' } }
+  );
 }
 
 export function createSupabaseClient({
@@ -105,3 +108,26 @@ export function createSupabaseClient({
     tokenUpdateMock,
   };
 }
+
+export const tokenExchangeFailures = [
+  {
+    reason: 'invalid_grant',
+    status: 400,
+    providerResponse: () =>
+      Response.json(
+        { error: 'invalid_grant', error_description: 'private fixture' },
+        { status: 400 }
+      ),
+    message: /lượt cấp quyền này không còn hiệu lực/i,
+  },
+  {
+    reason: 'calendar_scope_missing',
+    status: 200,
+    providerResponse: () =>
+      createTokenResponse(
+        'refresh-token',
+        'https://www.googleapis.com/auth/calendar.readonly'
+      ),
+    message: /cho phép truy cập Lịch Google/,
+  },
+];

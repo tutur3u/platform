@@ -1,3 +1,5 @@
+export const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
+
 export type GoogleCalendarOAuthConfig = {
   clientId: string;
   clientSecret: string;

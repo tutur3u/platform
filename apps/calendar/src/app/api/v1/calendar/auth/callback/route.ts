@@ -13,6 +13,7 @@ import {
 import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-reconnect';
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { admitGoogleConsentRestart } from '@/lib/calendar/google-consent-restart';
+import { exchangeGoogleCalendarCode } from '@/lib/calendar/google-oauth-code-exchange';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import {
   resolveGoogleCalendarOAuthRedirectUri,
@@ -99,38 +100,50 @@ export async function GET(request: Request) {
     oauthConfig.config.clientSecret
   );
 
-  calendarOAuthDebug('🔍 [DEBUG] Creating OAuth2Client...');
+  const redirectUri = resolveGoogleCalendarOAuthRedirectUri(request);
+  const exchange = await exchangeGoogleCalendarCode({
+    ...oauthConfig.config,
+    code,
+    codeVerifier,
+    redirectUri,
+  });
+
+  if (!exchange.ok) {
+    console.error('calendar.oauth.google_code_exchange_failed', {
+      providerCode: exchange.providerCode,
+      status: exchange.status,
+    });
+    const locale = resolveCalendarLocale(request);
+    const t = await getTranslations({ locale, namespace: 'calendar' });
+    let message = t('oauth_google_unavailable');
+    let status = 502;
+    if (exchange.providerCode === 'invalid_grant') {
+      status = 400;
+      message = t('oauth_google_restart');
+    } else if (exchange.providerCode === 'calendar_scope_missing') {
+      status = 400;
+      message = t('oauth_google_calendar_scope_missing');
+    }
+    return new Response(message, {
+      status,
+      headers: {
+        'Cache-Control': 'no-store',
+        'Content-Language': locale,
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Referrer-Policy': 'no-referrer',
+      },
+    });
+  }
+
+  const { tokens } = exchange;
   const auth = new OAuth2Client({
     clientId: oauthConfig.config.clientId,
     clientSecret: oauthConfig.config.clientSecret,
-    redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
+    redirectUri,
   });
 
   try {
-    calendarOAuthDebug(
-      '🔍 [DEBUG] Exchanging authorization code for tokens...'
-    );
-    // Exchange the authorization code for tokens
-    const { tokens } = await auth.getToken({ code, codeVerifier });
-
-    calendarOAuthDebug('🔍 [DEBUG] Token exchange result:', {
-      hasAccessToken: !!tokens.access_token,
-      hasRefreshToken: !!tokens.refresh_token,
-      tokenType: tokens.token_type,
-      expiryDate: tokens.expiry_date,
-    });
-
-    if (!tokens.access_token) {
-      calendarOAuthDebug('❌ [DEBUG] No access token received from Google');
-      return NextResponse.json(
-        { error: 'No access token received' },
-        { status: 500 }
-      );
-    }
-
-    const expiresAt = tokens.expiry_date
-      ? new Date(tokens.expiry_date).toISOString()
-      : null;
+    const expiresAt = new Date(tokens.expiry_date).toISOString();
 
     // Fetch user info from Google to get account email
     calendarOAuthDebug('🔍 [DEBUG] Fetching Google user info...');

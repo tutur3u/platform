@@ -391,7 +391,7 @@ and in `apps/calendar/src/lib/calendar/calendar-oauth-*.test.ts`):
 - Google uses S256 PKCE derived from the signed state and the browser's existing
   session on the initiating origin. Microsoft uses S256 PKCE with an HttpOnly
   verifier cookie.
-- After connecting (or on a provider error), the browser is redirected to the
+- After connecting, the browser is redirected to the
   Calendar app's workspace page, under `/calendar/{wsId}` for mounted Google
   connections or `{BASE_URL}/{wsId}` on the subdomain, which is where the
   Calendar satellite serves each workspace calendar. `BASE_URL`
@@ -405,6 +405,14 @@ and in `apps/calendar/src/lib/calendar/calendar-oauth-*.test.ts`):
   redirect URI selection, the signed state and PKCE round trip, and reconnect
   account binding. The Web-origin and forwarded-header fallbacks apply only
   outside production, for local proxies.
+- The Google callback posts the code and PKCE verifier to the token endpoint
+  once using the Worker's Fetch API and requires a valid bearer token with the
+  Calendar permission before saving a connection. A failed
+  exchange displays localized instructions to return to Calendar and start a new
+  connection. The `calendar.oauth.google_code_exchange_failed` event records
+  only the upstream HTTP status and an allowlisted Google error code or a fixed
+  fallback. Use the route and code-exchange tests to verify success, rejection,
+  and no retry on transport failure.
 - No environment variables beyond the existing provider credentials are
   required. The nonce ledger ships as a migration through the gated production
   migration workflow.

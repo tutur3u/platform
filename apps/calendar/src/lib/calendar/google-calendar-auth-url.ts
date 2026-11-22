@@ -3,6 +3,7 @@ import {
   createCalendarOAuthState,
   deriveCalendarOAuthPkce,
 } from './calendar-oauth-state';
+import { GOOGLE_CALENDAR_SCOPE } from './google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from './google-oauth-urls';
 
 type GenerateAuthUrlOptions = NonNullable<
@@ -45,7 +46,7 @@ export function buildGoogleCalendarAuthUrl(args: {
     code_challenge: codeChallenge,
     code_challenge_method: S256,
     scope: [
-      'https://www.googleapis.com/auth/calendar',
+      GOOGLE_CALENDAR_SCOPE,
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
     ],
