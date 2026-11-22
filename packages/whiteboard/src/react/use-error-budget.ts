@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 const DEFAULT_MAX_ERRORS = 3;
 
@@ -34,7 +34,10 @@ export function useErrorBudget(
 
   const isSpent = useCallback(() => countRef.current >= max, [max]);
 
-  return { exhausted, record, reset, isSpent };
+  return useMemo(
+    () => ({ exhausted, record, reset, isSpent }),
+    [exhausted, record, reset, isSpent]
+  );
 }
 
 export type ErrorBudget = ReturnType<typeof useErrorBudget>;

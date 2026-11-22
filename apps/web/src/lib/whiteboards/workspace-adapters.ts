@@ -1,8 +1,8 @@
 import { toast } from '@tuturuuu/ui/sonner';
-import type {
-  StoredWhiteboardSnapshot,
-  WhiteboardAssets,
-  WhiteboardPersistence,
+import {
+  parseStoredWhiteboardSnapshot,
+  type WhiteboardAssets,
+  type WhiteboardPersistence,
 } from '@tuturuuu/whiteboard';
 import { optimizeWhiteboardImageUpload } from './image-upload';
 
@@ -36,8 +36,7 @@ export function createWorkspaceWhiteboardPersistence(
       };
 
       return {
-        snapshot: (payload.whiteboard?.snapshot ??
-          null) as StoredWhiteboardSnapshot['snapshot'],
+        snapshot: parseStoredWhiteboardSnapshot(payload.whiteboard?.snapshot),
         revision: payload.whiteboard?.updated_at ?? null,
       };
     },

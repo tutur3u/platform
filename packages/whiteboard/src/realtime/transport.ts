@@ -55,12 +55,24 @@ const ELEMENT_EVENT = 'element-changes';
 const CURSOR_EVENT = 'cursor-move';
 const SELECTION_EVENT = 'selection-change';
 const HIDDEN_CURSOR = -1000;
+const DEPARTURE_TIMEOUT_MS = 1000;
+
+const inertHandlers = (
+  user: WhiteboardTransportHandlers['user']
+): WhiteboardTransportHandlers => ({
+  user,
+  onStatus: () => {},
+  onElementChanges: () => {},
+  onCursor: () => {},
+  onSelection: () => {},
+});
 
 /**
  * Whiteboard transport over two broadcast channels: one for element deltas and
  * one for cursors and selections. It reports `connected` only while both are
  * subscribed, and defers teardown so a disconnect immediately followed by a
- * connect keeps the same channels.
+ * connect keeps the same channels. Once a consumer disconnects, nothing is
+ * delivered to it, even while the channels stay open for a quick reconnect.
  *
  * It serves one consumer at a time. Reconnecting right after a disconnect hands
  * the open channels to the new consumer; connecting while another consumer is
@@ -162,8 +174,18 @@ export function createRealtimeWhiteboardTransport<
   const dispose = async (connection: ActiveConnection<TChannel>) => {
     const { user } = connection.handlers;
 
+    // Nothing is waiting on the elements channel, so it closes right away.
+    void connection.client.removeChannel(connection.elements);
+
+    // A cursors channel that never finished joining has no peers to notify;
+    // sending would only pay for a join that is about to be torn down.
+    if (!connection.cursorsReady) {
+      void connection.client.removeChannel(connection.cursors);
+      return;
+    }
+
     // Tell peers to drop this client's cursor and selection, and let those
-    // sends settle before the channels close so they actually go out.
+    // sends settle (bounded) before the channel closes so they go out.
     const departures = [
       {
         event: CURSOR_EVENT,
@@ -180,9 +202,16 @@ export function createRealtimeWhiteboardTransport<
     ].map(async ({ event, payload }) => {
       await connection.cursors.send({ type: 'broadcast', event, payload });
     });
-    await Promise.allSettled(departures);
 
-    void connection.client.removeChannel(connection.elements);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      Promise.allSettled(departures),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, DEPARTURE_TIMEOUT_MS);
+      }),
+    ]);
+    clearTimeout(timer);
+
     void connection.client.removeChannel(connection.cursors);
   };
 
@@ -221,6 +250,10 @@ export function createRealtimeWhiteboardTransport<
         // A consumer that was replaced, or already left, must not schedule teardown.
         if (disconnected || connection.handlers !== handlers) return;
         disconnected = true;
+
+        // Nothing reaches this consumer during the reuse window; the identity
+        // stays so departure messages still name the right user.
+        connection.handlers = inertHandlers(handlers.user);
 
         disposeTimer = setTimeout(() => {
           disposeTimer = null;

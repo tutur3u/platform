@@ -87,9 +87,9 @@ export async function expectTransportContract(
   expect(received).toHaveLength(1);
   expect(received[0]?.changes[0]?.element.id).toBe('x');
 
-  // After a consumer disconnects it receives nothing more.
+  // From the moment a consumer disconnects it receives nothing more, even if
+  // the transport keeps its connection open for a quick reconnect.
   disconnectB();
-  await settle();
   await a.sendElementChanges({ ...batch, timestamp: 2 });
   await settle();
   expect(received).toHaveLength(1);

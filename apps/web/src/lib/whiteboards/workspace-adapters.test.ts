@@ -137,4 +137,35 @@ describe('workspace whiteboard adapters', () => {
     expect(mocks.toastError).toHaveBeenCalledWith('Failed to upload image');
     expect(mocks.toastError).toHaveBeenCalledWith('Failed to process image');
   });
+
+  it('parses a snapshot the API returns as a JSON string', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({
+        whiteboard: {
+          snapshot: JSON.stringify({ elements: [{ id: 'a' }] }),
+          updated_at: 'r1',
+        },
+      })
+    ) as unknown as typeof fetch;
+
+    const loaded = await createWorkspaceWhiteboardPersistence(
+      board,
+      fetchImpl
+    ).load();
+
+    expect(loaded).toEqual({
+      snapshot: { elements: [{ id: 'a' }] },
+      revision: 'r1',
+    });
+  });
+
+  it('loads an empty board as a null snapshot', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({ whiteboard: { snapshot: null, updated_at: null } })
+    ) as unknown as typeof fetch;
+
+    expect(
+      await createWorkspaceWhiteboardPersistence(board, fetchImpl).load()
+    ).toEqual({ snapshot: null, revision: null });
+  });
 });

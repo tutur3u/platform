@@ -364,7 +364,7 @@ describe('createRealtimeWhiteboardTransport', () => {
     expect(channels.every((c) => !c.removed)).toBe(true);
   });
 
-  it('lets departure messages finish before the channels close', async () => {
+  it('closes the elements channel at once and the cursors channel after its departures settle', async () => {
     const { client, channels } = createFakeClient();
     const transport = createRealtimeWhiteboardTransport({
       channelName: 'b',
@@ -378,12 +378,96 @@ describe('createRealtimeWhiteboardTransport', () => {
     await vi.advanceTimersByTimeAsync(150);
 
     expect(channels[1]!.sent).toHaveLength(2);
-    expect(channels.every((c) => !c.removed)).toBe(true);
+    expect(channels[0]!.removed).toBe(true);
+    expect(channels[1]!.removed).toBe(false);
 
     for (const done of release) done();
     await vi.advanceTimersByTimeAsync(0);
 
+    expect(channels[1]!.removed).toBe(true);
+  });
+
+  it('stops waiting for departure messages after one second', async () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers())();
+    channels[1]!.sendHook = () => new Promise<void>(() => {});
+    await vi.advanceTimersByTimeAsync(150);
+    expect(channels[1]!.removed).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(channels[1]!.removed).toBe(true);
+  });
+
+  it('skips departure messages when the cursors channel never joined', async () => {
+    const channels: FakeChannel[] = [];
+    const client: BroadcastClientLike<FakeChannel> = {
+      channel(topic) {
+        const channel = new FakeChannel(topic, new Map());
+        channel.subscribe = (callback) => {
+          channel.statusCallback = callback;
+          if (topic.endsWith('-elements')) callback('SUBSCRIBED');
+        };
+        channels.push(channel);
+        return channel;
+      },
+      removeChannel(channel) {
+        channel.removed = true;
+      },
+    };
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers())();
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(channels[1]!.sent).toEqual([]);
     expect(channels.every((c) => c.removed)).toBe(true);
+  });
+
+  it('delivers nothing to a consumer from the moment it disconnects', () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+    const consumer = handlers();
+
+    const disconnect = transport.connect(consumer);
+    const statusCallsWhileConnected = vi.mocked(consumer.onStatus).mock.calls
+      .length;
+    disconnect();
+
+    channels[0]!.listeners.get('element-changes')?.({ payload: {} });
+    channels[1]!.listeners.get('cursor-move')?.({ payload: {} });
+    channels[1]!.listeners.get('selection-change')?.({ payload: {} });
+    channels[0]!.statusCallback?.('CHANNEL_ERROR');
+
+    expect(consumer.onElementChanges).not.toHaveBeenCalled();
+    expect(consumer.onCursor).not.toHaveBeenCalled();
+    expect(consumer.onSelection).not.toHaveBeenCalled();
+    expect(consumer.onStatus).toHaveBeenCalledTimes(statusCallsWhileConnected);
+  });
+
+  it('still names the departing user in departure messages', async () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers({ user: { id: 'zed', displayName: 'Zed' } }))();
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(channels[1]!.sent[0]?.payload).toMatchObject({
+      user: { id: 'zed' },
+    });
   });
 
   it('closes the channels without an unhandled rejection when a departure fails', async () => {
