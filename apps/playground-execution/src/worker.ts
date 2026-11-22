@@ -12,6 +12,7 @@ import {
 
 export { PlaygroundChecker } from './checker';
 export { PlaygroundCoordinator } from './coordinator';
+export { PlaygroundQualifier } from './qualifier';
 export { PlaygroundSlot } from './slot';
 
 const Stop = RunIdentity.extend({ runId: z.uuid().optional() });
@@ -52,9 +53,34 @@ const refuseCheck = (code: keyof typeof CHECK_STATUS, retryAfterMs?: number) =>
     CHECK_STATUS[code]
   );
 
+// Staging-only hosted qualification. Outside staging the binding is absent
+// and the route is indistinguishable from any unknown path.
+async function qualify(request: Request, env: Env) {
+  if (
+    request.method !== 'POST' ||
+    env.PLAYGROUND_QUALIFY !== 'enabled' ||
+    !env.PLAYGROUND_QUALIFIER
+  ) {
+    return json({ error: 'Not found' }, 404);
+  }
+  if (!authenticated(request, env.PLAYGROUND_OPERATOR_SECRET)) {
+    return json({ error: 'Unauthorized' }, 401);
+  }
+  try {
+    const report =
+      await env.PLAYGROUND_QUALIFIER.getByName('qualification').qualify();
+    if (!report) return json({ code: 'qualification_running' }, 409);
+    return json(report, report.passed ? 200 : 422);
+  } catch {
+    console.warn('Playground qualification failed to run');
+    return json({ code: 'qualification_unavailable' }, 503);
+  }
+}
+
 export default {
   async fetch(request, env): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === '/qualify') return qualify(request, env);
     if (request.method !== 'POST' || !routes.has(path)) {
       return json({ error: 'Not found' }, 404);
     }

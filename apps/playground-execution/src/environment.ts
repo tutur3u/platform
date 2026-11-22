@@ -1,11 +1,15 @@
 import type { PlaygroundChecker } from './checker';
 import type { PlaygroundCoordinator } from './coordinator';
+import type { PlaygroundQualifier } from './qualifier';
 import type { PlaygroundSlot } from './slot';
 
 export interface Env {
   PLAYGROUND_COORDINATOR: DurableObjectNamespace<PlaygroundCoordinator>;
   PLAYGROUND_SLOT: DurableObjectNamespace<PlaygroundSlot>;
   PLAYGROUND_CHECKER: DurableObjectNamespace<PlaygroundChecker>;
+  /** Staging only. */
+  PLAYGROUND_QUALIFIER?: DurableObjectNamespace<PlaygroundQualifier>;
+  PLAYGROUND_QUALIFY?: string;
   PLAYGROUND_SOURCE_ORIGIN?: string;
   PLAYGROUND_INGRESS_SECRET?: string;
   PLAYGROUND_OPERATOR_SECRET?: string;

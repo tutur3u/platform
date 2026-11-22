@@ -92,6 +92,7 @@
   "people-registry-key.yaml": ["always"],
   "periodic-report-delivery-contract.yaml": ["path-filters"],
   "playground-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "playground-execution-deploy.yaml": ["always"],
   "playground-execution-image.yaml": ["always"],
   "playground-execution-registry.yaml": ["always"],
   "playground-runtime-acceptance.yaml": ["path-filters"],

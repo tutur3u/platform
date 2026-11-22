@@ -63,14 +63,27 @@ const checker = defineContainer({
   ...images,
 });
 
+// Staging only: a fixture-only guest for hosted qualification of the sandbox.
+const qualifier = defineContainer({
+  name: `${worker}-qualifier`,
+  schedulingPolicy: 'durable-object',
+  instanceType: 'standard-1',
+  maxInstances: 1,
+  ssh: { enabled: false },
+  observability: { enabled: false },
+  ...images,
+});
+
 export default defineConfig({
-  containers: [slot, checker],
+  containers: staging ? [slot, checker, qualifier] : [slot, checker],
   worker: {
     name: worker,
     entrypoint: 'src/worker.ts',
     compatibilityDate: '2026-11-22',
     compatibilityFlags: ['nodejs_compat'],
-    workersDev: false,
+    // Staging is reached on workers.dev, so it needs no zone or route change;
+    // every route still requires its bearer secret.
+    workersDev: staging,
     previewUrls: false,
     ...(ingress ? { domains: [ingress] } : {}),
     env: {
@@ -106,6 +119,15 @@ export default defineConfig({
       PLAYGROUND_MAX_CHECKS_PER_UTC_DAY: bindings.text(
         process.env.PLAYGROUND_MAX_CHECKS_PER_UTC_DAY ?? '20000'
       ),
+      ...(staging
+        ? {
+            PLAYGROUND_QUALIFY: bindings.text('enabled'),
+            PLAYGROUND_QUALIFIER: bindings.durableObject({
+              worker,
+              exportName: 'PlaygroundQualifier',
+            }),
+          }
+        : {}),
     },
     exports: {
       PlaygroundCoordinator: exports.durableObject({ storage: 'sqlite' }),
@@ -117,6 +139,14 @@ export default defineConfig({
         storage: 'sqlite',
         container: checker,
       }),
+      ...(staging
+        ? {
+            PlaygroundQualifier: exports.durableObject({
+              storage: 'sqlite',
+              container: qualifier,
+            }),
+          }
+        : {}),
     },
   },
 });

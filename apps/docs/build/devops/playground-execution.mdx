@@ -54,6 +54,40 @@ digest. Use the digest in the Worker image configuration. The local image ID
 and the registry manifest digest identify different objects. Retain the
 previous digest while it is a rollback target. [Cloudflare image management](https://developers.cloudflare.com/containers/guides/image-management/)
 
+## Deploy to staging and qualify the sandbox
+
+Dispatch `Playground execution staging deploy`
+(`playground-execution-deploy.yaml`) on `main` with a registry reference
+pinned by digest. The build job has no credentials: it runs the Worker tests,
+builds the staging Worker with `cf build`, and checks that the emitted
+output names only that image and every Durable Object class. The deploy job
+runs in the reviewer-gated `playground-staging` environment. It deploys the
+prebuilt output with `cf deploy --prebuilt --no-provision`, uploading the
+ingress and operator secrets from the environment through a temporary
+secrets file, then runs hosted qualification and confirms admission is still
+paused. The environment holds `PLAYGROUND_STAGING_CLOUDFLARE_API_TOKEN` (a
+short-lived token minted for the run), `PLAYGROUND_STAGING_INGRESS_SECRET`
+and `PLAYGROUND_STAGING_OPERATOR_SECRET`, and uses the `CLOUDFLARE_ACCOUNT_ID`
+variable.
+
+Staging is reachable only on its `workers.dev` hostname, so it needs no zone
+or route change. Only the staging configuration contains the qualifier: the
+`PLAYGROUND_QUALIFY` flag, the `PLAYGROUND_QUALIFIER` binding and its one-guest
+container class. Production has none of them, which a configuration test
+enforces, and `/qualify` there answers like any unknown path.
+
+`POST /qualify` takes the operator secret. It starts one fresh guest and runs
+fixed fixture jobs, never request input, through the production exec,
+launcher and sandbox. The cases are every stock template, standard input, the
+dropped identity and capability sets, denied egress to public, metadata and
+private addresses and DNS, workspace write bounds, the command timeout, the
+output and process limits, and a compile-only check per language. It also
+records the guest's own view as root (identity, capabilities, the kernel's
+security modules and version) and the cold start time, then destroys the
+guest. The job uploads the report as `playground-execution-qualification-<sha>`
+and fails unless every case passed and the guest stopped. Check cases need an
+image built from a commit that includes check mode.
+
 ## Hosted qualification
 
 Run the fixture again against the digest on the actual Cloudflare execution
