@@ -481,11 +481,16 @@ and `packages/meet-core/src/features/call/components/document-workspace.test.tsx
 
 ## Whiteboard and breakout groups
 
-Both classroom tools are off by default. Enable the Meet Worker binding
-`MEET_EDUCATION_ENABLED` with the exact value `true`, then opt the meeting's
-workspace in with `ENABLE_EDUCATION`. Reload the call to discover the tools in
-the call activities menu. The API checks both flags on each read and write.
-Workspace opt-in governs the meeting, so admitted guests can participate.
+Production and staging Meet enable classroom tools with the Worker binding
+`MEET_EDUCATION_ENABLED=true`. By default, admitted participants across all
+Tuturuuu workspaces can use the tools in the Meet call activities menu, including
+admitted guests. A workspace administrator can opt out by setting
+`ENABLE_EDUCATION=false` in Web under **Workspace Settings → Secrets**. This
+setting also controls workspace Education access in Learn and Teach. The Meet API
+checks the meeting workspace's setting and room access on every read and write.
+If the setting cannot be read, Meet disables both tools for that request. Host-only
+actions require the room host. Attendance export follows its separate
+[retention and erasure gate](/platform/features/meet-calls#class-timer-and-attendance).
 
 The whiteboard shares completed freehand strokes, rectangles, text and sticky
 notes. Each participant has their own drawing tools and can undo their own
@@ -499,11 +504,10 @@ assignment or participant choice. The host can move participants, send a
 message to all groups, extend the deadline or close the session. Group members
 can request help. Audio and video continue in the main call during grouping.
 
-Deploy the compatible Meet and Meet realtime Workers before enabling the
-binding. Use one opted-in workspace to verify both panels with two admitted
-participants, then verify that another workspace stays off. Both tools use the
-existing meeting room snapshot and follow its lifecycle. Removing either flag
-disables access.
+Verify both panels with two admitted participants in a workspace without an
+Education setting. Both tools use the existing room snapshot and follow its
+lifecycle. To disable both tools across a deployment, set
+`MEET_EDUCATION_ENABLED=false` and redeploy Meet.
 
 Regression coverage lives in
 `packages/realtime/src/meet/room-classroom-tools.test.ts` and

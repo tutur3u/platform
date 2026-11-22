@@ -40,7 +40,7 @@ const draw = (body = JSON.stringify({ action: 'whiteboard.undo' })) =>
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.query.maybeSingle.mockResolvedValue({
-    data: { value: 'true' },
+    data: null,
     error: null,
   });
   mocks.route.mockImplementation(async (_request, _id, _allowGuest, run) => {
@@ -68,40 +68,55 @@ test.each([undefined, 'false', '1', 'TRUE'])(
 );
 
 test.each([
-  { data: null, error: null },
   { data: { value: 'false' }, error: null },
-  { data: { value: 'true' }, error: new Error('unavailable') },
-])('workspace opt-in fails closed', async (workspaceSecret) => {
+  { data: { value: ' FALSE ' }, error: null },
+  { data: null, error: new Error('unavailable') },
+])(
+  'an opt-out or unreadable workspace setting blocks tools',
+  async (setting) => {
+    vi.stubEnv('MEET_EDUCATION_ENABLED', 'true');
+    mocks.query.maybeSingle.mockResolvedValue(setting);
+    expect((await read())?.status).toBe(404);
+    expect((await draw('invalid JSON'))?.status).toBe(404);
+    expect(mocks.query.eq).toHaveBeenCalledWith('ws_id', 'room-workspace');
+    expect(mocks.query.eq).toHaveBeenCalledWith('name', 'ENABLE_EDUCATION');
+    expect(mocks.service).not.toHaveBeenCalled();
+  }
+);
+
+test('a thrown settings lookup fails closed', async () => {
   vi.stubEnv('MEET_EDUCATION_ENABLED', 'true');
-  mocks.query.maybeSingle.mockResolvedValue(workspaceSecret);
+  mocks.query.maybeSingle.mockRejectedValue(new Error('unavailable'));
   expect((await read())?.status).toBe(404);
-  expect((await draw('invalid JSON'))?.status).toBe(404);
-  expect(mocks.query.eq).toHaveBeenCalledWith('ws_id', 'room-workspace');
-  expect(mocks.query.eq).toHaveBeenCalledWith('name', 'ENABLE_EDUCATION');
+  expect((await draw())?.status).toBe(404);
   expect(mocks.service).not.toHaveBeenCalled();
 });
 
-test('both flags grant a scoped classroom command through the Meet API registry', async () => {
-  vi.stubEnv('MEET_EDUCATION_ENABLED', 'true');
-  expect((await read())?.status).toBe(200);
-  expect(mocks.route).toHaveBeenCalledWith(
-    expect.any(Request),
-    meetingId,
-    true,
-    expect.any(Function)
-  );
-  expect(mocks.service).toHaveBeenLastCalledWith(
-    access,
-    { action: 'whiteboard.read' },
-    { classroomTools: true }
-  );
-  expect((await draw())?.status).toBe(200);
-  expect(mocks.service).toHaveBeenLastCalledWith(
-    access,
-    { action: 'whiteboard.undo' },
-    { classroomTools: true }
-  );
-});
+test.each([null, { value: 'true' }])(
+  'the deployment flag enables room-scoped classroom commands with setting %j',
+  async (data) => {
+    vi.stubEnv('MEET_EDUCATION_ENABLED', 'true');
+    mocks.query.maybeSingle.mockResolvedValue({ data, error: null });
+    expect((await read())?.status).toBe(200);
+    expect(mocks.route).toHaveBeenCalledWith(
+      expect.any(Request),
+      meetingId,
+      true,
+      expect.any(Function)
+    );
+    expect(mocks.service).toHaveBeenLastCalledWith(
+      access,
+      { action: 'whiteboard.read' },
+      { classroomTools: true }
+    );
+    expect((await draw())?.status).toBe(200);
+    expect(mocks.service).toHaveBeenLastCalledWith(
+      access,
+      { action: 'whiteboard.undo' },
+      { classroomTools: true }
+    );
+  }
+);
 
 test('invalid and oversized writes never reach room storage', async () => {
   vi.stubEnv('MEET_EDUCATION_ENABLED', 'true');

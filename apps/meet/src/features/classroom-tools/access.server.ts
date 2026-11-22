@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { isEducationEnabled } from '@tuturuuu/education-core/education/education-flag';
 import { ENABLE_EDUCATION_SECRET } from '@tuturuuu/education-core/tulearn/constants';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
@@ -19,7 +18,7 @@ export async function isMeetClassroomEnabled(wsId: string) {
       .eq('ws_id', wsId)
       .eq('name', ENABLE_EDUCATION_SECRET)
       .maybeSingle();
-    return !error && isEducationEnabled(data?.value);
+    return !error && data?.value?.trim().toLowerCase() !== 'false';
   } catch {
     return false;
   }
