@@ -85,6 +85,50 @@ void main() {
         },
   );
 
+  test('a slow storage read times out without losing stored data', () async {
+    await credentials.storeIssued(
+      userId: 'user-a',
+      accessToken: accessA,
+      mobileClient: issued('stored')['mobile_client'],
+    );
+    final stored = Map<String, String>.of(values);
+    final slow = _Storage();
+    final read = Completer<String?>();
+    when(
+      () => slow.read(key: any(named: 'key')),
+    ).thenAnswer((_) => read.future);
+    final cold = MobileClientCredentials(
+      storage: slow,
+      clock: () => now,
+      turnstile: (_, _) async => fail('no mint without a storage answer'),
+      storageTimeout: const Duration(milliseconds: 20),
+    );
+
+    expect(await cold.current(userId: 'user-a', accessToken: accessA), isNull);
+    expect(
+      await cold.ensure(
+        userId: 'user-a',
+        accessToken: accessA,
+        origin: origin,
+        mint: (_) async => fail('no mint without a storage answer'),
+      ),
+      isNull,
+    );
+    // The late answer fills the cache; nothing empty replaced it meanwhile.
+    read.complete(stored.values.single);
+    await pumpEventQueue();
+    expect(
+      await cold.current(userId: 'user-a', accessToken: accessA),
+      'stored',
+    );
+    verifyNever(
+      () => slow.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    );
+  });
+
   test('binds the Turnstile solve to the session like the server', () {
     expect(supabaseSessionId(accessA, 'user-a'), 'session-1');
     expect(supabaseSessionId(accessA, 'user-b'), isNull);

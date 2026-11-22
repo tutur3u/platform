@@ -89,15 +89,23 @@ class MobileClientCredentials {
     FlutterSecureStorage? storage,
     MobileClientTurnstile? turnstile,
     DateTime Function()? clock,
+    Duration storageTimeout = defaultStorageTimeout,
   }) : _storage = storage ?? deviceSecureStorage,
        _turnstile = turnstile ?? requestIntegrityTurnstile,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _storageTimeout = storageTimeout;
 
   static MobileClientCredentials instance = MobileClientCredentials();
 
   static const refreshWindow = Duration(hours: 1);
   static const minBackoff = Duration(minutes: 1);
   static const maxBackoff = Duration(minutes: 30);
+
+  /// How long a request waits on secure storage. A read or write that takes
+  /// longer is abandoned for that request: it goes out without a credential,
+  /// and the server's step-up drives the single replay instead of the
+  /// request hanging before its HTTP timeout starts.
+  static const defaultStorageTimeout = Duration(seconds: 3);
 
   /// A forced re-mint after a server rejection is allowed at most this often
   /// per account, so repeated step-ups cannot drive a mint per request.
@@ -106,6 +114,7 @@ class MobileClientCredentials {
   final FlutterSecureStorage _storage;
   final MobileClientTurnstile _turnstile;
   final DateTime Function() _clock;
+  final Duration _storageTimeout;
 
   Map<String, _Credential>? _entries;
   Future<void> _writes = Future<void>.value();
@@ -143,6 +152,29 @@ class MobileClientCredentials {
     return _entries ??= entries;
   }
 
+  /// The stored entries, or a [TimeoutException] when secure storage does
+  /// not answer in time. A late read still completes and fills the cache;
+  /// nothing empty is cached in its place, so stored credentials survive.
+  Future<Map<String, _Credential>> _read() => _load().timeout(_storageTimeout);
+
+  /// Waits for a write at most [_storageTimeout]. The write stays queued and
+  /// may still land; the caller just stops waiting for it.
+  Future<void> _settle(Future<void> write) async {
+    try {
+      await write.timeout(_storageTimeout);
+    } on TimeoutException {
+      developer.log(
+        'Mobile client credential write timed out',
+        name: 'MobileClientCredentials',
+      );
+    }
+  }
+
+  void _logReadTimeout() => developer.log(
+    'Mobile client credential read timed out',
+    name: 'MobileClientCredentials',
+  );
+
   Future<void> _edit(void Function(Map<String, _Credential>) change) {
     final write = _writes.then((_) async {
       final entries = await _load();
@@ -176,11 +208,11 @@ class MobileClientCredentials {
   }
 
   Future<_Credential?> _valid(String userId, String binding) async {
-    final credential = (await _load())[userId];
+    final credential = (await _read())[userId];
     if (credential == null) return null;
     if (credential.binding != binding) {
       // Bound to another Supabase session of this account; it can never verify.
-      await _edit((entries) => entries.remove(userId));
+      await _settle(_edit((entries) => entries.remove(userId)));
       return null;
     }
     return credential.expiresAt.isAfter(_now) ? credential : null;
@@ -193,7 +225,12 @@ class MobileClientCredentials {
   }) async {
     final binding = _bindingFor(userId, accessToken);
     if (binding == null) return null;
-    return (await _valid(userId, binding))?.token;
+    try {
+      return (await _valid(userId, binding))?.token;
+    } on TimeoutException {
+      _logReadTimeout();
+      return null;
+    }
   }
 
   /// Returns a credential for this session, minting when it is missing or
@@ -210,10 +247,17 @@ class MobileClientCredentials {
   }) async {
     final binding = _bindingFor(userId, accessToken);
     if (binding == null) return null;
-    if (rejected != null && (await _load())[userId]?.token == rejected) {
-      await _edit((entries) => entries.remove(userId));
+    final _Credential? existing;
+    try {
+      if (rejected != null && (await _read())[userId]?.token == rejected) {
+        await _settle(_edit((entries) => entries.remove(userId)));
+      }
+      existing = await _valid(userId, binding);
+    } on TimeoutException {
+      // Without a storage answer there is nowhere to keep a mint either.
+      _logReadTimeout();
+      return null;
     }
-    final existing = await _valid(userId, binding);
     final now = _now;
     if (!force &&
         existing != null &&
@@ -267,7 +311,7 @@ class MobileClientCredentials {
       if ((_generation[userId] ?? 0) != generation || _epoch != epoch) {
         return null;
       }
-      await _edit((entries) => entries[userId] = credential);
+      await _settle(_edit((entries) => entries[userId] = credential));
       return credential.token;
     } on Object catch (error) {
       final failures = (_failures[userId] ?? 0) + 1;

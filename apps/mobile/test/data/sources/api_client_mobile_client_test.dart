@@ -269,4 +269,85 @@ void main() {
     expect(requests.length, 1);
     expect(mints, 0);
   });
+
+  group('secure storage that never answers', () {
+    setUp(() {
+      // A cold Keychain/Keystore read that never returns.
+      final storage = _Storage();
+      when(
+        () => storage.read(key: any(named: 'key')),
+      ).thenAnswer((_) => Completer<String?>().future);
+      when(
+        () => storage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((_) => Completer<void>().future);
+      when(
+        () => storage.delete(key: any(named: 'key')),
+      ).thenAnswer((_) => Completer<void>().future);
+      MobileClientCredentials.instance = MobileClientCredentials(
+        storage: storage,
+        turnstile: (_, _) async => 'captcha',
+        storageTimeout: const Duration(milliseconds: 20),
+      );
+    });
+
+    test('a mutation goes out without the credential', () async {
+      final client0 = api((_) => http.Response('{"ok":true}', 200));
+      expect(
+        await client0
+            .postJson('/api/v1/items', const {})
+            .timeout(const Duration(seconds: 2)),
+        {'ok': true},
+      );
+      expect(requests.single.headers[mobileClientHeader], isNull);
+    });
+
+    test('a step-up surfaces instead of hanging on the re-mint', () async {
+      final client0 = api((_) => stepUp);
+      await expectLater(
+        client0
+            .postJson('/api/v1/items', const {})
+            .timeout(const Duration(seconds: 2)),
+        throwsA(isA<ApiException>()),
+      );
+      // No storage answer means nowhere to keep a mint, so none starts.
+      expect(mints, 0);
+      expect(requests.length, 1);
+    });
+
+    test('acknowledged mutations dispatch and settle', () async {
+      final client0 = api((_) => http.Response('{}', 200));
+      expect(
+        await client0
+            .patchJsonAcknowledged(
+              '/api/v1/items',
+              const {},
+              actorId: 'user-a',
+              isCurrent: () => true,
+            )
+            .timeout(const Duration(seconds: 2)),
+        isEmpty,
+      );
+      expect(requests.single.headers[mobileClientHeader], isNull);
+    });
+
+    test('an acknowledged stream reaches dispatch', () async {
+      final client0 = api((_) => http.Response('done', 200));
+      final response = await client0
+          .sendJsonStreamAcknowledged(
+            'POST',
+            '/api/v1/items',
+            const {},
+            admission: ApiMutationAdmission(
+              actorId: 'user-a',
+              isCurrent: () => true,
+            ),
+          )
+          .timeout(const Duration(seconds: 2));
+      expect(response.statusCode, 200);
+      expect(requests.single.headers[mobileClientHeader], isNull);
+    });
+  });
 }
