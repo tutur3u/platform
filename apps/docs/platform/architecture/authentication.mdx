@@ -432,6 +432,29 @@ decoded filesystem hit is not a handler dispatch: route metadata and the render
 match must also select the endpoint. This probe does not replace a built Web
 artifact or hosting-provider routing acceptance check.
 
+## Saved-account vault API
+
+Web owns the browser vault under `/api/v1/auth/accounts`. The vault resolves
+the browser device from its device cookie and scopes reads and saved-session
+changes to that device. The account ID selects an entry within the device.
+Workspace IDs in saved context are navigation hints. Destination routes still
+enforce their own workspace permissions.
+
+| Request | Session and device contract |
+| --- | --- |
+| `GET /accounts` | Lists saved account metadata for the device and returns an empty list when the device is unavailable. |
+| `POST /accounts/current` | Saves the current Supabase session and can create the device. A missing session returns 401. |
+| `PATCH /accounts/current` | Updates route or workspace context for the active saved account on the device. |
+| `POST /accounts/switch` | Restores a saved session from the current device. An unusable entry requires reauthentication and a concurrent switch can return 409. |
+| `DELETE /accounts/{accountId}` | Removes a saved account from the current device. Removing the active account can switch to a remaining saved account or sign out. |
+| `POST /accounts/logout` | Removes the active saved account when present. Ordinary local sign-out remains available without one. |
+| `POST /accounts/logout-all` | Signs out the local session, removes the current device's saved accounts and clears its device cookie. |
+
+Mutation origin and JSON requirements apply before vault access, including
+logout requests. The account route suite covers origin and media-type
+refusals and dispatch to the vault. The vault switch suite covers concurrent
+switches and credential restoration.
+
 ## Saved-account vault key rollout
 
 The vault requires a dedicated `WEB_MULTI_ACCOUNT_SESSION_SECRET` of at least
