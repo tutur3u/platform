@@ -31,13 +31,19 @@ const mocks = vi.hoisted(() => ({
   permission: false,
   store: null as ReturnType<typeof createMemoryMastermindStore> | null,
   cronControl: undefined as { fetch: typeof fetch } | undefined,
+  options: [] as Array<{
+    stepUpExempt?: (user: { id: string }) => Promise<boolean>;
+  }>,
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
-    (handler: (request: Request, auth: { user: { id: string } }) => Response) =>
-    (request: Request) =>
-      handler(request, { user: mocks.user }),
+  withSessionAuth: (
+    handler: (request: Request, auth: { user: { id: string } }) => Response,
+    options: (typeof mocks.options)[number]
+  ) => {
+    mocks.options.push(options);
+    return (request: Request) => handler(request, { user: mocks.user });
+  },
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({
@@ -213,6 +219,22 @@ describe('ship routes', () => {
     } finally {
       mocks.cronControl = undefined;
     }
+  });
+
+  it('exempts only the owner from the browser step-up on Check now', async () => {
+    // The Mastermind Worker relays Check now without a browser user agent,
+    // so without the owner exemption the abuse guard answers 403.
+    // Import order: the check route registers first, then the read route.
+    const [check, read] = mocks.options;
+    expect(read?.stepUpExempt).toBeUndefined();
+    expect(await check?.stepUpExempt?.({ id: OWNER })).toBe(true);
+    expect(
+      await check?.stepUpExempt?.({
+        id: '22222222-2222-4222-8222-222222222222',
+      })
+    ).toBe(false);
+    mocks.permission = false;
+    expect(await check?.stepUpExempt?.({ id: OWNER })).toBe(false);
   });
 
   it('is unconfigured without an HTTPS origin and a token', async () => {

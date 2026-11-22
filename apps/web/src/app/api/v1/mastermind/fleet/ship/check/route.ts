@@ -64,5 +64,9 @@ export const POST = withSessionAuth(
   {
     rateLimit: { windowMs: 60_000, maxRequests: 6 },
     allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    // The Mastermind Worker and the phone cannot solve the browser Turnstile
+    // step-up; the owner check above is this route's gate, as for the other
+    // owner fleet mutations. Server reputation challenges still apply.
+    stepUpExempt: (user) => isFleetOwner(user),
   }
 );
