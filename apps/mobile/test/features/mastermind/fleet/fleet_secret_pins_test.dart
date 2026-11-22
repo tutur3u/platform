@@ -35,7 +35,7 @@ void main() {
   const otherKey = 'another-feature.token';
 
   late FakeSecretPlatform platform;
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() => SharedPreferences.setMockInitialValues(secretTestPrefs()));
   tearDown(() => platform.uninstall());
 
   test('an erase removes every pin entry and nothing else', () async {

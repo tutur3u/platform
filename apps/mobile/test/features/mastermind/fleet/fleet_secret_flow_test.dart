@@ -27,7 +27,7 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(secretTestPrefs());
     platform = FakeSecretPlatform()..install();
     pins = FleetSecretPins(
       userId: () => 'user-1',
@@ -306,7 +306,12 @@ void main() {
       flow.stepUpVerified();
       await flow.send(Uint8List.fromList(utf8.encode('disposable')));
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getKeys(), isEmpty);
+      // Only the trust's sign-in session id, never answer data.
+      expect(prefs.getKeys(), {fleetSecretTrustSessionKey});
+      expect(
+        prefs.getString(fleetSecretTrustSessionKey),
+        FakeSecretPlatform.session,
+      );
       final stored = await const FlutterSecureStorage().readAll();
       expect(stored.keys, everyElement(startsWith(FleetSecretPins.keyPrefix)));
       expect(stored.values.join(), isNot(contains('sealed')));

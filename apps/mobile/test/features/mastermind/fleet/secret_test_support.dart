@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_binding.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_erase.dart';
 
 /// `scripts/mastermind-fleet/secret-fixture.json`, read from `apps/mobile`.
 /// Disposable test values only.
@@ -88,15 +89,23 @@ class FakeSecretPlatform {
 
   static final _ed = Ed25519();
 
-  void install() => TestDefaultBinaryMessengerBinding
-      .instance
-      .defaultBinaryMessenger
-      .setMockMethodCallHandler(secretChannel, handle);
+  /// The sign-in session every secret page sees while this platform is
+  /// installed.
+  static const session = 'session-test';
+  String? Function()? _realSession;
 
-  void uninstall() => TestDefaultBinaryMessengerBinding
-      .instance
-      .defaultBinaryMessenger
-      .setMockMethodCallHandler(secretChannel, null);
+  void install() {
+    _realSession ??= fleetSecretSessionId;
+    fleetSecretSessionId = () => session;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secretChannel, handle);
+  }
+
+  void uninstall() {
+    if (_realSession case final real?) fleetSecretSessionId = real;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secretChannel, null);
+  }
 
   FleetSecretCrypto crypto() => FleetSecretCrypto(isIOS: () => true);
 
@@ -273,6 +282,13 @@ class RecordingSecretSource implements FleetSecretAnswerSource {
     if (reply is FleetSecretSendFailure) throw FleetSecretSendException(reply);
   }
 }
+
+/// Preferences in which this device's secret trust already belongs to the
+/// test session, so pins a test plants survive admission.
+Map<String, Object> secretTestPrefs([Map<String, Object> extra = const {}]) => {
+  fleetSecretTrustSessionKey: FakeSecretPlatform.session,
+  ...extra,
+};
 
 /// A snapshot with [decisions] open and [resolved] closed.
 FleetSnapshot secretSnapshot({

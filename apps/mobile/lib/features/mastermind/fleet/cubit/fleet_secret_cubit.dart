@@ -86,6 +86,10 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   /// Set by [leave]: no new dispatch, while a reply to one already sent is
   /// still handled until [close].
   bool _leaving = false;
+
+  /// [settleFleetSecretErase] admitted this sign-in session's trust; until
+  /// then no stored pin is read, offered for Forget or changed.
+  bool _admitted = false;
   bool _handledNotified = false;
 
   void _notifyHandled() {
@@ -150,11 +154,12 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     final account = _accountId();
     if (account == null || account.isEmpty) return FleetSecretBlock.signedOut;
     _account = account;
-    // An erase the Keychain refused at sign-out runs again first; until it
-    // completes, no old owner key or pin may verify or answer anything.
-    if (!await settleFleetSecretErase(crypto: _crypto, pins: _pins)) {
-      return FleetSecretBlock.failed;
-    }
+    // Trust from another sign-in, or an erase the Keychain refused, is
+    // erased first; until that completes no old owner key or pin may
+    // verify, be offered for Forget or answer anything.
+    final admitted = await settleFleetSecretErase(crypto: _crypto, pins: _pins);
+    if (!admitted || !_current) return FleetSecretBlock.failed;
+    _admitted = true;
     final signerKey = Uint8List.fromList(
       fleetSecretFromB64url(secret.signerKey, length: 32)!,
     );
@@ -253,7 +258,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   /// Re-reads this machine's stored trust for [FleetSecretState.forgettable].
   /// Only for a verified, current account; a failed read changes nothing.
   Future<void> _refreshForgettable() async {
-    if (!_current) return;
+    if (!_admitted || !_current) return;
     final FleetSecretPin? pin;
     try {
       pin = (await _pins.trust(secret.machineId)).pin;
@@ -662,7 +667,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   /// "Forget this machine": removes its pin; the next request needs a new
   /// pairing.
   Future<void> forgetMachine() async {
-    if (_ended) return;
+    if (!_admitted || _ended) return;
     final forgotten = await fleetSecretStored(
       () => _pins.forget(secret.machineId, account: _account),
     );

@@ -36,7 +36,7 @@ void main() {
     Map<String, dynamic> answers = const {},
     List<Map<String, dynamic>>? resolved,
   }) async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(secretTestPrefs());
     FlutterSecureStorage.setMockInitialValues({});
     platform = FakeSecretPlatform()..install();
     pins = FleetSecretPins(

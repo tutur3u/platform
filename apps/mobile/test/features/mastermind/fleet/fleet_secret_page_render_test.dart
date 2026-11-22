@@ -23,7 +23,7 @@ void main() {
 
   testWidgets('renders the opened secret entry flow in dark', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(secretTestPrefs());
     final platform = FakeSecretPlatform()..install();
     addTearDown(platform.uninstall);
     final pins = FleetSecretPins(

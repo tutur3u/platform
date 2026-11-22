@@ -88,7 +88,7 @@ void main() {
 
     setUp(() {
       FlutterSecureStorage.setMockInitialValues({});
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues(secretTestPrefs());
       platform = FakeSecretPlatform()..install();
       pins = FleetSecretPins(
         userId: () => 'user-1',

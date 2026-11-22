@@ -31,7 +31,7 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({'elsewhere': 'other plugin'});
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues(secretTestPrefs());
     platform = FakeSecretPlatform()..install();
     source = RecordingSecretSource();
   });

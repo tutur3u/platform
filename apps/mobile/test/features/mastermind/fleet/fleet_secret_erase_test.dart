@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -135,5 +137,116 @@ void main() {
     await expectLater(pins.eraseAll(), throwsA(isA<Exception>()));
     final left = await const FlutterSecureStorage().readAll();
     expect(left.keys, [firstPin]);
+  });
+
+  group('trust bound to the sign-in session', () {
+    late FleetSecretPins pins;
+
+    Future<void> pinActive() async {
+      await pins.putPending(
+        machineId: 'skr-m4',
+        signerKey: signerKey,
+        label: 'Skora M4',
+        pairingId: 'pair-0123456789abcdef01234567',
+        now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
+      );
+      await pins.activate(
+        machineId: 'skr-m4',
+        pairingId: 'pair-0123456789abcdef01234567',
+        signerKey: signerKey,
+        clock: () => now,
+      );
+    }
+
+    setUp(() => pins = FleetSecretPins(userId: () => 'user-1'));
+
+    test('a new sign-in erases the old trust before admitting', () async {
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+      await pinActive();
+      // Same session: the trust stays.
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+      expect(await pins.read(), isNotEmpty);
+      fleetSecretSessionId = () => 'session-next';
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+      expect(await pins.read(), isEmpty);
+    });
+
+    test(
+      'a lost marker after a cold restart cannot restore old trust',
+      () async {
+        expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+        await pinActive();
+        // Sign-out's erase is refused, and the restart loses every preference.
+        platform.refuseStoreDeletes = true;
+        await eraseFleetSecretKeys(crypto: platform.crypto(), pins: pins);
+        SharedPreferences.setMockInitialValues({});
+        fleetSecretSessionId = () => 'session-next';
+        expect(
+          await settleFleetSecretErase(crypto: platform.crypto()),
+          isFalse,
+        );
+        expect(await pending(), isTrue);
+        // Once the Keychain allows it, the old pin goes before any admission.
+        platform.refuseStoreDeletes = false;
+        expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+        expect(await pins.read(), isEmpty);
+      },
+    );
+
+    test('a malformed record admits nothing', () async {
+      SharedPreferences.setMockInitialValues({fleetSecretTrustSessionKey: 42});
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isFalse);
+    });
+
+    test('no readable session admits nothing', () async {
+      fleetSecretSessionId = () => null;
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isFalse);
+    });
+
+    test('a page blocked by a failed erase never offers Forget', () async {
+      expect(await settleFleetSecretErase(crypto: platform.crypto()), isTrue);
+      await pinActive();
+      platform.refuseStoreDeletes = true;
+      fleetSecretSessionId = () => 'session-next';
+      final flow = FleetSecretCubit(
+        decision: pairDecision(),
+        crypto: platform.crypto(),
+        pins: pins,
+        source: RecordingSecretSource(),
+        accountId: () => 'user-1',
+        now: () => now,
+        attempts: FleetPairingAttempts(),
+      );
+      addTearDown(flow.close);
+      await flow.start();
+      expect(flow.state.block, FleetSecretBlock.failed);
+      expect(flow.state.forgettable, isFalse);
+      platform.refuseStoreDeletes = false;
+      await flow.forgetMachine();
+      expect(await pins.read(), isNotEmpty);
+    });
+
+    test('closing while the erase settles ends quietly', () async {
+      final gate = Completer<void>();
+      platform.onCall = (method) async {
+        if (method == 'deleteOwnerKeys') await gate.future;
+      };
+      final flow = FleetSecretCubit(
+        decision: await signedRequestDecision(),
+        crypto: platform.crypto(),
+        pins: pins,
+        source: RecordingSecretSource(),
+        accountId: () => 'user-1',
+        now: () => now,
+        attempts: FleetPairingAttempts(),
+      );
+      final starting = flow.start();
+      await pumpEventQueue();
+      await flow.close();
+      gate.complete();
+      await starting;
+      expect(flow.isClosed, isTrue);
+    });
   });
 }
