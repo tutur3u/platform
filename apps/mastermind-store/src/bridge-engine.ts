@@ -239,7 +239,7 @@ export function createBridgeEngine(sql: SqlLike) {
       if (Number(row.exp) <= now) return null;
       return row.role === 'machine' && typeof row.machine === 'string'
         ? ({ role: 'machine', machineId: row.machine } as const)
-        : row.role === 'owner' &&
+        : row.role === STORED_OWNER_ROLE &&
             typeof row.owner === 'string' &&
             Number(row.lease_exp) > now
           ? ({

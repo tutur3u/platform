@@ -368,12 +368,15 @@ describe('fleet bridge engine', () => {
     expect(
       db.prepare('SELECT role FROM tickets WHERE hash = ?').get('upgraded')
     ).toEqual({ role: 'owner-v2' });
+    const machine = { role: 'machine' as const, machineId: 'skr-m4' };
+    engine.mintTicket({ hash: 'machine', ...machine }, NOW, BUDGET);
     engine.setStopped(true);
     engine.setStopped(false);
+    expect(db.prepare('SELECT hash FROM tickets ORDER BY hash').all()).toEqual([
+      { hash: 'machine' },
+    ]);
     expect(engine.redeemTicket('upgraded', NOW + 1)).toBeNull();
-    expect(
-      db.prepare('SELECT hash FROM tickets WHERE hash = ?').get('legacy')
-    ).toBeUndefined();
+    expect(engine.redeemTicket('machine', NOW + 1)).toEqual(machine);
   });
 
   it('bounds a single-use owner ticket by the credential lease', () => {
