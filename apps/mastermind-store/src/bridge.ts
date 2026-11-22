@@ -245,9 +245,10 @@ export class FleetBridge extends DurableObject {
           headers: {
             authorization: `Bearer ${token}`,
             'content-type': 'application/json',
+            'user-agent': 'Tuturuuu-Mastermind-Store/1.0',
           },
           body: JSON.stringify({ ownerId }),
-          redirect: 'error',
+          redirect: 'manual',
           signal: AbortSignal.timeout(2_000),
         }
       );

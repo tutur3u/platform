@@ -11,7 +11,7 @@ import {
 } from 'node:crypto';
 import {
   getAppSessionTokenFromRequest,
-  verifyAppSessionRequest,
+  verifyAppSessionRequestWithToken,
 } from '@tuturuuu/auth/app-session-core';
 import {
   createAdminClient,
@@ -125,9 +125,9 @@ export async function replyAssurance(
   request: Pick<NextRequest, 'headers' | 'url'>,
   principal: { userId: string; supabase: ClaimsReader },
   maxAgeSeconds: number,
-  nowSeconds = Math.floor(Date.now() / 1000)
+  nowSeconds = Math.floor(Date.now() / 1000),
+  appToken = getAppSessionTokenFromRequest(request) ?? undefined
 ): Promise<ReplyAssurance> {
-  const appToken = getAppSessionTokenFromRequest(request) ?? undefined;
   const client = credentialClient(request, principal.supabase);
   const account = await checkRequiredAccountMfa(
     request,
@@ -197,21 +197,23 @@ export async function ownerLiveLease(
   principal: { userId: string; supabase: ClaimsReader },
   now = Date.now()
 ) {
+  const session = getAppSessionTokenFromRequest(request)
+    ? verifyAppSessionRequestWithToken(request, { targetApp: 'mastermind' })
+    : null;
+  if (session && (!session.ok || session.claims.sub !== principal.userId))
+    return { status: 'required' } as const;
   const assurance = await replyAssurance(
     request,
     principal,
     OWNER_LIVE_MFA_MAX_AGE_SECONDS,
-    Math.floor(now / 1000)
+    Math.floor(now / 1000),
+    session?.token
   );
   if (assurance.status !== 'allowed') return assurance;
 
   let sessionExpiresAt: number | undefined;
-  if (getAppSessionTokenFromRequest(request)) {
-    const session = verifyAppSessionRequest(request, {
-      targetApp: 'mastermind',
-    });
-    if (session.ok && session.claims.sub === principal.userId)
-      sessionExpiresAt = session.claims.exp;
+  if (session) {
+    sessionExpiresAt = session.claims.exp;
   } else {
     try {
       const result = await credentialClient(

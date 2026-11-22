@@ -131,8 +131,7 @@ describe('fleet bridge', () => {
     const mf = runtime();
     try {
       expect(
-        (await call(mf, '/v1/bridge/ticket', { v: 1, ...ownerTicket() }, null))
-          .status
+        (await call(mf, '/v1/bridge/ticket', ownerTicket(), null)).status
       ).toBe(401);
       expect(
         (await call(mf, '/v1/bridge/ticket', { v: 1, role: 'machine' })).status
@@ -268,6 +267,22 @@ describe('fleet bridge', () => {
       expect(live.machines).toMatchObject([
         { machineId: 'skr-m4', connected: true },
       ]);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it('refuses owner tickets in the legacy protocol regardless of supplied binding', async () => {
+    const mf = runtime();
+    try {
+      expect(
+        (
+          await call(mf, '/v1/bridge/ticket', {
+            ...ownerTicket(),
+            v: BRIDGE_PROTOCOL_VERSION,
+          })
+        ).status
+      ).toBe(400);
     } finally {
       await mf.dispose();
     }
@@ -416,14 +431,9 @@ describe('fleet bridge', () => {
         call(mf, '/v1/fence', { stopped }, OPERATOR);
       expect((await fence(true)).body).toEqual({ ok: true, stopped: true });
       expect((await send(mf, 1)).status).toBe(503);
-      expect(
-        (
-          await call(mf, '/v1/bridge/ticket', {
-            v: 1,
-            ...ownerTicket(),
-          })
-        ).status
-      ).toBe(503);
+      expect((await call(mf, '/v1/bridge/ticket', ownerTicket())).status).toBe(
+        503
+      );
       expect((await fence(false)).body).toEqual({ ok: true, stopped: false });
       // The fenced socket is gone for good: the machine has to reconnect.
       link.send({ t: 'hello' });

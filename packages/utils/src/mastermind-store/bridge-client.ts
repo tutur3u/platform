@@ -7,6 +7,7 @@
 import {
   BRIDGE_LIMITS,
   BRIDGE_PROTOCOL_VERSION,
+  OWNER_TICKET_VERSION,
   type BridgeErrorCode,
   type BridgeLive,
   type BridgeReceipt,
@@ -113,7 +114,10 @@ export function createMastermindBridgeClient(options: {
       const { ticket, expiresAt } = unwrap(
         bridgeTicketResponseSchema.safeParse(
           await call('/v1/bridge/ticket', {
-            v: BRIDGE_PROTOCOL_VERSION,
+            v:
+              request.role === 'owner'
+                ? OWNER_TICKET_VERSION
+                : BRIDGE_PROTOCOL_VERSION,
             ...request,
           })
         )

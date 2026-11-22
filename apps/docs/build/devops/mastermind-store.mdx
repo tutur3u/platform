@@ -127,8 +127,12 @@ Bounds and stop fence:
   machine that keeps retrying backs off to one ticket request a minute, and a
   refused ticket charges nothing.
 - Deploy the Web owner-authorization endpoint and the identity-bearing
-  ticket issuer before deploying the store enforcement. During service
-  token rotation, the first store service token must match Web's active
+  v2 ticket issuer before deploying the store enforcement. The old store
+  refuses v2 owner tickets, so owner clients use their polling fallback
+  during the transition. Existing sockets acquire the new fence when the
+  upgraded store evaluates the next notice. Before a rollback to the old
+  Store, retire the active bridge sockets with the operator fence.
+  During service token rotation, the first store service token must match Web's active
   token for the outgoing authorization call. Canonical Web ingress gives
   authenticated callbacks a separate bucket of 300 a minute, 6,000 an
   hour and 20,000 a day. Verify the production ingress and current

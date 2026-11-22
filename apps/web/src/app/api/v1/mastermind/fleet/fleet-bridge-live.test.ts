@@ -1,3 +1,8 @@
+import {
+  APP_SESSION_COOKIE_NAME,
+  createAppSessionToken,
+  verifyAppSessionToken,
+} from '@tuturuuu/auth/app-session-core';
 import { createMemoryMastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,10 +49,19 @@ vi.mock('@tuturuuu/supabase/next/server', async () => ({
   ).getBearerAccessToken,
 }));
 vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
-  checkRequiredAccountMfa: async () => ({
-    status: 'allowed',
-    proof: { sessionId: 'current', verifiedAt: Math.floor(Date.now() / 1000) },
-  }),
+  checkRequiredAccountMfa: async (
+    _request: unknown,
+    _deps: unknown,
+    { appToken }: { appToken?: string }
+  ) => {
+    const verification = appToken ? verifyAppSessionToken(appToken) : null;
+    const proof = !verification
+      ? { sessionId: 'current', verifiedAt: Math.floor(Date.now() / 1000) }
+      : verification.ok
+        ? (verification.claims.mfa ?? null)
+        : null;
+    return { status: 'allowed', proof };
+  },
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({
@@ -169,6 +183,36 @@ describe('fleet bridge tickets and live state', () => {
       (await POST(signed(path, JSON.stringify({ machineId: '../x' })) as never))
         .status
     ).toBe(422);
+    expect(mocks.bridge!.ticket).not.toHaveBeenCalled();
+  });
+
+  it('does not use another app session to authorize the owner lease', async () => {
+    const mastermindToken = createAppSessionToken({
+      targetApp: 'mastermind',
+      userId: OWNER,
+    }).token;
+    const platform = createAppSessionToken({
+      targetApp: 'platform',
+      userId: OWNER,
+      mfa: {
+        sessionId: 'platform-mfa',
+        verifiedAt: Math.floor(Date.now() / 1000),
+      },
+    }).token;
+    const ticket = await import('./live/ticket/route');
+    const response = await ticket.POST(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/live/ticket',
+        {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${platform}`,
+            cookie: `${APP_SESSION_COOKIE_NAME}=${mastermindToken}`,
+          },
+        }
+      )
+    );
+    expect(response.status).toBe(403);
     expect(mocks.bridge!.ticket).not.toHaveBeenCalled();
   });
 

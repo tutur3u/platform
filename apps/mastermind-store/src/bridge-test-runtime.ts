@@ -1,12 +1,14 @@
 import {
   BRIDGE_PROTOCOL_VERSION,
   BRIDGE_SUBPROTOCOL,
+  OWNER_TICKET_VERSION,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
-import { Miniflare } from 'miniflare';
+import { Miniflare, Response } from 'miniflare';
 
 export const ORIGIN = 'http://localhost';
 export const ACTOR = '00000000-0000-4000-8000-0000000000aa';
 export const ownerTicket = () => ({
+  v: OWNER_TICKET_VERSION,
   role: 'owner' as const,
   ownerId: ACTOR,
   leaseExpiresAt: Date.now() + 300_000,
@@ -33,7 +35,8 @@ export function createBridgeTestRuntime(
         'https://tuturuuu.com/api/v1/mastermind/fleet/live/owner-authorization';
       if (
         request.url !== expected ||
-        request.headers.get('authorization') !== `Bearer ${TOKEN}`
+        request.headers.get('authorization') !== `Bearer ${TOKEN}` ||
+        request.headers.get('user-agent') !== 'Tuturuuu-Mastermind-Store/1.0'
       )
         return new Response(null, { status: 401 });
       const { ownerId } = (await request.json()) as { ownerId: string };

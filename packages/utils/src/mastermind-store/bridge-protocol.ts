@@ -285,11 +285,13 @@ export type BridgeOwnerFrame = z.infer<typeof bridgeOwnerFrameSchema>;
 
 /** Each owner socket is bounded by the credential Web admitted. */
 export const OWNER_LIVE_LEASE_MS = 5 * 60 * 1000;
+/** Legacy stores must refuse to issue an unbound ticket for a new issuer. */
+export const OWNER_TICKET_VERSION = 2;
 
 export const bridgeTicketRequestSchema = z.discriminatedUnion('role', [
   z.object({ v, role: z.literal('machine'), machineId }),
   z.object({
-    v,
+    v: z.literal(OWNER_TICKET_VERSION),
     role: z.literal('owner'),
     ownerId: z.uuid(),
     leaseExpiresAt: z.number().int().positive(),
