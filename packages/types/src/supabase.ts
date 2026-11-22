@@ -29698,6 +29698,14 @@ export type Database = {
         };
         Returns: boolean;
       };
+      external_app_workspace_has_admin: {
+        Args: {
+          p_excluded_user_id?: string;
+          p_include_defaults?: boolean;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       external_chat_apply_message_state: {
         Args: {
           p_connector_key: string;
@@ -35233,6 +35241,10 @@ export type Database = {
         Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
+      workspace_lost_member_manager: {
+        Args: { p_had_manager: boolean; p_ws_id: string };
+        Returns: boolean;
+      };
       workspace_quiz_authored_key: {
         Args: { p_content: Json; p_type: string };
         Returns: Json;
@@ -35249,6 +35261,15 @@ export type Database = {
       workspace_quiz_string_items: {
         Args: { p_key: string; p_value: Json };
         Returns: Json;
+      };
+      workspace_removal_authorized: {
+        Args: {
+          p_actor_id: string;
+          p_mode: string;
+          p_permission: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       workspace_role_creator_grants_owned_by_actor:
         | { Args: { p_actor_id: string; p_role_id: string }; Returns: boolean }
@@ -60382,6 +60403,15 @@ export type Database = {
         Args: { p_actor_id: string; p_confirmation: string; p_ws_id: string };
         Returns: string;
       };
+      delete_workspace_role_guarded: {
+        Args: {
+          p_actor_id: string;
+          p_mode: string;
+          p_role_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       detect_duplicate_workspace_users: {
         Args: { _ws_id: string };
         Returns: {
@@ -63318,6 +63348,15 @@ export type Database = {
         };
         Returns: boolean;
       };
+      reduce_external_app_workspace_admin_guarded: {
+        Args: {
+          p_actor_id: string;
+          p_disable_default_admin: boolean;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       release_expired_workspace_usage: {
         Args: { p_hold: string; p_receipt: string; p_ws: string };
         Returns: number;
@@ -63363,9 +63402,30 @@ export type Database = {
         Args: { p_actor_id: string; p_user_id: string; p_ws_id: string };
         Returns: string;
       };
+      remove_workspace_member_guarded_in_mode: {
+        Args: {
+          p_actor_id: string;
+          p_guard_self?: boolean;
+          p_mode: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       remove_workspace_role_member_guarded: {
         Args: {
           p_actor_id: string;
+          p_role_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      remove_workspace_role_member_guarded_in_mode: {
+        Args: {
+          p_actor_id: string;
+          p_guard_self?: boolean;
+          p_mode: string;
           p_role_id: string;
           p_user_id: string;
           p_ws_id: string;

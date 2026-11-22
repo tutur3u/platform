@@ -619,7 +619,12 @@ INSERT INTO definer_added_later VALUES
   ('public.record_unbilled_ai_charge(uuid,uuid,uuid,text,text,integer,integer,integer,integer,text)'),
   -- apps/database/supabase/migrations/20261122023000_guard_workspace_member_removals.sql
   ('public.remove_workspace_member_guarded(uuid,uuid,uuid)'),
-  ('public.remove_workspace_role_member_guarded(uuid,uuid,uuid,uuid)');
+  ('public.remove_workspace_role_member_guarded(uuid,uuid,uuid,uuid)'),
+  -- apps/database/supabase/migrations/20261122030000_guard_workspace_removal_modes.sql
+  ('public.remove_workspace_member_guarded_in_mode(uuid,uuid,uuid,text,boolean)'),
+  ('public.remove_workspace_role_member_guarded_in_mode(uuid,uuid,uuid,uuid,text,boolean)'),
+  ('public.delete_workspace_role_guarded(uuid,uuid,uuid,text)'),
+  ('public.reduce_external_app_workspace_admin_guarded(uuid,uuid,boolean,uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
