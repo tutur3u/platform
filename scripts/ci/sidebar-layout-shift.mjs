@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Headless layout-shift check for the shared satellite sidebar in hover mode.
+ * Headless layout-shift check for the shared satellite sidebar in hover mode,
+ * or in minimal mode with SIDEBAR_SHIFT_BEHAVIOR=minimal, which also checks
+ * that keyboard focus opens the panel and Escape closes it.
  *
  * Mounts the real shared sidebar chrome (packages/ui custom/structure,
  * satellite-shell, satellite-content, use-satellite-shell) with static
@@ -29,6 +31,8 @@ const harness = path.join(repo, 'packages/ui/tests/sidebar-layout-shift');
 const port = Number(process.env.SIDEBAR_SHIFT_PORT ?? 4191);
 const tolerance = Number(process.env.SIDEBAR_SHIFT_TOLERANCE ?? 0.001);
 const noAssert = process.env.SIDEBAR_SHIFT_NO_ASSERT === '1';
+const behavior =
+  process.env.SIDEBAR_SHIFT_BEHAVIOR === 'minimal' ? 'minimal' : 'hover';
 
 // Tooling lives in app workspaces rather than the repo root, so resolve each
 // dependency from the first workspace that declares it.
@@ -172,7 +176,7 @@ try {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(installProbes);
-  await page.goto(`http://127.0.0.1:${port}/`);
+  await page.goto(`http://127.0.0.1:${port}/?behavior=${behavior}`);
   await page.locator('[data-testid="calendar-grid"]').waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(800);
@@ -220,6 +224,30 @@ try {
   await page.waitForTimeout(300);
   const shifts = await page.evaluate(() => window.__shifts);
 
+  // Minimal mode: the logo is the first stop, and focusing it by keyboard
+  // opens the panel without moving focus; Escape closes it again.
+  let keyboard = null;
+  if (behavior === 'minimal') {
+    const state = () =>
+      page.evaluate(() => ({
+        overlay: document.querySelector('aside').dataset.overlayState ?? null,
+        onTrigger:
+          document.activeElement?.hasAttribute('data-sidebar-reveal-trigger') ??
+          false,
+      }));
+    await page.waitForTimeout(600);
+    const resting = await state();
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(400);
+    const focused = await state();
+    if (shots) {
+      await page.screenshot({ path: path.join(shots, '4-keyboard.png') });
+    }
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+    keyboard = { resting, focused, escaped: await state() };
+  }
+
   const frames = cycles.flatMap((c) => c.frames);
   const expandedAsideWidth = Math.max(
     ...cycles
@@ -253,6 +281,8 @@ try {
       .flatMap((s) => s.sources.filter((x) => !x.inSidebar))
       .slice(0, 6),
     pageErrors,
+    behavior,
+    keyboard,
   };
   const outPath = sidebarEvidencePath(process.env.SIDEBAR_SHIFT_OUT);
   fs.writeFileSync(
@@ -277,7 +307,18 @@ try {
       result.layoutShiftTotal <= tolerance,
       `layout-shift total ${result.layoutShiftTotal} exceeds ${tolerance}`
     );
-    console.log('PASS sidebar hover expand is a pure overlay');
+    if (keyboard) {
+      assert.deepEqual(
+        keyboard,
+        {
+          resting: { overlay: null, onTrigger: false },
+          focused: { overlay: 'open', onTrigger: true },
+          escaped: { overlay: null, onTrigger: true },
+        },
+        'keyboard focus must open the minimal sidebar and Escape must close it'
+      );
+    }
+    console.log(`PASS sidebar ${behavior} expand is a pure overlay`);
   }
 } catch (error) {
   console.error('FAIL', error.message);

@@ -26,10 +26,14 @@ import './style.css';
 /**
  * Synthetic mount of the real shared satellite chrome (Structure,
  * SatelliteShell, SatelliteContent, useSatelliteShell hover handlers and the
- * footer actions) in hover mode. Routing, i18n, auth and network are replaced
- * by static fixtures so the page needs no server and renders deterministically.
+ * footer actions) in hover mode, or in minimal mode with `?behavior=minimal`.
+ * Routing, i18n, auth and network are replaced by static fixtures so the page
+ * needs no server and renders deterministically.
  */
-const behavior = 'hover' as const;
+const behavior =
+  new URLSearchParams(window.location.search).get('behavior') === 'minimal'
+    ? 'minimal'
+    : 'hover';
 const pathname = '/ws/calendar';
 
 const links: NavLink[] = [
@@ -197,6 +201,8 @@ function Harness() {
       onMouseEnter={shell.onMouseEnter}
       onMouseLeave={shell.onMouseLeave}
       overlayOnExpand
+      sidebarLabels={{ open: 'Open sidebar', close: 'Close sidebar' }}
+      sidebarMinimal={behavior === 'minimal'}
       setIsCollapsed={shell.handleToggle}
       sidebarContent={
         <SatelliteContent

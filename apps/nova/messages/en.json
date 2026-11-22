@@ -1023,6 +1023,7 @@
     "clear_all_title": "Clear All Content",
     "clearing": "Clearing",
     "close": "Close",
+    "close_sidebar": "Close sidebar",
     "column_name": "Column Name",
     "columns": "Columns",
     "coming_soon": "Coming Soon",
@@ -1117,7 +1118,7 @@
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
     "hide_column": "Hide column",
-    "hide_sidebar": "Hide sidebar",
+    "hide_sidebar": "Minimal sidebar",
     "hide_workspace": "Hide workspace",
     "hide-all": "Hide All",
     "history": "History",
@@ -1170,6 +1171,7 @@
     "no-sheets-found": "No sheets found.",
     "not_whitelisted": "Not whitelisted",
     "of": "of",
+    "open_sidebar": "Open sidebar",
     "open-source": "Open Source",
     "option": "Option",
     "or": "Or",
@@ -3530,7 +3532,7 @@
       "close_settings": "Close settings",
       "first_section": "First section",
       "global": "Global",
-      "hide_sidebar": "Hide sidebar",
+      "hide_sidebar": "Minimal sidebar",
       "last_section": "Last section",
       "next_section": "Next section",
       "open_apps": "Open app launcher",
@@ -3545,7 +3547,7 @@
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
-      "sidebar_hidden": "Hidden"
+      "sidebar_minimal": "Minimal"
     }
   },
   "settings-account": {

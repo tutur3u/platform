@@ -9,6 +9,7 @@ import { SidebarContext } from '@tuturuuu/ui/custom/sidebar-context';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useCallback, useContext, useEffect, useRef } from 'react';
+import { normalizeSidebarBehavior } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { getMiraOpenAppPath } from './mira-open-app';
 import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
 import { useMiraWorkspace } from './mira-workspace-state';
@@ -58,12 +59,11 @@ export function useMiraUiActionDispatcher() {
         setTheme(String(output.theme));
       } else if (
         toolName === 'set_sidebar' &&
-        ['expanded', 'collapsed', 'hover', 'hidden'].includes(
-          String(output.behavior)
-        )
+        normalizeSidebarBehavior(output.behavior)
       ) {
+        // A retired "hidden" request applies as "minimal".
         sidebar?.handleBehaviorChange(
-          output.behavior as 'expanded' | 'collapsed' | 'hover' | 'hidden'
+          normalizeSidebarBehavior(output.behavior) ?? 'expanded'
         );
       } else if (
         toolName === 'show_workspace_artifact' &&

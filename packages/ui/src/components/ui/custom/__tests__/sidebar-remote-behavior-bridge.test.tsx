@@ -106,4 +106,34 @@ describe('SidebarRemoteBehaviorBridge', () => {
     expect(onApplyRemoteBehavior).not.toHaveBeenCalled();
     expect(mockUpdateConfigMutate).not.toHaveBeenCalled();
   });
+
+  it('reads a retired hidden account preference as minimal and rewrites it', async () => {
+    mockConfigState.remoteBehavior = 'hidden';
+    const { onApplyRemoteBehavior, onRemoteBehaviorAvailable } = renderBridge({
+      behavior: 'collapsed',
+      behaviorUpdatedAt: null,
+    });
+
+    await waitFor(() =>
+      expect(onApplyRemoteBehavior).toHaveBeenCalledWith('minimal')
+    );
+    expect(onRemoteBehaviorAvailable).toHaveBeenCalledWith('minimal');
+    expect(onApplyRemoteBehavior).not.toHaveBeenCalledWith('hidden');
+    expect(mockUpdateConfigMutate).toHaveBeenCalledTimes(1);
+    expect(mockUpdateConfigMutate).toHaveBeenCalledWith({
+      configId: 'SIDEBAR_BEHAVIOR',
+      value: 'minimal',
+    });
+  });
+
+  it('ignores an unknown account preference', async () => {
+    mockConfigState.remoteBehavior = 'floating';
+    const { onApplyRemoteBehavior } = renderBridge({
+      behavior: 'collapsed',
+      behaviorUpdatedAt: null,
+    });
+
+    await waitFor(() => expect(mockUpdateConfigMutate).not.toHaveBeenCalled());
+    expect(onApplyRemoteBehavior).not.toHaveBeenCalled();
+  });
 });

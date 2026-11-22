@@ -5,16 +5,14 @@ import {
   useUserConfig,
 } from '@tuturuuu/ui/hooks/use-user-config';
 import { useEffect, useRef } from 'react';
-import type { SidebarBehavior } from './sidebar-context';
+import {
+  LEGACY_HIDDEN_SIDEBAR_BEHAVIOR,
+  normalizeSidebarBehavior,
+  type SidebarBehavior,
+} from './sidebar-behavior';
 
 const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 const RECENT_LOCAL_BEHAVIOR_GRACE_MS = 5 * 60 * 1000;
-
-const isValidBehavior = (value: string | undefined): value is SidebarBehavior =>
-  value === 'expanded' ||
-  value === 'collapsed' ||
-  value === 'hover' ||
-  value === 'hidden';
 
 interface SidebarRemoteBehaviorBridgeProps {
   behavior: SidebarBehavior;
@@ -35,11 +33,30 @@ export function SidebarRemoteBehaviorBridge({
   onRemoteBehaviorAvailable,
   userChangeVersion,
 }: SidebarRemoteBehaviorBridgeProps) {
-  const { data: remoteBehavior, isSuccess: remoteLoaded } = useUserConfig(
+  const { data: storedBehavior, isSuccess: remoteLoaded } = useUserConfig(
     SIDEBAR_BEHAVIOR_CONFIG_KEY,
     'expanded'
   );
+  // An account still storing the retired "hidden" mode reads as "minimal".
+  const remoteBehavior = normalizeSidebarBehavior(storedBehavior);
   const updateConfig = useUpdateUserConfig();
+  const migratedLegacyValue = useRef(false);
+
+  useEffect(() => {
+    if (
+      !remoteLoaded ||
+      migratedLegacyValue.current ||
+      storedBehavior !== LEGACY_HIDDEN_SIDEBAR_BEHAVIOR
+    ) {
+      return;
+    }
+
+    migratedLegacyValue.current = true;
+    updateConfig.mutate({
+      configId: SIDEBAR_BEHAVIOR_CONFIG_KEY,
+      value: 'minimal',
+    });
+  }, [remoteLoaded, storedBehavior, updateConfig]);
   const hasAppliedRemote = useRef(false);
   const persistedUserChangeVersion = useRef(0);
   const handledLocalOverrideVersion = useRef(0);
@@ -51,7 +68,7 @@ export function SidebarRemoteBehaviorBridge({
     Date.now() - behaviorUpdatedAt <= RECENT_LOCAL_BEHAVIOR_GRACE_MS;
 
   useEffect(() => {
-    if (!remoteLoaded || !isValidBehavior(remoteBehavior)) return;
+    if (!remoteLoaded || !remoteBehavior) return;
 
     onRemoteBehaviorAvailable(remoteBehavior);
   }, [onRemoteBehaviorAvailable, remoteBehavior, remoteLoaded]);
@@ -62,7 +79,7 @@ export function SidebarRemoteBehaviorBridge({
       localOverride ||
       hasAppliedRemote.current ||
       userChangeVersion > 0 ||
-      !isValidBehavior(remoteBehavior)
+      !remoteBehavior
     ) {
       return;
     }

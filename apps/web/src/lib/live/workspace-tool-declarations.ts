@@ -33,13 +33,13 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'set_sidebar',
     description:
-      'Set navigation to expanded, collapsed, expand on hover, or hidden.',
+      'Set navigation to expanded, collapsed, expand on hover, or minimal (logo only; opens on hover).',
     parameters: {
       type: Type.OBJECT,
       properties: {
         behavior: {
           type: Type.STRING,
-          enum: ['expanded', 'collapsed', 'hover', 'hidden'],
+          enum: ['expanded', 'collapsed', 'hover', 'minimal'],
         },
       },
       required: ['behavior'],

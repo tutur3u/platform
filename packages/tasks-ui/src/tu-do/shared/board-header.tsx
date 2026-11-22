@@ -151,7 +151,7 @@ export function BoardHeader({
     currentView === 'kanban';
   const sidebar = useOptionalSidebar();
   const hideSidebarVisible =
-    Boolean(sidebar) && sidebar?.behavior !== 'hidden' && !publicView;
+    Boolean(sidebar) && sidebar?.behavior !== 'minimal' && !publicView;
   const hasSharedBoardGuests =
     board.access_type === 'guest' || board.has_guest_access === true;
   const presenceVisible =
@@ -447,7 +447,7 @@ export function BoardHeader({
             }
             onHideSidebar={
               hideSidebarVisible
-                ? () => sidebar?.handleBehaviorChange('hidden')
+                ? () => sidebar?.handleBehaviorChange('minimal')
                 : undefined
             }
             onOpenPlanner={

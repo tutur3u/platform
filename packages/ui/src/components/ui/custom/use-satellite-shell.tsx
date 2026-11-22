@@ -10,6 +10,11 @@ import {
 } from 'react';
 import type { NavLink } from './navigation';
 import {
+  opensAsOverlay,
+  restsCollapsed,
+  type SidebarBehavior,
+} from './sidebar-behavior';
+import {
   findActiveNavigation,
   type NavigationState,
 } from './satellite-shell-utils';
@@ -24,18 +29,10 @@ const getIsMobile = () => window.matchMedia(mobileQuery).matches;
 const getServerIsMobile = () => false;
 
 function collapsedForBehavior(
-  behavior: 'expanded' | 'collapsed' | 'hover' | 'hidden' | undefined,
+  behavior: SidebarBehavior | undefined,
   defaultCollapsed: boolean
 ) {
-  if (
-    behavior === 'collapsed' ||
-    behavior === 'hover' ||
-    behavior === 'hidden'
-  ) {
-    return true;
-  }
-
-  return defaultCollapsed;
+  return restsCollapsed(behavior) || defaultCollapsed;
 }
 
 export function useSatelliteShell({
@@ -50,10 +47,8 @@ export function useSatelliteShell({
   pathname: string;
   links: (NavLink | null)[];
   defaultCollapsed?: boolean;
-  behavior?: 'expanded' | 'collapsed' | 'hover' | 'hidden';
-  handleBehaviorChange?: (
-    behavior: 'expanded' | 'collapsed' | 'hover' | 'hidden'
-  ) => void;
+  behavior?: SidebarBehavior;
+  handleBehaviorChange?: (behavior: SidebarBehavior) => void;
   persistCollapsed?: (collapsed: boolean) => void;
   backLabel: string;
 }) {
@@ -143,12 +138,6 @@ export function useSatelliteShell({
       setMobileCollapsed((collapsed) => !collapsed);
       return;
     }
-    if (behavior === 'hidden') {
-      setIsCollapsed(true);
-      handleBehaviorChange?.('collapsed');
-      return;
-    }
-
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     if (newCollapsed) setWorkspaceSelectVisible(false);
@@ -174,9 +163,10 @@ export function useSatelliteShell({
     }
   }, [behavior, handleBehaviorChange, persistCollapsed, isMobile]);
 
-  const isHoverMode = behavior === 'hover';
-  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
-  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
+  // Hover and minimal both open the full sidebar as an overlay.
+  const isOverlayMode = opensAsOverlay(behavior);
+  const onMouseEnter = isOverlayMode ? () => setIsCollapsed(false) : undefined;
+  const onMouseLeave = isOverlayMode ? () => setIsCollapsed(true) : undefined;
   const closeOnMobile = useCallback(() => {
     if (window.innerWidth < 768) setMobileCollapsed(true);
   }, []);

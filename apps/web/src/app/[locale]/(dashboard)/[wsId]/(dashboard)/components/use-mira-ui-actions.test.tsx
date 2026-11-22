@@ -151,7 +151,7 @@ describe('Mira streamed UI actions', () => {
       presentation
     );
   });
-  it.each(['expanded', 'collapsed', 'hover', 'hidden'] as const)(
+  it.each(['expanded', 'collapsed', 'hover', 'minimal'] as const)(
     'applies the %s sidebar state through the preference provider',
     (behavior) => {
       const change = vi.fn();
@@ -180,6 +180,33 @@ describe('Mira streamed UI actions', () => {
       expect(change).toHaveBeenCalledWith(behavior);
     }
   );
+
+  it('applies a retired hidden sidebar request as minimal', () => {
+    const change = vi.fn();
+    renderHook(
+      () =>
+        useMiraUiActions(
+          [message('set_sidebar', { success: true, behavior: 'hidden' })],
+          'streaming'
+        ),
+      {
+        wrapper: ({ children }) => (
+          <SidebarContext.Provider
+            value={{
+              behavior: 'expanded' as SidebarBehavior,
+              setBehavior: vi.fn(),
+              handleBehaviorChange: change,
+              localOverride: false,
+              setLocalOverride: vi.fn(),
+            }}
+          >
+            {children}
+          </SidebarContext.Provider>
+        ),
+      }
+    );
+    expect(change).toHaveBeenCalledWith('minimal');
+  });
   it('ignores failed and invalid UI commands', () => {
     renderHook(() =>
       useMiraUiActions(
@@ -197,7 +224,7 @@ describe('Mira streamed UI actions', () => {
   });
 });
 
-it.each(['expanded', 'collapsed', 'hover', 'hidden'] as const)(
+it.each(['expanded', 'collapsed', 'hover', 'minimal'] as const)(
   'only auto-collapses expanded navigation when a new artifact opens (%s)',
   (behavior) => {
     mocks.artifacts = [];

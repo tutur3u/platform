@@ -179,6 +179,18 @@ resizes or moves the page. Rules for any change to it:
   tests cover overlay dismissal, portal movement and overlapping overlays.
 - The rail and the expanded panel are separate subtrees (keyed remount), because an
   element that exists in both states and changes position counts as a layout shift.
+- Minimal mode (`sidebarMinimal`) is the same overlay with no rail: at rest the
+  `aside` is a transparent hover area holding `SidebarMinimalTrigger` (the logo),
+  and the open panel is a floating card inside it
+  (`data-sidebar-overlay-surface`, `sidebar-minimal-reveal` and
+  `sidebar-minimal-conceal`). The `aside` keeps its left edge and full height in
+  both states, so a pointer resting on the screen edge cannot oscillate between
+  open and closed. `useSidebarOverlayClose` owns every way in and out: hover
+  with an open and a close delay, keyboard focus, tap, Escape, a press outside
+  and the Tab loop. The trigger stays mounted and focused under the open panel,
+  so revealing on focus never moves focus. Shells pass `sidebarLabels`, which
+  names the trigger. Product rules:
+  [Sidebar modes](/platform/personalization/sidebar-navigation#sidebar-modes).
 - Async content inside the panel needs a fixed-size skeleton, not a pop-in.
 - Rail items render `SidebarNavigationItemContent` from
   `@tuturuuu/ui/custom/satellite-navigation`: the icon, with a one-line
@@ -195,7 +207,9 @@ Layout Instability total above 0.001:
 ttr resources run -- node scripts/ci/sidebar-layout-shift.mjs
 ```
 
-Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed, mid-reveal, and expanded
+Set `SIDEBAR_SHIFT_BEHAVIOR=minimal` to run the same check in minimal mode; it
+also asserts that keyboard focus on the logo opens the panel and Escape closes
+it. Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed, mid-reveal, and expanded
 screenshots. It needs the installed workspace and a Playwright Chromium; it uses no
 network and no authentication, so it does not cover signed-in data states.
 

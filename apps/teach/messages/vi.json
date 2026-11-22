@@ -287,6 +287,7 @@
     "clear": "Xóa bỏ",
     "clear_search": "Xóa tìm kiếm",
     "close": "Đóng",
+    "close_sidebar": "Đóng thanh bên",
     "collapsed": "Thu nhỏ",
     "completed": "Hoàn thành",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.",
@@ -326,7 +327,7 @@
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
-    "hide_sidebar": "Ẩn thanh bên",
+    "hide_sidebar": "Thanh bên tối giản",
     "hide_workspace": "Ẩn không gian làm việc",
     "home": "Trang chủ",
     "join_workspace": "Tham gia không gian làm việc",
@@ -340,11 +341,13 @@
     "media-alt": "Tệp đa phương tiện {number}",
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
     "members": "Thành viên",
+    "minimal": "Tối giản",
     "next": "Tiếp theo",
     "no_content_yet": "Chưa có nội dung",
     "no_results_found": "Không tìm thấy kết quả",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
     "open": "Mở",
+    "open_sidebar": "Mở thanh bên",
     "option": "Lựa chọn",
     "order": "Thứ tự",
     "page": "Trang",
@@ -745,7 +748,7 @@
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
       "global": "Toàn cục",
-      "hide_sidebar": "Ẩn thanh bên",
+      "hide_sidebar": "Thanh bên tối giản",
       "last_section": "Mục cuối cùng",
       "next_section": "Mục tiếp theo",
       "open_apps": "Mở danh sách ứng dụng",
@@ -761,7 +764,7 @@
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
-      "sidebar_hidden": "Ẩn"
+      "sidebar_minimal": "Tối giản"
     },
     "search_settings_placeholder": "Tìm cài đặt..."
   },

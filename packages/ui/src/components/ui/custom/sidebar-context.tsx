@@ -24,7 +24,12 @@ export const SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME =
   'sidebar-behavior-updated-at';
 export const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
+import {
+  LEGACY_HIDDEN_SIDEBAR_BEHAVIOR,
+  type SidebarBehavior,
+} from './sidebar-behavior';
+
+export type { SidebarBehavior } from './sidebar-behavior';
 
 interface SidebarContextProps {
   behavior: SidebarBehavior;
@@ -135,6 +140,22 @@ export const SidebarProvider = ({
     if (updatedAt !== null) setBehaviorUpdatedAt(updatedAt);
   }, [initialBehaviorUpdatedAt]);
 
+  // The server already reads a retired "hidden" cookie as "minimal"; rewrite
+  // the cookie itself so every reader agrees.
+  useEffect(() => {
+    const stored = document.cookie
+      .split('; ')
+      .find((entry) => entry.startsWith(`${SIDEBAR_BEHAVIOR_COOKIE_NAME}=`))
+      ?.slice(SIDEBAR_BEHAVIOR_COOKIE_NAME.length + 1);
+    if (stored !== LEGACY_HIDDEN_SIDEBAR_BEHAVIOR) return;
+
+    setCookie(
+      SIDEBAR_BEHAVIOR_COOKIE_NAME,
+      'minimal',
+      getSidebarCookieOptions()
+    );
+  }, []);
+
   const applyBehavior = useCallback(
     (
       newBehavior: SidebarBehavior,
@@ -197,7 +218,7 @@ export const SidebarProvider = ({
 
       if (event.altKey) {
         event.preventDefault();
-        handleBehaviorChange('hidden');
+        handleBehaviorChange('minimal');
         return;
       }
 
@@ -205,7 +226,7 @@ export const SidebarProvider = ({
       handleBehaviorChange(
         behavior === 'expanded'
           ? 'collapsed'
-          : behavior === 'hidden'
+          : behavior === 'minimal'
             ? 'collapsed'
             : 'expanded'
       );

@@ -302,6 +302,7 @@
       "unchecked": "Cần làm"
     },
     "close": "Đóng",
+    "close_sidebar": "Đóng thanh bên",
     "create_workspace": "Tạo không gian làm việc",
     "current_workspace": "Không gian làm việc hiện tại",
     "default_workspace": "Không gian làm việc mặc định",
@@ -310,11 +311,12 @@
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
-    "hide_sidebar": "Ẩn thanh bên",
+    "hide_sidebar": "Thanh bên tối giản",
     "hide_workspace": "Ẩn không gian làm việc",
     "join_workspace": "Tham gia không gian làm việc",
     "loading": "Đang tải",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
+    "open_sidebar": "Mở thanh bên",
     "picker_internal_meta": "Quản trị nền tảng",
     "picker_more_actions": "Thêm thao tác",
     "picker_personal_meta": "Chỉ mình bạn",
@@ -518,7 +520,7 @@
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
       "global": "Toàn cục",
-      "hide_sidebar": "Ẩn thanh bên",
+      "hide_sidebar": "Thanh bên tối giản",
       "last_section": "Mục cuối cùng",
       "next_section": "Mục tiếp theo",
       "open_apps": "Mở danh sách ứng dụng",
@@ -533,7 +535,7 @@
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
-      "sidebar_hidden": "Ẩn"
+      "sidebar_minimal": "Tối giản"
     }
   },
   "studio": {

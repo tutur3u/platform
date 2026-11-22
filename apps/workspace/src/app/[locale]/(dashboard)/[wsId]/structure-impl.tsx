@@ -9,6 +9,7 @@ import {
 import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
+import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelectRevealProvider } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { cn } from '@tuturuuu/utils/format';
@@ -559,15 +560,7 @@ export function StructureImpl({
   );
 
   useEffect(() => {
-    if (
-      behavior === 'collapsed' ||
-      behavior === 'hover' ||
-      behavior === 'hidden'
-    ) {
-      setIsCollapsed(true);
-    } else {
-      setIsCollapsed(false);
-    }
+    setIsCollapsed(restsCollapsed(behavior));
   }, [behavior]);
 
   useEffect(() => {
@@ -734,12 +727,6 @@ export function StructureImpl({
   }, [pathname, preferredLinks, findActiveNavigation]);
 
   const handleToggle = () => {
-    if (behavior === 'hidden') {
-      setIsCollapsed(true);
-      handleBehaviorChange('collapsed');
-      return;
-    }
-
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     if (newCollapsed) setWorkspaceSelectVisible(false);
@@ -782,7 +769,7 @@ export function StructureImpl({
     });
   };
 
-  const isHoverMode = behavior === 'hover';
+  const isHoverMode = behavior === 'hover' || behavior === 'minimal';
 
   const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
   const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
@@ -835,9 +822,12 @@ export function StructureImpl({
     />
   );
 
+  const logo = (
+    <TuturuuLogo alt="" className="size-7" height={32} width={32} />
+  );
   const sidebarHeader = isCollapsed ? (
     <Link aria-label={t('common.home')} href="/home">
-      <TuturuuLogo alt="" className="size-7" height={32} width={32} />
+      {logo}
     </Link>
   ) : (
     <FixedAppBrand
@@ -1017,10 +1007,15 @@ export function StructureImpl({
           }
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
-          hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+          hideSizeToggle={isHoverMode}
           sidebarOverlayOpen={appsLauncherOpen}
-          overlayOnExpand={behavior === 'hover'}
-          sidebarHidden={behavior === 'hidden'}
+          overlayOnExpand={isHoverMode}
+          sidebarMinimal={behavior === 'minimal'}
+          minimalLogo={logo}
+          sidebarLabels={{
+            open: t('common.open_sidebar'),
+            close: t('common.close_sidebar'),
+          }}
         >
           {children}
         </BaseStructure>

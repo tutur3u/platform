@@ -269,6 +269,7 @@
     },
     "clear_search": "Clear search",
     "close": "Close",
+    "close_sidebar": "Close sidebar",
     "collapsed": "Collapsed",
     "continue": "Continue",
     "create_new_workspace": "Create New Workspace",
@@ -297,7 +298,7 @@
     "hidden_workspaces_empty": "You have no Hidden workspaces",
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
-    "hide_sidebar": "Hide sidebar",
+    "hide_sidebar": "Minimal sidebar",
     "hide_workspace": "Hide workspace",
     "home": "Home",
     "join_workspace": "Join Workspace",
@@ -311,9 +312,11 @@
     "media-alt": "Media file {number}",
     "media-optional": "Media Files (Optional)",
     "members": "Members",
+    "minimal": "Minimal",
     "name": "Name",
     "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
+    "open_sidebar": "Open sidebar",
     "personal_account": "Personal Account",
     "picker_internal_meta": "Platform administration",
     "picker_more_actions": "More actions",
@@ -1164,7 +1167,7 @@
       "close_settings": "Close settings",
       "first_section": "First section",
       "global": "Global",
-      "hide_sidebar": "Hide sidebar",
+      "hide_sidebar": "Minimal sidebar",
       "last_section": "Last section",
       "next_section": "Next section",
       "open_apps": "Open app launcher",
@@ -1180,7 +1183,7 @@
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
-      "sidebar_hidden": "Hidden"
+      "sidebar_minimal": "Minimal"
     },
     "search_settings_placeholder": "Search settings..."
   },

@@ -180,7 +180,7 @@ export function ColabSettings({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['expanded', 'collapsed', 'hover', 'hidden'] as const).map(
+                {(['expanded', 'collapsed', 'hover', 'minimal'] as const).map(
                   (value) => (
                     <SelectItem key={value} value={value}>
                       {t(

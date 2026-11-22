@@ -366,6 +366,7 @@
     "click_to_edit_task": "Nhấn để chỉnh sửa công việc",
     "click-upload-images": "Nhấp để tải lên hình ảnh ({count}/5)",
     "close": "Đóng",
+    "close_sidebar": "Đóng thanh bên",
     "closed": "Đã đóng",
     "closed_list": "Danh sách đã đóng",
     "collapse": "Thu gọn",
@@ -577,7 +578,7 @@
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
     "hide_column": "Ẩn cột",
-    "hide_sidebar": "Ẩn thanh bên",
+    "hide_sidebar": "Thanh bên tối giản",
     "hide_workspace": "Ẩn không gian làm việc",
     "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
@@ -645,6 +646,7 @@
     "member_no_longer_in_workspace": "Thành viên không còn trong không gian làm việc",
     "member-since": "Thành viên từ {date}",
     "members": "Thành viên",
+    "minimal": "Tối giản",
     "minimize": "giảm thiểu",
     "month": "Tháng",
     "more_options": "Tùy chọn khác",
@@ -710,6 +712,7 @@
     "of": "trên",
     "open": "Mở",
     "open_menu": "Mở menu",
+    "open_sidebar": "Mở thanh bên",
     "open-source": "Mã nguồn mở",
     "option": "Lựa chọn",
     "optional": "tùy chọn",
@@ -1257,7 +1260,7 @@
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
       "global": "Toàn cục",
-      "hide_sidebar": "Ẩn thanh bên",
+      "hide_sidebar": "Thanh bên tối giản",
       "last_section": "Mục cuối cùng",
       "next_section": "Mục tiếp theo",
       "open_apps": "Mở danh sách ứng dụng",
@@ -1273,7 +1276,7 @@
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
-      "sidebar_hidden": "Ẩn"
+      "sidebar_minimal": "Tối giản"
     },
     "search_settings_placeholder": "Tìm cài đặt..."
   },

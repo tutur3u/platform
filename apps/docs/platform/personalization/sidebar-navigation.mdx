@@ -50,6 +50,53 @@ buttons. The account and notification controls are unchanged. Coverage:
 choice), and the layout-shift harness in
 [Web design system](/build/development-tools/web-design-system#hover-expand-sidebar).
 
+## Sidebar modes
+
+**Settings → Sidebar → Sidebar Behavior** offers four modes on desktop. The
+choice follows the account across browsers unless **Local Override** is on.
+
+| Mode | At rest | Opening the full sidebar |
+| --- | --- | --- |
+| Expanded | Full sidebar, in the page flow | Already open |
+| Collapsed | Icon rail | The size toggle |
+| Hover | Icon rail | Hover the rail; it opens over the page |
+| Minimal | The Tuturuuu logo only | Hover, keyboard focus or tap the logo |
+
+**Minimal** (decided 2026-11-22) is the mode for the most room: the rail, its
+border and the account controls are gone and only the logo floats at the top
+left. A gutter the width of the collapsed rail stays reserved, so page content
+never sits under the logo and switching between Collapsed, Hover and Minimal
+does not move the page.
+
+- **Hover**: resting the pointer on the logo or anywhere along the left edge
+  for 120 ms opens the sidebar as a floating panel over the page. A pointer
+  that only crosses the edge opens nothing. Leaving closes it after 240 ms, so
+  slipping off and back keeps it open.
+- **Keyboard**: focusing the logo opens the panel and leaves focus on the logo;
+  the panel draws the focus ring meanwhile. Tab moves through the panel and
+  loops inside it. Escape closes it and returns focus to the logo; Enter or
+  Space on the logo toggles it. Picking a destination closes the panel.
+- **Touch**: a tap on the logo opens the panel; a tap outside, or on a
+  destination, closes it.
+- **Overlays**: a menu, dialog or popover opened from the panel keeps it open
+  and takes the first Escape.
+- **Motion**: the panel fades and slides in over 180 ms, and appears at once
+  when reduced motion is preferred.
+- **Phones**: the top bar and drawer are the same as in every other mode.
+
+Minimal takes the place of a mode named Hidden, which removed the sidebar and
+left no visible way back. A stored `hidden` value reads as `minimal` everywhere
+(the behavior cookie, the account preference and the assistant's `set_sidebar`
+tool) and is rewritten on the next visit. Cmd/Ctrl+Alt+B switches to Minimal and
+Cmd/Ctrl+B switches from it to Collapsed. The tasks board's **Minimal sidebar**
+action and the account menu use the same mode.
+
+Scope: Web, Workspace, Colab and every satellite sidebar. Exception: Nova has a
+single fixed sidebar and no modes. Coverage: `sidebar-behavior.test.ts`,
+`structure-minimal.test.tsx`, and the cookie and account-preference cases in
+`sidebar-context.test.tsx` and `sidebar-remote-behavior-bridge.test.tsx` under
+`packages/ui/src/components/ui/custom/`.
+
 ## Workspace switcher
 
 When **Show workspace selector** is on, the sidebar shows a compact **Switch

@@ -30,6 +30,7 @@ export function SatelliteShell({
   return (
     <Structure
       {...props}
+      minimalLogo={props.minimalLogo ?? collapsedLogo ?? brand.logo}
       sidebarHeader={
         props.isCollapsed ? (
           <Link

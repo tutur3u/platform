@@ -29,9 +29,10 @@ export async function executeSetTheme(
 }
 
 export async function executeSetSidebar(args: Record<string, unknown>) {
-  const behavior = args.behavior;
+  // "hidden" was replaced by "minimal"; older requests still map to it.
+  const behavior = args.behavior === 'hidden' ? 'minimal' : args.behavior;
   if (
-    !['expanded', 'collapsed', 'hover', 'hidden'].includes(String(behavior))
+    !['expanded', 'collapsed', 'hover', 'minimal'].includes(String(behavior))
   ) {
     return { error: 'Invalid sidebar behavior' };
   }

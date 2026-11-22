@@ -256,6 +256,7 @@
       "unchecked": "To do"
     },
     "close": "Close",
+    "close_sidebar": "Close sidebar",
     "create_workspace": "Create Workspace",
     "current_workspace": "Current workspace",
     "default_workspace": "Default workspace",
@@ -267,11 +268,12 @@
     "hidden_workspaces_empty": "You have no Hidden workspaces",
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
-    "hide_sidebar": "Hide sidebar",
+    "hide_sidebar": "Minimal sidebar",
     "hide_workspace": "Hide workspace",
     "join_workspace": "Join Workspace",
     "loading": "Loading",
     "no_workspace_found": "No workspaces found",
+    "open_sidebar": "Open sidebar",
     "optional": "optional",
     "or": "or",
     "picker_internal_meta": "Platform administration",
@@ -568,7 +570,7 @@
       "close_settings": "Close settings",
       "first_section": "First section",
       "global": "Global",
-      "hide_sidebar": "Hide sidebar",
+      "hide_sidebar": "Minimal sidebar",
       "last_section": "Last section",
       "next_section": "Next section",
       "open_apps": "Open app launcher",
@@ -583,7 +585,7 @@
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
-      "sidebar_hidden": "Hidden"
+      "sidebar_minimal": "Minimal"
     }
   },
   "toolsPage": {

@@ -82,9 +82,9 @@ export const workspaceUserChatToolDefinitions = {
 
   set_sidebar: tool({
     description:
-      'Set the navigation sidebar to expanded, collapsed, hover (expand on hover), or hidden. Apply immediately when asked.',
+      'Set the navigation sidebar to expanded, collapsed, hover (expand on hover), or minimal (only the logo shows; hovering it opens the sidebar). "hidden" is a retired alias of minimal. Apply immediately when asked.',
     inputSchema: z.object({
-      behavior: z.enum(['expanded', 'collapsed', 'hover', 'hidden']),
+      behavior: z.enum(['expanded', 'collapsed', 'hover', 'minimal', 'hidden']),
     }),
   }),
 

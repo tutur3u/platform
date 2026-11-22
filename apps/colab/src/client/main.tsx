@@ -30,6 +30,7 @@ import { JoinRoomDialog } from './join-dialog';
 import { navigateWorkspace, useWorkspaceLocation } from './navigation';
 import { Structure } from './structure';
 import { Workshop } from './workshop';
+import { normalizeSidebarBehavior } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { WorkspacePages } from './workspace-pages';
 import './app.css';
 import './markdown.css';
@@ -167,9 +168,7 @@ function initialSidebarBehavior(): SidebarBehavior {
     .split('; ')
     .find((value) => value.startsWith('sidebar-behavior='))
     ?.split('=')[1];
-  return stored === 'collapsed' || stored === 'hover' || stored === 'hidden'
-    ? stored
-    : 'expanded';
+  return normalizeSidebarBehavior(stored) ?? 'expanded';
 }
 function Root() {
   const [preference, setPreference] = useState<Locale | undefined>(() => {

@@ -642,7 +642,33 @@
   }
 }
 
+/* Minimal mode's panel floats over the page, so it fades and slides in from
+   the logo instead of wiping open from a rail. */
+@keyframes sidebar-minimal-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(-0.5rem, 0, 0) scale(0.985);
+  }
+}
+
+@keyframes sidebar-minimal-conceal {
+  to {
+    opacity: 0;
+    transform: translate3d(-0.5rem, 0, 0) scale(0.985);
+  }
+}
+
 @media (min-width: 48rem) {
+  .sidebar-minimal-reveal {
+    transform-origin: top left;
+    animation: sidebar-minimal-reveal 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .sidebar-minimal-conceal {
+    transform-origin: top left;
+    animation: sidebar-minimal-conceal 180ms ease-in forwards;
+  }
+
   .sidebar-overlay-reveal {
     animation: sidebar-overlay-reveal 180ms ease-out both;
   }
@@ -664,7 +690,9 @@
   .sidebar-overlay-reveal,
   .sidebar-overlay-content,
   .sidebar-overlay-conceal,
-  .sidebar-overlay-content-out {
+  .sidebar-overlay-content-out,
+  .sidebar-minimal-reveal,
+  .sidebar-minimal-conceal {
     animation: none;
   }
 }

@@ -308,6 +308,10 @@
       "import": "./src/components/ui/legacy/calendar/settings/types.ts"
     },
     "./legacy/calendar/settings/*": "./src/components/ui/legacy/calendar/settings/*.tsx",
+    "./custom/sidebar-behavior": {
+      "types": "./src/components/ui/custom/sidebar-behavior.ts",
+      "import": "./src/components/ui/custom/sidebar-behavior.ts"
+    },
     "./custom/sidebar-context": {
       "types": "./src/components/ui/custom/sidebar-context.tsx",
       "import": "./src/components/ui/custom/sidebar-context.tsx"

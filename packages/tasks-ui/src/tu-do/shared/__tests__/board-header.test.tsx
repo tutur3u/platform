@@ -341,7 +341,7 @@ describe('BoardHeader', () => {
     fireEvent.click(
       screen.getByRole('menuitem', { name: 'common.hide_sidebar' })
     );
-    expect(handleBehaviorChange).toHaveBeenCalledWith('hidden');
+    expect(handleBehaviorChange).toHaveBeenCalledWith('minimal');
   });
 
   it('does not offer hide-sidebar without context or when already hidden', () => {
@@ -352,7 +352,7 @@ describe('BoardHeader', () => {
 
     rerender(
       <SidebarContext.Provider
-        value={{ ...expandedSidebar(), behavior: 'hidden' }}
+        value={{ ...expandedSidebar(), behavior: 'minimal' }}
       >
         <QueryClientProvider client={new QueryClient()}>
           {headerElement()}

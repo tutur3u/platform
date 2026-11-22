@@ -9,7 +9,13 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '../constants/common';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
+import {
+  normalizeSidebarBehavior,
+  restsCollapsed,
+  type SidebarBehavior,
+} from '@tuturuuu/ui/custom/sidebar-behavior';
+
+export type { SidebarBehavior } from '@tuturuuu/ui/custom/sidebar-behavior';
 
 /**
  * Parse and validate the sidebar behavior from cookies.
@@ -18,17 +24,11 @@ export function parseSidebarBehavior(
   cookies: ReadonlyRequestCookies,
   fallback: SidebarBehavior = 'expanded'
 ): SidebarBehavior {
-  const behaviorCookie = cookies.get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
-  const rawBehavior = behaviorCookie?.value;
-
-  const isValidBehavior = (
-    value: string | undefined
-  ): value is SidebarBehavior => {
-    if (!value) return false;
-    return ['expanded', 'collapsed', 'hover', 'hidden'].includes(value);
-  };
-
-  return isValidBehavior(rawBehavior) ? rawBehavior : fallback;
+  // A cookie still holding the retired "hidden" mode reads as "minimal".
+  return (
+    normalizeSidebarBehavior(cookies.get(SIDEBAR_BEHAVIOR_COOKIE_NAME)?.value) ??
+    fallback
+  );
 }
 
 /**
@@ -38,13 +38,7 @@ export function getSidebarCollapsedState(
   cookies: ReadonlyRequestCookies,
   sidebarBehavior: SidebarBehavior
 ): boolean {
-  if (
-    sidebarBehavior === 'collapsed' ||
-    sidebarBehavior === 'hover' ||
-    sidebarBehavior === 'hidden'
-  ) {
-    return true;
-  }
+  if (restsCollapsed(sidebarBehavior)) return true;
 
   const collapsed = cookies.get(SIDEBAR_COLLAPSED_COOKIE_NAME)?.value?.trim();
   return collapsed === 'true';

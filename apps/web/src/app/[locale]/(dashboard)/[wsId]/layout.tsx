@@ -18,6 +18,10 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/sidebar';
 import type { SidebarBehavior } from '@/context/sidebar-context';
+import {
+  normalizeSidebarBehavior,
+  restsCollapsed,
+} from '@tuturuuu/ui/custom/sidebar-behavior';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
 import { isUnknownRouteShape } from '@/lib/route-shape';
 import {
@@ -197,17 +201,9 @@ export default async function Layout({ children, params }: LayoutProps) {
     SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME
   );
 
-  const rawBehavior = behaviorCookie?.value;
-  const isValidBehavior = (
-    value: string | undefined
-  ): value is SidebarBehavior => {
-    if (!value) return false;
-    return ['expanded', 'collapsed', 'hover', 'hidden'].includes(value);
-  };
-
-  const sidebarBehavior: SidebarBehavior = isValidBehavior(rawBehavior)
-    ? rawBehavior
-    : 'expanded';
+  // A cookie still holding the retired "hidden" mode reads as "minimal".
+  const sidebarBehavior: SidebarBehavior =
+    normalizeSidebarBehavior(behaviorCookie?.value) ?? 'expanded';
   const parsedBehaviorUpdatedAt = behaviorUpdatedAtCookie?.value
     ? Number(behaviorUpdatedAtCookie.value)
     : null;
@@ -219,11 +215,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       : null;
 
   let defaultCollapsed: boolean;
-  if (
-    sidebarBehavior === 'collapsed' ||
-    sidebarBehavior === 'hover' ||
-    sidebarBehavior === 'hidden'
-  ) {
+  if (restsCollapsed(sidebarBehavior)) {
     defaultCollapsed = true;
   } else {
     defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : false;

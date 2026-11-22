@@ -92,7 +92,7 @@ describe('SidebarProvider', () => {
     );
   });
 
-  it('hides the sidebar with Cmd/Ctrl+Alt+B', async () => {
+  it('switches to the minimal sidebar with Cmd/Ctrl+Alt+B', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_234_567_892);
 
     render(
@@ -104,20 +104,58 @@ describe('SidebarProvider', () => {
     fireEvent.keyDown(window, { key: 'b', altKey: true, ctrlKey: true });
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'hidden' })).toBeVisible()
+      expect(screen.getByRole('button', { name: 'minimal' })).toBeVisible()
     );
     expect(mockSetCookie).toHaveBeenCalledWith(
       SIDEBAR_BEHAVIOR_COOKIE_NAME,
-      'hidden',
+      'minimal',
       getSidebarCookieOptions()
     );
   });
 
-  it('changes hidden to collapsed with Cmd/Ctrl+B', async () => {
+  it('rewrites a retired hidden cookie as minimal', () => {
+    document.cookie = `${SIDEBAR_BEHAVIOR_COOKIE_NAME}=hidden`;
+    try {
+      render(
+        <SidebarProvider initialBehavior="minimal">
+          <SidebarHarness />
+        </SidebarProvider>
+      );
+
+      expect(mockSetCookie).toHaveBeenCalledWith(
+        SIDEBAR_BEHAVIOR_COOKIE_NAME,
+        'minimal',
+        getSidebarCookieOptions()
+      );
+    } finally {
+      document.cookie = `${SIDEBAR_BEHAVIOR_COOKIE_NAME}=; max-age=0`;
+    }
+  });
+
+  it('leaves a current behavior cookie alone', () => {
+    document.cookie = `${SIDEBAR_BEHAVIOR_COOKIE_NAME}=hover`;
+    try {
+      render(
+        <SidebarProvider initialBehavior="hover">
+          <SidebarHarness />
+        </SidebarProvider>
+      );
+
+      expect(mockSetCookie).not.toHaveBeenCalledWith(
+        SIDEBAR_BEHAVIOR_COOKIE_NAME,
+        expect.anything(),
+        expect.anything()
+      );
+    } finally {
+      document.cookie = `${SIDEBAR_BEHAVIOR_COOKIE_NAME}=; max-age=0`;
+    }
+  });
+
+  it('changes minimal to collapsed with Cmd/Ctrl+B', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_234_567_893);
 
     render(
-      <SidebarProvider initialBehavior="hidden">
+      <SidebarProvider initialBehavior="minimal">
         <SidebarHarness />
       </SidebarProvider>
     );

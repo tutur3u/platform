@@ -188,15 +188,19 @@ export function SidebarStructure({
             />
           }
           header={null}
-          hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+          hideSizeToggle={behavior === 'hover' || behavior === 'minimal'}
           isCollapsed={isCollapsed}
           mobileSidebarOpen={mobileSidebarOpen}
           notificationPopover={notificationPopover}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           sidebarOverlayOpen={appsLauncherOpen || settingsDialogOpen}
-          overlayOnExpand={behavior === 'hover'}
-          sidebarHidden={behavior === 'hidden'}
+          overlayOnExpand={behavior === 'hover' || behavior === 'minimal'}
+          sidebarMinimal={behavior === 'minimal'}
+          sidebarLabels={{
+            open: t('common.open_sidebar'),
+            close: t('common.close_sidebar'),
+          }}
           sidebarCollapsedWidth={sidebarCollapsedWidth}
           sidebarExpandedWidth={sidebarExpandedWidth}
           sidebarHeaderClassName={sidebarHeaderClassName}

@@ -108,6 +108,7 @@ export function useLiveTools(wsId: string) {
                         'expanded',
                         'collapsed',
                         'hover',
+                        'minimal',
                         'hidden',
                       ]),
                     })

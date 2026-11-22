@@ -9,12 +9,19 @@ import {
   type CSSProperties,
   type ReactNode,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
 } from 'react';
 import { observeMobileHeaderHeight } from './mobile-header-height';
+import { SidebarMinimalTrigger } from './sidebar-minimal-trigger';
 import { SidebarOverlayContext } from './sidebar-overlay-context';
 import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
+
+/** Hover intent for minimal mode: a pointer passing the edge opens nothing. */
+const MINIMAL_OPEN_DELAY_MS = 120;
+/** Grace for a pointer that slips off the floating panel and comes back. */
+const MINIMAL_CLOSE_DELAY_MS = 240;
 
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
@@ -38,6 +45,13 @@ interface StructureProps {
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   sidebarHidden?: boolean;
+  /**
+   * Only the logo rests on desktop; hover, keyboard focus or a tap opens the
+   * full sidebar as a floating panel. Phones keep the top bar and drawer.
+   */
+  sidebarMinimal?: boolean;
+  /** The logo shown on the minimal trigger. */
+  minimalLogo?: ReactNode;
   sidebarCollapsedWidth?: string;
   sidebarExpandedWidth?: string;
   sidebarHeaderClassName?: string;
@@ -66,19 +80,30 @@ export function Structure({
   onMouseEnter,
   onMouseLeave,
   sidebarHidden = false,
+  sidebarMinimal = false,
+  minimalLogo,
   sidebarCollapsedWidth = '4rem',
   sidebarExpandedWidth = '16rem',
   sidebarHeaderClassName,
   sidebarHeaderHeight,
 }: StructureProps) {
   const isMobile = useIsMobile();
+  const panelId = useId();
+  const isMinimal = sidebarMinimal && !sidebarHidden;
+  // Minimal always opens over the page, whatever the shell passed.
+  const overlay = overlayOnExpand || isMinimal;
+  const revealTrigger = isMinimal && !isMobile;
   const overlayClose = useSidebarOverlayClose({
-    enabled: overlayOnExpand,
+    enabled: overlay,
     externalOverlayOpen: sidebarOverlayOpen,
     isCollapsed,
     onMouseEnter,
     onMouseLeave,
+    revealTrigger,
+    openDelayMs: revealTrigger ? MINIMAL_OPEN_DELAY_MS : 0,
+    closeDelayMs: revealTrigger ? MINIMAL_CLOSE_DELAY_MS : 0,
   });
+  const overlayOpen = overlay && !isCollapsed;
   const mobileNavRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   // Content clears the measured top bar, which grows with the top safe area
@@ -164,26 +189,39 @@ export function Structure({
             <SidebarOverlayContext value={overlayClose.registerOverlay}>
               <aside
                 className={cn(
-                  'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg max-md:pt-[env(safe-area-inset-top,0px)] md:left-0 md:z-20 md:border-r md:border-l-0',
+                  'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col max-md:pt-[env(safe-area-inset-top,0px)] md:left-0 md:z-20',
+                  // On desktop the minimal sidebar has no chrome of its own:
+                  // it is the hover area, and the panel floats inside it.
+                  isMinimal
+                    ? 'max-md:overflow-hidden max-md:border-l max-md:backdrop-blur-lg'
+                    : 'overflow-hidden border-l backdrop-blur-lg md:border-r md:border-l-0',
                   // The hover overlay never animates width: a width transition
                   // reflows the panel on every frame. The reveal is a paint-only
                   // clip-path/opacity animation instead (see globals.css).
-                  overlayOnExpand
+                  overlay
                     ? 'max-md:transition-transform max-md:duration-300 max-md:ease-in-out'
                     : 'transition-all duration-300 ease-in-out',
                   isCollapsed
-                    ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
-                    : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
+                    ? 'w-[var(--sidebar-collapsed-width)] max-md:w-0'
+                    : 'w-[var(--sidebar-expanded-width)] max-sm:w-full',
+                  isMinimal
+                    ? isCollapsed
+                      ? 'max-md:bg-background/50'
+                      : 'max-md:bg-background md:w-[calc(var(--sidebar-expanded-width)+1rem)]'
+                    : isCollapsed
+                      ? 'bg-background/50'
+                      : 'bg-background',
                   isCollapsed && 'max-md:translate-x-full',
                   mobileSidebarOpen === false && 'max-md:hidden',
-                  overlayOnExpand &&
-                    !isCollapsed &&
+                  overlayOpen && 'md:z-40',
+                  overlayOpen &&
+                    !isMinimal &&
                     (overlayClose.isClosing
-                      ? 'sidebar-overlay-conceal md:z-40'
-                      : 'sidebar-overlay-reveal md:z-40')
+                      ? 'sidebar-overlay-conceal'
+                      : 'sidebar-overlay-reveal')
                 )}
                 data-overlay-state={
-                  overlayOnExpand && !isCollapsed
+                  overlayOpen
                     ? overlayClose.isClosing
                       ? 'closing'
                       : 'open'
@@ -192,25 +230,40 @@ export function Structure({
                 ref={overlayClose.panelRef}
                 style={sidebarStyle}
               >
+                {isMinimal && (
+                  <SidebarMinimalTrigger
+                    controls={panelId}
+                    expanded={!isCollapsed}
+                    label={
+                      isCollapsed ? sidebarLabels?.open : sidebarLabels?.close
+                    }
+                    logo={minimalLogo}
+                  />
+                )}
                 {/* In overlay mode the rail and the expanded panel are different
                     subtrees: remounting on the state flip means no element is
                     ever repositioned, so the swap cannot register as a layout
-                    shift, and the new subtree fades in. */}
+                    shift, and the new subtree fades in. Minimal has no rail. */}
+                {isMinimal && isCollapsed ? null : (
                 <div
-                  key={
-                    overlayOnExpand
-                      ? isCollapsed
-                        ? 'rail'
-                        : 'panel'
-                      : 'static'
-                  }
+                  key={overlay ? (isCollapsed ? 'rail' : 'panel') : 'static'}
+                  id={isMinimal ? panelId : undefined}
+                  data-sidebar-overlay-surface={isMinimal ? '' : undefined}
                   className={cn(
                     'flex min-h-0 flex-1 flex-col',
-                    overlayOnExpand &&
-                      !isCollapsed &&
+                    overlayOpen &&
+                      !isMinimal &&
                       (overlayClose.isClosing
                         ? 'sidebar-overlay-content-out'
-                        : 'sidebar-overlay-content')
+                        : 'sidebar-overlay-content'),
+                    overlayOpen &&
+                      isMinimal &&
+                      'group-has-[[data-sidebar-reveal-trigger]:focus-visible]:ring-2 group-has-[[data-sidebar-reveal-trigger]:focus-visible]:ring-ring md:m-2 md:overflow-hidden md:rounded-2xl md:border md:bg-background md:shadow-xl',
+                    overlayOpen &&
+                      isMinimal &&
+                      (overlayClose.isClosing
+                        ? 'sidebar-minimal-conceal'
+                        : 'sidebar-minimal-reveal')
                   )}
                 >
                   <div
@@ -297,8 +350,9 @@ export function Structure({
                     )}
                   </div>
                 </div>
+                )}
 
-                {!hideSizeToggle && (
+                {!hideSizeToggle && !isMinimal && (
                   <Button
                     size="icon"
                     variant="outline"
@@ -324,13 +378,13 @@ export function Structure({
             ref={mainRef}
             className={cn(
               'relative flex flex-col overflow-x-clip',
-              !overlayOnExpand && 'transition-all duration-300 ease-in-out',
+              !overlay && 'transition-all duration-300 ease-in-out',
               contentFullBleed
                 ? 'h-dvh min-h-0 overflow-y-hidden'
                 : 'h-full min-h-screen overflow-y-visible',
               sidebarHidden
                 ? 'md:pl-0'
-                : isCollapsed || overlayOnExpand
+                : isCollapsed || overlay
                   ? 'md:pl-[var(--sidebar-collapsed-width)]'
                   : 'md:pl-[var(--sidebar-expanded-width)]'
             )}

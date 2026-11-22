@@ -370,12 +370,12 @@ export default function UserNavClient({
                       )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => sidebar.handleBehaviorChange('hidden')}
-                      disabled={sidebar.behavior === 'hidden'}
+                      onClick={() => sidebar.handleBehaviorChange('minimal')}
+                      disabled={sidebar.behavior === 'minimal'}
                     >
                       <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-                      <span>{t('common.hidden')}</span>
-                      {sidebar.behavior === 'hidden' && (
+                      <span>{t('common.minimal')}</span>
+                      {sidebar.behavior === 'minimal' && (
                         <Check className="ml-auto h-4 w-4" />
                       )}
                     </DropdownMenuItem>

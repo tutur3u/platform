@@ -6,7 +6,6 @@ import {
   FlaskConical,
   History,
   Layers,
-  PanelLeftOpen,
   Presentation,
   Settings,
   Users,
@@ -191,17 +190,6 @@ export function Structure({
   ) : undefined;
   return (
     <div className="colab-shell">
-      {sidebar.behavior === 'hidden' && (
-        <Button
-          variant="outline"
-          size="icon"
-          className="fixed bottom-4 left-4 z-50"
-          aria-label={c.shellExpand}
-          onClick={() => sidebar.handleBehaviorChange('expanded')}
-        >
-          <PanelLeftOpen className="size-4" />
-        </Button>
-      )}
       <ReportProblemDialogContent
         open={feedbackOpen}
         onOpenChange={setFeedbackOpen}
@@ -288,10 +276,12 @@ export function Structure({
         }
         userPopover={account(true)}
         sidebarOverlayOpen={appsOpen || settingsOpen || feedbackOpen}
-        overlayOnExpand={sidebar.behavior === 'hover'}
+        overlayOnExpand={
+          sidebar.behavior === 'hover' || sidebar.behavior === 'minimal'
+        }
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        sidebarHidden={sidebar.behavior === 'hidden'}
+        sidebarMinimal={sidebar.behavior === 'minimal'}
       >
         <div className="colab-content">{children}</div>
       </SatelliteShell>

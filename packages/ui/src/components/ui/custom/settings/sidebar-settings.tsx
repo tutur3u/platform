@@ -80,12 +80,12 @@ export default function SidebarSettings({
           </div>
           <div>
             <RadioGroupItem
-              value="hidden"
-              id="hidden"
+              value="minimal"
+              id="minimal"
               className="peer sr-only"
             />
-            <Label htmlFor="hidden" className={BEHAVIOR_TILE_CLASS}>
-              {t('settings.preferences.sidebar_hidden')}
+            <Label htmlFor="minimal" className={BEHAVIOR_TILE_CLASS}>
+              {t('settings.preferences.sidebar_minimal')}
             </Label>
           </div>
         </RadioGroup>

@@ -1792,6 +1792,7 @@
     "clearing": "Clearing",
     "click-upload-images": "Click to upload images ({count}/5)",
     "close": "Close",
+    "close_sidebar": "Close sidebar",
     "collapsed": "Collapsed",
     "column_name": "Column Name",
     "columns": "Columns",
@@ -1904,7 +1905,7 @@
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
     "hide_column": "Hide column",
-    "hide_sidebar": "Hide sidebar",
+    "hide_sidebar": "Minimal sidebar",
     "hide_workspace": "Hide workspace",
     "hide-all": "Hide All",
     "history": "History",
@@ -1950,6 +1951,7 @@
     "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
     "member-since": "Member since {date}",
     "members": "Members",
+    "minimal": "Minimal",
     "minimize": "minimize",
     "month": "Month",
     "name_updated": "Name updated successfully",
@@ -1969,6 +1971,7 @@
     "not_whitelisted": "Not whitelisted",
     "nova-description": "Prompt engineering playground for everyone.",
     "of": "of",
+    "open_sidebar": "Open sidebar",
     "open-source": "Open Source",
     "option": "Option",
     "optional": "optional",
@@ -6824,7 +6827,7 @@
       "close_settings": "Close settings",
       "first_section": "First section",
       "global": "Global",
-      "hide_sidebar": "Hide sidebar",
+      "hide_sidebar": "Minimal sidebar",
       "last_section": "Last section",
       "next_section": "Next section",
       "open_apps": "Open app launcher",
@@ -6840,7 +6843,7 @@
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
-      "sidebar_hidden": "Hidden"
+      "sidebar_minimal": "Minimal"
     },
     "search_settings_placeholder": "Search settings..."
   },

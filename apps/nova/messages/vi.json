@@ -1023,6 +1023,7 @@
     "clear_all_title": "Xóa tất cả nội dung",
     "clearing": "Đang xoá",
     "close": "Đóng",
+    "close_sidebar": "Đóng thanh bên",
     "column_name": "Tên Cột",
     "columns": "Cột",
     "coming_soon": "Sắp ra mắt",
@@ -1117,7 +1118,7 @@
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
     "hide_column": "Ẩn cột",
-    "hide_sidebar": "Ẩn thanh bên",
+    "hide_sidebar": "Thanh bên tối giản",
     "hide_workspace": "Ẩn không gian làm việc",
     "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
@@ -1170,6 +1171,7 @@
     "no-sheets-found": "Không tìm thấy trang tính nào.",
     "not_whitelisted": "Không có trong danh sách trắng",
     "of": "trên",
+    "open_sidebar": "Mở thanh bên",
     "open-source": "Mã nguồn mở",
     "option": "Lựa chọn",
     "or": "Hoặc",
@@ -3530,7 +3532,7 @@
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
       "global": "Toàn cục",
-      "hide_sidebar": "Ẩn thanh bên",
+      "hide_sidebar": "Thanh bên tối giản",
       "last_section": "Mục cuối cùng",
       "next_section": "Mục tiếp theo",
       "open_apps": "Mở danh sách ứng dụng",
@@ -3545,7 +3547,7 @@
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
-      "sidebar_hidden": "Ẩn"
+      "sidebar_minimal": "Tối giản"
     }
   },
   "settings-account": {

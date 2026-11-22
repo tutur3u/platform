@@ -66,12 +66,20 @@ describe('getSidebarBehaviorUpdatedAt', () => {
 });
 
 describe('parseSidebarBehavior', () => {
-  it('parses hidden as a valid sidebar behavior', () => {
+  it('parses minimal as a valid sidebar behavior', () => {
+    expect(
+      parseSidebarBehavior(
+        cookieStoreWith({ [SIDEBAR_BEHAVIOR_COOKIE_NAME]: 'minimal' })
+      )
+    ).toBe('minimal');
+  });
+
+  it('reads a retired hidden cookie as minimal', () => {
     expect(
       parseSidebarBehavior(
         cookieStoreWith({ [SIDEBAR_BEHAVIOR_COOKIE_NAME]: 'hidden' })
       )
-    ).toBe('hidden');
+    ).toBe('minimal');
   });
 
   it('falls back to expanded by default for invalid sidebar behavior', () => {
@@ -93,8 +101,10 @@ describe('parseSidebarBehavior', () => {
 });
 
 describe('getSidebarCollapsedState', () => {
-  it('treats hidden as collapsed for initial layout state', () => {
-    expect(getSidebarCollapsedState(cookieStoreWith({}), 'hidden')).toBe(true);
+  it('treats minimal as collapsed for initial layout state', () => {
+    expect(getSidebarCollapsedState(cookieStoreWith({}), 'minimal')).toBe(
+      true
+    );
   });
 
   it('uses the collapsed cookie for expanded behavior', () => {

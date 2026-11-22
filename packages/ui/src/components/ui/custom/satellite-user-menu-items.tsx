@@ -28,7 +28,7 @@ import { PublicProfileMenuItem } from './public-profile-menu-item';
 
 export { PublicProfileMenuItem } from './public-profile-menu-item';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
+export type { SidebarBehavior } from './sidebar-behavior';
 
 /** One menu definition for the Next.js satellite and framework adapters. */
 export function SatelliteUserMenuItems({
@@ -52,7 +52,7 @@ export function SatelliteUserMenuItems({
       | 'common.dashboard'
       | 'common.expand_on_hover'
       | 'common.expanded'
-      | 'common.hidden'
+      | 'common.minimal'
       | 'common.language'
       | 'common.logout'
       | 'common.report-problem'
@@ -156,12 +156,12 @@ export function SatelliteUserMenuItems({
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => sidebar.handleBehaviorChange('hidden')}
-                  disabled={sidebar.behavior === 'hidden'}
+                  onClick={() => sidebar.handleBehaviorChange('minimal')}
+                  disabled={sidebar.behavior === 'minimal'}
                 >
                   <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.hidden')}</span>
-                  {sidebar.behavior === 'hidden' && (
+                  <span>{t('common.minimal')}</span>
+                  {sidebar.behavior === 'minimal' && (
                     <Check className="ml-auto h-4 w-4" />
                   )}
                 </DropdownMenuItem>

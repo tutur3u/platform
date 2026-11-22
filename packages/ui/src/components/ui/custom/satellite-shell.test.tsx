@@ -317,28 +317,28 @@ describe('framework-independent satellite shell', () => {
     expect(paints.at(-1)).toBe(true);
   });
 
-  it('preserves hidden and hover behavior', () => {
+  it.each([
+    'hover',
+    'minimal',
+  ] as const)('rests collapsed and opens as an overlay in %s mode', (behavior) => {
     const handleBehaviorChange = vi.fn();
     const links: NavLink[] = [];
-    const { result, rerender } = renderHook(
-      ({ behavior }: { behavior: 'hidden' | 'hover' }) =>
-        useSatelliteShell({
-          pathname: '/',
-          links,
-          backLabel: 'Back',
-          behavior,
-          handleBehaviorChange,
-        }),
-      { initialProps: { behavior: 'hidden' } }
+    const { result } = renderHook(() =>
+      useSatelliteShell({
+        pathname: '/',
+        links,
+        backLabel: 'Back',
+        behavior,
+        handleBehaviorChange,
+      })
     );
     expect(result.current.isCollapsed).toBe(true);
-    act(() => result.current.handleToggle());
-    expect(handleBehaviorChange).toHaveBeenCalledWith('collapsed');
-    rerender({ behavior: 'hover' });
     act(() => result.current.onMouseEnter?.());
     expect(result.current.isCollapsed).toBe(false);
     act(() => result.current.onMouseLeave?.());
     expect(result.current.isCollapsed).toBe(true);
+    // Opening the overlay is not a change of mode.
+    expect(handleBehaviorChange).not.toHaveBeenCalled();
   });
 });
 
