@@ -1,0 +1,81 @@
+name: Playground execution image
+
+# Manual build and qualification of the combined Playground execution image
+# for one exact main commit. It uploads the image archive and a receipt as
+# artifacts. It holds no Cloudflare credentials; the registry upload is a
+# separately approved operation that consumes the archive.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playground-execution-image-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Record the kernel sandbox features this runner provides
+        run: |
+          set -euo pipefail
+          uname -r
+          cat /sys/kernel/security/lsm || true
+      - name: Build the amd64 image
+        run: |
+          set -euo pipefail
+          docker build --platform linux/amd64 --pull \
+            --iidfile "$RUNNER_TEMP/image-id" \
+            apps/playground-execution/container
+          echo "PLAYGROUND_IMAGE_ID=$(cat "$RUNNER_TEMP/image-id")" >> "$GITHUB_ENV"
+      - name: Run every stock template with Docker isolation
+        run: node apps/playground-execution/verify-image.mjs "$PLAYGROUND_IMAGE_ID"
+      - name: Qualify the trusted launcher sandbox
+        run: node apps/playground-execution/qualify-launcher.mjs "$PLAYGROUND_IMAGE_ID"
+      - name: Archive the image and write the receipt
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/playground-image"
+          mkdir -p "$out"
+          tag="tuturuuu-playground:${GITHUB_SHA}"
+          docker image tag "$PLAYGROUND_IMAGE_ID" "$tag"
+          docker save "$tag" | gzip -n > "$out/image.tar.gz"
+          archive_sha="$(sha256sum "$out/image.tar.gz" | cut -d' ' -f1)"
+          image_bytes="$(docker image inspect "$PLAYGROUND_IMAGE_ID" --format '{{.Size}}')"
+          archive_bytes="$(stat -c %s "$out/image.tar.gz")"
+          node -e '
+            const [sha, image, archive, run, imageBytes, archiveBytes] =
+              process.argv.slice(1);
+            process.stdout.write(JSON.stringify({
+              sourceSha: sha,
+              imageId: image,
+              tag: `tuturuuu-playground:${sha}`,
+              archiveSha256: archive,
+              imageBytes: Number(imageBytes),
+              archiveBytes: Number(archiveBytes),
+              runId: run,
+              platform: "linux/amd64",
+            }, null, 2) + "\n");
+          ' "$GITHUB_SHA" "$PLAYGROUND_IMAGE_ID" "$archive_sha" "$GITHUB_RUN_ID" \
+            "$image_bytes" "$archive_bytes" > "$out/receipt.json"
+          cat "$out/receipt.json"
+          echo "### Playground image receipt" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "$out/receipt.json" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playground-execution-image-${{ github.sha }}
+          path: ${{ runner.temp }}/playground-image
+          retention-days: 14
+          if-no-files-found: error

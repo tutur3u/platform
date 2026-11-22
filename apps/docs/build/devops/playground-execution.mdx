@@ -5,20 +5,24 @@ description: Build and qualify the shared eleven-language Linux image for hosted
 
 ## Build and qualify the exact image
 
-Use the Dockerfile in `apps/playground-execution/container` from the reviewed
-source commit. Run the build and template checks on an admitted Linux CI
-executor with Docker and Node.js 24 or newer.
+Build the image in CI, never on a workstation. Dispatch the
+`Playground execution image` workflow (`playground-execution-image.yaml`) on
+`main` at the reviewed commit. It holds no Cloudflare credentials. The job
+builds the Dockerfile in `apps/playground-execution/container` for
+`linux/amd64` and then runs two qualifications:
 
-```sh
-(
-  set -eu
-  image_id_file="$(mktemp)"
-  trap 'rm -f "$image_id_file"' 0
-  docker build --platform linux/amd64 --iidfile "$image_id_file" \
-    apps/playground-execution/container
-  node apps/playground-execution/verify-image.mjs "$(cat "$image_id_file")"
-)
-```
+- `verify-image.mjs` runs every stock template under Docker's own isolation.
+- `qualify-launcher.mjs` runs the real launcher (`run.py`) as the slot does,
+  with only the capabilities it needs to build its sandbox. It checks every
+  stock template; UID, GID, capability sets and no-new-privileges; denied
+  egress to public, metadata and private addresses and DNS on a bridged
+  network, so the launcher's network namespace is the barrier; writes outside
+  the workspace; the command timeout; the output limit; and the process limit.
+
+The job uploads `image.tar.gz` and `receipt.json` (source SHA, image ID, tag, image and archive sizes,
+archive SHA-256, run ID) as the `playground-execution-image-<sha>` artifact for
+14 days. The registry upload is a separately approved operation on that
+archive.
 
 The fixture uses the same stock commands that Meet and Learn load. It checks
 Python, JavaScript, TypeScript, C, C++, Java, Rust, Go, Ruby, PHP, and Shell.
