@@ -196,14 +196,6 @@ test('only pure database maintenance is retained in pg_cron', () => {
     (owner) => owner.target === TARGETS.retainPostgres
   );
   assert.ok(retained.every((owner) => owner.id.startsWith('pg-cron:')));
-  assert.ok(
-    LEGACY_OWNERS.some(
-      (owner) =>
-        owner.id === 'pg-cron:fetch-exchange-rates:0 6 * * *' &&
-        owner.target === TARGETS.cronTrigger
-    ),
-    'pg_net HTTP schedules are not pure database maintenance'
-  );
 });
 
 test('a new or re-cadenced vercel.json cron fails', () => {

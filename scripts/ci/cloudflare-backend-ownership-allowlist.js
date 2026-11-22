@@ -167,12 +167,6 @@ const LEGACY_OWNERS = Object.freeze([
     `${PURE_POSTGRES} It refreshes one materialized view.`
   ),
   entry(
-    'pg-cron:fetch-exchange-rates:0 6 * * *',
-    'apps/web (Finance)',
-    TARGETS.cronTrigger,
-    'Cron Control job finance-exchange-rates (POST); then unschedule the pg_net job in a new migration.'
-  ),
-  entry(
     'pg-cron:cleanup-rate-limits:*/15 * * * *',
     'apps/database (Security)',
     TARGETS.retainPostgres,

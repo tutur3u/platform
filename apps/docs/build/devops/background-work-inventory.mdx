@@ -92,11 +92,11 @@ Vercel entry runs every five minutes. Preserve the live cadence; do not run
 ## pg_cron jobs
 
 Live jobs after replaying every migration's schedule and unschedule calls.
-`process-notification-batches` was unscheduled by a later migration.
+`process-notification-batches` and `fetch-exchange-rates` were unscheduled by later
+migrations; Cron Control job `finance-exchange-rates` refreshes exchange rates.
 
 | Job | Cadence | Work | Decision and justification |
 | --- | --- | --- | --- |
-| `fetch-exchange-rates` | `0 6 * * *` | `pg_net` POST to Web `/api/cron/finance/exchange-rates` | Cron Control `finance-exchange-rates` is enabled; unschedule this pg_cron job after its first successful Cloudflare run (a `finance-exchange-rates` ok entry in the Cron Control job log, plus a `currency_exchange_rates` row for that day). Both owners upsert the same day's rows, so the overlap is harmless |
 | `update_expired_sessions_job` | every minute | One UPDATE closing expired Nova sessions | Retain: pure SQL in the database |
 | typing-indicator cleanup (unnamed) | every minute | DELETE stale typing indicators | Retain: pure SQL in the database |
 | `security-budget-cleanup` | every minute | DELETE at most 20,000 expired budget counters | Retain: pure SQL, already bounded |
@@ -109,7 +109,6 @@ Schedule declaration locations for the live jobs:
 
 | Job | Source | Current trigger |
 | --- | --- | --- |
-| `fetch-exchange-rates` | `apps/database/supabase/migrations/20260205070000_add_exchange_rates_and_seed_currencies.sql:280` | pg_cron, `0 6 * * *`; `pg_net` HTTP POST |
 | `update_expired_sessions_job` | `apps/database/supabase/migrations/20250405124242_add_update_expired_sessions.sql:20` | pg_cron, every minute |
 | typing-indicator cleanup | `apps/database/supabase/migrations/20251003161231_create_typing_indicator_table.sql:72` | pg_cron, every minute |
 | `security-budget-cleanup` | `apps/database/supabase/migrations/20261002153000_security_egress_budgets.sql:86` | pg_cron, every minute |
