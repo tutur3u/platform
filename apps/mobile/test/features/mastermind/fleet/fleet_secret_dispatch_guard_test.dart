@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_secret_cubit.dart';
@@ -9,15 +10,40 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_secret_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/pump_app.dart';
 import 'secret_test_support.dart';
 
-/// Secure storage whose next read waits for [hold] once it is set.
+/// Secure storage whose next read waits for [hold], and next write for
+/// [holdWrite], once set.
 class _GateStorage extends FlutterSecureStorage {
   _GateStorage();
 
   Completer<void>? hold;
+  Completer<void>? holdWrite;
+  bool failWrite = false;
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    final gate = holdWrite;
+    if (gate != null) {
+      holdWrite = null;
+      await gate.future;
+    }
+    if (failWrite) throw Exception('keychain write failed');
+    await super.write(key: key, value: value);
+  }
 
   @override
   Future<String?> read({
@@ -58,6 +84,30 @@ class _HookedSource extends RecordingSecretSource {
       idempotencyKey: idempotencyKey,
       stillTrusted: stillTrusted,
     );
+  }
+}
+
+/// Runs [afterDispatch] once the answer has been dispatched, before the
+/// reply returns to the cubit.
+class _AfterDispatchSource extends RecordingSecretSource {
+  _AfterDispatchSource(this.afterDispatch);
+
+  final void Function() afterDispatch;
+
+  @override
+  Future<void> answerSecret({
+    required String decisionId,
+    required FleetSecretAnswer answer,
+    required String idempotencyKey,
+    Future<bool> Function()? stillTrusted,
+  }) async {
+    await super.answerSecret(
+      decisionId: decisionId,
+      answer: answer,
+      idempotencyKey: idempotencyKey,
+      stillTrusted: stillTrusted,
+    );
+    afterDispatch();
   }
 }
 
@@ -119,33 +169,295 @@ void main() {
     attempts: attempts ?? FleetPairingAttempts(),
   );
 
-  test('a Forget tapped while the guard read waits refuses', () async {
+  test('a Forget tapped while the transport guard reads refuses', () async {
+    await pinActive();
+    final gate = Completer<void>();
+    var held = false;
+    // At dispatch, hold the transport guard's own pin read.
+    final hooked = _HookedSource(() {
+      storage.hold = gate;
+      held = true;
+    });
+    final flow = cubit(await signedRequestDecision(), answers: hooked);
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    final sending = flow.send(Uint8List.fromList(value));
+    while (!held) {
+      await pumpEventQueue();
+    }
+    await pumpEventQueue();
+    // The Forget's write queues behind the held read; its epoch moves now.
+    final forgetting = pins.forget('skr-m4');
+    gate.complete();
+    await sending;
+    await forgetting;
+    expect(hooked.answers, isEmpty);
+    expect(flow.state.block, FleetSecretBlock.keyChanged);
+  });
+
+  test('a duplicate activation never stops a valid request', () async {
     await pinActive();
     final flow = cubit(await signedRequestDecision());
     addTearDown(flow.close);
     await flow.start();
     flow.stepUpVerified();
-    final gate = storage.hold = Completer<void>();
-    final sending = flow.send(Uint8List.fromList(value));
-    await pumpEventQueue();
-    // The Forget's write queues behind the waiting read; its epoch moves now.
-    final forgetting = pins.forget('skr-m4');
-    gate.complete();
-    await sending;
-    await forgetting;
-    expect(source.answers, isEmpty);
-    expect(flow.state.block, FleetSecretBlock.keyChanged);
+    // Another screen applies the same, already applied confirmation.
+    expect(
+      await pins.activate(
+        machineId: 'skr-m4',
+        pairingId: firstId,
+        signerKey: signerKey,
+        clock: () => now,
+      ),
+      isNull,
+    );
+    await flow.send(Uint8List.fromList(value));
+    expect(source.answers, hasLength(1));
+    expect(flow.state.phase, FleetSecretPhase.sent);
   });
 
-  test('a close that has only begun refuses the dispatch', () async {
+  test('leaving the page refuses at the transport guard', () async {
     await pinActive();
     late FleetSecretCubit flow;
-    final hooked = _HookedSource(() => unawaited(flow.close()));
+    final hooked = _HookedSource(() => flow.leave());
     flow = cubit(await signedRequestDecision(), answers: hooked);
+    addTearDown(flow.close);
     await flow.start();
     flow.stepUpVerified();
     await flow.send(Uint8List.fromList(value));
     expect(hooked.answers, isEmpty);
+    expect(flow.state.block, isNull);
+  });
+
+  test('a reply after leaving still marks the request handled', () async {
+    await pinActive();
+    late FleetSecretCubit flow;
+    var handled = 0;
+    final source = _AfterDispatchSource(() => flow.leave());
+    flow = FleetSecretCubit(
+      decision: await signedRequestDecision(),
+      crypto: platform.crypto(),
+      pins: pins,
+      source: source,
+      accountId: () => 'user-1',
+      now: () => now,
+      retryDelay: (_) => Duration.zero,
+      attempts: FleetPairingAttempts(),
+      onHandled: () => handled++,
+    );
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    await flow.send(Uint8List.fromList(value));
+    expect(source.answers, hasLength(1));
+    expect(handled, 1);
+    expect(flow.state.phase, FleetSecretPhase.sent);
+  });
+
+  test('an activation queued behind the guard read refuses', () async {
+    await pinActive();
+    // A re-pairing already waits; the request still verifies the old key.
+    await pins.putPending(
+      machineId: 'skr-m4',
+      signerKey: oldKey,
+      label: 'Skora M4',
+      pairingId: repairId,
+      now: now,
+      expiresAt: now.add(const Duration(minutes: 10)),
+    );
+    final gate = Completer<void>();
+    var held = false;
+    final hooked = _HookedSource(() {
+      storage.hold = gate;
+      held = true;
+    });
+    final flow = cubit(await signedRequestDecision(), answers: hooked);
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    final sending = flow.send(Uint8List.fromList(value));
+    while (!held) {
+      await pumpEventQueue();
+    }
+    await pumpEventQueue();
+    // The swap queues behind the held read and commits after it.
+    final swapping = pins.activate(
+      machineId: 'skr-m4',
+      pairingId: repairId,
+      signerKey: oldKey,
+      clock: () => now,
+    );
+    gate.complete();
+    await sending;
+    expect((await swapping)?.signerKey, oldKey);
+    expect(hooked.answers, isEmpty);
+    expect(flow.state.block, FleetSecretBlock.keyChanged);
+  });
+
+  for (final (name, leave)
+      in <(String, Future<void> Function(WidgetTester, FleetSecretRoute))>[
+        (
+          'the Close button',
+          (tester, _) => tester.tap(find.byTooltip('Close')),
+        ),
+        ('system Back', (tester, _) => tester.binding.handlePopRoute()),
+        (
+          'removal under its parent',
+          (tester, route) async => route.navigator!.removeRoute(route),
+        ),
+      ]) {
+    testWidgets('$name during a held dispatch sends nothing', (tester) async {
+      await tester.runAsync(pinActive);
+      final decision = (await tester.runAsync(signedRequestDecision))!;
+      final gate = Completer<void>();
+      var held = false;
+      // Hold the transport guard's own pin read at dispatch.
+      final hooked = _HookedSource(() {
+        storage.hold = gate;
+        held = true;
+      });
+      final flow = cubit(decision, answers: hooked);
+      await tester.runAsync(flow.start);
+      flow.stepUpVerified();
+      final route = FleetSecretRoute(
+        builder: (_) => FleetSecretPage(
+          decision: decision,
+          create: () => flow,
+          stepUp: null,
+          now: () => now,
+        ),
+      );
+      await tester.pumpApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(context).push(route),
+            child: const Text('open'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      late Future<void> sending;
+      await tester.runAsync(() async {
+        sending = flow.send(Uint8List.fromList(value));
+        while (!held) {
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+        }
+      });
+      await leave(tester, route);
+      // Released before the frame that could dispose the page: only the
+      // route completion fences this dispatch.
+      gate.complete();
+      await tester.runAsync(() => sending);
+      expect(flow.isClosed, isFalse);
+      expect(hooked.answers, isEmpty);
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
+
+  test('closing while the owner MAC runs never stages', () async {
+    await pinActive(key: oldKey, id: repairId);
+    late FleetSecretCubit flow;
+    var macs = 0;
+    platform.onCall = (method) async {
+      // The second HMAC is the owner MAC, after the code check passed.
+      if (method == 'hmac' && ++macs == 2) flow.leave();
+    };
+    flow = cubit(pairDecision());
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    await flow.submitCode('008j 4ct4 ank7 f24s');
+    expect(macs, 2);
+    final pin = (await pins.read())['skr-m4']!;
+    expect(pin.signerKey, oldKey);
+    expect(pin.candidate, isNull);
+    expect(source.answers, isEmpty);
+  });
+
+  test('leaving while staging waits keeps the earlier candidate', () async {
+    await pinActive(key: oldKey, id: repairId);
+    // An earlier re-pairing already waits for its machine's confirmation.
+    const earlierKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    await pins.putPending(
+      machineId: 'skr-m4',
+      signerKey: earlierKey,
+      label: 'Skora M4',
+      pairingId: 'pair-111111111111111111111111',
+      now: now,
+      expiresAt: now.add(const Duration(minutes: 10)),
+    );
+    final revision = (await pins.trust('skr-m4')).revision;
+    final gate = Completer<void>();
+    var macs = 0;
+    platform.onCall = (method) async {
+      // After the owner MAC, hold the staging write's own pin read.
+      if (method == 'hmac' && ++macs == 2) storage.hold = gate;
+    };
+    final flow = cubit(pairDecision());
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    final submitted = flow.submitCode('008j 4ct4 ank7 f24s');
+    while (macs < 2 || storage.hold != null) {
+      await pumpEventQueue();
+    }
+    flow.leave();
+    gate.complete();
+    await submitted;
+    final trust = await pins.trust('skr-m4');
+    expect(trust.revision, revision);
+    expect(trust.pin?.candidate?.signerKey, earlierKey);
+    expect(source.answers, isEmpty);
+  });
+
+  test('a reply after close still clears the Inbox card once', () async {
+    await pinActive();
+    late FleetSecretCubit flow;
+    var handled = 0;
+    final source = _AfterDispatchSource(() => unawaited(flow.close()));
+    flow = FleetSecretCubit(
+      decision: await signedRequestDecision(),
+      crypto: platform.crypto(),
+      pins: pins,
+      source: source,
+      accountId: () => 'user-1',
+      now: () => now,
+      retryDelay: (_) => Duration.zero,
+      attempts: FleetPairingAttempts(),
+      onHandled: () => handled++,
+    );
+    await flow.start();
+    flow.stepUpVerified();
+    await flow.send(Uint8List.fromList(value));
+    expect(source.answers, hasLength(1));
+    expect(handled, 1);
+  });
+
+  test('a stage whose write fails leaves open requests valid', () async {
+    await pinActive();
+    final flow = cubit(await signedRequestDecision());
+    addTearDown(flow.close);
+    await flow.start();
+    flow.stepUpVerified();
+    storage.failWrite = true;
+    await expectLater(
+      pins.putPending(
+        machineId: 'skr-m4',
+        signerKey: oldKey,
+        label: 'Skora M4',
+        pairingId: repairId,
+        now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
+      ),
+      throwsA(isA<Exception>()),
+    );
+    storage.failWrite = false;
+    await flow.send(Uint8List.fromList(value));
+    expect(source.answers, hasLength(1));
+    expect(flow.state.phase, FleetSecretPhase.sent);
   });
 
   test('an id-mismatched pairing card never offers Forget', () async {
@@ -177,31 +489,25 @@ void main() {
     expect(next.resend, isTrue);
   });
 
-  test('a reset during a code check leaves the shared counts empty', () async {
-    final flow = cubit(pairDecision(), attempts: FleetPairingAttempts.shared);
-    addTearDown(flow.close);
-    await flow.start();
-    flow.stepUpVerified();
-    final submitted = flow.submitCode('0000-0000-0000-0000');
-    final erased = eraseFleetSecretKeys(
+  test('a reset overtaking an in-flight count write leaves none', () async {
+    final pairing = pairDecision().secret! as FleetSecretPairing;
+    final counts = FleetPairingAttempts(storage: storage);
+    final gate = storage.holdWrite = Completer<void>();
+    final checking = FleetSecretPairer(
       crypto: platform.crypto(),
-      pins: FleetSecretPins(
-        userId: () => null,
-        storage: const FlutterSecureStorage(),
-      ),
-    );
-    await submitted;
-    await erased;
-    expect(
-      FleetPairingAttempts.shared.wrong(
-        pairDecision().secret! as FleetSecretPairing,
-      ),
-      0,
-    );
-    expect(
-      await fleetSecretStorage.read(key: FleetPairingAttempts.storageKey),
-      isNull,
-    );
-    expect(source.answers, isEmpty);
+      attempts: counts,
+    ).check(pairing, '0000-0000-0000-0000', now: now);
+    // Wait until the wrong code's write has started and is held.
+    while (storage.holdWrite != null) {
+      await pumpEventQueue();
+    }
+    // The write is in flight; the reset starts now.
+    counts.clear();
+    final erasing = counts.eraseSaved();
+    gate.complete();
+    await checking;
+    await erasing;
+    expect(counts.wrong(pairing), 0);
+    expect(await storage.read(key: FleetPairingAttempts.storageKey), isNull);
   });
 }

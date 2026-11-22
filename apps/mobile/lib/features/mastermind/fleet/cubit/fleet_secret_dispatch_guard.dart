@@ -39,29 +39,39 @@ class FleetSecretDispatchGuard {
     _epoch = epoch;
   }
 
+  /// A stage, activation or Forget queued while the pin read waited sends
+  /// the guard to read again behind it: a committed change then shows as a
+  /// new revision and refuses, a duplicate leaves it and allows. Gives up,
+  /// refusing, if changes keep arriving.
   Future<bool> allows(String? account) async {
     final revision = _revision;
     final epoch = _epoch;
-    if (revision == null || epoch == null || !_unchanged(epoch, account)) {
-      return false;
+    if (revision == null || epoch == null) return false;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (!_unchanged(epoch, account)) return false;
+      final queued = _pins.queued(_secret.machineId, account: account);
+      final FleetSecretTrust trust;
+      try {
+        trust = await _pins.trust(_secret.machineId);
+      } on Object {
+        return false;
+      }
+      if (!_unchanged(epoch, account) || trust.revision != revision) {
+        return false;
+      }
+      if (_pins.queued(_secret.machineId, account: account) != queued) {
+        continue;
+      }
+      final pin = trust.pin;
+      if (pin == null) return false;
+      return switch (_secret) {
+        final FleetSecretRequest request =>
+          pin.active && pin.signerKey == request.signerKey,
+        final FleetSecretPairing pairing =>
+          pin.awaiting(_now()) == (pairing.pairingId, pairing.signerKey),
+      };
     }
-    final FleetSecretTrust trust;
-    try {
-      trust = await _pins.trust(_secret.machineId);
-    } on Object {
-      return false;
-    }
-    if (!_unchanged(epoch, account) || trust.revision != revision) {
-      return false;
-    }
-    final pin = trust.pin;
-    if (pin == null) return false;
-    return switch (_secret) {
-      final FleetSecretRequest request =>
-        pin.active && pin.signerKey == request.signerKey,
-      final FleetSecretPairing pairing =>
-        pin.awaiting(_now()) == (pairing.pairingId, pairing.signerKey),
-    };
+    return false;
   }
 
   bool _unchanged(int epoch, String? account) =>

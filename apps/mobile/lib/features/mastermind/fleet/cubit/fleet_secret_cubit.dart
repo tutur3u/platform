@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_secret_activation.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_secret_dispatch_guard.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_secret_state.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
@@ -73,13 +74,17 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   late final _guard = FleetSecretDispatchGuard(
     pins: _pins,
     secret: secret,
-    current: () => _current,
+    current: () => !_leaving && _current,
     now: _now,
   );
 
   /// Set first thing in [close], so a guard resuming while the close
   /// finishes refuses.
   bool _closing = false;
+
+  /// Set by [leave]: no new dispatch, while a reply to one already sent is
+  /// still handled until [close].
+  bool _leaving = false;
   bool _handledNotified = false;
 
   void _notifyHandled() {
@@ -164,7 +169,17 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         return _expiring() ? FleetSecretBlock.expiring : null;
       }
       final request = secret as FleetSecretRequest;
-      if (snapshot case final current?) await _activatePending(current);
+      if (snapshot case final current?) {
+        await activateConfirmedPins(
+          snapshot: current,
+          pins: _pins,
+          crypto: _crypto,
+          keyId: _keyId,
+          account: _account,
+          now: _now,
+          ended: () => _ended,
+        );
+      }
       final epoch = _guard.epoch(_account);
       final trust = await _pins.trust(request.machineId);
       final pin = trust.pin;
@@ -288,7 +303,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     FleetSecretBinding.wipe(value);
     try {
       if (!await _stillTrusted()) {
-        if (!_ended) _fail(FleetSecretBlock.keyChanged);
+        _refuse();
         return;
       }
       final sealed = await _crypto.seal(
@@ -396,7 +411,9 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       }
       final ownerKey = fleetSecretB64url(_ownerKey);
       final mac = await _pairer.ownerMac(pairing, key!, ownerKey);
-      if (_ended) return;
+      // A page that left (or an account that changed) while the MAC ran
+      // never stages: it would displace a candidate it will not answer.
+      if (_leaving || !_current) return;
       final staged = await _pins.putPending(
         machineId: pairing.machineId,
         signerKey: pairing.signerKey,
@@ -405,6 +422,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         now: _now(),
         expiresAt: pairing.expiresAtTime,
         expectedRevision: before,
+        stillWanted: () => !_leaving && _current,
         account: _account,
       );
       if (_ended) return;
@@ -422,6 +440,32 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   }
 
   Future<bool> _stillTrusted() => _guard.allows(_account);
+
+  /// The page is leaving (its route accepted a pop): nothing dispatches
+  /// from now on, even while the route's exit transition still runs.
+  void leave() {
+    _leaving = true;
+    _pending = null;
+  }
+
+  /// A terminal reply that arrives after the page closed still clears the
+  /// Inbox card, once, while the same account and erasure generation hold.
+  void _acknowledgeAfterClose() {
+    _pending = null;
+    if (fleetSecretErasures.value != _erasure) return;
+    if (_account == null || _accountId() != _account) return;
+    _notifyHandled();
+  }
+
+  /// The guard refused a dispatch: say why, unless the page is leaving.
+  void _refuse() {
+    if (_ended || _leaving) return;
+    _fail(
+      secret is FleetSecretRequest
+          ? FleetSecretBlock.keyChanged
+          : FleetSecretBlock.failed,
+    );
+  }
 
   bool get _current => !_ended && _account != null && _accountId() == _account;
 
@@ -446,13 +490,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       // "Forget this machine" from another screen): never post under a key
       // this phone no longer trusts.
       if (!await _stillTrusted()) {
-        if (!_ended) {
-          _fail(
-            secret is FleetSecretRequest
-                ? FleetSecretBlock.keyChanged
-                : FleetSecretBlock.failed,
-          );
-        }
+        _refuse();
         return;
       }
       if (_ended) return;
@@ -464,13 +502,21 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           stillTrusted: _stillTrusted,
         );
         _pending = null;
-        if (_ended) return;
+        if (_ended) {
+          _acknowledgeAfterClose();
+          return;
+        }
         emit(state.copyWith(phase: FleetSecretPhase.sent));
         _notifyHandled();
         if (snapshot case final current?) _onSnapshot(current);
         return;
       } on FleetSecretSendException catch (error) {
-        if (_ended) return;
+        if (_ended) {
+          if (error.failure == FleetSecretSendFailure.closed) {
+            _acknowledgeAfterClose();
+          }
+          return;
+        }
         switch (error.failure) {
           case FleetSecretSendFailure.mfaRequired:
             emit(state.copyWith(phase: FleetSecretPhase.stepUp, resend: true));
@@ -484,11 +530,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
             _fail(FleetSecretBlock.forbidden);
             return;
           case FleetSecretSendFailure.untrusted:
-            _fail(
-              secret is FleetSecretRequest
-                  ? FleetSecretBlock.keyChanged
-                  : FleetSecretBlock.failed,
-            );
+            _refuse();
             return;
           case FleetSecretSendFailure.notDelivered ||
               FleetSecretSendFailure.rejected:
@@ -604,43 +646,6 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       ),
     );
     _notifyHandled();
-  }
-
-  /// Activates pending pins and re-pairings whose pairing the machine
-  /// settled for this phone's key in [snapshot]'s resolved list.
-  Future<void> _activatePending(FleetSnapshot snapshot) async {
-    for (final pin in (await _pins.read()).values) {
-      final awaited = pin.awaiting(_now());
-      if (awaited == null) continue;
-      final (pairingId, signerKey) = awaited;
-      final outcome = snapshot.resolved
-          .where((r) => r.id == pairingId)
-          .firstOrNull
-          ?.secretOutcome;
-      if (outcome == null ||
-          outcome.outcome != FleetSecretOutcomeKind.paired ||
-          outcome.answerDigest != _keyId) {
-        continue;
-      }
-      final verified = await _crypto.verifyEd25519(
-        publicKey: _bytes(signerKey, 32),
-        message: FleetSecretBinding.outcome(
-          pairingId,
-          'paired',
-          outcome.answerDigest,
-        ),
-        signature: _bytes(outcome.sig, 64),
-      );
-      if (verified && !_ended) {
-        await _pins.activate(
-          machineId: pin.machineId,
-          pairingId: pairingId,
-          signerKey: signerKey,
-          clock: _now,
-          account: _account,
-        );
-      }
-    }
   }
 
   /// "Forget this machine": removes its pin; the next request needs a new

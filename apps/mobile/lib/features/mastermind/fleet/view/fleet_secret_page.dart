@@ -36,8 +36,7 @@ Future<void> showFleetSecretPage(
   final userId = runtime.userId ?? () => null;
   final snapshot = runtime.fleet.state.snapshot;
   return Navigator.of(context, rootNavigator: true).push<void>(
-    MaterialPageRoute<void>(
-      fullscreenDialog: true,
+    FleetSecretRoute(
       builder: (_) => FleetSecretPage(
         decision: decision,
         now: now,
@@ -63,6 +62,27 @@ Future<void> showFleetSecretPage(
       ),
     ),
   );
+}
+
+/// The secret page's full-screen route. Completing it, by a pop or by a
+/// removal that never pops (its parent page replaced), runs the page's
+/// hooks synchronously, before the exit transition or disposal.
+class FleetSecretRoute extends MaterialPageRoute<void> {
+  FleetSecretRoute({required super.builder}) : super(fullscreenDialog: true);
+
+  final _completeHooks = <VoidCallback>{};
+
+  /// Runs [hook] when this route completes; adding the same hook twice
+  /// keeps one.
+  void onComplete(VoidCallback hook) => _completeHooks.add(hook);
+
+  @override
+  void didComplete(void result) {
+    for (final hook in List.of(_completeHooks)) {
+      hook();
+    }
+    super.didComplete(result);
+  }
 }
 
 /// Verified request (or pairing) details, the step-up, then the one input.
@@ -95,57 +115,79 @@ class FleetSecretPage extends StatelessWidget {
         unawaited(cubit.start());
         return cubit;
       },
-      child: Scaffold(
-        backgroundColor: tokens.colorScheme.background,
-        body: SafeArea(
-          child: Column(
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 56),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    spacing: 8,
-                    children: [
-                      AppIconButton(
-                        icon: const Icon(LucideIcons.x),
-                        tooltip: l10n.mastermindSecretClose,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
-                      Expanded(
-                        child: Semantics(
-                          header: true,
-                          child: Text(
-                            pairing
-                                ? l10n.mastermindSecretPairTitle
-                                : l10n.mastermindSecretRequestTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: tokens.typography.title,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: BlocBuilder<FleetSecretCubit, FleetSecretState>(
-                  builder: (context, state) => _Body(
-                    state: state,
-                    secret: decision.secret!,
-                    stepUp: stepUp,
-                    laneTitle: laneTitle,
-                    now: now,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: Builder(
+        // Fence dispatch the moment the route completes (Close, Done, system
+        // Back, or removal under a parent), not once the page is disposed.
+        builder: (context) {
+          final leave = context.read<FleetSecretCubit>().leave;
+          if (ModalRoute.of(context) case final FleetSecretRoute route) {
+            route.onComplete(leave);
+          }
+          return PopScope(
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) leave();
+            },
+            child: _scaffold(context, tokens, l10n, pairing),
+          );
+        },
       ),
     );
   }
+
+  Widget _scaffold(
+    BuildContext context,
+    AppTokens tokens,
+    AppLocalizations l10n,
+    bool pairing,
+  ) => Scaffold(
+    backgroundColor: tokens.colorScheme.background,
+    body: SafeArea(
+      child: Column(
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                spacing: 8,
+                children: [
+                  AppIconButton(
+                    icon: const Icon(LucideIcons.x),
+                    tooltip: l10n.mastermindSecretClose,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        pairing
+                            ? l10n.mastermindSecretPairTitle
+                            : l10n.mastermindSecretRequestTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tokens.typography.title,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: BlocBuilder<FleetSecretCubit, FleetSecretState>(
+              builder: (context, state) => _Body(
+                state: state,
+                secret: decision.secret!,
+                stepUp: stepUp,
+                laneTitle: laneTitle,
+                now: now,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Body extends StatelessWidget {

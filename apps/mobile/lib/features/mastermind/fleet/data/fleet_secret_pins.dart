@@ -213,10 +213,11 @@ class FleetSecretPins {
 
   String? _name() => _nameFor(_userId());
 
-  /// In-memory twin of the stored revision, advanced synchronously the
-  /// moment a stage, activation or Forget is asked for, before its Keychain
-  /// write queues. A dispatch guard whose pin read was already waiting sees
-  /// the change at once instead of after that write lands.
+  /// In-memory twin of the stored revision. Forget advances it the moment it
+  /// is asked for, before its Keychain write queues, so a dispatch guard
+  /// whose pin read was already waiting refuses at once. A stage or
+  /// activation advances it only when it commits, so a duplicate or refused
+  /// one never stops a valid open request.
   static final _epochs = <String, int>{};
 
   static String _epochKey(String? user, String machineId) =>
@@ -229,6 +230,19 @@ class FleetSecretPins {
   void _advance(String machineId, String? account) {
     final key = _epochKey(account ?? _userId(), machineId);
     _epochs[key] = (_epochs[key] ?? 0) + 1;
+  }
+
+  /// Trust changes asked for so far, counted the moment each one queues.
+  /// A guard whose pin read saw this move reads again behind them.
+  static final _queued = <String, int>{};
+
+  /// [machineId]'s count of queued trust changes for [account].
+  int queued(String machineId, {String? account}) =>
+      _queued[_epochKey(account ?? _userId(), machineId)] ?? 0;
+
+  void _enqueue(String machineId, String? account) {
+    final key = _epochKey(account ?? _userId(), machineId);
+    _queued[key] = (_queued[key] ?? 0) + 1;
   }
 
   /// Reserved entry beside the pins: pairings that already activated, kept
@@ -304,9 +318,13 @@ class FleetSecretPins {
   /// Changes the pins of [account] (default: the signed-in user). The
   /// account and the erasure count are fixed when this is called: the change
   /// is dropped when an erasure ran since, or another user signed in.
+  ///
+  /// [committed] runs only after the Keychain write succeeded, before
+  /// listeners hear of the change.
   Future<void> _update(
     void Function(_PinStore store) change, {
     String? account,
+    void Function()? committed,
   }) {
     final erasure = fleetSecretErasures.value;
     final user = account ?? _userId();
@@ -327,6 +345,7 @@ class FleetSecretPins {
       await (after == null
           ? _storage.delete(key: name)
           : _storage.write(key: name, value: after));
+      committed?.call();
       fleetSecretPinChanges.value++;
     });
   }
@@ -337,8 +356,9 @@ class FleetSecretPins {
   /// confirms it before [expiresAt]; a newer pairing replaces the candidate.
   /// Returns the machine's new trust revision, or null, storing nothing,
   /// for a pairing that already activated, when the machine's revision is no
-  /// longer [expectedRevision] (taken before the code check), or when the
-  /// write was dropped (an erasure or account switch since).
+  /// longer [expectedRevision] (taken before the code check), when
+  /// [stillWanted] answers false inside the queue, or when the write was
+  /// dropped (an erasure or account switch since).
   Future<int?> putPending({
     required String machineId,
     required String signerKey,
@@ -347,42 +367,52 @@ class FleetSecretPins {
     required DateTime now,
     required DateTime expiresAt,
     int? expectedRevision,
+    bool Function()? stillWanted,
     String? account,
   }) async {
-    _advance(machineId, account);
+    _enqueue(machineId, account);
     int? stored;
-    await _update((store) {
-      store.prune(now);
-      if (store.used.containsKey(pairingId)) return;
-      if (expectedRevision != null &&
-          store.revision(machineId) != expectedRevision) {
-        return;
-      }
-      stored = store.bump(machineId);
-      final pins = store.pins;
-      final current = pins[machineId];
-      if (current != null && current.active) {
-        pins[machineId] = current.withCandidate(
-          FleetSecretPinCandidate(
-            signerKey: signerKey,
-            label: label,
-            pairingId: pairingId,
-            pairedAt: now.toUtc(),
-            expiresAt: expiresAt.toUtc(),
-          ),
+    await _update(
+      (store) {
+        // Asked again inside the queue, after the read: a page that left
+        // while this waited stages nothing.
+        if (stillWanted != null && !stillWanted()) return;
+        store.prune(now);
+        if (store.used.containsKey(pairingId)) return;
+        if (expectedRevision != null &&
+            store.revision(machineId) != expectedRevision) {
+          return;
+        }
+        stored = store.bump(machineId);
+        final pins = store.pins;
+        final current = pins[machineId];
+        if (current != null && current.active) {
+          pins[machineId] = current.withCandidate(
+            FleetSecretPinCandidate(
+              signerKey: signerKey,
+              label: label,
+              pairingId: pairingId,
+              pairedAt: now.toUtc(),
+              expiresAt: expiresAt.toUtc(),
+            ),
+          );
+          return;
+        }
+        pins[machineId] = FleetSecretPin(
+          machineId: machineId,
+          signerKey: signerKey,
+          label: label,
+          pairedAt: now.toUtc(),
+          state: FleetSecretPinState.pending,
+          pairingId: pairingId,
+          expiresAt: expiresAt.toUtc(),
         );
-        return;
-      }
-      pins[machineId] = FleetSecretPin(
-        machineId: machineId,
-        signerKey: signerKey,
-        label: label,
-        pairedAt: now.toUtc(),
-        state: FleetSecretPinState.pending,
-        pairingId: pairingId,
-        expiresAt: expiresAt.toUtc(),
-      );
-    }, account: account);
+      },
+      account: account,
+      committed: () {
+        if (stored != null) _advance(machineId, account);
+      },
+    );
     return stored;
   }
 
@@ -399,40 +429,47 @@ class FleetSecretPins {
     required DateTime Function() clock,
     String? account,
   }) async {
-    _advance(machineId, account);
+    _enqueue(machineId, account);
     FleetSecretPin? result;
-    await _update(account: account, (store) {
-      final now = clock();
-      store.prune(now);
-      final pin = store.pins[machineId];
-      final awaited = pin?.awaiting(now);
-      if (pin == null ||
-          awaited == null ||
-          awaited.$1 != pairingId ||
-          awaited.$2 != signerKey ||
-          store.used.containsKey(pairingId)) {
-        return;
-      }
-      final next = pin.candidate;
-      store.used[pairingId] = pin.active && next != null
-          ? next.expiresAt
-          : pin.expiresAt!;
-      store.bump(machineId);
-      result = store.pins[machineId] = pin.active && next != null
-          ? FleetSecretPin(
-              machineId: machineId,
-              signerKey: next.signerKey,
-              label: next.label,
-              pairedAt: next.pairedAt,
-              state: FleetSecretPinState.active,
-            )
-          : pin.activated();
-    });
+    await _update(
+      account: account,
+      (store) {
+        final now = clock();
+        store.prune(now);
+        final pin = store.pins[machineId];
+        final awaited = pin?.awaiting(now);
+        if (pin == null ||
+            awaited == null ||
+            awaited.$1 != pairingId ||
+            awaited.$2 != signerKey ||
+            store.used.containsKey(pairingId)) {
+          return;
+        }
+        final next = pin.candidate;
+        store.used[pairingId] = pin.active && next != null
+            ? next.expiresAt
+            : pin.expiresAt!;
+        store.bump(machineId);
+        result = store.pins[machineId] = pin.active && next != null
+            ? FleetSecretPin(
+                machineId: machineId,
+                signerKey: next.signerKey,
+                label: next.label,
+                pairedAt: next.pairedAt,
+                state: FleetSecretPinState.active,
+              )
+            : pin.activated();
+      },
+      committed: () {
+        if (result != null) _advance(machineId, account);
+      },
+    );
     return result;
   }
 
   /// "Forget this machine".
   Future<void> forget(String machineId, {String? account}) {
+    _enqueue(machineId, account);
     _advance(machineId, account);
     return _update((store) {
       store.pins.remove(machineId);
