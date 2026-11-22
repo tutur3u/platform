@@ -1,6 +1,7 @@
 'use client';
 
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import {
@@ -8,141 +9,192 @@ import {
   useCallback,
   useDeferredValue,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import {
+  type DriveAccess,
+  resolveDriveBrowserState,
+} from './drive-browser-state';
+import type { DriveDialogState, DrivePreviewState } from './drive-dialog-state';
+import { downloadDriveFiles, getDriveObjectPath } from './drive-download';
+import type { DriveItemActions } from './drive-item-menu';
 import { getPathSegments } from './drive-selection';
 import {
-  type DriveSortBy,
-  type DriveViewMode,
+  type DriveSearchUpdate,
   driveSearchParamParsers,
 } from './search-params';
 import { getStoragePathSegmentDisplayName } from './storage-display-name';
 import { useDriveDeleteMutation } from './use-drive-delete-mutation';
 import {
   useInvalidateDriveQueries,
-  useWorkspaceStorageAnalyticsQuery,
   useWorkspaceStorageDirectoryQuery,
 } from './use-drive-queries';
 import { useDriveSelectionState } from './use-drive-selection-state';
+import { useDriveUploads } from './use-drive-uploads';
 
-export function useDriveExplorerController(wsId: string) {
-  const t = useTranslations('ws-storage-objects');
+export function useDriveExplorerController(wsId: string, access: DriveAccess) {
+  const t = useTranslations('drive');
   const [searchState, setSearchState] = useQueryStates(driveSearchParamParsers);
-  const [selectedItem, setSelectedItem] = useState<StorageObject | null>(null);
-  const [renameTarget, setRenameTarget] = useState<StorageObject | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [dialog, setDialog] = useState<DriveDialogState>({ kind: 'none' });
+  const [preview, setPreview] = useState<DrivePreviewState>({ kind: 'closed' });
+  const fileInput = useRef<HTMLInputElement>(null);
   const deferredQuery = useDeferredValue(searchState.q);
-  const invalidateDriveQueries = useInvalidateDriveQueries(wsId);
+  const invalidate = useInvalidateDriveQueries(wsId);
+  const canManage = access === 'manage';
+  const currentPath = searchState.path;
 
-  const normalizedSearchState = useMemo(
-    () => ({ ...searchState, q: deferredQuery }),
-    [deferredQuery, searchState]
-  );
   const directoryQuery = useWorkspaceStorageDirectoryQuery(
     wsId,
-    normalizedSearchState
+    useMemo(
+      () => ({ ...searchState, q: deferredQuery }),
+      [deferredQuery, searchState]
+    ),
+    { enabled: access === 'manage' }
   );
-  const analyticsQuery = useWorkspaceStorageAnalyticsQuery(wsId);
+  const items = directoryQuery.data?.items;
+  const { error, status } = directoryQuery;
+  const browserState = useMemo(
+    () =>
+      resolveDriveBrowserState({
+        access,
+        error,
+        items,
+        path: currentPath,
+        query: searchState.q,
+        status,
+        type: searchState.type,
+      }),
+    [access, currentPath, error, items, searchState.q, searchState.type, status]
+  );
+  const visibleFiles = useMemo(
+    () => (browserState.kind === 'ready' ? browserState.files : []),
+    [browserState]
+  );
+  // Selection covers only what is on screen, so a type chip cannot leave
+  // hidden files selected for a bulk action.
+  const visibleItems = useMemo(
+    () =>
+      browserState.kind === 'ready'
+        ? [...browserState.folders, ...browserState.files]
+        : [],
+    [browserState]
+  );
+  const selection = useDriveSelectionState({
+    currentPath,
+    items: visibleItems,
+  });
 
-  const items = directoryQuery.data?.items ?? [];
-  const total = directoryQuery.data?.total ?? 0;
-  const currentPath = searchState.path;
-  const pathSegments = getPathSegments(currentPath);
-  const selection = useDriveSelectionState({ currentPath, items });
-
-  const updateSearchState = useCallback(
-    (
-      updates: Partial<{
-        path: string | null;
-        q: string | null;
-        sortBy: DriveSortBy;
-        sortOrder: 'asc' | 'desc';
-        view: DriveViewMode;
-      }>
-    ) => {
+  const update = useCallback(
+    (next: DriveSearchUpdate) => {
       startTransition(() => {
-        void setSearchState(updates);
+        void setSearchState(next);
       });
     },
     [setSearchState]
   );
-
-  const handleNavigateToPath = useCallback(
-    (nextPath: string) => updateSearchState({ path: nextPath || null }),
-    [updateSearchState]
-  );
-  const handleNavigateIntoFolder = useCallback(
-    (name: string) => {
-      handleNavigateToPath(currentPath ? `${currentPath}/${name}` : name);
+  const navigate = useCallback(
+    (path: string) => {
+      setPreview({ kind: 'closed' });
+      update({ path: path || null, q: null, type: null });
     },
-    [currentPath, handleNavigateToPath]
+    [update]
   );
-  const handleRefresh = useCallback(async () => {
-    await invalidateDriveQueries();
-  }, [invalidateDriveQueries]);
-  const handleNavigateUp = useCallback(() => {
-    if (currentPath) {
-      handleNavigateToPath(pathSegments.slice(0, -1).join('/'));
-    }
-  }, [currentPath, handleNavigateToPath, pathSegments]);
+  const openFolder = useCallback(
+    (name: string) => navigate(currentPath ? `${currentPath}/${name}` : name),
+    [currentPath, navigate]
+  );
+  const closeDialog = useCallback(() => setDialog({ kind: 'none' }), []);
+
+  const uploads = useDriveUploads({ onSettled: invalidate, wsId });
+  const openFilePicker = useCallback(() => fileInput.current?.click(), []);
+  const uploadFiles = useCallback(
+    (files: Iterable<File>) => {
+      if (canManage) uploads.enqueue(files, currentPath);
+    },
+    [canManage, currentPath, uploads]
+  );
 
   const deleteMutation = useDriveDeleteMutation({
     currentPath,
     wsId,
     onSuccess: async () => {
-      await invalidateDriveQueries();
       selection.setSelectedKeys([]);
+      await invalidate();
     },
-    onSettled: () => {
-      setDeleteTarget(null);
-      setBulkDeleteDialogOpen(false);
-    },
+    onSettled: closeDialog,
   });
 
-  const currentDirectorySegment = pathSegments.at(-1);
-  const directoryLabel = currentDirectorySegment
-    ? getStoragePathSegmentDisplayName(currentDirectorySegment)
-    : t('root_label');
-  const largestFileName = analyticsQuery.data?.largestFile?.name
-    ? getStoragePathSegmentDisplayName(analyticsQuery.data.largestFile.name)
-    : t('not_available');
-  const smallestFileName = analyticsQuery.data?.smallestFile?.name
-    ? getStoragePathSegmentDisplayName(analyticsQuery.data.smallestFile.name)
-    : t('not_available');
-  const currentFolderCount = items.filter((item) => !item.id).length;
+  const actions: DriveItemActions = useMemo(
+    () => ({
+      canManage,
+      onCopyPath: (item: StorageObject) => {
+        navigator.clipboard
+          .writeText(getDriveObjectPath(currentPath, item))
+          .then(
+            () => toast.success(t('toasts.path_copied')),
+            () => toast.error(t('toasts.copy_failed'))
+          );
+      },
+      onDelete: (targets) => setDialog({ kind: 'delete', items: targets }),
+      onDownload: (files) => {
+        const onlyFiles = files.filter((file) => file.id);
+        toast.promise(downloadDriveFiles(wsId, currentPath, onlyFiles), {
+          loading: t('toasts.downloading', { count: onlyFiles.length }),
+          success: t('toasts.downloaded', { count: onlyFiles.length }),
+          error: t('toasts.download_failed'),
+        });
+      },
+      onMove: (targets) => setDialog({ kind: 'move', items: targets }),
+      onOpen: (item) =>
+        item.id
+          ? setPreview({ kind: 'open', fileId: item.id })
+          : openFolder(item.name ?? ''),
+      onRename: (item) => setDialog({ kind: 'rename', item }),
+      onShare: (item) =>
+        setDialog(
+          item.id
+            ? { kind: 'share-file', item }
+            : { kind: 'share-folder', item }
+        ),
+    }),
+    [canManage, currentPath, openFolder, t, wsId]
+  );
+
+  const segments = getPathSegments(currentPath);
+  const folderLabel = segments.length
+    ? getStoragePathSegmentDisplayName(segments.at(-1) ?? '')
+    : t('files');
 
   return {
-    analyticsQuery,
-    bulkDeleteDialogOpen,
-    currentFileCount: items.length - currentFolderCount,
-    currentFolderCount,
+    actions,
+    browserState,
+    canManage,
+    closeDialog,
     currentPath,
     deleteMutation,
-    deleteTarget,
-    directoryLabel,
+    dialog,
     directoryQuery,
-    handleNavigateIntoFolder,
-    handleNavigateToPath,
-    handleNavigateUp,
-    handleRefresh,
-    hasMoreResults: directoryQuery.hasNextPage ?? false,
-    isSummaryExpanded,
-    items,
-    largestFileName,
-    renameTarget,
+    fileInput,
+    folderLabel,
+    hasMore: directoryQuery.hasNextPage ?? false,
+    invalidate,
+    loadedCount: items?.length ?? 0,
+    navigate,
+    openFilePicker,
+    openFolder,
+    preview,
     searchState,
-    selectedItem,
     selection,
-    setBulkDeleteDialogOpen,
-    setDeleteTarget,
-    setIsSummaryExpanded,
-    setRenameTarget,
-    setSelectedItem,
-    showingCount: items.length,
-    smallestFileName,
-    total,
-    updateSearchState,
+    setDialog,
+    setPreview,
+    update,
+    uploadFiles,
+    uploads,
+    visibleFiles,
   };
 }
+
+export type DriveExplorerController = ReturnType<
+  typeof useDriveExplorerController
+>;

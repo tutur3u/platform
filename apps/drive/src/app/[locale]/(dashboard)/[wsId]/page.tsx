@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import {
   getDriveWorkspace,
@@ -30,9 +30,14 @@ export default async function WorkspaceDrivePage({
     notFound();
   }
 
-  if (permissions.withoutPermission('manage_drive')) {
-    redirect(`/${id}`);
-  }
-
-  return <DriveExplorerClient wsId={workspace.id} />;
+  // This page is the workspace root, so a redirect would loop; the explorer
+  // explains the missing permission instead.
+  return (
+    <DriveExplorerClient
+      access={
+        permissions.withoutPermission('manage_drive') ? 'denied' : 'manage'
+      }
+      wsId={workspace.id}
+    />
+  );
 }

@@ -1,179 +1,146 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
+import { CloudUpload, TriangleAlert } from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { DriveDeleteDialogs } from './drive-delete-dialogs';
-import {
-  DriveEmptyState,
-  DriveErrorState,
-  DriveGridView,
-  DriveListView,
-  DriveLoadingState,
-} from './drive-explorer-views';
-import { DriveToolbar } from './drive-toolbar';
-import { DriveUsageSummary } from './drive-usage-summary';
-import { FilePreviewDialog } from './file-preview-dialog';
-import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
+import type { DriveAccess } from './drive-browser-state';
+import { DriveBrowserView } from './drive-browser-view';
+import { DriveExplorerDialogs } from './drive-explorer-dialogs';
+import { DriveFilterBar } from './drive-filter-bar';
+import { DriveHeader } from './drive-header';
+import { DriveLoadMore } from './drive-load-more';
+import { DriveMobileNew } from './drive-mobile-new';
+import { DriveSelectionBar } from './drive-selection-bar';
+import { useDriveQuota } from './drive-storage-card';
+import { DriveUploadsPanel } from './drive-uploads-panel';
+import { getSelectionKey } from './drive-selection';
+import { useDriveDropTarget } from './use-drive-drop-target';
 import { useDriveExplorerController } from './use-drive-explorer-controller';
 
 interface DriveExplorerClientProps {
+  access?: DriveAccess;
   wsId: string;
 }
 
 export default function DriveExplorerClient({
+  access = 'manage',
   wsId,
 }: DriveExplorerClientProps) {
-  const t = useTranslations('ws-storage-objects');
-  const commonT = useTranslations('common');
-  const drive = useDriveExplorerController(wsId);
+  const t = useTranslations('drive');
+  const drive = useDriveExplorerController(wsId, access);
+  const quota = useDriveQuota(wsId);
+  const { handlers, state: dropState } = useDriveDropTarget({
+    disabled: !drive.canManage,
+    onDrop: drive.uploadFiles,
+  });
+  const { browserState, directoryQuery, searchState, selection } = drive;
+  const searching = Boolean(searchState.q.trim() || searchState.type);
+  const quotaTone = quota.state.kind === 'ready' ? quota.state.tone : 'normal';
 
   return (
-    <div className="space-y-6">
-      <DriveUsageSummary
-        currentPath={drive.currentPath}
-        directoryLabel={drive.directoryLabel}
-        fileCount={drive.analyticsQuery.data?.fileCount ?? 0}
-        isExpanded={drive.isSummaryExpanded}
-        isSyncing={
-          drive.directoryQuery.isFetching || drive.analyticsQuery.isFetching
-        }
-        largestFile={drive.analyticsQuery.data?.largestFile}
-        largestFileName={drive.largestFileName}
-        onRefresh={drive.handleRefresh}
-        setIsExpanded={drive.setIsSummaryExpanded}
-        smallestFile={drive.analyticsQuery.data?.smallestFile}
-        smallestFileName={drive.smallestFileName}
-        storageLimit={drive.analyticsQuery.data?.storageLimit ?? 0}
-        totalSize={drive.analyticsQuery.data?.totalSize ?? 0}
-        usagePercentage={drive.analyticsQuery.data?.usagePercentage ?? 0}
-        wsId={wsId}
+    <div
+      className="relative flex min-h-[calc(100dvh-8rem)] flex-col gap-4 pb-24"
+      {...handlers}
+    >
+      <DriveHeader
+        canManage={drive.canManage}
+        onNavigate={drive.navigate}
+        onNewFolder={() => drive.setDialog({ kind: 'new-folder' })}
+        onQueryChange={(q) => drive.update({ q: q || null })}
+        onUpload={drive.openFilePicker}
+        path={drive.currentPath}
+        query={searchState.q}
       />
-
-      <DriveToolbar
-        currentFileCount={drive.currentFileCount}
-        currentFolderCount={drive.currentFolderCount}
-        currentPath={drive.currentPath}
-        directoryLabel={drive.directoryLabel}
-        isReady={
-          !drive.directoryQuery.isPending && !drive.directoryQuery.isError
-        }
-        onClearSelection={() => drive.selection.setSelectedKeys([])}
-        onDeleteSelection={() => drive.setBulkDeleteDialogOpen(true)}
-        onNavigateToPath={drive.handleNavigateToPath}
-        onNavigateUp={drive.handleNavigateUp}
-        onRefresh={drive.handleRefresh}
-        onSelectAllVisible={() => drive.selection.handleSelectAllVisible(true)}
-        searchState={drive.searchState}
-        selectedCount={drive.selection.selectedItems.length}
-        showingCount={drive.showingCount}
-        total={drive.total}
-        updateSearchState={drive.updateSearchState}
-      />
-
-      {drive.directoryQuery.isPending && !drive.directoryQuery.data ? (
-        <DriveLoadingState />
-      ) : drive.directoryQuery.isError ? (
-        <DriveErrorState onRetry={() => void drive.directoryQuery.refetch()} />
-      ) : drive.analyticsQuery.isError ? (
-        <DriveErrorState onRetry={() => void drive.analyticsQuery.refetch()} />
-      ) : drive.items.length === 0 ? (
-        <DriveEmptyState
-          hasSearch={Boolean(drive.searchState.q)}
-          hasPath={Boolean(drive.currentPath)}
-          onResetSearch={() => drive.updateSearchState({ q: null })}
-        />
-      ) : (
-        <div className="space-y-5">
-          {drive.searchState.view === 'list' ? (
-            <DriveListView
-              allSelected={drive.selection.allVisibleSelected}
-              wsId={wsId}
-              items={drive.items}
-              path={drive.currentPath}
-              onNavigate={drive.handleNavigateIntoFolder}
-              onPreview={(item) => drive.setSelectedItem(item ?? null)}
-              onRequestRename={drive.setRenameTarget}
-              onRequestDelete={drive.setDeleteTarget}
-              onSelectAll={drive.selection.handleSelectAllVisible}
-              onToggleSelection={drive.selection.toggleSelectedItem}
-              onMutationSuccess={drive.handleRefresh}
-              selectedKeys={drive.selection.selectedKeys}
-            />
-          ) : (
-            <DriveGridView
-              allSelected={drive.selection.allVisibleSelected}
-              wsId={wsId}
-              items={drive.items}
-              path={drive.currentPath}
-              onNavigate={drive.handleNavigateIntoFolder}
-              onPreview={(item) => drive.setSelectedItem(item ?? null)}
-              onRequestRename={drive.setRenameTarget}
-              onRequestDelete={drive.setDeleteTarget}
-              onSelectAll={drive.selection.handleSelectAllVisible}
-              onToggleSelection={drive.selection.toggleSelectedItem}
-              onMutationSuccess={drive.handleRefresh}
-              selectedKeys={drive.selection.selectedKeys}
-            />
+      {browserState.kind === 'denied' ? null : (
+        <DriveFilterBar onChange={drive.update} searchState={searchState} />
+      )}
+      {searching && browserState.kind === 'ready' ? (
+        <p className="text-muted-foreground text-xs" aria-live="polite">
+          {t('search.scope', { folder: drive.folderLabel })}
+          {searchState.type && drive.hasMore
+            ? ` ${t('search.loaded_only', { count: drive.loadedCount })}`
+            : null}
+        </p>
+      ) : null}
+      {quotaTone === 'normal' || !drive.canManage ? null : (
+        <div
+          className={cn(
+            'flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm',
+            quotaTone === 'critical'
+              ? 'border-destructive/30 bg-destructive/10 text-destructive'
+              : 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
           )}
-          {drive.hasMoreResults ? (
-            <Card className="rounded-[28px] border-dynamic-border/80">
-              <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-muted-foreground text-sm">
-                  {t('loaded_summary', {
-                    current: drive.showingCount,
-                    total: drive.total,
-                  })}
-                </div>
-                <Button
-                  type="button"
-                  className="rounded-2xl"
-                  disabled={drive.directoryQuery.isFetchingNextPage}
-                  onClick={() => void drive.directoryQuery.fetchNextPage()}
-                >
-                  {drive.directoryQuery.isFetchingNextPage ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('loading_more')}
-                    </>
-                  ) : (
-                    commonT('load_more')
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
+          role="status"
+        >
+          <TriangleAlert aria-hidden className="size-4 shrink-0" />
+          {quotaTone === 'critical'
+            ? t('storage.full_banner')
+            : t('storage.almost_full_banner')}
         </div>
       )}
-
-      <FilePreviewDialog
-        wsId={wsId}
+      <DriveBrowserView
+        actions={drive.actions}
+        isSelected={(item) =>
+          selection.selectedKeys.includes(
+            getSelectionKey(drive.currentPath, item)
+          )
+        }
+        onClearFilters={() => drive.update({ q: null, type: null })}
+        onNavigate={drive.openFolder}
+        onRetry={() => void directoryQuery.refetch()}
+        onSelectAll={selection.handleSelectAllVisible}
+        onToggle={selection.toggleSelectedItem}
+        onUpload={drive.openFilePicker}
         path={drive.currentPath}
-        file={drive.selectedItem}
-        open={!!drive.selectedItem}
-        onOpenChange={(open) => {
-          if (!open) drive.setSelectedItem(null);
-        }}
-      />
-      <RenameStorageObjectDialog
+        state={browserState}
+        view={searchState.view}
         wsId={wsId}
-        path={drive.currentPath || undefined}
-        storageObject={drive.renameTarget}
-        open={!!drive.renameTarget}
-        onOpenChange={(open) => {
-          if (!open) drive.setRenameTarget(null);
+      />
+      {browserState.kind === 'ready' && drive.hasMore ? (
+        <DriveLoadMore
+          isLoading={directoryQuery.isFetchingNextPage}
+          loaded={drive.loadedCount}
+          onLoadMore={() => {
+            if (!directoryQuery.isFetchingNextPage)
+              void directoryQuery.fetchNextPage();
+          }}
+          total={directoryQuery.data?.total ?? drive.loadedCount}
+        />
+      ) : null}
+      {dropState.kind === 'over' ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl border-2 border-ring border-dashed bg-background/80">
+          <span className="flex items-center gap-2 font-bold text-lg">
+            <CloudUpload aria-hidden className="size-6" />
+            {t('uploads.drop_to', { folder: drive.folderLabel })}
+          </span>
+        </div>
+      ) : null}
+      <input
+        aria-hidden
+        className="hidden"
+        multiple
+        onChange={(event) => {
+          if (event.target.files) drive.uploadFiles(event.target.files);
+          event.target.value = '';
         }}
-        onSuccess={() => void drive.handleRefresh()}
+        ref={drive.fileInput}
+        tabIndex={-1}
+        type="file"
       />
-      <DriveDeleteDialogs
-        bulkDeleteDialogOpen={drive.bulkDeleteDialogOpen}
-        deleteMutation={drive.deleteMutation}
-        deleteTarget={drive.deleteTarget}
-        selectedItems={drive.selection.selectedItems}
-        setBulkDeleteDialogOpen={drive.setBulkDeleteDialogOpen}
-        setDeleteTarget={drive.setDeleteTarget}
+      <DriveSelectionBar
+        actions={drive.actions}
+        onClear={() => selection.setSelectedKeys([])}
+        selected={selection.selectedItems}
       />
+      <DriveUploadsPanel uploads={drive.uploads} />
+      {drive.canManage && selection.selectedItems.length === 0 ? (
+        <DriveMobileNew
+          folderLabel={drive.folderLabel}
+          onNewFolder={() => drive.setDialog({ kind: 'new-folder' })}
+          onUpload={drive.openFilePicker}
+        />
+      ) : null}
+      <DriveExplorerDialogs drive={drive} wsId={wsId} />
     </div>
   );
 }

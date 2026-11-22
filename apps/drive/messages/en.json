@@ -4068,6 +4068,231 @@
     "start_writing": "Start writing your document...",
     "untitled-document": "Untitled document"
   },
+  "drive": {
+    "actions": {
+      "add_to": "Add to {folder}",
+      "copy_path": "Copy path",
+      "delete_forever": "Delete forever",
+      "download": "Download",
+      "more": "More actions for {name}",
+      "move": "Move",
+      "new": "New",
+      "new_folder": "Folder",
+      "open": "Open",
+      "open_named": "Open {name}",
+      "preview": "Preview",
+      "preview_named": "Preview {name}",
+      "rename": "Rename",
+      "share": "Share",
+      "share_link": "Share link",
+      "upload": "Upload"
+    },
+    "breadcrumb": "Folder path",
+    "chips": {
+      "archive": "Archives",
+      "document": "Documents",
+      "image": "Images",
+      "pdf": "PDFs",
+      "sheet": "Spreadsheets",
+      "video": "Videos"
+    },
+    "columns": {
+      "actions": "Actions",
+      "modified": "Modified",
+      "name": "Name",
+      "size": "Size",
+      "type": "Type"
+    },
+    "common": {
+      "cancel": "Cancel",
+      "done": "Done"
+    },
+    "delete": {
+      "deleting": "Deleting",
+      "description": "This can’t be undone.",
+      "description_folders": "Folders are deleted with everything inside them. This can’t be undone.",
+      "title_many": "Delete {count} items forever?",
+      "title_one": "Delete “{name}” forever?"
+    },
+    "denied": {
+      "description": "You need the Manage Drive permission to see and change files in this workspace. Ask a workspace admin for access.",
+      "title": "You don’t have access to Drive",
+      "write_reason": "Requires the Manage Drive permission."
+    },
+    "details": {
+      "created": "Added",
+      "location": "Location",
+      "modified": "Modified",
+      "path": "Path",
+      "size": "Size",
+      "title": "Details",
+      "type": "Type"
+    },
+    "files": "Files",
+    "filters": {
+      "grid": "Grid view",
+      "list": "List view",
+      "order_asc": "Ascending order",
+      "order_desc": "Descending order",
+      "sort": {
+        "created_at": "Date added",
+        "name": "Name",
+        "size": "Size",
+        "updated_at": "Last modified"
+      },
+      "sort_label": "Sort by",
+      "type_label": "File type",
+      "view_label": "View"
+    },
+    "kinds": {
+      "archive": "Archive",
+      "audio": "Audio",
+      "code": "Code",
+      "document": "Document",
+      "folder": "Folder",
+      "image": "Image",
+      "other": "File",
+      "pdf": "PDF",
+      "sheet": "Spreadsheet",
+      "video": "Video"
+    },
+    "move": {
+      "blocked_inside": "A folder can’t move into itself.",
+      "blocked_same": "The items are already in this folder.",
+      "confirm": "Move to {folder}",
+      "description": "Choose the destination folder.",
+      "failed": "Couldn’t move the items.",
+      "failed_conflict": "An item with the same name is already in that folder.",
+      "failed_provider": "Moving isn’t available for this workspace’s storage yet.",
+      "failed_size": "This move is too large. Move fewer or smaller items.",
+      "load_failed": "Couldn’t load folders.",
+      "moved": "{count, plural, one {Moved # item} other {Moved # items}}",
+      "moving": "Moving",
+      "no_subfolders": "No folders inside this one.",
+      "partial": "Moved {moved} of {total} items. A name conflict or error stopped the rest.",
+      "title": "{count, plural, one {Move # item} other {Move # items}}",
+      "up": "Parent folder"
+    },
+    "new_folder": {
+      "create": "Create",
+      "created": "Folder created",
+      "creating": "Creating",
+      "description": "The folder is created in {folder}.",
+      "failed": "Couldn’t create the folder. A folder with this name may already exist.",
+      "invalid": "Folder names can’t contain a slash.",
+      "name": "Folder name",
+      "required": "Enter a folder name.",
+      "title": "New folder"
+    },
+    "paging": {
+      "load_more": "Load more",
+      "loaded": "Showing {loaded} of {total} items",
+      "loading": "Loading"
+    },
+    "preview": {
+      "close": "Close preview",
+      "fit": "Fit",
+      "next": "Next file",
+      "position": "{current} of {total} in {folder}",
+      "previous": "Previous file",
+      "zoom_in": "Zoom in",
+      "zoom_label": "Zoom",
+      "zoom_out": "Zoom out"
+    },
+    "search": {
+      "clear": "Clear search",
+      "label": "Search this folder",
+      "loaded_only": "The type filter covers the {count} items loaded so far.",
+      "placeholder": "Search this folder",
+      "scope": "Searching names in {folder}."
+    },
+    "sections": {
+      "files": "Files",
+      "folders": "Folders"
+    },
+    "selection": {
+      "clear": "Clear selection",
+      "count": "{count} selected",
+      "download_files_only": "Folders cannot be downloaded. Select files only.",
+      "move_limit": "Move up to {count} items at a time.",
+      "select_all": "Select all",
+      "select_item": "Select {name}",
+      "share_one": "Select one item to share.",
+      "toolbar": "Selected items"
+    },
+    "share": {
+      "copied": "Download link copied",
+      "copy_download_link": "Copy download link",
+      "copy_new": "Copy a new link",
+      "creating": "Creating",
+      "description": "Anyone with the link can download this file for a short time.",
+      "dismiss_notice": "Dismiss notice",
+      "failed": "Couldn’t create or copy the link",
+      "link": "Download link",
+      "migration_notice": "Links created before 5 Dec 2026 stop working after the storage move. Create a new link.",
+      "title": "Share {name}",
+      "works_for_hours": "{count, plural, one {The link works for # hour.} other {The link works for # hours.}} It can’t be turned off sooner.",
+      "works_for_minutes": "{count, plural, one {The link works for # minute.} other {The link works for # minutes.}} It can’t be turned off sooner.",
+      "works_short": "The link works for a short time and can’t be turned off sooner."
+    },
+    "states": {
+      "clear_filters": "Clear search and filters",
+      "empty_folder_description": "Upload files or drag them onto this page.",
+      "empty_folder_title": "This folder is empty",
+      "empty_root_description": "Upload files or drag them anywhere on this page.",
+      "empty_root_title": "Nothing here yet",
+      "error_description": "Check your connection and try again.",
+      "error_title": "Couldn’t load this folder",
+      "loading": "Loading files",
+      "no_results_description": "Try another name or file type.",
+      "no_results_query": "No results for “{query}”",
+      "no_results_title": "No matching files",
+      "retry": "Try again"
+    },
+    "storage": {
+      "almost_full": "Almost full",
+      "almost_full_banner": "Workspace storage is almost full. New uploads may fail.",
+      "full": "Storage is full",
+      "full_banner": "Workspace storage is full. Delete files to upload more.",
+      "load_failed": "Couldn’t load storage use.",
+      "title": "Storage",
+      "used_label": "Storage used",
+      "used_of": "{used} of {limit} used"
+    },
+    "toasts": {
+      "copy_failed": "Couldn’t copy",
+      "download_failed": "Couldn’t download",
+      "downloaded": "{count, plural, one {Downloaded # file} other {Downloaded # files}}",
+      "downloading": "{count, plural, one {Downloading # file} other {Downloading # files}}",
+      "path_copied": "Path copied"
+    },
+    "uploads": {
+      "cancel_all": "Cancel all uploads",
+      "cancel_named": "Cancel upload of {name}",
+      "canceled": "Canceled",
+      "close": "Close uploads",
+      "collapse": "Collapse uploads",
+      "done": "Uploaded · {size}",
+      "drop_to": "Drop to upload to {folder}",
+      "expand": "Expand uploads",
+      "failed": {
+        "denied": "You don’t have permission to upload here",
+        "network": "Connection lost during upload",
+        "quota": "Workspace storage is full",
+        "too_large": "This file is larger than the upload limit",
+        "type": "This file type isn’t allowed",
+        "unknown": "Upload failed"
+      },
+      "label": "Uploads",
+      "percent": "{percent}%",
+      "processing": "Processing",
+      "retry_named": "Retry upload of {name}",
+      "title_active": "{count, plural, one {Uploading # file} other {Uploading # files}} · {percent}%",
+      "title_done": "{count, plural, one {# upload complete} other {# uploads complete}}",
+      "title_failed": "{count, plural, one {# upload failed} other {# uploads failed}}",
+      "waiting": "Waiting"
+    }
+  },
   "dworkspace-mail": {
     "destination-addresses": "Destination Addresses"
   },

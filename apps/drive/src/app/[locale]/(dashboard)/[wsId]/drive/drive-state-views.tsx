@@ -1,108 +1,175 @@
 'use client';
 
-import { AlertTriangle, Folder, Loader2, Search } from '@tuturuuu/icons';
+import {
+  CloudUpload,
+  FolderOpen,
+  Lock,
+  RefreshCw,
+  SearchX,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import type { DriveViewMode } from './search-params';
 
-interface DriveEmptyStateProps {
-  hasSearch: boolean;
-  hasPath: boolean;
-  onResetSearch: () => void;
-}
+export function DriveLoadingState({ view }: { view: DriveViewMode }) {
+  const t = useTranslations('drive');
 
-export function DriveLoadingState() {
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
-      <Card className="overflow-hidden rounded-[28px] border-dynamic-border/80">
-        <CardContent className="space-y-4 p-5">
-          <Skeleton className="h-10 w-40 rounded-full" />
-          <Skeleton className="h-16 w-full rounded-3xl" />
-          <div className="grid gap-3 md:grid-cols-3">
-            <Skeleton className="h-28 rounded-3xl" />
-            <Skeleton className="h-28 rounded-3xl" />
-            <Skeleton className="h-28 rounded-3xl" />
+    <div aria-busy="true" className="space-y-6" role="status">
+      <span className="sr-only">{t('states.loading')}</span>
+      {view === 'grid' ? (
+        <>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-16" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(13.75rem,1fr))]">
+              {Array.from({ length: 4 }, (_, index) => (
+                <Skeleton className="h-16 rounded-2xl" key={index} />
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
-      <Card className="rounded-[28px] border-dynamic-border/80">
-        <CardContent className="space-y-3 p-5">
-          <Skeleton className="h-8 w-36 rounded-full" />
-          <Skeleton className="h-28 w-full rounded-3xl" />
-          <Skeleton className="h-16 w-full rounded-3xl" />
-        </CardContent>
-      </Card>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-12" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] md:gap-4">
+              {Array.from({ length: 8 }, (_, index) => (
+                <Skeleton className="aspect-[4/3.9] rounded-2xl" key={index} />
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-px overflow-hidden rounded-2xl border border-border bg-card">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div className="flex h-14 items-center gap-3 px-3" key={index}>
+              <Skeleton className="size-4 rounded" />
+              <Skeleton className="size-8 rounded-lg" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="hidden h-4 w-24 md:block" />
+              <Skeleton className="hidden h-4 w-16 sm:block" />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export function DriveErrorState({ onRetry }: { onRetry: () => void }) {
-  const t = useTranslations('ws-storage-objects');
-
+function StateMessage({
+  action,
+  description,
+  icon,
+  role,
+  title,
+}: {
+  action?: ReactNode;
+  description: string;
+  icon: ReactNode;
+  role?: 'alert';
+  title: string;
+}) {
   return (
-    <Card className="rounded-[28px] border-dynamic-red/20 bg-dynamic-red/5">
-      <CardContent className="flex flex-col items-center gap-4 px-6 py-14 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dynamic-red/20 bg-background/80">
-          <AlertTriangle className="h-6 w-6 text-dynamic-red" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="font-semibold text-lg">{t('error_title')}</h2>
-          <p className="max-w-xl text-muted-foreground text-sm">
-            {t('error_description')}
-          </p>
-        </div>
-        <Button type="button" variant="outline" onClick={onRetry}>
-          <Loader2 className="mr-2 h-4 w-4" />
-          {t('retry')}
-        </Button>
-      </CardContent>
-    </Card>
+    <div
+      className="flex flex-col items-center gap-4 rounded-2xl border border-border border-dashed px-6 py-16 text-center"
+      role={role}
+    >
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-accent text-muted-foreground [&_svg]:size-6">
+        {icon}
+      </span>
+      <div className="max-w-md space-y-1">
+        <h2 className="font-bold text-lg">{title}</h2>
+        <p className="text-muted-foreground text-sm">{description}</p>
+      </div>
+      {action}
+    </div>
   );
 }
 
 export function DriveEmptyState({
-  hasSearch,
-  hasPath,
-  onResetSearch,
-}: DriveEmptyStateProps) {
-  const t = useTranslations('ws-storage-objects');
+  canManage,
+  inFolder,
+  onUpload,
+}: {
+  canManage: boolean;
+  inFolder: boolean;
+  onUpload: () => void;
+}) {
+  const t = useTranslations('drive');
+  const key = inFolder ? 'empty_folder' : 'empty_root';
 
   return (
-    <Card className="rounded-[28px] border-dynamic-border/80 border-dashed bg-muted/20">
-      <CardContent className="flex flex-col items-center gap-5 px-6 py-16 text-center">
-        <div className="relative flex h-18 w-18 items-center justify-center rounded-[2rem] border border-dynamic-border bg-background shadow-sm">
-          {hasSearch ? (
-            <Search className="h-8 w-8 text-dynamic-blue" />
-          ) : (
-            <Folder className="h-8 w-8 text-dynamic-blue" />
-          )}
-          <div className="absolute -right-2 -bottom-2 rounded-full border border-dynamic-border bg-background px-2 py-1 font-medium text-[10px] text-muted-foreground uppercase tracking-[0.2em]">
-            {hasSearch ? t('search') : t('folder')}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h2 className="font-semibold text-xl">
-            {hasSearch
-              ? t('empty_search_title')
-              : hasPath
-                ? t('empty_folder_title')
-                : t('empty_root_title')}
-          </h2>
-          <p className="max-w-2xl text-muted-foreground text-sm leading-6">
-            {hasSearch
-              ? t('empty_search_description')
-              : hasPath
-                ? t('empty_folder_description')
-                : t('empty_root_description')}
-          </p>
-        </div>
-        {hasSearch ? (
-          <Button type="button" variant="outline" onClick={onResetSearch}>
-            {t('clear_search')}
+    <StateMessage
+      action={
+        canManage ? (
+          <Button onClick={onUpload} type="button">
+            <CloudUpload className="size-4" />
+            {t('actions.upload')}
           </Button>
-        ) : null}
-      </CardContent>
-    </Card>
+        ) : undefined
+      }
+      description={t(`states.${key}_description`)}
+      icon={inFolder ? <FolderOpen /> : <CloudUpload />}
+      title={t(`states.${key}_title`)}
+    />
+  );
+}
+
+export function DriveNoResultsState({
+  onClear,
+  query,
+}: {
+  onClear: () => void;
+  query: string;
+}) {
+  const t = useTranslations('drive');
+
+  return (
+    <StateMessage
+      action={
+        <Button onClick={onClear} type="button" variant="outline">
+          {t('states.clear_filters')}
+        </Button>
+      }
+      description={t('states.no_results_description')}
+      icon={<SearchX />}
+      title={
+        query
+          ? t('states.no_results_query', { query })
+          : t('states.no_results_title')
+      }
+    />
+  );
+}
+
+export function DriveErrorState({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations('drive');
+
+  return (
+    <StateMessage
+      action={
+        <Button onClick={onRetry} type="button" variant="outline">
+          <RefreshCw className="size-4" />
+          {t('states.retry')}
+        </Button>
+      }
+      description={t('states.error_description')}
+      icon={<TriangleAlert />}
+      role="alert"
+      title={t('states.error_title')}
+    />
+  );
+}
+
+export function DriveDeniedState() {
+  const t = useTranslations('drive');
+
+  return (
+    <StateMessage
+      description={t('denied.description')}
+      icon={<Lock />}
+      role="alert"
+      title={t('denied.title')}
+    />
   );
 }

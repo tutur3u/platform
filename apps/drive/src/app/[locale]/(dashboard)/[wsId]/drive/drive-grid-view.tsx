@@ -1,188 +1,173 @@
 'use client';
 
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuTrigger,
-} from '@tuturuuu/ui/context-menu';
-import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { formatBytes } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { getDriveFileKind } from './drive-file-kind';
 import { DriveGridThumbnail } from './drive-grid-thumbnail';
-import { getSelectionKey } from './drive-selection';
+import { DriveItemIcon } from './drive-item-icon';
+import { DriveItemMenu } from './drive-item-menu';
 import {
-  type DriveExplorerItemsProps,
-  formatTimestamp,
-  isFolder,
+  type DriveCollectionProps,
+  useDriveItemFormat,
 } from './drive-view-helpers';
-import { StorageObjectRowActions } from './row-actions';
 import { getStorageObjectDisplayName } from './storage-display-name';
 
-export function DriveGridView({
-  allSelected = false,
-  wsId,
-  items,
-  path,
-  onNavigate,
-  onPreview,
-  onRequestRename,
-  onRequestDelete,
-  onSelectAll,
-  onToggleSelection,
-  onMutationSuccess,
-  selectedKeys = [],
-}: DriveExplorerItemsProps) {
-  const t = useTranslations('ws-storage-objects');
+const cardClassName =
+  'group relative rounded-2xl border border-border bg-card shadow-elevation-1 transition-shadow has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-ring';
 
+function OpenButton({ label, onOpen }: { label: string; onOpen: () => void }) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-2 rounded-2xl border border-dynamic-border/80 bg-background px-3 py-2 text-sm">
-          <Checkbox
-            aria-label={t('select_all_visible')}
-            checked={allSelected}
-            onCheckedChange={(checked) => onSelectAll?.(checked === true)}
-          />
-          <span className="text-muted-foreground">
-            {t('select_all_visible')}
-          </span>
-        </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {items.map((item) => (
-          <DriveGridCard
-            key={item.id || item.name}
-            item={item}
-            path={path}
-            selected={selectedKeys.includes(getSelectionKey(path, item))}
-            wsId={wsId}
-            onMutationSuccess={onMutationSuccess}
-            onNavigate={onNavigate}
-            onPreview={onPreview}
-            onRequestDelete={onRequestDelete}
-            onRequestRename={onRequestRename}
-            onToggleSelection={onToggleSelection}
-          />
-        ))}
-      </div>
-    </div>
+    <button
+      aria-label={label}
+      className="absolute inset-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+      onClick={onOpen}
+      type="button"
+    />
   );
 }
 
-function DriveGridCard({
+function SelectBox({
+  checked,
   item,
-  onMutationSuccess,
-  onNavigate,
-  onPreview,
-  onRequestDelete,
-  onRequestRename,
-  onToggleSelection,
-  path,
-  selected,
-  wsId,
+  onToggle,
 }: {
+  checked: boolean;
   item: StorageObject;
-  path: string;
-  selected: boolean;
-} & Pick<
-  DriveExplorerItemsProps,
-  | 'wsId'
-  | 'onMutationSuccess'
-  | 'onNavigate'
-  | 'onPreview'
-  | 'onRequestDelete'
-  | 'onRequestRename'
-  | 'onToggleSelection'
->) {
-  const t = useTranslations('ws-storage-objects');
-  const folder = isFolder(item);
-  const displayName = getStorageObjectDisplayName(item);
-  const rowActions = {
-    onMutationSuccess,
-    onRequestDelete,
-    onRequestRename,
-    path,
-    row: { original: item } as Row<StorageObject>,
-    setStorageObject: onPreview,
-    wsId,
-  };
+  onToggle: DriveCollectionProps['onToggle'];
+}) {
+  const t = useTranslations('drive');
+  return (
+    <Checkbox
+      aria-label={t('selection.select_item', {
+        name: getStorageObjectDisplayName(item),
+      })}
+      checked={checked}
+      className={cn(
+        'relative z-10 bg-card',
+        !checked &&
+          'md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 md:group-has-[:focus-visible]:opacity-100'
+      )}
+      onCheckedChange={(value) => onToggle(item, value === true)}
+    />
+  );
+}
+
+export function DriveFolderSection({
+  actions,
+  folders,
+  isSelected,
+  onNavigate,
+  onToggle,
+}: DriveCollectionProps) {
+  const t = useTranslations('drive');
+  const format = useDriveItemFormat();
+  if (folders.length === 0) return null;
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div
-          className={`group relative flex h-full flex-col overflow-hidden rounded-[26px] border text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${
-            selected
-              ? 'border-primary/70 ring-1 ring-primary/30'
-              : 'border-dynamic-border/80 bg-card'
-          }`}
-        >
-          <button
-            type="button"
-            className="absolute inset-0 z-10 rounded-[26px]"
-            aria-label={displayName}
-            onClick={() =>
-              folder ? onNavigate(item.name || '') : onPreview(item)
-            }
-          />
-          <div className="relative aspect-[1.08/1] overflow-hidden border-dynamic-border/60 border-b bg-linear-to-br from-dynamic-blue/6 via-background to-dynamic-cyan/6">
-            <div
-              className="absolute top-3 left-3 z-20"
-              onClick={(event) => event.stopPropagation()}
+    <section aria-labelledby="drive-folders" className="space-y-3">
+      <h2
+        id="drive-folders"
+        className="font-bold text-muted-foreground text-sm"
+      >
+        {t('sections.folders')}
+      </h2>
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(13.75rem,1fr))]">
+        {folders.map((folder) => {
+          const name = getStorageObjectDisplayName(folder);
+          return (
+            <li
+              key={folder.name}
+              className={cn(cardClassName, 'flex items-center gap-3 p-3')}
             >
-              <Checkbox
-                aria-label={t('select_item', { name: displayName })}
-                checked={selected}
-                onCheckedChange={(checked) =>
-                  onToggleSelection?.(item, checked === true)
-                }
+              <OpenButton
+                label={t('actions.open_named', { name })}
+                onOpen={() => onNavigate(folder.name ?? '')}
               />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center p-5">
-              <div className="flex h-full w-full items-center justify-center rounded-[22px] border border-dynamic-border/70 bg-background/75 shadow-inner">
-                <DriveGridThumbnail wsId={wsId} path={path} item={item} />
-              </div>
-            </div>
-            <div className="absolute top-3 right-3">
-              <Badge className="border-dynamic-border/70 bg-background/85 text-foreground hover:bg-background/85">
-                {folder ? t('folder') : t('files')}
-              </Badge>
-            </div>
-          </div>
-          <div className="relative z-20 flex flex-1 flex-col gap-4 p-4">
-            <div className="space-y-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h3 className="line-clamp-2 font-semibold text-sm leading-6">
-                    {displayName}
-                  </h3>
-                </TooltipTrigger>
-                <TooltipContent>{displayName}</TooltipContent>
-              </Tooltip>
-              <p className="text-muted-foreground text-xs">
-                {folder
-                  ? t('folder_quick_hint')
-                  : formatTimestamp(item.updated_at)}
-              </p>
-            </div>
-            <div className="mt-auto flex items-center justify-between gap-3">
-              <div className="font-medium text-muted-foreground text-xs">
-                {folder ? '-' : formatBytes(item.metadata?.size ?? 0)}
-              </div>
-              <div onClick={(event) => event.stopPropagation()}>
-                <StorageObjectRowActions {...rowActions} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent forceMount>
-        <StorageObjectRowActions {...rowActions} menuOnly contextMenu />
-      </ContextMenuContent>
-    </ContextMenu>
+              <SelectBox
+                checked={isSelected(folder)}
+                item={folder}
+                onToggle={onToggle}
+              />
+              <DriveItemIcon item={folder} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <strong className="truncate text-sm">{name}</strong>
+                <span className="text-muted-foreground text-xs">
+                  {format.meta(folder)}
+                </span>
+              </span>
+              <DriveItemMenu actions={actions} item={folder} />
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+export function DriveFileGrid(props: DriveCollectionProps) {
+  const { actions, files, isSelected, onToggle, path, wsId } = props;
+  const t = useTranslations('drive');
+  const format = useDriveItemFormat();
+
+  return (
+    <div className="space-y-6">
+      <DriveFolderSection {...props} />
+      {files.length > 0 ? (
+        <section aria-labelledby="drive-files" className="space-y-3">
+          <h2
+            id="drive-files"
+            className="font-bold text-muted-foreground text-sm"
+          >
+            {t('sections.files')}
+          </h2>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] md:gap-4">
+            {files.map((file) => {
+              const name = getStorageObjectDisplayName(file);
+              const isImage = getDriveFileKind(file) === 'image';
+              return (
+                <li
+                  key={file.id}
+                  className={cn(cardClassName, 'flex flex-col gap-2 p-2')}
+                >
+                  <OpenButton
+                    label={t('actions.preview_named', { name })}
+                    onOpen={() => actions.onOpen(file)}
+                  />
+                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-muted">
+                    {isImage ? (
+                      <DriveGridThumbnail item={file} path={path} wsId={wsId} />
+                    ) : (
+                      <DriveItemIcon
+                        className="size-full rounded-xl"
+                        iconClassName="size-9"
+                        item={file}
+                      />
+                    )}
+                    <span className="absolute top-2 left-2 flex">
+                      <SelectBox
+                        checked={isSelected(file)}
+                        item={file}
+                        onToggle={onToggle}
+                      />
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 pb-1 pl-2">
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <strong className="truncate text-sm">{name}</strong>
+                      <span className="truncate text-muted-foreground text-xs">
+                        {format.meta(file)}
+                      </span>
+                    </span>
+                    <DriveItemMenu actions={actions} item={file} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   );
 }

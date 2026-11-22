@@ -1,60 +1,129 @@
 'use client';
 
-import { CheckSquare } from '@tuturuuu/icons';
+import { Download, FolderInput, Link, Trash2, X } from '@tuturuuu/icons';
+import { MAX_WORKSPACE_STORAGE_MOVE_ENTRIES } from '@tuturuuu/internal-api';
+import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
-import { FloatingBar } from '@tuturuuu/ui/floating-bar';
+import { FloatingBar, FloatingBarSeparator } from '@tuturuuu/ui/floating-bar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import type { DriveItemActions } from './drive-item-menu';
 
-interface DriveSelectionBarProps {
-  count: number;
-  onClearSelection: () => void;
-  onDelete: () => void;
-  onSelectAllVisible: () => void;
+function BarAction({
+  children,
+  disabledReason,
+  label,
+  onClick,
+  tone,
+}: {
+  children: ReactNode;
+  disabledReason: string | null;
+  label: string;
+  onClick: () => void;
+  tone?: 'destructive';
+}) {
+  const button = (
+    <Button
+      aria-label={label}
+      className={tone === 'destructive' ? 'text-destructive' : undefined}
+      disabled={disabledReason !== null}
+      onClick={onClick}
+      size="sm"
+      type="button"
+      variant="ghost"
+    >
+      {children}
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
+  );
+  if (!disabledReason) return button;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0}>{button}</span>
+      </TooltipTrigger>
+      <TooltipContent>{disabledReason}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function DriveSelectionBar({
-  count,
-  onClearSelection,
-  onDelete,
-  onSelectAllVisible,
-}: DriveSelectionBarProps) {
-  const t = useTranslations('ws-storage-objects');
+  actions,
+  onClear,
+  selected,
+}: {
+  actions: DriveItemActions;
+  onClear: () => void;
+  selected: StorageObject[];
+}) {
+  const t = useTranslations('drive');
+  if (selected.length === 0) return null;
 
-  if (count === 0) {
-    return null;
-  }
+  const hasFolders = selected.some((item) => !item.id);
+  const writeReason = actions.canManage ? null : t('denied.write_reason');
+  const only = selected.length === 1 ? selected[0] : undefined;
 
-  const selection = t('bulk_selection_count', { count });
-
-  // Inline in the page, so it keeps the bar's shape without floating chrome.
   return (
-    <FloatingBar
-      aria-label={selection}
-      className="w-fit flex-wrap bg-muted/20 shadow-none ring-dynamic-border/80 backdrop-blur-none"
-    >
-      <div className="flex items-center gap-2 px-2 font-medium text-foreground text-sm">
-        <CheckSquare className="h-4 w-4 text-dynamic-blue" />
-        {selection}
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onSelectAllVisible}
+    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--sorbet-content-bottom-clearance,0px)+1rem)] z-40 flex justify-center md:bottom-6">
+      <FloatingBar
+        aria-label={t('selection.toolbar')}
+        className="pointer-events-auto"
       >
-        {t('select_all_visible')}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={onClearSelection}
-      >
-        {t('deselect_all')}
-      </Button>
-      <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
-        {t('bulk_delete_action')}
-      </Button>
-    </FloatingBar>
+        <Button
+          aria-label={t('selection.clear')}
+          onClick={onClear}
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          <X className="size-4" />
+        </Button>
+        <strong aria-live="polite" className="px-2 text-sm">
+          {t('selection.count', { count: selected.length })}
+        </strong>
+        <FloatingBarSeparator />
+        <BarAction
+          disabledReason={
+            hasFolders ? t('selection.download_files_only') : null
+          }
+          label={t('actions.download')}
+          onClick={() => actions.onDownload(selected)}
+        >
+          <Download className="size-4" />
+        </BarAction>
+        <BarAction
+          disabledReason={only ? null : t('selection.share_one')}
+          label={t('actions.share_link')}
+          onClick={() => only && actions.onShare(only)}
+        >
+          <Link className="size-4" />
+        </BarAction>
+        <BarAction
+          disabledReason={
+            writeReason ??
+            (selected.length > MAX_WORKSPACE_STORAGE_MOVE_ENTRIES
+              ? t('selection.move_limit', {
+                  count: MAX_WORKSPACE_STORAGE_MOVE_ENTRIES,
+                })
+              : null)
+          }
+          label={t('actions.move')}
+          onClick={() => actions.onMove(selected)}
+        >
+          <FolderInput className="size-4" />
+        </BarAction>
+        <FloatingBarSeparator />
+        <BarAction
+          disabledReason={writeReason}
+          label={t('actions.delete_forever')}
+          onClick={() => actions.onDelete(selected)}
+          tone="destructive"
+        >
+          <Trash2 className="size-4" />
+        </BarAction>
+      </FloatingBar>
+    </div>
   );
 }

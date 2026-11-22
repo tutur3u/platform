@@ -4,6 +4,7 @@ import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';
 import { TTR_URL } from '@/constants/common';
+import { DriveStorageCard } from './drive/drive-storage-card';
 import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {
@@ -37,6 +38,9 @@ export function Structure({
       defaultCollapsed={defaultCollapsed}
       links={links}
       notificationPopover={notificationPopover}
+      sidebarContentAfter={({ isCollapsed }) =>
+        isCollapsed ? null : <DriveStorageCard wsId={wsId} />
+      }
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}

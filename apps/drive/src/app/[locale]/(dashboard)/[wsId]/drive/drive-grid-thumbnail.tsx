@@ -2,10 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Folder, Image as ImageIcon, Loader2 } from '@tuturuuu/icons';
-import { createWorkspaceStorageSignedUrl } from '@tuturuuu/internal-api';
+import { createWorkspaceStorageShareLink } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useState } from 'react';
+import { getSignedLinkStaleTime } from './drive-download';
 
 const IMAGE_MIME_PREFIX = 'image/';
 const imageExtensions = new Set([
@@ -86,11 +87,14 @@ export function DriveGridThumbnail({
         throw new Error('Missing file path');
       }
 
-      return createWorkspaceStorageSignedUrl(wsId, relativePath, 3600);
+      return createWorkspaceStorageShareLink(wsId, relativePath, undefined, {
+        fetch,
+      });
     },
     enabled: showImagePreview && !!relativePath,
-    staleTime: 50 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    // The server decides how long a signed link works.
+    staleTime: (query) => getSignedLinkStaleTime(query.state.data?.expiresIn),
+    select: (link) => link.url,
     refetchOnWindowFocus: false,
     retry: 1,
   });

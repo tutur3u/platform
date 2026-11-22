@@ -4068,6 +4068,231 @@
     "start_writing": "Bắt đầu viết tài liệu...",
     "untitled-document": "Tài liệu chưa có tiêu đề"
   },
+  "drive": {
+    "actions": {
+      "add_to": "Thêm vào {folder}",
+      "copy_path": "Sao chép đường dẫn",
+      "delete_forever": "Xóa vĩnh viễn",
+      "download": "Tải xuống",
+      "more": "Thao tác khác cho {name}",
+      "move": "Di chuyển",
+      "new": "Mới",
+      "new_folder": "Thư mục",
+      "open": "Mở",
+      "open_named": "Mở {name}",
+      "preview": "Xem trước",
+      "preview_named": "Xem trước {name}",
+      "rename": "Đổi tên",
+      "share": "Chia sẻ",
+      "share_link": "Chia sẻ liên kết",
+      "upload": "Tải lên"
+    },
+    "breadcrumb": "Đường dẫn thư mục",
+    "chips": {
+      "archive": "Tệp nén",
+      "document": "Tài liệu",
+      "image": "Hình ảnh",
+      "pdf": "PDF",
+      "sheet": "Bảng tính",
+      "video": "Video"
+    },
+    "columns": {
+      "actions": "Thao tác",
+      "modified": "Sửa đổi",
+      "name": "Tên",
+      "size": "Kích thước",
+      "type": "Loại"
+    },
+    "common": {
+      "cancel": "Hủy",
+      "done": "Xong"
+    },
+    "delete": {
+      "deleting": "Đang xóa",
+      "description": "Không thể hoàn tác thao tác này.",
+      "description_folders": "Thư mục sẽ bị xóa cùng toàn bộ nội dung bên trong. Không thể hoàn tác thao tác này.",
+      "title_many": "Xóa vĩnh viễn {count} mục?",
+      "title_one": "Xóa vĩnh viễn “{name}”?"
+    },
+    "denied": {
+      "description": "Bạn cần quyền Quản lý Drive để xem và thay đổi tệp trong không gian làm việc này. Hãy nhờ quản trị viên cấp quyền.",
+      "title": "Bạn chưa có quyền truy cập Drive",
+      "write_reason": "Cần quyền Quản lý Drive."
+    },
+    "details": {
+      "created": "Ngày thêm",
+      "location": "Vị trí",
+      "modified": "Sửa đổi",
+      "path": "Đường dẫn",
+      "size": "Kích thước",
+      "title": "Chi tiết",
+      "type": "Loại"
+    },
+    "files": "Tệp",
+    "filters": {
+      "grid": "Dạng lưới",
+      "list": "Dạng danh sách",
+      "order_asc": "Thứ tự tăng dần",
+      "order_desc": "Thứ tự giảm dần",
+      "sort": {
+        "created_at": "Ngày thêm",
+        "name": "Tên",
+        "size": "Kích thước",
+        "updated_at": "Sửa đổi gần nhất"
+      },
+      "sort_label": "Sắp xếp theo",
+      "type_label": "Loại tệp",
+      "view_label": "Chế độ xem"
+    },
+    "kinds": {
+      "archive": "Tệp nén",
+      "audio": "Âm thanh",
+      "code": "Mã nguồn",
+      "document": "Tài liệu",
+      "folder": "Thư mục",
+      "image": "Hình ảnh",
+      "other": "Tệp",
+      "pdf": "PDF",
+      "sheet": "Bảng tính",
+      "video": "Video"
+    },
+    "move": {
+      "blocked_inside": "Không thể di chuyển thư mục vào chính nó.",
+      "blocked_same": "Các mục đã nằm trong thư mục này.",
+      "confirm": "Di chuyển đến {folder}",
+      "description": "Chọn thư mục đích.",
+      "failed": "Không di chuyển được các mục.",
+      "failed_conflict": "Thư mục đích đã có mục cùng tên.",
+      "failed_provider": "Kho lưu trữ của không gian làm việc này chưa hỗ trợ di chuyển.",
+      "failed_size": "Lượt di chuyển quá lớn. Hãy di chuyển ít mục hơn hoặc mục nhỏ hơn.",
+      "load_failed": "Không tải được danh sách thư mục.",
+      "moved": "Đã di chuyển {count} mục",
+      "moving": "Đang di chuyển",
+      "no_subfolders": "Không có thư mục con nào.",
+      "partial": "Đã di chuyển {moved} trên {total} mục. Phần còn lại dừng do trùng tên hoặc lỗi.",
+      "title": "Di chuyển {count} mục",
+      "up": "Thư mục cha"
+    },
+    "new_folder": {
+      "create": "Tạo",
+      "created": "Đã tạo thư mục",
+      "creating": "Đang tạo",
+      "description": "Thư mục sẽ được tạo trong {folder}.",
+      "failed": "Không tạo được thư mục. Có thể đã có thư mục cùng tên.",
+      "invalid": "Tên thư mục không được chứa dấu gạch chéo.",
+      "name": "Tên thư mục",
+      "required": "Hãy nhập tên thư mục.",
+      "title": "Thư mục mới"
+    },
+    "paging": {
+      "load_more": "Tải thêm",
+      "loaded": "Đang hiển thị {loaded} trên {total} mục",
+      "loading": "Đang tải"
+    },
+    "preview": {
+      "close": "Đóng bản xem trước",
+      "fit": "Vừa khung",
+      "next": "Tệp tiếp theo",
+      "position": "{current} trên {total} trong {folder}",
+      "previous": "Tệp trước",
+      "zoom_in": "Phóng to",
+      "zoom_label": "Thu phóng",
+      "zoom_out": "Thu nhỏ"
+    },
+    "search": {
+      "clear": "Xóa tìm kiếm",
+      "label": "Tìm trong thư mục này",
+      "loaded_only": "Bộ lọc loại chỉ áp dụng cho {count} mục đã tải.",
+      "placeholder": "Tìm trong thư mục này",
+      "scope": "Đang tìm theo tên trong {folder}."
+    },
+    "sections": {
+      "files": "Tệp",
+      "folders": "Thư mục"
+    },
+    "selection": {
+      "clear": "Bỏ chọn",
+      "count": "Đã chọn {count}",
+      "download_files_only": "Không thể tải xuống thư mục. Hãy chỉ chọn tệp.",
+      "move_limit": "Mỗi lần chỉ di chuyển tối đa {count} mục.",
+      "select_all": "Chọn tất cả",
+      "select_item": "Chọn {name}",
+      "share_one": "Chọn một mục để chia sẻ.",
+      "toolbar": "Các mục đã chọn"
+    },
+    "share": {
+      "copied": "Đã sao chép liên kết tải xuống",
+      "copy_download_link": "Sao chép liên kết tải xuống",
+      "copy_new": "Sao chép liên kết mới",
+      "creating": "Đang tạo",
+      "description": "Bất kỳ ai có liên kết đều tải được tệp này trong thời gian ngắn.",
+      "dismiss_notice": "Ẩn thông báo",
+      "failed": "Không tạo hoặc sao chép được liên kết",
+      "link": "Liên kết tải xuống",
+      "migration_notice": "Các liên kết tạo trước ngày 5/12/2026 sẽ ngừng hoạt động sau khi chuyển kho lưu trữ. Hãy tạo liên kết mới.",
+      "title": "Chia sẻ {name}",
+      "works_for_hours": "Liên kết dùng được trong {count} giờ và không thể tắt sớm hơn.",
+      "works_for_minutes": "Liên kết dùng được trong {count} phút và không thể tắt sớm hơn.",
+      "works_short": "Liên kết chỉ dùng được trong thời gian ngắn và không thể tắt sớm hơn."
+    },
+    "states": {
+      "clear_filters": "Xóa tìm kiếm và bộ lọc",
+      "empty_folder_description": "Tải tệp lên hoặc kéo thả tệp vào trang này.",
+      "empty_folder_title": "Thư mục này đang trống",
+      "empty_root_description": "Tải tệp lên hoặc kéo thả tệp vào bất kỳ đâu trên trang này.",
+      "empty_root_title": "Chưa có gì ở đây",
+      "error_description": "Hãy kiểm tra kết nối rồi thử lại.",
+      "error_title": "Không tải được thư mục này",
+      "loading": "Đang tải tệp",
+      "no_results_description": "Hãy thử tên hoặc loại tệp khác.",
+      "no_results_query": "Không có kết quả cho “{query}”",
+      "no_results_title": "Không có tệp phù hợp",
+      "retry": "Thử lại"
+    },
+    "storage": {
+      "almost_full": "Sắp đầy",
+      "almost_full_banner": "Dung lượng không gian làm việc sắp đầy. Các lượt tải lên mới có thể thất bại.",
+      "full": "Dung lượng đã đầy",
+      "full_banner": "Dung lượng không gian làm việc đã đầy. Hãy xóa bớt tệp để tải thêm.",
+      "load_failed": "Không tải được mức sử dụng dung lượng.",
+      "title": "Dung lượng",
+      "used_label": "Dung lượng đã dùng",
+      "used_of": "Đã dùng {used} trên {limit}"
+    },
+    "toasts": {
+      "copy_failed": "Không sao chép được",
+      "download_failed": "Không tải xuống được",
+      "downloaded": "Đã tải xuống {count} tệp",
+      "downloading": "Đang tải xuống {count} tệp",
+      "path_copied": "Đã sao chép đường dẫn"
+    },
+    "uploads": {
+      "cancel_all": "Hủy tất cả lượt tải lên",
+      "cancel_named": "Hủy tải lên {name}",
+      "canceled": "Đã hủy",
+      "close": "Đóng danh sách tải lên",
+      "collapse": "Thu gọn danh sách tải lên",
+      "done": "Đã tải lên · {size}",
+      "drop_to": "Thả để tải lên {folder}",
+      "expand": "Mở rộng danh sách tải lên",
+      "failed": {
+        "denied": "Bạn không có quyền tải lên tại đây",
+        "network": "Mất kết nối khi đang tải lên",
+        "quota": "Dung lượng không gian làm việc đã đầy",
+        "too_large": "Tệp vượt quá giới hạn tải lên",
+        "type": "Loại tệp này không được phép",
+        "unknown": "Tải lên thất bại"
+      },
+      "label": "Tải lên",
+      "percent": "{percent}%",
+      "processing": "Đang xử lý",
+      "retry_named": "Thử tải lên lại {name}",
+      "title_active": "Đang tải lên {count} tệp · {percent}%",
+      "title_done": "Đã tải lên xong {count} tệp",
+      "title_failed": "{count} tệp tải lên thất bại",
+      "waiting": "Đang chờ"
+    }
+  },
   "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
   },

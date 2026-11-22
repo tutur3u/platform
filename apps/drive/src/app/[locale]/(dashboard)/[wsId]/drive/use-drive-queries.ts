@@ -86,11 +86,13 @@ function shouldKeepDirectoryPlaceholder(
 
 export function useWorkspaceStorageDirectoryQuery(
   wsId: string,
-  searchState: Pick<DriveSearchState, 'path' | 'q' | 'sortBy' | 'sortOrder'>
+  searchState: Pick<DriveSearchState, 'path' | 'q' | 'sortBy' | 'sortOrder'>,
+  options?: { enabled?: boolean }
 ) {
   const normalizedSearch = searchState.q.trim();
 
   return useInfiniteQuery({
+    enabled: options?.enabled ?? true,
     queryKey: driveDirectoryQueryKey(wsId, {
       ...searchState,
       q: normalizedSearch,

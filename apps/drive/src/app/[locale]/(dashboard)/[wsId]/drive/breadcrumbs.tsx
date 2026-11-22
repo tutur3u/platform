@@ -1,71 +1,62 @@
 'use client';
 
-import { ArrowLeft, ChevronRight, Folder } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { ScrollArea, ScrollBar } from '@tuturuuu/ui/scroll-area';
+import { ChevronRight } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
+import { getPathSegments } from './drive-selection';
 import { getStoragePathSegmentDisplayName } from './storage-display-name';
 
 interface DriveBreadcrumbsProps {
   path: string;
   onNavigate: (path: string) => void;
-  onNavigateUp?: () => void;
 }
 
+/** The folder trail; the current folder is the page heading. */
 export default function DriveBreadcrumbs({
   path,
   onNavigate,
-  onNavigateUp,
 }: DriveBreadcrumbsProps) {
-  const t = useTranslations('ws-storage-objects');
-  const pathSegments = path.split('/').filter(Boolean);
+  const t = useTranslations('drive');
+  const segments = getPathSegments(path);
+  const trail = [
+    { label: t('files'), path: '' },
+    ...segments.map((segment, index) => ({
+      label: getStoragePathSegmentDisplayName(segment),
+      path: segments.slice(0, index + 1).join('/'),
+    })),
+  ];
+  const current = trail.at(-1);
+  const parents = trail.slice(0, -1);
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex min-h-11 items-center gap-2 rounded-[22px] border border-dynamic-border/80 bg-muted/25 px-3 py-2">
-        {pathSegments.length > 0 && onNavigateUp ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 rounded-xl"
-            onClick={onNavigateUp}
-            aria-label={t('go_back')}
+    <nav
+      aria-label={t('breadcrumb')}
+      className="flex min-w-0 flex-1 items-center gap-1"
+    >
+      <ol className="flex min-w-0 items-center gap-1">
+        {parents.map((crumb) => (
+          <li key={crumb.path} className="flex min-w-0 items-center gap-1">
+            <button
+              type="button"
+              className="max-w-40 truncate rounded-full px-2 py-1 font-semibold text-muted-foreground text-sm hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              onClick={() => onNavigate(crumb.path)}
+            >
+              {crumb.label}
+            </button>
+            <ChevronRight
+              aria-hidden
+              className="size-3.5 shrink-0 text-muted-foreground"
+            />
+          </li>
+        ))}
+        <li className="min-w-0">
+          <h1
+            aria-current="page"
+            className="truncate px-2 font-bold text-xl tracking-tight"
           >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        ) : null}
-
-        <Button
-          type="button"
-          variant={pathSegments.length === 0 ? 'default' : 'ghost'}
-          className="h-8 rounded-xl"
-          onClick={() => onNavigate('')}
-        >
-          <Folder className="mr-2 h-4 w-4" />
-          {t('root_label')}
-        </Button>
-
-        {pathSegments.map((segment, index) => {
-          const nextPath = pathSegments.slice(0, index + 1).join('/');
-          const isCurrent = index === pathSegments.length - 1;
-
-          return (
-            <div key={nextPath} className="flex items-center gap-2">
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Button
-                type="button"
-                variant={isCurrent ? 'default' : 'ghost'}
-                className="h-8 rounded-xl"
-                onClick={() => onNavigate(nextPath)}
-              >
-                {getStoragePathSegmentDisplayName(segment)}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+            {current?.label}
+          </h1>
+        </li>
+      </ol>
+    </nav>
   );
 }

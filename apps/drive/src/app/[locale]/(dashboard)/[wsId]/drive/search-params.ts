@@ -1,6 +1,7 @@
 'use client';
 
 import { parseAsString, parseAsStringLiteral } from 'nuqs';
+import { type DriveTypeFilter, driveTypeFilters } from './drive-file-kind';
 
 export const DRIVE_FETCH_PAGE_SIZE = 20;
 
@@ -34,8 +35,11 @@ export const driveSearchParamParsers = {
   sortOrder: parseAsStringLiteral(driveSortOrderValues)
     .withDefault('desc')
     .withOptions(driveNavigationOptions),
+  type: parseAsStringLiteral(driveTypeFilters).withOptions(
+    driveNavigationOptions
+  ),
   view: parseAsStringLiteral(driveViewModes)
-    .withDefault('list')
+    .withDefault('grid')
     .withOptions(driveNavigationOptions),
 };
 
@@ -44,5 +48,15 @@ export type DriveSearchState = {
   q: string;
   sortBy: DriveSortBy;
   sortOrder: DriveSortOrder;
+  type: DriveTypeFilter | null;
   view: DriveViewMode;
 };
+
+export type DriveSearchUpdate = Partial<{
+  path: string | null;
+  q: string | null;
+  sortBy: DriveSortBy;
+  sortOrder: DriveSortOrder;
+  type: DriveTypeFilter | null;
+  view: DriveViewMode;
+}>;

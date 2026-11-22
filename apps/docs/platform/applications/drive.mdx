@@ -1,7 +1,7 @@
 ---
 title: 'Drive'
 description: 'Standalone Drive app with centralized workspace storage APIs.'
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-23"
 audience: users
 ---
 
@@ -46,6 +46,48 @@ the API error code even when the typed verification flag is absent; the challeng
 message remains visible, and a subsequent definitive denial still clears entries.
 
 Regression coverage: `apps/mobile/test/features/drive/drive_page_test.dart`.
+
+## Web file browser
+
+The web explorer lists folders before files in a grid or a list; the view, sort,
+folder path, search text and type chip live in the URL. Search matches names in
+the current folder only, because the list endpoint does not search across
+folders. Type chips (images, videos, PDFs, documents, spreadsheets, archives)
+filter the items already loaded, and the page says so while more pages remain.
+Folders stay visible under a type chip so navigation remains available.
+
+Upload with the Upload button, the phone New sheet, or by dropping files on the
+page. Each file runs the upload chain (`upload-url`, signed PUT,
+`finalize-upload`) with its own progress and cancel; at most three run at once.
+The uploads panel names the reason for a failure (too large, storage full,
+type not allowed, no permission, connection lost) and offers retry. A failed
+`finalize-upload` does not fail the upload, because the object is already
+stored and finalize only runs post-processing such as archive extraction.
+
+- **Delete** is permanent: the confirmation and its action say "Delete forever".
+- **Share** on a file copies a download link whose lifetime the share route
+  decides; the dialog shows the lifetime the route reports and offers no
+  long-lived or revocable link. Share on a folder opens its export links.
+  Until 5 January 2027 the Share dialog and the file details panel show a
+  dismissible notice that links created before the 5 December 2026 storage move
+  stop working; dismissal is kept in the viewer's browser only.
+- **Move** uses the protected move API and its 20-entry limit; the folder picker
+  blocks the current folder and a moving folder's own subtree.
+- The sidebar storage card warns from 90% of the workspace limit and turns
+  destructive at 100%; the explorer shows the same warning above the files.
+- Without `manage_drive` the explorer explains the missing permission and
+  disables write actions with that reason instead of redirecting.
+- On phones the product dock keeps destinations only and browser history owns
+  Back; a floating New button opens a sheet with Upload and Folder.
+
+The file details panel omits the uploader because the list endpoint does not
+return object owners.
+
+Regression coverage: the Drive explorer tests in
+`apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/` (`drive-explorer-client`,
+`drive-browser-state`, `drive-upload-queue`, `use-drive-uploads`,
+`drive-share-dialog`, `drive-move-dialog`, `drive-explorer-rules`) and
+`packages/internal-api/src/storage-move.test.ts` and `storage-share.test.ts`.
 
 ## Move entries between folders
 
