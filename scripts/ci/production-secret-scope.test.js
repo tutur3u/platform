@@ -117,14 +117,6 @@ test("a backup job may not read the other target's secrets", () => {
   assert.equal(violations.length, 1);
   assert.match(
     violations[0],
-    /fixture\.yaml:dump reads STAGING_DB_PASSWORD outside/u
-  );
-  assert.match(
-    violations[0],
-    /fixture\.yaml:export reads PRODUCTION_DB_PASSWORD outside/u
-  );
-  assert.match(
-    violations[0],
     /fixture\.yaml:export-staging reads PRODUCTION_DB_PASSWORD outside/u
   );
 });
@@ -149,6 +141,10 @@ test('an expression that can resolve to an unlisted environment is rejected', ()
     ALLOWED_ENVIRONMENTS.PRODUCTION_DB_PASSWORD
   );
   assert.equal(violations.length, 1);
+  assert.match(
+    violations[0],
+    /fixture\.yaml:export reads PRODUCTION_DB_PASSWORD outside/u
+  );
 });
 
 test('a job without an environment may not read a scoped secret', () => {
@@ -165,6 +161,10 @@ test('a job without an environment may not read a scoped secret', () => {
     ALLOWED_ENVIRONMENTS.STAGING_DB_PASSWORD
   );
   assert.equal(violations.length, 1);
+  assert.match(
+    violations[0],
+    /fixture\.yaml:dump reads STAGING_DB_PASSWORD outside/u
+  );
 });
 
 test('pull-request builds and unit tests use a placeholder service-role key', () => {
