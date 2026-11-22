@@ -1,3 +1,4 @@
+import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Why the publisher could not read a machine's quota or accounting.
@@ -31,3 +32,23 @@ String? usageAccountReason(AppLocalizations l10n, String? reason) =>
       'unavailable' => l10n.mastermindUsageProviderUnavailable,
       _ => null,
     };
+
+/// Whether a complete quota reading confirms that no account can run now:
+/// every account was checked within [quotaCheckStaleAfter], is not
+/// available, and reports no window whose reset has already passed.
+bool usageNoneAvailable(
+  String quotaKind,
+  List<UsageAccount> accounts,
+  DateTime now,
+) =>
+    quotaKind == 'complete' &&
+    accounts.isNotEmpty &&
+    accounts.every((account) {
+      final checkedAt = account.checkedAt;
+      return checkedAt != null &&
+          now.difference(checkedAt) <= quotaCheckStaleAfter &&
+          account.status != 'available' &&
+          account.windows.every(
+            (window) => window.resetsAt?.isAfter(now) ?? true,
+          );
+    });

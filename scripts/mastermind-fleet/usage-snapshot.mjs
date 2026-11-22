@@ -19,6 +19,7 @@ const READ_FAILURES = new Map([
   ['secret_not_a_file', 'reader_missing'],
   ['secret_file_permissions', 'reader_missing'],
   ['secret_too_short', 'reader_missing'],
+  ['usage_rpc_unreachable', 'unreachable'],
   ['usage_rpc_timeout', 'unreachable'],
   ['usage_rpc_disconnected', 'unreachable'],
 ]);

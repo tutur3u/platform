@@ -1,4 +1,4 @@
-import { answersAs, peerUrlAllowed } from './peer-lanes.mjs';
+import { describeEnvironment, peerUrlAllowed } from './peer-lanes.mjs';
 import { normalizeT3Accounting, normalizeT3Quota } from './usage-normalize.mjs';
 
 const ZONE = 'Asia/Ho_Chi_Minh';
@@ -103,11 +103,12 @@ export async function readT3Usage({
   if (!peerUrlAllowed(origin)) throw new Error('usage_origin_invalid');
   const base = new URL(origin);
   if (base.username || base.password) throw new Error('usage_origin_invalid');
-  if (
-    !(await answersAs(base, environmentId, { fetchImpl, deadline: signal }))
-  ) {
-    throw new Error('usage_environment_mismatch');
-  }
+  const descriptor = await describeEnvironment(base, environmentId, {
+    fetchImpl,
+    deadline: signal,
+  });
+  if (descriptor === 'unreachable') throw new Error('usage_rpc_unreachable');
+  if (descriptor !== 'match') throw new Error('usage_environment_mismatch');
   const ticketResponse = await fetchImpl(
     new URL('/api/auth/websocket-ticket/rpc', base),
     {

@@ -29,9 +29,16 @@ final class FleetClassifiedOutcome extends FleetMachineOutcome {
 /// A linked machine's lanes in the snapshot: T3's peer link lists thread
 /// status but not failure kinds, so failures are counted, not classified.
 final class FleetLaneOutcome extends FleetMachineOutcome {
-  const FleetLaneOutcome({required this.failed, required this.recovered});
+  const FleetLaneOutcome({
+    required this.failed,
+    required this.recovered,
+    this.partial = false,
+  });
   final int failed;
   final int recovered;
+
+  /// The snapshot's lane cap may have left out some of today's lanes.
+  final bool partial;
 }
 
 /// Nothing to count: the machine is offline, or its outcomes are not today's.
@@ -54,7 +61,7 @@ FleetMachineOutcome fleetMachineOutcome(
         ? FleetClassifiedOutcome(classified)
         : const FleetNoOutcome(offline: false);
   }
-  if (machine.status == FleetMachineStatus.offline) {
+  if (fleetMachineStatusAt(machine, now) == FleetMachineStatus.offline) {
     return const FleetNoOutcome(offline: true);
   }
   final dayStart = fleetIctDayStart(now);
@@ -66,12 +73,39 @@ FleetMachineOutcome fleetMachineOutcome(
     }
     if (lane.state == FleetLaneState.failed) {
       failed++;
-    } else if (lane.resolution == FleetLaneResolution.recovered ||
-        lane.resolution == FleetLaneResolution.quotaRecovered) {
+    } else if (lane.state == FleetLaneState.idle &&
+        (lane.resolution == FleetLaneResolution.recovered ||
+            lane.resolution == FleetLaneResolution.quotaRecovered)) {
+      // A retry still running has not recovered yet.
       recovered++;
     }
   }
-  return FleetLaneOutcome(failed: failed, recovered: recovered);
+  return FleetLaneOutcome(
+    failed: failed,
+    recovered: recovered,
+    partial:
+        !_coversToday(snapshot, FleetLaneState.failed, dayStart) ||
+        !_coversToday(snapshot, FleetLaneState.idle, dayStart),
+  );
+}
+
+/// Whether the snapshot lists every lane in [state] updated since
+/// [dayStart]. The publisher keeps each state's newest lanes under its cap,
+/// so the listed ones cover today when all of them are listed or the oldest
+/// listed one predates the day.
+bool _coversToday(
+  FleetSnapshot snapshot,
+  FleetLaneState state,
+  DateTime dayStart,
+) {
+  final total = switch (state) {
+    FleetLaneState.failed => snapshot.counts.failed,
+    FleetLaneState.idle => snapshot.counts.idle,
+    _ => 0,
+  };
+  final listed = snapshot.lanes.where((lane) => lane.state == state);
+  if (listed.length >= total) return true;
+  return listed.any((lane) => lane.updatedAt.isBefore(dayStart));
 }
 
 /// Today: per-machine outcomes. Classified where the publisher can read the
@@ -109,7 +143,8 @@ class FleetTodayOutcomesPanel extends StatelessWidget {
     final stale = switch (outcome) {
       FleetClassifiedOutcome(:final outcomes) =>
         now.difference(outcomes.observedAt) > fleetStaleAfter,
-      FleetLaneOutcome() => machine.status == FleetMachineStatus.stale,
+      FleetLaneOutcome() =>
+        fleetMachineStatusAt(machine, now) == FleetMachineStatus.stale,
       FleetNoOutcome() => false,
     };
     return AppRichRow(
@@ -136,8 +171,11 @@ class FleetTodayOutcomesPanel extends StatelessWidget {
         return outcomes.partial
             ? '$summary · ${l10n.mastermindFleetOutcomesPartial}'
             : summary;
-      case FleetLaneOutcome(:final failed, :final recovered):
-        return l10n.mastermindFleetOutcomesLanes(failed, recovered);
+      case FleetLaneOutcome(:final failed, :final recovered, :final partial):
+        final lanes = l10n.mastermindFleetOutcomesLanes(failed, recovered);
+        return partial
+            ? '$lanes · ${l10n.mastermindFleetOutcomesPartial}'
+            : lanes;
       case FleetNoOutcome(offline: true):
         return l10n.mastermindFleetOutcomesOffline;
       case FleetNoOutcome():

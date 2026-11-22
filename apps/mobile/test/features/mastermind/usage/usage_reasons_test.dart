@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
 import 'package:mobile/features/mastermind/usage/usage_content.dart';
+import 'package:mobile/features/mastermind/usage/usage_reasons.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -126,6 +127,48 @@ void main() {
     expect(usage.machines[2].quota.reason, 'reader_refused');
     expect(usage.machines[4].quota.reason, isNull);
     expect(usage.machines.first.accounts[1].windows.last.kind, 'monthly');
+  });
+
+  test('confirms no account can run only on fresh, unexpired evidence', () {
+    final now = DateTime.utc(2026, 11, 22, 3, 15);
+    UsageAccount limited({
+      Duration checkedAgo = const Duration(minutes: 5),
+      DateTime? resetsAt,
+    }) => (
+      id: 'personal',
+      provider: 'claudeAgent',
+      instance: 'personal',
+      email: null,
+      plan: null,
+      checkedAt: now.subtract(checkedAgo),
+      status: 'limited',
+      reason: 'weekly',
+      windows: [(kind: 'weekly', usedPercent: 100.0, resetsAt: resetsAt)],
+    );
+    expect(usageNoneAvailable('complete', [limited()], now), isTrue);
+    expect(
+      usageNoneAvailable('complete', [
+        limited(resetsAt: now.add(const Duration(hours: 1))),
+      ], now),
+      isTrue,
+    );
+    // A check older than the account limit no longer confirms it.
+    expect(
+      usageNoneAvailable('complete', [
+        limited(checkedAgo: const Duration(minutes: 20)),
+      ], now),
+      isFalse,
+    );
+    // The limit's reset has passed, so the account may run again.
+    expect(
+      usageNoneAvailable('complete', [
+        limited(resetsAt: now.subtract(const Duration(minutes: 1))),
+      ], now),
+      isFalse,
+    );
+    // A partial reading may have left an available account out.
+    expect(usageNoneAvailable('partial', [limited()], now), isFalse);
+    expect(usageNoneAvailable('complete', const [], now), isFalse);
   });
 
   testWidgets('says why each machine has no current quota', (tester) async {

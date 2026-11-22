@@ -168,7 +168,13 @@ test('names why each machine was not read without leaking the failure', async ()
   // A changed reason alone is a new snapshot, so a renewed reader publishes.
   const renewed = usageCollector({
     root: '/fixture',
-    configs: [{ id: 'refused', environmentId: 'refused', origin: 'http://127.0.0.1:3773' }],
+    configs: [
+      {
+        id: 'refused',
+        environmentId: 'refused',
+        origin: 'http://127.0.0.1:3773',
+      },
+    ],
     readSecret: () => 'fixture-bearer',
     now,
     collect: async () => {
@@ -180,7 +186,13 @@ test('names why each machine was not read without leaking the failure', async ()
     (
       await usageCollector({
         root: '/fixture',
-        configs: [{ id: 'refused', environmentId: 'refused', origin: 'http://127.0.0.1:3773' }],
+        configs: [
+          {
+            id: 'refused',
+            environmentId: 'refused',
+            origin: 'http://127.0.0.1:3773',
+          },
+        ],
         readSecret: () => 'fixture-bearer',
         now,
         collect: async () => {

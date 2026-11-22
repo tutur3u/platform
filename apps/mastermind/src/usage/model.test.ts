@@ -54,7 +54,10 @@ describe('usage readiness', () => {
       reason: 'reader_refused',
     });
     const legacy = machine({ quota: { kind: 'unavailable' }, accounts: [] });
-    expect(readiness(legacy, [], NOW)).toEqual({ kind: 'unread', reason: null });
+    expect(readiness(legacy, [], NOW)).toEqual({
+      kind: 'unread',
+      reason: null,
+    });
     const limited = machine({
       accounts: [
         account({ status: { kind: 'limited', reason: 'weekly' } }),
@@ -67,6 +70,28 @@ describe('usage readiness', () => {
     expect(readiness(limited, limited.accounts, NOW).kind).toBe(
       'none_available'
     );
+  });
+
+  it('does not say no account can run on old, expired or partial evidence', () => {
+    const limited = { status: { kind: 'limited', reason: 'weekly' } } as const;
+    const old = machine({
+      accounts: [account({ ...limited, checkedAt: at(20 * 60_000) })],
+    });
+    expect(readiness(old, old.accounts, NOW).kind).toBe('unconfirmed');
+    const reset = machine({
+      accounts: [
+        account({
+          ...limited,
+          windows: [{ kind: 'weekly', usedPercent: 100, resetsAt: at(60_000) }],
+        }),
+      ],
+    });
+    expect(readiness(reset, reset.accounts, NOW).kind).toBe('unconfirmed');
+    const partial = machine({
+      quota: { kind: 'partial', observedAt: at(20_000) },
+      accounts: [account(limited)],
+    });
+    expect(readiness(partial, partial.accounts, NOW).kind).toBe('unconfirmed');
   });
 
   it('draws a monthly row only when the provider reports one', () => {

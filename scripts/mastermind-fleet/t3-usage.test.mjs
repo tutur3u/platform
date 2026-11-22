@@ -179,3 +179,24 @@ test('sends no bearer when the configured environment identity differs', async (
   assert.equal(calls.length, 1);
   assert.equal(calls[0][1].authorization, undefined);
 });
+
+test('reports an unreachable descriptor as unreachable, not a mismatch', async () => {
+  const { usageReadFailure } = await import('./usage-snapshot.mjs');
+  const calls = [];
+  const error = await readT3Usage({
+    origin: 'https://t3.example.com',
+    environmentId: 'fixture-environment',
+    bearer: 'test-local-bearer',
+    async fetchImpl(url, options) {
+      calls.push([url, options.headers]);
+      throw new TypeError('fetch failed');
+    },
+    openSocket() {
+      assert.fail('should not connect');
+    },
+  }).catch((caught) => caught);
+  assert.equal(error.message, 'usage_rpc_unreachable');
+  assert.equal(usageReadFailure(error), 'unreachable');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][1].authorization, undefined);
+});

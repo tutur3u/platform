@@ -409,9 +409,11 @@ records the product rules of the shell entry and every tab.
   so a renewed reader publishes at once. Accounts carry at most two quota
   windows (`session`, `weekly` or `monthly`, exhausted windows first, so older
   clients still parse them), and a signed-in provider that reports no window
-  reads `not_reported`. Sources T3 marks `missing` (provider not installed)
-  or `refreshing` (provisional read) do not make accounting partial; the
-  partial line names the machines and the unpriced record count. Web and the
+  reads `not_reported`. A source T3 marks `missing` (provider not installed)
+  does not make accounting partial; a source still `refreshing` does, since
+  its scan can add records. The partial line names the machines and the
+  unpriced record count. An unreachable environment descriptor reads
+  `unreachable`, not `environment_mismatch`. Web and the
   Mastermind Worker must accept these fields before a publisher that emits
   them is installed, since the older contract refuses the write. Regression
   coverage: `scripts/mastermind-fleet/usage-normalize.test.mjs`,
@@ -424,10 +426,15 @@ records the product rules of the shell entry and every tab.
   after a linked T3 continuation completes. Missing or unknown structured
   failures are unclassified. T3's peer link lists thread status but not
   failure kinds, so only the publishing machine has classified outcomes.
-  Every other online or stale machine shows its failed lanes and its lanes
-  recovered after a retry, updated since ICT midnight, with that reason; an
-  offline machine says outcomes are not collected, and outcomes from another
-  day read unavailable. Publisher and machine timestamps show stale after two
+  Every other online or stale machine shows its failed lanes and its idle
+  lanes recovered after a retry, updated since ICT midnight, with that
+  reason; a retry still running is not counted as recovered. A peer silent
+  past the two-minute limit shows Stale, as on the Machines card. When the
+  snapshot's 300-lane cap may have cut today's failed or idle lanes, the row
+  says partial coverage. An offline machine says outcomes are not collected,
+  and outcomes from another day read unavailable. "No account can run now"
+  needs a complete quota reading in which every account was checked within
+  15 minutes and no reported window has passed its reset. Publisher and machine timestamps show stale after two
   minutes. Account quota freshness uses the provider’s original check time,
   judged on a 15-minute limit (`FLEET_USAGE_ACCOUNT_STALE_MS`) because T3
   rechecks some providers' limits only every two to five minutes. Regression

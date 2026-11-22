@@ -30,23 +30,38 @@ const LINK_EXPIRES_AT_HEADER = 't3-link-expires-at';
 const DESCRIPTOR_PATH = '/.well-known/t3/environment';
 
 /**
- * Whether `url` answers as `environmentId` on T3's unauthenticated
- * environment descriptor, checked before any credential is sent there.
+ * How `url` answers on T3's unauthenticated environment descriptor, checked
+ * before any credential is sent there: `match`, `mismatch` (another
+ * environment, or a non-T3 reply) or `unreachable` (no HTTP answer).
  */
-export async function answersAs(url, environmentId, { fetchImpl, deadline }) {
+export async function describeEnvironment(
+  url,
+  environmentId,
+  { fetchImpl, deadline }
+) {
+  let response;
   try {
-    const response = await fetchImpl(new URL(DESCRIPTOR_PATH, url).href, {
+    response = await fetchImpl(new URL(DESCRIPTOR_PATH, url).href, {
       method: 'GET',
       headers: { accept: 'application/json' },
       redirect: 'error',
       signal: signalFor(4_000, deadline),
     });
-    if (!response.ok) return false;
-    const descriptor = await response.json();
-    return descriptor?.environmentId === environmentId;
   } catch {
-    return false;
+    return 'unreachable';
   }
+  if (!response.ok) return 'mismatch';
+  try {
+    const descriptor = await response.json();
+    return descriptor?.environmentId === environmentId ? 'match' : 'mismatch';
+  } catch {
+    return 'mismatch';
+  }
+}
+
+/** Whether `url` answers as `environmentId` on T3's environment descriptor. */
+export async function answersAs(url, environmentId, options) {
+  return (await describeEnvironment(url, environmentId, options)) === 'match';
 }
 
 /** Tailscale names and its IPv6 range, which T3 also trusts over HTTP. */

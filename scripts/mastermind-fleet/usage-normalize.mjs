@@ -254,9 +254,12 @@ export function normalizeT3Accounting(summary, { trackSources = false } = {}) {
         rows.length !== summary.buckets.length ||
         rows.length > BUCKET_MAX ||
         !summary.sources.length ||
-        // A provisional read is complete as of readAt while T3 keeps scanning;
-        // the client's freshness limit covers its age.
-        summary.sources.some((source) => !COMPLETE_SOURCE.has(source?.status))
+        // A missing store is a provider that is not installed. A source still
+        // refreshing may add records, so its totals are partial.
+        summary.sources.some(
+          (source) =>
+            !COMPLETE_SOURCE.has(source?.status) || source?.refreshing === true
+        )
           ? 'partial'
           : 'complete',
       observedAt,

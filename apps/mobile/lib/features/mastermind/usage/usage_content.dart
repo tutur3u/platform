@@ -184,9 +184,7 @@ class _ReadinessRow extends StatelessWidget {
         : machine.quota.kind == 'unavailable'
         ? usageUnreadReason(l10n, machine.quota.reason) ??
               l10n.mastermindUsageNoConfirmedQuota
-        : current &&
-              listed.isNotEmpty &&
-              listed.every((account) => account.status != 'available')
+        : current && usageNoneAvailable(machine.quota.kind, listed, now)
         ? l10n.mastermindUsageNoAccountAvailable
         : l10n.mastermindUsageNoConfirmedQuota;
     return AppRichRow(

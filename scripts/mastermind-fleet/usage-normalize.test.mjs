@@ -215,8 +215,16 @@ test('reports monthly limits and names a signed-in provider without windows', ()
           instanceId: 'cursor',
           driver: 'cursor',
           usageLimits: limits([
-            { kind: 'monthly', usedPercent: 100, resetsAt: '2026-11-26T03:52:28.283Z' },
-            { kind: 'monthly', usedPercent: 100, resetsAt: '2026-11-26T03:52:28.283Z' },
+            {
+              kind: 'monthly',
+              usedPercent: 100,
+              resetsAt: '2026-11-26T03:52:28.283Z',
+            },
+            {
+              kind: 'monthly',
+              usedPercent: 100,
+              resetsAt: '2026-11-26T03:52:28.283Z',
+            },
           ]),
         },
         {
@@ -267,15 +275,17 @@ test('reports monthly limits and names a signed-in provider without windows', ()
   assert.deepEqual(silent.status, { kind: 'unknown', reason: 'not_reported' });
 });
 
-test('treats a missing provider store and a provisional refresh as complete', () => {
+test('treats a missing provider store as complete and a refresh as partial', () => {
   const summary = (sources) =>
     normalizeT3Accounting({ readAt: NOW.toISOString(), sources, buckets: [] });
   assert.equal(
-    summary([
-      { status: 'ok', refreshing: true },
-      { status: 'missing' },
-    ]).accounting.kind,
+    summary([{ status: 'ok' }, { status: 'missing' }]).accounting.kind,
     'complete'
+  );
+  assert.equal(
+    summary([{ status: 'ok', refreshing: true }, { status: 'missing' }])
+      .accounting.kind,
+    'partial'
   );
   assert.equal(
     summary([{ status: 'ok' }, { status: 'error' }]).accounting.kind,

@@ -29,6 +29,21 @@ export function windowKinds(account: Account) {
   );
 }
 
+/**
+ * The account was checked recently, is not available, and no window it
+ * reports has reached its reset, so the limit still holds.
+ */
+function confirmedUnavailable(account: Account, now: number) {
+  return (
+    account.checkedAt !== null &&
+    !accountStale(account, now) &&
+    account.status.kind !== 'available' &&
+    account.windows.every(
+      (window) => window.resetsAt === null || Date.parse(window.resetsAt) > now
+    )
+  );
+}
+
 export type Readiness =
   | { kind: 'available'; instances: string[] }
   | { kind: 'unread'; reason: UnreadReason | null }
@@ -58,10 +73,13 @@ export function readiness(
         .map((account) => account.instance)
     : [];
   if (instances.length) return { kind: 'available', instances };
+  // Only a complete, current reading whose every account is freshly
+  // confirmed unable to run may say that none can.
   if (
     current &&
+    quota.kind === 'complete' &&
     accounts.length &&
-    accounts.every((account) => account.status.kind !== 'available')
+    accounts.every((account) => confirmedUnavailable(account, now))
   ) {
     return { kind: 'none_available' };
   }
