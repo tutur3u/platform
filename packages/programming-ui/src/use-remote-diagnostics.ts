@@ -104,11 +104,13 @@ export function useRemoteDiagnostics({
   latest.current = files;
   // When this browser last changed a file; a change that follows it by more
   // than the idle delay came from the room.
-  const editedAt = useRef(0);
+  const editedAt = useRef(Number.NEGATIVE_INFINITY);
+  // A local edit's check is armed until its timer fires, whatever room changes land meanwhile.
+  const armed = useRef(false);
   useEffect(
     () =>
       localEdits?.(() => {
-        editedAt.current = Date.now();
+        editedAt.current = performance.now();
       }),
     [localEdits]
   );
@@ -134,9 +136,17 @@ export function useRemoteDiagnostics({
   const checkable = size === 'ok';
   // An edit aborts the check in flight; the idle delay settles the next one.
   useEffect(() => {
-    if (!remote || !checkable) return;
-    if (localEdits && Date.now() - editedAt.current > checkIdleMs(language))
+    if (!remote || !checkable) {
+      armed.current = false;
       return;
+    }
+    if (
+      localEdits &&
+      !armed.current &&
+      performance.now() - editedAt.current > checkIdleMs(language)
+    )
+      return;
+    armed.current = true;
     // A new hash aborts the check in flight and drops the pending settle, so
     // undoing back to the aborted text waits for the idle delay like any edit.
     if (settledHash.current !== hash) {
@@ -147,6 +157,7 @@ export function useRemoteDiagnostics({
       setSettled(undefined);
     }
     const timer = setTimeout(() => {
+      armed.current = false;
       if (checkedHash.current !== hash)
         setSettled((value) => ({
           hash,

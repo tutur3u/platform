@@ -414,3 +414,20 @@ it('ignores a room change that long follows a local edit which changed nothing',
   await idle(IDLE * 2);
   expect(calls).toHaveLength(0);
 });
+
+it('still checks a local edit when room edits land after the idle window and keep changing the text', async () => {
+  const { calls, edit, typed } = mount((payload) => ok(payload), {
+    localOnly: true,
+  });
+  await typed();
+  edit('int local;');
+  await idle(1400);
+  edit('int local; int r1;');
+  await idle(200);
+  edit('int local; int r1; int r2;');
+  await idle(IDLE * 4);
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.payload.files[0]!.content).toBe(
+    'int local; int r1; int r2;'
+  );
+});

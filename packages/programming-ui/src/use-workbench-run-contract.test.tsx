@@ -306,3 +306,23 @@ it('shows a conflicting manual Retry instead of sending it again under a new id'
   expect(payloads[2]!.requestId).toBe(payloads[1]!.requestId);
   expect(payloads[1]!.requestId).not.toBe(payloads[0]!.requestId);
 });
+
+it('retries under the id sent after the runner wait, not the first one', async () => {
+  vi.useFakeTimers();
+  const { result, payloads } = mount(async () => {
+    throw refused(429, 'PLAYGROUND_BUSY', 2);
+  });
+  act(() => result.current.runOperation('run'));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2500);
+  });
+  expect(payloads).toHaveLength(2);
+  expect(result.current.run.isError).toBe(true);
+  act(() => result.current.run.mutate(result.current.run.variables!));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10);
+  });
+  expect(payloads).toHaveLength(3);
+  expect(payloads[2]!.requestId).toBe(payloads[1]!.requestId);
+  expect(payloads[1]!.requestId).not.toBe(payloads[0]!.requestId);
+});
