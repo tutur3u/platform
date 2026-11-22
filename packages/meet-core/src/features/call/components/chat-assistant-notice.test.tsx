@@ -142,7 +142,7 @@ it('states the 18+ rule where room chat offers @mira and while a message mention
   showChat();
   // The empty chat invites people to ask Mira, so it carries the rule.
   expect(
-    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+    screen.getAllByText(adults.notice, { ignore: '.sr-only' })
   ).toHaveLength(1);
   expect(
     screen.getByRole('button', { name: 'Mira', description: adults.notice })
@@ -151,7 +151,7 @@ it('states the 18+ rule where room chat offers @mira and while a message mention
   expect(composer.getAttribute('aria-describedby')).toBeNull();
   fireEvent.change(composer, { target: { value: '@mira summarize' } });
   expect(
-    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+    screen.getAllByText(adults.notice, { ignore: '.sr-only' })
   ).toHaveLength(2);
   expect(
     document.getElementById(composer.getAttribute('aria-describedby') ?? '')
@@ -159,7 +159,7 @@ it('states the 18+ rule where room chat offers @mira and while a message mention
   ).toBe(adults.notice);
   fireEvent.change(composer, { target: { value: 'hello everyone' } });
   expect(
-    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+    screen.getAllByText(adults.notice, { ignore: '.sr-only' })
   ).toHaveLength(1);
 });
 

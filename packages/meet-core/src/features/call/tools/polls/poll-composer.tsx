@@ -11,6 +11,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../../live-assistant/mira-adult-notice';
 import type { PollActionResult } from '../../lib/polls-client';
 import type { PollAction } from '../../server/polls';
 import { ToolAction, ToolIconAction } from '../tool-ui';
@@ -124,9 +125,11 @@ export function PollComposer({
         <ToolAction
           icon={Sparkles}
           label={t('mira_draft')}
+          aria-describedby={`${id}-adults`}
           disabled={busy}
           onClick={() => setMode('mira')}
         />
+        <MiraAdultNotice id={`${id}-adults`} className="basis-full" />
       </div>
     );
 
@@ -281,13 +284,17 @@ export function PollComposer({
             />
           </>
         ) : (
-          <ToolAction
-            type="submit"
-            variant="default"
-            icon={Sparkles}
-            label={t('mira_draft')}
-            busy={busy}
-          />
+          <>
+            <MiraAdultNotice id={`${id}-adults`} className="basis-full" />
+            <ToolAction
+              type="submit"
+              variant="default"
+              icon={Sparkles}
+              label={t('mira_draft')}
+              aria-describedby={`${id}-adults`}
+              busy={busy}
+            />
+          </>
         )}
         <ToolAction
           icon={X}

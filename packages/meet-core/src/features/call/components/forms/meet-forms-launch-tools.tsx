@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../../live-assistant/mira-adult-notice';
 import {
   draftMeetForm,
   launchMeetForm,
@@ -170,9 +171,14 @@ export function MeetFormsLaunchTools({
               size="sm"
               variant="outline"
               disabled={!prompt.trim() || draft.isPending}
+              aria-describedby={`${fieldId}-draft-adults`}
               onClick={() => draft.mutate()}
             >
               {copy.draft}
+              <MiraAdultNotice
+                variant="compact"
+                id={`${fieldId}-draft-adults`}
+              />
             </Button>
             {miraDraft && (
               <div className="space-y-2 rounded-md bg-muted p-3">

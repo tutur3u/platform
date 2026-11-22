@@ -5,7 +5,6 @@ import { ChartColumn, Sparkles, X } from '@tuturuuu/icons';
 import {
   type PollDefinition,
   type PollResponse,
-  type PollResults,
   type ProjectedPoll,
   pollDefinitionSchema,
 } from '@tuturuuu/realtime/meet/room-polls';
@@ -13,7 +12,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useLocale, useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
 import {
   notifyPollMutation,
   type PollActionResult,
@@ -23,6 +22,8 @@ import {
   type useCallPolls,
 } from '../lib/polls-client';
 import type { PollAction } from '../server/polls';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
+import { PollResultList } from './poll-result-list';
 import { ControlButton } from './control-bar';
 import { ResizableCallPanel } from './resizable-call-panel';
 
@@ -181,6 +182,7 @@ function PollComposer({
   onSubmit: (action: PollAction) => Promise<unknown>;
 }) {
   const t = useTranslations('meet.call.polls');
+  const adultNoticeId = useId();
   const [mode, setMode] = useState<'manual' | 'mira'>();
   const [type, setType] = useState<PollDefinition['type']>('single_choice');
   const [question, setQuestion] = useState('');
@@ -250,9 +252,11 @@ function PollComposer({
           size="sm"
           variant="outline"
           disabled={busy}
+          aria-describedby={adultNoticeId}
           onClick={() => setMode('mira')}
         >
           <Sparkles className="size-4" /> {t('mira_draft')}
+          <MiraAdultNotice variant="compact" id={adultNoticeId} />
         </Button>
       </div>
     );
@@ -347,7 +351,15 @@ function PollComposer({
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={busy}>
+        {mode === 'mira' && (
+          <MiraAdultNotice id={adultNoticeId} className="basis-full" />
+        )}
+        <Button
+          type="submit"
+          size="sm"
+          disabled={busy}
+          aria-describedby={mode === 'mira' ? adultNoticeId : undefined}
+        >
           {t('save_draft')}
         </Button>
         <Button
@@ -382,6 +394,7 @@ function PollCard({
   summary?: string;
 }) {
   const t = useTranslations('meet.call.polls');
+  const adultNoticeId = useId();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { id: pollId } = poll;
   return (
@@ -410,7 +423,7 @@ function PollCard({
       )}
       {poll.status !== 'draft' &&
         (poll.results ? (
-          <ResultList results={poll.results} />
+          <PollResultList results={poll.results} />
         ) : (
           <p className="text-muted-foreground">{t('hidden')}</p>
         ))}
@@ -462,11 +475,13 @@ function PollCard({
               size="sm"
               variant="outline"
               disabled={busy}
+              aria-describedby={adultNoticeId}
               onClick={() =>
                 onAction({ action: 'mira_summarize', pollId, locale })
               }
             >
               <Sparkles className="size-4" /> {t('mira_summarize')}
+              <MiraAdultNotice variant="compact" id={adultNoticeId} />
             </Button>
           )}
           {(['csv', 'json'] as const).map((format) => (
@@ -640,61 +655,5 @@ function PollBallot({
         )}
       </fieldset>
     </form>
-  );
-}
-
-function ResultList({ results }: { results: PollResults }) {
-  const t = useTranslations('meet.call.polls');
-  const locale = useLocale();
-  return (
-    <div className="space-y-2 rounded-md bg-muted/40 p-2">
-      <p className="text-muted-foreground">
-        {t('responses', { count: results.responseCount })}
-      </p>
-      {results.average !== undefined && (
-        <p>
-          {t('average', {
-            value: new Intl.NumberFormat(locale, {
-              maximumFractionDigits: 2,
-            }).format(results.average),
-          })}
-        </p>
-      )}
-      {results.tally.length > 0 && (
-        <ul className="space-y-2">
-          {results.tally.map(({ label, count }, index) => (
-            <li key={`${index}-${label}`}>
-              <div className="flex min-w-0 justify-between gap-2">
-                <span className="min-w-0 wrap-break-word">{label}</span>
-                <span className="shrink-0 tabular-nums">{count}</span>
-              </div>
-              <div
-                aria-hidden
-                className="h-1 overflow-hidden rounded-full bg-muted"
-              >
-                <div
-                  className="h-full rounded-full bg-primary motion-safe:transition-[width] motion-safe:duration-300"
-                  style={{
-                    width: `${results.responseCount ? (100 * count) / results.responseCount : 0}%`,
-                  }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!!results.answers?.length && (
-        <ul className="max-h-40 space-y-1 overflow-y-auto">
-          {results.answers.map((answer, index) => (
-            <li
-              key={`${index}-${answer}`}
-              className="wrap-break-word whitespace-pre-wrap border-border border-t py-1"
-            >
-              {answer}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   );
 }

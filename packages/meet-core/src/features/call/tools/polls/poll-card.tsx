@@ -14,7 +14,8 @@ import type { ProjectedPoll } from '@tuturuuu/realtime/meet/room-polls';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { MiraAdultNotice } from '../../../live-assistant/mira-adult-notice';
 import { pollExportUrl } from '../../lib/polls-client';
 import type { PollAction } from '../../server/polls';
 import { ToolAction, toolActionClass } from '../tool-ui';
@@ -39,6 +40,7 @@ export function PollCard({
   summary?: string;
 }) {
   const t = useTranslations('meet.call.polls');
+  const adultNoticeId = useId();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { id: pollId } = poll;
   return (
@@ -123,14 +125,18 @@ export function PollCard({
             </>
           )}
           {poll.status !== 'draft' && (
-            <ToolAction
-              icon={Sparkles}
-              label={t('mira_summarize')}
-              disabled={busy}
-              onClick={() =>
-                onAction({ action: 'mira_summarize', pollId, locale })
-              }
-            />
+            <>
+              <ToolAction
+                icon={Sparkles}
+                label={t('mira_summarize')}
+                aria-describedby={adultNoticeId}
+                disabled={busy}
+                onClick={() =>
+                  onAction({ action: 'mira_summarize', pollId, locale })
+                }
+              />
+              <MiraAdultNotice id={adultNoticeId} className="basis-full" />
+            </>
           )}
           {(['csv', 'json'] as const).map((format) => (
             <Button

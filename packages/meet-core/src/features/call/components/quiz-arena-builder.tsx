@@ -15,6 +15,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useId, useState } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import {
   ARENA_GRADES,
   ARENA_SUBJECTS,
@@ -113,6 +114,7 @@ export function QuizArenaBuilder({
   onCancel?: () => void;
 }) {
   const t = useTranslations('meet.call.quizArena');
+  const adultNoticeId = useId();
   const [subject, setSubject] = useState<ArenaSubject>('general');
   const [grade, setGrade] = useState<ArenaGrade>('10');
   const [topic, setTopic] = useState('');
@@ -352,12 +354,14 @@ export function QuizArenaBuilder({
         <Button
           disabled={busy}
           className="bg-dynamic-purple text-background hover:bg-dynamic-purple/90"
+          aria-describedby={adultNoticeId}
           onClick={() =>
             onAction({ action: 'mira_generate_board', request, config })
           }
         >
           <Sparkles className="size-4" />
           {busy ? t('generating') : t('generate_with_mira')}
+          <MiraAdultNotice variant="compact" id={adultNoticeId} />
         </Button>
         {courses === null && (
           <Button
