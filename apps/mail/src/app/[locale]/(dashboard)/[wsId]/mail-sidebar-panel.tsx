@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Mail, PenLine, Settings } from '@tuturuuu/icons';
 import { listMailThreads } from '@tuturuuu/internal-api';
 import {
+  mailHistoryHref,
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -106,7 +107,7 @@ export function MailSidebarPanel({
       connectedByDefault
     );
     const nextPath = resolveSelectionPathname(pathname, selection);
-    window.history.replaceState(null, '', `${nextPath}?${params}`);
+    window.history.replaceState(null, '', mailHistoryHref(nextPath, params));
     closeOnMobile?.();
   };
   const manageAccounts = () => {

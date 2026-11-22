@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { TTR_URL } from '@/constants/common';
 import { getMailFolderHref, isMailFolder } from './mail-folders';
+import { mailHistoryHref } from './mail-source-selection';
 import { MailSidebarPanel } from './mail-sidebar-panel';
 import { MailboxSelectionProvider } from './mailbox-selection';
 
@@ -71,11 +72,7 @@ export function Structure({
     nextParams.set('compose', '1');
     const nextQuery = nextParams.toString();
 
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
+    window.history.replaceState(null, '', mailHistoryHref(pathname, nextQuery));
   }
 
   return (

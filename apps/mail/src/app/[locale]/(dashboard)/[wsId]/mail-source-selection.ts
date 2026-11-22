@@ -1,3 +1,4 @@
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { isMailFolder, type MailFolder } from './mail-folders';
 
 /** Folders every connected Gmail or Outlook account exposes. */
@@ -116,4 +117,18 @@ export function resolveSelectionPathname(
   }
   segments[segments.length - 1] = 'inbox';
   return segments.join('/');
+}
+
+/**
+ * The document URL for an in-place history update. `usePathname()` reports
+ * the app-relative path, so the app base (`/mail` on the shared origin) is
+ * restored before the browser URL is replaced.
+ */
+export function mailHistoryHref(
+  appPathname: string,
+  query: string,
+  basePath?: string
+) {
+  const path = withAppBase(appPathname || '/', basePath);
+  return query ? `${path}?${query}` : path;
 }

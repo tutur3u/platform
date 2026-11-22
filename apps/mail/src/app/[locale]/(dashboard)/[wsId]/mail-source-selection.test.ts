@@ -4,6 +4,7 @@ import {
   CONNECTED_MAIL_FOLDERS,
   getSourceFolderHref,
   isConnectedMailFolder,
+  mailHistoryHref,
   resolveConnectedAccountId,
   resolveConnectedMailFolder,
   resolveSelectionPathname,
@@ -169,5 +170,25 @@ describe('resolveSelectionPathname', () => {
         mailboxId: 'm',
       })
     ).toBe('/en/personal/starred');
+  });
+});
+
+describe('mailHistoryHref', () => {
+  it('keeps the shared-origin app base on in-place URL updates', () => {
+    expect(mailHistoryHref('/personal/inbox', 'compose=1', '/mail')).toBe(
+      '/mail/personal/inbox?compose=1'
+    );
+    expect(
+      mailHistoryHref('/personal/sent', 'mailbox=m&connected=', '/mail')
+    ).toBe('/mail/personal/sent?mailbox=m&connected=');
+  });
+
+  it('leaves root-hosted paths unchanged and omits an empty query', () => {
+    expect(mailHistoryHref('/personal/inbox', 'compose=1', '')).toBe(
+      '/personal/inbox?compose=1'
+    );
+    expect(mailHistoryHref('/personal/inbox', '', '/mail')).toBe(
+      '/mail/personal/inbox'
+    );
   });
 });
