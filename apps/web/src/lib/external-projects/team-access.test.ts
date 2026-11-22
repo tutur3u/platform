@@ -20,17 +20,26 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
+const ROLE_MEMBER = '44444444-4444-4444-8444-444444444444';
+
 type QueryResult<T> = {
   data: T | null;
   error: { code: string } | null;
 };
 
-function createAccess({ roleExists }: { roleExists: boolean }) {
+function createAccess({
+  roleExists,
+  rpcResult = { data: 'removed', error: null },
+}: {
+  roleExists: boolean;
+  rpcResult?: { data: unknown; error: unknown };
+}) {
   const calls = {
     deletedRoleMemberFilters: [] as Array<[string, string]>,
     insertedRoleMembers: null as unknown,
     roleFilters: [] as Array<[string, string]>,
     roleUpdates: [] as unknown[],
+    rpcCalls: [] as Array<{ args: Record<string, unknown>; fn: string }>,
     upsertedRolePermissions: null as unknown,
   };
 
@@ -62,6 +71,10 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
   };
 
   const admin = {
+    async rpc(fn: string, args: Record<string, unknown>) {
+      calls.rpcCalls.push({ args, fn });
+      return rpcResult;
+    },
     from(table: string) {
       if (table === 'workspace_roles') {
         return {
@@ -217,6 +230,110 @@ describe('external project role workspace binding', () => {
       ['ws_id', 'workspace-1'],
     ]);
     expect(calls.deletedRoleMemberFilters).toEqual([]);
+    expect(calls.rpcCalls).toEqual([]);
+  });
+
+  it('removes an access level person only through the guarded function', async () => {
+    for (const data of ['removed', 'not_found']) {
+      const { access, calls } = createAccess({
+        roleExists: true,
+        rpcResult: { data, error: null },
+      });
+
+      const response = await removeExternalProjectRoleMember({
+        access: access as never,
+        roleId: 'role-1',
+        userId: ROLE_MEMBER,
+      });
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ message: 'success' });
+      expect(calls.rpcCalls).toEqual([
+        {
+          args: {
+            p_actor_id: 'actor-1',
+            p_role_id: 'role-1',
+            p_user_id: ROLE_MEMBER,
+            p_ws_id: 'workspace-1',
+          },
+          fn: 'remove_workspace_role_member_guarded',
+        },
+      ]);
+      expect(calls.deletedRoleMemberFilters).toEqual([]);
+    }
+  });
+
+  it('answers each refusal of the guarded role removal', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const failure = { message: 'Error removing access level person' };
+    const cases = [
+      {
+        body: {
+          code: 'WORKSPACE_LAST_MANAGER',
+          message: 'At least one member must be able to manage members',
+        },
+        result: { data: 'last_manager', error: null },
+        status: 409,
+      },
+      {
+        body: { error: 'Forbidden' },
+        result: { data: 'forbidden', error: null },
+        status: 403,
+      },
+      {
+        body: failure,
+        result: { data: null, error: { code: '42501' } },
+        status: 500,
+      },
+      { body: failure, result: { data: 'deleted', error: null }, status: 500 },
+      // The role function never answers creator_protected.
+      {
+        body: failure,
+        result: { data: 'creator_protected', error: null },
+        status: 500,
+      },
+    ];
+
+    for (const { body, result, status } of cases) {
+      const { access, calls } = createAccess({
+        roleExists: true,
+        rpcResult: result,
+      });
+      const response = await removeExternalProjectRoleMember({
+        access: access as never,
+        roleId: 'role-1',
+        userId: ROLE_MEMBER,
+      });
+
+      expect(response.status).toBe(status);
+      await expect(response.json()).resolves.toEqual(body);
+      expect(calls.rpcCalls).toHaveLength(1);
+      expect(calls.deletedRoleMemberFilters).toEqual([]);
+    }
+
+    expect(error).toHaveBeenCalledTimes(3);
+    error.mockRestore();
+  });
+
+  it('refuses a user id that is not a canonical uuid without calling the function', async () => {
+    for (const userId of [
+      'not-a-uuid',
+      ROLE_MEMBER.replaceAll('-', ''),
+      `{${ROLE_MEMBER}}`,
+    ]) {
+      const { access, calls } = createAccess({ roleExists: true });
+      const response = await removeExternalProjectRoleMember({
+        access: access as never,
+        roleId: 'role-1',
+        userId,
+      });
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Invalid member identifier',
+      });
+      expect(calls.rpcCalls).toEqual([]);
+    }
   });
 
   it('does not update permissions when the role is outside the authorized workspace', async () => {

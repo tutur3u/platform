@@ -36,6 +36,7 @@ import { WorkspaceAccessInviteDialog } from './workspace-access-invite-dialog';
 import { getWorkspaceAccessLabels } from './workspace-access-labels';
 import { WorkspaceAccessMemberProfileDialog } from './workspace-access-member-profile-dialog';
 import { WorkspaceAccessMembers } from './workspace-access-members';
+import { describeWorkspaceAccessRemovalError } from './workspace-access-removal-error';
 import { WorkspaceAccessPageHeader } from './workspace-access-page-header';
 import { WorkspaceAccessPeopleFilters } from './workspace-access-people-filters';
 import { WorkspaceAccessRoleEditorDialog } from './workspace-access-role-editor-dialog';
@@ -220,7 +221,7 @@ export function WorkspaceAccessPage({
     mutationFn: (payload: { email?: null | string; userId?: null | string }) =>
       adapter.removeMember(workspaceId, payload),
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
+      toast.error(describeWorkspaceAccessRemovalError(error, t)),
     onSuccess: async () => {
       toast.success(t('common.deleted'));
       await invalidateAccessData();
@@ -266,7 +267,7 @@ export function WorkspaceAccessPage({
         ? adapter.addRoleMembers(workspaceId, payload.roleId, [payload.userId])
         : adapter.removeRoleMember(workspaceId, payload.roleId, payload.userId),
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
+      toast.error(describeWorkspaceAccessRemovalError(error, t)),
     onSuccess: async () => {
       toast.success(t('common.saved'));
       await invalidateAccessData();

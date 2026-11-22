@@ -148,9 +148,42 @@ workspace cache invalidation. These behaviors are covered by
 
 The RPCs `remove_workspace_member_guarded` and
 `remove_workspace_role_member_guarded` serialize removals with a
-workspace-scoped advisory lock. Only `service_role` may execute them. The two
-CMS removal routes do not call these functions. The route-level creator check
-and the database guard are separate layers.
+workspace-scoped advisory lock. Only `service_role` may execute them.
+
+The two CMS removal routes remove memberships only through these functions,
+with the actor id their credential check resolved. Each route keeps its own
+credential and permission check first; the functions authorize the actor
+again as a second layer.
+
+- `DELETE .../external-projects/members/access?id=` validates the uuid (`400`)
+  and refuses the workspace creator (`403`, code `WORKSPACE_CREATOR_PROTECTED`)
+  before calling `remove_workspace_member_guarded`. It cancels the person's
+  invitations only after the function answers `removed` or `not_found`, so a
+  refused or failed removal cancels nothing. A request with only `?email=`
+  cancels the invitation without calling the function.
+- `DELETE .../external-projects/members/roles/{roleId}/members/{userId}`
+  answers `404` when the access level is not in the workspace and `400` when
+  `userId` is not a canonical uuid, then calls
+  `remove_workspace_role_member_guarded`.
+
+| Function answer | Member route | Access level route |
+| --- | --- | --- |
+| `removed`, `not_found` | `200` success | `200` success |
+| `creator_protected` | `403`, code `WORKSPACE_CREATOR_PROTECTED` | not answered by this function; treated as an error |
+| `last_manager` | `409`, code `WORKSPACE_LAST_MANAGER` | `409`, code `WORKSPACE_LAST_MANAGER` |
+| `forbidden` | `403` | `403` |
+| RPC error or any other answer | `500` | `500` |
+
+`not_found` is a success on both routes. The member route also cancels the
+invitation of someone who was invited but never joined, by user id, and
+removing an access level membership that is already gone has the result the
+caller asked for. The CMS people screen shows translated messages for the two
+codes instead of the server text.
+
+Regression coverage: `apps/web/src/lib/external-projects/team-member-removal.test.ts`,
+`apps/web/src/lib/external-projects/team-access.test.ts`,
+`packages/internal-api/src/external-project-team.test.ts` and
+`packages/ui/src/components/ui/custom/workspace-access/workspace-access-removal-error.test.ts`.
 
 The RPCs require studio read and the corresponding workspace management
 permission, or root CMS administrator permission. A root guest with an enabled

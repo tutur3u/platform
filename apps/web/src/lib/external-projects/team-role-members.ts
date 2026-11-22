@@ -5,7 +5,9 @@ import {
 } from '@/lib/workspace-creator-grant-permissions';
 import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
+import { guardedRemovalRefusal } from './guarded-removal';
 import type { ExternalProjectTeamAccess } from './team-access';
+import { memberIdSchema } from './team-member-removal';
 
 export async function requireExternalProjectRoleInWorkspace({
   access,
@@ -131,6 +133,14 @@ export async function listExternalProjectRoleMembers({
   return NextResponse.json({ count: count ?? members.length, data: members });
 }
 
+/**
+ * Removes one person from an access level. The role must belong to the
+ * authorized workspace. The role membership is removed only by
+ * `remove_workspace_role_member_guarded`, which takes the workspace removal
+ * lock, authorizes the actor again, and refuses a removal that would leave no
+ * full member who can manage members. A membership that is already gone is a
+ * success.
+ */
 export async function removeExternalProjectRoleMember({
   access,
   roleId,
@@ -149,24 +159,34 @@ export async function removeExternalProjectRoleMember({
     return roleAccess.response;
   }
 
-  const { error } = await access.admin
-    .from('workspace_role_members')
-    .delete()
-    .eq('role_id', roleId)
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('Error removing CMS team role member', {
-      error,
-      roleId,
-      userId,
-      wsId: access.normalizedWorkspaceId,
-    });
+  if (!memberIdSchema.safeParse(userId).success) {
     return NextResponse.json(
-      { message: 'Error removing access level person' },
-      { status: 500 }
+      { message: 'Invalid member identifier' },
+      { status: 400 }
     );
   }
+
+  const { data: result, error } = await access.admin.rpc(
+    'remove_workspace_role_member_guarded',
+    {
+      p_actor_id: access.user.id,
+      p_role_id: roleId,
+      p_user_id: userId,
+      p_ws_id: access.normalizedWorkspaceId,
+    }
+  );
+  const refusal = guardedRemovalRefusal({
+    error,
+    failureResponse: () =>
+      NextResponse.json(
+        { message: 'Error removing access level person' },
+        { status: 500 }
+      ),
+    kind: 'role-member',
+    result,
+    wsId: access.normalizedWorkspaceId,
+  });
+  if (refusal) return refusal;
 
   return NextResponse.json({ message: 'success' });
 }

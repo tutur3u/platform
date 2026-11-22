@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  creatorProtectedResponse,
+  guardedRemovalRefusal,
+} from './guarded-removal';
 import type { ExternalProjectTeamAccess } from './team-access';
 
-export const WORKSPACE_CREATOR_PROTECTED = 'WORKSPACE_CREATOR_PROTECTED';
+export {
+  WORKSPACE_CREATOR_PROTECTED,
+  WORKSPACE_LAST_MANAGER,
+} from './guarded-removal';
 
 /**
  * Postgres reads a uuid written without hyphens, with other hyphen groupings
@@ -10,20 +17,26 @@ export const WORKSPACE_CREATOR_PROTECTED = 'WORKSPACE_CREATOR_PROTECTED';
  * accepted here, so the id compared with the creator is the id the delete
  * matches.
  */
-const memberIdSchema = z.guid();
+export const memberIdSchema = z.guid();
 
 const sameId = (left: string, right: string) =>
   left.toLowerCase() === right.toLowerCase();
+
+const errorResponse = () =>
+  NextResponse.json({ message: 'Error removing team member' }, { status: 500 });
 
 /**
  * Removes a joined member (`?id=`) and/or cancels an invitation (`?email=`).
  *
  * The workspace creator is never removed here. The creator can always manage
  * the workspace, so refusing this keeps at least one person who can manage
- * members in every workspace whose creator is a member. The check reads the
- * creator and then deletes, so it does not cover a creator hand-over that
- * lands between the two, or a workspace whose recorded creator is not a
- * member.
+ * members in every workspace whose creator is a member. This route-level
+ * check is the first layer. The membership itself is removed only by
+ * `remove_workspace_member_guarded`, which takes the workspace removal lock,
+ * authorizes the actor again, refuses the creator, and refuses a removal that
+ * would leave no full member who can manage members. Invitations are
+ * cancelled only after that function removed the member or found nothing to
+ * remove, so a refused removal cancels nothing.
  */
 export async function removeExternalProjectTeamMember({
   access,
@@ -71,14 +84,25 @@ export async function removeExternalProjectTeamMember({
     }
 
     if (sameId(workspace.creator_id, userId)) {
-      return NextResponse.json(
-        {
-          code: WORKSPACE_CREATOR_PROTECTED,
-          message: 'The workspace creator cannot be removed',
-        },
-        { status: 403 }
-      );
+      return creatorProtectedResponse();
     }
+
+    const { data: result, error: removalError } = await access.admin.rpc(
+      'remove_workspace_member_guarded',
+      {
+        p_actor_id: access.user.id,
+        p_user_id: userId,
+        p_ws_id: access.normalizedWorkspaceId,
+      }
+    );
+    const refusal = guardedRemovalRefusal({
+      error: removalError,
+      failureResponse: errorResponse,
+      kind: 'member',
+      result,
+      wsId: access.normalizedWorkspaceId,
+    });
+    if (refusal) return refusal;
   }
 
   let inviteUserIds: string[] = [];
@@ -131,31 +155,18 @@ export async function removeExternalProjectTeamMember({
         .eq('email', userEmail)
     : { error: undefined };
 
-  const memberQuery = userId
-    ? access.admin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', access.normalizedWorkspaceId)
-        .eq('user_id', userId)
-    : { error: undefined };
-
-  const [inviteResult, emailInviteResult, memberResult] = await Promise.all([
+  const [inviteResult, emailInviteResult] = await Promise.all([
     inviteQuery,
     emailInviteQuery,
-    memberQuery,
   ]);
 
-  if (inviteResult.error || emailInviteResult.error || memberResult.error) {
+  if (inviteResult.error || emailInviteResult.error) {
     console.error('Error removing CMS team member', {
       emailInviteError: emailInviteResult.error,
       inviteError: inviteResult.error,
-      memberError: memberResult.error,
       wsId: access.normalizedWorkspaceId,
     });
-    return NextResponse.json(
-      { message: 'Error removing team member' },
-      { status: 500 }
-    );
+    return errorResponse();
   }
 
   return NextResponse.json({ message: 'success', workspace_deleted: false });
