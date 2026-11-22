@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { EMPTY_LAYOUT, MAX_PANES, openActivity } from './layout-model';
+import {
+  EMPTY_LAYOUT,
+  MAX_PANES,
+  openActivities,
+  openActivity,
+  type StageLayout,
+} from './layout-model';
 import {
   parseStageLayout,
   readStoredStage,
@@ -23,7 +29,7 @@ describe('stage layout storage', () => {
 
   it('round-trips a layout and the video strip preference', () => {
     const key = stageLayoutKey('u1', 'm1');
-    writeStoredStage(key, { layout, strip: 'pill' });
+    writeStoredStage(key, { layout, views: {}, strip: 'pill' });
     const read = readStoredStage(key);
     expect(read.layout).toEqual(layout);
     expect(read.strip).toBe('pill');
@@ -33,8 +39,8 @@ describe('stage layout storage', () => {
 
   it('removes an empty default so nothing lingers', () => {
     const key = stageLayoutKey('u1', 'm1');
-    writeStoredStage(key, { layout, strip: 'auto' });
-    writeStoredStage(key, { layout: EMPTY_LAYOUT, strip: 'auto' });
+    writeStoredStage(key, { layout, views: {}, strip: 'auto' });
+    writeStoredStage(key, { layout: EMPTY_LAYOUT, views: {}, strip: 'auto' });
     expect(localStorage.getItem(key)).toBeNull();
   });
 
@@ -94,5 +100,34 @@ describe('stage layout storage', () => {
       },
     });
     expect(four.root).toBeNull();
+  });
+});
+
+describe('narrow screen arrangements', () => {
+  it('round-trips a tablet arrangement and aligns it with the desktop activities', () => {
+    const key = stageLayoutKey('u1', 'm1');
+    const tablet = ['a', 'b'].reduce(
+      (next, id) => openActivity(next, id, { maxPanes: MAX_PANES.tablet }),
+      EMPTY_LAYOUT
+    );
+    writeStoredStage(key, { layout, views: { tablet }, strip: 'auto' });
+    expect(readStoredStage(key).views.tablet?.root).not.toBeNull();
+    // Views that fall out of step with the desktop activities are aligned.
+    const matching = ['a', 'b', 'c', 'd'].reduce(
+      (next, id) => openActivity(next, id, { maxPanes: MAX_PANES.tablet }),
+      EMPTY_LAYOUT
+    );
+    const old = openActivity(matching, 'gone', { maxPanes: 2 });
+    writeStoredStage(key, { layout, views: { tablet: old }, strip: 'auto' });
+    const read = readStoredStage(key).views.tablet;
+    expect(openActivities(read as StageLayout).sort()).toEqual(
+      openActivities(layout).sort()
+    );
+  });
+
+  it('drops a narrow arrangement with more panes than its screen shows', () => {
+    const key = stageLayoutKey('u1', 'm1');
+    writeStoredStage(key, { layout, views: { phone: layout }, strip: 'auto' });
+    expect(readStoredStage(key).views.phone).toBeUndefined();
   });
 });

@@ -471,3 +471,26 @@ export function pruneLayout(
     .filter((id) => !isAvailable(id))
     .reduce(closeActivity, layout);
 }
+
+/**
+ * Makes a view hold the same activities as `source`: ones `source` no longer
+ * has are closed, ones it gained stack into the focused pane.
+ */
+export function alignLayout(
+  layout: StageLayout,
+  source: StageLayout
+): StageLayout {
+  const wanted = openActivities(source);
+  const kept = openActivities(layout).filter((id) => !wanted.includes(id));
+  const trimmed = kept.reduce(closeActivity, layout);
+  return wanted
+    .filter((id) => !isActivityOpen(trimmed, id))
+    .reduce(
+      (next, id) =>
+        openActivity(next, id, {
+          maxPanes: Number.MAX_SAFE_INTEGER,
+          placement: 'tab',
+        }),
+      trimmed
+    );
+}

@@ -124,3 +124,68 @@ it('stores a video strip preference apart from the panes', () => {
   flush();
   expect(mount().result.current.strip).toBe('pill');
 });
+
+it('keeps the desktop split when arranging panes on a narrow screen', () => {
+  const desktop = mount();
+  act(() => {
+    desktop.result.current.open('a');
+    desktop.result.current.open('b');
+    desktop.result.current.open('c');
+  });
+  const split = JSON.stringify(desktop.result.current.layout.root);
+  flush();
+  desktop.unmount();
+
+  const tablet = mount({ tier: 'tablet' });
+  // Reorder, resize and maximize on the tablet.
+  act(() =>
+    tablet.result.current.movePane(
+      tablet.result.current.layout.focusedPaneId ?? '',
+      -1
+    )
+  );
+  const tabletRoot = tablet.result.current.layout.root;
+  const boundary = tabletRoot?.kind === 'split' ? tabletRoot : null;
+  act(() => tablet.result.current.resize(boundary?.id ?? '', 0, 70));
+  act(() =>
+    tablet.result.current.maximize(tablet.result.current.layout.focusedPaneId)
+  );
+  flush();
+  tablet.unmount();
+
+  const again = mount();
+  expect(JSON.stringify(again.result.current.layout.root)).toBe(split);
+  expect(again.result.current.layout.maximizedPaneId).toBeNull();
+  again.unmount();
+  // The tablet keeps the arrangement made there.
+  const back = mount({ tier: 'tablet' });
+  expect(back.result.current.layout.maximizedPaneId).not.toBeNull();
+});
+
+it('applies opening and closing to every arrangement', () => {
+  const desktop = mount();
+  act(() => desktop.result.current.open('a'));
+  act(() => desktop.result.current.open('b'));
+  flush();
+  desktop.unmount();
+  const tablet = mount({ tier: 'tablet' });
+  act(() =>
+    tablet.result.current.maximize(tablet.result.current.layout.focusedPaneId)
+  );
+  act(() => tablet.result.current.open('c'));
+  act(() => tablet.result.current.close('a'));
+  expect(tablet.result.current.openIds.sort()).toEqual(['b', 'c']);
+  flush();
+  tablet.unmount();
+  const wide = mount();
+  expect(wide.result.current.openIds.sort()).toEqual(['b', 'c']);
+  wide.unmount();
+  // A phone with no arrangement of its own shows the same activities.
+  const phone = mount({ tier: 'phone' });
+  expect(phone.result.current.openIds.sort()).toEqual(['b', 'c']);
+  act(() => phone.result.current.close('b'));
+  flush();
+  phone.unmount();
+  expect(mount({ tier: 'tablet' }).result.current.openIds).toEqual(['c']);
+  expect(mount().result.current.openIds).toEqual(['c']);
+});

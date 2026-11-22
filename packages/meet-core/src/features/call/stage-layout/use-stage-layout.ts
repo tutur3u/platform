@@ -33,6 +33,7 @@ import {
 import {
   readStoredStage,
   stageLayoutKey,
+  type StoredStage,
   type VideoStripPreference,
   writeStoredStage,
 } from './layout-storage';
@@ -61,14 +62,22 @@ export function useViewportTier(): ViewportTier {
 
 const PERSIST_DELAY_MS = 200;
 
+type Change = (layout: StageLayout, maxPanes: number) => StageLayout;
+
 export type StageLayoutController = ReturnType<typeof useStageLayout>;
 
 /**
  * The stage's open activities for one person in one room. The layout is read
  * from local storage once and written back as it changes, so it survives
- * reconnects and reloads. What it shows is always fitted to the viewport and
- * limited to activities that are available now, without rewriting the saved
- * layout, so widening a window or regaining access brings panes back.
+ * reconnects and reloads.
+ *
+ * The desktop arrangement is the source of truth. A narrower screen shows it
+ * fitted to its pane limit until the person arranges panes there, which keeps
+ * a separate arrangement for that screen size; layout edits made on a narrow
+ * screen never rewrite the desktop split. Opening and closing an activity
+ * applies to every arrangement so they all hold the same activities. What is
+ * shown is limited to activities that are available now, without rewriting
+ * what is saved, so regaining access brings panes back.
  */
 export function useStageLayout({
   accountId,
@@ -82,31 +91,32 @@ export function useStageLayout({
   tier?: ViewportTier;
 }) {
   const key = stageLayoutKey(accountId, meetingId);
-  const [stored, setStored] = useState(() =>
+  const [stored, setStored] = useState<StoredStage>(() =>
     typeof window === 'undefined'
-      ? { layout: EMPTY_LAYOUT, strip: 'auto' as VideoStripPreference }
+      ? { layout: EMPTY_LAYOUT, views: {}, strip: 'auto' }
       : readStoredStage(key)
   );
   const measured = useViewportTier();
   const tier = forcedTier ?? measured;
   const maxPanes = MAX_PANES[tier];
-  const limits = useRef({ maxPanes, isAvailable });
-  limits.current = { maxPanes, isAvailable };
+  const limits = useRef({ tier, isAvailable });
+  limits.current = { tier, isAvailable };
 
-  /** What the viewport can show now: available activities, fitted to panes. */
-  const view = useCallback(
-    (layout: StageLayout) =>
+  /** One arrangement as a screen of `at` tier shows it. */
+  const present = useCallback(
+    (layout: StageLayout, at: ViewportTier) =>
       fitLayout(
         pruneLayout(layout, (id) => limits.current.isAvailable(id)),
-        limits.current.maxPanes
+        MAX_PANES[at]
       ),
     []
   );
+  const saved = (from: StoredStage, at: ViewportTier) =>
+    at === 'desktop' ? from.layout : (from.views[at] ?? from.layout);
   const shown = useMemo(
-    () => view(stored.layout),
-    // Availability and the pane limit are read through `limits`; they are
-    // listed so the view follows them.
-    [view, stored.layout, maxPanes, isAvailable]
+    () => present(saved(stored, tier), tier),
+    // Availability is read through `limits`; it is listed so the view follows it.
+    [present, stored, tier, isAvailable]
   );
 
   const dirty = useRef(false);
@@ -130,35 +140,57 @@ export function useStageLayout({
     []
   );
 
-  /** Applies an edit to what is on screen and keeps the result. */
+  /**
+   * Applies an edit to what is on screen and keeps the result for this screen
+   * size. A `shared` edit changes which activities are open, so it also
+   * applies to every other arrangement.
+   */
   const edit = useCallback(
-    (change: (layout: StageLayout) => StageLayout) => {
+    (change: Change, shared = false) => {
       dirty.current = true;
-      setStored((current) => ({
-        ...current,
-        layout: change(view(current.layout)),
-      }));
+      setStored((current) => {
+        const at = limits.current.tier;
+        const apply = (layout: StageLayout, to: ViewportTier) =>
+          change(present(layout, to), MAX_PANES[to]);
+        const next: StoredStage = { ...current, views: { ...current.views } };
+        if (at === 'desktop') next.layout = apply(current.layout, at);
+        else next.views[at] = apply(saved(current, at), at);
+        if (shared) {
+          if (at !== 'desktop') next.layout = apply(current.layout, 'desktop');
+          for (const other of ['tablet', 'phone'] as const) {
+            const view = current.views[other];
+            if (other !== at && view) next.views[other] = apply(view, other);
+          }
+        }
+        return next;
+      });
     },
-    [view]
+    [present]
   );
 
   const open = useCallback(
     (id: string, options?: Pick<OpenOptions, 'placement'>) =>
-      edit((layout) => openActivity(layout, id, { maxPanes, ...options })),
-    [edit, maxPanes]
+      edit(
+        (layout, max) =>
+          openActivity(layout, id, { maxPanes: max, ...options }),
+        true
+      ),
+    [edit]
   );
   const close = useCallback(
-    (id: string) => edit((layout) => closeActivity(layout, id)),
+    (id: string) => edit((layout) => closeActivity(layout, id), true),
     [edit]
   );
   const toggle = useCallback(
     (id: string) =>
-      edit((layout) =>
-        isActivityOpen(layout, id)
-          ? closeActivity(layout, id)
-          : openActivity(layout, id, { maxPanes })
+      edit(
+        (layout, max) =>
+          isActivityOpen(layout, id)
+            ? closeActivity(layout, id)
+            : openActivity(layout, id, { maxPanes: max }),
+        true
       ),
-    [edit, maxPanes]
+    [edit]
   );
   const setStrip = useCallback((strip: VideoStripPreference) => {
     dirty.current = true;

@@ -1,4 +1,5 @@
 import {
+  alignLayout,
   type Axis,
   EMPTY_LAYOUT,
   type LayoutNode,
@@ -9,8 +10,14 @@ import {
 
 export type VideoStripPreference = 'auto' | 'row' | 'pill';
 
+/** Layouts the person arranged on a narrower screen. */
+export type NarrowViews = Partial<Record<'tablet' | 'phone', StageLayout>>;
+
 export interface StoredStage {
+  /** The desktop arrangement: the source of truth for what is open. */
   layout: StageLayout;
+  /** Own arrangements for narrower screens, so editing there leaves `layout` be. */
+  views: NarrowViews;
   strip: VideoStripPreference;
 }
 
@@ -108,21 +115,35 @@ export function parseStageLayout(raw: unknown): StageLayout {
   };
 }
 
+function parseViews(raw: unknown, desktop: StageLayout): NarrowViews {
+  if (!isRecord(raw)) return {};
+  const views: NarrowViews = {};
+  for (const tier of ['tablet', 'phone'] as const) {
+    const parsed = parseStageLayout({ layout: raw[tier] });
+    if (!parsed.root || paneLeaves(parsed.root).length > MAX_PANES[tier])
+      continue;
+    views[tier] = alignLayout(parsed, desktop);
+  }
+  return views;
+}
+
 const preference = (value: unknown): VideoStripPreference =>
   value === 'row' || value === 'pill' ? value : 'auto';
 
 export function readStoredStage(key: string): StoredStage {
   try {
     const text = window.localStorage.getItem(key);
-    if (!text) return { layout: EMPTY_LAYOUT, strip: 'auto' };
+    if (!text) return { layout: EMPTY_LAYOUT, views: {}, strip: 'auto' };
     const raw: unknown = JSON.parse(text);
+    const layout = parseStageLayout(raw);
     return {
-      layout: parseStageLayout(raw),
+      layout,
+      views: parseViews(isRecord(raw) ? raw.views : undefined, layout),
       strip: preference(isRecord(raw) ? raw.strip : undefined),
     };
   } catch {
     // The room stays usable when storage is disabled or the value is damaged.
-    return { layout: EMPTY_LAYOUT, strip: 'auto' };
+    return { layout: EMPTY_LAYOUT, views: {}, strip: 'auto' };
   }
 }
 

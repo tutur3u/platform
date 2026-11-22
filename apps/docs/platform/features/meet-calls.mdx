@@ -1371,7 +1371,12 @@ media, or tool access.
 - **Phone.** One activity fills the width. The header's switcher opens an "Open
   activities" sheet that lists every open activity.
 - **Persistence.** The layout is local, saved per person and room under the
-  browser's storage, and restored after a reconnect or reload. Activities that
+  browser's storage, and restored after a reconnect or reload. The desktop
+  arrangement is the source of truth. A narrower screen shows it folded until
+  you arrange panes there, which saves a separate tablet or phone arrangement;
+  arranging, resizing, maximizing or reordering on a narrow screen never changes
+  the desktop split. Opening or closing an activity applies to every
+  arrangement, so they all hold the same activities. Activities that
   are not available right now (the call is not live, no access) are hidden, not
   forgotten, and return with their pane when available.
 - **No remounting.** Panes are placed from fractions of the stage, not nested,
