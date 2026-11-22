@@ -16,11 +16,11 @@ export { stripLeakedCss };
 
 const MAX_SOURCE_LENGTH = 20_000;
 
-const HIDDEN_HTML_REGIONS =
-  /<(style|script|head|title|template|noscript|xml)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/giu;
+const HIDDEN_TAG_OPENER =
+  /<(style|script|head|title|template|noscript|xml)\b/giu;
+const DOCTYPE_OPENER = /<!doctype/giu;
 const HTML_COMMENTS = /<!--[\s\S]*?(?:-->|$)/gu;
 const CONDITIONAL_COMMENTS = /<!\[[^\]<>]{0,200}\]>/gu;
-const DOCTYPE = /<!doctype[^>]*>/giu;
 const HTML_TAG = /<\/?[a-z](?:"[^"]*"|'[^']*'|[^<>"'])*>/giu;
 const INVISIBLE = /[​-‍⁠﻿­]|͏/gu;
 
@@ -56,13 +56,53 @@ function decodeEntities(value: string) {
   );
 }
 
+/**
+ * Replaces each region that starts at an `opener` match and runs through the
+ * next `>` (and, for hidden elements, through the matching closing tag or the
+ * end of input) with a space. This is `<name\b[^>]*>[\s\S]*?(?:<\/name\s*>|$)`
+ * without its quadratic case: the next `>` is cached and only moves forward,
+ * and when no `>` remains no later opener can match, so the scan stops.
+ */
+function replaceTagRegions(
+  value: string,
+  opener: RegExp,
+  { closing }: { closing: boolean }
+) {
+  let output = '';
+  let index = 0;
+  let nextGt = -1;
+  opener.lastIndex = 0;
+  for (
+    let match = opener.exec(value);
+    match !== null;
+    match = opener.exec(value)
+  ) {
+    const start = match.index;
+    if (nextGt < start) nextGt = value.indexOf('>', start);
+    if (nextGt === -1) break;
+    let end = nextGt + 1;
+    if (closing) {
+      const close = new RegExp(`</${match[1]}\\s*>`, 'giu');
+      close.lastIndex = end;
+      const closed = close.exec(value);
+      end = closed ? closed.index + closed[0].length : value.length;
+    }
+    output += `${value.slice(index, start)} `;
+    index = end;
+    opener.lastIndex = end;
+  }
+  return output + value.slice(index);
+}
+
 function stripHtmlMarkup(value: string) {
+  const withoutComments = value
+    .replace(HTML_COMMENTS, ' ')
+    .replace(CONDITIONAL_COMMENTS, ' ');
+  const withoutDoctype = replaceTagRegions(withoutComments, DOCTYPE_OPENER, {
+    closing: false,
+  });
   return decodeEntities(
-    value
-      .replace(HTML_COMMENTS, ' ')
-      .replace(CONDITIONAL_COMMENTS, ' ')
-      .replace(DOCTYPE, ' ')
-      .replace(HIDDEN_HTML_REGIONS, ' ')
+    replaceTagRegions(withoutDoctype, HIDDEN_TAG_OPENER, { closing: true })
       .replace(/<br\s*\/?>/giu, '\n')
       .replace(/<\/(?:p|div|tr|li|h[1-6])>/giu, '\n')
       .replace(HTML_TAG, ' ')

@@ -107,12 +107,65 @@ function isCssSelector(prelude: string, { partial = false } = {}) {
 
 const DECLARATION = /^\s*([a-z-]+)\s*:[^{}]*$/u;
 
+const MAX_URL_LENGTH = 2_000;
+
+/**
+ * End index of a `url(…)` starting at `index`, or -1 when its `)` does not
+ * follow within `MAX_URL_LENGTH` code points.
+ */
+function urlEnd(body: string, index: number) {
+  let cursor = index + 4;
+  for (let count = 0; cursor < body.length; count += 1) {
+    if (body[cursor] === ')') return cursor + 1;
+    if (count === MAX_URL_LENGTH) return -1;
+    cursor += (body.codePointAt(cursor) ?? 0) > 0xffff ? 2 : 1;
+  }
+  return -1;
+}
+
+/**
+ * Splits a declaration body on `;` with each `url(…)` reduced to `url()`.
+ * Returns null at the first brace outside a url: such a body holds a nested
+ * block, not declarations. Stopping there keeps nested input linear, because
+ * each block is read only up to its first child.
+ */
+function declarationParts(body: string) {
+  const parts: string[] = [];
+  let part = '';
+  let segment = 0;
+  let cursor = 0;
+  while (cursor < body.length) {
+    const char = body[cursor];
+    if (char === '{' || char === '}') return null;
+    if (char === ';') {
+      parts.push(part + body.slice(segment, cursor));
+      part = '';
+      cursor += 1;
+      segment = cursor;
+      continue;
+    }
+    if (char === 'u' && body.startsWith('url(', cursor)) {
+      const end = urlEnd(body, cursor);
+      if (end !== -1) {
+        part += `${body.slice(segment, cursor)}url()`;
+        cursor = end;
+        segment = cursor;
+        continue;
+      }
+    }
+    cursor += 1;
+  }
+  parts.push(part + body.slice(segment));
+  return parts;
+}
+
 /**
  * True when every declaration uses a known property. With `truncated`, the
  * final segment may be cut anywhere.
  */
 function isDeclarationBody(body: string, truncated: boolean) {
-  const parts = body.replace(/url\([^)]{0,2000}\)/gu, 'url()').split(';');
+  const parts = declarationParts(body);
+  if (parts === null) return false;
   let known = 0;
   for (const [partIndex, part] of parts.entries()) {
     if (!part.trim()) continue;

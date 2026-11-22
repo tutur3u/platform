@@ -97,25 +97,130 @@ describe('cleanSnippetSource', () => {
     );
   });
 
-  it('removes a truncated selector block and stays fast on hostile input', () => {
+  it('strips hidden regions whose attributes contain <', () => {
+    expect(
+      cleanSnippetSource(
+        '<style media="(width < 600px)">.a { color: red; }</style>Hello',
+        { html: true }
+      )
+    ).toBe('Hello');
+    expect(
+      cleanSnippetSource(
+        '<script data-condition="1 < 2">window.boot();</script>Hello',
+        { html: true }
+      )
+    ).toBe('Hello');
+  });
+
+  it('keeps stripping hidden regions, doctypes and url() bodies with odd characters', () => {
+    const html = (value: string) => cleanSnippetSource(value, { html: true });
+    expect(
+      html("<script data-owner=O'Reilly>window.boot();</script>Hello")
+    ).toBe('Hello');
+    expect(html('<!DOCTYPE html PUBLIC "a<b">Hello')).toBe('Hello');
+    const long = 'x'.repeat(2_001);
+    expect(
+      html(`<title data-template="${long}">Internal title</title>Hello`)
+    ).toBe('Hello');
+    expect(
+      html(`<!DOCTYPE html SYSTEM "https://example.test/${long}">Hello`)
+    ).toBe('Hello');
+    expect(
+      cleanSnippetSource(
+        `.a { background: url("https://example.test/${'\u{1F600}'.repeat(1_001)}/{x}") } Hello`
+      )
+    ).toBe('Hello');
+    expect(
+      cleanSnippetSource(
+        '.a { background: url("data:text/plain,{hello}") } Hello'
+      )
+    ).toBe('Hello');
+    expect(
+      cleanSnippetSource(
+        '@font-face { src: url("data:font/woff,{hello}") } Hello'
+      )
+    ).toBe('Hello');
+  });
+
+  it('removes a truncated selector block', () => {
     expect(cleanSnippetSource('Hi there\n.inner-body { width: 100%...')).toBe(
       'Hi there'
     );
-    const hostile = [
-      '{'.repeat(20_000),
-      'a{'.repeat(10_000),
-      '.a{'.repeat(7_000),
-      '<!['.repeat(7_000),
-      '<!['.repeat(7_000).concat('x'.repeat(10_000)),
-      `${'{'.repeat(5_000)}${'}'.repeat(5_000)}`,
-    ];
-    const started = performance.now();
-    for (const input of hostile) {
-      cleanSnippetSource(input);
-      cleanSnippetSource(input, { html: true });
-    }
-    expect(performance.now() - started).toBeLessThan(250);
   });
+
+  it('scales linearly on hostile input', () => {
+    // Each generator builds a hostile input of length n. Cost is compared at
+    // n and 8n inside the same process, so runner speed cancels out: a linear
+    // pass costs about 8x (up to about 13x where a url() scan reaches its
+    // 2,000 code point bound), a quadratic pass about 64x, and the bound is 32x.
+    const hostile: Record<string, (n: number) => string> = {
+      braces: (n) => '{'.repeat(n),
+      selectorBraces: (n) => 'a{'.repeat(n / 2),
+      classBraces: (n) => '.a{'.repeat(n / 3),
+      conditionalOpeners: (n) => '<!['.repeat(n / 3),
+      conditionalThenText: (n) => '<!['.repeat(n / 6).concat('x'.repeat(n / 2)),
+      balancedBraces: (n) => `${'{'.repeat(n / 2)}${'}'.repeat(n / 2)}`,
+      unterminatedStyle: (n) => '<style'.repeat(n / 6),
+      unterminatedHead: (n) => '<head a'.repeat(n / 7),
+      unterminatedDoctype: (n) => '<!doctype'.repeat(n / 9),
+      unterminatedComment: (n) => '<!--'.repeat(n / 4),
+      quotedTagOpeners: (n) => '<a"'.repeat(n / 3),
+      declarationRuns: (n) => 'a{b:'.repeat(n / 4),
+      nestedSelectorBlocks: (n) => `${'a{'.repeat(n / 4)}${'}'.repeat(n / 4)}`,
+      nestedAtRules: (n) =>
+        `${'@media a{'.repeat(n / 20)}${'}'.repeat(n / 20)}`,
+      rejectedNestedAtRules: (n) =>
+        `${'@media x{q '.repeat(n / 22)}${'}'.repeat(n / 22)}`,
+      nestedDeclarations: (n) =>
+        `${'a{b:c;'.repeat(n / 12)}${'}'.repeat(n / 12)}`,
+      unclosedUrls: (n) => `a{b:${'url('.repeat(Math.floor((n - 5) / 4))}}`,
+      unclosedTagThenText: (n) => `<style a${'x'.repeat(n - 9)}`,
+      quotedStyleOpeners: (n) => '<style "'.repeat(n / 8),
+      openQuoteStyle: (n) => "<style '".concat('<style'.repeat(n / 6)),
+    };
+    const measure = (input: string, html: boolean, reps: number) => {
+      const started = performance.now();
+      for (let call = 0; call < reps; call += 1) {
+        cleanSnippetSource(input, { html });
+      }
+      return performance.now() - started;
+    };
+    // Repetitions are calibrated so the small input takes a measurable time,
+    // small and large samples are interleaved, and the median of three
+    // trials is kept, so pauses and frequency changes on a busy runner do not
+    // decide the ratio.
+    const ratioFor = (build: (n: number) => string, html: boolean) => {
+      const smallInput = build(small);
+      const largeInput = build(large);
+      measure(largeInput, html, 2);
+      let reps = 1;
+      while (measure(smallInput, html, reps) < 1.5 && reps < 4_096) reps *= 2;
+      const ratios: number[] = [];
+      for (let trial = 0; trial < 3; trial += 1) {
+        let smallBest = Number.POSITIVE_INFINITY;
+        let largeBest = Number.POSITIVE_INFINITY;
+        for (let sample = 0; sample < 2; sample += 1) {
+          smallBest = Math.min(smallBest, measure(smallInput, html, reps));
+          largeBest = Math.min(largeBest, measure(largeInput, html, reps));
+        }
+        ratios.push(largeBest / smallBest);
+      }
+      return ratios.sort((left, right) => left - right)[1] ?? 0;
+    };
+    // 20,000 is the length cleanSnippetSource keeps, so 8n stays in range.
+    const small = 2_500;
+    const large = 20_000;
+    for (const [name, build] of Object.entries(hostile)) {
+      for (const html of [false, true]) {
+        const ratio = ratioFor(build, html);
+        expect({ name, html, linear: ratio < 32 }).toEqual({
+          name,
+          html,
+          linear: true,
+        });
+      }
+    }
+  }, 30_000);
 
   it('removes stylesheet runs cut anywhere in stored snippets', () => {
     const laravel = [
