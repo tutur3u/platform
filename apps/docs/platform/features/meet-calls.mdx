@@ -658,8 +658,9 @@ A reveal or a move names the card the host saw; the room refuses it when a
 newer deck has put a different card at that position.
 
 Participants track their own known flashcards. A mark goes back to the
-person who made it and, as a small progress update, to hosts and co-hosts; the
-rest of the room receives nothing for it. Each game round accepts the
+person who made it, on every connection they have in the room, and as a small
+progress update to hosts and co-hosts; the rest of the room receives nothing
+for it. Each game round accepts the
 first answer received before the server deadline. Revealing the round awards
 100 points for each correct answer. The game shows scores to the room and
 keeps individual choices private. Reveal and Next name the round on the host's screen, so one that
@@ -688,10 +689,12 @@ Regression coverage lives in `live-activities.test.ts`, `live-activities-assessm
 `*-panel.test.tsx` files under
 `tools/live-activities` and the Meet whiteboard store and panel tests.
 
-`MEET_LIVE_ASSESSMENT_ENABLED` in `packages/realtime` turns the assessment
-off as a whole. When it is false the room refuses every assessment command,
-leaves assessment out of every view, and the Activities menu and the co-host
-list no longer offer it. The other activities and the pen board are unaffected.
+The live assessment is switched off: `MEET_LIVE_ASSESSMENT_ENABLED` in
+`packages/realtime` is `false`. The room refuses every assessment command,
+leaves assessment out of every view, and neither the Activities menu nor a
+co-host's list offers it. Flashcards, the prep game, the icebreaker and the pen
+whiteboard are available. The assessment rules in this section describe what the
+room does when the switch is on.
 
 ## Viewer admission for large classes
 

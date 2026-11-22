@@ -547,7 +547,7 @@ it('keeps what one flashcard mark sends small, however large the room and the de
   expect(secondDevice.send.mock.calls.map(([wire]) => JSON.parse(wire))).toEqual(
     [{ type: 'activity.known', flashcards: { known: [cardId] } }]
   );
-  // Someone waiting, or another person, never gets that frame.
+  // Another person in the room never gets that frame.
   expect(JSON.stringify(others.map(({ send }) => send.mock.calls))).not.toContain(
     'activity.known'
   );
