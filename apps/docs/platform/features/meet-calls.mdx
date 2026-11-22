@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-11-20'
+updatedAt: '2026-11-22'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 audience: users
 ---
@@ -1022,28 +1022,83 @@ signed-token realtime/SFU integration check against the canonical endpoint.
 
 ## In-call actions and room activities
 
-The bottom bar keeps audio, video, people, chat and leaving visible. Screen
-sharing stays on the bar at desktop widths. More contains the remaining call
-actions, personal view controls and room activities. Live polls and Quiz Arena
-rounds stay reachable even with the participant activity menu hidden. The
-recording indicator stays visible in the call header.
+Scope: the in-call bottom bar in Meet on the web. Parley keeps its existing
+activity availability.
 
-The host or an admitted co-host with participant management can change
-**Activity visibility** in More. **Hosts and co-hosts** is the default menu
-view. **Showcase** lists the activities and directs people to room chat for
-feedback without offering tool launch actions. **Everyone in the call**
-shows the existing tool actions to admitted participants. Visibility does
-not grant host privileges or change existing document, programming, quiz,
-poll, or recording access checks. This setting applies to Meet's activity
-menu. Parley keeps its existing activity availability.
+The bottom bar has three groups. The center holds the call's root actions:
+microphone, camera and screen sharing (media rooms only), **Reactions**,
+**Raise hand**, **Activities**, **Follow**, **Summon**, More and Leave. Chat and
+the people count sit at the bottom right; the people count opens the participant
+list. The left edge names the surface the viewer has open, such as
+Co-Programming or a live document. On phones the bar keeps Reactions,
+Activities, More, Leave, Chat and the people count, and Follow and Summon move
+into More. The recording indicator stays visible in the call header.
+
+**Activities** is one labeled entry for everything the room can do together:
+Co-Programming, the live document, and every tool in the tools registry (polls,
+timers, Quiz Arena, Q&A, assessment, flashcards, games and icebreakers). Rooms
+with classroom tools or in-call Forms list those there too, under their own
+access rules. Each tile carries a name and a one-line description. Live polls
+and Quiz Arena rounds stay reachable through their live shortcuts even when the
+viewer cannot browse Activities.
+
+The host or an admitted co-host with participant management changes **Activity
+visibility** in Settings, under Activities. **Hosts and co-hosts** is the
+default. **Showcase** lists the activities and directs people to room chat for
+feedback without offering launch actions. **Everyone in the call** shows the
+launch actions to admitted participants. Visibility does not grant host
+privileges or change existing document, programming, quiz, poll, or recording
+access checks.
+
+More holds the remaining actions: Layout, Camera effects, recording, the
+presence-only switch for hosts, and private tools. Layout and Camera effects
+each open their own dialog.
 
 People keeps join requests and the participant list ahead of optional room
 settings. Moderators use a per-person menu for mute, media permissions and
 removal. Removing someone requires confirmation.
 
-After the call, Meet centers the summary, primary action and rating. More
-actions contains meeting settings and the restore and sharing controls for
-eligible hosts.
+### Follow and Summon
+
+Scope: admitted participants of one Meet room, on the web. Both actions move
+people between the room's surfaces: the stage, Co-Programming, the live document
+and any tool panel. They never change admission, media, or tool access.
+
+- **Summon** brings the chosen people to the surface the sender has open, once.
+- **Follow** keeps the chosen people on the sender's surface as the sender moves,
+  until the sender stops or the follower leaves.
+- Both target one person, several people, or everyone in the call.
+
+Default and permissions:
+
+- A host or co-host (anyone with participant management) moves people
+  immediately. The recipient sees who moved them and can go back or stop
+  following at any time.
+- Any other participant sends an invitation. The recipient chooses Join or
+  Follow, or dismisses it. Nothing moves without that consent.
+- A follower who navigates on their own stops following. A banner names the
+  person being followed and offers Stop following for as long as it applies.
+- A recipient who is not allowed to open the surface under Activity visibility
+  is told so and stays where they are.
+
+The room Durable Object validates the sender's presence, resolves targets to
+people present in the room, delivers the request only to those targets, and
+rate-limits each sender. It stores no navigation history. Regression coverage:
+`room-navigation.test.ts` (permissions, targeting and limits) and
+`room-navigation-policy.test.ts` (recipient decisions and the follow lifecycle).
+
+### Presence-only layout
+
+Scope: rooms whose transport is presence-only.
+
+- The **Presence only** badge sits beside the meeting name in the header.
+- The room shows no video tiles, camera previews or media controls. With an
+  activity open, the activity fills the main area. With nothing open, the main
+  area lists who is present.
+- The people count stays at the bottom right, as in media rooms.
+
+After the call, Meet shows the summary card with its primary action, and the
+rating in its own card. See [Self preview and ended screen](#self-preview-and-ended-screen).
 
 ## Gemini transcript and post-call notes
 
@@ -1481,10 +1536,22 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
   device in `localStorage` under `meet.self-preview`; unavailable storage falls
   back to the defaults (bottom-right, medium, visible). Snap animations honour
   `prefers-reduced-motion`.
-- The ended screen has one primary action: View notes and transcript when the
-  viewer may read them, otherwise Back to Meet. Restore, Meeting settings and
-  Back to Meet sit in a compact secondary row. The share-notes row renders only
-  for room admins; visibility rules are unchanged.
+- The ended screen's reader action follows what the meeting produced, decided
+  from the access-checked meet-ai state and only for viewers who may read notes.
+  With no post-call notes and no readable transcript there is no reader action
+  and Back to Meet is the primary action. With notes only it reads **Show
+  notes**, with a transcript only **Show transcript**, and with both **View
+  notes & transcript**. A failed or refused read, or Meet AI being unavailable,
+  counts as nothing to show. While the state loads the action's space is held,
+  so no wrong label flashes.
+- The reader opens inside the page layout: a second column on wide screens and
+  inline in the summary card on phones. Tabs appear only when both notes and a
+  transcript exist; the meeting page's notes reader follows the same rule.
+  Restore, New meeting and Settings sit in a compact secondary row. The host's
+  notes-sharing switch is in Settings; visibility rules are unchanged.
+- A Meet host whose meeting left no notes and no transcript gets **Add task** in
+  the secondary row, because the reader that normally carries it is absent.
+- The call rating is its own card below the summary card.
 - Viewers who may read notes see a facts row under the title: the span covered by
   captured notes sessions and recordings, distinct transcript speakers, and
   recording and transcript state (saved or processing). The row reuses the
@@ -1902,6 +1969,36 @@ checks admission and resource access before issuing tickets. A verified
 See [programming playgrounds](/platform/features/programming-playgrounds) for
 Drive ownership, limits and the intentional entitlement exception.
 
+### Co-Programming workbench
+
+Scope: the Co-Programming surface inside a Meet room. The hosted playground in
+Learn uses the same workbench without the meeting-only controls.
+
+- **Opening.** The host opens Co-Programming from one dialog: choose a
+  playground or a Learn problem, then the project and the language. The host can
+  reopen the dialog from the workbench menu to change the resource.
+- **Language.** The header shows the language. The host switches it there. For a
+  Learn problem the switch changes the runtime for the same problem. For a
+  playground the language belongs to the project, so the first switch to a
+  language creates a playground from that language's template and selects it
+  for the room. Switching back reopens the playground the room already used for
+  that language, with its code; the host's browser tab remembers them for the
+  session. Every playground stays in the host's projects. Other participants see
+  the language but cannot change it.
+- **Run.** Cmd+Enter on macOS and Ctrl+Enter elsewhere runs the playground, or
+  runs the tests for a problem. The Run control shows the shortcut. The shortcut
+  works while focus is in the editor or elsewhere in the workbench, and nowhere
+  else in the call.
+- **Theme.** Editor colors come from the app's design tokens and follow light
+  and dark mode and the active theme preset.
+- **Output.** Run output stays in the Console tab with the exit status. A
+  failure names what failed (saving the room's files, starting the run, reading
+  the result, or running tests), says that the room's edits are kept, and offers
+  a retry.
+
+Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
+`workbench-errors.test.ts` and `programming-panel.test.tsx`.
+
 Web screen capture depends on browser getDisplayMedia support. Android and iOS
 browsers that lack it can receive screens and co-program, but cannot open a
 native screen picker. Missing support and capture denials now display guidance.
@@ -2176,7 +2273,10 @@ also controls collaboration: automatic/sidebar uses a compact desktop rail,
 spotlight emphasizes content with a narrower rail, and grid balances content and
 participants. Narrow screens keep a horizontally scrollable filmstrip beneath the
 content. These choices are local to the active call; they never alter admission,
-media publication, or another participant's layout.
+media publication, or another participant's layout. The divider between content
+and participants is a one-pixel line with a wider pointer target, and it stays
+resizable from the keyboard. Presence-only rooms have no participant rail: the
+content fills the main area.
 
 The same media stage and keyed camera/screen tiles stay mounted when content,
 layout, or focus changes. Local playback mute state and media element identity
