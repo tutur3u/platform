@@ -1,45 +1,23 @@
+import {
+  PENBOARD_LIMITS,
+  penboardColors,
+  type PenboardStroke,
+} from '@tuturuuu/realtime/meet';
+
 /** Every participant draws in the same board space, whatever their panel size. */
-export const WHITEBOARD_WIDTH = 1200;
-export const WHITEBOARD_HEIGHT = 900;
+export const WHITEBOARD_WIDTH = PENBOARD_LIMITS.width;
+export const WHITEBOARD_HEIGHT = PENBOARD_LIMITS.height;
+export const WHITEBOARD_MAX_STROKE_POINTS = PENBOARD_LIMITS.pointsPerStroke;
 /** Stroke width, in board units, at the plain pressure of a mouse or finger. */
 export const WHITEBOARD_STROKE_WIDTH = 6;
-export const WHITEBOARD_MAX_STROKE_POINTS = 2000;
 /** Pressure recorded for input that cannot report one. */
 export const WHITEBOARD_PLAIN_PRESSURE = 0.5;
 
-/** Design-token names, so each participant renders ink in their own theme. */
-export const whiteboardColors = ['ink', 'blue', 'green', 'red'] as const;
-export type WhiteboardColor = (typeof whiteboardColors)[number];
-export type WhiteboardInput = 'pen' | 'touch' | 'mouse';
-
-export type WhiteboardPoint = {
-  /** Board units. */
-  x: number;
-  y: number;
-  /** 0 to 1. */
-  pressure: number;
-  /** Degrees from -90 to 90, as the pointer reported them. */
-  tiltX: number;
-  tiltY: number;
-  /** Milliseconds since the stroke started. */
-  t: number;
-};
-
-/**
- * A stroke is complete on its own: id, author and start time travel with it, so
- * another participant's stroke can be appended to the same board unchanged.
- */
-export type WhiteboardStroke = {
-  id: string;
-  authorId: string;
-  input: WhiteboardInput;
-  color: WhiteboardColor;
-  /** Width, in board units, at plain pressure. */
-  width: number;
-  /** Epoch milliseconds. */
-  startedAt: number;
-  points: readonly WhiteboardPoint[];
-};
+export const whiteboardColors = penboardColors;
+export type WhiteboardStroke = PenboardStroke;
+export type WhiteboardColor = PenboardStroke['color'];
+export type WhiteboardInput = PenboardStroke['input'];
+export type WhiteboardPoint = PenboardStroke['points'][number];
 
 const MIN_WIDTH_SCALE = 0.25;
 const MAX_WIDTH_SCALE = 1.75;

@@ -116,7 +116,7 @@ it('hides the hub list when tools are not available but keeps an open panel', ()
   ).toBeTruthy();
 });
 
-it('registers polls, timer, quiz and the live activities in order', () => {
+it('registers polls, timer, quiz, the live activities and the pen board in order', () => {
   expect(meetTools.map((tool) => tool.id)).toEqual([
     'polls',
     'timers',
@@ -126,6 +126,7 @@ it('registers polls, timer, quiz and the live activities in order', () => {
     'live-flashcards',
     'live-game',
     'live-icebreaker',
+    'pen-whiteboard',
   ]);
   expect(toolIdFromDrawer('tool:quiz')).toBe('quiz');
   expect(toolIdFromDrawer('chat')).toBeNull();

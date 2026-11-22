@@ -221,7 +221,13 @@ export function createWhiteboardPenInput(options: WhiteboardPenInputOptions) {
           draft.stroke.input,
           draft.startTime
         );
-        if (moved(last, point)) draft.points.push(point);
+        if (moved(last, point)) {
+          if (draft.points.length >= WHITEBOARD_MAX_STROKE_POINTS) {
+            draft = split(draft, last);
+            point.t -= last.t;
+          }
+          draft.points.push(point);
+        }
       }
       const stroke = snapshot(draft);
       draft = null;

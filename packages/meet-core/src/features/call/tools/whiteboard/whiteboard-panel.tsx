@@ -40,7 +40,7 @@ export function WhiteboardPanel({
   onClose,
 }: MeetToolPanelProps) {
   const t = useTranslations('meet.classroom_tools');
-  const { strokes } = useSyncExternalStore(
+  const { strokes, canUndo } = useSyncExternalStore(
     (onStoreChange) => subscribeWhiteboard(meetingId, onStoreChange),
     () => readWhiteboard(meetingId),
     () => readWhiteboard(meetingId)
@@ -78,9 +78,7 @@ export function WhiteboardPanel({
             <ToolIconAction
               icon={Undo2}
               label={t('whiteboard.undo')}
-              disabled={
-                !strokes.some((stroke) => stroke.authorId === participantId)
-              }
+              disabled={!canUndo}
               onClick={() => undoWhiteboardStroke(meetingId, participantId)}
             />
             {roomRole === 'host' ? (

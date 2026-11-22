@@ -589,6 +589,34 @@ helper failure against the installed upstream script and executes the replacemen
 with saved/system/forced themes. Require exact-commit CI and deployed first-paint
 verification; this console repair alone does not prove an authenticated join works.
 
+## Live activities and the pen board
+
+Admitted participants share the active Meet room's assessment, flashcards,
+game, icebreaker and pen board. Rejoining the room restores the current
+activity and board. Ending the room clears these tools, so restoring an ended
+meeting starts with empty activities and a clear board.
+
+Hosts and co-hosts configure assessments, choose the displayed flashcard,
+run the game and moderate icebreaker responses. Each participant can submit
+one answer per assessment item while the assessment is open. Only room
+managers see everyone's submissions. Releasing results shows the correct
+choices to the room and delivers each participant's own grade and feedback.
+Returning to draft clears submissions and released results.
+
+Participants track their own known flashcards. Each game round accepts the
+first answer received before the server deadline. Revealing the round awards
+100 points for each correct answer. The game shows scores to the room and
+keeps individual choices private. A new icebreaker prompt clears earlier
+responses. Other participants cannot see a hidden response.
+
+Anyone admitted can draw and undo their latest stroke. Managers can undo
+the latest stroke from any author or clear the board. Room limits can reject a
+new submission or stroke. Existing room content stays available when a limit
+is reached. The pen board is the drawing tool in the in-call tools menu.
+
+Regression coverage lives in `live-activities.test.ts`, `penboard.test.ts`,
+`activities-store.test.ts` and the Meet whiteboard store and panel tests.
+
 ## Viewer admission for large classes
 
 Meet hosts with a signed allowance of at least 50 publisher slots can enable

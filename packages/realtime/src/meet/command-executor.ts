@@ -1,3 +1,6 @@
+import { applyLiveActivities } from './live-activities';
+import { liveActivityAttemptRefusal } from './live-activity-rate';
+import { applyPenboard } from './penboard';
 import { applyLiveQa } from './live-qa';
 import type { MeetRealtimeServerMessage } from './messages';
 import {
@@ -60,6 +63,7 @@ function admissionRefusal(
 
 type CommandOptions = {
   read: () => MeetRoomSnapshot;
+  replyOnly?: (messages: MeetRealtimeServerMessage[]) => void;
   commit: (result: MeetRoomOutcome) => void | Promise<void>;
   runSfu: (intent: MeetSfuIntent) => Promise<unknown>;
 };
@@ -81,8 +85,26 @@ export class MeetCommandExecutor {
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
     // Charged once at admission, before room processing, any provider call
     // or queue wait. Refusals change no room state.
-    const qa = applyLiveQa(options.read(), command);
+    const state = options.read();
+    const qa = applyLiveQa(state, command);
     if (qa) return Promise.resolve(options.commit(qa));
+    const { userId } = command.token;
+    if (options.replyOnly && state.presence[userId] && !state.waiting[userId]) {
+      const refusal = liveActivityAttemptRefusal(command);
+      if (refusal) {
+        options.replyOnly([refusal]);
+        return Promise.resolve();
+      }
+    }
+    const tool =
+      applyLiveActivities(state, command) ?? applyPenboard(state, command);
+    if (tool) {
+      if (tool.state !== state || !options.replyOnly)
+        return Promise.resolve(options.commit(tool));
+      // Reads and refusals have no storage or alarm work.
+      options.replyOnly(tool.reply);
+      return Promise.resolve();
+    }
     const refusal = admissionRefusal(command);
     // A silently dropped report never reaches the room or its storage.
     if (refusal?.length === 0) return Promise.resolve();

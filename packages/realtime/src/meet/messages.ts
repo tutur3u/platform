@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  liveActivityClientMessages,
+  type LiveActivitiesServerMessage,
+} from './live-activities-schema';
+import { penboardClientMessages, type PenboardServerMessage } from './penboard';
 import type { LiveQaSnapshot } from './live-qa';
 import type { ClassTimer } from './class-timer';
 import {
@@ -85,6 +90,8 @@ const navigationRequestSchema = z
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionStateMessageSchema,
   transcriptionConsentMessageSchema,
+  ...liveActivityClientMessages,
+  ...penboardClientMessages,
   z.object({ type: z.literal('qa.read'), requestId }),
   z.object({
     type: z.literal('qa.ask'),
@@ -294,6 +301,8 @@ export type MeetRealtimeRoomTrack = {
 };
 
 export type MeetRealtimeServerMessage =
+  | LiveActivitiesServerMessage
+  | PenboardServerMessage
   | { type: 'qa.snapshot'; snapshot: LiveQaSnapshot; requestId?: string }
   | TranscriptionStateMessage
   | TranscriptionConsentMessage

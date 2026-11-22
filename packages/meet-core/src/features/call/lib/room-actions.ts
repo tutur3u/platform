@@ -5,6 +5,7 @@ import type {
   MeetMediaState,
   MeetNavigationMode,
   MeetReaction,
+  MeetRealtimeClientMessage,
   MeetRealtimeTrackKind,
   MeetRoomMediaQualitySummary,
   MeetRoomSettings,
@@ -36,6 +37,12 @@ export function createRoomActions(
   return {
     mediaPolicy,
     sendLiveQa: (message: LiveQaCommand) => signaling.current?.send(message),
+    sendSharedTool: (message: MeetRealtimeClientMessage) => {
+      const connection = signaling.current;
+      if (!connection?.isOpen) return false;
+      connection.send(message);
+      return true;
+    },
     reportTileHeight: (userId: string, devicePx: number | null) => {
       if (devicePx === null) tileHeights.delete(userId);
       else tileHeights.set(userId, devicePx);

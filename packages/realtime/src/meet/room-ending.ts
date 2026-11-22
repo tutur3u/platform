@@ -30,6 +30,10 @@ export function endMeetRoom(
         }
       : undefined,
     ended: true,
+    liveActivities: undefined,
+    liveActivityLimits: undefined,
+    penboard: undefined,
+    penboardLimits: undefined,
     ...(state.publishedFormLaunches && {
       publishedFormLaunches: state.publishedFormLaunches.map((launch) => ({
         ...launch,

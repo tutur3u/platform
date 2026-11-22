@@ -444,7 +444,6 @@ export class MeetRoomDurableObject implements DurableObject {
       this.delivery.sendTo(socket, { error: 'malformed_json', type: 'error' });
       return;
     }
-
     this.snapshot.usage ??= createRoomUsage();
     this.snapshot.usage.webSocketMessages++;
     const parsed = meetRealtimeClientMessageSchema.safeParse(json);
@@ -475,6 +474,7 @@ export class MeetRoomDurableObject implements DurableObject {
       },
       {
         read: () => this.snapshot,
+        replyOnly: (replies) => this.delivery.sendToSocket(socket, replies),
         commit: (result) => {
           recordMeetSubscriptionOperation(
             socket,

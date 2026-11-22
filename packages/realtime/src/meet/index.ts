@@ -1,4 +1,22 @@
 export {
+  EMPTY_LIVE_ACTIVITIES_MINE,
+  EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
+  type LiveActivitiesHost,
+  type LiveActivitiesMine,
+  type LiveActivitiesSnapshot,
+  type LiveActivityCommand,
+  liveActivityCommandSchema,
+  liveActivitiesHostSchema,
+  liveActivitiesMineSchema,
+  liveActivitiesSnapshotSchema,
+} from './live-activities';
+export {
+  PENBOARD_LIMITS,
+  penboardColors,
+  type PenboardStroke,
+  penboardStrokeSchema,
+} from './penboard';
+export {
   EASY_CENTER_WORKSPACE_ID,
   isMeetAiAllWorkspacesOptIn,
   isMeetAiEnabledForWorkspace,

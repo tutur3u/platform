@@ -1,7 +1,5 @@
 'use client';
-import { handleLiveQaMessage } from '../tools/live-activities/qa/qa-handler';
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
-import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import {
   type CloudflareSfuTrack,
   type MeetMediaState,
@@ -79,6 +77,7 @@ import {
 } from '../lib/remote-streams';
 import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
+import { meetRoomTools } from '../tools/room-tool-messages';
 /** Coordinate room signaling, local capture, and recoverable media transport. */
 export function useMeetRoom({
   meetingId,
@@ -162,8 +161,7 @@ export function useMeetRoom({
     };
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        deliverRoomAssistantAudio(meetingId, message);
-        handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
+        meetRoomTools.handleMessage(meetingId, message, actions);
         if (message.type === 'ready' && message.admission === 'admitted') {
           resetSubscriber();
           if (!message.resumed) {
@@ -218,7 +216,7 @@ export function useMeetRoom({
         actions.replayPresenceJoin(mediaRef.current);
         actions.replayAssistantAudio();
       },
-      onStatusChange: setConnectionStatus,
+      onStatusChange: meetRoomTools.onStatus(meetingId, setConnectionStatus),
       resolveUrl,
     });
     signalingRef.current = signaling;
@@ -226,7 +224,7 @@ export function useMeetRoom({
     return () => {
       activeRef.current = false;
       effects.dispose();
-      signaling.close();
+      meetRoomTools.close(meetingId, signaling);
       stopLocalCapture(
         effects,
         localStreamRef,
@@ -616,7 +614,7 @@ export function useMeetRoom({
   );
   const leave = useCallback(() => {
     activeRef.current = false;
-    signalingRef.current?.close();
+    meetRoomTools.close(meetingId, signalingRef.current);
     resetPublisher();
     resetSubscriber();
     stopLocalCapture(
@@ -627,7 +625,7 @@ export function useMeetRoom({
       setScreenStream
     );
     setConnectionStatus('closed');
-  }, [effects, resetPublisher, resetSubscriber]);
+  }, [effects, meetingId, resetPublisher, resetSubscriber]);
   const { cameraLook, setCameraLook, adoptPreview } = useCameraControls(
     effects,
     activeRef,

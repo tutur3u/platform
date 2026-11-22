@@ -332,6 +332,24 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     message: MeetRealtimeServerMessage,
     wire?: string
   ) {
+    if (
+      message.type === 'activity.mine' ||
+      message.type === 'activity.host' ||
+      message.type === 'penboard.snapshot' ||
+      message.type === 'penboard.stroke'
+    ) {
+      const state = read();
+      const token = tokenOf(socket);
+      if (
+        !token ||
+        state.ended ||
+        !state.presence[token.userId] ||
+        state.waiting[token.userId] ||
+        (message.type === 'activity.host' &&
+          !canMeetRealtimeManageParticipants(token))
+      )
+        return;
+    }
     try {
       socket.send(wire ?? JSON.stringify(message));
       if (

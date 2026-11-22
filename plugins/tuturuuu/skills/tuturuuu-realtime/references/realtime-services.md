@@ -387,3 +387,21 @@ attributing it to signaling. A keepNames-transformed function serialized by
 next-themes can reference helpers outside its serialized body. Preserve the
 Meet-specific literal bootstrap and test its execution without helper globals;
 do not disable function naming globally or treat a theme test as call acceptance.
+
+
+### Meet live activity views
+
+Keep assessment answers, flashcard progress, game choices and hidden icebreaker
+responses inside the room snapshot. Generate separate public, actor and manager
+views. Send assessment release and reset updates directly to the affected
+admitted participants. Manager delivery rechecks room presence and the signed
+manager capability when sending a private frame. End-of-room handling clears
+activity state, drawing state and mutation budgets together.
+
+Measure candidate state and outbound views as UTF-8 JSON before accepting a
+mutation. Meet's signaling frame budget is 256 KiB. The pen board sends one
+revisioned stroke per draw and a full snapshot on read, undo or clear. Store
+client draw receipts across undo and clear so a redelivery cannot recreate a
+removed stroke. The game checks the server deadline on commands without an
+alarm. Cover these behaviors with the realtime activity tests and the Meet core
+store and panel tests, then qualify the Worker type project for the same source.

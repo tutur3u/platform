@@ -1,20 +1,40 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { MeetRealtimeClientMessage } from '@tuturuuu/realtime/meet';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import enMessages from '../../../../../../../apps/meet/messages/en.json';
 import viMessages from '../../../../../../../apps/meet/messages/vi.json';
 import type { MeetToolPanelProps } from '../live-activities/meet-tool';
 import { whiteboardTool } from './definition';
 import { WHITEBOARD_HEIGHT, WHITEBOARD_WIDTH } from './stroke';
 import { WhiteboardPanel } from './whiteboard-panel';
-import { clearWhiteboard, readWhiteboard } from './whiteboard-store';
+import {
+  closeWhiteboardRoom,
+  readWhiteboard,
+  whiteboardRoom,
+} from './whiteboard-store';
 
 const meetingId = 'meeting-panel';
+const send = vi.fn<(message: MeetRealtimeClientMessage) => boolean>(() => true);
+
+beforeEach(() => {
+  send.mockClear();
+  const room = whiteboardRoom(meetingId);
+  room.identify('ana', false);
+  room.open(send);
+  room.receive({ type: 'penboard.snapshot', revision: 0, strokes: [] });
+});
 
 afterEach(() => {
   cleanup();
-  clearWhiteboard(meetingId);
+  closeWhiteboardRoom(meetingId);
 });
 
 function renderPanel(
@@ -164,11 +184,37 @@ it('undoes the last stroke and lets the host clear the board', () => {
     fireEvent.pointerUp(svg, { ...mouse, clientX: 160, clientY: 100 });
   }
   expect(strokes()).toHaveLength(2);
+  const room = whiteboardRoom(meetingId);
+  const posted = send.mock.calls.flatMap(([message]) =>
+    message.type === 'penboard.draw' ? [message] : []
+  );
+  act(() => {
+    for (const [index, message] of posted.entries()) {
+      room.receive({
+        type: 'penboard.stroke',
+        revision: index + 1,
+        requestId: message.requestId,
+        stroke: { ...message.stroke, id: crypto.randomUUID() },
+      });
+    }
+  });
 
   fireEvent.click(undo);
+  expect(send).toHaveBeenLastCalledWith({ type: 'penboard.undo' });
+  act(() =>
+    room.receive({
+      type: 'penboard.snapshot',
+      revision: 3,
+      strokes: strokes().slice(0, 1),
+    })
+  );
   expect(strokes()).toHaveLength(1);
   expect(svg.querySelectorAll('g > g')).toHaveLength(1);
   fireEvent.click(clear);
+  expect(send).toHaveBeenLastCalledWith({ type: 'penboard.clear' });
+  act(() =>
+    room.receive({ type: 'penboard.snapshot', revision: 4, strokes: [] })
+  );
   expect(strokes()).toHaveLength(0);
   expect(svg.querySelectorAll('g > g')).toHaveLength(0);
 });
