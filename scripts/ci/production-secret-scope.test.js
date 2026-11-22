@@ -21,10 +21,26 @@ const ALLOWED_ENVIRONMENTS = {
     'supabase-production-migrations',
     'supabase-staging-migrations',
   ],
-  PRODUCTION_DB_PASSWORD: ['supabase-production-migrations'],
-  PRODUCTION_PROJECT_ID: ['supabase-production-migrations'],
-  STAGING_DB_PASSWORD: ['supabase-staging-migrations'],
-  STAGING_PROJECT_ID: ['supabase-staging-migrations'],
+  // supabase-backup-*: the read-only backup export job
+  // (supabase-backup-export.yaml). It has one job per target, each in a
+  // main-only environment with a required reviewer, and each job reads only
+  // its own project's secrets.
+  PRODUCTION_DB_PASSWORD: [
+    'supabase-backup-production',
+    'supabase-production-migrations',
+  ],
+  PRODUCTION_PROJECT_ID: [
+    'supabase-backup-production',
+    'supabase-production-migrations',
+  ],
+  STAGING_DB_PASSWORD: [
+    'supabase-backup-staging',
+    'supabase-staging-migrations',
+  ],
+  STAGING_PROJECT_ID: [
+    'supabase-backup-staging',
+    'supabase-staging-migrations',
+  ],
   RELEASE_PLEASE_TOKEN: ['release-please'],
 };
 
@@ -42,30 +58,114 @@ const environmentNames = (job) => {
   );
 };
 
-for (const [secret, allowed] of Object.entries(ALLOWED_ENVIRONMENTS)) {
+// Returns the consumers of `secret` and every scope violation, so the rule
+// can be checked against fixtures as well as the real workflows.
+function checkSecretScope(allWorkflows, secret, allowed) {
   const reference = new RegExp(`secrets\\.${secret}\\b`, 'u');
-
-  test(`${secret} only reaches its branch-restricted environments`, () => {
-    const consumers = [];
-    for (const [file, workflow] of Object.entries(workflows)) {
-      assert.doesNotMatch(
-        JSON.stringify(workflow.env ?? {}),
-        reference,
-        `${file} must not expose ${secret} workflow-wide`
-      );
-      for (const [jobName, job] of Object.entries(workflow.jobs ?? {})) {
-        if (!reference.test(JSON.stringify(job))) continue;
-        consumers.push(`${file}:${jobName}`);
-        const names = environmentNames(job);
-        assert.ok(
-          names.length > 0 && names.every((name) => allowed.includes(name)),
+  const consumers = [];
+  const violations = [];
+  for (const [file, workflow] of Object.entries(allWorkflows)) {
+    if (reference.test(JSON.stringify(workflow.env ?? {}))) {
+      violations.push(`${file} must not expose ${secret} workflow-wide`);
+    }
+    for (const [jobName, job] of Object.entries(workflow.jobs ?? {})) {
+      if (!reference.test(JSON.stringify(job))) continue;
+      consumers.push(`${file}:${jobName}`);
+      const names = environmentNames(job);
+      if (
+        !(names.length > 0 && names.every((name) => allowed.includes(name)))
+      ) {
+        violations.push(
           `${file}:${jobName} reads ${secret} outside ${allowed.join(', ')}`
         );
       }
     }
+  }
+  return { consumers, violations };
+}
+
+for (const [secret, allowed] of Object.entries(ALLOWED_ENVIRONMENTS)) {
+  test(`${secret} only reaches its branch-restricted environments`, () => {
+    const { consumers, violations } = checkSecretScope(
+      workflows,
+      secret,
+      allowed
+    );
+    assert.deepEqual(violations, []);
     assert.ok(consumers.length > 0, `expected a consumer of ${secret}`);
   });
 }
+
+test("a backup job may not read the other target's secrets", () => {
+  const crossed = {
+    'fixture.yaml': {
+      jobs: {
+        'export-staging': {
+          environment: 'supabase-backup-staging',
+          steps: [
+            { env: { DB_PASSWORD: '${{ secrets.PRODUCTION_DB_PASSWORD }}' } },
+          ],
+        },
+      },
+    },
+  };
+  const { violations } = checkSecretScope(
+    crossed,
+    'PRODUCTION_DB_PASSWORD',
+    ALLOWED_ENVIRONMENTS.PRODUCTION_DB_PASSWORD
+  );
+  assert.equal(violations.length, 1);
+  assert.match(
+    violations[0],
+    /fixture\.yaml:dump reads STAGING_DB_PASSWORD outside/u
+  );
+  assert.match(
+    violations[0],
+    /fixture\.yaml:export reads PRODUCTION_DB_PASSWORD outside/u
+  );
+  assert.match(
+    violations[0],
+    /fixture\.yaml:export-staging reads PRODUCTION_DB_PASSWORD outside/u
+  );
+});
+
+test('an expression that can resolve to an unlisted environment is rejected', () => {
+  const selected = {
+    'fixture.yaml': {
+      jobs: {
+        export: {
+          environment:
+            "${{ inputs.target == 'production' && 'supabase-backup-production' || 'supabase-backup-staging' }}",
+          steps: [
+            { env: { DB_PASSWORD: '${{ secrets.PRODUCTION_DB_PASSWORD }}' } },
+          ],
+        },
+      },
+    },
+  };
+  const { violations } = checkSecretScope(
+    selected,
+    'PRODUCTION_DB_PASSWORD',
+    ALLOWED_ENVIRONMENTS.PRODUCTION_DB_PASSWORD
+  );
+  assert.equal(violations.length, 1);
+});
+
+test('a job without an environment may not read a scoped secret', () => {
+  const ungated = {
+    'fixture.yaml': {
+      jobs: {
+        dump: { steps: [{ env: { P: '${{ secrets.STAGING_DB_PASSWORD }}' } }] },
+      },
+    },
+  };
+  const { violations } = checkSecretScope(
+    ungated,
+    'STAGING_DB_PASSWORD',
+    ALLOWED_ENVIRONMENTS.STAGING_DB_PASSWORD
+  );
+  assert.equal(violations.length, 1);
+});
 
 test('pull-request builds and unit tests use a placeholder service-role key', () => {
   const unitTests = workflows['turbo-unit-tests.yaml'].jobs['test-shards'];

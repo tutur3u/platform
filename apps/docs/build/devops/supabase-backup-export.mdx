@@ -120,6 +120,10 @@ the first dispatch.** If a job names an environment that does not exist, GitHub
 creates it on first use with no reviewers and no branch policy. A dispatch
 before setup still fails closed, because the R2 and pooler secrets are missing.
 
+The workflow has one job per target, `export-staging` and `export-production`.
+Each runs in its own environment and references only its own project's
+secrets, which `scripts/ci/production-secret-scope.test.js` enforces.
+
 The project ref and database password come from the repository-level secrets
 shared with the migration workflows, chosen by `target`:
 `STAGING_PROJECT_ID`/`STAGING_DB_PASSWORD` or

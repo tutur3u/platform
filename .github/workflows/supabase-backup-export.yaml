@@ -28,14 +28,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  export:
-    name: ${{ inputs.mode }} ${{ inputs.target }}
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+  # One job per target, each in its own branch-restricted environment, so
+  # each job references only its own project's repository secrets
+  # (scripts/ci/production-secret-scope.test.js).
+  export-staging:
+    name: ${{ inputs.mode }} staging
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.target == 'staging' }}
     runs-on: ubuntu-latest
     timeout-minutes: 240
-    # Branch-restricted environments with required reviewers hold the
-    # read credentials and the backup bucket's object token.
-    environment: ${{ inputs.target == 'production' && 'supabase-backup-production' || 'supabase-backup-staging' }}
+    # Reviewer- and main-gated; holds the pooler host, CA, age recipients,
+    # the backup bucket's object token and the Storage S3 key.
+    environment: supabase-backup-staging
     steps:
       - name: Check out main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,35 +51,14 @@ jobs:
         with:
           node-version: 24
 
-      # /mnt is the runner's separate scratch disk. The script sizes the export
-      # from the snapshot and fails early if it does not fit.
-      - name: Prepare scratch disk
-        run: |
-          set -euo pipefail
-          sudo mkdir -p /mnt/supabase-export
-          sudo chown "$(id -u):$(id -g)" /mnt/supabase-export
-
-      # Postgres 17 and pgvector from PGDG for pg_dump and the local restore
-      # check. No default cluster is created; the script starts its own on a
-      # Unix socket only.
-      - name: Install Postgres 17, pgvector and age
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-common age
-          echo 'create_main_cluster = false' | sudo tee -a /etc/postgresql-common/createcluster.conf >/dev/null
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y -qq postgresql-17 postgresql-17-pgvector
-          echo "/usr/lib/postgresql/17/bin" >>"$GITHUB_PATH"
+      - name: Prepare scratch disk, Postgres 17, pgvector and age
+        run: bash scripts/backup/prepare-runner.sh
 
       - name: Run ${{ inputs.mode }}
         env:
-          TARGET: ${{ inputs.target }}
-          # Repo-level secrets shared with the migration workflows, chosen by
-          # target. The script pins each target to its project ref; a
-          # mismatched password fails authentication.
-          PROJECT_REF: ${{ inputs.target == 'production' && secrets.PRODUCTION_PROJECT_ID || secrets.STAGING_PROJECT_ID }}
-          DB_PASSWORD: ${{ inputs.target == 'production' && secrets.PRODUCTION_DB_PASSWORD || secrets.STAGING_DB_PASSWORD }}
+          TARGET: staging
+          PROJECT_REF: ${{ secrets.STAGING_PROJECT_ID }}
+          DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
           POOLER_HOST: ${{ secrets.POOLER_HOST }}
           DB_CA_CERT: ${{ vars.SUPABASE_DB_CA_CERT }}
           AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}
@@ -93,6 +75,50 @@ jobs:
           RUN_ATTEMPT: ${{ github.run_attempt }}
           WORK_DIR: /mnt/supabase-export
           MODE: ${{ inputs.mode }}
-        run: |
-          set -euo pipefail
-          bash scripts/backup/supabase-export.sh "$MODE"
+        run: bash scripts/backup/supabase-export.sh "$MODE"
+
+  export-production:
+    name: ${{ inputs.mode }} production
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.target == 'production' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    # Reviewer- and main-gated; holds the pooler host, CA, age recipients,
+    # the backup bucket's object token and the Storage S3 key.
+    environment: supabase-backup-production
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Prepare scratch disk, Postgres 17, pgvector and age
+        run: bash scripts/backup/prepare-runner.sh
+
+      - name: Run ${{ inputs.mode }}
+        env:
+          TARGET: production
+          PROJECT_REF: ${{ secrets.PRODUCTION_PROJECT_ID }}
+          DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+          POOLER_HOST: ${{ secrets.POOLER_HOST }}
+          DB_CA_CERT: ${{ vars.SUPABASE_DB_CA_CERT }}
+          AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}
+          R2_ENDPOINT: ${{ secrets.R2_BACKUP_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          STORAGE_S3_ENDPOINT: ${{ secrets.STORAGE_S3_ENDPOINT }}
+          STORAGE_S3_REGION: ap-southeast-1
+          STORAGE_S3_ACCESS_KEY_ID: ${{ secrets.STORAGE_S3_ACCESS_KEY_ID }}
+          STORAGE_S3_SECRET_ACCESS_KEY: ${{ secrets.STORAGE_S3_SECRET_ACCESS_KEY }}
+          GIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORK_DIR: /mnt/supabase-export
+          MODE: ${{ inputs.mode }}
+        run: bash scripts/backup/supabase-export.sh "$MODE"
