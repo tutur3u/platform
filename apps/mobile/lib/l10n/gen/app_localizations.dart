@@ -17743,6 +17743,12 @@ abstract class AppLocalizations {
   /// **'Creator'**
   String get settingsWorkspaceMembersCreatorChip;
 
+  /// No description provided for @settingsWorkspaceMembersCreatorRemovalRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The workspace creator cannot be removed.'**
+  String get settingsWorkspaceMembersCreatorRemovalRefused;
+
   /// No description provided for @settingsWorkspaceMembersEmailField.
   ///
   /// In en, this message translates to:
@@ -17778,6 +17784,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invite sent.'**
   String get settingsWorkspaceMembersInviteSent;
+
+  /// No description provided for @settingsWorkspaceMembersLastManagerRemovalRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one member must be able to manage members. Give another member that access first.'**
+  String get settingsWorkspaceMembersLastManagerRemovalRefused;
 
   /// No description provided for @settingsWorkspaceMembersLinkAction.
   ///

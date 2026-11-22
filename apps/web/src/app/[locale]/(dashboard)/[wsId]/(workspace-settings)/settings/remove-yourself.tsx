@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, UserMinus } from '@tuturuuu/icons';
+import { removeWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { Workspace } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -13,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -29,6 +31,7 @@ export default function RemoveYourself({ workspace, currentUserId }: Props) {
   const isSystemWs = workspace?.id === ROOT_WORKSPACE_ID;
 
   const t = useTranslations('ws-settings');
+  const tMembers = useTranslations('ws-members');
   const router = useRouter();
 
   const [isLeaving, setIsLeaving] = useState(false);
@@ -52,16 +55,27 @@ export default function RemoveYourself({ workspace, currentUserId }: Props) {
 
     setIsLeaving(true);
 
-    await removeMemberFromWorkspace(workspace.id, currentUserId, t, {
-      onSuccess: () => {
-        router.push('/');
-        router.refresh();
-      },
-      onError: () => {
-        setIsLeaving(false);
-        setShowLeaveDialog(false);
-      },
-    });
+    try {
+      const result = await removeWorkspaceMember(workspace.id, {
+        userId: currentUserId,
+      });
+      router.push('/');
+      router.refresh();
+      toast.success(
+        result.workspace_deleted
+          ? t('leave_workspace_deleted')
+          : t('leave_workspace_success')
+      );
+    } catch (error) {
+      setIsLeaving(false);
+      setShowLeaveDialog(false);
+      toast.error(
+        getWorkspaceAccessRemovalRefusalMessage(error, {
+          creator: tMembers('creator_removal_refused'),
+          lastManager: tMembers('last_manager_removal_refused'),
+        }) ?? t('leave_workspace_failed')
+      );
+    }
   };
 
   const isLeaveDisabled = confirmationInput !== workspace?.name || isLeaving;
@@ -161,46 +175,3 @@ export default function RemoveYourself({ workspace, currentUserId }: Props) {
     </>
   );
 }
-
-const removeMemberFromWorkspace = async (
-  wsId: string,
-  userId: string,
-  t: (
-    key:
-      | 'leave_workspace_deleted'
-      | 'leave_workspace_failed'
-      | 'leave_workspace_success'
-  ) => string,
-  options?: {
-    onSuccess?: () => void;
-    onError?: () => void;
-    onCompleted?: () => void;
-  }
-) => {
-  try {
-    const res = await fetch(`/api/workspaces/${wsId}/members?id=${userId}`, {
-      method: 'DELETE',
-    });
-
-    if (!res.ok) {
-      options?.onError?.();
-      toast.error(t('leave_workspace_failed'));
-      return;
-    }
-
-    const data = await res.json();
-    const workspaceDeleted = data?.workspace_deleted === true;
-
-    options?.onSuccess?.();
-    toast.success(
-      workspaceDeleted
-        ? t('leave_workspace_deleted')
-        : t('leave_workspace_success')
-    );
-  } catch (_) {
-    options?.onError?.();
-    toast.error(t('leave_workspace_failed'));
-  } finally {
-    options?.onCompleted?.();
-  }
-};

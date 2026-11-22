@@ -9364,6 +9364,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsWorkspaceMembersCreatorChip => 'Creator';
 
   @override
+  String get settingsWorkspaceMembersCreatorRemovalRefused => 'The workspace creator cannot be removed.';
+
+  @override
   String get settingsWorkspaceMembersEmailField => 'Email';
 
   @override
@@ -9380,6 +9383,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
+
+  @override
+  String get settingsWorkspaceMembersLastManagerRemovalRefused => 'At least one member must be able to manage members. Give another member that access first.';
 
   @override
   String get settingsWorkspaceMembersLinkAction => 'New link';

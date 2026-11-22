@@ -10,6 +10,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import {
   Dialog,
   DialogContent,
@@ -82,13 +83,18 @@ export function MemberSettingsButton({
       if (currentUser?.id === user.id) router.push('/');
       setOpen(false);
     },
-    onError: () => {
+    onError: (error) => {
       const invited = user?.pending;
       toast({
         title: t('error'),
-        description: invited
-          ? t('revoke_error')
-          : `${t('remove_error')} "${memberName || t('unknown_member')}"`,
+        description:
+          getWorkspaceAccessRemovalRefusalMessage(error, {
+            creator: t('creator_removal_refused'),
+            lastManager: t('last_manager_removal_refused'),
+          }) ??
+          (invited
+            ? t('revoke_error')
+            : `${t('remove_error')} "${memberName || t('unknown_member')}"`),
       });
     },
   });

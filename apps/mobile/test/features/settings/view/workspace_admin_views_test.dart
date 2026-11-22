@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace_management.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/settings/view/settings_workspace_member_sheets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_members_view.dart';
 import 'package:mobile/features/settings/view/settings_workspace_secrets_view.dart';
@@ -117,10 +118,18 @@ void main() {
                 message: 'Remove Minh?',
                 confirmLabel: 'Remove',
                 cancelLabel: 'Cancel',
-                describeError: (error) => 'Server said no',
+                describeError: (error) =>
+                    describeWorkspaceAdminError(context, error),
                 onConfirm: () async {
                   attempts += 1;
-                  if (attempts == 1) throw Exception('boom');
+                  if (attempts == 1) {
+                    throw const ApiException(
+                      message:
+                          'At least one member must be able to manage members',
+                      statusCode: 409,
+                      code: 'WORKSPACE_LAST_MANAGER',
+                    );
+                  }
                 },
               );
             },
@@ -132,7 +141,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('app-async-confirm')));
       await tester.pumpAndSettle();
-      expect(find.text('Server said no'), findsOneWidget);
+      expect(
+        find.text(
+          'At least one member must be able to manage members. '
+          'Give another member that access first.',
+        ),
+        findsOneWidget,
+      );
       expect(result, isNull);
 
       await tester.tap(find.byKey(const ValueKey('app-async-confirm')));

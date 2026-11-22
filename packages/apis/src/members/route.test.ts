@@ -64,14 +64,11 @@ describe('revokeWorkspaceMemberAccessRecords', () => {
     expect(emailIlike).toHaveBeenCalledWith('email', 'invite@example.com');
   });
 
-  it('removes joined membership and direct invitations by user id', async () => {
+  it('revokes direct invitations by user id', async () => {
     const inviteUserEq = vi.fn().mockResolvedValue({ error: null });
-    const memberUserEq = vi.fn().mockResolvedValue({ error: null });
-    const from = vi.fn((table: string) => ({
+    const from = vi.fn(() => ({
       delete: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: table === 'workspace_members' ? memberUserEq : inviteUserEq,
-        })),
+        eq: vi.fn(() => ({ eq: inviteUserEq })),
       })),
     }));
 
@@ -83,7 +80,7 @@ describe('revokeWorkspaceMemberAccessRecords', () => {
     });
 
     expect(inviteUserEq).toHaveBeenCalledWith('user_id', 'user-1');
-    expect(memberUserEq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(from).toHaveBeenCalledExactlyOnceWith('workspace_invites');
   });
 });
 

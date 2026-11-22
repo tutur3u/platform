@@ -29,4 +29,5 @@ export {
   ExternalProjectWorkspaceAccessPage,
   StandardWorkspaceAccessPage,
 } from './workspace-access-client-pages';
+export { getWorkspaceAccessRemovalRefusalMessage } from './workspace-access-removal-error';
 export { WorkspaceAccessPage } from './workspace-access-page';

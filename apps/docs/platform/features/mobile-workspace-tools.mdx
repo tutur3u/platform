@@ -54,6 +54,33 @@ existing route access rules. Meet includes meeting search, scheduling, editing,
 and deletion when enabled. Every launcher module has an English and Vietnamese
 description.
 
+## Workspace member removal
+
+Workspace Settings on mobile, the standard people screen, and the member
+and leave dialogs in Web and Workspace share the standard members API. When a full
+member can manage members, removing another person must leave a full member
+with that permission while any full members remain. Guests and creators
+without full membership do not count toward this rule.
+
+The workspace creator remains protected. The
+`GUARD_WORKSPACE_SELF_REMOVAL` switch defaults to `false`, so an authorized
+member can leave even if they are the sole manager. If the departure leaves
+the workspace empty, the API runs its existing workspace cleanup. Invite-only
+revocation does not change membership.
+
+The API returns `WORKSPACE_LAST_MANAGER` with HTTP 409 when the manager
+rule blocks a removal. The screen shows the translated refusal and keeps
+the person in the list. The database checks and removes membership before
+the API revokes Polar seats, invitations and direct board access.
+Invitation and board cleanup run independently. If either fails, the API
+returns its removal error. An authorized retry can finish cleanup for an
+already absent membership.
+
+Regression coverage lives in
+[tested route behavior](https://github.com/tutur3u/platform/blob/main/packages/apis/src/members/route.remove-authorization.test.ts)
+and the
+[database removal suite](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
+
 ## Navigation preferences and recovery
 
 Phones and tablets share a compact floating icon dock. Leaving a mini-app returns

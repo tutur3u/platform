@@ -31,12 +31,10 @@ const directCleanup: OrphanedWorkspaceCleanup = {
 
 function adminClient(options: { workspaceMissingOnCleanup: boolean }) {
   const writes: string[] = [];
-  let workspaceReads = 0;
   const from = vi.fn((table: string) => {
     let rows: Array<Record<string, unknown>> = [];
     if (table === 'workspaces') {
-      workspaceReads += 1;
-      const missing = options.workspaceMissingOnCleanup && workspaceReads > 1;
+      const missing = options.workspaceMissingOnCleanup;
       rows = missing
         ? []
         : [{ id: 'ws-a', creator_id: creator, personal: false }];
@@ -66,7 +64,8 @@ function adminClient(options: { workspaceMissingOnCleanup: boolean }) {
     };
     return query;
   });
-  return { from, writes };
+  const rpc = vi.fn().mockResolvedValue({ data: 'removed', error: null });
+  return { from, rpc, writes };
 }
 
 function removeMember() {

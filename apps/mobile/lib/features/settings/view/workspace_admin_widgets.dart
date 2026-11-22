@@ -4,13 +4,19 @@ import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Server message for a failed workspace-admin request, or the generic
-/// fallback when the server sent none.
+/// Localized removal refusals and server messages for other request failures.
 String describeWorkspaceAdminError(BuildContext context, Object error) {
-  if (error is ApiException && error.message.trim().isNotEmpty) {
-    return error.message.trim();
+  final l10n = context.l10n;
+  if (error is ApiException) {
+    switch (error.code) {
+      case 'WORKSPACE_LAST_MANAGER':
+        return l10n.settingsWorkspaceMembersLastManagerRemovalRefused;
+      case 'WORKSPACE_CREATOR_PROTECTED':
+        return l10n.settingsWorkspaceMembersCreatorRemovalRefused;
+    }
+    if (error.message.trim().isNotEmpty) return error.message.trim();
   }
-  return context.l10n.commonSomethingWentWrong;
+  return l10n.commonSomethingWentWrong;
 }
 
 /// Shows a workspace-admin failure as a destructive toast.

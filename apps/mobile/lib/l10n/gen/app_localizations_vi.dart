@@ -9257,6 +9257,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspaceMembersCreatorChip => 'Chủ sở hữu';
 
   @override
+  String get settingsWorkspaceMembersCreatorRemovalRefused => 'Không thể xóa người tạo không gian làm việc.';
+
+  @override
   String get settingsWorkspaceMembersEmailField => 'Email';
 
   @override
@@ -9273,6 +9276,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
+
+  @override
+  String get settingsWorkspaceMembersLastManagerRemovalRefused => 'Phải có ít nhất một thành viên có quyền quản lý thành viên. Hãy cấp quyền đó cho một thành viên khác trước.';
 
   @override
   String get settingsWorkspaceMembersLinkAction => 'Tạo link';

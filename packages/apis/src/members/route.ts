@@ -12,6 +12,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  GUARD_WORKSPACE_SELF_REMOVAL,
+  lastManagerResponse,
+  WORKSPACE_CREATOR_PROTECTED,
+} from './guarded-removal';
 
 interface Params {
   params: Promise<{
@@ -211,62 +216,76 @@ export async function DELETE(
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   if (userId) {
-    const { data: workspace, error: workspaceError } = await sbAdmin
-      .from('workspaces')
-      .select('creator_id')
-      .eq('id', resolvedWsId)
-      .single();
-
-    if (workspaceError) {
-      console.error('Error resolving workspace creator:', workspaceError);
-      return NextResponse.json(
-        { message: 'Error deleting workspace member' },
-        { status: 500 }
+    try {
+      const { data, error } = await sbAdmin.rpc(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: user.id,
+          p_guard_self: GUARD_WORKSPACE_SELF_REMOVAL,
+          p_mode: 'workspace',
+          p_user_id: userId,
+          p_ws_id: resolvedWsId,
+        }
       );
+      if (error) throw error;
+
+      switch (data) {
+        case 'removed':
+        case 'not_found':
+          break;
+        case 'creator_protected':
+          return NextResponse.json(
+            {
+              code: WORKSPACE_CREATOR_PROTECTED,
+              message: 'Workspace creator cannot be removed',
+            },
+            { status: 409 }
+          );
+        case 'forbidden':
+          return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        case 'last_manager':
+          return lastManagerResponse();
+        default:
+          throw new Error('Unexpected guarded member removal response');
+      }
+    } catch (error) {
+      console.error('Error deleting workspace member:', error);
+      return memberRemovalFailure();
     }
 
-    if (workspace?.creator_id === userId) {
-      return NextResponse.json(
-        { message: 'Workspace creator cannot be removed' },
-        { status: 409 }
+    try {
+      await revokeSeatFromMember(
+        createPolarClient(),
+        sbAdmin,
+        resolvedWsId,
+        userId
       );
+    } catch (error) {
+      console.error('Error preparing workspace member seat revocation:', error);
     }
   }
 
-  // Revoke Polar seat BEFORE deleting member (best-effort)
-  if (userId) {
-    const polar = createPolarClient();
-    await revokeSeatFromMember(polar, sbAdmin, resolvedWsId, userId);
+  const access = {
+    sbAdmin,
+    userEmail: normalizedUserEmail,
+    userId,
+    wsId: resolvedWsId,
+  };
+  const [invitations, boardShares] = await Promise.allSettled([
+    revokeWorkspaceMemberAccessRecords(access),
+    revokeDirectBoardGuestAccess(access),
+  ]);
+  if (invitations.status === 'rejected') {
+    console.error('Error deleting workspace invitations:', invitations.reason);
   }
-
-  try {
-    await revokeWorkspaceMemberAccessRecords({
-      sbAdmin,
-      userEmail: normalizedUserEmail,
-      userId,
-      wsId: resolvedWsId,
-    });
-  } catch (error) {
-    console.error('Error deleting workspace member access:', error);
-    return NextResponse.json(
-      { message: 'Error deleting workspace member' },
-      { status: 500 }
+  if (boardShares.status === 'rejected') {
+    console.error(
+      'Error revoking direct board guest access:',
+      boardShares.reason
     );
   }
-
-  try {
-    await revokeDirectBoardGuestAccess({
-      sbAdmin,
-      wsId: resolvedWsId,
-      userId,
-      userEmail: normalizedUserEmail,
-    });
-  } catch (error) {
-    console.error('Error revoking direct board guest access:', error);
-    return NextResponse.json(
-      { message: 'Error deleting workspace member' },
-      { status: 500 }
-    );
+  if (invitations.status === 'rejected' || boardShares.status === 'rejected') {
+    return memberRemovalFailure();
   }
 
   // After successful removal, check if workspace is now orphaned
@@ -278,6 +297,13 @@ export async function DELETE(
     message: 'success',
     workspace_deleted: workspaceDeleted,
   });
+}
+
+function memberRemovalFailure() {
+  return NextResponse.json(
+    { message: 'Error deleting workspace member' },
+    { status: 500 }
+  );
 }
 
 export async function revokeWorkspaceMemberAccessRecords({
@@ -329,22 +355,8 @@ export async function revokeWorkspaceMemberAccessRecords({
         .ilike('email', userEmail)
     : Promise.resolve({ error: null });
 
-  const memberQuery = userId
-    ? sbAdmin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', wsId)
-        .eq('user_id', userId)
-    : Promise.resolve({ error: null });
-
-  const results = await Promise.all([
-    inviteQuery,
-    emailInviteQuery,
-    memberQuery,
-  ]);
-  const mutationError = (results as Array<{ error: unknown }>).find(
-    (result) => result.error
-  )?.error;
+  const results = await Promise.all([inviteQuery, emailInviteQuery]);
+  const mutationError = results.find((result) => result.error)?.error;
   if (mutationError) throw mutationError;
 }
 

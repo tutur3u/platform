@@ -28,12 +28,11 @@ function errorCode(error: unknown) {
 }
 
 /**
- * The toast text for a failed member or access-level removal: the translated
- * refusal for a known response code, otherwise the error's own message.
+ * The translated refusal for a known member or access-level removal code.
  */
-export function describeWorkspaceAccessRemovalError(
+export function getWorkspaceAccessRemovalRefusalMessage(
   error: unknown,
-  text: WorkspaceAccessRemovalErrorText
+  text: Pick<WorkspaceAccessRemovalErrorText, 'creator' | 'lastManager'>
 ) {
   const code = errorCode(error);
   if (code && Object.hasOwn(REMOVAL_REFUSAL_TEXT, code)) {
@@ -42,5 +41,15 @@ export function describeWorkspaceAccessRemovalError(
     ];
   }
 
-  return error instanceof Error ? error.message : text.fallback;
+  return null;
+}
+
+export function describeWorkspaceAccessRemovalError(
+  error: unknown,
+  text: WorkspaceAccessRemovalErrorText
+) {
+  return (
+    getWorkspaceAccessRemovalRefusalMessage(error, text) ??
+    (error instanceof Error ? error.message : text.fallback)
+  );
 }

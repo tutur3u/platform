@@ -14,13 +14,12 @@ const mocks = vi.hoisted(() => {
   const workspaceSubscriptionSingle = vi.fn();
   const subscriptionProductMaybeSingle = vi.fn();
   const inviteDeleteByUserId = vi.fn();
-  const memberDeleteByUserId = vi.fn();
+  const guardedRemoval = vi.fn();
   const getExternalCustomer = vi.fn();
   const getPermissions = vi.fn();
   const listSeats = vi.fn();
   const revokeSeat = vi.fn();
   const workspaceBoardsEq = vi.fn();
-  const workspaceCreatorSingle = vi.fn();
   const withSessionAuth = vi.fn(
     (
       handler: (
@@ -63,47 +62,18 @@ const mocks = vi.hoisted(() => {
         };
       }
 
-      if (table === 'workspace_members') {
-        return {
-          delete: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: memberDeleteByUserId,
-            })),
-          })),
-        };
-      }
-
       throw new Error(`Unexpected session table: ${table}`);
     }),
   };
 
   const adminSupabase = {
+    rpc: guardedRemoval,
     from: vi.fn((table: string) => {
-      if (table === 'workspaces') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: workspaceCreatorSingle,
-            })),
-          })),
-        };
-      }
-
       if (table === 'workspace_invites') {
         return {
           delete: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: inviteDeleteByUserId,
-            })),
-          })),
-        };
-      }
-
-      if (table === 'workspace_members') {
-        return {
-          delete: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: memberDeleteByUserId,
             })),
           })),
         };
@@ -170,7 +140,7 @@ const mocks = vi.hoisted(() => {
     getPermissions,
     inviteDeleteByUserId,
     listSeats,
-    memberDeleteByUserId,
+    guardedRemoval,
     normalizeAppWorkspaceId,
     normalizeSharedWorkspaceId,
     polarClient,
@@ -179,7 +149,6 @@ const mocks = vi.hoisted(() => {
     subscriptionProductMaybeSingle,
     workspaceSubscriptionSingle,
     workspaceBoardsEq,
-    workspaceCreatorSingle,
     withSessionAuth,
   };
 });
@@ -244,51 +213,73 @@ describe('workspace members delete route', () => {
       withoutPermission: vi.fn(() => false),
     });
     mocks.inviteDeleteByUserId.mockResolvedValue({ error: null });
-    mocks.memberDeleteByUserId.mockResolvedValue({ error: null });
+    mocks.guardedRemoval.mockResolvedValue({ data: 'removed', error: null });
     mocks.workspaceBoardsEq.mockResolvedValue({ data: [], error: null });
-    mocks.workspaceCreatorSingle.mockResolvedValue({
-      data: { creator_id: 'creator-user' },
-      error: null,
-    });
   });
 
-  it('revokes the Polar seat using the Polar customer id during member removal', async () => {
-    const { DELETE } =
-      await import('@/legacy-api-routes/workspaces/[wsId]/members/route');
+  it.each([
+    [
+      '/api/workspaces',
+      () => import('@/legacy-api-routes/workspaces/[wsId]/members/route'),
+    ],
+    [
+      '/api/v1/workspaces',
+      () => import('@/legacy-api-routes/v1/workspaces/[wsId]/members/route'),
+    ],
+  ] as const)(
+    'revokes the Polar seat by customer id after guarded removal on %s',
+    async (path, loadRoute) => {
+      const { DELETE } = await loadRoute();
 
-    const response = await DELETE(
-      new NextRequest(
-        `http://localhost/api/workspaces/${ROOT_WORKSPACE_ID}/members?id=00000000-0000-4000-8000-000000000001`,
+      const response = await DELETE(
+        new NextRequest(
+          `http://localhost${path}/${ROOT_WORKSPACE_ID}/members?id=00000000-0000-4000-8000-000000000001`,
+          {
+            method: 'DELETE',
+          }
+        ),
         {
-          method: 'DELETE',
+          params: Promise.resolve({ wsId: ROOT_WORKSPACE_ID }),
         }
-      ),
-      {
-        params: Promise.resolve({ wsId: ROOT_WORKSPACE_ID }),
-      }
-    );
+      );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      message: 'success',
-      workspace_deleted: false,
-    });
-    expect(mocks.normalizeAppWorkspaceId).toHaveBeenCalledWith(
-      ROOT_WORKSPACE_ID,
-      mocks.sessionSupabase
-    );
-    expect(mocks.normalizeSharedWorkspaceId).toHaveBeenCalledWith(
-      ROOT_WORKSPACE_ID,
-      mocks.sessionSupabase
-    );
-    expect(mocks.getExternalCustomer).toHaveBeenCalledWith({
-      externalId: '00000000-0000-4000-8000-000000000001',
-    });
-    expect(mocks.revokeSeat).toHaveBeenCalledWith({
-      seatId: 'seat-1',
-    });
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_members');
-    expect(mocks.sessionSupabase.auth.getUser).not.toHaveBeenCalled();
-    expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        message: 'success',
+        workspace_deleted: false,
+      });
+      expect(mocks.normalizeAppWorkspaceId).toHaveBeenCalledWith(
+        ROOT_WORKSPACE_ID,
+        mocks.sessionSupabase
+      );
+      expect(mocks.normalizeSharedWorkspaceId).toHaveBeenCalledWith(
+        ROOT_WORKSPACE_ID,
+        mocks.sessionSupabase
+      );
+      expect(mocks.getExternalCustomer).toHaveBeenCalledWith({
+        externalId: '00000000-0000-4000-8000-000000000001',
+      });
+      expect(mocks.revokeSeat).toHaveBeenCalledWith({
+        seatId: 'seat-1',
+      });
+      expect(mocks.guardedRemoval).toHaveBeenCalledExactlyOnceWith(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: 'admin-user',
+          p_guard_self: false,
+          p_mode: 'workspace',
+          p_user_id: '00000000-0000-4000-8000-000000000001',
+          p_ws_id: ROOT_WORKSPACE_ID,
+        }
+      );
+      expect(mocks.guardedRemoval.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.getExternalCustomer.mock.invocationCallOrder[0]!
+      );
+      expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
+        'workspace_members'
+      );
+      expect(mocks.sessionSupabase.auth.getUser).not.toHaveBeenCalled();
+      expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
+    }
+  );
 });
