@@ -45,10 +45,7 @@ function fixture(t, app = 'mail') {
       main: './index.js',
       compatibility_date:
         app === 'apps' || app === 'finance' ? '2026-10-12' : '2026-10-19',
-      compatibility_flags:
-        app === 'apps'
-          ? ['nodejs_compat']
-          : ['nodejs_compat', 'global_fetch_strictly_public'],
+      compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
       vars:
         app === 'web'
           ? {

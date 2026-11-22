@@ -649,10 +649,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "The Apps staging config enables global_fetch_strictly_public so same-zone fetches reach zone Worker routes. The filename stays the only Wrangler use; counts are unchanged."
       },
-      "digest": "7e0ea5e7bdb9bdc55d8b329a819e376c5a7a846cb135feb651efae4bceadc896"
+      "digest": "3790085362b5187b03e5b7e663f66f681321e80785d1c5c9a29d196fc1283701"
     },
     "apps/backend/wrangler.jsonc": {
       "lines": 2,
@@ -999,10 +999,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/b1a9f43ea2c4783ff5cd014fec362f674ca05e41",
-        "reason": "The Gateway config declares the Contacts mount and service binding. The filename remains the only Wrangler use."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "The gateway config enables global_fetch_strictly_public so same-zone fetches reach zone Worker routes. The filename stays the only Wrangler use; counts are unchanged."
       },
-      "digest": "22d485dbf8f7f14e32971c6cc3ed96e5e3a0f993b1c3080dabd63ca6c44f53a9"
+      "digest": "5849629786baa5b58007f28c829e5ebcf7006e4b65a660a1c1ed84b139e26b91"
     },
     "apps/gateway/wrangler.subdomain-redirect.jsonc": {
       "lines": 1,
