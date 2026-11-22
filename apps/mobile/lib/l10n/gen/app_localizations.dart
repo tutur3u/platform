@@ -35179,6 +35179,18 @@ abstract class AppLocalizations {
   /// **'Usage records from {machines} are older than 2 minutes.'**
   String mastermindUsagePartialStale(String machines);
 
+  /// No description provided for @mastermindUsageUnpricedUncounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Some usage has no price, so cost totals leave it out.'**
+  String get mastermindUsageUnpricedUncounted;
+
+  /// No description provided for @mastermindFleetOutcomesUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes not read yet. Outcomes are not shown.'**
+  String get mastermindFleetOutcomesUnread;
+
   /// No description provided for @mastermindUsageUnpricedRecords.
   ///
   /// In en, this message translates to:

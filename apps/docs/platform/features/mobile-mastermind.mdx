@@ -412,7 +412,8 @@ records the product rules of the shell entry and every tab.
   reads `not_reported`. A source T3 marks `missing` (provider not installed)
   does not make accounting partial; a source still `refreshing` does, since
   its scan can add records. The partial line names the machines and the
-  unpriced record count. An environment descriptor that never answers, or
+  unpriced record count; a row with no price and no unpriced count is named
+  without inventing a record count. An environment descriptor that never answers, or
   whose body is cut off, reads `unreachable`; a non-T3 or other-environment
   reply reads `environment_mismatch`. Web and the
   Mastermind Worker must accept these fields before a publisher that emits
@@ -431,9 +432,13 @@ records the product rules of the shell entry and every tab.
   retried lanes (failures a newer attempt superseded, which may still be
   running, so they are not shown as recoveries), updated since ICT midnight,
   with that reason. A peer silent past the two-minute limit shows Stale, as
-  on the Machines card. When the 300-lane cap may have cut today's failed or
-  idle lanes, including a full snapshot that lists none (a peer listing stops
-  at the cap of active lanes), the row says partial coverage. An offline
+  on the Machines card. Each linked machine carries `laneCoverage`:
+  `complete` for its whole recent listing, `partial` when the peer listing
+  hit its 300-lane cap or page limit, and `unavailable` when the peer answered
+  its heartbeat but no lane listing was read or cached. An unavailable
+  listing reads "Lanes not read yet", never zero failures. The row also says
+  partial coverage when the snapshot's own 300-lane cap may have cut today's
+  failed or idle lanes, including a full snapshot that lists none. An offline
   machine says outcomes are not collected, and outcomes from another day read
   unavailable. "No account can run now" needs a complete quota reading in
   which every account the machine reports, whatever the provider filter, was

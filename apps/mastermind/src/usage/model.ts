@@ -99,7 +99,10 @@ export type AccountingGaps = {
   unread: string[];
   partial: string[];
   stale: string[];
+  /** Records T3 counted as having no price. */
   unpriced: number;
+  /** A row without a cost whose unpriced records T3 did not count. */
+  unpricedUncounted: boolean;
 };
 
 /** Names each machine and price gap behind partial cost totals. */
@@ -118,15 +121,9 @@ export function accountingGaps(
         accounting.kind !== 'unavailable' &&
         olderThan(accounting.observedAt, now, FLEET_USAGE_STALE_MS)
     ),
-    unpriced: rows.reduce(
-      (total, row) =>
-        total +
-        (row.unpricedRecords > 0
-          ? row.unpricedRecords
-          : row.costUsd === null
-            ? 1
-            : 0),
-      0
+    unpriced: rows.reduce((total, row) => total + row.unpricedRecords, 0),
+    unpricedUncounted: rows.some(
+      (row) => row.costUsd === null && row.unpricedRecords === 0
     ),
   };
 }
@@ -136,6 +133,7 @@ export function hasAccountingGaps(gaps: AccountingGaps) {
     gaps.unread.length > 0 ||
     gaps.partial.length > 0 ||
     gaps.stale.length > 0 ||
-    gaps.unpriced > 0
+    gaps.unpriced > 0 ||
+    gaps.unpricedUncounted
   );
 }

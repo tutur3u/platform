@@ -128,6 +128,7 @@ class FleetMachine {
     required this.status,
     this.lastSeenAt,
     this.todayOutcomes,
+    this.laneCoverage,
   });
 
   static FleetMachine? parse(Map<String, dynamic> json) {
@@ -144,6 +145,7 @@ class FleetMachine {
         final Map<String, dynamic> json => FleetTodayOutcomes.parse(json),
         _ => null,
       },
+      laneCoverage: _enum(FleetLaneCoverage.values, json['laneCoverage']),
     );
   }
 
@@ -152,7 +154,14 @@ class FleetMachine {
   final FleetMachineStatus status;
   final DateTime? lastSeenAt;
   final FleetTodayOutcomes? todayOutcomes;
+
+  /// A linked machine's lane listing; null from publishers that predate it.
+  final FleetLaneCoverage? laneCoverage;
 }
+
+/// Whether a linked machine's published lanes are its whole recent listing,
+/// a capped one, or none (reachable, but its lanes were not read).
+enum FleetLaneCoverage { complete, partial, unavailable }
 
 class FleetOption {
   const FleetOption({required this.id, required this.label});

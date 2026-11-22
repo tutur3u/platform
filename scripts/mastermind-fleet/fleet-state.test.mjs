@@ -72,6 +72,7 @@ test('counts lanes on every linked machine under its own slug', () => {
       label: 'Skora Macbook M3 Pro',
       status: 'online',
       lastSeenAt: NOW.toISOString(),
+      laneCoverage: 'partial',
       threads: [
         remoteThread('m3-q', 'queued', '2026-11-20T02:57:00.000Z'),
         remoteThread('m3-f', 'failed', '2026-11-20T01:00:00.000Z'),
@@ -118,6 +119,11 @@ test('counts lanes on every linked machine under its own slug', () => {
       ['macstudio1', 'online', NOW.toISOString()],
       ['skora-macbook-m3-pro', 'online', NOW.toISOString()],
     ]
+  );
+  // Only a peer's own listing coverage goes out, and only from the closed set.
+  assert.deepEqual(
+    state.machines.map((m) => m.laneCoverage),
+    [undefined, undefined, 'partial']
   );
   const json = JSON.stringify(state);
   assert.ok(!json.includes('env-3'));

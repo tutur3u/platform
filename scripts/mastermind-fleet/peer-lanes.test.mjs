@@ -103,6 +103,7 @@ test('lists every active page, recent failures and recent idle threads', async (
   for (const id of ['fail-old', 'done-old']) assert.ok(!ids.has(id), id);
   assert.equal(rows.find((row) => row.threadId === 'done-new').state, 'idle');
   assert.equal(rows[0].projectTitle, 'platform');
+  assert.equal(rows.truncated, false);
 });
 
 test('probes peers live, keeps a stale peer, drops an offline one', async () => {
@@ -257,6 +258,11 @@ test('probes peers live, keeps a stale peer, drops an offline one', async () => 
   assert.equal(result.cache['env-d'].threads, undefined);
   assert.equal(byId['env-a'].live, true);
   assert.equal(byId['env-c'].live, false);
+  // A live or cached listing covers the lanes; a heartbeat alone does not.
+  assert.equal(byId['env-a'].laneCoverage, 'complete');
+  assert.equal(byId['env-c'].laneCoverage, 'complete');
+  assert.equal(byId['env-f'].laneCoverage, 'unavailable');
+  assert.equal(result.cache['env-a'].laneCoverage, 'complete');
   assert.equal(result.cache['env-a'].lastSeenAt, NOW.toISOString());
   assert.equal(result.cache['env-c'].lastSeenAt, minutesAgo(10));
   // Each token only goes to its own link's addresses; every session closes.
@@ -398,6 +404,8 @@ test('collects running work before newer queued threads', async () => {
   assert.equal(rows.length, 300);
   assert.equal(rows[0].threadId, 'old-run');
   assert.ok(!rows.some((row) => row.threadId === 'never-ran'));
+  // The cap left active threads out and skipped the failed and recent scan.
+  assert.equal(rows.truncated, true);
 });
 
 test('refuses a FIFO at the credential path without blocking', async () => {

@@ -28,6 +28,7 @@ FleetSnapshot _snapshot({
   Map<String, dynamic> counts = const {'running': 4, 'idle': 2, 'failed': 4},
   List<Map<String, dynamic>> extraLanes = const [],
   String? macStudioSeenAt,
+  String? macStudioCoverage,
 }) => FleetSnapshot.parse({
   'receivedAt': '2026-11-22T02:58:40.000Z',
   'state': {
@@ -57,6 +58,7 @@ FleetSnapshot _snapshot({
         'label': 'MacStudio1',
         'status': 'online',
         'lastSeenAt': ?macStudioSeenAt,
+        'laneCoverage': ?macStudioCoverage,
       },
       {'id': 'macbook1', 'label': 'Macbook1', 'status': 'stale'},
       {'id': 'skora-macbook-m3-pro', 'label': 'M3 Pro', 'status': 'offline'},
@@ -178,6 +180,33 @@ void main() {
             as FleetLaneOutcome;
     expect(outcome.failed, 0);
     expect(outcome.partial, isTrue);
+  });
+
+  test("the publisher's lane coverage decides what a peer row may claim", () {
+    final unread = _snapshot(macStudioCoverage: 'unavailable');
+    final none = fleetMachineOutcome(
+      unread,
+      _machine(unread, 'macstudio1'),
+      _now,
+    );
+    expect(none, isA<FleetNoOutcome>());
+    expect((none as FleetNoOutcome).unread, isTrue);
+    // Every state is listed and its total matches, yet the peer's own
+    // listing was capped.
+    final capped = _snapshot(macStudioCoverage: 'partial');
+    expect(
+      (fleetMachineOutcome(capped, _machine(capped, 'macstudio1'), _now)
+              as FleetLaneOutcome)
+          .partial,
+      isTrue,
+    );
+    final whole = _snapshot(macStudioCoverage: 'complete');
+    expect(
+      (fleetMachineOutcome(whole, _machine(whole, 'macstudio1'), _now)
+              as FleetLaneOutcome)
+          .partial,
+      isFalse,
+    );
   });
 
   testWidgets('a peer last seen past the stale limit shows Stale', (

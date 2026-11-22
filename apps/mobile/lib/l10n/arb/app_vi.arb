@@ -8020,6 +8020,8 @@
       }
     }
   },
+  "mastermindUsageUnpricedUncounted": "Một phần mức dùng chưa có giá, nên tổng chi phí không tính phần này.",
+  "mastermindFleetOutcomesUnread": "Chưa đọc được các luồng. Không hiển thị kết quả.",
   "mastermindUsageUnpricedRecords": "{count, plural, other{{count} bản ghi mức dùng chưa có giá, nên tổng chi phí không tính các bản ghi này.}}",
   "@mastermindUsageUnpricedRecords": {
     "placeholders": {

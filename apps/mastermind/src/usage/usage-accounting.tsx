@@ -131,6 +131,7 @@ export function UsageAccounting({
               {t('usage.gap.unpriced', { count: count.format(gaps.unpriced) })}
             </p>
           )}
+          {gaps.unpricedUncounted && <p>{t('usage.gap.unpricedUncounted')}</p>}
         </div>
       )}
       <div className="grid gap-3 md:grid-cols-3">

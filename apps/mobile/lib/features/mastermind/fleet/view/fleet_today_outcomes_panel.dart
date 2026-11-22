@@ -43,10 +43,12 @@ final class FleetLaneOutcome extends FleetMachineOutcome {
   final bool partial;
 }
 
-/// Nothing to count: the machine is offline, or its outcomes are not today's.
+/// Nothing to count: the machine is offline, its lanes were not read, or its
+/// outcomes are not today's.
 final class FleetNoOutcome extends FleetMachineOutcome {
-  const FleetNoOutcome({required this.offline});
+  const FleetNoOutcome({required this.offline, this.unread = false});
   final bool offline;
+  final bool unread;
 }
 
 /// Today's outcome for [machine]. Machines without classified outcomes (every
@@ -65,6 +67,10 @@ FleetMachineOutcome fleetMachineOutcome(
   }
   if (fleetMachineStatusAt(machine, now) == FleetMachineStatus.offline) {
     return const FleetNoOutcome(offline: true);
+  }
+  // Reachable, but no lane listing: zero lanes would read as zero failures.
+  if (machine.laneCoverage == FleetLaneCoverage.unavailable) {
+    return const FleetNoOutcome(offline: false, unread: true);
   }
   final dayStart = fleetIctDayStart(now);
   var failed = 0;
@@ -85,6 +91,7 @@ FleetMachineOutcome fleetMachineOutcome(
     failed: failed,
     retried: retried,
     partial:
+        machine.laneCoverage == FleetLaneCoverage.partial ||
         !_coversToday(snapshot, FleetLaneState.failed, dayStart) ||
         !_coversToday(snapshot, FleetLaneState.idle, dayStart),
   );
@@ -186,6 +193,8 @@ class FleetTodayOutcomesPanel extends StatelessWidget {
             : lanes;
       case FleetNoOutcome(offline: true):
         return l10n.mastermindFleetOutcomesOffline;
+      case FleetNoOutcome(unread: true):
+        return l10n.mastermindFleetOutcomesUnread;
       case FleetNoOutcome():
         return l10n.mastermindUsageMissing;
     }

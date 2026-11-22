@@ -82,7 +82,21 @@ FleetUsage _usage(DateTime now) {
           status: {'kind': 'limited', 'reason': 'weekly'},
         ),
       ],
-      'buckets': <Object>[],
+      // No price and no unpriced count: named, not counted as one record.
+      'buckets': [
+        {
+          'day': '2026-11-22',
+          'provider': 'codex',
+          'model': 'fixture-model',
+          'accountId': null,
+          'uncachedInputTokens': 1,
+          'cachedInputTokens': 0,
+          'cacheCreationTokens': 0,
+          'outputTokens': 1,
+          'unpricedRecords': 0,
+          'costUsd': null,
+        },
+      ],
     },
     {
       'id': 'c02',
@@ -231,6 +245,10 @@ void main() {
       find.text(
         '420 usage records have no price, so cost totals leave them out.',
       ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Some usage has no price, so cost totals leave it out.'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);

@@ -174,6 +174,27 @@ describe('usage readiness', () => {
       partial: ['C02'],
       stale: ['C02'],
       unpriced: 420,
+      unpricedUncounted: false,
     });
+  });
+
+  it('reports a cost-less row without inventing a record count', () => {
+    const rows = [
+      {
+        day: '2026-11-22',
+        provider: 'codex',
+        model: 'fixture-model',
+        accountId: null,
+        uncachedInputTokens: 1,
+        cachedInputTokens: 0,
+        cacheCreationTokens: 0,
+        outputTokens: 1,
+        unpricedRecords: 0,
+        costUsd: null,
+      },
+    ];
+    const gaps = accountingGaps([machine()], rows, NOW);
+    expect(gaps.unpriced).toBe(0);
+    expect(gaps.unpricedUncounted).toBe(true);
   });
 });

@@ -18930,6 +18930,12 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindUsageUnpricedUncounted => 'Một phần mức dùng chưa có giá, nên tổng chi phí không tính phần này.';
+
+  @override
+  String get mastermindFleetOutcomesUnread => 'Chưa đọc được các luồng. Không hiển thị kết quả.';
+
+  @override
   String mastermindUsageUnpricedRecords(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

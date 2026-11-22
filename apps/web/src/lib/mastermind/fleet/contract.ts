@@ -68,6 +68,8 @@ export const fleetMachineSchema = z.object({
   label: labelText(40, 'Machine'),
   status: z.enum(['online', 'stale', 'offline']),
   lastSeenAt: isoTime.optional(),
+  // A linked machine's lane listing: whole, capped, or not read this tick.
+  laneCoverage: z.enum(['complete', 'partial', 'unavailable']).optional(),
   todayOutcomes: z
     .object({
       kind: z.enum(['complete', 'partial']),

@@ -193,17 +193,18 @@ List<String> _accountingGaps(
   });
   final unpriced = rows.fold<int>(
     0,
-    (total, row) =>
-        total +
-        (row.bucket.unpriced > 0
-            ? row.bucket.unpriced
-            : (row.bucket.cost == null ? 1 : 0)),
+    (total, row) => total + row.bucket.unpriced,
+  );
+  // A row without a cost whose unpriced records T3 did not count.
+  final uncounted = rows.any(
+    (row) => row.bucket.cost == null && row.bucket.unpriced == 0,
   );
   return [
     if (unread.isNotEmpty) l10n.mastermindUsagePartialUnread(unread),
     if (partial.isNotEmpty) l10n.mastermindUsagePartialSources(partial),
     if (stale.isNotEmpty) l10n.mastermindUsagePartialStale(stale),
     if (unpriced > 0) l10n.mastermindUsageUnpricedRecords(unpriced),
+    if (uncounted) l10n.mastermindUsageUnpricedUncounted,
   ];
 }
 

@@ -329,6 +329,8 @@ function threadPage(result, requested) {
 export async function listPeerThreads(callTool, now = new Date()) {
   const since = now.getTime() - DAY_MS;
   const byId = new Map();
+  // Set when the cap or the page limit left threads out of the listing.
+  let truncated = false;
   const add = (threads, keep) => {
     for (const thread of threads) {
       if (
@@ -375,7 +377,10 @@ export async function listPeerThreads(callTool, now = new Date()) {
         const result = await list({ statuses, limit: full ? 1 : PAGE, cursor });
         if (Number.isInteger(result.total))
           totals[laneStateFor(statuses[0])] ??= result.total;
-        if (full) break;
+        if (full) {
+          truncated = true;
+          break;
+        }
         add(result.threads, () => true);
         cursor = result.nextCursor;
       } while (cursor !== null);
@@ -389,7 +394,11 @@ export async function listPeerThreads(callTool, now = new Date()) {
   const pageRecent = async (statuses) => {
     let cursor = 0;
     for (let page = 0; page < RECENT_PAGES; page++) {
-      if (cursor === null || byId.size >= MAX_PEER_LANES) return;
+      if (cursor === null) return;
+      if (byId.size >= MAX_PEER_LANES) {
+        truncated = true;
+        return;
+      }
       const result = await list({
         ...(statuses ? { statuses } : {}),
         limit: PAGE,
@@ -400,6 +409,7 @@ export async function listPeerThreads(callTool, now = new Date()) {
       if (!last || Date.parse(last.updatedAt) < since) return;
       cursor = result.nextCursor;
     }
+    if (cursor !== null) truncated = true;
   };
   const [, projects] = await Promise.all([
     pageRecent(['failed']).then(() => pageRecent()),
@@ -425,6 +435,7 @@ export async function listPeerThreads(callTool, now = new Date()) {
     if (total > listed) extraCounts[state] = total - listed;
   }
   rows.extraCounts = extraCounts;
+  rows.truncated = truncated || byId.size > MAX_PEER_LANES;
   return rows;
 }
 
@@ -527,12 +538,21 @@ export async function readPeers({
         : keepCached
           ? (previous?.extraCounts ?? {})
           : {};
+      // Whether the published lanes are this peer's whole recent listing,
+      // a capped one, or none at all (a heartbeat without a lane read).
+      const laneCoverage = live
+        ? threads.truncated
+          ? 'partial'
+          : 'complete'
+        : keepCached
+          ? (previous?.laneCoverage ?? 'complete')
+          : 'unavailable';
       nextCache[link.environment_id] = {
         linkKey,
         ...(leaseExpiresAt ? { leaseExpiresAt } : {}),
         ...(lastSeenAt ? { lastSeenAt } : {}),
         ...(lanesFresh && !expired
-          ? { lanesAt, threads: kept, extraCounts }
+          ? { lanesAt, threads: kept, extraCounts, laneCoverage }
           : {}),
       };
       return {
@@ -541,6 +561,7 @@ export async function readPeers({
         status,
         live,
         extraCounts,
+        laneCoverage,
         ...(lastSeenAt ? { lastSeenAt } : {}),
         threads: kept,
       };

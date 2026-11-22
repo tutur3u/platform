@@ -18,6 +18,7 @@ export const ACTIVE_RUN_STATUSES = [
 const STATE_ORDER = { running: 0, waiting: 1, queued: 2, failed: 3, idle: 4 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_LANES = 300;
+const LANE_COVERAGE = new Set(['complete', 'partial', 'unavailable']);
 const MAX_MACHINES = 32;
 const ACTIVE_STATES = new Set(['running', 'waiting', 'queued']);
 /** Run statuses that ended without finishing or failing the work. */
@@ -378,6 +379,9 @@ export function buildFleetState(
             now
           ),
         ...(lastSeenAt ? { lastSeenAt } : {}),
+        ...(LANE_COVERAGE.has(peer.laneCoverage)
+          ? { laneCoverage: peer.laneCoverage }
+          : {}),
       };
     }),
   ];

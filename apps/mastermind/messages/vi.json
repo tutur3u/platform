@@ -271,6 +271,7 @@
         "partial": "Một số nguồn mức dùng trên {machines} chưa đầy đủ.",
         "stale": "Bản ghi mức dùng từ {machines} đã cũ hơn 2 phút.",
         "unpriced": "{count} bản ghi mức dùng chưa có giá, nên tổng chi phí không tính các bản ghi này.",
+        "unpricedUncounted": "Một phần mức dùng chưa có giá, nên tổng chi phí không tính phần này.",
         "unread": "Không có bản ghi mức dùng từ {machines}."
       },
       "input": "Đầu vào chưa lưu đệm",

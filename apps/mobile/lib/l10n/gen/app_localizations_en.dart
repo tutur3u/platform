@@ -19153,6 +19153,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindUsageUnpricedUncounted => 'Some usage has no price, so cost totals leave it out.';
+
+  @override
+  String get mastermindFleetOutcomesUnread => 'Lanes not read yet. Outcomes are not shown.';
+
+  @override
   String mastermindUsageUnpricedRecords(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

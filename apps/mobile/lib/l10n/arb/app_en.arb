@@ -9471,6 +9471,8 @@
       }
     }
   },
+  "mastermindUsageUnpricedUncounted": "Some usage has no price, so cost totals leave it out.",
+  "mastermindFleetOutcomesUnread": "Lanes not read yet. Outcomes are not shown.",
   "mastermindUsageUnpricedRecords": "{count, plural, =1{1 usage record has no price, so cost totals leave it out.} other{{count} usage records have no price, so cost totals leave them out.}}",
   "@mastermindUsageUnpricedRecords": {
     "placeholders": {

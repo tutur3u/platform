@@ -271,6 +271,7 @@
         "partial": "Some usage sources are incomplete on {machines}.",
         "stale": "Usage records from {machines} are older than 2 minutes.",
         "unpriced": "{count} usage records have no price, so cost totals leave them out.",
+        "unpricedUncounted": "Some usage has no price, so cost totals leave it out.",
         "unread": "No usage records from {machines}."
       },
       "input": "Uncached input",

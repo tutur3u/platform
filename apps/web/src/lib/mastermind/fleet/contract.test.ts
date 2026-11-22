@@ -68,6 +68,26 @@ describe('fleetStateSchema', () => {
     expect(parsed.lanes[0]?.title).toBe('Fix in billing');
   });
 
+  it("keeps a linked machine's lane coverage from the closed set", () => {
+    const base = sampleFleetState();
+    const machines = base.machines.map((machine, index) =>
+      index === 0
+        ? { ...machine, laneCoverage: 'unavailable' as const }
+        : machine
+    );
+    const parsed = fleetStateSchema.parse(sampleFleetState({ machines }));
+    expect(parsed.machines[0]?.laneCoverage).toBe('unavailable');
+    expect(
+      fleetStateSchema.safeParse(
+        sampleFleetState({
+          machines: machines.map((machine, index) =>
+            index === 0 ? { ...machine, laneCoverage: 'some' } : machine
+          ),
+        } as never)
+      ).success
+    ).toBe(false);
+  });
+
   it('labels a lane whose title is only sensitive content', () => {
     const parsed = fleetStateSchema.parse(
       sampleFleetState({
