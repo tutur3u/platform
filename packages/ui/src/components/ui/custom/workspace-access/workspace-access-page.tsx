@@ -341,7 +341,7 @@ export function WorkspaceAccessPage({
   const deleteRoleMutation = useMutation({
     mutationFn: (roleId: string) => adapter.deleteRole(workspaceId, roleId),
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
+      toast.error(describeWorkspaceAccessRemovalError(error, removalErrorText)),
     onSuccess: async () => {
       toast.success(t('common.deleted'));
       await invalidateAccessData();

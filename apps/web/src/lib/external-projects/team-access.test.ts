@@ -3,6 +3,7 @@ import { requireWorkspaceExternalProjectAccess } from './access';
 import {
   addExternalProjectRoleMembers,
   createExternalProjectTeamRole,
+  deleteExternalProjectTeamRole,
   removeExternalProjectRoleMember,
   requireExternalProjectTeamAccess,
   updateExternalProjectTeamDefaultPermissions,
@@ -416,6 +417,71 @@ describe('external project role workspace binding', () => {
         ws_id: 'workspace-1',
       },
     ]);
+  });
+});
+
+describe('CMS access-level removal', () => {
+  const failure = { message: 'Error deleting access level' };
+
+  it.each([
+    ['removed', 200, { message: 'success' }],
+    ['not_found', 200, { message: 'success' }],
+    ['forbidden', 403, { error: 'Forbidden' }],
+    [
+      'last_manager',
+      409,
+      {
+        code: 'WORKSPACE_LAST_MANAGER',
+        message: 'At least one member must be able to manage members',
+      },
+    ],
+    ['role_protected', 500, failure],
+    ['creator_protected', 500, failure],
+    ['unexpected', 500, failure],
+  ])('maps %s without a direct delete', async (data, status, body) => {
+    const admin = {
+      from: vi.fn(),
+      rpc: vi.fn().mockResolvedValue({ data, error: null }),
+    };
+    const response = await deleteExternalProjectTeamRole({
+      access: {
+        admin,
+        normalizedWorkspaceId: 'workspace-1',
+        user: { id: 'actor-1' },
+      } as never,
+      roleId: 'role-1',
+    });
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual(body);
+    expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+      'delete_workspace_role_guarded',
+      {
+        p_actor_id: 'actor-1',
+        p_mode: 'cms',
+        p_role_id: 'role-1',
+        p_ws_id: 'workspace-1',
+      }
+    );
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('returns the existing failure when the RPC reports an error', async () => {
+    const error = new Error('unavailable');
+    const admin = {
+      from: vi.fn(),
+      rpc: vi.fn().mockResolvedValue({ data: 'removed', error }),
+    };
+    const response = await deleteExternalProjectTeamRole({
+      access: {
+        admin,
+        normalizedWorkspaceId: 'workspace-1',
+        user: { id: 'actor-1' },
+      } as never,
+      roleId: 'role-1',
+    });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual(failure);
+    expect(admin.from).not.toHaveBeenCalled();
   });
 });
 

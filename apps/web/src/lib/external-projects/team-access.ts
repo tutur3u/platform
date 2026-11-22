@@ -1,3 +1,4 @@
+import { lastManagerResponse } from '@tuturuuu/apis/members/guarded-removal';
 import type {
   Database,
   TablesInsert,
@@ -367,25 +368,47 @@ export async function deleteExternalProjectTeamRole({
   access: ExternalProjectTeamAccess;
   roleId: string;
 }) {
-  const { error } = await access.admin
-    .from('workspace_roles')
-    .delete()
-    .eq('id', roleId)
-    .eq('ws_id', access.normalizedWorkspaceId);
+  const deletionFailure = () =>
+    NextResponse.json(
+      { message: 'Error deleting access level' },
+      { status: 500 }
+    );
 
-  if (error) {
+  try {
+    const { data, error } = await access.admin.rpc(
+      'delete_workspace_role_guarded',
+      {
+        p_actor_id: access.user.id,
+        p_mode: 'cms',
+        p_role_id: roleId,
+        p_ws_id: access.normalizedWorkspaceId,
+      }
+    );
+    if (error) throw error;
+
+    switch (data) {
+      case 'removed':
+      case 'not_found':
+        return NextResponse.json({ message: 'success' });
+      case 'forbidden':
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      case 'last_manager':
+        return lastManagerResponse();
+      case 'role_protected':
+        return deletionFailure();
+      default:
+        throw new Error(
+          'Unexpected guarded CMS access-level deletion response'
+        );
+    }
+  } catch (error) {
     console.error('Error deleting CMS team role', {
       error,
       roleId,
       wsId: access.normalizedWorkspaceId,
     });
-    return NextResponse.json(
-      { message: 'Error deleting access level' },
-      { status: 500 }
-    );
+    return deletionFailure();
   }
-
-  return NextResponse.json({ message: 'success' });
 }
 
 export async function getExternalProjectTeamDefaultPermissions({

@@ -209,6 +209,28 @@ scoped membership is missing, `forbidden` when the actor lacks permission, or
 also returns `creator_protected` for the workspace creator. Refusals leave the
 membership and role assignments intact.
 
+### Deleting an access level
+
+CMS deletes a named access level through `delete_workspace_role_guarded`.
+The function authorizes the session actor in CMS mode and uses the same
+workspace lock as team membership removal. Its transaction removes the role
+and its assignments together. If a full member could manage members and
+full members would still remain, the delete must retain that permission for
+at least one full member. Guests and creators outside full membership do not
+satisfy the rule. The existing CMS member and assignment RPCs apply their
+stricter manager floor.
+
+A refused delete returns HTTP 409 with `WORKSPACE_LAST_MANAGER` and the
+people screen shows the translated refusal. An already absent role returns
+success. The recorded Mastermind role retains its deletion protection.
+The workspace-mode self-removal switch defaults off and applies only to
+individual workspace-mode removals. It does not apply to CMS access levels.
+
+Regression coverage lives in
+[CMS team access tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/external-projects/team-access.test.ts)
+and the
+[database removal suite](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
+
 ## Onboard editors for the first site
 
 Use this runbook after the site-builder permission and publish changes have
