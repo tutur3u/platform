@@ -25,6 +25,16 @@ class FleetInboxGroups {
     Map<String, FleetPendingAnswer> pending = const {},
     FleetDecision? Function(String decisionId)? seen,
   }) {
+    final secretIds = {
+      for (final decision in snapshot.decisions)
+        if (decision.kind == FleetDecisionKind.secret) decision.id,
+      for (final decision in snapshot.resolved)
+        if (decision.kind == FleetDecisionKind.secret) decision.id,
+    };
+    bool secret(String id) =>
+        secretIds.contains(id) ||
+        seen?.call(id)?.kind == FleetDecisionKind.secret;
+
     // A sign-in request keeps its card while its answer travels: it keeps
     // blocking work until the agent verifies it.
     bool away(FleetDecision d) =>
@@ -35,7 +45,10 @@ class FleetInboxGroups {
     final open =
         [
           for (final d in snapshot.decisions)
-            if (!away(d) && (!answered(d) || returned(d) || blocking(d))) d,
+            if (!secret(d.id) &&
+                !away(d) &&
+                (!answered(d) || returned(d) || blocking(d)))
+              d,
         ]..sort(
           (a, b) => a.urgency.index != b.urgency.index
               ? a.urgency.index - b.urgency.index
@@ -64,12 +77,20 @@ class FleetInboxGroups {
       needs.add(decision);
     }
     snoozed.sort((a, b) => a.$2.compareTo(b.$2));
-    history.addAll(fleetHistory(snapshot, pending, now, seen: seen));
+    history.addAll(
+      fleetHistory(
+        snapshot,
+        pending,
+        now,
+        seen: seen,
+      ).where((e) => !secret(e.id)),
+    );
     final live = {for (final d in snapshot.decisions) d.id};
     undelivered.addAll(
       [
         for (final MapEntry(:key, :value) in pending.entries)
-          if (!value.outstanding && !live.contains(key)) (key, value),
+          if (!value.outstanding && !live.contains(key) && !secret(key))
+            (key, value),
       ]..sort((a, b) => b.$2.createdAt.compareTo(a.$2.createdAt)),
     );
     alertCount = snapshot.alerts.length;

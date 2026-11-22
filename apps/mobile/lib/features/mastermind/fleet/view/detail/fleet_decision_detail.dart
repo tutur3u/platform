@@ -145,6 +145,9 @@ class FleetDecisionDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (decision.kind == FleetDecisionKind.secret) {
+      return const SizedBox.shrink();
+    }
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
@@ -181,8 +184,9 @@ class FleetDecisionDetail extends StatelessWidget {
                 decision: decision,
                 badge: switch (decision.kind) {
                   FleetDecisionKind.review => l10n.mastermindFleetReviewBadge,
-                  FleetDecisionKind.login => null,
-                  FleetDecisionKind.ask => null,
+                  FleetDecisionKind.login ||
+                  FleetDecisionKind.ask ||
+                  FleetDecisionKind.secret => null,
                 },
                 now: now,
               ),

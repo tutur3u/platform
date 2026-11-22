@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/fleet_router_harness.dart';
 import '../../../helpers/mastermind_fleet_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
+import 'secret_test_support.dart';
 
 const _body =
     'Fysh redesign, drawn in its own design system:\n\n'
@@ -55,10 +56,13 @@ void main() {
   late FakeFleetSource source;
   late MastermindViewHarness harness;
 
-  Future<void> setUpHarness({Duration undoWindow = Duration.zero}) async {
+  Future<void> setUpHarness({
+    Duration undoWindow = Duration.zero,
+    List<Map<String, dynamic>>? decisions,
+  }) async {
     SharedPreferences.setMockInitialValues({});
     source = FakeFleetSource(
-      json: fleetSampleJson(decisions: [_fysh(), _second()]),
+      json: fleetSampleJson(decisions: decisions ?? [_fysh(), _second()]),
     );
     harness = MastermindViewHarness(
       fleet: FleetCubit(
@@ -80,6 +84,47 @@ void main() {
 
   Future<void> scrollTo(WidgetTester tester, Finder finder) =>
       tester.scrollUntilVisible(finder, 200, scrollable: fleetPageScrollable());
+
+  testWidgets('secret requests stay out of the Inbox and decision routes', (
+    tester,
+  ) async {
+    final secret = await signedRequestDecision(
+      id: 'secret-between-asks',
+      resign: false,
+    );
+    await setUpHarness(
+      decisions: [
+        _fysh(),
+        {...decisionJson(secret), 'createdAt': '2026-11-20T02:45:00.000Z'},
+        _second(),
+      ],
+    );
+    final router = await pumpFleetRoutes(
+      tester,
+      harness,
+      now: () => fleetTestNow,
+    );
+    expect(
+      harness.runtime.fleet.seenDecision(secret.id)?.kind,
+      FleetDecisionKind.secret,
+    );
+    expect(find.text('Needs you 2'), findsOneWidget);
+    expect(find.text(secret.title), findsNothing);
+
+    await open(tester, 'Fysh revamp mockups: approve?');
+    expect(find.text('1 of 2'), findsOneWidget);
+    expect(find.textContaining('Next: Move the M4 lanes'), findsOneWidget);
+
+    router.go(Routes.mastermindFleetDecisionPath(secret.id));
+    await tester.pumpAndSettle();
+    expect(find.text('This decision is closed'), findsOneWidget);
+    expect(find.text('Back to Inbox'), findsOneWidget);
+    expect(find.text(secret.title), findsNothing);
+    for (final action in ['Approve', 'Reply', 'Hold', 'Snooze']) {
+      expect(find.text(action), findsNothing);
+    }
+    expect(source.answers, isEmpty);
+  });
 
   testWidgets('a compact card opens the full description and options', (
     tester,

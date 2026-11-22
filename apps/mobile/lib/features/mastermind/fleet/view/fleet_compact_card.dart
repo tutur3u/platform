@@ -75,6 +75,9 @@ class FleetCompactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (decision.kind == FleetDecisionKind.secret) {
+      return const SizedBox.shrink();
+    }
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final summary = fleetDecisionSummary(decision);
@@ -165,7 +168,7 @@ class _Header extends StatelessWidget {
                 ? l10n.mastermindFleetMockupBadge
                 : l10n.mastermindFleetReviewBadge,
           FleetDecisionKind.login => decision.login?.state.label(l10n),
-          FleetDecisionKind.ask => null,
+          FleetDecisionKind.ask || FleetDecisionKind.secret => null,
         };
     final caption = tokens.typography.caption.copyWith(color: muted);
     return Row(

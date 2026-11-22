@@ -428,10 +428,14 @@ class FleetSnapshot {
             : a.createdAt.compareTo(b.createdAt),
       );
 
-  /// Unanswered decisions the owner can still act on at [now]: a login
-  /// request that has expired or ended no longer counts.
-  List<FleetDecision> needsYouAt(DateTime now) =>
-      openDecisions.where((d) => d.login?.isOpenAt(now) ?? true).toList();
+  /// Unanswered decisions available to the ordinary owner flow at [now].
+  List<FleetDecision> needsYouAt(DateTime now) => openDecisions
+      .where(
+        (d) =>
+            d.kind != FleetDecisionKind.secret &&
+            (d.login?.isOpenAt(now) ?? true),
+      )
+      .toList();
 
   /// Login requests still open at [now], answered or not: until the agent
   /// verifies a sign-in, the request keeps blocking work.

@@ -316,12 +316,17 @@ class _FleetDecisionPageState extends State<FleetDecisionPage> {
     final entry = groups.history.where((e) => e.id == id).firstOrNull;
     final open = index >= 0 || groups.snoozed.any((pair) => pair.$1.id == id);
     final decision = live ?? entry?.decision ?? _fleet.seenDecision(id);
+    final secret =
+        decision?.kind == FleetDecisionKind.secret ||
+        snapshot.resolved.any(
+          (d) => d.id == id && d.kind == FleetDecisionKind.secret,
+        );
     final pending = state.pending[id];
     final nextDecision = next == null
         ? null
         : snapshot.decisions.where((d) => d.id == next).firstOrNull;
     final Widget body;
-    if (decision == null && entry != null) {
+    if (!secret && decision == null && entry != null) {
       // Closed before this session saw it: only its title and record.
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -331,7 +336,7 @@ class _FleetDecisionPageState extends State<FleetDecisionPage> {
           FleetAnswerPanel(entry: entry, orchestrator: orchestrator),
         ],
       );
-    } else if (decision == null) {
+    } else if (secret || decision == null) {
       body = AppStateMessage(
         icon: LucideIcons.circleCheck,
         title: l10n.mastermindFleetDecisionGone,

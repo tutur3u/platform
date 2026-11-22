@@ -4,6 +4,7 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_groups.dart';
 
 import '../../../helpers/mastermind_fleet_fixture.dart';
+import 'secret_test_support.dart';
 
 Map<String, dynamic> _ask(
   String id, {
@@ -44,6 +45,47 @@ void main() {
     snoozes,
     fleetTestNow,
     pending: pending,
+  );
+
+  test(
+    'secret requests cannot appear in snoozes, history or retries',
+    () async {
+      final secret = await signedRequestDecision(
+        id: 'secret-live',
+        resign: false,
+      );
+      final stale = await signedRequestDecision(
+        id: 'secret-stale',
+        resign: false,
+      );
+      final snapshot = FleetSnapshot.parse(
+        fleetSampleJson(
+          decisions: [decisionJson(secret), _ask('ordinary')],
+          resolved: [
+            {
+              'id': 'secret-closed',
+              'title': 'Closed secret request',
+              'kind': 'secret',
+              'resolvedAt': '2026-11-20T02:30:00.000Z',
+            },
+          ],
+        ),
+      );
+      expect(snapshot.resolved.single.kind, FleetDecisionKind.secret);
+      expect(snapshot.needsYouAt(fleetTestNow).map((d) => d.id), ['ordinary']);
+      final inbox = FleetInboxGroups(
+        snapshot,
+        {secret.id: fleetTestNow.add(const Duration(minutes: 5))},
+        fleetTestNow,
+        pending: {stale.id: _pending(FleetSendStatus.failed)},
+        seen: (id) => id == stale.id ? stale : null,
+      );
+
+      expect(inbox.order, ['ordinary']);
+      expect(inbox.snoozed, isEmpty);
+      expect(inbox.history, isEmpty);
+      expect(inbox.undelivered, isEmpty);
+    },
   );
 
   test('the tab counts cover only open items', () {

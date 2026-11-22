@@ -593,6 +593,10 @@ Mastermind web app has no dock Back; the browser owns it. Code lives in
 Scope: the mobile Fleet Inbox (`/mastermind/inbox`) and the decision detail
 page (`/mastermind/inbox/ask/<id>`). Default: every list card is compact and
 every answer is given on the detail page, in the decision's own option order.
+Secret requests are excluded from the ordinary Inbox lanes, Today’s Needs you
+list, and decision navigation. A direct decision URL shows the existing
+unavailable state while secure entry is disabled. The fleet decision route
+and Inbox grouping tests cover this boundary.
 
 - **Lanes:** a "Needs you N" / "FYI N" / "History" switch at the top of the
   Inbox root (no extra top bar; the shell owns the title). Needs you holds
