@@ -156,6 +156,7 @@ export {
   meetTrackKind,
   canMeetRealtimeManageParticipants,
   canMeetRealtimeRunActivities,
+  receivesMeetManagerMessage,
   canMeetRealtimePublish,
   canMeetRealtimeUpdateStage,
   getMeetRealtimeScopesForRole,

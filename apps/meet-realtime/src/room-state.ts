@@ -1,10 +1,10 @@
 import type { ServerWebSocket } from 'bun';
 import {
-  canMeetRealtimeManageParticipants,
   createMeetRoomSnapshot,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
   type MeetRoomSnapshot,
+  receivesMeetManagerMessage,
 } from '../../../packages/realtime/src/meet';
 
 export type MeetWebSocket = ServerWebSocket<{
@@ -93,9 +93,12 @@ export function sendToManagers(
   messages: MeetRealtimeServerMessage[]
 ) {
   if (!messages.length) return;
+  // The same rule as the Durable Object: the activity view also reaches
+  // workspace co-hosts, and nothing else for managers does.
   eachClient(roomId, (client) => {
-    if (!canMeetRealtimeManageParticipants(client.data.token)) return;
-    for (const message of messages) send(client, message);
+    for (const message of messages)
+      if (receivesMeetManagerMessage(client.data.token, message))
+        send(client, message);
   });
 }
 

@@ -21,6 +21,7 @@ import {
 } from './live-activity-rate';
 import { mineView, publicView } from './live-activity-views';
 import { MEET_MAX_MESSAGE_BYTES } from './message-size';
+import { receivesMeetManagerMessage } from './permissions';
 import {
   createMeetRoomSnapshot,
   createMeetRoomSocketDelivery,
@@ -772,4 +773,17 @@ it('gives managers the answer keys and prepared rounds, and nobody else', () => 
       },
     },
   ]);
+});
+
+it('delivers manager messages by one rule on every transport', () => {
+  const view = { type: 'activity.host' };
+  const notice = { type: 'room.title.changed' };
+  // Hosts manage participants: everything for managers reaches them.
+  expect(receivesMeetManagerMessage(host, view)).toBe(true);
+  expect(receivesMeetManagerMessage(host, notice)).toBe(true);
+  // A workspace co-host gets the activity view and nothing else.
+  expect(receivesMeetManagerMessage(cohost, view)).toBe(true);
+  expect(receivesMeetManagerMessage(cohost, notice)).toBe(false);
+  expect(receivesMeetManagerMessage(guest, view)).toBe(false);
+  expect(receivesMeetManagerMessage(guest, notice)).toBe(false);
 });

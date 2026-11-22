@@ -8,6 +8,7 @@ import {
   canMeetRealtimeManageParticipants,
   canMeetRealtimeRunActivities,
   meetNonClassMedia,
+  receivesMeetManagerMessage,
 } from './permissions';
 import type { RoomBudget } from './room-budget';
 import type { RoomFormsState } from './room-forms';
@@ -436,13 +437,8 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     for (const socket of sockets()) {
       const token = tokenOf(socket);
       if (!token) continue;
-      const manages = canMeetRealtimeManageParticipants(token);
-      // The activity view also goes to workspace co-hosts, who run activities
-      // without managing participants. Nothing else here reaches them.
-      const runs = canMeetRealtimeRunActivities(token);
       for (const message of messages)
-        if (manages || (runs && message.type === 'activity.host'))
-          sendTo(socket, message);
+        if (receivesMeetManagerMessage(token, message)) sendTo(socket, message);
     }
   }
 

@@ -179,3 +179,19 @@ export function meetTrackKind(track: {
     'video'
   );
 }
+
+/**
+ * Whether a message for the room's managers reaches this token. Participant
+ * managers get all of them. The activity view also goes to workspace co-hosts,
+ * who run activities without managing participants; nothing else reaches them.
+ * Every transport delivers manager messages through this one rule.
+ */
+export function receivesMeetManagerMessage(
+  token: Pick<MeetRealtimeTokenPayload, 'role' | 'scopes'>,
+  message: { type: string }
+) {
+  return (
+    canMeetRealtimeManageParticipants(token) ||
+    (message.type === 'activity.host' && canMeetRealtimeRunActivities(token))
+  );
+}
