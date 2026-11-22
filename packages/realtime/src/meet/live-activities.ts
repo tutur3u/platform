@@ -18,7 +18,10 @@ import {
   publicView,
   settleActivities,
 } from './live-activity-views';
-import type { MeetRealtimeServerMessage } from './messages';
+import {
+  type MeetRealtimeServerMessage,
+  meetRealtimeClientMessageSchema,
+} from './messages';
 import { canMeetRealtimeRunActivities } from './permissions';
 import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
@@ -488,4 +491,15 @@ export function malformedMeetEventReply(
     error: 'malformed_event',
     ...(requestId ? { requestId } : {}),
   };
+}
+
+/**
+ * A client frame as the room reads it: the parsed message, or the refusal to
+ * send back when it cannot be read.
+ */
+export function readMeetClientFrame(json: unknown) {
+  const parsed = meetRealtimeClientMessageSchema.safeParse(json);
+  return parsed.success
+    ? ({ success: true, data: parsed.data } as const)
+    : ({ success: false, reply: malformedMeetEventReply(json) } as const);
 }

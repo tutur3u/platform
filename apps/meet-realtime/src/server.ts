@@ -10,8 +10,7 @@ import {
   type MeetRoomOutcome,
   type MeetSfuIntent,
   meetPresenceMessage,
-  malformedMeetEventReply,
-  meetRealtimeClientMessageSchema,
+  readMeetClientFrame,
   mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
@@ -94,9 +93,9 @@ async function handleMessage(
     return;
   }
 
-  const parsed = meetRealtimeClientMessageSchema.safeParse(json);
+  const parsed = readMeetClientFrame(json);
   if (!parsed.success) {
-    send(ws, malformedMeetEventReply(json));
+    send(ws, parsed.reply);
     return;
   }
 

@@ -3,6 +3,7 @@ import { MeetCommandExecutor } from './command-executor';
 import {
   liveActivityCommandSchema,
   malformedMeetEventReply,
+  readMeetClientFrame,
 } from './live-activities';
 import {
   action,
@@ -452,6 +453,18 @@ it("refuses an activity frame it cannot read under the sender's request id", () 
     type: 'error',
     error: 'malformed_event',
     requestId: 'request-1',
+  });
+  // Both transports read frames through one function: the message, or that
+  // refusal.
+  expect(readMeetClientFrame(outdated)).toEqual({
+    success: false,
+    reply: { type: 'error', error: 'malformed_event', requestId: 'request-1' },
+  });
+  expect(
+    readMeetClientFrame({ type: 'activity.read', requestId: 'request-2' })
+  ).toEqual({
+    success: true,
+    data: { type: 'activity.read', requestId: 'request-2' },
   });
   // An id the room would not accept is not echoed, and neither is the id of
   // a frame that is not about activities.

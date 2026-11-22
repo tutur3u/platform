@@ -11,6 +11,7 @@ export {
   liveActivitiesSnapshotSchema,
   malformedMeetEventReply,
   MEET_LIVE_ASSESSMENT_ENABLED,
+  readMeetClientFrame,
 } from './live-activities';
 export {
   PENBOARD_LIMITS,
