@@ -294,7 +294,7 @@ void main() {
         Routes.mastermindFleetAccess,
       );
       expect(find.text('Release train'), findsOneWidget);
-      for (final tab in ['Today', 'Inbox', 'Work', 'Ship', 'Insights']) {
+      for (final tab in ['Today', 'Inbox', 'Projects', 'Ship', 'Usage']) {
         expect(find.bySemanticsLabel(tab), findsNothing, reason: tab);
       }
       expect(find.bySemanticsLabel('Back'), findsWidgets);
@@ -313,7 +313,7 @@ void main() {
     testWidgets('the owner keeps the Mastermind tabs', (tester) async {
       await open(tester, mastermind: TestAccess.enabled);
       expect(find.text('Release train'), findsOneWidget);
-      for (final tab in ['Today', 'Inbox', 'Work', 'Ship', 'Insights']) {
+      for (final tab in ['Today', 'Inbox', 'Projects', 'Ship', 'Usage']) {
         expect(find.bySemanticsLabel(tab), findsWidgets, reason: tab);
       }
     });
