@@ -1,5 +1,6 @@
 import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
 import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
+import type { SignedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { headers } from 'next/headers';
 import {
   getSatelliteAppSessionFromRequest,
@@ -29,6 +30,12 @@ export async function getSatelliteAppSessionUser(
   return getSatelliteAppSessionUserFromRequest(await requestOptions(targetApp));
 }
 
-export async function getSatelliteCurrentUser(targetApp?: AppSessionTargetApp) {
-  return getSatelliteCurrentUserFromRequest(await requestOptions(targetApp));
+export async function getSatelliteCurrentUser(
+  targetApp?: AppSessionTargetApp,
+  timing?: SignedInLoaderTiming
+) {
+  return getSatelliteCurrentUserFromRequest({
+    ...(await requestOptions(targetApp)),
+    timing,
+  });
 }

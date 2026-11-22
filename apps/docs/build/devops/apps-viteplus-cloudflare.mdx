@@ -30,7 +30,10 @@ proxy admission, actor resolution and the data stages the loader actually ran.
 Some stages contain more than one HTTP request. Compare labels as overlapping
 spans where the loader starts work concurrently, and keep the redacted timing
 receipt with the serving build SHA. Navigation timings do not identify Worker
-isolate state.
+isolate state. Calendar also records the profile session check, central API
+call through response parsing, and fetch until response headers. The fetch
+span is part of the API span, and the session check can overlap the API call
+when the app session is already verified.
 
 ## Owning validation
 

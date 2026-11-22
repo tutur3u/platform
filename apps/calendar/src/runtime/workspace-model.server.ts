@@ -66,7 +66,7 @@ export async function workspaceShellModel(
     workspace,
     user: { id: user.id },
     profile: await timing.measure('profile', () =>
-      getSatelliteCurrentUser('calendar')
+      getSatelliteCurrentUser('calendar', timing)
     ),
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(cookieStore),

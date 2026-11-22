@@ -1,4 +1,5 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
+import { signedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -131,6 +132,39 @@ describe('request-scoped satellite authentication', () => {
       expect(mocks.profile).toHaveBeenCalledTimes(1);
     }
   );
+
+  it('records the central fetch and session phases without changing the profile', async () => {
+    const options = context();
+    const responseHeaders = new Headers();
+    const timing = signedInLoaderTiming(
+      new Request('https://tuturuuu.com/calendar/personal', {
+        headers: {
+          'sec-fetch-dest': 'document',
+          'tuturuuu-qa-timing': '1',
+        },
+      }),
+      responseHeaders
+    );
+    mocks.claims.mockReturnValue(claims);
+    mocks.forward.mockImplementation((_headers, config) => config);
+    mocks.profile.mockImplementation(async ({ fetch }) => {
+      const response = await fetch(
+        'data:application/json,%7B%22id%22%3A%22fixture%22%7D'
+      );
+      return response.json();
+    });
+
+    await expect(
+      getSatelliteCurrentUserFromRequest({ ...options, timing })
+    ).resolves.toMatchObject({ id: 'fixture' });
+    expect(mocks.forward).toHaveBeenCalledWith(options.request.headers, {
+      fetch: expect.any(Function),
+    });
+    await timing.appendToResponse(async () => true);
+    for (const phase of ['profile-session', 'profile-fetch', 'profile-api']) {
+      expect(responseHeaders.get('server-timing')).toContain(`${phase};dur=`);
+    }
+  });
 
   it('retains a verified app actor when the profile service is unavailable', async () => {
     mocks.claims.mockReturnValue(claims);

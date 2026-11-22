@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { SignedInLoaderTiming } from '@tuturuuu/utils/signed-in-loader-timing';
 
 export interface SatelliteAuthRequestOptions {
   request: Pick<Request, 'headers'>;
@@ -88,7 +89,10 @@ export async function getSatelliteCurrentUserFromRequest({
   request,
   targetApp,
   getSupabaseSessionUser,
-}: SatelliteAuthRequestOptions): Promise<WorkspaceUser | null> {
+  timing,
+}: SatelliteAuthRequestOptions & {
+  timing?: SignedInLoaderTiming;
+}): Promise<WorkspaceUser | null> {
   if (hasAppLogoutFence(request)) return null;
   const requestHeaders = request.headers;
   const appSession = getAppSessionClaimsFromRequest(
@@ -98,16 +102,27 @@ export async function getSatelliteCurrentUserFromRequest({
     targetApp ? { targetApp } : {}
   );
 
-  const supabaseUserPromise = getSupabaseSessionUser();
+  const supabaseUserPromise = timing
+    ? timing.measure('profile-session', getSupabaseSessionUser)
+    : getSupabaseSessionUser();
   if (!appSession && !(await supabaseUserPromise)) {
     return null;
   }
 
+  const readProfile = () =>
+    getCurrentUserProfile(
+      timing
+        ? withForwardedInternalApiAuth(requestHeaders, {
+            fetch: (input, init) =>
+              timing.measure('profile-fetch', () => fetch(input, init)),
+          })
+        : withForwardedInternalApiAuth(requestHeaders)
+    );
   try {
     // A verified app session can start the centrally authorized read while
     // Supabase revalidation resolves the existing fallback profile.
     const [profile] = await Promise.all([
-      getCurrentUserProfile(withForwardedInternalApiAuth(requestHeaders)),
+      timing ? timing.measure('profile-api', readProfile) : readProfile(),
       supabaseUserPromise,
     ]);
 
