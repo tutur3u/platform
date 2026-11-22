@@ -59,7 +59,7 @@ Decision by the owner on 2026-11-23 ("Separate, off by default"): product-update
 - **Send exclusion:** a sender reads `private.product_email_recipients`, which lists only users whose current decision is a grant. Do not build a recipient list from any other source, and do not send to a user with no row or a withdrawal.
 - **Exceptions:** transactional and security email is not product email and does not consult this record.
 - **Rollout:** the onboarding switches stay disabled until production applies this migration (Web deploys before the migration round).
-- **Erasure:** deleting the account removes the state and the evidence with it. Whether the evidence retention period in the table below needs a pseudonymised copy is a legal-owner decision.
+- **Erasure:** deleting the account removes the state and the evidence with it (decision, 2026-11-23: keep the full cascade for now, because not processing a withdrawn person is the safer default). **Open question for the legal owner:** whether the consent-evidence retention period in the table below requires a pseudonymised copy to survive erasure.
 - **Regression coverage:** [`apps/database/supabase/tests/product-email-consent.sql`](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/product-email-consent.sql) covers the default, grant and withdraw audit rows, cross-user isolation, anon and direct-write denial, validation, append-only evidence and the `should_send_notification` marketing rule (missing, granted, withdrawn, and unchanged types and channels). `20261027151200_anon-definer-execute.sql` inventories the three definers.
 
 ## Retention defaults and precedence
