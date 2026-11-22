@@ -408,6 +408,12 @@ trusted publisher. Keep the workflow enabled so subsequent green production
 version bumps can publish. If npm requests interactive authentication, stop
 and ask the npm package owner to check the trusted-publisher settings.
 
+For a fleet-host SDK Vitest check, admit the entire suite through the host
+resource broker. The SDK test environment removes the host's resource-shim
+directory from worker `PATH` so subprocess fixtures can signal the runtime
+they launched. Keep the host's pinned Node and Bun binaries available on
+`PATH`. Resource admission tests supply their own private shims.
+
 After the publish job succeeds, verify the stable dist-tag and run the
 published CLI from a temporary directory. Both commands should report the
 approved version. Replace `<approved-version>` before running the smoke test.

@@ -34,6 +34,8 @@ describe('occupied-slot bypass attempts queue', { timeout: 60_000 }, () => {
     const git = (...args: string[]) =>
       execFileSync('git', args, { cwd: repo, stdio: 'ignore' });
     git('init', '-q');
+    const hooks = join(repo, '.git', 'hooks');
+    git('config', 'core.hooksPath', hooks);
     git(
       '-c',
       'user.email=t@example.com',
@@ -44,10 +46,10 @@ describe('occupied-slot bypass attempts queue', { timeout: 60_000 }, () => {
       '-qm',
       'init'
     );
-    await mkdir(join(repo, '.git', 'hooks'), { recursive: true });
+    await mkdir(hooks, { recursive: true });
     await executable(join(repo, 'fsmonitor.sh'), touch('fsmonitor'));
     await executable(
-      join(repo, '.git', 'hooks', 'reference-transaction'),
+      join(hooks, 'reference-transaction'),
       touch('reference-transaction')
     );
     const preload = join(path, 'preload.cjs');

@@ -1,9 +1,18 @@
 /// <reference types="vitest" />
-import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { homedir, tmpdir } from 'node:os';
+import { delimiter, resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 const silent = process.env.CHECK_DETAILS === '1' ? false : 'passed-only';
+const resourceBin = resolve(
+  process.env.TTR_RESOURCES_HOME ||
+    resolve(homedir(), '.tuturuuu', 'resources'),
+  'bin'
+);
+const fixturePath = (process.env.PATH ?? '')
+  .split(delimiter)
+  .filter((directory) => resolve(directory) !== resourceBin)
+  .join(delimiter);
 
 export default defineConfig({
   resolve: {
@@ -44,6 +53,9 @@ export default defineConfig({
     // fixtures that launch real heavy commands must not depend on this
     // machine's free disk; admission tests pass explicit env objects.
     env: {
+      // Fixtures that signal child PIDs must spawn the runtime directly.
+      // Tests for resource admission install their own shims.
+      PATH: fixturePath,
       TTR_STORAGE_AUTO_RECLAIM: '0',
       TTR_STORAGE_HOME: resolve(tmpdir(), 'ttr-sdk-test-storage'),
       TTR_RESOURCES_IGNORE_DISK: '1',
