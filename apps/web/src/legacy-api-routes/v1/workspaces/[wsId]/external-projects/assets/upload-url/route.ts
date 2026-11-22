@@ -158,7 +158,7 @@ export async function POST(
   try {
     const requestContentType = request.headers.get('content-type') ?? '';
     if (requestContentType.toLowerCase().includes('multipart/form-data')) {
-      return uploadExternalProjectAssetDirect(request, access);
+      return await uploadExternalProjectAssetDirect(request, access);
     }
 
     let body: unknown;

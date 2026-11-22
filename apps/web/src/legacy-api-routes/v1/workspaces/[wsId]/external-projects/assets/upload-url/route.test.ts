@@ -78,10 +78,10 @@ async function postAssetUploadJson(payload: unknown) {
   });
 }
 
-async function postAssetUploadMultipart() {
+async function postAssetUploadMultipart(request = createMultipartRequest()) {
   const { POST } = await import('./route');
 
-  return POST(createMultipartRequest(), {
+  return POST(request, {
     params: Promise.resolve({ wsId: 'workspace-1' }),
   });
 }
@@ -184,6 +184,51 @@ describe('external project asset upload-url route', () => {
       | Uint8Array
       | undefined;
     expect(buffer?.byteLength).toBe(5);
+  });
+
+  it.each([
+    {
+      status: 413,
+      message:
+        'Workspace storage limit exceeded. Please free up space or upgrade your plan.',
+    },
+    { status: 409, message: 'File already exists' },
+  ])(
+    'returns multipart storage errors with status $status',
+    async ({ message, status }) => {
+      const { WorkspaceStorageError } =
+        await import('@tuturuuu/storage-core/workspace-storage-provider');
+      mocks.uploadWorkspaceStorageFileDirect.mockRejectedValueOnce(
+        new WorkspaceStorageError(message, status)
+      );
+
+      const response = await postAssetUploadMultipart();
+
+      expect(response.status).toBe(status);
+      await expect(response.json()).resolves.toEqual({ error: message });
+    }
+  );
+
+  it('returns a generic 500 and logs only the unexpected multipart error', async () => {
+    const request = createMultipartRequest();
+    request.headers.set('Authorization', 'Bearer test-upload-token');
+    const error = new Error('Unexpected storage failure');
+    mocks.uploadWorkspaceStorageFileDirect.mockRejectedValueOnce(error);
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const response = await postAssetUploadMultipart(request);
+
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Failed to upload external project asset',
+      });
+      expect(log.mock.calls).toStrictEqual([
+        ['Failed to upload external project asset', { error }],
+      ]);
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('rejects unauthorized external-project uploads before signing', async () => {
