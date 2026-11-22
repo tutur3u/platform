@@ -161,7 +161,12 @@ test(
       `require('fs').writeFileSync(${JSON.stringify(world.received)}, require('fs').readFileSync(0))`,
     ];
     world.writeOperations({
-      max: { purpose: 'Largest request', argv, delivery: 'stdin', extraArgs: true },
+      max: {
+        purpose: 'Largest request',
+        argv,
+        delivery: 'stdin',
+        extraArgs: true,
+      },
     });
     // Fill `command` to exactly COMMAND_MAX UTF-8 bytes.
     const extra = [];

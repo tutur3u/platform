@@ -180,35 +180,67 @@ export function machineKey(paths, { create = false } = {}) {
   }
 }
 
-/**
- * Runs `fn` holding the owner-key lock, an exclusively created directory.
- * Enrolment, revocation and answer claims all take it, so none of them can
- * act on a stale read of the owner keys.
- */
-export function withOwnerKeysLock(paths, fn, nowMs = () => Date.now()) {
-  const deadline = nowMs() + LOCK_WAIT_MS;
+/** One try at the owner-key lock, clearing a stale one for the next try. */
+function tryOwnerKeysLock(paths, nowMs) {
   fs.mkdirSync(path.dirname(paths.ownerKeysLock), {
     recursive: true,
     mode: 0o700,
   });
-  for (;;) {
+  try {
+    fs.mkdirSync(paths.ownerKeysLock, { mode: 0o700 });
+    return true;
+  } catch (error) {
+    if (error?.code !== 'EEXIST') throw error;
     try {
-      fs.mkdirSync(paths.ownerKeysLock, { mode: 0o700 });
-      break;
-    } catch (error) {
-      if (error?.code !== 'EEXIST') throw error;
-      try {
-        if (nowMs() - fs.statSync(paths.ownerKeysLock).mtimeMs > LOCK_STALE_MS)
-          fs.rmdirSync(paths.ownerKeysLock);
-      } catch {
-        // Released meanwhile.
-      }
-      if (nowMs() > deadline) throw new Error('secret_lock_busy');
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+      if (nowMs() - fs.statSync(paths.ownerKeysLock).mtimeMs > LOCK_STALE_MS)
+        fs.rmdirSync(paths.ownerKeysLock);
+    } catch {
+      // Released meanwhile.
     }
+    return false;
+  }
+}
+
+/**
+ * Runs `fn` holding the owner-key lock, an exclusively created directory.
+ * Enrolment, revocation and answer claims all take it, so none of them can
+ * act on a stale read of the owner keys. This form blocks the thread while
+ * it waits; a process that must stay cancellable uses
+ * `withOwnerKeysLockAsync`.
+ */
+export function withOwnerKeysLock(paths, fn, nowMs = () => Date.now()) {
+  const deadline = nowMs() + LOCK_WAIT_MS;
+  while (!tryOwnerKeysLock(paths, nowMs)) {
+    if (nowMs() > deadline) throw new Error('secret_lock_busy');
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
   }
   try {
     return fn();
+  } finally {
+    fs.rmdirSync(paths.ownerKeysLock);
+  }
+}
+
+/**
+ * The same lock for a request or pairing in flight. It waits on a timer, so
+ * signal handlers keep running, for as long as `giveUp()` stays false: the
+ * caller's own cancel and expiry bound the wait, and a lock whose holder
+ * died is cleared as stale. Returns `fn()`'s result, or null when it gave
+ * up without the lock. `fn` is synchronous and runs right after the lock is
+ * taken, so a cancel or expiry it checks first is current.
+ */
+export async function withOwnerKeysLockAsync(
+  paths,
+  fn,
+  giveUp,
+  nowMs = () => Date.now()
+) {
+  while (!tryOwnerKeysLock(paths, nowMs)) {
+    if (giveUp()) return null;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  try {
+    return giveUp() ? null : fn();
   } finally {
     fs.rmdirSync(paths.ownerKeysLock);
   }

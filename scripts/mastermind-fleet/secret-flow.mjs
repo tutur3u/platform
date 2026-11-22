@@ -23,7 +23,7 @@ import {
   resolveOperation,
   spoolFiles,
   verifyPlatform,
-  withOwnerKeysLock,
+  withOwnerKeysLockAsync,
 } from './secret-machine.mjs';
 import {
   macEqual,
@@ -120,6 +120,14 @@ function settle(paths, ctx, outcome, answerDigest = '') {
 }
 
 /**
+ * Whether the request or pairing is over while still waiting: cancelled, or
+ * past its deadline. It ends a wait for the owner-key lock and is read again
+ * with the lock held, so nothing is enrolled or claimed after either.
+ */
+const ended = (ctx) => () =>
+  Boolean(ctx.signal?.aborted) || ctx.now() >= ctx.deadlineMs;
+
+/**
  * Waits until `check(file)` returns a truthy claim for one spool file of
  * this request, `deadlineMs` passes, or `signal` aborts. Each file is read
  * once and removed. Returns `{ claim }`, `{ expired: true }` or
@@ -132,7 +140,7 @@ async function waitForClaim(paths, ctx, check) {
     for (const file of spoolFiles(paths, ctx.id)) {
       const record = readSpool(file);
       removeFiles([file]);
-      const claim = record ? check(record) : null;
+      const claim = record ? await check(record) : null;
       if (claim) return { claim };
     }
     await sleep(ctx.pollMs);
@@ -206,11 +214,10 @@ export async function runPair({
         )
       )
         return null;
-      // The lock can wait: expiry and cancel are checked again inside it.
-      return withOwnerKeysLock(paths, () =>
-        now() < ctx.deadlineMs && !signal?.aborted
-          ? addOwnerKey(paths, ownerKey, new Date(now()))
-          : null
+      return withOwnerKeysLockAsync(
+        paths,
+        () => addOwnerKey(paths, ownerKey, new Date(now())),
+        ended(ctx)
       );
     });
     const outcome = result.claim
@@ -351,8 +358,10 @@ export async function runRequest({
     );
 
     const result = await waitForClaim(paths, ctx, (record) =>
-      withOwnerKeysLock(paths, () =>
-        signal?.aborted ? null : checkAnswer(paths, request, record, now())
+      withOwnerKeysLockAsync(
+        paths,
+        () => checkAnswer(paths, request, record, now()),
+        ended(ctx)
       )
     );
     if (!result.claim) {

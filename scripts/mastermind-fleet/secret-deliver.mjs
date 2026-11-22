@@ -63,12 +63,16 @@ export function deliver(
     child.on('exit', (code, signal) => resolve(code ?? (signal ? 128 : 1)));
     child.on('error', () => resolve(127));
   });
+  const payload = op.newline
+    ? Buffer.concat([value, Buffer.from('\n')])
+    : Buffer.from(value);
   const delivered = new Promise((resolve) => {
     let settled = false;
     const settle = (ok) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      payload.fill(0);
       resolve(ok);
     };
     const timer = setTimeout(() => {
@@ -78,13 +82,9 @@ export function deliver(
     child.on('error', () => settle(false));
     if (!pipe) return settle(false);
     pipe.on('error', () => settle(false));
-    const payload = op.newline
-      ? Buffer.concat([value, Buffer.from('\n')])
-      : Buffer.from(value);
-    pipe.end(payload, () => {
-      payload.fill(0);
-      settle(true);
-    });
+    // A failed write reaches this callback with its error, before the
+    // stream's own `error` event.
+    pipe.end(payload, (error) => settle(!error));
   });
   return {
     delivered,

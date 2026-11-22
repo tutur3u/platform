@@ -3,14 +3,18 @@
 // across the owner-key lock.
 // Design: apps/docs/build/devops/mastermind-secret-entry.mdx.
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
+import { Writable } from 'node:stream';
 import { afterEach, test } from 'node:test';
-import { childEnv } from './secret-deliver.mjs';
+import { childEnv, deliver } from './secret-deliver.mjs';
 import { EXIT, runPair, runRequest } from './secret-flow.mjs';
 import {
   ownerKeys,
   revokeOwnerKey,
+  spoolFiles,
   withOwnerKeysLock,
 } from './secret-machine.mjs';
 import { ownerMac, pairingKey, parsePairingCode } from './secret-pairing.mjs';
@@ -193,4 +197,124 @@ test('a pairing proof that gets the owner-key lock after expiry enrolls nothing'
     resolved(world.paths, decision.id).secretOutcome.outcome,
     'expired'
   );
+});
+
+test('a write the command pipe refuses is not delivered', async () => {
+  const child = Object.assign(new EventEmitter(), {
+    stdin: new Writable({
+      write(_chunk, _encoding, callback) {
+        callback(Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
+      },
+    }),
+    kill() {},
+  });
+  const run = deliver(
+    { argv: ['/usr/bin/true'], delivery: 'stdin', output: 'withheld' },
+    Buffer.from('disposable'),
+    { spawn: () => child }
+  );
+  assert.equal(await run.delivered, false);
+});
+
+/** Holds the owner-key lock as another process would, until released. */
+function holdLock(paths) {
+  fs.mkdirSync(path.dirname(paths.ownerKeysLock), { recursive: true });
+  fs.mkdirSync(paths.ownerKeysLock);
+  return () => fs.rmdirSync(paths.ownerKeysLock);
+}
+
+/** Resolves once the flow has taken the spool file and waits for the lock. */
+async function pickedUp(paths, id) {
+  while (spoolFiles(paths, id).length)
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  await new Promise((resolve) => setTimeout(resolve, 80));
+}
+
+/** A request whose valid answer is stuck behind a held owner-key lock. */
+async function answerBehindLock(overrides) {
+  world = makeWorld();
+  const run = start('test-stdin', overrides);
+  const { secret } = await openDecision(world.paths);
+  const { mode: _m, sig: _s, ...request } = secret;
+  const release = holdLock(world.paths);
+  writeSpool(
+    world.paths,
+    request.requestId,
+    1,
+    signedAnswer(request, world.owner)
+  );
+  await pickedUp(world.paths, request.requestId);
+  return { run, request, release };
+}
+
+test('a cancel while a valid answer waits for a lock that stays held withdraws the request', async () => {
+  const controller = new AbortController();
+  const { run, request, release } = await answerBehindLock({
+    signal: controller.signal,
+  });
+  try {
+    controller.abort();
+    assert.equal(await run, EXIT.cancelled);
+  } finally {
+    release();
+  }
+  assert.equal(fs.existsSync(world.received), false);
+  assert.equal(
+    resolved(world.paths, request.requestId).secretOutcome.outcome,
+    'cancelled'
+  );
+  assert.deepEqual(fs.readdirSync(world.paths.openDir), []);
+});
+
+test('expiry while a valid answer waits for a lock that stays held expires the request', async () => {
+  let clock = null;
+  const { run, request, release } = await answerBehindLock({
+    now: () => clock ?? Date.now(),
+  });
+  try {
+    clock = Date.parse(request.expiresAt);
+    assert.equal(await run, EXIT.expired);
+  } finally {
+    release();
+  }
+  assert.equal(fs.existsSync(world.received), false);
+  assert.equal(
+    resolved(world.paths, request.requestId).secretOutcome.outcome,
+    'expired'
+  );
+  assert.deepEqual(fs.readdirSync(world.paths.openDir), []);
+});
+
+test('a cancel while a pairing proof waits for the lock enrolls nothing once the lock frees', async () => {
+  world = makeWorld();
+  withOwnerKeysLock(world.paths, () =>
+    revokeOwnerKey(world.paths, ownerKeyId(world.ownerRaw))
+  );
+  const printed = [];
+  const controller = new AbortController();
+  const run = runPair({
+    paths: world.paths,
+    checkPlatform: () => world.helper,
+    pollMs: 10,
+    signal: controller.signal,
+    print: (line) => printed.push(line),
+  });
+  const decision = await openDecision(world.paths, 'pair-');
+  const code = printed.find((l) => l.startsWith('Pairing code: ')).slice(14);
+  const { mode: _m, v: _v, machineMac: _mac, ...fields } = decision.secret;
+  const key = pairingKey(parsePairingCode(code), fields.pairingId);
+  const ownerKey = b64url(world.ownerRaw);
+  const release = holdLock(world.paths);
+  writeSpool(world.paths, decision.id, 1, {
+    action: 'pair',
+    pair: {
+      ownerKey,
+      ownerMac: b64url(ownerMac(key, { ...fields, ownerKey })),
+    },
+  });
+  await pickedUp(world.paths, decision.id);
+  controller.abort();
+  release();
+  assert.equal(await run, EXIT.cancelled);
+  assert.deepEqual(ownerKeys(world.paths), []);
 });
