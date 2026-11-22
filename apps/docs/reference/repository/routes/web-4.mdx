@@ -14,6 +14,7 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/cron/jobs/[jobId]` | DELETE, GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/cron/jobs/%5BjobId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/cron/jobs` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/cron/jobs/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/cells` | DELETE, GET, HEAD, POST, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/cells/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/[columnId]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/%5BcolumnId%5D/route.ts) |
@@ -193,6 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/storage/auto-extract` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/auto-extract/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/export/[token]/[...assetPath]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export/%5Btoken%5D/%5B...assetPath%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/storage/export-links` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/export-links/route.ts) |
-| `/api/v1/workspaces/[wsId]/storage/finalize-upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/storage/finalize-upload/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

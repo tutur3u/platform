@@ -602,6 +602,7 @@ describe('web proxy api handling', () => {
     expect(options).toEqual(
       expect.objectContaining({
         additionalRoutePolicies: [
+          expect.objectContaining({ key: 'fleet-owner-notice' }),
           expect.objectContaining({ key: 'fleet-publisher' }),
           expect.objectContaining({ key: 'email-rate-limit-override' }),
         ],
@@ -610,7 +611,7 @@ describe('web proxy api handling', () => {
       })
     );
     expect(
-      options?.additionalRoutePolicies?.[1]?.matches(
+      options?.additionalRoutePolicies?.[2]?.matches(
         new NextRequest(`http://localhost${emailRoute}`, { method: 'POST' })
       )
     ).toBe(true);
