@@ -120,6 +120,8 @@ function harness({
   assignThrows = false,
   otherWriter = false,
   stageFails = false,
+  strayWriter = false,
+  listingLag = 0,
   overrideLag = 0,
   crons = [],
   liveCrons = crons,
@@ -131,6 +133,8 @@ function harness({
     },
     n: 0,
     lag: 0,
+    stale: null,
+    staleReads: 0,
     writes: [],
   };
   const out = mkdtempSync(path.join(tmpdir(), 'serving-workers-test-'));
@@ -156,7 +160,21 @@ function harness({
           setDeployment(versions);
           return new Response('', { status: 503 });
         }
-        return json(setDeployment(versions));
+        // Like the real API, a write answers with the deployment's id alone,
+        // and the listing can show the previous deployment for a while.
+        state.stale = state.deployment;
+        state.staleReads = listingLag;
+        const { id } = setDeployment(versions);
+        if (strayWriter)
+          state.deployment = {
+            id: 'stray',
+            versions: [{ version_id: OTHER, percentage: 100 }],
+          };
+        return json({ id });
+      }
+      if (state.staleReads > 0) {
+        state.staleReads -= 1;
+        return json({ deployments: [state.stale] });
       }
       return json({ deployments: [state.deployment] });
     }
@@ -296,4 +314,34 @@ test('a failed assignment never overwrites another writer', async () => {
   assert.deepEqual(state.deployment.versions, [
     { version_id: OTHER, percentage: 100 },
   ]);
+});
+
+test('a write is trusted only once it reads back as the active deployment', async () => {
+  // The fake answers a write with its id alone, so every publish here reads
+  // the staged and restored deployments back. Broken variant: another writer
+  // lands between the write and the read-back; nothing is assigned or undone.
+  const { state, out, options } = harness({ strayWriter: true });
+  await assert.rejects(
+    publish('learn', SHA, out, options),
+    /not the active one/
+  );
+  assert.deepEqual(state.deployment.versions, [
+    { version_id: OTHER, percentage: 100 },
+  ]);
+  assert.equal(state.writes.length, 1);
+});
+
+test('a read-back waits out a listing that lags the write', async () => {
+  const { state, out, options } = harness({ listingLag: 2 });
+  const receipt = await publish('learn', SHA, out, options);
+  assert.equal(receipt.outcome, 'published');
+  assert.deepEqual(state.deployment.versions, [
+    { version_id: CANDIDATE, percentage: 100 },
+  ]);
+  // Broken variant: a listing that never shows the write stops the publish.
+  const never = harness({ listingLag: Number.POSITIVE_INFINITY });
+  await assert.rejects(
+    publish('learn', SHA, never.out, never.options),
+    /is not the active one \(d0\)/
+  );
 });

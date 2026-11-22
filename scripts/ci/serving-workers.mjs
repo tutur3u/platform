@@ -135,15 +135,14 @@ function createCloudflare(env, fetchImpl, sleep) {
       },
       { sleep }
     );
+  const deployment = async (worker) => {
+    const [active] = [
+      ...(await call(`${worker}/deployments`)).deployments,
+    ].sort((a, b) => String(b.created_on).localeCompare(String(a.created_on)));
+    return { id: active.id, versions: active.versions };
+  };
   return {
-    async deployment(worker) {
-      const [active] = [
-        ...(await call(`${worker}/deployments`)).deployments,
-      ].sort((a, b) =>
-        String(b.created_on).localeCompare(String(a.created_on))
-      );
-      return { id: active.id, versions: active.versions };
-    },
+    deployment,
     async schedules(worker) {
       const result = await call(`${worker}/schedules`);
       return (result.schedules ?? []).map(({ cron }) => cron).sort();
@@ -157,7 +156,21 @@ function createCloudflare(env, fetchImpl, sleep) {
           annotations: { 'workers/message': message },
         }),
       });
-      return { id: result.id, versions: result.versions };
+      // The write answers with the new deployment's id alone, so the versions
+      // it serves are read back from the active deployment, which has to be
+      // the one just written. The listing can lag a write, so the read is
+      // retried over about a minute, like the settle that follows a write.
+      return withRetry(
+        async () => {
+          const active = await deployment(worker);
+          if (active.id !== result.id)
+            throw new Error(
+              `the written deployment ${result.id} is not the active one (${active.id})`
+            );
+          return active;
+        },
+        { attempts: 6, sleep }
+      );
     },
   };
 }
