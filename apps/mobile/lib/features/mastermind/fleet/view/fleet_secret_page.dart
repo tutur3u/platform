@@ -186,10 +186,14 @@ class _Body extends StatelessWidget {
         !state.resend &&
         (state.phase == FleetSecretPhase.stepUp ||
             state.phase == FleetSecretPhase.input);
+    // Forget stays reachable whenever the stored trust offers it, including
+    // on the pairing page and while a re-pairing waits for the machine.
     final forgettable =
-        request != null &&
-        (state.block == FleetSecretBlock.keyChanged ||
-            state.block == FleetSecretBlock.notInAudience);
+        state.forgettable ||
+        (request != null &&
+            (state.block == FleetSecretBlock.keyChanged ||
+                state.block == FleetSecretBlock.notInAudience ||
+                state.block == FleetSecretBlock.pendingPin));
     return LayoutBuilder(
       builder: (context, constraints) {
         final gutter = AppPageInsets.gutterOf(

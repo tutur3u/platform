@@ -100,6 +100,38 @@ void main() {
       sig: 'sig',
     );
 
+    test('a signer the phone stopped trusting sends nothing', () async {
+      when(
+        () => api.postJsonGuarded(
+          any(),
+          any(),
+          beforeDispatch: any(named: 'beforeDispatch'),
+        ),
+      ).thenAnswer((invocation) async {
+        final guard =
+            invocation.namedArguments[#beforeDispatch]!
+                as Future<void> Function();
+        await guard();
+        fail('dispatched after the guard refused');
+      });
+      final repository = FleetRepository(api: api);
+      await expectLater(
+        repository.answerSecret(
+          decisionId: 'secret-0123456789abcdef01234567',
+          answer: const FleetSecretDeclineAnswer(owner: owner),
+          idempotencyKey: 'key-1',
+          stillTrusted: () async => false,
+        ),
+        throwsA(
+          isA<FleetSecretSendException>().having(
+            (e) => e.failure,
+            'failure',
+            FleetSecretSendFailure.untrusted,
+          ),
+        ),
+      );
+    });
+
     test('posts each answer body with its key, outside the outbox', () async {
       when(() => api.postJson(any(), any())).thenAnswer((_) async => {});
       final repository = FleetRepository(api: api);

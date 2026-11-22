@@ -46,11 +46,13 @@ void main() {
       label: 'Skora M4',
       pairingId: id ?? 'pair-0123456789abcdef01234567',
       now: now,
+      expiresAt: now.add(const Duration(minutes: 10)),
     );
     await pins.activate(
       machineId: 'skr-m4',
       pairingId: id ?? 'pair-0123456789abcdef01234567',
       signerKey: key.isEmpty ? signerKey : key,
+      clock: () => now,
     );
   }
 
@@ -118,6 +120,7 @@ void main() {
         label: 'Skora M4',
         pairingId: 'pair-0123456789abcdef01234567',
         now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
       );
       expect(
         await blockOf(await signedRequestDecision()),
@@ -480,6 +483,7 @@ void main() {
         label: 'Skora M4',
         pairingId: 'pair-0123456789abcdef01234567',
         now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
       );
       await Future.wait([write, eraseElsewhere()]);
       expect(await pins.read(), isEmpty);
@@ -492,6 +496,7 @@ void main() {
         label: 'Skora M4',
         pairingId: 'pair-0123456789abcdef01234567',
         now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
         account: 'user-2',
       );
       expect(await pins.read(), isEmpty);
@@ -589,6 +594,7 @@ void main() {
         label: 'Skora M4',
         pairingId: 'pair-0123456789abcdef01234567',
         now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
       );
       final decision = await signedRequestDecision();
       final flow = cubit(

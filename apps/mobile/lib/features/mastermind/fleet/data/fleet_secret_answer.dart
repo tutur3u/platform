@@ -14,6 +14,10 @@ enum FleetSecretSendFailure {
   forbidden,
   rejected,
   unavailable,
+
+  /// The phone stopped trusting the request's signer before dispatch, so
+  /// nothing was sent.
+  untrusted,
 }
 
 class FleetSecretSendException implements Exception {
@@ -125,9 +129,13 @@ class FleetSecretPairAnswer extends FleetSecretAnswer {
 abstract interface class FleetSecretAnswerSource {
   /// Throws [FleetSecretSendException]. [idempotencyKey] is a fresh v4 UUID
   /// per answer, reused only when this same answer is sent again.
+  /// [stillTrusted] is asked immediately before every dispatch, replays
+  /// included; when it answers false nothing is sent and the failure is
+  /// [FleetSecretSendFailure.untrusted].
   Future<void> answerSecret({
     required String decisionId,
     required FleetSecretAnswer answer,
     required String idempotencyKey,
+    Future<bool> Function()? stillTrusted,
   });
 }

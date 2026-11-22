@@ -61,25 +61,23 @@ extension _ApiClientMutations on ApiClient {
     bool requiresAuth = true,
     bool sendOrigin = false,
     Duration timeout = const Duration(seconds: 30),
+    Future<void> Function()? beforeDispatch,
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(
-      () async => await _client
-          .post(
-            url,
-            headers: {
-              ...await _getHeaders(
-                contentType: 'application/json',
-                requiresAuth: requiresAuth,
-              ),
-              if (sendOrigin) 'Origin': url.origin,
-            },
-            body: jsonEncode(body),
-          )
-          .timeout(timeout),
-      requiresAuth: requiresAuth,
-    );
+    final response = await _performRequest(() async {
+      final headers = {
+        ...await _getHeaders(
+          contentType: 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        if (sendOrigin) 'Origin': url.origin,
+      };
+      if (beforeDispatch != null) await beforeDispatch();
+      return await _client
+          .post(url, headers: headers, body: jsonEncode(body))
+          .timeout(timeout);
+    }, requiresAuth: requiresAuth);
 
     return _handleResponse(response);
   }

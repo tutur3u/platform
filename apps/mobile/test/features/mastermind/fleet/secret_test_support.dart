@@ -226,7 +226,11 @@ class RecordingSecretSource implements FleetSecretAnswerSource {
     required String decisionId,
     required FleetSecretAnswer answer,
     required String idempotencyKey,
+    Future<bool> Function()? stillTrusted,
   }) async {
+    if (stillTrusted != null && !await stillTrusted()) {
+      throw const FleetSecretSendException(FleetSecretSendFailure.untrusted);
+    }
     answers.add(answer.toJson());
     keys.add(idempotencyKey);
     if (replies.isEmpty) return;

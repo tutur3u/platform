@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
 
@@ -11,6 +12,65 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart'
 /// turns [active] only once the machine's signed `paired` outcome names this
 /// phone's key. Requests are answered against an active pin only.
 enum FleetSecretPinState { pending, active }
+
+/// A re-pairing of a machine that already has an active pin. The active key
+/// stays in use until the machine's signed `paired` outcome confirms this
+/// pairing before [expiresAt]; only then does it replace the active key.
+@immutable
+class FleetSecretPinCandidate {
+  const FleetSecretPinCandidate({
+    required this.signerKey,
+    required this.label,
+    required this.pairingId,
+    required this.pairedAt,
+    required this.expiresAt,
+  });
+
+  static FleetSecretPinCandidate? fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final signerKey = json['signerKey'];
+    final label = json['label'];
+    final pairingId = json['pairingId'];
+    final pairedAt = _time(json['pairedAt']);
+    final expiresAt = _time(json['expiresAt']);
+    if (!_isKey(signerKey) ||
+        label is! String ||
+        pairingId is! String ||
+        pairedAt == null ||
+        expiresAt == null) {
+      return null;
+    }
+    return FleetSecretPinCandidate(
+      signerKey: signerKey! as String,
+      label: label,
+      pairingId: pairingId,
+      pairedAt: pairedAt,
+      expiresAt: expiresAt,
+    );
+  }
+
+  final String signerKey;
+  final String label;
+  final String pairingId;
+  final DateTime pairedAt;
+  final DateTime expiresAt;
+
+  bool liveAt(DateTime now) => now.toUtc().isBefore(expiresAt);
+
+  Map<String, Object?> toJson() => {
+    'signerKey': signerKey,
+    'label': label,
+    'pairingId': pairingId,
+    'pairedAt': pairedAt.toIso8601String(),
+    'expiresAt': expiresAt.toIso8601String(),
+  };
+}
+
+DateTime? _time(Object? value) =>
+    value is String ? DateTime.tryParse(value)?.toUtc() : null;
+
+bool _isKey(Object? value) =>
+    value is String && fleetSecretFromB64url(value, length: 32) != null;
 
 /// One paired machine's Ed25519 key, as this phone trusts it.
 @immutable
@@ -22,20 +82,20 @@ class FleetSecretPin {
     required this.pairedAt,
     required this.state,
     this.pairingId,
+    this.expiresAt,
+    this.candidate,
   });
 
   static FleetSecretPin? fromJson(String machineId, Object? json) {
     if (json is! Map<String, dynamic>) return null;
     final signerKey = json['signerKey'];
     final label = json['label'];
-    final pairedAt = json['pairedAt'] is String
-        ? DateTime.tryParse(json['pairedAt'] as String)?.toUtc()
-        : null;
+    final pairedAt = _time(json['pairedAt']);
     final state = FleetSecretPinState.values
         .where((s) => s.name == json['state'])
         .firstOrNull;
     final pairingId = json['pairingId'];
-    if (signerKey is! String ||
+    if (!_isKey(signerKey) ||
         label is! String ||
         pairedAt == null ||
         state == null) {
@@ -43,11 +103,16 @@ class FleetSecretPin {
     }
     return FleetSecretPin(
       machineId: machineId,
-      signerKey: signerKey,
+      signerKey: signerKey! as String,
       label: label,
       pairedAt: pairedAt,
       state: state,
       pairingId: pairingId is String ? pairingId : null,
+      expiresAt: _time(json['expiresAt']),
+      // Only an active pin can carry a re-pairing.
+      candidate: state == FleetSecretPinState.active
+          ? FleetSecretPinCandidate.fromJson(json['candidate'])
+          : null,
     );
   }
 
@@ -62,7 +127,30 @@ class FleetSecretPin {
   /// The pairing a pending pin waits on.
   final String? pairingId;
 
+  /// When a pending pin's pairing ends. A pending pin without one (written
+  /// before expiry was stored) never activates: it needs a fresh pairing.
+  final DateTime? expiresAt;
+
+  /// A re-pairing waiting for the machine's confirmation; active pins only.
+  final FleetSecretPinCandidate? candidate;
+
   bool get active => state == FleetSecretPinState.active;
+
+  /// The pairing this pin waits on and the key it would trust: a pending
+  /// pin's own, or an active pin's live candidate.
+  (String pairingId, String signerKey)? awaiting(DateTime now) {
+    if (!active) {
+      final id = pairingId;
+      final end = expiresAt;
+      return id == null || end == null || !now.toUtc().isBefore(end)
+          ? null
+          : (id, signerKey);
+    }
+    final next = candidate;
+    return next != null && next.liveAt(now)
+        ? (next.pairingId, next.signerKey)
+        : null;
+  }
 
   FleetSecretPin activated() => FleetSecretPin(
     machineId: machineId,
@@ -72,12 +160,25 @@ class FleetSecretPin {
     state: FleetSecretPinState.active,
   );
 
+  FleetSecretPin withCandidate(FleetSecretPinCandidate? next) => FleetSecretPin(
+    machineId: machineId,
+    signerKey: signerKey,
+    label: label,
+    pairedAt: pairedAt,
+    state: state,
+    pairingId: pairingId,
+    expiresAt: expiresAt,
+    candidate: next,
+  );
+
   Map<String, Object?> toJson() => {
     'signerKey': signerKey,
     'label': label,
     'pairedAt': pairedAt.toIso8601String(),
     'state': state.name,
     'pairingId': ?pairingId,
+    'expiresAt': ?expiresAt?.toIso8601String(),
+    'candidate': ?candidate?.toJson(),
   };
 }
 
@@ -112,43 +213,99 @@ class FleetSecretPins {
 
   String? _name() => _nameFor(_userId());
 
-  Future<Map<String, FleetSecretPin>> _read(String name) async {
+  /// In-memory twin of the stored revision, advanced synchronously the
+  /// moment a stage, activation or Forget is asked for, before its Keychain
+  /// write queues. A dispatch guard whose pin read was already waiting sees
+  /// the change at once instead of after that write lands.
+  static final _epochs = <String, int>{};
+
+  static String _epochKey(String? user, String machineId) =>
+      '${_nameFor(user)}|$machineId';
+
+  /// [machineId]'s in-memory epoch for [account] (default: signed-in user).
+  int epoch(String machineId, {String? account}) =>
+      _epochs[_epochKey(account ?? _userId(), machineId)] ?? 0;
+
+  void _advance(String machineId, String? account) {
+    final key = _epochKey(account ?? _userId(), machineId);
+    _epochs[key] = (_epochs[key] ?? 0) + 1;
+  }
+
+  /// Reserved entry beside the pins: pairings that already activated, kept
+  /// until they expire so the same pairing can never be staged again, even
+  /// after "Forget this machine". Machine ids cannot start with `~`.
+  static const _usedKey = '~usedPairings';
+
+  /// Reserved entry: a revision per machine that every change to that
+  /// machine's trust advances, Forget included even with no pin left, so a
+  /// screen that waited can tell that anything changed meanwhile.
+  static const _revisionsKey = '~revisions';
+
+  Future<_PinStore> _read(String name) async {
     final raw = await _storage.read(key: name);
-    if (raw == null) return {};
+    if (raw == null) return _PinStore({}, {}, {});
     try {
       final json = jsonDecode(raw);
-      if (json is! Map<String, dynamic>) return {};
-      return {
-        for (final MapEntry(:key, :value) in json.entries)
-          if (FleetSecretPin.fromJson(key, value) case final pin?) key: pin,
-      };
+      if (json is! Map<String, dynamic>) return _PinStore({}, {}, {});
+      final used = json[_usedKey];
+      final revisions = json[_revisionsKey];
+      return _PinStore(
+        {
+          for (final MapEntry(:key, :value) in json.entries)
+            if (key != _usedKey && key != _revisionsKey)
+              if (FleetSecretPin.fromJson(key, value) case final pin?) key: pin,
+        },
+        {
+          if (used is Map<String, dynamic>)
+            for (final MapEntry(:key, :value) in used.entries)
+              if (_time(value) case final end?) key: end,
+        },
+        {
+          if (revisions is Map<String, dynamic>)
+            for (final MapEntry(:key, :value) in revisions.entries)
+              if (value is int) key: value,
+        },
+      );
     } on FormatException {
-      return {};
+      return _PinStore({}, {}, {});
     }
   }
 
-  Future<void> _write(String name, Map<String, FleetSecretPin> pins) =>
-      pins.isEmpty
-      ? _storage.delete(key: name)
-      : _storage.write(
-          key: name,
-          value: jsonEncode({
-            for (final MapEntry(:key, :value) in pins.entries)
-              key: value.toJson(),
-          }),
-        );
+  static String? _encode(_PinStore store) =>
+      store.pins.isEmpty && store.used.isEmpty && store.revisions.isEmpty
+      ? null
+      : jsonEncode({
+          for (final MapEntry(:key, :value) in store.pins.entries)
+            key: value.toJson(),
+          if (store.used.isNotEmpty)
+            _usedKey: {
+              for (final MapEntry(:key, :value) in store.used.entries)
+                key: value.toIso8601String(),
+            },
+          if (store.revisions.isNotEmpty) _revisionsKey: store.revisions,
+        });
 
   /// The signed-in user's pins; empty while signed out.
   Future<Map<String, FleetSecretPin>> read() => _serial(() async {
     final name = _name();
-    return name == null ? <String, FleetSecretPin>{} : await _read(name);
+    return name == null ? <String, FleetSecretPin>{} : (await _read(name)).pins;
+  });
+
+  /// [machineId]'s pin and trust revision for the signed-in user. Compare
+  /// the revision after a wait: any change to the machine's trust since,
+  /// Forget included, gives a different one.
+  Future<FleetSecretTrust> trust(String machineId) => _serial(() async {
+    final name = _name();
+    if (name == null) return (pin: null, revision: -1);
+    final store = await _read(name);
+    return (pin: store.pins[machineId], revision: store.revision(machineId));
   });
 
   /// Changes the pins of [account] (default: the signed-in user). The
   /// account and the erasure count are fixed when this is called: the change
   /// is dropped when an erasure ran since, or another user signed in.
   Future<void> _update(
-    void Function(Map<String, FleetSecretPin> pins) change, {
+    void Function(_PinStore store) change, {
     String? account,
   }) {
     final erasure = fleetSecretErasures.value;
@@ -160,61 +317,133 @@ class FleetSecretPins {
           _userId() != user) {
         return;
       }
-      final pins = await _read(name);
-      change(pins);
-      await _write(name, pins);
+      final store = await _read(name);
+      final before = _encode(store);
+      change(store);
+      final after = _encode(store);
+      // A refused or no-op change writes nothing, so the Keychain item is
+      // only ever rewritten for a real change.
+      if (after == before) return;
+      await (after == null
+          ? _storage.delete(key: name)
+          : _storage.write(key: name, value: after));
+      fleetSecretPinChanges.value++;
     });
   }
 
-  /// Records a pending pin after a correct pairing code. It replaces any
-  /// earlier pin for the machine: a new pairing is the only way to change it.
-  Future<void> putPending({
+  /// Records a correct pairing code. With no active pin for the machine it
+  /// stores a pending pin, replacing any earlier pending one. An active pin
+  /// stays in use and keeps this pairing as its candidate until the machine
+  /// confirms it before [expiresAt]; a newer pairing replaces the candidate.
+  /// Returns the machine's new trust revision, or null, storing nothing,
+  /// for a pairing that already activated, when the machine's revision is no
+  /// longer [expectedRevision] (taken before the code check), or when the
+  /// write was dropped (an erasure or account switch since).
+  Future<int?> putPending({
     required String machineId,
     required String signerKey,
     required String label,
     required String pairingId,
     required DateTime now,
+    required DateTime expiresAt,
+    int? expectedRevision,
     String? account,
-  }) => _update(
-    (pins) => pins[machineId] = FleetSecretPin(
-      machineId: machineId,
-      signerKey: signerKey,
-      label: label,
-      pairedAt: now.toUtc(),
-      state: FleetSecretPinState.pending,
-      pairingId: pairingId,
-    ),
-    account: account,
-  );
+  }) async {
+    _advance(machineId, account);
+    int? stored;
+    await _update((store) {
+      store.prune(now);
+      if (store.used.containsKey(pairingId)) return;
+      if (expectedRevision != null &&
+          store.revision(machineId) != expectedRevision) {
+        return;
+      }
+      stored = store.bump(machineId);
+      final pins = store.pins;
+      final current = pins[machineId];
+      if (current != null && current.active) {
+        pins[machineId] = current.withCandidate(
+          FleetSecretPinCandidate(
+            signerKey: signerKey,
+            label: label,
+            pairingId: pairingId,
+            pairedAt: now.toUtc(),
+            expiresAt: expiresAt.toUtc(),
+          ),
+        );
+        return;
+      }
+      pins[machineId] = FleetSecretPin(
+        machineId: machineId,
+        signerKey: signerKey,
+        label: label,
+        pairedAt: now.toUtc(),
+        state: FleetSecretPinState.pending,
+        pairingId: pairingId,
+        expiresAt: expiresAt.toUtc(),
+      );
+    }, account: account);
+    return stored;
+  }
 
-  /// Activates the pending pin of [pairingId] when it still names
-  /// [signerKey]. Returns the active pin, or null when nothing matched.
+  /// Activates the pairing [pairingId] when it still names [signerKey]: a
+  /// pending pin turns active, or an active pin's live candidate replaces
+  /// its key in the same write. Expiry is checked against [clock] inside the
+  /// serialized write, so a confirmation queued behind another Keychain
+  /// operation cannot activate after the pairing ends. Returns the active
+  /// pin, or null when nothing matched or the pairing expired.
   Future<FleetSecretPin?> activate({
     required String machineId,
     required String pairingId,
     required String signerKey,
+    required DateTime Function() clock,
     String? account,
   }) async {
+    _advance(machineId, account);
     FleetSecretPin? result;
-    await _update(account: account, (pins) {
-      final pin = pins[machineId];
+    await _update(account: account, (store) {
+      final now = clock();
+      store.prune(now);
+      final pin = store.pins[machineId];
+      final awaited = pin?.awaiting(now);
       if (pin == null ||
-          pin.state != FleetSecretPinState.pending ||
-          pin.pairingId != pairingId ||
-          pin.signerKey != signerKey) {
+          awaited == null ||
+          awaited.$1 != pairingId ||
+          awaited.$2 != signerKey ||
+          store.used.containsKey(pairingId)) {
         return;
       }
-      result = pins[machineId] = pin.activated();
+      final next = pin.candidate;
+      store.used[pairingId] = pin.active && next != null
+          ? next.expiresAt
+          : pin.expiresAt!;
+      store.bump(machineId);
+      result = store.pins[machineId] = pin.active && next != null
+          ? FleetSecretPin(
+              machineId: machineId,
+              signerKey: next.signerKey,
+              label: next.label,
+              pairedAt: next.pairedAt,
+              state: FleetSecretPinState.active,
+            )
+          : pin.activated();
     });
     return result;
   }
 
   /// "Forget this machine".
-  Future<void> forget(String machineId, {String? account}) =>
-      _update((pins) => pins.remove(machineId), account: account);
+  Future<void> forget(String machineId, {String? account}) {
+    _advance(machineId, account);
+    return _update((store) {
+      store.pins.remove(machineId);
+      store.bump(machineId);
+    }, account: account);
+  }
 
   /// Every user's pins on this device. The names are copied first, so the
-  /// deletes never change a listing that is still being walked.
+  /// deletes never change a listing that is still being walked. The saved
+  /// wrong-code counts are deleted by their own queue
+  /// ([FleetPairingAttempts.eraseSaved]).
   Future<void> eraseAll() => _serial(() async {
     final names = (await _storage.readAll()).keys
         .where((name) => name.startsWith(keyPrefix))
@@ -240,6 +469,13 @@ const fleetSecretStorage = FlutterSecureStorage(
 /// clears its field and closes.
 final fleetSecretErasures = ValueNotifier<int>(0);
 
+/// Bumped after every pins write, so open secret pages refresh what they
+/// offer (Forget) from the stored trust.
+final fleetSecretPinChanges = ValueNotifier<int>(0);
+
+/// A machine's stored pin, if any, and its trust revision (-1 signed out).
+typedef FleetSecretTrust = ({FleetSecretPin? pin, int revision});
+
 /// Sign-out or account switch: erases every owner key and pin on this
 /// device and closes any open secret page. Failures are swallowed so the
 /// rest of the reset still runs; the next erase tries again.
@@ -261,5 +497,25 @@ Future<void> eraseFleetSecretKeys({
 /// plugin's capability answer: a failed check must not keep pins.
 Future<void> _erasePins(FleetSecretCrypto crypto, FleetSecretPins? pins) async {
   if (!crypto.onSecretPlatform) return;
-  await (pins ?? FleetSecretPins(userId: () => null)).eraseAll();
+  await Future.wait([
+    (pins ?? FleetSecretPins(userId: () => null)).eraseAll(),
+    FleetPairingAttempts.shared.eraseSaved(),
+  ]);
+}
+
+/// One user's Keychain entry: the pins, the pairings already used and each
+/// machine's trust revision.
+class _PinStore {
+  _PinStore(this.pins, this.used, this.revisions);
+
+  final Map<String, FleetSecretPin> pins;
+  final Map<String, DateTime> used;
+  final Map<String, int> revisions;
+
+  int revision(String machineId) => revisions[machineId] ?? 0;
+
+  int bump(String machineId) => revisions[machineId] = revision(machineId) + 1;
+
+  void prune(DateTime now) =>
+      used.removeWhere((_, end) => !now.toUtc().isBefore(end));
 }

@@ -186,13 +186,32 @@ class FleetRepository implements FleetSource, FleetSecretAnswerSource {
     required String decisionId,
     required FleetSecretAnswer answer,
     required String idempotencyKey,
+    Future<bool> Function()? stillTrusted,
   }) async {
+    var refused = false;
+    final path = answerPath(decisionId);
+    final body = {...answer.toJson(), 'idempotencyKey': idempotencyKey};
     try {
-      await _api.postJson(answerPath(decisionId), {
-        ...answer.toJson(),
-        'idempotencyKey': idempotencyKey,
-      });
+      if (stillTrusted == null) {
+        await _api.postJson(path, body);
+      } else {
+        await _api.postJsonGuarded(
+          path,
+          body,
+          beforeDispatch: () async {
+            if (!await stillTrusted()) {
+              refused = true;
+              throw const FleetSecretSendException(
+                FleetSecretSendFailure.untrusted,
+              );
+            }
+          },
+        );
+      }
     } on Object catch (error) {
+      if (refused) {
+        throw const FleetSecretSendException(FleetSecretSendFailure.untrusted);
+      }
       throw FleetSecretSendException.from(error);
     }
   }

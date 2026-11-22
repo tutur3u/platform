@@ -139,11 +139,13 @@ void main() {
         label: 'Skora M4',
         pairingId: 'pair-0123456789abcdef01234567',
         now: now,
+        expiresAt: now.add(const Duration(minutes: 10)),
       );
       await pins.activate(
         machineId: 'skr-m4',
         pairingId: 'pair-0123456789abcdef01234567',
         signerKey: signerKey,
+        clock: () => now,
       );
     });
 

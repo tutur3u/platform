@@ -97,6 +97,7 @@ class FleetSecretState {
     this.retrying = false,
     this.resend = false,
     this.settled,
+    this.forgettable = false,
   });
 
   final FleetSecretPhase phase;
@@ -123,6 +124,29 @@ class FleetSecretState {
   final bool resend;
   final FleetSecretSettled? settled;
 
+  /// The stored trust offers Forget: a pairing page for a machine that has
+  /// a pin, or a request whose machine has a re-pairing waiting. Refreshed
+  /// whenever the pins change.
+  final bool forgettable;
+
+  /// This state with only [forgettable] changed; every other field, the
+  /// transient ones ([block], [codeError], [retrying], [resend]) included,
+  /// stays as it is.
+  FleetSecretState withForgettable(bool value) => FleetSecretState(
+    phase: phase,
+    block: block,
+    pin: pin,
+    requestCode: requestCode,
+    fingerprint: fingerprint,
+    codeError: codeError,
+    codesLeft: codesLeft,
+    declined: declined,
+    retrying: retrying,
+    resend: resend,
+    settled: settled,
+    forgettable: value,
+  );
+
   bool get acceptsInput => phase == FleetSecretPhase.input;
 
   FleetSecretState copyWith({
@@ -137,6 +161,7 @@ class FleetSecretState {
     bool? retrying,
     bool? resend,
     FleetSecretSettled? settled,
+    bool? forgettable,
   }) => FleetSecretState(
     phase: phase ?? this.phase,
     block: block,
@@ -149,5 +174,6 @@ class FleetSecretState {
     retrying: retrying ?? false,
     resend: resend ?? false,
     settled: settled ?? this.settled,
+    forgettable: forgettable ?? this.forgettable,
   );
 }

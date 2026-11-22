@@ -278,6 +278,15 @@ class ApiClient {
     Duration timeout = const Duration(seconds: 30),
   }) => _postJson(path, body, requiresAuth: requiresAuth, timeout: timeout);
 
+  /// [postJson] with [beforeDispatch] run after the credentials are prepared
+  /// and before every dispatch, replays included (session refresh, step-up
+  /// and verification retries); throwing from it sends nothing.
+  Future<Map<String, dynamic>> postJsonGuarded(
+    String path,
+    Object? body, {
+    required Future<void> Function() beforeDispatch,
+  }) => _postJson(path, body, beforeDispatch: beforeDispatch);
+
   Future<Map<String, dynamic>> postSameOriginJson(String path, Object? body) =>
       _postJson(path, body, sendOrigin: true);
 
