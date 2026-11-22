@@ -74,6 +74,48 @@ describe('mounted app ingress', () => {
     expect(cache.entries.size).toBe(0);
   });
 
+  it.each([
+    [
+      '/admin/api/v1/mobile-calendar/api/v1/workspaces/ws/calendar/events',
+      true,
+    ],
+    ['/admin/api/v1/mobile-calendar-extra/api/v1/calendar/connections', false],
+    ['/admin/api/v1/infrastructure/devboxes', false],
+  ] as const)(
+    'keeps download protection inputs only on the Calendar gateway (%s)',
+    async (pathname, calendar) => {
+      const { handle } = handler();
+      const fetch = vi.fn(async (_request: Request) => new Response('admin'));
+      const env = {
+        ...ENV,
+        GATEWAY_MOUNTED_PATHS: '/admin,/admin/*',
+        MOUNT_ADMIN: { fetch },
+      };
+      const response = await handle(
+        new Request(`https://tuturuuu.com${pathname}`, {
+          headers: {
+            'x-tuturuuu-offline-download': '1',
+            'x-tuturuuu-turnstile-token': 'captcha-fixture',
+            'x-tuturuuu-calendar-gateway': 'untrusted-credential',
+            'x-forwarded-host': 'untrusted.example',
+          },
+        }),
+        env
+      );
+      expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+      expect(fetch).toHaveBeenCalledTimes(1);
+      const sent = fetch.mock.calls[0]?.[0].headers;
+      expect(sent?.get('x-tuturuuu-offline-download')).toBe(
+        calendar ? '1' : null
+      );
+      expect(sent?.get('x-tuturuuu-turnstile-token')).toBe(
+        calendar ? 'captcha-fixture' : null
+      );
+      expect(sent?.get('x-tuturuuu-calendar-gateway')).toBeNull();
+      expect(sent?.get('x-forwarded-host')).toBeNull();
+    }
+  );
+
   it.each([32, 1_300_000])(
     'strips spoofed mount headers and preserves a %i-byte stream',
     async (size) => {

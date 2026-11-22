@@ -27,6 +27,28 @@ function dependencies() {
 }
 
 describe('authenticated native Calendar gateway', () => {
+  it('verifies and forwards the same event read on the legacy and mounted URLs', async () => {
+    for (const origin of [
+      'https://infrastructure.tuturuuu.com',
+      'https://tuturuuu.com/admin',
+    ]) {
+      const deps = dependencies();
+      const path = `${events}?start_at=2026-11-21T00%3A00%3A00Z`;
+      const response = await forwardCalendarRequest(
+        new Request(`${origin}${GATEWAY_PREFIX}${path}`, {
+          headers: { Authorization: 'Bearer valid-session' },
+        }),
+        deps
+      );
+      expect(response.status).toBe(200);
+      expect(deps.verifyToken).toHaveBeenCalledExactlyOnceWith('valid-session');
+      expect(deps.loadSecret).toHaveBeenCalledTimes(1);
+      expect(deps.fetch.mock.calls[0]?.[0]).toBe(
+        `https://calendar.tuturuuu.com${path}`
+      );
+    }
+  });
+
   it('labels an upstream bare JSON 429 without inventing its limiter window', async () => {
     const deps = dependencies();
     deps.fetch.mockResolvedValue(

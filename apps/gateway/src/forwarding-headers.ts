@@ -49,3 +49,19 @@ export function isClientForwardingHeader(name: string) {
     lower === 'x-rewrite-url'
   );
 }
+
+export function isMountedClientForwardingHeader(
+  name: string,
+  pathname: string
+) {
+  // These client inputs are used only to invoke stronger download protection
+  // or submit a token the destination verifies itself.
+  if (
+    pathname.startsWith('/admin/api/v1/mobile-calendar/api/v1/') &&
+    (name === 'x-tuturuuu-offline-download' ||
+      name === 'x-tuturuuu-turnstile-token')
+  ) {
+    return false;
+  }
+  return isClientForwardingHeader(name);
+}

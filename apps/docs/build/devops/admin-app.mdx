@@ -74,6 +74,17 @@ permissions.
    HTTP clients drop on a cross-host redirect) and every other method. Staging
    artifacts never redirect.
 
+The mounted Calendar gateway is `/admin/api/v1/mobile-calendar/api/v1/…`.
+For allowlisted Calendar methods and paths it accepts a cookieless Supabase
+Bearer session. The gateway verifies that session before loading the private
+forwarding credential, and Calendar still enforces actor and workspace access.
+The Admin proxy applies the same request and offline-download guards on both
+paths. The apex Gateway passes the offline-download marker and Turnstile
+token through only for this Calendar route. Deploy the Gateway and Admin
+changes together. Validate a signed-in Calendar read, a rejected invalid
+session and the marked offline-download guard before changing the
+mobile API origin. Installed builds can continue using the legacy gateway.
+
 Admin binds the shared abuse guard (`ABUSE_GUARD` → `tuturuuu-abuse-guard`,
 entrypoint `AbuseGuardEntrypoint`) with `ABUSE_GUARD_FAMILIES=proxy,ratelimit,integrity`
 and the Web `ABUSE_GUARD_KEY_PEPPER`. The guard covers Admin's `proxy` traffic

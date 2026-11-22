@@ -151,6 +151,33 @@ describe('Infra proxy', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['GET', '/api/v1/mobile-calendar/api/v1/calendar/connections', true],
+    ['PATCH', '/api/v1/mobile-calendar/api/v1/calendar/connections', true],
+    ['POST', '/api/v1/mobile-calendar/api/v1/calendar/connections', false],
+    ['GET', '/api/v1/mobile-calendar/api/v1/calendar/auth/callback', false],
+    ['GET', '/api/v1/mobile-calendar-extra/api/v1/calendar/connections', false],
+  ] as const)(
+    'admits only allowed mounted Calendar requests (%s %s)',
+    async (method, path, admitted) => {
+      mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+      const request = new NextRequest(`https://tuturuuu.com/admin${path}`, {
+        method,
+        nextConfig: { basePath: '/admin' },
+        headers: { authorization: 'Bearer native.fixture.jwt' },
+      });
+
+      const response = await proxy(request);
+
+      expect(response.status).toBe(admitted ? 200 : 401);
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(
+        admitted ? 1 : 0
+      );
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(response.headers.getSetCookie()).toEqual([]);
+    }
+  );
+
   it.each(['MFA required', 'Account assurance unavailable'])(
     'answers an apex page %s refusal without clearing the central session',
     async (error) => {

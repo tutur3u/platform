@@ -32,7 +32,7 @@ export function isOfflineCapableRead(
 ) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return false;
   const pathname = new URL(request.url).pathname.replace(
-    /^\/api\/v1\/mobile-calendar(?=\/api\/)/u,
+    /^(?:\/admin)?\/api\/v1\/mobile-calendar(?=\/api\/)/u,
     ''
   );
   return (

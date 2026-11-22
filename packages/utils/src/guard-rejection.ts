@@ -22,7 +22,7 @@ export type GuardRejectionReason =
 // Only fixed templates enter logs; no path segments or query values are copied.
 function routeTemplate(url: string) {
   const path = new URL(url).pathname;
-  if (path.startsWith('/api/v1/mobile-calendar/'))
+  if (/^(?:\/admin)?\/api\/v1\/mobile-calendar\//u.test(path))
     return '/api/v1/mobile-calendar/:path*';
   if (/^\/api\/(?:v1\/)?workspaces(?:\/|$)/u.test(path))
     return '/api/:version?/workspaces/:path*';

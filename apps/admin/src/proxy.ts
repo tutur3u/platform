@@ -28,6 +28,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+import { calendarGatewayRoute } from './lib/mobile-calendar/gateway-route';
 import {
   calendarPreferenceBlockDiagnostic,
   calendarPreferenceGuardPrefix,
@@ -142,9 +143,20 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const isBuildInfoRead =
       request.nextUrl.pathname === '/api/build-info' &&
       (request.method === 'GET' || request.method === 'HEAD');
-    // The apex admits only a verified coordination bearer without cookies; a
-    // provider JWT there would skip the provider-only session and MFA checks.
-    if (mounted && refusesMountedAuthorization(request)) {
+    // This allowlist dispatches only to the Calendar gateway, which verifies
+    // the Supabase bearer itself before loading its server-side credential.
+    const calendarGatewayBearer =
+      mounted &&
+      isExplicitBearerRequest(request) &&
+      hasAuthenticatedBearerToken(request.headers) &&
+      calendarGatewayRoute(request.nextUrl.pathname)?.methods.includes(
+        request.method
+      );
+    if (
+      mounted &&
+      !calendarGatewayBearer &&
+      refusesMountedAuthorization(request)
+    ) {
       return mountedAuthorizationRefusal();
     }
     // Mira operator routes take only the Admin cookie session. A client

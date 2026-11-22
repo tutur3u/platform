@@ -1,10 +1,12 @@
+import { getAppBasePath, SHARED_APP_ORIGIN } from '@tuturuuu/utils/app-mounts';
 import { Effect } from '@tuturuuu/utils/effect';
 import {
   CalendarGatewayCredentialError,
   isCalendarGatewayCredential,
 } from './credential';
+import { calendarGatewayRoute } from './gateway-route';
 
-export const GATEWAY_PREFIX = '/api/v1/mobile-calendar';
+export { GATEWAY_PREFIX } from './gateway-route';
 export const GATEWAY_HEADER = 'x-tuturuuu-calendar-gateway';
 const CALENDAR_ORIGIN = 'https://calendar.tuturuuu.com';
 const MAX_REQUEST_BYTES = 512 * 1024;
@@ -46,48 +48,6 @@ function jsonError(status: number, message: string) {
       headers: { 'Cache-Control': 'private, no-store' },
     }
   );
-}
-
-// Only the native Calendar repository's JSON APIs are forwarded. OAuth
-// callbacks, media, AI endpoints, cron routes and arbitrary URLs are excluded.
-function allowedMethods(path: string): string[] {
-  const id = '[a-zA-Z0-9_-]+';
-  if (
-    new RegExp(
-      `^/api/v1/workspaces/${id}/calendar/(?:colors|default-source)$`
-    ).test(path)
-  ) {
-    return ['GET'];
-  }
-  if (
-    path === '/api/v1/users/calendar-settings' ||
-    new RegExp(`^/api/v1/workspaces/${id}/calendar-settings$`).test(path)
-  ) {
-    return ['GET', 'PATCH'];
-  }
-  if (new RegExp(`^/api/v1/workspaces/${id}/calendar/events$`).test(path)) {
-    return ['GET', 'POST'];
-  }
-  if (
-    new RegExp(`^/api/v1/workspaces/${id}/calendar/events/${id}$`).test(path)
-  ) {
-    return ['GET', 'PUT', 'DELETE'];
-  }
-  if (
-    new RegExp(
-      `^/api/v1/workspaces/${id}/calendar/events/${id}/response$`
-    ).test(path)
-  ) {
-    return ['POST'];
-  }
-  if (path === '/api/v1/calendar/auth/accounts') return ['GET', 'DELETE'];
-  if (path === '/api/v1/calendar/connections') return ['GET', 'PATCH'];
-  if (
-    path === '/api/v1/calendar/auth' ||
-    path === '/api/v1/calendar/auth/microsoft'
-  )
-    return ['GET'];
-  return [];
 }
 
 async function boundedBody(
@@ -140,14 +100,18 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
     Effect.tryPromise({
       try: async () => {
         const incoming = new URL(request.url);
-        const path = incoming.pathname.slice(GATEWAY_PREFIX.length);
-        if (
-          !incoming.pathname.startsWith(`${GATEWAY_PREFIX}/`) ||
-          allowedMethods(path).length === 0
-        ) {
+        const basePath = getAppBasePath('infra');
+        const pathname =
+          incoming.origin === SHARED_APP_ORIGIN &&
+          basePath &&
+          incoming.pathname.startsWith(`${basePath}/`)
+            ? incoming.pathname.slice(basePath.length)
+            : incoming.pathname;
+        const route = calendarGatewayRoute(pathname);
+        if (!route) {
           return jsonError(404, 'Calendar route not found');
         }
-        if (!allowedMethods(path).includes(request.method)) {
+        if (!route.methods.includes(request.method)) {
           return jsonError(405, 'Method not allowed');
         }
         const match = /^Bearer ([^\s]+)$/i.exec(
@@ -200,7 +164,7 @@ export function forwardCalendarRequest(request: Request, deps: Dependencies) {
         }
         stage = 'upstream-fetch';
         const upstream = await deps.fetch(
-          `${CALENDAR_ORIGIN}${path}${incoming.search}`,
+          `${CALENDAR_ORIGIN}${route.path}${incoming.search}`,
           {
             method: request.method,
             headers,

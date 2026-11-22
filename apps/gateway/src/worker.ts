@@ -2,7 +2,10 @@ import { acceptanceRobots, isAcceptanceHost } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
 import { mastermindRedirect } from './mastermind-redirect';
 import { withOriginAuth } from './origin-ip-proof';
-import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
+import {
+  HOP_HEADER,
+  isMountedClientForwardingHeader,
+} from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
 import { vinextFamilyTarget, webFallbackTarget } from './web-route-table';
@@ -135,11 +138,11 @@ const PAGE_CLIENT_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
  * unbuffered body with the cleaned headers. The edge-set `cf-connecting-ip`
  * passes through.
  */
-function mountedRequest(request: Request): Request {
+function mountedRequest(request: Request, pathname: string): Request {
   const headers = new Headers(request.headers);
   let changed = false;
   for (const name of request.headers.keys()) {
-    if (isClientForwardingHeader(name)) {
+    if (isMountedClientForwardingHeader(name, pathname)) {
       headers.delete(name);
       changed = true;
     }
@@ -534,7 +537,7 @@ export function createHandler(deps: HandlerDeps) {
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
-        const response = await mounted.fetch(mountedRequest(request));
+        const response = await mounted.fetch(mountedRequest(request, pathname));
         // Keep the upstream WebSocket attached to its upgrade response.
         return response.status === 101
           ? response

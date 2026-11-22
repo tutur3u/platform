@@ -189,6 +189,23 @@ describe('offline download guards', () => {
       );
     });
   }
+  it('enforces the offline guard on mounted Calendar gateway reads', async () => {
+    vi.stubEnv('OFFLINE_DOWNLOAD_PROTECTION_ENABLED', '');
+    const input = new NextRequest(
+      'https://tuturuuu.com/admin/api/v1/mobile-calendar/api/v1/workspaces/ws/calendar/events',
+      {
+        nextConfig: { basePath: '/admin' },
+        headers: { [OFFLINE_DOWNLOAD_HEADER]: '1' },
+      }
+    );
+    const response = await guardOfflineDownloadRequest(input);
+    expect(response?.status).toBe(503);
+    expect(response?.headers.get('X-Tuturuuu-Guard-Reason')).toBe(
+      'offline-download-inactive'
+    );
+    expect(response?.headers.get('Retry-After')).toBe('30');
+  });
+
   it('leaves unrelated APIs outside the new guard', async () => {
     expect(
       await guardOfflineDownloadRequest(
