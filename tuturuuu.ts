@@ -233,6 +233,17 @@ export const vercelWorkflowTargets = [
   },
 ] satisfies VercelWorkflowTarget[];
 
+const appsNativeProductionInputs = [
+  'scripts/ci/apps-native-artifact.py',
+  'scripts/ci/apps-native-browser-fence.runtime.mjs',
+  'scripts/ci/apps-native-browser.runtime.mjs',
+  'scripts/ci/apps-native-production-mount.mjs',
+  'scripts/ci/apps-native-runtime-launcher.mjs',
+  'scripts/ci/apps-native-runtime-plan.mjs',
+  'scripts/ci/apps-native-runtime-pointer.mjs',
+  'scripts/ci/apps-native-runtime.mjs',
+];
+
 export const cloudflareProductionTargets = [
   {
     app: 'git',
@@ -253,7 +264,11 @@ export const cloudflareProductionTargets = [
     additionalPaths:
       app === 'tasks'
         ? tasksProductionInputs
-        : ['scripts/ci/wave1-', '.github/workflows/wave1-'],
+        : [
+            'scripts/ci/wave1-',
+            '.github/workflows/wave1-',
+            ...(app === 'apps' ? appsNativeProductionInputs : []),
+          ],
     productionWorkflow: `${app}-cloudflare.yaml`,
   })),
   ...(['cron-control', 'deploy-coordinator'] as const).map((app) => ({

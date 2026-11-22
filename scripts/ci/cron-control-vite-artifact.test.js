@@ -52,10 +52,69 @@ test('Cron Control qualifies its cf Build Output and deploys the same immutable 
   const recheck = deployment.findIndex(
     (step) => step.run === `${PARITY} "$CLOUDFLARE_ACCOUNT_ID"`
   );
+  const before = deployment.findIndex((step) =>
+    step.run?.includes('cf-worker-settings.mjs before')
+  );
+  const lease = deployment.findIndex((step) => step.with?.phase === 'check');
+  const reuse = deployment.findIndex((step) => step.id === 'already-serving');
   const publish = deployment.findIndex((step) =>
     step.run?.includes('cf deploy --prebuilt')
   );
-  assert.ok(download >= 0 && recheck > download && publish > recheck);
+  const after = deployment.findIndex((step) =>
+    step.run?.includes('cf-worker-settings.mjs after')
+  );
+  const confirm = deployment.findIndex((step) =>
+    step.run?.includes('verify-already-serving.mjs confirm')
+  );
+  const marker = deployment.findIndex((step) =>
+    step.run?.includes('record-deployment-marker.ts')
+  );
+  assert.ok(download >= 0 && recheck > download && before > recheck);
+  assert.ok(lease > before && reuse > lease && publish > reuse);
+  assert.ok(after > publish && confirm > after && marker > confirm);
+  const allowed = "steps.coordinator.outputs.publish != 'false'";
+  assert.equal(deployment[reuse].if, undefined);
+  assert.equal(
+    deployment[reuse].env.CRON_COORDINATOR_PUBLISH,
+    '${{ steps.coordinator.outputs.publish }}'
+  );
+  assert.match(deployment[reuse].run, /check .*settings-before\.json/);
+  assert.equal(
+    deployment[reuse].env.CRON_COORDINATOR_CHECK,
+    '${{ steps.coordinator-lease.outcome }}'
+  );
+  assert.equal(
+    deployment[publish].if,
+    `${allowed} && steps.already-serving.outputs.reuse == 'false'`
+  );
+  assert.equal(deployment[after].if, allowed);
+  assert.equal(deployment[publish].id, 'strict-publish');
+  assert.equal(
+    deployment[after].env.CRON_CONTROL_PUBLISH_OUTCOME,
+    '${{ steps.strict-publish.outcome }}'
+  );
+  assert.match(deployment[after].run, /true:skipped\|false:success/);
+  assert.equal(
+    deployment[confirm].if,
+    `${allowed} && steps.already-serving.outputs.reuse == 'true'`
+  );
+  assert.match(
+    deployment[confirm].run,
+    /confirm .*settings-before\.json.*settings-after\.json/
+  );
+  assert.equal(
+    deployment[confirm].env.CRON_CONTROL_PROOF_DIGEST,
+    '${{ steps.already-serving.outputs.proof-digest }}'
+  );
+  for (const index of [reuse, confirm]) {
+    assert.equal(
+      deployment[index].env.CRON_CONTROL_SERVING_PROOF,
+      '${{ secrets.CRON_CONTROL_SERVING_PROOF }}'
+    );
+  }
+  for (const index of [reuse, after, confirm]) {
+    assert.equal(deployment[index]['continue-on-error'], undefined);
+  }
   assert.equal(deployment[download].with.name, steps[upload].with.name);
   assert.equal(
     deployment[download].with.path,

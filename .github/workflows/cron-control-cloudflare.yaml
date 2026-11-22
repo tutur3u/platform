@@ -193,6 +193,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/cf-worker-settings.mjs before scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json"
       - name: Check the deployment coordinator lease
+        id: coordinator-lease
         if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator
         with:
@@ -201,8 +202,19 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: cron-control
           environment: production
+      - name: Verify the prebuilt artifact is already serving
+        id: already-serving
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CRON_CONTROL_SERVING_PROOF: ${{ secrets.CRON_CONTROL_SERVING_PROOF }}
+          CRON_COORDINATOR_PUBLISH: ${{ steps.coordinator.outputs.publish }}
+          CRON_COORDINATOR_CHECK: ${{ steps.coordinator-lease.outcome }}
+          CRON_COORDINATOR_DEPLOYMENT_ID: ${{ steps.coordinator.outputs.deployment-id }}
+          DEPLOY_COORDINATOR_ORIGIN: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+        run: node apps/cron-control/scripts/verify-already-serving.mjs check apps/cron-control scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json"
       - name: Publish the exact artifact with its secrets
-        if: steps.coordinator.outputs.publish != 'false'
+        id: strict-publish
+        if: steps.coordinator.outputs.publish != 'false' && steps.already-serving.outputs.reuse == 'false'
         working-directory: apps/cron-control
         env:
           CF_SEND_TELEMETRY: 'false'
@@ -222,7 +234,14 @@ jobs:
         if: steps.coordinator.outputs.publish != 'false'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
-        run: node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json" "$RUNNER_TEMP/cron-control-settings-after.json"
+          CRON_CONTROL_REUSED: ${{ steps.already-serving.outputs.reuse }}
+          CRON_CONTROL_PUBLISH_OUTCOME: ${{ steps.strict-publish.outcome }}
+        run: |
+          case "$CRON_CONTROL_REUSED:$CRON_CONTROL_PUBLISH_OUTCOME" in
+            true:skipped|false:success) ;;
+            *) echo 'No verified Cron Control publication path completed'; exit 1 ;;
+          esac
+          node scripts/ci/cf-worker-settings.mjs after scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json" "$RUNNER_TEMP/cron-control-settings-after.json"
       - name: Retain settings and rollback evidence
         if: always() && steps.coordinator.outputs.publish != 'false'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -231,6 +250,17 @@ jobs:
           path: ${{ runner.temp }}/cron-control-settings-*.json
           retention-days: 7
           if-no-files-found: error
+      - name: Confirm the reused deployment is still serving
+        if: steps.coordinator.outputs.publish != 'false' && steps.already-serving.outputs.reuse == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CRON_CONTROL_SERVING_PROOF: ${{ secrets.CRON_CONTROL_SERVING_PROOF }}
+          CRON_CONTROL_PROOF_DIGEST: ${{ steps.already-serving.outputs.proof-digest }}
+          CRON_COORDINATOR_PUBLISH: ${{ steps.coordinator.outputs.publish }}
+          CRON_COORDINATOR_CHECK: ${{ steps.coordinator-lease.outcome }}
+          CRON_COORDINATOR_DEPLOYMENT_ID: ${{ steps.coordinator.outputs.deployment-id }}
+          DEPLOY_COORDINATOR_ORIGIN: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+        run: node apps/cron-control/scripts/verify-already-serving.mjs confirm apps/cron-control scripts/ci/fixtures/cf-worker-parity/cron-control.json "$RUNNER_TEMP/cron-control-settings-before.json" "$RUNNER_TEMP/cron-control-settings-after.json"
       - name: Record successful Cloudflare deployment
         if: steps.coordinator.outputs.publish != 'false'
         continue-on-error: true
