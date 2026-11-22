@@ -72,8 +72,11 @@ jobs:
       - name: Run ${{ inputs.mode }}
         env:
           TARGET: ${{ inputs.target }}
-          PROJECT_REF: ${{ secrets.PROJECT_ID }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          # Repo-level secrets shared with the migration workflows, chosen by
+          # target. The script pins each target to its project ref; a
+          # mismatched password fails authentication.
+          PROJECT_REF: ${{ inputs.target == 'production' && secrets.PRODUCTION_PROJECT_ID || secrets.STAGING_PROJECT_ID }}
+          DB_PASSWORD: ${{ inputs.target == 'production' && secrets.PRODUCTION_DB_PASSWORD || secrets.STAGING_DB_PASSWORD }}
           POOLER_HOST: ${{ secrets.POOLER_HOST }}
           DB_CA_CERT: ${{ vars.SUPABASE_DB_CA_CERT }}
           AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}

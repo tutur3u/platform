@@ -115,12 +115,24 @@ This repository is public, so workflow logs are public too.
 ## Environment setup
 
 Two environments, `supabase-backup-staging` and `supabase-backup-production`,
-are restricted to `main` and have required reviewers. Each holds:
+must be restricted to `main` and have required reviewers. **Create both before
+the first dispatch.** If a job names an environment that does not exist, GitHub
+creates it on first use with no reviewers and no branch policy. A dispatch
+before setup still fails closed, because the R2 and pooler secrets are missing.
+
+The project ref and database password come from the repository-level secrets
+shared with the migration workflows, chosen by `target`:
+`STAGING_PROJECT_ID`/`STAGING_DB_PASSWORD` or
+`PRODUCTION_PROJECT_ID`/`PRODUCTION_DB_PASSWORD`. This job resolves them only
+after its environment gate. Because they are repository-level secrets, any
+workflow with write access can still read them, exactly as the migration
+workflows do. The script pins each target to its project ref, and a mismatched
+password fails authentication.
+
+Each environment holds:
 
 | Name | Kind | Value |
 | --- | --- | --- |
-| `PROJECT_ID` | secret | Project ref. The script accepts only the known staging and production refs |
-| `DB_PASSWORD` | secret | Database password, used through the session pooler |
 | `POOLER_HOST` | secret | `aws-<n>-ap-southeast-1.pooler.supabase.com` |
 | `SUPABASE_DB_CA_CERT` | variable | Supabase's database CA certificate (PEM) |
 | `R2_BACKUP_ENDPOINT`, `R2_BACKUP_BUCKET` | secret | The backup bucket's S3 endpoint and name |
