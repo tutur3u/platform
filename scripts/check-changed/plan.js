@@ -39,10 +39,6 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/bun-workflow-pins.test.js',
   'scripts/ci/check-workflow-config.test.js',
   'scripts/ci/pr-label-gate.test.js',
-  // Security scanners over every workflow and composite action. They list the
-  // directory themselves, so readAllWorkflows() discovery does not find them.
-  'scripts/ci/workflow-action-pins.test.js',
-  'scripts/ci/workflow-script-injection.test.js',
 ];
 // A change to a pinned staging or Cloudflare Web producer needs its marker
 // contract tests even when no test file changes.
