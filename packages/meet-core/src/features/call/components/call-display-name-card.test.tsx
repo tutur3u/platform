@@ -141,3 +141,14 @@ it('keeps the admitted name when the room locks it', async () => {
   expect(await screen.findByText('profile_settings.locked')).toBeDefined();
   expect(previewDisplayName).toHaveBeenLastCalledWith('self', 'Old Name');
 });
+
+it('says when the room refused a rename for going too fast', async () => {
+  mocks.update.mockResolvedValueOnce({});
+  const { previewDisplayName } = setup(
+    vi.fn().mockRejectedValue(new Error('rename_rate_limited'))
+  );
+  expect(
+    await screen.findByText('profile_settings.rate_limited')
+  ).toBeDefined();
+  expect(previewDisplayName).toHaveBeenLastCalledWith('self', 'Old Name');
+});

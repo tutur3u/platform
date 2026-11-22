@@ -15,7 +15,11 @@ import { outcome } from './room-outcome';
 import { takeActorRateLimit } from './actor-rate-limit';
 import { MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE } from './room-media-quality';
 import { LAYER_UPDATE_RATE_LIMITED } from './room-sfu';
-import { MEET_RENAMES_PER_MINUTE, RENAME_RATE_LIMITED } from './room-rename';
+import {
+  limitPresenceJoinRename,
+  MEET_RENAMES_PER_MINUTE,
+  RENAME_RATE_LIMITED,
+} from './room-rename';
 
 /** Layer update batches a receiver may send per minute. */
 export const MEET_LAYER_UPDATES_PER_MINUTE = 40;
@@ -118,6 +122,13 @@ export class MeetCommandExecutor {
       return Promise.resolve(
         options.commit(outcome(options.read(), { reply: refusal }))
       );
+    if (command.message.type === 'presence.join') {
+      const gate = limitPresenceJoinRename(options.read(), command);
+      const result = applyMeetRoomCommand(options.read(), gate.command);
+      return Promise.resolve(
+        options.commit({ ...result, reply: [...result.reply, ...gate.reply] })
+      );
+    }
     if (
       !command.message.type.startsWith('sfu.') &&
       command.message.type !== 'media.idle'

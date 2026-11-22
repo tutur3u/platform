@@ -1,6 +1,9 @@
 'use client';
 
-import { DISPLAY_NAME_LOCKED } from '@tuturuuu/realtime/meet';
+import {
+  DISPLAY_NAME_LOCKED,
+  RENAME_RATE_LIMITED,
+} from '@tuturuuu/realtime/meet';
 import { useEffect, useRef, useState } from 'react';
 import { prepareParticipantName } from '../lib/participant-name';
 import type { MeetRoomController } from '../lib/room-controller';
@@ -13,7 +16,9 @@ export type LiveRenameState =
   | { kind: 'renamed' }
   /** Saved to the profile; the host-approved name stays for this call. */
   | { kind: 'locked' }
-  /** Saved to the profile; the room did not confirm it. */
+  /** Saved to the profile; too many recent renames, so the room kept the old name. */
+  | { kind: 'rate_limited' }
+  /** Saved to the profile; the room did not confirm it and a reconnect replays it. */
   | { kind: 'unconfirmed' };
 
 type LiveRenameRoom = Pick<
@@ -65,11 +70,14 @@ export function useLiveDisplayName({
         setLive({ kind: 'renamed' });
       } catch (error) {
         if (shown) previewRef.current(shown.userId, shown.previous);
+        const code = error instanceof Error ? error.message : '';
         setLive({
           kind:
-            error instanceof Error && error.message === DISPLAY_NAME_LOCKED
+            code === DISPLAY_NAME_LOCKED
               ? 'locked'
-              : 'unconfirmed',
+              : code === RENAME_RATE_LIMITED
+                ? 'rate_limited'
+                : 'unconfirmed',
         });
       }
     },

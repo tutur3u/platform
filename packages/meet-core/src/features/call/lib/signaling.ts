@@ -286,11 +286,16 @@ export class MeetSignaling {
     if (
       (message.type === 'room.ended' ||
         message.type === 'room.title.changed' ||
-        message.type === 'participant.renamed' ||
         message.type === 'recording.state') &&
       message.requestId
     ) {
       this.pending.get(message.requestId)?.resolve(undefined);
+      this.pending.delete(message.requestId);
+    }
+    if (message.type === 'participant.renamed' && message.requestId) {
+      this.pending
+        .get(message.requestId)
+        ?.resolve({ displayName: message.displayName });
       this.pending.delete(message.requestId);
     }
     if (message.type === 'chat.message' && message.requestId) {

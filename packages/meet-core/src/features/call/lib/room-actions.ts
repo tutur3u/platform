@@ -11,6 +11,7 @@ import type {
   MeetRoomSettings,
   MeetRoomView,
 } from '@tuturuuu/realtime/meet';
+import { DISPLAY_NAME_LOCKED } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
 import { createMediaPolicy } from './media-policy';
 import { prepareParticipantName } from './participant-name';
@@ -30,6 +31,29 @@ export function createRoomActions(
       }
     | undefined;
   let customDisplayName: string | undefined;
+  /**
+   * A name saved to the profile during the call. Reconnects replay it through
+   * `participant.rename`, so the lobby name never overwrites it, until the
+   * room reports the name as locked.
+   */
+  let savedRename: string | undefined;
+  const sendRename = async (connection: MeetSignaling, name: string) => {
+    try {
+      const reply = await connection.request<{ displayName: string }>({
+        type: 'participant.rename',
+        displayName: name,
+      });
+      if (savedRename === name) savedRename = reply.displayName;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === DISPLAY_NAME_LOCKED &&
+        savedRename === name
+      )
+        savedRename = undefined;
+      throw error;
+    }
+  };
   const pendingChat = new Map<string, string>();
   // Measured outside React state so tile resizes never re-render the room.
   const tileHeights = new Map<string, number>();
@@ -99,20 +123,26 @@ export function createRoomActions(
     renameSelf: async (displayName: string) => {
       const name = prepareParticipantName(displayName);
       if (!name) throw new Error('display_name_empty');
+      // The profile already holds this name, so a reconnect replays it even
+      // when this request never reaches the room.
+      savedRename = name;
       const connection = signaling.current;
       if (!connection?.isOpen) throw new Error('signaling_closed');
-      await connection.request({
-        type: 'participant.rename',
-        displayName: name,
-      });
-      customDisplayName = name;
+      await sendRename(connection, name);
     },
-    replayPresenceJoin: (media: MeetMediaState) =>
-      signaling.current?.send({
+    replayPresenceJoin: (media: MeetMediaState) => {
+      const connection = signaling.current;
+      if (!connection) return;
+      const rename = savedRename;
+      connection.send({
         type: 'presence.join',
         media,
-        ...(customDisplayName ? { displayName: customDisplayName } : {}),
-      }),
+        ...(customDisplayName && !rename
+          ? { displayName: customDisplayName }
+          : {}),
+      });
+      if (rename) void sendRename(connection, rename).catch(() => undefined);
+    },
     replayAssistantAudio: () => {
       if (assistantAudio)
         signaling.current?.send({

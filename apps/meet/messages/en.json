@@ -5071,6 +5071,7 @@
         "name_hint": "Everyone in this call sees the new name right away. No need to rejoin.",
         "name_placeholder": "Your name as others see it",
         "preview": "Preview",
+        "rate_limited": "Saved to your profile. You renamed several times just now, so this call keeps the old name. Save again in a minute.",
         "renamed": "Everyone in this call now sees your new name.",
         "unconfirmed": "Saved to your profile. Others see it once your connection recovers."
       },

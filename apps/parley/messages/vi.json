@@ -5010,7 +5010,8 @@
         "preview": "Xem trước",
         "renamed": "Mọi người trong cuộc gọi đã thấy tên mới của bạn.",
         "locked": "Đã lưu vào hồ sơ. Cuộc gọi này giữ tên mà chủ phòng đã duyệt cho bạn.",
-        "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại."
+        "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại.",
+        "rate_limited": "Đã lưu vào hồ sơ. Bạn vừa đổi tên nhiều lần nên cuộc gọi này vẫn giữ tên cũ. Hãy lưu lại sau một phút."
       }
     },
     "collaboration": {

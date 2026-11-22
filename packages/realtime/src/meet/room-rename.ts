@@ -1,8 +1,11 @@
+import { takeActorRateLimit } from './actor-rate-limit';
 import { attendancePatch, renameOpenAttendance } from './attendance-ledger';
 import type { MeetClassFeatures } from './class-features';
 import type { MeetRealtimeClientMessage } from './messages';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import {
+  getMeetDisplayName,
+  type MeetRoomCommand,
   type MeetRoomOutcome,
   type MeetRoomSnapshot,
   meetPresenceMessage,
@@ -60,4 +63,47 @@ export function applyParticipantRename(
     broadcast: [meetPresenceMessage(next, roomId)],
     reply: [renamed],
   });
+}
+
+/** One rename bucket per participant and room, shared by both rename paths. */
+export function takeRenameAllowance(token: MeetRealtimeTokenPayload) {
+  return takeActorRateLimit(
+    `participant.rename:${token.roomId}:${token.userId}`,
+    MEET_RENAMES_PER_MINUTE,
+    60_000
+  );
+}
+
+/**
+ * `presence.join` renames an admitted participant who joined without the
+ * lobby, so a join that would change their name spends the same allowance as
+ * `participant.rename`. First joins, lobby joins and same-name rejoins stay
+ * free. Over the limit the join still applies, keeping the current name, and
+ * the sender is told why.
+ */
+export function limitPresenceJoinRename(
+  state: MeetRoomSnapshot,
+  command: MeetRoomCommand
+): {
+  command: MeetRoomCommand;
+  reply: [] | [{ type: 'error'; error: string }];
+} {
+  const { message, token } = command;
+  if (message.type !== 'presence.join' || token.admission === 'lobby')
+    return { command, reply: [] };
+  const existing = state.presence[token.userId];
+  if (!existing || state.waiting[token.userId]) return { command, reply: [] };
+  const next = getMeetDisplayName({
+    ...token,
+    displayName: message.displayName || token.displayName,
+  });
+  if (next === existing.displayName || takeRenameAllowance(token))
+    return { command, reply: [] };
+  return {
+    command: {
+      ...command,
+      message: { ...message, displayName: existing.displayName },
+    },
+    reply: [{ type: 'error', error: RENAME_RATE_LIMITED }],
+  };
 }

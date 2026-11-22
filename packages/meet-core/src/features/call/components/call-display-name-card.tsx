@@ -166,6 +166,8 @@ function SaveStatus({
         return t('profile_settings.renamed');
       case 'locked':
         return t('profile_settings.locked');
+      case 'rate_limited':
+        return t('profile_settings.rate_limited');
       case 'unconfirmed':
         return t('profile_settings.unconfirmed');
       case 'idle':

@@ -5071,6 +5071,7 @@
         "name_hint": "Mọi người trong cuộc gọi thấy tên mới ngay. Không cần tham gia lại.",
         "name_placeholder": "Tên mà mọi người nhìn thấy",
         "preview": "Xem trước",
+        "rate_limited": "Đã lưu vào hồ sơ. Bạn vừa đổi tên nhiều lần nên cuộc gọi này vẫn giữ tên cũ. Hãy lưu lại sau một phút.",
         "renamed": "Mọi người trong cuộc gọi đã thấy tên mới của bạn.",
         "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại."
       },

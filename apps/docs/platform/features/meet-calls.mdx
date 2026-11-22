@@ -1746,12 +1746,20 @@ the dialog closes mid-check. After the save succeeds, the client sends
 sees the name without a rejoin. The command carries no target: the room always
 renames the sender. The name is normalised and capped at 120 characters like
 `presence.join` (the profile API caps it at 100). Each participant may rename
-six times a minute per room, and later attempts get `rename_rate_limited`. The
-open attendance row takes the new name. Guests, and anyone admitted from the
-lobby, keep the name the host approved: the room answers
-`display_name_locked`, the profile change still stands, and the dialog says the
-call keeps the admitted name. A new photo reaches others when this device
-next connects, not live. Regression coverage: `room-rename.test.ts`,
+six times a minute per room, and later attempts get `rename_rate_limited`; the
+dialog says so, because nothing retries that attempt until the next reconnect.
+A `presence.join` that would change an admitted participant's name spends the
+same allowance; over it, the join still applies its media but keeps the
+current name. First joins, same-name rejoins and lobby joins are not limited.
+The open attendance row takes the new name. Once the profile save succeeds,
+the client keeps the saved name (the room's normalised form once it answers)
+and every reconnect replays it through `participant.rename` instead of the
+lobby name, so a rename that timed out or met a closed socket still lands.
+Guests, and anyone admitted from the lobby, keep the name the host approved:
+the room answers `display_name_locked`, the client stops replaying, the
+profile change still stands, and the dialog says the call keeps the admitted
+name. A new photo reaches others when this device next connects, not live.
+Regression coverage: `room-rename.test.ts`, `room-rename-presence.test.ts`,
 `live-rename.test.ts`, `call-display-name-card.test.tsx` and
 `call-settings-you.test.tsx`.
 

@@ -5010,7 +5010,8 @@
         "preview": "Preview",
         "renamed": "Everyone in this call now sees your new name.",
         "locked": "Saved to your profile. This call keeps the name the host admitted you with.",
-        "unconfirmed": "Saved to your profile. Others see it once your connection recovers."
+        "unconfirmed": "Saved to your profile. Others see it once your connection recovers.",
+        "rate_limited": "Saved to your profile. You renamed several times just now, so this call keeps the old name. Save again in a minute."
       }
     },
     "collaboration": {

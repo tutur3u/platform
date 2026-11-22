@@ -80,8 +80,11 @@ async function connected() {
   return { actions, socket: Socket.last!, read: () => state };
 }
 
-it('renames through the room, resolves on its acknowledgement and replays the name', async () => {
+const idle = { audioEnabled: false, videoEnabled: false, screenEnabled: false };
+
+it('renames through the room and replays the room-normalised name on reconnect', async () => {
   const { actions, socket, read } = await connected();
+  actions.setDisplayName('Lobby Name');
   actions.previewDisplayName('self', 'New Name');
   expect(read().participants.self?.displayName).toBe('New Name');
   const renamed = actions.renameSelf('  New Name ');
@@ -93,24 +96,41 @@ it('renames through the room, resolves on its acknowledgement and replays the na
   socket.receive({
     type: 'participant.renamed',
     userId: 'self',
-    displayName: 'New Name',
+    displayName: 'New Name (normalised)',
     requestId: request.requestId,
   });
   await expect(renamed).resolves.toBeUndefined();
-  // A reconnect announces the new name again.
-  actions.replayPresenceJoin({
-    audioEnabled: false,
-    videoEnabled: false,
-    screenEnabled: false,
-  });
-  expect(socket.sent.at(-1)).toMatchObject({
-    type: 'presence.join',
-    displayName: 'New Name',
+  actions.replayPresenceJoin(idle);
+  const [presence, replay] = socket.sent.slice(-2);
+  // The lobby name never overwrites the saved one.
+  expect(presence).toEqual({ type: 'presence.join', media: idle });
+  expect(replay).toMatchObject({
+    type: 'participant.rename',
+    displayName: 'New Name (normalised)',
   });
 });
 
-it('rejects with the room error so the caller can roll back', async () => {
+it('replays a saved name whose rename timed out or never reached the room', async () => {
   const { actions, socket } = await connected();
+  actions.setDisplayName('Lobby Name');
+  socket.readyState = 3;
+  await expect(actions.renameSelf('New Name')).rejects.toThrow(
+    'signaling_closed'
+  );
+  socket.readyState = 1;
+  actions.replayPresenceJoin(idle);
+  expect(socket.sent.slice(-2)).toEqual([
+    { type: 'presence.join', media: idle },
+    expect.objectContaining({
+      type: 'participant.rename',
+      displayName: 'New Name',
+    }),
+  ]);
+});
+
+it('rejects with the room error and stops replaying a locked name', async () => {
+  const { actions, socket } = await connected();
+  actions.setDisplayName('Lobby Name');
   const renamed = actions.renameSelf('New Name');
   socket.receive({
     type: 'error',
@@ -118,5 +138,11 @@ it('rejects with the room error so the caller can roll back', async () => {
     requestId: socket.sent.at(-1)!.requestId,
   });
   await expect(renamed).rejects.toThrow('display_name_locked');
+  actions.replayPresenceJoin(idle);
+  expect(socket.sent.at(-1)).toEqual({
+    type: 'presence.join',
+    media: idle,
+    displayName: 'Lobby Name',
+  });
   await expect(actions.renameSelf('   ')).rejects.toThrow('display_name_empty');
 });
