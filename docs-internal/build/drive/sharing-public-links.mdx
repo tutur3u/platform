@@ -1,0 +1,223 @@
+---
+title: "Drive: public share links and viewer"
+description: "Proxy pass-through, request pipeline, ticket cookie, link-only budgets and viewer behaviour for Drive view links opened from a URL fragment."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner and independent security review; nothing is
+implemented. Part of [Sharing](/build/drive/sharing); rules S3, S5 and S7 are in
+the [object index contract](/build/drive/object-index-contract).
+
+## Public request path
+
+A visitor who opens a link has no session. Drive's proxy sends every `/api`
+request through a session refresh (`refreshAppSessionForRequest`, or
+`mountedAuth.resolveSession` on the shared origin) and then
+`guardApiProxyRequest` (the MFA guard) before the `fallback` rewrite hands the
+request to web (`apps/drive/src/proxy.ts`, `apps/drive/next.config.ts`). For an
+anonymous visitor that pipeline answers with a failure response or a login
+redirect, so the two public routes need an **anonymous pass-through** in the
+proxy:
+
+- It matches **exactly**, on `req.nextUrl.pathname` (the base path is already
+  removed): `POST /api/v1/drive/share-links/open` and `GET` or `HEAD`
+  `/api/v1/drive/share-links/content`. Anything else, including `/open/`,
+  `/openx`, a sub-path, another method or an encoded variant, takes the normal
+  pipeline and fails closed.
+- It runs **first** in the `/api` branch, before session refresh and the MFA
+  guard, in the shape of the existing `/api/build-info` branch (`isBuildInfoRead`
+  in `apps/drive/src/proxy.ts`): no refresh, no ambient identity.
+- It deletes every cookie except the five ticket slots (below) and the
+  `authorization` header, so the web handler never sees a session. Then the
+  request continues and the `fallback` rewrite proxies to web, passing
+  `Set-Cookie` back.
+- **No header carries the mount base.** A forwarded `x-tuturuuu-app-base` would
+  never arrive: the gateway strips every `x-tuturuuu-*` header
+  (`apps/gateway/src/forwarding-headers.ts:27`), web's sanitizer deletes any
+  such header it does not allow
+  (`apps/web/cloudflare/request-sanitizer.ts:62-66`), and the bridge's central
+  API forward passes no `setHeaders`
+  (`packages/start-bridge/src/start/handler.ts:328-334`). So web always sets
+  the ticket cookie with `Path=/api/v1/drive/share-links` and reads nothing from
+  the request to build it. On the mount host the bridge rewrites that path (see
+  the ticket cookie); on a standalone Drive host it already matches the path the
+  host serves.
+- **The URLs the `/drive/s` shell calls**, same-origin and relative to the app's
+  base: `POST <base>/api/v1/drive/share-links/open` and `GET
+  <base>/api/v1/drive/share-links/content?s=<1..5>`, where `<base>` is `/drive`
+  on `tuturuuu.com` and empty on a standalone Drive host. Drive's proxy sees
+  them with the base already removed, which is why the exact-match rule above
+  names `/api/v1/...` only.
+- The pass-through skips the MFA guard's request budget, so the web handlers
+  carry their own admission (below). The matcher in `packages/auth` stays
+  segment-exact and the shared `PUBLIC_PATHS` is not extended.
+
+### Web's `/api` ordering
+
+`webProxy` runs, in order: the malformed-cookie block
+(`blockMalformedApiAuthCookieRequest`), the anonymous-abuse block
+(`blockSuspiciousAnonymousApiRequest`), `guardApiCostAndCsrf`, and then
+`guardBrowserApiSession` with the MFA guard (`apps/web/src/proxy.ts:1004-1040`).
+The two public routes skip **only the last, the session work**. The first three
+keep running, so abuse blocking, the cost guard and the CSRF check still apply
+to anonymous traffic.
+
+- CSRF: `guardWebApiCsrf` accepts the request origin, the configured origin and
+  `WEB_CSRF_TRUSTED_ORIGINS`, which lists only the workspace origin today
+  (`apps/web/src/lib/security/csrf.ts:38`); the `tuturuuu.com/<app>` mounts share
+  web's origin and need no entry. A `POST` `open` from a **standalone Drive
+  origin** carries that origin and is refused once `TTR_CSRF_MODE` is `enforce`,
+  so `drive.tuturuuu.com` joins `WEB_CSRF_TRUSTED_ORIGINS` **only until the 301 to
+  `tuturuuu.com/drive` is on**, then leaves it (release-authority decision, in
+  [Sharing](/build/drive/sharing#decisions)). The request carries no session
+  cookie by then, so the check protects nothing but the origin.
+
+### Tests
+
+Drive and `packages/auth`, mounted at `tuturuuu.com/drive` and standalone: an
+anonymous `POST` to `open` and `GET` to `content` reach web with no redirect and
+no `401`; session cookies and `authorization` are stripped; each near-miss path and method above takes the
+normal pipeline; a client-supplied `x-tuturuuu-*` header never reaches the web
+handler; `Set-Cookie` survives the rewrite. In web: the first three
+guards still run for both routes (a blocked anonymous address and a failing CSRF
+origin are refused), and `open` under `enforce` succeeds from each trusted origin.
+
+**Emitted-Worker test on the mount host**, with the bridge's isolation active:
+`open` sets a ticket cookie, the next `content` request on `/drive` carries it,
+and web sees it. This is the case the cookie-name rules below exist for.
+
+## Ticket and cookie
+
+`open` returns an **AEAD ticket** in an `HttpOnly` cookie:
+
+- Sealed with `DRIVE_SHARE_TICKET_KEY` (at least 32 bytes, in the web Worker),
+  with a constant label as associated data. It carries the version, workspace
+  id, link id, object id and an expiry at most **5 minutes** ahead. It is not a
+  grant: every content request still calls `drive_share_check_link` and requires
+  the same object id, so a revoked link or a replaced object stops at once.
+- **Fixed names.** The Start bridge acts on every cookie Drive does not declare.
+  On a mount host it narrows the request `Cookie` header to
+  `mounts.isolation.ownedCookies` and the logout fence
+  (`isolateMountedCookieHeader`, `core/mount-isolation.ts:199-210`), and
+  `ownedCookies` takes **exact names only**. It drops every `Set-Cookie` Drive
+  does not own (`scopeMountedResponseCookies`, `:315-347`). A per-link name such
+  as `__Secure-ds_<selector>` would never reach web and its `Set-Cookie` would be
+  dropped. Drive therefore uses **five fixed slots**, `__Secure-ds_1` to
+  `__Secure-ds_5`, declared in `ownedCookies` in `apps/drive/start-bridge.config.ts`
+  (and allowed by name in the Drive proxy). Each slot holds one sealed ticket.
+- **Slot choice.** `open` reuses the slot whose ticket is for the same link,
+  otherwise an empty or expired slot, otherwise the slot with the earliest
+  expiry. The response names the slot and the viewer passes it as `?s=<1..5>` on
+  content URLs. At most five links are open in one browser; a sixth replaces the
+  oldest.
+- **Attributes and the forced path.** `HttpOnly; Secure; SameSite=Strict;
+  Max-Age=300`, no `Domain`. Web always sets
+  `Path=/api/v1/drive/share-links`. **On a mount host the bridge replaces the
+  path**: `scopeOwnedSetCookie` (`core/mount-isolation.ts:299`) drops
+  `Domain`, `Path` and `Secure` and writes `Path=/drive; Secure`. The cookie
+  then goes with every `/drive` request on `tuturuuu.com`, not only the share
+  routes. That is accepted (release-authority decision), because the ticket is sealed,
+  bound to one link and lives 5 minutes; the bridge gets no per-cookie path. A standalone Drive host
+  has no isolation, so the cookie keeps the share-links path there.
+- No ticket appears in a URL. The shell re-opens before expiry (at 4 minutes).
+
+## Public request pipeline
+
+In order, each step before the next one's cost:
+
+1. Method, `Content-Type` and body size (under 1 KB); token format
+   `^ds1_[A-Za-z0-9_-]{43}$` before any database call (content requests carry
+   the cookie instead).
+2. `admitPublicRequest` with a server-owned surface (`drive-share-open`,
+   `drive-share-content`): the per-source ingress quota first, then challenge
+   rules. No custom block list.
+3. The link's request budgets (below), keyed by `sha256(token)` (open) or the
+   ticket's link id (content) and reserved **before any database read**, so
+   unknown tokens cost only the source quota and the per-hash budget.
+4. `drive_share_open_link` (or `drive_share_check_link(p_ws_id, p_link_id)` for
+   content), then the live creator check: `MEMBER` holding `view_drive` and
+   `manage_drive`.
+5. Mint the ticket, or relay.
+
+### Budgets
+
+Budgets are the links' own, never `reserveStorageDownloadBudget`'s members' keys:
+members cannot debit links and links cannot debit members. **Their values are
+constants of the `drive-share-open` and `drive-share-content` surface policy in
+code**, reviewed there and not repeated in this folder. The budgets, all keyed
+as described in the pipeline above:
+
+| Budget | Charged |
+| --- | --- |
+| Opens per link, all viewers | On `open` |
+| Opens per link and source | On `open` |
+| Content requests per link and source | Per request |
+| Content requests per link, all viewers | Per request |
+| Bytes per link, per workspace and across all links, per day | Reserved before the stream, at the requested length |
+
+- **Budgets key on the visitor.** The bridge drops `cf-connecting-ip` from a
+  forwarded request (`packages/start-bridge/src/core/api-forward.ts:58-67`), so
+  web could see the Drive Worker's subrequest address instead of the visitor's.
+  An **emitted-Worker test** is required: two visitors with different
+  addresses, opening through the mount, get separate `admitPublicRequest`
+  source buckets and separate per-source budgets, and one visitor's limit never
+  limits the other. If the test shows the Drive Worker's address, the bridge
+  must carry a client-address proof for this route (a value it mints itself
+  through `setHeaders`, never a copied inbound header) before Sharing is
+  enabled; otherwise every viewer shares one source budget and one holder locks
+  out the rest.
+- **Ordering invariant.** The per-source open budget is below the per-link open
+  budget, so one holder cannot lock every other viewer out of a link. A test
+  asserts the relation against the constants.
+- **Range clamp.** One range per request, clamped to a surface-policy maximum. A
+  request is charged `min(requested length, clamp, bytes left)`. An open-ended
+  range such as `Range: bytes=0-` (what media elements send) is treated as the
+  next clamp-sized range, answered `206` with `Content-Range`, and charged that
+  size; the player continues with further ranges. A suffix range charges
+  `min(N, clamp)`; multiple ranges are refused. A request **without** `Range` is
+  charged the full size, which is at most 100 MiB because links are capped at
+  that size. Nothing is refunded for an aborted stream.
+- **Limited responses are distinguishable.** A per-link or per-source limit
+  returns `429 { code: 'rate_limited' }` with `Retry-After` (seconds to the end
+  of the window), the same for every cause. The budget key is the token hash even
+  when the token is unknown, so a `429` reveals nothing about whether a link
+  exists; every other failure stays one `404`.
+- Each content request re-checks liveness with one indexed read, so video
+  playback within an open ticket is bounded by the content-request and byte
+  budgets, not the open window.
+
+## The `/drive/s` viewer
+
+- Public page `/drive/s` (no token in the path). The Drive proxy treats exactly
+  `/s` as public through its own matcher (S7), with a locale prefix stripped
+  first so `/en/s` and `/vi/s` are public on the unmounted proxy too; the mounted
+  proxy passes `publicPaths: ['/s']`. The shared `PUBLIC_PATHS` is not extended.
+  The `/s` to `/en/s` locale redirect keeps the fragment.
+- **`/s` is served anonymously whatever the session state.** The mounted
+  matcher (`packages/auth/src/proxy/mounted-app-auth.ts`) resolves the session
+  first for a public path and, for owed MFA or an assurance outage, redirects to
+  `/login` (lines 131-145), so a visitor with an MFA-owed Web session could not
+  open a link. `createMountedAppAuth` gains an `anonymousPaths` option for exact
+  paths: it skips `resolveSession` and the logout fence and returns
+  `anonymousNext` (session cookies and `authorization` stripped). Drive passes
+  `anonymousPaths: ['/s']`. Tests: valid session, owed MFA, assurance outage and
+  an active logout fence each serve `/s` signed out with no redirect, and other
+  public paths keep their behaviour.
+- The shell reads `location.hash`, calls `history.replaceState` to drop it, and
+  opens the link through an `internal-api` client function (a TanStack mutation,
+  no raw `fetch`). The fragment is never sent to any server, so gateway, Drive
+  and web logs, referrers and link-unfurling or email-scanning bots never see
+  the token. **No log-redaction claim is made or needed.**
+- The viewer shows the name and size, an inline preview for raster images, audio,
+  video and plain text, and a download button for everything else. **PDF is
+  download-only in v1.**
+- Headers on both routes: `Cache-Control: private, no-store`, `Referrer-Policy:
+  no-referrer`, `X-Robots-Tag: noindex, nofollow`, `nosniff`. The shell sets
+  `frame-ancestors 'none'`; content sets the relay's `sandbox; default-src
+  'none'` CSP, inline only for the allowlist, attachment otherwise with a
+  sanitized `Content-Disposition`.
+- **No raw storage URL leakage**: bytes are relayed in process; the provider URL
+  (and R2 key) is never in a body, header, redirect or client log.
+- Residual exposure: the fragment sits in the creator's clipboard and in browser
+  history before the viewer strips it; a browser extension can read it. Revoke
+  and the 90-day cap bound this.

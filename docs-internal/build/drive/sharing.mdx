@@ -1,0 +1,206 @@
+---
+title: "Drive: Share with people"
+description: "Design note for Drive sharing on the storage object index: revocable view links opened from a URL fragment, file-only viewer grants bound to object ids, authorization, API and the decisions."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner and independent security review; nothing is
+implemented or migrated. Companions: [data model, triggers and tests](/build/drive/sharing-data-model),
+[public links and viewer](/build/drive/sharing-public-links),
+[Recent files](/build/drive/recent-files), [Trash](/build/drive/trash) and the shared
+[object index contract](/build/drive/object-index-contract) (D1 to D9, S1 to S10
+below refer to it).
+
+## Decision
+
+Two mechanisms, in this build order:
+
+1. **Revocable view links** for one file. A random token stored only as a hash,
+   with an expiry and a revoke button. The token travels in the URL **fragment**
+   and is sent once in a `POST` body, so it is never in a request URL, an access
+   log or a `Referer`. Bytes stream through a relay; no storage URL reaches the
+   viewer.
+2. **Per-member viewer grants on a file**, for workspace members who lack Drive
+   permission. **File-only in v1**; the editor role and folder grants come later.
+
+Both bind to `storage_objects.id` (D8). They are API-mediated and change neither
+`workspace_storage.object_access`, Storage RLS nor bucket policies, so a grant
+never lets anyone read the bucket directly. **No external email grants in v1**,
+and no email-HMAC columns.
+
+## Current system (verified in code)
+
+- "Share" is `POST|GET /api/v1/workspaces/[wsId]/storage/share`: it signs a
+  provider URL, clamped to 7 days (`clampSignedUrlTtl`). A signed URL cannot be
+  revoked before it expires. With R2 these become presigned URLs of at most 15
+  minutes (D9) and stop being presented as "sharing".
+- Folder export links are HMAC tokens with one revocation marker per folder; no
+  per-link record.
+- `relayStorageDownload` streams from an encrypted short-lived ticket with
+  `private, no-store`, `no-referrer`, `nosniff`, a `sandbox` CSP and one byte
+  range. `reserveStorageDownloadBudget` charges **global** daily and monthly byte
+  caps and a per-**file** request limit shared with members, so it must not
+  carry links (below).
+- `apps/drive` is a Worker with `basePath: '/drive'` that proxies `/api/*` to
+  web through a `fallback` rewrite in `next.config.ts`. Its proxy redirects
+  unauthenticated visitors except public paths, and runs session refresh and the
+  MFA guard on every `/api` request (`apps/drive/src/proxy.ts`); the public
+  routes need their own pass-through ([public links](/build/drive/sharing-public-links#public-request-path)).
+- Drive routes use `resolveWorkspaceStorageRouteAuth` then `view_drive` or
+  `manage_drive`; Drive sessions use a service-role client, so every function
+  takes an explicit actor (S3).
+- `private.storage_access_events` is best-effort telemetry: wrong for grant and
+  revoke evidence, so Sharing has its own events table.
+
+## Behaviour and defaults
+
+### View links
+
+- Created by a `manage_drive` holder from a file's Share menu. Files only, up
+  to **100 MiB** in v1 (so a whole-file read fits the link byte budgets).
+  Expiry default **7 days**, minimum 5 minutes, maximum **90 days**; never
+  permanent. The URL (`https://<drive origin>/drive/s#ds1_...`) is shown **once**;
+  the list shows label, creator, times, open count and last opened, never the
+  token. Revoke is immediate for every new request, singly or for every link on a
+  file. There is no use limit in v1; the open count is informational.
+- The viewer shows file name, size and an inline preview for safe types
+  (raster images, audio, video, plain text), otherwise a download button. **PDF,
+  HTML and SVG are download-only in v1** (an inline PDF needs a frame, which the
+  sandbox CSP and `frame-ancestors` forbid). No workspace name, path or member
+  names.
+- Every failure (unknown, revoked, expired, object replaced, trashed or purged,
+  blob not publishable, creator not allowed) shows one page: "This link is not
+  available". A rate limit is the one distinguishable response (below).
+- **A link ends for good** when its object stops being `live`: replacing the
+  file (new id), trashing and permanently deleting all revoke it by trigger, and
+  **restoring does not bring it back**. A link also ends when its creator stops
+  being a `MEMBER` holding **both `view_drive` and `manage_drive`**, and it stops
+  working when the path becomes a private root (S5). **Losing `manage_drive`
+  revokes the creator's links**; regaining it brings none back. The check is live
+  at every open and content request, and the first observation writes the
+  revocation (`creator_role_lost`) and its event. `prune_drive_share_rows`
+  also revokes the links of creators who no longer hold both permissions
+  (through `public.has_workspace_permission`), so a link nobody opens is revoked
+  by the sweep, and the sweep job is enabled together with `DRIVE_SHARING_MODE`.
+  A permission lost and regained between two observations can revive a link for
+  that window, which is bounded by the sweep interval and accepted (Decisions). Moves and
+  renames never revoke.
+- Only objects whose blob is publishable are linkable: blob `state = 'live'` and
+  `sanitize_state` in `clean` or `not_applicable` (`pending` and `refused` are
+  refused at creation and at every open).
+- Limits: 10 active links per file, 500 per workspace, and a per-user creation
+  budget.
+
+### Per-person grants
+
+- A `manage_drive` holder gives a workspace member (`MEMBER` or `GUEST`) the
+  `viewer` role on a **file**: preview and download. Optional expiry. Grants are
+  additive. "Shared with me" lists the caller's grants; `manage_drive` holders
+  list grants per file. A grant follows the object through rename and move, and
+  ends when the object leaves `live`.
+- **File grants only in v1.** Folders are rows in the index (D1), so a later
+  folder grant can bind to a folder id without the reused-path hazard; it is not
+  part of v1.
+- **The `editor` role is refused in SQL until phase 2.** The v1 table CHECK
+  allows `viewer` only, and the function raises on anything else, so an
+  `editor` row cannot exist before the write path does. Phase 2 (agreed with the
+  media lead, because it changes `upload-url` and `finalize-upload`) widens the
+  CHECK in the migration that ships it. Limits: 50 grants per file, 1,000 per
+  workspace, a per-user change budget.
+
+## Authorization model
+
+One framework-free module in `packages/storage-core` (outside upload paths):
+`resolveDriveAccess({ wsId, userId, object, permissions, loadGrant })` returns
+`{ read, write }`.
+
+1. S5 first: private roots deny, grants or not.
+2. Role permissions (`view_drive`, `manage_drive`, the Finance exceptions).
+3. Otherwise one indexed lookup of the actor's active grant on the **object id**.
+   It counts only while the grantee is a current member, the grant is not revoked
+   or expired, and the object is `live`.
+
+Grant-derived reads go through the relay, never a provider URL. Phase 1 adds the
+grant branch to object reads, preview and "Shared with me" only; a grantee cannot
+list folders.
+
+## API
+
+New handlers under `apps/web/src/app/api/` (S9). Management routes use
+`resolveWorkspaceStorageRouteAuth` and `manage_drive`; errors are `{ message, code }`.
+
+| Method and path | Request | Response | Notes |
+| --- | --- | --- | --- |
+| `POST /v1/workspaces/[wsId]/storage/share-links` | `{ objectId, expiresInSeconds?, label? }` | `201 { id, url, expiresAt }` | `url` appears only here. Needs `view_drive` plus `manage_drive`; S5 on the object's path. Not idempotent (the URL cannot be re-read); caps and the list bound strays |
+| `GET .../storage/share-links?objectId=` | none | `{ items }` | Limit 100, no tokens |
+| `DELETE .../storage/share-links/[id]`, or `?objectId=` for all on a file | none | `204` / `200 { revoked }` | Idempotent |
+| `POST .../storage/grants` | `{ objectId, userId, role: 'viewer', expiresAt? }` | `201` / `200` | `userId` is the grantee only; any other role is `422` |
+| `GET .../storage/grants?objectId=`, `PATCH\|DELETE .../storage/grants/[id]` | as shown | `{ items }`, `200`, `204` | |
+| `GET .../storage/shared-with-me?before=&limit=` | none | `{ items }` | Any member; limit 50 |
+| `POST /v1/drive/share-links/open` | `{ token }` | `200 { name, size, contentType, expiresAt, previewable, slot }` plus `Set-Cookie` | Public. One `404` body for every failure; `429` with `Retry-After` when limited |
+| `GET\|HEAD /v1/drive/share-links/content?s=<slot>` | cookie, optional `Range` | bytes | Public. Relay |
+
+### Public routes and the viewer
+
+The two public routes, their proxy pass-through, request pipeline, link-only
+budgets and the `/drive/s` viewer are in
+[Sharing: public links and viewer](/build/drive/sharing-public-links). The rules
+that matter here: the token is in the URL fragment and sent once in a `POST`
+body; every public failure is one `404`; links draw on their own budgets and
+never on members' keys.
+
+## Interactions with listing, quota, move and preview
+
+- **Listing**: a grantee without `view_drive` sees only "Shared with me"; a link
+  grants no listing; non-live objects vanish from every share view.
+- **Quota**: shares add no bytes. Link and grant reads use the relay and the link
+  budgets.
+- **Move, rename**: bindings follow the id; nothing is called. Overwrite, trash
+  and permanent delete revoke by trigger.
+- **Preview**: members use R2 presigned URLs of at most 15 minutes; grantees and
+  links use the relay. Recent is not written by either.
+
+## Interactions with the media and external-app work
+
+1. **`object_access`**: not edited. Grants and links are not RLS-backed, so no
+   merge conflict and no widening of direct Storage reads.
+2. **Private roots**: sharing calls S5 at creation and at every use. When
+   `external-projects` joins the list, creating a link or grant there returns
+   403 and existing bindings are denied. TypeScript tests prove both (S9).
+3. **External-app tokens cannot share**: management routes accept user sessions.
+4. **`drive.files:delete`** calls the permanent `delete`, whose `live` to
+   `purged` change fires the revocation trigger, so an app delete cannot leave a
+   live link.
+5. **Audit**: its own events table; `storage_access_events` is untouched.
+6. **Blob rules**: link serving honours `sanitize_state`; renditions belong to the
+   blob and are not served through links. Drive blobs are never deduplicated
+   across paths (D1), so a grant or link never follows identical bytes.
+
+## Decisions
+
+1. **v1 scope**: workspace members plus view links; no external emails and no
+   email-HMAC columns.
+2. **Link expiry**: 7 days by default, 90 at most; no permanent links.
+3. **Link creation** needs `manage_drive`. **Losing `manage_drive` (or
+   `view_drive`, or membership) revokes the creator's links**, and none comes back
+   when the permission does.
+4. **Grants**: file-only, `viewer` only, enforced in SQL; the editor role is
+   phase 2.
+5. **Replacing a file revokes its links** (new object id, trigger).
+6. **Trash revokes permanently**; restore revives no link or grant.
+7. **Budgets**: link-only open, content-request and byte budgets, with values in
+   the surface policy and the per-source open budget below the per-link one
+   ([public links](/build/drive/sharing-public-links#budgets)).
+8. **Token transport**: URL fragment plus `POST`; log redaction is not relied on.
+9. **Viewer ticket**: a 5-minute `HttpOnly` cookie, not a query-string ticket.
+10. **PDF** is download-only in v1.
+11. **CSRF origin**: `drive.tuturuuu.com` joins `WEB_CSRF_TRUSTED_ORIGINS` only
+    until the 301 to `tuturuuu.com/drive` is on, then leaves it (release
+    authority). The mounted origin needs no entry.
+12. **Cookie path on the mount host**: the bridge forces the five-slot ticket
+    cookie to `Path=/drive`; this is accepted, with no per-cookie path in the
+    bridge (release authority).
+13. **Permission loss and regain**: a creator who loses and regains
+    `view_drive` and `manage_drive` between two observations can revive a link for
+    that window. The window is bounded by the sweep interval and is accepted
+    (release authority).

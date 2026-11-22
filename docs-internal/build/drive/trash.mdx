@@ -1,0 +1,251 @@
+---
+title: "Drive: Trash and restore"
+description: "Design note for soft delete in Drive on the storage object index: metadata-only trash and restore for Drive-initiated deletes, folder units, quota and pending deletion, idempotent requests and the decisions."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner review. Nothing here is implemented, and no
+migration is applied. Companions: [Trash data model and purge job](/build/drive/trash-purge-job),
+[Recent files](/build/drive/recent-files), [Sharing](/build/drive/sharing) and the
+shared [object index contract](/build/drive/object-index-contract) (D1 to D9 and
+S1 to S10 below refer to it).
+
+## Decision
+
+Deleting a file or folder **in Drive** moves it to Trash for 7 days. It can be
+restored until then. A purge job on a dedicated Cloudflare Worker then removes
+it. Deletes that do not start in Drive (Finance, user groups, external apps)
+stay permanent and never enter Trash.
+
+Trash is **metadata-only**: the object row on `private.storage_objects` goes
+`live` to `trashed` (D4), and `restore` goes back. No object is relocated or
+copied, there is no `.tuturuuu/trash` prefix, and the old key-length and
+provider-migration problems do not exist. The R2 key is `{ws}/b/{blobId}`, and
+the path lives only in the index (D1, D2).
+
+| Option | Verdict |
+| --- | --- |
+| Relocate under `.tuturuuu/trash/<id>/...` plus a ledger | Rejected: a copy and delete per object, a key-length cap, a provider-specific primitive, and a path that stays resolvable until the move finishes |
+| State on the object row, mutated by `StorageObjectService` | **Chosen.** One transaction per unit, the live path is free at once, and every reader loses access with no per-route change |
+
+## Current system (verified in code)
+
+- Deletes are permanent: `DELETE .../storage/object`
+  (`deleteWorkspaceStorageObjectByPath`) and `DELETE .../storage/folders`
+  (list the prefix, then batches of 1,000 `DeleteObjects` or Supabase `remove`).
+  Permission `manage_drive`, plus a Finance exception for transaction receipts
+  (`canAccessFinanceTransactionStoragePath`). Both are wrapped in
+  `withStorageAccessAudit` (action `delete`). About 20 other paths delete or
+  rename directly (user groups, external-app Drive, Finance, provider
+  migration); D7 replaces all of them.
+- Folders are implicit (a prefix) or a `.emptyFolderPlaceholder` object today;
+  the index makes them rows (D1). Private roots are hidden by
+  `isExcludedDrivePath` and denied by `object_access`.
+- Quota today: `ensureWorkspaceCapacity` and `get_workspace_storage_limit`; the
+  index computes it over `live` rows and `trashed` rows with `purge_after >
+  now()`.
+
+## Behaviour and defaults
+
+- **Who may trash.** Only a delete a person makes through a Drive route with
+  `manage_drive` becomes a Trash unit. The Finance exception, Finance's own
+  routes, user groups and external-app `drive.files:delete` call the service's
+  permanent `delete`. A receipt a `manage_drive` holder deletes in the Drive
+  browser is a Drive delete and goes to Trash.
+- **Delete** creates one Trash **unit**: a file is its own unit (the object row);
+  a folder is one unit holding every live object and sub-folder under it, linked
+  by a `trash_entry_id`. Items inside a folder unit are not listed separately.
+- **Trash view**: units newest first with name, original location, who deleted
+  it, when, size, item count and the date it will be removed. No browsing inside
+  a trashed folder in v1. Visible to every `manage_drive` holder, also for units
+  deleted by a member who has since left.
+- **Restore** returns the unit. It **never overwrites**: a taken name is handled
+  by the conflict rules below. **Delete forever** and **Empty trash** are
+  immediate and cannot be undone; purge is automatic 7 days after trashing.
+- Empty trash needs an explicit confirmation (UI dialog, and `confirm: true` in
+  the request).
+- Trashing **revokes the unit's links and grants permanently and drops its Recent
+  rows**; restoring brings none of them back (contract, revocation section).
+- **Restorable Trash counts toward quota.** Rows already expedited cannot be
+  restored, stop counting at once and show as **pending deletion** until the job
+  purges them (see [Quota](#quota)).
+- Permission: moving to Trash, viewing, restoring and deleting forever all need
+  `manage_drive`.
+- Private roots are never trashable (S5), checked on the way in and again on the
+  final restore path.
+- **Trash mode** (`trash_mode` in the [data model](/build/drive/trash-purge-job#data-model))
+  is `on` **only while the purge job is enabled and healthy**. While it is `off`
+  (the default) the Drive delete routes call the permanent `delete`, as today.
+  The **database gate** refuses any row entering `trashed`, by insert or update,
+  while Trash is unavailable (D7), so a caller outside the route cannot create a
+  unit that nothing would purge.
+- Requests carry an `Idempotency-Key` (S10): replays return the stored result for
+  files and folders alike.
+
+### Folder units
+
+- A folder unit is created in one bounded transaction: the entry row, then
+  `StorageObjectService.trash` over the folder row, every `live` descendant
+  folder row and their objects, all with the same `trash_entry_id` and
+  `purge_after`. A folder holding no objects is still a unit: its folder rows
+  are what the unit consists of, so it stays visible and restorable. Above **5,000
+  objects** the route returns `409 trash_too_large` and nothing changes: the
+  folder is **refused**, matching the service's `too_large` bound. The user
+  deletes or moves parts of it first. (The service counts every row it changes,
+  so a folder with many sub-folders can reach the bound earlier.)
+- A permanent delete, with Trash off, keeps today's behaviour: the route runs
+  the service in bounded batches, not atomically and not part of Trash.
+- Trashing a file inside folder `D` first and `D` afterwards makes two units,
+  each restored on its own.
+
+## Operations
+
+### Move to Trash
+
+1. The route (`DELETE .../storage/object` and `.../folders`, when Trash mode is
+   on) authorizes, applies S1 and S5, and calls `drive_trash_available()`; closed
+   means `503 trash_unavailable`.
+2. A file: resolve path to the live object id, then `StorageObjectService.trash`
+   with origin `drive`. The id is stored in the idempotency row's `target_id`,
+   so a retry replays that result and never resolves the path again. A folder:
+   `drive_trash_entry_create` (counts from one index query, bound 5,000) then
+   `trash` over the folder with the entry id. The entry, the idempotency row and
+   the service mutation are **one transaction** through a Drive definer
+   function that calls the service's composable, non-committing function
+   (contract dependency 10, resolved).
+3. Revocation of links and grants and removal of Recent rows happen in the
+   triggers on the state change. The route calls nothing else.
+
+### Restore
+
+Request: `{ conflict: 'rename' | 'fail', destination: 'original' | 'root' }`,
+defaults `rename` and `original`, with a required `Idempotency-Key` header.
+
+1. Resolve the target path: the unit's `deleted_from_path` (or its root-level
+   name). Apply S1 and **S5 to the final path** (after any rename or
+   `destination: 'root'`), never only to the original.
+2. Check the ancestors with `drive_trash_ancestors`, then call
+   `StorageObjectService.restore` with the target. A live-slot conflict comes
+   back as `path_taken`; the route retries with the next name, up to 20 tries.
+   A folder restores all-or-nothing in one transaction, so a conflict inside it
+   leaves nothing half restored.
+3. **Name taken for a folder unit** means any live folder with that name under
+   the target parent, any live object whose path equals the target, or any live
+   object whose path starts with `target/`. It is checked **inside the restore
+   transaction** (under the per-parent advisory lock in the index note), so a
+   recreated folder `D` or a live `D/other` is never merged into silently.
+4. Restore applies only while `purge_after > now()`; an expedited or purged unit
+   returns `409 not_restorable`.
+
+Restore needs no capacity check (the bytes already count), and the same
+`Idempotency-Key` returns the same `restoredPath`; the same key with a different
+body returns `422 idempotency_key_reuse`. No `HEAD`, copy or overwrite
+exists, so there is **no R2 overwrite race**: the live unique indexes decide.
+
+| Situation | Behaviour |
+| --- | --- |
+| Original path free | Restore there |
+| A live object or folder has the name | `rename`: `name (restored).ext`, then `name (restored 2).ext`, up to 20 tries, then `409 name_conflict`. `fail`: `409 name_conflict` with the first free suggestion. No merge, no overwrite |
+| Parent folder deleted for good | The restore recreates it as a new folder (new id; grants on the old folder do not follow) |
+| Parent folder is itself an unrestored unit | `409 parent_in_trash` with its id; restore the parent first, or send `destination: 'root'`. This is **Drive's stricter policy in front of the service's default**, which would recreate any missing live ancestor, trashed separately or not (index note, "Folder units"); Drive checks `drive_trash_ancestors` before calling the service |
+| An ancestor segment is now a live file | `409 parent_blocked`; `destination: 'root'` is the way out |
+| Final path is a private root, or fails S1 | `409 forbidden_destination` (never written) |
+
+### Delete forever and Empty trash
+
+The route **expedites** the unit: one statement sets `purge_after = now()` for
+every row of it (D7), which makes it unrestorable at once. The unit leaves the
+Trash view immediately and its bytes leave quota. **The route purges nothing**:
+the `trashed` to `purged` step is the purge Worker's alone (`ttr_storage_purge`,
+contract dependency 9, resolved): the route calls
+`private.storage_expedite_unit(ws_id, unit_id, actor_id)` as `service_role`
+after its own permission check, so the web app needs no purge credential and
+there is no inline budget.
+
+- The job claims expedited rows first, under the same fences and per-workspace
+  caps as any purge. While purge is `off`, `dry-run` or stopped, Delete forever
+  still expedites the unit; it shows as pending deletion until the job runs.
+- Empty trash expedites up to 500 units per call and returns how many remain.
+  A new expedite is refused (`429 purge_backlog`) once the workspace's
+  pending-deletion bytes exceed **2x its quota**; the multiplier is a
+  surface-policy constant, not repeated in this folder.
+
+## Quota
+
+- Quota is **logical bytes over `live` rows and `trashed` rows with
+  `purge_after > now()`** (release-authority decision; D5 has the partial index).
+  Only restorable rows count. A deduplicated blob never lowers it, and Drive
+  blobs are never shared across paths.
+- A row that Delete forever or Empty trash expedited is unrestorable, so it is
+  excluded at once and shown as **pending deletion**. The caps mean a large Empty
+  trash can take several days to leave R2, so the claim takes expedited rows
+  first and physical bytes are tracked separately for cost; the 2x
+  quota refusal above bounds how many bytes can sit in that state.
+- `GET .../storage/trash` returns `usage: { trashBytes, trashItems,
+  pendingDeletionBytes, pendingDeletionItems }`. Restore and the quota check
+  share one rule, `purge_after > now()`.
+
+## API
+
+New handlers under `apps/web/src/app/api/v1/workspaces/[wsId]/storage/trash/`
+(S9). Auth: `resolveWorkspaceStorageRouteAuth` (`drive`), then `manage_drive`.
+The actor is `auth.context.userId` (S3).
+
+| Method and path | Request | Response | Notes |
+| --- | --- | --- | --- |
+| `GET .../storage/trash?limit=&before=` | none | `{ items, nextBefore, usage }` | Limit default 50, max 100. Items carry `kind` (`file`, `folder`), `id`, name, original path, `deletedBy`, `deletedAt`, `purgeAfter`, size, count |
+| `POST .../storage/trash/[kind]/[id]/restore` | `{ conflict?, destination? }`, `Idempotency-Key` required | `200 { restoredPath }` or `409` with a code | `kind` is `file` or `folder`; retry-safe |
+| `DELETE .../storage/trash/[kind]/[id]` | none, `Idempotency-Key` required | `204` | Delete forever; immediate and unrestorable |
+| `DELETE .../storage/trash` | `{ confirm: true }`, `Idempotency-Key` required | `200 { purged, remaining }` | Empty trash; at most 500 units per call |
+| `GET .../storage/trash/file/[id]/preview` | none | `{ url }` | Files only. `url` is a `/drive` relay link with a 60 s ticket, **never a provider URL**; audited as `sign` |
+
+Existing delete routes keep their request shape. In `on` mode they return `200
+{ success: true, trashId, kind }` and accept an optional `Idempotency-Key`, so a
+retry after success replays instead of returning `404`. Limits: a per-user
+operation budget through `ABUSE_GUARD` (surface policy constant); bodies under
+4 KB.
+
+## Interactions with the media and external-app work
+
+- `external-projects` becoming service-only: Trash calls `isExcludedDrivePath`
+  on the way in and on the restore path, so such objects stop being trashable the
+  moment the list changes. `object_access` is **not edited** here, and TypeScript
+  tests prove the denial (S9).
+- The media lead's `drive.files:delete`, Finance receipt deletes through Finance
+  routes, and the user-groups delete paths call the permanent `delete` (S9). They
+  create no Trash unit, and the revocation triggers still fire.
+- Media renditions and originals under `external-projects/` are not Drive units.
+- Provider migration copies live and trashed rows with their ids (index note,
+  "Folders, quota, audit and migration"); `storage_access_events` is not changed here.
+
+## Decisions
+
+1. **Retention**: 7 days for every workspace, then purge.
+2. **Quota**: restorable trashed bytes count toward the limit; expedited,
+   unrestorable rows are excluded and shown as **pending deletion**
+   (release authority).
+3. **Visibility**: every `manage_drive` holder sees and restores every unit.
+4. **Restore** never replaces an existing item; the default is to rename.
+5. **Empty trash** asks for confirmation before purging.
+6. **Trash mode requires the purge job**: it can be on only while the job is
+   enabled and healthy; **Delete forever is immediate** and cannot be restored.
+7. **Shares and Recent** do not come back on restore.
+8. **Trash browsing**: whole units only in v1.
+9. **Folder size**: trashing a folder over 5,000 objects is **refused**
+   (`409 trash_too_large`), matching the service bound.
+10. **Scope**: Finance deletes stay permanent; Trash covers Drive-initiated
+    deletes only. Only a Drive-routed `trash` may enter Trash, enforced in the
+    service by its origin argument and by the database gate's availability check.
+11. **Purge Worker**: a new `drive-purge` Worker, off the public gateway, with
+    the `ttr_storage_purge` role.
+12. **Purge caps**: 100 objects per tick and 5,000 per day per workspace
+    (the `ws_tick_cap` and `ws_daily_cap` defaults).
+13. **Alerts**: trash-health alerts go to the Iris and ops alert channel. Until it
+    exists, the health job's `degraded` outcome (or its `failed` slots) in the
+    Cron Control ledger is the interim signal (release authority).
+14. **Pending-deletion backlog**: new expedites (Delete forever, Empty trash) are
+    refused once pending-deletion bytes exceed 2x the workspace quota; the value
+    lives in the surface policy (release authority).
+15. **Database access**: Cron Control gets no Postgres access. Only the
+    `drive-purge` Worker holds `ttr_storage_purge`; Cron Control's own jobs for
+    Drive call only read-only and bounded-prune functions (release authority).

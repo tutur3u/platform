@@ -1,0 +1,316 @@
+---
+title: "Drive: Recent files"
+description: "Design note for a per-user Recent list in Drive: recently opened files bound to the R2 object index, with a workspace off switch, export adapter, retention job and threat model."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner review. Nothing here is implemented, and no
+migration is applied. Companions: [Trash](/build/drive/trash),
+[Sharing](/build/drive/sharing) and the shared
+[object index contract](/build/drive/object-index-contract) (D1 to D9, S1 to S10
+below refer to it).
+
+## Decision
+
+Build **Recently opened**: a private, per-user list of files the user explicitly
+opened (preview or download) in a workspace's Drive. Rows reference the object
+index by `object_id` (D8), so a rename or move needs no upkeep, and a trigger
+ends the row when the object leaves `live`.
+
+| Option | Needs | Verdict |
+| --- | --- | --- |
+| Recently modified | A query on the index `(ws_id, updated_at desc, id)` (D5) | Possible later at low cost; not the owner's choice for v1 |
+| Recently opened | One small table and one write per open | **Chosen.** It matches what Recent means to users and records what the person did, not what others changed |
+
+With the index, "modified" is now a cheap query, so the earlier reason to reject
+it (walking the provider) is gone. The choice rests on product meaning and
+privacy, not cost. A "Modified" view stays an option and needs no new storage.
+
+## Current system (verified in code)
+
+- Listing: `listWorkspaceStorageDirectory` walks the provider. After the R2
+  migration it reads the index; that is storage-core's change, not this note's.
+- Open paths: preview and download both sign a read URL through
+  `POST|GET /api/v1/workspaces/[wsId]/storage/share`, which also signs
+  thumbnails and embeds, so **signing is not a signal that the user opened a
+  file**. The Drive UI calls the Recent route explicitly instead.
+- Auth: `resolveWorkspaceStorageRouteAuth` (app `drive`), then `getPermissions`.
+  For Drive app sessions the Supabase client is a service-role client with the
+  user attached, so every function takes an explicit actor (S3).
+
+## Behaviour and defaults
+
+- A "Recent" view lists up to 25 files (maximum 50), newest open first. Each row
+  shows the file name, parent folder and time, taken from the live index row.
+- Per user and per workspace. Nobody else, workspace admins included, can read
+  another member's list. It is not an access log; the
+  [Sharing](/build/drive/sharing) audit is the evidence trail.
+- An open is a deliberate user action: the preview dialog or Download. These do
+  not count: thumbnails, listings, search, bulk export, API-key and SDK reads,
+  external-app reads, share-link visits and Finance receipt previews.
+- Files only. Retention **30 days**, at most **50 rows** per user and workspace
+  (the 51st evicts the oldest in the same write). Reopening within 60 seconds
+  writes nothing.
+- "Clear history" deletes the caller's rows for the workspace.
+- A rename or move changes nothing here: the list shows the object's current
+  path. When the object leaves `live` (overwrite creates a new id, trash, permanent delete)
+  its rows are deleted by a trigger. **An overwrite does not carry the Recent row
+  to the new object** (new id, row ends). **Restoring from Trash does not bring
+  Recent entries back** (the product rule in the contract's revocation section).
+- `GUEST` members have no Recent list: the functions require `MEMBER`. A member
+  who leaves a workspace, or is moved out of it, loses that workspace's rows in
+  the same transaction (S6).
+- **Workspace off switch.** Any `manage_drive` holder can turn Recent off for a
+  workspace ([below](#workspace-switch)). Default on.
+
+## Data model
+
+One additive migration, `private` schema, RLS enabled with zero policies.
+
+```sql
+create table private.drive_settings (
+  ws_id          uuid primary key references public.workspaces (id) on delete cascade,
+  recent_enabled boolean not null default true,
+  updated_at     timestamptz not null default now(),
+  updated_by     uuid references public.users (id) on delete set null
+);
+
+create table private.drive_recent (
+  ws_id          uuid not null references public.workspaces (id) on delete cascade,
+  user_id        uuid not null references public.users (id) on delete cascade,
+  object_id      uuid not null references private.storage_objects (id) on delete cascade,
+  last_opened_at timestamptz not null default now(),
+  primary key (ws_id, user_id, object_id)
+);
+
+create index drive_recent_user_idx
+  on private.drive_recent (ws_id, user_id, last_opened_at desc, object_id);
+create index drive_recent_retention_idx
+  on private.drive_recent (last_opened_at);
+
+alter table private.drive_settings, private.drive_recent enable row level security;
+revoke all on table private.drive_settings, private.drive_recent
+  from public, anon, authenticated, service_role;
+```
+
+- `ON DELETE CASCADE` on `object_id` is the documented erasure path (D8): a hard
+  delete of an object row removes its Recent rows.
+- An **`AFTER UPDATE`** trigger on `private.storage_objects`,
+  `WHEN (OLD.state = 'live' AND NEW.state <> 'live')` (the index note's
+  revocation contract; `blob_id` and `ws_id` are immutable there), runs
+  `private.drive_recent_on_leave_live()` (`SECURITY DEFINER`, pinned
+  `search_path`, `ENABLE ALWAYS`), which deletes `drive_recent where
+  object_id = OLD.id`. After, not before, so a cancelled row leaves no side
+  effect. The `BEFORE TRUNCATE` refusal on `storage_objects`, owned by the
+  index migration (contract dependency 11), keeps it from being skipped. The
+  trigger lives in this migration, so Recent ships independently of Sharing.
+- The row stores no path, name, size or type. Display data comes from the live
+  index row at read time (joined on `object_id` and `ws_id`), so a client
+  cannot plant text and a move is invisible to this table.
+- `service_role` holds no table privilege either: only the `SECURITY DEFINER`
+  functions below touch the tables.
+- `drive_settings` is a tiny Drive-owned table so the switch does not depend on
+  the shape of `workspace_configs`. Later Drive switches reuse it.
+
+### Functions
+
+All follow S4 (`SECURITY DEFINER`, pinned `search_path`, `service_role` only,
+`review=` annotation, `p_ws_id` on every function that takes an id, actor from
+the session per S3).
+
+| Function | Behaviour |
+| --- | --- |
+| `private.drive_recent_touch(p_ws_id, p_actor_id, p_object_id)` | Reads the switch and `MEMBER` status, then requires the `storage_objects` row to exist in `p_ws_id` with `state = 'live'`. Upserts; skips the write when `last_opened_at` is under 60 s old; evicts rows beyond the newest 50. Returns one of `recorded`, `skipped_recent`, `disabled`, `not_member`, `not_found` |
+| `private.drive_recent_list(p_ws_id, p_actor_id, p_limit, p_before_at, p_before_id)` | `p_limit` 1..50, keyset on `(last_opened_at, object_id)`, joins `state = 'live'` object rows, returns nothing when the switch is off or the actor is not a `MEMBER`; returns `object_id`, current `path`, `size`, `content_type`, `etag`, `last_opened_at` |
+| `private.drive_recent_forget(p_ws_id, p_actor_id, p_object_id)` | Deletes one row, or every row of the actor in the workspace when `p_object_id` is null |
+| `private.drive_settings_set_recent(p_ws_id, p_actor_id, p_enabled)` | Upserts the switch; turning it **off deletes every Recent row of the workspace** in the same transaction. The route has already required `manage_drive` |
+| `private.drive_recent_export(p_user_id, p_limit, p_after_ws, p_after_id)` | Subject export (below); keyset; `p_user_id` only, no workspace argument by design; returns rows **only for workspaces where the user is currently a `MEMBER`** |
+| `private.drive_recent_erase_user(p_user_id)` | Subject erasure (below); returns the count deleted |
+| `private.prune_drive_recent(p_limit)` | Retention. `p_limit` 1..1000 (the shared `callMaintenanceRpc` sends 1000), `FOR UPDATE SKIP LOCKED`, `statement_timeout` 10 s, returns `{deleted}`. Deletes rows older than 30 days and rows whose user is no longer a `MEMBER` of the workspace. Rows of objects that left `live` are already gone (trigger) |
+
+There is no prefix rewrite, drop or suspend function: paths are not stored (S2
+does not apply) and triggers do the removal. `view_drive` is not checked in SQL;
+the route checks it on every call, so
+losing `view_drive` hides the list at once. `touch` returning anything other than
+`not_found` produces `204`, so a client cannot learn membership or switch state.
+
+## Workspace switch
+
+- **Storage**: `private.drive_settings.recent_enabled`, per workspace, default
+  true. A missing row means enabled.
+- **Permission**: `manage_drive` to change it; `view_drive` to read it (the UI
+  hides Recent when off).
+- **API**: `GET .../storage/settings` returns `{ recentEnabled }`;
+  `PATCH .../storage/settings` with `{ recentEnabled: boolean }` returns the same
+  object. Body under 1 KB.
+- **Enforcement point**: `drive_recent_touch` and `drive_recent_list` read the
+  row inside the function, so a stale client or a direct route call cannot write
+  while the switch is off. The route does not cache the value.
+- **Effect of turning off**: writes stop and existing rows are deleted at once;
+  turning it on starts an empty history.
+
+## API
+
+New handlers under `apps/web/src/app/api/v1/workspaces/[wsId]/storage/recent/`
+and `.../storage/settings/` (S9). Auth: `resolveWorkspaceStorageRouteAuth`,
+`appSessionTargets: 'drive'`, workspace id normalized by the helper.
+
+| Method and path | Permission | Request | Response | Notes |
+| --- | --- | --- | --- | --- |
+| `POST .../storage/recent` | `view_drive` | `{ objectId }` | `204` or `404` | Idempotent. The route resolves the object, applies S1 and S5 to its path (private roots return 403 without confirming existence), then calls `touch`. `404` only for `not_found` |
+| `GET .../storage/recent?limit=&before=` | `view_drive` | none | `{ items: [{ objectId, path, name, openedAt }], nextBefore }` | `limit` default 25, max 50. Drops excluded paths (S5), so a page may be short. `nextBefore` is an opaque keyset cursor |
+| `DELETE .../storage/recent` | `view_drive` | `{ objectId? }` | `204` | No `objectId` clears the caller's list for the workspace |
+| `GET\|PATCH .../storage/settings` | `view_drive` / `manage_drive` | see above | `{ recentEnabled }` | |
+
+Writes are limited per user through the existing `ABUSE_GUARD` binding (value in
+the surface policy, not in this note) and bodies stay under 2 KB. Failures use
+`{ message }`. The client calls these through `packages/internal-api`, not raw
+`fetch`.
+
+There are no stale rows to heal: a row whose object is gone is dropped by the
+state join, and prune removes it.
+
+## Export and erasure
+
+Recent is personal data (a record of what a person opened), so it is in the
+per-user data export and the erasure path.
+
+- **Export adapter** `exportDriveRecent({ userId })` in storage-core (framework
+  free, registered with the data-protection export): pages through
+  `drive_recent_export(p_user_id, ...)`, which returns one record per row for
+  the workspaces the user **currently belongs to** as a `MEMBER`: `workspaceId`,
+  `objectId`, `lastOpenedAt` and the current `path` from the index. Rows of a
+  workspace the user has left do not exist (S6 deletes them) and the function
+  returns none even if one survived. The adapter then checks `view_drive` per
+  workspace: where the user lacks it, the record carries `objectId` and
+  `lastOpenedAt` only, with **no path**, because an export must not reveal the
+  current path of a file the person can no longer see. Rows for private roots
+  are omitted (S5). Output is machine-readable JSON in its own file.
+  Authorization applies when the export is created and again when it is
+  downloaded, scoped to the requesting subject; nothing from another user or
+  another tenant is included.
+- **Erasure adapter** `eraseDriveRecentForUser({ userId })` calls
+  `drive_recent_erase_user`. The `ON DELETE CASCADE` on `user_id` is the safety
+  net, not the contract, so the adapter reports a truthful count. Workspace
+  deletion cascades through `ws_id`.
+- Inventory entry: S8.
+
+## Interactions
+
+- **Listing and quota**: unchanged. The table stores ids and times only.
+- **Move, rename, overwrite, trash, restore, delete**: rename and move keep the id
+  and need nothing; overwrite, trash and permanent delete fire the trigger.
+  Recent code has no call from any of them, and restore adds nothing back.
+  Deletes by Finance, user groups and external apps are permanent and fire the
+  same trigger (S9).
+- **Preview**: the preview dialog calls `POST .../recent` once when it opens;
+  Download calls it before signing. Share-link and grant reads write nothing.
+- **Media lead's `object_access` change**: no interaction (S9). Recent calls
+  `isExcludedDrivePath`, so `external-projects` rows are refused on write and
+  dropped on read the moment the root list changes.
+
+## Migration plan
+
+1. `YYYYMMDDHHMMSS_drive_recent.sql`: both tables, indexes, functions,
+   grants, inside one transaction with `lock_timeout = '5s'` and
+   `statement_timeout = '30s'`. New empty tables need no `CONCURRENTLY` file.
+   The header carries `NEEDS APPROVAL`. It depends on the index table existing
+   (D1).
+2. `apps/database/rollbacks/<stamp>_drive_recent.rollback.sql` drops
+   functions then tables. Data loss is acceptable (derived history).
+3. Production follows the standing flow: exact-SQL security review, green CI,
+   staging migration, gated `supabase-production.yaml`. Code lands afterwards
+   behind `DRIVE_RECENT_ENABLED` (default off).
+
+### pgTAP cases (`apps/database/supabase/tests/drive-recent.sql`)
+
+1. RLS enabled and zero policies on both tables; no table privilege for
+   `public`, `anon`, `authenticated` **or `service_role`** (explicit revoke).
+2. No function executable by `public`, `anon` or `authenticated`; `service_role`
+   can execute each; `search_path = pg_catalog, pg_temp` in every `proconfig`.
+3. `touch` returns `not_member` for a non-member and a `GUEST`, `disabled` when
+   the switch is off, `not_found` for a superseded, trashed, purged or
+   other-workspace object; each writes nothing.
+4. Two users touching one object produce two rows; a second touch within 60 s is
+   `skipped_recent`; after 61 s it advances.
+5. The 51st distinct object leaves 50 rows and keeps the newest.
+6. `list` returns only the caller's rows, newest first, no gaps or repeats, with
+   the live path after a metadata-only rename; `p_limit` 0 or 51 raises `22023`.
+7. Trashing, overwriting (new id, **the row does not carry over**) and a
+   permanent delete delete the object's rows through the trigger, including under
+   `session_replication_role = replica` (`ENABLE ALWAYS`); a later `trashed` to
+   `purged` change has nothing left to delete; restoring brings none back; a
+   metadata-only rename or move keeps the row and shows the new path; a direct
+   `DELETE` of the object row cascades; `TRUNCATE storage_objects` raises.
+8. `set_recent(false)` deletes all workspace rows and later `touch` and `list`
+   return nothing; other workspaces unaffected.
+9. `forget` with a null object clears only the actor's rows in that workspace.
+10. `export` returns only the subject's rows in workspaces where the subject is a
+    current `MEMBER`, omits private-root paths and pages stably; a user who left a
+    workspace gets no rows from it; `erase_user` deletes exactly the subject's rows.
+11. `prune` deletes at most `p_limit` rows older than 30 days or whose user is no
+    longer a `MEMBER`, skips locked rows, rejects `p_limit` outside 1..1000.
+12. Deleting a workspace or a user cascades the rows. **Member removal** (delete
+    or a move of the `workspace_members` row) deletes that user's rows for the
+    old workspace in the same transaction; deleting a workspace through its
+    member cascade still succeeds; a re-added member starts empty.
+13. **Cross-workspace, every id-taking function**: with workspace A's `object_id`
+    and workspace B's `p_ws_id`, `touch` and `forget` change and return nothing
+    for the unknown-id case. (`list`, `set_recent`, `export`, `erase_user` and
+    `prune` take no object id.)
+14. Concurrency (`helpers/local-dblink.inc`): 60 parallel touches by one user on
+    distinct objects leave at most 50 rows.
+15. `path`-bearing inputs are not accepted anywhere (no function has a path
+    parameter), so there is no `%` or `_` prefix case to test; the S1 and S2
+    cases live in the route tests.
+
+## Cloudflare job: retention
+
+Rows expire by age and state, so retention is an idempotent prune, not a
+scheduler.
+
+| Item | Value |
+| --- | --- |
+| Cron Control job | `database-drive-recent-retention`, `*/10 * * * *`, overlap `idempotent`, `timeoutMs` 30,000; Cron Control calls the RPC directly from its own Worker, so no new service and no storage credentials |
+| Processor | `DATABASE_MAINTENANCE_RPCS['drive-recent-retention'] = 'prune_drive_recent'` |
+| Default | **Off**: the id stays out of `CRON_CONTROL_ENABLED_JOBS` until the owner enables it. Correctness never depends on it: reads filter by state and age |
+| Bounds | At most 1,000 rows per call, one call per slot, no loop and no in-slot retry |
+| Terminal state | `deleted = 0` is idle; no rescheduling, queue or alarm |
+| Stop fence | The ledger stops the job after five consecutive failed slots; removing the id from the enabled list stops it at once |
+
+Operation-count tests (`apps/cron-control/src/drive-recent-retention.test.ts`):
+empty table costs one RPC and zero retries; 5,000 expired rows drain at 1,000
+per slot; a failing RPC is one attempt per slot and the fifth failure stops
+dispatch; an id not enabled makes zero calls; a restart mid-backlog replays
+nothing.
+
+## Threat model
+
+| Threat | Control |
+| --- | --- |
+| IDOR across workspaces | Route normalizes `wsId` and checks `view_drive`; every function takes `p_ws_id` and matches the object's workspace; case 13 |
+| IDOR across users | The actor is the session user (S3); no function lists another user's rows; no admin read path |
+| Reading a file you can no longer see | The list route re-checks `view_drive` and S5 on every read; a row alone grants nothing, and opening goes through the normal read route. Rows of non-live objects are deleted by trigger |
+| History as surveillance | Per user, 30 days, 50 rows, clearable, a workspace off switch, not visible to admins, kept out of the share audit |
+| Sensitive path strings at rest | No path is stored; names come from the index at read time |
+| Write amplification | 60 s dedupe, 50-row cap, per-user write limit, 2 KB bodies |
+| Rows left by removed members | Deleted in the removal transaction (S6); functions also need current `MEMBER` status, the export joins current membership, and prune removes any stragglers. Cascades remove them when the user or workspace is deleted |
+| Export leaking paths from a workspace the user left | Export covers current memberships only and omits the path where `view_drive` is missing |
+| Triggers skipped | `ENABLE ALWAYS`, `AFTER UPDATE`, `BEFORE TRUNCATE` refusal on `storage_objects`, replica mode banned by lint |
+| Private paths | `POST` returns 403 for excluded roots; `GET` filters them out |
+| Switch bypass | Enforced inside `touch` and `list`, not only in the UI |
+| Audit integrity | Not applicable: convenience history, not evidence |
+
+## Decisions
+
+1. **Source**: recently opened only in v1.
+2. **Privacy**: private to the user; 30 days and 50 items.
+3. **Workspace off switch**: `drive_settings.recent_enabled`, `manage_drive`,
+   enforced in SQL; turning it off deletes the rows.
+4. **Export**: included, through the adapter above; erasure by adapter and
+   cascade.
+5. **Binding**: by `object_id`; a trigger removes the row when the object leaves
+   `live`; restore never brings it back.
+6. **Overwrite** does not carry the Recent row: the new id starts unopened.
+7. **`GUEST` members** get no Recent.
+8. **Member removal** deletes the user's Recent rows for that workspace.

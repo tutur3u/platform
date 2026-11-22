@@ -1,0 +1,355 @@
+---
+title: "Drive: Trash data model and purge job"
+description: "Tables, functions, the database gate, the drive-purge Worker under Cron Control, its roles, bounds and fences, the independent health and retention jobs, migration plan, pgTAP cases and threat model for Drive Trash."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner review. Nothing here is implemented. Part of
+[Trash](/build/drive/trash); rules D1 to D9 and S1 to S10 are in the
+[object index contract](/build/drive/object-index-contract).
+
+## Data model
+
+One additive migration after the index migration. `private` schema, RLS enabled
+with zero policies, no client grants. Object-level trash state is **not** here:
+it is on `storage_objects` (D4). Drive adds four small tables here plus the
+shared `drive_idempotency_keys` (S10).
+
+```sql
+create table private.drive_trash_entries (        -- folder units only
+  id            uuid primary key default gen_random_uuid(),
+  ws_id         uuid not null references public.workspaces (id) on delete cascade,
+  original_path text not null check (private.drive_path_is_valid(original_path)),
+  name          text not null check (octet_length(name) between 1 and 255),
+  object_count  integer not null check (object_count between 0 and 5000),
+  total_bytes   bigint not null check (total_bytes >= 0),
+  deleted_by    uuid references public.users (id) on delete set null,
+  trashed_at    timestamptz not null default now()
+);
+create index drive_trash_entries_ws_idx on private.drive_trash_entries (ws_id, trashed_at desc, id);
+
+create table private.drive_purge_failures (        -- retry count and dead letters
+  id         uuid primary key default gen_random_uuid(),
+  object_id  uuid unique references private.storage_objects (id) on delete cascade,
+  entry_id   uuid unique references private.drive_trash_entries (id) on delete cascade, -- folder-only unit
+  ws_id      uuid not null references public.workspaces (id) on delete cascade,
+  attempts   smallint not null check (attempts between 1 and 3),
+  last_error_code text check (last_error_code ~ '^[a-z_]{1,40}$'),
+  dead_at    timestamptz,                             -- set on the third failure
+  updated_at timestamptz not null default now(),
+  check ((object_id is null) <> (entry_id is null))
+);
+
+create table private.drive_purge_usage (          -- per-workspace daily budget
+  ws_id        uuid not null references public.workspaces (id) on delete cascade,
+  day          date not null,
+  purged_count integer not null default 0 check (purged_count >= 0),
+  primary key (ws_id, day)
+);
+
+create table private.drive_trash_control (
+  singleton      boolean primary key default true check (singleton),
+  trash_mode     text not null default 'off' check (trash_mode in ('off','on')),
+  purge_mode     text not null default 'off' check (purge_mode in ('off','dry-run','on')),
+  ws_tick_cap    integer not null default 100 check (ws_tick_cap between 1 and 500),
+  ws_daily_cap   integer not null default 5000 check (ws_daily_cap >= ws_tick_cap),
+  stopped_at     timestamptz,
+  stopped_by     text,
+  last_tick_at   timestamptz,
+  check (trash_mode = 'off' or purge_mode = 'on')
+);
+insert into private.drive_trash_control default values;
+```
+
+- A **folder entry has no status column**. A unit is "in Trash" while any
+  `storage_objects` **or `storage_folders`** row has its `trash_entry_id`,
+  `state = 'trashed'` and `purge_after > now()`. Liveness covers folder rows, so
+  a unit with `object_count = 0` (an empty folder tree) stays visible and
+  restorable until its folder rows are restored or purged, and purge moves them
+  to `deleted` instead of leaving them `trashed` (the trash columns and CHECKs on
+  `storage_folders` are the index migration's, contract dependency 5, resolved).
+  **The claim must also return due folder-only units**: without it nothing
+  would ever select a unit with `object_count = 0`, whose only trashed rows are
+  folders, and its rows would stay `trashed` for good. Restore and purge change the rows
+  atomically, so the entry cannot disagree with them. Entries left with no
+  trashed rows of either kind are pruned. The `trash_entry_id` index is the
+  index design's (D5). Retries use the shared idempotency table (S10), so
+  entries carry no request id.
+- The control row's `CHECK` is the structural form of "Trash only with purge":
+  `trash_mode` cannot be `on` unless `purge_mode = 'on'`. `set_mode` also
+  **refuses `purge_mode` other than `on` while any `trashed` row remains** in
+  either table, and the health job stays enabled while one does, so rows can
+  never be stranded with nothing to purge them. `stopped_at` is the emergency
+  fence: it stops claims and closes `drive_trash_available()`, so new deletes
+  fail with `503` instead of becoming permanent; the health job reports it.
+- `drive_purge_usage` counts purged objects per workspace and day. Reservation
+  is up front (`drive_trash_budget_take`, below); a failed purge refunds its
+  unit. Rows older than 7 days are pruned.
+
+### The database gate
+
+A `BEFORE INSERT OR UPDATE` trigger on `storage_objects` (contract, trash gate)
+enforces the rules the route and service also check, so no caller can skip them:
+
+- a row entering `trashed` requires `drive_trash_available()`; on **UPDATE** it
+  must also come from `OLD.state = 'live'`, so `superseded` and `purged` rows
+  can never be trashed; an **insert** of a `trashed` row is possible only through
+  the copier function and must carry `deleted_at <= now()` and `purge_after <= now() + 7
+  days`, so a copied row cannot extend retention;
+- on `live` to `trashed` the trigger **sets `deleted_at = now()`** and refuses a
+  `purge_after` later than `now() + 7 days`; while `OLD.state = 'trashed'` it
+  refuses any change to `deleted_at`, `deleted_by`, `deleted_from_path` and
+  `trash_entry_id`, and `purge_after` may only decrease, so an app caller cannot
+  move retention forward;
+- the copier-only insert is **enforced by privilege, not by the trigger**: no
+  role other than the copier function's owner holds `INSERT` on
+  `storage_objects`, `service_role` included (pgTAP case 4);
+- the Drive origin is the service's `trash` **argument** (contract), not a
+  setting or a column, so the trigger holds no marker to forge;
+- the trigger is `ENABLE ALWAYS`, and the `trashed` row it admits stays inert
+  because nothing but `restore`, expedite, `purge` or the job moves it again.
+
+With Trash `off` or stopped there is no `live` to `trashed` path at all. Deletes
+use the service's permanent `delete` (`live` to `purged`, index note "State
+rules"), and the revocation triggers fire on it exactly as on a trash.
+
+### Functions
+
+All follow S4 (`SECURITY DEFINER` owned by `ttr_drive_owner`, pinned
+`search_path`, `service_role` only unless noted, `review=` annotation, `p_ws_id` on every id-taking function) and
+S3 (actor from the session, `system` for the job). Object state changes go
+through `StorageObjectService` (D7); these functions hold only the Drive-owned
+rows and call the service's composable, non-committing functions inside one
+transaction for route operations (contract dependency 10, resolved). Drive's
+migration grants `EXECUTE` on the claim, budget, ok and fail functions to
+`ttr_storage_purge`; the index migration already created the role.
+
+| Function | Behaviour |
+| --- | --- |
+| `private.drive_trash_available()` | True only when `trash_mode = 'on'`, `purge_mode = 'on'`, `stopped_at` is null and `last_tick_at` is under 20 minutes old. The delete route refuses with `503 trash_unavailable` otherwise (never a silent permanent delete). `service_role` and the gate execute it |
+| `private.drive_trash_entry_create(p_ws_id, p_actor_id, p_original_path, p_name, p_object_count, p_total_bytes)` | Checks `MEMBER`; inserts the entry. Called inside the transaction that holds the idempotency row |
+| `private.drive_trash_list(p_ws_id, p_limit, p_before_at, p_before_id)` | Union of file units (`storage_objects`, `state = 'trashed'`, no entry, `purge_after > now()`) and folder entries that still have restorable rows; limit 1..100, keyset on `(deleted_at, id)` |
+| `private.drive_trash_usage(p_ws_id)` | `{ trashBytes, trashItems, pendingDeletionBytes, pendingDeletionItems }`: restorable rows (`purge_after > now()`) apart from **pending deletion** (`purge_after <= now()`), which no longer counts toward quota |
+| `private.drive_trash_ancestors(p_ws_id, p_folder_id)` | For restore: a live file at an ancestor path or an ancestor folder that is `trashed` (`parent_blocked`, `parent_in_trash`) |
+| `private.drive_trash_budget_take(p_ws_id, p_limit)` | `ttr_storage_purge` only. Returns 0 unless `purge_mode = 'on'` and `stopped_at` is null; otherwise reserves `min(p_limit, ws_tick_cap, ws_daily_cap - today's usage)` rows in `drive_purge_usage` and returns them. Used by the claim; there is no inline purge |
+| `private.drive_trash_purge_claim(p_limit)` | `ttr_storage_purge` only. See [the job](#cloudflare-job-the-purge-processor); orders **expedited rows first**, then by `purge_after`. Returns due objects **and due folder-only units** (`object_count = 0`, by entry id), the latter purged through the unit form of `purge`; each folder row counts one against the tick and daily budgets |
+| `private.drive_trash_purge_fail(p_ws_id, p_target_id, p_code)`, `private.drive_trash_purge_ok(p_ws_id, p_target_id)` | `ttr_storage_purge` only. The target is an object id or a folder-only entry id. Increment attempts and refund the reserved unit (third failure sets `dead_at`); delete the failure row on success |
+| `private.drive_trash_health(p_limit integer)` | Read-only, `service_role`. Accepts the `p_limit` Cron Control always sends and ignores it. Returns `{ stale, stopped, overdue, trashed }`: `stale` is 1 when Trash is on and `last_tick_at` is too old, `stopped` mirrors `stopped_at`, `overdue` counts only rows whose `purge_after` is the full 7 days (not expedited) and more than an hour past due, `trashed` counts rows still in Trash. **Never raises** |
+| `private.drive_trash_set_mode(p_trash_mode, p_purge_mode, p_by)`, `private.drive_trash_stop(p_by)`, `private.drive_trash_resume(p_by)`, `private.drive_trash_requeue(p_ws_id, p_target_id)` | **Operator controls** (S4): `EXECUTE` only for the `NOLOGIN` **`ttr_storage_operator`** role, granted to named operator logins; not `service_role`, not `ttr_storage_purge`. Until a login exists they are owner-run SQL. Each stores a `p_by` label in the control row. `stop` is allowed while Trash is on; `set_mode` refuses purge off while `trashed` rows remain; `requeue` clears a dead letter |
+| `private.prune_drive_trash(p_limit)` | `service_role`. Deletes entries with no trashed rows of either kind older than a day, failure rows of purged objects, usage rows older than 7 days and idempotency keys older than 24 hours; `p_limit` 1..1000; returns the counters `entries`, `failures`, `usage` and `keys` |
+
+## Cloudflare job: the purge processor
+
+The purge job is **Drive's**, written against the index. It follows
+[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership): no
+pg_cron, Vercel cron, Edge Function, Next `after()` or `api/cron` route.
+
+| Item | Value |
+| --- | --- |
+| Job | `drive-trash-purge`, `*/5 * * * *`, overlap `claim-fenced`, `timeoutMs` 60,000 |
+| Where it runs | **A new `drive-purge` Worker**, not a route on the `apps/web` gateway (which would dodge `scripts/ci/cloudflare-backend-ownership.js` by its path) and not the storage Worker. Cron Control calls it as a new `ProcessorTarget` (`'drive-purge'`) with its own origin and a `TARGET_SECRET_VARS` entry (`CRON_SECRET_DRIVE_PURGE`, required by the `Record<ProcessorTarget, string>` type) over a non-public origin or service binding |
+| Auth | `Authorization: Bearer <target secret>` compared with a **constant-time** comparison (`crypto.subtle.timingSafeEqual` on equal-length digests). The route accepts no ids and no body, only "run a tick", and is not reachable through the public gateway |
+| Credentials | The **`ttr_storage_purge`** login role through a connection secret that Iris's packet places in the Worker (Hyperdrive later): `EXECUTE` on the purge RPC and Drive's claim, budget, ok and fail functions, no table privilege, no operator control, **no R2 credential**. Cron Control holds only the target secret for this Worker, never the database credential. Blob bytes are deleted by the migration lead's R2 deleter job (D6) |
+| Default | **Off.** The id is absent from `CRON_CONTROL_ENABLED_JOBS`; `purge_mode` is `off`; `trash_mode` is `off` |
+| One attempt | Add `drive-trash-purge` to the one-attempt ids in `maxAttempts` (`apps/cron-control/src/jobs.ts:489-496`, beside `fleet-access-consumer`); any other job outside web and `handover` gets two attempts per slot and would break the per-slot bounds |
+| Work | `drive_trash_purge_claim(500)`, then `StorageObjectService.purge` per claimed object id, or its unit form for a folder-only unit, in batches of at most 50, then `purge_ok` or `purge_fail` per target |
+
+Bounds and fences:
+
+| Bound | Limit |
+| --- | --- |
+| Objects per tick | **500** |
+| Per workspace | `ws_tick_cap` (**100**) per tick and `ws_daily_cap` (**5,000**) per day through `drive_trash_budget_take`; the claim takes a fair share from each due workspace so one tenant cannot starve the rest |
+| Attempts | **3 per object or folder-only unit**; the third failure sets `dead_at` and the claim never returns that id again (dead letter) until an operator calls `requeue` |
+| Idempotency | `purge` is idempotent on id (refcount decremented only on the `trashed` to `purged` transition), so overlapping or replayed ticks cannot double count |
+| Idle | Zero due rows: the claim returns nothing, the processor makes no further call and schedules nothing. No alarm, queue or self-continuation; the next slot is the only retry |
+| Fence 1 | Cron Control: id not enabled, or the ledger stop after 5 consecutive failed slots |
+| Fence 2 | Database, **durable**: `purge_mode` not `on` or `stopped_at` set, checked inside the claim and the budget, so a running Worker finds no work. The processor re-checks the fence before each batch of 50 |
+| Fence 3 | `last_tick_at`, written by every claim (also idle), feeds `drive_trash_available()`: if the job stops, Trash closes within 20 minutes |
+
+Purge order: object row to `purged` (D7), then the blob refcount through the
+bounded `deleting` path (D6), in the service transaction; a folder-only unit's
+folder rows go to `deleted` the same way. R2 bytes are the migration lead's later
+step. A crash at any point leaves a `trashed` row that the next slot claims again.
+
+**The job is not one transaction with its bookkeeping.** The same-transaction
+rule (S10) covers route operations. The claim, the service purge and
+`purge_ok` or `purge_fail` are separate statements, which is safe because the
+budget unit is **reserved up front** by the claim, and each step is idempotent or
+fails toward more caution. A crash after the claim and before the purge loses
+nothing: the row is still `trashed` and the next slot claims it again, at worst
+spending a unit that was never refunded, which only lowers that day's headroom.
+A crash after the purge and before `purge_ok` leaves a failure row for an object
+that is already `purged`, which the claim never returns and `prune` deletes. A
+replayed purge does not decrement the refcount twice (it changes only on the
+`trashed` to `purged` transition).
+
+### Independent health check
+
+The overdue alert is **not** computed by the claim, because a dead job never
+claims and so never pages. A second job reads the state itself:
+
+| Item | Value |
+| --- | --- |
+| Job | `drive-trash-health`, `*/15 * * * *`, overlap `idempotent`, `timeoutMs` 30,000; a **dedicated processor** (`apps/cron-control/src/processors/drive-trash-health.ts`) that calls `drive_trash_health` through `postPrivateRpc` |
+| Why not `callMaintenanceRpc` | It posts `{ p_limit: 1000 }` and reads integer counters, which the function accepts; but it can only return `ok`, `failed` or `unknown`, and **the ledger stops a job after `MAX_CONSECUTIVE_FAILURES` (5) consecutive `failed` or `unknown` slots** (`apps/cron-control/src/jobs.ts:99`, `ledger.ts:198-213`). An alarm that fails its slot would silence itself after five |
+| Outcomes | `ok` when `stale`, `stopped` and `overdue` are all zero; **`degraded`** otherwise, which the ledger records without counting a failure (`ledger.ts` `#charge`), so the job keeps running while the fault lasts; `failed` or `unknown` only when the RPC itself cannot be read. Counters go in the slot detail |
+| Default | **Off**, enabled together with `trash_mode`, and kept enabled while any `trashed` row remains (`set_mode`, above) |
+| Work | One read-only RPC per slot. **Expedited units never alarm**: a large Delete forever drains at the caps by design and shows as pending deletion |
+| Bounds | No loop, no scheduling, zero writes |
+| Alert route | Trash-health alerts go to the **Iris and ops alert channel** (release-authority decision). That channel does not exist yet, so until it does the interim signal is the job's **`degraded` outcome in the Cron Control ledger** (`lastOutcome`), or its `failed` slots when the RPC is unreadable |
+
+### Cloudflare job: retention
+
+Nothing else prunes the Drive-owned rows, so the idempotency keys, usage rows,
+failure rows and entries would grow forever. A third job calls the bounded prune:
+
+| Item | Value |
+| --- | --- |
+| Job | `database-drive-trash-retention`, `*/10 * * * *`, overlap `idempotent`, `timeoutMs` 30,000; `DATABASE_MAINTENANCE_RPCS['drive-trash-retention'] = 'prune_drive_trash'`, called by Cron Control directly through `callMaintenanceRpc` with `p_limit` 1000 and the counters `entries`, `failures`, `usage`, `keys` |
+| Default | **Off**, enabled with `trash_mode`; correctness never depends on it (reads filter by state and age), only storage growth does |
+| Bounds | At most 1,000 rows per call, one call per slot, no loop and no in-slot retry; all-zero counts are idle; the ledger stops it after five consecutive failed slots |
+
+Operation-count tests (`apps/cron-control/src/drive-trash-purge.test.ts`, the
+health and retention job tests and the processor tests):
+
+- empty queue: one claim, zero service calls, nothing scheduled;
+- 700 due objects: 500 in the first slot, the rest next slot;
+- one workspace with 10,000 due rows: at most `ws_tick_cap` per slot while another
+  workspace's rows still drain;
+- a persistent error: attempts 1, 2, 3 over three slots, then a dead letter and
+  zero further calls for that id;
+- two overlapping slots: no id purged twice, refcount decremented once;
+- fence set between batches: no further service call;
+- `purge_mode` `off` or `dry-run`, or `stopped_at`: zero purges (`dry-run`
+  returns counts only);
+- expedited rows are claimed before retention-due rows;
+- a due **folder-only unit** (`object_count = 0`): the claim returns it, one
+  unit-form purge runs, its folder rows end `deleted`, and it counts against the
+  tick and daily caps by folder row; a persistent error on it reaches a dead
+  letter in three slots like an object, and 1,000 due folder-only units drain at
+  the caps, never above 500 per slot;
+- the health job with a stalled `last_tick_at` returns `degraded` with the claim
+  job not running at all, and **six consecutive degraded slots never stop it**;
+  with only expedited backlog it returns `ok`; an unreadable RPC is `failed`;
+- retention: an empty table costs one RPC; 5,000 expired rows drain at 1,000 per
+  slot; a failing RPC is one attempt per slot and the fifth failure stops the
+  job; an id not enabled makes zero calls;
+- target secret wrong, missing or length-mismatched: `401`, zero database calls.
+
+## Migration plan
+
+1. `YYYYMMDDHHMMSS_drive_trash.sql`: the tables, indexes, functions, the gate and
+   grants, in one transaction with `lock_timeout = '5s'` and `statement_timeout =
+   '30s'`; `NEEDS APPROVAL` header; `reviewed(function-grant)` annotations with
+   review links. It depends on the index migration. Production runs only through
+   the gated workflow.
+2. Rollback drops the functions and tables. It **raises while `trash_mode = 'on'`
+   or any `trashed` object or folder row remains**, because nothing would purge them:
+   turn Trash off, restore or expedite every unit, wait for the job, then roll
+   back.
+3. Code lands after production applies the migration, behind `trash_mode = 'off'`.
+   Enable order: staging, one test workspace, set `purge_mode = 'on'`, enable the
+   Cron Control jobs (purge, then health, then retention), confirm `last_tick_at` advances,
+   **then** set `trash_mode = 'on'`. The owner approves each step.
+
+### pgTAP cases (`apps/database/supabase/tests/drive-trash.sql`)
+
+1. RLS enabled, zero policies, no client privileges; no function executable by
+   `public`, `anon` or `authenticated`; `search_path` pinned on every function;
+   the operator controls are executable by `ttr_storage_operator` only, claim,
+   budget, ok and fail by `ttr_storage_purge` only, and `ttr_storage_purge` holds
+   no table privilege and cannot execute a control; `health` and `prune` run as
+   `service_role`.
+2. The control `CHECK`: `trash_mode = 'on'` is refused unless `purge_mode = 'on'`;
+   `set_mode` refuses purge off while any `trashed` object or folder row remains;
+   `stop` while Trash is on
+   succeeds and closes `drive_trash_available()`; `set_mode` returns the refusal.
+3. `drive_trash_available()` is false when any of the four conditions fails,
+   including a stale `last_tick_at`.
+4. **The gate**, on **insert and update**: a row entering `trashed` is refused
+   while Trash is off, stopped or stale, including under
+   `session_replication_role = replica`; an **inserted** `trashed` row is
+   refused through every function but the copier, and through the copier when
+   `deleted_at` is in the future or `purge_after` is beyond 7 days; on `live` to
+   `trashed` the trigger overwrites a caller's `deleted_at` with `now()` and
+   refuses a `purge_after` beyond 7 days; on a `trashed` row a change to
+   `deleted_at`, `deleted_by`, `deleted_from_path` or `trash_entry_id` is
+   refused, and `purge_after` may fall but never rise; a refused update leaves
+   the row `live` with its bindings intact. **`superseded` to `trashed` and
+   `purged` to `trashed` are refused** (the gate accepts entering `trashed` on
+   update only from `live`). **`service_role` cannot insert a `trashed` row**:
+   `INSERT` on `storage_objects` fails with `42501` for it and for every role but
+   the copier's owner, with the gate not reached. `trash` with an origin other
+   than `drive` raises `42501`; the function writes no audit row (the raise would
+   roll it back), and the **service's audit row written before the call** is the
+   record, which the case asserts survives.
+5. `entry_create` by a non-member writes nothing; a folder trash and its
+   idempotency row commit or roll back together; a replayed key returns the same
+   entry.
+6. `list` shows file units and folder entries newest first with stable paging,
+   hides expedited and purged units, and returns only the asked workspace.
+7. A folder entry disappears from `list` once its rows are restored or purged.
+   **A unit of folder rows only** (`object_count = 0`) stays listed and
+   restorable until restored or purged, and purging it moves its folder rows to
+   `deleted`; none stays `trashed`.
+8. `purge_claim` returns nothing when `purge_mode` is `off`, in `dry-run`
+   (counts only), or when `stopped_at` is set; honours `SKIP LOCKED` across two
+   connections, the 500 limit, `ws_tick_cap` and `ws_daily_cap`; never returns a
+   dead-lettered or not-yet-due row; updates `last_tick_at` on every call;
+   returns expedited rows first; returns a due folder-only unit (and its
+   folder rows are purged to `deleted` through the unit form), never a folder-only
+   unit that is not yet due.
+9. `budget_take` returns 0 when off or stopped, never exceeds the tick or daily
+   cap across concurrent callers, and a failed purge refunds its unit. Delete
+   forever (expedite) draws on no budget and purges nothing inline.
+10. `purge_fail` three times sets `dead_at`; `purge_ok` removes the failure row;
+    `requeue` clears a dead letter; attempts reset after success.
+11. `ancestors` returns a live file at an ancestor path and a trashed ancestor
+    folder; nothing for other workspaces.
+12. Expedited units cannot restore (`purge_after <= now()`); a restore racing a
+    due purge has exactly one winner (`helpers/local-dblink.inc`).
+13. A restore into a path occupied by a live object fails atomically for a whole
+    folder and leaves every row `trashed`; restoring folder `D` while a live
+    folder `D`, a live file `D` or a live `D/other` exists returns `path_taken`
+    and merges nothing.
+14. `prune` removes only entry-less leftovers (no trashed object or folder row),
+    purged failure rows, old usage and idempotency rows, respects `p_limit`
+    1..1000 and returns the four counters.
+15. Workspace deletion cascades entries, failures and keys; user deletion sets
+    `deleted_by` null and keeps the row.
+16. **Cross-workspace, every id-taking function**: workspace A's object, entry or
+    failure id with workspace B's `p_ws_id` changes and returns nothing.
+17. Rollback refuses while Trash is on or a `trashed` row exists.
+18. `drive_trash_health(1000)` never raises: it reports `stale` for a stale tick
+    and `overdue` for non-expedited overdue rows, and reports neither for
+    expedited ones.
+19. A file-trash replay returns the first request's stored result and target id
+    even after a new file is uploaded at the same path; a crash between the
+    service mutation and the key (an injected failure) rolls both back, never one
+    (dependency 10).
+
+## Threat model
+
+| Threat | Control |
+| --- | --- |
+| IDOR across workspaces | `wsId` normalized, `manage_drive` required, every function takes `p_ws_id` and filters `id and ws_id`; case 16 |
+| Restoring into a path the user cannot write | S1 and S5 on the **final** path, including renamed and `destination: 'root'` results |
+| Reading trashed bytes | The path is not live, so no reader resolves it; preview uses the relay, never a provider URL; no Trash content under any public prefix |
+| Shares resurrecting | Trashing revokes links and grants permanently; restore revives none; Recent rows are gone |
+| Name reuse after delete | A new object at the path gets a new id (D2), so no binding attaches |
+| Trash on, purge off or stopped | `CHECK`, `set_mode` refusing purge off while rows remain, the health gate and the database gate: deletes fail closed with `503`, never permanent; no caller can create a `trashed` row (insert or update) while Trash is unavailable |
+| Non-Drive caller creating Trash units | Finance, user groups and external apps call the permanent `delete`. The Drive origin is a **service argument** the service refuses to accept from another origin; the TypeScript service writes the attempt's audit row **before** calling the function, because the function's `42501` raise would roll back an audit insert made inside it. It is a tripwire, not a control: the guarantee is `drive_trash_available()` |
+| Retention extension by an app caller | The gate sets `deleted_at` itself, caps `purge_after` at 7 days, refuses edits to the trash fields of a `trashed` row and lets `purge_after` only fall; the table `CHECK` bounds it too |
+| Dead purge job | The independent health job reports `degraded` on a stale tick without ever failing its slot, so the failure budget cannot silence it; Trash closes within 20 minutes through fence 3. Alerts go to the Iris and ops channel once it exists; until then the ledger's `degraded` outcome is the signal |
+| Pending-deletion backlog as free storage | Expedited rows leave quota but still hold bytes until purged. The purge drains at the caps, and new expedites (Delete forever, Empty trash) are refused once a workspace's pending-deletion bytes exceed 2x its quota (a surface-policy value); physical bytes are tracked separately for cost |
+| Triggers skipped | `ENABLE ALWAYS`, `BEFORE TRUNCATE` refusal (owned by the index migration), no replica mode or `DISABLE TRIGGER` on object-state paths (migration lint) |
+| Enumeration | Random UUIDs, workspace- and permission-scoped reads; unknown or foreign ids return `404` |
+| Audit integrity | Routes keep emitting the `delete` event; entries record `deleted_by` and times; operator control calls are logged; `storage_access_events` is not altered here |
+| Rows left by deleted members | `deleted_by` is set null by the FK, units stay recoverable by any `manage_drive` holder, and retention is unchanged |
+| Abuse: trash as free storage | Restorable rows count toward quota, pending deletion is bounded by the 2x quota refusal; 500 units per empty call; per-user operation budget; 5,000 objects per folder unit |
+| Abuse: purge as a cost vector | 500 per tick, per-workspace caps, 3 attempts then dead letter, three fences, no scheduling beyond the tick; Delete forever only sets `purge_after` and purges nothing inline |
+| Operator control from the web app or the Worker | Controls are executable by `ttr_storage_operator` only: not `service_role`, not the purge Worker's `ttr_storage_purge`, which also holds no table privilege |
+| Rows growing without bound | The retention job prunes entries, failures, usage and keys in bounded batches |
+| Idempotency confusion | Keyed on a client key scoped to actor and operation, with a request hash; a reused key with another body is `422` |
+| Compromised service role or operator | Out of scope; the ledger is not tamper-evident |

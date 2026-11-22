@@ -1,0 +1,376 @@
+---
+title: "Drive: object index contract"
+description: "Shared dependencies and rules for the Recent, Trash and Sharing design notes: the storage object index, the storage-core object service, path and actor rules, revocation triggers, idempotency keys and data-protection entries."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner review. Nothing here is implemented, and no
+migration is applied. The three feature notes, [Recent files](/build/drive/recent-files),
+[Trash](/build/drive/trash) and [Sharing](/build/drive/sharing), cite the items
+below by id (D1, S3, ...) instead of repeating them.
+
+## Why this page exists
+
+Storage moves from Supabase Storage to R2 by 2026-12-05. The Supabase to
+Cloudflare program's storage object index design (P1c step 2, final revision,
+called the "index note" here) is the source for D1 to D7; Drive's own
+rules are S1 to S10. Drive has no object metadata today, so without the index each
+feature would walk the provider, relocate objects and patch bindings by path.
+All three notes build on the index. What the index note provides is listed under
+[Dependencies on the migration note](#dependencies-on-the-migration-note); every
+item is resolved there.
+
+## Agreed contracts (dependencies)
+
+| Id | Contract |
+| --- | --- |
+| D1 | **Tables.** `private.storage_blobs` holds bytes (`r2_key` `{ws}/b/{id}`, `sha256`, `size`, `refcount`, `sanitize_state`, `state` `pending`, `live`, `deleting`, `purged`). **Dedupe applies to external-projects blobs only** (`dedupe_scope`); every Drive blob belongs to exactly one path version, so a grant can never follow identical bytes. `private.storage_folders` holds **folders as rows**: ids are never reused, a move keeps the id, a delete leaves a tombstone, states `live`, `trashed`, `deleted`. `private.storage_objects` holds the named entries Drive uses. `private.storage_r2_tombstones` holds the R2 keys of rows that are gone (below) |
+| D2 | **Object row.** `id` is stable and never reused; `blob_id`, `folder_id` (null is the workspace root), `bucket`, `ws_id`, `path`, `state` in `live`, `superseded`, `trashed`, `purged`, `superseded_by`, `created_by` and `deleted_by` (FK `users`, `ON DELETE SET NULL`). `id`, `ws_id` and `blob_id` are **immutable**, enforced by a guard trigger (`storage_folders`: `id` and `ws_id`). `path` is a denormalized copy the service maintains for prefix listing; rename and move stay metadata-only |
+| D3 | **Path rule, case-sensitive.** 1 to 1024 octets (`octet_length`), NFC-normalized (the CHECK rejects non-NFC input). Names are 1 to 255 octets. The CHECK refuses a leading or trailing `/`, `//`, `.` and `..` segments, control characters and backslash. `Report.pdf` and `report.pdf` coexist. Drive uses this as its single path rule |
+| D4 | **Trash fields on the row.** `deleted_at`, `deleted_by`, `purge_after`, `deleted_from_path`, `trash_entry_id` (groups a folder unit), with `CHECK (state = 'trashed') = (deleted_at is not null and purge_after is not null)` and a table `CHECK` that `purge_after` lies between `deleted_at` and `deleted_at + 7 days` |
+| D5 | **Indexes.** Unique live path `(bucket, coalesce(ws_id, zero uuid), path) where state = 'live'`; unique live folder name `(ws_id, parent, name) where state = 'live'`; prefix `(ws_id, path text_pattern_ops) where state in ('live','trashed')`; recent `(ws_id, updated_at desc, id) where state = 'live'`; trash `(ws_id, deleted_at desc, id) where state = 'trashed'`; purge `(purge_after) where state = 'trashed'`; `(blob_id)`; `(trash_entry_id) where trash_entry_id is not null`; quota `(ws_id, state, purge_after) where state in ('live','trashed')` |
+| D6 | **Transitions.** Overwrite creates a **new** id and supersedes the old row. Move and rename keep the id. Trash is metadata-only; restore re-checks the live slot and never overwrites. The blob **refcount drops only on `trashed` to `purged`, `live` to `purged` (permanent delete) and `live` to `superseded`**, and a blob that reaches zero goes to `deleting` under a row lock, **never inline** in the transaction that changed the object. A separate bounded Cron Control job owned by the Supabase to Cloudflare lane deletes the R2 bytes (and renditions) of `deleting` blobs. Hard deletes and cascades enqueue every `r2_key` in `private.storage_r2_tombstones` through `AFTER DELETE` triggers, so no key is lost |
+| D7 | **`StorageObjectService`** in storage-core is the only code that changes these tables or R2: `create`, `overwrite`, `move`, `trash`, `restore`, `purge`. `restore(id or unit, target_path?)` returns **`path_taken`** on a live-slot conflict. `purge(id or unit, expedite: true)` sets `purge_after = now()` for the unit; purge is metadata-only and callable only by the `ttr_storage_purge` login role (a Worker with a database credential and no R2 credential); expedite is a separate step (dependency 9). A unit, a folder move and a folder trash are **at most 5,000 rows per call**, above which the call returns **`too_large`**. A file and a folder named alike under one parent can never both be live: `pg_advisory_xact_lock(ws_id, parent)` in `BEFORE INSERT/UPDATE` triggers on both tables. Drive consumes it and **never re-implements upkeep in Drive routes** |
+| D8 | **Drive FKs.** `drive_share_grants`, `drive_share_links` and `drive_recent` reference `storage_objects.id` `ON DELETE CASCADE`. Cascade is the documented erasure path |
+| D9 | **Reads.** Direct provider URLs are R2 presigned URLs of at most 15 minutes. Long-lived sharing is only the revocable `/drive/s` relay links |
+
+**Quota** (release-authority decision) is per workspace, in logical bytes: the
+sum of blob `size` over objects that are `live`, or `trashed` **with
+`purge_after > now()`**. Only restorable rows count. Expedited rows (Delete
+forever, Empty trash) are unrestorable, drop out of quota at once and are shown
+as **"pending deletion"**. Deduplication never lowers it; physical bytes are
+tracked separately for cost.
+
+**Rollout order**: (1) the migration lead's tables migration with pgTAP, (2)
+Drive's migration (revocation triggers, grants, links, Recent, events, the Trash
+gate), (3) the P1c backfill and R2 cutover, (4) Drive's Recent, Trash and Share
+flags on. Until step 3 the Supabase provider has no index, so the three
+features ship dark behind default-off flags. The index migration sorts after
+`20261123014700` and lands after the Media lead's S0(f) migration.
+
+### What D7 must guarantee
+
+- Each call is one transaction. `restore` and `move` return `path_taken` when
+  the live unique slot is occupied, atomically (no `HEAD`-then-copy race).
+- `restore` applies only while `state = 'trashed'` **and** `purge_after > now()`,
+  so Delete forever (`expedite: true`) makes a unit unrestorable before anything
+  is deleted.
+- `purge` is idempotent on `id`, changes the refcount only on the
+  `trashed` to `purged` transition, and never touches R2.
+- **Two ways out of `live`, with different callers.**
+  - `trash` is for **Drive-routed deletes only** (Drive routes with Trash on).
+    It takes an **origin argument** (below); the database gate refuses any
+    other path to `trashed`.
+  - `delete` is the permanent delete for every other caller (Finance, user
+    groups, external-app `drive.files:delete`) and for Drive routes while Trash
+    is off: `live` straight to `purged`, then the refcount drops through the
+    bounded `deleting` path (resolved, index note, "State rules").
+- A **folder unit** is the folder row, its descendant folder rows and their
+  objects under one `trash_entry_id`, at most 5,000 rows. Restore is
+  all-or-nothing: a missing ancestor folder is recreated as a **new** folder row
+  (new id; v1 grants are file-only), and any live-slot conflict returns
+  `path_taken` with nothing restored. **Drive's `409 parent_in_trash` is a
+  stricter policy in front of that default**: the service would recreate an
+  ancestor that is trashed separately too, but Drive refuses first, from
+  `drive_trash_ancestors`.
+- Callers pass the verified actor (S3) and a path already checked against S1 and
+  S5; the service re-checks both as defence in depth.
+
+### Trash gate and revocation triggers
+
+The index migration owns the integrity triggers: the immutable-column guard,
+the advisory-lock name triggers, the `AFTER DELETE` refcount and tombstone
+triggers, and the `BEFORE TRUNCATE` refusal (dependency 11). Drive's migration
+owns the gate and the revocation triggers below. Every Drive trigger is
+`SECURITY DEFINER` with a pinned `search_path` unless stated, and is switched
+with **`ENABLE ALWAYS`**, so `session_replication_role = replica` does not skip
+it (the precedent is `20261121103531_accounts_management.sql`, which pairs row
+triggers with a `BEFORE TRUNCATE` trigger and `enable always`).
+
+| Trigger | When | Effect |
+| --- | --- | --- |
+| Trash gate | **`BEFORE INSERT OR UPDATE`** on `storage_objects`, `WHEN (NEW.state = 'trashed')` | Refuses (`55000 trash_unavailable`) a row entering `trashed` unless `drive_trash_available()` is true. **Insert:** only the copier function (`storage_copy_object`, the one function that inserts a non-`live` row) reaches it, **by privilege**: no role other than the copier's owner holds `INSERT` on `storage_objects`, `service_role` included, and the trigger does not check the caller. The row needs `deleted_at <= now()` and `purge_after <= now() + 7 days`. **Update:** entering `trashed` requires `OLD.state = 'live'`, so `superseded` and `purged` rows are refused. **`live` to `trashed`:** sets `deleted_at = now()` and refuses a `purge_after` later than `now() + 7 days`. **While `OLD.state = 'trashed'`:** refuses any change to `deleted_at`, `deleted_by`, `deleted_from_path` and `trash_entry_id`, and `purge_after` may only decrease (expedite). Writes no other table, so a cancelled row leaves no side effect |
+| Leave-live revocation, one per feature | **`AFTER UPDATE`** on `storage_objects`, `WHEN (OLD.state = 'live' AND NEW.state <> 'live')`, the index note's revocation contract verbatim | Recent deletes the object's rows; Sharing revokes its links and grants and writes events. Overwrite (`superseded`), trash and permanent delete (`live` to `purged`) fire it. `trashed` to `purged` does not: the object already left `live` and its bindings are gone. No wider `WHEN` is needed: the index guard makes `blob_id` and `ws_id` immutable |
+| Delete revocation | `BEFORE DELETE` on `storage_objects` | Runs before the FK cascade removes the binding rows so events can name the object; writes no event when the workspace row is already gone. No other `BEFORE` trigger on the table may return `NULL` (a pgTAP case lists the table's triggers) |
+
+- A move or rename (`path` changes, `state` stays `live`) never revokes:
+  bindings follow the id.
+- **Product rule: trashing revokes permanently.** Restoring brings back neither
+  shares nor Recent entries. No suspend or unsuspend machinery exists.
+- The service and every migration run with `session_replication_role = origin`
+  and never `DISABLE TRIGGER` on object-state paths; a migration lint enforces
+  this. pgTAP proves each trigger **also fires under `replica` mode**, that
+  an update through the service fires them, that the gate refuses `live` to
+  `trashed` when Trash is unavailable, and each trigger rule in the table: an
+  inserted `trashed` row beyond 7 days or with a future `deleted_at`, a later
+  `deleted_at` on a trashed row, a `purge_after` that rises, an insert of
+  `trashed` through any function but the copier, **`superseded` to `trashed` and
+  `purged` to `trashed`**, and `service_role` unable to insert a `trashed` row.
+- **Drive-origin marker: a service argument, not a setting and not a column.**
+  `StorageObjectService.trash(…, origin)` passes `origin = 'drive'` to the
+  index's definer function, which refuses any other value (`42501`). The
+  **TypeScript service writes the attempt to `storage_access_events` before the
+  call**, because a raise rolls back an audit insert made inside the function. There is no GUC and no row
+  column, so nothing persists on the row or can be set by a session. This is a
+  tripwire against a Finance route or script trashing by mistake, **not a
+  control**: anyone who can execute the function can pass `'drive'`, so a
+  compromised service role is out of scope. The guarantee is
+  `drive_trash_available()`: whatever the caller, no row can enter `trashed`
+  while purge is off, stopped or stale, and the service's audit names who tried.
+
+### What the three notes never do
+
+No relocation under `.tuturuuu/trash`, no provider copy and delete, no
+per-path `LIKE` rewrite of bindings, no provider `HEAD`, and no upkeep call from
+a Drive route after a rename, move, overwrite or delete. Provider migration
+needs no Trash case because Trash is metadata.
+
+## Shared rules
+
+### S1. One path check
+
+`assertDriveRelativePath(path)` is the D3 rule, applied verbatim in TypeScript
+and SQL (reuse the index's CHECK expression or an immutable
+`private.drive_path_is_valid` that calls it, so the two cannot drift). It runs on
+every path entering Recent, Trash or Sharing and on every restore target. Always
+`octet_length`, never `char_length`. Then S5. Cases: `a_b` against `axb`, `%` and
+`\` in names, multi-byte names at the limit, `.` and `..` segments, `a//b`, a
+non-NFC name, and leading or trailing `/`.
+
+### S2. Prefix matching
+
+Prefix operations use `starts_with(path, prefix || '/')` (or `left`), never
+`LIKE`, because `%` and `_` are valid in names. They use the D5 prefix index.
+
+### S3. Actor source
+
+Drive app sessions use a service-role client, so `auth.uid()` is null in SQL and
+every function here is `service_role` only with an explicit actor argument.
+
+- **Session routes**: the actor is `auth.context.userId` from
+  `resolveWorkspaceStorageRouteAuth`, passed as `p_actor_id`; never read from a
+  body, query or header.
+- A body field such as `userId` is only the **grantee**; the function checks that
+  user is a `workspace_members` row of the normalized `p_ws_id`.
+- **Public link routes**: no user actor; events carry `actor_kind = 'link'`.
+- **Purge processor and triggers**: `actor_kind = 'system'`.
+- External-app tokens never reach these functions; the management routes accept
+  user sessions only.
+
+### S4. Function conventions (every function in the three notes)
+
+- `SECURITY DEFINER`, `set search_path = pg_catalog, pg_temp`, schema-qualified
+  objects, `revoke ... from public, anon, authenticated`, `grant execute ... to
+  service_role`, and `-- tuturuuu: reviewed(function-grant): <signature>
+  review=<link>` with a real review link.
+- **`p_ws_id` on every function that takes an id**; every statement filters
+  `id = p_id and ws_id = p_ws_id`. An id from another workspace changes nothing
+  and returns what an unknown id returns. **One recorded exception:**
+  `drive_share_open_link` resolves by the 256-bit token hash, derives the
+  workspace from the row and takes no workspace input; its cross-tenant case
+  proves a token only ever returns its own link.
+- **Cross-workspace pgTAP for every function that takes an id**: call it with
+  workspace A's object, link, grant or entry id and workspace B's `p_ws_id`, and
+  assert no row changed or was returned. Concurrency cases use
+  `helpers/local-dblink.inc`. Functions with no id (a list by workspace, a
+  prune) are not in that case.
+- Foreign keys state their delete rule: user columns kept for audit are nullable
+  `ON DELETE SET NULL`; ownership by a workspace or an object is `ON DELETE
+  CASCADE`.
+- **Database roles beside `service_role`**, from the index note's "Credentials
+  and roles". The web app holds `service_role` and no other. `ttr_drive_owner`
+  (NOLOGIN, created by the index migration) owns every Drive definer function and
+  is never granted to `service_role` or a login.
+  - **`ttr_storage_purge`**: a `LOGIN` role with `EXECUTE` only on the purge and
+    R2-deleter RPCs and no table privileges, reached by the `drive-purge` Worker
+    (and the R2 deleter job) through a connection secret that Iris's packet
+    places; no agent mints it, and it is never `service_role`. Drive's claim,
+    budget, ok and fail functions are granted to it by Drive's migration
+    (dependency 9).
+  - **`ttr_storage_operator`**: `NOLOGIN`, granted to named operator logins
+    only. Drive's `set_mode`, `stop`, `resume` and `requeue` belong to it, so the
+    purge Worker cannot change a mode and the web app cannot stop the fence.
+    Until a named login exists, the controls are owner-run SQL.
+  - **For Drive's jobs**, Cron Control keeps its one credential,
+    `SUPABASE_SECRET_KEY` over PostgREST (`apps/cron-control/src/dispatch.ts:113-125`,
+    `processors/maintenance-rpc.ts`), and gets no Postgres access: only the
+    `drive-purge` Worker holds `ttr_storage_purge`. Through that credential the
+    health and retention jobs call only read-only and bounded-prune functions,
+    granted to `service_role` and holding no control. Other Cron Control jobs are
+    out of this note.
+
+### S5. Private roots
+
+`chat`, `chats`, `external-apps`, `external-projects` once service-only,
+`.tuturuuu` and the rest of `isExcludedDrivePath` are never trashable,
+shareable or recorded. The check (`assertWorkspaceStoragePathAllowed` plus
+`isExcludedDrivePath`) runs on the **final** path of every operation: create,
+restore after any rename or `destination: 'root'`, move, and link or grant
+creation. Policy is live, never trusted from an earlier state.
+
+### S6. Member removal
+
+Two triggers on `workspace_members` (beside `remove_departed_member_role_memberships`
+and `remove_moved_member_role_memberships`,
+`20261121163500_remove_role_memberships_on_member_removal.sql`), both calling one
+`SECURITY DEFINER` function, `ENABLE ALWAYS`:
+
+- `AFTER DELETE`;
+- `AFTER UPDATE OF ws_id, user_id` `WHEN ((OLD.ws_id, OLD.user_id) IS DISTINCT
+  FROM (NEW.ws_id, NEW.user_id))`, because a moved member is a departure from
+  the old workspace.
+
+In the **same transaction** it, for `OLD.ws_id` and `OLD.user_id`:
+
+1. revokes every grant whose grantee is that user and every link they created;
+2. deletes that user's Recent rows for the workspace;
+3. writes the events, **only when the workspace row still exists**: a workspace
+   deletion cascades the member rows, and an event row for a workspace that is
+   gone would break the delete on its foreign key (the `storage_objects` delete
+   trigger skips the same way). A user deletion cascades the member rows with the
+   workspace intact, so events are written and `actor_id` is null.
+
+A removed and re-added member regains nothing. Role loss without removal is
+covered by live checks at use. No sweep job is needed for correctness; the
+Recent prune also deletes rows of users who are no longer `MEMBER`.
+
+### S7. Public path matching
+
+Sharing needs one public page and two public API routes. Both proxies must match
+by **segment**:
+
+- `packages/auth/src/proxy/index.ts` uses `publicPaths.some(startsWith)` and an
+  `isPublicPath` callback that receives the pathname **with its locale prefix**;
+  adding `/s` to `publicPaths` would open `/settings`, `/shared-with-me` and
+  `/s2`. Drive passes its own `isPublicPath` callback, so no other satellite
+  gains `/s`. The callback strips a supported locale prefix first (`/en/s`,
+  `/vi/s`), because on the unmounted proxy an unstripped `/en/s` is not public
+  and redirects to login.
+- `packages/auth/src/proxy/mounted-app-auth.ts` matches exactly with
+  `publicPaths.includes(path)` after removing `/en` or `/vi` and a trailing
+  slash, but resolves the session first and redirects an owed-MFA visitor to
+  `/login`. `/s` must not depend on a session, so `createMountedAppAuth` gains
+  an `anonymousPaths` option that skips `resolveSession` and serves the path
+  signed out; Drive passes `anonymousPaths: ['/s']` ([viewer](/build/drive/sharing-public-links)).
+- The matcher normalizes (decode, collapse dots and slashes) and then accepts
+  `path === '/s'` only. Tests, mounted and unmounted: `/s`, `/en/s`, `/vi/s`
+  public; `/s/x`, `/en/s/x`, `/s2`, `/settings`, `/shared-with-me`,
+  `/s%2F..%2Fsettings`, `/S`, `/fr/s`, `/EN/s` and trailing-dot variants not.
+- The locale redirect from `/s` to `/en/s` keeps the URL fragment (browsers
+  carry it across a redirect that sets none); a test covers it.
+- The public **API** routes are exact paths in both Drive's and web's proxy,
+  with their own pass-through branch, specified in
+  [public links](/build/drive/sharing-public-links#public-request-path).
+
+### S8. Data-protection inventory
+
+Add every store to `apps/docs/platform/data-protection/inventory.mdx` with
+purpose, scope, readers, retention clock, export and erasure adapters and
+regression evidence:
+
+| Store | Purpose | Retention | Export and erasure |
+| --- | --- | --- | --- |
+| `drive_recent` | Per-user Recent list | 30 days, 50 per user and workspace | In the user export (adapter in [Recent](/build/drive/recent-files#export-and-erasure)); cascade on user, workspace and object; deleted on member removal |
+| `drive_trash_entries`, trash columns on `storage_objects` | Folder-unit recovery | 7 days then purge | `deleted_by` set null on user deletion; workspace cascade |
+| `drive_share_grants`, `drive_share_links` | Access bindings | Revoked or expired rows 30 days | Grantee and creator in a workspace export; creator set null on user deletion; cascade on object and workspace |
+| `drive_share_events` | Audit | 90 days access and denial, 400 days other | HMAC identifiers only; `actor_id` set null on user deletion; workspace cascade |
+| `drive_idempotency_keys` | Replay of restore, trash and purge requests | 24 hours | The stored result can hold a restored path; cascade on workspace and user; no export (transient) |
+| `drive_purge_failures`, `drive_purge_usage`, `drive_trash_control` | Purge retry, budget and fence state | Failures until purged then pruned; usage 7 days | No personal data; workspace cascade |
+| `drive_settings` | Workspace switches | Life of the workspace | Cascade |
+
+`viewer_hmac` is pseudonymous personal data (a keyed hash of an address and a
+date), so it is inventoried and kept 90 days at most.
+
+### S9. Routes and external apps
+
+- New or reworked handlers live under `apps/web/src/app/api/**`, never
+  `legacy-api-routes`; replaced wrappers are removed and tests move with them.
+- `external-projects` becoming service-only in `workspace_storage.object_access`:
+  the three features never edit `object_access`, call `isExcludedDrivePath`, and
+  add TypeScript tests that bindings and Recent rows under `external-projects/`
+  are denied after the root list changes and that `trash` refuses them (S5).
+- **Trash covers Drive-initiated deletes only.** Finance receipt deletes, user
+  groups and external-app `drive.files:delete` call the service's permanent
+  `delete`, never `trash`, so they never create a Trash unit; the gate refuses a
+  stray attempt. `deleted_by` is nullable for an app actor. Their deletes still
+  fire the revocation triggers.
+
+### S10. Idempotency keys
+
+Restore, Delete forever, Empty trash and Move to Trash take an
+`Idempotency-Key` header (restore and the purges require it). Keys are stored in
+`private.drive_idempotency_keys`, so a file delete, a folder delete and a restore
+all replay the same way:
+
+```sql
+create table private.drive_idempotency_keys (
+  ws_id        uuid not null references public.workspaces (id) on delete cascade,
+  actor_id     uuid not null references public.users (id) on delete cascade,
+  key          text not null check (key ~ '^[A-Za-z0-9_-]{16,64}$'),
+  op           text not null check (op in ('trash','restore','purge','empty')),
+  target_id    uuid,
+  request_hash bytea not null check (octet_length(request_hash) = 32),
+  status       smallint not null,
+  result       jsonb not null check (pg_column_size(result) <= 2048),
+  created_at   timestamptz not null default now(),
+  primary key (ws_id, actor_id, op, key)
+);
+create index drive_idempotency_keys_ttl_idx on private.drive_idempotency_keys (created_at);
+```
+
+- The key is scoped to the actor and the operation, and the row is inserted in
+  the **same transaction** as the mutation, so a concurrent second request waits
+  on the primary key and then replays the stored result. The idempotency row,
+  the folder entry, the budget and failure rows and the service mutation must
+  commit or roll back together (dependency 10, resolved) **for route
+  operations**: a crash that kept the mutation but lost the key would let the
+  retry re-resolve the path and trash a file uploaded there since. The purge
+  job is the exception: its claim, purge and `purge_ok` or `purge_fail` are
+  separate statements, safe because the budget is reserved up front and each step
+  is idempotent ([purge job](/build/drive/trash-purge-job#cloudflare-job-the-purge-processor)).
+- A file-trash key is **bound to the object id resolved on the first request**:
+  `target_id` holds it, and a replay returns the stored result and never
+  resolves the path again.
+- `request_hash` is a SHA-256 of the canonical request (kind, target id, body
+  fields). The same key with a different hash returns `422 idempotency_key_reuse`
+  and changes nothing.
+- A replay returns the stored status and body with `Idempotency-Replayed: true`.
+  Failed requests (`409 name_conflict` and the like) are stored too; a request
+  that errored before committing stores nothing and is retried for real.
+- Keys older than 24 hours are pruned by `prune_drive_trash`, scheduled by the
+  `database-drive-trash-retention` job (bounded, [purge job](/build/drive/trash-purge-job#cloudflare-job-retention)).
+
+## Dependencies on the migration note
+
+The index design ("Storage object index: design note (P1c step 2)", final
+revision, sha256 `e17c5d74...ed89e`, called the "index note") settles all of
+Drive's dependencies. Each row cites the note's section.
+
+| Id | Item | Status and where the note settles it |
+| --- | --- | --- |
+| 1 | Permanent `delete` | RESOLVED. State rules, "Delete": `live` to `purged` through the bounded `deleting` path |
+| 2 | Cross-kind names | RESOLVED. Integrity rules: `pg_advisory_xact_lock(ws_id, parent)` in `BEFORE INSERT/UPDATE` triggers on both tables; restore relies on the same lock |
+| 3 | Erasure frees blobs | RESOLVED. Integrity rules, "Hard deletes and cascades": `AFTER DELETE` triggers drop refcounts and enqueue every `r2_key` in `storage_r2_tombstones` |
+| 4 | Immutable columns, 7-day bound | RESOLVED. Integrity rules: immutable `id`, `ws_id`, `blob_id`; table `CHECK` on `purge_after` |
+| 5 | Folder rows in Trash | RESOLVED. The `storage_folders` schema carries `deleted_at`, `deleted_by`, `purge_after` and `trash_entry_id` with the same `CHECK`s, and a `trash_entry_id` index; "Folder units": purge moves a unit's folder rows to `deleted` (tombstones), so an empty folder unit is purged too. **Drive's side**: `drive_trash_purge_claim` must also return due folder-only units (`object_count = 0`), or nothing would ever purge them ([purge job](/build/drive/trash-purge-job#data-model)) |
+| 6 | `storage_access_events` | RESOLVED. Folders, quota, audit: the service writes it, routes pass actor and context |
+| 7 | Provider migration | RESOLVED. Same section: copies `live` and `trashed` rows, ids assigned once |
+| 8 | Order | RESOLVED. Rollout order matches the one above |
+| 9a | Role grants | RESOLVED. "Credentials and roles": the index migration creates `ttr_storage_purge` and `ttr_storage_operator`; **Drive's migration grants `EXECUTE` on `drive_trash_purge_claim`, `drive_trash_budget_take`, `drive_trash_purge_ok` and `drive_trash_purge_fail` to `ttr_storage_purge`** and owns its definers as **`ttr_drive_owner`** (NOLOGIN, created by the index migration) |
+| 9b | Separate expedite | RESOLVED. `private.storage_expedite_unit(ws_id, unit_id, actor_id)` is `SECURITY DEFINER`, `EXECUTE` for `service_role`, called by the web route after its own permission check; it only sets `purge_after = now()` and audits the actor. The `trashed` to `purged` step stays with `ttr_storage_purge` |
+| 9c | Operator logins | RESOLVED as a procedure. The release authority names the first logins later; until then no login holds `ttr_storage_operator` and the controls are **owner-run SQL through a reviewed packet** |
+| 10 | One transaction with the service | RESOLVED. "Composing with Drive's transactions": the service operations are composable, non-committing SQL functions, and **Drive's definer wrappers call them inside one transaction**. This covers route operations; the job's bookkeeping is separate by design (S10) |
+| 11 | Truncate refusal | RESOLVED. Integrity rules: the index migration owns one `BEFORE TRUNCATE` refusal per table, `ENABLE ALWAYS`; Drive's pgTAP only asserts it |
+
+**Ordering.** The index migration sorts after `20261123014700` and lands after
+the Media lead's S0(f) migration. Drive's migrations follow it, so the roles
+already exist when Drive grants to them.
+
+**Left to the index owner**
+- The index note says the definer function writes the origin audit, then raises
+  `42501`. The raise rolls the audit insert back, so Drive writes the audit from
+  the TypeScript service before the call and expects the function to raise
+  without an audit write.
+- Any index-note text that implies the gate trigger checks the Drive origin
+  should be reworded: the trigger cannot see the argument, only the definer
+  function does, and the trigger's guarantee is `drive_trash_available()`.

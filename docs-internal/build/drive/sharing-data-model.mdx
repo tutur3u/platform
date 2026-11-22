@@ -1,0 +1,276 @@
+---
+title: "Drive: sharing data model, triggers and tests"
+description: "Tables, functions, revocation and member-removal triggers, the append-only audit, the retention job, migration plan, pgTAP cases and threat model for Drive sharing."
+updatedAt: '2026-11-23'
+---
+
+Status: design note for owner and independent security review; nothing is
+implemented or migrated. Part of [Sharing](/build/drive/sharing); rules D1 to D9
+and S1 to S10 are in the [object index contract](/build/drive/object-index-contract).
+
+## Data model
+
+One additive migration after the index migration; `private` schema, RLS enabled,
+zero policies, no client grants.
+
+```sql
+create table private.drive_share_links (
+  id          uuid primary key default gen_random_uuid(),
+  ws_id       uuid not null references public.workspaces (id) on delete cascade,
+  object_id   uuid not null references private.storage_objects (id) on delete cascade,
+  token_hash  bytea not null unique check (octet_length(token_hash) = 32),
+  label       text check (octet_length(label) <= 240),
+  created_by  uuid references public.users (id) on delete set null,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null,
+  open_count  integer not null default 0,
+  last_opened_at timestamptz,
+  revoked_at  timestamptz,
+  revoked_by  uuid references public.users (id) on delete set null,
+  revoked_reason text check (revoked_reason ~ '^[a-z_]{1,40}$'),
+  check (expires_at > created_at and expires_at <= created_at + interval '90 days')
+);
+create index drive_share_links_object_idx on private.drive_share_links (object_id)
+  where revoked_at is null;
+create index drive_share_links_ws_idx on private.drive_share_links (ws_id, created_by);
+
+create table private.drive_share_grants (
+  id          uuid primary key default gen_random_uuid(),
+  ws_id       uuid not null references public.workspaces (id) on delete cascade,
+  object_id   uuid not null references private.storage_objects (id) on delete cascade,
+  grantee_user_id uuid not null references public.users (id) on delete cascade,
+  role        text not null check (role = 'viewer'),   -- phase 2 widens this CHECK
+  created_by  uuid references public.users (id) on delete set null,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz,
+  revoked_at  timestamptz,
+  revoked_by  uuid references public.users (id) on delete set null,
+  revoked_reason text check (revoked_reason ~ '^[a-z_]{1,40}$')
+);
+create unique index drive_share_grants_uniq
+  on private.drive_share_grants (object_id, grantee_user_id) where revoked_at is null;
+create index drive_share_grants_grantee_idx
+  on private.drive_share_grants (grantee_user_id, ws_id) where revoked_at is null;
+
+create table private.drive_share_events (
+  id          bigint generated always as identity primary key,
+  occurred_at timestamptz not null default now(),
+  ws_id       uuid not null references public.workspaces (id) on delete cascade,
+  event       text not null check (event in
+    ('grant_created','grant_updated','grant_revoked','link_created','link_revoked',
+     'link_opened','link_denied')),
+  actor_id    uuid references public.users (id) on delete set null,
+  actor_kind  text not null check (actor_kind in ('user','link','system')),
+  object_id   uuid,                       -- no FK: the audit outlives the object
+  grant_id    uuid, link_id uuid,
+  role        text check (role = 'viewer'),
+  reason      text check (reason ~ '^[a-z_]{1,40}$'),
+  viewer_hmac text check (viewer_hmac ~ '^[0-9a-f]{16,64}$'),
+  check (viewer_hmac is null or event in ('link_opened','link_denied'))
+);
+create index drive_share_events_ws_idx on private.drive_share_events (ws_id, occurred_at desc);
+create index drive_share_events_retention_idx on private.drive_share_events (occurred_at, id);
+-- the once-per-link-and-viewer-per-hour dedupe reads this
+create index drive_share_events_viewer_idx
+  on private.drive_share_events (link_id, viewer_hmac, occurred_at)
+  where viewer_hmac is not null;
+```
+
+- No path, `object_marker` or email column exists: the object id identifies the
+  target, so nothing needs rewriting on rename or move and the audit stores no
+  path. `created_by` is nullable; a link whose creator was deleted is denied.
+- `viewer_hmac` is `HMAC(key, ip || utc-date)` truncated to 128 bits
+  (`DRIVE_SHARE_AUDIT_HMAC_KEY`, at least 32 bytes, in the Worker). Raw
+  addresses and user agents are never stored (S8). It exists only on `link_opened`
+  and `link_denied` rows (CHECK).
+- Events are written only by an internal `private.drive_share_log(...)` with no
+  `service_role` grant, called from the functions and triggers below, so no route
+  can forge one.
+
+### The append-only audit
+
+No role holds `UPDATE`, `DELETE` or `TRUNCATE` on the events table, and the
+table is protected structurally, following the accounts audit
+(`20261121103531_accounts_management.sql`): a trigger function that is
+`SECURITY INVOKER` and **decides on row conditions only**, never on
+`current_user` (inside a `SECURITY DEFINER` function that is always the owner,
+so such a test would pass for everyone).
+
+- `BEFORE UPDATE OR DELETE` (row): an `UPDATE` is allowed only when `actor_id`
+  goes from non-null to null **and every other column is unchanged**
+  (the foreign key's `SET NULL`). A `DELETE` is allowed only when the row is
+  past its retention (90 days for `link_opened` and `link_denied`, 400 days for
+  the rest) **or** its workspace row is gone (workspace cascade). Everything else
+  raises `42501`.
+- **`BEFORE TRUNCATE`** (statement): always raises, so `TRUNCATE` cannot skip the
+  row trigger.
+- Both are **`ENABLE ALWAYS`**, so `session_replication_role = replica` does not
+  skip them. No setting, session variable or argument enables a bypass; pgTAP
+  proves a `set_config` attempt, replica mode and `TRUNCATE` change nothing.
+
+### Token
+
+32 CSPRNG bytes, base64url, `ds1_` plus 43 characters (256 bits). Stored as
+`sha256(token)` only; at 256 bits a plain hash needs no salt, and lookup is an
+equality on the unique index with no secret-dependent comparison. Returned once,
+never logged.
+
+### Functions
+
+All follow S4 and S3. The actor is the verified session user; a body `userId` is
+only a grantee checked as a member of `p_ws_id`. Every mutation writes its event
+in the same transaction.
+
+| Function | Behaviour |
+| --- | --- |
+| `drive_share_create_link(p_ws_id, p_actor_id, p_object_id, p_token_hash, p_label, p_expires_at)` | Checks `MEMBER`, the object is `live` in `p_ws_id`, blob publishable, size at most 100 MiB, caps, expiry range |
+| `drive_share_open_link(p_token_hash, p_viewer_hmac)` | The one S4 exception: resolves by token hash and takes no workspace input. Returns `(link_id, ws_id, object_id, creator_id)` only for a link that is unexpired, unrevoked, on a live object with a publishable blob; empty for every failure. Counts the open and sets `last_opened_at` at most once a minute. `link_opened` once per link and viewer per hour (the viewer index). `link_denied` only when the token matched a row, capped per link, per workspace and globally per hour (surface-policy values). **Unknown tokens write nothing** |
+| `drive_share_check_link(p_ws_id, p_link_id)` | Read-only, for content requests: the ticket carries the workspace id with the link id, so this takes both and follows S4. Same liveness test, returns the blob reference, size and type. No writes |
+| `drive_share_revoke_link(p_ws_id, p_actor_id, p_link_id)`, `drive_share_revoke_object_links(p_ws_id, p_actor_id, p_object_id)` | Idempotent: first `revoked_at` kept, one event |
+| `drive_share_revoke_creator(p_ws_id, p_user_id, p_reason)` | Revokes every open link the user created in the workspace, one event per row, `actor_kind = 'system'`. Reasons `member_removed` (the S6 triggers) and `creator_role_lost` (the use-time check and the sweep). Regaining the permission revives nothing |
+| `drive_share_upsert_grant(p_ws_id, p_actor_id, p_object_id, p_grantee_id, p_role, p_expires_at)`, `drive_share_update_grant(p_ws_id, p_actor_id, p_grant_id, ...)`, `drive_share_revoke_grant(p_ws_id, p_actor_id, p_grant_id)` | Grantee must be `MEMBER` or `GUEST` of `p_ws_id`; `p_role` other than `viewer` raises `22023`; caps; repeat is an update |
+| `drive_share_grant_for(p_ws_id, p_user_id, p_object_id)` | The active grant joined to current membership and a live object |
+| `drive_share_list_links(p_ws_id, p_object_id, p_limit)`, `drive_share_list_grants(...)`, `drive_share_shared_with_me(p_ws_id, p_user_id, p_limit, p_before)` | Scoped reads, limits 1..100 |
+| `prune_drive_share_rows(p_limit)` | Retention, plus one sweep: it revokes the open links of creators who no longer hold both `view_drive` and `manage_drive` in the workspace (`public.has_workspace_permission`), `creator_role_lost`. Bounded by `p_limit` 1..1000 (the shared caller sends 1000); returns the counters `deleted` and `revoked`. **The revoke sweep runs first in every call**, before any retention delete, so a retention backlog cannot delay revocation |
+
+### Revocation triggers
+
+Drive owns all trigger bodies (contract, trigger table). They are `SECURITY
+DEFINER`, pin `search_path`, `ENABLE ALWAYS`, and write set-based, so the work is
+bounded by the per-object caps.
+
+- **`AFTER UPDATE`** on `storage_objects`, `WHEN (OLD.state = 'live' AND
+  NEW.state <> 'live')`, the revocation contract of the
+  [index contract](/build/drive/object-index-contract#trash-gate-and-revocation-triggers):
+  set `revoked_at` and `revoked_reason` (`overwritten` for `superseded`,
+  `trashed` or `deleted` for the other states) on every open link and grant of
+  the object, and write one event per row with `actor_kind = 'system'`. It runs
+  after the row change, so a cancelled row leaves no side effect. The index's
+  guard trigger makes `id`, `ws_id` and `blob_id` immutable, so no wider `WHEN`
+  is needed: a rebinding change cannot happen.
+- **`BEFORE DELETE`** on `storage_objects`: the same with reason `deleted`, run
+  before the cascade removes the rows, skipping the event when the workspace row
+  is already gone.
+- **`BEFORE TRUNCATE`** on `storage_objects`: refusal, **owned by the index
+  migration** (contract dependency 11); Drive's pgTAP only asserts it.
+- **Member removal** (S6): `AFTER DELETE` and `AFTER UPDATE OF ws_id, user_id` on
+  `workspace_members` revoke the removed user's grants and the links they
+  created in `OLD.ws_id`, reason `member_removed`. The event insert is skipped
+  when the workspace row is gone, so deleting a workspace (which cascades its
+  members) still succeeds.
+
+No Drive route calls any of this; D7 mutations fire it, so every one of the
+~20 delete and rename paths is covered. A `trashed` to `purged` change revokes
+nothing further: its links and grants ended at the trash.
+
+## API tests
+
+TypeScript tests: the public matcher cases from S7; the token never appears in a
+logged URL or response header; every public failure has one body and status;
+a ticket for link A cannot read link B; `external-projects` denial; content
+requests charge the link budgets and never the members' keys; `editor` is
+rejected by the route and the function.
+
+## Cloudflare job
+
+Retention and the creator-role sweep, no storage credentials and no new service.
+Read-time checks deny a link whose creator lost access without it, but the
+durable revocation of an unobserved link is the sweep's, so the job is enabled
+with `DRIVE_SHARING_MODE`.
+
+| Item | Value |
+| --- | --- |
+| Job | `database-drive-share-retention`, `*/10 * * * *`, overlap `idempotent`, `timeoutMs` 30,000; `DATABASE_MAINTENANCE_RPCS['drive-share-retention'] = 'prune_drive_share_rows'`, called by Cron Control directly |
+| Default | **Off** until `DRIVE_SHARING_MODE` leaves `off`: then enabled with it (not in `CRON_CONTROL_ENABLED_JOBS` before) |
+| Work | At most `p_limit` (1..1000) per call, `FOR UPDATE SKIP LOCKED`, **revoking first** (links of creators who lost access), then retention: delete links expired or revoked over 30 days, grants revoked over 30 days, access and denial events over 90 days and other events over 400 days |
+| Bounds | One RPC per slot, no loop, no in-slot retry, no self-scheduling; all-zero counts mean idle |
+| Stop fence | The ledger stops after 5 consecutive failed slots, or remove the id |
+
+Operation-count tests (`apps/cron-control/src/drive-share-retention.test.ts`):
+empty tables cost one RPC; a backlog drains at one RPC per slot; a failing RPC
+is one attempt per slot and the fifth failure stops the job; a disabled id makes
+zero deletes; a restart replays nothing.
+
+## Migration plan
+
+1. `YYYYMMDDHHMMSS_drive_sharing.sql`: three tables, indexes, functions, the
+   object triggers and the member triggers, grants, with `lock_timeout = '5s'`,
+   `statement_timeout = '30s'`, `NEEDS APPROVAL` and `reviewed(function-grant)`
+   annotations carrying review links. Depends on the index migration.
+2. Rollback drops triggers, functions, then tables, and raises while any link or
+   grant is active, so no live share is silently removed.
+3. Code ships after production applies the migration, behind `DRIVE_SHARING_MODE`:
+   `off` (default), `links`, `links-grants`.
+
+### pgTAP cases (`apps/database/supabase/tests/drive-sharing.sql`)
+
+1. RLS enabled and zero policies on all three tables; no client or `service_role`
+   table privilege; no function executable by `public`, `anon` or
+   `authenticated`; `drive_share_log` not executable by `service_role`;
+   `search_path` pinned everywhere.
+2. `create_link` rejects a non-member, a non-live object, a non-publishable blob
+   (`pending`, `refused`), a file over 100 MiB, an expiry past 90 days or in the
+   past, the 11th link per file and the 501st per workspace.
+3. `open_link` returns one row for a live link and an **identical empty result**
+   for unknown, expired, revoked, replaced, trashed and unpublishable cases;
+   unknown tokens write no event; opens and denials are deduped and capped per
+   link, workspace and globally; `last_opened_at` moves at most once a minute.
+4. Revocation triggers: overwrite (new id), trash and a permanent `live` to
+   `purged` delete each revoke the object's links and grants with the right
+   reason and one event per row; a later `trashed` to `purged` change revokes
+   nothing more and writes no event; **restore revives nothing**; a rename or
+   move revokes nothing; an update of `blob_id` or `ws_id` is refused by the
+   index guard before any revocation could matter;
+   deleting the object row writes events before the cascade; deleting the
+   workspace succeeds. The same cases pass under `session_replication_role =
+   replica` (the triggers are `ENABLE ALWAYS`), and `TRUNCATE storage_objects`
+   raises.
+5. `drive_share_revoke_creator` revokes only that creator's open links in that workspace, once; the sweep revokes the links of a creator whose permission was removed and a regained permission revives none; a link whose creator still holds both permissions is untouched; with a retention backlog larger than `p_limit`, the first call still revokes before it deletes.
+6. Member removal revokes that user's grants and created links in the same
+   transaction; **moving** a `workspace_members` row to another workspace or user
+   revokes in the old workspace; re-adding the user restores nothing; role loss
+   without removal is denied by the live checks; deleting a **workspace** (member
+   cascade) and deleting a **user** both succeed and leave no orphan event.
+7. `upsert_grant` rejects a non-member grantee, a non-live object, a grant above
+   the cap and **any role other than `viewer`** (`editor` fails the CHECK too);
+   a repeat updates; `grant_for` returns nothing for a removed member.
+8. Every mutation writes its event in one transaction: a forced later failure rolls
+   both back. Events are append-only: `service_role`, the table owner and a
+   superuser under replica mode cannot update (except `actor_id` to null),
+   delete before retention, truncate or bypass with `set_config`; user deletion
+   (`SET NULL` on `actor_id`) and workspace deletion still succeed; a
+   `viewer_hmac` on a `link_created` row is refused; `prune` deletes only past
+   retention.
+9. `revoke_link` twice writes one event and keeps the first `revoked_at`.
+10. **Cross-workspace, every id-taking function**: `create_link`,
+   `check_link`, both revokes, `revoke_creator`, `upsert_grant`, `update_grant`, `revoke_grant`,
+   `grant_for`, `list_links` and `list_grants` called with workspace A's object,
+   link or grant id and workspace B's `p_ws_id` change and return nothing.
+   `open_link` (the recorded exception) is tested separately: a token returns
+   only its own link and workspace. Concurrency uses `helpers/local-dblink.inc`.
+11. `prune` respects `p_limit` 1..1000; workspace deletion cascades all rows.
+
+## Threat model
+
+| Threat | Control |
+| --- | --- |
+| IDOR across workspaces | `wsId` normalized, then matched in SQL; every id-taking function takes `p_ws_id`; public resolution derives the workspace from the token row and exposes none of it; case 9 |
+| Actor spoofing | The actor is `auth.context.userId` only; a body `userId` is a grantee validated as a member (S3) |
+| Token guessing | 256 bits, `ds1_` prefix, format check before any query, source quotas through `admitPublicRequest`, per-hash budget before any read, one generic failure |
+| Token in logs, referrers, bots | Fragment plus `POST`: never in a request URL or `Referer`; unfurlers and email scanners cannot consume it; no redaction relied on |
+| Token at rest | SHA-256 only |
+| Ticket theft | AEAD `HttpOnly` `SameSite=Strict` cookie, 5 minutes, bound to one link, revalidated on every request |
+| Revocation latency | New requests immediate (live read, `no-store`); in flight at most the relay idle timeout; downloaded bytes cannot be recalled |
+| Path reuse and stale bindings | Bindings are object ids (D8); overwrite, trash and delete revoke by trigger; no path matching exists |
+| Triggers skipped | `ENABLE ALWAYS`, `AFTER UPDATE` side effects, `BEFORE TRUNCATE` refusal (owned by the index migration), immutable `blob_id` and `ws_id`, replica mode and `DISABLE TRIGGER` banned by lint |
+| Removed, moved, then re-added member | Revoked in the removal or move transaction; no resurrection |
+| Editor grant created early | `viewer`-only CHECK and function check until phase 2 |
+| Enumeration | One body and status for every failure; HEAD like GET; no workspace, path or member names in public responses |
+| Amplification | Budgets before reads; unknown tokens write nothing; `last_opened_at` throttled; denial events capped per link, workspace and globally |
+| One holder locking out other viewers | Per-source open budget below the per-link budget; the `429` is distinguishable and carries `Retry-After` |
+| Creator loses `manage_drive` | Denied at every open and content request by the live check, which writes `creator_role_lost`; the sweep revokes unobserved links; nothing revives a link when the permission returns, except a loss and regain between two observations, bounded by the sweep interval and accepted (release authority) |
+| Link or grant on a private root or unpublished blob | S5 at creation and use; blob state and `sanitize_state` checked at creation and open |
+| Audit integrity | Same-transaction events, row-condition append-only trigger plus truncate refusal on every role, internal-only writer, HMAC viewers, retention by prune only. A compromised owner role could alter rows; a hash chain is deferred |
+| Privilege escalation | Viewer never writes; only `manage_drive` creates shares; app tokens rejected |
+| HTML or SVG from the Drive origin | Inline allowlist, `nosniff`, `sandbox` CSP, attachment otherwise; PDF, HTML and SVG never inline |
+| Cost abuse | Link-only budgets, per-source quotas, relay timeouts, caps per file and workspace |
