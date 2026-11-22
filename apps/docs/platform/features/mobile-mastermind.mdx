@@ -613,9 +613,9 @@ page (`/mastermind/inbox/ask/<id>`). Default: every list card is compact and
 every answer is given on the detail page, in the decision's own option order.
 Secret requests are excluded from the ordinary Inbox lanes, Today’s Needs you
 list, and decision navigation. A direct decision URL shows the existing
-unavailable state. With secure entry enabled, open secret and pairing requests
-appear only in their own "Secret requests" group at the top of Needs you (see
-[Secret requests](#secret-requests)). The fleet decision route and Inbox
+unavailable state. On a phone with secure entry, open secret and pairing
+requests appear only in their own "Secret requests" group at the top of Needs
+you (see [Secret requests](#secret-requests)). The fleet decision route and Inbox
 grouping tests cover this boundary.
 
 - **Lanes:** a "Needs you N" / "FYI N" / "History" switch at the top of the
@@ -1521,7 +1521,7 @@ quota and accounting.
   controls. Tapping the card or its action opens the full-screen page;
   closing the page without answering keeps the card. Once the answer is
   sent, declined or the request closes, the card leaves the Inbox and never
-  appears in History. The group stays hidden until secure entry is enabled.
+  appears in History.
 - **Exceptions:** secret requests send no push notification and never join the
   Inbox swipe deck or decision detail; they open their own full-screen page.
 - **Regression coverage:** `scripts/mastermind-fleet/secret-*.test.mjs`

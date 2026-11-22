@@ -33,24 +33,24 @@ void main() {
   }
 
   group('feature header', () {
-    test('omits secret until the Inbox renders secret cards', () async {
-      expect(fleetSecretCardsReady, isFalse);
-      expect(
-        await features(
-          FleetRepository(api: api, secretSupported: () async => true),
-        ),
-        'login,alerts,review,mobile-issues',
-      );
-    });
-
-    test('declares secret on a supported phone once cards are ready', () async {
+    test('omits secret while the Inbox renders no secret cards', () async {
       expect(
         await features(
           FleetRepository(
             api: api,
             secretSupported: () async => true,
-            secretCardsReady: true,
+            secretCardsReady: false,
           ),
+        ),
+        'login,alerts,review,mobile-issues',
+      );
+    });
+
+    test('declares secret on a supported phone by default', () async {
+      expect(fleetSecretCardsReady, isTrue);
+      expect(
+        await features(
+          FleetRepository(api: api, secretSupported: () async => true),
         ),
         'login,alerts,review,mobile-issues,secret',
       );
@@ -66,13 +66,7 @@ void main() {
           () => api.getJsonWithHeaders(any(), any()),
         ).thenAnswer((_) async => fleetSampleJson());
         expect(
-          await features(
-            FleetRepository(
-              api: api,
-              secretSupported: supported,
-              secretCardsReady: true,
-            ),
-          ),
+          await features(FleetRepository(api: api, secretSupported: supported)),
           'login,alerts,review,mobile-issues',
         );
       }

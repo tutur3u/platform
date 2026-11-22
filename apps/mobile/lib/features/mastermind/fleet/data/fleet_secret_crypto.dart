@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Whether the Inbox renders `secret` decisions as secret cards. Until it
-/// does, the app never declares the `secret` fleet feature, so Web keeps
+/// Whether the Inbox renders `secret` decisions as secret cards. With it
+/// off, the app never declares the `secret` fleet feature, so Web keeps
 /// secret decisions away from cards that would offer the wrong answers.
-const bool fleetSecretCardsReady = false;
+const bool fleetSecretCardsReady = true;
 
 /// Sealed answer parts, as raw bytes.
 class FleetSecretSealed {

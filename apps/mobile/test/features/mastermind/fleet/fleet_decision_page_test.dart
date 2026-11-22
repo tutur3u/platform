@@ -7,6 +7,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/view/detail/fleet_decision_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/fleet_router_harness.dart';
@@ -85,46 +86,57 @@ void main() {
   Future<void> scrollTo(WidgetTester tester, Finder finder) =>
       tester.scrollUntilVisible(finder, 200, scrollable: fleetPageScrollable());
 
-  testWidgets('secret requests stay out of the Inbox and decision routes', (
-    tester,
-  ) async {
-    final secret = await signedRequestDecision(
-      id: 'secret-between-asks',
-      resign: false,
-    );
-    await setUpHarness(
-      decisions: [
-        _fysh(),
-        {...decisionJson(secret), 'createdAt': '2026-11-20T02:45:00.000Z'},
-        _second(),
-      ],
-    );
-    final router = await pumpFleetRoutes(
-      tester,
-      harness,
-      now: () => fleetTestNow,
-    );
-    expect(
-      harness.runtime.fleet.seenDecision(secret.id)?.kind,
-      FleetDecisionKind.secret,
-    );
-    expect(find.text('Needs you 2'), findsOneWidget);
-    expect(find.text(secret.title), findsNothing);
+  testWidgets(
+    'secret requests stay out of ordinary lanes and decision routes',
+    (tester) async {
+      final secret = await signedRequestDecision(
+        id: 'secret-between-asks',
+        resign: false,
+      );
+      await setUpHarness(
+        decisions: [
+          _fysh(),
+          {...decisionJson(secret), 'createdAt': '2026-11-20T02:45:00.000Z'},
+          _second(),
+        ],
+      );
+      final router = await pumpFleetRoutes(
+        tester,
+        harness,
+        now: () => fleetTestNow,
+      );
+      expect(
+        harness.runtime.fleet.seenDecision(secret.id)?.kind,
+        FleetDecisionKind.secret,
+      );
+      // Counted, but only as its own secret card.
+      expect(find.text('Needs you 3'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('fleet-secret-card-${secret.id}')),
+        findsOneWidget,
+      );
 
-    await open(tester, 'Fysh revamp mockups: approve?');
-    expect(find.text('1 of 2'), findsOneWidget);
-    expect(find.textContaining('Next: Move the M4 lanes'), findsOneWidget);
+      await open(tester, 'Fysh revamp mockups: approve?');
+      expect(find.text('1 of 2'), findsOneWidget);
+      expect(find.textContaining('Next: Move the M4 lanes'), findsOneWidget);
 
-    router.go(Routes.mastermindFleetDecisionPath(secret.id));
-    await tester.pumpAndSettle();
-    expect(find.text('This decision is closed'), findsOneWidget);
-    expect(find.text('Back to Inbox'), findsOneWidget);
-    expect(find.text(secret.title), findsNothing);
-    for (final action in ['Approve', 'Reply', 'Hold', 'Snooze']) {
-      expect(find.text(action), findsNothing);
-    }
-    expect(source.answers, isEmpty);
-  });
+      router.go(Routes.mastermindFleetDecisionPath(secret.id));
+      await tester.pumpAndSettle();
+      expect(find.text('This decision is closed'), findsOneWidget);
+      expect(find.text('Back to Inbox'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(FleetDecisionPage),
+          matching: find.text(secret.title),
+        ),
+        findsNothing,
+      );
+      for (final action in ['Approve', 'Reply', 'Hold', 'Snooze']) {
+        expect(find.text(action), findsNothing);
+      }
+      expect(source.answers, isEmpty);
+    },
+  );
 
   testWidgets('a compact card opens the full description and options', (
     tester,

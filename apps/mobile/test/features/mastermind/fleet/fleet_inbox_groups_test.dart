@@ -81,7 +81,8 @@ void main() {
         seen: (id) => id == stale.id ? stale : null,
       );
 
-      expect(inbox.secrets, isEmpty);
+      // Only its own group lists the open secret request.
+      expect(inbox.secrets.map((d) => d.id), [secret.id]);
       expect(inbox.order, ['ordinary']);
       expect(inbox.snoozed, isEmpty);
       expect(inbox.history, isEmpty);
@@ -137,12 +138,9 @@ void main() {
       );
       expect(snapshot.answers[answered.id]?.action, FleetAnswerAction.secret);
 
-      final inbox = FleetInboxGroups(
-        snapshot,
-        {secret.id: now.add(const Duration(minutes: 5))},
-        now,
-        secretCardsReady: true,
-      );
+      final inbox = FleetInboxGroups(snapshot, {
+        secret.id: now.add(const Duration(minutes: 5)),
+      }, now);
       expect(inbox.secrets.map((d) => d.id), [secret.id, pairing.id]);
       expect(inbox.openCount, 3);
       expect(inbox.order, ['ordinary']);
@@ -154,7 +152,6 @@ void main() {
         snapshot,
         const {},
         now,
-        secretCardsReady: true,
         handledSecrets: {secret.id, pairing.id},
       );
       expect(handled.secrets, isEmpty);

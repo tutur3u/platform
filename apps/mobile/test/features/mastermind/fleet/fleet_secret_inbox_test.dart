@@ -115,13 +115,34 @@ void main() {
         ),
       );
 
+  testWidgets('secret cards are on by default', (tester) async {
+    expect(fleetSecretCardsReady, isTrue);
+    final secret = await signedRequestDecision(resign: false);
+    await setUpHarness(decisions: [decisionJson(secret), ordinaryAsk()]);
+    await pumpFleetRoutes(
+      tester,
+      harness,
+      now: () => now,
+      openSecret: openSecret,
+    );
+    expect(
+      find.byKey(ValueKey('fleet-secret-card-${secret.id}')),
+      findsOneWidget,
+    );
+    expect(find.text('Needs you 2'), findsOneWidget);
+  });
+
   testWidgets('gate-false path keeps secret requests hidden from Inbox', (
     tester,
   ) async {
-    expect(fleetSecretCardsReady, isFalse);
     final secret = await signedRequestDecision(resign: false);
     await setUpHarness(decisions: [decisionJson(secret), ordinaryAsk()]);
-    await pumpFleetRoutes(tester, harness, now: () => now);
+    await pumpFleetRoutes(
+      tester,
+      harness,
+      now: () => now,
+      secretCardsReady: false,
+    );
     expect(find.byType(FleetSecretCard), findsNothing);
     expect(find.text('Secret requests'), findsNothing);
     expect(find.text('Needs you 1'), findsOneWidget);
@@ -138,7 +159,6 @@ void main() {
         tester,
         harness,
         now: () => now,
-        secretCardsReady: true,
         openSecret: openSecret,
       );
 
@@ -206,7 +226,6 @@ void main() {
         tester,
         harness,
         now: () => now,
-        secretCardsReady: true,
         openSecret: openSecret,
       );
 
@@ -280,12 +299,7 @@ void main() {
   ) async {
     final pairing = pairDecision();
     await setUpHarness(decisions: [decisionJson(pairing)]);
-    await pumpFleetRoutes(
-      tester,
-      harness,
-      now: () => now,
-      secretCardsReady: true,
-    );
+    await pumpFleetRoutes(tester, harness, now: () => now);
     expect(find.text('Pair machine'), findsOneWidget);
     expect(find.text('Pair'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('fleet-secret-open')));
@@ -305,7 +319,6 @@ void main() {
       tester,
       harness,
       now: () => now,
-      secretCardsReady: true,
       openSecret: openSecret,
       size: const Size(320, 720),
       textScale: 2,
@@ -327,11 +340,7 @@ void main() {
           settings: settings,
           brightness: brightness,
           child: harness.wrap(
-            FleetInboxPage(
-              now: () => now,
-              secretCardsReady: true,
-              openSecret: openSecret,
-            ),
+            FleetInboxPage(now: () => now, openSecret: openSecret),
           ),
         ),
       );
