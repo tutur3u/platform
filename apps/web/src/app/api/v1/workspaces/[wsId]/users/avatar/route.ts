@@ -2,7 +2,7 @@ import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-budget
 import { handleGetAvatarRequest } from '@tuturuuu/users-core/routes/users/avatar';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
-import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { WORKSPACE_MEDIA_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { createOptimizedProfileMediaTicket } from '@/lib/profile-media-ticket';
 
@@ -69,7 +69,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
   },
   {
-    allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+    allowAppSessionAuth: WORKSPACE_MEDIA_APP_SESSION_AUTH,
     rateLimit: { windowMs: 60000, maxRequests: 10 },
     skipAppSessionStepUpChallenge: true,
   }

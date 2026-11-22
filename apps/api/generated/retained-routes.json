@@ -3514,7 +3514,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
-    "sourceSha256": "16447b0f6ebc4dc367f7ba8ce0ff8016123340f6de9ffc5ca33734fb960a79f4",
+    "sourceSha256": "bd545e4a780ef7584ef238b00a145fd269546258e381ed38887a062537692ad2",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -6464,7 +6464,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts",
-    "sourceSha256": "522b18cc8ddbc8db22b431093f1949c3c817bfb81cefcd12796baa9f1b4130b6",
+    "sourceSha256": "fe3c0da1ffde3d985f7673aa3cecb3f69b68e2e5e0fd8a1dac3194bf0384a145",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

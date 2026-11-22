@@ -241,6 +241,13 @@ of its membership checks:
 - every route that accepts a scope-only app session, such as the current-user
   profile, banner, full-name, avatar and profile-media routes.
 
+The workspace media routes (`workspaces/{wsId}/avatar/upload-url` and
+`workspaces/{wsId}/users/avatar`) accept first-party app sessions only. A
+`users:profile:write` bearer covers the user's own profile, and no
+external-app scope grants workspace media, so an external-app bearer gets
+`401` there. Coverage:
+`apps/web/src/lib/profile-app-session-external-bearer.test.ts`.
+
 Disabling the app answers its bearers with `403` immediately.
 
 **Rotating an app secret signs out every user of that app.** Bearers issued

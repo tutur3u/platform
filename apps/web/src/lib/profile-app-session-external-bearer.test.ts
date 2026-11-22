@@ -49,6 +49,10 @@ const profileRoutes = [
     'users/me/full-name',
     () => import('@/legacy-api-routes/v1/users/me/full-name/route'),
   ],
+] as const;
+
+/** Workspace media routes: first-party app sessions only. */
+const workspaceMediaRoutes = [
   [
     'workspaces/[wsId]/users/avatar',
     () => import('@/app/api/v1/workspaces/[wsId]/users/avatar/route'),
@@ -152,5 +156,43 @@ describe.each(profileRoutes)('%s external-app bearers', (_route, load) => {
       expect(result.ok).toBe(true);
     }
     expect(mocks.getExternalAppById).not.toHaveBeenCalled();
+  });
+});
+
+describe.each(workspaceMediaRoutes)('%s app sessions', (_route, load) => {
+  async function routeAuthOptions() {
+    vi.resetModules();
+    mocks.captured.length = 0;
+    await load();
+    const options = mocks.captured as AuthOptions[];
+    expect(options.length).toBeGreaterThan(0);
+    return options;
+  }
+
+  it('refuses an external-app users:profile:write bearer', async () => {
+    mocks.getExternalAppById.mockResolvedValue({
+      enabled: true,
+      id: 'fysh',
+      secretIssuedAt: null,
+    });
+
+    for (const options of await routeAuthOptions()) {
+      const result = await verifyConfiguredAppSessionRequest(
+        externalBearer(),
+        options.allowAppSessionAuth
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.response.status).toBe(401);
+    }
+  });
+
+  it('admits a first-party app session', async () => {
+    for (const options of await routeAuthOptions()) {
+      const result = await verifyConfiguredAppSessionRequest(
+        bearerRequest({ scopes: ['internal-app:session'], targetApp: 'cms' }),
+        options.allowAppSessionAuth
+      );
+      expect(result.ok).toBe(true);
+    }
   });
 });
