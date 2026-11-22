@@ -21,3 +21,15 @@ export function denied(
 ) {
   return outcome(state, { reply: [{ error, requestId, type: 'error' }] });
 }
+
+/**
+ * Room-shared activity and pen-board state with their rate buckets. A room
+ * that ends drops all of it, whether someone ended it or its time ran out, so
+ * no answer, key or drawing outlives the room.
+ */
+export const ENDED_ROOM_TOOLS = {
+  liveActivities: undefined,
+  liveActivityLimits: undefined,
+  penboard: undefined,
+  penboardLimits: undefined,
+} satisfies Partial<MeetRoomSnapshot>;

@@ -1,6 +1,7 @@
 import { closeOpenAttendanceIntervals } from './attendance-ledger';
 import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import type { MeetRoomSnapshot } from './room';
+import { ENDED_ROOM_TOOLS } from './room-outcome';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
 
@@ -30,10 +31,7 @@ export function endMeetRoom(
         }
       : undefined,
     ended: true,
-    liveActivities: undefined,
-    liveActivityLimits: undefined,
-    penboard: undefined,
-    penboardLimits: undefined,
+    ...ENDED_ROOM_TOOLS,
     ...(state.publishedFormLaunches && {
       publishedFormLaunches: state.publishedFormLaunches.map((launch) => ({
         ...launch,

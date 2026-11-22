@@ -3,7 +3,7 @@ import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import type { MeetRealtimeRoomTrack } from './messages';
 import type { MeetRealtimeRole, MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
-import { outcome } from './room-outcome';
+import { ENDED_ROOM_TOOLS, outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
 
@@ -228,6 +228,7 @@ export function expireRoomBudget(
       waiting: {},
       tracks: {},
       lastReactionAt: {},
+      ...ENDED_ROOM_TOOLS,
     },
     {
       broadcast: [{ type: 'room.ended' }],

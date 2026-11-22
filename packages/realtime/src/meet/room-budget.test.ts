@@ -134,6 +134,43 @@ describe('meeting resource budget', () => {
       expireRoomBudget(ended!.state, now + MEET_MAX_ROOM_DURATION_MS + 20000)
     ).toBeNull();
   });
+  it('drops activity and pen-board state and their rate buckets when the time runs out', () => {
+    const state = initial();
+    const userId = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
+    const buckets = { [userId]: { count: 3, resetAt: now + 60_000 } };
+    Object.assign(state, {
+      liveActivities: {
+        assessment: {
+          status: 'closed',
+          released: false,
+          sealed: false,
+          items: [{ id: 'item', prompt: 'Explain', kind: 'long' }],
+          responses: [
+            { itemId: 'item', participantId: userId, answer: 'Private answer' },
+          ],
+        },
+      },
+      liveActivityLimits: buckets,
+      penboard: { strokes: [{ id: 'stroke', authorId: userId }] },
+      penboardLimits: buckets,
+    });
+    expect(JSON.stringify(state)).toContain('Private answer');
+    const ended = expireRoomBudget(state, now + MEET_MAX_ROOM_DURATION_MS)!
+      .state;
+    expect(ended.ended).toBe(true);
+    // What the room persists after the expiry holds none of it.
+    const persisted = JSON.parse(JSON.stringify(ended));
+    for (const key of [
+      'liveActivities',
+      'liveActivityLimits',
+      'penboard',
+      'penboardLimits',
+    ]) {
+      expect(ended[key as keyof typeof ended]).toBeUndefined();
+      expect(persisted).not.toHaveProperty(key);
+    }
+    expect(JSON.stringify(persisted)).not.toMatch(/Private answer|stroke/);
+  });
   it('retains cleanup obligations on provider failure and force-closes recorded publications', async () => {
     const state = initial();
     state.tracks.t = {
