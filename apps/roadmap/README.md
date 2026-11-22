@@ -80,15 +80,30 @@ focus and tap, a legend and quiet axes from the Sorbet tokens:
   (`ChartCard`/`ChartTable`), which keeps the server HTML complete.
 
 The Releases tab (`components/store-releases.tsx`, `components/ds/store-*.tsx`)
-shows each store's status, the five release dates and the listing, then its
-screenshots as equal-height thumbnails (intrinsic aspect ratio, `object-cover`,
-lazy loading, a skeleton until decoded). A thumbnail opens
-`MediaPreviewDialog` (`@tuturuuu/ui/custom/media-preview-dialog`, on `Dialog`,
-loaded on the first open): focus is trapped and returned to the thumbnail,
-Escape closes, Left and Right, swipes and edge buttons move between
-screenshots, + and - (or the buttons or a double tap) zoom and a drag pans,
-and the caption names the screenshot, store, device and language. Captions,
-device and language come from `apps/mobile/store` (`content/store-releases.ts`).
+shows each store as one compact row: its glyph, status, version and build, a
+slim submit, review and release bar with the dates (targets marked as plans)
+and two decorative thumbnails. A row opens the store in a near-full-screen
+dialog (`ds/store-dialog.tsx`, a full-screen sheet on phones, loaded on the
+first open) on `@tuturuuu/ui` Dialog and Tabs: Overview (status, the five
+release dates, version and build), Screenshots (a captioned grid per device
+class), Store listing (every listing field with copy buttons), What's new and
+Availability. The store and tab live in the URL (`?store=ios&tab=screenshots`,
+`ds/use-store-dialog.ts`), so a link opens the dialog on that tab and Back
+closes it: opening pushes a history entry marked in its history state, a tab
+replaces it and keeps the mark, and closing a marked entry goes back (also
+after Forward or a reload). Closing a dialog the reader landed on drops the
+two params in place and shows the Releases tab when the link named no other
+section. Focus starts on the selected tab and returns to the store's row, or
+to the page's selected tab while the row is hidden.
+
+A screenshot thumbnail opens `MediaPreviewDialog`
+(`@tuturuuu/ui/custom/media-preview-dialog`, on `Dialog`, loaded on the first
+open): focus is trapped and returned to the thumbnail, Escape closes, Left and
+Right, swipes and edge buttons move between screenshots, + and - (or the
+buttons or a double tap) zoom and a drag pans, and the caption names the
+screenshot, store, device and language. Thumbnails keep a skeleton until
+decoded (a `span`, valid inside the row's button). Captions, device, language
+and listing text come from `apps/mobile/store` (`content/store-releases.ts`).
 
 ## Design tokens (Sorbet)
 

@@ -92,3 +92,97 @@ export function nextRelease<T extends { release: StoreMetadata['release'] }>(
   }
   return best;
 }
+
+/** The store dialog's tabs, in order. */
+export const STORE_TABS = [
+  'overview',
+  'screenshots',
+  'listing',
+  'whats-new',
+  'availability',
+] as const;
+export type StoreTab = (typeof STORE_TABS)[number];
+
+export type StoreSelection = { store: string; tab: StoreTab };
+
+function isStoreTab(value: unknown): value is StoreTab {
+  return (STORE_TABS as readonly unknown[]).includes(value);
+}
+
+/**
+ * The store dialog a URL opens: `?store=ios&tab=screenshots`. An unknown
+ * store opens nothing; a missing or unknown tab opens Overview.
+ */
+export function storeSelection(
+  search: Readonly<Record<string, unknown>>,
+  ids: readonly string[]
+): StoreSelection | null {
+  const store = search.store;
+  if (typeof store !== 'string' || !ids.includes(store)) return null;
+  return { store, tab: isStoreTab(search.tab) ? search.tab : 'overview' };
+}
+
+/** The search params with the dialog's state set, or removed for null. */
+export function withStoreSelection(
+  search: Readonly<Record<string, unknown>>,
+  selection: StoreSelection | null
+): Record<string, unknown> {
+  const { store: _store, tab: _tab, ...rest } = search;
+  return selection
+    ? { ...rest, store: selection.store, tab: selection.tab }
+    : rest;
+}
+
+export type StepState = 'done' | 'current' | 'upcoming' | 'blocked';
+
+export type ReleaseStep = {
+  id: 'submission' | 'review' | 'release';
+  state: StepState;
+  /** When it happened, or its target while it has not. */
+  at: string | null;
+  /** True while `at` is a target rather than a fact. */
+  planned: boolean;
+};
+
+/**
+ * Submission, review and release as three steps. A step is done once its
+ * fact exists (a later fact implies the earlier ones); the first step not
+ * done is current, and a rejection blocks review.
+ */
+export function releaseSteps(release: StoreMetadata['release']): ReleaseStep[] {
+  const released = Boolean(release.liveAt) || release.status === 'live';
+  const approved =
+    released || Boolean(release.approvedAt) || release.status === 'approved';
+  const submitted =
+    approved ||
+    Boolean(release.submittedAt) ||
+    ['submitted', 'in_review', 'rejected'].includes(release.status);
+  const steps: Omit<ReleaseStep, 'state'>[] = [
+    {
+      id: 'submission',
+      at: release.submittedAt ?? release.targetSubmitDate,
+      planned: !release.submittedAt,
+    },
+    { id: 'review', at: release.approvedAt, planned: false },
+    {
+      id: 'release',
+      at: release.liveAt ?? release.targetLiveDate,
+      planned: !release.liveAt,
+    },
+  ];
+  const done = [submitted, approved, released];
+  const current = done.indexOf(false);
+  return steps.map((step, index) => ({
+    ...step,
+    // A planned date on a step that is already done is not shown as a plan.
+    planned: done[index] ? false : step.planned,
+    at: done[index] && step.planned ? null : step.at,
+    state: done[index]
+      ? 'done'
+      : index === current
+        ? step.id === 'review' && release.status === 'rejected'
+          ? 'blocked'
+          : 'current'
+        : 'upcoming',
+  }));
+}

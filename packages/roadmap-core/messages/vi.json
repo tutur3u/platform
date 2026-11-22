@@ -76,6 +76,75 @@
       "zoomOut": "Thu nhỏ",
       "thumbnails": "Tất cả ảnh chụp màn hình",
       "counter": "{n} trên {total}"
+    },
+    "summary": "{count} cửa hàng",
+    "details": "Chi tiết",
+    "steps": {
+      "submission": "Gửi duyệt",
+      "review": "Xét duyệt",
+      "release": "Phát hành"
+    },
+    "stepStates": {
+      "done": "Xong",
+      "current": "Hiện tại",
+      "upcoming": "Tiếp theo",
+      "blocked": "Cần chỉnh sửa"
+    },
+    "stepTarget": "Dự kiến {date}",
+    "tabs": {
+      "label": "Chi tiết cửa hàng",
+      "overview": "Tổng quan",
+      "screenshots": "Ảnh chụp màn hình",
+      "listing": "Trang cửa hàng",
+      "whats-new": "Có gì mới",
+      "availability": "Phạm vi phát hành"
+    },
+    "close": "Đóng",
+    "copyLink": "Sao chép liên kết",
+    "linkCopied": "Đã sao chép liên kết",
+    "copyListing": "Sao chép mô tả",
+    "copied": "Đã sao chép",
+    "copyFailed": "Hãy chọn văn bản để sao chép",
+    "copyLinkFailed": "Hãy sao chép địa chỉ trên thanh địa chỉ",
+    "timeline": "Tiến trình phát hành",
+    "status": "Trạng thái",
+    "version": "Phiên bản",
+    "history": "Phiên bản và bản dựng",
+    "current": "Hiện tại",
+    "platform": "Nền tảng",
+    "category": "Danh mục",
+    "categories": {
+      "Productivity": "Năng suất"
+    },
+    "store": "Cửa hàng",
+    "captured": "Chụp trên {device} bằng {language} · {count} ảnh",
+    "prepared": "Đã chuẩn bị cho trang cửa hàng",
+    "promotion": "Nội dung quảng bá",
+    "keywords": "Từ khóa",
+    "features": "Tính năng",
+    "listingLanguage": "Ngôn ngữ của trang",
+    "noNotes": "Phiên bản này không có ghi chú phát hành",
+    "noNotesBody": "Phiên bản {version} không có ghi chú phát hành. Ghi chú sẽ hiển thị ở đây với những phiên bản có kèm ghi chú.",
+    "languages": "Ngôn ngữ",
+    "deviceClasses": "Thiết bị",
+    "links": "Liên kết",
+    "linkNames": {
+      "storePage": "Trang cửa hàng",
+      "marketing": "Trang web",
+      "privacy": "Chính sách quyền riêng tư",
+      "support": "Hỗ trợ",
+      "accountDeletion": "Xóa tài khoản"
+    },
+    "notListed": "Trang cửa hàng sẽ có khi phát hành.",
+    "deviceNames": {
+      "iphone-6.9": "iPhone 6.9″",
+      "iphone-6.5": "iPhone 6.5″",
+      "ipad-13": "iPad 13″",
+      "mac": "Mac",
+      "phone": "Điện thoại Android",
+      "tablet7": "Máy tính bảng 7″",
+      "tablet10": "Máy tính bảng 10″",
+      "desktop": "Máy tính Windows"
     }
   },
   "meta": {

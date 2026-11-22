@@ -76,6 +76,75 @@
       "zoomOut": "Zoom out",
       "thumbnails": "All screenshots",
       "counter": "{n} of {total}"
+    },
+    "summary": "{count} stores",
+    "details": "Details",
+    "steps": {
+      "submission": "Submit",
+      "review": "Review",
+      "release": "Release"
+    },
+    "stepStates": {
+      "done": "Done",
+      "current": "Now",
+      "upcoming": "Next",
+      "blocked": "Needs changes"
+    },
+    "stepTarget": "Target {date}",
+    "tabs": {
+      "label": "Store details",
+      "overview": "Overview",
+      "screenshots": "Screenshots",
+      "listing": "Store listing",
+      "whats-new": "What's new",
+      "availability": "Availability"
+    },
+    "close": "Close",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyListing": "Copy description",
+    "copied": "Copied",
+    "copyFailed": "Select the text to copy it",
+    "copyLinkFailed": "Copy the address from the address bar",
+    "timeline": "Release timeline",
+    "status": "Status",
+    "version": "Version",
+    "history": "Versions and builds",
+    "current": "Current",
+    "platform": "Platform",
+    "category": "Category",
+    "categories": {
+      "Productivity": "Productivity"
+    },
+    "store": "Store",
+    "captured": "Captured on {device} in {language} · {count} screenshots",
+    "prepared": "Prepared for the listing",
+    "promotion": "Promotional text",
+    "keywords": "Keywords",
+    "features": "Features",
+    "listingLanguage": "Listing language",
+    "noNotes": "No release notes for this version",
+    "noNotesBody": "Version {version} has no release notes. Notes appear here for versions that ship with them.",
+    "languages": "Languages",
+    "deviceClasses": "Devices",
+    "links": "Links",
+    "linkNames": {
+      "storePage": "Store page",
+      "marketing": "Website",
+      "privacy": "Privacy policy",
+      "support": "Support",
+      "accountDeletion": "Delete an account"
+    },
+    "notListed": "The store page goes live with the release.",
+    "deviceNames": {
+      "iphone-6.9": "iPhone 6.9″",
+      "iphone-6.5": "iPhone 6.5″",
+      "ipad-13": "iPad 13″",
+      "mac": "Mac",
+      "phone": "Android phone",
+      "tablet7": "7″ tablet",
+      "tablet10": "10″ tablet",
+      "desktop": "Windows desktop"
     }
   },
   "meta": {
