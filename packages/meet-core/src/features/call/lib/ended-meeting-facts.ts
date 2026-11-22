@@ -129,13 +129,18 @@ interface AvailabilityChunk {
   segments?: Array<{ erased: true } | { transcript?: string | null }>;
 }
 
+/**
+ * A chunk is marked erased as soon as one speaker's segment is removed, while
+ * the other speakers' segments stay readable. Only a chunk without segments
+ * falls back to its combined text, and only when nothing was erased.
+ */
 function readableChunk(chunk: AvailabilityChunk) {
-  if (chunk.status !== 'completed' || chunk.erased) return false;
+  if (chunk.status !== 'completed') return false;
   if (chunk.segments?.length)
     return chunk.segments.some(
       (segment) => !('erased' in segment) && !!segment.transcript?.trim()
     );
-  return !!chunk.transcript?.trim();
+  return !chunk.erased && !!chunk.transcript?.trim();
 }
 
 export function endedNotesAvailability({

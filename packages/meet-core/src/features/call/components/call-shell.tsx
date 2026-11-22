@@ -15,7 +15,6 @@ import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useCallMediaActions } from '../hooks/call-media-actions';
 import { useMeetRoom } from '../hooks/use-meet-room';
-import { useProgrammingOpener } from '../hooks/use-programming-opener';
 import { useRoomRecording } from '../hooks/use-room-recording';
 import { useRoomUsage } from '../hooks/use-room-usage';
 import { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
@@ -103,14 +102,8 @@ function CallShellContent({
   const [saving, setSaving] = useState(false);
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [ending, setEnding] = useState(false);
-  const programmingT = useTranslations('programmingPlayground');
   const collaborationT = useTranslations('meet.collaboration');
   const [programmingOpen, setShowProgramming] = useState(false);
-  const programming = useProgrammingOpener(
-    meetingId,
-    programmingT('playground'),
-    accountId
-  );
   const [documentOpen, setShowDocument] = useState(false);
   const [drawer, setDrawer] = useState<
     CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer | ToolDrawer
@@ -272,13 +265,11 @@ function CallShellContent({
     drawer,
     onDrawer: tools.route,
   });
+  // Opening only shows the panel. The host picks the resource in its dialog;
+  // nothing is created or selected for the room before that choice.
   const openProgramming = (open: boolean) => {
     setShowDocument(false);
     setShowProgramming(open);
-    if (open && canManage)
-      void programming
-        .prepare()
-        .catch(() => toast.error(programmingT('accessError')));
   };
   const openDocument = (open: boolean) => {
     setShowProgramming(false);
@@ -481,7 +472,6 @@ function CallShellContent({
                 meetingId,
                 wsId,
                 accountId,
-                preparing: programming.isPending,
                 canManage,
                 selection: state.settings.programming ?? null,
               },

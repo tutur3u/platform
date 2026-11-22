@@ -77,6 +77,32 @@ describe('endedNotesAvailability', () => {
     ).toBe('none');
   });
 
+  it('keeps the transcript when one speaker was erased from a chunk', () => {
+    // The projection marks the whole chunk erased but keeps the other
+    // speakers' segments.
+    expect(
+      endedNotesAvailability({
+        data: {
+          sessions: [],
+          chunks: [
+            chunk('completed', null, {
+              erased: true,
+              segments: [{ erased: true }, { transcript: 'Still here' }],
+            }),
+          ],
+        },
+      })
+    ).toBe('transcript');
+    expect(
+      endedNotesAvailability({
+        data: {
+          sessions: [],
+          chunks: [chunk('completed', 'combined text', { erased: true })],
+        },
+      })
+    ).toBe('none');
+  });
+
   it('offers both when notes and a transcript exist', () => {
     expect(
       endedNotesAvailability({

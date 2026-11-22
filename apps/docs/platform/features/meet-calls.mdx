@@ -2128,13 +2128,15 @@ and distinct backup-warning labels without inline alerts.
 
 ### Programming preparation and resource discovery
 
-Meet web hosts open Programming into a blank Python project when the room has no
-selected resource. Opening an existing selection reuses it; participants only join
-the host's selection and never create a project automatically. The existing
-authorized collaboration ticket, hosted runtime, Run, and problem Test controls
-remain responsible for connecting and executing code. Creating a meeting project
-keeps its runnable entry file empty; standalone playground template defaults are
-unchanged. Internal checkpoint uploads explicitly permit zero-byte source files
+Opening Co-Programming never creates or selects anything by itself. With no
+selected resource, the host gets the Open Co-Programming dialog and the room's
+resource changes only when the host confirms a choice there; cancelling leaves
+the room and the host's projects untouched. Opening an existing selection reuses
+it; participants only join the host's selection and never create a project. The
+existing authorized collaboration ticket, hosted runtime, Run, and problem Test
+controls remain responsible for connecting and executing code. A new meeting
+playground starts from its language's template; standalone playground template
+defaults are unchanged. Internal checkpoint uploads explicitly permit zero-byte source files
 only with valid positive Drive quota and verified usage accounting; over-quota or
 unknown quota still blocks creation. Signed browser uploads retain their nonempty
 file policy. `empty-playground-storage.test.ts` exercises actual capacity guards
@@ -2145,7 +2147,7 @@ shared UI dropdowns. Problem discovery supports cursor pagination, while project
 discovery checks the response actor against the signed-in account. The native
 collaboration bridge retains its existing explicit resource-ID selection until
 that bridge provides authenticated discovery metadata. Regression coverage lives
-in `prepare-programming.test.ts` and `playground-service.test.ts`.
+in `programming-panel.test.tsx` and `playground-service.test.ts`.
 
 ## Private My day panel
 
