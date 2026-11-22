@@ -1,9 +1,10 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/mobile_version_check.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
@@ -12,7 +13,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -97,14 +97,70 @@ void main() {
 
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue with Microsoft'), findsNothing);
-      expect(find.text('Continue with Apple'), findsOneWidget);
-      expect(find.text('Continue with GitHub'), findsOneWidget);
-      expect(find.text('Sign in with mobile QR'), findsOneWidget);
+      // The test platform is Android: Apple signs in only on iOS.
+      expect(find.byTooltip('Continue with Apple'), findsNothing);
+      expect(find.byTooltip('Continue with GitHub'), findsOneWidget);
+      expect(find.byTooltip('Sign in with mobile QR'), findsOneWidget);
+      expect(find.text('Welcome to Tuturuuu'), findsOneWidget);
       expect(find.text('Sign in to continue'), findsNothing);
-      expect(
-        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-        findsOneWidget,
+      expect(find.widgetWithText(AppButton, 'Continue'), findsOneWidget);
+    });
+
+    testWidgets('shows Apple sign-in only on iOS', (tester) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
       );
+      for (final platform in TargetPlatform.values) {
+        debugDefaultTargetPlatformOverride = platform;
+        try {
+          await tester.pumpApp(buildSubject());
+          await tester.pump();
+          expect(
+            find.byTooltip('Continue with Apple'),
+            platform == TargetPlatform.iOS ? findsOneWidget : findsNothing,
+            reason: platform.name,
+          );
+          expect(find.byTooltip('Continue with GitHub'), findsOneWidget);
+          if (platform == TargetPlatform.iOS) {
+            await tester.ensureVisible(find.byTooltip('Continue with Apple'));
+            await tester.tap(find.byTooltip('Continue with Apple'));
+            await tester.pump();
+            verify(() => authCubit.signInWithApple()).called(1);
+          }
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      }
+    });
+
+    testWidgets('footer asks only for the terms, not email consent', (
+      tester,
+    ) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+      await tester.pumpApp(buildSubject());
+      await tester.pump();
+
+      final footer = tester.widget<Text>(
+        find.byKey(const ValueKey('auth-legal-footer')),
+      );
+      expect(
+        footer.textSpan!.toPlainText(),
+        'By continuing you agree to the Terms and Privacy Policy.',
+      );
+      expect(find.textContaining('email', findRichText: true), findsNothing);
+      expect(find.textContaining('updates', findRichText: true), findsNothing);
+      expect(find.byType(Checkbox), findsNothing);
+      expect(find.byType(Switch), findsNothing);
     });
 
     testWidgets('shows add-account copy in add-account mode', (tester) async {
@@ -192,15 +248,13 @@ void main() {
       await tester.pumpApp(buildSubject());
       await tester.pump();
 
-      expect(find.text('Continue with Apple'), findsNothing);
-      expect(find.text('Continue with Google'), findsNothing);
-      expect(find.text('Continue with Microsoft'), findsNothing);
-      expect(find.text('Continue with GitHub'), findsNothing);
-      expect(find.text('Sign in with mobile QR'), findsNothing);
-      expect(find.byType(shad.OutlineButton), findsNWidgets(4));
-
-      for (var index = 0; index < 4; index++) {
-        final button = find.byType(shad.OutlineButton).at(index);
+      final providers = [
+        find.widgetWithText(AppButton, 'Continue with Google'),
+        find.byTooltip('Continue with GitHub'),
+        find.byTooltip('Sign in with mobile QR'),
+      ];
+      for (final button in providers) {
+        expect(button, findsOneWidget);
         await tester.ensureVisible(button);
         await tester.tap(button, warnIfMissed: false);
       }
@@ -233,24 +287,14 @@ void main() {
       await tester.pumpApp(buildSubject());
       await tester.pump();
 
-      await tester.enterText(
-        find.byType(shad.TextField).first,
-        'user@test.com',
-      );
-      await tester.ensureVisible(
-        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-      );
-      await tester.tap(
-        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-      );
+      await tester.enterText(find.byType(TextField).first, 'user@test.com');
+      await tester.ensureVisible(find.widgetWithText(AppButton, 'Continue'));
+      await tester.tap(find.widgetWithText(AppButton, 'Continue'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Back'), findsOneWidget);
-      expect(find.byType(shad.TextField), findsOneWidget);
-      expect(
-        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-        findsNothing,
-      );
+      expect(find.text('Other ways to sign in'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.widgetWithText(AppButton, 'Continue'), findsNothing);
       expect(find.text('Continue with Google'), findsNothing);
       expect(find.text('Continue with Microsoft'), findsNothing);
       expect(find.text('Continue with Apple'), findsNothing);
@@ -317,13 +361,16 @@ void main() {
       await tester.pumpApp(buildSubject());
       await tester.pump();
 
-      expect(find.text('Continue with email'), findsNothing);
-      expect(find.text('Use password instead'), findsNothing);
-
-      await tester.enterText(
-        find.byType(shad.TextField).first,
-        'user@test.com',
+      // One Continue button, waiting while the OTP policy resolves.
+      expect(
+        tester
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Continue'))
+            .loading,
+        isTrue,
       );
+      expect(find.text('Use password'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, 'user@test.com');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -366,11 +413,8 @@ void main() {
       await tester.pumpApp(buildSubject());
       await tester.pump();
 
-      expect(
-        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-        findsOneWidget,
-      );
-      expect(find.text('Use password instead'), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Continue'), findsOneWidget);
+      expect(find.text('Use password'), findsNothing);
     });
 
     testWidgets(
@@ -413,13 +457,8 @@ void main() {
         await tester.pumpApp(buildSubject());
         await tester.pump();
 
-        await tester.enterText(
-          find.byType(shad.TextField).first,
-          'user@test.com',
-        );
-        await tester.tap(
-          find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-        );
+        await tester.enterText(find.byType(TextField).first, 'user@test.com');
+        await tester.tap(find.widgetWithText(AppButton, 'Continue'));
         await tester.pumpAndSettle();
 
         expect(
@@ -428,8 +467,8 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Use password instead'), findsOneWidget);
-        expect(find.text('Retry in 30s'), findsOneWidget);
+        expect(find.text('Use password'), findsOneWidget);
+        expect(find.text('Resend in 0:30'), findsOneWidget);
         expect(
           find.text('Too many OTP requests. Please try again later.'),
           findsNothing,
@@ -479,16 +518,11 @@ void main() {
         await tester.pumpApp(buildSubject());
         await tester.pump();
 
-        await tester.enterText(
-          find.byType(shad.TextField).first,
-          'user@test.com',
-        );
-        await tester.tap(
-          find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
-        );
+        await tester.enterText(find.byType(TextField).first, 'user@test.com');
+        await tester.tap(find.widgetWithText(AppButton, 'Continue'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Use password instead'));
+        await tester.tap(find.text('Use password'));
         await tester.pumpAndSettle();
 
         verify(() => authCubit.clearError()).called(greaterThanOrEqualTo(1));

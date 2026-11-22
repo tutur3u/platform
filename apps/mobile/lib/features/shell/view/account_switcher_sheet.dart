@@ -7,6 +7,7 @@ import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/shell/view/account_option_tile.dart';
 import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -93,23 +94,27 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
         );
         final busy = state.switchingAccountId != null || state.isLoading;
         return AppSheetScaffold(
-          title: l10n.authSwitchAccount,
+          title: l10n.authAccountsTitle,
+          headerActions: [
+            AppButton(
+              key: const ValueKey('account-switcher-manage'),
+              variant: AppButtonVariant.link,
+              size: AppButtonSize.small,
+              semanticLabel: l10n.authManageAccounts,
+              onPressed: busy
+                  ? null
+                  : () => _select(AccountSwitcherAction.manage),
+              child: Text(l10n.authManageShort),
+            ),
+          ],
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (active != null)
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: c.primary.withValues(alpha: 0.07),
-                    border: Border.all(
-                      color: c.primary.withValues(alpha: 0.25),
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: _AccountTile(identity: active, active: true),
-                ),
-              for (final account in others)
-                _AccountTile(
+                AccountOptionTile(identity: active, active: true),
+              for (final account in others) ...[
+                const SizedBox(height: AppSpacing.sm),
+                AccountOptionTile(
                   key: ValueKey('switch-account-${account.id}'),
                   identity: savedAccountIdentity(account),
                   switching: state.switchingAccountId == account.id,
@@ -118,103 +123,31 @@ class _AccountSwitcherSheetState extends State<_AccountSwitcherSheet> {
                   enabled: !busy,
                   onTap: () => unawaited(_switchTo(account)),
                 ),
-              const SizedBox(height: AppSpacing.sm),
-              Divider(height: 1, color: c.border),
-              const SizedBox(height: AppSpacing.xs),
-              AppListTile(
-                leading: Icon(LucideIcons.userPlus, color: c.primary),
-                title: Text(l10n.authAddAccount),
-                enabled: !busy,
-                onTap: () => _select(AccountSwitcherAction.add),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              AppButton.secondary(
+                key: const ValueKey('account-switcher-add'),
+                size: AppButtonSize.large,
+                alignment: Alignment.center,
+                leading: const Icon(LucideIcons.plus),
+                onPressed: busy
+                    ? null
+                    : () => _select(AccountSwitcherAction.add),
+                child: Text(l10n.authAddAccount),
               ),
-              AppListTile(
-                leading: const Icon(LucideIcons.settings2),
-                title: Text(l10n.authManageAccounts),
-                trailing: const Icon(AppIcons.forward, size: 16),
-                enabled: !busy,
-                onTap: () => _select(AccountSwitcherAction.manage),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l10n.authSwitchReloadNote,
+                textAlign: TextAlign.center,
+                style: tokens.typography.caption.copyWith(
+                  color: c.mutedForeground,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
         );
       },
-    );
-  }
-}
-
-class _AccountTile extends StatelessWidget {
-  const _AccountTile({
-    required this.identity,
-    this.active = false,
-    this.switching = false,
-    this.signInRequired = false,
-    this.failed = false,
-    this.enabled = true,
-    this.onTap,
-    super.key,
-  });
-
-  final AccountIdentity identity;
-  final bool active;
-  final bool switching;
-  final bool signInRequired;
-  final bool failed;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final c = AppTokens.of(context).colorScheme;
-    final status = signInRequired
-        ? l10n.authSignInAgain
-        : failed
-        ? l10n.authSwitchAccountFailed
-        : null;
-    return AppListTile(
-      selected: active,
-      enabled: enabled,
-      onTap: switching ? null : onTap,
-      leading: AccountAvatar(identity: identity, isSelected: active),
-      title: Text(
-        identity.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w700),
-      ),
-      subtitle: identity.email == null && status == null
-          ? null
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (identity.email case final email?)
-                  Text(email, maxLines: 1, overflow: TextOverflow.ellipsis),
-                if (status != null)
-                  Text(
-                    status,
-                    style: TextStyle(
-                      color: signInRequired ? c.primary : c.destructive,
-                    ),
-                  ),
-              ],
-            ),
-      trailing: switching
-          ? SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(
-                key: const ValueKey('account-switch-progress'),
-                color: c.primary,
-                strokeWidth: 2,
-                semanticsLabel: l10n.commonLoading,
-              ),
-            )
-          : active
-          ? Icon(
-              LucideIcons.circleCheck,
-              key: const ValueKey('active-account-check'),
-              color: c.primary,
-            )
-          : const Icon(AppIcons.forward, size: 16),
     );
   }
 }

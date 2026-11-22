@@ -1,12 +1,13 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -39,13 +40,11 @@ void main() {
 
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue with Microsoft'), findsNothing);
-      expect(find.text('Continue with Apple'), findsOneWidget);
-      expect(find.text('Continue with GitHub'), findsOneWidget);
-      expect(find.byType(shad.TextField), findsNothing);
-      expect(
-        find.widgetWithText(shad.PrimaryButton, 'Create account'),
-        findsNothing,
-      );
+      // Apple signs in only through the native iOS sheet.
+      expect(find.byTooltip('Continue with Apple'), findsNothing);
+      expect(find.byTooltip('Continue with GitHub'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Create account'), findsNothing);
     });
 
     testWidgets('renders localized Apple auth errors', (tester) async {

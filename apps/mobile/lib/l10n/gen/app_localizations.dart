@@ -37368,6 +37368,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the pairing code shown on this machine'**
   String get mastermindSecretPairCardHint;
+
+  /// No description provided for @authLegalFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to the {terms} and {privacy}.'**
+  String authLegalFooter(String terms, String privacy);
+
+  /// No description provided for @authTermsLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms'**
+  String get authTermsLink;
+
+  /// No description provided for @authPrivacyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get authPrivacyLink;
+
+  /// No description provided for @authAccountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get authAccountsTitle;
+
+  /// No description provided for @authManageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get authManageShort;
+
+  /// No description provided for @authSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired'**
+  String get authSessionExpired;
+
+  /// No description provided for @authSwitchReloadNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching reloads the app as that account. Nothing carries over.'**
+  String get authSwitchReloadNote;
+
+  /// No description provided for @loginWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Tuturuuu'**
+  String get loginWelcomeTitle;
+
+  /// No description provided for @loginWelcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in or create an account. It\'s the same step.'**
+  String get loginWelcomeSubtitle;
+
+  /// No description provided for @loginContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get loginContinue;
+
+  /// No description provided for @loginEmailPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get loginEmailPlaceholder;
+
+  /// No description provided for @loginOtherWays.
+  ///
+  /// In en, this message translates to:
+  /// **'Other ways to sign in'**
+  String get loginOtherWays;
+
+  /// No description provided for @loginCheckEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email'**
+  String get loginCheckEmailTitle;
+
+  /// No description provided for @loginCodeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent to {email}'**
+  String loginCodeSentTo(String email);
+
+  /// No description provided for @loginResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {time}'**
+  String loginResendIn(String time);
+
+  /// No description provided for @loginUsePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use password'**
+  String get loginUsePassword;
+
+  /// No description provided for @loginUseEmailCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Use email code'**
+  String get loginUseEmailCode;
+
+  /// No description provided for @loginPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get loginPasswordTitle;
+
+  /// No description provided for @loginContinueWithEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get loginContinueWithEmailTitle;
+
+  /// No description provided for @mfaTwoStepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step verification'**
+  String get mfaTwoStepTitle;
+
+  /// No description provided for @requiredMfaOpenAuthenticator.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in authenticator app'**
+  String get requiredMfaOpenAuthenticator;
+
+  /// No description provided for @requiredMfaCopySecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy setup key'**
+  String get requiredMfaCopySecret;
+
+  /// No description provided for @requiredMfaSecretCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup key copied'**
+  String get requiredMfaSecretCopied;
+
+  /// No description provided for @requiredMfaOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No authenticator app opened this link. Copy the setup key instead.'**
+  String get requiredMfaOpenFailed;
+
+  /// No description provided for @requiredMfaCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Then enter the 6-digit code your app shows.'**
+  String get requiredMfaCodeHint;
+
+  /// No description provided for @authShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get authShowPassword;
+
+  /// No description provided for @authHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get authHidePassword;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

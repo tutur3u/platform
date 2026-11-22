@@ -14,15 +14,6 @@ lib/core/widgets/shadcn_localizations_fallback.dart
 lib/core/widgets/shadcn_material_bridge.dart
 lib/counter/view/counter_page.dart
 lib/features/app_version/view/app_version_gate.dart
-lib/features/auth/view/forgot_password_page.dart
-lib/features/auth/view/login_page.dart
-lib/features/auth/view/mfa_verify_page.dart
-lib/features/auth/view/signup_page.dart
-lib/features/auth/widgets/auth_action_button.dart
-lib/features/auth/widgets/auth_google_button.dart
-lib/features/auth/widgets/auth_otp_field.dart
-lib/features/auth/widgets/auth_scaffold.dart
-lib/features/auth/widgets/auth_section_card.dart
 lib/features/calendar/view/calendar_page.dart
 lib/features/calendar/widgets/year_view.dart
 lib/features/dashboard/view/dashboard_page.dart
@@ -63,7 +54,6 @@ lib/features/security/mfa_approval/view/mfa_approval_dialog.dart
 lib/features/security/mfa_approval/view/mfa_approval_listener.dart
 lib/features/security/mfa_approval/view/mfa_request_page.dart
 lib/features/security/qr_login/view/qr_login_scanner_page.dart
-lib/features/security/qr_login/view/qr_login_sign_in_page.dart
 lib/features/security/view/app_lock_gate.dart
 lib/features/settings/cubit/theme_cubit.dart
 lib/features/settings/cubit/theme_state.dart
@@ -75,7 +65,6 @@ lib/features/settings/view/settings_session_section.dart
 lib/features/settings/view/settings_workspace_page.dart
 lib/features/settings/view/workspace_properties_dialog.dart
 lib/features/shell/view/custom_navigation_bar.dart
-lib/features/shell/view/manage_accounts_page.dart
 lib/features/shell/view/mobile_section_app_bar.dart
 lib/features/shell/view/shell_chrome_actions.dart
 lib/features/shell/view/shell_navigation_rail.dart
@@ -160,10 +149,6 @@ test/features/assistant/widgets/assistant_live_startup_diagnostics_test.dart
 test/features/assistant/widgets/assistant_memory_editor_clipboard_test.dart
 test/features/assistant/widgets/assistant_scroll_overlay_test.dart
 test/features/assistant/widgets/assistant_shell_geometry_test.dart
-test/features/auth/view/login_email_mode_captcha_test.dart
-test/features/auth/view/login_email_mode_test.dart
-test/features/auth/view/login_page_test.dart
-test/features/auth/view/signup_page_test.dart
 test/features/calendar/widgets/calendar_deep_link_edit_test.dart
 test/features/calendar/widgets/calendar_overview_today_test.dart
 test/features/calendar/widgets/calendar_view_reselect_test.dart

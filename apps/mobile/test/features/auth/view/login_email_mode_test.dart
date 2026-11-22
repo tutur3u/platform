@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/mobile_version_check.dart';
@@ -10,7 +11,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -83,23 +83,21 @@ void main() {
   }
 
   Future<void> identify(WidgetTester tester, String email) async {
-    await tester.enterText(find.byType(shad.TextField).first, email);
-    await tap(tester, 'Continue with email');
+    await tester.enterText(find.byType(TextField).first, email);
+    await tap(tester, 'Continue');
   }
 
   void expectPassword(WidgetTester tester) {
     expect(find.text('Sign in'), findsOneWidget);
     expect(
-      tester
-          .widget<shad.TextField>(find.byType(shad.TextField).first)
-          .obscureText,
+      tester.widget<TextField>(find.byType(TextField).first).obscureText,
       isTrue,
     );
   }
 
   void expectOtp() {
     expect(find.text('Verify code'), findsOneWidget);
-    expect(find.text('Use password instead'), findsOneWidget);
+    expect(find.text('Use password'), findsOneWidget);
   }
 
   for (final email in [
@@ -118,9 +116,9 @@ void main() {
       verifyNever(
         () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
       );
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
       expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('Sign in with mobile QR'), findsOneWidget);
+      expect(find.byTooltip('Sign in with mobile QR'), findsOneWidget);
     });
   }
 
@@ -158,7 +156,7 @@ void main() {
       } else {
         expectPassword(tester);
       }
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
     }
     verify(
       () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
@@ -181,19 +179,22 @@ void main() {
           captchaToken: any(named: 'captchaToken'),
         ),
       ).called(1);
-      expect(find.text('Retry in 30s'), findsOneWidget);
-      await tap(tester, 'Use password instead');
+      expect(find.text('Resend in 0:30'), findsOneWidget);
+      await tap(tester, 'Use password');
       expectPassword(tester);
       await tap(tester, 'Use email code instead');
       verifyNever(
         () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
       );
-      expect(find.textContaining(RegExp(r'^Retry in \d+s$')), findsOneWidget);
+      expect(
+        find.textContaining(RegExp(r'^Resend in \d+:\d\d$')),
+        findsOneWidget,
+      );
       expectOtp();
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
       await identify(tester, 'another@tuturuuu.com');
       expectPassword(tester);
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
       await identify(tester, ' PERSON@${domain.toUpperCase()} ');
       expectOtp();
       verify(
@@ -216,7 +217,7 @@ void main() {
           captchaToken: any(named: 'captchaToken'),
         ),
       ).called(1);
-      await tap(tester, 'Use password instead');
+      await tap(tester, 'Use password');
       expectPassword(tester);
       await tap(tester, 'Use email code instead');
       expectOtp();
@@ -283,10 +284,10 @@ void main() {
       await render(tester);
       await identify(tester, 'person@example.com');
       expectOtp();
-      await tap(tester, 'Use password instead');
+      await tap(tester, 'Use password');
       expectPassword(tester);
       await tester.enterText(
-        find.byType(shad.TextField).first,
+        find.byType(TextField).first,
         'synthetic-password',
       );
       await tap(tester, 'Sign in');
@@ -299,10 +300,10 @@ void main() {
           captchaToken: any(named: 'captchaToken'),
         ),
       ).called(2);
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
       await identify(tester, 'person@tutur3u.com');
       expectPassword(tester);
-      await tap(tester, 'Back');
+      await tap(tester, 'Other ways to sign in');
       await identify(tester, ' PERSON@EXAMPLE.COM ');
       expectPassword(tester);
       verify(

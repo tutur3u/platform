@@ -20203,4 +20203,91 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSecretPairCardHint => 'Nhập mã ghép nối hiển thị trên máy này';
+
+  @override
+  String authLegalFooter(String terms, String privacy) {
+    return 'Khi tiếp tục, bạn đồng ý với $terms và $privacy.';
+  }
+
+  @override
+  String get authTermsLink => 'Điều khoản';
+
+  @override
+  String get authPrivacyLink => 'Chính sách quyền riêng tư';
+
+  @override
+  String get authAccountsTitle => 'Tài khoản';
+
+  @override
+  String get authManageShort => 'Quản lý';
+
+  @override
+  String get authSessionExpired => 'Phiên đã hết hạn';
+
+  @override
+  String get authSwitchReloadNote => 'Khi chuyển, ứng dụng tải lại theo tài khoản đó. Không có gì được mang sang.';
+
+  @override
+  String get loginWelcomeTitle => 'Chào mừng đến với Tuturuuu';
+
+  @override
+  String get loginWelcomeSubtitle => 'Đăng nhập hoặc tạo tài khoản, chỉ cần một bước.';
+
+  @override
+  String get loginContinue => 'Tiếp tục';
+
+  @override
+  String get loginEmailPlaceholder => 'Địa chỉ email';
+
+  @override
+  String get loginOtherWays => 'Cách đăng nhập khác';
+
+  @override
+  String get loginCheckEmailTitle => 'Kiểm tra email của bạn';
+
+  @override
+  String loginCodeSentTo(String email) {
+    return 'Đã gửi mã đến $email';
+  }
+
+  @override
+  String loginResendIn(String time) {
+    return 'Gửi lại sau $time';
+  }
+
+  @override
+  String get loginUsePassword => 'Dùng mật khẩu';
+
+  @override
+  String get loginUseEmailCode => 'Dùng mã qua email';
+
+  @override
+  String get loginPasswordTitle => 'Nhập mật khẩu';
+
+  @override
+  String get loginContinueWithEmailTitle => 'Tiếp tục với email';
+
+  @override
+  String get mfaTwoStepTitle => 'Xác minh hai bước';
+
+  @override
+  String get requiredMfaOpenAuthenticator => 'Mở trong ứng dụng xác thực';
+
+  @override
+  String get requiredMfaCopySecret => 'Sao chép khóa thiết lập';
+
+  @override
+  String get requiredMfaSecretCopied => 'Đã sao chép khóa thiết lập';
+
+  @override
+  String get requiredMfaOpenFailed => 'Không có ứng dụng xác thực nào mở được liên kết này. Hãy sao chép khóa thiết lập.';
+
+  @override
+  String get requiredMfaCodeHint => 'Sau đó nhập mã 6 chữ số mà ứng dụng hiển thị.';
+
+  @override
+  String get authShowPassword => 'Hiện mật khẩu';
+
+  @override
+  String get authHidePassword => 'Ẩn mật khẩu';
 }

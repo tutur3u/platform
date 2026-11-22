@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AuthLoadingIndicator extends StatelessWidget {
   const AuthLoadingIndicator({
@@ -21,6 +21,7 @@ class AuthLoadingIndicator extends StatelessWidget {
   }
 }
 
+/// The step's main action: a full-width 48px primary button.
 class AuthPrimaryButton extends StatelessWidget {
   const AuthPrimaryButton({
     required this.label,
@@ -38,23 +39,14 @@ class AuthPrimaryButton extends StatelessWidget {
   final bool expand;
 
   @override
-  Widget build(BuildContext context) {
-    final button = shad.PrimaryButton(
-      alignment: Alignment.center,
-      onPressed: isLoading ? null : onPressed,
-      child: _AuthButtonContent(
-        label: label,
-        isLoading: isLoading,
-        leading: leading,
-      ),
-    );
-
-    if (!expand) {
-      return button;
-    }
-
-    return SizedBox(width: double.infinity, child: button);
-  }
+  Widget build(BuildContext context) => _AuthButton(
+    variant: AppButtonVariant.primary,
+    label: label,
+    onPressed: onPressed,
+    isLoading: isLoading,
+    leading: leading,
+    expand: expand,
+  );
 }
 
 class AuthSecondaryButton extends StatelessWidget {
@@ -76,88 +68,50 @@ class AuthSecondaryButton extends StatelessWidget {
   final bool expand;
 
   @override
-  Widget build(BuildContext context) {
-    final child = _AuthButtonContent(
-      label: label,
-      isLoading: isLoading,
-      leading: leading,
-    );
-
-    final button = switch (variant) {
-      AuthSecondaryButtonVariant.outline => shad.OutlineButton(
-        alignment: Alignment.center,
-        onPressed: isLoading ? null : onPressed,
-        child: child,
-      ),
-      AuthSecondaryButtonVariant.ghost => shad.GhostButton(
-        alignment: Alignment.center,
-        onPressed: isLoading ? null : onPressed,
-        child: child,
-      ),
-    };
-
-    if (!expand) {
-      return button;
-    }
-
-    return SizedBox(width: double.infinity, child: button);
-  }
+  Widget build(BuildContext context) => _AuthButton(
+    variant: switch (variant) {
+      AuthSecondaryButtonVariant.outline => AppButtonVariant.outline,
+      AuthSecondaryButtonVariant.soft => AppButtonVariant.secondary,
+      AuthSecondaryButtonVariant.ghost => AppButtonVariant.ghost,
+    },
+    label: label,
+    onPressed: onPressed,
+    isLoading: isLoading,
+    leading: leading,
+    expand: expand,
+  );
 }
 
-enum AuthSecondaryButtonVariant { outline, ghost }
+enum AuthSecondaryButtonVariant { outline, soft, ghost }
 
-class _AuthButtonContent extends StatelessWidget {
-  const _AuthButtonContent({
+class _AuthButton extends StatelessWidget {
+  const _AuthButton({
+    required this.variant,
     required this.label,
+    required this.onPressed,
     required this.isLoading,
-    this.leading,
+    required this.leading,
+    required this.expand,
   });
 
+  final AppButtonVariant variant;
   final String label;
+  final VoidCallback? onPressed;
   final bool isLoading;
   final Widget? leading;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return SizedBox(
-      height: 22,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (leading != null && !isLoading)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox.square(
-                dimension: 20,
-                child: Center(child: leading),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: isLoading
-                    ? const AuthLoadingIndicator(key: ValueKey('loading'))
-                    : Text(
-                        label,
-                        key: const ValueKey('label'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    final button = AppButton(
+      variant: variant,
+      size: AppButtonSize.large,
+      alignment: expand ? Alignment.center : null,
+      onPressed: onPressed,
+      loading: isLoading,
+      leading: leading,
+      child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
     );
+    return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }

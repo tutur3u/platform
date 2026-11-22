@@ -40,6 +40,8 @@ Widget _page({
 );
 
 void main() {
+  _securityPanelDimTests();
+
   testWidgets('retry rejects stale tokens and completes only once', (
     tester,
   ) async {
@@ -362,6 +364,55 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.tap(find.byTooltip('Not now'));
       await tester.pumpAndSettle();
+    });
+  }
+}
+
+void _expectPageNotDimmed(WidgetTester tester) {
+  for (final barrier in tester.widgetList<ModalBarrier>(
+    find.byType(ModalBarrier),
+  )) {
+    expect(barrier.color == null || barrier.color!.a == 0, isTrue);
+  }
+  final veiled = find.ancestor(
+    of: find.text('Other'),
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          (widget is Opacity && widget.opacity < 1) ||
+          (widget is ColoredBox && widget.color.a > 0 && widget.color.a < 1),
+    ),
+  );
+  expect(veiled, findsNothing);
+}
+
+void _securityPanelDimTests() {
+  for (final modal in [true, false]) {
+    testWidgets('the ${modal ? 'modal' : 'inline'} card never dims the page', (
+      tester,
+    ) async {
+      String? result = 'unset';
+      await tester.pumpApp(
+        _page(
+          onVerify: (context) async {
+            result = await showSecurityCheckPanel(
+              Navigator.of(context, rootNavigator: true),
+              modal: modal,
+              challengeBuilder: (key, onToken, onFailure) =>
+                  const SizedBox(height: 64),
+            );
+          },
+        ),
+      );
+      await tester.tap(find.text('Verify'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_panel), findsOneWidget);
+      expect(find.text('Quick security check'), findsOneWidget);
+      _expectPageNotDimmed(tester);
+
+      await tester.tap(find.byTooltip('Not now'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_panel), findsNothing);
+      expect(result, isNull);
     });
   }
 }

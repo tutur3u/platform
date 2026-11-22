@@ -20440,4 +20440,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSecretPairCardHint => 'Enter the pairing code shown on this machine';
+
+  @override
+  String authLegalFooter(String terms, String privacy) {
+    return 'By continuing you agree to the $terms and $privacy.';
+  }
+
+  @override
+  String get authTermsLink => 'Terms';
+
+  @override
+  String get authPrivacyLink => 'Privacy Policy';
+
+  @override
+  String get authAccountsTitle => 'Accounts';
+
+  @override
+  String get authManageShort => 'Manage';
+
+  @override
+  String get authSessionExpired => 'Session expired';
+
+  @override
+  String get authSwitchReloadNote => 'Switching reloads the app as that account. Nothing carries over.';
+
+  @override
+  String get loginWelcomeTitle => 'Welcome to Tuturuuu';
+
+  @override
+  String get loginWelcomeSubtitle => 'Sign in or create an account. It\'s the same step.';
+
+  @override
+  String get loginContinue => 'Continue';
+
+  @override
+  String get loginEmailPlaceholder => 'Email address';
+
+  @override
+  String get loginOtherWays => 'Other ways to sign in';
+
+  @override
+  String get loginCheckEmailTitle => 'Check your email';
+
+  @override
+  String loginCodeSentTo(String email) {
+    return 'Code sent to $email';
+  }
+
+  @override
+  String loginResendIn(String time) {
+    return 'Resend in $time';
+  }
+
+  @override
+  String get loginUsePassword => 'Use password';
+
+  @override
+  String get loginUseEmailCode => 'Use email code';
+
+  @override
+  String get loginPasswordTitle => 'Enter your password';
+
+  @override
+  String get loginContinueWithEmailTitle => 'Continue with email';
+
+  @override
+  String get mfaTwoStepTitle => 'Two-step verification';
+
+  @override
+  String get requiredMfaOpenAuthenticator => 'Open in authenticator app';
+
+  @override
+  String get requiredMfaCopySecret => 'Copy setup key';
+
+  @override
+  String get requiredMfaSecretCopied => 'Setup key copied';
+
+  @override
+  String get requiredMfaOpenFailed => 'No authenticator app opened this link. Copy the setup key instead.';
+
+  @override
+  String get requiredMfaCodeHint => 'Then enter the 6-digit code your app shows.';
+
+  @override
+  String get authShowPassword => 'Show password';
+
+  @override
+  String get authHidePassword => 'Hide password';
 }

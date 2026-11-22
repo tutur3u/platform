@@ -1,20 +1,21 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
-import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart'
+    show SettingsSection;
 import 'package:mobile/features/shell/view/account_presentation.dart';
+import 'package:mobile/features/shell/view/manage_account_row.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ManageAccountsPage extends StatefulWidget {
   const ManageAccountsPage({super.key});
@@ -36,10 +37,12 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
   bool get _isMutating =>
       _removingAccountId != null || _loggingOutAccountId != null;
 
-  Future<void> _startAddAccountFlow() async {
+  /// Add account, or sign an expired saved account in again ([email]
+  /// prefills the form), through the same add-account flow.
+  Future<void> _startAddAccountFlow({String? email}) async {
     final authCubit = context.read<AuthCubit>();
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final started = await authCubit.beginAddAccountFlow();
+    final started = await authCubit.beginAddAccountFlow(email: email);
     if (!mounted) {
       return;
     }
@@ -47,13 +50,10 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
       if (!toastContext.mounted) {
         return;
       }
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(
-            authCubit.state.error ?? context.l10n.authAddAccountFailed,
-          ),
-        ),
+      showAppToast(
+        toastContext,
+        message: authCubit.state.error ?? context.l10n.authAddAccountFailed,
+        variant: AppAlertVariant.destructive,
       );
       return;
     }
@@ -132,296 +132,118 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
 
     final authCubit = context.read<AuthCubit>();
     if (success && authCubit.state.revocationUnconfirmed) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => success
-          ? shad.Alert(title: Text(successMessage))
-          : shad.Alert.destructive(
-              title: Text(authCubit.state.error ?? fallbackError),
-            ),
+    showAppToast(
+      toastContext,
+      message: success
+          ? successMessage
+          : authCubit.state.error ?? fallbackError,
+      variant: success ? AppAlertVariant.neutral : AppAlertVariant.destructive,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return shad.Scaffold(
-      child: BlocBuilder<AuthCubit, AuthState>(
-        builder: (context, state) {
-          final accounts = sortStoredAccountsByRecent(state.accounts);
-          final activeAccount = accounts
-              .where((account) => account.id == state.user?.id)
-              .firstOrNull;
-          final savedAccounts = activeAccount == null
-              ? accounts
-              : accounts
-                    .where((account) => account.id != activeAccount.id)
-                    .toList(growable: false);
+    final l10n = context.l10n;
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        final accounts = sortStoredAccountsByRecent(state.accounts);
+        final activeAccount = accounts
+            .where((account) => account.id == state.user?.id)
+            .firstOrNull;
+        final savedAccounts = activeAccount == null
+            ? accounts
+            : accounts
+                  .where((account) => account.id != activeAccount.id)
+                  .toList(growable: false);
 
-          return AppPageListView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            children: [
-              StaggeredEntry(
-                index: 0,
-                playOnceKey: 'manage-accounts-hero',
-                child: _ManageAccountsHeroCard(
-                  onAddAccount: _isMutating ? null : _startAddAccountFlow,
-                ),
+        return AppPageListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          children: [
+            StaggeredEntry(
+              index: 0,
+              playOnceKey: 'manage-accounts-hero',
+              child: ManageAccountsHero(
+                onAddAccount: _isMutating ? null : _startAddAccountFlow,
               ),
-              const shad.Gap(20),
-              if (activeAccount != null)
-                StaggeredEntry(
-                  index: 1,
-                  playOnceKey: 'manage-accounts-current',
-                  child: SettingsSection(
-                    title: context.l10n.authCurrentAccountTitle,
-                    description: context.l10n.authCurrentAccountDescription,
-                    children: [
-                      _ManageAccountCard(
-                        account: activeAccount,
-                        badgeLabel: context.l10n.authCurrentAccountBadge,
-                        badgeIcon: Icons.check_circle_rounded,
-                        actionLabel: context.l10n.authLogOut,
-                        actionIcon: Icons.logout_rounded,
-                        isBusy: _loggingOutAccountId == activeAccount.id,
-                        onAction: _isMutating
+            ),
+            const AppGap(AppSpacing.xl),
+            if (activeAccount != null) ...[
+              StaggeredEntry(
+                index: 1,
+                playOnceKey: 'manage-accounts-current',
+                child: SettingsSection(
+                  title: l10n.authCurrentAccountTitle,
+                  description: l10n.authCurrentAccountDescription,
+                  children: [
+                    ManageAccountRow(
+                      identity: savedAccountIdentity(activeAccount),
+                      active: true,
+                      action: ManageAccountAction(
+                        label: l10n.authLogOut,
+                        icon: LucideIcons.logOut,
+                        destructive: true,
+                        busy: _loggingOutAccountId == activeAccount.id,
+                        onPressed: _isMutating
                             ? null
                             : () => _logOutCurrentAccount(activeAccount),
-                        actionDestructive: true,
-                      ),
-                    ],
-                  ),
-                ),
-              if (activeAccount != null) const shad.Gap(20),
-              StaggeredEntry(
-                index: 2,
-                playOnceKey: 'manage-accounts-saved',
-                child: SettingsSection(
-                  title: context.l10n.authSavedAccountsTitle,
-                  description: context.l10n.authSavedAccountsDescription,
-                  children: savedAccounts.isEmpty
-                      ? [
-                          SettingsPanel(
-                            child: Text(
-                              context.l10n.authManageAccountsEmpty,
-                              style: shad.Theme.of(context).typography.small
-                                  .copyWith(
-                                    color: shad.Theme.of(
-                                      context,
-                                    ).colorScheme.mutedForeground,
-                                  ),
-                            ),
-                          ),
-                        ]
-                      : [
-                          for (final account in savedAccounts)
-                            _ManageAccountCard(
-                              account: account,
-                              badgeLabel: context.l10n.authSavedAccountBadge,
-                              badgeIcon: Icons.devices_rounded,
-                              actionLabel: context.l10n.authRemoveAccount,
-                              actionIcon: Icons.delete_outline_rounded,
-                              isBusy: _removingAccountId == account.id,
-                              onAction: _isMutating
-                                  ? null
-                                  : () => _removeAccount(account),
-                              actionDestructive: true,
-                            ),
-                        ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ManageAccountsHeroCard extends StatelessWidget {
-  const _ManageAccountsHeroCard({required this.onAddAccount});
-
-  final VoidCallback? onAddAccount;
-
-  @override
-  Widget build(BuildContext context) {
-    return SettingsGroup(
-      children: [
-        SettingsTile(
-          grouped: true,
-          icon: Icons.person_add_outlined,
-          title: context.l10n.authAddAccount,
-          subtitle: context.l10n.authManageAccountsDescription,
-          wrapSupportingText: true,
-          onTap: onAddAccount,
-          showChevron: onAddAccount != null,
-        ),
-      ],
-    );
-  }
-}
-
-class _ManageAccountCard extends StatelessWidget {
-  const _ManageAccountCard({
-    required this.account,
-    required this.badgeLabel,
-    required this.badgeIcon,
-    required this.actionLabel,
-    required this.actionIcon,
-    required this.isBusy,
-    required this.onAction,
-    required this.actionDestructive,
-  });
-
-  final StoredAuthAccount account;
-  final String badgeLabel;
-  final IconData badgeIcon;
-  final String actionLabel;
-  final IconData actionIcon;
-  final bool isBusy;
-  final VoidCallback? onAction;
-  final bool actionDestructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final title = accountPrimaryLabel(account);
-    final subtitle = accountSecondaryLabel(account);
-
-    return SettingsPanel(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AccountAvatar(identity: savedAccountIdentity(account), size: 46),
-              const shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.typography.base.copyWith(
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (subtitle != null) ...[
-                      const shad.Gap(4),
-                      Text(
-                        subtitle,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
+              const AppGap(AppSpacing.xl),
             ],
-          ),
-          const shad.Gap(14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              _AccountBadge(label: badgeLabel, icon: badgeIcon),
-              if (isBusy)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: NovaLoadingIndicator(size: 20),
-                )
-              else
-                _AccountActionButton(
-                  label: actionLabel,
-                  icon: actionIcon,
-                  onPressed: onAction,
-                  destructive: actionDestructive,
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AccountBadge extends StatelessWidget {
-  const _AccountBadge({required this.label, required this.icon});
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: colorScheme.primary),
-          const shad.Gap(6),
-          Text(
-            label,
-            style: theme.typography.xSmall.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w700,
+            StaggeredEntry(
+              index: 2,
+              playOnceKey: 'manage-accounts-saved',
+              child: SettingsSection(
+                title: l10n.authSavedAccountsTitle,
+                description: l10n.authSavedAccountsDescription,
+                children: savedAccounts.isEmpty
+                    ? [
+                        AppCard(
+                          child: Text(
+                            l10n.authManageAccountsEmpty,
+                            style: AppTokens.of(context).typography.bodySm
+                                .copyWith(
+                                  color: AppTokens.of(
+                                    context,
+                                  ).colorScheme.mutedForeground,
+                                ),
+                          ),
+                        ),
+                      ]
+                    : [
+                        for (final account in savedAccounts)
+                          ManageAccountRow(
+                            key: ValueKey('manage-account-${account.id}'),
+                            identity: savedAccountIdentity(account),
+                            expired: state.expiredAccountIds.contains(
+                              account.id,
+                            ),
+                            onSignInAgain: _isMutating
+                                ? null
+                                : () => _startAddAccountFlow(
+                                    email: account.email,
+                                  ),
+                            action: ManageAccountAction(
+                              label: l10n.authRemoveAccount,
+                              icon: LucideIcons.trash2,
+                              destructive: true,
+                              busy: _removingAccountId == account.id,
+                              onPressed: _isMutating
+                                  ? null
+                                  : () => _removeAccount(account),
+                            ),
+                          ),
+                      ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AccountActionButton extends StatelessWidget {
-  const _AccountActionButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    required this.destructive,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final foreground = destructive
-        ? theme.colorScheme.destructive
-        : colorScheme.primary;
-
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18, color: foreground),
-      label: Text(
-        label,
-        style: theme.typography.small.copyWith(
-          color: foreground,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: foreground.withValues(alpha: 0.22)),
-        foregroundColor: foreground,
-      ),
+          ],
+        );
+      },
     );
   }
 }

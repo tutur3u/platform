@@ -10382,5 +10382,56 @@
   "mastermindSecretSectionTitle": "Secret requests",
   "mastermindSecretDecisionsSectionTitle": "Decisions",
   "mastermindSecretCardHint": "End-to-end encrypted · opens secure entry",
-  "mastermindSecretPairCardHint": "Enter the pairing code shown on this machine"
+  "mastermindSecretPairCardHint": "Enter the pairing code shown on this machine",
+  "authLegalFooter": "By continuing you agree to the {terms} and {privacy}.",
+  "@authLegalFooter": {
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
+  "authTermsLink": "Terms",
+  "authPrivacyLink": "Privacy Policy",
+  "authAccountsTitle": "Accounts",
+  "authManageShort": "Manage",
+  "authSessionExpired": "Session expired",
+  "authSwitchReloadNote": "Switching reloads the app as that account. Nothing carries over.",
+  "loginWelcomeTitle": "Welcome to Tuturuuu",
+  "loginWelcomeSubtitle": "Sign in or create an account. It's the same step.",
+  "loginContinue": "Continue",
+  "loginEmailPlaceholder": "Email address",
+  "loginOtherWays": "Other ways to sign in",
+  "loginCheckEmailTitle": "Check your email",
+  "loginCodeSentTo": "Code sent to {email}",
+  "@loginCodeSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "loginResendIn": "Resend in {time}",
+  "@loginResendIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "loginUsePassword": "Use password",
+  "loginUseEmailCode": "Use email code",
+  "loginPasswordTitle": "Enter your password",
+  "loginContinueWithEmailTitle": "Continue with email",
+  "mfaTwoStepTitle": "Two-step verification",
+  "requiredMfaOpenAuthenticator": "Open in authenticator app",
+  "requiredMfaCopySecret": "Copy setup key",
+  "requiredMfaSecretCopied": "Setup key copied",
+  "requiredMfaOpenFailed": "No authenticator app opened this link. Copy the setup key instead.",
+  "requiredMfaCodeHint": "Then enter the 6-digit code your app shows.",
+  "authShowPassword": "Show password",
+  "authHidePassword": "Hide password"
 }

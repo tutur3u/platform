@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/ui/ui.dart';
 
 class AuthOtpField extends StatefulWidget {
   const AuthOtpField({
@@ -11,6 +11,7 @@ class AuthOtpField extends StatefulWidget {
     this.enabled = true,
     this.autofocus = false,
     this.onCompleted,
+    this.semanticLabel,
     super.key,
   });
 
@@ -21,6 +22,9 @@ class AuthOtpField extends StatefulWidget {
   final int length;
   final bool enabled;
   final bool autofocus;
+
+  /// Names the field for screen readers ("6-digit code").
+  final String? semanticLabel;
 
   @override
   State<AuthOtpField> createState() => _AuthOtpFieldState();
@@ -88,135 +92,125 @@ class _AuthOtpFieldState extends State<AuthOtpField> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final focusHalo = tokens.infoTone.fill;
     final code = widget.controller.text;
     final hasFocus = widget.focusNode.hasFocus;
-    const slotWidth = 46.0;
-    const slotHeight = 56.0;
-    const slotSpacing = 10.0;
-    final fieldWidth =
-        (widget.length * slotWidth) + ((widget.length - 1) * slotSpacing);
-
-    return Semantics(
-      textField: true,
-      child: SizedBox(
-        width: fieldWidth,
-        height: slotHeight,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            IgnorePointer(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.length, (index) {
-                  final isFilled = index < code.length;
-                  final activeIndex = code.length >= widget.length
-                      ? widget.length - 1
-                      : code.length;
-                  final isActive = hasFocus && index == activeIndex;
-                  final char = isFilled ? code[index] : '';
-
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      right: index == widget.length - 1 ? 0 : slotSpacing,
-                    ),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOutCubic,
-                      width: slotWidth,
-                      height: slotHeight,
-                      decoration: BoxDecoration(
-                        color: isFilled
-                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                            : theme.colorScheme.muted.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(17),
-                        border: Border.all(
-                          color: isActive
-                              ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                              : theme.colorScheme.border.withValues(
-                                  alpha: 0.28,
-                                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 46x56 slots shrink to fit 320px phones; they never overflow.
+        const gap = 8.0;
+        final room = constraints.maxWidth.isFinite
+            ? (constraints.maxWidth - gap * (widget.length - 1)) / widget.length
+            : 46.0;
+        final slotWidth = room.clamp(34.0, 46.0);
+        final slotHeight = slotWidth * 56 / 46;
+        final fieldWidth =
+            widget.length * slotWidth + (widget.length - 1) * gap;
+        return Semantics(
+          textField: true,
+          label: widget.semanticLabel,
+          child: SizedBox(
+            width: fieldWidth,
+            height: slotHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                IgnorePointer(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(widget.length, (index) {
+                      final isFilled = index < code.length;
+                      final activeIndex = code.length >= widget.length
+                          ? widget.length - 1
+                          : code.length;
+                      final isActive =
+                          hasFocus && widget.enabled && index == activeIndex;
+                      return Padding(
+                        padding: EdgeInsetsDirectional.only(
+                          end: index == widget.length - 1 ? 0 : gap,
                         ),
-                        boxShadow: isActive
-                            ? [
-                                BoxShadow(
-                                  color: theme.colorScheme.primary.withValues(
-                                    alpha: 0.08,
-                                  ),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : const [],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Text(
-                            char,
-                            style: theme.typography.h3.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: isFilled
-                                  ? theme.colorScheme.foreground
-                                  : theme.colorScheme.mutedForeground,
+                        child: AnimatedContainer(
+                          duration: AppMotion.fast,
+                          curve: AppMotion.standard,
+                          width: slotWidth,
+                          height: slotHeight,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: c.card,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              // Field stroke: `input` (borderStrong) stands in
+                              // until the Sorbet `fieldStroke` role lands.
+                              color: isActive ? c.ring : c.input,
+                              width: isActive ? 1.5 : 1,
+                            ),
+                            boxShadow: isActive
+                                ? [BoxShadow(color: focusHalo, spreadRadius: 3)]
+                                : const [],
+                          ),
+                          child: Text(
+                            isFilled ? code[index] : '',
+                            style: tokens.typography.x2Large.copyWith(
+                              fontFamily: tokens.typography.monoFamily,
+                              fontWeight: FontWeight.w600,
+                              color: c.foreground,
+                              height: 1,
                             ),
                           ),
-                          if (isActive && !isFilled)
-                            Positioned(
-                              bottom: 14,
-                              child: Container(
-                                width: 2,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-            Positioned.fill(
-              child: TextField(
-                // input-placeholder: exempt hidden OTP capture
-                key: const ValueKey('auth-otp-input'),
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                enabled: widget.enabled,
-                autofocus: widget.autofocus,
-                autocorrect: false,
-                enableSuggestions: false,
-                enableInteractiveSelection: true,
-                showCursor: false,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                textAlign: TextAlign.center,
-                autofillHints: const [AutofillHints.oneTimeCode],
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(widget.length),
-                ],
-                style: theme.typography.h3.copyWith(
-                  color: Colors.transparent,
-                  height: 1,
+                        ),
+                      );
+                    }),
+                  ),
                 ),
-                cursorColor: Colors.transparent,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  counterText: '',
-                  contentPadding: EdgeInsets.zero,
-                  isCollapsed: true,
-                ),
-                onChanged: _handleTextChanged,
-              ),
+                Positioned.fill(child: _input(tokens)),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+
+  Widget _input(AppTokens tokens) => TextField(
+    // input-placeholder: exempt hidden OTP capture
+    key: const ValueKey('auth-otp-input'),
+    controller: widget.controller,
+    focusNode: widget.focusNode,
+    enabled: widget.enabled,
+    autofocus: widget.autofocus,
+    autocorrect: false,
+    enableSuggestions: false,
+    enableInteractiveSelection: true,
+    showCursor: false,
+    keyboardType: TextInputType.number,
+    textInputAction: TextInputAction.done,
+    textAlign: TextAlign.center,
+    autofillHints: const [AutofillHints.oneTimeCode],
+    inputFormatters: [
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(widget.length),
+    ],
+    style: tokens.typography.x2Large.copyWith(
+      color: Colors.transparent,
+      height: 1,
+    ),
+    cursorColor: Colors.transparent,
+    // The capture field is invisible; theme borders must not draw over the
+    // slots.
+    decoration: const InputDecoration(
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+      errorBorder: InputBorder.none,
+      focusedErrorBorder: InputBorder.none,
+      filled: false,
+      counterText: '',
+      contentPadding: EdgeInsets.zero,
+      isCollapsed: true,
+    ),
+    onChanged: _handleTextChanged,
+  );
 }

@@ -1,42 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AuthSocialButton extends StatelessWidget {
-  const AuthSocialButton({
-    required this.label,
-    required this.logoAssetPath,
-    required this.isLoading,
-    required this.onPressed,
-    this.logoColor,
-    super.key,
-  });
-
-  final String label;
-  final String logoAssetPath;
-  final bool isLoading;
-  final Color? logoColor;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuthSecondaryButton(
-      label: label,
-      onPressed: onPressed,
-      isLoading: isLoading,
-      leading: SvgPicture.asset(
-        logoAssetPath,
-        width: 20,
-        height: 20,
-        colorFilter: logoColor == null
-            ? null
-            : ColorFilter.mode(logoColor!, BlendMode.srcIn),
-      ),
-    );
-  }
-}
+/// Sign in with Apple completes only through the native iOS sheet, so the
+/// Apple button shows only there.
+bool get authAppleSignInAvailable =>
+    defaultTargetPlatform == TargetPlatform.iOS;
 
 class AuthGoogleButton extends StatelessWidget {
   const AuthGoogleButton({
@@ -49,70 +21,121 @@ class AuthGoogleButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
+  Widget build(BuildContext context) => AuthSecondaryButton(
+    label: context.l10n.authContinueWithGoogle,
+    onPressed: isLoading ? null : onPressed,
+    leading: SvgPicture.asset(
+      'assets/logos/google.svg',
+      width: 18,
+      height: 18,
+      excludeFromSemantics: true,
+    ),
+  );
+}
+
+/// One square provider button in [AuthProviderIconRow].
+class AuthProviderIconButton extends StatelessWidget {
+  const AuthProviderIconButton({
+    required this.label,
+    required this.onPressed,
+    this.logoAssetPath,
+    this.icon,
+    super.key,
+  }) : assert(logoAssetPath != null || icon != null, 'Give a logo or icon');
+
+  final String label;
+  final VoidCallback? onPressed;
+  final String? logoAssetPath;
+  final IconData? icon;
+
+  @override
   Widget build(BuildContext context) {
-    return AuthSocialButton(
-      label: context.l10n.authContinueWithGoogle,
-      logoAssetPath: 'assets/logos/google.svg',
-      isLoading: isLoading,
-      onPressed: onPressed,
+    final c = AppTokens.of(context).colorScheme;
+    final mark = switch (logoAssetPath) {
+      final path? => SvgPicture.asset(
+        path,
+        width: 18,
+        height: 18,
+        excludeFromSemantics: true,
+        colorFilter: ColorFilter.mode(c.foreground, BlendMode.srcIn),
+      ),
+      null => Icon(icon, size: 18),
+    };
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppButton.outline(
+        size: AppButtonSize.large,
+        alignment: Alignment.center,
+        semanticLabel: label,
+        onPressed: onPressed,
+        child: mark,
+      ),
     );
   }
 }
 
-class AuthAppleButton extends StatelessWidget {
-  const AuthAppleButton({
+/// Apple (iOS only), GitHub and, when [onQr] is set, QR sign-in as a row of
+/// equal square buttons.
+class AuthProviderIconRow extends StatelessWidget {
+  const AuthProviderIconRow({
     required this.isLoading,
-    required this.onPressed,
+    required this.onApple,
+    required this.onGithub,
+    this.onQr,
     super.key,
   });
 
   final bool isLoading;
-  final VoidCallback? onPressed;
+  final VoidCallback? onApple;
+  final VoidCallback? onGithub;
+  final VoidCallback? onQr;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return AuthSocialButton(
-      label: context.l10n.authContinueWithApple,
-      logoAssetPath: 'assets/logos/apple.svg',
-      isLoading: isLoading,
-      onPressed: onPressed,
-      logoColor: theme.colorScheme.foreground,
+    final l10n = context.l10n;
+    VoidCallback? guard(VoidCallback? action) => isLoading ? null : action;
+    final buttons = [
+      if (authAppleSignInAvailable)
+        AuthProviderIconButton(
+          key: const ValueKey('auth-provider-apple'),
+          label: l10n.authContinueWithApple,
+          logoAssetPath: 'assets/logos/apple.svg',
+          onPressed: guard(onApple),
+        ),
+      AuthProviderIconButton(
+        key: const ValueKey('auth-provider-github'),
+        label: l10n.authContinueWithGithub,
+        logoAssetPath: 'assets/logos/github.svg',
+        onPressed: guard(onGithub),
+      ),
+      if (onQr case final qr?)
+        AuthProviderIconButton(
+          key: const ValueKey('auth-provider-qr'),
+          label: l10n.qrLoginMobileButton,
+          icon: LucideIcons.qrCode,
+          onPressed: guard(qr),
+        ),
+    ];
+    return Row(
+      children: [
+        for (final (index, button) in buttons.indexed) ...[
+          if (index > 0) const SizedBox(width: AppSpacing.md),
+          Expanded(child: button),
+        ],
+      ],
     );
   }
 }
 
-class AuthGithubButton extends StatelessWidget {
-  const AuthGithubButton({
-    required this.isLoading,
-    required this.onPressed,
-    super.key,
-  });
-
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return AuthSocialButton(
-      label: context.l10n.authContinueWithGithub,
-      logoAssetPath: 'assets/logos/github.svg',
-      isLoading: isLoading,
-      onPressed: onPressed,
-      logoColor: theme.colorScheme.foreground,
-    );
-  }
-}
-
+/// Google, then the provider icon row (sign-up has no QR option).
 class AuthSocialButtons extends StatelessWidget {
   const AuthSocialButtons({
     required this.isLoading,
     required this.onGooglePressed,
     required this.onApplePressed,
     required this.onGithubPressed,
+    this.onQrPressed,
     super.key,
   });
 
@@ -120,22 +143,25 @@ class AuthSocialButtons extends StatelessWidget {
   final VoidCallback? onGooglePressed;
   final VoidCallback? onApplePressed;
   final VoidCallback? onGithubPressed;
+  final VoidCallback? onQrPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AuthGoogleButton(isLoading: isLoading, onPressed: onGooglePressed),
-        const shad.Gap(12),
-        AuthAppleButton(isLoading: isLoading, onPressed: onApplePressed),
-        const shad.Gap(12),
-        AuthGithubButton(isLoading: isLoading, onPressed: onGithubPressed),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      AuthGoogleButton(isLoading: isLoading, onPressed: onGooglePressed),
+      const AppGap(AppSpacing.md),
+      AuthProviderIconRow(
+        isLoading: isLoading,
+        onApple: onApplePressed,
+        onGithub: onGithubPressed,
+        onQr: onQrPressed,
+      ),
+    ],
+  );
 }
 
+/// A hairline with a short centred label ("or").
 class AuthMethodDivider extends StatelessWidget {
   const AuthMethodDivider({this.label, super.key});
 
@@ -143,27 +169,27 @@ class AuthMethodDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     // Long labels wrap inside narrow form widths instead of overflowing.
     return LayoutBuilder(
       builder: (context, constraints) => Row(
         children: [
-          Expanded(child: Divider(color: theme.colorScheme.border)),
+          Expanded(child: Divider(height: 1, color: c.border)),
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Text(
-                label ?? context.l10n.authContinueWithEmail,
+                label ?? context.l10n.authContinueWithQr,
                 textAlign: TextAlign.center,
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.mutedForeground,
+                style: tokens.typography.caption.copyWith(
+                  color: c.mutedForeground,
                 ),
               ),
             ),
           ),
-          Expanded(child: Divider(color: theme.colorScheme.border)),
+          Expanded(child: Divider(height: 1, color: c.border)),
         ],
       ),
     );

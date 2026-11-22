@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/config/env.dart';
@@ -12,7 +12,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -83,8 +82,8 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.enterText(find.byType(shad.TextField).first, email);
-      await tap(tester, 'Continue with email');
+      await tester.enterText(find.byType(TextField).first, email);
+      await tap(tester, 'Continue');
       expect(find.text('Sign in'), findsOneWidget);
     }
 
@@ -105,12 +104,12 @@ void main() {
         },
       );
       await tap(tester, 'Use email code instead');
-      await tap(tester, 'Back');
-      await tap(tester, 'Continue with email');
+      await tap(tester, 'Other ways to sign in');
+      await tap(tester, 'Continue');
       expect(checks, 2);
       // An address outside the workspace domains signs in by code.
       await tester.enterText(
-        find.byType(shad.TextField).first,
+        find.byType(TextField).first,
         'second@example.com',
       );
       token.complete('stale');
@@ -123,7 +122,7 @@ void main() {
 
       // Submitting the form as it now reads runs a fresh check and sends
       // to the address shown.
-      await tap(tester, 'Continue with email');
+      await tap(tester, 'Continue');
       expect(checks, 3);
       verify(
         () => auth.sendOtp('second@example.com', captchaToken: 'fresh'),
@@ -147,10 +146,10 @@ void main() {
         verifyNever(
           () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
         );
-        await tap(tester, 'Back');
+        await tap(tester, 'Other ways to sign in');
         // Explicit code preference survives cancellation; continuing requests a
         // fresh check, and the null-token guard still blocks the API action.
-        await tap(tester, 'Continue with email');
+        await tap(tester, 'Continue');
         expect(checks, 2);
         expect(find.text('Verify code'), findsNothing);
         verifyNever(
@@ -172,7 +171,7 @@ void main() {
           verify(
             () => auth.sendOtp('person@$domain', captchaToken: 'synthetic-1'),
           ).called(1);
-          await tap(tester, 'Use password instead');
+          await tap(tester, 'Use password');
           await tap(tester, 'Use email code instead');
           expect(find.text('Verify code'), findsOneWidget);
           expect(checks, 2);

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/ui/ui.dart';
 
+/// A quiet bordered panel for supporting content on a sign-in step.
 class AuthSectionCard extends StatelessWidget {
   const AuthSectionCard({
     required this.child,
     this.title,
     this.description,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
     super.key,
   });
 
@@ -17,50 +18,31 @@ class AuthSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.9),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.foreground.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null) ...[
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    return AppCard(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title case final heading?) ...[
+            Text(
+              heading,
+              style: tokens.typography.heading.copyWith(color: c.foreground),
+            ),
+            if (description case final text?) ...[
+              const AppGap(AppSpacing.xs),
               Text(
-                title!,
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w700,
+                text,
+                style: tokens.typography.bodySm.copyWith(
+                  color: c.mutedForeground,
                 ),
               ),
-              if (description != null) ...[
-                const shad.Gap(6),
-                Text(
-                  description!,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-              const shad.Gap(16),
             ],
-            child,
+            const AppGap(AppSpacing.md),
           ],
-        ),
+          child,
+        ],
       ),
     );
   }

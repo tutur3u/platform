@@ -2,9 +2,7 @@ import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/env.dart';
-import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/tokens/app_tokens.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 typedef SecurityChallengeBuilder =
@@ -155,14 +153,7 @@ class _SecurityCheckPanelState extends State<SecurityCheckPanel> {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: radius,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x47000000),
-                offset: Offset(0, 12),
-                blurRadius: 36,
-                spreadRadius: -8,
-              ),
-            ],
+            boxShadow: tokens.depth.overlay,
           ),
           child: Material(
             color: c.card,
@@ -172,65 +163,73 @@ class _SecurityCheckPanelState extends State<SecurityCheckPanel> {
             ),
             clipBehavior: Clip.antiAlias,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg + 2,
+                AppSpacing.sm,
+                AppSpacing.lg + 2,
+                AppSpacing.lg + 2,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const AppIconTile(icon: LucideIcons.shieldCheck),
-                      const SizedBox(width: AppLayout.rowLeadingGap),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Semantics(
-                              liveRegion: true,
-                              header: true,
-                              child: Text(
-                                l10n.securityCheckPanelTitle,
-                                style: tokens.typography.base.copyWith(
-                                  color: c.foreground,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        child: Semantics(
+                          liveRegion: true,
+                          header: true,
+                          child: Text(
+                            l10n.securityCheckPanelTitle,
+                            style: tokens.typography.heading.copyWith(
+                              color: c.foreground,
                             ),
-                            const SizedBox(height: AppSpacing.xxs),
-                            Text(
-                              l10n.securityCheckPanelMessage,
-                              style: tokens.typography.small.copyWith(
-                                color: c.mutedForeground,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                      IconButton(
+                      AppIconButton(
+                        icon: const Icon(LucideIcons.x, size: 18),
                         tooltip: l10n.securityCheckDismiss,
                         onPressed: _dismiss,
-                        icon: const Icon(LucideIcons.x, size: 18),
                       ),
                     ],
                   ),
+                  Text(
+                    l10n.securityCheckPanelMessage,
+                    style: tokens.typography.bodySm.copyWith(
+                      color: c.mutedForeground,
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.md),
-                  _challenge(),
+                  // The Turnstile widget sits in a sunken well; its own
+                  // frame and behaviour are Cloudflare's.
+                  Container(
+                    constraints: const BoxConstraints(minHeight: 64),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: c.muted,
+                      borderRadius: BorderRadius.circular(14),
+                      // Field stroke: `input` (borderStrong) stands in until
+                      // the Sorbet `fieldStroke` role lands.
+                      border: Border.all(color: c.input),
+                    ),
+                    child: _challenge(),
+                  ),
                   if (_failed) ...[
                     const SizedBox(height: AppSpacing.sm),
                     Semantics(
                       liveRegion: true,
                       child: Text(
                         l10n.captchaError,
-                        style: tokens.typography.small.copyWith(
+                        style: tokens.typography.caption.copyWith(
                           color: c.destructive,
                         ),
                       ),
                     ),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: TextButton(
+                      child: AppButton(
+                        variant: AppButtonVariant.link,
                         onPressed: () => setState(() {
                           _failed = false;
                           _attempt++;

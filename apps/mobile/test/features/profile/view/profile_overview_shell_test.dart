@@ -453,7 +453,7 @@ void main() {
     await mount(tester);
     await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
     await _pump(tester);
-    await tester.tap(find.text('Manage accounts'));
+    await tester.tap(find.byKey(const ValueKey('account-switcher-manage')));
     await _pump(tester);
     expect(find.text('Synthetic account management'), findsOneWidget);
   });

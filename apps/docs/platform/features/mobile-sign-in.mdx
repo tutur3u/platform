@@ -1,0 +1,41 @@
+---
+title: Mobile sign-in
+description: What the Flutter sign-in, two-step and account-switch screens show, and the rules behind them.
+audience: developers
+---
+
+The mobile sign-in flow (`apps/mobile/lib/features/auth`) uses the Sorbet
+design: core/ui components, `SorbetTokens` colours, and the token-coloured
+illustration scenes in `lib/core/ui/kit/illustration`. This page covers what
+those screens show. Auth semantics are unchanged: Turnstile gating, OTP and
+password cooldowns, required MFA, native Google and Apple sign-in, the OAuth
+callback allowlist and add-account restore all behave as before.
+
+## Decisions
+
+| Rule | Default | Surfaces | Exceptions |
+| --- | --- | --- | --- |
+| The sign-in footer asks only for the Terms and Privacy Policy. | Always shown under the identify step and on sign-up. | Login, sign-up. | None. Product email is a separate onboarding opt-in, off by default. It is never a sign-in condition. |
+| Sign in with Apple appears only on iOS. | Hidden on Android, desktop and web builds of the app. | Login and sign-up icon rows. | None. The repository completes Apple sign-in only through the native iOS sheet; elsewhere it returns `appleSignInFailed`. |
+| Apple, GitHub and QR sign-in sit in one row of square icon buttons under Continue with Google. | QR is on the login step only. | Login, sign-up (no QR). | None. |
+| The step's main action (Verify code, Sign in) stays above the keyboard. | Pinned under the scroll view. | OTP and password steps, forgot password, required-MFA recovery. | Continue on the identify step scrolls with the form. |
+| Required MFA enrolment on a phone shows the setup key with Copy, plus Open in authenticator app when the enrol response includes an `otpauth://` URI. | No QR code on mobile: it would point the phone at itself. | Required MFA enrolment. | Web shows a client-rendered QR from the same secret. |
+| The security check never dims the page. Back and Escape close the card first. | The card floats above the form; the form stays as submitted. | Every Turnstile prompt. | None. |
+| An account whose saved session expired reads "Session expired" with a Sign in again action. | Sign in again starts the add-account flow prefilled with that email. | Account switcher sheet, Manage accounts. | None. |
+
+## Regression coverage
+
+- `test/features/auth/view/login_page_test.dart`: Apple only on iOS, the
+  footer without an email-consent clause, provider buttons disabled while a
+  sign-in runs.
+- `test/features/auth/view/auth_small_screen_test.dart`: Continue and Verify
+  stay on screen and at least 44px tall at 320x568 with 2x text, and Verify
+  stays above the keyboard.
+- `test/features/auth/widgets/security_check_dialog_test.dart`: the modal and
+  inline security cards never dim the page.
+- `test/features/shell/view/account_switcher_sheet_test.dart`: active check,
+  expired row action, switching spinner.
+- `test/features/auth/view/auth_design_render_test.dart`: DesignRender PNGs
+  for login, OTP, two-step, security check and the account switcher (phone and
+  tablet, light and dark, English and Vietnamese on phones) when
+  `DESIGN_RENDER_DIR` is set.
