@@ -1,3 +1,4 @@
+import { lastManagerResponse } from '@tuturuuu/apis/members/guarded-removal';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   Database,
@@ -37,7 +38,7 @@ async function authorizeRoleRequest(req: Request, wsId: string) {
   return {
     error: null,
     permissions: access.permissions,
-    userId: access.user?.id,
+    userId: access.user.id,
   };
 }
 
@@ -210,23 +211,36 @@ export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createAdminClient({ noCookie: true });
   const resolvedWsId = authorization.permissions.wsId;
 
-  const { error } = await supabase
-    .from('workspace_roles')
-    .delete()
-    .eq('id', id)
-    .eq('ws_id', resolvedWsId);
+  const { data, error } = await supabase.rpc('delete_workspace_role_guarded', {
+    p_actor_id: authorization.userId,
+    p_mode: 'workspace',
+    p_role_id: id,
+    p_ws_id: resolvedWsId,
+  });
 
-  if (error) {
-    console.error('Error deleting workspace role', {
-      error,
-      roleId: id,
-      wsId: resolvedWsId,
-    });
-    return NextResponse.json(
-      { message: 'Error deleting workspace role' },
-      { status: 500 }
-    );
+  if (!error) {
+    switch (data) {
+      case 'removed':
+      case 'not_found':
+        return NextResponse.json({ message: 'success' });
+      case 'forbidden':
+        return NextResponse.json(
+          { message: 'Workspace permission denied' },
+          { status: 403 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+    }
   }
 
-  return NextResponse.json({ message: 'success' });
+  console.error('Error deleting workspace role', {
+    error,
+    result: data,
+    roleId: id,
+    wsId: resolvedWsId,
+  });
+  return NextResponse.json(
+    { message: 'Error deleting workspace role' },
+    { status: 500 }
+  );
 }

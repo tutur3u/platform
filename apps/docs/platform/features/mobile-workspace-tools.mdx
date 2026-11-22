@@ -93,6 +93,20 @@ the manager check when a person removes their own role assignment.
 Regression coverage lives in the
 [standard role-member route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/roles/%5BroleId%5D/members/%5BuserId%5D/route.test.ts).
 
+### Deleting a workspace role
+
+The standard people and roles screens in Web and Workspace and the mobile
+roles screen delete a role through the same workspace lock. The role and
+its assignments remain when deletion would leave full members without a
+member manager. The API returns HTTP 409 with `WORKSPACE_LAST_MANAGER`
+and the screen shows the translated refusal. Deleting an already absent role
+succeeds. The Mastermind access role is protected.
+
+Regression coverage lives in the
+[standard role route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/roles/%5BroleId%5D/route.test.ts)
+and the
+[database removal suite](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
+
 ## Navigation preferences and recovery
 
 Phones and tablets share a compact floating icon dock. Leaving a mini-app returns

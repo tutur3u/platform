@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
   canManageCreatorGrantRole: vi.fn(),
   resolveWorkspaceRouteAccess: vi.fn(),
+  rpc: vi.fn(),
   permissionError: null as unknown,
   roleLookup: { data: null as unknown, error: null as unknown },
   workspaceLookup: { data: null as unknown, error: null as unknown },
@@ -47,10 +48,13 @@ function createQuery(table: string) {
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
     from: vi.fn((table: string) => createQuery(table)),
+    rpc: mocks.rpc,
   })),
 }));
 
-import { PUT } from './route';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { DELETE, PUT } from './route';
 
 function putRole(
   roleId: string,
@@ -235,5 +239,108 @@ describe('workspace role update route', () => {
       table: 'workspace_role_permissions',
     });
     expect(JSON.stringify(mocks.calls)).not.toContain('manage_mastermind');
+  });
+});
+
+describe('workspace role delete route', () => {
+  function deleteRole() {
+    return DELETE(
+      new Request('http://localhost/roles', {
+        method: 'DELETE',
+        body: JSON.stringify({ actorId: 'untrusted-actor' }),
+      }),
+      { params: Promise.resolve({ roleId: 'role-id', wsId: 'personal' }) }
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.calls.length = 0;
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: true,
+      permissions: { wsId: 'resolved-ws' },
+      user: { id: 'actor-id' },
+    });
+  });
+
+  it.each([401, 403])(
+    'returns the access denial %i before creating an admin client',
+    async (status) => {
+      const denial = NextResponse.json({ message: 'Denied' }, { status });
+      mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+        ok: false,
+        response: denial,
+      });
+
+      expect(await deleteRole()).toBe(denial);
+      expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+        expect.any(Request),
+        'personal',
+        ['manage_workspace_roles']
+      );
+      expect(createAdminClient).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+      expect(mocks.calls).toEqual([]);
+    }
+  );
+
+  it.each([
+    ['removed', 200, { message: 'success' }],
+    ['not_found', 200, { message: 'success' }],
+    ['forbidden', 403, { message: 'Workspace permission denied' }],
+    [
+      'last_manager',
+      409,
+      {
+        code: 'WORKSPACE_LAST_MANAGER',
+        message: 'At least one member must be able to manage members',
+      },
+    ],
+    ['role_protected', 500, { message: 'Error deleting workspace role' }],
+    ['creator_protected', 500, { message: 'Error deleting workspace role' }],
+    ['self_protected', 500, { message: 'Error deleting workspace role' }],
+    ['last_admin', 500, { message: 'Error deleting workspace role' }],
+    [
+      'default_admin_enabled',
+      500,
+      { message: 'Error deleting workspace role' },
+    ],
+    ['unexpected', 500, { message: 'Error deleting workspace role' }],
+    [null, 500, { message: 'Error deleting workspace role' }],
+  ])(
+    'maps guarded result %s without a direct table write',
+    async (data, status, body) => {
+      mocks.rpc.mockResolvedValue({ data, error: null });
+
+      const response = await deleteRole();
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual(body);
+      expect(createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+      expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith(
+        'delete_workspace_role_guarded',
+        {
+          p_actor_id: 'actor-id',
+          p_mode: 'workspace',
+          p_role_id: 'role-id',
+          p_ws_id: 'resolved-ws',
+        }
+      );
+      expect(mocks.calls).toEqual([]);
+    }
+  );
+
+  it('uses the existing failure response if the RPC errors', async () => {
+    const error = new Error('RPC unavailable');
+    mocks.rpc.mockResolvedValue({ data: 'removed', error });
+
+    const response = await deleteRole();
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      message: 'Error deleting workspace role',
+    });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.calls).toEqual([]);
   });
 });

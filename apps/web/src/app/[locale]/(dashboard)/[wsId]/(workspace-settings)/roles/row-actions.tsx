@@ -8,6 +8,7 @@ import type { WorkspaceRole } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
+import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +41,10 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
       toast({
         title: t('ws-roles.delete_failed'),
         description:
-          error instanceof Error ? error.message : t('common.500-msg'),
+          getWorkspaceAccessRemovalRefusalMessage(error, {
+            creator: t('ws-members.creator_removal_refused'),
+            lastManager: t('ws-members.last_manager_removal_refused'),
+          }) ?? (error instanceof Error ? error.message : t('common.500-msg')),
       });
     },
   });
