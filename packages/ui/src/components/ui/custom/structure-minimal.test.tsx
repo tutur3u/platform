@@ -291,6 +291,25 @@ describe('Structure in minimal mode', () => {
     expect(isOpen()).toBe(true);
   });
 
+  it('moves focus to the logo when pointer focus returns before the panel closes', () => {
+    const { rerender } = render(<MinimalShell dialogOpen />);
+    fireEvent.mouseEnter(sidebar());
+    advance(120);
+    setModality('pointer');
+    fireEvent.mouseLeave(sidebar());
+
+    rerender(<MinimalShell dialogOpen={false} />);
+    const account = screen.getByRole('button', { name: 'Account' });
+    act(() => account.focus());
+    expect(document.activeElement).toBe(account);
+
+    advance(240);
+    expect(sidebar()).toHaveAttribute('data-overlay-state', 'closing');
+    expect(document.activeElement).toBe(trigger());
+    finishClosing();
+    expect(trigger()).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('opens on a tap and closes on a press outside', () => {
     const onOpen = vi.fn();
     render(<MinimalShell onOpen={onOpen} />);

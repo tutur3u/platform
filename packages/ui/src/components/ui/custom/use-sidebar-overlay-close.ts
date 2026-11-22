@@ -122,6 +122,16 @@ export function useSidebarOverlayClose({
   });
 
   const conceal = useEffectEvent(() => {
+    const active = document.activeElement;
+    if (revealTrigger && panel?.contains(active)) {
+      const trigger = panel.querySelector<HTMLElement>(
+        SIDEBAR_REVEAL_TRIGGER_SELECTOR
+      );
+      if (trigger && active !== trigger) {
+        ignoreTriggerFocus.current = true;
+        trigger.focus({ preventScroll: true });
+      }
+    }
     if (prefersReducedMotion()) {
       finishClose();
       return;
