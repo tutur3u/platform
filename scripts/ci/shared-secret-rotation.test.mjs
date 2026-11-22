@@ -251,6 +251,52 @@ test('the coordination token reaches every sender in one mint', async () => {
   assert.ok(web.workers.every(({ group }) => group === 'web'));
 });
 
+test('the infrastructure cron secret reaches Cron Control, Admin and Calendar in one mint', async () => {
+  const lines = [];
+  const original = console.log;
+  console.log = (line) => lines.push(line);
+  try {
+    await sharedSecret.main(
+      ['plan', 'CRON_SECRET_INFRASTRUCTURE', 'production'],
+      {
+        env: {},
+        fetchImpl: () => assert.fail('plan must not call a provider'),
+      }
+    );
+  } finally {
+    console.log = original;
+  }
+  const text = lines.join('\n');
+  assert.match(
+    text,
+    /sender tuturuuu-cron-control: CRON_SECRET_INFRASTRUCTURE/
+  );
+  assert.match(text, /peer tuturuuu-infrastructure: CRON_SECRET/);
+  assert.match(text, /peer tuturuuu-calendar: CRON_SECRET/);
+  const resolved = resolveSharedSecret({
+    secret: 'CRON_SECRET_INFRASTRUCTURE',
+    environment: 'production',
+    root: ROOT,
+    scope: 'all',
+  });
+  assert.deepEqual(
+    resolved.workers.map(({ name, binding }) => `${name} ${binding}`).sort(),
+    [
+      'tuturuuu-calendar CRON_SECRET',
+      'tuturuuu-cron-control CRON_SECRET_INFRASTRUCTURE',
+      'tuturuuu-infrastructure CRON_SECRET',
+    ]
+  );
+  assert.throws(() =>
+    resolveSharedSecret({
+      secret: 'CRON_SECRET_INFRASTRUCTURE',
+      environment: 'staging',
+      root: ROOT,
+      scope: 'all',
+    })
+  );
+});
+
 test('the committed vinext table lists the live family Workers', () => {
   const workers = readVinextWorkers(join(import.meta.dirname, '../..'));
   assert.ok(workers.includes('tuturuuu-web-vinext-public-auth'));

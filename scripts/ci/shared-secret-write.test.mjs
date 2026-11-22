@@ -35,6 +35,7 @@ const WORKFLOWS = {
         'CLOUDFLARE_COORDINATION_TOKEN',
         'MASTERMIND_STORE_TOKEN',
         'MASTERMIND_SHIP_CHECK_TOKEN',
+        'CRON_SECRET_INFRASTRUCTURE',
       ],
       environment: ['staging', 'production'],
     },

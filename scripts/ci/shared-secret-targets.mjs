@@ -217,6 +217,22 @@ export const SHARED_SECRETS = Object.freeze({
       ...vinextTargets(root, environment, 'MASTERMIND_SHIP_CHECK_TOKEN'),
     ],
   },
+  // Cron Control signs Admin's cron routes with CRON_SECRET_INFRASTRUCTURE;
+  // Admin (deployed as tuturuuu-infrastructure) checks it as CRON_SECRET and
+  // forwards it to Calendar, which checks the same value as CRON_SECRET.
+  CRON_SECRET_INFRASTRUCTURE: {
+    mode: 'mint',
+    environments: ['production'],
+    targets: (root, environment) => [
+      target(
+        forEnvironment('tuturuuu-cron-control', environment),
+        'CRON_SECRET_INFRASTRUCTURE',
+        'sender'
+      ),
+      ...peer('tuturuuu-infrastructure', 'CRON_SECRET')(root, environment),
+      ...peer('tuturuuu-calendar', 'CRON_SECRET')(root, environment),
+    ],
+  },
   MEET_REALTIME_TOKEN_SECRET: {
     mode: 'copy',
     environments: ['production'],

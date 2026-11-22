@@ -64,6 +64,16 @@ export const ROTATION = Object.freeze({
     impact:
       'Mastermind Ship Check now answers failed for the seconds between the two writes; the two-minute collector is unaffected.',
   },
+  CRON_SECRET_INFRASTRUCTURE: {
+    dualAccept:
+      'no: Admin and Calendar each compare one CRON_SECRET; the mint writes Cron Control, Admin and Calendar in one run.',
+    source: 'none outside the Workers: shared-secret-write mints it',
+    order: [
+      'Mint with shared-secret-write (Cron Control, Admin and Calendar in one run).',
+    ],
+    impact:
+      'Admin and Calendar cron requests answer 401 for the seconds between the writes; the next Cron Control slot retries. The writes run in order and stop at the first failure, so a partial run leaves later targets on the old value and their cron requests keep answering 401: re-dispatch shared-secret-write for this secret, which mints one new value for all three. Any caller outside Cron Control that still holds the old value fails after a rotation; Calendar smart scheduling has no other caller while Vercel deployments are disabled.',
+  },
   MEET_REALTIME_TOKEN_SECRET: {
     dualAccept: 'no: a bare HMAC with one secret on every issuer and verifier.',
     source:
