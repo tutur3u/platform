@@ -19,6 +19,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -183,12 +184,17 @@ export default function RoleFormMembersSection({
       await removeRoleMember(wsId, roleId, memberId);
       toast.success(t('ws-roles.member_removed_successfully'));
       void roleMembersQuery.refetch();
-    } catch {
+    } catch (error) {
       if (previousMembers) {
         queryClient.setQueryData(roleMembersQueryKey, previousMembers);
         onUpdate(previousMembers.count);
       }
-      toast.error(t('ws-roles.failed_to_remove_member'));
+      toast.error(
+        getWorkspaceAccessRemovalRefusalMessage(error, {
+          creator: t('ws-members.creator_removal_refused'),
+          lastManager: t('ws-members.last_manager_removal_refused'),
+        }) ?? t('ws-roles.failed_to_remove_member')
+      );
     }
   };
 

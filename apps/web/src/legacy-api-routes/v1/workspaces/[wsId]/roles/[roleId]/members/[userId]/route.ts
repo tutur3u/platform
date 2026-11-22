@@ -1,3 +1,7 @@
+import {
+  GUARD_WORKSPACE_SELF_REMOVAL,
+  lastManagerResponse,
+} from '@tuturuuu/apis/members/guarded-removal';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
@@ -29,19 +33,39 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
 
-  const { error } = await supabase
-    .from('workspace_role_members')
-    .delete()
-    .eq('role_id', roleId)
-    .eq('user_id', userId);
+  try {
+    const { data, error } = await supabase.rpc(
+      'remove_workspace_role_member_guarded_in_mode',
+      {
+        p_actor_id: access.user.id,
+        p_guard_self: GUARD_WORKSPACE_SELF_REMOVAL,
+        p_mode: 'workspace',
+        p_role_id: role.id,
+        p_user_id: userId,
+        p_ws_id: access.permissions.wsId,
+      }
+    );
+    if (error) throw error;
 
-  if (error) {
-    console.log(error);
+    switch (data) {
+      case 'removed':
+      case 'not_found':
+        return NextResponse.json({ message: 'success' });
+      case 'forbidden':
+        return NextResponse.json(
+          { message: 'Workspace permission denied' },
+          { status: 403 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+      default:
+        throw new Error('Unexpected guarded role member removal response');
+    }
+  } catch (error) {
+    console.error('Error removing workspace role member:', error);
     return NextResponse.json(
       { message: 'Error removing role member' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }

@@ -81,6 +81,18 @@ Regression coverage lives in
 and the
 [database removal suite](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
 
+### Removing a role membership
+
+Role membership removal in Web, Workspace and mobile uses the same member
+manager rule and workspace lock. A missing role returns HTTP 404. An already
+absent assignment returns success. When the manager rule refuses removal, the
+API returns HTTP 409 with `WORKSPACE_LAST_MANAGER`, and the settings surface
+shows the translated refusal. The workspace self-removal switch also controls
+the manager check when a person removes their own role assignment.
+
+Regression coverage lives in the
+[standard role-member route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/workspaces/%5BwsId%5D/roles/%5BroleId%5D/members/%5BuserId%5D/route.test.ts).
+
 ## Navigation preferences and recovery
 
 Phones and tablets share a compact floating icon dock. Leaving a mini-app returns
