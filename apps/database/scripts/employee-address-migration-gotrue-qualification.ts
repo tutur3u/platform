@@ -170,7 +170,11 @@ async function cleanup() {
     (args) => exec('docker', args, { timeout: 30000, maxBuffer: 256 * 1024 }),
     suffix
   );
-  console.log(JSON.stringify({ cleanup: result }));
+  console.log(
+    JSON.stringify({
+      cleanup: { containers: [auth, database], network, absent: result.absent },
+    })
+  );
   if (!result.absent) failing = true;
 }
 
@@ -318,16 +322,18 @@ try {
     insert into qualification_mail_data values ('${randomUUID()}','${userId}','retained-source-message');`);
   if (sourceFlow === '--source=google-destination') {
     stage = 'google_destination_provider';
-    await qualifyGoogleDestination({
-      client,
-      sql,
-      userId,
-      sourceAddress,
-      destinationAddress,
-      puts: () => adminUserPuts,
-      password,
-      fixtureId: suffix,
-    });
+    await qualifyGoogleDestination(
+      {
+        client,
+        sql,
+        userId,
+        sourceAddress,
+        destinationAddress,
+        puts: () => adminUserPuts,
+        password,
+      },
+      suffix
+    );
   } else {
     const createdSnapshot = await snapshot(userId);
     const calls: {

@@ -9,16 +9,18 @@ import {
 
 /** Disposable SQL-seeded Google claims, real GoTrue admin mutation. This does
  * not qualify an external Google login or the full application SQL journal. */
-export async function qualifyGoogleDestination(options: {
-  client: Pick<ReturnType<typeof createClient>, 'auth'>;
-  sql(statement: string): Promise<string>;
-  userId: string;
-  password: string;
-  fixtureId: string;
-  sourceAddress: string;
-  destinationAddress: string;
-  puts(): number;
-}) {
+export async function qualifyGoogleDestination(
+  options: {
+    client: Pick<ReturnType<typeof createClient>, 'auth'>;
+    sql(statement: string): Promise<string>;
+    userId: string;
+    password: string;
+    sourceAddress: string;
+    destinationAddress: string;
+    puts(): number;
+  },
+  fixtureId: string
+) {
   const { client, sql, userId, sourceAddress, destinationAddress } = options;
   assert.match(userId, /^[a-f0-9-]{36}$/);
   assert.equal(sourceAddress, 'qualification@staff.tuturuuu.com');
@@ -102,12 +104,15 @@ export async function qualifyGoogleDestination(options: {
   console.log(
     JSON.stringify({
       stage: 'google_destination_provider',
-      fixtureId: options.fixtureId,
+      fixtureId,
       qualification: 'PASS',
       migrationPuts: 1,
       preservationNegativeControls,
-      preservedSessionRows: beforeState.sessions.length,
-      preservedRefreshRows: beforeState.tokens.length,
+      preservedSessionRows: beforeState.sessions.reduce(
+        (count) => count + 1,
+        0
+      ),
+      preservedRefreshRows: beforeState.tokens.reduce((count) => count + 1, 0),
       googleClaims: 'SQL_SEEDED_FIXTURE',
       actualGoTrue: true,
       identityTransition: 'ONE_VERIFIED_EMAIL_ADDITION',
