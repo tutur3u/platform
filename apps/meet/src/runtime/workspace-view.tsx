@@ -19,10 +19,12 @@ export function WorkspaceView({
   workspace,
   locale,
   children,
+  canManageVersionBadge,
 }: {
   workspace: WorkspaceModel;
   locale: string;
   children: ReactNode;
+  canManageVersionBadge: boolean;
 }) {
   const t = useTranslations();
   const { workspaceSlug, wsId, user, profile } = workspace;
@@ -33,6 +35,7 @@ export function WorkspaceView({
   };
   const userPopover = (
     <UserNavClient
+      canManageVersionBadge={canManageVersionBadge}
       user={profile}
       locale={locale}
       hideMetadata

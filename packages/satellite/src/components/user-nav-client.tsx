@@ -54,6 +54,8 @@ interface UserNavClientProps {
   settingsDialog?: ReactNode;
   /** Sidebar tab for apps using the shared settings dialog. */
   sidebarSettingsTab?: SatelliteSidebarSettingsTab;
+  /** Verified server-side eligibility for app-owned settings. */
+  canManageVersionBadge?: boolean;
   /** Let an app-level host own settings URL state, shortcuts, and rendering. */
   externalSettingsHost?: boolean;
 }
@@ -65,6 +67,7 @@ export default function UserNavClient({
   ttrUrl,
   settingsDialog,
   sidebarSettingsTab,
+  canManageVersionBadge,
   externalSettingsHost = false,
 }: UserNavClientProps) {
   const t = useTranslations();
@@ -142,6 +145,7 @@ export default function UserNavClient({
   // Apps without their own dialog still get the shared account tabs.
   const effectiveSettingsDialog = settingsDialog ?? (
     <SatelliteDefaultSettingsDialog
+      canManageVersionBadge={canManageVersionBadge}
       centralUrl={centralUrl}
       sidebarTab={sidebarSettingsTab}
       user={user}

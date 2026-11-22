@@ -1396,6 +1396,8 @@ Meet must not mount Vercel Analytics or Speed Insights: their `/_vercel/*` scrip
 
 The platform user-config API uses the shared satellite app-session audience list in `apps/web/src/lib/api-auth-audiences.ts`. Keep Meet in that list and in the Rust current-user session targets. A successful local Meet call-token refresh does not verify authorization for proxied platform APIs such as `SHOW_VERSION_BADGE`.
 
+Native Meet offers the version badge and its Appearance setting only when the active Meet actor also has a matching, verified staff session. An app session without that verification leaves the badge hidden and does not read its staff-only configuration.
+
 A recovered publisher announces a new SFU session for its stable microphone,
 camera, or screen track name. The room retires older registrations for that
 participant and track and broadcasts `track.closed` before the replacement

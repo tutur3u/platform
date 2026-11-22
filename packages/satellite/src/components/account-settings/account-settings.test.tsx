@@ -17,7 +17,14 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('@tuturuuu/ui/custom/settings/appearance-settings', () => ({
-  AppearanceSettings: () => null,
+  AppearanceSettings: ({
+    canManageVersionBadge,
+  }: {
+    canManageVersionBadge: boolean;
+  }) =>
+    canManageVersionBadge ? (
+      <button type="button">Show version badge</button>
+    ) : null,
 }));
 vi.mock('@tuturuuu/ui/custom/settings-dialog-shell', () => ({
   SettingsDialogShell: ({
@@ -52,6 +59,29 @@ const user = { email: 'ada@example.com', id: 'user-1' } as WorkspaceUser;
 afterEach(cleanup);
 
 describe('shared satellite account settings', () => {
+  it('uses an explicit server decision even when the profile has a staff email', () => {
+    const props = {
+      centralUrl: 'https://tuturuuu.com',
+      defaultTab: 'appearance',
+      user: { ...user, email: 'staff@tuturuuu.com' },
+    };
+    const { rerender } = render(
+      <SatelliteDefaultSettingsDialog
+        {...props}
+        canManageVersionBadge={false}
+      />
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Show version badge' })
+    ).toBeNull();
+    rerender(
+      <SatelliteDefaultSettingsDialog {...props} canManageVersionBadge />
+    );
+    expect(
+      screen.getByRole('button', { name: 'Show version badge' })
+    ).toBeDefined();
+  });
+
   it('opens the sidebar panel only when the app supplies a tab', () => {
     const props = { centralUrl: 'https://tuturuuu.com', user: null };
     const { rerender } = render(<SatelliteDefaultSettingsDialog {...props} />);

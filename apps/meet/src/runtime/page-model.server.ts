@@ -32,6 +32,7 @@ import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
   getSatelliteAppSessionUser,
   getSatelliteCurrentUser,
+  getSatelliteSupabaseSessionUser,
 } from '@tuturuuu/satellite/auth';
 import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
 import {
@@ -42,6 +43,7 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meetingId]/meeting-calendar-event';
@@ -379,6 +381,10 @@ async function loadResolvedPageModel(url: URL) {
     markSignedInDocument();
     recordMeetPhase('actor', performance.now() - actorStartedAt);
   }
+  const badgeSession =
+    actor && isExactTuturuuuDotComEmail(actor.email)
+      ? await getSatelliteSupabaseSessionUser()
+      : null;
   const params: Record<string, string> = { locale };
   if (segments[0] === 'r' && segments[1]) params.code = segments[1];
   else if (segments[0] === 'plans' && segments[1]) params.planId = segments[1];
@@ -390,7 +396,10 @@ async function loadResolvedPageModel(url: URL) {
     params,
     locale,
     actorId: actor?.id,
-    showVersionBadge: isExactTuturuuuDotComEmail(actor?.email),
+    showVersionBadge:
+      badgeSession !== null &&
+      badgeSession.id === actor?.id &&
+      isVerifiedTuturuuuStaffSession(badgeSession),
     meta: {
       title: 'Tuturuuu Meet',
       description:

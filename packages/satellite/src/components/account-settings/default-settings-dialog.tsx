@@ -25,11 +25,13 @@ export interface SatelliteSidebarSettingsTab {
  */
 export function SatelliteDefaultSettingsDialog({
   centralUrl,
+  canManageVersionBadge,
   defaultTab = 'profile',
   sidebarTab,
   user,
 }: {
   centralUrl: string;
+  canManageVersionBadge?: boolean;
   defaultTab?: string;
   sidebarTab?: SatelliteSidebarSettingsTab;
   user: WorkspaceUser | null;
@@ -77,7 +79,9 @@ export function SatelliteDefaultSettingsDialog({
       />
       {activeTab === 'appearance' && (
         <AppearanceSettings
-          canManageVersionBadge={isExactTuturuuuDotComEmail(user?.email)}
+          canManageVersionBadge={
+            canManageVersionBadge ?? isExactTuturuuuDotComEmail(user?.email)
+          }
         />
       )}
       {activeTab === 'sidebar' && sidebarTab?.content}

@@ -27,10 +27,15 @@ export default function WorkspacePage({
   model: WorkspacePageModel;
 }) {
   const t = useTranslations('meet.call');
+  const shell = {
+    canManageVersionBadge: model.showVersionBadge,
+    locale: model.locale,
+    workspace: model.workspace,
+  };
   switch (model.kind) {
     case 'workspace-plans':
       return (
-        <WorkspaceView workspace={model.workspace} locale={model.locale}>
+        <WorkspaceView {...shell}>
           <div className="-m-4">
             <Suspense fallback={null}>
               <PlansView model={model} />
@@ -40,7 +45,7 @@ export default function WorkspacePage({
       );
     case 'meeting':
       return (
-        <WorkspaceView workspace={model.workspace} locale={model.locale}>
+        <WorkspaceView {...shell}>
           <Suspense fallback={null}>
             <MeetingView model={model} />
           </Suspense>
@@ -48,7 +53,7 @@ export default function WorkspacePage({
       );
     case 'meetings':
       return (
-        <WorkspaceView workspace={model.workspace} locale={model.locale}>
+        <WorkspaceView {...shell}>
           <div className="container mx-auto max-w-5xl space-y-6 p-4 md:p-6">
             <h1 className="font-semibold text-2xl tracking-tight">
               {t('meetings_title')}
