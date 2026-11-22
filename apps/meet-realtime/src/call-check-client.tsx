@@ -287,8 +287,6 @@ function CallCheck() {
             <ParticipantsPanel
               approved={room.state.approved}
               onForget={room.forgetParticipant}
-              shareNotes={false}
-              onShareNotes={() => undefined}
               canManage={room.state.role === 'host'}
               onDecideAdmission={() => setShowRequest(false)}
               onMute={() => undefined}

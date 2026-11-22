@@ -30,8 +30,6 @@ export function ParticipantsPanel({
   approved,
   miraActive = false,
   onForget,
-  shareNotes,
-  onShareNotes,
   canManage,
   onAdmitAll,
   onDenyAll,
@@ -53,8 +51,6 @@ export function ParticipantsPanel({
   approved: MeetApprovedParticipant[];
   miraActive?: boolean;
   onForget: (userId: string) => void;
-  shareNotes: boolean;
-  onShareNotes: (enabled: boolean) => void;
   canManage: boolean;
   onAdmitAll?: () => void;
   onDenyAll?: () => void;
@@ -270,7 +266,7 @@ export function ParticipantsPanel({
             <AccordionTrigger className="gap-2 text-sm">
               {labels('settings_permissions')}
             </AccordionTrigger>
-            <AccordionContent className="space-y-2">
+            <AccordionContent className="space-y-3">
               <RoomPermissionToggles
                 settings={settings}
                 isHost={isHost}
@@ -281,14 +277,7 @@ export function ParticipantsPanel({
           </AccordionItem>
         </Accordion>
       )}
-      {isHost && (
-        <RoomHostControls
-          approved={approved}
-          onForget={onForget}
-          shareNotes={shareNotes}
-          onShareNotes={onShareNotes}
-        />
-      )}
+      {isHost && <RoomHostControls approved={approved} onForget={onForget} />}
     </ScrollArea>
   );
 }

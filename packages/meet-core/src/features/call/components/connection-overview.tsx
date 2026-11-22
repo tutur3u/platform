@@ -86,7 +86,10 @@ export function ConnectionOverview({
           const peer = data?.[direction];
           const Icon = direction === 'publisher' ? ArrowUp : ArrowDown;
           return (
-            <section key={direction} className="min-w-0 rounded-xl border p-3">
+            <section
+              key={direction}
+              className="min-w-0 rounded-xl border bg-card p-4"
+            >
               <div className="mb-3 flex items-center gap-2">
                 <Icon className="size-4" />
                 <h3 className="flex-1 font-medium text-sm">
@@ -132,7 +135,7 @@ export function ConnectionOverview({
           );
         })}
       </div>
-      <section className="rounded-xl border p-3">
+      <section className="rounded-xl border bg-card p-4">
         <div className="flex items-center gap-2 text-sm">
           <Activity className="size-4" />
           <h3 className="flex-1 font-medium">{t('latency_history')}</h3>

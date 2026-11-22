@@ -103,3 +103,69 @@ it('finds permissions with shared settings search and dispatches all host lock t
     [{ skipLobby: true }],
   ]);
 });
+
+function renderSettings(role: 'host' | 'participant') {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  const shareNotes = vi.fn();
+  const room = {
+    getBandwidthMode: () => 'auto',
+    updateSettings: vi.fn(),
+    shareNotes,
+    state: {
+      role,
+      selfUserId: 'self',
+      participants: {},
+      settings: { shareNotes: false },
+    },
+  } as unknown as MeetRoomController;
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter>
+        <CallSettings
+          room={room}
+          meetingId="meeting"
+          canManage={role === 'host'}
+          ai={{} as Parameters<typeof CallSettings>[0]['ai']}
+          sound={false}
+          onSound={vi.fn()}
+          outputDeviceId=""
+          onOutput={vi.fn()}
+        />
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Meeting settings' }));
+  return { shareNotes };
+}
+
+const pages = messages.meet.call.settings_pages;
+
+it('lets the host choose who reads notes from the Notes access page', () => {
+  const { shareNotes } = renderSettings('host');
+  // Each page carries its own description instead of the shell default.
+  expect(screen.getByText(pages.devices)).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: pages.notes_access }));
+  expect(screen.getByText(pages.notes_access_description)).toBeDefined();
+  const toggle = screen.getByRole('switch', {
+    name: messages.meet.call.share_notes,
+  });
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
+  expect(screen.getByText(messages.meet.call.share_notes_hint)).toBeDefined();
+  fireEvent.click(toggle);
+  expect(shareNotes).toHaveBeenCalledWith(true);
+});
+
+it('keeps Notes access out of a participant’s settings', () => {
+  renderSettings('participant');
+  expect(screen.queryByRole('button', { name: pages.notes_access })).toBeNull();
+  expect(
+    screen.queryByRole('switch', { name: messages.meet.call.share_notes })
+  ).toBeNull();
+});

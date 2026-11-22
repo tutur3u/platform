@@ -585,8 +585,6 @@ function CallShellContent({
             waiting={state.waiting}
             approved={state.approved}
             onForget={room.forgetParticipant}
-            shareNotes={state.settings.shareNotes}
-            onShareNotes={room.shareNotes}
           />
         )}
       </div>

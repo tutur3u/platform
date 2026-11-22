@@ -10,39 +10,21 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
+/**
+ * Host-only list of people admitted before, who skip the lobby next time.
+ * Who may read the transcript and notes lives in Meet settings.
+ */
 export function RoomHostControls({
   approved,
   onForget,
-  shareNotes,
-  onShareNotes,
 }: {
   approved: MeetApprovedParticipant[];
   onForget: (userId: string) => void;
-  shareNotes: boolean;
-  onShareNotes: (enabled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
   return (
-    <section className="space-y-4 border-t p-4">
-      <div>
-        <h3 className="mb-3 font-semibold text-sm">{t('host_controls')}</h3>
-        <div className="flex items-start justify-between gap-4 rounded-md border p-3">
-          <div className="space-y-1">
-            <Label htmlFor="meet-share-notes">{t('share_notes')}</Label>
-            <p className="text-muted-foreground text-xs">
-              {t('share_notes_hint')}
-            </p>
-          </div>
-          <Switch
-            id="meet-share-notes"
-            checked={shareNotes}
-            onCheckedChange={onShareNotes}
-          />
-        </div>
-      </div>
+    <section aria-label={t('host_controls')} className="border-t px-4">
       <Accordion type="multiple">
         <AccordionItem value="approved" className="border-0">
           <AccordionTrigger className="gap-2 text-sm">

@@ -4987,6 +4987,18 @@
           "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}"
         },
         "cancel": "Cancel"
+      },
+      "settings_pages": {
+        "devices": "Choose your microphone, camera and speaker.",
+        "media": "Balance video quality against bandwidth.",
+        "connection": "Check call quality and fix media problems.",
+        "permissions": "Decide what participants can turn on and who joins directly.",
+        "activities": "Choose who can open activities and summon others.",
+        "chat": "Keep the meeting chat and manage recordings.",
+        "mira": "Confirm your workspace’s audience before Mira joins.",
+        "public": "Manage the public meeting link and your private AI memory.",
+        "notes_access": "Notes access",
+        "notes_access_description": "Choose who can read this meeting’s transcript and notes."
       }
     },
     "collaboration": {

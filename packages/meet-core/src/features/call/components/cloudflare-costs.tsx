@@ -4,6 +4,7 @@ import { Cloud, ExternalLink, Info } from '@tuturuuu/icons';
 import { getMeetRoomCosts } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
+import { MeetSettingsCard } from './meet-settings-card';
 export function CloudflareCosts({ meetingId }: { meetingId: string }) {
   const t = useTranslations('meet.call');
   const query = useQuery({
@@ -16,7 +17,8 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
     usage = data?.cloudflare;
   const usd = (amount: number) => `$${amount.toFixed(6)}`;
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    // Dense figures read as one list, so its lines sit closer together.
+    <MeetSettingsCard className="gap-3">
       <div className="flex items-center gap-2">
         <Cloud className="size-4" />
         <h3 className="flex-1 font-medium text-sm">Cloudflare</h3>
@@ -113,6 +115,6 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
         {t('cloudflare_pricing')}
         <ExternalLink className="size-3" />
       </a>
-    </section>
+    </MeetSettingsCard>
   );
 }

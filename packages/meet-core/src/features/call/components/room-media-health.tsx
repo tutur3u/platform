@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Activity } from '@tuturuuu/icons';
 import type { MeetRoomMediaQualitySummary } from '@tuturuuu/realtime/meet';
 import { useTranslations } from 'next-intl';
+import { MeetSettingsCard } from './meet-settings-card';
 
 type Range = MeetRoomMediaQualitySummary['sendKbps'];
 
@@ -29,7 +30,7 @@ export function RoomMediaHealth({
   });
   const data = query.data;
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <MeetSettingsCard>
       <div className="flex items-center gap-2">
         <Activity className="size-4" />
         <h3 className="flex-1 font-medium text-sm">{t('room_media_health')}</h3>
@@ -87,6 +88,6 @@ export function RoomMediaHealth({
           </dd>
         </dl>
       )}
-    </section>
+    </MeetSettingsCard>
   );
 }

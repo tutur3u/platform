@@ -18,11 +18,9 @@ it('keeps the join request glyph outside the accordion chevron rotation', () => 
         onForget={vi.fn()}
         onMute={vi.fn()}
         onRemove={vi.fn()}
-        onShareNotes={vi.fn()}
         participants={[]}
         raisedHandUserIds={[]}
         selfUserId="host"
-        shareNotes={false}
         waiting={[
           {
             userId: 'guest',
@@ -57,11 +55,9 @@ it('hides the microphone badge in a presence-only room and keeps the name', () =
     onForget: vi.fn(),
     onMute: vi.fn(),
     onRemove: vi.fn(),
-    onShareNotes: vi.fn(),
     participants: [person],
     raisedHandUserIds: ['self'],
     selfUserId: 'self',
-    shareNotes: false,
     waiting: [],
   };
   const { rerender } = render(
@@ -78,4 +74,33 @@ it('hides the microphone badge in a presence-only room and keeps the name', () =
   );
   expect(screen.getByText('Ada')).toBeTruthy();
   expect(screen.queryByText('Microphone muted')).toBeNull();
+});
+
+it('keeps notes sharing out of the host participants panel', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantsPanel
+        approved={[]}
+        canManage
+        isHost
+        onDecideAdmission={vi.fn()}
+        onForget={vi.fn()}
+        onMute={vi.fn()}
+        onRemove={vi.fn()}
+        participants={[]}
+        raisedHandUserIds={[]}
+        selfUserId="host"
+        waiting={[]}
+      />
+    </NextIntlClientProvider>
+  );
+  expect(
+    screen.getByRole('button', {
+      name: new RegExp(messages.meet.call.approved_people),
+    })
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole('switch', { name: messages.meet.call.share_notes })
+  ).toBeNull();
+  expect(screen.queryByText(messages.meet.call.share_notes_hint)).toBeNull();
 });

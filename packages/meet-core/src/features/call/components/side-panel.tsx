@@ -25,8 +25,6 @@ export function SidePanel({
   miraActive = false,
   approved,
   onForget,
-  shareNotes,
-  onShareNotes,
   canManage,
   chat,
   onClose,
@@ -52,8 +50,6 @@ export function SidePanel({
   miraActive?: boolean;
   approved: MeetApprovedParticipant[];
   onForget: (userId: string) => void;
-  shareNotes: boolean;
-  onShareNotes: (enabled: boolean) => void;
   canManage: boolean;
   chat: CallChatMessage[];
   onClose: () => void;
@@ -112,8 +108,6 @@ export function SidePanel({
           miraActive={miraActive}
           approved={approved}
           onForget={onForget}
-          shareNotes={shareNotes}
-          onShareNotes={onShareNotes}
           canManage={
             room?.state.canManageParticipants ??
             controls?.canManage ??

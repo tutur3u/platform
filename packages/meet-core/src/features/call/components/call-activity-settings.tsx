@@ -2,10 +2,15 @@
 
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import type { RoomToolsMode } from './call-room-tools';
+import {
+  MeetSettingsCard,
+  MeetSettingsHeading,
+  MeetSettingsStack,
+  MeetSettingsToggle,
+} from './meet-settings-card';
 
 const modes = ['hosts', 'showcase', 'everyone'] as const;
 
@@ -26,62 +31,54 @@ export function CallActivitySettings({
   const settingsT = useTranslations('meet.call.activities_settings');
   const id = useId();
   return (
-    <div className="grid gap-3">
-      <div className="grid gap-1">
-        <p id={id} className="font-semibold">
-          {t('visibility')}
-        </p>
-        <p className="text-muted-foreground text-sm">{t('visibility_hint')}</p>
-      </div>
-      <RadioGroup
-        aria-labelledby={id}
-        value={mode}
-        onValueChange={(value) => {
-          const next = modes.find((entry) => entry === value);
-          if (next) onMode(next);
-        }}
-        className="gap-2"
-      >
-        {modes.map((entry) => (
-          <Label
-            key={entry}
-            htmlFor={`${id}-${entry}`}
-            className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-3 font-normal has-[[data-state=checked]]:border-foreground hover:bg-accent"
-          >
-            <RadioGroupItem
-              id={`${id}-${entry}`}
-              value={entry}
-              className="mt-0.5 shrink-0"
-            />
-            <span className="grid gap-0.5 text-sm">
-              <span className="font-semibold">{t(entry)}</span>
-              <span className="text-muted-foreground text-xs">
-                {t(`${entry}_hint`)}
-              </span>
-            </span>
-          </Label>
-        ))}
-      </RadioGroup>
-      {onParticipantNavigation && (
-        <Label
-          htmlFor={`${id}-navigation`}
-          className="flex min-h-11 cursor-pointer items-center justify-between gap-4 border-t pt-4 font-normal"
+    <MeetSettingsStack>
+      <MeetSettingsCard>
+        <MeetSettingsHeading
+          id={id}
+          title={t('visibility')}
+          description={t('visibility_hint')}
+        />
+        <RadioGroup
+          aria-labelledby={id}
+          value={mode}
+          onValueChange={(value) => {
+            const next = modes.find((entry) => entry === value);
+            if (next) onMode(next);
+          }}
+          className="gap-3"
         >
-          <span className="grid gap-0.5 text-sm">
-            <span className="font-semibold">
-              {settingsT('participant_navigation')}
-            </span>
-            <span className="text-muted-foreground text-xs">
-              {settingsT('participant_navigation_hint')}
-            </span>
-          </span>
-          <Switch
+          {modes.map((entry) => (
+            <Label
+              key={entry}
+              htmlFor={`${id}-${entry}`}
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-4 font-normal has-[[data-state=checked]]:border-foreground hover:bg-accent"
+            >
+              <RadioGroupItem
+                id={`${id}-${entry}`}
+                value={entry}
+                className="mt-0.5 shrink-0"
+              />
+              <span className="grid gap-1 text-sm">
+                <span className="font-medium">{t(entry)}</span>
+                <span className="text-muted-foreground">
+                  {t(`${entry}_hint`)}
+                </span>
+              </span>
+            </Label>
+          ))}
+        </RadioGroup>
+      </MeetSettingsCard>
+      {onParticipantNavigation && (
+        <MeetSettingsCard>
+          <MeetSettingsToggle
             id={`${id}-navigation`}
+            label={settingsT('participant_navigation')}
+            hint={settingsT('participant_navigation_hint')}
             checked={participantNavigation !== false}
             onCheckedChange={onParticipantNavigation}
           />
-        </Label>
+        </MeetSettingsCard>
       )}
-    </div>
+    </MeetSettingsStack>
   );
 }

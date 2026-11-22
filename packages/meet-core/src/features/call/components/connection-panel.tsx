@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, Copy, RefreshCw } from '@tuturuuu/icons';
+import { ArrowDown, ArrowUp, Copy, PlugZap, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -57,7 +57,7 @@ export function ConnectionPanel({
   };
 
   const content = (
-    <>
+    <div className="grid min-w-0 gap-4">
       <ConnectionOverview data={data} />
       <div className="flex flex-wrap gap-2">
         <Button
@@ -87,20 +87,23 @@ export function ConnectionPanel({
           <Copy className="size-4" />
           {t('connection_copy')}
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            requestId.current++;
+            setBusy(false);
+            reconnect();
+            setSnapshot(null);
+            setOpen(false);
+            toast.info(t('connection_reconnecting'));
+          }}
+        >
+          <PlugZap className="size-4" />
+          {t('connection_reconnect')}
+        </Button>
       </div>
-      <Button
-        onClick={() => {
-          requestId.current++;
-          setBusy(false);
-          reconnect();
-          setSnapshot(null);
-          setOpen(false);
-          toast.info(t('connection_reconnecting'));
-        }}
-      >
-        {t('connection_reconnect')}
-      </Button>
-    </>
+    </div>
   );
   if (embedded) return content;
   return (

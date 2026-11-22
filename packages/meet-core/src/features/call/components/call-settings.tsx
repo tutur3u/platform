@@ -7,6 +7,7 @@ import {
   Lock,
   MessageSquare,
   Mic,
+  ScrollText,
   Settings2,
   Sparkles,
   Video,
@@ -49,7 +50,9 @@ import { CloudflareCosts } from './cloudflare-costs';
 import { ConnectionPanel } from './connection-panel';
 import { DeviceSettings } from './device-settings';
 import { MeetingActionHint } from './meeting-action-hint';
+import { MeetSettingsStack } from './meet-settings-card';
 import { MeetingPublicSettings } from './meeting-public-settings';
+import { NotesAccessSettings } from './notes-access-settings';
 import { RecordingSettings } from './recording-settings';
 import { RoomMediaHealth } from './room-media-health';
 import { ThumbnailModeSetting } from './thumbnail-mode-setting';
@@ -87,6 +90,7 @@ export function CallSettings({
   onOutput: (id: string) => void;
 }) {
   const t = useTranslations('meet.call');
+  const pageT = useTranslations('meet.call.settings_pages');
   const miraT = useTranslations('meet.mira_adults');
   const labels = useLargeRoomLabels();
   const {
@@ -101,6 +105,7 @@ export function CallSettings({
   const [bandwidth, setBandwidth] = useState(room.getBandwidthMode);
   const bandwidthId = useId();
   const managesMedia = room.state.canManageParticipants ?? canManage;
+  const isHost = room.state.role === 'host';
   const accountId = room.state.selfUserId
     ? room.state.participants[room.state.selfUserId]?.accountId
     : undefined;
@@ -113,12 +118,14 @@ export function CallSettings({
         {
           name: 'devices',
           label: t('devices'),
+          description: pageT('devices'),
           icon: Mic,
           keywords: [t('notification_sounds')],
         },
         {
           name: 'media',
           label: labels('settings_media'),
+          description: pageT('media'),
           icon: Video,
           keywords: [
             t('bandwidth'),
@@ -129,6 +136,7 @@ export function CallSettings({
         {
           name: 'connection',
           label: labels('settings_connection'),
+          description: pageT('connection'),
           icon: Activity,
           keywords: [t('connection_title')],
         },
@@ -142,6 +150,7 @@ export function CallSettings({
               {
                 name: 'permissions',
                 label: labels('settings_permissions'),
+                description: pageT('permissions'),
                 icon: Lock,
                 keywords: [
                   labels('lock_mics'),
@@ -157,24 +166,49 @@ export function CallSettings({
               {
                 name: 'activities',
                 label: t('activities.settings'),
+                description: pageT('activities'),
                 icon: LayoutGrid,
                 keywords: [t('room_tools.visibility')],
               },
             ]
           : []),
-        { name: 'chat', label: labels('settings_chat'), icon: MessageSquare },
+        {
+          name: 'chat',
+          label: labels('settings_chat'),
+          description: pageT('chat'),
+          icon: MessageSquare,
+        },
+        ...(isHost
+          ? [
+              {
+                name: 'notes',
+                label: pageT('notes_access'),
+                description: pageT('notes_access_description'),
+                icon: ScrollText,
+                keywords: [t('share_notes')],
+              },
+            ]
+          : []),
         ...(miraWorkspaceId
           ? [
               {
                 name: MIRA_SETTINGS_TAB,
                 label: miraT('settings_tab'),
+                description: pageT('mira'),
                 icon: Sparkles,
                 keywords: [miraT('toggle'), miraT('badge')],
               },
             ]
           : []),
         ...(canManage || room.state.selfUserId
-          ? [{ name: 'public', label: labels('settings_public'), icon: Globe }]
+          ? [
+              {
+                name: 'public',
+                label: labels('settings_public'),
+                description: pageT('public'),
+                icon: Globe,
+              },
+            ]
           : []),
       ],
     },
@@ -257,24 +291,22 @@ export function CallSettings({
               <RoomPermissionToggles
                 settings={room.state.settings}
                 onSettingsChange={room.updateSettings}
-                isHost={room.state.role === 'host'}
+                isHost={isHost}
               />
             </SettingsSection>
             <ClassroomSettings room={room} />
           </>
         )}
         {activeTab === 'activities' && activities && (
-          <SettingsSection>
-            <CallActivitySettings
-              mode={activities.mode}
-              onMode={activities.onMode}
-              participantNavigation={activities.participantNavigation}
-              onParticipantNavigation={activities.onParticipantNavigation}
-            />
-          </SettingsSection>
+          <CallActivitySettings
+            mode={activities.mode}
+            onMode={activities.onMode}
+            participantNavigation={activities.participantNavigation}
+            onParticipantNavigation={activities.onParticipantNavigation}
+          />
         )}
         {activeTab === 'connection' && (
-          <SettingsSection surface="plain" className="space-y-4">
+          <MeetSettingsStack>
             <ConnectionPanel
               embedded
               telemetry={telemetry}
@@ -289,26 +321,27 @@ export function CallSettings({
             )}
             {canManage && <CloudflareCosts meetingId={meetingId} />}
             {canManage && data?.canManage && <AiCosts data={data} />}
-          </SettingsSection>
+          </MeetSettingsStack>
         )}
         {activeTab === 'chat' && (
-          <SettingsSection surface="plain">
+          <MeetSettingsStack>
             <ChatSettings room={room} canManage={canManage} />
             <RecordingSettings
               room={room}
               meetingId={meetingId}
               canManage={canManage}
             />
-          </SettingsSection>
+          </MeetSettingsStack>
         )}
+        {activeTab === 'notes' && isHost && <NotesAccessSettings room={room} />}
         {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
           <MiraAudienceSettings wsId={miraWorkspaceId} />
         )}
         {activeTab === 'public' && (
-          <SettingsSection surface="plain">
+          <MeetSettingsStack>
             {canManage && <MeetingPublicSettings meetingId={meetingId} />}
             {accountId && <MeetMemorySettings userId={accountId} />}
-          </SettingsSection>
+          </MeetSettingsStack>
         )}
       </SettingsDialogShell>
     </Dialog>

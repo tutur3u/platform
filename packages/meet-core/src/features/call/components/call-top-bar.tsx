@@ -99,8 +99,11 @@ export function CallTopBarMore({
             <DropdownMenuCheckboxItem
               checked={transcriptOpen}
               onCheckedChange={onToggleTranscript}
+              // The check sits at the end so this row's icon lines up with
+              // the plain rows above it.
+              className="pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
             >
-              <Captions className="size-4" />
+              <Captions className="size-4 text-muted-foreground" />
               {aiT('title')}
             </DropdownMenuCheckboxItem>
           )}

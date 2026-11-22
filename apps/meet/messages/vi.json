@@ -5329,6 +5329,18 @@
       "send": "Gửi",
       "sending": "Đang gửi",
       "settings_hint": "Điều chỉnh thiết bị, kiểm tra kết nối và quản lý tùy chọn phòng.",
+      "settings_pages": {
+        "activities": "Chọn ai được mở hoạt động và mời người khác cùng xem.",
+        "chat": "Lưu trò chuyện cuộc họp và quản lý bản ghi hình.",
+        "connection": "Kiểm tra chất lượng cuộc gọi và khắc phục sự cố âm thanh, hình ảnh.",
+        "devices": "Chọn micrô, camera và loa của bạn.",
+        "media": "Cân bằng chất lượng video với băng thông.",
+        "mira": "Xác nhận đối tượng trong không gian làm việc trước khi Mira tham gia.",
+        "notes_access": "Quyền xem ghi chú",
+        "notes_access_description": "Chọn ai được đọc bản chép lời và ghi chú của cuộc họp này.",
+        "permissions": "Quyết định người tham gia được bật gì và ai được vào thẳng.",
+        "public": "Quản lý liên kết công khai của cuộc họp và bộ nhớ AI riêng của bạn."
+      },
       "settings_title": "Cài đặt cuộc họp",
       "sfu_egress": "Ước tính phân phối phương tiện",
       "share_ended_notes": "Chia sẻ ghi chú sau cuộc họp",

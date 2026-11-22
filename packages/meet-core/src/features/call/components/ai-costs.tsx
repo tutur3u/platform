@@ -2,6 +2,7 @@
 import { Coins } from '@tuturuuu/icons';
 import type { getMeetAiState } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { MeetSettingsCard } from './meet-settings-card';
 export function AiCosts({
   data,
 }: {
@@ -11,7 +12,7 @@ export function AiCosts({
   const at = useTranslations('meet.ai');
   if (!data.canManage) return null;
   return (
-    <section className="space-y-3 rounded-xl border p-4">
+    <MeetSettingsCard>
       <h3 className="flex items-center gap-2 font-medium text-sm">
         <Coins className="size-4" />
         {t('cost_breakdown')}
@@ -51,6 +52,6 @@ export function AiCosts({
           {at('unpriced', { count: data.unpricedRequests })}
         </p>
       )}
-    </section>
+    </MeetSettingsCard>
   );
 }

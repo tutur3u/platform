@@ -1,6 +1,6 @@
 'use client';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
-import { X } from '@tuturuuu/icons';
+import { Mail, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -127,5 +127,10 @@ export function MeetMailShare({
 
 export function MeetMailMenuItem({ onSelect }: { onSelect: () => void }) {
   const t = useTranslations('meet.mail_handoff');
-  return <DropdownMenuItem onSelect={onSelect}>{t('title')}</DropdownMenuItem>;
+  return (
+    <DropdownMenuItem onSelect={onSelect}>
+      <Mail className="size-4" />
+      {t('title')}
+    </DropdownMenuItem>
+  );
 }

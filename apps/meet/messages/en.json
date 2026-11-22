@@ -5329,6 +5329,18 @@
       "send": "Send",
       "sending": "Sending",
       "settings_hint": "Tune your devices, review connectivity, and manage room preferences.",
+      "settings_pages": {
+        "activities": "Choose who can open activities and summon others.",
+        "chat": "Keep the meeting chat and manage recordings.",
+        "connection": "Check call quality and fix media problems.",
+        "devices": "Choose your microphone, camera and speaker.",
+        "media": "Balance video quality against bandwidth.",
+        "mira": "Confirm your workspace’s audience before Mira joins.",
+        "notes_access": "Notes access",
+        "notes_access_description": "Choose who can read this meeting’s transcript and notes.",
+        "permissions": "Decide what participants can turn on and who joins directly.",
+        "public": "Manage the public meeting link and your private AI memory."
+      },
       "settings_title": "Meeting settings",
       "sfu_egress": "Media delivery estimate",
       "share_ended_notes": "Share notes after the meeting",

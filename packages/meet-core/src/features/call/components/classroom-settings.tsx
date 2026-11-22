@@ -1,9 +1,9 @@
 'use client';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { MeetRoomController } from '../lib/room-controller';
+import { MeetSettingsCard, MeetSettingsToggle } from './meet-settings-card';
 
 export function ClassroomSettings({
   room,
@@ -18,37 +18,28 @@ export function ClassroomSettings({
   )
     return null;
   return (
-    <section className="space-y-4 rounded-xl border p-4">
+    <MeetSettingsCard>
       {room.state.classViewersAvailable && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="meet-class-viewers">{t('class_viewers')}</Label>
-            <Switch
-              id="meet-class-viewers"
-              aria-describedby="meet-class-viewers-hint"
-              checked={room.state.settings.viewersByDefault === true}
-              onCheckedChange={(viewersByDefault) =>
-                room.updateSettings({ viewersByDefault })
-              }
-            />
-          </div>
-          <p
-            id="meet-class-viewers-hint"
-            className="text-muted-foreground text-xs"
-          >
-            {t('class_viewers_hint')}
-          </p>
-        </div>
+        <MeetSettingsToggle
+          id="meet-class-viewers"
+          label={t('class_viewers')}
+          hint={t('class_viewers_hint')}
+          checked={room.state.settings.viewersByDefault === true}
+          onCheckedChange={(viewersByDefault) =>
+            room.updateSettings({ viewersByDefault })
+          }
+        />
       )}
       {maximum !== undefined && (
         <>
-          <div className="space-y-2">
+          <div className="grid gap-2">
             <Label htmlFor="meet-room-maximum">{t('room_maximum')}</Label>
             <Input
               id="meet-room-maximum"
               type="number"
               min={1}
               max={maximum}
+              aria-describedby="meet-room-maximum-hint"
               key={room.state.settings.maxParticipants ?? maximum}
               defaultValue={room.state.settings.maxParticipants ?? maximum}
               onBlur={(event) => {
@@ -61,25 +52,24 @@ export function ClassroomSettings({
                   );
               }}
             />
-            <p className="text-muted-foreground text-xs">
+            <p
+              id="meet-room-maximum-hint"
+              className="text-muted-foreground text-sm"
+            >
               {t('room_maximum_hint', { maximum })}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="meet-stop-admission">{t('stop_admission')}</Label>
-            <Switch
-              id="meet-stop-admission"
-              checked={room.state.settings.admissionClosed === true}
-              onCheckedChange={(admissionClosed) =>
-                room.updateSettings({ admissionClosed })
-              }
-            />
-          </div>
-          <p className="text-muted-foreground text-xs">
-            {t('stop_admission_hint')}
-          </p>
+          <MeetSettingsToggle
+            id="meet-stop-admission"
+            label={t('stop_admission')}
+            hint={t('stop_admission_hint')}
+            checked={room.state.settings.admissionClosed === true}
+            onCheckedChange={(admissionClosed) =>
+              room.updateSettings({ admissionClosed })
+            }
+          />
         </>
       )}
-    </section>
+    </MeetSettingsCard>
   );
 }

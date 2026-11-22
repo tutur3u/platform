@@ -16,11 +16,13 @@ import {
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import {
+  MeetSettingsCard,
+  MeetSettingsToggle,
+} from '../call/components/meet-settings-card';
 
 export function MeetMemorySettings({
   userId,
@@ -59,26 +61,18 @@ export function MeetMemorySettings({
     },
   });
   return (
-    <section className="space-y-4 rounded-xl border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <Label htmlFor={`${id}-enabled`} className="flex items-center gap-2">
-            <Brain className="size-4" />
-            {t('memory_title')}
-          </Label>
-          <p className="max-w-prose text-muted-foreground text-xs">
-            {t('memory_hint')}
-          </p>
-        </div>
-        <Switch
-          id={`${id}-enabled`}
-          checked={query.data?.enabled === true}
-          disabled={!query.data || mutation.isPending}
-          onCheckedChange={(enabled) =>
-            mutation.mutate({ action: 'settings', enabled })
-          }
-        />
-      </div>
+    <MeetSettingsCard>
+      <MeetSettingsToggle
+        id={`${id}-enabled`}
+        icon={<Brain className="size-4" />}
+        label={t('memory_title')}
+        hint={t('memory_hint')}
+        checked={query.data?.enabled === true}
+        disabled={!query.data || mutation.isPending}
+        onCheckedChange={(enabled) =>
+          mutation.mutate({ action: 'settings', enabled })
+        }
+      />
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <Badge variant="secondary" className="gap-1">
           <LockKeyhole className="size-3" />
@@ -119,104 +113,106 @@ export function MeetMemorySettings({
           {t('memory_empty')}
         </p>
       )}
-      <ul className="max-h-72 divide-y overflow-y-auto">
-        {query.data?.memories.map((memory) => (
-          <li key={memory.id} className="space-y-2 py-3 first:pt-0">
-            {editing === memory.id ? (
-              <div className="space-y-2">
-                <Textarea
-                  aria-label={t('memory_content')}
-                  maxLength={1000}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                />
-                <div className="flex justify-end gap-2">
+      {!!query.data?.memories.length && (
+        <ul className="max-h-72 divide-y overflow-y-auto">
+          {query.data.memories.map((memory) => (
+            <li key={memory.id} className="space-y-2 py-3 first:pt-0">
+              {editing === memory.id ? (
+                <div className="space-y-2">
+                  <Textarea
+                    aria-label={t('memory_content')}
+                    maxLength={1000}
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditing(null);
+                        setDraft('');
+                      }}
+                    >
+                      {t('cancel')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={mutation.isPending || !draft.trim()}
+                      onClick={() =>
+                        mutation.mutate({
+                          action: 'edit',
+                          id: memory.id,
+                          content: draft,
+                        })
+                      }
+                    >
+                      <Check className="size-3.5" />
+                      {t('save')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                    {memory.content}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label={t('edit_memory')}
+                    disabled={mutation.isPending}
+                    onClick={() => {
+                      setEditing(memory.id);
+                      setDraft(memory.content);
+                    }}
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 shrink-0"
+                    aria-label={t('delete_memory')}
+                    disabled={mutation.isPending}
+                    onClick={() => setDeleting(memory.id)}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+              {deleting === memory.id && (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted p-2 text-xs">
+                  <span className="min-w-0 flex-1">
+                    {t('delete_memory_confirm')}
+                  </span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      setEditing(null);
-                      setDraft('');
-                    }}
+                    aria-label={t('cancel')}
+                    onClick={() => setDeleting(null)}
                   >
-                    {t('cancel')}
+                    <X className="size-3.5" />
                   </Button>
                   <Button
                     size="sm"
-                    disabled={mutation.isPending || !draft.trim()}
+                    variant="destructive"
+                    disabled={mutation.isPending}
                     onClick={() =>
-                      mutation.mutate({
-                        action: 'edit',
-                        id: memory.id,
-                        content: draft,
-                      })
+                      mutation.mutate({ action: 'delete', id: memory.id })
                     }
                   >
-                    <Check className="size-3.5" />
-                    {t('save')}
+                    {t('delete_memory')}
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2">
-                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm leading-relaxed">
-                  {memory.content}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0"
-                  aria-label={t('edit_memory')}
-                  disabled={mutation.isPending}
-                  onClick={() => {
-                    setEditing(memory.id);
-                    setDraft(memory.content);
-                  }}
-                >
-                  <Pencil className="size-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0"
-                  aria-label={t('delete_memory')}
-                  disabled={mutation.isPending}
-                  onClick={() => setDeleting(memory.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </div>
-            )}
-            {deleting === memory.id && (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted p-2 text-xs">
-                <span className="min-w-0 flex-1">
-                  {t('delete_memory_confirm')}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label={t('cancel')}
-                  onClick={() => setDeleting(null)}
-                >
-                  <X className="size-3.5" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={mutation.isPending}
-                  onClick={() =>
-                    mutation.mutate({ action: 'delete', id: memory.id })
-                  }
-                >
-                  {t('delete_memory')}
-                </Button>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {query.data?.enabled && !editing && (
-        <div className="space-y-2 border-t pt-3">
+        <div className="grid gap-3 border-t pt-4">
           <Textarea
             aria-label={t('memory_content')}
             placeholder={t('memory_placeholder')}
@@ -224,27 +220,29 @@ export function MeetMemorySettings({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
           />
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={
-              mutation.isPending ||
-              !draft.trim() ||
-              query.data.memories.length >= 100
-            }
-            onClick={() =>
-              mutation.mutate({
-                action: 'save',
-                content: draft,
-                category: 'preference',
-              })
-            }
-          >
-            <Plus className="size-3.5" />
-            {t('add_memory')}
-          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={
+                mutation.isPending ||
+                !draft.trim() ||
+                query.data.memories.length >= 100
+              }
+              onClick={() =>
+                mutation.mutate({
+                  action: 'save',
+                  content: draft,
+                  category: 'preference',
+                })
+              }
+            >
+              <Plus className="size-4" />
+              {t('add_memory')}
+            </Button>
+          </div>
         </div>
       )}
-    </section>
+    </MeetSettingsCard>
   );
 }

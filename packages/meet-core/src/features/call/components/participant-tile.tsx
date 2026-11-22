@@ -281,15 +281,21 @@ function ParticipantTileImpl({
             className="size-4 shrink-0"
           />
         )}
+        {/* Names wrap to two lines before clipping; the self label stays whole. */}
         <span
           className={cn(
-            'min-w-0 truncate font-medium',
-            floating ? 'text-xs' : 'text-sm'
+            'min-w-0 font-medium',
+            floating
+              ? 'truncate text-xs'
+              : 'line-clamp-2 break-words text-sm @max-[12rem]:line-clamp-1'
           )}
+          title={floating ? undefined : participant.displayName}
         >
           {floating ? t('you') : participant.displayName}
-          {isSelf && !floating ? ` · ${t('you')}` : ''}
         </span>
+        {isSelf && !floating && (
+          <span className="shrink-0 font-medium text-sm">· {t('you')}</span>
+        )}
         {!isSelf && !presenceOnly && (
           <MediaReceivingStatus
             audio={readiness.receivingAudio}

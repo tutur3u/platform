@@ -1,9 +1,8 @@
 'use client';
 import { MessageSquareText } from '@tuturuuu/icons';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { MeetRoomController } from '../lib/room-controller';
+import { MeetSettingsCard, MeetSettingsToggle } from './meet-settings-card';
 
 export function ChatSettings({
   room,
@@ -14,20 +13,16 @@ export function ChatSettings({
 }) {
   const t = useTranslations('meet.call');
   return (
-    <section className="flex items-start justify-between gap-3 rounded-xl border p-4">
-      <div className="space-y-1">
-        <Label htmlFor="meet-save-chat" className="flex items-center gap-2">
-          <MessageSquareText className="size-4" />
-          {t('save_chat')}
-        </Label>
-        <p className="text-muted-foreground text-xs">{t('save_chat_hint')}</p>
-      </div>
-      <Switch
+    <MeetSettingsCard>
+      <MeetSettingsToggle
         id="meet-save-chat"
+        icon={<MessageSquareText className="size-4" />}
+        label={t('save_chat')}
+        hint={t('save_chat_hint')}
         checked={room.state.settings.saveChat !== false}
         disabled={!canManage}
         onCheckedChange={(saveChat) => room.updateSettings({ saveChat })}
       />
-    </section>
+    </MeetSettingsCard>
   );
 }

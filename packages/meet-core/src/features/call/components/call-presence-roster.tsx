@@ -53,7 +53,7 @@ export function CallPresenceRoster({
           return (
             <li
               key={person.userId}
-              className="flex w-20 flex-col items-center gap-1.5 text-center"
+              className="flex min-w-20 max-w-36 flex-col items-center gap-1.5 text-center"
             >
               <span className="relative">
                 <Avatar className="size-14">
@@ -74,7 +74,10 @@ export function CallPresenceRoster({
                   </span>
                 )}
               </span>
-              <span className="w-full truncate text-sm">
+              <span
+                className="line-clamp-2 w-full break-words text-sm"
+                title={person.displayName}
+              >
                 {self
                   ? t('presence_roster.self', { name: person.displayName })
                   : person.displayName}

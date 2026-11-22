@@ -12,6 +12,7 @@ import {
   PhoneOff,
   Square,
   Users,
+  UsersRound,
   Video,
   VideoOff,
 } from '@tuturuuu/icons';
@@ -429,13 +430,16 @@ export function ControlBar({
               ) : null}
               {extraControls}
               {onPresenceChange && (
-                <Label className="flex min-h-11 items-center justify-between gap-2 border-t px-3 pt-1">
-                  {t('presence_only')}
-                  <Switch
-                    checked={presenceOnly}
-                    onCheckedChange={onPresenceChange}
-                  />
-                </Label>
+                <div className="mt-1 border-t pt-1">
+                  <Label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
+                    <UsersRound className="size-5 shrink-0" />
+                    <span className="min-w-0 flex-1">{t('presence_only')}</span>
+                    <Switch
+                      checked={presenceOnly}
+                      onCheckedChange={onPresenceChange}
+                    />
+                  </Label>
+                </div>
               )}
             </CloseCallOverflow.Provider>
           </PopoverContent>
