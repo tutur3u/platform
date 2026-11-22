@@ -26,10 +26,11 @@ export function SidebarSettingsButton({
       aria-label={label}
       className={satelliteNavigationItemClass({ isCollapsed })}
       data-slot="sidebar-settings-button"
-      onClick={() =>
+      onClick={(event) =>
         window.dispatchEvent(
           new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
             cancelable: true,
+            detail: { returnFocus: event.currentTarget },
           })
         )
       }

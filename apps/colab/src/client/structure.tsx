@@ -21,6 +21,10 @@ import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
 import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import {
+  SettingsDialogFocusContext,
+  useSettingsDialogFocusReturn,
+} from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { ReportProblemDialogContent } from '@tuturuuu/ui/report-problem-dialog-content';
 import { type ReactNode, useMemo, useState } from 'react';
@@ -63,9 +67,15 @@ export function Structure({
   const [appsOpen, setAppsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const { rememberFocus, restoreFocus } =
+    useSettingsDialogFocusReturn(settingsOpen);
+  const openSettings = (origin?: HTMLElement) => {
+    rememberFocus(origin);
+    setSettingsOpen(true);
+  };
   useSettingsDialogShortcut({
     enabled: true,
-    onOpen: () => setSettingsOpen(true),
+    onOpen: () => openSettings(),
   });
   const links = useMemo<(NavLink | null)[]>(
     () => [
@@ -156,6 +166,7 @@ export function Structure({
     [c, roomId, identity?.email, room?.self.admin]
   );
   const {
+    behavior,
     isCollapsed: collapsed,
     mobileSidebarOpen,
     setIsCollapsed,
@@ -172,6 +183,7 @@ export function Structure({
       localStorage.getItem('colab-sidebar-collapsed') === 'true',
     persistCollapsed,
     behavior: sidebar.behavior,
+    holdBehavior: settingsOpen,
     handleBehaviorChange: sidebar.handleBehaviorChange,
     backLabel: c.back,
   });
@@ -197,13 +209,15 @@ export function Structure({
         t={(key, values) => t(`common.${key}`, values)}
       />
 
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <ColabSettings
-          onLocaleChange={onLocaleChange}
-          onClose={() => setSettingsOpen(false)}
-          onReport={() => setFeedbackOpen(true)}
-        />
-      </Dialog>
+      <SettingsDialogFocusContext value={restoreFocus}>
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <ColabSettings
+            onLocaleChange={onLocaleChange}
+            onClose={() => setSettingsOpen(false)}
+            onReport={() => setFeedbackOpen(true)}
+          />
+        </Dialog>
+      </SettingsDialogFocusContext>
 
       <AppsLauncherCoreDialog
         closeLabel={c.common.close}
@@ -251,7 +265,7 @@ export function Structure({
             variant="ghost"
             aria-label={c.settings}
             className={`h-9 rounded-lg ${collapsed ? 'w-9 px-0' : 'w-full justify-start px-3'}`}
-            onClick={() => setSettingsOpen(true)}
+            onClick={(event) => openSettings(event.currentTarget)}
           >
             <Settings className="size-4 shrink-0" />
             {!collapsed && c.settings}
@@ -276,12 +290,10 @@ export function Structure({
         }
         userPopover={account(true)}
         sidebarOverlayOpen={appsOpen || settingsOpen || feedbackOpen}
-        overlayOnExpand={
-          sidebar.behavior === 'hover' || sidebar.behavior === 'minimal'
-        }
+        overlayOnExpand={behavior === 'hover' || behavior === 'minimal'}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        sidebarMinimal={sidebar.behavior === 'minimal'}
+        sidebarMinimal={behavior === 'minimal'}
       >
         <div className="colab-content">{children}</div>
       </SatelliteShell>

@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from '@testing-library/react';
+import { useSettingsDialogFocusReturn } from '../../../hooks/use-settings-dialog-focus-return';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../dialog';
@@ -212,6 +219,25 @@ describe('Structure in minimal mode', () => {
     ).toContain(
       'group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-2'
     );
+  });
+
+  it('returns keyboard focus from Settings without reopening the overlay', () => {
+    render(<MinimalShell />);
+    const { result, rerender } = renderHook(
+      ({ open }) => useSettingsDialogFocusReturn(open),
+      { initialProps: { open: false } }
+    );
+    result.current.rememberFocus(trigger());
+    rerender({ open: true });
+    setModality('keyboard');
+    rerender({ open: false });
+
+    act(() => result.current.restoreFocus(new Event('closeAutoFocus')));
+    advance(32);
+
+    expect(document.activeElement).toBe(trigger());
+    expect(trigger()).toHaveAttribute('aria-expanded', 'false');
+    expect(fireEvent.keyDown(trigger(), { key: 'Tab' })).toBe(true);
   });
 
   it('does not open when a click or tap focuses the logo', () => {

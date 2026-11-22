@@ -4,6 +4,10 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
+  SettingsDialogFocusContext,
+  useSettingsDialogFocusReturn,
+} from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { useParams, usePathname } from 'next/navigation';
 import type { ComponentType } from 'react';
@@ -33,6 +37,7 @@ function getRouteParam(params: Record<string, string | string[]>, key: string) {
 }
 
 type SettingsOpenIntent = {
+  returnFocus?: HTMLElement;
   settingsBoardId?: string;
   settingsLinkedProvider?: string;
   settingsTab?: string;
@@ -77,6 +82,8 @@ export function SettingsDialogHost({
   const requestedSettingsBoardId = extras.settingsBoardId ?? undefined;
   const linkedProvider = extras.settingsLinkedProvider ?? undefined;
   const settingsOpen = requestedSettingsOpen || Boolean(openIntent);
+  const { rememberFocus, restoreFocus } =
+    useSettingsDialogFocusReturn(settingsOpen);
   const SettingsDialog = useLazyClientComponent(
     loadSettingsDialog,
     settingsOpen
@@ -91,6 +98,7 @@ export function SettingsDialogHost({
           ? (event.detail as SettingsOpenIntent)
           : {};
 
+      rememberFocus(detail.returnFocus);
       const intent: SettingsOpenIntent = {
         settingsBoardId:
           typeof detail.settingsBoardId === 'string'
@@ -127,7 +135,7 @@ export function SettingsDialogHost({
         handleSettingsIntent
       );
     };
-  }, [openSettings]);
+  }, [openSettings, rememberFocus]);
 
   // The optimistic intent only bridges the gap until the URL acknowledges the
   // open. Clear it whenever both exist, independent of the lazy import, so a
@@ -158,8 +166,9 @@ export function SettingsDialogHost({
       return;
     }
 
+    rememberFocus();
     openSettings(null);
-  }, [openSettings, params, pathname]);
+  }, [openSettings, params, pathname, rememberFocus]);
 
   useSettingsDialogShortcut({
     enabled: Boolean(user),
@@ -186,20 +195,22 @@ export function SettingsDialogHost({
     : openIntent?.settingsLinkedProvider;
 
   return (
-    <Dialog open={settingsOpen} onOpenChange={handleSettingsOpenChange}>
-      {settingsOpen &&
-        (SettingsDialog ? (
-          <SettingsDialog
-            wsId={wsId}
-            user={user}
-            workspace={workspace}
-            defaultTab={dialogDefaultTab}
-            boardId={dialogBoardId}
-            linkedProvider={dialogLinkedProvider}
-          />
-        ) : (
-          <SettingsDialogFullscreenSkeleton />
-        ))}
-    </Dialog>
+    <SettingsDialogFocusContext value={restoreFocus}>
+      <Dialog open={settingsOpen} onOpenChange={handleSettingsOpenChange}>
+        {settingsOpen &&
+          (SettingsDialog ? (
+            <SettingsDialog
+              wsId={wsId}
+              user={user}
+              workspace={workspace}
+              defaultTab={dialogDefaultTab}
+              boardId={dialogBoardId}
+              linkedProvider={dialogLinkedProvider}
+            />
+          ) : (
+            <SettingsDialogFullscreenSkeleton />
+          ))}
+      </Dialog>
+    </SettingsDialogFocusContext>
   );
 }

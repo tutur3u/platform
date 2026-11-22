@@ -123,12 +123,32 @@ describe('Structure', () => {
     expect(
       sidebarQueries.getByRole('button', { name: 'Account' })
     ).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Account' })).toHaveLength(1);
     expect(
       sidebarQueries.getByRole('button', { name: 'Notifications' })
     ).toBeVisible();
     expect(
       sidebarQueries.queryByText('Expanded account actions')
     ).not.toBeInTheDocument();
+  });
+
+  it('mounts the compact account in the top bar only on a phone', () => {
+    vi.stubGlobal('innerWidth', 390);
+    const { container } = render(
+      <Structure
+        isCollapsed
+        setIsCollapsed={vi.fn()}
+        mobileSidebarOpen={false}
+        userPopover={<button type="button">Account</button>}
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+
+    const account = screen.getByRole('button', { name: 'Account' });
+    expect(account.closest('nav')).toBe(
+      container.querySelector('[data-slot="mobile-top-bar"]')
+    );
   });
 
   it('renders the combined account actions only once when expanded', () => {

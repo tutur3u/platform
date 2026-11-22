@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import { SettingsDialogFocusContext } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
+import { type ReactNode, useContext, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
 
@@ -56,6 +58,17 @@ function renderHost() {
   return render(<SettingsDialogHost user={user} wsId="personal" />);
 }
 
+function CloseFocusProbe() {
+  const restoreFocus = useContext(SettingsDialogFocusContext);
+  useEffect(
+    () => () => {
+      setTimeout(() => restoreFocus?.(new Event('closeAutoFocus')), 0);
+    },
+    [restoreFocus]
+  );
+  return <div>Preferences</div>;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   state.lazyComponent = null;
@@ -72,6 +85,52 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SettingsDialogHost optimistic open intent', () => {
+  it('restores focus to the Minimal logo when Settings replaces its opener', async () => {
+    function Shell({ minimal }: { minimal: boolean }) {
+      return (
+        <>
+          <aside data-slot="app-sidebar">
+            {minimal ? (
+              <button data-sidebar-reveal-trigger="" key="logo" type="button">
+                Open sidebar
+              </button>
+            ) : (
+              <button key="settings" type="button">
+                Settings
+              </button>
+            )}
+          </aside>
+          <SettingsDialogHost user={user} wsId="personal" />
+        </>
+      );
+    }
+    state.lazyComponent = CloseFocusProbe;
+    const view = render(<Shell minimal={false} />);
+    const opener = screen.getByRole('button', { name: 'Settings' });
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+          detail: { returnFocus: opener, settingsTab: 'sidebar' },
+        })
+      );
+    });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    state.query = {
+      ...state.query,
+      settingsDialog: 'open',
+      settingsTab: 'sidebar',
+    };
+    view.rerender(<Shell minimal />);
+    state.query = { ...state.query, settingsDialog: null, settingsTab: null };
+    view.rerender(<Shell minimal />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Open sidebar' })).toHaveFocus()
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('stays closed after Back while the lazy dialog import is pending', () => {
     const view = renderHost();
 

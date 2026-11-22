@@ -1,6 +1,10 @@
 'use client';
 
 import { createContext, useCallback, useLayoutEffect, useRef } from 'react';
+import {
+  focusSidebarRevealTrigger,
+  SIDEBAR_REVEAL_TRIGGER_SELECTOR,
+} from '../components/ui/custom/use-sidebar-overlay-close';
 
 export const SettingsDialogFocusContext = createContext<
   ((event: Event) => void) | undefined
@@ -34,7 +38,7 @@ export function useSettingsDialogFocusReturn(open: boolean) {
       if (isOpen.current) return;
       const target = [
         origin,
-        sidebar?.querySelector<HTMLElement>('[data-sidebar-reveal-trigger]'),
+        sidebar?.querySelector<HTMLElement>(SIDEBAR_REVEAL_TRIGGER_SELECTOR),
         sidebar?.querySelector<HTMLElement>(
           '[data-slot="sidebar-settings-button"]'
         ),
@@ -44,7 +48,11 @@ export function useSettingsDialogFocusReturn(open: boolean) {
           !control.closest('[inert]') &&
           control.checkVisibility?.({ visibilityProperty: true }) !== false
       );
-      target?.focus({ preventScroll: true });
+      if (target?.matches(SIDEBAR_REVEAL_TRIGGER_SELECTOR)) {
+        focusSidebarRevealTrigger(target);
+      } else {
+        target?.focus({ preventScroll: true });
+      }
     });
   }, []);
 

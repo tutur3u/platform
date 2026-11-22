@@ -91,6 +91,7 @@ export function Structure({
   const isMobile = useIsMobile();
   const panelId = useId();
   const isMinimal = sidebarMinimal && !sidebarHidden;
+  const accountInTopBar = isMobile || (isMinimal && isCollapsed);
   // Minimal always opens over the page, whatever the shell passed.
   const overlay = overlayOnExpand || isMinimal;
   const revealTrigger = isMinimal && !isMobile;
@@ -158,7 +159,7 @@ export function Structure({
                 {mobileHeader}
               </div>
               <div className="flex w-fit items-center gap-2">
-                {userPopover}
+                {accountInTopBar && userPopover}
                 <Button
                   size="icon"
                   variant="outline"
@@ -349,7 +350,7 @@ export function Structure({
                     >
                       {isCollapsed ? (
                         <div className="flex w-full flex-col items-center gap-1">
-                          {userPopover}
+                          {!accountInTopBar && userPopover}
                           {notificationPopover}
                         </div>
                       ) : (

@@ -14,6 +14,17 @@ const CLOSE_FALLBACK_MS = SIDEBAR_OVERLAY_CLOSE_MS + 80;
 
 /** The logo button that stands in for the sidebar in minimal mode. */
 export const SIDEBAR_REVEAL_TRIGGER_SELECTOR = '[data-sidebar-reveal-trigger]';
+const restoringRevealFocus = new WeakSet<HTMLElement>();
+
+export function focusSidebarRevealTrigger(trigger: HTMLElement) {
+  restoringRevealFocus.add(trigger);
+  try {
+    trigger.focus({ preventScroll: true });
+  } finally {
+    restoringRevealFocus.delete(trigger);
+  }
+}
+
 /** The element that runs the conceal animation when it is not the panel. */
 const SURFACE_ATTRIBUTE = 'data-sidebar-overlay-surface';
 /** Overlays opened from the sidebar render in portals outside the panel. */
@@ -316,7 +327,13 @@ export function useSidebarOverlayClose({
       const onTrigger =
         target instanceof Element &&
         target.matches(SIDEBAR_REVEAL_TRIGGER_SELECTOR);
-      if (ignoreTriggerFocus.current && onTrigger) return;
+      if (
+        onTrigger &&
+        (ignoreTriggerFocus.current ||
+          (target instanceof HTMLElement && restoringRevealFocus.has(target)))
+      ) {
+        return;
+      }
       ignoreTriggerFocus.current = false;
       if (!holds.current.has('focus') && isKeyboardFocus(target)) {
         hold('focus');
