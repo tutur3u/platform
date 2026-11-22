@@ -7,6 +7,10 @@ import {
 } from '../src/native/auth';
 import { withOwner } from '../src/native/context';
 import { mastermindRequest, secure } from '../src/native/request';
+import { installWebUserAgent } from '../src/native/web-fetch';
+
+// Every call this Worker makes to tuturuuu.com names itself (web-fetch.ts).
+installWebUserAgent();
 export default {
   fetch(request: Request, env: MastermindEnvironment) {
     try {

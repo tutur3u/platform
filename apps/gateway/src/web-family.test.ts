@@ -250,6 +250,7 @@ describe('web family request hygiene', () => {
     headers.set('cookie', 'fixture_session=1');
     headers.set('authorization', 'Bearer fixture-only');
     headers.set('next-action', 'fixture-action');
+    headers.set('x-tuturuuu-app-redeem-proof', 'fixture-proof');
     await t.call('/api/v1/users/me/profile', {
       method: 'PATCH',
       headers,
@@ -262,6 +263,10 @@ describe('web family request hygiene', () => {
       expect(sent.headers.has(name), name).toBe(false);
     }
     expect(sent.headers.has('x-forwarded-for')).toBe(false);
+    // Web verifies the redemption HMAC itself, so the proof passes through.
+    expect(sent.headers.get('x-tuturuuu-app-redeem-proof')).toBe(
+      'fixture-proof'
+    );
     expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
     expect(sent.headers.get('x-forwarded-proto')).toBe('https');
     expect(sent.headers.get('x-gateway-hop')).toBe('1');
