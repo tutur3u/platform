@@ -256,8 +256,10 @@ function CallShellContent({
     requiresAccount,
     canManage,
     enabled: liveTools,
-    // Whoever runs activities must reach them even when browsing is hosts-only.
+    // Whoever runs activities reaches those, and only those, when browsing
+    // the tools is for hosts only.
     available: roomTools.canUse || runsRoomActivities(state),
+    activitiesOnly: !roomTools.canUse,
     canRunActivities: runsRoomActivities(state),
     selfUserId: state.selfUserId,
     people: state.participants,

@@ -1,6 +1,7 @@
 'use client';
 
 import { MeetToolProvider } from './context';
+import { roomActivityTools } from './live-activities/activity-manager';
 import { findMeetTool, type MeetToolDefinition, meetTools } from './registry';
 import { MeetToolsHub, MeetToolsMenu } from './tools-hub';
 
@@ -30,6 +31,7 @@ export function useMeetTools<A extends string>({
   canRunActivities,
   enabled,
   available,
+  activitiesOnly,
   selfUserId,
   people,
   tools = meetTools,
@@ -48,6 +50,11 @@ export function useMeetTools<A extends string>({
   people?: Readonly<Record<string, { displayName?: string } | undefined>>;
   /** Whether this person may browse the hub (live shortcuts still open tools). */
   available: boolean;
+  /**
+   * Set for someone who may not use the room's tools but runs its activities:
+   * they browse the activities and the pen board, and nothing else.
+   */
+  activitiesOnly?: boolean;
   tools?: readonly MeetToolDefinition[];
 }) {
   const activeId = toolIdFromDrawer(drawer);
@@ -61,7 +68,8 @@ export function useMeetTools<A extends string>({
   };
   const close = () => onDrawer(null);
   const Panel = active?.Panel;
-  const shown = available && enabled ? tools : [];
+  const browsable = activitiesOnly ? roomActivityTools(tools) : tools;
+  const shown = available && enabled ? browsable : [];
 
   return {
     activeId,

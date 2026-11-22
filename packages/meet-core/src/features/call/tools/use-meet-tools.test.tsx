@@ -37,10 +37,14 @@ function Harness({
   drawer,
   onDrawer,
   available = true,
+  activitiesOnly,
+  registry = [sample, literal],
 }: {
   drawer: string | null;
   onDrawer: (next: string | null) => void;
   available?: boolean;
+  activitiesOnly?: boolean;
+  registry?: readonly MeetToolDefinition[];
 }) {
   const tools = useMeetTools<'polls' | 'quiz-arena' | 'forms'>({
     drawer,
@@ -51,11 +55,15 @@ function Harness({
     canManage: true,
     enabled: true,
     available,
-    tools: [sample, literal],
+    activitiesOnly,
+    tools: registry,
   });
   return (
     <>
       <div data-testid="menu">{tools.menu}</div>
+      <output data-testid="shown">
+        {tools.shown.map(({ id }) => id).join(' ')}
+      </output>
       {tools.panel}
       <button type="button" onClick={() => tools.route('polls')}>
         live poll
@@ -114,6 +122,41 @@ it('hides the hub list when tools are not available but keeps an open panel', ()
   expect(
     screen.getByRole('button', { name: 'panel for meeting as host person' })
   ).toBeTruthy();
+});
+
+it('lets someone who only runs activities browse those and the pen board, nothing else', () => {
+  const shown = () => screen.getByTestId('shown').textContent;
+  const all = meetTools.map(({ id }) => id).join(' ');
+  // A workspace co-host in a room whose tools are for hosts only.
+  const cohost = renderHarness({
+    drawer: null,
+    onDrawer: vi.fn(),
+    activitiesOnly: true,
+    registry: meetTools,
+  });
+  expect(shown()).toBe(
+    'live-assessment live-flashcards live-game live-icebreaker pen-whiteboard'
+  );
+  for (const hostsOnly of ['Polls', 'Q&A'])
+    expect(screen.queryByRole('button', { name: hostsOnly })).toBeNull();
+  cohost.unmount();
+  // Someone who may use the room's tools browses all of them.
+  const member = renderHarness({
+    drawer: null,
+    onDrawer: vi.fn(),
+    registry: meetTools,
+  });
+  expect(shown()).toBe(all);
+  member.unmount();
+  // Someone who may do neither browses none.
+  renderHarness({
+    drawer: null,
+    onDrawer: vi.fn(),
+    available: false,
+    activitiesOnly: true,
+    registry: meetTools,
+  });
+  expect(shown()).toBe('');
 });
 
 it('registers polls, timer, quiz, the live activities and the pen board in order', () => {

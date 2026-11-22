@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { runsRoomActivities } from './activity-manager';
+import { roomActivityTools, runsRoomActivities } from './activity-manager';
 
 it('matches the room: hosts, participant managers and workspace co-hosts run activities', () => {
   expect(runsRoomActivities({ role: 'host', classRole: 'host' })).toBe(true);
@@ -24,4 +24,27 @@ it('matches the room: hosts, participant managers and workspace co-hosts run act
   ).toBe(false);
   expect(runsRoomActivities({ role: 'viewer' })).toBe(false);
   expect(runsRoomActivities({})).toBe(false);
+});
+
+it('limits someone who only runs activities to the activities and the pen board', () => {
+  const ids = [
+    'polls',
+    'timers',
+    'quiz',
+    'live-qa',
+    'live-assessment',
+    'live-flashcards',
+    'live-game',
+    'live-icebreaker',
+    'pen-whiteboard',
+  ];
+  expect(
+    roomActivityTools(ids.map((id) => ({ id }))).map(({ id }) => id)
+  ).toEqual([
+    'live-assessment',
+    'live-flashcards',
+    'live-game',
+    'live-icebreaker',
+    'pen-whiteboard',
+  ]);
 });
