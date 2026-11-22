@@ -161,12 +161,12 @@ it('retries a warming checker quietly for 20 s, then pauses checks', async () =>
   await idle();
   expect(result.current).toEqual({ kind: 'checking' });
   await idle(CHECK_WARMING_BUDGET_MS);
-  // One attempt every 2 s from the first, the last at 20 s.
-  expect(calls).toHaveLength(11);
+  // The checker asks for 2 s; attempts stay 5 s apart, the last at 20 s.
+  expect(calls).toHaveLength(5);
   expect(result.current).toEqual({ kind: 'paused' });
   edit('int x;');
   await idle(IDLE * 2);
-  expect(calls).toHaveLength(11);
+  expect(calls).toHaveLength(5);
 });
 
 it('resumes after an unavailable pause of at least a minute, on the next edit', async () => {
@@ -252,17 +252,19 @@ it('stays silent and stops when the check endpoint is not deployed', async () =>
   expect(calls).toHaveLength(1);
 });
 
-it('waits out a busy checker before trying again', async () => {
+it('does not retry a busy checker; the next local edit asks again', async () => {
   let busy = true;
-  const { result, calls } = mount((payload) => {
+  const { result, calls, edit } = mount((payload) => {
     if (!busy) return ok(payload);
-    busy = false;
-    return Promise.reject(refused(429, 'PLAYGROUND_BUSY', 4));
+    return Promise.reject(refused(429, 'PLAYGROUND_BUSY', 2));
   });
   await idle();
-  await idle(3900);
+  await idle(30_000);
   expect(calls).toHaveLength(1);
-  await idle(200);
+  expect(result.current).toEqual({ kind: 'off' });
+  busy = false;
+  edit('int y;');
+  await idle();
   expect(calls).toHaveLength(2);
   expect(result.current).toEqual({ kind: 'ready', problems: 0 });
 });
@@ -386,4 +388,29 @@ it('treats an empty room as idle: no check, no markers cleared, no size notice',
   expect(calls).toHaveLength(1);
   expect(sink.clear).not.toHaveBeenCalled();
   expect(result.current).toEqual({ kind: 'off' });
+});
+
+it('waits out the idle delay again when undoing to the text whose check was aborted', async () => {
+  const { calls, edit } = mount(() => new Promise(() => undefined));
+  await idle();
+  expect(calls).toHaveLength(1);
+  edit('int b;');
+  await idle(500);
+  expect(calls[0]!.signal.aborted).toBe(true);
+  edit('int main(){}');
+  await idle(100);
+  expect(calls).toHaveLength(1);
+  await idle(IDLE);
+  expect(calls).toHaveLength(2);
+});
+
+it('ignores a room change that long follows a local edit which changed nothing', async () => {
+  const { calls, edit, typed } = mount((payload) => ok(payload), {
+    localOnly: true,
+  });
+  await typed();
+  await idle(IDLE * 3);
+  edit('int remote(){}');
+  await idle(IDLE * 2);
+  expect(calls).toHaveLength(0);
 });

@@ -90,7 +90,7 @@ it('refuses to expose a join capability to an insecure external endpoint', () =>
   client.destroy();
 });
 
-it('reports local edits but not updates that arrive from the room', () => {
+it('reports local file edits but not the run command or updates from the room', () => {
   const client = new ProgrammingCollaborationClient(vi.fn());
   const edits = vi.fn();
   const stop = client.onLocalEdit(edits);
@@ -98,23 +98,29 @@ it('reports local edits but not updates that arrive from the room', () => {
     client.connect('wss://example.com/collaboration', 'ticket');
     const socket = Socket.instances[0]!;
     const remote = new Y.Doc();
-    remote.getText('command').insert(0, 'ls');
+    const file = new Y.Text('int a;');
+    remote.getMap<Y.Text>('files').set('main.c', file);
     socket.sync(remote);
+    expect(edits).not.toHaveBeenCalled();
     const next = new Y.Doc();
     Y.applyUpdate(next, Y.encodeStateAsUpdate(remote));
-    next.getText('command').insert(2, ' -a');
+    next.getMap<Y.Text>('files').get('main.c')!.insert(6, ' int b;');
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'update',
         update: Buffer.from(Y.encodeStateAsUpdate(next)).toString('base64'),
       }),
     });
-    expect(client.doc.getText('command').toString()).toBe('ls -a');
+    expect(client.doc.getMap<Y.Text>('files').get('main.c')!.toString()).toBe(
+      'int a; int b;'
+    );
     expect(edits).not.toHaveBeenCalled();
-    client.doc.getText('command').insert(0, 'x');
+    client.doc.getText('command').insert(0, 'ls');
+    expect(edits).not.toHaveBeenCalled();
+    client.doc.getMap<Y.Text>('files').get('main.c')!.insert(0, 'x');
     expect(edits).toHaveBeenCalledTimes(1);
     stop();
-    client.doc.getText('command').insert(0, 'y');
+    client.doc.getMap<Y.Text>('files').get('main.c')!.insert(0, 'y');
     expect(edits).toHaveBeenCalledTimes(1);
   } finally {
     client.destroy();

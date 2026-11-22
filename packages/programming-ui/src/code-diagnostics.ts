@@ -38,6 +38,8 @@ export const checkIdleMs = (language: PlaygroundLanguage | undefined) =>
  * quota, so the budget is time rather than a count.
  */
 export const CHECK_WARMING_BUDGET_MS = 20_000;
+/** Warming retries are at least this far apart, whatever the checker suggests. */
+export const CHECK_WARMING_SPACING_MS = 5000;
 /** An unavailable checker pauses checks for at least this long. */
 export const CHECK_PAUSE_MIN_S = 60;
 export const CHECK_LIMITS = {

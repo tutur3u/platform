@@ -11,6 +11,7 @@ import {
 import {
   CHECK_PAUSE_MIN_S,
   CHECK_WARMING_BUDGET_MS,
+  CHECK_WARMING_SPACING_MS,
   type CheckFiles,
   checkHash,
   checkIdleMs,
@@ -22,9 +23,6 @@ import {
   type WorkbenchCheck,
 } from './code-diagnostics';
 import type { CheckMarkerSink } from './editor-markers';
-
-/** A busy checker is waited on this many times per edit; the next edit tries again. */
-const CHECK_BUSY_RETRIES = 3;
 
 function subscribeVisibility(onChange: () => void) {
   document.addEventListener('visibilitychange', onChange);
@@ -104,11 +102,13 @@ export function useRemoteDiagnostics({
   );
   const latest = useRef(files);
   latest.current = files;
-  const edited = useRef(false);
+  // When this browser last changed a file; a change that follows it by more
+  // than the idle delay came from the room.
+  const editedAt = useRef(0);
   useEffect(
     () =>
       localEdits?.(() => {
-        edited.current = true;
+        editedAt.current = Date.now();
       }),
     [localEdits]
   );
@@ -135,15 +135,19 @@ export function useRemoteDiagnostics({
   // An edit aborts the check in flight; the idle delay settles the next one.
   useEffect(() => {
     if (!remote || !checkable) return;
-    if (localEdits && !edited.current) return;
-    if (settledHash.current !== hash)
+    if (localEdits && Date.now() - editedAt.current > checkIdleMs(language))
+      return;
+    // A new hash aborts the check in flight and drops the pending settle, so
+    // undoing back to the aborted text waits for the idle delay like any edit.
+    if (settledHash.current !== hash) {
       void client.cancelQueries({
         queryKey: ['playground-check', roomKey],
         exact: false,
       });
+      setSettled(undefined);
+    }
     const timer = setTimeout(() => {
-      edited.current = false;
-      if (settledHash.current !== hash || checkedHash.current !== hash)
+      if (checkedHash.current !== hash)
         setSettled((value) => ({
           hash,
           files: latest.current,
@@ -196,7 +200,6 @@ export function useRemoteDiagnostics({
       const checkedLanguage = language!;
       const checkedFor = settled!.hash;
       let warmingSince: number | undefined;
-      let busy = 0;
       let conflicted = false;
       for (;;) {
         try {
@@ -218,19 +221,19 @@ export function useRemoteDiagnostics({
           return result.diagnostics.length;
         } catch (error) {
           const refusal = checkRefusal(error);
-          // Each attempt is charged to the quota, so warming is bounded by time.
+          // Each attempt is charged to the quota, so warming is bounded by
+          // time and spaced out. A busy checker is not retried: the next
+          // local edit asks again.
           if (refusal.kind === 'warming') {
             warmingSince ??= Date.now();
-            const wait = refusal.retryAfterSeconds * 1000;
+            const wait = Math.max(
+              refusal.retryAfterSeconds * 1000,
+              CHECK_WARMING_SPACING_MS
+            );
             if (Date.now() - warmingSince + wait <= CHECK_WARMING_BUDGET_MS) {
               await sleep(wait, signal);
               continue;
             }
-          }
-          if (refusal.kind === 'busy' && busy < CHECK_BUSY_RETRIES) {
-            busy += 1;
-            await sleep(refusal.retryAfterSeconds * 1000, signal);
-            continue;
           }
           if (refusal.kind === 'conflict' && !conflicted) {
             conflicted = true;

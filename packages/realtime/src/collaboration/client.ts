@@ -155,13 +155,14 @@ export class ProgrammingCollaborationClient {
     this.presenceAt = Date.now();
   }
 
-  /** Calls back for changes made in this browser; updates from the room are not local. */
+  /** Calls back for file changes made in this browser; the run command and updates from the room are not. */
   onLocalEdit(listener: () => void) {
-    const handler = (_update: Uint8Array, origin: unknown) => {
-      if (origin !== REMOTE) listener();
+    const files = this.doc.getMap('files');
+    const handler = (_events: unknown, transaction: Y.Transaction) => {
+      if (transaction.origin !== REMOTE) listener();
     };
-    this.doc.on('update', handler);
-    return () => this.doc.off('update', handler);
+    files.observeDeep(handler);
+    return () => files.unobserveDeep(handler);
   }
 
   destroy() {

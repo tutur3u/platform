@@ -120,8 +120,9 @@ export function useWorkbenchRun({
         resolve(false);
       };
     });
-  // Request IDs already sent: a Retry reuses its ID, which the service may have accepted.
-  const sentIds = useRef(new Set<string>());
+  // The request ID last sent for each Run request: a resend or a wait changes
+  // it, and a Retry must reuse the one the service may have accepted.
+  const sentAs = useRef(new Map<string, string>());
   const send = async (
     input: { operation: 'run' | 'stop'; stdin: string; runId?: string },
     requestId: string
@@ -141,11 +142,11 @@ export function useWorkbenchRun({
     }) => {
       const { operation } = input;
       const startedAt = Date.now();
-      let requestId = input.requestId;
+      const sentBefore = sentAs.current.get(input.requestId);
+      let requestId = sentBefore ?? input.requestId;
       // A conflicting Retry is shown, never re-sent under a new ID: the first
       // attempt may already be running, and sending again would run twice.
-      let conflictRetried = sentIds.current.has(input.requestId);
-      sentIds.current.add(input.requestId);
+      let conflictRetried = sentBefore !== undefined;
       if (operation === 'run' && owner)
         await checkpointRoom().catch((error: unknown) => {
           throw new WorkbenchStepError('save', error);
@@ -154,6 +155,7 @@ export function useWorkbenchRun({
       let queued: { runId: string };
       for (;;) {
         try {
+          sentAs.current.set(input.requestId, requestId);
           queued = await send(input, requestId);
           break;
         } catch (error) {

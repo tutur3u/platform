@@ -9,7 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import type { PlaygroundLanguage } from '@tuturuuu/types/primitives/playgrounds';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DiagnosticsStatus } from './code-diagnostics';
 import { LANGUAGE_LABELS } from './workbench-language';
 
@@ -57,8 +57,10 @@ function ProblemsStatus({ status }: { status: DiagnosticsStatus }) {
 /**
  * What a screen reader hears: the settled state, once per change. Checking is
  * visual only and keeps the last announcement, so an unchanged count is not
- * read out again after every check.
+ * read out again after every check. It is announced once the state has held
+ * for a second, so a stream of worker updates does not chatter.
  */
+const ANNOUNCE_SETTLE_MS = 1000;
 function ProblemsAnnouncement({ status }: { status: DiagnosticsStatus }) {
   const t = useTranslations('programmingPlayground');
   const text =
@@ -72,7 +74,11 @@ function ProblemsAnnouncement({ status }: { status: DiagnosticsStatus }) {
             ? t('diagnosticsTooLarge')
             : t('diagnosticsProblems', { count: status.problems });
   const [announced, setAnnounced] = useState('');
-  if (text !== undefined && text !== announced) setAnnounced(text);
+  useEffect(() => {
+    if (text === undefined) return;
+    const timer = setTimeout(() => setAnnounced(text), ANNOUNCE_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [text]);
   return (
     <output aria-live="polite" className="sr-only">
       {announced}

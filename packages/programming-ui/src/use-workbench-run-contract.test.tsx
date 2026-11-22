@@ -296,11 +296,13 @@ it('shows a conflicting manual Retry instead of sending it again under a new id'
   });
   act(() => result.current.runOperation('run'));
   await waitFor(() => expect(result.current.run.isError).toBe(true));
-  // The fresh Run was re-sent once; the Retry reuses its ID and is not.
+  // The fresh Run was re-sent once as a new ID; the Retry reuses that last
+  // ID (the one the service may have accepted) and is not re-sent.
   expect(payloads).toHaveLength(2);
   act(() => result.current.run.mutate(result.current.run.variables!));
   await waitFor(() => expect(payloads).toHaveLength(3));
   await waitFor(() => expect(result.current.run.isError).toBe(true));
   expect(payloads).toHaveLength(3);
-  expect(payloads[2]!.requestId).toBe(payloads[0]!.requestId);
+  expect(payloads[2]!.requestId).toBe(payloads[1]!.requestId);
+  expect(payloads[1]!.requestId).not.toBe(payloads[0]!.requestId);
 });
