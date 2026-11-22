@@ -614,6 +614,77 @@ and does not retry it. Production inbound runs through Cloudflare Email Routing.
 Configure the topic and the other `MAIL_SES_*` values on the Mail Worker before
 subscribing SNS to the endpoint. Coverage: `apps/mail/src/app/api/v1/webhooks/mail/ses/route.test.ts`.
 
+### Email Routing Worker logs
+
+`tuturuuu-mail-email-routing` has Workers Observability enabled in
+`apps/mail/wrangler.email-routing.jsonc` at the default `head_sampling_rate`
+of `1`. Per-message failures are queryable there alongside the zone's Email
+Routing activity log.
+
+**Cost envelope.** Logging is billed per invocation, and invocations equal
+Email Routing delivery attempts:
+
+- The Worker writes no `console` output. Each attempt produces one
+  invocation log. An uncaught exception is recorded on that invocation.
+- Within one invocation, the ingest call is tried up to three times on `429`
+  or `5xx`. These are subrequests of the same invocation, not separate
+  invocations.
+- When the Worker calls `setReject` (an invalid recipient, a message over
+  25 MiB, or a domain that Mail refuses), the sender receives a permanent
+  failure and does not retry.
+- When the Worker throws (an ingest outage or a transient ingest error), the
+  sender receives a temporary failure and retries on its own schedule. Each
+  retry is a new invocation. An ingest outage therefore multiplies events by
+  the senders' retry counts, and a spam burst multiplies them by message count.
+- Cloudflare truncates a log at 256 KB, so one attempt ingests at most 256 KB.
+
+Workers Logs pricing for this Worker on Workers Paid:
+
+- **Until December 1, 2026:** 20 million log events per month are included,
+  then $0.60 per million.
+- **From December 1, 2026:** Workers Logs draw on the account's shared
+  Cloudflare Observability allowance, then cost $0.25 per GB ingested and
+  $0.10 per GB-month stored, with 7-day retention. At the 256 KB ceiling, that
+  is at most $0.064 of ingestion per 1,000 attempts beyond the allowance.
+  Enterprise accounts switch at contract renewal, and legacy Log Explorer
+  usage is billed separately.
+
+Both allowances are shared with the account's other Workers. See
+[Cloudflare Observability pricing](https://developers.cloudflare.com/observability/pricing/).
+Check the script's event count per invocation during an ingest outage or spam
+burst, and before onboarding a high-volume domain.
+
+**Stop.** No workflow deploys this Worker. Every deploy is a manual release
+from `main`, so a committed value is the durable state.
+
+1. **Immediate stop, no build.** Send
+   `PATCH /accounts/{account_id}/workers/scripts/tuturuuu-mail-email-routing/script-settings`
+   with `{"observability":{"enabled":false}}`, using a token with Workers
+   Scripts Write. Read back `GET …/script-settings`; it must show
+   observability disabled. New invocations stop producing logs. Logs already
+   stored expire after the 7-day retention.
+2. **Durable stop.** Commit `"enabled": false` in
+   `apps/mail/wrangler.email-routing.jsonc` before the next deploy of this
+   Worker. A deploy of the checked-in `true` would resume logging.
+
+Lowering `head_sampling_rate` reduces ingestion but does not stop it.
+Delivery does not depend on logging.
+
+**Stop verification.** The production stop check exercises the immediate
+stop:
+
+1. Deploy from `main` with logging on, then confirm that a delivery is
+   ingested and logged.
+2. Turn logging off with the settings `PATCH`, then confirm that the next
+   delivery is still ingested and produces no new log event.
+3. Turn logging back on with the same `PATCH`, then confirm that logging
+   resumes.
+
+Production keeps logging on, so `main` never carries `"enabled": false`. For
+that reason the check does not deploy a committed `false`. That path is an
+ordinary config change plus a manual deploy, and its effect is visible in the
+same settings readback.
+
 ## Cloudflare onboarding
 
 Cloudflare must already manage DNS for an onboarded domain. Arbitrary-recipient
