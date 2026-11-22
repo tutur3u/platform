@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-// Mastermind fleet sync publisher. Run once per launchd tick on the
-// orchestrator Mac: publishes the live fleet snapshot when it changes (or every
-// heartbeat), then pulls owner decision answers into the local answers folder
-// and acknowledges them, then refreshes the firing SLO alerts file when the
-// tick has time left. It never sends messages to fleet threads.
+// Each launchd tick publishes changed snapshots or heartbeats, pulls and
+// acknowledges answers, and refreshes firing SLO alerts within the tick budget.
 // Runbook: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 import { createHmac, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
