@@ -222,6 +222,7 @@ export function Structure({
                       ? 'sidebar-overlay-conceal'
                       : 'sidebar-overlay-reveal')
                 )}
+                data-minimal-sidebar={isMinimal || undefined}
                 data-overlay-state={
                   overlayOpen
                     ? overlayClose.isClosing

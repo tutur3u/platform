@@ -36,6 +36,20 @@ describe('SidebarWorkspaceSelectSection', () => {
       container
         .querySelector('[data-reveal-state]')
         ?.getAttribute('data-reveal-state')
+    ).toBe('closed');
+  });
+
+  it('opens the picker for an explicit reveal request', () => {
+    const { container } = render(
+      <SidebarWorkspaceSelectSection visible openRequest={() => true}>
+        <RevealProbe />
+      </SidebarWorkspaceSelectSection>
+    );
+
+    expect(
+      container
+        .querySelector('[data-reveal-state]')
+        ?.getAttribute('data-reveal-state')
     ).toBe('open');
   });
 

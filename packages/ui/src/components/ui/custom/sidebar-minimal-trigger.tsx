@@ -8,8 +8,8 @@ import type { ReactNode } from 'react';
  * hover, keyboard focus or tap. `useSidebarOverlayClose` finds it by its
  * `data-sidebar-reveal-trigger` attribute and wires those interactions.
  *
- * It stays mounted under the open panel, so keyboard focus that revealed the
- * sidebar is never moved; the panel draws the ring for it meanwhile.
+ * The same button sits over the panel's brand slot while open, so a click
+ * after hover still interacts with the sidebar. The panel draws its focus ring.
  */
 export function SidebarMinimalTrigger({
   controls,
@@ -30,8 +30,10 @@ export function SidebarMinimalTrigger({
       aria-label={label}
       data-sidebar-reveal-trigger=""
       className={cn(
-        'absolute top-3 left-2 hidden size-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-card outline-none transition-[background-color,opacity] duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none md:flex',
-        expanded && 'pointer-events-none opacity-0'
+        'absolute top-3 left-2 z-10 hidden size-10 cursor-pointer items-center justify-center rounded-xl border outline-none transition-colors duration-150 hover:bg-accent motion-reduce:transition-none md:flex',
+        expanded
+          ? 'translate-x-2 translate-y-1 border-transparent'
+          : 'border-border bg-card focus-visible:ring-2 focus-visible:ring-ring'
       )}
     >
       {logo}

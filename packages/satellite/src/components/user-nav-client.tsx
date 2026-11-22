@@ -24,6 +24,8 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
@@ -78,9 +80,30 @@ export function SatelliteSettingsDialogHost({
   const { closeSettings, open, openSettings, tab } =
     useSettingsDialogUrlState();
   const signedIn = Boolean(user);
+  const dialogOpen = useRef(open);
+  const returnFocus = useRef<{
+    origin: HTMLElement;
+    minimalSidebar: HTMLElement | null;
+  } | null>(null);
+  useLayoutEffect(() => {
+    dialogOpen.current = open;
+  }, [open]);
+  const openFromCurrentControl = useCallback(
+    (nextTab: string | null) => {
+      const origin = document.activeElement;
+      if (!open && origin instanceof HTMLElement && origin !== document.body) {
+        returnFocus.current = {
+          origin,
+          minimalSidebar: origin.closest('[data-minimal-sidebar]'),
+        };
+      }
+      openSettings(nextTab);
+    },
+    [open, openSettings]
+  );
   const openDefaultSettings = useCallback(() => {
-    openSettings(null);
-  }, [openSettings]);
+    openFromCurrentControl(null);
+  }, [openFromCurrentControl]);
   useSettingsDialogShortcut({
     enabled: signedIn,
     onOpen: openDefaultSettings,
@@ -94,7 +117,7 @@ export function SatelliteSettingsDialogHost({
 
       const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
         ?.settingsTab;
-      openSettings(tab ?? null);
+      openFromCurrentControl(tab ?? null);
     };
 
     window.addEventListener(
@@ -106,7 +129,7 @@ export function SatelliteSettingsDialogHost({
         SETTINGS_DIALOG_OPEN_INTENT_EVENT,
         handleSettingsIntent
       );
-  }, [openSettings, signedIn]);
+  }, [openFromCurrentControl, signedIn]);
 
   if (!user) return null;
 
@@ -114,6 +137,22 @@ export function SatelliteSettingsDialogHost({
     <SatelliteDefaultSettingsDialog
       canManageVersionBadge={canManageVersionBadge}
       centralUrl={centralUrl}
+      onCloseAutoFocus={(event) => {
+        if (dialogOpen.current || !returnFocus.current) return;
+        const { origin, minimalSidebar } = returnFocus.current;
+        returnFocus.current = null;
+        const target =
+          origin.isConnected &&
+          !origin.closest('[inert]') &&
+          origin.checkVisibility?.({ visibilityProperty: true }) !== false
+            ? origin
+            : minimalSidebar?.querySelector<HTMLElement>(
+                '[data-sidebar-reveal-trigger]'
+              );
+        if (!target?.isConnected) return;
+        event.preventDefault();
+        target.focus({ preventScroll: true });
+      }}
       sidebarTab={sidebarSettingsTab}
       user={user}
     />

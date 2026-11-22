@@ -67,6 +67,7 @@ export interface SettingsDialogShellProps {
   activeTab: string;
   /** Callback when active tab changes */
   onActiveTabChange: (tab: string) => void;
+  onCloseAutoFocus?: (event: Event) => void;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
   /** Optional context control that replaces the active group breadcrumb */
@@ -90,6 +91,7 @@ export function SatelliteSettingsDialogShell({
   navItems,
   activeTab,
   onActiveTabChange,
+  onCloseAutoFocus,
   keyboardNavigation = false,
   activeGroupBreadcrumb,
   children,
@@ -157,6 +159,7 @@ export function SatelliteSettingsDialogShell({
     <DialogContent
       presentation="fullscreen"
       className="settings-surface flex-col md:inset-8 md:h-auto md:max-h-none md:w-auto md:rounded-2xl md:border md:shadow-2xl"
+      onCloseAutoFocus={onCloseAutoFocus}
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >

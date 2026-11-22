@@ -258,6 +258,28 @@ try {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(600);
     keyboard = { resting, focused, escaped: await state() };
+
+    const logo = page.locator('[data-sidebar-reveal-trigger]');
+    const bounds = await logo.boundingBox();
+    assert.ok(bounds, 'the resting logo has a visible pointer target');
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + bounds.height / 2;
+    const location = page.url();
+    await page.mouse.move(x, y);
+    await page.locator('aside[data-overlay-state="open"]').waitFor();
+    await page.mouse.click(x, y);
+    await page.mouse.move(900, 450);
+    await page.waitForTimeout(520);
+    assert.equal(
+      page.url(),
+      location,
+      'clicking the reveal logo stays on the page'
+    );
+    assert.equal(
+      (await state()).overlay,
+      'open',
+      'click pins the hovered panel'
+    );
   }
 
   if (behavior === 'hover') {

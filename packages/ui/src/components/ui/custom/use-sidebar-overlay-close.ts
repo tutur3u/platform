@@ -199,7 +199,12 @@ export function useSidebarOverlayClose({
   });
 
   const handleTriggerClick = useEffectEvent((trigger: HTMLElement) => {
-    if (isCollapsed) {
+    if (
+      isCollapsed ||
+      (holds.current.has('hover') &&
+        !holds.current.has('tap') &&
+        !holds.current.has('focus'))
+    ) {
       hold('tap');
       trigger.focus({ preventScroll: true });
     } else dismiss(true);

@@ -5,6 +5,11 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import {
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { type ReactNode, useState } from 'react';
@@ -55,36 +60,23 @@ vi.mock('./account-settings/default-settings-dialog', () => ({
   SatelliteDefaultSettingsDialog: ({
     centralUrl,
     defaultTab,
+    onCloseAutoFocus,
   }: {
     centralUrl: string;
     defaultTab?: string;
+    onCloseAutoFocus?: (event: Event) => void;
   }) => (
-    <div data-testid="default-settings">
-      {centralUrl}|{defaultTab ?? 'default'}
-    </div>
+    <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogTitle>Settings</DialogTitle>
+      <DialogDescription>Account settings</DialogDescription>
+      <div data-testid="default-settings">
+        {centralUrl}|{defaultTab ?? 'default'}
+      </div>
+    </DialogContent>
   ),
 }));
 vi.mock('@tuturuuu/ui/report-problem-dialog', () => ({
   ReportProblemDialog: () => null,
-}));
-vi.mock('@tuturuuu/ui/dialog', () => ({
-  Dialog: ({
-    children,
-    onOpenChange,
-    open,
-  }: {
-    children: ReactNode;
-    onOpenChange: (open: boolean) => void;
-    open: boolean;
-  }) =>
-    open ? (
-      <div role="dialog">
-        <button type="button" onClick={() => onOpenChange(false)}>
-          Close
-        </button>
-        {children}
-      </div>
-    ) : null,
 }));
 vi.mock('./account-switcher-menu', () => ({
   SatelliteAccountSwitcherMenu: () => null,
@@ -170,7 +162,7 @@ describe('satellite UserNavClient shared settings', () => {
     ).toBeNull();
   });
 
-  it('keeps app-owned settings open when the sidebar account menu unmounts', async () => {
+  it('keeps app-owned settings open across menu unmount and returns focus on close', async () => {
     function SidebarWithSettings() {
       const [showMenu, setShowMenu] = useState(true);
       return (
@@ -182,6 +174,19 @@ describe('satellite UserNavClient shared settings', () => {
           {showMenu && (
             <UserNavClient externalSettingsHost locale="en" user={user} />
           )}
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+                  cancelable: true,
+                  detail: { settingsTab: 'sidebar' },
+                })
+              )
+            }
+          >
+            Open sidebar settings
+          </button>
           <button type="button" onClick={() => setShowMenu(false)}>
             Hide account menu
           </button>
@@ -194,21 +199,23 @@ describe('satellite UserNavClient shared settings', () => {
       wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }),
     });
 
-    fireEvent(
-      window,
-      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-        cancelable: true,
-        detail: { settingsTab: 'sidebar' },
-      })
-    );
+    const opener = screen.getByRole('button', {
+      name: 'Open sidebar settings',
+    });
+    const hideMenu = screen.getByRole('button', { name: 'Hide account menu' });
+    opener.focus();
+    fireEvent.click(opener);
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
     expect(screen.getAllByRole('dialog')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Hide account menu' }));
-    expect(
-      screen.queryByRole('button', { name: 'common.settings' })
-    ).toBeNull();
+    fireEvent.click(hideMenu);
     expect(screen.getByTestId('default-settings').textContent).toBe(
       'https://tuturuuu.com|sidebar'
     );
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'common.settings' })
+    ).toBeNull();
   });
 });
