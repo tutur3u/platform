@@ -2,7 +2,11 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import { describeWorkspaceAccessRemovalError } from './workspace-access-removal-error';
 
-const t = (key: string) => `t:${key}`;
+const text = {
+  creator: 't:ws-members.creator_removal_refused',
+  fallback: 't:common.error',
+  lastManager: 't:ws-members.last_manager_removal_refused',
+};
 
 describe('describeWorkspaceAccessRemovalError', () => {
   it('translates the last-manager refusal instead of showing the server text', () => {
@@ -12,7 +16,7 @@ describe('describeWorkspaceAccessRemovalError', () => {
       'WORKSPACE_LAST_MANAGER'
     );
 
-    expect(describeWorkspaceAccessRemovalError(error, t)).toBe(
+    expect(describeWorkspaceAccessRemovalError(error, text)).toBe(
       't:ws-members.last_manager_removal_refused'
     );
   });
@@ -24,7 +28,7 @@ describe('describeWorkspaceAccessRemovalError', () => {
       'WORKSPACE_CREATOR_PROTECTED'
     );
 
-    expect(describeWorkspaceAccessRemovalError(error, t)).toBe(
+    expect(describeWorkspaceAccessRemovalError(error, text)).toBe(
       't:ws-members.creator_removal_refused'
     );
   });
@@ -33,19 +37,19 @@ describe('describeWorkspaceAccessRemovalError', () => {
     expect(
       describeWorkspaceAccessRemovalError(
         new InternalApiError('Forbidden', 403),
-        t
+        text
       )
     ).toBe('Forbidden');
     expect(
       describeWorkspaceAccessRemovalError(
         new InternalApiError('Nope', 409, 'toString'),
-        t
+        text
       )
     ).toBe('Nope');
-    expect(describeWorkspaceAccessRemovalError(new Error('Broken'), t)).toBe(
+    expect(describeWorkspaceAccessRemovalError(new Error('Broken'), text)).toBe(
       'Broken'
     );
-    expect(describeWorkspaceAccessRemovalError('oops', t)).toBe(
+    expect(describeWorkspaceAccessRemovalError('oops', text)).toBe(
       't:common.error'
     );
   });

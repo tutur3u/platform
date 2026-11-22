@@ -217,11 +217,16 @@ export function WorkspaceAccessPage({
       await invalidateAccessData();
     },
   });
+  const removalErrorText = {
+    creator: t('ws-members.creator_removal_refused'),
+    fallback: t('common.error'),
+    lastManager: t('ws-members.last_manager_removal_refused'),
+  };
   const removeMemberMutation = useMutation({
     mutationFn: (payload: { email?: null | string; userId?: null | string }) =>
       adapter.removeMember(workspaceId, payload),
     onError: (error) =>
-      toast.error(describeWorkspaceAccessRemovalError(error, t)),
+      toast.error(describeWorkspaceAccessRemovalError(error, removalErrorText)),
     onSuccess: async () => {
       toast.success(t('common.deleted'));
       await invalidateAccessData();
@@ -267,7 +272,7 @@ export function WorkspaceAccessPage({
         ? adapter.addRoleMembers(workspaceId, payload.roleId, [payload.userId])
         : adapter.removeRoleMember(workspaceId, payload.roleId, payload.userId),
     onError: (error) =>
-      toast.error(describeWorkspaceAccessRemovalError(error, t)),
+      toast.error(describeWorkspaceAccessRemovalError(error, removalErrorText)),
     onSuccess: async () => {
       toast.success(t('common.saved'));
       await invalidateAccessData();
