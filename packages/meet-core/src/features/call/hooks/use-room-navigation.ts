@@ -62,8 +62,15 @@ export function useRoomNavigation({
 }: {
   room: MeetRoomController;
   surface: CallSurfaceState;
-  /** `forced` marks a move a host or co-host made, which opens the surface. */
-  apply: (next: CallSurfaceState, options: { forced: boolean }) => void;
+  /**
+   * `forced` marks a move a host or co-host made, which opens the surface.
+   * It returns the view the person is on afterwards when that is not `next`,
+   * as when a view opens nothing and they stay where they are.
+   */
+  apply: (
+    next: CallSurfaceState,
+    options: { forced: boolean }
+  ) => MeetRoomView | undefined | void;
   access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
@@ -130,10 +137,13 @@ export function useRoomNavigation({
   );
 
   const go = useCallback((next: MeetRoomView, forced: boolean) => {
-    appliedKey.current = viewKey(next);
-    applyRef.current(surfaceFromView(next, surfaceRef.current.drawer), {
-      forced,
-    });
+    const reached = applyRef.current(
+      surfaceFromView(next, surfaceRef.current.drawer),
+      { forced }
+    );
+    // Following ends when the view I am on stops matching what was applied,
+    // so record where applying actually left me.
+    appliedKey.current = viewKey(reached ?? next);
   }, []);
 
   const startFollowing = useCallback(
