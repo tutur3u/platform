@@ -25,6 +25,7 @@ class AuthScaffold extends StatelessWidget {
     this.showBackButton = false,
     this.backButtonLabel,
     this.onBack,
+    this.backButtonEnabled = true,
     this.showLogo = true,
     super.key,
   });
@@ -47,6 +48,10 @@ class AuthScaffold extends StatelessWidget {
   /// Shown next to the back chevron (for example "Home").
   final String? backButtonLabel;
   final VoidCallback? onBack;
+
+  /// False disables Back (for example while a sign-in is in flight); a null
+  /// [onBack] still means "pop this route", never "disabled".
+  final bool backButtonEnabled;
 
   /// The brand mark when there is no [hero] or [illustration].
   final bool showLogo;
@@ -136,7 +141,9 @@ class AuthScaffold extends StatelessWidget {
           alignment: AlignmentDirectional.centerStart,
           child: AuthBackButton(
             label: backButtonLabel,
-            onPressed: onBack ?? () => Navigator.of(context).maybePop(),
+            onPressed: backButtonEnabled
+                ? (onBack ?? () => Navigator.of(context).maybePop())
+                : null,
           ),
         ),
       if (hero case final band?) band,

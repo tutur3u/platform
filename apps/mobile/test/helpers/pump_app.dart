@@ -165,15 +165,18 @@ Widget appearanceTestApp({
 
 /// [home] through the app's theme pipeline: the classic or [sorbet] shad
 /// theme, the appearance host and the Material bridge, with animations off.
-/// [boundaryKey] marks a repaint boundary around the app for goldens.
+/// [boundaryKey] marks a repaint boundary around the app for goldens; [locale]
+/// localizes overlays (sheets, dialogs) too, not only [home].
 Widget sorbetTestApp({
   required Widget home,
   AppearanceSettings appearance = const AppearanceSettings(),
   SorbetTheme? sorbet,
   Brightness brightness = Brightness.light,
   Key? boundaryKey,
+  Locale? locale,
 }) => shad.ShadcnApp(
   debugShowCheckedModeBanner: false,
+  locale: locale,
   theme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.light),
   darkTheme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.dark),
   themeMode: brightness == Brightness.dark

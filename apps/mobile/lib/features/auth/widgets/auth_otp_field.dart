@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/ui.dart';
 
 class AuthOtpField extends StatefulWidget {
@@ -94,6 +95,7 @@ class _AuthOtpFieldState extends State<AuthOtpField> {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
+    final fieldStroke = SorbetTokens.maybeOf(context)?.fieldStroke ?? c.input;
     final focusHalo = tokens.infoTone.fill;
     final code = widget.controller.text;
     final hasFocus = widget.focusNode.hasFocus;
@@ -141,9 +143,7 @@ class _AuthOtpFieldState extends State<AuthOtpField> {
                             color: c.card,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              // Field stroke: `input` (borderStrong) stands in
-                              // until the Sorbet `fieldStroke` role lands.
-                              color: isActive ? c.ring : c.input,
+                              color: isActive ? c.ring : fieldStroke,
                               width: isActive ? 1.5 : 1,
                             ),
                             boxShadow: isActive

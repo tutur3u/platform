@@ -123,6 +123,7 @@ void main() {
         sorbet: const SorbetTheme(),
         brightness: brightness,
         boundaryKey: DesignRenderApp.boundaryKey,
+        locale: locale,
         home: Builder(
           builder: (context) => Localizations.override(
             context: context,

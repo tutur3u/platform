@@ -38,6 +38,7 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     required this.navSelectedInk,
     required this.dockSurface,
     required this.skeleton,
+    required this.fieldStroke,
     required this.radii,
     required this.controls,
     this.eventTone = SorbetHueTone.calm,
@@ -74,6 +75,7 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
       navSelectedInk: roles.foreground,
       dockSurface: roles.surface,
       skeleton: roles.surfaceSunken,
+      fieldStroke: roles.fieldStroke,
       radii: SorbetRadii.of(theme.radius),
       controls: SorbetControlSizes.of(theme.density),
       typography: AppTypography(
@@ -113,6 +115,10 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
   /// Loading placeholders (`roles.skeleton`); they pulse once per
   /// [SorbetMotion.skeletonPulse] and stay static under reduced motion.
   final Color skeleton;
+
+  /// Field outlines (inputs, code slots, checkboxes): about 3.6:1 against a
+  /// field, where `borderStrong` is only 1.6:1.
+  final Color fieldStroke;
   final SorbetRadii radii;
   final SorbetControlSizes controls;
 
@@ -154,6 +160,7 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     Color? navSelectedInk,
     Color? dockSurface,
     Color? skeleton,
+    Color? fieldStroke,
     SorbetRadii? radii,
     SorbetControlSizes? controls,
     SorbetHueTone? eventTone,
@@ -176,6 +183,7 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     navSelectedInk: navSelectedInk ?? this.navSelectedInk,
     dockSurface: dockSurface ?? this.dockSurface,
     skeleton: skeleton ?? this.skeleton,
+    fieldStroke: fieldStroke ?? this.fieldStroke,
     radii: radii ?? this.radii,
     controls: controls ?? this.controls,
     eventTone: eventTone ?? this.eventTone,
@@ -206,6 +214,7 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
       navSelectedInk: mix(navSelectedInk, other.navSelectedInk),
       dockSurface: mix(dockSurface, other.dockSurface),
       skeleton: mix(skeleton, other.skeleton),
+      fieldStroke: mix(fieldStroke, other.fieldStroke),
       radii: SorbetRadii.lerp(radii, other.radii, t),
       controls: near.controls,
       eventTone: near.eventTone,

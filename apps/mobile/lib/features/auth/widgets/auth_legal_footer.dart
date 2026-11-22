@@ -27,7 +27,14 @@ class _AuthLegalFooterState extends State<AuthLegalFooter> {
   late final _privacy = TapGestureRecognizer()..onTap = () => _open('/privacy');
 
   void _open(String path) {
-    final uri = Uri.parse(ApiConfig.baseUrl).replace(path: path);
+    final base = Uri.tryParse(ApiConfig.baseUrl);
+    if (base == null || base.host.isEmpty) return;
+    final uri = Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+      path: path,
+    );
     if (widget.onOpen case final open?) {
       open(uri);
       return;

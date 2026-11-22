@@ -2,6 +2,7 @@ import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -209,9 +210,11 @@ class _SecurityCheckPanelState extends State<SecurityCheckPanel> {
                     decoration: BoxDecoration(
                       color: c.muted,
                       borderRadius: BorderRadius.circular(14),
-                      // Field stroke: `input` (borderStrong) stands in until
-                      // the Sorbet `fieldStroke` role lands.
-                      border: Border.all(color: c.input),
+                      border: Border.all(
+                        color:
+                            SorbetTokens.maybeOf(context)?.fieldStroke ??
+                            c.input,
+                      ),
                     ),
                     child: _challenge(),
                   ),

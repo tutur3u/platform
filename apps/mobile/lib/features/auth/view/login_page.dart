@@ -202,7 +202,10 @@ class _LoginPageState extends State<LoginPage> {
   void _showPasswordStage() {
     context.read<AuthCubit>().clearError();
     _attempts.cancel();
-    setState(() => _stage = _LoginStage.password);
+    setState(() {
+      _stage = _LoginStage.password;
+      _obscurePassword = true;
+    });
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
         _passwordFocusNode.requestFocus();
@@ -217,6 +220,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _stage = _LoginStage.identify;
       _retryAfter = 0;
+      _obscurePassword = true;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -506,7 +510,8 @@ class _LoginPageState extends State<LoginPage> {
     return AuthScaffold(
       showBackButton: true,
       backButtonLabel: l10n.loginOtherWays,
-      onBack: busy ? null : _showIdentifyStage,
+      onBack: _showIdentifyStage,
+      backButtonEnabled: !busy,
       illustration: AppIllustrationKind.emailCode,
       title: l10n.loginCheckEmailTitle,
       subtitle: _sentTo(),
@@ -537,7 +542,8 @@ class _LoginPageState extends State<LoginPage> {
     return AuthScaffold(
       showBackButton: true,
       backButtonLabel: l10n.loginOtherWays,
-      onBack: busy ? null : _showIdentifyStage,
+      onBack: _showIdentifyStage,
+      backButtonEnabled: !busy,
       title: l10n.loginPasswordTitle,
       subtitle: Text(_emailController.text.trim()),
       bottomAction: AuthPrimaryButton(

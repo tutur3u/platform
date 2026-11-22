@@ -41,6 +41,7 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
   String? _uri;
   bool _busy = false;
   bool _openFailed = false;
+  bool _copiedSecret = false;
   bool _failed = false;
 
   Future<void> _enroll() async {
@@ -77,6 +78,12 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
         challengeId: challenge.id,
         code: _code.text,
       );
+      // The seed is no longer needed once verified; do not leave it on the
+      // clipboard. Overwrite without reading (reading prompts on iOS).
+      if (_copiedSecret) {
+        _copiedSecret = false;
+        await Clipboard.setData(const ClipboardData(text: ''));
+      }
       // AuthCubit handles the provider's mfaChallengeVerified event and routes.
     } on Object {
       if (mounted) setState(() => _failed = true);
@@ -92,9 +99,22 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
     super.dispose();
   }
 
-  Future<void> _openAuthenticator() async {
+  /// The enrol response's authenticator link, only when it is a TOTP
+  /// `otpauth://totp/...` URI that carries a secret.
+  Uri? get _authenticatorUri {
     final uri = Uri.tryParse(_uri ?? '');
-    if (uri == null || uri.scheme != 'otpauth') return;
+    if (uri == null ||
+        uri.scheme != 'otpauth' ||
+        uri.host != 'totp' ||
+        (uri.queryParameters['secret']?.isEmpty ?? true)) {
+      return null;
+    }
+    return uri;
+  }
+
+  Future<void> _openAuthenticator() async {
+    final uri = _authenticatorUri;
+    if (uri == null) return;
     var opened = false;
     try {
       opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -108,6 +128,7 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
     final secret = _secret;
     if (secret == null) return;
     await Clipboard.setData(ClipboardData(text: secret));
+    _copiedSecret = true;
     if (!mounted) return;
     showAppToast(context, message: context.l10n.requiredMfaSecretCopied);
   }
@@ -161,7 +182,7 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
           if (secret != null) ...[
             RequiredMfaSecretCard(
               secret: secret,
-              canOpenAuthenticator: _uri != null,
+              canOpenAuthenticator: _authenticatorUri != null,
               openFailed: _openFailed,
               onCopy: () => unawaited(_copySecret()),
               onOpenAuthenticator: () => unawaited(_openAuthenticator()),

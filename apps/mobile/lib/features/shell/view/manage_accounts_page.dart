@@ -34,15 +34,26 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
     unawaited(context.read<AuthCubit>().syncCurrentSessionToStore());
   }
 
+  bool _startingAddAccount = false;
+
   bool get _isMutating =>
-      _removingAccountId != null || _loggingOutAccountId != null;
+      _startingAddAccount ||
+      _removingAccountId != null ||
+      _loggingOutAccountId != null;
 
   /// Add account, or sign an expired saved account in again ([email]
   /// prefills the form), through the same add-account flow.
   Future<void> _startAddAccountFlow({String? email}) async {
+    if (_isMutating) return;
     final authCubit = context.read<AuthCubit>();
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final started = await authCubit.beginAddAccountFlow(email: email);
+    setState(() => _startingAddAccount = true);
+    final bool started;
+    try {
+      started = await authCubit.beginAddAccountFlow(email: email);
+    } finally {
+      if (mounted) setState(() => _startingAddAccount = false);
+    }
     if (!mounted) {
       return;
     }
@@ -146,6 +157,8 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
     final l10n = context.l10n;
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
+        final busy =
+            _isMutating || state.isLoading || state.switchingAccountId != null;
         final accounts = sortStoredAccountsByRecent(state.accounts);
         final activeAccount = accounts
             .where((account) => account.id == state.user?.id)
@@ -165,7 +178,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
               index: 0,
               playOnceKey: 'manage-accounts-hero',
               child: ManageAccountsHero(
-                onAddAccount: _isMutating ? null : _startAddAccountFlow,
+                onAddAccount: busy ? null : _startAddAccountFlow,
               ),
             ),
             const AppGap(AppSpacing.xl),
@@ -185,7 +198,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                         icon: LucideIcons.logOut,
                         destructive: true,
                         busy: _loggingOutAccountId == activeAccount.id,
-                        onPressed: _isMutating
+                        onPressed: busy
                             ? null
                             : () => _logOutCurrentAccount(activeAccount),
                       ),
@@ -223,7 +236,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                             expired: state.expiredAccountIds.contains(
                               account.id,
                             ),
-                            onSignInAgain: _isMutating
+                            onSignInAgain: busy
                                 ? null
                                 : () => _startAddAccountFlow(
                                     email: account.email,
@@ -233,7 +246,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                               icon: LucideIcons.trash2,
                               destructive: true,
                               busy: _removingAccountId == account.id,
-                              onPressed: _isMutating
+                              onPressed: busy
                                   ? null
                                   : () => _removeAccount(account),
                             ),

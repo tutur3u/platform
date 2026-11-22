@@ -8,7 +8,7 @@ import 'package:mobile/l10n/l10n.dart';
 /// Sign in with Apple completes only through the native iOS sheet, so the
 /// Apple button shows only there.
 bool get authAppleSignInAvailable =>
-    defaultTargetPlatform == TargetPlatform.iOS;
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 class AuthGoogleButton extends StatelessWidget {
   const AuthGoogleButton({
