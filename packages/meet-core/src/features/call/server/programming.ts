@@ -9,6 +9,14 @@ import {
   programmingMiraAnswerSchema,
   meetingProgrammingSchema,
 } from '@tuturuuu/realtime/meet';
+import {
+  CloudPlaygroundRefusal,
+  isCloudPlaygroundRun,
+  readCloudPlayground,
+  startCloudPlayground,
+  stopCloudPlayground,
+  useCloudMeetPlayground,
+} from '@tuturuuu/storage-core/cloud-playground';
 import { playgroundPreviewResponse } from '@tuturuuu/storage-core/playground-preview';
 import {
   createPlayground,
@@ -123,6 +131,7 @@ async function authorizePlayground(
   return {
     ownerId,
     projectId: selection.id,
+    revision: project.revision,
     meetingId: override ? access.meeting.id : undefined,
   };
 }
@@ -359,7 +368,7 @@ export async function executeMeetingPlayground(
   const selection = await selected(access);
   if (selection?.kind !== 'playground')
     throw new MeetCallAccessError(409, 'Select a playground');
-  await authorizePlayground(access);
+  const project = await authorizePlayground(access, selection);
   const parsed = z
     .object({
       operation: z.enum(['run', 'stop']),
@@ -368,24 +377,60 @@ export async function executeMeetingPlayground(
     })
     .strict()
     .parse(payload);
+  if (useCloudMeetPlayground()) {
+    const scope = {
+      meetingId: access.meeting.id,
+      ownerId: project.ownerId,
+      projectId: project.projectId,
+    };
+    try {
+      return parsed.operation === 'stop'
+        ? await stopCloudPlayground(scope)
+        : await startCloudPlayground(
+            scope,
+            {
+              requester: access.user.id,
+              requestId: parsed.requestId,
+              revision: project.revision,
+              stdin: parsed.stdin,
+            },
+            project.meetingId
+          );
+    } catch (error) {
+      if (error instanceof CloudPlaygroundRefusal)
+        throw new MeetCallAccessError(error.status, error.message, error.code);
+      throw error;
+    }
+  }
   return executePlayground(
-    access.meeting.creator_id!,
-    selection.id,
+    project.ownerId,
+    project.projectId,
     parsed.operation,
     parsed.requestId,
     { stdin: parsed.stdin },
-    (await elevated(access)) ? access.meeting.id : undefined
+    project.meetingId
   );
 }
 export async function readMeetingPlaygroundRun(access: Access, runId: string) {
   const selection = await selected(access);
   if (selection?.kind !== 'playground')
     throw new MeetCallAccessError(409, 'Select a playground');
-  await authorizePlayground(access);
+  const project = await authorizePlayground(access, selection);
+  const id = z.uuid().parse(runId);
+  if (isCloudPlaygroundRun(id)) {
+    return readCloudPlayground(
+      {
+        meetingId: access.meeting.id,
+        ownerId: project.ownerId,
+        projectId: project.projectId,
+      },
+      id
+    );
+  }
   const { preview: _preview, ...result } = await getPlaygroundRun(
-    access.meeting.creator_id!,
-    selection.id,
-    z.uuid().parse(runId)
+    project.ownerId,
+    project.projectId,
+    id
   );
   return result;
 }

@@ -36,7 +36,10 @@ async function response(run: () => Promise<unknown>) {
     return NextResponse.json(await run(), { headers: noStore });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Collaboration action unavailable' },
+      {
+        error: 'Collaboration action unavailable',
+        code: error instanceof MeetCallAccessError ? error.code : undefined,
+      },
       {
         status:
           error instanceof MeetCallAccessError

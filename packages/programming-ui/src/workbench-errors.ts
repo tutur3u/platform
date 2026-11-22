@@ -4,6 +4,8 @@ export type WorkbenchFailureReason =
   | 'access'
   | 'changed'
   | 'busy'
+  | 'capacity'
+  | 'paused'
   | 'unavailable'
   | 'offline'
   | 'unknown';
@@ -26,6 +28,10 @@ export class WorkbenchStepError extends Error {
 
 /** Maps an API error (status-bearing, e.g. InternalApiError) to a reason the UI can explain. */
 export function failureReason(error: unknown): WorkbenchFailureReason {
+  if (error && typeof error === 'object' && 'code' in error) {
+    if (error.code === 'PLAYGROUND_PAUSED') return 'paused';
+    if (error.code === 'PLAYGROUND_CAPACITY') return 'capacity';
+  }
   const status =
     error && typeof error === 'object' && 'status' in error
       ? Number((error as { status: unknown }).status)

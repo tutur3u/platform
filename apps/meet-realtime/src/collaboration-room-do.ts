@@ -302,7 +302,10 @@ export class CollaborationRoomDurableObject implements DurableObject {
       request.method !== 'POST' ||
       ticket.role !== 'owner' ||
       !ticket.runId ||
-      !ticket.runnerId ||
+      !!ticket.runnerId === !!ticket.executionMeetingId ||
+      (ticket.meetingId &&
+        ticket.executionMeetingId &&
+        ticket.meetingId !== ticket.executionMeetingId) ||
       ticket.resource !== 'playground'
     )
       return new Response(null, { status: 403 });
@@ -352,7 +355,8 @@ export class CollaborationRoomDurableObject implements DurableObject {
           snapshot,
           'runner-files',
           ticket.runId,
-          ticket.runnerId
+          ticket.runnerId,
+          ticket.executionMeetingId
         );
         this.checkpointing = commit.then(
           () => undefined,
@@ -413,9 +417,15 @@ export class CollaborationRoomDurableObject implements DurableObject {
         candidate.destroy();
       }
       metadata.runnerNeedsAck = false;
-      metadata.runId = ticket.runId;
-      metadata.runnerId = ticket.runnerId;
-      metadata.runnerHashes = result.hashes;
+      if (ticket.runnerId) {
+        metadata.runId = ticket.runId;
+        metadata.runnerId = ticket.runnerId;
+        metadata.runnerHashes = result.hashes;
+      } else {
+        delete metadata.runId;
+        delete metadata.runnerId;
+        delete metadata.runnerHashes;
+      }
       await this.state.storage.put({
         [KEY]: Y.encodeStateAsUpdate(this.doc),
         metadata,
@@ -612,7 +622,8 @@ export class CollaborationRoomDurableObject implements DurableObject {
     snapshot: ReturnType<typeof programmingDocumentSnapshot>,
     kind: 'checkpoint' | 'runner-files',
     runId?: string,
-    runnerId?: string
+    runnerId?: string,
+    executionMeetingId?: string
   ) {
     const hashes = await this.fileHashes(snapshot.files);
     const token = signRealtimePayload(
@@ -621,6 +632,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
         kind,
         runId,
         runnerId,
+        executionMeetingId,
         roomId: this.metadata!.roomId,
         resourceId: this.metadata!.resourceId,
         resource: 'playground',

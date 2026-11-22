@@ -1920,6 +1920,26 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/internal/playground-execution/export",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/internal/playground-execution/export/route.ts",
+    "sourceSha256": "f116367c2f9b972f3582f03bb2169a26b1660ced72837137ee91a072705ba8cb",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/internal/playground-execution/source",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/internal/playground-execution/source/route.ts",
+    "sourceSha256": "9347a25013c3eb7d825fe0473bb39af32fd4751211360f25e7971ce64562fc8f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/link-shortener/{linkId}/analytics",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -2264,7 +2284,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/route.ts",
-    "sourceSha256": "3e7aeedcb79fba8bb7160965fe140a7cbddb5b26aad0c2c410744366e96c6ee6",
+    "sourceSha256": "4b3e4cfd55fc1e0c601783713c5619d766c7a21d6a33278d82008412ef232d8e",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2724,7 +2744,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/realtime/programming/checkpoint/route.ts",
-    "sourceSha256": "97ae8c0e1c73bb18b3fdf9d12b3adae63a0533b784b0e709e842a224d75375f4",
+    "sourceSha256": "f7fc8be124c204741f1622ef119beec70a2267ffd109cf3d5f5f1aae775a02c9",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

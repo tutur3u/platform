@@ -2138,6 +2138,8 @@ Learn uses the same workbench without the meeting-only controls.
   a retry. The reason follows the HTTP status of the failed step: 502, 503 and
   504 say that running code is temporarily unavailable (a Playground pool with
   no ready runner answers a run with 503), and 429 says the service is busy.
+  Learn retains its existing provider during the Meet rollout of Cloudflare
+  execution. [Playground execution runbook](/build/devops/playground-execution)
 - **Runner unavailable.** In a meeting playground, once starting a run answers
   502, 503 or 504, Run stays visible and focusable but `aria-disabled` for the
   rest of the call, including after a language switch; its tooltip and

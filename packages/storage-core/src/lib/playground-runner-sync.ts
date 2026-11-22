@@ -43,6 +43,33 @@ export async function syncPlaygroundRunnerFiles(input: {
       createHash('sha256').update(file.content).digest('hex'),
     ])
   );
+  return syncRunnerFiles({ ...input, baseline });
+}
+
+interface FileSyncInput {
+  actorId: string;
+  projectId: string;
+  revision: number;
+  meetingId?: string;
+  runId: string;
+  files: PlaygroundFile[];
+  paths: string[];
+  baseline: Record<string, string>;
+}
+
+export async function syncCloudPlaygroundFiles(
+  input: FileSyncInput & { executionMeetingId: string }
+) {
+  return syncRunnerFiles(input);
+}
+
+async function syncRunnerFiles(
+  input: FileSyncInput &
+    (
+      | { runnerId: string; executionMeetingId?: never }
+      | { executionMeetingId: string; runnerId?: never }
+    )
+) {
   const join = await programmingRoomTicket(
     {
       actorId: input.actorId,
@@ -77,13 +104,14 @@ export async function syncPlaygroundRunnerFiles(input: {
           kind: 'runner-files',
           runId: input.runId,
           runnerId: input.runnerId,
+          executionMeetingId: input.executionMeetingId,
         },
         secret
       )}`,
     },
     body: JSON.stringify({
       revision: input.revision,
-      baseline,
+      baseline: input.baseline,
       files: input.files,
       paths: input.paths,
     }),

@@ -632,6 +632,7 @@
                   "reference/repository/routes/parley",
                   "reference/repository/routes/pay",
                   "reference/repository/routes/playground",
+                  "reference/repository/routes/playground-execution",
                   "reference/repository/routes/redis",
                   "reference/repository/routes/rewise",
                   "reference/repository/routes/roadmap",
@@ -661,7 +662,9 @@
           },
           {
             "group": "Smart Scheduling API",
-            "pages": ["platform/features/smart-scheduling/api-reference"]
+            "pages": [
+              "platform/features/smart-scheduling/api-reference"
+            ]
           }
         ]
       },
@@ -690,7 +693,9 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": ["learn/examples/overview"]
+                "pages": [
+                  "learn/examples/overview"
+                ]
               },
               {
                 "group": "Workshops",

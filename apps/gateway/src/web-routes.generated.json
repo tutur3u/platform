@@ -1002,6 +1002,16 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/internal/playground-execution/export"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/internal/playground-execution/source"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/link-shortener/[linkId]/analytics"
     },
     {

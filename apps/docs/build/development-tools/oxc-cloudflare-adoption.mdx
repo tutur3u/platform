@@ -507,6 +507,10 @@ It carries a few accounting limits:
 - The theoretical storage ceiling is 2 KiB × 120-day retention × the daily budget.
   Only replay fences use long TTLs, and their values are tiny.
 
+The [Playground execution runbook](/build/devops/playground-execution)
+records the Cloudflare Run limits, restart and stop behavior, and container
+billing assumptions. Hosted isolation and shutdown evidence precede activation.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an

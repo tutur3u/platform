@@ -10,6 +10,7 @@ export const collaborationTicketSchema = z
     meetingId: z.guid().optional(),
     runId: z.guid().optional(),
     runnerId: z.guid().optional(),
+    executionMeetingId: z.guid().optional(),
     resource: z.enum(['playground', 'problem']),
     role: z.enum(['owner', 'editor', 'viewer']),
     displayName: z.string().max(100),

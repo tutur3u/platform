@@ -1,5 +1,6 @@
 import { collaborationTicketSchema } from '@tuturuuu/realtime/collaboration';
 import { verifyRealtimePayload } from '@tuturuuu/realtime/core/token';
+import { verifyActiveCloudPlayground } from '@tuturuuu/storage-core/cloud-playground';
 import { saveProgrammingRoomCheckpoint } from '@tuturuuu/storage-core/programming-collaboration';
 import { PlaygroundDelta } from '@tuturuuu/utils/playground-schema';
 import { NextResponse } from 'next/server';
@@ -18,7 +19,12 @@ export async function POST(request: Request) {
     token.data.exp * 1000 <= Date.now() ||
     !['checkpoint', 'runner-files'].includes(token.data.kind) ||
     (token.data.kind === 'runner-files' && !token.data.runId) ||
-    !!token.data.runId !== !!token.data.runnerId ||
+    (token.data.executionMeetingId
+      ? token.data.kind !== 'runner-files' ||
+        !!token.data.runnerId ||
+        (token.data.meetingId !== undefined &&
+          token.data.meetingId !== token.data.executionMeetingId)
+      : !!token.data.runId !== !!token.data.runnerId) ||
     token.data.role !== 'owner' ||
     token.data.resource !== 'playground' ||
     token.data.ownerId !== token.data.userId ||
@@ -44,6 +50,25 @@ export async function POST(request: Request) {
         { error: 'Invalid checkpoint' },
         { status: 400 }
       );
+    if (token.data.executionMeetingId && token.data.runId) {
+      await verifyActiveCloudPlayground(
+        {
+          meetingId: token.data.executionMeetingId,
+          ownerId: token.data.ownerId,
+          projectId: token.data.resourceId,
+        },
+        token.data.runId,
+        parsed.data.revision
+      );
+      return NextResponse.json(
+        await saveProgrammingRoomCheckpoint(
+          token.data.ownerId,
+          token.data.resourceId,
+          parsed.data,
+          token.data.meetingId
+        )
+      );
+    }
     return NextResponse.json(
       await saveProgrammingRoomCheckpoint(
         token.data.ownerId,

@@ -50,3 +50,77 @@ A Docker fixture verifies the image and template contracts. Cloudflare applies
 its own runtime policy. In particular, Durable Object scheduling does not
 remove root capabilities merely because an exec process sets a numeric user.
 Require hosted isolation evidence before enabling an execution route. [Cloudflare Container exec](https://developers.cloudflare.com/containers/api/durable-object-container/#exec)
+
+## Cloudflare admission and rollback
+
+The Cloudflare path uses a dedicated Worker, a SQLite coordination Durable
+Object, and at most 20 slot Durable Objects that can start guests. Meet keeps
+its existing authorization and passes a short-lived capability for the exact
+saved revision. The slot uses that capability to download source from Web.
+The source-signing key stays in the application servers. The guest receives
+only the saved files, command, and stdin.
+
+The Meet adapter is selected only when
+`MEET_PLAYGROUND_EXECUTION_PROVIDER=cloudflare`. The Durable Object starts
+with admission paused. The ingress and operator secrets are separate.
+Production deployment, registry upload, secret installation and
+admission changes each require operator authorization for the exact operation.
+
+| Configuration | Default |
+| --- | --- |
+| `PLAYGROUND_MAX_CONCURRENT` | 20 active slots |
+| `PLAYGROUND_MAX_CONCURRENT_PER_USER` | 1 active Run per requester |
+| `PLAYGROUND_MAX_RUNS_PER_USER_10_MINUTES` | 30 starts per requester in a rolling 10-minute window |
+| `PLAYGROUND_MAX_STARTS_PER_UTC_DAY` | 5,000 starts per UTC day |
+
+Set the values lower for an early deployment. The defaults are also the approved
+ceilings. A duplicate request uses the original receipt and consumes no further
+start allowance. A failed or ambiguous dispatch consumes its original allowance.
+The active project limit protects shared rooms where two participants can ask to
+run the same revision. The current Meet adapter handles Run, Stop and Console
+results. File changes use the existing collaborative merge and revision-checked
+Drive checkpoint. Preview and Learn retain their current provider. Qualify the
+writeback and concurrent editor behavior before production activation.
+
+The operator calls `POST /control` with the operator credential and
+`{"enabled":false}`. The response records the new generation and the number of
+active reservations. Admission then refuses new work. Confirm there are zero
+active reservations and zero running instances before rolling back the
+application route or rotating service secrets. The same control request is
+idempotent. Re-enable only after a scoped approval and verified teardown.
+Keep the result endpoint available for existing cloud run receipts while
+switching the Meet adapter back to its previous provider.
+
+An accepted reservation schedules finite work. The normal path makes one
+assignment RPC, one source fetch with an eight-second timeout, one guest
+start, one command, one finalization, and at most one file export. The slot journals its start before
+fetching source. Interrupted execution is reconciled without launching the
+command again. Cleanup makes at most three attempts per reservation. If
+cleanup stays unconfirmed, the slot remains occupied for operator
+reconciliation. Terminal jobs clear their deadline work. Result polling
+uses only the journal. A new admission prunes up to 64 expired receipts.
+
+## Usage and cost
+
+The initial instance size is 0.5 vCPU, 4 GiB of memory, and an 8 GB disk.
+The command has a 30-second timeout within a 50-second job deadline. Output
+is capped at 64 KiB. Fresh instances are destroyed after execution, with a
+15-second inactivity timeout as a fallback. Warm reuse requires independent
+hosted qualification before use.
+
+At published overage rates, the estimated Containers cost is
+`$0.00001056 × live seconds + $0.000020 × active vCPU-seconds`.
+
+| Modeled Run | Live seconds | Active vCPU-seconds | Cost per Run | Cost at 150,000 Runs |
+| --- | ---: | ---: | ---: | ---: |
+| Cold | 45 | 5 | $0.0005752 | $86.28 |
+| Warm, conditional | 25 | 2.5 | $0.0003140 | $47.10 |
+| Stress scenario | 70 | 35 | $0.0014392 | $215.88 |
+
+A 15-second idle tail costs about $0.0001584 per instance plus actual CPU.
+Sleeping container compute is $0. The estimates exclude the Workers Paid
+base charge, Workers and Durable Object requests, duration, SQLite storage,
+and logs, and are before shared included allowances. The stress scenario
+is an estimate. Provider shutdown latency can change billed usage. Record
+real cold-start and shutdown times, journal operation counts, and actual
+usage during qualification. [Cloudflare Containers pricing](https://developers.cloudflare.com/containers/platform/pricing/) · [Workers and Durable Objects pricing](https://developers.cloudflare.com/workers/platform/pricing/)

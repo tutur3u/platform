@@ -51,3 +51,12 @@ describe('workbench failures', () => {
     ).toBe(true);
   });
 });
+
+it('shows Playground capacity and pause refusals independently of the HTTP status', () => {
+  expect(failureReason({ status: 429, code: 'PLAYGROUND_CAPACITY' })).toBe(
+    'capacity'
+  );
+  expect(failureReason({ status: 503, code: 'PLAYGROUND_PAUSED' })).toBe(
+    'paused'
+  );
+});

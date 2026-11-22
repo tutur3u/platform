@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 885,
+    "total": 887,
     "categories": {
-      "api": 685,
+      "api": 687,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 873 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 875 }
   },
   "routes": [
     {
@@ -2976,6 +2976,22 @@
     {
       "pattern": "/api/v1/integrations/external-chat/widget.js",
       "source": "apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/internal/playground-execution/export",
+      "source": "apps/web/src/app/api/v1/internal/playground-execution/export/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/internal/playground-execution/source",
+      "source": "apps/web/src/app/api/v1/internal/playground-execution/source/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

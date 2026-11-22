@@ -12,6 +12,7 @@ RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources \
         gcc \
         golang-go \
         libc6-dev \
+        mount \
         nodejs \
         openjdk-21-jdk-headless \
         php-cli \
@@ -28,6 +29,8 @@ ENV HOME=/tmp \
     GOSUMDB=off \
     GOTOOLCHAIN=local \
     PYTHONDONTWRITEBYTECODE=1
+
+COPY --chmod=0444 run.py /usr/local/lib/playground/run.py
 
 WORKDIR /
 USER 65534:65534
