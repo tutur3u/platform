@@ -107,6 +107,46 @@ describe('SidebarRemoteBehaviorBridge', () => {
     expect(mockUpdateConfigMutate).not.toHaveBeenCalled();
   });
 
+  it('restores the normalized account behavior when local override is disabled', () => {
+    mockConfigState.remoteBehavior = 'hidden';
+    const onApplyRemoteBehavior = vi.fn();
+    const props = {
+      behavior: 'collapsed',
+      behaviorUpdatedAt: null,
+      onApplyRemoteBehavior,
+      onRemoteBehaviorAvailable: vi.fn(),
+      userChangeVersion: 0,
+    } as const;
+    const { rerender } = render(
+      <SidebarRemoteBehaviorBridge
+        {...props}
+        localOverride={false}
+        localOverrideVersion={0}
+      />
+    );
+    expect(onApplyRemoteBehavior).toHaveBeenCalledWith('minimal');
+    onApplyRemoteBehavior.mockClear();
+
+    rerender(
+      <SidebarRemoteBehaviorBridge
+        {...props}
+        localOverride
+        localOverrideVersion={1}
+      />
+    );
+    expect(onApplyRemoteBehavior).not.toHaveBeenCalled();
+
+    rerender(
+      <SidebarRemoteBehaviorBridge
+        {...props}
+        localOverride={false}
+        localOverrideVersion={2}
+      />
+    );
+
+    expect(onApplyRemoteBehavior).toHaveBeenCalledExactlyOnceWith('minimal');
+  });
+
   it('reads a retired hidden account preference as minimal and rewrites it', async () => {
     mockConfigState.remoteBehavior = 'hidden';
     const { onApplyRemoteBehavior, onRemoteBehaviorAvailable } = renderBridge({

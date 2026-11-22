@@ -144,7 +144,7 @@ export function SidebarRemoteBehaviorBridge({
       return;
     }
 
-    if (isValidBehavior(remoteBehavior)) {
+    if (remoteBehavior !== null) {
       onApplyRemoteBehavior(remoteBehavior);
     }
   }, [
