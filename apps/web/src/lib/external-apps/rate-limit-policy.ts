@@ -11,10 +11,10 @@ const HOUR_MS = 60 * MINUTE_MS;
  * and workspace; those caps sit above the per-user caps so one member cannot
  * spend a whole workspace's budget alone.
  *
- * The app-token exchange admits at most `exchangeAttempt` per app and client
- * IP before any credential check (`exchangeUnknownIp` per app when no trusted
- * IP is known), paces failed app secrets and failed handoff or refresh
- * tokens per app and IP, and counts token exchanges of a verified app at
+ * The app-token exchange admits at most `exchangeAttempt` per app and keyed
+ * digest of the presented secret before the secret is checked, answers 429
+ * to failed app secrets and failed handoff or refresh tokens past their
+ * per-app and per-IP limits, and counts token exchanges of a verified app at
  * `exchange` per app.
  */
 export const EXTERNAL_APP_RATE_LIMITS = {
@@ -26,7 +26,6 @@ export const EXTERNAL_APP_RATE_LIMITS = {
   workspaceWrite: { windowMs: MINUTE_MS, maxRequests: 60 },
   workspaceInvitation: { windowMs: HOUR_MS, maxRequests: 30 },
   exchangeAttempt: { windowMs: MINUTE_MS, maxRequests: 600 },
-  exchangeUnknownIp: { windowMs: MINUTE_MS, maxRequests: 300 },
   exchangeSecretFailure: { windowMs: MINUTE_MS, maxRequests: 30 },
   exchangeTokenFailure: { windowMs: MINUTE_MS, maxRequests: 30 },
   exchange: { windowMs: MINUTE_MS, maxRequests: 600 },

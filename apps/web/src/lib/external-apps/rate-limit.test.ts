@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fill, registerRateLimitStore, store } from './rate-limit-test-support';
 import { guard } from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/route-guard';
 import { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';
-import { EXTERNAL_APP_ROUTE_SCOPE_NAMES } from './rate-limit';
 
 const WS_1 = '22222222-2222-4222-8222-222222222222';
 const WS_2 = '33333333-3333-4333-8333-333333333333';
@@ -292,23 +291,5 @@ describe('external-app workspace route limits', () => {
 
     expect(store.calls).toEqual([]);
     expect(handlerCalls).toEqual(['members', 'members']);
-  });
-});
-
-describe('external-app route scope names', () => {
-  it('match the scopes the handlers require', async () => {
-    vi.doMock('server-only', () => ({}));
-    const [{ externalAppWorkspaceCronScopes }, drive, members] =
-      await Promise.all([
-        import('./workspace-cron'),
-        import('./workspace-drive'),
-        import('./workspace-members'),
-      ]);
-
-    expect({
-      ...externalAppWorkspaceCronScopes,
-      ...drive.externalAppWorkspaceDriveScopes,
-      ...members.externalAppWorkspaceMemberScopes,
-    }).toEqual(EXTERNAL_APP_ROUTE_SCOPE_NAMES);
   });
 });

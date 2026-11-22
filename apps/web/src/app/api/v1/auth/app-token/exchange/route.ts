@@ -355,13 +355,17 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
-  // Token and refresh exchanges are admitted before the app secret is
-  // checked, and failed secret or token checks are paced per app and IP on
-  // both paths; failed secrets also block the source. Refresh also keeps its
-  // own per-family pre-limit.
+  // Token and refresh exchanges are admitted per app and presented secret
+  // before the secret is checked, and a failed secret or token check answers
+  // 429 past its per-app and per-IP limit, on both paths. Refresh also keeps
+  // its own per-family pre-limit.
   const exchangeAppId = appId ?? targetApp;
   const exchange = exchangeAppId
-    ? { appId: exchangeAppId, ip: extractIPFromRequest(request.headers) }
+    ? {
+        appId: exchangeAppId,
+        appSecret,
+        ip: extractIPFromRequest(request.headers),
+      }
     : null;
   if (exchange) {
     const refusal = await admitExternalAppExchange(exchange);

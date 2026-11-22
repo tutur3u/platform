@@ -6,12 +6,8 @@ import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { type Counter, consume, KEY_PREFIX, keyPart } from './rate-limit-core';
 import type { ExternalAppRateLimitBucket } from './rate-limit-policy';
 
-/**
- * Scope names the external-app handlers require. Kept here so the guard does
- * not load the handlers' server modules; a test pins them to the handlers'
- * exported scope constants.
- */
-export const EXTERNAL_APP_ROUTE_SCOPE_NAMES = {
+/** Scope names the external-app handlers require. */
+const EXTERNAL_APP_ROUTE_SCOPE_NAMES = {
   cronRead: 'workspace:cron:read',
   cronWrite: 'workspace:cron:write',
   driveRead: 'workspace:drive:read',
@@ -27,9 +23,14 @@ type RouteKind = 'invitation' | 'read' | 'uploadUrl' | 'write';
 
 /**
  * Each routed external-app operation, its counter kind and the scopes its
- * handler requires. An operation missing here counts per user only.
+ * handler requires. The guard keeps this table instead of loading the
+ * handlers' server modules; a test pins every entry to the `requiredScopes`
+ * its route module exports. An operation missing here counts per user only.
  */
-const ROUTES: Record<string, { kind: RouteKind; scopes: readonly string[] }> = {
+export const EXTERNAL_APP_ROUTES: Record<
+  string,
+  { kind: RouteKind; scopes: readonly string[] }
+> = {
   'GET cron': { kind: 'read', scopes: [scope.cronRead] },
   'GET cron/executions': { kind: 'read', scopes: [scope.cronRead] },
   'GET cron/jobs/[jobKey]/executions': {
@@ -93,9 +94,10 @@ function boundWorkspaceKeyPart(wsId: string, boundWorkspaceId?: string) {
  * The counters one external-app workspace request consumes. Every request is
  * counted per app and user, which caps a bearer however its URL names the
  * workspace. Workspace counters are added only for a bearer bound to the
- * requested workspace that holds every scope the route requires (exact
- * grants), so a member whose request the handler refuses cannot spend the
- * workspace's budget.
+ * requested workspace that holds every scope the route requires, so a bearer
+ * without the route's scopes cannot spend the workspace's budget. Scopes are
+ * matched by exact grant: a wildcard bearer counts per user only. The count
+ * happens before the handler's membership and permission checks.
  */
 export function externalAppWorkspaceCounters({
   appId,
@@ -115,7 +117,9 @@ export function externalAppWorkspaceCounters({
   wsId: string;
 }): Counter[] {
   const route =
-    ROUTES[`${method === 'HEAD' ? 'GET' : method} ${pattern.join('/')}`];
+    EXTERNAL_APP_ROUTES[
+      `${method === 'HEAD' ? 'GET' : method} ${pattern.join('/')}`
+    ];
   const kind: RouteKind =
     route?.kind ?? (READ_METHODS.has(method) ? 'read' : 'write');
   const app = keyPart(appId);

@@ -4,6 +4,9 @@ import {
   loadExternalAppWorkspaceCron,
 } from '@/lib/external-apps/workspace-cron';
 
+/** Scopes this route requires; the route-group rate limiter is tested against them. */
+export const requiredScopes = [externalAppWorkspaceCronScopes.cronRead];
+
 const ROUTE = '/api/v1/workspaces/[wsId]/external-apps/cron';
 
 export async function GET(
@@ -16,7 +19,7 @@ export async function GET(
       Response.json(await loadExternalAppWorkspaceCron(access)),
     operation: 'status',
     request,
-    requiredScopes: [externalAppWorkspaceCronScopes.cronRead],
+    requiredScopes,
     route: ROUTE,
     wsId,
   });

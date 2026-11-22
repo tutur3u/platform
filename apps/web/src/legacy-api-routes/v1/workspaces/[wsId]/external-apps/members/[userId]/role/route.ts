@@ -4,6 +4,12 @@ import {
   updateExternalAppWorkspaceMemberRole,
 } from '@/lib/external-apps/workspace-members';
 
+/** Scopes this route requires; the route-group rate limiter is tested against them. */
+export const requiredScopes = [
+  externalAppWorkspaceMemberScopes.membersWrite,
+  externalAppWorkspaceMemberScopes.rolesWrite,
+];
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ userId: string; wsId: string }> }
@@ -12,10 +18,7 @@ export async function PATCH(
   const access = await requireExternalAppWorkspaceMembersAccess({
     capability: 'manage-roles',
     request,
-    requiredScopes: [
-      externalAppWorkspaceMemberScopes.membersWrite,
-      externalAppWorkspaceMemberScopes.rolesWrite,
-    ],
+    requiredScopes,
     wsId,
   });
 

@@ -1,134 +1,93 @@
+import { createHmac } from 'node:crypto';
+import { getServerTokenSecretCandidates } from '@tuturuuu/auth/app-coordination';
 import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
 import { UNKNOWN_CLIENT_IP } from '@tuturuuu/utils/abuse-protection/client-ip';
-import { checkRateLimitRedis, getRedisClient } from '@/lib/rate-limit';
+import { checkRateLimitRedis } from '@/lib/rate-limit';
 import {
   consume,
-  counterStoreRequired,
   KEY_PREFIX,
   keyPart,
-  limiterUnavailableResponse,
   rateLimitedResponse,
 } from './rate-limit-core';
 import { EXTERNAL_APP_RATE_LIMITS } from './rate-limit-policy';
 
-/** The app an exchange names and the caller's trusted client IP. */
-export type ExternalAppExchangeSource = { appId: string; ip: string };
+/** The app an exchange names, the secret it presents and its client IP. */
+export type ExternalAppExchangeSource = {
+  appId: string;
+  appSecret?: string;
+  ip: string;
+};
 
-/** The app and source key parts, with IPv6 counted per /64. */
-function sourceKeys({ appId, ip }: ExternalAppExchangeSource) {
-  const source = guardSourceBucket(ip);
-  return {
-    app: keyPart(appId),
-    known: source !== UNKNOWN_CLIENT_IP,
-    source: keyPart(source),
-  };
-}
-
-const failureBlockKey = (app: string, source: string) =>
-  `ratelimit:${KEY_PREFIX}:exchangeFailureBlock:app:${app}:ip:${source}`;
+/** Label that derives the admission subkey from the token signing key. */
+const ADMISSION_SUBKEY_LABEL = 'tuturuuu/external-app-exchange-admission/v1';
 
 /**
- * Seconds left on the failed-secret block for this app and source, null when
- * none is active, or `unavailable` when the store cannot be read.
+ * A keyed digest of the presented app secret, so callers share an admission
+ * bucket only when they hold the same secret and the counter key reveals
+ * nothing about it. The HMAC key is a subkey derived from the server's
+ * app-coordination signing secret, never that secret itself, so the counter
+ * keys in the limiter store are no signing oracle over caller-chosen input.
  */
-async function failureBlockRetryAfter(app: string, source: string) {
-  const redis = await getRedisClient();
-  if (!redis) return 'unavailable' as const;
-  try {
-    const until = Number(await redis.get(failureBlockKey(app, source)));
-    const retryAfter = Math.ceil(until - Date.now() / 1000);
-    return Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null;
-  } catch {
-    return 'unavailable' as const;
-  }
+function secretKeyPart(appSecret?: string) {
+  if (!appSecret) return 'none';
+  const [signingKey] = getServerTokenSecretCandidates();
+  const subkey = createHmac('sha256', signingKey!)
+    .update(ADMISSION_SUBKEY_LABEL)
+    .digest();
+  return createHmac('sha256', subkey).update(appSecret).digest('base64url');
 }
 
 /**
- * Admits an exchange attempt before any credential check. An app's server
- * calls the exchange for all of its users from a shared egress IP, so this
- * ceiling is high; the tight pacing applies only to failed credential checks
- * (see `paceExternalAppExchangeFailure`).
- * Without a trusted client IP every caller of the app shares one source, so
- * those attempts use a separate per-app ceiling.
+ * Admits an exchange attempt before the app secret is checked, per app and
+ * presented secret. Keying on the secret rather than the client IP means a
+ * flood from a shared egress (a Worker range, a NAT, an unknown IP) with
+ * wrong secrets fills only its own buckets and never limits a caller that
+ * holds the app's real secret.
  */
-export async function admitExternalAppExchange(
-  exchange: ExternalAppExchangeSource
+export function admitExternalAppExchange({
+  appId,
+  appSecret,
+}: ExternalAppExchangeSource) {
+  return consume([
+    {
+      bucket: 'exchangeAttempt',
+      failClosed: true,
+      key: `${KEY_PREFIX}:exchangeAttempt:app:${keyPart(appId)}:secret:${secretKeyPart(appSecret)}`,
+    },
+  ]);
+}
+
+/**
+ * Paces a failed credential check per app and client IP (IPv6 per /64),
+ * returning the 429 to send for this failed request once the failure limit
+ * is passed, or null to send the 401. Only the failed request is answered
+ * differently: a request whose credentials are valid is never refused here,
+ * so failures sent under an app's id, or forwarded through an app's servers,
+ * cannot lock out that app's valid exchanges.
+ */
+export async function paceExternalAppExchangeFailure(
+  { appId, ip }: ExternalAppExchangeSource,
+  credential: 'secret' | 'token'
 ) {
-  const { app, known, source } = sourceKeys(exchange);
-  if (!known) {
+  const app = keyPart(appId);
+  const source = guardSourceBucket(ip);
+  if (source === UNKNOWN_CLIENT_IP) {
     console.warn('External app token exchange has no trusted client IP', {
       appId: app,
       code: 'EXCHANGE_CLIENT_IP_UNKNOWN',
     });
   }
-
-  const [refusal, blocked] = await Promise.all([
-    consume([
-      known
-        ? {
-            bucket: 'exchangeAttempt',
-            failClosed: true,
-            key: `${KEY_PREFIX}:exchangeAttempt:app:${app}:ip:${source}`,
-          }
-        : {
-            bucket: 'exchangeUnknownIp',
-            failClosed: true,
-            key: `${KEY_PREFIX}:exchangeUnknownIp:app:${app}`,
-          },
-    ]),
-    failureBlockRetryAfter(app, source),
-  ]);
-  if (refusal) return refusal;
-  if (blocked === 'unavailable') {
-    return counterStoreRequired() ? limiterUnavailableResponse() : null;
-  }
-  return blocked
-    ? rateLimitedResponse(
-        blocked,
-        EXTERNAL_APP_RATE_LIMITS.exchangeSecretFailure.maxRequests
-      )
-    : null;
-}
-
-/**
- * Paces a failed credential check for this app and source, returning the 429
- * to send once the failure limit is passed, or null to send the 401.
- *
- * A failed app secret also blocks every exchange attempt from that source
- * until the failure window ends, which stops secret guessing. Only the caller
- * chooses the secret, so the block cannot be aimed at an app's own servers.
- * A failed handoff or refresh token is paced without blocking: an app's
- * servers forward the tokens their users bring, so junk tokens sent through
- * an app must not lock out that app's valid exchanges.
- */
-export async function paceExternalAppExchangeFailure(
-  exchange: ExternalAppExchangeSource,
-  credential: 'secret' | 'token'
-) {
-  const { app, source } = sourceKeys(exchange);
   const bucket =
     credential === 'secret' ? 'exchangeSecretFailure' : 'exchangeTokenFailure';
   const result = await checkRateLimitRedis(
-    `${KEY_PREFIX}:${bucket}:app:${app}:ip:${source}`,
+    `${KEY_PREFIX}:${bucket}:app:${app}:ip:${keyPart(source)}`,
     EXTERNAL_APP_RATE_LIMITS[bucket]
   );
   if (result.allowed || result.unavailable) return null;
-
-  const retryAfter = Math.max(1, result.reset - Math.floor(Date.now() / 1000));
-  if (credential === 'secret') {
-    const redis = await getRedisClient();
-    try {
-      await redis?.set(failureBlockKey(app, source), result.reset, {
-        px: retryAfter * 1000,
-      });
-    } catch {
-      console.warn('External app exchange failure block was not stored', {
-        appId: app,
-        code: 'EXCHANGE_FAILURE_BLOCK_UNSTORED',
-      });
-    }
-  }
-  return rateLimitedResponse(retryAfter, result.limit);
+  return rateLimitedResponse(
+    Math.max(1, result.reset - Math.floor(Date.now() / 1000)),
+    result.limit
+  );
 }
 
 /** Counts a token exchange of a verified app, per app across all sources. */

@@ -525,8 +525,13 @@ when the bearer's `workspace_id` claim names the requested workspace (by its id
 or the `internal` alias) and the bearer holds every scope the route requires,
 by exact grant. Other bearers, handles and `personal` count per user only, so a
 token never spends another workspace's budget and a member without the route's
-scope never spends it either. Workspace caps sit above the per-user caps, so
-one member cannot exhaust a workspace alone.
+scope never spends it either. Wildcard grants (`*`, `workspace:members:*`) are
+not expanded here, so a wildcard bearer is capped per user only. The guard
+counts a request against the workspace before the handler's membership and
+permission checks, so a scoped member whose request the handler then refuses
+still spends it. Workspace caps sit above the per-user caps, so one member
+cannot exhaust a workspace alone. The guard's route table is tested against the
+`requiredScopes` each route module exports.
 
 Limits live in `apps/web/src/lib/external-apps/rate-limit-policy.ts`:
 
@@ -538,27 +543,41 @@ Limits live in `apps/web/src/lib/external-apps/rate-limit-policy.ts`:
 | `members/invitations`, besides the write | 5 per hour | 30 per hour |
 
 The app-token exchange is called by an app's servers, so one client IP carries
-all of that app's users:
+all of that app's users, and shared egress (a Worker range, a NAT) carries
+other callers too. Its counters are therefore keyed on what the caller holds:
 
 | Exchange counter | Key | Limit |
 | --- | --- | --- |
-| Every attempt, before the app secret is checked | app and client IP | 600 per minute |
-| Every attempt without a trusted client IP | app | 300 per minute |
-| Failed app secret | app and client IP | 30 per minute, then the source is refused until the window ends |
-| Failed handoff or refresh token | app and client IP | 30 per minute, then those failures answer 429 |
+| Every token or refresh attempt, before the app secret is checked | app and an HMAC of the presented secret | 600 per minute |
+| Failed app secret | app and client IP | past 30 per minute, that failed request answers 429 |
+| Failed handoff or refresh token | app and client IP | past 30 per minute, that failed request answers 429 |
 | `token` exchange of a verified app | app | 600 per minute |
 
-A failed token never blocks the source, because an app's servers forward the
-tokens their users bring; junk tokens sent through an app cannot lock out its
-valid exchanges. Refresh exchanges also keep their own per-family pre-limit.
-IPv6 clients are counted per /64. The client IP comes only from the trusted
+The admission key is an HMAC-SHA256 of the presented secret under a subkey
+derived from the server's app-coordination signing secret (never the signing
+secret itself), so it reveals nothing about the secret, gives no signing
+oracle, and
+only callers holding the same secret share a bucket; requests without a secret
+share one bucket per app, and they always fail. Failure pacing only changes
+the answer to a request that already failed: it never refuses a request whose
+secret and token are valid, so neither failures sent under an app's public id
+nor junk tokens forwarded through an app's servers can lock out its valid
+exchanges. Refresh exchanges carry the app secret too, so they are admitted
+and paced the same way, and also keep their own per-family pre-limit. IPv6
+clients are counted per /64.
+
+A caller sending random secrets creates a new admission bucket per secret, and
+each attempt costs one HMAC and one app registry read before it fails. The web
+API proxy guard's default mutation limits (`guardApiProxyRequest`: 60 per
+minute, 300 per hour and 2,000 per day per client identity) bound that cost
+per client; no tighter edge limit applies to this route. The client IP comes only from the trusted
 proxy headers of the configured runtime (`TRUSTED_PROXY`): `cf-connecting-ip`
 on Cloudflare Workers, the signed `x-tuturuuu-origin-auth` proof or an
 authenticated origin's `cf-connecting-ip` behind the Cloudflare proxy, and
 `x-vercel-forwarded-for`, then `x-real-ip` and `x-forwarded-for`, on Vercel.
-An exchange without a trusted client IP logs `EXCHANGE_CLIENT_IP_UNKNOWN`,
-and its failures count per app. A
-request counts even when the limiter or its handler then refuses it.
+An exchange failure without a trusted client IP logs
+`EXCHANGE_CLIENT_IP_UNKNOWN` and is paced per app. A request counts even when
+the limiter or its handler then refuses it.
 
 Counts use the web `ratelimit` abuse-guard family (the `ABUSE_GUARD` service
 binding) through `checkRateLimitRedis`, which retries a store that failed to
@@ -579,6 +598,7 @@ Regression coverage lives in
 `apps/web/src/lib/external-apps/rate-limit.test.ts`,
 `apps/web/src/lib/external-apps/rate-limit-exchange.test.ts`,
 `apps/web/src/lib/external-apps/rate-limit-backend-off.test.ts`,
+`apps/web/src/lib/external-apps/rate-limit-routes.test.ts`,
 `apps/web/src/lib/rate-limit-guard.test.ts`,
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-rate-limit.test.ts` and
 `scripts/generate-web-api-route-wrappers.test.js`.

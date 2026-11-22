@@ -19,7 +19,11 @@ const limiter = vi.hoisted(() => ({
 
 vi.mock('@/lib/external-apps/exchange-rate-limit', () => limiter);
 
-const source = { appId: 'yoola', ip: '203.0.113.7' };
+const source = {
+  appId: 'yoola',
+  appSecret: 'ttr_app_secret_test',
+  ip: '203.0.113.7',
+};
 
 function exchange(body: Record<string, unknown>) {
   return POST(
@@ -70,7 +74,7 @@ describe('app token exchange rate limit', () => {
     vi.unstubAllEnvs();
   });
 
-  it('admits per app and IP, then counts the verified app once', async () => {
+  it('admits per app and secret, then counts the verified app once', async () => {
     const response = await exchange({ token: 'handoff-token' });
 
     expect(response.status).toBe(200);

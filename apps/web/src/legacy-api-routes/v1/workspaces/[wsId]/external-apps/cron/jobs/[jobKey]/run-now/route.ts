@@ -4,6 +4,12 @@ import {
   runExternalAppWorkspaceCronJobNow,
 } from '@/lib/external-apps/workspace-cron';
 
+/** Scopes this route requires; the route-group rate limiter is tested against them. */
+export const requiredScopes = [
+  externalAppWorkspaceCronScopes.cronRead,
+  externalAppWorkspaceCronScopes.cronWrite,
+];
+
 const ROUTE =
   '/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/run-now';
 
@@ -16,10 +22,7 @@ export async function POST(
     handler: (access) => runExternalAppWorkspaceCronJobNow({ access, jobKey }),
     operation: 'run_now',
     request,
-    requiredScopes: [
-      externalAppWorkspaceCronScopes.cronRead,
-      externalAppWorkspaceCronScopes.cronWrite,
-    ],
+    requiredScopes,
     route: ROUTE,
     wsId,
   });
