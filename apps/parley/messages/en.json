@@ -4827,7 +4827,8 @@
           "full": "This activity is full. Remove something before adding more.",
           "permission": "Only hosts and co-hosts can do that.",
           "closed": "That is closed now.",
-          "generic": "That did not go through. Try again."
+          "generic": "That did not go through. Try again.",
+          "not_closed": "Close answers before releasing results."
         },
         "options": {
           "legend": "Options, with the correct one selected",
@@ -4885,7 +4886,10 @@
           "submitted": "Submitted",
           "closed_note": "Answers are closed. Results appear here when the host releases them.",
           "released_note": "Results are released. Only you see your score and feedback.",
-          "your_score": "Your score: {score}"
+          "your_score": "Your score: {score}",
+          "reopen_confirm": "Reopen and withdraw results",
+          "reopen_hint": "Reopening withdraws the released results so answers can change. Select again to confirm.",
+          "release_hint": "Close answers to release results."
         },
         "flashcards": {
           "title": "Flashcards",

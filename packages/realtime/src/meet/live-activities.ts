@@ -53,16 +53,23 @@ function applyActivity(
         assessment:
           command.status === 'draft'
             ? { ...assessment, status: 'draft', responses: [], released: false }
-            : { ...assessment, status: command.status },
+            : command.status === 'open'
+              ? // Answers can change again, so released results are withdrawn.
+                { ...assessment, status: 'open', released: false }
+              : { ...assessment, status: command.status },
       };
     case 'assessment.release':
       if (command.released === assessment.released) return state;
+      // Keys and grades leave the managers only once answers are final.
+      if (command.released && assessment.status !== 'closed')
+        return 'activity_assessment_not_closed';
       return {
         ...state,
         assessment: { ...assessment, released: command.released },
       };
     case 'assessment.submit': {
-      if (assessment.status !== 'open') return 'activity_assessment_closed';
+      if (assessment.status !== 'open' || assessment.released)
+        return 'activity_assessment_closed';
       const item = assessment.items.find(({ id }) => id === command.itemId);
       if (!item) return 'activity_item_not_found';
       if (
@@ -225,7 +232,11 @@ function refreshActors(
   switch (command.kind) {
     case 'assessment.release':
     case 'assessment.status':
-      return command.kind === 'assessment.release' || command.status === 'draft'
+      // Reopening withdraws released results, so each respondent's own view
+      // loses its score and feedback again.
+      return command.kind === 'assessment.release' ||
+        command.status === 'draft' ||
+        before.assessment.released !== after.assessment.released
         ? before.assessment.responses.map(({ participantId }) => participantId)
         : [];
     case 'assessment.grade':

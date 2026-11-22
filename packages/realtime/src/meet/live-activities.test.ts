@@ -172,10 +172,33 @@ describe('assessment', () => {
       'Private feedback'
     );
 
-    const released = action(graded.state, host, {
+    // Results leave the managers only once answers are final.
+    expect(
+      action(graded.state, host, { kind: 'assessment.release', released: true })
+        .reply
+    ).toMatchObject(error('activity_assessment_not_closed'));
+    const closed = action(graded.state, host, {
+      kind: 'assessment.status',
+      status: 'closed',
+    });
+    expect(
+      action(closed.state, guest, {
+        kind: 'assessment.submit',
+        itemId: long.id,
+        answer: 'too late',
+      }).reply
+    ).toMatchObject(error('activity_assessment_closed'));
+    const released = action(closed.state, host, {
       kind: 'assessment.release',
       released: true,
     });
+    expect(
+      action(released.state, guest, {
+        kind: 'assessment.submit',
+        itemId: long.id,
+        answer: 'after the key',
+      }).reply
+    ).toMatchObject(error('activity_assessment_closed'));
     expect(released.broadcast).toMatchObject([
       {
         snapshot: {
@@ -202,6 +225,31 @@ describe('assessment', () => {
     expect(JSON.stringify(read(released.state, other).reply)).not.toContain(
       'private answer'
     );
+
+    // Reopening makes answers editable again, so keys and grades go back.
+    const reopened = action(released.state, cohost, {
+      kind: 'assessment.status',
+      status: 'open',
+    });
+    expect(reopened.state.liveActivities?.assessment).toMatchObject({
+      status: 'open',
+      released: false,
+    });
+    expect(JSON.stringify(reopened.broadcast)).not.toContain('"correct"');
+    expect(reopened.direct).toMatchObject([
+      { userId: guest.userId, message: { type: 'activity.mine' } },
+    ]);
+    expect(JSON.stringify(reopened.direct)).not.toMatch(
+      /Private feedback|"score"/
+    );
+    expect(
+      action(reopened.state, guest, {
+        kind: 'assessment.submit',
+        itemId: long.id,
+        answer: 'second thoughts',
+      }).state.liveActivities?.assessment.responses
+    ).toMatchObject([{ answer: 'second thoughts' }]);
+
     const draft = action(released.state, host, {
       kind: 'assessment.status',
       status: 'draft',

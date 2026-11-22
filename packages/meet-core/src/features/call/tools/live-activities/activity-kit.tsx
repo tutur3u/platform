@@ -17,6 +17,7 @@ const ERRORS: Record<string, string> = {
   awaiting_admission: 'permission',
   activity_assessment_closed: 'closed',
   activity_game_closed: 'closed',
+  activity_assessment_not_closed: 'not_closed',
 };
 
 /**

@@ -89,27 +89,41 @@ function GradeRow({
 export function AssessmentHost({ activity }: { activity: Activity }) {
   const t = useTranslations('meet.call.live_activities.assessment');
   const [confirmEdit, setConfirmEdit] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
   const { assessment } = activity.snapshot;
   const responses = activity.host?.assessment.responses ?? [];
   const answers = activity.host?.assessment.answers ?? {};
   const open = assessment.status === 'open';
+  // Reopening withdraws released results, so it asks twice once they are out.
+  const reopenNeedsConfirm = !open && assessment.released && !confirmReopen;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <ToolAction
           icon={open ? Lock : Play}
-          label={t(open ? 'close_answers' : 'reopen')}
-          onClick={() =>
+          label={t(
+            open
+              ? 'close_answers'
+              : confirmReopen
+                ? 'reopen_confirm'
+                : 'reopen'
+          )}
+          variant={confirmReopen ? 'destructive' : 'outline'}
+          onClick={() => {
+            if (reopenNeedsConfirm) return setConfirmReopen(true);
+            setConfirmReopen(false);
             activity.send({
               kind: 'assessment.status',
               status: open ? 'closed' : 'open',
-            })
-          }
+            });
+          }}
         />
         <ToolAction
           icon={assessment.released ? EyeOff : Eye}
           label={t(assessment.released ? 'hide_results' : 'release')}
           variant={assessment.released ? 'outline' : 'default'}
+          // Results go out only once answers are final.
+          disabled={open}
           onClick={() =>
             activity.send({
               kind: 'assessment.release',
@@ -128,9 +142,15 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
           }}
         />
       </div>
-      {confirmEdit && (
+      {(confirmEdit || confirmReopen || open) && (
         <p role="status" className="text-muted-foreground text-xs">
-          {t('edit_hint')}
+          {t(
+            confirmEdit
+              ? 'edit_hint'
+              : confirmReopen
+                ? 'reopen_hint'
+                : 'release_hint'
+          )}
         </p>
       )}
       <ol className="space-y-3">

@@ -138,7 +138,13 @@ it('shows the host each answer, grades written ones and releases results', () =>
     target: { value: 'Good reasoning' },
   });
   fireEvent.click(screen.getByRole('button', { name: t.grade }));
-  fireEvent.click(screen.getByRole('button', { name: t.release }));
+  // While answers can still change, results cannot be released.
+  expect(screen.getByRole('button', { name: t.release })).toHaveProperty(
+    'disabled',
+    true
+  );
+  expect(screen.getByText(t.release_hint)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: t.close_answers }));
   expect(sent()).toEqual([
     {
       kind: 'assessment.grade',
@@ -147,11 +153,28 @@ it('shows the host each answer, grades written ones and releases results', () =>
       score: 85,
       feedback: 'Good reasoning',
     },
-    { kind: 'assessment.release', released: true },
+    { kind: 'assessment.status', status: 'closed' },
   ]);
-  // Going back to the questions clears answers, so it asks twice.
+
+  const closed = { ...open, status: 'closed' as const };
+  room({ manager: true, snapshot: { assessment: closed } });
+  fireEvent.click(screen.getByRole('button', { name: t.release }));
+  expect(sent().at(-1)).toEqual({ kind: 'assessment.release', released: true });
+
+  // Released: reopening would withdraw the results, so it asks twice.
+  room({
+    manager: true,
+    snapshot: { assessment: { ...closed, released: true } },
+  });
+  fireEvent.click(screen.getByRole('button', { name: t.reopen }));
+  expect(sent()).toHaveLength(3);
+  expect(screen.getByText(t.reopen_hint)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: t.reopen_confirm }));
+  expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'open' });
+
+  // Going back to the questions clears answers, so it asks twice as well.
   fireEvent.click(screen.getByRole('button', { name: t.edit }));
-  expect(sent()).toHaveLength(2);
+  expect(sent()).toHaveLength(4);
   fireEvent.click(screen.getByRole('button', { name: t.edit_confirm }));
   expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'draft' });
 });

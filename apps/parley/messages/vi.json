@@ -4827,7 +4827,8 @@
           "full": "Hoạt động này đã đầy. Hãy xóa bớt trước khi thêm.",
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",
           "closed": "Phần này đã đóng.",
-          "generic": "Thao tác chưa thành công. Hãy thử lại."
+          "generic": "Thao tác chưa thành công. Hãy thử lại.",
+          "not_closed": "Hãy đóng nhận câu trả lời trước khi công bố kết quả."
         },
         "options": {
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
@@ -4885,7 +4886,10 @@
           "submitted": "Đã gửi",
           "closed_note": "Đã đóng nhận câu trả lời. Kết quả sẽ hiện ở đây khi chủ phòng công bố.",
           "released_note": "Kết quả đã được công bố. Chỉ bạn thấy điểm và nhận xét của mình.",
-          "your_score": "Điểm của bạn: {score}"
+          "your_score": "Điểm của bạn: {score}",
+          "reopen_confirm": "Mở lại và thu hồi kết quả",
+          "reopen_hint": "Mở lại sẽ thu hồi kết quả đã công bố để câu trả lời có thể thay đổi. Chọn lần nữa để xác nhận.",
+          "release_hint": "Hãy đóng nhận câu trả lời để công bố kết quả."
         },
         "flashcards": {
           "title": "Thẻ ghi nhớ",
