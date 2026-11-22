@@ -23,7 +23,7 @@ import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -237,33 +237,28 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow &&
-    hasSatelliteSession
+    (mounted || hasSatelliteSession)
   ) {
+    let target = 'personal';
     try {
       const defaultWorkspace = await getCurrentUserDefaultWorkspace(
         withForwardedInternalApiAuth(authRequestHeaders)
       );
 
       if (defaultWorkspace) {
-        const target = defaultWorkspace.personal
-          ? 'personal'
-          : defaultWorkspace.id === ROOT_WORKSPACE_ID
-            ? 'internal'
-            : defaultWorkspace.id;
-        const redirectUrl = workspaceUrl(`/${target}`);
-        const wsRedirect = NextResponse.redirect(redirectUrl);
-        propagateAuthCookies(authRes, wsRedirect);
-        return finish(wsRedirect);
+        target = toWorkspaceSlug(defaultWorkspace.id, {
+          personal: defaultWorkspace.personal ?? false,
+        });
       }
-
-      // Fallback to personal workspace if no default workspace found
-      const redirectUrl = workspaceUrl('/personal');
-      const fallbackRedirect = NextResponse.redirect(redirectUrl);
-      propagateAuthCookies(authRes, fallbackRedirect);
-      return finish(fallbackRedirect);
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }
+    const localePrefix = isLocaleRootPath ? `/${pathSegments[0]}` : '';
+    const redirect = NextResponse.redirect(
+      workspaceUrl(`${localePrefix}/${target}`)
+    );
+    propagateAuthCookies(authRes, redirect);
+    return finish(redirect);
   }
 
   // Continue with locale handling

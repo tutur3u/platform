@@ -59,6 +59,7 @@ test(
     const origin = 'https://tuturuuu.com';
     const base = '/finance';
     const signedCalls = [];
+    let defaultWorkspaceUnavailable = false;
     const runtime = await financeRuntime(t, {
       financeOrigin: origin,
       fixtureResponse: (request) => {
@@ -66,6 +67,15 @@ test(
           JSON.stringify([...request.headers]),
           /fixture-central-provider-refresh|tuturuuu_web_app_session/u
         );
+        if (
+          request.method === 'GET' &&
+          new URL(request.url).pathname === '/api/v1/users/me/default-workspace'
+        ) {
+          signedCalls.push('/api/v1/users/me/default-workspace');
+          return defaultWorkspaceUnavailable
+            ? new Response('Fixture upstream unavailable', { status: 502 })
+            : Response.json({ id: fixtureWorkspaceId, personal: false });
+        }
         return signedSsrFixtureResponse(request, signedCalls, origin, base, {
           verifiedTotp: true,
         });
@@ -97,6 +107,41 @@ test(
     await pendingMfa.text();
 
     const headers = syntheticMountedSessionHeaders(runtime.secret, 'aal2');
+    const rootCallback = await runtime.fetch(
+      `${origin}${base}/verify-token?nextUrl=%2F`,
+      {
+        headers,
+      }
+    );
+    assert.equal(rootCallback.status, 307);
+    const root = rootCallback.headers.get('location');
+    assert.ok(root === `${origin}${base}` || root === `${origin}${base}/`);
+    await rootCallback.text();
+    const rootRedirect = await runtime.fetch(root, { headers });
+    assert.equal(rootRedirect.status, 307);
+    assert.equal(
+      rootRedirect.headers.get('location'),
+      `${origin}${base}/${fixtureWorkspaceId}`
+    );
+    await rootRedirect.text();
+    defaultWorkspaceUnavailable = true;
+    const rootFallback = await runtime.fetch(
+      `${origin}${base}/vi?ref=a&ref=b`,
+      { headers }
+    );
+    assert.equal(rootFallback.status, 307);
+    assert.equal(
+      rootFallback.headers.get('location'),
+      `${origin}${base}/vi/personal?ref=a&ref=b`
+    );
+    await rootFallback.text();
+    assert.equal(
+      signedCalls.filter(
+        (call) => call === '/api/v1/users/me/default-workspace'
+      ).length,
+      2
+    );
+
     const verified = await runtime.fetch(callback.href, { headers });
     assert.equal(verified.status, 307);
     assert.equal(verified.headers.get('location'), `${origin}${base}${path}`);

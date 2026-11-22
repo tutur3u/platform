@@ -157,8 +157,8 @@ configured separately by the release operator.
 | Canonical host | `finance.tuturuuu.com` |
 | Admitted apex mount | `https://tuturuuu.com/finance`; the production Worker rejects other apex paths and hosts |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker refuses to start without the last two |
-| Vars | The production entry of `apps/finance/cloudflare/native-profiles.json`: `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `ABUSE_GUARD_FAMILIES=proxy`. The Supabase URL is a var, so it is not a Worker secret |
-| Bindings | `ASSETS` and `ABUSE_GUARD` (service `tuturuuu-abuse-guard`, entrypoint `AbuseGuardEntrypoint`); Web sets `ABUSE_GUARD_KEY_PEPPER`, which is not deploy-required |
+| Vars | The production entry of `apps/finance/cloudflare/native-profiles.json`: `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL` and an empty `ABUSE_GUARD_FAMILIES`. The Supabase URL is a var, so it is not a Worker secret |
+| Bindings | `ASSETS` and `ABUSE_GUARD` (service `tuturuuu-abuse-guard`, entrypoint `AbuseGuardEntrypoint`). The production proxy family stays unassigned until the separate pepper rollout and family activation |
 | Compatibility | `2026-10-12`, `nodejs_compat` and `global_fetch_strictly_public`, from `apps/finance/void.config.ts` |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=finance` from `production` (environment `wave1-finance-production`) |
 | Anonymous `/` | 307 to `https://tuturuuu.com/login`; the pre-seal doctor runs with `--expect-redirect` |

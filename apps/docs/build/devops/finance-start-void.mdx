@@ -69,6 +69,10 @@ failures and p95 latency for 30 to 60 minutes and roll back on regression.
 For apex smoke, compare build-info with the sealed SHA and finish login on the
 workspace URL with a signed-in staging or smoke account. Expect a single
 `/finance` prefix, both query values, and site assets served inside the mount.
+A signed-in visit to the mounted root opens the default workspace overview.
+If the default-workspace lookup is unavailable, Finance opens the personal
+overview. An explicit locale and the query stay on the mounted redirect. The
+native Worker suite covers the root callback, default workspace and fallback.
 With a TOTP-enrolled smoke account, open the same URL at AAL1 and confirm Web
 receives `mfa=required` with the workspace return intact. Complete MFA on Web
 and confirm the AAL2 session reaches the mounted workspace, with no central

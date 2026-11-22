@@ -8,7 +8,7 @@ const financeVars = {
   NEXT_PUBLIC_APP_URL: 'https://finance.tuturuuu.com',
   FINANCE_APP_URL: 'https://finance.tuturuuu.com',
   NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
-  ABUSE_GUARD_FAMILIES: 'proxy',
+  ABUSE_GUARD_FAMILIES: '',
 };
 function fixture(t, app = 'mail') {
   const dir = fs.realpathSync(
