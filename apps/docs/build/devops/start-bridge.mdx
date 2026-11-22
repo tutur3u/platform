@@ -109,6 +109,21 @@ response gets a fresh nonce in its `Content-Security-Policy`, which the router
 and the head script repeat. On the apex the handler sits behind the one-origin
 gate (`decideOneOriginRequest`, #6746).
 
+### Rolling out a shared variable
+
+`centralApiOrigin` reads `INTERNAL_WEB_API_ORIGIN`, but each app decides how
+strictly it validates it. Workspace's `resolveWebApiOrigin` accepts only hosts
+in `TUTURUUU_WEB_API_HOSTS` (default `tuturuuu.com`), and
+[its runbook](/build/devops/workspace-start-void) requires both to stay unset in
+production. Any other value makes every Workspace request answer 500. Most
+other bridges fall back to `https://tuturuuu.com` without validating the value.
+
+Do not derive a rollout target list from "the Worker reads the variable". For
+each target, read that app's runbook and its resolver before writing, and leave
+out any app that forbids the value. Write with an expect-current check, then
+probe a page and an `/api` path on every target, and roll back any target that
+starts answering 5xx to its previous version.
+
 ## Registries and the unregistered-route check
 
 Each app declares `start-bridge.routes.json` at its root:

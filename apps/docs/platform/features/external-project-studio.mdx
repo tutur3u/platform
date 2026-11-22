@@ -365,6 +365,39 @@ bun run test -- src/lib/external-projects/email-policy.test.ts \
   'src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.test.ts'
 ```
 
+## Edge WAF exception for media uploads
+
+Bearer-authenticated multipart uploads from linked sites can trip the
+Cloudflare OWASP Core rule `949110: Inbound Anomaly Score Exceeded`, because a
+binary body scores as an anomaly. The edge answers 403 before the request
+reaches the gateway or api-core, so Web logs show nothing and the app's abuse
+guard (`ABUSE_CHALLENGE_REQUIRED`) is not involved. JSON writes on the same
+routes do not score, so a passing JSON call next to a failing upload is the
+signature of this block.
+
+The `tuturuuu.com` zone has a logged managed-rule exception
+(`15e29a570fdd4560b5c4c6e6e23d007c`). It is placed directly after the Meet
+audio-upload exception and before the managed-ruleset execute rules. It skips
+only rule `6179ae15870a4bb7b2d480d4843b323c` in the OWASP ruleset
+`4814384a9e5d4991b9815dcfc25d2f1f`, for this expression:
+
+```text
+(http.host eq "tuturuuu.com" and http.request.method eq "POST" and (http.request.uri.path wildcard "/api/v1/workspaces/*/external-projects/assets/upload-url" or http.request.uri.path wildcard "/api/v1/workspaces/*/external-projects/webgl-packages/upload-url") and starts_with(http.request.headers["content-type"][0], "multipart/form-data") and starts_with(http.request.headers["authorization"][0], "Bearer "))
+```
+
+Every other managed rule stays active, and the handlers still enforce the
+bearer, manage access, quota (413), type (415) and duplicate (409) checks.
+
+- Diagnose: find the request's Ray ID in Security Analytics (or
+  `firewallEventsAdaptive` filtered by path) and confirm the `firewallManaged`
+  block names rule 949110.
+- Extend: add a new multipart upload route (for example
+  `external-projects/storage`) to this expression through its own reviewed zone
+  change, with a preimage and readback of the entrypoint ruleset. Never replace
+  it with a ruleset-wide or domain-wide skip.
+- Roll back: delete the rule by id from the `http_request_firewall_managed`
+  entrypoint and read back that the other rules are unchanged.
+
 ## Implementation Notes
 
 - Keep CMS as a pure satellite frontend. Do not move API ownership into `apps/cms`.
