@@ -1,5 +1,8 @@
 part of 'dashboard_page.dart';
 
+/// Grid entry for the Up next half of the `tasks` Home widget.
+const _upNextEntryId = 'tasks-up-next';
+
 extension _DashboardCustomization on _DashboardViewState {
   /// Build-time only: module visibility and the mode gate use `select`.
   List<String> _availableHomeWidgetIds(BuildContext context) {
@@ -31,7 +34,9 @@ extension _DashboardCustomization on _DashboardViewState {
     ];
   }
 
-  List<Widget> _dashboardWidgets(
+  /// Visible Home widgets in the user's order. Tasks contributes two cards,
+  /// Today and Up next, so the grid can balance them across columns.
+  List<({String id, Widget child})> _dashboardEntries(
     BuildContext context,
     Workspace workspace,
     TaskListState taskState,
@@ -50,15 +55,24 @@ extension _DashboardCustomization on _DashboardViewState {
       ),
       'tasks': StaggeredEntrance(
         replayKey: widget.replayToken,
-        child: _TaskSectionsBlock(
+        child: _TaskSection.today(
           state: taskState,
-          today: tasks.today,
-          upNext: tasks.upNext,
+          tasks: tasks.today,
+          onRetry: () => _retryTasks(context, workspace),
+        ),
+      ),
+      _upNextEntryId: StaggeredEntrance(
+        replayKey: widget.replayToken,
+        child: _TaskSection.upNext(
+          state: taskState,
+          tasks: tasks.upNext,
+          onRetry: () => _retryTasks(context, workspace),
         ),
       ),
       'calendar': StaggeredEntrance(
         replayKey: widget.replayToken,
         child: _UpcomingEventsBlock(
+          onRetry: () => _retryEvents(context, workspace),
           status: calendarState.status,
           hasLoadedOnce: calendarState.hasLoadedOnce,
           events: upcomingEvents,
@@ -96,12 +110,16 @@ extension _DashboardCustomization on _DashboardViewState {
     return [
       for (final id in layout.arranged(available))
         if (!layout.hidden.contains(id))
-          KeyedSubtree(
-            key: ValueKey('home-widget-$id'),
-            child: const {'mail', 'meet', 'finance', 'notes'}.contains(id)
-                ? HomeOnlineCard(child: cards[id]!)
-                : cards[id]!,
-          ),
+          for (final entry in id == 'tasks' ? ['tasks', _upNextEntryId] : [id])
+            (
+              id: entry,
+              child: KeyedSubtree(
+                key: ValueKey('home-widget-$entry'),
+                child: const {'mail', 'meet', 'finance', 'notes'}.contains(id)
+                    ? HomeOnlineCard(child: cards[entry]!)
+                    : cards[entry]!,
+              ),
+            ),
     ];
   }
 

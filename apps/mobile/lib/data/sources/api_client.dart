@@ -29,6 +29,7 @@ part 'api_client_mutations.dart';
 part 'api_client_integrity.dart';
 part 'api_client_conditional.dart';
 part 'api_client_mobile_client.dart';
+part 'api_client_verification.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
 class ApiClient {
@@ -94,7 +95,7 @@ class ApiClient {
       return await OfflineApiRequest.paced(
         () => _client.send(request).timeout(_requestTimeout),
       );
-    });
+    }, read: true);
     if (response.statusCode != 200 ||
         (response.contentLength != null &&
             response.contentLength! > maxBytes)) {
@@ -177,24 +178,31 @@ class ApiClient {
     }
     final url = _url(path);
 
-    final response = await _performRequest(() async {
-      final userId = requiresAuth ? _auth.currentUser?.id : null;
-      late Map<String, String> requestHeaders;
-      return await OfflineApiRequest.paced(
-        () {
-          if (requiresAuth) _checkRequestUser(userId);
-          return _client
-              .get(url, headers: requestHeaders)
-              .timeout(_requestTimeout);
-        },
-        prepare: () async {
-          requestHeaders = {
-            ...headers,
-            ...await _getHeaders(requiresAuth: requiresAuth, offlineRead: true),
-          };
-        },
-      );
-    }, requiresAuth: requiresAuth);
+    final response = await _performRequest(
+      () async {
+        final userId = requiresAuth ? _auth.currentUser?.id : null;
+        late Map<String, String> requestHeaders;
+        return await OfflineApiRequest.paced(
+          () {
+            if (requiresAuth) _checkRequestUser(userId);
+            return _client
+                .get(url, headers: requestHeaders)
+                .timeout(_requestTimeout);
+          },
+          prepare: () async {
+            requestHeaders = {
+              ...headers,
+              ...await _getHeaders(
+                requiresAuth: requiresAuth,
+                offlineRead: true,
+              ),
+            };
+          },
+        );
+      },
+      requiresAuth: requiresAuth,
+      read: true,
+    );
 
     return _handleResponse(response);
   }
@@ -208,22 +216,26 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(() async {
-      final userId = requiresAuth ? _auth.currentUser?.id : null;
-      late Map<String, String> headers;
-      return await OfflineApiRequest.paced(
-        () {
-          if (requiresAuth) _checkRequestUser(userId);
-          return _client.get(url, headers: headers).timeout(_requestTimeout);
-        },
-        prepare: () async {
-          headers = await _getHeaders(
-            requiresAuth: requiresAuth,
-            offlineRead: true,
-          );
-        },
-      );
-    }, requiresAuth: requiresAuth);
+    final response = await _performRequest(
+      () async {
+        final userId = requiresAuth ? _auth.currentUser?.id : null;
+        late Map<String, String> headers;
+        return await OfflineApiRequest.paced(
+          () {
+            if (requiresAuth) _checkRequestUser(userId);
+            return _client.get(url, headers: headers).timeout(_requestTimeout);
+          },
+          prepare: () async {
+            headers = await _getHeaders(
+              requiresAuth: requiresAuth,
+              offlineRead: true,
+            );
+          },
+        );
+      },
+      requiresAuth: requiresAuth,
+      read: true,
+    );
 
     // Reuse existing error handling behavior.
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -344,20 +356,24 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    return await _performStreamedRequest(() async {
-      final request = http.Request('GET', url)
-        ..followRedirects = followRedirects
-        ..headers.addAll(
-          await _getHeaders(
-            accept: accept,
-            requiresAuth: requiresAuth,
-            offlineRead: true,
-          ),
+    return await _performStreamedRequest(
+      () async {
+        final request = http.Request('GET', url)
+          ..followRedirects = followRedirects
+          ..headers.addAll(
+            await _getHeaders(
+              accept: accept,
+              requiresAuth: requiresAuth,
+              offlineRead: true,
+            ),
+          );
+        return await OfflineApiRequest.paced(
+          () => _client.send(request).timeout(_requestTimeout),
         );
-      return await OfflineApiRequest.paced(
-        () => _client.send(request).timeout(_requestTimeout),
-      );
-    }, requiresAuth: requiresAuth);
+      },
+      requiresAuth: requiresAuth,
+      read: true,
+    );
   }
 
   Future<http.StreamedResponse> sendJsonStreamAcknowledged(
@@ -455,21 +471,10 @@ class ApiClient {
     }
   }
 
-  Future<String?> _verificationToken() async {
-    try {
-      return await ApiVerification.requestToken?.call();
-    } on Object {
-      throw const ApiException(
-        message: 'Unable to verify request',
-        statusCode: 0,
-        failureKind: ApiFailureKind.session,
-      );
-    }
-  }
-
   Future<http.Response> _performRequest(
     Future<http.Response> Function() request, {
     bool requiresAuth = true,
+    bool read = false,
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
@@ -487,7 +492,7 @@ class ApiClient {
           response.statusCode == 403 &&
           response.headers['x-abuse-challenge'] == 'turnstile' &&
           OfflineApiRequest.allowsChallenge) {
-        final token = await _verificationToken();
+        final token = await _verificationToken(response, read: read);
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
           response = await ApiVerification.retry(token, () => request());
@@ -515,6 +520,7 @@ class ApiClient {
   Future<http.StreamedResponse> _performStreamedRequest(
     Future<http.StreamedResponse> Function() request, {
     bool requiresAuth = true,
+    bool read = false,
   }) async {
     try {
       final userId = requiresAuth ? _auth.currentUser?.id : null;
@@ -534,7 +540,7 @@ class ApiClient {
           response.statusCode == 403 &&
           response.headers['x-abuse-challenge'] == 'turnstile' &&
           OfflineApiRequest.allowsChallenge) {
-        final token = await _verificationToken();
+        final token = await _verificationToken(response, read: read);
         _checkRequestUser(userId);
         if (token != null && token.isNotEmpty) {
           await response.stream.listen(null).cancel();

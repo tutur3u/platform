@@ -5465,7 +5465,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
 
   @override
-  String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
+  String get homeSectionLoadFailed => 'Dữ liệu của bạn vẫn an toàn. Hãy thử lại sau giây lát.';
+
+  @override
+  String homeSectionLoadFailedTitle(String section) {
+    return 'Không tải được $section';
+  }
 
   @override
   String get homeSectionToday => 'Hôm nay';
@@ -8540,7 +8545,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get requiredMfaVerify => 'Xác minh và tiếp tục';
 
   @override
-  String get securityCheckTitle => 'Kiểm tra bảo mật';
+  String get securityCheckDismiss => 'Để sau';
+
+  @override
+  String get securityCheckPanelMessage => 'Cloudflare cần bạn chạm một lần để tiếp tục. Trang này vẫn mở.';
+
+  @override
+  String get securityCheckPanelTitle => 'Kiểm tra bảo mật nhanh';
 
   @override
   String get securityConnect => 'Kết nối';

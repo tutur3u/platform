@@ -440,7 +440,7 @@ jobs:
             --file-reporter=json:configured-otp-captcha.json
           jq -s -e '
             [.[] | select(.type == "testDone" and .hidden == false)] |
-            length == 4 and all(.[]; .result == "success" and .skipped == false)
+            length == 5 and all(.[]; .result == "success" and .skipped == false)
           ' configured-otp-captcha.json
 
       - name: Verify native device DST gap

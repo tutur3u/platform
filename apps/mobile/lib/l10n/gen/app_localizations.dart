@@ -10402,8 +10402,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeSectionLoadFailed.
   ///
   /// In en, this message translates to:
-  /// **'Pull down to try again.'**
+  /// **'Your data is safe. Try again in a moment.'**
   String get homeSectionLoadFailed;
+
+  /// No description provided for @homeSectionLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load {section}'**
+  String homeSectionLoadFailedTitle(String section);
 
   /// No description provided for @homeSectionToday.
   ///
@@ -16285,11 +16291,23 @@ abstract class AppLocalizations {
   /// **'Verify and continue'**
   String get requiredMfaVerify;
 
-  /// No description provided for @securityCheckTitle.
+  /// No description provided for @securityCheckDismiss.
   ///
   /// In en, this message translates to:
-  /// **'Security check'**
-  String get securityCheckTitle;
+  /// **'Not now'**
+  String get securityCheckDismiss;
+
+  /// No description provided for @securityCheckPanelMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare needs one tap to continue. This page stays open.'**
+  String get securityCheckPanelMessage;
+
+  /// No description provided for @securityCheckPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick security check'**
+  String get securityCheckPanelTitle;
 
   /// No description provided for @securityConnect.
   ///

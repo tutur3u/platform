@@ -179,7 +179,16 @@ GoRouter createAppRouter(
   final navigatorKey = GlobalKey<NavigatorState>();
   ApiVerification.requestToken = () async {
     final context = navigatorKey.currentContext;
-    return context == null ? null : await showSecurityCheck(context);
+    // Reads ask for a background solve only (ApiVerification.promptsFor).
+    // A write replays one already-formed request, so the page stays usable
+    // around the check instead of being blocked by it.
+    return context == null
+        ? null
+        : await showSecurityCheck(
+            context,
+            allowPrompt: ApiVerification.allowsPrompt,
+            modal: false,
+          );
   };
   return GoRouter(
     navigatorKey: navigatorKey,

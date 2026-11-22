@@ -10,9 +10,27 @@ TaskListInfo _list(String board, String list) => TaskListInfo(
   board: TaskBoardInfo(id: 'board-$board', name: board),
 );
 
-/// Home under the real shell with fixture data: phone, tablet and desktop in
-/// Classic light/dark, a gradient and a blob theme. Captures are written
-/// only when `SETTINGS_RENDER_DIR` is set; layout assertions always run.
+/// Home sizes: the shared phone, portrait tablet and laptop, plus a
+/// landscape iPad (icon rail) and a wide desktop (sidebar, 1600dp canvas).
+final _homeRenderSizes = <String, Size>{
+  ...renderSizes,
+  'tablet-landscape': const Size(1180, 820),
+  'wide': const Size(1920, 1080),
+};
+
+/// Grid columns each Home size shows for its three grid cards (Today, Up
+/// next, Calendar): one on phones, two on portrait tablets, three beside
+/// the rail or sidebar.
+int _homeColumns(String size) => switch (size) {
+  'phone' => 1,
+  'tablet' => 2,
+  _ => 3,
+};
+
+/// Home under the real shell with fixture data: phone, tablets, laptop and a
+/// wide desktop in Classic light/dark, a gradient and a blob theme. Captures
+/// are written only when `SETTINGS_RENDER_DIR` is set; layout assertions
+/// always run.
 void _homeRenderCases() {
   testWidgets('Home can select a workspace from its empty state', (
     tester,
@@ -32,7 +50,7 @@ void _homeRenderCases() {
     expect(find.byType(AppSheetScaffold), findsOneWidget);
   });
 
-  for (final size in renderSizes.entries) {
+  for (final size in _homeRenderSizes.entries) {
     for (final look in renderAppearances.entries) {
       testWidgets('Home renders on ${size.key} in ${look.key}', (tester) async {
         final now = DateTime.now();
@@ -135,8 +153,18 @@ void _homeRenderCases() {
             size.value.width - AppLayout.gutter(DeviceClass.compact),
           );
         } else {
-          // Tablets and desktops lay the widgets out in columns.
-          expect(lefts.length, greaterThan(1));
+          // Tablets and desktops lay the widgets out in balanced columns,
+          // with Today at a glance as a KPI strip above them.
+          final strip = find.ancestor(
+            of: find.byKey(const ValueKey('home-metric-active')),
+            matching: find.byType(AppGroupedCard),
+          );
+          final today = tester.getRect(
+            find.byKey(const ValueKey('home-widget-tasks')),
+          );
+          expect(tester.getRect(strip).bottom, lessThan(today.top));
+          expect(tester.getRect(strip).left, today.left);
+          expect(lefts.length, _homeColumns(size.key));
         }
         expect(
           tester.getSize(find.byType(ShellWorkspacePicker)).height,
@@ -187,8 +215,24 @@ void _homeRenderCases() {
 
       // Today and Up next both wait on the task load.
       expect(find.byType(AppSkeletonRows), findsNWidgets(2));
-      expect(find.text('Pull down to try again.'), findsOneWidget);
+      // A failed card names what failed and offers Retry; it never asks
+      // for a pull gesture that desktops and keyboards do not have.
+      expect(find.text("Couldn't load Calendar"), findsOneWidget);
+      expect(
+        find.text('Your data is safe. Try again in a moment.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Pull down'), findsNothing);
       await _capture(tester, 'home-phone-$look-states');
+      when(
+        () => calendar.loadEvents(
+          any(),
+          forceRefresh: any(named: 'forceRefresh'),
+        ),
+      ).thenAnswer((_) async {});
+      await tester.ensureVisible(find.text('Retry'));
+      await tester.tap(find.text('Retry'));
+      verify(() => calendar.loadEvents(any(), forceRefresh: true)).called(1);
       expect(tester.takeException(), isNull);
     });
   }

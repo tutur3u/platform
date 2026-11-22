@@ -65,6 +65,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final _emailModePreference = LoginEmailModePreference();
   _LoginStage _stage = _LoginStage.identify;
+  final _attempts = SecurityCheckAttempts.prewarmed();
   int _retryAfter = 0;
   Timer? _retryAfterTimer;
   Timer? _otpAvailabilityGraceTimer;
@@ -184,6 +185,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showOtpStage({bool clearOtp = true, int retryAfter = 0}) {
     context.read<AuthCubit>().clearError();
+    _attempts.cancel();
     _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.otp;
@@ -202,9 +204,8 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showPasswordStage() {
     context.read<AuthCubit>().clearError();
-    setState(() {
-      _stage = _LoginStage.password;
-    });
+    _attempts.cancel();
+    setState(() => _stage = _LoginStage.password);
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
         _passwordFocusNode.requestFocus();
@@ -214,6 +215,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showIdentifyStage() {
     context.read<AuthCubit>().clearError();
+    _attempts.cancel();
     _stopRetryAfterTimer();
     setState(() {
       _stage = _LoginStage.identify;
@@ -259,34 +261,34 @@ class _LoginPageState extends State<LoginPage> {
       _emailFocusNode.requestFocus();
       return;
     }
-
-    final captcha = await (widget.otpSecurityCheck ?? showSecurityCheck)(
-      context,
+    // Replaces a pending password submit; an edited email drops the send.
+    await _attempts.run(
+      verify: () => (widget.otpSecurityCheck ?? showSecurityCheck)(context),
+      stillCurrent: () => _entered(email),
+      submit: (captcha) => _sendOtp(email, captcha),
     );
-    if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
+  }
 
+  /// Whether this page is in front and still shows what a submit read.
+  bool _entered(String email, [String? password]) =>
+      mounted &&
+      (ModalRoute.isCurrentOf(context) ?? true) &&
+      _emailController.text.trim() == email &&
+      (password == null || _passwordController.text == password);
+
+  Future<void> _sendOtp(String email, String? captcha) async {
     final result = await context.read<AuthCubit>().sendOtp(
       email,
       captchaToken: captcha,
     );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (result.success) {
-      _showOtpStage();
-      return;
-    }
-
-    final retryAfter = result.retryAfter ?? 0;
-    if (retryAfter > 0) {
-      _showOtpStage(clearOtp: false, retryAfter: retryAfter);
-      return;
-    }
-
-    _stopRetryAfterTimer();
-    if (mounted) {
+    if (!mounted) return;
+    final retryAfter = result.success ? 0 : result.retryAfter ?? 0;
+    if (result.success || retryAfter > 0) {
+      // Show the address the code went to, even if the field changed since.
+      _emailController.text = email;
+      _showOtpStage(clearOtp: result.success, retryAfter: retryAfter);
+    } else {
+      _stopRetryAfterTimer();
       setState(() => _retryAfter = 0);
     }
   }
@@ -294,32 +296,29 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleVerifyOtp() async {
     final email = _emailController.text.trim();
     final otp = _otpController.text.trim();
-    if (email.isEmpty || otp.length < 6) {
-      return;
-    }
-
+    if (email.isEmpty || otp.length < 6) return;
+    _attempts.cancel(); // A resend waiting on its check must not overlap.
     await context.read<AuthCubit>().verifyOtp(email, otp);
   }
 
   Future<void> _handlePasswordLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) {
-      return;
-    }
-
-    final captcha = await showSecurityCheck(context);
-    if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
-
-    await context.read<AuthCubit>().signInWithPassword(
-      email,
-      password,
-      captchaToken: captcha,
+    if (email.isEmpty || password.isEmpty) return;
+    await _attempts.run(
+      verify: () => showSecurityCheck(context),
+      stillCurrent: () => _isPasswordStage && _entered(email, password),
+      submit: (captcha) => context.read<AuthCubit>().signInWithPassword(
+        email,
+        password,
+        captchaToken: captcha,
+      ),
     );
   }
 
-  void _handleQrLogin() {
-    unawaited(context.push(Routes.qrLogin));
+  void _leave(String route) {
+    _attempts.cancel(); // A submit still waiting on its check is dropped.
+    unawaited(context.push<void>(route));
   }
 
   void _syncAndroidBackState() {
@@ -352,8 +351,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onCancelAddAccount() async {
-    final authCubit = context.read<AuthCubit>();
-    final ok = await authCubit.cancelAddAccountFlow();
+    _attempts.suspend(); // No sign-in may start or land mid-cancel.
+    final ok = await context.read<AuthCubit>().cancelAddAccountFlow();
+    if (!ok) _attempts.resume();
     if (mounted && !ok) setState(() => _cancelAddAccountFailed = true);
   }
 
@@ -417,7 +417,7 @@ class _LoginPageState extends State<LoginPage> {
             const shad.Gap(24),
             AuthMethodDivider(label: l10n.authContinueWithQr),
             const shad.Gap(18),
-            LoginQrSection(onPressed: _handleQrLogin),
+            LoginQrSection(onPressed: () => _leave(Routes.qrLogin)),
           ],
           BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
@@ -677,7 +677,7 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: shad.GhostButton(
-                  onPressed: () => context.push('/forgot-password'),
+                  onPressed: () => _leave('/forgot-password'),
                   child: Text(context.l10n.loginForgotPassword),
                 ),
               ),

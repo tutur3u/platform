@@ -79,7 +79,8 @@ void main() {
       expect(ResponsivePadding.maxContentWidth(DeviceClass.medium), 600);
       expect(ResponsivePadding.maxContentWidth(DeviceClass.expanded), 720);
       expect(ResponsivePadding.rootContentWidth(DeviceClass.medium), 1120);
-      expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1440);
+      // Root canvases grew from 1440 so wide desktops fit four Home columns.
+      expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1600);
       expect(
         ResponsivePadding.maxFormWidth(DeviceClass.compact),
         double.infinity,
@@ -103,12 +104,16 @@ void main() {
       expect(700 - insets.horizontal, 600 - 48);
     });
 
-    test('expanded root pages keep gutters until 1440dp', () {
+    test('expanded root pages keep gutters until 1600dp', () {
       expect(
         AppPageInsets.resolve(width: 1200, kind: AppPageKind.root).left,
         32,
       );
-      final wide = AppPageInsets.resolve(width: 1640, kind: AppPageKind.root);
+      expect(
+        AppPageInsets.resolve(width: 1600, kind: AppPageKind.root).left,
+        32,
+      );
+      final wide = AppPageInsets.resolve(width: 1800, kind: AppPageKind.root);
       expect(wide.left, 32 + 100);
     });
 

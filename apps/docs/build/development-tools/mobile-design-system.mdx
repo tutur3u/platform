@@ -53,7 +53,7 @@ Max content width (gutters included) per `AppPageKind`:
 
 | Kind | Use | medium | expanded |
 | --- | --- | --- | --- |
-| `root` | root destinations and dashboards | 1120 | 1440 |
+| `root` | root destinations and dashboards | 1120 | 1600 |
 | `detail` (default) | mini-app lists and detail screens | 600 | 720 |
 | `form` | auth, create and edit forms | 480 | 480 |
 | `reading` | documents, notes, long text | 640 | 680 |
@@ -364,11 +364,17 @@ should still use the gutter token.
   floating bottom dock owns destinations and in-app Back.
 - **Rail**: width >= 840dp and shortest side >= 600dp (landscape tablets,
   laptops, desktops). `ShellNavigationRail` shows the same destinations on
-  the leading edge, including the mini-app Back item. The dock keeps only
+  the leading edge, including the mini-app Back item. It is full height,
+  top-aligned and ends at a hairline. Below `shellSidebarMinWidth` (1280dp)
+  it is the 80dp icon rail; from 1280dp it extends into the 240dp labelled
+  sidebar. Read the width with `shellNavigationExtentFor(size)`, never a
+  constant. The dock keeps only
   the Assistant/Notes composer and page actions; an idle dock paints no
   surface. Scroll content reserves dock clearance only while the dock shows a
-  composer slot or dock actions for the current route. Rail destinations show
-  their existing localized label as a hover-only tooltip on pointer devices.
+  composer slot or dock actions for the current route. Icon rail
+  destinations show their existing localized label as a hover-only tooltip on
+  pointer devices; the sidebar shows it as text, excluded from semantics so
+  screen readers hear each destination once.
 
 Both modes keep a single top navbar title with no Back button, system Back
 and deep links (handled by `ShellPage` independently of the layout), and
@@ -516,7 +522,11 @@ open above the shell rather than inside the body.
   immersive toggles, rail-mode clearance, RTL through `ShellPage`, and
   hover-only tooltips.
 - `shell_viewport_checks.dart`: the dock/rail viewport matrix, including the
-  root page's first content one `pageTop` gap below the floating header.
+  full-height rail or sidebar width per window and the root page's first
+  content one `pageTop` gap below the floating header.
+- `test/core/responsive/sliver_responsive_cards_test.dart`: balanced
+  columns (`BalancedColumns` places each card in the shortest column) and
+  the gap-aware column count.
 - `test/core/ui/app_components_test.dart`: token resolution from the
   appearance extension, `AppGap` axes, every component in light and dark at 2x
   text, and toast placement above the dock.

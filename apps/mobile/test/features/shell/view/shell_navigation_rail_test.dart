@@ -42,6 +42,7 @@ List<shad.NavigationItem> _items() => [
 Future<List<Key?>> _pumpRail(
   WidgetTester tester, {
   TextDirection direction = TextDirection.ltr,
+  bool extended = false,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -53,10 +54,14 @@ Future<List<Key?>> _pumpRail(
     Directionality(
       textDirection: direction,
       child: AdaptiveShellFrame(
+        railExtent: extended
+            ? shellNavigationSidebarExtent
+            : shellNavigationRailExtent,
         rail: ShellNavigationRail(
           items: _items(),
           selectedKey: _home,
           onSelected: selected.add,
+          extended: extended,
         ),
         body: const SizedBox.expand(key: ValueKey('body')),
       ),
@@ -74,9 +79,15 @@ void main() {
       find.byKey(const ValueKey('shell-navigation-rail')),
     );
     final body = tester.getRect(find.byKey(const ValueKey('body')));
-    expect(rail.left, closeTo(12, 0.5));
+    // A full-height rail flush with the leading edge.
+    expect(rail.left, 0);
+    expect(rail.top, 0);
+    expect(rail.height, 800);
+    expect(rail.width, shellNavigationRailExtent);
     expect(body.left, closeTo(shellNavigationRailExtent, 0.5));
     expect(body.right, 1200);
+    // The icon rail names destinations by tooltip only.
+    expect(find.text('Home'), findsNothing);
 
     final back = tester.getSize(find.byKey(_back));
     expect(back.width, greaterThanOrEqualTo(48));
@@ -99,9 +110,45 @@ void main() {
       find.byKey(const ValueKey('shell-navigation-rail')),
     );
     final body = tester.getRect(find.byKey(const ValueKey('body')));
-    expect(rail.right, closeTo(1200 - 12, 0.5));
+    expect(rail.right, 1200);
     expect(body.left, 0);
     expect(body.right, closeTo(1200 - shellNavigationRailExtent, 0.5));
+  });
+
+  testWidgets('sidebar shows labels without a second announcement', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final selected = await _pumpRail(tester, extended: true);
+    final rail = tester.getRect(
+      find.byKey(const ValueKey('shell-navigation-rail')),
+    );
+    final body = tester.getRect(find.byKey(const ValueKey('body')));
+    expect(rail.width, shellNavigationSidebarExtent);
+    expect(body.left, closeTo(shellNavigationSidebarExtent, 0.5));
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Tasks'), findsOneWidget);
+    // The visible label is excluded; the item keeps its one accessible name.
+    expect(find.bySemanticsLabel('Home'), findsOneWidget);
+    final home = tester.getSize(find.byKey(_home));
+    expect(home.height, greaterThanOrEqualTo(48));
+    expect(home.width, greaterThan(shellNavigationRailSlot));
+
+    await tester.tap(find.text('Home'));
+    await tester.tap(find.text('Tasks'));
+    expect(selected, [_home]);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  test('labelled sidebar starts at 1280dp on rail-mode windows', () {
+    expect(shellNavigationExtendedFor(const Size(1180, 820)), isFalse);
+    expect(shellNavigationExtentFor(const Size(1180, 820)), 80);
+    expect(shellNavigationExtendedFor(const Size(1280, 800)), isTrue);
+    expect(shellNavigationExtentFor(const Size(1470, 956)), 240);
+    // Phones in landscape and portrait tablets keep the dock.
+    expect(shellNavigationExtentFor(const Size(1400, 430)), 0);
+    expect(shellNavigationExtentFor(const Size(820, 1180)), 0);
   });
 
   testWidgets('frame keeps the body mounted when the rail comes and goes', (

@@ -71,6 +71,8 @@ class _FeedbackFormState extends State<ProductFeedbackForm> {
   @override
   void initState() {
     super.initState();
+    // Sending feedback needs a Turnstile token; prepare it in the background.
+    if (widget.verify == null) SecurityCheckPrewarm.prewarm();
     _repository =
         widget.repository ??
         ProductFeedbackRepository(

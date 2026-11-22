@@ -87,6 +87,10 @@ class _HomeOpenLink extends StatelessWidget {
 
 /// Rows of a Home section for a load that has no data yet, failed, or is
 /// empty. Returns null once there are rows to show.
+///
+/// A failure names the section and offers [onRetry]. Pull to refresh still
+/// works on touch screens, but the message never depends on it: desktops
+/// and keyboards have no pull gesture.
 List<Widget>? _homeStateRows(
   BuildContext context, {
   required bool loading,
@@ -94,16 +98,23 @@ List<Widget>? _homeStateRows(
   required bool empty,
   required IconData emptyIcon,
   required String emptyTitle,
+  String? sectionTitle,
+  FutureOr<void> Function()? onRetry,
   String? emptyMessage,
 }) {
   if (loading) return const [AppSkeletonRows()];
   if (failed) {
+    final l10n = context.l10n;
     return [
       AppStateMessage.inline(
         icon: LucideIcons.cloudOff,
         tone: AppTone.destructive,
-        title: context.l10n.commonSomethingWentWrong,
-        message: context.l10n.homeSectionLoadFailed,
+        title: sectionTitle == null
+            ? l10n.commonSomethingWentWrong
+            : l10n.homeSectionLoadFailedTitle(sectionTitle),
+        message: l10n.homeSectionLoadFailed,
+        actionLabel: onRetry == null ? null : l10n.commonRetry,
+        onAction: onRetry,
       ),
     ];
   }
@@ -119,34 +130,40 @@ List<Widget>? _homeStateRows(
   return null;
 }
 
-/// Today (overdue and due today) and Up next (later), as two sections.
-class _TaskSectionsBlock extends StatelessWidget {
-  const _TaskSectionsBlock({
+/// One half of the tasks Home widget: Today (overdue and due today) or Up
+/// next (later). Each half is its own grid card so wide layouts can balance
+/// them across columns.
+class _TaskSection extends StatelessWidget {
+  const _TaskSection.today({
     required this.state,
-    required this.today,
-    required this.upNext,
-  });
+    required this.tasks,
+    required this.onRetry,
+  }) : upNext = false;
+
+  const _TaskSection.upNext({
+    required this.state,
+    required this.tasks,
+    required this.onRetry,
+  }) : upNext = true;
 
   final TaskListState state;
-  final List<UserTask> today;
-  final List<UserTask> upNext;
+  final List<UserTask> tasks;
+  final bool upNext;
+  final FutureOr<void> Function() onRetry;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final title = upNext ? l10n.homeSectionUpNext : l10n.homeSectionToday;
     final loading =
         state.status == TaskListStatus.loading && !state.hasLoadedOnce;
     final failed =
         state.status == TaskListStatus.error &&
         state.totalActiveTasks == 0 &&
-        today.isEmpty &&
-        upNext.isEmpty;
-    Widget section(
-      String title,
-      List<UserTask> tasks,
-      IconData emptyIcon,
-      String emptyTitle,
-    ) => _HomeSection(
+        state.overdueTasks.isEmpty &&
+        state.todayTasks.isEmpty &&
+        state.upcomingTasks.isEmpty;
+    return _HomeSection(
       title: title,
       actionLabel: l10n.homeSeeAll,
       onOpen: () => context.go(Routes.tasks),
@@ -156,30 +173,14 @@ class _TaskSectionsBlock extends StatelessWidget {
             loading: loading,
             failed: failed,
             empty: tasks.isEmpty,
-            emptyIcon: emptyIcon,
-            emptyTitle: emptyTitle,
+            emptyIcon: upNext
+                ? LucideIcons.calendarClock
+                : LucideIcons.circleCheck,
+            emptyTitle: upNext ? l10n.homeUpNextEmpty : l10n.homeTodayEmpty,
+            sectionTitle: title,
+            onRetry: onRetry,
           ) ??
           [for (final task in tasks) _TaskRow(task: task)],
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        section(
-          l10n.homeSectionToday,
-          today,
-          LucideIcons.circleCheck,
-          l10n.homeTodayEmpty,
-        ),
-        const SizedBox(height: AppLayout.sectionGap),
-        section(
-          l10n.homeSectionUpNext,
-          upNext,
-          LucideIcons.calendarClock,
-          l10n.homeUpNextEmpty,
-        ),
-      ],
     );
   }
 }
@@ -189,11 +190,13 @@ class _UpcomingEventsBlock extends StatelessWidget {
     required this.status,
     required this.hasLoadedOnce,
     required this.events,
+    required this.onRetry,
   });
 
   final CalendarStatus status;
   final bool hasLoadedOnce;
   final List<CalendarEvent> events;
+  final FutureOr<void> Function() onRetry;
 
   @override
   Widget build(BuildContext context) => _HomeSection(
@@ -209,6 +212,8 @@ class _UpcomingEventsBlock extends StatelessWidget {
           empty: events.isEmpty,
           emptyIcon: LucideIcons.calendarCheck,
           emptyTitle: context.l10n.homeCalendarEmpty,
+          sectionTitle: context.l10n.homeSectionCalendar,
+          onRetry: onRetry,
         ) ??
         [for (final event in events) _EventRow(event: event)],
   );

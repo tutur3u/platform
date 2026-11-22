@@ -12,6 +12,7 @@ class _HomeHeader extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final l10n = context.l10n;
+    final scale = _HomeScaleScope.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final now = DateTime.now();
     final name = context.select<ShellProfileCubit?, String?>((cubit) {
@@ -36,6 +37,7 @@ class _HomeHeader extends StatelessWidget {
           Text(
             DateFormat.MMMMEEEEd(locale).format(now),
             style: tokens.typography.small.copyWith(
+              fontSize: scale.dateSize,
               color: c.mutedForeground,
               fontWeight: FontWeight.w500,
             ),
@@ -48,6 +50,7 @@ class _HomeHeader extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: tokens.typography.x2Large.copyWith(
+                fontSize: scale.greetingSize,
                 color: c.foreground,
                 fontWeight: FontWeight.w700,
                 height: 1.2,
@@ -76,8 +79,66 @@ class _TodaySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // On tablets and laptops ([_HomeScale.strip]) the card is a KPI strip
+    // under the greeting: no caption row, larger numbers.
+    final scale = _HomeScaleScope.of(context);
     final l10n = context.l10n;
     final c = AppTokens.of(context).colorScheme;
+    final card = AppGroupedCard(
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Metric(
+                key: const ValueKey('home-metric-active'),
+                valueSize: scale.metricSize,
+                value: activeTasks,
+                label: l10n.dashboardActiveTasksLabel,
+                onTap: () => context.go(Routes.tasks),
+              ),
+              VerticalDivider(
+                width: 1,
+                thickness: 0.5,
+                indent: AppSpacing.lg,
+                endIndent: AppSpacing.lg,
+                color: c.border,
+              ),
+              _Metric(
+                key: const ValueKey('home-metric-overdue'),
+                valueSize: scale.metricSize,
+                value: overdueTasks,
+                label: l10n.dashboardTaskOverdue,
+                tone: overdueTasks > 0 ? AppTone.destructive : null,
+                onTap: () => context.go(Routes.tasks),
+              ),
+              VerticalDivider(
+                width: 1,
+                thickness: 0.5,
+                indent: AppSpacing.lg,
+                endIndent: AppSpacing.lg,
+                color: c.border,
+              ),
+              _Metric(
+                key: const ValueKey('home-metric-events'),
+                valueSize: scale.metricSize,
+                value: nextEvents,
+                label: l10n.dashboardUpcomingEvents,
+                onTap: () => context.go(Routes.calendar),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (scale.strip) {
+      return Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: l10n.dashboardTodayTitle,
+        child: card,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -87,50 +148,7 @@ class _TodaySummaryCard extends StatelessWidget {
           trailing: const SizedBox(height: 44),
         ),
         const SizedBox(height: AppSpacing.xs),
-        AppGroupedCard(
-          children: [
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Metric(
-                    key: const ValueKey('home-metric-active'),
-                    value: activeTasks,
-                    label: l10n.dashboardActiveTasksLabel,
-                    onTap: () => context.go(Routes.tasks),
-                  ),
-                  VerticalDivider(
-                    width: 1,
-                    thickness: 0.5,
-                    indent: AppSpacing.lg,
-                    endIndent: AppSpacing.lg,
-                    color: c.border,
-                  ),
-                  _Metric(
-                    key: const ValueKey('home-metric-overdue'),
-                    value: overdueTasks,
-                    label: l10n.dashboardTaskOverdue,
-                    tone: overdueTasks > 0 ? AppTone.destructive : null,
-                    onTap: () => context.go(Routes.tasks),
-                  ),
-                  VerticalDivider(
-                    width: 1,
-                    thickness: 0.5,
-                    indent: AppSpacing.lg,
-                    endIndent: AppSpacing.lg,
-                    color: c.border,
-                  ),
-                  _Metric(
-                    key: const ValueKey('home-metric-events'),
-                    value: nextEvents,
-                    label: l10n.dashboardUpcomingEvents,
-                    onTap: () => context.go(Routes.calendar),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        card,
       ],
     );
   }
@@ -141,11 +159,13 @@ class _Metric extends StatelessWidget {
     required this.value,
     required this.label,
     required this.onTap,
+    required this.valueSize,
     this.tone,
     super.key,
   });
 
   final int value;
+  final double valueSize;
   final String label;
   final VoidCallback onTap;
   final AppTone? tone;
@@ -174,6 +194,7 @@ class _Metric extends StatelessWidget {
                 Text(
                   '$value',
                   style: tokens.typography.x3Large.copyWith(
+                    fontSize: valueSize,
                     color: tone?.foreground(c) ?? c.foreground,
                     fontWeight: FontWeight.w700,
                     height: 1.1,

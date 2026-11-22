@@ -47,7 +47,10 @@ extension _ApiClientIntegrity on ApiClient {
           final response = await _client
               .post(
                 _url(endpoint),
-                headers: {...headers, 'Content-Type': 'application/json'},
+                // A step-up token is for the protected request only; proof
+                // preparation must not spend it first.
+                headers: {...headers, 'Content-Type': 'application/json'}
+                  ..remove('x-tuturuuu-turnstile-token'),
                 body: jsonEncode(payload),
               )
               .timeout(_requestTimeout);
@@ -87,6 +90,6 @@ extension _ApiClientIntegrity on ApiClient {
         }
       }
       return response;
-    });
+    }, read: method == 'GET');
   }
 }

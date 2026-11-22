@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,6 +87,49 @@ void main() {
       await tap(tester, 'Continue with email');
       expect(find.text('Sign in'), findsOneWidget);
     }
+
+    testWidgets('an email edited during the check gets no code', (
+      tester,
+    ) async {
+      final token = Completer<String?>();
+      var checks = 0;
+      // The first check is cancelled, which keeps the code preference; the
+      // second stays pending while the address changes; the third passes.
+      await render(
+        tester,
+        'first@tuturuuu.com',
+        (_) => switch (++checks) {
+          1 => Future.value(),
+          2 => token.future,
+          _ => Future.value('fresh'),
+        },
+      );
+      await tap(tester, 'Use email code instead');
+      await tap(tester, 'Back');
+      await tap(tester, 'Continue with email');
+      expect(checks, 2);
+      // An address outside the workspace domains signs in by code.
+      await tester.enterText(
+        find.byType(shad.TextField).first,
+        'second@example.com',
+      );
+      token.complete('stale');
+      await tester.pumpAndSettle();
+      // Neither address gets a code for a form that no longer shows it.
+      verifyNever(
+        () => auth.sendOtp(any(), captchaToken: any(named: 'captchaToken')),
+      );
+      expect(find.text('Verify code'), findsNothing);
+
+      // Submitting the form as it now reads runs a fresh check and sends
+      // to the address shown.
+      await tap(tester, 'Continue with email');
+      expect(checks, 3);
+      verify(
+        () => auth.sendOtp('second@example.com', captchaToken: 'fresh'),
+      ).called(1);
+      expect(find.text('Verify code'), findsOneWidget);
+    });
 
     for (final domain in ['tuturuuu.com', 'tutur3u.com']) {
       testWidgets('cancelled CAPTCHA blocks initial code switch for $domain', (

@@ -60,7 +60,8 @@ abstract final class AppLayout {
       switch ((kind, deviceClass)) {
         (_, DeviceClass.compact) => null,
         (AppPageKind.root, DeviceClass.medium) => 1120,
-        (AppPageKind.root, DeviceClass.expanded) => 1440,
+        // Wide desktops fit four Home columns; laptops fill their body.
+        (AppPageKind.root, DeviceClass.expanded) => 1600,
         (AppPageKind.detail, DeviceClass.medium) => 600,
         (AppPageKind.detail, DeviceClass.expanded) => 720,
         (AppPageKind.form, _) => 480,

@@ -16,7 +16,7 @@ extension ConditionalApiReads on ApiClient {
       return await _client
           .get(_url(path), headers: headers)
           .timeout(_requestTimeout);
-    });
+    }, read: true);
     if (response.statusCode == 304) return null;
     return _handleResponse(response);
   }

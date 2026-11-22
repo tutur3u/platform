@@ -258,9 +258,18 @@ Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
   final body = tester.getRect(find.byType(AppsHubPage));
   expect(railRect.left, lessThan(body.left));
   expect(body.left, greaterThanOrEqualTo(railRect.right));
-  expect(body.left, closeTo(shellNavigationRailExtent, 0.5));
+  // Landscape tablets get the icon rail; 1280dp and wider the sidebar.
+  expect(body.left, closeTo(shellNavigationExtentFor(size), 0.5));
+  expect(
+    shellNavigationExtentFor(size),
+    size.width >= shellSidebarMinWidth
+        ? shellNavigationSidebarExtent
+        : shellNavigationRailExtent,
+  );
   expect(body.bottom, closeTo(size.height, 1));
-  expect(railRect.height, lessThan(size.height));
+  // A full-height leading rail, not a floating island.
+  expect(railRect.top, 0);
+  expect(railRect.height, closeTo(size.height, 1));
   // The same header brand and Apps destination as the dock layout.
   expect(
     find.byWidgetPredicate(

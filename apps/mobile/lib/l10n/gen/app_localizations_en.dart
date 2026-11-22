@@ -5506,7 +5506,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNotAvailableOffline => 'Not available offline';
 
   @override
-  String get homeSectionLoadFailed => 'Pull down to try again.';
+  String get homeSectionLoadFailed => 'Your data is safe. Try again in a moment.';
+
+  @override
+  String homeSectionLoadFailedTitle(String section) {
+    return 'Couldn\'t load $section';
+  }
 
   @override
   String get homeSectionToday => 'Today';
@@ -8649,7 +8654,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requiredMfaVerify => 'Verify and continue';
 
   @override
-  String get securityCheckTitle => 'Security check';
+  String get securityCheckDismiss => 'Not now';
+
+  @override
+  String get securityCheckPanelMessage => 'Cloudflare needs one tap to continue. This page stays open.';
+
+  @override
+  String get securityCheckPanelTitle => 'Quick security check';
 
   @override
   String get securityConnect => 'Connect';

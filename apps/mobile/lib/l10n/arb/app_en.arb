@@ -490,6 +490,13 @@
       }
     }
   },
+  "@homeSectionLoadFailedTitle": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryAuditChanges": {
     "placeholders": {
       "count": {
@@ -3381,7 +3388,8 @@
   "homeHideWidget": "Hide widget",
   "homeSectionCalendar": "Calendar",
   "homeNotAvailableOffline": "Not available offline",
-  "homeSectionLoadFailed": "Pull down to try again.",
+  "homeSectionLoadFailed": "Your data is safe. Try again in a moment.",
+  "homeSectionLoadFailedTitle": "Couldn't load {section}",
   "homeSectionToday": "Today",
   "homeSectionUpNext": "Up next",
   "homeSeeAll": "See all",
@@ -4369,7 +4377,9 @@
   "requiredMfaSignInAgain": "Sign in again",
   "requiredMfaStart": "Set up authenticator",
   "requiredMfaVerify": "Verify and continue",
-  "securityCheckTitle": "Security check",
+  "securityCheckDismiss": "Not now",
+  "securityCheckPanelMessage": "Cloudflare needs one tap to continue. This page stays open.",
+  "securityCheckPanelTitle": "Quick security check",
   "securityConnect": "Connect",
   "securityConnectionsDescription": "Choose how you sign in. Keep at least one connected account.",
   "securityConnectionsTitle": "Connected accounts",

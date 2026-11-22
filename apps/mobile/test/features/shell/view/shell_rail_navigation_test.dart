@@ -48,7 +48,8 @@ void main() {
   for (final (name, size, gutter) in [
     ('phone', const Size(390, 844), 16.0),
     ('tablet-portrait', const Size(768, 1024), 24.0 + 84),
-    ('desktop', const Size(1280, 800), 32.0 + 239),
+    // Beside the 240dp sidebar: (1040 - 720) / 2 centring.
+    ('desktop', const Size(1280, 800), 32.0 + 160),
   ]) {
     testWidgets('page primitives use body-width gutters on $name', (
       tester,
@@ -58,7 +59,7 @@ void main() {
       final rail = find.byType(ShellNavigationRail);
       final railMode = shellNavigationModeFor(size) == ShellNavigationMode.rail;
       expect(rail, railMode ? findsOneWidget : findsNothing);
-      final bodyStart = railMode ? shellNavigationRailExtent : 0.0;
+      final bodyStart = shellNavigationExtentFor(size);
       final bodyWidth = size.width - bodyStart;
       final expected = AppPageInsets.resolve(width: bodyWidth).left;
       final title = tester.getRect(

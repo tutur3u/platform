@@ -62,6 +62,7 @@ part 'dashboard_sections.dart';
 part 'dashboard_rows.dart';
 part 'dashboard_resource_cards.dart';
 part 'dashboard_customization.dart';
+part 'dashboard_grid.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({
@@ -268,6 +269,16 @@ class _DashboardViewState extends State<_DashboardView> {
                       final upcomingEvents = _upcomingEvents(
                         calendarState.events,
                       );
+                      // Built here, not in the layout builder below: the
+                      // entries watch cubits, which needs a build method.
+                      final entries = _dashboardEntries(
+                        context,
+                        workspace,
+                        taskState,
+                        calendarState,
+                        homeTasks,
+                        upcomingEvents,
+                      );
                       return shad.Scaffold(
                         child: NovaRefreshIndicator(
                           onRefresh: () => _refresh(context, workspace),
@@ -288,26 +299,15 @@ class _DashboardViewState extends State<_DashboardView> {
                                         ),
                                       ),
                                     ),
-                                    SliverResponsiveCards(
-                                      minColumnWidth: 340,
-                                      spacing: AppLayout.sectionGap,
-                                      leading: StaggeredEntrance(
-                                        replayKey: widget.replayToken,
-                                        child: Column(
-                                          children: [
-                                            const _HomeHeader(),
-                                            HomeLastSynced(wsId: workspace.id),
-                                          ],
-                                        ),
-                                      ),
-                                      children: _dashboardWidgets(
-                                        context,
-                                        workspace,
-                                        taskState,
-                                        calendarState,
-                                        homeTasks,
-                                        upcomingEvents,
-                                      ),
+                                    SliverLayoutBuilder(
+                                      builder: (context, constraints) =>
+                                          _homeGrid(
+                                            _HomeScale.forWidth(
+                                              constraints.crossAxisExtent,
+                                            ),
+                                            workspace,
+                                            entries,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -387,8 +387,14 @@ class _DashboardViewState extends State<_DashboardView> {
               ? context.l10n.commonSomethingWentWrong
               : context.l10n.workspaceSelectEmpty,
           message: isError ? context.l10n.homeSectionLoadFailed : null,
-          actionLabel: isError ? null : context.l10n.workspaceSelectTitle,
-          onAction: isError ? null : () => showWorkspacePickerSheet(context),
+          actionLabel: isError
+              ? context.l10n.commonRetry
+              : context.l10n.workspaceSelectTitle,
+          onAction: isError
+              ? () => context.read<WorkspaceCubit>().loadWorkspaces(
+                  forceRefresh: true,
+                )
+              : () => showWorkspacePickerSheet(context),
         ),
       ),
     );

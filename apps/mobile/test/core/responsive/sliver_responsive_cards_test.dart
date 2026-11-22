@@ -8,7 +8,7 @@ void main() {
   test('root destinations share tablet and desktop width limits', () {
     expect(ResponsivePadding.rootContentWidth(DeviceClass.compact), isNull);
     expect(ResponsivePadding.rootContentWidth(DeviceClass.medium), 1120);
-    expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1440);
+    expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1600);
   });
 
   for (final (width, expectedColumns) in [
@@ -49,6 +49,60 @@ void main() {
       expect(third.left > second.left, expectedColumns >= 3);
     });
   }
+
+  testWidgets('short cards fill the shortest column first', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(1200, 900);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: CustomScrollView(
+          slivers: [
+            SliverResponsiveCards(
+              children: [
+                SizedBox(key: ValueKey('tall'), height: 400),
+                SizedBox(key: ValueKey('a'), height: 100),
+                SizedBox(key: ValueKey('b'), height: 100),
+                SizedBox(key: ValueKey('c'), height: 100),
+                SizedBox(key: ValueKey('d'), height: 100),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    Rect rect(String key) => tester.getRect(find.byKey(ValueKey(key)));
+    // a and b open columns 2 and 3; c and d stack under them instead of
+    // under the tall card, as an index-based flow would place d.
+    expect(rect('a').left, greaterThan(rect('tall').left));
+    expect(rect('b').left, greaterThan(rect('a').left));
+    expect(rect('c').left, rect('a').left);
+    expect(rect('c').top, rect('a').bottom + 14);
+    expect(rect('d').left, rect('b').left);
+    expect(rect('d').top, rect('b').bottom + 14);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('columns count the gap between them', () {
+    int columns(double width) => SliverResponsiveCards.columnsFor(
+      width,
+      minColumnWidth: 320,
+      spacing: 24,
+      maxColumns: 4,
+    );
+    expect(columns(358), 1);
+    expect(columns(772), 2);
+    // A landscape iPad beside the rail and a 13-inch laptop beside the
+    // sidebar both fit three Home columns; a wide desktop fits four.
+    expect(columns(1036), 3);
+    expect(columns(1150), 3);
+    expect(columns(1536), 4);
+  });
 
   for (final size in [const Size(1032, 1376), const Size(1376, 1032)]) {
     testWidgets('dashboard cards flow without empty rows at $size', (

@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/responsive/balanced_columns.dart';
 
 /// Content-sized columns that adapt to the available window width.
-/// Each column flows independently so short cards do not create empty rows.
+///
+/// Each card goes to the shortest column ([BalancedColumns]), so short cards
+/// neither create empty rows nor leave one side of a wide screen empty.
 /// [spacing] separates cards; nothing is added after the last card, so the
 /// page's scroll end gap stays the only trailing space.
 class SliverResponsiveCards extends StatelessWidget {
@@ -20,39 +23,37 @@ class SliverResponsiveCards extends StatelessWidget {
   final int maxColumns;
   final double spacing;
 
+  /// Columns of at least [minColumnWidth] that fit [width] with [spacing]
+  /// between them, between 1 and [maxColumns].
+  static int columnsFor(
+    double width, {
+    required double minColumnWidth,
+    required double spacing,
+    required int maxColumns,
+  }) => ((width + spacing) / (minColumnWidth + spacing)).floor().clamp(
+    1,
+    maxColumns,
+  );
+
   @override
   Widget build(BuildContext context) => SliverLayoutBuilder(
     builder: (context, constraints) {
-      final columns = (constraints.crossAxisExtent / minColumnWidth)
-          .floor()
-          .clamp(1, maxColumns);
+      final columns = columnsFor(
+        constraints.crossAxisExtent,
+        minColumnWidth: minColumnWidth,
+        spacing: spacing,
+        maxColumns: maxColumns,
+      );
       return SliverToBoxAdapter(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (leading != null) ...[leading!, SizedBox(height: spacing)],
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var column = 0; column < columns; column++) ...[
-                  if (column > 0) SizedBox(width: spacing),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (
-                          var index = column;
-                          index < children.length;
-                          index += columns
-                        ) ...[
-                          if (index >= columns) SizedBox(height: spacing),
-                          children[index],
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+            BalancedColumns(
+              columns: columns,
+              spacing: spacing,
+              runSpacing: spacing,
+              children: children,
             ),
           ],
         ),

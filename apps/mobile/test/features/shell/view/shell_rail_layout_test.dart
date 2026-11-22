@@ -191,7 +191,8 @@ void main() {
     final rail = tester.getRect(
       find.byKey(const ValueKey('shell-navigation-rail')),
     );
-    expect(rail.right, closeTo(_landscape.width - 12, 0.5));
+    // The full-height rail sits flush with the leading (right) edge.
+    expect(rail.right, closeTo(_landscape.width, 0.5));
     final page = tester.getRect(find.text(Routes.inventorySales));
     expect(page.right, lessThan(rail.left));
 

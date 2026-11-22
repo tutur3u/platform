@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-29'
+updatedAt: '2026-11-22'
 audience: users
 ---
 
@@ -152,7 +152,10 @@ Screens inherit the app shell's background and single top title/actions bar.
 On phones and portrait tablets the floating bottom navbar owns in-app Back
 navigation and scroll clearance. On landscape tablets, laptops, and desktops
 (width >= 840dp, shortest side >= 600dp) the same destinations, including Back,
-move to a leading rail and the dock keeps only composers and page actions.
+move to a full-height leading rail and the dock keeps only composers and page
+actions. Below 1280dp the rail is 80dp of icons with tooltips, matching the
+web's collapsed sidebar; from 1280dp (13-inch laptops and wider) it is a 240dp
+sidebar with each destination's label.
 Full-screen/system forms have their own shell rules. These conventions keep
 controls reachable and avoid duplicate headers.
 
@@ -211,6 +214,76 @@ Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an
 appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
+
+## Home on tablets and desktops
+
+Home fills wide screens instead of a narrow column. Scope: the Flutter app's
+Home dashboard on every platform; other root pages share the wider root canvas
+(1600dp on expanded bodies) and the rail or sidebar.
+
+- **Columns.** Cards flow into balanced columns: each card goes to the shortest
+  column, so a short card never leaves one side empty. Columns are at least
+  320dp: one on phones, two on portrait tablets, three beside the rail or the
+  laptop sidebar, four on wide desktops. Today and Up next are separate cards.
+- **Scale.** The greeting, date and Today at a glance numbers step up with the
+  width Home receives, and so does the gap between cards.
+- **Today at a glance.** On tablets and wider it is a KPI strip under the
+  greeting. On phones it stays a card in the order chosen in Customize. Hiding
+  it hides the strip too.
+- **Failed cards.** A card whose load fails says which section failed, that
+  the data is safe, and offers Retry, which reloads only that section. Pull to
+  refresh still works on touch screens, but no message asks for it.
+
+Regression coverage: `test/features/shell/view/home_render_cases.dart` (phone,
+both tablet orientations, laptop and wide desktop; failed-card Retry),
+`test/core/responsive/sliver_responsive_cards_test.dart` and the shell rail
+tests.
+
+## Security check (Turnstile)
+
+The server decides when a request needs a Turnstile token: the adaptive
+step-up on writes and the offline-download guard on explicit bulk reads. The
+abuse-guard Worker does not issue Turnstile challenges. The app decides only
+how to ask:
+
+- **Background first.** Every step-up first tries an invisible solve. Sign-in
+  and feedback start one when they open, so the submit usually finds a token
+  ready. A ready token is handed to one request of the same account (or the
+  same signed-out state), within three minutes by a monotonic clock (Turnstile
+  tokens expire after 300 seconds), and never reused.
+- **Never on reads or navigation.** A plain read (Home, lists, opening a
+  screen) never shows the check. If the background solve cannot get a token,
+  the read fails like any other request and its card offers Retry.
+- **A card in context, never a dimmed full-screen dialog.** When Cloudflare
+  needs interaction, a small card appears above the dock on phones and in the
+  bottom corner on wider screens. Not now, Escape or system Back cancels that
+  one action; Back closes the card before it navigates or offers to exit. An
+  unanswered card gives up after three minutes, and a sign-out or account
+  switch settles it.
+  - *In-app writes and explicit offline downloads:* the page stays usable
+    around the card and Tab is not trapped, because the app is replaying one
+    already-formed request. Escape also works from the text field the person
+    was typing in when the card opened, and is left to the page elsewhere.
+  - *Sign-in, QR sign-in and feedback forms:* the card is a route of its
+    own. The form takes no input, focus stays in the card and Back closes the
+    card first, so what is submitted is what the form shows.
+- **Sign-in stays consistent.** The sign-in form runs one check at a time and
+  gives its token to the latest submit. The token is dropped if the email or
+  password changed, the step changed, the person opened another page from
+  sign-in, add-account is being cancelled, or code verification started. The code step shows
+  the address the code went to. While Turnstile is configured, nothing is
+  submitted without a token.
+- **One token, one request.** Proof preparation for Native Integrity never
+  carries the step-up token; only the protected request does.
+
+The security property is unchanged: every protected action still sends a token
+the server verifies with Siteverify, and the server's session clearance
+(15 minutes after a pass) and the native client credential still apply.
+Regression coverage: `test/data/sources/api_client_prompt_policy_test.dart`,
+`test/features/auth/widgets/security_check_dialog_test.dart`,
+`security_check_prewarm_test.dart`, and the configured sign-in suite
+`test/features/auth/view/login_email_mode_captcha_test.dart`, which CI runs
+with Turnstile defines and an exact test count.
 
 ## Private product feedback
 

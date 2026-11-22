@@ -19,6 +19,7 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
+import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
@@ -298,6 +299,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
         if (!context.mounted) {
           return true;
         }
+        // Back closes an open security check card before it navigates.
+        if (SecurityCheckCard.dismiss()) return true;
         final rootNav = Navigator.of(context, rootNavigator: true);
         if (rootNav.canPop()) {
           _debugBack('BackButtonListener.popNavigatorDialog');
@@ -552,6 +555,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _hasOpenModal() =>
       mounted &&
       (Navigator.of(context, rootNavigator: true).canPop() ||
+          SecurityCheckCard.isOpen ||
           context.read<ShellChromeActionsCubit?>()?.state.topmostModalOwner !=
               null);
 

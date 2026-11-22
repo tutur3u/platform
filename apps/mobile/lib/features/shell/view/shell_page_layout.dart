@@ -364,9 +364,10 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
+    final windowSize = MediaQuery.sizeOf(context);
     final railMode =
-        shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
-        ShellNavigationMode.rail;
+        shellNavigationModeFor(windowSize) == ShellNavigationMode.rail;
+    final sidebar = shellNavigationExtendedFor(windowSize);
     final destinations = navChildren
         .where((item) => item.key != backKey)
         .toList();
@@ -382,6 +383,9 @@ extension _ShellPageLayout on _ShellPageState {
           : const [],
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
       child: AdaptiveShellFrame(
+        railExtent: sidebar
+            ? shellNavigationSidebarExtent
+            : shellNavigationRailExtent,
         rail: railMode && showBottomNav
             ? destinations.isEmpty && dockBack == null
                   ? const SizedBox.shrink()
@@ -390,6 +394,7 @@ extension _ShellPageLayout on _ShellPageState {
                       items: destinations,
                       selectedKey: selectedKey,
                       onSelected: navContent.onSelected,
+                      extended: sidebar,
                     )
             : null,
         body: _buildBodyWithFloatingNav(
