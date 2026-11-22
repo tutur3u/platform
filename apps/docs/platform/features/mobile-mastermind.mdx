@@ -419,7 +419,13 @@ records the product rules of the shell entry and every tab.
   Issue each reader on its machine with `t3 auth session issue --scope
   orchestration:read --scope diagnostics:read --ttl 30d --subject
   mastermind-usage-reader --token-only`, writing the output straight into
-  `usage-readers/<id>` (mode 0600) without printing it. Readers expire after
+  `usage-readers/<id>` (mode 0600) without printing it. `t3 auth session
+  issue` only issues on its own machine, so for a linked machine run it there
+  (an agent on that T3 environment), write it to a 0600 file under `umask
+  077`, and send that file to the publisher host with `tailscale file cp`;
+  on the publisher, move it from the Taildrop inbox into `usage-readers/<id>`
+  and delete the inbox copy. Add the machine to `usageMachines` with the
+  relay origin its environment descriptor confirms. Readers expire after
   30 days; a refused or expired reader publishes `reader_refused`, so renew it
   before then. A machine whose quota or accounting was not read publishes one
   closed `reason`: `not_configured` (no `usageMachines` entry),
