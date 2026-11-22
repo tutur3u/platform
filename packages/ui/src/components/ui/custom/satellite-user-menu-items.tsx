@@ -25,6 +25,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import type { ReactNode } from 'react';
 import { PublicProfileMenuItem } from './public-profile-menu-item';
+import type { SidebarBehavior } from './sidebar-behavior';
 
 export { PublicProfileMenuItem } from './public-profile-menu-item';
 
