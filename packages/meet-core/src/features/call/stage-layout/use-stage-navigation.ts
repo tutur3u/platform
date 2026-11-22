@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { currentRoomView } from '../components/room-navigation-policy';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import {
@@ -25,7 +26,7 @@ export function useStageNavigation({
   access,
 }: {
   room: Parameters<typeof useRoomNavigation>[0]['room'];
-  stage: Pick<StageLayoutController, 'focused' | 'open'>;
+  stage: Pick<StageLayoutController, 'focused' | 'open' | 'close' | 'isOpen'>;
   drawer: string | null;
   onDrawer: (drawer: string | null) => void;
   /** A host or co-host opened a shared surface for this person. */
@@ -34,6 +35,8 @@ export function useStageNavigation({
   onSummoned?: (activityId: string) => void;
   access: Parameters<typeof useRoomNavigation>[0]['access'];
 }) {
+  const latest = useRef(stage);
+  latest.current = stage;
   const surface = {
     programming: stage.focused === PROGRAMMING_ACTIVITY,
     document: stage.focused === DOCUMENT_ACTIVITY,
@@ -53,11 +56,22 @@ export function useStageNavigation({
       onDrawer(next.drawer);
       if (target) {
         if (forced && next.tool) onSummoned?.(next.tool);
+        // Going back returns to the activity the person was in, and closes
+        // the one they were brought to if it was not open before.
+        const before = stage.focused;
+        const brought = !stage.isOpen(target);
         stage.open(target);
-        return undefined;
+        return {
+          back: () => {
+            const now = latest.current;
+            if (brought) now.close(target);
+            if (before && before !== target && now.isOpen(before))
+              now.open(before);
+          },
+        };
       }
       // The stage view opens nothing: the person stays on what they have open.
-      return currentRoomView(surface);
+      return { reached: currentRoomView(surface) };
     },
     access,
   });

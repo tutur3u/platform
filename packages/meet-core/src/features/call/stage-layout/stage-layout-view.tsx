@@ -259,6 +259,7 @@ export function StageLayoutView({
                     position,
                   })
                 }
+                onCancel={() => setDrag(null)}
                 onCommit={(position) => {
                   setDrag(null);
                   controller.resize(boundary.splitId, boundary.index, position);

@@ -2,6 +2,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { useRef } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { NavigationEvent } from '../components/room-navigation-policy';
@@ -131,4 +132,56 @@ it('ends following when the person moves on their own', () => {
   act(() => stage.open('tool:live-qa'));
   view.rerender(tree());
   expect(nav.following).toBeNull();
+});
+
+const goBack = () => {
+  const options = vi.mocked(toast).mock.calls.at(-1)?.[1] as
+    | { action?: { onClick: () => void } }
+    | undefined;
+  act(() => options?.action?.onClick());
+};
+const summon = (view: NavigationEvent['view'], rerender: () => void) => {
+  deliver(view, 'summon');
+  rerender();
+};
+
+it('goes back from a summon to the stage by closing what was brought in', () => {
+  const view = mount();
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  expect(stage.openIds).toEqual(['tool:live-qa']);
+  goBack();
+  expect(stage.openIds).toEqual([]);
+});
+
+it('goes back to a classroom board and closes the activity brought in', () => {
+  const view = mount();
+  act(() => stage.open('whiteboard'));
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  expect(stage.focused).toBe('tool:live-qa');
+  goBack();
+  expect(stage.openIds).toEqual(['whiteboard']);
+  expect(stage.focused).toBe('whiteboard');
+});
+
+it('goes back to the pane the person was in when the activity was already open', () => {
+  const view = mount();
+  act(() => {
+    stage.open('tool:live-qa');
+    stage.open('programming');
+  });
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  expect(stage.focused).toBe('tool:live-qa');
+  goBack();
+  // Nothing was newly opened, so nothing closes; focus returns.
+  expect(stage.openIds).toEqual(['tool:live-qa', 'programming']);
+  expect(stage.focused).toBe('programming');
+});
+
+it('does not reopen an activity the person closed after the summon', () => {
+  const view = mount();
+  act(() => stage.open('whiteboard'));
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  act(() => stage.close('whiteboard'));
+  goBack();
+  expect(stage.openIds).toEqual([]);
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { type Boundary, boundaryStyle } from './layout-geometry';
 
 /** Percent of a split moved by an arrow key; Shift moves it further. */
@@ -21,6 +21,7 @@ export function LayoutSeparator({
   extent,
   onPreview,
   onCommit,
+  onCancel,
   onReset,
 }: {
   boundary: Boundary;
@@ -31,6 +32,8 @@ export function LayoutSeparator({
   onPreview: (position: number) => void;
   /** Saves a position: the end of a drag, or one keyboard step. */
   onCommit: (position: number) => void;
+  /** The separator went away mid-drag; drop the preview. */
+  onCancel: () => void;
   onReset: () => void;
 }) {
   const drag = useRef<{
@@ -42,6 +45,20 @@ export function LayoutSeparator({
     scheduled: boolean;
     frame: number;
   } | null>(null);
+  const cancel = useRef(onCancel);
+  cancel.current = onCancel;
+  // A separator that unmounts during a drag (the pane count changed, a pane
+  // was maximized) never sees the pointer release, so end the drag here.
+  useEffect(
+    () => () => {
+      const active = drag.current;
+      if (!active) return;
+      drag.current = null;
+      cancelAnimationFrame(active.frame);
+      cancel.current();
+    },
+    []
+  );
   const vertical = boundary.axis === 'row';
   const finish = (pointer: number) => {
     const active = drag.current;

@@ -21,6 +21,11 @@ import { findMeetTool } from '../tools/registry';
 
 export type { NavigationTargets };
 
+export interface ApplyResult {
+  reached?: MeetRoomView;
+  back?: () => void;
+}
+
 export interface NavigationPerson {
   userId: string;
   displayName: string;
@@ -64,13 +69,14 @@ export function useRoomNavigation({
   surface: CallSurfaceState;
   /**
    * `forced` marks a move a host or co-host made, which opens the surface.
-   * It returns the view the person is on afterwards when that is not `next`,
-   * as when a view opens nothing and they stay where they are.
+   * It may report the view the person is on afterwards when that is not
+   * `next` (a view that opens nothing leaves them where they are), and a
+   * `back` that undoes the move.
    */
   apply: (
     next: CallSurfaceState,
     options: { forced: boolean }
-  ) => MeetRoomView | undefined | void;
+  ) => ApplyResult | void;
   access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
@@ -137,13 +143,14 @@ export function useRoomNavigation({
   );
 
   const go = useCallback((next: MeetRoomView, forced: boolean) => {
-    const reached = applyRef.current(
+    const result = applyRef.current(
       surfaceFromView(next, surfaceRef.current.drawer),
       { forced }
     );
     // Following ends when the view I am on stops matching what was applied,
     // so record where applying actually left me.
-    appliedKey.current = viewKey(reached ?? next);
+    appliedKey.current = viewKey(result?.reached ?? next);
+    return result?.back;
   }, []);
 
   const startFollowing = useCallback(
@@ -172,11 +179,12 @@ export function useRoomNavigation({
           const previous = surfaceRef.current;
           setFollowing(null);
           followingRef.current = null;
-          go(decision.view, true);
+          const back = go(decision.view, true);
           toast(t('summon.brought', { name, surface: label(decision.view) }), {
             action: {
               label: t('summon.go_back'),
-              onClick: () => applyRef.current(previous, { forced: false }),
+              onClick: () =>
+                back ? back() : applyRef.current(previous, { forced: false }),
             },
           });
           break;

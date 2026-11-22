@@ -390,3 +390,39 @@ it('does not touch the saved layout when the only pane is pressed', () => {
   expect(setItem.mock.calls).toEqual([]);
   setItem.mockRestore();
 });
+
+it('drops a drag preview when the separator goes away mid-drag', () => {
+  vi.stubGlobal('requestAnimationFrame', (run: () => void) => {
+    run();
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  view();
+  open('a', 'b');
+  const stage = document.querySelector('[role="group"]') as HTMLElement;
+  vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue({
+    width: 1000,
+    height: 600,
+    top: 0,
+    left: 0,
+    right: 1000,
+    bottom: 600,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  });
+  const separator = screen.getByRole('separator');
+  Object.assign(separator, { setPointerCapture: () => {}, focus: () => {} });
+  fireEvent.pointerDown(separator, { pointerId: 1, button: 0, clientX: 500 });
+  fireEvent.pointerMove(separator, { pointerId: 1, clientX: 700 });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '70'
+  );
+  // Maximizing unmounts the separator without a pointer release.
+  act(() => controller.maximize(controller.layout.focusedPaneId));
+  expect(screen.queryAllByRole('separator')).toHaveLength(0);
+  act(() => controller.maximize(null));
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '50'
+  );
+});

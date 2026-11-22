@@ -311,3 +311,38 @@ it('stores nothing for an edit that changes nothing', () => {
   expect(write).not.toHaveBeenCalled();
   write.mockRestore();
 });
+
+it('does not fork a narrow arrangement for a focus or tab switch', () => {
+  const desktop = mount();
+  act(() => {
+    desktop.result.current.open('a');
+    desktop.result.current.open('b');
+    desktop.result.current.open('c');
+  });
+  flush();
+  desktop.unmount();
+  const key = stageLayoutKey('u1', 'm1');
+  const savedViews = () => JSON.parse(localStorage.getItem(key) ?? '{}').views;
+
+  const tablet = mount({ tier: 'tablet' });
+  // On the tablet b and c share a pane; bring b forward, then focus the first.
+  const panes = () => tablet.result.current.layout;
+  const shared = panes().focusedPaneId ?? '';
+  act(() => tablet.result.current.activate(shared, 'b'));
+  expect(tablet.result.current.focused).toBe('b');
+  const first = JSON.stringify(panes().root).includes('"a"') ? 'a' : '';
+  expect(first).toBe('a');
+  act(() =>
+    tablet.result.current.focusPane(
+      (panes().root?.kind === 'split' ? panes().root.children[0]?.id : '') ?? ''
+    )
+  );
+  expect(tablet.result.current.focused).toBe('a');
+  flush();
+  expect(savedViews()).toEqual({});
+  tablet.unmount();
+  // The desktop arrangement carries the focus the person moved there.
+  const wide = mount();
+  expect(wide.result.current.focused).toBe('a');
+  expect(wide.result.current.openIds).toEqual(['a', 'b', 'c']);
+});
