@@ -4,7 +4,7 @@ import { AssessmentPanel } from './assessment-panel';
 
 export const liveAssessmentTool: MeetToolDefinition = {
   id: 'live-assessment',
-  label: 'Assessment',
+  label: 'meet.call.live_activities.assessment.title',
   icon: CheckSquare,
   Panel: AssessmentPanel,
 };

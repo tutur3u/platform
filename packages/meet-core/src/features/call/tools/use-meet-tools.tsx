@@ -29,6 +29,8 @@ export function useMeetTools<A extends string>({
   canManage,
   enabled,
   available,
+  selfUserId,
+  people,
   tools = meetTools,
 }: {
   drawer: string | null;
@@ -38,6 +40,9 @@ export function useMeetTools<A extends string>({
   requiresAccount: boolean;
   canManage: boolean;
   enabled: boolean;
+  /** This person's room id and the room's people, for room-shared tools. */
+  selfUserId?: string | null;
+  people?: Readonly<Record<string, { displayName?: string } | undefined>>;
   /** Whether this person may browse the hub (live shortcuts still open tools). */
   available: boolean;
   tools?: readonly MeetToolDefinition[];
@@ -75,6 +80,8 @@ export function useMeetTools<A extends string>({
           requiresAccount,
           canManage,
           enabled,
+          selfUserId,
+          people,
           close,
         }}
       >

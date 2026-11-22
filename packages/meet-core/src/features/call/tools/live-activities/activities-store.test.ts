@@ -14,8 +14,9 @@ import {
 const meetingId = 'live-activities';
 const send = vi.fn<(message: MeetRealtimeClientMessage) => boolean>(() => true);
 const host = {
-  assessment: { responses: [] },
+  assessment: { responses: [], answers: {} },
   flashcards: { progress: [] },
+  game: { rounds: [] },
   icebreaker: { hidden: [] },
 };
 
@@ -37,7 +38,11 @@ it('reads once on admission and updates separate public and private views from r
   );
   expect(send).toHaveBeenCalledWith({ type: 'activity.read' });
   expect(room.send(command)).toBe(true);
-  expect(send).toHaveBeenLastCalledWith({ type: 'activity.command', command });
+  expect(send).toHaveBeenLastCalledWith({
+    type: 'activity.command',
+    command,
+    requestId: expect.any(String),
+  });
 
   const snapshot = {
     ...EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
@@ -55,7 +60,7 @@ it('reads once on admission and updates separate public and private views from r
   handleLiveActivitiesMessage(meetingId, { type: 'activity.mine', mine }, send);
   handleLiveActivitiesMessage(meetingId, { type: 'activity.host', host }, send);
   expect(notify).toHaveBeenCalledTimes(2);
-  expect(room.read()).toEqual({ snapshot, mine, host: null });
+  expect(room.read()).toEqual({ snapshot, mine, host: null, error: null });
   expect(liveActivitiesRoom('different-room').read().mine).toBe(
     EMPTY_LIVE_ACTIVITIES_MINE
   );
@@ -65,6 +70,22 @@ it('reads once on admission and updates separate public and private views from r
   expect(room.read().snapshot).toBe(EMPTY_LIVE_ACTIVITIES_SNAPSHOT);
   expect(room.send(command)).toBe(false);
   unsubscribe();
+});
+
+it('shows a refusal of the last command only, and clears it with the next one', () => {
+  const room = createLiveActivitiesStore();
+  room.open(send);
+  room.receive({ type: 'error', error: 'room_full', requestId: 'someone' });
+  expect(room.read().error).toBeNull();
+  room.send({ kind: 'game.start' });
+  const requestId = (
+    send.mock.calls.at(-1)?.[0] as { requestId?: string } | undefined
+  )?.requestId;
+  room.receive({ type: 'error', error: 'activity_rate_limited', requestId });
+  expect(room.read().error).toBe('activity_rate_limited');
+  room.send({ kind: 'game.start' });
+  expect(room.read().error).toBeNull();
+  room.close();
 });
 
 it('drops manager data on downgrade and re-reads when the transport opens again', () => {

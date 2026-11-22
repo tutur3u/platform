@@ -129,10 +129,27 @@ export function mineView(
 export function hostView({
   assessment,
   flashcards,
+  game,
   icebreaker,
 }: Activities): LiveActivitiesHost {
   return {
-    assessment: { responses: assessment.responses },
+    assessment: {
+      responses: assessment.responses,
+      answers: Object.fromEntries(
+        assessment.items.flatMap(({ id, answer }) =>
+          answer === undefined ? [] : [[id, answer]]
+        )
+      ),
+    },
+    game: {
+      rounds: game.rounds.map(({ id, prompt, options, answer, seconds }) => ({
+        id,
+        prompt,
+        options,
+        answer,
+        seconds,
+      })),
+    },
     flashcards: {
       progress: Object.entries(flashcards.progress).map(
         ([participantId, known]) => ({

@@ -1,35 +1,37 @@
 'use client';
 
-import { X } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import type { ReactNode } from 'react';
+import { LayoutGrid } from '@tuturuuu/icons';
+import { useTranslations } from 'next-intl';
+import type { ComponentType, ReactNode } from 'react';
 import { ResizableCallPanel } from '../../components/resizable-call-panel';
+import { CallPanelHeader } from '../tool-ui';
 
 export function LiveActivityPanelFrame({
   title,
+  icon = LayoutGrid,
+  subtitle,
   onClose,
   children,
 }: {
   title: string;
+  icon?: ComponentType<{ className?: string }>;
+  subtitle?: ReactNode;
   onClose?: () => void;
   children: ReactNode;
 }) {
+  const t = useTranslations('meet.call.live_activities');
   return (
     <ResizableCallPanel label={title}>
-      <header className="flex items-center justify-between gap-2 border-border border-b px-3 py-2">
-        <h2 className="font-semibold text-foreground text-sm">{title}</h2>
-        {onClose ? (
-          <Button
-            aria-label="Close panel"
-            onClick={onClose}
-            size="icon"
-            variant="ghost"
-          >
-            <X className="size-4" />
-          </Button>
-        ) : null}
-      </header>
-      <div className="min-h-0 space-y-3 overflow-y-auto p-3">{children}</div>
+      <CallPanelHeader
+        icon={icon}
+        title={title}
+        subtitle={subtitle}
+        closeLabel={t('close')}
+        onClose={() => onClose?.()}
+      />
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+        {children}
+      </div>
     </ResizableCallPanel>
   );
 }

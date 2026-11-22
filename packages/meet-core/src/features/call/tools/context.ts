@@ -11,6 +11,10 @@ export type MeetToolContextValue = {
   canManage: boolean;
   /** False when the call is not live; tools must not query the room then. */
   enabled: boolean;
+  /** This person's id in the room, which room-shared tools record as the author. */
+  selfUserId?: string | null;
+  /** People in the room by room id, so shared tools can show names. */
+  people?: Readonly<Record<string, { displayName?: string } | undefined>>;
   close: () => void;
 };
 

@@ -47,12 +47,16 @@ export function WhiteboardPanel({
   );
   const [color, setColor] = useState<WhiteboardColor>('ink');
   const title = t('whiteboard.title');
+  // Its own name, so it is told apart from the classroom whiteboard in menus.
+  const panelTitle = useTranslations('meet.call.live_activities')(
+    'penboard.title'
+  );
 
   return (
-    <ResizableCallPanel label={title}>
+    <ResizableCallPanel label={panelTitle}>
       <CallPanelHeader
         icon={PenTool}
-        title={title}
+        title={panelTitle}
         closeLabel={t('close_panel')}
         onClose={() => onClose?.()}
       />

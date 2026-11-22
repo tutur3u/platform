@@ -4,7 +4,7 @@ import { WhiteboardPanel } from './whiteboard-panel';
 
 export const whiteboardTool: MeetToolDefinition = {
   id: 'pen-whiteboard',
-  label: 'meet.classroom_tools.whiteboard.title',
+  label: 'meet.call.live_activities.penboard.title',
   icon: PenTool,
   Panel: WhiteboardPanel,
 };

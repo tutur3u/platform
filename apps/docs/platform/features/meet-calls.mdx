@@ -601,7 +601,15 @@ run the game and moderate icebreaker responses. Each participant can submit
 one answer per assessment item while the assessment is open. Only room
 managers see everyone's submissions. Releasing results shows the correct
 choices to the room and delivers each participant's own grade and feedback.
-Returning to draft clears submissions and released results.
+Returning to draft clears submissions and released results. Answer keys and the
+prepared game rounds reach room managers only, so a host can review and edit
+them; everyone else gets a correct choice only on release or reveal.
+
+Each activity has a host view and a participant view in the Activities menu.
+Hosts and co-hosts write the assessment questions, the flashcard deck and the
+game rounds in the panel and save them to the room before opening or starting.
+A refusal from the room, such as a rate limit or a full activity, shows as a
+quiet line in the panel of the person whose action it refused.
 
 Participants track their own known flashcards. Each game round accepts the
 first answer received before the server deadline. Revealing the round awards
@@ -612,10 +620,13 @@ responses. Other participants cannot see a hidden response.
 Anyone admitted can draw and undo their latest stroke. Managers can undo
 the latest stroke from any author or clear the board. Room limits can reject a
 new submission or stroke. Existing room content stays available when a limit
-is reached. The pen board is the drawing tool in the in-call tools menu.
+is reached. The pen board is listed as **Pen whiteboard** in the Activities menu,
+apart from the classroom whiteboard. Its replay ledger forgets strokes that are
+no longer on the board once it fills, so a long session keeps drawing.
 
 Regression coverage lives in `live-activities.test.ts`, `penboard.test.ts`,
-`activities-store.test.ts` and the Meet whiteboard store and panel tests.
+`activities-store.test.ts`, the four `*-panel.test.tsx` files under
+`tools/live-activities` and the Meet whiteboard store and panel tests.
 
 ## Viewer admission for large classes
 

@@ -4,7 +4,7 @@ import { FlashcardsPanel } from './flashcards-panel';
 
 export const liveFlashcardsTool: MeetToolDefinition = {
   id: 'live-flashcards',
-  label: 'Flashcards',
+  label: 'meet.call.live_activities.flashcards.title',
   icon: Layers,
   Panel: FlashcardsPanel,
 };

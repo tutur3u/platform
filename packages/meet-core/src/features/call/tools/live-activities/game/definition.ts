@@ -4,7 +4,7 @@ import { GamePanel } from './game-panel';
 
 export const liveGameTool: MeetToolDefinition = {
   id: 'live-game',
-  label: 'Prep game',
+  label: 'meet.call.live_activities.game.title',
   icon: Gamepad2,
   Panel: GamePanel,
 };

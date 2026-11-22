@@ -171,3 +171,28 @@ it('rejects oversized point lists, author quotas, and aggregate board bytes', ()
     MEET_MAX_MESSAGE_BYTES
   );
 });
+
+it('keeps drawing after the receipt ledger fills, forgetting strokes no longer on the board', () => {
+  const kept = run(room(), guest, draw());
+  const visible = kept.state.penboard!;
+  const stale = Object.fromEntries(
+    Array.from({ length: PENBOARD_LIMITS.drawReceipts - 1 }, (_, index) => [
+      `${guest.userId}:${crypto.randomUUID()}`,
+      { id: crypto.randomUUID(), revision: index + 1 },
+    ])
+  );
+  const full: MeetRoomSnapshot = {
+    ...kept.state,
+    penboard: { ...visible, drawIds: { ...visible.drawIds, ...stale } },
+  };
+  expect(Object.keys(full.penboard!.drawIds)).toHaveLength(
+    PENBOARD_LIMITS.drawReceipts
+  );
+  const next = run(full, host, draw());
+  expect(next.broadcast).toMatchObject([{ type: 'penboard.stroke' }]);
+  const receipts = Object.values(next.state.penboard!.drawIds);
+  // The visible strokes keep their receipts, so a redelivery stays idempotent.
+  expect(receipts.map(({ id }) => id).sort()).toEqual(
+    next.state.penboard!.strokes.map(({ id }) => id).sort()
+  );
+});

@@ -196,6 +196,8 @@ export const liveActivitiesMineSchema = z.object({
 export const liveActivitiesHostSchema = z.object({
   assessment: z.object({
     responses: z.array(responseBody.extend({ itemId: id, participantId: id })),
+    /** Answer keys of choice items, so a manager can review before release. */
+    answers: z.record(id, optionIndex),
   }),
   flashcards: z.object({
     progress: z
@@ -203,6 +205,20 @@ export const liveActivitiesHostSchema = z.object({
         z.object({ participantId: id, known: z.number().int().nonnegative() })
       )
       .max(LIVE_ACTIVITY_LIMITS.actors),
+  }),
+  /** The prepared rounds with their keys; the room only sees the live round. */
+  game: z.object({
+    rounds: z
+      .array(
+        z.object({
+          id,
+          prompt: text(240),
+          options,
+          answer: optionIndex,
+          seconds: z.number().int().min(5).max(120),
+        })
+      )
+      .max(LIVE_ACTIVITY_LIMITS.gameRounds),
   }),
   icebreaker: z.object({
     hidden: z.array(icebreakerResponse).max(LIVE_ACTIVITY_LIMITS.actors),

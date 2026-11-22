@@ -23,12 +23,15 @@ export type LiveActivitiesView = {
   snapshot: LiveActivitiesSnapshot;
   mine: LiveActivitiesMine;
   host: LiveActivitiesHost | null;
+  /** Why the room refused this person's last command; cleared by the next one. */
+  error: string | null;
 };
 
 const EMPTY: LiveActivitiesView = {
   snapshot: EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
   mine: EMPTY_LIVE_ACTIVITIES_MINE,
   host: null,
+  error: null,
 };
 
 type Send = (message: MeetRealtimeClientMessage) => boolean;
@@ -37,6 +40,8 @@ export function createLiveActivitiesStore() {
   let view = EMPTY;
   let send: Send | undefined;
   let manager = false;
+  // Only a refusal of the command this person just sent is theirs to see.
+  let lastRequest: string | undefined;
   const listeners = new Set<() => void>();
   const publish = (next: LiveActivitiesView) => {
     if (view === next) return;
@@ -69,13 +74,26 @@ export function createLiveActivitiesStore() {
         case 'activity.host':
           if (manager) publish({ ...view, host: message.host });
           break;
+        case 'error':
+          if (message.requestId && message.requestId === lastRequest)
+            publish({ ...view, error: message.error });
+          break;
       }
     },
-    send: (command: LiveActivityCommand) =>
-      send?.({ type: 'activity.command', command }) ?? false,
+    send(command: LiveActivityCommand) {
+      if (!send) return false;
+      lastRequest = crypto.randomUUID();
+      if (view.error) publish({ ...view, error: null });
+      return send({
+        type: 'activity.command',
+        command,
+        requestId: lastRequest,
+      });
+    },
     close() {
       send = undefined;
       manager = false;
+      lastRequest = undefined;
       publish(EMPTY);
       return listeners.size === 0;
     },
@@ -102,3 +120,5 @@ export function useLiveActivities(meetingId: string) {
   const view = useSyncExternalStore(room.subscribe, room.read, () => EMPTY);
   return { ...view, send: room.send };
 }
+
+export type LiveActivities = ReturnType<typeof useLiveActivities>;

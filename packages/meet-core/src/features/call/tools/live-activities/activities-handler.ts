@@ -27,6 +27,8 @@ export function handleLiveActivitiesMessage(
     case 'activity.snapshot':
     case 'activity.mine':
     case 'activity.host':
+    // The store keeps only a refusal of this person's own last command.
+    case 'error':
       liveActivitiesRoom(meetingId).receive(message);
       break;
     case 'room.ended':

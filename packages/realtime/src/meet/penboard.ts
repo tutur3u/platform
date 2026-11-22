@@ -145,11 +145,19 @@ export function applyPenboard(
     }
     if (
       board.strokes.length >= PENBOARD_LIMITS.strokes ||
-      Object.keys(board.drawIds).length >= PENBOARD_LIMITS.drawReceipts ||
       board.strokes.filter(({ authorId }) => authorId === userId).length >=
         PENBOARD_LIMITS.strokesPerAuthor
     )
       return denied(state, 'penboard_full', requestId);
+    // A full ledger forgets receipts of strokes no longer on the board, so a
+    // long session keeps drawing. Receipts of visible strokes always stay.
+    let drawIds = board.drawIds;
+    if (Object.keys(drawIds).length >= PENBOARD_LIMITS.drawReceipts) {
+      const visible = new Set(board.strokes.map(({ id }) => id));
+      drawIds = Object.fromEntries(
+        Object.entries(drawIds).filter(([, receipt]) => visible.has(receipt.id))
+      );
+    }
     const stroke = {
       ...message.stroke,
       id: crypto.randomUUID(),
@@ -165,7 +173,7 @@ export function applyPenboard(
     const penboard: PenboardState = {
       revision,
       strokes,
-      drawIds: { ...board.drawIds, [key]: { id: stroke.id, revision } },
+      drawIds: { ...drawIds, [key]: { id: stroke.id, revision } },
     };
     return outcome(
       { ...state, penboard, penboardLimits: limits },

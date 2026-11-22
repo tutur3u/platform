@@ -536,3 +536,49 @@ it('rechecks manager and actor admission at socket delivery', () => {
   );
   expect(absent.send).not.toHaveBeenCalled();
 });
+
+it('gives managers the answer keys and prepared rounds, and nobody else', () => {
+  const set = action(room(), host, {
+    kind: 'assessment.set',
+    items: [
+      { prompt: 'Pick one', kind: 'choice', options: ['a', 'b'], answer: 1 },
+    ],
+  });
+  const itemId = set.state.liveActivities!.assessment.items[0]!.id;
+  expect(set.toManagers).toMatchObject([
+    {
+      type: 'activity.host',
+      host: { assessment: { answers: { [itemId]: 1 } } },
+    },
+  ]);
+  const prepared = action(set.state, cohost, {
+    kind: 'game.set',
+    rounds: [
+      { prompt: 'Round one', options: ['x', 'y'], answer: 0, seconds: 10 },
+    ],
+  });
+  expect(prepared.toManagers).toMatchObject([
+    {
+      host: {
+        game: { rounds: [{ prompt: 'Round one', answer: 0, seconds: 10 }] },
+      },
+    },
+  ]);
+  expect(JSON.stringify(prepared.broadcast)).not.toMatch(
+    /"answer"|"answers"|"correct"|"rounds"|Round one/
+  );
+  expect(JSON.stringify(read(prepared.state, guest).reply)).not.toMatch(
+    /activity\.host|"answers"|"rounds"|Round one/
+  );
+  expect(read(prepared.state, cohost).reply).toMatchObject([
+    {},
+    {},
+    {
+      type: 'activity.host',
+      host: {
+        assessment: { answers: { [itemId]: 1 } },
+        game: { rounds: [{ answer: 0 }] },
+      },
+    },
+  ]);
+});

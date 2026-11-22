@@ -4,7 +4,7 @@ import { QaPanel } from './qa-panel';
 
 export const liveQaTool: MeetToolDefinition = {
   id: 'live-qa',
-  label: 'Q&A',
+  label: 'meet.call.live_activities.qa.title',
   icon: MessageSquare,
   Panel: QaPanel,
 };

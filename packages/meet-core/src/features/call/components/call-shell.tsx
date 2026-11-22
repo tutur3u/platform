@@ -256,6 +256,8 @@ function CallShellContent({
     canManage,
     enabled: liveTools,
     available: roomTools.canUse,
+    selfUserId: state.selfUserId,
+    people: state.participants,
   });
   const activities = useCallActivities({
     requiresAccount,

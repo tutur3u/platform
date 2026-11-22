@@ -71,9 +71,15 @@ const strokes = () => readWhiteboard(meetingId).strokes;
 it('exports a tool definition the call shell can list', () => {
   expect(whiteboardTool.id).toBe('pen-whiteboard');
   // The hub translates the label, so it must be a key both catalogs carry.
-  expect(whiteboardTool.label).toBe('meet.classroom_tools.whiteboard.title');
-  expect(enMessages.meet.classroom_tools.whiteboard.title).toBe('Whiteboard');
-  expect(viMessages.meet.classroom_tools.whiteboard.title).toBeTruthy();
+  // Its own name, so the menu tells it apart from the classroom whiteboard.
+  expect(whiteboardTool.label).toBe('meet.call.live_activities.penboard.title');
+  expect(enMessages.meet.call.live_activities.penboard.title).toBe(
+    'Pen whiteboard'
+  );
+  expect(viMessages.meet.call.live_activities.penboard.title).toBeTruthy();
+  expect(enMessages.meet.call.live_activities.penboard.title).not.toBe(
+    enMessages.meet.classroom_tools.whiteboard.title
+  );
   expect(
     typeof whiteboardTool.icon === 'function' ||
       typeof whiteboardTool.icon === 'object'
