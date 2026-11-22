@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { liveQaDelivery } from './live-qa-views';
 import { LIVE_QA_BROADCAST_DELAY_MS } from './live-qa-broadcast';
 import type { MeetRealtimeServerMessage } from './messages';
 import { getMeetRealtimeScopesForRole } from './permissions';
@@ -119,4 +120,47 @@ it('serializes one host view once for every host socket', () => {
   // The full view never reaches someone who is not a host.
   delivery.sendToUser(guest.userId, [message]);
   expect(sockets[2]!.send).not.toHaveBeenCalled();
+});
+
+it('serializes the host frame of one change once for every host', () => {
+  const second = { ...host, userId: crypto.randomUUID() };
+  const socket = (token: typeof host) => ({
+    readyState: 1,
+    send: vi.fn<(wire: string) => void>(),
+    close: vi.fn(),
+    deserializeAttachment: () => ({ token }),
+    serializeAttachment: vi.fn<(value: MeetRoomSocketAttachment) => void>(),
+  });
+  const sockets = [socket(host), socket(second)];
+  const sender = { ...host, userId: crypto.randomUUID() };
+  const state = {
+    ...createMeetRoomSnapshot(),
+    presence: Object.fromEntries(
+      [host, second, sender].map((token) => [
+        token.userId,
+        createMeetPresence(token, now),
+      ])
+    ),
+  };
+  const delivery = createMeetRoomSocketDelivery({
+    sockets: () => sockets,
+    read: () => state,
+    fullPresence: () => ({ type: 'room.ended' }),
+    announcements: () => [],
+  });
+  const { direct } = liveQaDelivery(
+    state,
+    { questions: [], revision: 1 } as never,
+    sender
+  );
+  const stringify = vi.spyOn(JSON, 'stringify');
+  for (const entry of direct ?? [])
+    delivery.sendToUser(entry.userId, [entry.message]);
+  expect(direct).toHaveLength(2);
+  const hostFrames = stringify.mock.calls.filter(
+    ([value]) => (value as { type?: string })?.type === 'qa.host'
+  );
+  expect(hostFrames).toHaveLength(1);
+  expect(sockets[0]!.send).toHaveBeenCalledTimes(1);
+  expect(sockets[1]!.send).toHaveBeenCalledTimes(1);
 });

@@ -126,12 +126,13 @@ export function createLiveQaClient(
       });
     },
     /**
-     * Forgets the views of an earlier admission. The next read fills them
+     * Forgets the views and the vote marks of an earlier admission. The next read fills them
      * again, so a host view never outlives the role that received it.
      */
     reset() {
       shared = EMPTY;
       host = null;
+      self = null;
       error = null;
       publish();
     },

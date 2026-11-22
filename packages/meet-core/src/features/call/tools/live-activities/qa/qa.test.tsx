@@ -208,7 +208,7 @@ it('keeps hidden questions with hosts, converges answers and serves late joiners
   expect(late.read().snapshot).toEqual(guestClient.read().snapshot);
 });
 
-it('forgets the host view and older snapshots when the person is admitted again', () => {
+it('forgets the host view, vote marks and older snapshots when the person is admitted again', () => {
   let receive: (message: MeetRealtimeServerMessage) => void = () => {};
   const client = createLiveQaClient({
     send: () => {},
@@ -218,14 +218,20 @@ it('forgets the host view and older snapshots when the person is admitted again'
     },
   });
   client.subscribe(() => {});
-  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 5 } });
+  receive({
+    type: 'qa.snapshot',
+    snapshot: { questions: [], revision: 5 },
+    self: { actor: 'a', participantId: 'p', votedIds: ['q1'] },
+  });
   receive({ type: 'qa.host', snapshot: { questions: [], revision: 5 } });
+  expect(client.read().self?.votedIds).toEqual(['q1']);
   // A held broadcast older than the latest reply is ignored.
   receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 4 } });
   expect(client.read().snapshot.revision).toBe(5);
   expect(client.read().isHost).toBe(true);
   client.reset();
   expect(client.read().isHost).toBe(false);
+  expect(client.read().self).toBe(null);
   receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 1 } });
   expect(client.read().snapshot.revision).toBe(1);
 });

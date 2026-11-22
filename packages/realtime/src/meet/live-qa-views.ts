@@ -101,7 +101,11 @@ export function liveQaDelivery(
   token: Viewer,
   requestId?: string
 ): Partial<Omit<MeetRoomOutcome, 'state'>> {
-  const host = liveQaHostView(qa);
+  // One message object for every host, so the room serializes it once.
+  const hostMessage = {
+    type: 'qa.host' as const,
+    snapshot: liveQaHostView(qa),
+  };
   return {
     broadcast: [{ type: 'qa.snapshot', snapshot: liveQaPublicView(qa) }],
     direct: Object.entries(state.presence)
@@ -111,10 +115,7 @@ export function liveQaDelivery(
           person.role === 'host' &&
           !state.waiting[userId]
       )
-      .map(([userId]) => ({
-        userId,
-        message: { type: 'qa.host', snapshot: host },
-      })),
+      .map(([userId]) => ({ userId, message: hostMessage })),
     reply: liveQaReplies(qa, token, requestId),
   };
 }

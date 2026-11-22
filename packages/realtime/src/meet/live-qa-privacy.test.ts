@@ -128,3 +128,31 @@ describe('live Q&A files on hidden questions and deleted answers', () => {
     });
   });
 });
+
+describe('live Q&A host frame', () => {
+  it('shares one host message across every other admitted host', () => {
+    const second = {
+      ...host,
+      userId: crypto.randomUUID(),
+      accountId: crypto.randomUUID(),
+    };
+    const state = room();
+    const withTwoHosts = {
+      ...state,
+      presence: {
+        ...state.presence,
+        [second.userId]: {
+          ...state.presence[host.userId]!,
+          userId: second.userId,
+        },
+      },
+    };
+    const asked = ask(withTwoHosts, member).result;
+    const messages = asked.direct.map((entry) => entry.message);
+    expect(asked.direct.map((entry) => entry.userId).sort()).toEqual(
+      [host.userId, second.userId].sort()
+    );
+    expect(messages[0]).toMatchObject({ type: 'qa.host' });
+    expect(messages[1]).toBe(messages[0]);
+  });
+});

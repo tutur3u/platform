@@ -5,6 +5,7 @@ import {
   getMeetRealtimeScopesForRole,
   meetRealtimeTokenPayloadSchema,
 } from './index';
+import { ask, attach, host, member, room } from './live-qa.fixtures';
 import { applyChatMessage } from './room-chat';
 
 const token = meetRealtimeTokenPayloadSchema.parse({
@@ -101,4 +102,51 @@ it('does not evict saved history when many unsaved messages arrive', () => {
   expect(state.chat?.filter((entry) => entry.retained === false)).toHaveLength(
     500
   );
+});
+
+function chatWith(attachmentId: string, state: ReturnType<typeof room>) {
+  return applyChatMessage(
+    state,
+    {
+      type: 'chat.message',
+      body: 'Here',
+      requestId: 'request-file',
+      attachmentIds: [attachmentId],
+    },
+    host,
+    new Date().toISOString()
+  );
+}
+it('posts a fresh own file to chat once and then refuses it', () => {
+  const file = attach(room(), host.accountId!);
+  const first = chatWith(file.id, file.state);
+  expect(first.state.attachments?.[file.id]?.published).toBe(true);
+  expect(first.reply[0]).toMatchObject({ type: 'chat.message' });
+  expect(chatWith(file.id, first.state).reply[0]).toMatchObject({
+    error: 'attachment_unavailable',
+  });
+});
+it('refuses a file that a Q&A question already shared', () => {
+  const file = attach(room(), member.accountId!);
+  const asked = ask(file.state, member, { attachmentIds: [file.id] });
+  expect(asked.state.attachments?.[file.id]?.published).toBe(true);
+  const attempt = applyChatMessage(
+    asked.state,
+    {
+      type: 'chat.message',
+      body: 'Mine',
+      requestId: 'request-qa',
+      attachmentIds: [file.id],
+    },
+    member,
+    new Date().toISOString()
+  );
+  expect(attempt.reply[0]).toMatchObject({ error: 'attachment_unavailable' });
+  expect(attempt.state).toBe(asked.state);
+});
+it('refuses a withheld file, even from its uploader', () => {
+  const file = attach(room(), host.accountId!, { withheld: true });
+  const attempt = chatWith(file.id, file.state);
+  expect(attempt.reply[0]).toMatchObject({ error: 'attachment_unavailable' });
+  expect(attempt.state.chat ?? []).toHaveLength(0);
 });

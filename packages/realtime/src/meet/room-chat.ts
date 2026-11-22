@@ -36,6 +36,8 @@ export function applyChatMessage(
     if (
       !file ||
       file.discarded ||
+      file.published ||
+      file.withheld ||
       file.ownerAccountId !== (token.accountId ?? userId)
     )
       return denied(state, 'attachment_unavailable', message.requestId);
