@@ -28,6 +28,13 @@ localization changes.
   Silicon, run it under `--platform linux/amd64` or on an Intel host.
   `test/helpers/golden_tolerance.dart` allows 0.5% of pixels to differ, and
   that budget is for rounding, not for host drift.
+- On a macOS host, run the suite as `flutter test --exclude-tags golden`.
+  Every `matchesGoldenFile` test file carries `@Tags(['golden'])`. A full run
+  there can fail image comparisons with raster mismatches although CI passes
+  them. Those failures are host drift: do not regenerate the images on that
+  host, and read a golden result only from CI or the pinned Linux toolchain.
+  The exclusion drops each tagged file whole, including its widget
+  assertions, so CI stays the check for those.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
   behavior changes. Release Please owns mobile version updates.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package

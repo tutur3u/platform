@@ -1,7 +1,7 @@
 ---
 title: 'Mobile design system'
 description: 'Spacing tokens, page primitives, components, sheets and dialogs, the full-bleed allowlist, breakpoints, and the adaptive shell for apps/mobile.'
-updatedAt: "2026-10-29"
+updatedAt: "2026-11-22"
 audience: developers
 ---
 
@@ -90,6 +90,14 @@ uploaded, and a field changed locally is never replaced by an older load.
 - Goldens for classic and Sorbet, light and dark, phone and tablet live in
   `test/core/theme/sorbet/goldens/`; render compositions through
   `sorbetTestApp` in `test/helpers/pump_app.dart`.
+- Golden images are generated and verified on Linux x86_64 with the Flutter
+  version pinned in `mobile.yaml`, which is what CI runs. The test font
+  rasterizes differently on macOS, so a full `flutter test` on a Mac can fail
+  image comparisons with raster mismatches while CI passes them. On a Mac
+  run `flutter test --exclude-tags golden` (every `matchesGoldenFile`
+  test file carries `@Tags(['golden'])`), and never regenerate the images
+  there. The exclusion drops each tagged file whole, including its widget
+  assertions, so CI stays the check for those.
 
 ## Page primitives
 
