@@ -77,6 +77,10 @@ export interface Ledger {
   claim(input: ClaimInput): Promise<ClaimResult>;
   complete(input: CompleteInput): Promise<JobState>;
   resume(jobId: string): Promise<JobState>;
+  resumeIf(
+    jobId: string,
+    stopReason: string
+  ): Promise<{ resumed: boolean; state: JobState }>;
   status(): Promise<Record<string, JobState>>;
   stop(jobId: string, reason: string): Promise<JobState>;
 }
@@ -232,6 +236,16 @@ export class LedgerCore {
     return next;
   }
 
+  // Resumes only a job stopped for `stopReason`, in the same storage step as
+  // the check, so a different stop (an operator's) landing first wins and a
+  // second concurrent caller changes nothing.
+  resumeIf(jobId: string, stopReason: string) {
+    const state = this.#read(jobId);
+    if (!state.stopped || state.stopReason !== stopReason)
+      return { resumed: false, state };
+    return { resumed: true, state: this.resume(jobId) };
+  }
+
   status(): Record<string, JobState> {
     return Object.fromEntries(this.store.list());
   }
@@ -351,6 +365,7 @@ export function localLedger(core: LedgerCore): Ledger {
     claim: async (input) => core.claim(input),
     complete: async (input) => core.complete(input),
     resume: async (jobId) => core.resume(jobId),
+    resumeIf: async (jobId, stopReason) => core.resumeIf(jobId, stopReason),
     status: async () => core.status(),
     stop: async (jobId, reason) => core.stop(jobId, reason),
   };

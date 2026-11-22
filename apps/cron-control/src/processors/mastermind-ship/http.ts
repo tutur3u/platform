@@ -36,6 +36,7 @@ export class ShipSourceError extends Error {
 
 export type ShipResponse =
   | { status: 304; headers: Headers }
+  | { status: 404; headers: Headers }
   | { status: 200; headers: Headers; json: unknown };
 
 /** Backoff for a refused request: Retry-After, then the rate-limit reset. */
@@ -64,16 +65,19 @@ export async function shipFetch(
     method: 'GET' | 'POST';
     headers: Record<string, string>;
     body?: string;
+    /** Answer a 404 as `{ status: 404 }` instead of an `http` failure. */
+    allowNotFound?: boolean;
   }
 ): Promise<ShipResponse> {
   const remaining = deps.deadline - deps.now();
   if (remaining <= 0) throw new ShipSourceError('timeout');
   if (!budget.take()) throw new ShipSourceError('rate-limited');
   const timeout = AbortSignal.timeout(Math.min(REQUEST_TIMEOUT_MS, remaining));
+  const { allowNotFound, ...request } = init;
   let response: Response;
   try {
     response = await deps.fetch(url, {
-      ...init,
+      ...request,
       redirect: 'manual',
       signal: deps.signal ? AbortSignal.any([deps.signal, timeout]) : timeout,
     });
@@ -100,6 +104,10 @@ export async function shipFetch(
   if (response.status === 401) {
     void response.body?.cancel().catch(() => undefined);
     throw new ShipSourceError('auth');
+  }
+  if (response.status === 404 && allowNotFound) {
+    void response.body?.cancel().catch(() => undefined);
+    return { status: 404, headers: response.headers };
   }
   if (!response.ok) {
     void response.body?.cancel().catch(() => undefined);

@@ -1,6 +1,6 @@
 import type { ProcessorContext, ProcessorResult } from '../types';
 import { type ShipAppSpec, type ShipEnvName, shipCatalog } from './catalog';
-import { cloudflareConfigured, readWorker } from './cloudflare';
+import { cloudflareConfigured, MISSING_WORKER, readWorker } from './cloudflare';
 import { collectGithubOwner, type GithubFacts } from './github';
 import { githubConfigured } from './github-auth';
 import { RequestBudget, ShipSourceError } from './http';
@@ -196,17 +196,30 @@ export async function collectShip(
       });
     } else {
       let failed: ShipSourceError | null = null;
+      let missing = 0;
       for (const script of scripts) {
         if (!(await context.fence())) return result('stopped');
         try {
-          workers.set(
+          const read = await readWorker(
+            env,
+            deps,
+            budget,
             script,
-            await readWorker(env, deps, budget, script, state.versions)
+            state.versions
           );
+          if (read === MISSING_WORKER) missing++;
+          workers.set(script, read === MISSING_WORKER ? null : read);
         } catch (error) {
           failed = failure(error);
           if (failed.retryAt) break;
         }
+      }
+      // One missing script is an unpublished environment; every script
+      // missing means the account or token is wrong, never "no Workers".
+      if (!failed && missing === scripts.length) {
+        failed = new ShipSourceError('invalid');
+        // Keep every last-known Worker rather than erasing them all.
+        workers.clear();
       }
       if (failed) failedThisRun = true;
       sources.push(nextSource(before, base, context.now(), failed ?? 'ok'));

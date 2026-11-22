@@ -18,7 +18,7 @@ copy.
 | Source | Requests | Facts |
 | --- | --- | --- |
 | GitHub, per repository | One conditional probe of the newest Actions run per repository (`If-None-Match`; a 304 costs no rate limit), then one batched GraphQL query, plus at most two deployment follow-up queries | The newest successful deployment per tracked environment, the CI rollup of its commit, and the commits on the branch newer than the production commit for the app's paths |
-| Cloudflare | One deployments read per Worker script, plus one version read the first time a version id is seen | The active version, its traffic share, its deploy time and the SHA from its message or tag |
+| Cloudflare | One deployments read per Worker script, plus one version read the first time a version id is seen. A script the account does not have (404) reads as no Worker for that environment, not a source failure; every script answering 404 fails the source, since that means a wrong account or token | The active version, its traffic share, its deploy time and the SHA from its message or tag |
 
 The probe is skipped on **Check now** and when the last full read is four
 minutes old, so a read is reused for at most four minutes, inside the
@@ -83,6 +83,11 @@ which those sources read `unconfigured`, and makes no provider request.
   is `failed` and counts against the failure budget, so a revoked
   credential stops the job after five slots. One failing source beside a
   working one is `degraded`.
+- **Check now resumes a failure-budget stop.** Cron Control's operator
+  routes have no public ingress, so the owner's Check now (admitted by the
+  30-second limit) resumes a job its five-slot failure budget stopped, then
+  runs it. An operator stop is never lifted this way; Check now answers
+  `stopped`. A resumed job that keeps failing stops again after five slots.
 - Durable stops: `POST /control/jobs/mastermind-ship/stop` with the operator
   token (Cron Control has no public ingress, so this runs only from an
   operator session with access to the Worker, never from Web; Web holds only

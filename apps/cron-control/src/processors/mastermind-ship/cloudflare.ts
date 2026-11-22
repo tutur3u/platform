@@ -23,6 +23,9 @@ const SCRIPT = /^[a-z0-9][a-z0-9-]{0,62}$/u;
 const VERSION = /^[0-9a-f-]{8,64}$/u;
 const SHA_IN_TEXT = /\b[0-9a-f]{40}\b/u;
 
+/** The account has no such script (deployments answered 404). */
+export const MISSING_WORKER = 'missing' as const;
+
 export function cloudflareConfigured(env: CloudflareShipEnv) {
   return (
     ACCOUNT.test(env.CLOUDFLARE_ACCOUNT_ID ?? '') &&
@@ -57,7 +60,7 @@ export async function readWorker(
   budget: RequestBudget,
   script: string,
   versions: ShipCollectorState['versions']
-): Promise<ShipWorker | null> {
+): Promise<ShipWorker | null | typeof MISSING_WORKER> {
   if (!SCRIPT.test(script)) throw new ShipSourceError('invalid');
   const headers = {
     Authorization: `Bearer ${env.MASTERMIND_SHIP_CLOUDFLARE_TOKEN!.trim()}`,
@@ -69,7 +72,11 @@ export async function readWorker(
   const listed = await shipFetch(deps, budget, new URL('deployments', base), {
     method: 'GET',
     headers,
+    allowNotFound: true,
   });
+  // A script the account does not have is "no Worker", not a source failure:
+  // the catalog may name an environment before its first publication.
+  if (listed.status === 404) return MISSING_WORKER;
   const deployments =
     listed.status === 200 ? result(listed.json)?.deployments : null;
   if (!Array.isArray(deployments)) throw new ShipSourceError('invalid');

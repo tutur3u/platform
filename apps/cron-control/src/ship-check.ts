@@ -6,11 +6,14 @@ import { SHIP_JOB } from './processors/mastermind-ship';
 // `POST /mastermind-ship/check` with MASTERMIND_SHIP_CHECK_TOKEN on behalf of
 // the owner. The run goes through the same ledger claim as the schedule, so
 // the job's durable stop fence, failure budget and lease apply, and the last
-// claimed slot rate-limits checks to one per 30 seconds across both paths.
+// claimed slot rate-limits checks to one per 30 seconds across both paths. A
+// check also resumes a job its own failure budget stopped; an operator stop
+// is never lifted here.
 
 export const SHIP_CHECK_PATH = '/mastermind-ship/check';
 export const SHIP_CHECK_INTERVAL_MS = 30_000;
 const MIN_TOKEN_LENGTH = 32;
+const FAILURE_STOP = 'failure-budget-exhausted';
 
 export interface ShipCheckEnv {
   MASTERMIND_SHIP_CHECK_TOKEN?: string;
@@ -70,11 +73,24 @@ export async function handleShipCheck(
   if (!parseEnabledJobs(env.CRON_CONTROL_ENABLED_JOBS).enabled.has(SHIP_JOB))
     return reply(409, { state: 'disabled' });
   const now = deps.now();
-  const state = (await deps.ledger().status())[SHIP_JOB];
-  if (state?.stopped) return reply(409, { state: 'stopped' });
+  const ledger = deps.ledger();
+  const state = (await ledger.status())[SHIP_JOB];
+  // The owner's Check now is the resume for a job its own failure budget
+  // stopped (Cron Control has no public ingress for the operator resume). An
+  // operator stop stays in force. A resumed job that keeps failing stops
+  // again after five slots.
+  const failedStop = state?.stopped && state.stopReason === FAILURE_STOP;
+  if (state?.stopped && !failedStop) return reply(409, { state: 'stopped' });
   const last = state?.lastSlot ? Date.parse(state.lastSlot) : Number.NaN;
   if (Number.isFinite(last) && now - last < SHIP_CHECK_INTERVAL_MS)
     return limited(SHIP_CHECK_INTERVAL_MS - (now - last));
+  if (failedStop) {
+    // Atomic in the ledger: an operator stop that landed since the read
+    // stays, and a concurrent check that resumed first leaves this one to
+    // the claim below (busy or duplicate, so 429).
+    const { state: current } = await ledger.resumeIf(SHIP_JOB, FAILURE_STOP);
+    if (current.stopped) return reply(409, { state: 'stopped' });
+  }
   const report = await runJob(cronJob, checkSlot(now), env, deps);
   switch (report.outcome) {
     case 'ok':

@@ -64,7 +64,7 @@ it('stays off until enabled and then writes one sanitized snapshot per tick', as
 
   const h = setup();
   const [report] = await h.tick(T0);
-  expect(report).toMatchObject({ id: 'mastermind-ship', outcome: 'degraded' });
+  expect(report).toMatchObject({ id: 'mastermind-ship', outcome: 'ok' });
   const snap = h.snapshot();
   expect(snap).toMatchObject({ version: 1, trigger: 'schedule' });
   expect(snap.apps.map((app) => app.id)).toEqual([
@@ -122,7 +122,10 @@ it('stays off until enabled and then writes one sanitized snapshot per tick', as
     okAt: '2026-11-22T10:00:00.000Z',
   });
   expect(sources['github:upskii/platform']?.state).toBe('ok');
-  expect(sources.cloudflare).toMatchObject({ state: 'error', problem: 'http' });
+  // Catalog scripts the account does not have (404) read as no Worker.
+  expect(sources.cloudflare).toMatchObject({ state: 'ok', problem: null });
+  expect(app('meet').production.worker).toBeNull();
+  expect(app('contacts').production.worker).toBeNull();
   const raw = h.world.store.get(SHIP_SNAPSHOT_KEY)!;
   for (const secret of [
     GITHUB_TOKEN,
@@ -164,7 +167,7 @@ it('runs only on even minutes of the one-minute trigger', async () => {
   expect((await h.ledger().status())['mastermind-ship']).toBeUndefined();
   expect((await h.tick(T0 + 2 * MINUTES))[0]).toMatchObject({
     id: 'mastermind-ship',
-    outcome: 'degraded',
+    outcome: 'ok',
   });
 });
 
@@ -288,7 +291,7 @@ it('keeps Deployed for a matched-name app whose success is on a later page', asy
 it('fails the slot when every source fails, so a revoked token stops the job', async () => {
   const h = setup();
   h.world.githubStatus = 401;
-  h.world.workers.clear();
+  h.world.cloudflareStatus = 401;
   for (let slot = 0; slot < 5; slot++)
     expect((await h.tick(T0 + slot * 2 * MINUTES))[0]?.outcome).toBe('failed');
   expect((await h.ledger().status())['mastermind-ship']).toMatchObject({
@@ -302,7 +305,34 @@ it('fails the slot when every source fails, so a revoked token stops the job', a
   expect(h.world.log).toEqual([]);
   // One failing source beside a working one is degraded, not failed.
   const partial = setup();
+  partial.world.githubStatus = 401;
   expect((await partial.tick(T0))[0]?.outcome).toBe('degraded');
+});
+
+it('fails the Cloudflare source when every catalog script is missing', async () => {
+  const h = setup();
+  await h.tick(T0);
+  h.world.workers.clear();
+  await h.tick(T0 + 2 * MINUTES);
+  expect(
+    h.snapshot().sources.find((source) => source.id === 'cloudflare')
+  ).toMatchObject({ state: 'error', problem: 'invalid' });
+  // The last-known Worker is kept, not erased.
+  expect(
+    h.snapshot().apps.find((app) => app.id === 'calendar')?.production.worker
+  ).toMatchObject({ script: 'tuturuuu-calendar' });
+});
+
+it('never stops on missing catalog scripts while GitHub is unconfigured', async () => {
+  const h = setup({ MASTERMIND_SHIP_GITHUB_TOKEN: undefined });
+  for (let slot = 0; slot < 6; slot++)
+    expect((await h.tick(T0 + slot * 2 * MINUTES))[0]?.outcome).toBe(
+      'degraded'
+    );
+  expect((await h.ledger().status())['mastermind-ship']?.stopped).toBe(false);
+  expect(
+    h.snapshot().sources.find((source) => source.id === 'cloudflare')?.state
+  ).toBe('ok');
 });
 
 it('backs off on a GitHub rate limit and keeps last-known facts with their stamp', async () => {
@@ -405,7 +435,7 @@ it('runs "Check now" through the ledger, at most once per 30 seconds', async () 
   const checked = await run(T0 + 45_000);
   expect(checked).toEqual({
     status: 200,
-    body: { state: 'checked', outcome: 'degraded' },
+    body: { state: 'checked', outcome: 'ok' },
   });
   expect(h.snapshot()).toMatchObject({
     trigger: 'check',
@@ -417,7 +447,7 @@ it('runs "Check now" through the ledger, at most once per 30 seconds', async () 
   expect((await run(T0 + 60_000)).status).toBe(429);
 
   // The next scheduled slot still runs after a check.
-  expect((await h.tick(T0 + 2 * MINUTES))[0]?.outcome).toBe('degraded');
+  expect((await h.tick(T0 + 2 * MINUTES))[0]?.outcome).toBe('ok');
 
   await h.ledger().stop('mastermind-ship', 'operator');
   h.world.log.length = 0;
@@ -426,6 +456,92 @@ it('runs "Check now" through the ledger, at most once per 30 seconds', async () 
     body: { state: 'stopped' },
   });
   expect(h.world.log).toEqual([]);
+});
+
+it('resumes a job its failure budget stopped, never an operator stop', async () => {
+  const h = setup({ MASTERMIND_SHIP_CHECK_TOKEN: CHECK_TOKEN });
+  h.world.githubStatus = 401;
+  h.world.cloudflareStatus = 401;
+  for (let slot = 0; slot < 5; slot++) await h.tick(T0 + slot * 2 * MINUTES);
+  expect((await h.ledger().status())['mastermind-ship']).toMatchObject({
+    stopped: true,
+    stopReason: 'failure-budget-exhausted',
+  });
+  h.world.githubStatus = 0;
+  h.world.cloudflareStatus = 0;
+  const at = T0 + 9 * MINUTES;
+  // Inside the 30-second window the check neither resumes nor runs.
+  const early = await handleShipCheck(
+    check(),
+    h.env,
+    h.deps(T0 + 8 * MINUTES + 10_000)
+  );
+  expect(early?.status).toBe(429);
+  expect((await h.ledger().status())['mastermind-ship']?.stopped).toBe(true);
+  const resumed = await handleShipCheck(check(), h.env, h.deps(at));
+  expect(await resumed?.json()).toEqual({ state: 'checked', outcome: 'ok' });
+  expect((await h.ledger().status())['mastermind-ship']).toMatchObject({
+    stopped: false,
+    consecutiveFailures: 0,
+  });
+  // The schedule runs again after the resume.
+  expect((await h.tick(T0 + 10 * MINUTES))[0]?.outcome).toBe('ok');
+
+  await h.ledger().stop('mastermind-ship', 'operator');
+  h.world.log.length = 0;
+  const refused = await handleShipCheck(
+    check(),
+    h.env,
+    h.deps(T0 + 12 * MINUTES)
+  );
+  expect(refused?.status).toBe(409);
+  expect(h.world.log).toEqual([]);
+  expect((await h.ledger().status())['mastermind-ship']?.stopReason).toBe(
+    'operator'
+  );
+});
+
+it('resumes atomically: an operator stop that lands first wins, a second check is a no-op', async () => {
+  const h = setup({ MASTERMIND_SHIP_CHECK_TOKEN: CHECK_TOKEN });
+  h.world.githubStatus = 401;
+  h.world.cloudflareStatus = 401;
+  for (let slot = 0; slot < 5; slot++) await h.tick(T0 + slot * 2 * MINUTES);
+  h.world.githubStatus = 0;
+  h.world.cloudflareStatus = 0;
+  const at = T0 + 9 * MINUTES;
+  // An operator stop landing between the status read and the resume.
+  const raced = h.deps(at);
+  const status = raced.ledger().status;
+  raced.ledger = () => {
+    const ledger = h.ledger();
+    return {
+      ...ledger,
+      status: async () => {
+        const read = await status.call(ledger);
+        await ledger.stop('mastermind-ship', 'operator');
+        return read;
+      },
+    };
+  };
+  expect((await handleShipCheck(check(), h.env, raced))?.status).toBe(409);
+  expect((await h.ledger().status())['mastermind-ship']?.stopReason).toBe(
+    'operator'
+  );
+  // The ledger-level guard: a second resume after one succeeded changes
+  // nothing.
+  await h.ledger().resume('mastermind-ship');
+  await h.ledger().stop('mastermind-ship', 'failure-budget-exhausted');
+  const first = await h
+    .ledger()
+    .resumeIf('mastermind-ship', 'failure-budget-exhausted');
+  const second = await h
+    .ledger()
+    .resumeIf('mastermind-ship', 'failure-budget-exhausted');
+  expect(first.resumed).toBe(true);
+  expect(second).toMatchObject({
+    resumed: false,
+    state: { generation: first.state.generation },
+  });
 });
 
 it('refuses "Check now" while the job is disabled or the token is unset', async () => {

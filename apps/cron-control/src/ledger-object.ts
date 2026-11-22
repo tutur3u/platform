@@ -121,6 +121,10 @@ export class CronLedger extends DurableObject<unknown> {
     return this.#core.resume(jobId);
   }
 
+  resumeIf(jobId: string, stopReason: string) {
+    return this.#core.resumeIf(jobId, stopReason);
+  }
+
   status() {
     return this.#core.status();
   }

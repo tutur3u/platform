@@ -43,6 +43,8 @@ export function makeWorld() {
     storeDown: false,
     /** Response status forced for GitHub requests (e.g. 403). */
     githubStatus: 0 as number,
+    /** Response status forced for Cloudflare requests (e.g. 401). */
+    cloudflareStatus: 0 as number,
     githubHeaders: {} as Record<string, string>,
     etag: '"runs-1"',
     remaining: 4000,
@@ -187,6 +189,8 @@ export function makeWorld() {
     }
     if (url.hostname === 'api.cloudflare.com') {
       log.push(`cloudflare ${url.pathname.split('/scripts/')[1]}`);
+      if (world.cloudflareStatus)
+        return new Response('refused', { status: world.cloudflareStatus });
       const [, script, rest] =
         /\/workers\/scripts\/([^/]+)\/(.+)$/u.exec(url.pathname) ?? [];
       const worker = world.workers.get(script ?? '');
