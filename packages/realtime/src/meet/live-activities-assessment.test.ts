@@ -353,6 +353,73 @@ describe('assessment', () => {
     ).toMatchObject(error('activity_assessment_not_closed'));
   });
 
+  it('lets an attempt stored without its seal continue only as a new attempt', () => {
+    const configured = action(room(), host, { kind: 'assessment.set', items });
+    const open = action(configured.state, host, {
+      kind: 'assessment.status',
+      status: 'open',
+    }).state;
+    const [, long] = open.liveActivities?.assessment.items ?? [];
+    const answered = action(open, guest, {
+      kind: 'assessment.submit',
+      itemId: long?.id,
+      answer: 'Written after the key',
+    }).state;
+    const closed = action(answered, host, {
+      kind: 'assessment.status',
+      status: 'closed',
+    }).state;
+    const activities = closed.liveActivities;
+    if (!activities) throw new Error('Missing activities');
+    const { attempt, items: stored, responses } = activities.assessment;
+    // As the older rules stored it: results hidden again, and no seal recorded.
+    const legacy: MeetRoomSnapshot = {
+      ...closed,
+      liveActivities: {
+        ...activities,
+        assessment: {
+          status: 'closed',
+          released: false,
+          attempt,
+          items: stored,
+          responses,
+        },
+      },
+    };
+    expect(read(legacy, guest).reply).toMatchObject([
+      { snapshot: { assessment: { status: 'closed', sealed: true } } },
+      {},
+    ]);
+    const reopened = action(legacy, host, {
+      kind: 'assessment.status',
+      status: 'open',
+    });
+    expect(reopened.reply).toMatchObject(error('activity_assessment_sealed'));
+    expect(reopened.state).toBe(legacy);
+    const fresh = action(legacy, host, { kind: 'assessment.restart' }).state
+      .liveActivities?.assessment;
+    expect(fresh).toMatchObject({ status: 'open', sealed: false, responses: [] });
+    expect(fresh?.items.map(({ id }) => id)).not.toContain(long?.id);
+    // A draft stored the same way has released nothing and opens as usual.
+    const draft: MeetRoomSnapshot = {
+      ...configured.state,
+      liveActivities: {
+        ...activities,
+        assessment: {
+          status: 'draft',
+          released: false,
+          attempt,
+          items: stored,
+          responses: [],
+        },
+      },
+    };
+    expect(
+      action(draft, host, { kind: 'assessment.status', status: 'open' }).state
+        .liveActivities?.assessment
+    ).toMatchObject({ status: 'open', sealed: false, attempt });
+  });
+
   it('refuses a delayed grade once the questions were reset and answered again', () => {
     const step = (state: MeetRoomSnapshot, status: string) =>
       action(state, host, { kind: 'assessment.status', status }).state;

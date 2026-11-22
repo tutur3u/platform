@@ -61,11 +61,25 @@ declare module './room' {
 }
 
 export const EMPTY_ACTIVITIES: Activities = {
-  assessment: { status: 'draft', released: false, items: [], responses: [] },
+  assessment: {
+    status: 'draft',
+    released: false,
+    sealed: false,
+    items: [],
+    responses: [],
+  },
   flashcards: { cards: [], index: 0, flipped: false, progress: {} },
   game: EMPTY_ACTIVITY_GAME,
   icebreaker: { prompt: null, promptId: null, responses: [] },
 };
+
+/**
+ * Whether an attempt can no longer simply reopen. A release seals it. One
+ * stored without the seal may have released its key under rules that did not
+ * record it, so once it has left draft it counts as sealed too.
+ */
+const isSealed = ({ status, released, sealed }: Activities['assessment']) =>
+  released || (sealed ?? status !== 'draft');
 
 /** Results are out only for closed answers, whatever the stored flags say. */
 const resultsOut = ({ status, released }: Activities['assessment']) =>
@@ -80,21 +94,20 @@ export const LEGACY_ICEBREAKER_PROMPT_ID =
 
 /**
  * Stored state as the rules read it. A release ends its attempt, so an
- * assessment stored as released while still open is closed, and any released
- * one is sealed. An active prompt always has an id.
+ * assessment stored as released while still open is closed, and the seal is
+ * always recorded. An active prompt always has an id.
  */
 export function settleActivities(state: Activities): Activities {
   const { assessment, icebreaker } = state;
+  const sealed = isSealed(assessment);
+  const status = assessment.released ? 'closed' : assessment.status;
   const unsettled =
-    assessment.released &&
-    !(assessment.status === 'closed' && assessment.sealed);
+    sealed !== assessment.sealed || status !== assessment.status;
   const unnamed = icebreaker.prompt !== null && !icebreaker.promptId;
   if (!unsettled && !unnamed) return state;
   return {
     ...state,
-    assessment: unsettled
-      ? { ...assessment, status: 'closed', sealed: true }
-      : assessment,
+    assessment: unsettled ? { ...assessment, status, sealed } : assessment,
     icebreaker: unnamed
       ? { ...icebreaker, promptId: LEGACY_ICEBREAKER_PROMPT_ID }
       : icebreaker,
@@ -119,7 +132,7 @@ export function publicView({
       status: assessment.status,
       attemptId: assessment.attempt ?? null,
       released,
-      sealed: assessment.sealed === true || assessment.released,
+      sealed: isSealed(assessment),
       items: assessment.items.map(({ id, prompt, kind, options, answer }) => ({
         id,
         prompt,

@@ -610,7 +610,9 @@ grades and the key hidden. Answers closed without a release can open again and
 keep what was submitted. Each attempt has its own id. Every host action names
 the attempt, and a status change also the status it leaves; the room refuses an
 action written for another attempt or status, so a click that another host's
-action overtook changes nothing. Keys and grades are never visible while an answer can change. Written answers are
+action overtook changes nothing. Keys and grades are never visible while an answer can change. An attempt
+stored before releases were recorded counts as released once it has left draft,
+so it too can only continue as a new attempt. Written answers are
 graded only after answers are closed, and each grade names the revision of the
 answer it read: the room refuses a grade for an answer that was rewritten since.
 Returning to draft clears submissions and released results and gives the
