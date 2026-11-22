@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   authorizeFleetPublisher,
@@ -63,7 +63,7 @@ export const GET = withSessionAuth<{ assetId: string }>(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 120 },
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
   }
 );
 

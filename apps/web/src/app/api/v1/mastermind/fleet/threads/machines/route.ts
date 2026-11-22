@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { MASTERMIND_APP_SESSION } from '@/lib/mastermind/fleet/auth';
+import { MASTERMIND_FLEET_SESSIONS } from '@/lib/mastermind/fleet/auth';
 import { readFromMachine } from '@/lib/mastermind/fleet/bridge-rpc';
 import { FLEET_NO_STORE, fleetError } from '@/lib/mastermind/fleet/http';
 import {
@@ -29,6 +29,6 @@ export const GET = withSessionAuth(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 30 },
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
   }
 );

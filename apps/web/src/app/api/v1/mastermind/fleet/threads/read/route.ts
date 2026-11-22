@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   FLEET_NO_STORE,
@@ -68,7 +68,7 @@ export const POST = withSessionAuth(
   {
     rateLimit: { windowMs: 60_000, maxRequests: 120 },
     maxPayloadSize: 2048,
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
     stepUpExempt: (user) => isFleetOwner(user),
   }
 );

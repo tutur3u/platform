@@ -4,7 +4,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { readFleetAlerts } from '@/lib/mastermind/fleet/alerts';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   FLEET_MAX_BODY_BYTES,
@@ -125,7 +125,7 @@ export const GET = withSessionAuth(
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
     // The Mastermind web Worker reads with the owner's short-lived
     // satellite session; the owner and permission checks still apply.
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
   }
 );
 

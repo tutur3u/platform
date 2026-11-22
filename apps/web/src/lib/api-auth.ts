@@ -4,10 +4,6 @@ import {
   getAppSessionTokenFromRequest,
   hasSupportedSupabaseAuthCookie,
 } from '@tuturuuu/auth/app-session';
-import {
-  CLI_APP_ACCESS_SCOPE,
-  CLI_APP_TARGET_APP,
-} from '@tuturuuu/auth/cli-session';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -39,11 +35,23 @@ import {
 } from './abuse-risk';
 import {
   type AppSessionAuthOptions,
+  isCliAppSessionClaims,
   verifyConfiguredAppSessionRequest,
 } from './api-auth-app-session';
+import { isFreshMfaProof } from './auth/mfa-proof-age';
 import { resolveTimedSessionUser } from './server-timing';
 import { supabaseSessionRequest } from './supabase-session-request';
-import { hasVerifiedMobileClientCredential } from './auth/mobile-client-credential';
+import {
+  applyAdaptiveRateLimitHeaders,
+  applyPrivateCacheControl,
+  type CacheConfig,
+} from './api-auth-response';
+import { isBrowserRequest } from './auth/browser-request';
+import {
+  getRequestBearerToken,
+  hasVerifiedMobileClientCredential,
+  MOBILE_CLIENT_HEADER,
+} from './auth/mobile-client-credential';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -265,13 +273,6 @@ export async function resolveSessionAuthContext(
   };
 }
 
-interface CacheConfig {
-  /** Browser cache max-age in seconds. Only applied to 2xx GET responses. */
-  maxAge: number;
-  /** stale-while-revalidate window in seconds (optional). */
-  swr?: number;
-}
-
 type SessionAuthRateLimitKind = 'method' | 'read' | 'mutate';
 
 /** Default rate limits — reads stay open, mutations allow a moderate burst. */
@@ -316,6 +317,9 @@ interface SessionAuthOptions {
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
   preferSupabaseSessionAuth?: boolean;
+  appSessionMfaMaxAgeSeconds?: number;
+  /** Only accept Supabase bearers marked by the verified native Mastermind sign-in. */
+  requireMastermindMobileSessionForSupabase?: boolean;
   /** Verified app-session requests skip browser step-up (scoped server-to-server routes only). */
   skipAppSessionStepUpChallenge?: boolean;
   /** Waives the browser-shape step-up (never a server reputation challenge) for admitted users: native clients cannot solve Turnstile. Rate limits still apply. */
@@ -323,33 +327,6 @@ interface SessionAuthOptions {
 }
 
 type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
-
-function isCliAppSessionClaims(claims: {
-  origin_app?: string | null;
-  scopes?: readonly string[];
-  target_app?: string | null;
-}) {
-  return (
-    claims.origin_app === 'cli' &&
-    claims.target_app === CLI_APP_TARGET_APP &&
-    claims.scopes?.includes(CLI_APP_ACCESS_SCOPE) === true
-  );
-}
-
-function applyPrivateCacheControl(
-  request: NextRequest,
-  response: NextResponse,
-  cache: CacheConfig | undefined
-) {
-  if (!cache || request.method !== 'GET') return;
-  if (response.status < 200 || response.status >= 300) return;
-  const swr =
-    cache.swr === undefined ? '' : `, stale-while-revalidate=${cache.swr}`;
-  response.headers.set(
-    'Cache-Control',
-    `private, max-age=${cache.maxAge}${swr}`
-  );
-}
 
 function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
@@ -450,15 +427,6 @@ async function applyAdaptiveSessionControls({
     headers: rateLimitResult.headers,
     response: null,
   };
-}
-
-function applyAdaptiveRateLimitHeaders(
-  response: NextResponse,
-  headers: Record<string, string>
-) {
-  for (const [key, value] of Object.entries(headers)) {
-    response.headers.set(key, value);
-  }
 }
 
 /**
@@ -632,6 +600,14 @@ export function withSessionAuth<T = unknown>(
         );
 
         if (!appSessionVerification.ok) return appSessionVerification.response;
+        if (
+          options.appSessionMfaMaxAgeSeconds !== undefined &&
+          !isFreshMfaProof(
+            appSessionVerification.claims.mfa ?? null,
+            options.appSessionMfaMaxAgeSeconds
+          )
+        )
+          return NextResponse.json({ error: 'mfa_required' }, { status: 403 });
 
         const appSessionUser = createAppSessionUser(
           appSessionVerification.claims
@@ -705,6 +681,16 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
+    const requireNative =
+      options?.requireMastermindMobileSessionForSupabase === true;
+    if (
+      requireNative &&
+      (isBrowserRequest(request.headers) ||
+        !getRequestBearerToken(request.headers) ||
+        !request.headers.has(MOBILE_CLIENT_HEADER))
+    )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const supabase = (await createClient(
       supabaseSessionRequest(request, options)
     )) as TypedSupabaseClient;
@@ -744,6 +730,12 @@ export function withSessionAuth<T = unknown>(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const verifiedNativeClient =
+      (requireNative || !isRead) &&
+      hasVerifiedMobileClientCredential(request, user.id, requireNative);
+    if (requireNative && !verifiedNativeClient)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     // 5. Check user suspension
     try {
       const { checkUserSuspension } =
@@ -776,8 +768,7 @@ export function withSessionAuth<T = unknown>(
       request,
       stepUpExempt: options?.stepUpExempt,
       user,
-      verifiedNativeClient:
-        !isRead && hasVerifiedMobileClientCredential(request, user.id),
+      verifiedNativeClient: !isRead && verifiedNativeClient,
     });
     if (adaptiveControls.response) return adaptiveControls.response;
 

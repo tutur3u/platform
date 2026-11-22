@@ -110,26 +110,18 @@ async function answer(
 
 // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 describe('Mastermind fleet sync routes', () => {
-  it('owner reads and answers admit only the Mastermind satellite session', async () => {
+  it('owner reads and answers require dedicated Mastermind or native credentials', async () => {
     await import('./state/route');
     await import('./decisions/[decisionId]/answer/route');
-    const sessions = mocks.authOptions.map(
-      (options) =>
-        (options as { allowAppSessionAuth?: unknown }).allowAppSessionAuth
-    );
-    expect(sessions).toContainEqual({
-      targetApp: 'mastermind',
-      requiredScope: 'internal-app:session',
+    const fleetAuth = expect.objectContaining({
+      allowAppSessionAuth: {
+        targetApp: 'mastermind',
+        requiredScope: 'internal-app:session',
+      },
+      requireMastermindMobileSessionForSupabase: true,
+      appSessionMfaMaxAgeSeconds: 86_400,
     });
-    expect(sessions.filter(Boolean)).toHaveLength(2);
-    expect(
-      sessions
-        .filter(Boolean)
-        .every(
-          (session) =>
-            (session as { targetApp: string }).targetApp === 'mastermind'
-        )
-    ).toBe(true);
+    expect(mocks.authOptions).toEqual([fleetAuth, fleetAuth]);
   });
 
   beforeEach(() => {

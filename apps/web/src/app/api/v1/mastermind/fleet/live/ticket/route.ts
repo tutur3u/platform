@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   bridgeFailure,
@@ -44,7 +44,7 @@ export const POST = withSessionAuth(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 12 },
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
     stepUpExempt: (user) => isFleetOwner(user),
   }
 );

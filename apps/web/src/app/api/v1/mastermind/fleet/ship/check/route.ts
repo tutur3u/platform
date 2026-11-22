@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import { FLEET_NO_STORE, fleetError } from '@/lib/mastermind/fleet/http';
 import {
@@ -63,7 +63,7 @@ export const POST = withSessionAuth(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 6 },
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
     // The Mastermind Worker and the phone cannot solve the browser Turnstile
     // step-up; the owner check above is this route's gate, as for the other
     // owner fleet mutations. Server reputation challenges still apply.

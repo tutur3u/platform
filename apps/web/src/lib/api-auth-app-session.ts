@@ -2,6 +2,10 @@ import {
   type AppSessionTargetApp,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import {
+  CLI_APP_ACCESS_SCOPE,
+  CLI_APP_TARGET_APP,
+} from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -80,4 +84,16 @@ export async function verifyConfiguredAppSessionRequest(
     ok: false,
     response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
   };
+}
+
+export function isCliAppSessionClaims(claims: {
+  origin_app?: string | null;
+  scopes?: readonly string[];
+  target_app?: string | null;
+}) {
+  return (
+    claims.origin_app === 'cli' &&
+    claims.target_app === CLI_APP_TARGET_APP &&
+    claims.scopes?.includes(CLI_APP_ACCESS_SCOPE) === true
+  );
 }

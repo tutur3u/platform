@@ -4,7 +4,7 @@ import { BRIDGE_LIMITS } from '@tuturuuu/utils/mastermind-store/bridge-protocol'
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   bridgeFailure,
@@ -139,7 +139,7 @@ export const POST = withSessionAuth(
     // the real per-thread and hourly limits; this only bounds a runaway client.
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
     maxPayloadSize: 32 * 1024,
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
     // The phone cannot solve the browser Turnstile step-up; the second-factor
     // check above is the gate for this route.
     stepUpExempt: (user) => isFleetOwner(user),

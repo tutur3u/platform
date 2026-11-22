@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
-  MASTERMIND_APP_SESSION,
+  MASTERMIND_FLEET_SESSIONS,
 } from '@/lib/mastermind/fleet/auth';
 import {
   type FleetAnswerRecord,
@@ -159,7 +159,7 @@ export const POST = withSessionAuth<{ decisionId: string }>(
   {
     rateLimit: { windowMs: 60_000, maxRequests: 30 },
     maxPayloadSize: 8192,
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
     // The Mastermind phone app cannot solve the browser Turnstile step-up;
     // the fleet owner (allowlist plus root permission) is exempt from it.
     stepUpExempt: (user) => isFleetOwner(user),

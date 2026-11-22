@@ -104,6 +104,10 @@ vi.mock('./rate-limit', () => ({
 }));
 
 import { withSessionAuth } from './api-auth';
+import {
+  createMobileClientCredential,
+  MOBILE_CLIENT_HEADER,
+} from './auth/mobile-client-credential';
 
 function appSessionRequest() {
   return new NextRequest('https://app.test/api/v1/users/me/profile', {
@@ -467,6 +471,142 @@ describe('withSessionAuth stepUpExempt', () => {
       method,
       ...(method === 'POST' ? { body: '{}' } : {}),
     });
+
+  const fleetCredentialOptions = {
+    rateLimit: false,
+    allowAppSessionAuth: {
+      targetApp: 'mastermind',
+      requiredScope: 'internal-app:session',
+    },
+    requireMastermindMobileSessionForSupabase: true,
+    appSessionMfaMaxAgeSeconds: 86_400,
+  } as const;
+
+  it.each([
+    ['GET', '/state'],
+    ['POST', '/decisions/decision-1/answer'],
+  ])(
+    'refuses the Web owner cookie before the fleet handler (%s %s)',
+    async (method, path) => {
+      const handler = vi.fn(() => NextResponse.json({ ok: true }));
+      const route = withSessionAuth(handler, fleetCredentialOptions);
+      const response = await route(
+        new NextRequest(`https://tuturuuu.com/api/v1/mastermind/fleet${path}`, {
+          method,
+          headers: {
+            cookie: 'sb-project-auth-token=web-session',
+            'sec-fetch-site': 'same-origin',
+          },
+        })
+      );
+      expect(response.status).toBe(401);
+      expect(mocks.createClient).not.toHaveBeenCalled();
+      expect(handler).not.toHaveBeenCalled();
+    }
+  );
+
+  it('binds mobile Fleet access to the verified bearer session', async () => {
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler, fleetCredentialOptions);
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    const binding = { userId: owner.id, sessionId: 'native-session' };
+    const genericCredential = createMobileClientCredential(binding).token;
+    const credential = createMobileClientCredential({
+      ...binding,
+      mastermindSession: true,
+    }).token;
+
+    function request(sessionId: string, headers: Record<string, string>) {
+      // Supabase verification is stubbed above. The real admission still checks
+      // the server-signed mobile credential against the token's verified subject.
+      const claims = Buffer.from(
+        JSON.stringify({
+          sub: owner.id,
+          session_id: sessionId,
+        })
+      ).toString('base64url');
+      return new NextRequest(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/state',
+        {
+          headers: {
+            authorization: `Bearer header.${claims}.signature`,
+            ...headers,
+          },
+        }
+      );
+    }
+
+    expect((await route(request('native-session', {}))).status).toBe(401);
+    expect(
+      (
+        await route(
+          request('native-session', {
+            [MOBILE_CLIENT_HEADER]: genericCredential,
+          })
+        )
+      ).status
+    ).toBe(401);
+    expect(
+      (
+        await route(
+          request('another-session', {
+            [MOBILE_CLIENT_HEADER]: credential,
+          })
+        )
+      ).status
+    ).toBe(401);
+    expect(
+      (
+        await route(
+          request('native-session', {
+            [MOBILE_CLIENT_HEADER]: credential,
+            'sec-fetch-site': 'same-origin',
+          })
+        )
+      ).status
+    ).toBe(401);
+    expect(
+      (
+        await route(
+          request('native-session', {
+            [MOBILE_CLIENT_HEADER]: credential,
+          })
+        )
+      ).status
+    ).toBe(200);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('requires a fresh MFA proof on the dedicated Mastermind bearer', async () => {
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler, fleetCredentialOptions);
+    const now = Math.floor(Date.now() / 1000);
+    mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_test');
+    mocks.createAppSessionUser.mockReturnValue(owner);
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    const request = new NextRequest(
+      'https://tuturuuu.com/api/v1/mastermind/fleet/state',
+      {
+        headers: { authorization: 'Bearer ttr_app_test' },
+      }
+    );
+    for (const mfa of [
+      undefined,
+      { sessionId: 'mfa', verifiedAt: now - 86_401 },
+    ]) {
+      mocks.verifyAppSessionRequest.mockReturnValue({
+        ok: true,
+        claims: { mfa },
+      });
+      expect((await route(request)).status).toBe(403);
+    }
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      ok: true,
+      claims: { mfa: { sessionId: 'mfa', verifiedAt: now - 1 } },
+    });
+    expect((await route(request)).status).toBe(200);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
 
   it('lets an exempt user skip a challenged mutation', async () => {
     const stepUpExempt = vi.fn(async () => true);

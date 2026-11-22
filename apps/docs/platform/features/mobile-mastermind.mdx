@@ -395,6 +395,23 @@ records the product rules of the shell entry and every tab.
   answers are served again at the next pull. Regression coverage:
   `apps/web/src/lib/proxy-route-policies.test.ts` and
   `scripts/mastermind-fleet/web-call.test.mjs`.
+- **Fleet client authorization:** native fleet reads and writes use a
+  Supabase access token and a signed Mastermind credential bound to the
+  same session. Web records the session when the owner signs in through
+  native password or email code. A credential renewal extends that record
+  for 30 days using the same session ID. A generic mobile credential or a
+  Turnstile pass alone cannot establish the record. The dedicated
+  Mastermind Worker uses its own
+  Mastermind access session with a recent MFA proof. The routes recheck
+  owner allowlist and root permission, and thread replies retain their
+  fresh MFA requirement. Before activating Web enforcement, verify a
+  compatible mobile release and a newly recorded owner session on the
+  owner's device. Previous sessions and direct provider sign-ins do not
+  have this record. The owner can sign back in with a native password or
+  email code. The signed publisher and separate Fleet grantee APIs keep
+  their own authorization. Regression tests cover plain Web cookies,
+  generic mobile credentials, another session's credentials and native
+  Fleet requests.
 - **Fleet usage endpoint:** `/api/v1/mastermind/fleet/usage` stores a bounded
   usage snapshot separately from lanes and decisions. The existing fleet
   publisher signature authorizes writes. Reads require the fleet owner

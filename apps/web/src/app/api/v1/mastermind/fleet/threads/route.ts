@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { MASTERMIND_APP_SESSION } from '@/lib/mastermind/fleet/auth';
+import { MASTERMIND_FLEET_SESSIONS } from '@/lib/mastermind/fleet/auth';
 import { readFromMachine } from '@/lib/mastermind/fleet/bridge-rpc';
 import {
   FLEET_NO_STORE,
@@ -100,6 +100,6 @@ export const GET = withSessionAuth(
   },
   {
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
-    allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    ...MASTERMIND_FLEET_SESSIONS,
   }
 );
