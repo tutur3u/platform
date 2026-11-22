@@ -520,7 +520,7 @@ export async function uploadWorkspaceTaskFile(
   );
 }
 
-async function finalizeWorkspaceStorageUpload(
+export async function finalizeWorkspaceStorageUpload(
   workspaceId: string,
   payload: {
     path: string;
