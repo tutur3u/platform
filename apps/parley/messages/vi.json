@@ -5163,7 +5163,7 @@
       "unavailable_missing": "Tài liệu này không còn trong cuộc họp. Hãy chọn thẻ khác hoặc thử lại.",
       "unavailable_permission": "Tài khoản của bạn chưa có quyền truy cập. Bạn có thể hỏi chủ trì trong cuộc trò chuyện của cuộc họp.",
       "unavailable_sign_in": "Phiên đăng nhập của bạn đã hết hạn. Hãy đăng nhập lại rồi thử lại.",
-      "placeholder_rename_document": "Tên tài liệu"
+      "placeholder_rename_document": "Ví dụ: Ghi chú nhóm"
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",

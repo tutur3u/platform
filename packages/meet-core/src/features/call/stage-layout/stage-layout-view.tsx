@@ -320,7 +320,9 @@ export function StageLayoutView({
           items={switchItems}
           currentId={focusedPane?.active ?? null}
           onSelect={open}
-          onBrowse={activitiesRequest?.request}
+          onBrowse={
+            activitiesRequest?.available ? activitiesRequest.request : undefined
+          }
         />
       )}
     </div>

@@ -274,3 +274,41 @@ it('opens when the stage asks for it and not before', () => {
   act(() => ask());
   expect(dialog()).not.toBeNull();
 });
+
+it('ignores a request while there is nothing to show and registers once there is', () => {
+  let ask: () => void = () => {};
+  let available = false;
+  function Ask() {
+    const request = useActivitiesRequest();
+    ask = request?.request ?? ask;
+    available = !!request?.available;
+    return null;
+  }
+  const action = { active: false, toggle: vi.fn() };
+  const tree = (tools: ComponentProps<typeof ActivitiesMenu>['tools']) => (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter>
+        <ActivitiesRequestProvider>
+          <Ask />
+          <ActivitiesMenu
+            tools={tools}
+            openToolIds={[]}
+            onTool={vi.fn()}
+            {...(tools.length
+              ? { collaboration: { programming: action, document: action } }
+              : {})}
+          />
+        </ActivitiesRequestProvider>
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  const view = render(tree([]));
+  expect(available).toBe(false);
+  act(() => ask());
+  view.rerender(tree([polls]));
+  // The request came while the menu rendered nothing, so it does not linger.
+  expect(dialog()).toBeNull();
+  expect(available).toBe(true);
+  act(() => ask());
+  expect(dialog()).not.toBeNull();
+});

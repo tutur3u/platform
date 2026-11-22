@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
+import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ActivityMeta } from './pane-chrome';
 
@@ -34,12 +35,23 @@ export function PhoneSwitcher({
   onBrowse?: () => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
+  const handoff = useRef(false);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         className="gap-2 rounded-t-3xl px-4 pb-8"
         aria-describedby={undefined}
+        onCloseAutoFocus={(event) => {
+          // Open the next dialog only once this sheet is gone, so two modals
+          // never overlap and the page can be pressed again afterwards.
+          if (!handoff.current) return;
+          handoff.current = false;
+          event.preventDefault();
+          if (document.body.style.pointerEvents === 'none')
+            document.body.style.pointerEvents = '';
+          requestAnimationFrame(() => onBrowse?.());
+        }}
       >
         <SheetHeader className="p-0 pt-2">
           <SheetTitle>{t('switcher_title')}</SheetTitle>
@@ -89,8 +101,8 @@ export function PhoneSwitcher({
             variant="outline"
             className="mt-2 h-11 gap-2 rounded-full"
             onClick={() => {
+              handoff.current = true;
               onOpenChange(false);
-              onBrowse();
             }}
           >
             <Plus aria-hidden="true" className="size-4" />

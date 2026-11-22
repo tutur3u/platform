@@ -23,6 +23,8 @@ let events: NavigationEvent[] = [];
 let stage: ReturnType<typeof useStageLayout>;
 let nav: ReturnType<typeof useStageNavigation>;
 let summoned: string[] = [];
+let drawerNow: string | null = null;
+const onDrawer = vi.fn();
 
 function Harness() {
   stage = useStageLayout({
@@ -47,8 +49,8 @@ function Harness() {
   nav = useStageNavigation({
     room: room as unknown as MeetRoomController,
     stage,
-    drawer: null,
-    onDrawer: () => {},
+    drawer: drawerNow,
+    onDrawer,
     onBroughtIn: () => {},
     onSummoned: (id) => summoned.push(id),
     access: {
@@ -81,6 +83,8 @@ const deliver = (
 beforeEach(() => {
   events = [];
   summoned = [];
+  drawerNow = null;
+  onDrawer.mockClear();
 });
 afterEach(() => {
   cleanup();
@@ -184,4 +188,30 @@ it('does not reopen an activity the person closed after the summon', () => {
   act(() => stage.close('whiteboard'));
   goBack();
   expect(stage.openIds).toEqual([]);
+});
+
+it('restores the side drawer the person had before the summon', () => {
+  drawerNow = 'chat';
+  const view = mount();
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  // They open another drawer, then change their mind and go back.
+  drawerNow = 'participants';
+  view.rerender(tree());
+  onDrawer.mockClear();
+  goBack();
+  expect(onDrawer).toHaveBeenCalledWith('chat');
+});
+
+it('only closes the brought-in activity once the person has moved on', () => {
+  const view = mount();
+  act(() => stage.open('whiteboard'));
+  summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
+  // They go to the pen board on their own; the toast is now stale.
+  act(() => stage.open('tool:pen-whiteboard'));
+  view.rerender(tree());
+  onDrawer.mockClear();
+  goBack();
+  expect(stage.openIds).toEqual(['whiteboard', 'tool:pen-whiteboard']);
+  expect(stage.focused).toBe('tool:pen-whiteboard');
+  expect(onDrawer).not.toHaveBeenCalled();
 });

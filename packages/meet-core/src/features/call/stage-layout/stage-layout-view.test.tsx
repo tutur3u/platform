@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -431,25 +432,49 @@ it('drops a drag preview when the separator goes away mid-drag', () => {
   );
 });
 
-it('offers Open another activity on the phone switcher', () => {
-  let requests = 0;
-  function Count() {
-    requests = useActivitiesRequest()?.count ?? 0;
-    return null;
-  }
+function Menu() {
+  const register = useActivitiesRequest()?.register;
+  useEffect(() => register?.(), [register]);
+  return null;
+}
+
+function Phone({ menu }: { menu: boolean }) {
+  const request = useActivitiesRequest();
+  requests = request?.count ?? 0;
+  return (
+    <>
+      {menu && <Menu />}
+      <Harness tier="phone" />
+    </>
+  );
+}
+let requests = 0;
+const phone = (menu: boolean) =>
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <ActivitiesRequestProvider>
-        <Count />
-        <Harness tier="phone" />
+        <Phone menu={menu} />
       </ActivitiesRequestProvider>
     </NextIntlClientProvider>
   );
+
+it('offers Open another activity on the phone switcher only with a menu to open', () => {
+  phone(false);
+  open('a', 'b');
+  fireEvent.click(screen.getByRole('button', { name: 'b' }));
+  expect(
+    screen.queryByRole('button', { name: 'Open another activity' })
+  ).toBeNull();
+});
+
+it('asks for the Activities dialog only after the switcher sheet has closed', async () => {
+  phone(true);
   open('a', 'b');
   fireEvent.click(screen.getByRole('button', { name: 'b' }));
   fireEvent.click(
     screen.getByRole('button', { name: 'Open another activity' })
   );
-  expect(requests).toBe(1);
+  await waitFor(() => expect(requests).toBe(1));
   expect(screen.queryByRole('dialog')).toBeNull();
+  expect(document.body.style.pointerEvents).not.toBe('none');
 });

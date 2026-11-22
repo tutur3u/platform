@@ -5163,7 +5163,7 @@
       "unavailable_missing": "This document is no longer in the meeting. Choose another tab or retry.",
       "unavailable_permission": "Your account does not have access. You can ask the host in meeting chat.",
       "unavailable_sign_in": "Your session has expired. Sign in again, then retry.",
-      "placeholder_rename_document": "Document name"
+      "placeholder_rename_document": "For example, Group notes"
     },
     "details": {
       "back": "Back to meetings",

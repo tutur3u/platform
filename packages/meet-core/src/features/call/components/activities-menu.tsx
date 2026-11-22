@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
 import { useActivitiesRequest } from '../stage-layout/activities-request';
 import { ActivitiesDialog } from './activities-dialog';
@@ -66,10 +66,6 @@ export function ActivitiesMenu({
   // activity"); a new request opens it.
   const request = useActivitiesRequest();
   const [handled, setHandled] = useState(request?.count ?? 0);
-  if (request && request.count !== handled) {
-    setHandled(request.count);
-    setOpen(true);
-  }
   const [persistedTab, setPersistedTab] = useQueryState(
     'activitiesTab',
     parseAsString.withOptions({
@@ -129,7 +125,15 @@ export function ActivitiesMenu({
     ...tile,
     description: tile.description ?? describe(tile.id),
   }));
-  if (!tiles.length) return null;
+  const register = request?.register;
+  const hasTiles = tiles.length > 0;
+  useEffect(() => (hasTiles ? register?.() : undefined), [hasTiles, register]);
+  // A request counts only while this menu has something to show.
+  if (request && request.count !== handled) {
+    setHandled(request.count);
+    if (hasTiles) setOpen(true);
+  }
+  if (!hasTiles) return null;
   // Counts activities open for this person; room-wide live state is not
   // known for every tool.
   const openCount = tiles.filter((tile) => tile.active).length;

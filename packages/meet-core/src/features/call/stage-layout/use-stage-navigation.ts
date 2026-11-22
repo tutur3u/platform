@@ -59,12 +59,18 @@ export function useStageNavigation({
         // Going back returns to the activity the person was in, and closes
         // the one they were brought to if it was not open before.
         const before = stage.focused;
+        const drawerBefore = drawer;
         const brought = !stage.isOpen(target);
         stage.open(target);
         return {
           back: () => {
             const now = latest.current;
+            // Only undo the move while the person is still on what they were
+            // brought to; after they moved on, just close what was added.
+            const stillThere = now.focused === target;
             if (brought) now.close(target);
+            if (!stillThere) return;
+            onDrawer(drawerBefore);
             if (before && before !== target && now.isOpen(before))
               now.open(before);
           },
