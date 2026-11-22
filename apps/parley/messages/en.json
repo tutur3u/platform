@@ -4828,7 +4828,8 @@
           "permission": "Only hosts and co-hosts can do that.",
           "closed": "That is closed now.",
           "generic": "That did not go through. Try again.",
-          "not_closed": "Close answers before releasing results."
+          "not_closed": "Close answers first.",
+          "answer_changed": "That answer changed after you read it. Check it again before grading."
         },
         "options": {
           "legend": "Options, with the correct one selected",
@@ -4889,7 +4890,7 @@
           "your_score": "Your score: {score}",
           "reopen_confirm": "Reopen and withdraw results",
           "reopen_hint": "Reopening withdraws the released results so answers can change. Select again to confirm.",
-          "release_hint": "Close answers to release results."
+          "release_hint": "Close answers to grade and release results."
         },
         "flashcards": {
           "title": "Flashcards",

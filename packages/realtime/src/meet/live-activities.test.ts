@@ -133,13 +133,35 @@ describe('assessment', () => {
       itemId: long.id,
       answer: ' private answer ',
     });
-    const graded = action(replaced.state, cohost, {
+    const grade = {
       kind: 'assessment.grade',
       itemId: long.id,
       participantId: guest.userId,
       score: 85,
       feedback: 'Private feedback',
+    };
+    // Grades and results attach to final answers only.
+    expect(
+      action(replaced.state, cohost, { ...grade, revision: 1 }).reply
+    ).toMatchObject(error('activity_assessment_not_closed'));
+    expect(
+      action(replaced.state, host, {
+        kind: 'assessment.release',
+        released: true,
+      }).reply
+    ).toMatchObject(error('activity_assessment_not_closed'));
+    const closed = action(replaced.state, host, {
+      kind: 'assessment.status',
+      status: 'closed',
     });
+    expect(closed.toManagers).toMatchObject([
+      { host: { assessment: { responses: [{ revision: 1 }] } } },
+    ]);
+    // A grade written for the first answer does not land on its replacement.
+    const stale = action(closed.state, cohost, { ...grade, revision: 0 });
+    expect(stale.reply).toMatchObject(error('activity_answer_changed'));
+    expect(stale.state).toBe(closed.state);
+    const graded = action(closed.state, cohost, { ...grade, revision: 1 });
     expect(graded.broadcast).toMatchObject([
       { snapshot: { assessment: { counts: { [long.id]: 1 } } } },
     ]);
@@ -172,23 +194,14 @@ describe('assessment', () => {
       'Private feedback'
     );
 
-    // Results leave the managers only once answers are final.
     expect(
-      action(graded.state, host, { kind: 'assessment.release', released: true })
-        .reply
-    ).toMatchObject(error('activity_assessment_not_closed'));
-    const closed = action(graded.state, host, {
-      kind: 'assessment.status',
-      status: 'closed',
-    });
-    expect(
-      action(closed.state, guest, {
+      action(graded.state, guest, {
         kind: 'assessment.submit',
         itemId: long.id,
         answer: 'too late',
       }).reply
     ).toMatchObject(error('activity_assessment_closed'));
-    const released = action(closed.state, host, {
+    const released = action(graded.state, host, {
       kind: 'assessment.release',
       released: true,
     });

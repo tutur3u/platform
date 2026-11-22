@@ -70,6 +70,8 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
     kind: z.literal('assessment.grade'),
     itemId: id,
     participantId: id,
+    /** The answer the grader read; a grade for a replaced answer is refused. */
+    revision: z.number().int().nonnegative(),
     score: z.number().min(0).max(100),
     feedback: z.string().trim().max(400).optional(),
   }),
@@ -197,7 +199,14 @@ export const liveActivitiesMineSchema = z.object({
 });
 export const liveActivitiesHostSchema = z.object({
   assessment: z.object({
-    responses: z.array(responseBody.extend({ itemId: id, participantId: id })),
+    responses: z.array(
+      responseBody.extend({
+        itemId: id,
+        participantId: id,
+        /** Counts replacements of this answer; a grade names the one it read. */
+        revision: z.number().int().nonnegative(),
+      })
+    ),
     /** Answer keys of choice items, so a manager can review before release. */
     answers: z.record(id, optionIndex),
   }),

@@ -4585,7 +4585,7 @@
           "question_number": "Question {number}",
           "regrade": "Update grade",
           "release": "Release results",
-          "release_hint": "Close answers to release results.",
+          "release_hint": "Close answers to grade and release results.",
           "released_note": "Results are released. Only you see your score and feedback.",
           "remove_question": "Remove question {number}",
           "reopen": "Reopen",
@@ -4608,10 +4608,11 @@
         },
         "close": "Close panel",
         "errors": {
+          "answer_changed": "That answer changed after you read it. Check it again before grading.",
           "closed": "That is closed now.",
           "full": "This activity is full. Remove something before adding more.",
           "generic": "That did not go through. Try again.",
-          "not_closed": "Close answers before releasing results.",
+          "not_closed": "Close answers first.",
           "permission": "Only hosts and co-hosts can do that.",
           "rate_limited": "That was a lot at once. Wait a moment and try again."
         },

@@ -119,11 +119,12 @@ it('shows the host each answer, grades written ones and releases results', () =>
       assessment: {
         answers: { [CHOICE]: 0 },
         responses: [
-          { itemId: CHOICE, participantId: ANA, choice: 1 },
+          { itemId: CHOICE, participantId: ANA, choice: 1, revision: 0 },
           {
             itemId: LONG,
             participantId: ANA,
             answer: 'It keeps equal keys in order.',
+            revision: 2,
           },
         ],
       },
@@ -131,6 +132,18 @@ it('shows the host each answer, grades written ones and releases results', () =>
   });
   expect(screen.getByText('It keeps equal keys in order.')).toBeTruthy();
   expect(screen.getByText(t.correct)).toBeTruthy();
+  // While answers can still change, nothing is graded or released.
+  expect(screen.queryByLabelText('Score for Ana, 0 to 100')).toBeNull();
+  expect(screen.getByRole('button', { name: t.release })).toHaveProperty(
+    'disabled',
+    true
+  );
+  expect(screen.getByText(t.release_hint)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: t.close_answers }));
+  expect(sent()).toEqual([{ kind: 'assessment.status', status: 'closed' }]);
+
+  const closed = { ...open, status: 'closed' as const };
+  const store = room({ manager: true, snapshot: { assessment: closed } });
   fireEvent.change(screen.getByLabelText('Score for Ana, 0 to 100'), {
     target: { value: '85' },
   });
@@ -138,26 +151,26 @@ it('shows the host each answer, grades written ones and releases results', () =>
     target: { value: 'Good reasoning' },
   });
   fireEvent.click(screen.getByRole('button', { name: t.grade }));
-  // While answers can still change, results cannot be released.
-  expect(screen.getByRole('button', { name: t.release })).toHaveProperty(
-    'disabled',
-    true
+  // The grade names the answer revision the host read.
+  expect(sent().at(-1)).toEqual({
+    kind: 'assessment.grade',
+    itemId: LONG,
+    participantId: ANA,
+    revision: 2,
+    score: 85,
+    feedback: 'Good reasoning',
+  });
+  // A grade for an answer that was rewritten meanwhile is refused, and said.
+  act(() =>
+    store.receive({
+      type: 'error',
+      error: 'activity_answer_changed',
+      requestId: lastRequestId(),
+    })
   );
-  expect(screen.getByText(t.release_hint)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: t.close_answers }));
-  expect(sent()).toEqual([
-    {
-      kind: 'assessment.grade',
-      itemId: LONG,
-      participantId: ANA,
-      score: 85,
-      feedback: 'Good reasoning',
-    },
-    { kind: 'assessment.status', status: 'closed' },
-  ]);
-
-  const closed = { ...open, status: 'closed' as const };
-  room({ manager: true, snapshot: { assessment: closed } });
+  expect(screen.getByRole('status').textContent).toBe(
+    strings.errors.answer_changed
+  );
   fireEvent.click(screen.getByRole('button', { name: t.release }));
   expect(sent().at(-1)).toEqual({ kind: 'assessment.release', released: true });
 

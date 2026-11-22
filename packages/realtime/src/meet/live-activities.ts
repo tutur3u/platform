@@ -100,11 +100,13 @@ function applyActivity(
         )
           return 'activity_full';
       }
+      // A replaced answer is a new revision and starts without a grade.
       const response = {
         participantId,
         itemId: command.itemId,
         answer: command.answer,
         choice: command.choice,
+        revision: existing ? (existing.revision ?? 0) + 1 : 0,
       };
       const responses = existing
         ? assessment.responses.map((entry) =>
@@ -114,12 +116,17 @@ function applyActivity(
       return { ...state, assessment: { ...assessment, responses } };
     }
     case 'assessment.grade': {
+      // Grades attach to final answers: closed, and the revision the grader read.
+      if (assessment.status !== 'closed')
+        return 'activity_assessment_not_closed';
       const index = assessment.responses.findIndex(
         ({ itemId, participantId }) =>
           itemId === command.itemId && participantId === command.participantId
       );
       const existing = assessment.responses[index];
       if (!existing) return 'activity_response_not_found';
+      if ((existing.revision ?? 0) !== command.revision)
+        return 'activity_answer_changed';
       if (
         existing.score === command.score &&
         existing.feedback === command.feedback

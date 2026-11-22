@@ -4828,7 +4828,8 @@
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",
           "closed": "Phần này đã đóng.",
           "generic": "Thao tác chưa thành công. Hãy thử lại.",
-          "not_closed": "Hãy đóng nhận câu trả lời trước khi công bố kết quả."
+          "not_closed": "Hãy đóng nhận câu trả lời trước.",
+          "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm."
         },
         "options": {
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
@@ -4889,7 +4890,7 @@
           "your_score": "Điểm của bạn: {score}",
           "reopen_confirm": "Mở lại và thu hồi kết quả",
           "reopen_hint": "Mở lại sẽ thu hồi kết quả đã công bố để câu trả lời có thể thay đổi. Chọn lần nữa để xác nhận.",
-          "release_hint": "Hãy đóng nhận câu trả lời để công bố kết quả."
+          "release_hint": "Hãy đóng nhận câu trả lời để chấm điểm và công bố kết quả."
         },
         "flashcards": {
           "title": "Thẻ ghi nhớ",

@@ -13,14 +13,20 @@ type Response = NonNullable<
   Activity['host']
 >['assessment']['responses'][number];
 
-/** One written answer with the host's score and private feedback. */
+/**
+ * One written answer with the host's score and private feedback. Grading waits
+ * until answers are closed, and each grade names the answer revision it read,
+ * so it can never land on a rewritten answer.
+ */
 function GradeRow({
   response,
   name,
+  canGrade,
   send,
 }: {
   response: Response;
   name: string;
+  canGrade: boolean;
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.assessment');
@@ -32,12 +38,19 @@ function GradeRow({
   const valid = score.trim() !== '' && value >= 0 && value <= 100;
   const changed =
     value !== response.score || feedback.trim() !== (response.feedback ?? '');
-  return (
-    <li className="space-y-2 rounded-xl bg-muted/40 p-3">
+  const answer = (
+    <>
       <p className="font-semibold text-xs">{name}</p>
       <p className="wrap-break-word whitespace-pre-wrap text-sm">
         {response.answer}
       </p>
+    </>
+  );
+  if (!canGrade)
+    return <li className="space-y-2 rounded-xl bg-muted/40 p-3">{answer}</li>;
+  return (
+    <li className="space-y-2 rounded-xl bg-muted/40 p-3">
+      {answer}
       <form
         className="flex flex-wrap items-center gap-2"
         onSubmit={(event) => {
@@ -47,6 +60,7 @@ function GradeRow({
             kind: 'assessment.grade',
             itemId: response.itemId,
             participantId: response.participantId,
+            revision: response.revision,
             score: value,
             ...(feedback.trim() ? { feedback: feedback.trim() } : {}),
           });
@@ -207,9 +221,11 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
                 <ul className="space-y-2">
                   {given.map((response) => (
                     <GradeRow
-                      key={`${response.participantId}:${response.score}:${response.feedback}`}
+                      // A replaced answer or a saved grade starts the form over.
+                      key={`${response.participantId}:${response.revision}:${response.score}:${response.feedback}`}
                       response={response}
                       name={activity.nameOf(response.participantId)}
+                      canGrade={!open}
                       send={activity.send}
                     />
                   ))}

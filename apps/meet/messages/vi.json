@@ -4585,7 +4585,7 @@
           "question_number": "Câu hỏi {number}",
           "regrade": "Cập nhật điểm",
           "release": "Công bố kết quả",
-          "release_hint": "Hãy đóng nhận câu trả lời để công bố kết quả.",
+          "release_hint": "Hãy đóng nhận câu trả lời để chấm điểm và công bố kết quả.",
           "released_note": "Kết quả đã được công bố. Chỉ bạn thấy điểm và nhận xét của mình.",
           "remove_question": "Xóa câu hỏi {number}",
           "reopen": "Mở lại",
@@ -4608,10 +4608,11 @@
         },
         "close": "Đóng bảng",
         "errors": {
+          "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
           "closed": "Phần này đã đóng.",
           "full": "Hoạt động này đã đầy. Hãy xóa bớt trước khi thêm.",
           "generic": "Thao tác chưa thành công. Hãy thử lại.",
-          "not_closed": "Hãy đóng nhận câu trả lời trước khi công bố kết quả.",
+          "not_closed": "Hãy đóng nhận câu trả lời trước.",
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",
           "rate_limited": "Bạn thao tác hơi nhanh. Hãy chờ một chút rồi thử lại."
         },

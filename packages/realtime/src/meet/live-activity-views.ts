@@ -17,7 +17,11 @@ type AssessmentItem = Extract<
 >['items'][number] & {
   id: string;
 };
-type AssessmentResponse = LiveActivitiesHost['assessment']['responses'][number];
+// Answers stored before they carried a revision count as the first one.
+type AssessmentResponse = Omit<
+  LiveActivitiesHost['assessment']['responses'][number],
+  'revision'
+> & { revision?: number };
 type IcebreakerResponse = LiveActivitiesHost['icebreaker']['hidden'][number] & {
   hidden: boolean;
 };
@@ -146,7 +150,10 @@ export function hostView({
 }: Activities): LiveActivitiesHost {
   return {
     assessment: {
-      responses: assessment.responses,
+      responses: assessment.responses.map((response) => ({
+        ...response,
+        revision: response.revision ?? 0,
+      })),
       answers: Object.fromEntries(
         assessment.items.flatMap(({ id, answer }) =>
           answer === undefined ? [] : [[id, answer]]
