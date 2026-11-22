@@ -8,6 +8,7 @@ import {
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
   updateCurrentUserEmail,
   updateCurrentUserFullName,
+  updateCurrentUserProfile,
   updateUserConfig,
   updateUserWorkspaceConfig,
 } from './users';
@@ -60,6 +61,33 @@ describe('users internal-api helpers', () => {
         method: 'PATCH',
       })
     );
+  });
+
+  it('sends a verification token with a profile save only when one is given', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+    const sentToken = (call: number) =>
+      new Headers(fetchMock.mock.calls[call]?.[1]?.headers).get(
+        'x-tuturuuu-turnstile-token'
+      );
+
+    await updateCurrentUserProfile({ display_name: 'Ada' }, options);
+    await updateCurrentUserProfile({ display_name: 'Ada' }, options, {
+      turnstileToken: 'one-use',
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://internal.example.com/api/v1/users/me/profile',
+      expect.objectContaining({
+        body: JSON.stringify({ display_name: 'Ada' }),
+        method: 'PATCH',
+      })
+    );
+    expect(sentToken(0)).toBeNull();
+    expect(sentToken(1)).toBe('one-use');
   });
 
   it('starts a verified current user email change through the profile route', async () => {

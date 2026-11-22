@@ -4489,6 +4489,8 @@
       "name_save_failed": "Không thể lưu tên. Vui lòng thử lại.",
       "name_setup_hint": "Thêm tên hiển thị cho cuộc gọi này. Tên sẽ được lưu vào hồ sơ để bạn không cần nhập lại.",
       "name_setup_title": "Bạn muốn được gọi là gì?",
+      "name_verify_failed": "Không thể xác minh trình duyệt này. Vui lòng thử lại.",
+      "name_verify_prompt": "Hoàn tất bước xác minh để lưu tên.",
       "notes_private": "Chủ phòng chưa chia sẻ bản chép lời và ghi chú.",
       "notes_sharing_failed": "Không thể cập nhật chia sẻ ghi chú. Vui lòng thử lại.",
       "notice_chat": "Tin nhắn mới từ {name}",

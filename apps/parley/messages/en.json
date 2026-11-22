@@ -4489,6 +4489,8 @@
       "name_save_failed": "Could not save your name. Please try again.",
       "name_setup_hint": "Add a display name for this call. We’ll save it to your profile so you only need to do this once.",
       "name_setup_title": "What should we call you?",
+      "name_verify_failed": "We couldn’t verify this browser. Please try again.",
+      "name_verify_prompt": "Complete the check to save your name.",
       "notes_private": "The host has not shared transcript and notes yet.",
       "notes_sharing_failed": "Could not update notes sharing. Try again.",
       "notice_chat": "New message from {name}",

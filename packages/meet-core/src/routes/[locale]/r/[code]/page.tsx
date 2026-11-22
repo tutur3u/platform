@@ -159,6 +159,7 @@ export default async function RoomPage({
         initialName={access.suggestedDisplayName ?? ''}
         meetingName={meeting.name ?? t('untitled_meeting')}
         leaveHref={leaveHref}
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()}
       />
     );
 

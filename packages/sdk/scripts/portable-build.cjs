@@ -42,6 +42,7 @@ const portableFiles = new Set([
   'internal-api/tasks-dashboard.ts',
   'internal-api/tasks.ts',
   'internal-api/user-config-types.ts',
+  'internal-api/user-profile-save.ts',
   'internal-api/user-profile-types.ts',
   'internal-api/users-link-actions.ts',
   'internal-api/users.ts',

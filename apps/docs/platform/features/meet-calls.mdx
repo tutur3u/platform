@@ -1371,6 +1371,20 @@ the current-user profile API, and refreshes the same invite. Later joins reuse t
 saved display name. A failed save leaves the form open for retry; a temporary
 profile lookup failure does not invite the user to overwrite an existing name.
 
+Web's adaptive abuse check can refuse that save with `ABUSE_CHALLENGE_REQUIRED`
+(see [authentication](/platform/architecture/authentication)). The form then
+shows a Cloudflare Turnstile check and repeats the save once with the token in
+`x-tuturuuu-turnstile-token`. Each check reports one outcome, so the token is
+sent once, and leaving the form ends a pending check. A second refusal, a failed
+or unsupported check, a check that cannot load within 20 seconds or a missing
+site key reports that the browser could not be verified and leaves the form
+open; the next submit starts a fresh attempt. The check renders with
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` and Web verifies the token with its own
+`TURNSTILE_SECRET_KEY`, so both must belong to one Turnstile widget. Other Meet
+mutations that Web challenges still surface the refusal as a failed action.
+Regression coverage: `participant-name-form.test.tsx` and the profile case in
+`packages/internal-api/src/users.test.ts`.
+
 The lobby separates connection progress from waiting for host admission. Guests
 can leave while waiting, and their preview is not published until they join.
 Host admission actions are labeled, and a muted participant has one mute status

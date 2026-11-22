@@ -6,10 +6,8 @@ export {
 } from './profile-banner';
 
 import { optimizeProfileMediaFile } from './profile-media-optimize';
-import type {
-  CurrentUserProfileResponse,
-  UpdateCurrentUserProfilePayload,
-} from './user-profile-types';
+import { updateCurrentUserProfile } from './user-profile-save';
+import type { CurrentUserProfileResponse } from './user-profile-types';
 
 export type {
   CurrentUserProfileResponse,
@@ -517,20 +515,7 @@ export async function createCurrentUserAvatarUploadUrl(
   );
 }
 
-export async function updateCurrentUserProfile(
-  payload: UpdateCurrentUserProfilePayload,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<CurrentUserProfileResponse>('/api/v1/users/me/profile', {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-  });
-}
+export { updateCurrentUserProfile };
 
 export async function updateCurrentUserFullName(
   fullName: string,

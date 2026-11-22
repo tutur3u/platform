@@ -78,6 +78,7 @@ export function RoomView({
         initialName={access.suggestedDisplayName ?? ''}
         meetingName={meetingName}
         leaveHref={leaveHref}
+        siteKey={model.formsTurnstileSiteKey}
       />
     );
   return (
