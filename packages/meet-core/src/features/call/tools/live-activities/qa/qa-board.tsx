@@ -86,7 +86,7 @@ export function QaBoard({
     const measure = () =>
       list.style.setProperty(
         '--qa-controls-height',
-        `${controls.offsetHeight}px`
+        `${controls.getBoundingClientRect().height}px`
       );
     measure();
     const observer = new ResizeObserver(measure);
@@ -203,7 +203,7 @@ export function QaBoard({
         className={cn(
           'space-y-3',
           pane &&
-            '-mx-4 min-h-0 flex-1 scroll-pt-(--qa-controls-height) overflow-y-auto px-4'
+            '-mx-4 min-h-0 flex-1 scroll-pt-[calc(var(--qa-controls-height)+4px)] overflow-y-auto px-4'
         )}
       >
         {controls}

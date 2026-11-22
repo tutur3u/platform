@@ -72,20 +72,26 @@ export function QaComposer({
   const [busy, setBusy] = useState(false);
   // Focus or a press inside the form opens a folded composer. Nothing inside
   // the form folds it, so a tap on Attach or Send always lands, on every
-  // platform. It folds only for what happens outside: a press, focus moving
-  // away, or Escape, and never while there is a draft or a file.
+  // platform. It folds only for what happens outside: a click, focus moving
+  // away, or Escape, and never while there is a draft or a file. A click, not
+  // a press: folding shrinks the footer and shifts the list, which must not
+  // happen under a touch scroll or before a tap on a card has landed.
   const [open, setOpen] = useState(false);
   const form = useRef<HTMLFormElement>(null);
   const folded = compact && !open && !draft && files.length === 0;
+  // Becoming compact starts folded, unless the person is in the field.
+  useEffect(() => {
+    setOpen(compact && !!form.current?.contains(document.activeElement));
+  }, [compact]);
   useEffect(() => {
     if (!compact || !open) return;
     const away = (event: Event) => {
       if (!form.current?.contains(event.target as Node)) setOpen(false);
     };
-    document.addEventListener('pointerdown', away, true);
+    document.addEventListener('click', away, true);
     document.addEventListener('focusin', away, true);
     return () => {
-      document.removeEventListener('pointerdown', away, true);
+      document.removeEventListener('click', away, true);
       document.removeEventListener('focusin', away, true);
     };
   }, [compact, open]);
@@ -139,6 +145,8 @@ export function QaComposer({
       uploaded.current.clear();
       setDraft('');
       setFiles([]);
+      // Stay open while the field is still in use; fold once focus has left.
+      if (!form.current?.contains(document.activeElement)) setOpen(false);
     } catch {
       if (mounted.current) onUploadError('upload_failed');
     } finally {
@@ -150,8 +158,8 @@ export function QaComposer({
     <form
       ref={form}
       className="space-y-2"
-      onFocus={() => setOpen(true)}
-      onPointerDownCapture={() => setOpen(true)}
+      onFocus={() => compact && setOpen(true)}
+      onPointerDownCapture={() => compact && setOpen(true)}
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -188,7 +196,11 @@ export function QaComposer({
               if (event.key === 'Escape' && onCancel) {
                 event.stopPropagation();
                 onCancel();
-              } else if (event.key === 'Escape') {
+              } else if (
+                event.key === 'Escape' &&
+                compact &&
+                !event.nativeEvent.isComposing
+              ) {
                 setOpen(false);
                 event.currentTarget.blur();
               }

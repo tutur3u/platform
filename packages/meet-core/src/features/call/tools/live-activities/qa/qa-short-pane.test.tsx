@@ -175,13 +175,13 @@ it('folds an idle composer to one line in a short pane and opens it on focus', (
   fireEvent.focus(composer());
   expect(composer().getAttribute('rows')).toBe('2');
   expect(composer().getAttribute('placeholder')).toBe(t.composer_placeholder);
-  // A draft keeps it open when the person presses elsewhere.
+  // A draft keeps it open when the person clicks elsewhere.
   fireEvent.change(composer(), { target: { value: 'My question' } });
-  fireEvent.pointerDown(document.body);
+  fireEvent.click(document.body);
   expect(composer().getAttribute('rows')).toBe('2');
-  // With the draft gone, the next press outside folds it.
+  // With the draft gone, the next click outside folds it.
   fireEvent.change(composer(), { target: { value: '' } });
-  fireEvent.pointerDown(document.body);
+  fireEvent.click(document.body);
   expect(composer().getAttribute('rows')).toBe('1');
 });
 
@@ -250,12 +250,12 @@ it('never folds from anything inside the form', () => {
   expect(composer().getAttribute('rows')).toBe('2');
 });
 
-it('folds on a press outside the form', () => {
+it('folds on a click outside the form', () => {
   body = SHORT;
   mount();
   fireEvent.focus(composer());
   expect(composer().getAttribute('rows')).toBe('2');
-  fireEvent.pointerDown(document.body);
+  fireEvent.click(document.body);
   expect(composer().getAttribute('rows')).toBe('1');
 });
 
@@ -285,45 +285,106 @@ it('stays open while there is a draft, whatever happens outside', () => {
   mount();
   fireEvent.focus(composer());
   fireEvent.change(composer(), { target: { value: 'My question' } });
-  fireEvent.pointerDown(document.body);
+  fireEvent.click(document.body);
   fireEvent.keyDown(composer(), { key: 'Escape' });
   expect(composer().getAttribute('rows')).toBe('2');
 });
 
-it('listens outside the form only while it is open and removes its listeners', () => {
+it('listens for clicks and focus outside only while open, and removes the same listeners', () => {
   body = SHORT;
   const add = vi.spyOn(document, 'addEventListener');
   const remove = vi.spyOn(document, 'removeEventListener');
-  const added = () =>
-    add.mock.calls.filter(
-      ([type]) => type === 'pointerdown' || type === 'focusin'
-    ).length;
-  const removed = () =>
-    remove.mock.calls.filter(
-      ([type]) => type === 'pointerdown' || type === 'focusin'
-    ).length;
+  const watched = (spy: typeof add) =>
+    spy.mock.calls.filter(([type]) => type === 'click' || type === 'focusin');
   mount();
-  const before = added();
+  const before = watched(add).length;
   fireEvent.focus(composer());
-  expect(added()).toBeGreaterThan(before);
-  // Folding removes them...
-  const afterOpen = removed();
-  fireEvent.pointerDown(document.body);
-  expect(removed()).toBeGreaterThan(afterOpen);
-  // ...and so does unmounting while open.
+  const added = watched(add).slice(before);
+  // A click and a focusin, each in the capture phase.
+  expect(added.map(([type, , capture]) => [type, capture])).toEqual([
+    ['click', true],
+    ['focusin', true],
+  ]);
+  // The press itself is never watched: scrolling must not fold.
+  expect(add.mock.calls.some(([type]) => type === 'pointerdown')).toBe(false);
+  const removedBefore = watched(remove).length;
+  fireEvent.click(document.body);
+  const removed = watched(remove).slice(removedBefore);
+  expect(
+    removed.map(([type, listener, capture]) => [type, listener, capture])
+  ).toEqual(
+    added.map(([type, listener, capture]) => [type, listener, capture])
+  );
+  // Unmounting while open removes them too.
   fireEvent.focus(composer());
-  const beforeUnmount = removed();
+  const beforeUnmount = watched(remove).length;
+  const reAdded = watched(add).slice(-2);
   cleanup();
-  expect(removed()).toBeGreaterThan(beforeUnmount);
+  expect(
+    watched(remove)
+      .slice(beforeUnmount)
+      .map(([type, listener, capture]) => [type, listener, capture])
+  ).toEqual(
+    reAdded.map(([type, listener, capture]) => [type, listener, capture])
+  );
   add.mockRestore();
   remove.mockRestore();
+});
+
+it('adds no listeners and does not blur on Escape when the composer is not compact', () => {
+  body = TALL;
+  const add = vi.spyOn(document, 'addEventListener');
+  mount();
+  const before = add.mock.calls.length;
+  composer().focus();
+  fireEvent.focus(composer());
+  expect(
+    add.mock.calls
+      .slice(before)
+      .filter(([type]) => type === 'click' || type === 'focusin')
+  ).toEqual([]);
+  fireEvent.keyDown(composer(), { key: 'Escape' });
+  expect(document.activeElement).toBe(composer());
+  expect(composer().getAttribute('rows')).toBe('2');
+  add.mockRestore();
+});
+
+it('cancels an answer composer on Escape and keeps Escape for compact folding', () => {
+  body = TALL;
+  mount();
+  fireEvent.click(screen.getAllByRole('button', { name: t.answer })[0]!);
+  const answer = screen.getByPlaceholderText(t.answer_placeholder);
+  fireEvent.keyDown(answer, { key: 'Escape' });
+  expect(screen.queryByPlaceholderText(t.answer_placeholder)).toBeNull();
+});
+
+it('does not fold on Escape while composing text', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  fireEvent.keyDown(composer(), { key: 'Escape', isComposing: true });
+  expect(composer().getAttribute('rows')).toBe('2');
+});
+
+it('lets a tap on a card button land: a press never folds, the click does', () => {
+  body = SHORT;
+  mount();
+  fireEvent.focus(composer());
+  const answerButton = screen.getAllByRole('button', { name: t.answer })[0]!;
+  fireEvent.pointerDown(answerButton);
+  // Nothing has moved yet, so the click reaches the card's own handler.
+  expect(composer().getAttribute('rows')).toBe('2');
+  fireEvent.click(answerButton);
+  expect(screen.getByPlaceholderText(t.answer_placeholder)).toBeTruthy();
 });
 
 it('scrolls a focused card below the sticky controls in a tall pane only', () => {
   mount();
   const list = screen.getByText('First question?').closest('ul')
     ?.parentElement as HTMLElement;
-  expect(list.className).toContain('scroll-pt-(--qa-controls-height)');
+  expect(list.className).toContain(
+    'scroll-pt-[calc(var(--qa-controls-height)+4px)]'
+  );
   expect(list.style.getPropertyValue('--qa-controls-height')).not.toBe('');
   resize(SHORT);
   expect(list.style.getPropertyValue('--qa-controls-height')).toBe('');
