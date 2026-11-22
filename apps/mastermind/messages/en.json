@@ -555,6 +555,23 @@
         "body": "The collector writes the first snapshot within two minutes of being enabled. Check now runs it immediately."
       },
       "loading": "Checking GitHub deployments, CI runs and Cloudflare Worker versions. Nothing is shown from an older snapshot while this runs."
+    },
+    "notice": {
+      "signInFailed": {
+        "title": "Sign-in did not finish",
+        "body": "Mastermind could not confirm this sign-in. It may have expired or been started in another tab.",
+        "action": "Sign in again"
+      },
+      "wrongAccount": {
+        "title": "This account cannot open Mastermind",
+        "body": "You are signed in to Tuturuuu with an account that has no access to this page.",
+        "action": "Use another account"
+      },
+      "mfa": {
+        "title": "Verify your second factor",
+        "body": "Mastermind needs a second-factor check from the last 24 hours.",
+        "action": "Verify now"
+      }
     }
   },
   "owner": "Authenticated owner",

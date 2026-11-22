@@ -27,7 +27,21 @@ function commandFor(mode, files, root = ROOT) {
   }
   const canonicalRoot = realpathSync(root);
   const selected = files.map((file) => {
-    if (file.startsWith('-') || /[*?{}!]/.test(file)) {
+    // Braces are glob syntax, but TanStack's optional route segment puts them
+    // in real file names (`routes/{-$locale}/ship.tsx`); such a path passes
+    // only when it names an existing file exactly as written.
+    const literalFile = (() => {
+      try {
+        return statSync(path.resolve(root, file)).isFile();
+      } catch {
+        return false;
+      }
+    })();
+    if (
+      file.startsWith('-') ||
+      /[*?!]/.test(file) ||
+      (/[{}]/.test(file) && !literalFile)
+    ) {
       throw new Error(
         `Pass explicit file paths, without flags or globs: ${file}`
       );

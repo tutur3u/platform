@@ -420,7 +420,10 @@ jobs:
             '303 https://tuturuuu.com/login?returnUrl=https%3A%2F%2Fmastermind.tuturuuu.com%2Fverify-token'*) ;;
             *) fail "/login answered $result; expected 303 to Tuturuuu sign-in" ;;
           esac
-          for path in /en /vi /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
+          # English has no locale prefix; a legacy /en link moves for good.
+          result=$(probe /en/ship)
+          [ "$result" = "308 https://mastermind.tuturuuu.com/ship" ] || fail "/en/ship answered $result; expected 308 to /ship"
+          for path in /ship /vi /verify-token /_serverFn/probe /assets/probe.js /api/build-info; do
             result=$(probe "$path")
             [ "$result" = "403 " ] || fail "$path answered $result; expected 403"
             grep -qi '^cache-control: private, no-store' "$RUNNER_TEMP/gate-headers" || fail "$path is not private, no-store"

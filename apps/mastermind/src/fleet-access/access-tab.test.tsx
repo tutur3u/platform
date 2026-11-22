@@ -213,7 +213,7 @@ describe('Access tab visibility', () => {
     expect(alert.textContent).toContain(a.mfa);
     expect(
       within(alert).getByRole('link', { name: a.signIn }).getAttribute('href')
-    ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+    ).toBe('/login?nextUrl=%2Ffleet-access');
     expect(
       within(alert).getByRole('button', { name: t.common.reload })
     ).toBeTruthy();
@@ -229,7 +229,7 @@ describe('Access tab visibility', () => {
     expect(alert.textContent).toContain(a.forbidden);
     expect(
       within(alert).getByRole('link', { name: a.signIn }).getAttribute('href')
-    ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+    ).toBe('/login?nextUrl=%2Ffleet-access');
   });
 });
 
@@ -347,7 +347,7 @@ describe('Access changes', () => {
       expect(await screen.findByText(t.ownerRefusal[reason])).toBeTruthy();
       expect(
         screen.getByRole('link', { name: a.signIn }).getAttribute('href')
-      ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+      ).toBe('/login?nextUrl=%2Ffleet-access');
       cleanup();
     }
   });

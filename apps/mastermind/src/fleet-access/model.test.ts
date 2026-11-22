@@ -192,7 +192,7 @@ describe('Fleet access messages', () => {
   });
 
   it('sends the Owner back through Worker login to this Fleet page', () => {
-    expect(fleetSignInHref('en')).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+    expect(fleetSignInHref('en')).toBe('/login?nextUrl=%2Ffleet-access');
     expect(fleetSignInHref('vi')).toBe('/login?nextUrl=%2Fvi%2Ffleet-access');
   });
 });

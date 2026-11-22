@@ -10,7 +10,7 @@ import {
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../i18n';
-import type { ProjectsSearch } from '../routes/$locale_.projects';
+import type { ProjectsSearch } from '../routes/{-$locale}/projects';
 import { createFixtureThreadsClient } from './fixtures';
 import { ProjectsPage } from './projects-page';
 

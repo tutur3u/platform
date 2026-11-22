@@ -1,6 +1,6 @@
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
-import { FLEET_TIME_ZONE, type Locale, useI18n } from '../i18n';
+import { FLEET_TIME_ZONE, type Locale, localePath, useI18n } from '../i18n';
 
 export type FleetText = typeof en.fleetAccess;
 
@@ -17,7 +17,7 @@ export function useFleetText() {
 
 /** Worker `/login`, then back to this locale's Fleet page. */
 export function fleetSignInHref(locale: Locale) {
-  return `/login?nextUrl=${encodeURIComponent(`/${locale}/fleet-access`)}`;
+  return `/login?nextUrl=${encodeURIComponent(localePath(locale, '/fleet-access'))}`;
 }
 
 export function fill(template: string, values: Record<string, string>) {

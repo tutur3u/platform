@@ -18,7 +18,13 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTheme } from 'next-themes';
 import { type ReactNode, useState } from 'react';
 import { useHydrated } from '../fleet/preferences';
-import { type Locale, locales, type MessageKey, useI18n } from '../i18n';
+import {
+  type Locale,
+  localeParam,
+  locales,
+  type MessageKey,
+  useI18n,
+} from '../i18n';
 import { toneBadge } from './tone';
 
 export interface NavCounts {
@@ -56,16 +62,16 @@ export const NAV: readonly NavEntry[] = [
     id: 'projects',
     label: 'nav.projects',
     icon: Folder,
-    to: '/$locale/projects',
+    to: '/{-$locale}/projects',
   },
   { id: 'access', label: 'nav.access', icon: KeyRound },
-  { id: 'ship', label: 'nav.ship', icon: Rocket, to: '/$locale/ship' },
+  { id: 'ship', label: 'nav.ship', icon: Rocket, to: '/{-$locale}/ship' },
   { id: 'fleet', label: 'nav.fleet', icon: Server },
   {
     id: 'fleet-access',
     label: 'nav.fleetAccess',
     icon: Users,
-    to: '/$locale/fleet-access',
+    to: '/{-$locale}/fleet-access',
     scopes: ['owner', 'fleet'],
   },
   { id: 'activity', label: 'nav.activity', icon: Activity },
@@ -138,7 +144,7 @@ function Nav({
           <Link
             key={id}
             to={to}
-            params={{ locale }}
+            params={{ locale: localeParam(locale) }}
             onClick={onNavigate}
             className={NAV_LINK}
             activeProps={{ className: 'bg-accent text-accent-foreground' }}
@@ -148,8 +154,8 @@ function Nav({
         ) : (
           <Link
             key={id}
-            to="/$locale"
-            params={{ locale }}
+            to="/{-$locale}"
+            params={{ locale: localeParam(locale) }}
             hash={id}
             onClick={onNavigate}
             className={NAV_LINK}
@@ -176,7 +182,7 @@ export function Preferences() {
                   tier keeps the switch, not only owners. */}
               <Link
                 to="."
-                params={(prev) => ({ ...prev, locale: value })}
+                params={(prev) => ({ ...prev, locale: localeParam(value) })}
                 search={(prev) => prev}
                 hash
                 resetScroll={false}

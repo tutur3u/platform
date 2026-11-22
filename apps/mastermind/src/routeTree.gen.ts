@@ -3,113 +3,153 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LocaleRouteImport } from './routes/$locale'
-import { Route as LocaleFleetAccessRouteImport } from './routes/$locale_.fleet-access'
-import { Route as LocaleProjectsRouteImport } from './routes/$locale_.projects'
-import { Route as LocaleShipRouteImport } from './routes/$locale_.ship'
+import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
+import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
+import { Route as Char123LocaleChar125FleetAccessRouteImport } from './routes/{-$locale}/fleet-access'
+import { Route as Char123LocaleChar125ProjectsRouteImport } from './routes/{-$locale}/projects'
+import { Route as Char123LocaleChar125ShipRouteImport } from './routes/{-$locale}/ship'
 
-const LocaleRoute = LocaleRouteImport.update({
-  id: '/$locale',
-  path: '/$locale',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleFleetAccessRoute = LocaleFleetAccessRouteImport.update({
-  id: '/$locale_/fleet-access',
-  path: '/$locale/fleet-access',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleProjectsRoute = LocaleProjectsRouteImport.update({
-  id: '/$locale_/projects',
-  path: '/$locale/projects',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleShipRoute = LocaleShipRouteImport.update({
-  id: '/$locale_/ship',
-  path: '/$locale/ship',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Char123LocaleChar125RouteRoute =
+  Char123LocaleChar125RouteRouteImport.update({
+    id: '/{-$locale}',
+    path: '/{-$locale}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char123LocaleChar125IndexRoute =
+  Char123LocaleChar125IndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125FleetAccessRoute =
+  Char123LocaleChar125FleetAccessRouteImport.update({
+    id: '/fleet-access',
+    path: '/fleet-access',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125ProjectsRoute =
+  Char123LocaleChar125ProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125ShipRoute =
+  Char123LocaleChar125ShipRouteImport.update({
+    id: '/ship',
+    path: '/ship',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/$locale': typeof LocaleRoute
-  '/$locale/fleet-access': typeof LocaleFleetAccessRoute
-  '/$locale/projects': typeof LocaleProjectsRoute
-  '/$locale/ship': typeof LocaleShipRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
+  '/{-$locale}/fleet-access': typeof Char123LocaleChar125FleetAccessRoute
+  '/{-$locale}/projects': typeof Char123LocaleChar125ProjectsRoute
+  '/{-$locale}/ship': typeof Char123LocaleChar125ShipRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
 }
 export interface FileRoutesByTo {
-  '/$locale': typeof LocaleRoute
-  '/$locale/fleet-access': typeof LocaleFleetAccessRoute
-  '/$locale/projects': typeof LocaleProjectsRoute
-  '/$locale/ship': typeof LocaleShipRoute
+  '/{-$locale}/fleet-access': typeof Char123LocaleChar125FleetAccessRoute
+  '/{-$locale}/projects': typeof Char123LocaleChar125ProjectsRoute
+  '/{-$locale}/ship': typeof Char123LocaleChar125ShipRoute
+  '/{-$locale}': typeof Char123LocaleChar125IndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/$locale': typeof LocaleRoute
-  '/$locale_/fleet-access': typeof LocaleFleetAccessRoute
-  '/$locale_/projects': typeof LocaleProjectsRoute
-  '/$locale_/ship': typeof LocaleShipRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
+  '/{-$locale}/fleet-access': typeof Char123LocaleChar125FleetAccessRoute
+  '/{-$locale}/projects': typeof Char123LocaleChar125ProjectsRoute
+  '/{-$locale}/ship': typeof Char123LocaleChar125ShipRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/$locale'
-    | '/$locale/fleet-access'
-    | '/$locale/projects'
-    | '/$locale/ship'
+    | '/{-$locale}'
+    | '/{-$locale}/fleet-access'
+    | '/{-$locale}/projects'
+    | '/{-$locale}/ship'
+    | '/{-$locale}/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/$locale' | '/$locale/fleet-access' | '/$locale/projects' | '/$locale/ship'
+  to:
+    | '/{-$locale}/fleet-access'
+    | '/{-$locale}/projects'
+    | '/{-$locale}/ship'
+    | '/{-$locale}'
   id:
     | '__root__'
-    | '/$locale'
-    | '/$locale_/fleet-access'
-    | '/$locale_/projects'
-    | '/$locale_/ship'
+    | '/{-$locale}'
+    | '/{-$locale}/fleet-access'
+    | '/{-$locale}/projects'
+    | '/{-$locale}/ship'
+    | '/{-$locale}/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  LocaleRoute: typeof LocaleRoute
-  LocaleFleetAccessRoute: typeof LocaleFleetAccessRoute
-  LocaleProjectsRoute: typeof LocaleProjectsRoute
-  LocaleShipRoute: typeof LocaleShipRoute
+  Char123LocaleChar125RouteRoute: typeof Char123LocaleChar125RouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/$locale': {
-      id: '/$locale'
-      path: '/$locale'
-      fullPath: '/$locale'
-      preLoaderRoute: typeof LocaleRouteImport
+    '/{-$locale}': {
+      id: '/{-$locale}'
+      path: '/{-$locale}'
+      fullPath: '/{-$locale}'
+      preLoaderRoute: typeof Char123LocaleChar125RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$locale_/fleet-access': {
-      id: '/$locale_/fleet-access'
-      path: '/$locale/fleet-access'
-      fullPath: '/$locale/fleet-access'
-      preLoaderRoute: typeof LocaleFleetAccessRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$locale}/': {
+      id: '/{-$locale}/'
+      path: '/'
+      fullPath: '/{-$locale}/'
+      preLoaderRoute: typeof Char123LocaleChar125IndexRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
-    '/$locale_/projects': {
-      id: '/$locale_/projects'
-      path: '/$locale/projects'
-      fullPath: '/$locale/projects'
-      preLoaderRoute: typeof LocaleProjectsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$locale}/fleet-access': {
+      id: '/{-$locale}/fleet-access'
+      path: '/fleet-access'
+      fullPath: '/{-$locale}/fleet-access'
+      preLoaderRoute: typeof Char123LocaleChar125FleetAccessRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
-    '/$locale_/ship': {
-      id: '/$locale_/ship'
-      path: '/$locale/ship'
-      fullPath: '/$locale/ship'
-      preLoaderRoute: typeof LocaleShipRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$locale}/projects': {
+      id: '/{-$locale}/projects'
+      path: '/projects'
+      fullPath: '/{-$locale}/projects'
+      preLoaderRoute: typeof Char123LocaleChar125ProjectsRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/ship': {
+      id: '/{-$locale}/ship'
+      path: '/ship'
+      fullPath: '/{-$locale}/ship'
+      preLoaderRoute: typeof Char123LocaleChar125ShipRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
   }
 }
 
+interface Char123LocaleChar125RouteRouteChildren {
+  Char123LocaleChar125FleetAccessRoute: typeof Char123LocaleChar125FleetAccessRoute
+  Char123LocaleChar125ProjectsRoute: typeof Char123LocaleChar125ProjectsRoute
+  Char123LocaleChar125ShipRoute: typeof Char123LocaleChar125ShipRoute
+  Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+}
+
+const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
+  {
+    Char123LocaleChar125FleetAccessRoute: Char123LocaleChar125FleetAccessRoute,
+    Char123LocaleChar125ProjectsRoute: Char123LocaleChar125ProjectsRoute,
+    Char123LocaleChar125ShipRoute: Char123LocaleChar125ShipRoute,
+    Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+  }
+
+const Char123LocaleChar125RouteRouteWithChildren =
+  Char123LocaleChar125RouteRoute._addFileChildren(
+    Char123LocaleChar125RouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
-  LocaleRoute: LocaleRoute,
-  LocaleFleetAccessRoute: LocaleFleetAccessRoute,
-  LocaleProjectsRoute: LocaleProjectsRoute,
-  LocaleShipRoute: LocaleShipRoute,
+  Char123LocaleChar125RouteRoute: Char123LocaleChar125RouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

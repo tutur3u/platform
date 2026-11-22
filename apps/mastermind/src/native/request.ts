@@ -11,14 +11,18 @@ import {
   sessionSubject,
 } from './auth';
 import { fleetReturnPath, isFleetPath } from './fleet-admission';
+import { legacyLocaleRedirect } from './locale-path';
+import { noticePage, workerLoginHref } from './notice';
 import {
   CLEAR_LOGIN_STATE,
   clearedSessionCookies,
   consumeLoginState,
   hostSessionRequest,
   exchangeHandoff,
+  hasCentralSessionHint,
   isHandoffToken,
   loginRedirect,
+  readCookie,
   refreshSession,
   safeNextPath,
   sessionCookies,
@@ -89,6 +93,22 @@ function admitsMethod(request: Request, url: URL, mount: ResolvedMount) {
   );
 }
 
+/**
+ * Set while an owner's second-factor step-up is under way, so a session that
+ * still lacks MFA after it gets the notice instead of another round trip.
+ */
+const MFA_STEP_COOKIE = '__Host-mastermind_mfa_step';
+const MFA_STEP_SECONDS = 600;
+const START_MFA_STEP = `${MFA_STEP_COOKIE}=1; Path=/; Max-Age=${MFA_STEP_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
+const CLEAR_MFA_STEP = `${MFA_STEP_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+
+function isNavigation(request: Request) {
+  return (
+    request.method === 'GET' &&
+    request.headers.get('Sec-Fetch-Mode') === 'navigate'
+  );
+}
+
 /** The owner's session lacks a second-factor check from the last day. */
 const MFA_REQUIRED =
   'Mastermind needs a multi-factor authentication check from the last 24 hours. Sign out of Tuturuuu, sign in again with your second factor, then reopen Mastermind.\n' +
@@ -110,21 +130,36 @@ export async function mastermindRequest(
   const mount =
     url.protocol === 'https:' ? resolveAppBase(url, mastermindMount) : null;
   if (!mount) return secure(new Response('Forbidden', { status: 403 }));
+  // Legacy `/en/...` links move to the unprefixed path before any session
+  // work, so they never start a sign-in for the old address.
+  if (request.method === 'GET' || request.method === 'HEAD') {
+    const moved = legacyLocaleRedirect(url);
+    if (moved) return secure(moved);
+  }
   // The verified Tuturuuu session is the only identity; no request header
   // names the user. Login and its callback come first, so anyone can start a
   // sign-in, and only a session the Worker accepts is issued.
   const isOwner = (subject: string) => ownerIds(env).includes(subject);
   if (request.method === 'GET' && url.pathname === '/login') {
     // A signed-in grantee returns only to the Fleet page; the callback below
-    // applies the same rule to the subject Web verifies.
-    const next = safeNextPath(url.searchParams.get('nextUrl') ?? '/en');
+    // applies the same rule to the subject Web verifies. Choosing another
+    // account keeps the destination, since the chosen account decides it.
+    const next = safeNextPath(url.searchParams.get('nextUrl') ?? '/');
+    const chooseAccount = url.searchParams.get('account') === 'choose';
     const signedIn = sessionSubject(request, env, now);
     return secure(
       await loginRedirect(
-        signedIn && !isOwner(signedIn) ? fleetReturnPath(next) : next,
-        // `mfa=fresh` is the step-up before a reply: the second factor is
-        // verified again even when the session already holds one.
-        { freshMfa: url.searchParams.get('mfa') === 'fresh' }
+        signedIn && !isOwner(signedIn) && !chooseAccount
+          ? fleetReturnPath(next)
+          : next,
+        {
+          // `mfa=fresh` is the step-up before a reply: the second factor is
+          // verified again even when the session already holds one.
+          freshMfa: url.searchParams.get('mfa') === 'fresh',
+          // `account=choose` lets the person pick another Tuturuuu account.
+          chooseAccount,
+          signedIn: hasCentralSessionHint(request),
+        }
       )
     );
   }
@@ -139,10 +174,13 @@ export async function mastermindRequest(
         ? await exchangeHandoff(token, state.verifier, env, now)
         : null;
     if (!state || !session) {
+      const retry = safeNextPath(url.searchParams.get('nextUrl'));
+      const back = new URL(retry, 'https://mastermind.tuturuuu.com');
+      back.searchParams.delete('mm_state');
+      const path = `${back.pathname}${back.search}`;
       return secure(
-        new Response('Forbidden', {
-          status: 403,
-          headers: { 'Set-Cookie': CLEAR_LOGIN_STATE },
+        noticePage('signInFailed', path, workerLoginHref(path), {
+          'Set-Cookie': CLEAR_LOGIN_STATE,
         })
       );
     }
@@ -161,9 +199,18 @@ export async function mastermindRequest(
   // before any refresh, permission call or render.
   const fleetPath = isFleetPath(request.method, url, mount.basePath);
   const subject = sessionSubject(request, env, now);
-  if (subject && !isOwner(subject) && !fleetPath) {
-    return secure(new Response('Forbidden', { status: 403 }));
-  }
+  const here = safeNextPath(`${url.pathname}${url.search}`);
+  const wrongAccount = () =>
+    secure(
+      isNavigation(request)
+        ? noticePage(
+            'wrongAccount',
+            here,
+            workerLoginHref(here, { account: 'choose' })
+          )
+        : new Response('Forbidden', { status: 403 })
+    );
+  if (subject && !isOwner(subject) && !fleetPath) return wrongAccount();
 
   let admitted = request;
   let owner = await authenticate(request, env, now, fleetPath);
@@ -177,17 +224,33 @@ export async function mastermindRequest(
       if (owner) issued = sessionCookies(session);
     }
   }
-  if (owner === 'forbidden') {
-    return secure(new Response('Forbidden', { status: 403 }));
-  }
+  if (owner === 'forbidden') return wrongAccount();
   if (owner === 'mfa') {
-    // Refresh would carry the stale proof forward, so drop the session and
-    // let the next visit sign in with a fresh second-factor check.
-    const headers = new Headers({
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
-    for (const cookie of clearedSessionCookies())
+    // Refresh would carry the stale proof forward, so the session is dropped.
+    // A navigation starts the second-factor step-up in the sign-in itself;
+    // Web hands back a session only with a just-verified factor. Once a
+    // step-up is under way, or for any other request, the notice answers.
+    const cleared = clearedSessionCookies();
+    if (isNavigation(request) && !readCookie(request, MFA_STEP_COOKIE)) {
+      const step = await loginRedirect(here, { freshMfa: true });
+      for (const cookie of cleared) step.headers.append('Set-Cookie', cookie);
+      step.headers.append('Set-Cookie', START_MFA_STEP);
+      return secure(step);
+    }
+    const headers = new Headers();
+    for (const cookie of [...cleared, CLEAR_MFA_STEP])
       headers.append('Set-Cookie', cookie);
+    if (isNavigation(request)) {
+      return secure(
+        noticePage(
+          'mfa',
+          here,
+          workerLoginHref(here, { mfa: 'fresh' }),
+          headers
+        )
+      );
+    }
+    headers.set('Content-Type', 'text/plain; charset=utf-8');
     return secure(new Response(MFA_REQUIRED, { status: 403, headers }));
   }
   if (!owner) {
@@ -196,12 +259,12 @@ export async function mastermindRequest(
         new Response(null, { status: 303, headers: { Location: '/login' } })
       );
     }
-    const navigation =
-      request.method === 'GET' &&
-      request.headers.get('Sec-Fetch-Mode') === 'navigate';
-    const next = safeNextPath(`${url.pathname}${url.search}`);
-    return navigation
-      ? secure(await loginRedirect(fleetPath ? fleetReturnPath(next) : next))
+    return isNavigation(request)
+      ? secure(
+          await loginRedirect(fleetPath ? fleetReturnPath(here) : here, {
+            signedIn: hasCentralSessionHint(request),
+          })
+        )
       : secure(new Response('Forbidden', { status: 403 }));
   }
   if (!admitsMethod(request, url, mount)) {
@@ -209,5 +272,8 @@ export async function mastermindRequest(
   }
   const response = secure(await render(admitted, owner, mount), nonce);
   for (const cookie of issued) response.headers.append('Set-Cookie', cookie);
+  // A step-up ends only once a request is admitted with the new proof.
+  if (readCookie(request, MFA_STEP_COOKIE))
+    response.headers.append('Set-Cookie', CLEAR_MFA_STEP);
   return response;
 }

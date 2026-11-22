@@ -555,6 +555,23 @@
         "body": "Bộ thu thập ghi bản đầu tiên trong vòng hai phút sau khi được bật. Kiểm tra ngay sẽ chạy ngay lập tức."
       },
       "loading": "Đang kiểm tra GitHub deployments, lượt chạy CI và phiên bản Cloudflare Worker. Không hiển thị dữ liệu cũ trong lúc chờ."
+    },
+    "notice": {
+      "signInFailed": {
+        "title": "Đăng nhập chưa hoàn tất",
+        "body": "Mastermind không xác nhận được lần đăng nhập này. Có thể nó đã hết hạn hoặc được bắt đầu ở một thẻ khác.",
+        "action": "Đăng nhập lại"
+      },
+      "wrongAccount": {
+        "title": "Tài khoản này không mở được Mastermind",
+        "body": "Bạn đang đăng nhập Tuturuuu bằng một tài khoản không có quyền truy cập trang này.",
+        "action": "Dùng tài khoản khác"
+      },
+      "mfa": {
+        "title": "Xác minh yếu tố thứ hai",
+        "body": "Mastermind cần một lần kiểm tra yếu tố thứ hai trong 24 giờ qua.",
+        "action": "Xác minh ngay"
+      }
     }
   },
   "owner": "Chủ sở hữu đã xác thực",

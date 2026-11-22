@@ -191,9 +191,9 @@ function buildTokenReturnUrl(target: ResolvedCrossAppTarget) {
 
 async function createCrossAppReturn(
   request: NextRequest,
-  fail: ReportHandoffFailure
+  fail: ReportHandoffFailure,
+  body: unknown
 ) {
-  const body = await request.json().catch(() => null);
   const parsed = returnUrlSchema.safeParse(body);
 
   if (!parsed.success) {
@@ -382,8 +382,98 @@ async function createCrossAppReturn(
 
 export async function POST(request: NextRequest) {
   return withRequestLogDrain({ request, route: ROUTE }, () =>
+    withAuthHandoffDiagnostics(ROUTE, async (fail) =>
+      createCrossAppReturn(
+        request,
+        fail,
+        await request.json().catch(() => null)
+      )
+    )
+  );
+}
+
+/** Sign-in parameters that need the login page's own interaction. */
+const INTERACTIVE_LOGIN_PARAMS = [
+  'confirmAccount',
+  'expectedUserId',
+  'multiAccount',
+] as const;
+
+function redirectTo(location: string) {
+  return new NextResponse(null, {
+    status: 303,
+    headers: {
+      'Cache-Control': 'no-store',
+      Location: location,
+      'Referrer-Policy': 'no-referrer',
+    },
+  });
+}
+
+/**
+ * Signed-in continue for a registered first-party app: the satellite sends
+ * the browser here instead of to `/login`. When the Tuturuuu session already
+ * satisfies everything the login page would check, the handoff is minted
+ * server-side and the browser goes straight back to the app's
+ * `/verify-token`, so no sign-in page renders. Anything else, including no
+ * session, a second-factor step-up, an account choice or a non-first-party
+ * return, falls back to `/login` with the same parameters. Only a top-level
+ * navigation continues, the same request the login page itself would turn
+ * into a handoff.
+ */
+async function continueSignedInReturn(
+  request: NextRequest,
+  fail: ReportHandoffFailure
+) {
+  const params = request.nextUrl.searchParams;
+  const login = new URL('/login', request.nextUrl.origin);
+  login.search = request.nextUrl.search;
+  const fallback = () => redirectTo(login.toString());
+
+  const navigation =
+    request.headers.get('sec-fetch-mode') === 'navigate' &&
+    request.headers.get('sec-fetch-dest') === 'document';
+  const returnUrl = params.get('returnUrl');
+  if (
+    !navigation ||
+    !returnUrl ||
+    INTERACTIVE_LOGIN_PARAMS.some((name) => params.has(name))
+  ) {
+    return fallback();
+  }
+  const target = await resolveTargetApp(decodeReturnUrl(returnUrl), request);
+  // Only Worker-only targets continue here: their handoff is bound to the
+  // browser's PKCE verifier and redeemable only with the Worker's proof, so
+  // a token in this Location is useless anywhere else, including a
+  // development origin in the registry. Web's own returns and every other
+  // app keep the sign-in page.
+  if (
+    target?.kind !== 'internal' ||
+    !target.requiresToken ||
+    !requiresWorkerRedeemProof(target.targetApp)
+  )
+    return fallback();
+
+  const rawMfaMaxAge = params.get('mfaMaxAge');
+  const response = await createCrossAppReturn(request, fail, {
+    codeChallenge: params.get('code_challenge') ?? undefined,
+    codeChallengeMethod: params.get('code_challenge_method') ?? undefined,
+    ...(rawMfaMaxAge === null ? {} : { mfaMaxAge: Number(rawMfaMaxAge) }),
+    returnUrl,
+  });
+  if (!response.ok) return fallback();
+  const body = (await response.json().catch(() => null)) as {
+    returnUrl?: unknown;
+  } | null;
+  return typeof body?.returnUrl === 'string'
+    ? redirectTo(body.returnUrl)
+    : fallback();
+}
+
+export async function GET(request: NextRequest) {
+  return withRequestLogDrain({ request, route: ROUTE }, () =>
     withAuthHandoffDiagnostics(ROUTE, (fail) =>
-      createCrossAppReturn(request, fail)
+      continueSignedInReturn(request, fail)
     )
   );
 }

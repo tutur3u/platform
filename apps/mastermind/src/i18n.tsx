@@ -21,6 +21,34 @@ export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
+/** English is the default locale and has no path prefix; `/vi` stays. */
+export const DEFAULT_LOCALE: Locale = 'en';
+
+/**
+ * Whether a `{-$locale}` route param is one this app serves: absent (the
+ * default locale) or a non-default locale. `en` itself is never a prefix;
+ * the Worker redirects `/en/...` to the unprefixed path.
+ */
+export function isLocaleParam(param: string | undefined) {
+  return param === undefined || (param !== DEFAULT_LOCALE && isLocale(param));
+}
+
+/** The locale a `{-$locale}` route param names. */
+export function routeLocale(param: string | undefined): Locale {
+  return param !== undefined && isLocale(param) ? param : DEFAULT_LOCALE;
+}
+
+/** The `{-$locale}` param for a locale: the default locale has none. */
+export function localeParam(locale: Locale): Locale | undefined {
+  return locale === DEFAULT_LOCALE ? undefined : locale;
+}
+
+/** A same-app path under a locale: `/ship`, or `/vi/ship`. */
+export function localePath(locale: Locale, path = '/') {
+  const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+  return path === '/' ? prefix || '/' : `${prefix}${path}`;
+}
+
 /** Message lookup with `{name}` interpolation; unknown keys render the key. */
 export function translator(locale: Locale): Translate {
   const messages: Messages = (locale === 'vi' ? vi : en).command;

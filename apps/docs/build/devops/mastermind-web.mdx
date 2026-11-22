@@ -13,8 +13,20 @@ It does not revive the retired app.
 
 ## Command center
 
-`/en` and `/vi` render the owner command center with the shared `Structure`
-shell and `@tuturuuu/ui` components. Every section reads the
+### Locale paths
+
+English is the default locale and has no path prefix, like the other
+Tuturuuu apps: `/`, `/ship`, `/projects`, `/fleet-access`. Vietnamese keeps
+`/vi/...`. The routes use the optional `{-$locale}` segment
+(`src/routes/{-$locale}/`), which admits only an absent locale or `vi`. An old
+`/en/...` link answers `308` to the same path without the prefix, query kept,
+before any session work; a `/en//host` path maps to `/`, never a
+protocol-relative `Location`. Sign-in return paths drop the prefix the same
+way. Coverage: `src/routes-locale.test.ts` and
+`src/native/locale-notice.test.ts`.
+
+`/` (English) and `/vi` (Vietnamese) render the owner command center with
+the shared `Structure` shell and `@tuturuuu/ui` components. Every section reads the
 [fleet sync](/platform/features/mobile-mastermind#fleet-sync) snapshot, and
 nothing renders a value the snapshot does not carry:
 
@@ -100,15 +112,25 @@ Missing configuration fails closed with 503 before storage, API or hub reads.
    request: `GET /api/v1/mastermind/access` with the owner's session must
    answer `enabled: true` (five-second timeout, redirects refused). Refresh
    carries the proof forward unchanged, so its age bounds how long one
-   second-factor check admits the owner. An owner session without a current
-   MFA proof gets a 403 notice to sign in again with the second factor, not
-   another sign-in redirect, and the response expires its session cookies. Missing or
+   second-factor check admits the owner. An owner navigation without a
+   current MFA proof expires its session cookies and starts the step-up in
+   the sign-in itself (`mfaMaxAge=30`): Web hands back a session only with a
+   just-verified factor. The `__Host-mastermind_mfa_step` cookie (600
+   seconds) marks the step-up, so a session that still lacks MFA afterwards
+   gets the notice page instead of another round trip; any other request
+   gets a plain 403 notice. Missing or
    empty IDs admit no owner. Session permission scopes are never treated as
    permission evidence, and the owner never falls back to a Fleet grant.
 4. Any other subject is a [Fleet grantee](#fleet-access-admission) and reaches
    Fleet paths only.
 5. Signed out, `/` and any navigation go to Tuturuuu sign-in through
    `/login`; every other request is a private 403.
+6. A navigation the Worker refuses gets a no-script notice page in the
+   path's locale with the one step that fixes it, never a bare `Forbidden`:
+   a sign-in callback that cannot finish offers `/login` again for the same
+   page, and a signed-in account without access offers
+   `/login?account=choose`, which asks Web for its account picker
+   (`confirmAccount=1`). Every other refused request stays a plain 403.
 
 ### Fleet access admission
 
@@ -117,7 +139,7 @@ A person with a live Fleet grant opens only the
 and method answers 403 before any session refresh, permission check or render,
 with no login redirect. The admitted requests are exactly:
 
-- `GET /{en,vi}/fleet-access` (no `HEAD`);
+- `GET /fleet-access` or `/vi/fleet-access` (no `HEAD`);
 - `GET /assets/*` (no `HEAD`);
 - `GET` or same-origin `POST /_serverFn/fleet-access.<name>` for the six
   functions in `src/fleet-access/api.ts`.
@@ -126,7 +148,7 @@ with no login redirect. The admitted requests are exactly:
 them to get a session. The subject decides the return: `/verify-token` uses
 the subject Web verified, and `/login` the subject of a session the browser
 already holds. For a grantee both return only to the Fleet page: any other
-`nextUrl` becomes `/en/fleet-access`. Before any refresh, the subject of the
+`nextUrl` becomes `/fleet-access`. Before any refresh, the subject of the
 access session (or, once it expires, of the refresh credential) is read from
 local signature checks, so a grantee on another path is refused without a
 network call.
@@ -175,7 +197,12 @@ like every other satellite. No other host, subdomain or path maps to it.
    Return paths must stay on the host and never point at `/login` or
    `/verify-token`. `/login` also stores a random nonce and a PKCE verifier
    in the `__Host-mastermind_login_state` cookie (600 seconds) and sends the
-   verifier's S256 `code_challenge`.
+   verifier's S256 `code_challenge`. When the browser carries a central
+   Tuturuuu session cookie (a routing hint only), the same query goes to
+   Web's [signed-in continue](/platform/architecture/authentication#signed-in-continue-for-first-party-apps)
+   instead, which returns straight to `/verify-token` without rendering the
+   sign-in page; a step-up (`mfa=fresh`) or an account choice always uses
+   `/login`.
 2. Web mints a single-use, 300-second cross-app token for target
    `mastermind` after its own MFA policy, bound to that challenge; it refuses
    a Mastermind handoff without one (`PKCE_REQUIRED`). `/verify-token` checks

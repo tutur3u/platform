@@ -115,7 +115,7 @@ const sameOrigin = { Origin: host, 'Sec-Fetch-Site': 'same-origin' };
 
 test('a live grantee reaches the Fleet page, assets and Fleet server functions', async () => {
   for (const path of [
-    '/en/fleet-access',
+    '/fleet-access',
     '/vi/fleet-access?tab=requests',
     '/assets/index-abc123.js',
     '/_serverFn/fleet-access.fleetDigestFn?payload=x',
@@ -142,18 +142,18 @@ test('a live grantee reaches the Fleet page, assets and Fleet server functions',
 
 const ownerRoutes = [
   ['/', 'GET'],
-  ['/en', 'GET'],
+  ['/', 'GET'],
   ['/vi', 'GET'],
-  ['/en/fleet-access/extra', 'GET'],
+  ['/fleet-access/extra', 'GET'],
   ['/fr/fleet-access', 'GET'],
-  ['/en/settings', 'GET'],
+  ['/settings', 'GET'],
   ['/login-ish', 'GET'],
   ['/_serverFn/answer', 'POST'],
   ['/_serverFn/0f3a9c', 'GET'],
   ['/_serverFn/fleet-access.loadFleet', 'GET'],
   ['/_serverFn/fleet-access.fleetDigestFn/extra', 'GET'],
-  ['/en/fleet-access', 'POST'],
-  ['/assets/../en', 'GET'],
+  ['/fleet-access', 'POST'],
+  ['/assets/../ship', 'GET'],
 ] as const;
 test.each(ownerRoutes)(
   'a grantee gets 403 on owner route %s %s with no session or data work',
@@ -171,7 +171,7 @@ test.each(ownerRoutes)(
 );
 
 test('a revoked, stopped or unverifiable grant denies the next request', async () => {
-  expect((await call('/en/fleet-access')).status).toBe(200);
+  expect((await call('/fleet-access')).status).toBe(200);
   for (const answer of [
     async () => live(false),
     async () => live(true, true),
@@ -199,18 +199,18 @@ test('forged Access headers are ignored: the session alone is the identity', asy
     'Cf-Access-Jwt-Assertion': ['eyJhbGciOiJSUzI1NiJ9', 'e30', 'sig'].join('.'),
     'Cf-Access-Authenticated-User-Email': owner.email,
   };
-  for (const path of ['/en', '/_serverFn/answer']) {
+  for (const path of ['/', '/_serverFn/answer']) {
     expect(
       await call(path, { headers: { ...forged, ...sameOrigin } })
     ).toMatchObject({ status: 403, roles: [] });
   }
-  expect(await call('/en/fleet-access', { headers: forged })).toMatchObject({
+  expect(await call('/fleet-access', { headers: forged })).toMatchObject({
     status: 200,
     roles: ['fleet'],
   });
   expect(rootFetch).not.toHaveBeenCalled();
   const anonymous = await mastermindRequest(
-    new Request(`${host}/en`, { headers: forged }),
+    new Request(`${host}/ship`, { headers: forged }),
     env,
     () => new Response('rendered'),
     now
@@ -221,7 +221,7 @@ test('forged Access headers are ignored: the session alone is the identity', asy
 
 test('an owner id under another email is never a grantee', async () => {
   env.OWNER_IDS = `${owner.id},${grantee.id}`;
-  for (const path of ['/en', '/en/fleet-access']) {
+  for (const path of ['/', '/fleet-access']) {
     expect(await call(path)).toMatchObject({ status: 403, roles: [] });
   }
   expect(rootFetch).not.toHaveBeenCalled();
@@ -240,7 +240,7 @@ const ownerAnswer = () =>
 
 test('the Owner tier never admits the grantee path', async () => {
   grantFetch.mockImplementation(async () => ownerAnswer());
-  expect(await call('/en/fleet-access')).toMatchObject({
+  expect(await call('/fleet-access')).toMatchObject({
     status: 403,
     roles: [],
   });
@@ -249,7 +249,7 @@ test('the Owner tier never admits the grantee path', async () => {
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
   expect(
     await refreshSession(
-      new Request(`${host}/en/fleet-access`, {
+      new Request(`${host}/fleet-access`, {
         headers: {
           cookie: `__Host-mastermind_refresh=${pair(grantee).appSessionRefreshToken}`,
         },
@@ -267,7 +267,7 @@ test('an owner id cannot get a session under another email', async () => {
   expect(grantFetch).not.toHaveBeenCalled();
   expect(
     await refreshSession(
-      new Request(`${host}/en/fleet-access`, {
+      new Request(`${host}/fleet-access`, {
         headers: {
           cookie: `__Host-mastermind_refresh=${pair(grantee).appSessionRefreshToken}`,
         },
@@ -300,20 +300,20 @@ test('a grantee login and callback return only to the Fleet page', async () => {
     next.searchParams.delete('mm_state');
     return `${next.pathname}${next.search}`;
   };
-  expect(await returnOf('/login?nextUrl=%2Fen')).toBe('/en/fleet-access');
+  expect(await returnOf('/login?nextUrl=%2F')).toBe('/fleet-access');
   expect(await returnOf('/login?nextUrl=%2F_serverFn%2Fanswer')).toBe(
-    '/en/fleet-access'
+    '/fleet-access'
   );
   expect(
     await returnOf('/login?nextUrl=%2Fvi%2Ffleet-access%3Ftab%3Dlink')
   ).toBe('/vi/fleet-access?tab=link');
-  expect(await returnOf('/login')).toBe('/en/fleet-access');
+  expect(await returnOf('/login')).toBe('/fleet-access');
   expect(await returnOf('/login?nextUrl=%2Fvi', owner)).toBe('/vi');
 
   web.mockResolvedValueOnce(Response.json(pair(grantee)));
   const callback = await mastermindRequest(
     new Request(
-      `${host}/verify-token?token=${'b'.repeat(64)}&nextUrl=${encodeURIComponent(`/en?mm_state=${'s'.repeat(22)}`)}`,
+      `${host}/verify-token?token=${'b'.repeat(64)}&nextUrl=${encodeURIComponent(`/?mm_state=${'s'.repeat(22)}`)}`,
       {
         headers: {
           cookie: `__Host-mastermind_login_state=${'s'.repeat(22)}.${VERIFIER}`,
@@ -324,12 +324,12 @@ test('a grantee login and callback return only to the Fleet page', async () => {
     () => new Response('unreachable'),
     now
   );
-  expect(callback.headers.get('Location')).toBe('/en/fleet-access');
+  expect(callback.headers.get('Location')).toBe('/fleet-access');
 });
 
 test('a grantee may use only GET for the page and assets', async () => {
   for (const [path, method] of [
-    ['/en/fleet-access', 'HEAD'],
+    ['/fleet-access', 'HEAD'],
     ['/assets/index.js', 'HEAD'],
     ['/assets/index.js', 'POST'],
     ['/_serverFn/fleet-access.fleetDigestFn', 'PUT'],
@@ -344,7 +344,7 @@ test('a grantee may use only GET for the page and assets', async () => {
 });
 
 test('the owner is unchanged and never falls back to a Fleet grant', async () => {
-  for (const path of ['/en', '/en/fleet-access', '/_serverFn/answer']) {
+  for (const path of ['/', '/fleet-access', '/_serverFn/answer']) {
     expect(await call(path, { as: owner })).toMatchObject({
       status: 200,
       roles: ['owner'],
@@ -352,7 +352,7 @@ test('the owner is unchanged and never falls back to a Fleet grant', async () =>
   }
   expect(grantFetch).not.toHaveBeenCalled();
   rootFetch.mockImplementation(async () => Response.json({ enabled: false }));
-  expect(await call('/en/fleet-access', { as: owner })).toMatchObject({
+  expect(await call('/fleet-access', { as: owner })).toMatchObject({
     status: 403,
     roles: [],
   });
@@ -361,7 +361,7 @@ test('the owner is unchanged and never falls back to a Fleet grant', async () =>
 
 test('a grantee context has a Fleet actor and no owner identity', () => {
   const user = { ...grantee, token: 't', expiresAt: now + 1000, mfa: true };
-  const request = new Request(`${host}/en/fleet-access`);
+  const request = new Request(`${host}/fleet-access`);
   withOwner(request, { ...user, role: 'fleet' }, () => {
     expect(currentFleetActor().id).toBe(grantee.id);
     expect(() => currentOwner()).toThrow('Missing authenticated owner');
@@ -432,7 +432,7 @@ test('a grantee session is issued and rotated only with a live grant', async () 
   expect(await exchangeHandoff('t', VERIFIER, env, now)).toBeNull();
 
   const refreshing = (user: { id: string; email: string }) =>
-    new Request(`${host}/en/fleet-access`, {
+    new Request(`${host}/fleet-access`, {
       headers: {
         cookie: `__Host-mastermind_refresh=${pair(user).appSessionRefreshToken}`,
       },

@@ -163,7 +163,9 @@ export function createFleetGrantee({ app, secret }) {
       ['en', 'Fleet access'],
       ['vi', 'Quyền truy cập đội máy'],
     ]) {
-      const response = await page(`/${locale}/fleet-access`);
+      const response = await page(
+        locale === 'en' ? '/fleet-access' : `/${locale}/fleet-access`
+      );
       assert.equal(response.status, 200);
       const html = await response.text();
       assert.ok(html.includes(title));
@@ -228,17 +230,14 @@ export function createFleetGrantee({ app, secret }) {
     ]) {
       assert.equal(await rpc('grantee', id, method, {}), 403, id);
     }
-    for (const path of ['/', '/en', '/vi', '/en/settings']) {
+    for (const path of ['/', '/ship', '/vi', '/settings']) {
       const response = await page(path, {
         headers: { 'Sec-Fetch-Mode': 'navigate' },
       });
       assert.equal(response.status, 403, path);
       assert.equal(response.headers.get('Location'), null);
     }
-    assert.equal(
-      (await page('/en/fleet-access', { method: 'HEAD' })).status,
-      403
-    );
+    assert.equal((await page('/fleet-access', { method: 'HEAD' })).status, 403);
     assert.equal(ownerStateReads(), stateReads + 1);
     assert.equal(ownerChecks(), ownerChecksAfterOwner);
     assert.ok(ownerChecksAfterOwner > checks);
@@ -250,9 +249,9 @@ export function createFleetGrantee({ app, secret }) {
       ),
       'Cf-Access-Authenticated-User-Email': 'owner@example.invalid',
     };
-    assert.equal((await page('/en', { headers: forged })).status, 403);
+    assert.equal((await page('/ship', { headers: forged })).status, 403);
     assert.equal(
-      (await page('/en/fleet-access', { headers: forged })).status,
+      (await page('/fleet-access', { headers: forged })).status,
       200
     );
     assert.equal(ownerChecks(), ownerChecksAfterOwner);
@@ -269,7 +268,7 @@ export function createFleetGrantee({ app, secret }) {
       returnUrl.searchParams.get('nextUrl') ?? '',
       'https://mastermind.tuturuuu.com'
     );
-    assert.equal(next.pathname, '/en/fleet-access');
+    assert.equal(next.pathname, '/fleet-access');
     assert.match(next.searchParams.get('mm_state') ?? '', /^[\w-]{22}$/);
 
     // The Owner tier and a revoked grant deny the next request.
@@ -278,7 +277,7 @@ export function createFleetGrantee({ app, secret }) {
       { enabled: false, tier: null },
     ]) {
       grant = next;
-      assert.equal((await page('/en/fleet-access')).status, 403);
+      assert.equal((await page('/fleet-access')).status, 403);
       assert.equal(
         await rpc('grantee', 'fleet-access.fleetDigestFn', 'GET'),
         403

@@ -146,6 +146,31 @@ Coverage: `apps/web/src/app/[locale]/(auth)/login/form-focused-sign-in.test.tsx`
 `apps/web/src/app/api/auth/callback/route-pkce.test.ts` and
 `apps/web/src/lib/auth/oauth-callback-url.test.ts`.
 
+### Signed-in continue for first-party apps
+
+Scope: Worker-only first-party targets (`WORKER_ONLY_REDEEM_TARGETS` in
+`@tuturuuu/auth/app-redeem-proof`, today Mastermind), whose handoffs are bound
+to the browser's PKCE verifier and redeemable only with the Worker's proof.
+Apex-mounted apps (Mail, Calendar, Meet, Contacts at `tuturuuu.com/<app>`)
+read the shared session directly and need no handoff. Default: when the
+browser carries a central session cookie, the satellite sends it to
+`GET /api/v1/auth/cross-app-return` with the same query it would give
+`/login` (`returnUrl`, `code_challenge`, `code_challenge_method`,
+`mfaMaxAge`). When the Tuturuuu session already satisfies everything the
+login page checks, Web mints the handoff server-side and answers `303`
+straight to the app's `/verify-token`, so no sign-in page renders. The answer
+is `no-store` with `Referrer-Policy: no-referrer`.
+
+Every other case answers `303` to `/login` with the query unchanged: no
+session, a required or stale second factor, `confirmAccount`, `multiAccount`
+or `expectedUserId`, any other return (Web's own and every non-Worker-only
+app included), a Mastermind return without a PKCE challenge, and any
+request that is not a top-level document navigation (`Sec-Fetch-Mode:
+navigate`, `Sec-Fetch-Dest: document`). The mint is the one the login page
+makes for the same request, with the same account MFA policy and PKCE
+binding. Coverage:
+`apps/web/src/app/api/v1/auth/cross-app-return/route-continue.test.ts`.
+
 ## Raw session tokens are native-only
 
 Browser sign-in uses the browser session flow. Raw access and refresh tokens are reserved for supported native-client authentication flows; browser requests to those native token flows are refused. Native-client compatibility and browser session behavior require separate verification.

@@ -184,5 +184,5 @@ test('links to every thread from the Inbox header', () => {
   render(wrap(<Inbox snapshot={snapshot()} now={now} showFyi interactive />));
   expect(
     screen.getByRole('link', { name: 'All threads' }).getAttribute('href')
-  ).toBe('/$locale/projects');
+  ).toBe('/{-$locale}/projects');
 });

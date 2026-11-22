@@ -25,12 +25,7 @@ export default {
       env,
       (input, owner, mount) => {
         const path = new URL(input.url).pathname;
-        if (path === `${mount.basePath}/` || path === (mount.basePath || '/')) {
-          return new Response(null, {
-            status: 303,
-            headers: { Location: `${mount.basePath}/en` },
-          });
-        }
+        // `/` is the English command center; the default locale has no prefix.
         if (path.startsWith(`${mount.basePath}/assets/`) && env.ASSETS) {
           return fetchAsset(env.ASSETS, input);
         }

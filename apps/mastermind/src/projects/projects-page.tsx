@@ -6,7 +6,7 @@ import { PageHeader, Preferences, Shell } from '../components/shell';
 import { useNow } from '../fleet/clock';
 import { subscribeOwnerLive } from '../fleet/owner-live';
 import { formatAge, useI18n } from '../i18n';
-import type { ProjectsSearch } from '../routes/$locale_.projects';
+import type { ProjectsSearch } from '../routes/{-$locale}/projects';
 import { FlatThreadList } from './flat-list';
 import { CachedGroups } from './cached-groups';
 import { useListCache } from './list-cache';

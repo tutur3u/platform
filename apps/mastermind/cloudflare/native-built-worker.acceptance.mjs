@@ -231,11 +231,26 @@ test(
       );
     }
     assert.equal(
-      (await worker.fetch('https://mastermind.tuturuuu.com/en')).status,
+      (await worker.fetch('https://mastermind.tuturuuu.com/ship')).status,
       403
     );
+    // English has no prefix: a legacy /en link moves for good.
+    const legacy = await worker.fetch(
+      'https://mastermind.tuturuuu.com/en/ship?x=1',
+      { redirect: 'manual' }
+    );
+    assert.equal(legacy.status, 308);
+    assert.equal(legacy.headers.get('Location'), '/ship?x=1');
+    assert.equal(
+      (
+        await worker.fetch('https://mastermind.tuturuuu.com/en//evil.example', {
+          redirect: 'manual',
+        })
+      ).headers.get('Location'),
+      '/'
+    );
     // Access headers are never authority: without a session they open nothing.
-    for (const path of ['/en', '/_serverFn/answer', '/assets/probe.js']) {
+    for (const path of ['/ship', '/_serverFn/answer', '/assets/probe.js']) {
       assert.equal(
         (
           await worker.fetch(`https://mastermind.tuturuuu.com${path}`, {
@@ -289,7 +304,7 @@ test(
       ) ?? [];
     const callback = (cookie) =>
       worker.fetch(
-        `https://mastermind.tuturuuu.com/verify-token?token=${'a'.repeat(64)}&nextUrl=${encodeURIComponent(`/en?mm_state=${state}`)}`,
+        `https://mastermind.tuturuuu.com/verify-token?token=${'a'.repeat(64)}&nextUrl=${encodeURIComponent(`/?mm_state=${state}`)}`,
         {
           headers: cookie
             ? { cookie: `__Host-mastermind_login_state=${cookie}` }
@@ -305,33 +320,40 @@ test(
     const matched = await callback(`${state}.${verifier}`);
     assert.equal(matched.status, 403);
     assert.equal(handoffRedemptions, 1);
-    // An owner session without MFA is refused with the MFA notice.
-    const noMfa = await worker.fetch('https://mastermind.tuturuuu.com/en', {
+    // An owner navigation without MFA starts the second-factor step-up.
+    const noMfa = await worker.fetch('https://mastermind.tuturuuu.com/ship', {
       headers: {
         Authorization: `Bearer ${sessionWithoutMfa}`,
         'Sec-Fetch-Mode': 'navigate',
       },
       redirect: 'manual',
     });
-    assert.equal(noMfa.status, 403);
-    assert.match(await noMfa.text(), /multi-factor authentication/);
+    assert.equal(noMfa.status, 303);
+    const stepUp = new URL(noMfa.headers.get('Location') ?? '');
+    assert.equal(stepUp.origin + stepUp.pathname, 'https://tuturuuu.com/login');
+    assert.equal(stepUp.searchParams.get('mfaMaxAge'), '30');
+    // A non-navigation without MFA gets the notice.
+    const noMfaCall = await worker.fetch(
+      'https://mastermind.tuturuuu.com/ship',
+      {
+        headers: { Authorization: `Bearer ${sessionWithoutMfa}` },
+        redirect: 'manual',
+      }
+    );
+    assert.equal(noMfaCall.status, 403);
+    assert.match(await noMfaCall.text(), /multi-factor authentication/);
     for (const path of ['/mastermind', '/mastermind/en']) {
       assert.equal(
         (await worker.fetch(`https://tuturuuu.com${path}`, { headers })).status,
         403
       );
     }
-    const root = await worker.fetch('https://mastermind.tuturuuu.com/', {
-      headers,
-      redirect: 'manual',
-    });
-    assert.equal(root.status, 303);
-    assert.equal(root.headers.get('Location'), '/en');
     const nonces = new Set();
+    // `/` is the English command center; Vietnamese keeps `/vi`.
     for (const locale of ['en', 'vi']) {
       const response = await worker.fetch(
-        `https://mastermind.tuturuuu.com/${locale}`,
-        { headers }
+        `https://mastermind.tuturuuu.com${locale === 'en' ? '/' : '/vi'}`,
+        { headers, redirect: 'manual' }
       );
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
@@ -365,7 +387,7 @@ test(
     const readsBeforeRevocation = permissionReads;
     rootAccess = false;
     assert.equal(
-      (await worker.fetch('https://mastermind.tuturuuu.com/en', { headers }))
+      (await worker.fetch('https://mastermind.tuturuuu.com/', { headers }))
         .status,
       403
     );

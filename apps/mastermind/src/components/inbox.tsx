@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 import type { FleetSnapshot } from '../fleet/contract';
 import { inboxLanes, type NeedsItem } from '../fleet/inbox-lanes';
 import { useSnoozes } from '../fleet/snooze';
-import { useI18n } from '../i18n';
+import { localeParam, useI18n } from '../i18n';
 import { AskCard } from './ask-card';
 import { FyiPanel, RecentAnswers } from './inbox-side';
 import { Kbd, onListKey, visibleCards } from './inbox-keys';
@@ -81,7 +81,10 @@ export function Inbox({
       note={t('inbox.note')}
       actions={
         <Button asChild variant="outline" size="sm">
-          <Link to="/$locale/projects" params={{ locale }}>
+          <Link
+            to="/{-$locale}/projects"
+            params={{ locale: localeParam(locale) }}
+          >
             <Folder />
             {t('projects.allThreads')}
           </Link>

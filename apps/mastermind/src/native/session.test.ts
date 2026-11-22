@@ -80,12 +80,12 @@ test('return paths stay on the host and never loop through the handoff', () => {
     '//evil.invalid',
     '/\\evil',
     '/.//evil.example',
-    '/en/..//evil.example',
+    '/..//evil.example',
     '/%2e%2e//evil.example',
     '/login',
     '/verify-token?token=x',
   ])
-    expect(safeNextPath(raw)).toBe('/en');
+    expect(safeNextPath(raw)).toBe('/');
 });
 
 test('handoff accepts only a 300 s owner session for target mastermind with the owner email', async () => {
@@ -141,12 +141,12 @@ test('handoff accepts only a 300 s owner session for target mastermind with the 
 
 test('refresh needs a local owner refresh credential before calling Web', async () => {
   const cookie = (token: string) =>
-    new Request('https://mastermind.tuturuuu.com/en', {
+    new Request('https://mastermind.tuturuuu.com/', {
       headers: { cookie: `__Host-mastermind_refresh=${token}` },
     });
   expect(
     await refreshSession(
-      new Request('https://mastermind.tuturuuu.com/en'),
+      new Request('https://mastermind.tuturuuu.com/'),
       env,
       now
     )
@@ -246,7 +246,7 @@ test('an expired access session rotates inline; without a session a navigation g
   web.mockResolvedValueOnce(Response.json(issued()));
   let rendered = 0;
   const response = await mastermindRequest(
-    new Request('https://mastermind.tuturuuu.com/en', {
+    new Request('https://mastermind.tuturuuu.com/', {
       headers: {
         cookie: `__Host-mastermind_session=${expired}; __Host-mastermind_refresh=${refresh}`,
       },
@@ -307,7 +307,7 @@ test('shared-name session cookies a sibling host could plant are ignored', async
     'tuturuuu_app_session_refresh',
   ]) {
     const response = await mastermindRequest(
-      new Request('https://mastermind.tuturuuu.com/en', {
+      new Request('https://mastermind.tuturuuu.com/ship', {
         headers: { cookie: `${name}=${planted}` },
       }),
       env,
@@ -322,7 +322,7 @@ test('shared-name session cookies a sibling host could plant are ignored', async
   expect(rendered).toBe(0);
   expect(web).not.toHaveBeenCalled();
   const own = await mastermindRequest(
-    new Request('https://mastermind.tuturuuu.com/en', {
+    new Request('https://mastermind.tuturuuu.com/', {
       headers: { cookie: `__Host-mastermind_session=${planted}` },
     }),
     env,
@@ -373,7 +373,7 @@ test("a callback without this browser's login state or with a malformed token ne
 test('a forced intruder handoff and a sessionless fetch are refused without cookies', async () => {
   web.mockResolvedValueOnce(Response.json(issued('intruder')));
   const csrf = await mastermindRequest(
-    callback('/en'),
+    callback('/'),
     env,
     () => new Response('unreachable'),
     now
@@ -442,7 +442,7 @@ test('a step-up sign-in asks Web for a second factor verified in the last 30 sec
   expect(web).not.toHaveBeenCalled();
 
   expect(
-    location(await loginRedirect('/en', { freshMfa: true })).searchParams.get(
+    location(await loginRedirect('/', { freshMfa: true })).searchParams.get(
       'mfaMaxAge'
     )
   ).toBe('30');

@@ -43,7 +43,9 @@ export function fleetServerFunctionId({
 }
 
 const fleetIds = new Set(FLEET_SERVER_FUNCTION_IDS);
-const FLEET_PAGE = /^\/(?:en|vi)\/fleet-access\/?$/;
+// `/fleet-access` (English, no prefix) or `/vi/fleet-access`; the Worker
+// redirects legacy `/en/...` paths before this gate runs.
+const FLEET_PAGE = /^(?:\/vi)?\/fleet-access\/?$/;
 
 export function isFleetPath(method: string, url: URL, basePath: string) {
   if (basePath && !url.pathname.startsWith(`${basePath}/`)) return false;
@@ -63,5 +65,5 @@ export function fleetReturnPath(path: string) {
   const url = new URL(path, 'https://mastermind.tuturuuu.com');
   return FLEET_PAGE.test(url.pathname)
     ? `${url.pathname}${url.search}`
-    : '/en/fleet-access';
+    : '/fleet-access';
 }

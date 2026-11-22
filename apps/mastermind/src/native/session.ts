@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/auth/app-session-core';
 import { z } from 'zod';
 import { isOwnerEmail, type MastermindEnvironment, ownerIds } from './auth';
+import { legacyDefaultLocalePath } from './locale-path';
 import { hasLiveFleetGrant } from './permission';
 
 /**
@@ -32,17 +33,21 @@ const TARGET = 'mastermind';
 const MAX_ACCESS_SECONDS = 300;
 const MAX_REFRESH_SECONDS = 86_400;
 
-/** A same-host path to return to; anything else falls back to `/en`. */
+/**
+ * A same-host path to return to; anything else falls back to `/`. A legacy
+ * `/en` path returns to its unprefixed form.
+ */
 export function safeNextPath(raw: string | null) {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/en';
-  if (raw.includes('\\') || /[\u0000-\u001f]/u.test(raw)) return '/en';
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/';
+  if (raw.includes('\\') || /[\u0000-\u001f]/u.test(raw)) return '/';
   const url = new URL(raw, MASTERMIND_ORIGIN);
-  if (url.origin !== MASTERMIND_ORIGIN) return '/en';
+  if (url.origin !== MASTERMIND_ORIGIN) return '/';
   // Dot segments can normalize into `//host`, a protocol-relative Location.
   if (!url.pathname.startsWith('/') || url.pathname.startsWith('//'))
-    return '/en';
-  if (['/login', '/verify-token'].includes(url.pathname)) return '/en';
-  return `${url.pathname}${url.search}`;
+    return '/';
+  if (['/login', '/verify-token'].includes(url.pathname)) return '/';
+  const pathname = legacyDefaultLocalePath(url.pathname) ?? url.pathname;
+  return `${pathname}${url.search}`;
 }
 
 /**
@@ -95,14 +100,38 @@ const LOGIN_NONCE = /^[A-Za-z0-9_-]{22}$/;
 export const FRESH_MFA_MAX_AGE_SECONDS = 30;
 
 /**
+ * Whether the browser carries a Tuturuuu session cookie on the shared
+ * domain. It is only a routing hint, never identity: Web verifies the
+ * session itself and falls back to its sign-in page.
+ */
+const CENTRAL_SESSION_COOKIE = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+export function hasCentralSessionHint(request: Request) {
+  return (request.headers.get('cookie') ?? '')
+    .split(';')
+    .some((part) =>
+      CENTRAL_SESSION_COOKIE.test(part.trim().split('=')[0] ?? '')
+    );
+}
+
+/** Web's signed-in continue: mints server-side, else answers `/login`. */
+const WEB_CONTINUE_PATH = '/api/v1/auth/cross-app-return';
+
+/**
  * Sends the browser to the Web sign-in, to return through `/verify-token`.
  * With `freshMfa`, Web hands back a session only once its second factor was
  * verified within the last `FRESH_MFA_MAX_AGE_SECONDS`, asking for it again
- * when the session's own proof is older.
+ * when the session's own proof is older. With `signedIn` (a central session
+ * cookie is present) the browser goes to Web's signed-in continue instead,
+ * which returns straight here when that session is enough and otherwise
+ * shows the same sign-in page.
  */
 export async function loginRedirect(
   nextPath: string,
-  { freshMfa = false }: { freshMfa?: boolean } = {}
+  {
+    freshMfa = false,
+    chooseAccount = false,
+    signedIn = false,
+  }: { freshMfa?: boolean; chooseAccount?: boolean; signedIn?: boolean } = {}
 ) {
   const state = randomToken(16);
   const verifier = randomToken(32);
@@ -110,10 +139,16 @@ export async function loginRedirect(
   next.searchParams.set(LOGIN_STATE_PARAM, state);
   const verify = new URL('/verify-token', MASTERMIND_ORIGIN);
   verify.searchParams.set('nextUrl', `${next.pathname}${next.search}`);
-  const login = new URL('/login', WEB_ORIGIN);
+  // A step-up or an account choice needs the sign-in page itself.
+  const login = new URL(
+    signedIn && !freshMfa && !chooseAccount ? WEB_CONTINUE_PATH : '/login',
+    WEB_ORIGIN
+  );
   login.searchParams.set('returnUrl', verify.toString());
   if (freshMfa)
     login.searchParams.set('mfaMaxAge', String(FRESH_MFA_MAX_AGE_SECONDS));
+  // Web shows its account picker instead of continuing as the current one.
+  if (chooseAccount) login.searchParams.set('confirmAccount', '1');
   login.searchParams.set('code_challenge', await pkceChallenge(verifier));
   login.searchParams.set('code_challenge_method', 'S256');
   const headers = new Headers({ Location: login.toString() });

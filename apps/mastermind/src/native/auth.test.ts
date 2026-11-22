@@ -126,7 +126,7 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
     new Request(
       kind === 'apex path'
         ? 'https://tuturuuu.com/mastermind'
-        : `${protocol}//${host}/en`,
+        : `${protocol}//${host}/ship`,
       { headers }
     ),
     {
@@ -147,25 +147,51 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
   expect(otherFetch).not.toHaveBeenCalled();
   expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });
-test('an owner session without MFA gets the MFA notice, not a login loop', async () => {
-  const response = await mastermindRequest(
-    new Request('https://mastermind.tuturuuu.com/en', {
+const clearedSession = [
+  '__Host-mastermind_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+  '__Host-mastermind_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+];
+const withoutMfa = (headers: Record<string, string> = {}) =>
+  mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/vi/ship', {
       headers: {
         Authorization: `Bearer ${session({ mfa: null })}`,
-        'Sec-Fetch-Mode': 'navigate',
+        ...headers,
       },
     }),
     env,
     () => new Response('private'),
     now
   );
-  expect(response.status).toBe(403);
-  expect(response.headers.get('Location')).toBeNull();
-  expect(response.headers.getSetCookie()).toEqual([
-    '__Host-mastermind_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
-    '__Host-mastermind_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
-  ]);
-  expect(await response.text()).toMatch(/multi-factor authentication/);
+test('an owner navigation without MFA starts the second-factor step-up in the sign-in', async () => {
+  const response = await withoutMfa({ 'Sec-Fetch-Mode': 'navigate' });
+  expect(response.status).toBe(303);
+  const login = new URL(response.headers.get('Location') ?? '');
+  expect(login.origin + login.pathname).toBe('https://tuturuuu.com/login');
+  expect(login.searchParams.get('mfaMaxAge')).toBe('30');
+  const cookies = response.headers.getSetCookie();
+  expect(cookies).toEqual(expect.arrayContaining(clearedSession));
+  expect(cookies).toContain(
+    '__Host-mastermind_mfa_step=1; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax'
+  );
+});
+test('a step-up already under way, or a non-navigation, gets the MFA notice, not a loop', async () => {
+  const again = await withoutMfa({
+    'Sec-Fetch-Mode': 'navigate',
+    cookie: '__Host-mastermind_mfa_step=1',
+  });
+  expect(again.status).toBe(403);
+  expect(again.headers.get('Location')).toBeNull();
+  expect(again.headers.getSetCookie()).toEqual(
+    expect.arrayContaining(clearedSession)
+  );
+  const page = await again.text();
+  expect(page).toContain('lang="vi"');
+  expect(page).toContain('href="/login?mfa=fresh&amp;nextUrl=%2Fvi%2Fship"');
+  const call = await withoutMfa();
+  expect(call.status).toBe(403);
+  expect(call.headers.get('Location')).toBeNull();
+  expect(await call.text()).toMatch(/multi-factor authentication/);
 });
 test('an MFA proof without verifiedAt never admits the owner', async () => {
   // Web's signer refuses such a proof, so hand-sign a session that carries one.
@@ -176,7 +202,7 @@ test('an MFA proof without verifiedAt never admits the owner', async () => {
   const token = `ttr_app_${content}.${createHmac('sha256', secret).update(content).digest('base64url')}`;
   let reads = 0;
   const response = await mastermindRequest(
-    new Request('https://mastermind.tuturuuu.com/en', {
+    new Request('https://mastermind.tuturuuu.com/ship', {
       headers: { Authorization: `Bearer ${token}` },
     }),
     env,
@@ -190,6 +216,27 @@ test('an MFA proof without verifiedAt never admits the owner', async () => {
   expect(response.status).toBe(403);
   expect(reads).toBe(0);
   expect(permissionFetch).not.toHaveBeenCalled();
+});
+test('the step-up marker clears only once a request is admitted with the new proof', async () => {
+  const admitted = await mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/ship', {
+      headers: owner({ cookie: '__Host-mastermind_mfa_step=1' }),
+    }),
+    env,
+    () => new Response('page'),
+    now
+  );
+  expect(admitted.status).toBe(200);
+  expect(admitted.headers.getSetCookie()).toContain(
+    '__Host-mastermind_mfa_step=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax'
+  );
+  const plain = await mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/ship', { headers: owner() }),
+    env,
+    () => new Response('page'),
+    now
+  );
+  expect(plain.headers.getSetCookie()).toEqual([]);
 });
 test('valid owner -> 200; permission revocation is immediate even with warm memo', async () => {
   const request = new Request('https://mastermind.tuturuuu.com/vi', {
@@ -332,7 +379,7 @@ test('app tree contains no privileged database key names', () => {
 });
 
 test('live permission revocation denies the next request with unchanged env and warm memo', async () => {
-  const request = new Request('https://mastermind.tuturuuu.com/en', {
+  const request = new Request('https://mastermind.tuturuuu.com/', {
     headers: owner(),
   });
   const memo = createOwnerMemo<string>(() => now);
@@ -371,7 +418,7 @@ test.each(['error', 'timeout', 'unauthorized', 'malformed', 'wrong type'])(
       return Response.json(kind === 'malformed' ? {} : { enabled: 'true' });
     });
     const render = vi.fn(async () => new Response('private'));
-    const request = new Request('https://mastermind.tuturuuu.com/en', {
+    const request = new Request('https://mastermind.tuturuuu.com/', {
       headers: owner(),
     });
     expect((await mastermindRequest(request, env, render, now)).status).toBe(
@@ -415,7 +462,7 @@ test('only same-origin server-function POSTs pass the method gate', async () => 
   expect(admitted).toMatchObject({ status: 200, reads: 1 });
   expect(admitted.csp).toContain("'nonce-bm9uY2U='");
   for (const [path, method, headers] of [
-    ['/en', 'POST', same],
+    ['/', 'POST', same],
     ['/_serverFn/answer', 'POST', {}],
     ['/_serverFn/answer', 'POST', { Origin: 'https://tuturuuu.com' }],
     ['/_serverFn/answer', 'POST', { ...same, 'Sec-Fetch-Site': 'same-site' }],
