@@ -1,7 +1,7 @@
 ---
 title: "Pre-push checks"
 description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
-updatedAt: "2026-11-17"
+updatedAt: "2026-11-22"
 audience: developers
 ---
 
@@ -54,6 +54,7 @@ set in the environment.
 | `.github/workflows/` or `.github/actions/`                                              | Workflow concurrency (including the main validation inventory), Bun pin, workflow-config and `pr-label-gate` policy tests                                                                                                                                                                                                                                                                                                 |
 | `apps/mobile/`                                                                          | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it                                                                                                                                                                                                                                                                   |
 | `apps/*/messages/*.json`                                                                | i18n sort and en/vi key parity                                                                                                                                                                                                                                                                                                                                                                                           |
+| Any JS or TS source under `apps/*` or `packages/*`; `apps/*/messages/*.json` and `packages/*/messages/*.json`; each workspace's `package.json` and `tsconfig*.json`; the root `package.json`; `packages/typescript-config/*.json`; the i18n rendered, namespace, launcher and source-key-scan check scripts (`scripts/i18n-rendered-*`, `scripts/i18n-namespace-*`, `scripts/i18n-launcher-translations*`, `scripts/i18n-source-key-scan*`) and `scripts/paused-runtimes.js`| Translation usage, build-free, the three commands of the i18n Check namespace job: rendered keys, rendered settings keys and shared namespaces. They follow imports, so a source change with no bundle change can fail them; `scripts/check-changed/i18n-usage.test.js` pins the paths and the commands |
 | Migrations, docs, web API routes                                                        | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings                                                                                                                                                                                                                                                                                                                                             |
 | Web routes/pages, `apps/api/**`, Web Cloudflare route config, `.oxfmtrc.json`, `bun.lock`| Route registries `--check`, build-free: API route registry (`apps/api/generated`), Web route manifest (`start-route-manifest.json`) and gateway route table. Editing a handler changes its recorded source hash, so a registry can be stale without a new route                                                                                                                                                          |
 | Migrations, the public-schema allowlist, generated types, mobile/Discord or app/package source| [Public schema guard](/build/devops/public-schema-privatization#guard-no-new-public-relations) (`bun db:public-guard`)
@@ -167,6 +168,15 @@ reverse dependents because those files can affect type-checking and test discove
 When script tests are selected, the fence covers `scripts/`, `plugins/` and
 `.github/actions/` as well as the tests' own parent directories, so nested tests
 cannot depend on untracked helpers in a parent or sibling directory.
+The translation usage checks read the working tree of every app and shared
+package, so an untracked file in a workspace the push does not touch can fail
+them, or satisfy an import that CI cannot resolve. The hook does not refuse
+up front for those files, because the presence of other work in a shared
+checkout must not block a push: before the checks run it prints a note naming
+untracked paths they may read, matched by path whether or not anything
+imports them. The note is advisory. A translation check that fails still
+fails the push, whichever file caused it, and the note is where to look
+first; CI on the exact commit decides. A dry run prints no note.
 Ignored files are excluded from this check. NUL-delimited Git paths preserve
 whitespace; only option-like repository/workspace-relative prefixes are rejected
 before file tools run. Internal dash directories, including Git app routes, are valid. The hook checks committed changes only and skips deletions or pushes of refs

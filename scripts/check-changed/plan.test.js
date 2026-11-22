@@ -98,6 +98,10 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'browser-session-surface',
     'public-schema',
     'mounted-client-api',
+    // Source an app can render: the translation usage checks.
+    'i18n-rendered-keys',
+    'i18n-rendered-settings',
+    'i18n-namespace',
     // A page is a route: the registries derived from the route tree.
     'web-route-manifest',
     'gateway-routes',

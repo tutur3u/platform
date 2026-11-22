@@ -11,6 +11,7 @@ function validateMap(value = map) {
     'sdk-portable',
     'package-release-dependencies',
     'i18n',
+    'i18n-usage',
     'migration-timestamps',
     'api-route-wrappers',
     'mobile-lucide-sync',

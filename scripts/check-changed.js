@@ -18,6 +18,7 @@ const { pinVitestTsconfig } = require('./check-changed/vitest-tsconfig-pin.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { selectAffectedWorkspaces } = require('./check-changed/affected.js');
+const { i18nUsageUntrackedNote } = require('./check-changed/i18n-usage.js');
 const {
   trustedTtr,
   inResourceLane,
@@ -560,6 +561,11 @@ function main(argv = process.argv.slice(2), deps = {}) {
       );
       return 1;
     }
+    // Advisory: a failed listing says nothing and never fails the push.
+    const usageNote = options.dryRun
+      ? null
+      : i18nUsageUntrackedNote(steps, (args) => tryGit(args, execFile));
+    if (usageNote) log(usageNote);
   }
   const missing = missingDistPackages(root);
   log(
