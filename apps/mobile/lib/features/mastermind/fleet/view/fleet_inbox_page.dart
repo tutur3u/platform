@@ -183,6 +183,9 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
   ) {
     final l10n = context.l10n;
     final fleet = _runtime.fleet;
+    final urgentIssues = snapshot.mobileIssues
+        .where((alert) => alert.urgent)
+        .toList();
     Widget card(FleetDecision decision) =>
         _card(snapshot, state, decision, now);
     return AppPageScrollView(
@@ -194,8 +197,11 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
             FleetFreshnessLine(state: state, now: widget.now),
             FleetInboxLaneSwitch(
               lane: _lane,
-              needsYou: groups.openCount,
-              fyi: groups.fyiCount,
+              needsYou: groups.openCount + urgentIssues.length,
+              fyi:
+                  groups.fyiCount +
+                  snapshot.mobileIssues.length -
+                  urgentIssues.length,
               onChanged: (lane) => setState(() => _lane = lane),
             ),
             ...switch (_lane) {
@@ -203,6 +209,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                 l10n,
                 groups,
                 card: card,
+                mobileIssues: urgentIssues,
                 onWake: (id) => unawaited(_runtime.fleetSnoozes.wake(id)),
               ),
               FleetInboxLane.fyi => fleetFyiLane(

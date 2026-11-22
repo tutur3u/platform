@@ -25,7 +25,7 @@ test('fleet reads send only the owner bearer and the login and review features, 
   );
   expect(request.headers.get('Authorization')).toBe('Bearer session-token');
   expect(request.headers.get('x-mastermind-fleet-features')).toBe(
-    'login,review'
+    'login,review,mobile-issues'
   );
   expect(request.redirect).toBe('manual');
   expect([...request.headers.keys()].sort()).toEqual([

@@ -17,6 +17,7 @@ import {
 import type { ClaimResult, Ledger, RunOutcome } from './ledger';
 import { WORKER_PROCESSORS } from './processors';
 import { withinDeadline } from './processors/deadline';
+import { MOBILE_ISSUES_JOB, mobileIssueMode } from './processors/mobile-issues';
 import {
   TASKS_RECURRENCE_JOB,
   tasksRecurrenceMode,
@@ -55,6 +56,14 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  if (cronJob.workerProcessor === MOBILE_ISSUES_JOB) {
+    const secret = env.MASTERMIND_MOBILE_ALERTS_SECRET?.trim();
+    if (!secret || secret.length < 32)
+      return { problem: 'MASTERMIND_MOBILE_ALERTS_SECRET unset' };
+    if (env.WEB_ORIGIN !== 'https://tuturuuu.com')
+      return { problem: 'Mobile alerts require the canonical Web origin' };
+    return { secret, url: new URL(cronJob.path, env.WEB_ORIGIN) };
+  }
   if (cronJob.workerProcessor === 'mastermind-ship') {
     const secret = env.MASTERMIND_STORE_TOKEN?.trim();
     if (!secret || secret.length < 32)
@@ -165,6 +174,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
     cronJob.workerProcessor !== 'chat-realtime-revocations' &&
     cronJob.workerProcessor !== 'fleet-access-consumer' &&
     cronJob.workerProcessor !== 'mastermind-ship' &&
+    cronJob.workerProcessor !== MOBILE_ISSUES_JOB &&
     !selected.includes(cronJob.id)
   )
     return null;
@@ -282,6 +292,19 @@ export async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (
+    cronJob.id === MOBILE_ISSUES_JOB &&
+    mobileIssueMode(
+      env.MOBILE_CRASHLYTICS_MODE,
+      env.MOBILE_CRASHLYTICS_UNTIL,
+      deps.now()
+    ) === 'off'
+  )
+    return {
+      id: cronJob.id,
+      outcome: 'skipped',
+      reason: 'mobile-crashlytics-off',
+    };
   if (
     cronJob.id === 'fleet-access-consumer' &&
     env.FLEET_CONSUMER_MODE !== 'dry-run'

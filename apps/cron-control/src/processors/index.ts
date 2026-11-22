@@ -9,6 +9,7 @@ import { sweepUnauthorizedDevboxRuns } from './devbox-unauthorized-run-sweep';
 import { dispatchBillSplitReminders } from './finance-bill-split-reminders';
 import { consumeFleetIntents } from './fleet-access-consumer';
 import { collectShip } from './mastermind-ship';
+import { collectMobileIssues, MOBILE_ISSUES_JOB } from './mobile-issues';
 import { eraseMeetAttendance } from './meet-attendance-erasure';
 import { retainMeetAttendance } from './meet-attendance-retention';
 import { purgeMeetTranscripts } from './meet-transcript-retention';
@@ -42,6 +43,7 @@ export const WORKER_PROCESSORS: Record<
   'finance-bill-split-reminders': dispatchBillSplitReminders,
   'fleet-access-consumer': consumeFleetIntents,
   'mastermind-ship': collectShip,
+  [MOBILE_ISSUES_JOB]: collectMobileIssues,
   'meet-attendance-erasure': eraseMeetAttendance,
   'meet-attendance-retention': retainMeetAttendance,
   'meet-transcript-retention': purgeMeetTranscripts,

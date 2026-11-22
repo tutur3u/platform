@@ -137,7 +137,7 @@ void main() {
       await FleetRepository(api: api).fetch();
       verify(
         () => api.getJsonWithHeaders(FleetRepository.statePath, {
-          'x-mastermind-fleet-features': 'login,alerts,review',
+          'x-mastermind-fleet-features': 'login,alerts,review,mobile-issues',
         }),
       ).called(1);
     });

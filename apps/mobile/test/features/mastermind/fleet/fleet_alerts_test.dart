@@ -74,6 +74,47 @@ void main() {
       );
       expect(answered.alerts, hasLength(2));
     });
+
+    test('preserves urgent and FYI mobile issues when answering', () {
+      final spike = {
+        'id': 'mobile-${'a' * 32}',
+        'issueId': 'a' * 32,
+        'platform': 'ios',
+        'kind': 'spike',
+        'priority': 'decision',
+        'build': 10,
+        'count': 25,
+      };
+      final newIssue = {
+        ...spike,
+        'id': 'mobile-${'b' * 32}',
+        'issueId': 'b' * 32,
+        'kind': 'new',
+        'priority': 'fyi',
+        'count': 1,
+      };
+      final snapshot = FleetSnapshot.parse({
+        ...fleetSampleJson(),
+        'mobileIssues': [
+          spike,
+          newIssue,
+          {...spike, 'issueId': 'invalid'},
+        ],
+      });
+      final receipt = FleetAnswerReceipt.parse({
+        'action': 'hold',
+        'revision': 1,
+        'answeredAt': '2026-11-20T03:01:00Z',
+        'pickedUp': false,
+      })!;
+      final answered = snapshot.withAnswer('pool-switch', receipt);
+
+      expect(answered.answers['pool-switch'], receipt);
+      expect(answered.mobileIssues.map((issue) => (issue.kind, issue.urgent)), [
+        (FleetMobileIssueKind.spike, true),
+        (FleetMobileIssueKind.newIssue, false),
+      ]);
+    });
   });
 
   group('Today', () {

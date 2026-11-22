@@ -20331,4 +20331,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetCopyText => 'Copy text';
+
+  @override
+  String get mastermindMobileIssueNew => 'New mobile issue';
+
+  @override
+  String get mastermindMobileIssueRegression => 'Mobile issue regression';
+
+  @override
+  String get mastermindMobileIssueSpike => 'Mobile issue spike';
+
+  @override
+  String get mastermindMobileIssueTest => 'Mobile diagnostics test';
+
+  @override
+  String mastermindMobileIssueDetail(String platform, int build, int count, String issueId) {
+    return '$platform build $build · $count reports · $issueId';
+  }
 }

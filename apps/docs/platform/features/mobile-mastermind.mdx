@@ -293,6 +293,16 @@ records the product rules of the shell entry and every tab.
   including a nonempty list with no valid row, keeps the previous file and logs counts only. The orchestrator reads that file to
   raise one urgent ask per new page alert id; tickets and resolved alerts
   raise none.
+- **Mobile issue alerts:** owner clients that advertise `mobile-issues`
+  receive a top-level `mobileIssues` list and corresponding ETag changes
+  when alerts arrive. New issues, regressions and lower-volume spikes appear
+  in FYI. A spike with at least 25 reports appears at decision priority
+  above the open decisions. Signed pulls carry the same optional field, and
+  the local publisher stores it in its existing alerts file. Each entry only
+  includes an issue ID, platform, build, report count, kind, priority and
+  timestamp with a stable dedupe ID. See the
+  [Crashlytics triage runbook](/build/devops/mobile-store-deployment#fleet-crashlytics-triage)
+  for the pickup and fix-lane procedure.
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record with the answering
   actor; a retry by the same actor with the same key and payload returns the

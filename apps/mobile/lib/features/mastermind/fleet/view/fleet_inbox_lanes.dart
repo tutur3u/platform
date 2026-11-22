@@ -7,6 +7,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_alerts_panel.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_history_row.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_groups.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_rows.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_mobile_issue_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The three Inbox lanes.
@@ -26,8 +27,10 @@ List<Widget> fleetNeedsYouLane(
   FleetInboxGroups groups, {
   required FleetInboxCardBuilder card,
   required void Function(String decisionId) onWake,
+  List<FleetMobileIssue> mobileIssues = const [],
 }) => [
-  if (groups.needs.isEmpty)
+  for (final alert in mobileIssues) _gap(FleetMobileIssueRow(alert: alert)),
+  if (groups.needs.isEmpty && mobileIssues.isEmpty)
     _gap(
       AppStateMessage.inline(
         icon: LucideIcons.circleCheck,
@@ -60,7 +63,10 @@ List<Widget> fleetFyiLane(
   required FleetInboxCardBuilder card,
   DateTime Function()? clock,
 }) => [
-  if (groups.fyiCount == 0)
+  for (final alert in snapshot.mobileIssues.where((alert) => !alert.urgent))
+    _gap(FleetMobileIssueRow(alert: alert)),
+  if (groups.fyiCount == 0 &&
+      snapshot.mobileIssues.every((alert) => alert.urgent))
     _gap(
       AppStateMessage.inline(
         icon: LucideIcons.circleCheck,

@@ -20094,4 +20094,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetCopyText => 'Sao chép nội dung';
+
+  @override
+  String get mastermindMobileIssueNew => 'Sự cố mới trên thiết bị di động';
+
+  @override
+  String get mastermindMobileIssueRegression => 'Sự cố di động tái diễn';
+
+  @override
+  String get mastermindMobileIssueSpike => 'Số báo cáo sự cố di động tăng đột biến';
+
+  @override
+  String get mastermindMobileIssueTest => 'Kiểm thử chẩn đoán di động';
+
+  @override
+  String mastermindMobileIssueDetail(String platform, int build, int count, String issueId) {
+    return '$platform bản dựng $build · $count báo cáo · $issueId';
+  }
 }

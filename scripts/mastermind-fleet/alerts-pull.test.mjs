@@ -171,3 +171,53 @@ test('re-checks every field and caps the list', () => {
     20
   );
 });
+
+test('copies only bounded mobile aggregates into the alerts file', async (t) => {
+  const write = t.mock.fn();
+  const mobile = {
+    id: `mobile-${'a'.repeat(32)}`,
+    issueId: 'b'.repeat(32),
+    platform: 'android',
+    kind: 'spike',
+    priority: 'decision',
+    build: 1000007,
+    count: 25,
+    startedAt: NOW.toISOString(),
+  };
+  const get = async () => ({
+    alerts: [],
+    mobileIssues: [
+      { ...mobile, userId: 'drop-me' },
+      { ...mobile, issueId: 'not-an-id' },
+    ],
+  });
+  const result = await pullAlerts({
+    get,
+    write,
+    file: '/unused',
+    tickEnd: Date.now() + 10_000,
+    now: NOW,
+  });
+  assert.deepEqual(result, { firing: 0, pages: 0 });
+  assert.deepEqual(write.mock.calls[0].arguments[1], {
+    fetchedAt: NOW.toISOString(),
+    alerts: [],
+    mobileIssues: [mobile],
+  });
+});
+
+test('keeps SLO alerts when mobile alerts are unusable', async (t) => {
+  const write = t.mock.fn();
+  const result = await pullAlerts({
+    get: async () => ({ alerts: [TICKET], mobileIssues: { malformed: true } }),
+    write,
+    file: '/unused',
+    tickEnd: Date.now() + 10_000,
+    now: NOW,
+  });
+  assert.deepEqual(result, { firing: 1, pages: 0 });
+  assert.deepEqual(write.mock.calls[0].arguments[1], {
+    fetchedAt: NOW.toISOString(),
+    alerts: [TICKET],
+  });
+});

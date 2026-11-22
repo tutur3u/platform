@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import type { MobileIssueAlert } from '../fleet/contract';
+import { MobileIssueRow } from './mobile-issue-row';
 import type { InboxLanes } from '../fleet/inbox-lanes';
 import type { InboxItem } from '../fleet/model';
 import { formatTime, useI18n } from '../i18n';
@@ -15,27 +17,34 @@ import { toneBadge, toneDot } from './tone';
 export function FyiPanel({
   lanes,
   showFyi,
+  mobileIssues = [],
 }: {
   lanes: InboxLanes;
   showFyi: boolean;
+  mobileIssues?: MobileIssueAlert[];
 }) {
   const { t, locale } = useI18n();
   const asks = showFyi ? lanes.fyi.asks : [];
   const { resolved } = lanes.fyi;
+  const alerts = showFyi ? mobileIssues : [];
+  const total = asks.length + resolved.length + alerts.length;
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex-row items-center gap-2 px-4 py-3">
         <CardTitle className="text-base">{t('inbox.fyi')}</CardTitle>
         <Badge variant="secondary" className="tabular-nums">
-          {asks.length + resolved.length}
+          {total}
         </Badge>
       </CardHeader>
-      {asks.length + resolved.length === 0 ? (
+      {total === 0 ? (
         <p className="border-t px-4 py-4 text-muted-foreground text-sm">
           {t('inbox.empty.fyi')}
         </p>
       ) : (
         <ul className="divide-y border-t">
+          {alerts.map((alert) => (
+            <MobileIssueRow key={alert.id} alert={alert} />
+          ))}
           {asks.map(({ decision }) => (
             <li key={decision.id} className="flex gap-3 px-4 py-3">
               <span className={toneDot('blue', 'mt-1.5')} aria-hidden />

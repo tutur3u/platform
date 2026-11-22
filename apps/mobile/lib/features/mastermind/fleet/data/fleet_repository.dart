@@ -90,19 +90,20 @@ class FleetRepository implements FleetSource, FleetSecretAnswerSource {
        _secretCardsReady = secretCardsReady;
 
   static const statePath = '/api/v1/mastermind/fleet/state';
+  static const String _snapshotFeatures = 'login,alerts,review,mobile-issues';
 
   /// Snapshot features this app renders. Without `login` or `review`, Web
   /// omits access requests or design reviews because older clients would
   /// offer answers it refuses; without `alerts`, it omits SLO burn alerts.
-  static const featuresHeader = {
-    'x-mastermind-fleet-features': 'login,alerts,review',
+  static const Map<String, String> featuresHeader = {
+    'x-mastermind-fleet-features': _snapshotFeatures,
   };
 
   /// [featuresHeader] plus `secret` where CryptoKit secret entry runs (iOS
   /// 17 or later with the plugin) and the Inbox renders secret cards
   /// ([fleetSecretCardsReady]); Web hides secret decisions otherwise.
-  static const secretFeaturesHeader = {
-    'x-mastermind-fleet-features': 'login,alerts,review,secret',
+  static const Map<String, String> secretFeaturesHeader = {
+    'x-mastermind-fleet-features': '$_snapshotFeatures,secret',
   };
 
   /// Web's cap on an uploaded review preview.

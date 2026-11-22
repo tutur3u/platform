@@ -74,6 +74,14 @@
       "failed": "Lỗi"
     },
     "inbox": {
+      "mobileIssues": {
+        "detail": "{platform} · bản dựng {build} · {count} sự kiện",
+        "new": "Sự cố ứng dụng di động mới",
+        "regression": "Sự cố ứng dụng di động tái diễn",
+        "spike": "Số sự cố ứng dụng di động tăng đột biến",
+        "test": "Kiểm tra cảnh báo sự cố ứng dụng di động",
+        "urgent": "Khẩn cấp"
+      },
       "open": "Đang mở",
       "snoozed": "Tạm hoãn",
       "answered": "Đã trả lời",

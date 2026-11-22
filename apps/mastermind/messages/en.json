@@ -74,6 +74,14 @@
       "failed": "Failed"
     },
     "inbox": {
+      "mobileIssues": {
+        "detail": "{platform} · build {build} · {count} events",
+        "new": "New mobile crash issue",
+        "regression": "Mobile crash regression",
+        "spike": "Mobile crash spike",
+        "test": "Mobile crash alert test",
+        "urgent": "Urgent"
+      },
       "open": "Open",
       "snoozed": "Snoozed",
       "answered": "Answered",

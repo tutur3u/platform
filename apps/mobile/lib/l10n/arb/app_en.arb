@@ -10305,5 +10305,26 @@
   "mastermindFleetMockupLabel": "Mockup preview. Opens full screen.",
   "mastermindFleetNotSentAnswered": "Not sent: this was answered while you wrote",
   "mastermindFleetNotSentClosed": "Not sent: this decision closed",
-  "mastermindFleetCopyText": "Copy text"
+  "mastermindFleetCopyText": "Copy text",
+  "mastermindMobileIssueNew": "New mobile issue",
+  "mastermindMobileIssueRegression": "Mobile issue regression",
+  "mastermindMobileIssueSpike": "Mobile issue spike",
+  "mastermindMobileIssueTest": "Mobile diagnostics test",
+  "mastermindMobileIssueDetail": "{platform} build {build} · {count} reports · {issueId}",
+  "@mastermindMobileIssueDetail": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      },
+      "build": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "issueId": {
+        "type": "String"
+      }
+    }
+  }
 }

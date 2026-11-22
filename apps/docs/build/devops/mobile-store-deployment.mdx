@@ -237,22 +237,83 @@ verify both journeys before resolving the issue.
 
 ### Fleet Crashlytics triage
 
-An operator with existing Crashlytics read access can use
-[the Firebase MCP reports tool](https://firebase.google.com/docs/crashlytics/ai-assistance-mcp)
-without opening the console. Query `topIssues` for the production iOS or Android
-app and the affected build over the last 24 hours. Compare the previous window
-and build for new or regressed fatal, ANR, or nonfatal clusters. Use
-`crashlytics_get_issue` by exact issue ID when the aggregate is insufficient.
-Keep individual reports within the restricted incident lane. Fleet handoffs
-include only platform, version/build, issue ID, severity, coarse impact and the
-allowlisted route template when applicable. Do not put raw event samples, native
-installation IDs, names, or stack traces into the Inbox.
+Open the Mastermind Inbox and review **Updates (FYI)** for new issues,
+regressions and velocity spikes. A spike with at least 25 reports is shown at
+decision priority. Open a fix lane with the alert ID, platform, build, issue ID
+and count. Use the alert ID as the lane's dedupe key and record the first build
+containing a verified fix in the fix-build registry. The local fleet publisher
+also saves the same aggregate items to `alerts.json` for agents that use the
+signed pull.
 
-The current signed Fleet alerts endpoint pulls a fixed SLO burn-alert schema.
-Use the existing incident handoff for a Crashlytics cluster until a mobile
-source and receiver schema are approved. Any future Cloudflare exporter must
-map only aggregate fields, deduplicate by issue and build, and prove query and
-retry limits, expiry, and a durable stop fence before activation.
+Use [Firebase MCP's report tools](https://firebase.google.com/docs/crashlytics/ai-assistance-mcp)
+with an existing read grant for an individual investigation. Look up the exact
+issue ID and review sensitive samples inside the restricted incident lane. The
+automated alert contains no stack frames, account or installation IDs, request
+metadata, free text, or raw events.
+
+#### Crashlytics discovery on Cron Control
+
+The `mobile-crashlytics-alerts` processor uses the existing 30-minute Cloudflare
+trigger. The source allowlists the job with collection off until mode and expiry
+are installed. It reads the two production apps' Crashlytics
+[BigQuery streaming exports](https://firebase.google.com/docs/crashlytics/bigquery-export).
+Confirm both tables exist, their freshness and their location using read-only
+access before requesting activation. Enabling a paid streaming export requires
+owner authorization if streaming is unavailable.
+
+- Use a dedicated service account with job creation on the billing project and
+  read access limited to the two export tables. Provision and rotate its
+  credential through the approved secret custody tooling. Install
+  `MOBILE_CRASHLYTICS_BIGQUERY` on Cron Control as a secret with
+  `client_email`, `private_key`, `project_id`, `location`, `ios_table` and
+  `android_table` fields. Table names are fully qualified and end in
+  `_REALTIME`. No credential material belongs in source, build output, or an
+  alert. Use the separate `MASTERMIND_MOBILE_ALERTS_SECRET` on Cron Control
+  and the Web API Worker serving the mobile alerts PUT. The existing
+  fleet-publisher signing key still authorizes its GET.
+- Checks use a five-minute streaming lag allowance and a 30-minute event
+  window. An issue is new if first seen in that window within the preceding
+  seven days of export history. A regression must appear in the recorded fixed
+  build or a later build. Set `MOBILE_CRASHLYTICS_FIX_BUILDS` to a JSON object
+  with up to 100 `platform:issue-id` keys and numeric fixed builds. A velocity
+  spike is at least 10 distinct reports and at least three times the preceding
+  two-and-a-half-hour rate. Late arrivals beyond the allowance and history
+  outside retained export data can miss a new-issue alert.
+- Each admitted slot can make one OAuth request, one aggregate query capped
+  at 64 MiB billed and 100 rows, and one signed publish with at most 20 items.
+  Incomplete results fail closed without pagination or retries. The query
+  returns up to 100 candidates, prioritizing urgent spikes and then volume. A crowded slot publishes up to
+  20, with decision-priority spikes first, and records when it clipped.
+  The slot ledger blocks repeats and automatically stops after five consecutive
+  failed runs. Web admits at most two compare-and-set attempts and deduplicates
+  for 14 days, by issue, fix build, or six-hour spike window as applicable.
+  The 512-entry dedupe store evicts the oldest records at capacity.
+  Inbox entries expire after 24 hours.
+- Deploy the receiver first, then Cron Control, under reviewed Cloudflare
+  write packets. Test mode (`MOBILE_CRASHLYTICS_MODE=test`) emits one
+  synthetic FYI item without BigQuery. Give it a UTC expiry at most one hour
+  ahead using `MOBILE_CRASHLYTICS_UNTIL`. Verify the **Mobile diagnostics test**
+  entry in the owner Inbox and the signed publisher pull, with the alert ID and
+  exact deployed versions in the rollout receipt. Test mode will not publish
+  again after the Cron ledger records the receipt.
+- To start the real poller, set `MOBILE_CRASHLYTICS_MODE=active` and
+  `MOBILE_CRASHLYTICS_UNTIL` to an approved UTC expiry in
+  `YYYY-MM-DDTHH:mm:ssZ` format, at most seven days ahead. The window bounds
+  usage to 336 admitted queries and 21 GiB billed at the per-query ceiling.
+  Check observed bytes and the redacted result counters before renewing.
+  Deploy the reviewed job allowlist transition through Cron Control CI.
+  Install the lease and fix-build settings as operator-managed
+  bindings using the documented [Cloudflare secret tooling](/build/devops/shared-secret-write).
+  Confirm bindings and the enabled job list after every Cron Control rollout.
+- The API core relay `POST /api/v1/mastermind/fleet/alerts?action=stop` uses the
+  Cron Control service binding. Pass the existing operator bearer from approved
+  custody. Cron Control authenticates the call and returns only after it has
+  stopped the job in the ledger. Verify this relay with the synthetic test
+  before active mode. Set mode to `off` after stopping. Read back the stopped
+  ledger and verify the next scheduled slot performs no external work. The
+  generation fence is checked before OAuth, query and publish. An HTTP
+  operation already admitted at the stop boundary can finish. The stop
+  survives Worker restarts, and renewal needs a separate reviewed call with `action=resume`.
 
 For a failed call, filter Crashlytics nonfatal issues by `meet_media_*`,
 `meet_camera_toggle`, or `meet_microphone_toggle`, then compare the same build's

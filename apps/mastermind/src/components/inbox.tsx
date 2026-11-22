@@ -10,6 +10,7 @@ import { localeParam, useI18n } from '../i18n';
 import { AskCard } from './ask-card';
 import { FyiPanel, RecentAnswers } from './inbox-side';
 import { Kbd, onListKey, visibleCards } from './inbox-keys';
+import { MobileIssueRow } from './mobile-issue-row';
 import { LoginCard } from './login-card';
 import { ReviewCard } from './review-card';
 import { Section, SectionMessage } from './section';
@@ -28,6 +29,11 @@ export function Inbox({
 }) {
   const { t, locale } = useI18n();
   const lanes = inboxLanes(snapshot, useSnoozes(), now);
+  const urgent =
+    snapshot.mobileIssues?.filter((alert) => alert.priority === 'decision') ??
+    [];
+  const updates =
+    snapshot.mobileIssues?.filter((alert) => alert.priority === 'fyi') ?? [];
   const list = useRef<HTMLDivElement>(null);
   const [showSnoozed, setShowSnoozed] = useState(false);
   const label = (id?: string) =>
@@ -96,7 +102,7 @@ export function Inbox({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold">{t('inbox.needsYou')}</h3>
             <Badge variant="secondary" className="tabular-nums">
-              {lanes.needs.length}
+              {lanes.needs.length + urgent.length}
             </Badge>
             <span className="ml-auto text-muted-foreground text-sm">
               {t('inbox.mostUrgent')}
@@ -115,6 +121,13 @@ export function Inbox({
             <Kbd>Ctrl/Cmd Enter</Kbd>
             {t('inbox.keys.sendNext')}
           </p>
+          {urgent.length > 0 && (
+            <ul className="divide-y rounded-md border">
+              {urgent.map((alert) => (
+                <MobileIssueRow key={alert.id} alert={alert} />
+              ))}
+            </ul>
+          )}
           {/* Keys are handled on the list; each card is focusable. */}
           {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
           {/* Every card, snoozed ones too, is a keyed entry of one array,
@@ -122,7 +135,7 @@ export function Inbox({
               or drops its queued answer, retry or draft. */}
           <div ref={list} className="space-y-3" onKeyDown={onListKey}>
             {[
-              ...(lanes.needs.length
+              ...(lanes.needs.length || urgent.length
                 ? []
                 : [
                     <SectionMessage key="empty">
@@ -172,7 +185,7 @@ export function Inbox({
           </div>
         </div>
         <div className="space-y-4">
-          <FyiPanel lanes={lanes} showFyi={showFyi} />
+          <FyiPanel lanes={lanes} showFyi={showFyi} mobileIssues={updates} />
           <RecentAnswers items={lanes.recent} />
         </div>
       </div>

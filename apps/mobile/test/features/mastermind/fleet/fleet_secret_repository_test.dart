@@ -39,7 +39,7 @@ void main() {
         await features(
           FleetRepository(api: api, secretSupported: () async => true),
         ),
-        'login,alerts,review',
+        'login,alerts,review,mobile-issues',
       );
     });
 
@@ -52,7 +52,7 @@ void main() {
             secretCardsReady: true,
           ),
         ),
-        'login,alerts,review,secret',
+        'login,alerts,review,mobile-issues,secret',
       );
     });
 
@@ -73,7 +73,7 @@ void main() {
               secretCardsReady: true,
             ),
           ),
-          'login,alerts,review',
+          'login,alerts,review,mobile-issues',
         );
       }
     });

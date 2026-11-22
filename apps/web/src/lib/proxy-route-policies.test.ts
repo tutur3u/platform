@@ -23,6 +23,7 @@ describe('fleet publisher proxy policy', () => {
     ['GET', '/api/v1/mastermind/fleet/answers'],
     ['POST', '/api/v1/mastermind/fleet/answers'],
     ['GET', '/api/v1/mastermind/fleet/alerts'],
+    ['PUT', '/api/v1/mastermind/fleet/alerts'],
     ['POST', '/api/v1/mastermind/fleet/bridge/ticket'],
   ])('selects a signed %s to %s', (method, path) => {
     expect(isSignedFleetPublish(request(path, method, SIGNATURE))).toBe(true);

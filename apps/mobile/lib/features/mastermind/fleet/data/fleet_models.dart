@@ -11,6 +11,7 @@ export 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
 part 'fleet_alerts.dart';
 part 'fleet_counts.dart';
 part 'fleet_login.dart';
+part 'fleet_mobile_issue.dart';
 part 'fleet_release.dart';
 part 'fleet_review.dart';
 
@@ -338,6 +339,7 @@ class FleetSnapshot {
     this.resolved = const [],
     this.release,
     this.alerts = const [],
+    this.mobileIssues = const [],
   });
 
   /// Throws [FormatException] only when the envelope itself is unusable.
@@ -388,6 +390,7 @@ class FleetSnapshot {
         _ => null,
       },
       alerts: _list(json['alerts'], FleetAlert.parse),
+      mobileIssues: _list(json['mobileIssues'], FleetMobileIssue.parse),
     );
   }
 
@@ -408,6 +411,7 @@ class FleetSnapshot {
 
   /// Firing SLO burn alerts, pages first; empty when Web left them out.
   final List<FleetAlert> alerts;
+  final List<FleetMobileIssue> mobileIssues;
 
   /// Page-severity burns: each counts toward what needs the owner.
   List<FleetAlert> get pageAlerts =>
@@ -457,5 +461,6 @@ class FleetSnapshot {
         resolved: resolved,
         release: release,
         alerts: alerts,
+        mobileIssues: mobileIssues,
       );
 }

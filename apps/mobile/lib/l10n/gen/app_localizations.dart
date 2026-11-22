@@ -37170,6 +37170,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy text'**
   String get mastermindFleetCopyText;
+
+  /// No description provided for @mastermindMobileIssueNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New mobile issue'**
+  String get mastermindMobileIssueNew;
+
+  /// No description provided for @mastermindMobileIssueRegression.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile issue regression'**
+  String get mastermindMobileIssueRegression;
+
+  /// No description provided for @mastermindMobileIssueSpike.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile issue spike'**
+  String get mastermindMobileIssueSpike;
+
+  /// No description provided for @mastermindMobileIssueTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile diagnostics test'**
+  String get mastermindMobileIssueTest;
+
+  /// No description provided for @mastermindMobileIssueDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{platform} build {build} · {count} reports · {issueId}'**
+  String mastermindMobileIssueDetail(String platform, int build, int count, String issueId);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

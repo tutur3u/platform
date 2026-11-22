@@ -1,3 +1,4 @@
+import { MOBILE_ISSUES_JOB } from './processors/mobile-issues';
 import { TASKS_RECURRENCE_JOB } from './processors/tasks-recurrence';
 import { isWebJob } from './web-gate';
 
@@ -28,6 +29,7 @@ export type WorkerProcessorId =
   | 'devbox-unauthorized-run-sweep'
   | 'finance-bill-split-reminders'
   | 'fleet-access-consumer'
+  | typeof MOBILE_ISSUES_JOB
   | 'mastermind-ship'
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
@@ -288,6 +290,17 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/prune_observability_rollups',
     'idempotent',
     { workerProcessor: 'observability-retention', timeoutMs: 30_000 }
+  ),
+  job(
+    MOBILE_ISSUES_JOB,
+    '*/30 * * * *',
+    'web',
+    '/api/v1/mastermind/fleet/alerts',
+    'idempotent',
+    {
+      workerProcessor: MOBILE_ISSUES_JOB,
+      timeoutMs: 25_000,
+    }
   ),
   // Mastermind ship collector: GitHub deployments/CI/pending commits and
   // Cloudflare Worker versions into the Mastermind store. Its target is the

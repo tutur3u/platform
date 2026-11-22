@@ -178,7 +178,7 @@ test(
             );
             assert.equal(
               request.headers.get('x-mastermind-fleet-features'),
-              'login,review'
+              'login,review,mobile-issues'
             );
             return Response.json(fleetResponseFixture(Date.now()));
           }

@@ -8499,5 +8499,10 @@
   "mastermindFleetMockupLabel": "Bản xem trước. Mở toàn màn hình.",
   "mastermindFleetNotSentAnswered": "Chưa gửi: đã có câu trả lời khác trong lúc bạn viết",
   "mastermindFleetNotSentClosed": "Chưa gửi: quyết định này đã đóng",
-  "mastermindFleetCopyText": "Sao chép nội dung"
+  "mastermindFleetCopyText": "Sao chép nội dung",
+  "mastermindMobileIssueNew": "Sự cố mới trên thiết bị di động",
+  "mastermindMobileIssueRegression": "Sự cố di động tái diễn",
+  "mastermindMobileIssueSpike": "Số báo cáo sự cố di động tăng đột biến",
+  "mastermindMobileIssueTest": "Kiểm thử chẩn đoán di động",
+  "mastermindMobileIssueDetail": "{platform} bản dựng {build} · {count} báo cáo · {issueId}"
 }

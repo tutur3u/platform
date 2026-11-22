@@ -11,8 +11,8 @@ import { assertCronSet } from './assert-cron-set.mjs';
 // that `cf deploy --prebuilt` publishes. Enabled-job slot claims, restarts,
 // stop/resume and the failure budget are covered by the ledger, dispatch and
 // control unit tests: this harness takes only declared secrets and the
-// configured job list; the production configuration enables only the two
-// retention jobs, with AI Studio retention in dry-run.
+// configured job list; AI Studio retention stays in dry-run and Crashlytics
+// polling stays off until explicitly armed.
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TRIGGERS = [
   '*/5 * * * *',
@@ -52,7 +52,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every schedule and enables the two retention jobs, five web jobs, exchange rates, the Mastermind ship collector, checkout expiry and Calendar sync, AI retention in dry-run', async () => {
+test('source config preserves the schedule and job list with AI retention in dry-run and Crashlytics polling off', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -63,7 +63,7 @@ test('source config keeps every schedule and enables the two retention jobs, fiv
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
     value:
-      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync',
+      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts',
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WEB_MODE, {
     type: 'text',
@@ -74,6 +74,8 @@ test('source config keeps every schedule and enables the two retention jobs, fiv
     type: 'text',
     value: 'dry-run',
   });
+  assert.equal(config.worker.env.MOBILE_CRASHLYTICS_MODE, undefined);
+  assert.equal(config.worker.env.MOBILE_CRASHLYTICS_UNTIL, undefined);
   assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
     type: 'text',
     value: 'inventory-checkout-expiry',

@@ -74,7 +74,15 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assertCronSet(baseline.previousIdentity.crons, TARGET_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['vars', 'compatibilityFlags']);
+  assert.deepEqual(baseline.transition.fields, ['vars']);
+  assert.deepEqual(
+    baseline.previousIdentity.compatibilityFlags,
+    baseline.identity.compatibilityFlags
+  );
+  assert.deepEqual(baseline.identity.vars, {
+    ...baseline.previousIdentity.vars,
+    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},mobile-crashlytics-alerts`,
+  });
   assert.deepEqual(
     emitted.compatibility_flags,
     baseline.identity.compatibilityFlags

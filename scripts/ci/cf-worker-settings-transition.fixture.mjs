@@ -21,6 +21,7 @@ const {
 // Artifact parity and cron order are pinned against the real fixture.
 export const LIVE = {
   ...live,
+  compatibilityFlags: [],
   secrets: [
     'CRON_CONTROL_DELIVERY_TOKEN',
     'CRON_CONTROL_OPERATOR_TOKEN',
@@ -31,6 +32,7 @@ export const LIVE = {
     ...liveVars,
     CRON_CONTROL_ENABLED_JOBS:
       'database-cron-history-retention,ai-studio-retention',
+    CRON_CONTROL_WORKER_PROCESSORS: '',
   },
 };
 

@@ -38,7 +38,7 @@ const FLEET_PUBLISHER_ROUTES = new Map([
   ['POST', /^\/api\/v1\/mastermind\/fleet\/(?:answers|bridge\/ticket)\/?$/u],
   [
     'PUT',
-    /^\/api\/v1\/mastermind\/fleet\/(?:state|usage|review-assets\/[^/]+)\/?$/u,
+    /^\/api\/v1\/mastermind\/fleet\/(?:state|usage|alerts|review-assets\/[^/]+)\/?$/u,
   ],
 ]);
 /** Lowercase hex HMAC-SHA256, as the publisher signs it. */

@@ -92,6 +92,8 @@ it('catalog ids are unique and every cadence has a trigger', () => {
       expect(job.path).toBe('/v1/ops');
     else if (job.workerProcessor === 'fleet-access-consumer')
       expect(job.path).toBe('/api/v1/fleet/consumer/');
+    else if (job.workerProcessor === 'mobile-crashlytics-alerts')
+      expect(job.path).toBe('/api/v1/mastermind/fleet/alerts');
     else expect(job.path).toMatch(/^\/api\/cron\/[a-z0-9/-]+$/);
     expect(leaseMs(job)).toBeGreaterThan(job.timeoutMs);
   }

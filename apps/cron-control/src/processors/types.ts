@@ -17,6 +17,10 @@ export interface ProcessorEnv {
   GITHUB_ACTIONS_READ_TOKEN?: string;
   /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */
   MEET_ATTENDANCE_ERASURE?: MeetAttendanceErasureBinding;
+  MOBILE_CRASHLYTICS_BIGQUERY?: string;
+  MOBILE_CRASHLYTICS_FIX_BUILDS?: string;
+  MOBILE_CRASHLYTICS_MODE?: string;
+  MOBILE_CRASHLYTICS_UNTIL?: string;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
   TASKS_RECURRENCE_MODE?: string;

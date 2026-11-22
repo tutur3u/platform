@@ -98,6 +98,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
 | Chat realtime | cf + Void Worker with hibernating inbox and conversation Durable Objects | Bound fanout to two rooms per publish, deduplicate within the replay window, and verify the Worker stop secret and Web URL fence. See the [Chat realtime runbook](/build/devops/chat-realtime-runbook). |
 | Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
+| Mobile issue discovery | Cron Control processor, activation held | One query and at most one publish per admitted slot, a seven-day lease, and a durable stop fence. See the [Crashlytics runbook](/build/devops/mobile-store-deployment#crashlytics-discovery-on-cron-control) for operation limits and stop verification. |
 | Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; the operations runbook is internal |
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
 | Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |

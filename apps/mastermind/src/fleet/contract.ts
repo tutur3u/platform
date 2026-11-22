@@ -1,3 +1,4 @@
+import { mobileIssueAlertsSchema } from '../../../web/src/lib/mastermind/fleet/mobile-issues-contract';
 import { z } from 'zod';
 import {
   fleetAnswerActions,
@@ -49,7 +50,9 @@ export const fleetStateResponseSchema = z.object({
   state: fleetStateSchema,
   receivedAt: z.iso.datetime({ offset: true }),
   answers: z.record(slug, fleetAnswerReceiptSchema).default({}),
+  mobileIssues: mobileIssueAlertsSchema.optional(),
 });
+export type { MobileIssueAlert } from '../../../web/src/lib/mastermind/fleet/mobile-issues-contract';
 export type FleetSnapshot = z.infer<typeof fleetStateResponseSchema>;
 
 export const fleetAnswerRequestSchema = z

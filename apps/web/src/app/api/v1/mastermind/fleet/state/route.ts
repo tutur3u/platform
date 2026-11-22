@@ -22,6 +22,7 @@ import {
   fleetStore,
   logFleetStoreFailure,
 } from '@/lib/mastermind/fleet/http';
+import { readMobileIssues } from '@/lib/mastermind/fleet/mobile-issues-store';
 import {
   readFleetAnswers,
   readFleetState,
@@ -60,6 +61,12 @@ export const GET = withSessionAuth(
       ? readFleetAlerts()
       : Promise.resolve(null);
 
+    const mobileIssuesRead =
+      features.has('mobile-issues') &&
+      process.env.MASTERMIND_MOBILE_ALERTS_SECRET
+        ? readMobileIssues(store)
+        : Promise.resolve(null);
+
     let stored: Awaited<ReturnType<typeof readFleetState>>;
     let answers: Record<string, FleetAnswerRecord>;
     try {
@@ -73,7 +80,10 @@ export const GET = withSessionAuth(
       return fleetError('unavailable', 503);
     }
 
-    const alerts = await alertsRead;
+    const [alerts, mobileIssues] = await Promise.all([
+      alertsRead,
+      mobileIssuesRead,
+    ]);
     const state = fleetStateView(stored.state, { features });
     const openIds = new Set(state.decisions.map((d) => d.id));
     const receipts = Object.fromEntries(
@@ -90,7 +100,9 @@ export const GET = withSessionAuth(
           .sort()
           .join(',')}|${state.decisions
           .map((d) => `${d.id}:${d.login?.state ?? ''}`)
-          .join(',')}|${alerts ? JSON.stringify(alerts) : '-'}`
+          .join(
+            ','
+          )}|${alerts ? JSON.stringify(alerts) : '-'}|${mobileIssues ? JSON.stringify(mobileIssues) : '-'}`
       )
       .digest('hex')
       .slice(0, 32)}"`;
@@ -104,6 +116,7 @@ export const GET = withSessionAuth(
         receivedAt: stored.receivedAt,
         answers: receipts,
         ...(alerts ? { alerts } : {}),
+        ...(mobileIssues?.length ? { mobileIssues } : {}),
       },
       { headers }
     );

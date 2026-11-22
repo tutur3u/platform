@@ -9,7 +9,7 @@ import {
   MASTERMIND_PUSH_TIMESTAMP_HEADER,
   verifyMastermindPushSignature,
 } from '@/lib/mastermind/push-events/signature';
-import { fleetSignedPayload } from './signing';
+import { fleetSignedPayload, FLEET_ROUTES } from './signing';
 
 export const FLEET_SIGNATURE_HEADER = MASTERMIND_PUSH_SIGNATURE_HEADER;
 export const FLEET_TIMESTAMP_HEADER = MASTERMIND_PUSH_TIMESTAMP_HEADER;
@@ -62,9 +62,15 @@ export function verifyFleetPublisher(
   env: Record<string, string | undefined> = process.env
 ) {
   const url = new URL(request.url);
+  const mobilePublish =
+    request.method === 'PUT' && url.pathname === FLEET_ROUTES.alerts;
   return verifyMastermindPushSignature({
-    secret: env.MASTERMIND_FLEET_PUBLISHER_SECRET,
-    nextSecret: env.MASTERMIND_FLEET_PUBLISHER_SECRET_NEXT,
+    secret: mobilePublish
+      ? env.MASTERMIND_MOBILE_ALERTS_SECRET
+      : env.MASTERMIND_FLEET_PUBLISHER_SECRET,
+    nextSecret: mobilePublish
+      ? undefined
+      : env.MASTERMIND_FLEET_PUBLISHER_SECRET_NEXT,
     signature: request.headers.get(FLEET_SIGNATURE_HEADER),
     timestamp: request.headers.get(FLEET_TIMESTAMP_HEADER),
     rawBody: fleetSignedPayload(

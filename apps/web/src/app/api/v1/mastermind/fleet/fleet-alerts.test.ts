@@ -122,13 +122,13 @@ async function publish() {
   return PUT(signed('PUT', '/api/v1/mastermind/fleet/state', body));
 }
 
-function signed(method: string, path: string, body = '') {
+function signed(method: string, path: string, body = '', secret = SECRET) {
   const timestamp = String(Math.floor(Date.now() / 1000));
   return new Request(`https://tuturuuu.com${path}`, {
     method,
     headers: {
       'x-mm-signature': signMastermindPushEvent(
-        SECRET,
+        secret,
         timestamp,
         fleetSignedPayload(method, path, body)
       ),
@@ -211,6 +211,82 @@ describe('Mastermind fleet SLO burn alerts', () => {
         ],
       }),
     ]);
+  });
+
+  it('admits mobile alerts only on their signed route and surfaces a deduplicated urgent issue', async () => {
+    const mobileSecret = 'mobile-fixture-secret-0000000000000';
+    vi.stubEnv('MASTERMIND_MOBILE_ALERTS_SECRET', mobileSecret);
+    const { PUT } = await import('./alerts/route');
+    const now = new Date('2026-11-22T04:00:00.000Z');
+    vi.setSystemTime(now);
+    const issueId = '1'.repeat(32);
+    const payload = (at: Date, count: number) => ({
+      slot: at.toISOString(),
+      alerts: [
+        { platform: 'ios', issueId, kind: 'spike', count, build: 1000007 },
+      ],
+    });
+    const initial = JSON.stringify(payload(now, 12));
+    expect((await PUT(signed('PUT', ALERTS_PATH, initial))).status).toBe(401);
+    const denied = await PUT(
+      signed(
+        'PUT',
+        ALERTS_PATH,
+        JSON.stringify({
+          ...payload(now, 12),
+          email: 'redaction@example.invalid',
+        }),
+        mobileSecret
+      )
+    );
+    expect(denied.status).toBe(422);
+
+    const send = (body: string) =>
+      PUT(signed('PUT', ALERTS_PATH, body, mobileSecret));
+    expect(await (await send(initial)).json()).toEqual({
+      accepted: true,
+      inserted: 1,
+    });
+    expect((await send(initial)).status).toBe(409);
+    expect(
+      (await (await ownerRead(withAlerts)).json()).mobileIssues
+    ).toBeUndefined();
+
+    const later = new Date(now.getTime() + 30 * 60_000);
+    vi.setSystemTime(later);
+    expect(
+      await (await send(JSON.stringify(payload(later, 25)))).json()
+    ).toEqual({
+      accepted: true,
+      inserted: 0,
+    });
+    const body = await (
+      await ownerRead({
+        'x-mastermind-fleet-features': 'mobile-issues',
+      })
+    ).json();
+    expect(body.mobileIssues).toEqual([
+      {
+        id: expect.stringMatching(/^mobile-[0-9a-f]{32}$/),
+        platform: 'ios',
+        issueId,
+        kind: 'spike',
+        count: 25,
+        priority: 'decision',
+        build: 1000007,
+        startedAt: later.toISOString(),
+      },
+    ]);
+    expect((await (await publisherPull()).json()).mobileIssues).toEqual(
+      body.mobileIssues
+    );
+    const { GET } = await import('./alerts/route');
+    expect(
+      (await GET(signed('GET', ALERTS_PATH, '', mobileSecret))).status
+    ).toBe(401);
+
+    vi.setSystemTime(later.getTime() + 86_400_000);
+    expect((await (await publisherPull()).json()).mobileIssues).toBeUndefined();
   });
 
   it('reads the database at most once a minute per isolate', async () => {
