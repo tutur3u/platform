@@ -128,3 +128,19 @@ it('requests the existing 300-second default lifetime', async () => {
     expect.objectContaining({ p_expiry_seconds: 300 })
   );
 });
+
+it('never mints an unbound handoff for a Worker-only target', async () => {
+  const { rpc, supabase } = client();
+  for (const target of ['mastermind', 'Mastermind', ' mastermind ']) {
+    expect(
+      await generateAssuredCrossAppToken(
+        new Request('https://tuturuuu.com/api/auth/generate-app-tokens'),
+        supabase,
+        target,
+        'web'
+      )
+    ).toBeNull();
+  }
+  expect(rpc).not.toHaveBeenCalled();
+  expect(mocks.assurance).not.toHaveBeenCalled();
+});

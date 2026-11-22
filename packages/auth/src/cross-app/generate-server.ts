@@ -3,8 +3,14 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { mfaProofFromVerifiedClaims } from '@tuturuuu/utils/required-mfa-policy';
 import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
 import { createMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
+import { requiresWorkerRedeemProof } from '../app-redeem-proof';
 
-/** Browser/CLI handoffs must carry server-signed assurance, never raw metadata. */
+/**
+ * Browser/CLI handoffs must carry server-signed assurance, never raw metadata.
+ * Worker-only targets mint only through the cross-app return, which binds
+ * the handoff to the browser's PKCE challenge; this unbound mint refuses
+ * them.
+ */
 export async function generateAssuredCrossAppToken(
   request: Request,
   supabase: TypedSupabaseClient,
@@ -12,6 +18,7 @@ export async function generateAssuredCrossAppToken(
   originApp: string,
   expirySeconds = 300
 ): Promise<string | null> {
+  if (requiresWorkerRedeemProof(targetApp)) return null;
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
   const assurance = await checkRequiredAccountMfa(
