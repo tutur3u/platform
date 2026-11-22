@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Monitor, Smartphone, Tablet, Trash2 } from '@tuturuuu/icons';
+import { LogOut } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +12,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
@@ -25,16 +24,19 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  disambiguateSessionIdentifiers,
+  groupSessions,
+  maskSessionIp,
+} from '@/lib/sessions/session-display';
 import { describeSessionUserAgent } from '@/lib/sessions/session-user-agent';
+import {
+  formatSessionClientLabel,
+  SessionRow,
+  type SessionRowData,
+} from './session-row';
 
-interface Session {
-  session_id: string;
-  created_at: string;
-  updated_at: string;
-  user_agent: string;
-  ip: string;
-  is_current: boolean;
-}
+type Session = SessionRowData;
 
 interface SessionStats {
   total_sessions: number;
@@ -45,17 +47,6 @@ interface SessionStats {
 interface SessionsData {
   sessions: Session[];
   stats: SessionStats;
-}
-
-function getDeviceIcon(userAgent: string) {
-  const device = describeSessionUserAgent(userAgent).device;
-  if (device === 'phone') {
-    return <Smartphone className="h-4 w-4" />;
-  }
-  if (device === 'tablet') {
-    return <Tablet className="h-4 w-4" />;
-  }
-  return <Monitor className="h-4 w-4" />;
 }
 
 // Time ago formatter that leverages i18n translations
@@ -108,15 +99,15 @@ export default function SessionsCard() {
       const data = await response.json();
       setSessionsData(data);
     } catch (error) {
+      // The API and the browser report errors in English, so the detail goes
+      // to the console and the toast stays localized.
       console.error('Error fetching sessions:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to load sessions'
-      );
+      toast.error(t('load_failed'));
       setSessionsData(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchSessions();
@@ -138,14 +129,12 @@ export default function SessionsCard() {
       }
 
       if (showToast) {
-        toast.success('Session revoked successfully');
+        toast.success(t('revoke_success'));
       }
       await fetchSessions(); // Refresh the list
     } catch (error) {
       console.error('Error revoking session:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to revoke session'
-      );
+      toast.error(t('revoke_failed'));
     } finally {
       setRevokingIds((prev) => prev.filter((id) => id !== sessionId));
     }
@@ -196,12 +185,13 @@ export default function SessionsCard() {
     await fetchSessions();
 
     if (failureCount === 0) {
-      toast.success('All other sessions revoked successfully');
+      toast.success(t('revoke_all_success'));
     } else {
       toast.warning(
-        `Revoked ${successCount} session${
-          successCount !== 1 ? 's' : ''
-        }, but ${failureCount} failed. Please try again.`
+        t('revoke_all_partial', {
+          failed: failureCount,
+          revoked: successCount,
+        })
       );
     }
 
@@ -242,6 +232,65 @@ export default function SessionsCard() {
   }
 
   const { sessions, stats } = sessionsData;
+  const grouped = groupSessions(sessions, {
+    isCurrent: (session) => session.is_current,
+    lastActive: (session) => new Date(session.updated_at),
+    now: new Date(),
+  });
+  const groups = [
+    {
+      key: 'current',
+      title: t('this_device'),
+      sessions: grouped.current ? [grouped.current] : [],
+    },
+    { key: 'recent', title: t('active_recently'), sessions: grouped.recent },
+    { key: 'older', title: t('older'), sessions: grouped.older },
+  ];
+  const rowMeta = groups.flatMap((group) =>
+    group.sessions.map((session) => {
+      const label = formatSessionClientLabel(
+        describeSessionUserAgent(session.user_agent),
+        t
+      );
+      const lastActive = formatTimeAgo(session.updated_at);
+      const context = [maskSessionIp(session.ip), lastActive]
+        .filter(Boolean)
+        .join(', ');
+      return {
+        id: session.session_id,
+        label,
+        lastActive,
+        context: context.length > 0 ? context : null,
+      };
+    })
+  );
+  const disambiguations = disambiguateSessionIdentifiers(rowMeta);
+  const metaById = new Map(
+    rowMeta.map((item) => {
+      const dis = disambiguations.get(item.id);
+      let identifier = item.label;
+      if (dis?.duplicated) {
+        if (dis.context && dis.ordinal !== null) {
+          identifier = t('session_with_context_ordinal', {
+            label: item.label,
+            context: dis.context,
+            ordinal: dis.ordinal,
+          });
+        } else if (dis.context) {
+          identifier = t('session_with_context', {
+            label: item.label,
+            context: dis.context,
+          });
+        } else if (dis.ordinal !== null) {
+          identifier = t('session_ordinal', {
+            label: item.label,
+            ordinal: dis.ordinal,
+          });
+        }
+      }
+      return [item.id, { lastActive: item.lastActive, identifier }] as const;
+    })
+  );
 
   return (
     <>
@@ -264,83 +313,36 @@ export default function SessionsCard() {
         </SettingItemTab>
       </SettingsSection>
 
-      <SettingsSection title={t('title')} description={t('manage_description')}>
-        {revokingAll && bulkProgress.total > 0 && (
-          <SettingsSectionBlock className="space-y-2">
-            <Progress
-              value={(bulkProgress.completed / bulkProgress.total) * 100}
-            />
-            <div className="text-foreground text-sm">
-              Revoked {bulkProgress.completed} of {bulkProgress.total}
-            </div>
-          </SettingsSectionBlock>
-        )}
-        {sessions.length === 0 ? (
+      {sessions.length === 0 && (
+        <SettingsSection title={t('title')}>
           <SettingsSectionMessage>
             {t('no_active_sessions')}
           </SettingsSectionMessage>
-        ) : (
-          sessions.map((session) => (
-            <SettingItemTab
-              key={session.session_id}
-              layout="compact"
-              title={
-                <>
-                  {describeSessionUserAgent(session.user_agent).label}
-                  {session.is_current && (
-                    <Badge
-                      variant="outline"
-                      className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green text-xs"
-                    >
-                      {t('current_session')}
-                    </Badge>
-                  )}
-                </>
-              }
-              description={`${session.ip} · ${t('last_active')} ${formatTimeAgo(session.updated_at)}`}
-              icon={getDeviceIcon(session.user_agent)}
-            >
-              {!session.is_current && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      disabled={revokingIds.includes(session.session_id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">
-                        {revokingIds.includes(session.session_id)
-                          ? 'Revoking...'
-                          : 'Revoke'}
-                      </span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {t('revoke_session_question')}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('revoke_session_description')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => revokeSession(session.session_id)}
-                      >
-                        {t('revoke_session')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </SettingItemTab>
-          ))
-        )}
-      </SettingsSection>
+        </SettingsSection>
+      )}
+
+      {groups.map(
+        (group) =>
+          group.sessions.length > 0 && (
+            <SettingsSection key={group.key} title={group.title}>
+              {group.sessions.map((session) => {
+                const meta = metaById.get(session.session_id);
+                return (
+                  <SessionRow
+                    key={session.session_id}
+                    session={session}
+                    lastActive={
+                      meta?.lastActive ?? formatTimeAgo(session.updated_at)
+                    }
+                    identifier={meta?.identifier}
+                    revoking={revokingIds.includes(session.session_id)}
+                    onRevoke={() => revokeSession(session.session_id)}
+                  />
+                );
+              })}
+            </SettingsSection>
+          )
+      )}
 
       {sessions.length > 1 && (
         <SettingsSection>
@@ -373,6 +375,30 @@ export default function SessionsCard() {
               </AlertDialogContent>
             </AlertDialog>
           </SettingItemTab>
+          {revokingAll && bulkProgress.total > 0 && (
+            <SettingsSectionBlock className="space-y-2">
+              {/* The shared Progress keeps `value` for its indicator, so the
+                  bar gets its name and value here. The count is requests
+                  finished, whether or not each one succeeded. */}
+              <Progress
+                aria-label={t('revoke_progress_label')}
+                aria-valuenow={Math.round(
+                  (bulkProgress.completed / bulkProgress.total) * 100
+                )}
+                aria-valuetext={t('revoke_progress', {
+                  completed: bulkProgress.completed,
+                  total: bulkProgress.total,
+                })}
+                value={(bulkProgress.completed / bulkProgress.total) * 100}
+              />
+              <div className="text-foreground text-sm">
+                {t('revoke_progress', {
+                  completed: bulkProgress.completed,
+                  total: bulkProgress.total,
+                })}
+              </div>
+            </SettingsSectionBlock>
+          )}
         </SettingsSection>
       )}
     </>

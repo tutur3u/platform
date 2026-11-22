@@ -861,6 +861,17 @@ Each action keeps its gate:
   verification and the account recheck.
 - Log out current account: the Settings page's sign-out confirmation.
 
+The web Settings > Sessions card in Web and Workspace follows the same
+grouping and disclosure rules: This device, then Active recently (seven days),
+then Older, with a masked address in the row and the full address, timestamps
+and raw user agent behind a details disclosure. Client names match the app,
+but the web names Apple platforms by operating system ("Safari on iOS",
+"Safari on iPadOS") where the app names the device ("Safari on iPhone").
+Desktop apps other than T3 Code read "Desktop app" on both, because a product
+token is free text and a row never repeats text from a user agent. Its rules live in
+`apps/web/src/lib/sessions/session-display.ts` and `session-user-agent.ts`,
+covered by their colocated tests.
+
 The hub shows neither the signed-in email nor a pending request's pair code;
 the approval dialog asks the user to read the code from the requesting device.
 Switch rows take one keyboard stop, since the row owns activation.

@@ -1,7 +1,7 @@
 ---
 title: "Workspace on Start + Void"
 description: "Route groups carved from Web into the native Workspace app, the missing API guard, and the rollback to Vercel."
-updatedAt: "2026-11-10"
+updatedAt: "2026-11-22"
 audience: developers
 ---
 
@@ -140,7 +140,9 @@ Workspace holds copies of Web files. Re-compare the auth and account files with
   navigating away.
 - Recovery sessions (`lib/auth/recovery-session.ts`, `recovery.ts`) are created
   with the recovering browser's user agent.
-- The sessions card describes devices with `lib/sessions/session-user-agent.ts`.
+- The sessions card (`components/settings/account/sessions-card.tsx` and
+  `session-row.tsx`) describes devices with `lib/sessions/session-user-agent.ts`
+  and masks and groups sessions with `lib/sessions/session-display.ts`.
 - External-project scope checks live in `lib/external-projects/access-mode.ts`,
   and the route permissions include `edit_external_projects`.
 

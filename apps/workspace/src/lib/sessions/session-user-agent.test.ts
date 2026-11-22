@@ -78,9 +78,62 @@ describe('describeSessionUserAgent', () => {
       device: 'phone',
       os: 'iOS',
     });
-    expect(describeSessionUserAgent('Chrome/120.0').label).toBe(
-      'Chrome on Unknown OS'
+    expect(describeSessionUserAgent('Chrome/120.0').label).toBe('Chrome');
+  });
+
+  it('names app and tool clients instead of the engine they embed', () => {
+    expect(describeSessionUserAgent('Dart/3.14 (dart:io)')).toMatchObject({
+      device: 'phone',
+      kind: 'tuturuuu-app',
+      label: 'Tuturuuu app',
+      name: null,
+      platform: null,
+    });
+    expect(
+      describeSessionUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) T3CodeNightly/0.1.12 Chrome/158.0.0.0 Electron/41.0.0 Safari/537.36'
+      )
+    ).toMatchObject({
+      device: 'desktop',
+      kind: 'desktop-app',
+      label: 'T3 Code on macOS',
+      name: 'T3 Code',
+    });
+    // A product token is free text, so other desktop apps stay unnamed.
+    const unnamed = describeSessionUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Workstation-QA-0142/4.41.0 Chrome/130.0.0.0 Electron/33.0.0 Safari/537.36'
     );
+    expect(unnamed).toMatchObject({
+      kind: 'desktop-app',
+      label: 'Desktop app on Windows',
+      name: null,
+    });
+    expect(JSON.stringify(unnamed)).not.toContain('Workstation');
+    expect(describeSessionUserAgent('curl/8.7.1')).toMatchObject({
+      kind: 'tool',
+      label: 'curl',
+    });
+    expect(describeSessionUserAgent('ttr/2.4.0 (darwin)').label).toBe(
+      'Tuturuuu CLI'
+    );
+  });
+
+  it('recognises Opera, Samsung Internet and ChromeOS', () => {
+    expect(
+      describeSessionUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0'
+      ).label
+    ).toBe('Opera on Windows');
+    expect(
+      describeSessionUserAgent(
+        'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36'
+      )
+    ).toMatchObject({ device: 'phone', label: 'Samsung Internet on Android' });
+    expect(
+      describeSessionUserAgent(
+        'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      ).label
+    ).toBe('Chrome on ChromeOS');
   });
 
   it('does not invent a browser for missing or non-browser agents', () => {
@@ -90,13 +143,19 @@ describe('describeSessionUserAgent', () => {
       '',
       'Unknown',
       'node',
-      'Dart/3.9 (dart:io)',
+      'Unknown Device',
     ]) {
       expect(describeSessionUserAgent(userAgent)).toMatchObject({
         device: 'desktop',
+        kind: 'unknown',
         label: 'Unknown Device',
+        platform: null,
       });
     }
+    expect(describeSessionUserAgent('SomeBot (Macintosh)')).toMatchObject({
+      kind: 'unknown',
+      label: 'Unknown Device on macOS',
+    });
   });
 });
 
