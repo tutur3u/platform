@@ -10,9 +10,18 @@ const mocks = vi.hoisted(() => ({
   listFactors: vi.fn(),
   challengeAndVerify: vi.fn(),
   refresh: vi.fn(),
+  signOut: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({ auth: { mfa: mocks } }),
+  createClient: () => ({
+    auth: {
+      mfa: {
+        challengeAndVerify: mocks.challengeAndVerify,
+        listFactors: mocks.listFactors,
+      },
+      signOut: mocks.signOut,
+    },
+  }),
 }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: mocks.refresh }),
@@ -46,7 +55,7 @@ it('uses the existing provider MFA service and refreshes server authorization af
   expect(
     screen.getByRole('button', { name: 'required_mfa_verify' })
   ).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('verification_code_label'), {
+  fireEvent.change(await screen.findByLabelText('verification_code_label'), {
     target: { value: '123456' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'required_mfa_verify' }));
@@ -61,7 +70,7 @@ it('uses the existing provider MFA service and refreshes server authorization af
 it('shows an accessible failure and keeps the user on the page on rejected MFA', async () => {
   mocks.challengeAndVerify.mockResolvedValue({ error: Error('rejected') });
   setup();
-  fireEvent.change(screen.getByLabelText('verification_code_label'), {
+  fireEvent.change(await screen.findByLabelText('verification_code_label'), {
     target: { value: '123456' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'required_mfa_verify' }));
@@ -69,4 +78,18 @@ it('shows an accessible failure and keeps the user on the page on rejected MFA',
     'required_mfa_error'
   );
   expect(mocks.refresh).not.toHaveBeenCalled();
+});
+it('signs in again through the step-up login path, outside the code card', async () => {
+  const assign = vi.fn();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { assign },
+  });
+  mocks.signOut.mockResolvedValue({ error: null });
+  setup();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'reauthenticate_sign_in_instead' })
+  );
+  await waitFor(() => expect(assign).toHaveBeenCalledWith('/en/login'));
+  expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
 });

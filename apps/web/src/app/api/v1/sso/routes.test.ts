@@ -54,7 +54,9 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
 vi.mock('../../../[locale]/(auth)/sso/consent/reauthenticate', () => ({
-  Reauthenticate: () => null,
+  // The page hands its explanation to the reauthenticate card.
+  Reauthenticate: ({ description }: { description?: string }) =>
+    description ?? null,
 }));
 vi.mock('@/lib/rate-limit', () => ({ checkRateLimitRedis: mocks.limiter }));
 vi.mock('next/server', async (original) => ({

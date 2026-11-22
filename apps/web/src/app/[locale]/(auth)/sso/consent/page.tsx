@@ -1,8 +1,11 @@
+import { Check } from '@tuturuuu/icons/lucide-static';
 import { SsoError } from '@tuturuuu/sso';
+import { Button } from '@tuturuuu/ui/button';
 import { cookies, headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 import {
   cookieName,
   csrfFor,
@@ -12,6 +15,12 @@ import {
 import { configuration, enabled } from '@/lib/sso/config';
 import { consentIdentity } from '@/lib/sso/identity';
 import { adminClient } from '@/lib/sso/store';
+import {
+  ConfirmIdentityIllustration,
+  ConsentIllustration,
+  ExpiredLinkIllustration,
+} from '../../login/auth-illustrations';
+import { AuthStateCard } from '../../login/auth-state-card';
 import { Reauthenticate } from './reauthenticate';
 
 export default async function ConsentPage({
@@ -26,12 +35,7 @@ export default async function ConsentPage({
   const locale = (await params).locale === 'vi' ? 'vi' : 'en';
   const t = await getTranslations({ locale, namespace: 'sso_consent' });
   const query = await searchParams;
-  if (query.denied === '1')
-    return (
-      <main className="mx-auto max-w-lg p-6">
-        <h1>{t('denied')}</h1>
-      </main>
-    );
+  if (query.denied === '1') return <ConsentDenied title={t('denied')} />;
   const handle = handleSchema.safeParse(query.transaction);
   if (!handle.success) notFound();
   const config = configuration();
@@ -51,68 +55,121 @@ export default async function ConsentPage({
     );
   } catch (error) {
     if (error instanceof SsoError && error.code === 'session_changed')
-      return (
-        <main className="mx-auto max-w-lg p-6">
-          <h1>{t('denied')}</h1>
-        </main>
-      );
+      return <ConsentDenied title={t('denied')} />;
     const returnPath = `/${locale}/sso/consent?transaction=${handle.data}`;
     const loginPath = `/${locale}/login?mfa=required&nextUrl=${encodeURIComponent(returnPath)}`;
     return (
-      <main className="mx-auto max-w-lg space-y-4 p-6">
-        <h1 className="font-semibold text-xl">{t('title')}</h1>
-        <p>{t('authentication_required')}</p>
+      <ConsentFrame>
         {error instanceof SsoError && error.code === 'mfa_required' ? (
-          <Reauthenticate loginPath={loginPath} />
+          <Reauthenticate
+            description={t('authentication_required')}
+            loginPath={loginPath}
+          />
         ) : (
-          <a className="underline" href={loginPath}>
-            {t('sign_in')}
-          </a>
+          <AuthStateCard
+            description={t('authentication_required')}
+            illustration={<ConfirmIdentityIllustration />}
+            title={t('title')}
+            titleAs="h1"
+          >
+            <Button asChild className="h-12 w-full rounded-2xl font-bold">
+              <a href={loginPath}>{t('sign_in')}</a>
+            </Button>
+          </AuthStateCard>
         )}
-      </main>
+      </ConsentFrame>
     );
   }
+  const appName = context.current.name;
   return (
-    <main className="mx-auto max-w-lg space-y-6 p-6">
-      <h1 className="font-semibold text-2xl">{t('title')}</h1>
-      <p>{t('destination', { name: context.current.name })}</p>
-      <p>{context.actor.email}</p>
-      <p>{t('description')}</p>
-      <ul className="list-disc space-y-2 pl-6">
-        <li>{t('subject')}</li>
-        <li>{t('email')}</li>
-        <li>{t('first_name')}</li>
-        <li>{t('last_name')}</li>
-      </ul>
-      <p>{t('each_login')}</p>
-      <form
-        method="post"
-        action={`/api/v1/sso/transactions/${handle.data}/decision`}
-        className="flex gap-4"
+    <ConsentFrame>
+      <AuthStateCard
+        illustration={<ConsentIllustration />}
+        title={t('share_title', { name: appName })}
+        titleAs="h1"
       >
-        <input
-          type="hidden"
-          name="csrf"
-          value={csrfFor(state, context.actor)}
-        />
-        <input type="hidden" name="locale" value={locale} />
-        <button
-          type="submit"
-          className="rounded border bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2"
-          name="decision"
-          value="approve"
+        <p className="text-center text-muted-foreground text-sm">
+          {t('description')}
+        </p>
+        <ul className="flex flex-col rounded-2xl border px-3.5 py-1">
+          {CLAIM_KEYS.map((key) => (
+            <li
+              className="flex items-start gap-2.5 border-b py-2.5 text-sm last:border-b-0"
+              key={key}
+            >
+              <Check
+                aria-hidden
+                className="mt-0.5 size-4 shrink-0 text-dynamic-green"
+              />
+              <span>{t(key)}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {t('each_login', { name: appName })}
+        </p>
+        <form
+          method="post"
+          action={`/api/v1/sso/transactions/${handle.data}/decision`}
+          className="grid grid-cols-2 gap-2.5"
         >
-          {t('approve')}
-        </button>
-        <button
-          type="submit"
-          className="rounded border px-4 py-2 focus-visible:outline-2"
-          name="decision"
-          value="deny"
-        >
-          {t('deny')}
-        </button>
-      </form>
+          <input
+            type="hidden"
+            name="csrf"
+            value={csrfFor(state, context.actor)}
+          />
+          <input type="hidden" name="locale" value={locale} />
+          <Button
+            type="submit"
+            className="h-12 rounded-2xl font-bold"
+            name="decision"
+            value="deny"
+            variant="outline"
+          >
+            {t('deny')}
+          </Button>
+          <Button
+            type="submit"
+            className="h-12 rounded-2xl font-bold"
+            name="decision"
+            value="approve"
+          >
+            {t('approve')}
+          </Button>
+        </form>
+        <p className="text-center text-muted-foreground text-xs">
+          {t('signed_in_as', { email: context.actor.email ?? '' })}{' '}
+          <a
+            className="font-semibold text-foreground underline underline-offset-4"
+            href={locale === 'vi' ? '/vi/logout' : '/logout'}
+          >
+            {t('not_you')}
+          </a>
+        </p>
+      </AuthStateCard>
+    </ConsentFrame>
+  );
+}
+
+const CLAIM_KEYS = ['subject', 'email', 'first_name', 'last_name'] as const;
+
+/** The consent screens share the 400px auth column, centred on the page. */
+function ConsentFrame({ children }: { children: ReactNode }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-background p-4 text-foreground">
+      <div className="flex w-full max-w-[400px] flex-col gap-4">{children}</div>
     </main>
+  );
+}
+
+function ConsentDenied({ title }: { title: string }) {
+  return (
+    <ConsentFrame>
+      <AuthStateCard
+        illustration={<ExpiredLinkIllustration />}
+        title={title}
+        titleAs="h1"
+      />
+    </ConsentFrame>
   );
 }
