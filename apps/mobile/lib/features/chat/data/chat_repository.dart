@@ -409,8 +409,9 @@ class ChatRepository {
             );
       admission?.check();
     } on ApiException catch (error) {
-      if (error is ApiMutationNotDispatched) rethrow;
-      admission?.check();
+      if (error is ApiMutationNotDispatched || admission?.current == false) {
+        rethrow;
+      }
       if (!await _messageMutationQueue.enqueueAfterNetworkFailure(
         error: error,
         feature: 'chat',

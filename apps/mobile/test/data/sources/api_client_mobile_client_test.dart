@@ -40,6 +40,7 @@ void main() {
   late List<http.Request> requests;
   late int mints;
   late int prompts;
+  late bool mintAvailable;
   Completer<void>? slow;
   final stepUp = http.Response(
     '{"code":"ABUSE_CHALLENGE_REQUIRED"}',
@@ -86,6 +87,7 @@ void main() {
     requests = [];
     mints = 0;
     prompts = 0;
+    mintAvailable = true;
     slow = null;
     ApiVerification.requestToken = () async {
       prompts++;
@@ -117,6 +119,7 @@ void main() {
           expect(request.headers['authorization'], 'Bearer $accessToken');
           expect(jsonDecode(request.body), {'captchaToken': 'captcha'});
           mints++;
+          if (!mintAvailable) return http.Response('{}', 503);
           return http.Response(
             jsonEncode({
               'mobile_client': {
@@ -284,6 +287,103 @@ void main() {
     );
     expect(requests.length, 1);
     expect(mints, 0);
+  });
+
+  group('foreground Mira reply', () {
+    const path = '/api/v1/workspaces/ws/chat/conversations/chat/messages';
+    const body = {'clientRequestId': 'original-request'};
+    Future<String> reply(ApiClient api, {bool Function()? isCurrent}) async {
+      final response = await api.sendJsonStreamAcknowledged(
+        'POST',
+        path,
+        body,
+        accept: 'application/x-ndjson',
+        admission: ApiMutationAdmission(
+          actorId: 'user-a',
+          isCurrent: isCurrent ?? () => true,
+          allowStepUpPrompt: true,
+        ),
+      );
+      return await response.stream.bytesToString();
+    }
+
+    test(
+      'sends a stored credential on the first attempt without a prompt',
+      () async {
+        await signedIn();
+        final client0 = api(
+          (request) => request.headers[mobileClientHeader] == 'login'
+              ? http.Response('reply', 200)
+              : stepUp,
+        );
+        expect(await reply(client0), 'reply');
+        expect(requests, hasLength(1));
+        expect(prompts, 0);
+        expect(mints, 0);
+      },
+    );
+
+    for (final mintSucceeds in [false, true]) {
+      test(
+        'uses one security check when mint succeeds=$mintSucceeds',
+        () async {
+          mintAvailable = mintSucceeds;
+          if (mintSucceeds) await signedIn();
+          ApiVerification.requestToken = () async {
+            expect(ApiVerification.allowsPrompt, isTrue);
+            prompts++;
+            return 'security-check';
+          };
+          final client0 = api(
+            (request) =>
+                request.headers['x-tuturuuu-turnstile-token'] ==
+                    'security-check'
+                ? http.Response('reply', 200)
+                : stepUp,
+          );
+
+          expect(await reply(client0), 'reply');
+          expect(prompts, 1);
+          expect(mints, 1);
+          expect(requests.last.followRedirects, isFalse);
+          expect(
+            requests.map((r) => r.headers[mobileClientHeader]),
+            mintSucceeds
+                ? ['login', 'credential-1', 'credential-1']
+                : [null, null],
+          );
+          for (final request in requests) {
+            expect(request.url.path, path);
+            expect(request.headers['authorization'], 'Bearer $accessToken');
+            expect(jsonDecode(request.body), body);
+          }
+        },
+      );
+    }
+
+    test('does not prompt or replay an ordinary forbidden reply', () async {
+      await signedIn();
+      final client0 = api((_) => http.Response('forbidden', 403));
+      expect(await reply(client0), 'forbidden');
+      expect(prompts, 0);
+      expect(mints, 0);
+      expect(requests.single.headers[mobileClientHeader], 'login');
+    });
+
+    test('does not replay when the chat leaves during verification', () async {
+      mintAvailable = false;
+      var current = true;
+      ApiVerification.requestToken = () async {
+        current = false;
+        return 'security-check';
+      };
+      final client0 = api((_) => stepUp);
+      await expectLater(
+        reply(client0, isCurrent: () => current),
+        throwsA(isA<ApiException>()),
+      );
+      expect(requests, hasLength(1));
+    });
   });
 
   group('secure storage that never answers', () {

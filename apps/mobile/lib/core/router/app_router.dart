@@ -193,6 +193,7 @@ GoRouter createAppRouter(
         : await showSecurityCheck(
             context,
             allowPrompt: ApiVerification.allowsPrompt,
+            cancellation: ApiVerification.cancellation,
             modal: false,
           );
   };

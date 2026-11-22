@@ -1,11 +1,19 @@
 part of 'assistant_chat_cubit.dart';
 
 final class _AssistantReplySubscription {
-  _AssistantReplySubscription(this._subscription);
+  _AssistantReplySubscription(this.admission, this._subscription);
 
+  final ApiMutationAdmission admission;
   final StreamSubscription<AssistantStreamEvent> _subscription;
 
-  Future<void> cancel() => _subscription.cancel();
+  Future<void> cancel() async {
+    admission.retire();
+    try {
+      await _subscription.cancel();
+    } on ApiMutationScopeChanged catch (error) {
+      if (!identical(error.admission, admission)) rethrow;
+    }
+  }
 }
 
 extension _AssistantChatSubmission on AssistantChatCubit {
@@ -502,6 +510,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       late final ApiMutationAdmission admission;
       admission = ApiMutationAdmission(
         actorId: actor ?? '',
+        allowStepUpPrompt: true,
         isCurrent: () =>
             actor != null && _repository.currentActorId == actor && current(),
         onNotDispatched: (failure) => _releaseDefinitelyUnsentNativePending(
@@ -512,8 +521,8 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       );
       nativePending?.attempts.add(admission);
       phase = OperationalPhase.assistantReply;
-      _streamAdmission = admission;
       _streamSubscription = _AssistantReplySubscription(
+        admission,
         _replyForSubmission(
           firstCreation: firstCreation,
           chatId: chatId,
@@ -610,7 +619,6 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             }
             _unknownSubmission(clientRequestId);
             _streamSubscription = null;
-            _streamAdmission = null;
             _finalizeToolParts();
             if (isClosed || state.status == AssistantChatStatus.error) {
               return;

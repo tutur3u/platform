@@ -31,6 +31,7 @@ class FirstApi extends ApiClient {
   String? malformed;
   bool transportFailure = false;
   Completer<void>? responseGate;
+  ApiMutationAdmission? dispatchedAdmission;
   final headers = Completer<void>();
   final releaseBody = Completer<void>();
   @override
@@ -43,6 +44,7 @@ class FirstApi extends ApiClient {
   }) async {
     final body = rawBody! as Map<String, dynamic>;
     admission.recordDispatchPossible();
+    dispatchedAdmission = admission;
     requests++;
     this.path = path;
     this.body = body;
@@ -137,9 +139,11 @@ void main() {
   late FirstApi api;
   late AssistantRepository repository;
   var current = true;
+  var creationCurrent = true;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     current = true;
+    creationCurrent = true;
     api = FirstApi();
     repository = AssistantRepository(
       apiClient: api,
@@ -148,7 +152,7 @@ void main() {
     await informedReset(repository, ws);
   });
   Stream<AssistantStreamEvent> send() => repository.streamFirstChat(
-    creation: AssistantFirstMessageCreation(settings, () => current),
+    creation: AssistantFirstMessageCreation(settings, () => creationCurrent),
     chatId: chat,
     wsId: ws,
     messages: const [
@@ -247,5 +251,20 @@ void main() {
     current = false;
     await expectLater(send().toList(), throwsA(isA<Object>()));
     expect(api.requests, 0);
+  });
+
+  test('expired first-chat settings retire the HTTP admission', () async {
+    api.responseGate = Completer<void>();
+    final sendResult = send().toList();
+    await api.headers.future;
+    expect(api.dispatchedAdmission!.current, isTrue);
+    creationCurrent = false;
+    expect(api.dispatchedAdmission!.current, isFalse);
+    api.responseGate!.complete();
+    expect(
+      (await sendResult).whereType<AssistantChatCreatedStreamEvent>(),
+      isEmpty,
+    );
+    expect(api.requests, 1);
   });
 }

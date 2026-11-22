@@ -117,7 +117,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   String? _activeSubmissionRequestId;
   Timer? _queueDebounce;
   _AssistantReplySubscription? _streamSubscription;
-  ApiMutationAdmission? _streamAdmission;
   final _streamCancellations = <Future<void>>{};
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
@@ -558,22 +557,19 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   Future<void> _cancelReplyStream() async {
-    final cancelSubscription = _streamSubscription?.cancel;
-    final admission = _streamAdmission;
+    final subscription = _streamSubscription;
     _streamSubscription = null;
-    _streamAdmission = null;
     final cancellations = _streamCancellations.toList();
     final Future<void>? operation;
-    if (cancelSubscription == null) {
+    if (subscription == null) {
       operation = null;
     } else {
       Future<void> cancel() async {
         try {
-          await cancelSubscription();
+          await subscription.cancel();
         } on ApiMutationNotDispatched catch (error) {
-          if (admission == null ||
-              !identical(error.admission, admission) ||
-              !admission.definitelyNotDispatched) {
+          if (!identical(error.admission, subscription.admission) ||
+              !subscription.admission.definitelyNotDispatched) {
             rethrow;
           }
         }

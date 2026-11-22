@@ -43,6 +43,7 @@ extension AssistantFirstMessageOperations on AssistantRepository {
       },
       onCancel: () {
         cancelled = true;
+        admission.retire();
         final cleanup = subscription.cancel();
         if (acknowledged) return cleanup;
         // A bounded in-flight HTTP request remains observed, but cannot keep
@@ -67,11 +68,11 @@ extension AssistantFirstMessageOperations on AssistantRepository {
   }) async* {
     final version = _creationGenerationVersion;
     final scope = _creationScopeKey(wsId);
-    bool current() =>
+    bool creationCurrent() =>
         version == _creationGenerationVersion &&
         scope == _creationScopeKey(wsId) &&
-        creation.isCurrent() &&
-        admission.current;
+        creation.isCurrent();
+    bool current() => creationCurrent() && admission.current;
     final user = messages.reversed.where((m) => m.role == 'user').firstOrNull;
     final requestId = user?.clientRequestId;
     if (!isUuid(chatId) ||
@@ -98,20 +99,23 @@ extension AssistantFirstMessageOperations on AssistantRepository {
       yield const AssistantJsonStreamEvent({
         'type': 'native-dispatch-admitted',
       });
-      final response = await _apiClient.sendJsonStreamAcknowledged(
-        'POST',
-        '/api/v1/workspaces/$wsId/chat/conversations/$chatId/messages',
-        {
-          'content': _latestUserText(messages),
-          'kind': 'user',
-          'clientRequestId': requestId,
-          'miraMode': true,
-          'timezone': timezone,
-          'clientCapabilities': AssistantClientActions.chatCapabilities(),
-          'initialConversation': creation.settings.toJson(),
-        },
-        accept: 'application/x-ndjson',
-        admission: admission,
+      final response = await admission.withScope(
+        creationCurrent,
+        () => _apiClient.sendJsonStreamAcknowledged(
+          'POST',
+          '/api/v1/workspaces/$wsId/chat/conversations/$chatId/messages',
+          {
+            'content': _latestUserText(messages),
+            'kind': 'user',
+            'clientRequestId': requestId,
+            'miraMode': true,
+            'timezone': timezone,
+            'clientCapabilities': AssistantClientActions.chatCapabilities(),
+            'initialConversation': creation.settings.toJson(),
+          },
+          accept: 'application/x-ndjson',
+          admission: admission,
+        ),
       );
       if (!current()) {
         await response.stream.listen((_) {}).cancel();

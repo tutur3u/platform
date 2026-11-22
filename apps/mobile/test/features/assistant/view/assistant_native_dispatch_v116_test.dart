@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
@@ -336,6 +338,74 @@ void main() {
     expect(h.chat.state.messages.where((m) => m.role == 'user'), hasLength(1));
     // A stop that never completes fails here, not at the ten-minute default.
   }, timeout: const Timeout(Duration(minutes: 1)));
+  for (final stop in [true, false]) {
+    testWidgets('${stop ? 'stopping a reply' : 'opening chat history'} '
+        'cancels verification', (tester) async {
+      final h = (await tester.runAsync(NativeDispatchHarness.create))!;
+      addTearDown(() => h.dispose(tester));
+      final answer = Completer<String?>();
+      final original = ApiVerification.requestToken;
+      ValueListenable<bool>? cancellation;
+      ApiVerification.requestToken = () {
+        cancellation = ApiVerification.cancellation;
+        return answer.future;
+      };
+      addTearDown(() {
+        ApiVerification.requestToken = original;
+        if (!answer.isCompleted) answer.complete();
+      });
+
+      await h.open(tester);
+      h.port.responseStatus = 403;
+      await h.pageSend(tester, 'Leave during verification');
+      expect(cancellation?.value, isFalse);
+      expect(h.port.posts, hasLength(1));
+      if (stop) {
+        var finished = false;
+        final stopping = h.chat.stopStreaming().then((_) => finished = true);
+        await h.settle(tester);
+        expect(finished, isTrue);
+        await stopping;
+        expect(h.chat.state.status, AssistantChatStatus.idle);
+      } else {
+        // History reads the real fixture cache and needs its I/O zone.
+        await tester.runAsync(
+          () => h.chat
+              .openChatById(repairWorkspace, repairChat)
+              .timeout(const Duration(seconds: 5)),
+        );
+        await h.settle(tester);
+      }
+      expect(cancellation?.value, isTrue);
+      expect(answer.isCompleted, isFalse);
+
+      answer.complete('late-security-check');
+      await h.settle(tester);
+      expect(h.port.posts, hasLength(1));
+    });
+  }
+
+  testWidgets('stopping preserves a pending reply transport failure', (
+    tester,
+  ) async {
+    final h = (await tester.runAsync(NativeDispatchHarness.create))!;
+    addTearDown(() => h.dispose(tester));
+    await h.open(tester);
+    final responseGate = Completer<void>();
+    h.port.responseGate = responseGate;
+    await h.pageSend(tester, 'Stop during an in-flight send');
+    expect(h.port.posts, hasLength(1));
+    const failure = ApiException.transport(message: 'Fixture transport error');
+    final stopping = expectLater(
+      h.chat.stopStreaming(),
+      throwsA(same(failure)),
+    );
+    responseGate.completeError(failure);
+    await h.settle(tester);
+    await stopping;
+    expect(h.port.posts, hasLength(1));
+  });
+
   testWidgets('empty-state native send uses one request and the client ID', (
     tester,
   ) async {

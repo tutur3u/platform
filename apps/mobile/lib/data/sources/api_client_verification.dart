@@ -12,9 +12,11 @@ extension _ApiClientVerification on ApiClient {
   Future<String?> _verificationToken(
     http.BaseResponse response, {
     required bool read,
+    ValueNotifier<bool>? cancellation,
   }) async {
     try {
       return await ApiVerification.request(
+        cancellation: cancellation,
         allowPrompt: ApiVerification.promptsFor(
           read ? 'GET' : response.request?.method,
           bulkRead: OfflineApiRequest.active,

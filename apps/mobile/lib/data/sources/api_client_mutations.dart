@@ -5,11 +5,15 @@ final class ApiMutationAdmission {
   ApiMutationAdmission({
     required this.actorId,
     required bool Function() isCurrent,
+    bool allowStepUpPrompt = false,
     void Function(ApiMutationNotDispatched)? onNotDispatched,
-  }) : _isCurrent = isCurrent,
+  }) : _stepUpCancellation = allowStepUpPrompt ? ValueNotifier(false) : null,
+       _isCurrent = isCurrent,
        _onNotDispatched = onNotDispatched;
   final String actorId;
+  final ValueNotifier<bool>? _stepUpCancellation;
   final bool Function() _isCurrent;
+  final _additionalScopes = <bool Function()>[];
   bool _retired = false;
   bool _dispatchPossible = false;
   final void Function(ApiMutationNotDispatched)? _onNotDispatched;
@@ -33,18 +37,46 @@ final class ApiMutationAdmission {
     return failure;
   }
 
+  void retire() {
+    _retired = true;
+    _stepUpCancellation?.value = true;
+  }
+
+  /// Adds a dispatch check for each attempt within an operation.
+  Future<T> withScope<T>(
+    bool Function() isCurrent,
+    Future<T> Function() operation,
+  ) async {
+    _additionalScopes.add(isCurrent);
+    try {
+      return await operation();
+    } finally {
+      _additionalScopes.remove(isCurrent);
+    }
+  }
+
   bool get current {
-    if (_unsentFailure != null || !_isCurrent()) {
-      _retired = true;
+    if (!_retired &&
+        (_unsentFailure != null ||
+            !_isCurrent() ||
+            !_additionalScopes.every((isCurrent) => isCurrent()))) {
+      retire();
     }
     return !_retired;
   }
 
   void check() {
     if (_unsentFailure != null || !current) {
-      throw const ApiException(message: 'Request scope changed', statusCode: 0);
+      throw ApiMutationScopeChanged._(this);
     }
   }
+}
+
+final class ApiMutationScopeChanged extends ApiException {
+  const ApiMutationScopeChanged._(this.admission)
+    : super(message: 'Request scope changed', statusCode: 0);
+
+  final ApiMutationAdmission admission;
 }
 
 final class ApiMutationNotDispatched extends ApiException {
@@ -119,8 +151,8 @@ extension _ApiClientMutations on ApiClient {
     }
   }
 
-  /// Native mutations dispatch once without auth or challenge response replay,
-  /// except one replay after a pre-handler step-up with a re-minted credential.
+  /// Replays only after a pre-handler step-up. Foreground callers can opt in
+  /// to the security check if the native credential does not clear it.
   Future<http.StreamedResponse> _sendJsonStreamAcknowledged(
     String method,
     String path,
@@ -144,6 +176,7 @@ extension _ApiClientMutations on ApiClient {
         );
         admitted();
         final request = http.Request(method, _url(path))
+          ..followRedirects = ApiVerification.token == null
           ..headers.addAll(headers)
           ..body = jsonEncode(body);
         // There is no async gap between this lease check and the HTTP dispatch.
@@ -152,17 +185,38 @@ extension _ApiClientMutations on ApiClient {
         return await _client.send(request).timeout(_requestTimeout);
       }
 
-      final response = await _performStreamedRequest(
-        () async => await _withStreamStepUpReplay(admission.actorId, send),
-        requiresAuth: false,
-      );
-      try {
-        admitted();
-      } on Object {
+      return await _performStreamedRequest(() async {
+        final response = await _withStreamStepUpReplay(admission.actorId, send);
+        String? token;
+        try {
+          admitted();
+          final cancellation = admission._stepUpCancellation;
+          if (cancellation != null &&
+              OfflineApiRequest.allowsChallenge &&
+              _isStepUp(response.statusCode, response.headers)) {
+            token = await _verificationToken(
+              response,
+              read: false,
+              cancellation: cancellation,
+            );
+            admitted();
+          }
+        } on Object {
+          await response.stream.listen(null).cancel();
+          rethrow;
+        }
+        if (token == null || token.isEmpty) return response;
+
         await response.stream.listen(null).cancel();
-        rethrow;
-      }
-      return response;
+        final replay = await ApiVerification.retry(token, send);
+        try {
+          admitted();
+        } on Object {
+          await replay.stream.listen(null).cancel();
+          rethrow;
+        }
+        return replay;
+      }, requiresAuth: false);
     } on Object catch (error, stack) {
       Error.throwWithStackTrace(admission.preparationFailure(error), stack);
     }

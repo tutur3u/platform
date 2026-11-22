@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -32,9 +33,11 @@ Future<String?> showSecurityCheck(
   BuildContext context, {
   bool allowPrompt = true,
   bool modal = true,
+  ValueListenable<bool>? cancellation,
 }) async {
   if (!Env.isTurnstileConfigured) return null;
   final background = await SecurityCheckPrewarm.background();
+  if (cancellation?.value ?? false) return null;
   if (background != null || !allowPrompt) return background;
   if (!context.mounted) return null;
   // A form that another page covers by now gets no card over that page.
@@ -43,7 +46,11 @@ Future<String?> showSecurityCheck(
   if (_activeChecks[navigator] ?? false) return null;
   _activeChecks[navigator] = true;
   try {
-    return await showSecurityCheckPanel(navigator, modal: modal);
+    return await showSecurityCheckPanel(
+      navigator,
+      modal: modal,
+      cancellation: cancellation,
+    );
   } finally {
     _activeChecks[navigator] = false;
   }
@@ -63,7 +70,9 @@ Future<String?> showSecurityCheckPanel(
   bool modal = false,
   SecurityChallengeBuilder? challengeBuilder,
   Duration giveUpAfter = const Duration(minutes: 3),
+  ValueListenable<bool>? cancellation,
 }) {
+  if (cancellation?.value ?? false) return Future.value();
   final completer = Completer<String?>();
   final previousFocus = FocusManager.instance.primaryFocus;
   // Non-modal, someone typing (an autosave asked) keeps their caret; the
@@ -74,12 +83,18 @@ Future<String?> showSecurityCheckPanel(
   final takeFocus = modal || !typing;
   Timer? giveUp;
   var close = () {};
+  late final VoidCallback cancel;
   void finish(String? token) {
     if (completer.isCompleted) return;
     giveUp?.cancel();
+    cancellation?.removeListener(cancel);
     completer.complete(token);
     close();
   }
+
+  cancel = () {
+    if (cancellation?.value ?? false) finish(null);
+  };
 
   Widget panel() => _SecurityCheckPlacement(
     onUnmount: () => finish(null),
@@ -131,6 +146,7 @@ Future<String?> showSecurityCheckPanel(
   }
   // A request must not wait forever on a panel nobody answers.
   giveUp = Timer(giveUpAfter, () => finish(null));
+  cancellation?.addListener(cancel);
   return completer.future;
 }
 

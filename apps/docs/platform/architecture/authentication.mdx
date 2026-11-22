@@ -255,9 +255,12 @@ trust signal that a spoofed User-Agent cannot produce.
   step-up runs before the handler, so the replay cannot repeat a write, and
   the acknowledged request variants replay the same way. A forced re-mint
   runs at most once per two minutes per account, and failed mints back off
-  from one to thirty minutes, so a refusal never loops. When no credential
-  can be minted, the existing security-check dialog and the Mastermind outbox
-  retry handle the 403 as before.
+  from one to thirty minutes, so a refusal never loops. If a foreground Mira
+  reply still receives the pre-handler step-up, the app offers its usual
+  security check and retries once with the proof and the original request ID.
+  Stopping the reply or leaving its chat dismisses the pending check and
+  prevents a retry. The request also rechecks its account before replay.
+  The Mastermind outbox retains its own retry flow.
 - **Use:** the app sends it as `x-tuturuuu-mobile-client` next to
   `Authorization: Bearer <supabase access token>`. `withSessionAuth` verifies
   the signature and expiry, and checks that the token's user and session

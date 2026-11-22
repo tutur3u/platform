@@ -42,6 +42,36 @@ Widget _page({
 void main() {
   _securityPanelDimTests();
 
+  testWidgets('retiring the initiating request closes its check', (
+    tester,
+  ) async {
+    final cancellation = ValueNotifier(false);
+    addTearDown(cancellation.dispose);
+    var completed = false;
+    await tester.pumpApp(
+      _page(
+        onVerify: (context) async {
+          final token = await showSecurityCheckPanel(
+            Navigator.of(context, rootNavigator: true),
+            cancellation: cancellation,
+            challengeBuilder: (_, _, _) => const SizedBox(height: 65),
+          );
+          expect(token, isNull);
+          completed = true;
+        },
+      ),
+    );
+    await tester.tap(find.text('Verify'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(_panel), findsOneWidget);
+    expect(completed, isFalse);
+
+    cancellation.value = true;
+    await tester.pumpAndSettle();
+    expect(find.byKey(_panel), findsNothing);
+    expect(completed, isTrue);
+  });
+
   testWidgets('retry rejects stale tokens and completes only once', (
     tester,
   ) async {
