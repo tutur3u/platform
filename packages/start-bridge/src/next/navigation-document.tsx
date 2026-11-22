@@ -4,14 +4,16 @@ import {
   useRouter as useStartRouter,
 } from '@tanstack/react-router';
 import type { AnchorHTMLAttributes } from 'react';
-import { withAppBase } from '../start/base-path';
+import { appRelativePathname, withAppBase } from '../start/base-path';
 
 /**
  * `next/navigation` + `next/link` for apps whose navigation is deliberately
  * document-level (full page loads), e.g. a gateway whose links leave the app.
  */
 export function usePathname() {
-  return useLocation({ select: (location) => location.pathname });
+  const routerBasepath = useStartRouter().basepath;
+  const pathname = useLocation({ select: (location) => location.pathname });
+  return appRelativePathname(pathname, routerBasepath);
 }
 export function useSearchParams() {
   const search = useLocation({ select: (location) => location.searchStr });

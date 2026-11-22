@@ -8,7 +8,7 @@ import {
 import { createServerOnlyFn } from '@tanstack/react-start';
 import { createContext, useContext, useMemo } from 'react';
 import { bridgeRedirect } from '../start/absolute-redirect';
-import { withAppBase } from '../start/base-path';
+import { appRelativePathname, withAppBase } from '../start/base-path';
 
 /** Logical App Router params supplied by a catch-all page view. */
 export const BridgeParamsContext = createContext<Record<string, string>>({});
@@ -48,7 +48,9 @@ export function notFound(): never {
 }
 /** App-relative pathname, as `next/navigation` reports under a basePath. */
 export function usePathname() {
-  return useLocation({ select: (location) => location.pathname });
+  const routerBasepath = useStartRouter().basepath;
+  const pathname = useLocation({ select: (location) => location.pathname });
+  return appRelativePathname(pathname, routerBasepath);
 }
 export function useSearchParams() {
   const search = useLocation({ select: (location) => location.searchStr });

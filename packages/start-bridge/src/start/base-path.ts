@@ -1,7 +1,13 @@
 import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
 import { requestNonce, trustedTypesBootstrap } from '../core/csp';
 
-export { appPath, appUrl, runtimeAppBase, withAppBase } from '../core/app-url';
+export {
+  appPath,
+  appRelativePathname,
+  appUrl,
+  runtimeAppBase,
+  withAppBase,
+} from '../core/app-url';
 export { createNonce, requestNonce } from '../core/csp';
 
 /** @deprecated Use `runtimeAppBase`; kept for the v0 export surface. */

@@ -47,6 +47,28 @@ export function withAppBase(href: string, basePath = runtimeAppBase()): string {
   return prefixBase(href, basePath);
 }
 
+/**
+ * The app-relative pathname `next/navigation` reports under a basePath.
+ * Start's client hydration resets the router to its build-time basepath, so
+ * on a runtime mount (`/contacts`) the browser router reads the full path
+ * while the server router, created with the request base, reads it relative.
+ * Strip the base only when the router does not already apply it, and only at
+ * a segment boundary.
+ */
+export function appRelativePathname(
+  pathname: string,
+  routerBasepath: string | undefined,
+  basePath = runtimeAppBase()
+): string {
+  const base = trimTrailingSlashes(basePath);
+  if (!base || trimTrailingSlashes(routerBasepath ?? '') === base)
+    return pathname;
+  if (pathname === base) return '/';
+  return pathname.startsWith(`${base}/`)
+    ? pathname.slice(base.length)
+    : pathname;
+}
+
 /** App path for fetches and links, e.g. `appPath('/api/meet-call/x')`. */
 export function appPath(path: string): string {
   return withAppBase(path);
