@@ -7,14 +7,15 @@ const MAX_RPC_RESPONSE_BYTES = 1_024;
 
 export type PrivateRpcResult =
   | { kind: 'ok'; value: unknown }
-  | { kind: 'http'; status: number }
+  | { kind: 'http'; status: number; code?: string }
   | { kind: 'invalid' };
 
 /**
  * POSTs one private RPC with the service key under the run deadline. Network
  * errors and the deadline throw. A response must be at most `maxBytes` (1 KiB
  * by default) of JSON; anything unreadable is `invalid`, so its outcome is
- * unknown.
+ * unknown. With `readErrorCode`, an error response's body is read under the
+ * same cap and its PostgREST `code` is returned; otherwise it is discarded.
  */
 export async function postPrivateRpc(
   context: Pick<
@@ -23,7 +24,8 @@ export async function postPrivateRpc(
   >,
   rpc: string,
   body: Record<string, unknown>,
-  maxBytes = MAX_RPC_RESPONSE_BYTES
+  maxBytes = MAX_RPC_RESPONSE_BYTES,
+  { readErrorCode = false }: { readErrorCode?: boolean } = {}
 ): Promise<PrivateRpcResult> {
   const timeout = AbortSignal.timeout(
     Math.max(1, Math.min(30_000, context.deadline - context.now()))
@@ -40,18 +42,39 @@ export async function postPrivateRpc(
       signal,
     })
   );
-  return readRpcResponse(context, response, maxBytes);
+  return readRpcResponse(context, response, maxBytes, readErrorCode);
 }
 
 export async function readRpcResponse(
   context: Pick<ProcessorContext, 'deadline' | 'now' | 'signal'>,
   response: Response,
-  maxBytes: number
+  maxBytes: number,
+  readErrorCode = false
 ): Promise<PrivateRpcResult> {
   if (!response.ok) {
-    void response.body?.cancel().catch(() => undefined);
-    return { kind: 'http', status: response.status };
+    if (!readErrorCode) {
+      void response.body?.cancel().catch(() => undefined);
+      return { kind: 'http', status: response.status };
+    }
+    const error = await readBoundedJson(context, response, maxBytes);
+    const code =
+      error.kind === 'ok' &&
+      typeof error.value === 'object' &&
+      error.value !== null
+        ? (error.value as { code?: unknown }).code
+        : undefined;
+    return typeof code === 'string'
+      ? { code, kind: 'http', status: response.status }
+      : { kind: 'http', status: response.status };
   }
+  return readBoundedJson(context, response, maxBytes);
+}
+
+async function readBoundedJson(
+  context: Pick<ProcessorContext, 'deadline' | 'now' | 'signal'>,
+  response: Response,
+  maxBytes: number
+): Promise<{ kind: 'ok'; value: unknown } | { kind: 'invalid' }> {
   // One scalar summary is expected; cap bytes before parsing any response.
   const reader = response.body?.getReader();
   if (!reader) return { kind: 'invalid' };

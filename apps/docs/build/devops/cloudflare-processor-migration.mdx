@@ -80,6 +80,52 @@ revalidation calls for idle, draining, capped, stopped, partially failed, deadli
 malformed and chunked cases; `src/dispatch.test.ts` proves the port runs only when
 selected; the Inventory route test covers revalidation auth and input bounds.
 
+## Native maintenance: external-app exchange audit retention
+
+`external-app-exchange-audit-retention` deletes `private.external_app_exchange_events`
+rows older than 180 days, measured by the database clock, through
+`private.purge_external_app_exchange_events(p_limit)`. Migration
+`20261123024500_external_app_exchange_events.sql`, which lands separately from
+the job, creates that function: `security definer`, executable only by
+`service_role`, returning the deleted count as an integer, with no `pg_cron`
+schedule. The job runs daily at 02:43 GMT+7 (`43 19 * * *`), sharing
+the AI Studio retention trigger, so it adds no Worker invocation. Like every Cron
+Control job, it stays off until `CRON_CONTROL_ENABLED_JOBS` names it.
+
+Bounds per daily slot:
+
+| Operation | At most |
+| --- | --- |
+| Purge RPC calls (`p_limit` 1,000) | 8, ending at the first page below 1,000 |
+| Rows deleted | 8,000 |
+| Ledger operations | claim, one fence check before each call (8), outcome record |
+| In-slot retries | 0 |
+
+An empty table costs one call. Eight full pages, or a deadline that leaves less
+than 40 seconds (one call's 30-second timeout plus the outcome write), end the
+slot as `degraded` with
+`detail.capped`; the remaining backlog waits for the next daily slot. A closed
+fence ends the slot as `stopped` before the next call. A 4xx is `failed`; a 5xx,
+a network error or an invalid count is `unknown`, because rows may have been
+deleted. Outcomes charge the shared failure budget, except a `PGRST202` 404
+before the grace date, so five consecutive charged slots stop the job.
+
+Until `RPC_MISSING_GRACE_UNTIL` (2026-12-07 23:59 GMT+7), a 404 whose capped
+(1 KiB) body carries PostgREST's `PGRST202` means the migration has not applied
+yet. The processor then logs `EXTERNAL_APP_EXCHANGE_AUDIT_RPC_MISSING`, makes no
+further call and records `stopped` with `detail.rpcMissing`: one call a day.
+After that date, or without `PGRST202`, a 404 is `failed`.
+
+Expected volume is about one row per external-app sign-in (code exchange) or
+token refresh. More than 8,000 new rows a day would outgrow the daily slot: the
+backlog would keep growing while the job reports only `degraded`, so watch
+`detail.capped` before admitting it.
+
+Regression coverage: `apps/cron-control/src/external-app-exchange-audit-retention.test.ts`
+counts calls for the default-off, empty, full-then-short, eight-full-page,
+deadline-pressure, fence-closed, missing-function before and after the grace
+date, non-`PGRST202` 404, 5xx failure-budget and invalid-count cases.
+
 ## Per-job plan
 
 | Job | Processor target | Work bounds to keep | Cost change when moved |

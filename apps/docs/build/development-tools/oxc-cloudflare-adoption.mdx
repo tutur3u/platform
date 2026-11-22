@@ -365,6 +365,13 @@ scan. Deletes are idempotent and the processor schedules no follow-up. The
 `meet-attendance-retention.test.ts` dispatch cases count calls through a full
 batch, deadline pressure and a stop between pages.
 
+The daily `external-app-exchange-audit-retention` slot makes at most eight
+1,000-row purge RPCs and ten ledger operations (claim, eight fence checks,
+outcome), on an existing trigger. While the purge function is missing it makes
+one call a day, uncharged only until 2026-12-07 23:59 GMT+7. Hosted stop and
+billing evidence are still outstanding; see the
+[processor runbook](/build/devops/cloudflare-processor-migration#native-maintenance-external-app-exchange-audit-retention).
+
 Cron Control's default-off checkout Worker uses a 5,000-item combined active and
 quarantine bound, pre-expiry capacity checks, three durable attempts per item,
 per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is

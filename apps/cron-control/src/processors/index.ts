@@ -6,6 +6,7 @@ import { recoverChatRevocations } from './chat-realtime-revocations';
 import { expireCheckouts } from './checkout-expiry';
 import { pruneCronHistory } from './cron-history-retention';
 import { sweepUnauthorizedDevboxRuns } from './devbox-unauthorized-run-sweep';
+import { purgeExternalAppExchangeAudit } from './external-app-exchange-audit-retention';
 import { dispatchBillSplitReminders } from './finance-bill-split-reminders';
 import { consumeFleetIntents } from './fleet-access-consumer';
 import { collectShip } from './mastermind-ship';
@@ -40,6 +41,7 @@ export const WORKER_PROCESSORS: Record<
   'checkout-expiry': expireCheckouts,
   'cron-history-retention': pruneCronHistory,
   'devbox-unauthorized-run-sweep': sweepUnauthorizedDevboxRuns,
+  'external-app-exchange-audit-retention': purgeExternalAppExchangeAudit,
   'finance-bill-split-reminders': dispatchBillSplitReminders,
   'fleet-access-consumer': consumeFleetIntents,
   'mastermind-ship': collectShip,

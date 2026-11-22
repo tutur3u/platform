@@ -27,6 +27,7 @@ export type WorkerProcessorId =
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'devbox-unauthorized-run-sweep'
+  | 'external-app-exchange-audit-retention'
   | 'finance-bill-split-reminders'
   | 'fleet-access-consumer'
   | typeof MOBILE_ISSUES_JOB
@@ -56,6 +57,7 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
+  'external-app-exchange-audit-retention': 'purge_external_app_exchange_events',
   'finance-bill-split-reminders': 'dispatch_finance_bill_split_reminders',
   'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
@@ -222,6 +224,21 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/purge_meet_transcripts_batch',
     'idempotent',
     { workerProcessor: 'meet-transcript-retention', timeoutMs: 150_000 }
+  ),
+  // Daily at 02:43 GMT+7 (19:43 UTC), sharing the AI Studio retention trigger.
+  // At most 8 calls of 1,000 rows per slot. Until 2026-12-07 23:59 GMT+7 a
+  // missing purge function (404 PGRST202) stops the slot without charging the
+  // failure budget. Stays out of CRON_CONTROL_ENABLED_JOBS until admitted.
+  job(
+    'external-app-exchange-audit-retention',
+    '43 19 * * *',
+    'web',
+    '/rest/v1/rpc/purge_external_app_exchange_events',
+    'idempotent',
+    {
+      workerProcessor: 'external-app-exchange-audit-retention',
+      timeoutMs: 150_000,
+    }
   ),
   // Daily at 02:43 GMT+7 (19:43 UTC), the low-traffic window. Counts only
   // until AI_STUDIO_RETENTION_MODE is 'delete'; 'off' is the kill switch.
