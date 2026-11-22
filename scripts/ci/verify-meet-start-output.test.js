@@ -577,7 +577,6 @@ test('rejects simultaneous/missing pointers, artifact symlinks and packaged envi
   rmSync(join(f.app, '.void/preview-deploy-config.json'));
   assert.throws(() => validate(f.app));
 });
-
 function liveFacts() {
   return {
     preconditions: {
@@ -631,7 +630,6 @@ test('live probe requires measured loader/profile/metadata facts while unknown h
   drift.preconditions.stateMatchesInput = false;
   assert.throws(() => checkLiveProbe(drift), /retained/);
 });
-
 // Explicit measured-reader fixtures; these do not qualify the public CLI.
 test('capture remeasures complete loader/materializer state exactly twice', (t) => {
   for (const change of [
@@ -722,17 +720,19 @@ test('capture remeasures complete loader/materializer state exactly twice', (t) 
     assert.equal(snapshots, 2, change);
   }
 });
-
-test('classroom flag is pinned OFF in the emitted artifact contract without changing AI guards', () => {
+test('classroom flags are pinned in the production artifact without changing AI guards', () => {
   assert.equal(identity.vars.MEET_CLASSROOM_LIMITS_ENABLED, 'false');
+  assert.equal(identity.vars.MEET_EDUCATION_ENABLED, 'true');
   assert.equal(identity.vars.MEET_AI_DISABLED, 'true');
   assert.equal(identity.vars.MEET_AI_ENABLED_WORKSPACE_IDS, '');
-  const config = emitted();
-  checkPolicy(config, identity, secretNames);
-  for (const value of [undefined, 'true']) {
-    const changed = structuredClone(config);
-    if (value === undefined) delete changed.vars.MEET_CLASSROOM_LIMITS_ENABLED;
-    else changed.vars.MEET_CLASSROOM_LIMITS_ENABLED = value;
-    assert.throws(() => checkPolicy(changed, identity, secretNames));
+  for (const flag of [
+    'MEET_CLASSROOM_LIMITS_ENABLED',
+    'MEET_EDUCATION_ENABLED',
+  ]) {
+    const config = emitted();
+    config.vars[flag] = config.vars[flag] === 'true' ? 'false' : 'true';
+    assert.throws(() => checkPolicy(config, identity, secretNames));
+    delete config.vars[flag];
+    assert.throws(() => checkPolicy(config, identity, secretNames));
   }
 });
