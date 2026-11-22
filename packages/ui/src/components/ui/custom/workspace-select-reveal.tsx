@@ -25,6 +25,14 @@ export function WorkspaceSelectRevealProvider({
   );
 }
 
+/**
+ * True inside the sidebar's workspace selector section, where the trigger is
+ * the "Switch workspace" entry point rather than a named workspace control.
+ */
+export function useIsSidebarWorkspaceSelect() {
+  return useContext(WorkspaceSelectRevealContext) !== null;
+}
+
 export function useOpenWorkspaceSelectWhenRevealed(
   hasSelectableWorkspaces: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>

@@ -1934,6 +1934,7 @@
     "success": "Thành công",
     "suggestion-improve": "Đề xuất cải thiện",
     "suggestion-placeholder": "Mô tả vấn đề và bất kỳ đề xuất nào bạn có để cải thiện tình hình...",
+    "switch_workspace": "Chuyển không gian làm việc",
     "system": "Hệ thống",
     "task_relationship_already_exists": "Mối quan hệ này đã tồn tại.",
     "task_relationship_circular": "Thao tác này sẽ tạo ra mối quan hệ vòng lặp, điều này không được phép.",

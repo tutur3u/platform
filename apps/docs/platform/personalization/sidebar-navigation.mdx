@@ -50,6 +50,28 @@ buttons. The account and notification controls are unchanged. Coverage:
 choice), and the layout-shift harness in
 [Web design system](/build/development-tools/web-design-system#hover-expand-sidebar).
 
+## Workspace switcher
+
+When **Show workspace selector** is on, the sidebar shows a compact **Switch
+workspace** row with the current workspace's avatar, under the app name
+(decided 2026-11-22). It replaces the earlier dropdown-style control that showed
+the workspace name, plan badge and a chevron: workspaces are chosen in the
+**Select workspace** dialog, so nothing in the sidebar reads as a dropdown.
+Clicking the row, or pressing Cmd+Shift+K (Ctrl+Shift+K), opens that dialog;
+the dialog and shortcut are unchanged. A pending-invitation count still shows
+beside the label and is announced as the row's description. This applies to Web,
+Workspace and every satellite sidebar.
+
+Unchanged: collapsing the sidebar still turns the selector off, so the collapsed
+rail shows no switcher; use the shortcut there. Where a surface does render the
+control collapsed, it is the avatar alone with a tooltip, an accessible name and
+a dot for pending invitations. Exception: outside the sidebar (the settings
+breadcrumb and the account menu) the control still names the current workspace,
+because there it says which workspace you are in. Coverage:
+`workspace-select-trigger.test.tsx` and the sidebar case in
+`workspace-select-invitations.test.tsx` under
+`packages/ui/src/components/ui/custom/__tests__/`.
+
 ## Preference precedence
 
 Sidebar layout preferences use a hybrid model:

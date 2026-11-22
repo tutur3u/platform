@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 import en from '../../../../../../../apps/web/messages/en.json';
 import { WorkspaceVisibilityProvider } from '../../../../hooks/use-workspace-visibility';
+import { SidebarWorkspaceSelectSection } from '../satellite-workspace-section';
 import { WorkspaceSelect } from '../workspace-select';
 import { Command, CommandInput, CommandList } from '../../command';
 import {
@@ -283,3 +284,61 @@ it.each(['empty', 'error', 'loading'] as const)(
     expect(screen.queryByRole('alert')).toBeNull();
   }
 );
+
+it('is the "Switch workspace" entry point in the sidebar and opens the dialog', async () => {
+  const workspaces = [
+    {
+      id: 'workspace-0',
+      name: 'Orchard 0',
+      tier: 'FREE' as const,
+      personal: false,
+      avatar_url: null,
+      logo_url: null,
+    },
+  ];
+  mocks.listWorkspaceInvitations.mockResolvedValue({ invitations: [] });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  client.setQueryData(['workspace-hidden', 'user-1'], []);
+  client.setQueryData(['workspace-user', 'user-1'], {
+    id: 'user-1',
+    default_workspace_id: null,
+  });
+  client.setQueryData(
+    ['workspace-select-current-workspace', 'user-1', 'workspace-0'],
+    workspaces[0]
+  );
+  render(
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={en}>
+        <WorkspaceVisibilityProvider actorId="user-1">
+          <SidebarWorkspaceSelectSection visible>
+            <WorkspaceSelect
+              wsId="workspace-0"
+              cacheScope="user-1"
+              fetchWorkspaces={async () => workspaces}
+            />
+          </SidebarWorkspaceSelectSection>
+        </WorkspaceVisibilityProvider>
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+
+  // Turning the setting on reveals the section and opens the dialog once.
+  const dialog = await screen.findByRole('dialog', {
+    name: 'Select workspace',
+  });
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+  const trigger = screen.getByRole('button', { name: 'Switch workspace' });
+  expect(trigger.textContent).toBe('Switch workspace');
+  expect(trigger.querySelector('svg')).toBeNull();
+  expect(screen.queryByRole('combobox')).toBeNull();
+
+  fireEvent.click(trigger);
+  expect(
+    await screen.findByRole('dialog', { name: 'Select workspace' })
+  ).toBeTruthy();
+});

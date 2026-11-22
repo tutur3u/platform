@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
 import {
@@ -17,7 +16,6 @@ import {
   resolveWorkspaceId,
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
-import { cn } from '@tuturuuu/utils/format';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import { usePathname, useRouter } from 'next/navigation';
@@ -34,7 +32,6 @@ import {
   useWorkspaceVisibility,
 } from '../../../hooks/use-workspace-visibility';
 import { zodResolver } from '../../../resolvers';
-import { Badge } from '../badge';
 import { Button } from '../button';
 import { Command } from '../command';
 import {
@@ -67,12 +64,15 @@ import {
   resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
-import { WorkspaceIcon } from './workspace-select-icon';
 import {
   useWorkspaceInvitations,
   WorkspaceInvitationItems,
 } from './workspace-select-invitations';
-import { useOpenWorkspaceSelectWhenRevealed } from './workspace-select-reveal';
+import {
+  useIsSidebarWorkspaceSelect,
+  useOpenWorkspaceSelectWhenRevealed,
+} from './workspace-select-reveal';
+import { WorkspaceSelectTrigger } from './workspace-select-trigger';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -306,6 +306,7 @@ export function WorkspaceSelect({
   const hasSelectableWorkspaces =
     workspaces.length > 0 || invitations.length > 0;
   useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
+  const inSidebar = useIsSidebarWorkspaceSelect();
   const openPicker = useCallback(() => {
     if (!hasSelectableWorkspaces) return;
     setOpen(true);
@@ -527,74 +528,31 @@ export function WorkspaceSelect({
         preferences={pickerPreferences}
         presentation={presentation}
         trigger={
-          <Button
+          <WorkspaceSelectTrigger
+            appearance={inSidebar ? 'switch' : 'workspace'}
             aria-expanded={open}
-            aria-keyshortcuts="Meta+Shift+K Control+Shift+K"
-            aria-label={t('common.select_workspace')}
-            className={cn(
-              hideLeading ? 'justify-center p-0' : 'justify-start',
-              'w-full whitespace-normal text-start',
-              triggerClassName
-            )}
+            avatarUrl={
+              resolveWorkspaceAvatarUrl(workspace?.avatar_url, {
+                rootWorkspaceLogoUrl:
+                  workspace?.id === ROOT_WORKSPACE_ID
+                    ? TUTURUUU_LOGO_URL
+                    : undefined,
+              }) ?? undefined
+            }
+            className={triggerClassName}
+            compact={hideLeading}
             disabled={!hasSelectableWorkspaces}
-            size="xs"
-            type="button"
-            variant="outline"
-          >
-            <WorkspaceIcon
-              avatarUrl={
-                resolveWorkspaceAvatarUrl(workspace?.avatar_url, {
-                  rootWorkspaceLogoUrl:
-                    workspace?.id === ROOT_WORKSPACE_ID
-                      ? TUTURUUU_LOGO_URL
-                      : undefined,
-                }) ?? undefined
-              }
-              fallbackLogoUrl={fallbackLogoUrl}
-              name={workspace?.name}
-            />
-            <div
-              className={cn(
-                hideLeading
-                  ? 'hidden'
-                  : 'flex min-w-0 flex-1 items-center gap-1.5'
-              )}
-            >
-              <span className="line-clamp-1 min-w-0 flex-1 break-all text-xs">
-                {workspace?.name || `${t('common.loading')}...`}
-              </span>
-              {showTierBadges && workspace?.tier !== undefined && (
-                <Badge
-                  className={cn(
-                    'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
-                    (!workspace?.tier || workspace?.tier === 'FREE') &&
-                      'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
-                    workspace?.tier === 'PLUS' &&
-                      'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
-                    workspace?.tier === 'PRO' &&
-                      'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
-                    workspace?.tier === 'ENTERPRISE' &&
-                      'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
-                  )}
-                  variant="outline"
-                >
-                  {workspace?.tier || 'FREE'}
-                </Badge>
-              )}
-            </div>
-            {invitations.length > 0 && (
-              <Badge
-                aria-label={`${invitations.length} ${t('workspace-invitation.list-eyebrow')}`}
-                className="h-5 min-w-5 justify-center px-1 text-[10px]"
-                variant="destructive"
-              >
-                {invitations.length > 99 ? '99+' : invitations.length}
-              </Badge>
-            )}
-            {hideLeading || (
-              <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-            )}
-          </Button>
+            fallbackLogoUrl={fallbackLogoUrl}
+            invitationCount={invitations.length}
+            labels={{
+              select: t('common.select_workspace'),
+              switch: t('common.switch_workspace'),
+              loading: t('common.loading'),
+              invitations: t('workspace-invitation.list-eyebrow'),
+            }}
+            showTierBadges={showTierBadges}
+            workspace={workspace}
+          />
         }
         visibility={visibility}
         workspaces={workspaces ?? []}

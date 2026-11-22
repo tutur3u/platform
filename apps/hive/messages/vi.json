@@ -333,7 +333,8 @@
     "restore_workspace": "Khôi phục không gian làm việc",
     "retry": "Thử lại",
     "search_workspace": "Tìm kiếm không gian làm việc",
-    "select_workspace": "Chọn không gian làm việc"
+    "select_workspace": "Chọn không gian làm việc",
+    "switch_workspace": "Chuyển không gian làm việc"
   },
   "dashboard": {
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",

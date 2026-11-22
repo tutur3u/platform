@@ -3115,6 +3115,7 @@
     "suggestion-improve": "Suggestion to Improve ",
     "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
     "switch_to": "Switch to {theme}",
+    "switch_workspace": "Switch workspace",
     "system": "System",
     "task": "task",
     "task_duplicated_successfully": "Task duplicated successfully",

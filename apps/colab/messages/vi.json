@@ -292,7 +292,8 @@
     "restore_workspace": "Khôi phục không gian làm việc",
     "retry": "Thử lại",
     "search_workspace": "Tìm kiếm không gian làm việc",
-    "select_workspace": "Chọn không gian làm việc"
+    "select_workspace": "Chọn không gian làm việc",
+    "switch_workspace": "Chuyển không gian làm việc"
   },
   "compile": "Tạo kỹ năng",
   "completedWithIssues": "Hoàn tất nhưng cần xem lại",

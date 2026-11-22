@@ -1957,6 +1957,7 @@
     "success": "Success",
     "suggestion-improve": "Suggestion to Improve ",
     "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
+    "switch_workspace": "Switch workspace",
     "system": "System",
     "task_relationship_already_exists": "This relationship already exists.",
     "task_relationship_circular": "This would create a circular relationship, which is not allowed.",

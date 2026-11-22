@@ -333,7 +333,8 @@
     "restore_workspace": "Restore workspace",
     "retry": "Retry",
     "search_workspace": "Search workspaces",
-    "select_workspace": "Select workspace"
+    "select_workspace": "Select workspace",
+    "switch_workspace": "Switch workspace"
   },
   "dashboard": {
     "description": "Build a shared voxel world, configure LLM NPCs, and run manual agent decision experiments.",

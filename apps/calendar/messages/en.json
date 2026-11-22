@@ -3513,6 +3513,7 @@
     "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
     "switch_to": "Switch to {theme}",
     "switch_tracking_to_task": "Switch timer to this task",
+    "switch_workspace": "Switch workspace",
     "system": "System",
     "task": "task",
     "task_contacts": {
