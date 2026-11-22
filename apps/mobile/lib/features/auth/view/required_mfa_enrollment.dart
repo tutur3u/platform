@@ -78,12 +78,7 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
         challengeId: challenge.id,
         code: _code.text,
       );
-      // The seed is no longer needed once verified; do not leave it on the
-      // clipboard. Overwrite without reading (reading prompts on iOS).
-      if (_copiedSecret) {
-        _copiedSecret = false;
-        await Clipboard.setData(const ClipboardData(text: ''));
-      }
+      unawaited(_clearCopiedSecret());
       // AuthCubit handles the provider's mfaChallengeVerified event and routes.
     } on Object {
       if (mounted) setState(() => _failed = true);
@@ -92,8 +87,22 @@ class _RequiredMfaEnrollmentState extends State<RequiredMfaEnrollment> {
     }
   }
 
+  /// Best effort: the seed is not needed once verified or abandoned, so do
+  /// not leave it on the clipboard. Overwrite without reading (reading
+  /// prompts on iOS); a clipboard failure never fails verification.
+  Future<void> _clearCopiedSecret() async {
+    if (!_copiedSecret) return;
+    _copiedSecret = false;
+    try {
+      await Clipboard.setData(const ClipboardData(text: ''));
+    } on Object {
+      // Nothing to report; the platform clipboard is unavailable.
+    }
+  }
+
   @override
   void dispose() {
+    unawaited(_clearCopiedSecret());
     _code.dispose();
     _focus.dispose();
     super.dispose();
