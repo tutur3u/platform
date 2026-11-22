@@ -15,7 +15,7 @@ import {
 import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
 import { type LoginMethod, useLastLoginMethod } from './last-login-method';
 import { LoginMethodSeparator } from './login-form-parts';
 import { PasskeyLoginButton } from './passkey-login-button';
@@ -78,6 +78,7 @@ export function IdentifyStep({
   usePasswordAvailable: boolean;
 }) {
   const t = useTranslations();
+  const turnstileDetailId = useId();
   const lastUsed = useLastLoginMethod();
   const { emailLastUsed } = arrangeSignInMethodStack(lastUsed);
 
@@ -185,6 +186,7 @@ export function IdentifyStep({
           {turnstile.state ? (
             <TurnstilePill
               detail={turnstile.detail}
+              detailId={turnstileDetailId}
               onRetry={turnstile.onRetry}
               state={turnstile.state}
             >
@@ -209,6 +211,13 @@ export function IdentifyStep({
             onAuthenticated={passkey.onAuthenticated}
             onCaptchaReset={passkey.onCaptchaReset}
             requiresTurnstile={passkey.requiresTurnstile}
+            turnstileDescribedBy={
+              turnstile.detail &&
+              (turnstile.state === 'failed' ||
+                turnstile.state === 'unavailable')
+                ? turnstileDetailId
+                : undefined
+            }
           />
         )}
       />

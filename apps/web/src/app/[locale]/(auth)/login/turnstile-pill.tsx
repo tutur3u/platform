@@ -39,6 +39,7 @@ function PillIcon({ state }: { state: TurnstilePillState }) {
 export function TurnstilePill({
   children,
   detail,
+  detailId,
   onRetry,
   state,
 }: {
@@ -46,6 +47,8 @@ export function TurnstilePill({
   children?: ReactNode;
   /** The existing error copy for a failed or unavailable check. */
   detail?: string;
+  /** Lets blocked controls point aria-describedby at the detail line. */
+  detailId?: string;
   onRetry?: () => void;
   state: TurnstilePillState;
 }) {
@@ -91,7 +94,10 @@ export function TurnstilePill({
         </div>
       ) : null}
       {detail && state !== 'checking' && state !== 'passed' ? (
-        <p className="text-balance text-center text-destructive text-sm">
+        <p
+          className="text-balance text-center text-destructive text-sm"
+          id={detailId}
+        >
           {detail}
         </p>
       ) : null}

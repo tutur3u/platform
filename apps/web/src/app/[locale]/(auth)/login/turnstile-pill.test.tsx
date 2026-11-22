@@ -68,4 +68,17 @@ describe('TurnstilePill', () => {
     );
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it('exposes the failure detail by id for blocked controls', () => {
+    render(
+      <TurnstilePill
+        detail="captcha failed"
+        detailId="turnstile-detail"
+        state="failed"
+      />
+    );
+    expect(document.getElementById('turnstile-detail')).toHaveTextContent(
+      'captcha failed'
+    );
+  });
 });

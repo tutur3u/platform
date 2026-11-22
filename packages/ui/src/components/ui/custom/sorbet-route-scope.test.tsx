@@ -28,10 +28,21 @@ describe('SorbetRouteScope', () => {
   });
 
   it('leaves Sorbet on after unmount for a device that keeps it', () => {
+    // The pre-paint script already applied Sorbet on this device.
+    root().setAttribute('data-ui', 'sorbet');
     const { unmount } = render(<SorbetRouteScope />);
     expect(root().getAttribute('data-ui')).toBe('sorbet');
     unmount();
     expect(root().getAttribute('data-ui')).toBe('sorbet');
     expect(localStorage.getItem(SORBET_UI_STORAGE_KEY)).toBeNull();
+  });
+
+  it('restores the previous page state when no choice is stored', () => {
+    // An account opt-out applied while storage is blocked leaves no stored
+    // value; the route scope must not keep Sorbet after it unmounts.
+    const { unmount } = render(<SorbetRouteScope />);
+    expect(root().getAttribute('data-ui')).toBe('sorbet');
+    unmount();
+    expect(root().hasAttribute('data-ui')).toBe(false);
   });
 });

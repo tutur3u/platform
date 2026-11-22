@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import {
   readStoredSorbetUi,
   SORBET_UI_ATTRIBUTE,
@@ -15,9 +15,13 @@ import {
  * already applies Sorbet unless this device opted out, so only that case
  * switches after hydration.
  */
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 export function SorbetRouteScope() {
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const root = document.documentElement;
+    const previous = root.getAttribute(SORBET_UI_ATTRIBUTE);
     const ensure = () => {
       if (root.getAttribute(SORBET_UI_ATTRIBUTE) !== SORBET_UI_VALUE) {
         root.setAttribute(SORBET_UI_ATTRIBUTE, SORBET_UI_VALUE);
@@ -33,8 +37,15 @@ export function SorbetRouteScope() {
     });
     return () => {
       observer.disconnect();
-      if (readStoredSorbetUi() === false) {
+      const stored = readStoredSorbetUi();
+      // Without a stored choice (for example blocked storage), restore what
+      // the page had before these routes mounted.
+      const restore =
+        stored === false ? null : stored === null ? previous : SORBET_UI_VALUE;
+      if (restore === null) {
         root.removeAttribute(SORBET_UI_ATTRIBUTE);
+      } else {
+        root.setAttribute(SORBET_UI_ATTRIBUTE, restore);
       }
     };
   }, []);

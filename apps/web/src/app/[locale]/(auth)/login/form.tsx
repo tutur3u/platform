@@ -513,6 +513,11 @@ export default function LoginForm({
     setCaptchaError(undefined);
   }, []);
   const captchaRetry = useTurnstileRetry(resetCaptchaAfterError, resetCaptcha);
+  const retryCaptchaManually = useCallback(() => {
+    captchaRetry.cancel();
+    setCaptchaToken(undefined);
+    resetCaptchaAfterError();
+  }, [captchaRetry, resetCaptchaAfterError]);
 
   const handleCaptchaSuccess = useCallback(
     (token: string) => {
@@ -1840,7 +1845,7 @@ export default function LoginForm({
                       turnstileClientState.canRenderWidget && turnstileSiteKey
                         ? captchaError
                         : t('login.captcha_not_configured'),
-                    onRetry: resetCaptchaAfterError,
+                    onRetry: retryCaptchaManually,
                     state: resolveTurnstilePillState({
                       ...turnstileClientState,
                       error: captchaError,

@@ -21,6 +21,8 @@ interface PasskeyLoginButtonProps {
   onAuthenticated: () => Promise<void>;
   onCaptchaReset?: () => void;
   requiresTurnstile?: boolean;
+  /** The id of a security-check message rendered elsewhere on the page. */
+  turnstileDescribedBy?: string;
   turnstileError?: string;
 }
 
@@ -32,6 +34,7 @@ export function PasskeyLoginButton({
   onAuthenticated,
   onCaptchaReset,
   requiresTurnstile = false,
+  turnstileDescribedBy,
   turnstileError,
 }: PasskeyLoginButtonProps) {
   const t = useTranslations('login');
@@ -113,7 +116,13 @@ export function PasskeyLoginButton({
   return (
     <div className="flex flex-col gap-2">
       <SocialLoginButton
-        aria-describedby={turnstileBlockReason ? turnstileErrorId : undefined}
+        aria-describedby={
+          turnstileBlockReason
+            ? turnstileErrorId
+            : isTurnstileBlocked
+              ? turnstileDescribedBy
+              : undefined
+        }
         badge={badge}
         disabled={disabled || isAuthenticating || isTurnstileBlocked}
         icon={
