@@ -3,7 +3,6 @@
 import {
   ChevronDownIcon,
   Fingerprint,
-  History,
   Mail,
 } from '@tuturuuu/icons/lucide-static';
 import {
@@ -14,13 +13,10 @@ import {
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
-import {
-  arrangeLoginMethods,
-  type LoginMethod,
-  useLastLoginMethod,
-} from './last-login-method';
+import type { LoginMethod } from './last-login-method';
 import { SocialImageLogo, SocialLogoMask } from './login-form-parts';
-import { SocialLoginButton } from './social-login-button';
+import { arrangeSignInMethodStack } from './sign-in-method-stack';
+import { LastUsedChip, SocialLoginButton } from './social-login-button';
 
 const METHOD_LABEL_KEYS = {
   apple: 'login.continue_with_apple',
@@ -50,101 +46,95 @@ function MethodIcon({ method }: { method: LoginMethod }): ReactNode {
   }
 }
 
+type OAuthLoginMethod = Exclude<LoginMethod, 'email' | 'passkey'>;
+
 /**
- * The first sign-in step: one decision among a few methods, with the
- * last-used method first and the rest behind "More sign-in options".
- * Choosing email or passkey opens the email step, which holds the security
- * check both of them need.
+ * The sign-in methods under the email field: the last-used method (when it
+ * is not email), Google and passkey, then the rest behind "More options".
+ * The passkey is rendered by the caller so it keeps the security check the
+ * email field shares with it.
  */
-export function SignInMethods({
-  autoFocusFirst = false,
+export function SignInAlternatives({
   disabled,
+  lastUsed,
   onChoose,
+  renderPasskey,
 }: {
-  /** Focuses the first method when returning from the email step. */
-  autoFocusFirst?: boolean;
   disabled: boolean;
-  onChoose: (method: LoginMethod) => void;
+  lastUsed: LoginMethod | null;
+  onChoose: (method: OAuthLoginMethod) => void;
+  renderPasskey: (badge: ReactNode) => ReactNode;
 }) {
   const t = useTranslations();
-  const lastUsed = useLastLoginMethod();
-  const { more, primary } = arrangeLoginMethods(lastUsed);
+  const { alternatives, more } = arrangeSignInMethodStack(lastUsed);
   const [moreOpen, setMoreOpen] = useState(false);
-  // The chosen method shows a spinner in its icon lane while the page waits
-  // for its provider, so a tap never leaves only greyed-out buttons.
+  // The chosen provider shows a spinner in its icon lane while the page
+  // waits for it, so a tap never leaves only greyed-out buttons.
   const [chosen, setChosen] = useState<LoginMethod | null>(null);
   // Re-enabled buttons (an OAuth start failed) forget the earlier choice.
   if (!disabled && chosen !== null) setChosen(null);
 
-  const renderMethod = (
-    method: LoginMethod,
-    { autoFocus = false, withNote = true } = {}
-  ) => (
-    <div className="space-y-2" key={method}>
-      <SocialLoginButton
-        autoFocus={autoFocus}
-        // The last-used mark is a border tint and an edge icon, so the
-        // centred label never moves when it appears after hydration.
-        className={method === lastUsed ? 'border-primary/50' : undefined}
-        disabled={disabled}
-        icon={
-          disabled && chosen === method ? (
-            <span aria-hidden className="flex">
-              <LoadingIndicator className="size-5" />
-            </span>
-          ) : (
-            <MethodIcon method={method} />
-          )
-        }
-        onClick={() => {
-          setChosen(method);
-          onChoose(method);
-        }}
-      >
-        {t(METHOD_LABEL_KEYS[method])}
-        {method === lastUsed ? (
-          <>
-            <span className="sr-only">, {t('login.last_used')}</span>
-            <History
-              aria-hidden
-              className="absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted-foreground"
-            />
-          </>
+  const renderMethod = (method: LoginMethod, withNote: boolean) => {
+    const badge =
+      method === lastUsed ? (
+        <LastUsedChip label={t('login.last_used')} />
+      ) : null;
+    if (method === 'passkey') return renderPasskey(badge);
+    if (method === 'email') return null;
+    return (
+      <div className="space-y-2">
+        <SocialLoginButton
+          badge={badge}
+          disabled={disabled}
+          icon={
+            disabled && chosen === method ? (
+              <span aria-hidden className="flex">
+                <LoadingIndicator className="size-5" />
+              </span>
+            ) : (
+              <MethodIcon method={method} />
+            )
+          }
+          onClick={() => {
+            setChosen(method);
+            onChoose(method);
+          }}
+        >
+          {t(METHOD_LABEL_KEYS[method])}
+        </SocialLoginButton>
+        {withNote && method === 'azure' ? (
+          <p className="text-balance text-center text-muted-foreground text-sm">
+            {t('login.microsoft_email_recovery')}
+          </p>
         ) : null}
-      </SocialLoginButton>
-      {withNote && method === 'azure' ? (
-        <p className="text-muted-foreground text-sm">
-          {t('login.microsoft_email_recovery')}
-        </p>
-      ) : null}
-    </div>
-  );
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-2.5">
       {/* Slots are keyed by position: a method remembered on this device
           fills a slot in place after hydration instead of moving rows. */}
-      {primary.map((method, index) => (
+      {alternatives.map((method, index) => (
         <div data-slot-index={index} key={`slot-${index.toString()}`}>
-          {renderMethod(method, {
-            autoFocus: autoFocusFirst && index === 0,
-            withNote: false,
-          })}
+          {renderMethod(method, false)}
         </div>
       ))}
       <Collapsible onOpenChange={setMoreOpen} open={moreOpen}>
         <CollapsibleTrigger
-          className="mx-auto flex items-center gap-1 rounded-full px-3 py-2 text-muted-foreground text-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="mx-auto flex min-h-11 items-center gap-1 rounded-full px-3.5 font-semibold text-foreground text-sm transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
           disabled={disabled}
         >
           {t('login.more_sign_in_options')}
           <ChevronDownIcon
             aria-hidden
-            className={`size-4 transition-transform ${moreOpen ? 'rotate-180' : ''}`}
+            className={`size-4 transition-transform motion-reduce:transition-none ${moreOpen ? 'rotate-180' : ''}`}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-3 pt-1">
-          {more.map((method) => renderMethod(method))}
+        <CollapsibleContent className="flex flex-col gap-2.5 pt-1">
+          {more.map((method) => (
+            <div key={method}>{renderMethod(method, true)}</div>
+          ))}
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -173,7 +163,7 @@ export function OAuthMethodButtons({
             {t(METHOD_LABEL_KEYS[method])}
           </SocialLoginButton>
           {method === 'azure' ? (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-balance text-center text-muted-foreground text-sm">
               {t('login.microsoft_email_recovery')}
             </p>
           ) : null}

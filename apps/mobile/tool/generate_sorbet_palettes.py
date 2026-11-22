@@ -62,11 +62,16 @@ abstract final class SorbetPalettes {
   static SorbetRoles roles(SorbetPreset preset, Brightness b) {
     if (preset == SorbetPreset.sorbet) return defaultRoles(b);
     final base = defaultRoles(b);
+    final colors = source(preset, b);
     return SorbetRoles.fromSource(
-      source(preset, b),
+      colors,
       b,
       destructive: base.destructive,
       destructiveForeground: base.destructiveForeground,
+      // High Contrast draws fields with its full-strength input edge.
+      fieldStroke: preset == SorbetPreset.highContrast
+          ? colors.input
+          : base.fieldStroke,
     );
   }
 

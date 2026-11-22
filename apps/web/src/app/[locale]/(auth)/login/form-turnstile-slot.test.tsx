@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 function turnstileSlot() {
-  return document.querySelector('.rounded-2xl.bg-transparent.py-1');
+  return document.querySelector('[data-turnstile-slot]');
 }
 
 describe('LoginForm Turnstile slot', () => {
@@ -42,6 +42,10 @@ describe('LoginForm Turnstile slot', () => {
     await openEmailStep();
 
     await waitFor(() => expect(turnstileSlot()).not.toBeNull());
+    expect(turnstileSlot()).toHaveAttribute('data-turnstile-state', 'checking');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'login.turnstile_checking'
+    );
     expect(screen.queryByTestId('turnstile')).not.toBeInTheDocument();
 
     resolveOtpSettings({ otpEnabled: false });
@@ -60,6 +64,17 @@ describe('LoginForm Turnstile slot', () => {
 
     const notice = await screen.findByText('login.captcha_not_configured');
     expect(notice).toBeInTheDocument();
+    expect(turnstileSlot()).toHaveAttribute(
+      'data-turnstile-state',
+      'unavailable'
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'login.turnstile_unavailable'
+    );
+    // The passkey stays blocked without a token, exactly as before.
+    expect(
+      screen.getByRole('button', { name: 'continue_with_passkey' })
+    ).toBeDisabled();
     expect(document.querySelector('.animate-pulse.h-\\[65px\\]')).toBeNull();
   });
 });

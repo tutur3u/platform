@@ -59,6 +59,7 @@ class SorbetRoles {
     required this.accent,
     required this.border,
     required this.borderStrong,
+    required this.fieldStroke,
     required this.foreground,
     required this.mutedForeground,
     required this.primary,
@@ -78,6 +79,7 @@ class SorbetRoles {
     Brightness brightness, {
     required Color destructive,
     required Color destructiveForeground,
+    required Color fieldStroke,
   }) {
     final dark = brightness == Brightness.dark;
     return SorbetRoles(
@@ -88,6 +90,7 @@ class SorbetRoles {
       accent: source.accentSoft,
       border: source.hairline,
       borderStrong: source.input,
+      fieldStroke: fieldStroke,
       foreground: source.ink,
       mutedForeground: source.mutedInk,
       primary: source.accent,
@@ -111,6 +114,10 @@ class SorbetRoles {
   final Color accent;
   final Color border;
   final Color borderStrong;
+
+  /// Edges of text fields, OTP cells and checkboxes: 3:1 against a field,
+  /// where [borderStrong] is a 1.6:1 hairline. Presets keep the default value.
+  final Color fieldStroke;
   final Color foreground;
   final Color mutedForeground;
   final Color primary;
@@ -130,6 +137,7 @@ class SorbetRoles {
     'accent': accent,
     'border': border,
     'border-strong': borderStrong,
+    'field-stroke': fieldStroke,
     'foreground': foreground,
     'muted-foreground': mutedForeground,
     'primary': primary,

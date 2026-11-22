@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { Separator } from '@tuturuuu/ui/separator';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import type { ReturnUrlFailureKind } from './invalid-return-url-warning';
 
@@ -116,13 +115,10 @@ export function SocialImageLogo({ src, alt }: { src: string; alt: string }) {
 
 export function LoginMethodSeparator({ label }: { label: string }) {
   return (
-    <div className="relative py-0.5">
-      <Separator className="bg-border/60" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="bg-card px-3 text-muted-foreground text-xs">
-          {label}
-        </span>
-      </div>
+    <div className="flex items-center gap-3 font-semibold text-muted-foreground text-xs">
+      <span aria-hidden className="h-px flex-1 bg-border" />
+      <span>{label}</span>
+      <span aria-hidden className="h-px flex-1 bg-border" />
     </div>
   );
 }

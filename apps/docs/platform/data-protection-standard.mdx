@@ -1,7 +1,7 @@
 ---
 title: "Personal data protection standard"
 description: "Platform-wide purpose, retention, subject-rights and deletion requirements, with current gaps and an approval-gated implementation plan."
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-23"
 audience: developers
 ---
 
@@ -34,6 +34,16 @@ Record a specific purpose and lawful basis before collection. Where consent is t
 Keep collection optional and separate where the purposes differ. Withdrawal stops future processing based on that consent, including admitted background jobs. Consent evidence must be minimal and must not become a permanent raw IP or user-agent history. Hashes and keyed HMACs remain personal data when linkable.
 
 Memory retains source provenance and explicit preferences, actor/workspace consent and deletion fences. Recalled text is untrusted context, never action authority. Reuse the existing product memory service. Meet's separately opted-in memory stays separate. Consolidation deletes originals only after the replacement is durably confirmed, with truthful partial failures and revision conflicts. Disabling collection does not remove access, export or deletion rights.
+
+### Sign-in does not bundle product email
+
+Decision by the owner on 2026-11-23: sign-in no longer asks for product-update email consent. Continuing on the Web and mobile sign-in screens agrees to the Terms and the Privacy Policy only, with the copy "By continuing you agree to the Terms and Privacy Policy." (Vietnamese: "Khi tiếp tục, bạn đồng ý với Điều khoản và Chính sách quyền riêng tư."). The earlier "to receive periodic emails with updates" clause is removed.
+
+Product email becomes a separate opt-in during onboarding, **off by default**. Only an explicit switch turned on by the user grants it, and it records the consent evidence listed above. A Terms acceptance, account creation, sign-in or an existing subscription never turns it on.
+
+- **Scope:** Web `/login` (every locale and partner co-brand) and mobile sign-in. The onboarding switch is delivered with the onboarding revamp on Web and mobile.
+- **Exceptions:** transactional and security email (sign-in codes, account recovery, MFA and billing receipts) is not product email and needs no opt-in.
+- **Regression coverage:** `apps/web/src/app/[locale]/(auth)/login/login-consent-copy.test.ts` checks both locales' footer copy names Terms and Privacy and never email, and `page.test.tsx` checks the rendered footer. The onboarding switch's default-off test ships with that switch.
 
 ## Retention defaults and precedence
 

@@ -360,11 +360,9 @@ export function resetReturnUrlLoginMocks() {
 }
 
 /** Opens the email step from the first sign-in step. */
+/** The email field leads the first step; waits until it renders. */
 export async function openEmailStep() {
-  const { fireEvent, screen } = await import('@testing-library/react');
-  fireEvent.click(
-    await screen.findByRole('button', { name: /^login\.continue_with_email/u })
-  );
+  const { screen } = await import('@testing-library/react');
   await screen.findByPlaceholderText('login.email_username_placeholder');
 }
 

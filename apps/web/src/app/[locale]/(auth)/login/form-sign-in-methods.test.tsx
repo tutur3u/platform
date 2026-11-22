@@ -24,24 +24,45 @@ afterEach(() => {
   queryClients.clear();
 });
 
-describe('LoginForm sign-in methods step', () => {
-  it('starts with one decision: Google, email or more options', async () => {
+/** Focusable controls of the first step, in document (tab) order. */
+function tabOrder() {
+  return [...document.querySelectorAll<HTMLElement>('input, button')].map(
+    (element) =>
+      element.getAttribute('placeholder') ?? element.textContent?.trim() ?? ''
+  );
+}
+
+describe('LoginForm email-first sign-in step', () => {
+  it('leads with email, then Google, passkey and more options', async () => {
     renderLoginFormSearch('');
 
+    const email = await screen.findByPlaceholderText(
+      'login.email_username_placeholder'
+    );
+    expect(screen.getByText('login.email_or_username')).toBeInTheDocument();
+    expect(email).not.toHaveFocus();
     await screen.findByRole('button', { name: /login\.continue_with_google/u });
     expect(
-      screen.getByRole('button', { name: /^login\.continue_with_email/u })
+      screen.getByRole('button', { name: 'continue_with_passkey' })
     ).toBeInTheDocument();
-    expect(
-      screen.queryByPlaceholderText('login.email_username_placeholder')
-    ).not.toBeInTheDocument();
-    expect(screen.queryByTestId('turnstile')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /login\.continue_with_apple/u })
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /login\.staff_microsoft/u })
-    ).not.toBeInTheDocument();
+
+    const order = tabOrder();
+    const index = (label: string) =>
+      order.findIndex((entry) => entry.startsWith(label));
+    expect(index('login.email_username_placeholder')).toBe(0);
+    expect(index('login.continue_with_email')).toBeGreaterThan(0);
+    expect(index('login.continue_with_google')).toBeGreaterThan(
+      index('login.continue_with_email')
+    );
+    expect(index('continue_with_passkey')).toBeGreaterThan(
+      index('login.continue_with_google')
+    );
+    expect(index('login.more_sign_in_options')).toBeGreaterThan(
+      index('continue_with_passkey')
+    );
 
     await openMoreSignInOptions();
 
@@ -49,13 +70,15 @@ describe('LoginForm sign-in methods step', () => {
       /login\.continue_with_apple/u,
       /login\.continue_with_github/u,
       /login\.staff_microsoft/u,
-      /login\.continue_with_passkey/u,
     ]) {
       expect(await screen.findByRole('button', { name })).toBeInTheDocument();
     }
+    expect(
+      screen.getByText('login.microsoft_email_recovery')
+    ).toBeInTheDocument();
   });
 
-  it('remembers a provider and surfaces it first next time', async () => {
+  it('remembers a provider and marks it last used next time', async () => {
     const first = renderLoginFormSearch('');
     await act(async () => {
       fireEvent.click(
@@ -70,10 +93,10 @@ describe('LoginForm sign-in methods step', () => {
     const google = await screen.findByRole('button', {
       name: /login\.continue_with_google/u,
     });
-    expect(google).toHaveTextContent('login.last_used');
+    expect(google).toHaveAccessibleName(/login\.last_used/u);
   });
 
-  it('shows a remembered staff Microsoft sign-in on the first step', async () => {
+  it('promotes a remembered staff Microsoft sign-in onto the first step', async () => {
     localStorage.setItem('tuturuuu:last-login-method', 'azure');
 
     renderLoginFormSearch('');
@@ -81,7 +104,7 @@ describe('LoginForm sign-in methods step', () => {
     const microsoft = await screen.findByRole('button', {
       name: /login\.staff_microsoft/u,
     });
-    expect(microsoft).toHaveTextContent('login.last_used');
+    expect(microsoft).toHaveAccessibleName(/login\.last_used/u);
     // The help note stays in the disclosure so a remembered method never
     // changes the first step's height.
     expect(
@@ -91,44 +114,16 @@ describe('LoginForm sign-in methods step', () => {
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
   });
 
-  it('opens the email step with the security check and passkey', async () => {
-    renderLoginFormSearch('');
-
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: /^login\.continue_with_email/u,
-      })
-    );
-
-    const emailInput = await screen.findByPlaceholderText(
-      'login.email_username_placeholder'
-    );
-    await waitFor(() => expect(emailInput).toHaveFocus());
-    expect(
-      screen.getByRole('button', { name: 'continue_with_passkey' })
-    ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'login.other_sign_in_methods' })
-    );
-    const google = await screen.findByRole('button', {
-      name: /login\.continue_with_google/u,
-    });
-    await waitFor(() => expect(google).toHaveFocus());
-  });
-
-  it('offers a labelled staff Microsoft entry with email recovery', async () => {
-    mocks.currentUserProfile = null;
-    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+  it('marks the email field when email was the last method', async () => {
+    localStorage.setItem('tuturuuu:last-login-method', 'email');
 
     renderLoginFormSearch('');
 
-    await openMoreSignInOptions();
-
+    await screen.findByPlaceholderText('login.email_username_placeholder');
+    expect(screen.getByText('login.last_used')).toBeInTheDocument();
     expect(
-      await screen.findByRole('button', {
-        name: /login\.staff_microsoft/u,
-      })
-    ).toBeInTheDocument();
+      screen.getByRole('button', { name: /login\.continue_with_google/u })
+    ).not.toHaveAccessibleName(/login\.last_used/u);
   });
 
   it('does not automatically start Microsoft OAuth from a provider hint', async () => {
@@ -136,9 +131,7 @@ describe('LoginForm sign-in methods step', () => {
     mocks.getUser.mockResolvedValue({ data: { user: null } });
     renderLoginFormSearch('?provider=azure');
     await openMoreSignInOptions();
-    await screen.findByRole('button', {
-      name: 'Microsoft login.staff_microsoft',
-    });
+    await screen.findByRole('button', { name: /login\.staff_microsoft/u });
     expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
     expect(
       screen.getByText('login.microsoft_email_recovery')

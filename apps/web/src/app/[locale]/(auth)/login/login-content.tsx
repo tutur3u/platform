@@ -11,6 +11,9 @@ import { DEV_MODE } from '@/constants/env';
 // Imported eagerly so the form renders with the shell; a lazy chunk would
 // swap a shorter skeleton for it and move the centered column.
 import LoginForm from './form';
+import { AuthStagePanel } from './auth-stage-panel';
+import { AuthTopControls } from './auth-top-controls';
+import { LoginFooter } from './login-footer';
 import {
   isFocusedExternalSignIn,
   mayBeFocusedExternalSignIn,
@@ -115,7 +118,7 @@ function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
   return (
     <span
       aria-label={`${domain.name} Logo`}
-      className="block h-20 w-20 bg-center bg-contain bg-no-repeat"
+      className="block size-12 bg-center bg-contain bg-no-repeat"
       role="img"
       style={{ backgroundImage: `url(${domain.logo})` }}
     />
@@ -124,15 +127,14 @@ function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
 
 function LoginFormFallback() {
   return (
-    <div className="animate-pulse rounded-3xl border bg-card p-8 shadow-elevation-1">
-      <div className="space-y-3">
-        <div className="h-5 w-16 rounded bg-muted" />
-        <div className="h-12 w-full rounded-2xl bg-muted" />
-        <div className="h-12 w-full rounded-2xl bg-muted" />
-        <div className="h-12 w-full rounded-2xl bg-muted" />
-        <div className="h-12 w-full rounded-2xl bg-muted" />
-        <div className="h-12 w-full rounded-2xl bg-muted" />
-      </div>
+    <div className="animate-pulse space-y-3 motion-reduce:animate-none">
+      <div className="h-5 w-32 rounded-full bg-muted" />
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          className="h-12 w-full rounded-full bg-muted"
+          key={`login-fallback-${index.toString()}`}
+        />
+      ))}
     </div>
   );
 }
@@ -180,111 +182,97 @@ export function LoginContent({
     redirect(`/api/auth/callback?${callbackSearch}`);
   }, [authCallbackRedirect, callbackCode, callbackSearch]);
 
-  const renderLogo = (domain: LoginDomain) => (
-    <a href={domain.href} className="flex items-center justify-center">
-      <LoginDomainLogo domain={domain} />
-    </a>
-  );
-
   const isPartnerDomain =
     currentDomain !== null && currentDomain.href !== tuturuuuDomain.href;
   const usesTuturuuuLogo = currentDomain?.logo === tuturuuuDomain.logo;
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
-        <div className="fade-in-0 slide-in-from-bottom-4 w-full animate-in duration-300 motion-reduce:animate-none">
-          <div className="mb-8 text-center">
-            {focusedAppName || focusedPending ? (
-              <div className="space-y-4">
-                <div>{renderLogo(tuturuuuDomain)}</div>
-                {focusedAppName ? (
-                  <h1 className="text-balance font-bold text-3xl tracking-tight">
-                    {t('login.sign_in_to_continue_to', { app: focusedAppName })}
-                  </h1>
-                ) : (
-                  <div
-                    aria-hidden="true"
-                    className="mx-auto h-9 w-72 max-w-full animate-pulse rounded-full bg-muted"
-                  />
-                )}
-              </div>
-            ) : isPartnerDomain ? (
-              <div className="space-y-4">
-                {usesTuturuuuLogo ? (
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="relative">{renderLogo(tuturuuuDomain)}</div>
-                    <div className="rounded-full border border-border/70 bg-muted/40 px-3 py-1 font-medium text-muted-foreground text-xs">
-                      {currentDomain.name}
+    <div className="min-h-dvh bg-background text-foreground">
+      <div className="relative mx-auto flex min-h-dvh max-w-[1440px] flex-col gap-4 p-4 lg:grid lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
+        <AuthStagePanel />
+
+        <section className="flex min-w-0 flex-1 flex-col lg:px-6 lg:py-2">
+          {/* Over the hero on phones and tablets; first in the tab order. */}
+          <div className="absolute top-7 right-7 z-10 lg:static">
+            <AuthTopControls />
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center py-6 md:py-8">
+            <div className="fade-in-0 slide-in-from-bottom-4 flex w-full max-w-[400px] animate-in flex-col gap-6 duration-300 motion-reduce:animate-none md:max-w-[440px] lg:max-w-[400px]">
+              {focusedAppName || focusedPending ? (
+                <div className="flex flex-col gap-4">
+                  <LoginDomainLogo domain={tuturuuuDomain} />
+                  {focusedAppName ? (
+                    <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
+                      {t('login.sign_in_to_continue_to', {
+                        app: focusedAppName,
+                      })}
+                    </h1>
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="h-9 w-72 max-w-full animate-pulse rounded-full bg-muted motion-reduce:animate-none"
+                    />
+                  )}
+                </div>
+              ) : isPartnerDomain ? (
+                <div className="flex flex-col gap-3">
+                  {usesTuturuuuLogo ? (
+                    <div className="flex items-center gap-3">
+                      <LoginDomainLogo domain={tuturuuuDomain} />
+                      <span className="inline-flex h-7 items-center rounded-full bg-secondary px-3 font-bold text-muted-foreground text-xs">
+                        {currentDomain.name}
+                      </span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="relative">{renderLogo(tuturuuuDomain)}</div>
-                    <div className="flex items-center justify-center">
-                      <XIcon className="size-8 text-muted-foreground/60" />
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <LoginDomainLogo domain={tuturuuuDomain} />
+                      <XIcon
+                        aria-hidden
+                        className="size-5 text-muted-foreground"
+                      />
+                      <LoginDomainLogo domain={currentDomain} />
                     </div>
-                    <div className="relative">{renderLogo(currentDomain)}</div>
-                  </div>
-                )}
-                <p className="text-muted-foreground text-sm">
-                  {t('login.powered-by', { domain: currentDomain.name })}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>{renderLogo(tuturuuuDomain)}</div>
-                <div className="space-y-2">
-                  <h1 className="font-bold text-4xl tracking-tight">
-                    {multiAccount
-                      ? t('account_switcher.add_account')
-                      : t('login.welcome')}
+                  )}
+                  <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
+                    {t('login.welcome_to_tuturuuu')}
                   </h1>
                   <p className="text-muted-foreground text-sm">
-                    {multiAccount
-                      ? t('account_switcher.add_account_description')
-                      : t('login.sign_in_to_your_account')}
+                    {t('login.powered-by', { domain: currentDomain.name })}
                   </p>
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
+                    {multiAccount
+                      ? t('account_switcher.add_account')
+                      : t('login.welcome_to_tuturuuu')}
+                  </h1>
+                  <p className="text-[15px] text-muted-foreground leading-relaxed">
+                    {multiAccount
+                      ? t('account_switcher.add_account_description')
+                      : t('login.sign_in_or_create')}
+                  </p>
+                </div>
+              )}
 
-          <div className="fade-in-0 slide-in-from-bottom-3 animate-in duration-300 [animation-delay:50ms] [animation-fill-mode:both] motion-reduce:animate-none">
-            {callbackCode ? (
-              <LoginFormFallback />
-            ) : (
-              <LoginForm
-                deferAuthSurfaceUntilSessionCheck={
-                  deferAuthSurfaceUntilSessionCheck
-                }
-                loginView={loginView}
-                localE2EAuthBypass={localE2EAuthBypass}
-                runtimeSupabaseConfig={runtimeSupabaseConfig}
-              />
-            )}
-          </div>
-
-          <div className="fade-in-0 mt-8 animate-in text-center duration-300 [animation-delay:100ms] [animation-fill-mode:both] motion-reduce:animate-none">
-            <div className="text-balance text-muted-foreground text-xs leading-relaxed">
-              <span>{t('auth.notice-p1')} </span>
-              <a
-                href="/terms"
-                className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
-              >
-                {t('auth.tos')}
-              </a>
-              <span> {t('common.and')} </span>
-              <a
-                href="/privacy"
-                className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
-              >
-                {t('auth.privacy')}
-              </a>
-              <span> {t('auth.notice-p2')}.</span>
+              {callbackCode ? (
+                <LoginFormFallback />
+              ) : (
+                <LoginForm
+                  deferAuthSurfaceUntilSessionCheck={
+                    deferAuthSurfaceUntilSessionCheck
+                  }
+                  loginView={loginView}
+                  localE2EAuthBypass={localE2EAuthBypass}
+                  runtimeSupabaseConfig={runtimeSupabaseConfig}
+                />
+              )}
             </div>
           </div>
-        </div>
+
+          <LoginFooter />
+        </section>
       </div>
     </div>
   );

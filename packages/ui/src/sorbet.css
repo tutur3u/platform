@@ -30,6 +30,8 @@
   --border: #f0e1dd;
   --input: #dcc8c3;
   --ring: #2a55a8;
+  /* Field strokes: 3:1 against a field, where --input (border-strong) is 1.6:1. */
+  --sorbet-field-stroke: #8f8491;
 
   --chart-1: #2a55a8;
   --chart-2: #2b6e22;
@@ -131,6 +133,7 @@
   --border: #3a3241;
   --input: #544a5c;
   --ring: #b5cdff;
+  --sorbet-field-stroke: #7d7183;
 
   --chart-1: #b5cdff;
   --chart-2: #aee6a4;
@@ -232,6 +235,33 @@
     [data-slot="button"][role="combobox"]
   ) {
   border-radius: var(--radius);
+}
+
+/*
+  Field strokes: text fields, OTP slots and unchecked checkboxes draw their
+  edge with the field-stroke role, so an empty field reads against white (the
+  --input hairline is only 1.6:1). Focus, invalid, active and checked states
+  keep their own colours.
+*/
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="input-otp-slot"],
+    [data-slot="checkbox"]
+  ):not(
+    :focus-visible,
+    [aria-invalid="true"],
+    [data-active="true"],
+    [data-state="checked"],
+    [data-state="indeterminate"]
+  ) {
+  border-color: var(--sorbet-field-stroke);
+}
+
+/* High Contrast already draws fields with its full-strength input edge. */
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"] {
+  --sorbet-field-stroke: var(--input);
 }
 
 /* Surfaces float on soft shadows; borders recede. */

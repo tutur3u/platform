@@ -104,6 +104,7 @@ const ROLE_PROPERTIES = {
   accent: 'accent',
   border: 'border',
   'border-strong': 'input',
+  'field-stroke': 'sorbet-field-stroke',
   foreground: 'foreground',
   'muted-foreground': 'muted-foreground',
   primary: 'primary',
@@ -301,6 +302,15 @@ describe('Sorbet token contract', () => {
       expect(
         contrast(role('primary'), role('primary-foreground'))
       ).toBeGreaterThanOrEqual(4.5);
+      // Field edges are non-text UI: 3:1 against every field and page ground,
+      // which border-strong (the hairline input edge) does not reach.
+      for (const ground of ['background', 'surface']) {
+        expect(
+          contrast(role('field-stroke'), role(ground)),
+          `${mode} field-stroke on ${ground}`
+        ).toBeGreaterThanOrEqual(3);
+      }
+      expect(contrast(role('border-strong'), role('surface'))).toBeLessThan(3);
       for (const [hue, value] of Object.entries(tokens.hues)) {
         const { fill, calm, ink } = value[mode];
         for (const ground of [
@@ -352,6 +362,26 @@ describe('Sorbet token contract', () => {
     for (const name of ['fast', 'base', 'slow', 'sheet']) {
       expect(reduced).toContain(`--sorbet-duration-${name}: 0ms`);
     }
+  });
+
+  it('strokes fields, OTP slots and checkboxes with the field role', () => {
+    const rule = css.slice(
+      css.indexOf(
+        '[data-slot="input"],\n    [data-slot="textarea"],\n    [data-slot="input-otp-slot"]'
+      )
+    );
+    const body = rule.slice(0, rule.indexOf('}'));
+    for (const slot of ['input', 'textarea', 'input-otp-slot', 'checkbox']) {
+      expect(body).toContain(`[data-slot="${slot}"]`);
+    }
+    for (const state of [
+      ':focus-visible',
+      '[aria-invalid="true"]',
+      '[data-state="checked"]',
+    ]) {
+      expect(body).toContain(state);
+    }
+    expect(body).toContain('border-color: var(--sorbet-field-stroke)');
   });
 
   it('keeps every Sorbet selector under the data-ui attribute', () => {

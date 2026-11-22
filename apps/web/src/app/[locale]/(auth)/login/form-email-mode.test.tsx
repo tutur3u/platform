@@ -73,9 +73,7 @@ describe('LoginForm email method defaults', () => {
     expect(
       screen.getByRole('button', { name: 'continue_with_passkey' })
     ).toBeEnabled();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'login.other_sign_in_methods' })
-    );
+    // Google shares the email-first step; no second screen to open.
     expect(
       await screen.findByRole('button', { name: /google/i })
     ).toBeEnabled();

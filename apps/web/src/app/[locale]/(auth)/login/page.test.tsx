@@ -90,31 +90,66 @@ vi.mock('./form', () => ({
   },
 }));
 
-vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string, values?: Record<string, string>) => {
-    const messages: Record<string, string> = {
-      'account_switcher.add_account': 'Add account',
-      'account_switcher.add_account_description':
-        'Add another account to continue',
-      'auth.notice-p1': 'By continuing, you agree to Tuturuuu',
-      'auth.notice-p2': 'to receive periodic emails with updates',
-      'auth.privacy': 'Privacy Policy',
-      'auth.tos': 'Terms of Service',
-      'common.and': 'and',
-      'login.sign_in_to_your_account': 'Sign in to your account to continue',
-      'login.welcome': 'Welcome Back',
+vi.mock('next-intl', async () => {
+  const en = (await import('../../../../../messages/en.json')).default;
+  const translate = (namespace?: string) => {
+    const t = (key: string, values?: Record<string, string>) => {
+      const fullKey = namespace ? `${namespace}.${key}` : key;
+      const messages: Record<string, string> = {
+        'account_switcher.add_account': 'Add account',
+        'account_switcher.add_account_description':
+          'Add another account to continue',
+        'login.sign_in_or_create':
+          'Sign in or create an account. It is the same step.',
+        'login.welcome_to_tuturuuu': 'Welcome to Tuturuuu',
+      };
+
+      if (fullKey === 'login.sign_in_to_continue_to') {
+        return `Sign in to continue to ${values?.app ?? ''}`;
+      }
+
+      if (fullKey === 'login.powered-by') {
+        return `Powered by ${values?.domain ?? ''}`;
+      }
+
+      return messages[fullKey] ?? fullKey;
     };
+    // Renders the real English notice, with tags as the given elements.
+    t.rich = (
+      key: string,
+      tags: Record<string, (chunks: string) => unknown>
+    ) => {
+      const source = (en.login as Record<string, string>)[key] ?? key;
+      return source
+        .split(/(<\w+>[^<]*<\/\w+>)/u)
+        .filter(Boolean)
+        .map((part, index) => {
+          const match = /^<(\w+)>([^<]*)<\/\w+>$/u.exec(part);
+          const render = match ? tags[match[1]!] : undefined;
+          return render ? (
+            <span key={`${key}-${index.toString()}`}>
+              {render(match![2]!) as string}
+            </span>
+          ) : (
+            part
+          );
+        });
+    };
+    return t;
+  };
+  return {
+    useLocale: () => 'en',
+    useTranslations: translate,
+  };
+});
 
-    if (key === 'login.sign_in_to_continue_to') {
-      return `Sign in to continue to ${values?.app ?? ''}`;
-    }
-
-    if (key === 'login.powered-by') {
-      return `Powered by ${values?.domain ?? ''}`;
-    }
-
-    return messages[key] ?? key;
-  },
+vi.mock('./auth-top-controls', () => ({
+  AuthTopControls: () => (
+    <div data-testid="auth-top-controls">
+      <button type="button">language</button>
+      <button type="button">theme</button>
+    </div>
+  ),
 }));
 
 function setSearchParams(
@@ -166,7 +201,7 @@ describe('Login page', () => {
     await renderLoginPage();
 
     expect(
-      screen.getByRole('heading', { name: 'Welcome Back' })
+      screen.getByRole('heading', { name: 'Welcome to Tuturuuu' })
     ).toBeInTheDocument();
     expect(mocks.loginFormProps).toContainEqual({
       deferAuthSurfaceUntilSessionCheck: false,
@@ -197,6 +232,40 @@ describe('Login page', () => {
       'data-runtime-supabase-url',
       'http://127.0.0.1:8001'
     );
+  });
+
+  it('agrees to the Terms and Privacy Policy without bundling product emails', async () => {
+    await renderLoginPage();
+
+    const footer = screen.getByRole('contentinfo');
+    expect(footer).toHaveTextContent(
+      'By continuing you agree to the Terms and Privacy Policy.'
+    );
+    expect(footer.textContent).not.toMatch(/email/iu);
+    expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute(
+      'href',
+      '/terms'
+    );
+    expect(
+      screen.getByRole('link', { name: 'Privacy Policy' })
+    ).toHaveAttribute('href', '/privacy');
+    expect(
+      screen.getByRole('link', { name: 'login.trouble_signing_in' })
+    ).toHaveAttribute('href', '/auth/recovery');
+  });
+
+  it('puts the corner controls before the form and hides the stage', async () => {
+    await renderLoginPage();
+
+    const controls = screen.getByTestId('auth-top-controls');
+    const form = screen.getByTestId('login-form');
+    const stage = screen.getByTestId('auth-stage');
+    expect(
+      controls.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(stage).toHaveAttribute('aria-hidden', 'true');
+    expect(stage.querySelector('a, button, input')).toBeNull();
+    expect(stage.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('renders the partner app header for known returnUrl domains on the client', async () => {
@@ -280,7 +349,7 @@ describe('Login page', () => {
         name: 'Sign in to continue to EduFest Booth Hall',
       })
     ).toBeInTheDocument();
-    expect(screen.queryByText('Welcome Back')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome to Tuturuuu')).not.toBeInTheDocument();
   });
 
   it('reserves the header while a focused sign-in view resolves', async () => {
@@ -291,7 +360,7 @@ describe('Login page', () => {
       returnUrl: 'https://showcase.ieeai.net/edufest/verify-token?state=s',
     });
 
-    expect(screen.queryByText('Welcome Back')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome to Tuturuuu')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 });

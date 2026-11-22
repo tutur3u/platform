@@ -149,6 +149,7 @@ void main() {
             b,
             destructive: base.destructive,
             destructiveForeground: base.destructiveForeground,
+            fieldStroke: base.fieldStroke,
           ).byJsonName;
           for (final MapEntry(key: from, value: role) in roleMap.entries) {
             expect(

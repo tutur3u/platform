@@ -1,0 +1,83 @@
+/*
+  Sign-in stage illustration: colours are token roles (SVG presentation
+  attributes cannot read var(), so they are classes), and every motion is
+  opt-in and stops under reduced motion.
+*/
+.auth-il-line {
+  stroke: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+.auth-il-detail {
+  stroke: color-mix(in oklab, var(--muted-foreground) 28%, transparent);
+}
+.auth-il-ink {
+  stroke: var(--foreground);
+}
+.auth-il-surface {
+  fill: var(--card);
+}
+.auth-il-fg {
+  fill: var(--foreground);
+}
+.auth-il-none {
+  fill: none;
+}
+.auth-il-pink-calm {
+  fill: var(--calendar-bg-pink);
+}
+.auth-il-pink {
+  fill: color-mix(in oklab, var(--pink) 18%, var(--calendar-bg-pink));
+}
+.auth-il-blue {
+  fill: color-mix(in oklab, var(--blue) 18%, var(--calendar-bg-blue));
+}
+.auth-il-blue-ink {
+  fill: var(--blue);
+}
+.auth-il-green {
+  fill: color-mix(in oklab, var(--green) 18%, var(--calendar-bg-green));
+}
+.auth-il-green-stroke {
+  stroke: var(--green);
+}
+.auth-il-yellow {
+  fill: color-mix(in oklab, var(--yellow) 18%, var(--calendar-bg-yellow));
+}
+.auth-il-gray {
+  fill: color-mix(in oklab, var(--gray) 14%, var(--calendar-bg-gray));
+}
+.auth-il-round {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-float {
+    animation: auth-float 6s cubic-bezier(0.2, 0, 0, 1) infinite alternate;
+  }
+  .auth-float-2 {
+    animation: auth-float 7s cubic-bezier(0.2, 0, 0, 1) infinite
+      alternate-reverse;
+  }
+  .auth-twinkle {
+    animation: auth-twinkle 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes auth-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes auth-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}

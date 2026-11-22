@@ -1,3 +1,4 @@
+import { SorbetRouteScope } from '@tuturuuu/ui/custom/sorbet-route-scope';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
@@ -24,6 +25,8 @@ export default async function AuthLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
+      {/* Sign-in pages use the Sorbet design for everyone, signed out too. */}
+      <SorbetRouteScope />
       {children}
     </NextIntlClientProvider>
   );

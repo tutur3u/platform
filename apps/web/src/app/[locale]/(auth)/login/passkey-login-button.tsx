@@ -2,17 +2,19 @@
 
 import { Fingerprint } from '@tuturuuu/icons/lucide-static';
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
-import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
+import { authToast as toast } from './auth-inline-error-store';
 import {
   appendDiagnosticReference,
   createClientAuthDiagnosticCode,
 } from './auth-diagnostic-copy';
+import { SocialLoginButton } from './social-login-button';
 
 interface PasskeyLoginButtonProps {
+  /** A right-edge mark such as the "Last used" chip. */
+  badge?: ReactNode;
   captchaToken?: string;
   canRenderTurnstile?: boolean;
   disabled?: boolean;
@@ -23,6 +25,7 @@ interface PasskeyLoginButtonProps {
 }
 
 export function PasskeyLoginButton({
+  badge,
   captchaToken,
   canRenderTurnstile = false,
   disabled,
@@ -109,23 +112,26 @@ export function PasskeyLoginButton({
 
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        className="h-12 w-full rounded-2xl font-medium"
-        disabled={disabled || isAuthenticating || isTurnstileBlocked}
-        onClick={handlePasskeyLogin}
+      <SocialLoginButton
         aria-describedby={turnstileBlockReason ? turnstileErrorId : undefined}
+        badge={badge}
+        disabled={disabled || isAuthenticating || isTurnstileBlocked}
+        icon={
+          isAuthenticating ? (
+            <LoadingIndicator className="size-5" />
+          ) : (
+            <Fingerprint aria-hidden className="size-5" />
+          )
+        }
+        onClick={handlePasskeyLogin}
       >
-        {isAuthenticating ? (
-          <LoadingIndicator className="size-4" />
-        ) : (
-          <Fingerprint className="size-4" />
-        )}
-        <span>{t('continue_with_passkey')}</span>
-      </Button>
+        {t('continue_with_passkey')}
+      </SocialLoginButton>
       {turnstileBlockReason ? (
-        <p id={turnstileErrorId} className="text-destructive text-sm">
+        <p
+          id={turnstileErrorId}
+          className="text-balance text-center text-destructive text-sm"
+        >
           {turnstileBlockReason}
         </p>
       ) : null}
