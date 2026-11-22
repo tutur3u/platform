@@ -108,3 +108,49 @@ export function endedMeetingFacts({
 
   return { minutes, speakers, recording, transcript };
 }
+
+/**
+ * Which ended-meeting reader the viewer can open, decided only from the
+ * access-checked meet-ai state. `loading` holds the space until the state
+ * arrives; a refused or failed read, or a room with neither post-call notes
+ * nor a readable transcript, is `none` so the page offers no empty reader.
+ */
+export type EndedNotesAvailability =
+  | 'loading'
+  | 'none'
+  | 'notes'
+  | 'transcript'
+  | 'both';
+
+interface AvailabilityChunk {
+  status: string;
+  erased?: boolean;
+  transcript?: string | null;
+  segments?: Array<{ erased: true } | { transcript?: string | null }>;
+}
+
+function readableChunk(chunk: AvailabilityChunk) {
+  if (chunk.status !== 'completed' || chunk.erased) return false;
+  if (chunk.segments?.length)
+    return chunk.segments.some(
+      (segment) => !('erased' in segment) && !!segment.transcript?.trim()
+    );
+  return !!chunk.transcript?.trim();
+}
+
+export function endedNotesAvailability({
+  data,
+  error,
+}: {
+  data?: {
+    sessions: Array<{ notes: unknown }>;
+    chunks: AvailabilityChunk[];
+  } | null;
+  error?: unknown;
+}): EndedNotesAvailability {
+  if (!data) return error ? 'none' : 'loading';
+  const notes = data.sessions.some((session) => session.notes != null);
+  const transcript = data.chunks.some(readableChunk);
+  if (notes) return transcript ? 'both' : 'notes';
+  return transcript ? 'transcript' : 'none';
+}

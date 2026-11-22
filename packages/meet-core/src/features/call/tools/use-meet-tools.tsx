@@ -57,6 +57,9 @@ export function useMeetTools<A extends string>({
 
   return {
     activeId,
+    /** Tools this person may browse now, for the Activities menu. */
+    shown,
+    toggle,
     route,
     hub: shown.length ? (
       <MeetToolsHub tools={shown} activeId={activeId} onSelect={toggle} />

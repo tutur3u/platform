@@ -1,30 +1,48 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
+import type { MeetToolDefinition } from '../tools/registry';
+import { ActivitiesMenu } from './activities-menu';
+import { CallActivitySettings } from './call-activity-settings';
 import { CallRoomTools, useRoomTools } from './call-room-tools';
 import { ControlBar } from './control-bar';
 
 afterEach(cleanup);
 
 const noAction = () => undefined;
+const poll: MeetToolDefinition = {
+  id: 'polls',
+  label: 'meet.call.polls.title',
+  icon: () => null,
+  Panel: () => null,
+};
+
+function Intl({ children }: { children: ReactNode }) {
+  return (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
 function Fixture({
   mode,
   manager = false,
-  onMode = noAction,
   feedback = noAction,
+  onTool = noAction,
 }: {
   mode?: 'hosts' | 'showcase' | 'everyone';
   manager?: boolean;
-  onMode?: (mode: string) => void;
   feedback?: () => void;
+  onTool?: (id: string) => void;
 }) {
   const policy = useRoomTools(mode, manager);
   const action = { active: false, toggle: noAction };
   return (
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <Intl>
       <ControlBar
         activePanel={null}
         cameraOn
@@ -40,31 +58,41 @@ function Fixture({
         screenOn={false}
         unreadChat={0}
         waitingCount={0}
+        activities={
+          <ActivitiesMenu
+            tools={[poll]}
+            activeToolId={null}
+            onTool={onTool}
+            collaboration={
+              policy.canUse
+                ? { programming: action, document: action }
+                : undefined
+            }
+            preview={policy.showPreview ? { onFeedback: feedback } : undefined}
+          />
+        }
         extraControls={
           <CallRoomTools
-            actions={{
-              document: action,
-              personal: action,
-              programming: action,
-              feedback,
-            }}
+            actions={{ personal: action }}
             activities={<span>Live poll</span>}
-            mode={mode}
-            onMode={onMode}
             policy={policy}
           />
         }
       />
-    </NextIntlClientProvider>
+    </Intl>
   );
 }
 
 const more = () =>
   fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+const openActivities = () =>
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.call.activities.button })
+  );
 const tools = messages.meet.call.room_tools;
 const coding = messages.programmingPlayground.coding;
 
-it('keeps advanced tools out of the default attendee menu while leaving live activities reachable', () => {
+it('keeps launch actions out of More while leaving live activities reachable', () => {
   render(<Fixture />);
   expect(
     screen.getByRole('button', { name: messages.meet.call.mute })
@@ -72,34 +100,69 @@ it('keeps advanced tools out of the default attendee menu while leaving live act
   expect(screen.queryByText('Live poll')).toBeNull();
   more();
   expect(screen.getByText('Live poll')).toBeTruthy();
-  expect(screen.queryByRole('button', { name: coding })).toBeNull();
+  expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
   expect(screen.queryByRole('radiogroup')).toBeNull();
 });
 
-it('offers feedback instead of launch actions in Showcase', () => {
-  const feedback = vi.fn();
-  render(<Fixture mode="showcase" feedback={feedback} />);
-  more();
-  expect(screen.getByText(tools.preview)).toBeTruthy();
-  expect(screen.getByText(coding)).toBeTruthy();
-  expect(screen.queryByRole('button', { name: coding })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: tools.feedback }));
-  expect(feedback).toHaveBeenCalledOnce();
-  expect(screen.queryByRole('button', { name: tools.feedback })).toBeNull();
+it('lists tools in Activities for attendees but keeps collaboration for hosts', () => {
+  const onTool = vi.fn();
+  render(<Fixture onTool={onTool} />);
+  openActivities();
+  expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /Polls/ }));
+  expect(onTool).toHaveBeenCalledWith('polls');
+  cleanup();
+  render(<Fixture manager />);
+  openActivities();
+  expect(screen.getByRole('button', { name: new RegExp(coding) })).toBeTruthy();
+  cleanup();
+  render(<Fixture mode="everyone" />);
+  openActivities();
+  expect(screen.getByRole('button', { name: new RegExp(coding) })).toBeTruthy();
 });
 
-it('lets managers set visibility and shows tools to attendees only when enabled', () => {
+it('previews activities with a feedback shortcut in Showcase', () => {
+  const feedback = vi.fn();
+  render(<Fixture mode="showcase" feedback={feedback} />);
+  openActivities();
+  expect(screen.getByText(tools.preview)).toBeTruthy();
+  expect(screen.getByText(coding)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: tools.feedback }));
+  expect(feedback).toHaveBeenCalledOnce();
+});
+
+it('sets activity visibility from the settings section', () => {
   const onMode = vi.fn();
-  render(<Fixture manager onMode={onMode} />);
-  more();
-  expect(screen.getByRole('button', { name: coding })).toBeTruthy();
+  render(
+    <Intl>
+      <CallActivitySettings mode="hosts" onMode={onMode} />
+    </Intl>
+  );
   fireEvent.click(
     screen.getByRole('radio', { name: new RegExp(tools.everyone) })
   );
   expect(onMode).toHaveBeenCalledWith('everyone');
-  cleanup();
-  render(<Fixture mode="everyone" />);
-  more();
-  expect(screen.getByRole('button', { name: coding })).toBeTruthy();
-  expect(screen.queryByRole('radiogroup')).toBeNull();
+});
+
+it('lets managers turn participant Follow and Summon off', () => {
+  const onParticipantNavigation = vi.fn();
+  render(
+    <Intl>
+      <CallActivitySettings
+        mode="hosts"
+        onMode={noAction}
+        participantNavigation
+        onParticipantNavigation={onParticipantNavigation}
+      />
+    </Intl>
+  );
+  fireEvent.click(
+    screen.getByRole('switch', {
+      name: new RegExp(
+        messages.meet.call.activities_settings.participant_navigation
+      ),
+    })
+  );
+  expect(onParticipantNavigation).toHaveBeenCalledWith(false);
 });

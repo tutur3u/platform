@@ -15,7 +15,6 @@ function mount(overrides: Partial<Props> = {}) {
     onToggle: vi.fn(),
     view: { text: '', exitCode: null, running: false },
     save: 'idle',
-    failed: false,
     run: {
       command: 'python3 main.py',
       onCommand: vi.fn(),
@@ -79,7 +78,6 @@ it('renders the preview frame only for a valid opted-in port', () => {
         onToggle={vi.fn()}
         view={{ text: '', exitCode: null, running: false }}
         save="idle"
-        failed={false}
         preview={{ port: '3000', onPort: vi.fn(), url, onClose: vi.fn() }}
       />
     </NextIntlClientProvider>
@@ -88,6 +86,30 @@ it('renders the preview frame only for a valid opted-in port', () => {
   expect(frame?.getAttribute('src')).toBe('/preview/3000/');
   expect(frame?.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
   expect(screen.getByRole('button', { name: t.previewClose })).toBeTruthy();
+});
+
+it('names the failed step, what is still safe, and retries it', () => {
+  const onRetry = vi.fn();
+  mount({
+    failure: { step: 'save', reason: 'busy' },
+    onRetry,
+  });
+  const alert = screen.getByRole('alert');
+  expect(alert.textContent).toContain(t.failureStep.save);
+  expect(alert.textContent).toContain(t.failureReason.busy);
+  expect(alert.textContent).toContain(t.failureSafe);
+  expect(alert.textContent).not.toContain(t.failed);
+  fireEvent.click(screen.getByRole('button', { name: t.retry }));
+  expect(onRetry).toHaveBeenCalledOnce();
+});
+
+it('summarizes a finished run with its exit status and duration', () => {
+  mount({
+    view: { text: 'boom\n', exitCode: 1, running: false },
+    durationMs: 420,
+  });
+  expect(screen.getByText('Exited with code 1')).toBeTruthy();
+  expect(screen.getByText('0.42 s')).toBeTruthy();
 });
 
 it('renders real public test failures and jumps to the linked editor line', () => {
@@ -113,7 +135,6 @@ it('renders real public test failures and jumps to the linked editor line', () =
         }}
         view={{ text: '', running: false, exitCode: null }}
         save="idle"
-        failed={false}
         testing={false}
         canTest
         failureLink={{ index: 1, line: 19, jump }}

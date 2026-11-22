@@ -1,9 +1,9 @@
 'use client';
 import {
   Bookmark,
+  CodeXml,
   Ellipsis,
   Loader2,
-  Play,
   Save,
   Square,
   Users,
@@ -19,19 +19,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { classNames as cn } from './class-names';
 import type { WorkbenchAction } from './workbench-layout';
+import {
+  LANGUAGE_LABELS,
+  WorkbenchLanguagePicker,
+} from './workbench-language-picker';
+import { WorkbenchRunButton } from './workbench-run-button';
 
-/** One slim row: identity on the left, the two or three primary actions on the right, the rest in a menu. */
+export type WorkbenchControls =
+  | {
+      kind: 'playground';
+      editable: boolean;
+      busy: boolean;
+      onRun: () => void;
+      onStop: () => void;
+      onSave?: () => void;
+      pending: boolean;
+    }
+  | {
+      kind: 'problem';
+      editable: boolean;
+      onTest: () => void;
+      pending: boolean;
+    }
+  | { kind: 'none' };
+
+/** Identity and runtime on the left, Run and the two secondary actions on the right, the rest in a menu. */
 export function WorkbenchToolbar({
   title,
   language,
@@ -40,29 +55,15 @@ export function WorkbenchToolbar({
   controls,
   actions,
   meeting,
+  problem = false,
 }: {
   title: string;
   language: PlaygroundLanguage;
   status: 'connecting' | 'open' | 'offline';
   participants: string[];
-  controls:
-    | {
-        kind: 'playground';
-        editable: boolean;
-        busy: boolean;
-        onRun: () => void;
-        onStop: () => void;
-        onSave?: () => void;
-        pending: boolean;
-      }
-    | {
-        kind: 'problem';
-        editable: boolean;
-        onTest: () => void;
-        pending: boolean;
-      }
-    | { kind: 'none' };
+  controls: WorkbenchControls;
   actions: WorkbenchAction[];
+  problem?: boolean;
   meeting?: {
     mark?: ReactNode;
     onRuntime?: (value: PlaygroundLanguage) => void;
@@ -70,156 +71,135 @@ export function WorkbenchToolbar({
   };
 }) {
   const t = useTranslations('programmingPlayground');
-  const runtime = {
-    python: 'Python',
-    javascript: 'JavaScript',
-    typescript: 'TypeScript',
-    c: 'C',
-    cpp: 'C++',
-    java: 'Java',
-    rust: 'Rust',
-    go: 'Go',
-    ruby: 'Ruby',
-    php: 'PHP',
-    shell: 'Shell',
-  } satisfies Record<PlaygroundLanguage, string>;
+  const languages = PLAYGROUND_LANGUAGES.filter(
+    (value) => !problem || value !== 'shell'
+  );
+  const iconButton = 'size-8 rounded-full';
   return (
-    <header
-      className={cn(
-        'flex min-h-10 shrink-0 items-center gap-2 border-b px-2',
-        meeting && 'flex-wrap py-1.5'
-      )}
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+    <header className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3 py-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        {meeting ? (
+          <span
+            aria-hidden="true"
+            className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+          >
+            <CodeXml className="size-4" />
+          </span>
+        ) : null}
         {meeting?.mark}
-        <strong className="truncate font-medium text-sm">{title}</strong>
-        {!meeting?.onRuntime && (
-          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-            {runtime[language]}
+        <div className="flex min-w-0 flex-col leading-tight">
+          <strong className="truncate font-semibold text-sm">{title}</strong>
+          <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+            {meeting && <span className="truncate">{t('coding')}</span>}
+            {status !== 'open' ? (
+              <output className="flex shrink-0 items-center gap-1">
+                <Loader2
+                  className="size-3 animate-spin motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+                {t(status)}
+              </output>
+            ) : (
+              <span
+                className="flex shrink-0 items-center gap-1"
+                title={participants.join(', ')}
+              >
+                <Users className="size-3" aria-hidden="true" />
+                {t('editingCount', { count: participants.length })}
+                <span className="sr-only">{participants.join(', ')}</span>
+              </span>
+            )}
+          </span>
+        </div>
+        {meeting ? (
+          <WorkbenchLanguagePicker
+            language={language}
+            languages={languages}
+            onChange={meeting.onRuntime}
+            pending={meeting.runtimePending}
+          />
+        ) : (
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+            {LANGUAGE_LABELS[language]}
           </span>
         )}
-        {status !== 'open' && (
-          <output className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
-            <Loader2
-              className="size-3 animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-            />
-            {t(status)}
-          </output>
-        )}
-        <span
-          className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs"
-          title={participants.join(', ')}
-        >
-          <Users className="size-3.5" aria-hidden="true" />
-          {participants.length}
-          <span className="sr-only">{participants.join(', ')}</span>
-        </span>
       </div>
-      {meeting?.onRuntime && (
-        <Select
-          value={language}
-          disabled={meeting.runtimePending}
-          onValueChange={(value) => {
-            const chosen = PLAYGROUND_LANGUAGES.find(
-              (language) => language === value
-            );
-            if (chosen) meeting.onRuntime?.(chosen);
-          }}
-        >
-          <SelectTrigger
-            aria-label={t('language')}
-            className="h-8 w-auto max-w-32 motion-reduce:transition-none"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PLAYGROUND_LANGUAGES.filter((value) => value !== 'shell').map(
-              (value) => (
-                <SelectItem key={value} value={value}>
-                  {runtime[value]}
-                </SelectItem>
-              )
-            )}
-          </SelectContent>
-        </Select>
-      )}
-      {controls.kind === 'problem' && (
-        <Button
-          size="sm"
-          disabled={!controls.editable || controls.pending}
-          onClick={controls.onTest}
-        >
-          <Play className="size-3.5" />
-          {t('test')}
-        </Button>
-      )}
-      {controls.kind === 'playground' && (
-        <>
-          <Button
-            size="sm"
-            disabled={controls.pending || !controls.editable || controls.busy}
-            onClick={controls.onRun}
-          >
-            <Play className="size-3.5" />
-            {t('run')}
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            aria-label={t('stop')}
-            title={t('stop')}
-            disabled={controls.pending || !controls.editable}
-            onClick={controls.onStop}
-          >
-            <Square className="size-3.5" />
-          </Button>
-          {controls.onSave && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-8"
-              aria-label={t(meeting ? 'checkpoint' : 'save')}
-              title={t(meeting ? 'checkpoint' : 'save')}
+      <div className="flex shrink-0 items-center gap-1.5">
+        {controls.kind === 'problem' && (
+          <WorkbenchRunButton
+            label={t('test')}
+            busy={controls.pending}
+            disabled={!controls.editable || controls.pending}
+            onRun={controls.onTest}
+          />
+        )}
+        {controls.kind === 'playground' && (
+          <>
+            <WorkbenchRunButton
+              label={t('run')}
+              busy={controls.busy || controls.pending}
               disabled={controls.pending || !controls.editable || controls.busy}
-              onClick={controls.onSave}
-            >
-              {meeting ? (
-                <Bookmark className="size-3.5" />
-              ) : (
-                <Save className="size-3.5" />
-              )}
-            </Button>
-          )}
-        </>
-      )}
-      {actions.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+              onRun={controls.onRun}
+            />
             <Button
               size="icon"
-              variant="ghost"
-              className="size-8"
-              aria-label={t('more')}
+              variant="outline"
+              className={iconButton}
+              aria-label={t('stop')}
+              title={t('stop')}
+              disabled={controls.pending || !controls.editable}
+              onClick={controls.onStop}
             >
-              <Ellipsis className="size-4" />
+              <Square className="size-3.5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-48">
-            {actions.map((action) => (
-              <DropdownMenuItem
-                key={action.id}
-                disabled={action.disabled}
-                variant={action.destructive ? 'destructive' : 'default'}
-                onSelect={action.onSelect}
+            {controls.onSave && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className={iconButton}
+                aria-label={t(meeting ? 'checkpoint' : 'save')}
+                title={t(meeting ? 'checkpoint' : 'save')}
+                disabled={
+                  controls.pending || !controls.editable || controls.busy
+                }
+                onClick={controls.onSave}
               >
-                {action.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+                {meeting ? (
+                  <Bookmark className="size-3.5" />
+                ) : (
+                  <Save className="size-3.5" />
+                )}
+              </Button>
+            )}
+          </>
+        )}
+        {actions.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={iconButton}
+                aria-label={t('more')}
+              >
+                <Ellipsis className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-48">
+              {actions.map((action) => (
+                <DropdownMenuItem
+                  key={action.id}
+                  disabled={action.disabled}
+                  variant={action.destructive ? 'destructive' : 'default'}
+                  onSelect={action.onSelect}
+                >
+                  {action.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
     </header>
   );
 }

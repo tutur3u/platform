@@ -1,9 +1,9 @@
 'use client';
 
-import { ClipboardList } from '@tuturuuu/icons';
+import { ClipboardList, LayoutGrid, PenTool } from '@tuturuuu/icons';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ComponentType, useState } from 'react';
 import { ClassroomControls } from '../../classroom-tools/classroom-controls';
 import type { ClassroomTool } from '../../classroom-tools/classroom-client';
 import { ClassroomPanel } from '../../classroom-tools/classroom-panel';
@@ -24,6 +24,15 @@ const MeetFormsActivity = dynamic(
 );
 
 export type ActivityDrawer = 'polls' | 'quiz-arena' | 'forms' | ClassroomTool;
+
+/** An activity the Activities menu lists beside the registered tools. */
+export type ActivityEntry = {
+  id: ActivityDrawer;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  active: boolean;
+  toggle: () => void;
+};
 
 /** Classroom activities share one drawer slot and one control group. */
 export function useCallActivities<D extends string | null>({
@@ -54,6 +63,7 @@ export function useCallActivities<D extends string | null>({
 }) {
   const t = useTranslations('meet.call.quizArena');
   const formsT = useTranslations('meet.call');
+  const classroomT = useTranslations('meet.classroom_tools');
   const [hasOpenedForms, setHasOpenedForms] = useState(false);
   const canUseForms = enabled && formsEnabled && !requiresAccount;
   const classroomAvailable = enabled && classroomToolsEnabled;
@@ -90,8 +100,42 @@ export function useCallActivities<D extends string | null>({
       onClick={() => toggle('quiz-arena')}
     />
   ) : null;
+  // With the Activities menu in use (`showTools` off) these open from its
+  // grid; otherwise they stay rows in More.
+  const entries: ActivityEntry[] = [
+    ...(classroomAvailable
+      ? [
+          {
+            id: 'whiteboard' as const,
+            label: classroomT('whiteboard.title'),
+            icon: PenTool,
+            active: drawer === 'whiteboard',
+            toggle: () => toggle('whiteboard'),
+          },
+          {
+            id: 'breakouts' as const,
+            label: classroomT('breakouts.title'),
+            icon: LayoutGrid,
+            active: drawer === 'breakouts',
+            toggle: () => toggle('breakouts'),
+          },
+        ]
+      : []),
+    ...(canUseForms
+      ? [
+          {
+            id: 'forms' as const,
+            label: formsT('forms.title'),
+            icon: ClipboardList,
+            active: drawer === 'forms',
+            toggle: () => toggle('forms'),
+          },
+        ]
+      : []),
+  ];
   return {
     liveControl,
+    entries,
     controls: (
       <>
         {showPolls && (
@@ -101,7 +145,7 @@ export function useCallActivities<D extends string | null>({
             onClick={() => toggle('polls')}
           />
         )}
-        {classroomAvailable && (
+        {showTools && classroomAvailable && (
           <ClassroomControls active={drawer} toggle={toggle} />
         )}
         {showArena && (
@@ -111,7 +155,7 @@ export function useCallActivities<D extends string | null>({
             onClick={() => toggle('quiz-arena')}
           />
         )}
-        {canUseForms && (
+        {showTools && canUseForms && (
           <ControlButton
             active={drawer === 'forms'}
             icon={ClipboardList}

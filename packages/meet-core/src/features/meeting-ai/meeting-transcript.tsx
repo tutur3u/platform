@@ -1,14 +1,24 @@
 'use client';
 import type { MeetAiChunk } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
-export function MeetingTranscript({ chunks }: { chunks: MeetAiChunk[] }) {
+export function MeetingTranscript({
+  chunks,
+  heading = true,
+  className = 'max-h-80',
+}: {
+  chunks: MeetAiChunk[];
+  /** Off where a card title or tab already names the transcript. */
+  heading?: boolean;
+  /** Height limit of the scroll area. */
+  className?: string;
+}) {
   const t = useTranslations('meet.ai');
   return (
     <section
-      className="max-h-80 space-y-2 overflow-y-auto"
+      className={`space-y-2 overflow-y-auto ${className}`}
       aria-label={t('transcript')}
     >
-      <h3 className="font-medium text-sm">{t('transcript')}</h3>
+      {heading && <h3 className="font-medium text-sm">{t('transcript')}</h3>}
       {!chunks.length && (
         <p className="text-muted-foreground text-sm">{t('empty')}</p>
       )}

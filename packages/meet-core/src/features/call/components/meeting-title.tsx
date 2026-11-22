@@ -35,7 +35,7 @@ export function MeetingTitle({
   const [busy, setBusy] = useState(false);
   const displayed = saved?.previous === title ? saved.name : title;
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 shrink">
       {canManage ? (
         <Dialog
           open={open}

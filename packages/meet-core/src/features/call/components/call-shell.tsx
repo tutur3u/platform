@@ -1,12 +1,10 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Users } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
-import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -15,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
+import { useCallMediaActions } from '../hooks/call-media-actions';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import { useProgrammingOpener } from '../hooks/use-programming-opener';
 import { useRoomRecording } from '../hooks/use-room-recording';
@@ -27,19 +26,19 @@ import {
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
-import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
-import { encodeRoomCode } from '../lib/room-code';
 import { type ActivityDrawer, useCallActivities } from './call-activities';
 import { CallEnded } from './call-ended';
-import { CallRoomTools, useRoomTools } from './call-room-tools';
-import { CallExtras } from './call-extras';
+import { useRoomTools } from './call-room-tools';
+import { CallControlDock } from './call-control-dock';
+import { CallHeader } from './call-header';
+import { CallPresenceRoster } from './call-presence-roster';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
-import { CallTopBarConnection, CallTopBarMore } from './call-top-bar';
+import { CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
-import { type CallPanel, ControlBar } from './control-bar';
+import type { CallPanel } from './control-bar';
 import {
   AccountGatedNotesDrawer,
   AccountGatedPersonalDrawer,
@@ -47,8 +46,7 @@ import {
 } from './call-account-gates';
 import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
-import { MeetingActionHint } from './meeting-action-hint';
-import { MeetingStatus, MeetingTitle } from './meeting-title';
+import { CallWaitingBanner } from './call-waiting-banner';
 import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
@@ -60,7 +58,9 @@ import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
 import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
-type Device = 'microphone' | 'camera' | 'screen';
+import { useRoomNavigation } from '../hooks/use-room-navigation';
+import { ActivitiesMenu } from './activities-menu';
+import { FollowBanner } from './room-navigation-controls';
 function CallShellContent({
   accountId,
   defaultDisplayName,
@@ -131,10 +131,6 @@ function CallShellContent({
     setFocus(key);
     setLayout(key ? 'spotlight' : 'auto');
   }, []);
-  const [busyDevices, setBusyDevices] = useState<
-    Partial<Record<Device, boolean>>
-  >({});
-  const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
   const { state } = room;
   const retryConnection = () => {
@@ -157,6 +153,7 @@ function CallShellContent({
     toolMode,
     state.canManageParticipants ?? canManage
   );
+  const presenceOnly = state.settings.transport === 'presence';
   const showProgramming = roomTools.canUse && programmingOpen;
   const showDocument = roomTools.canUse && documentOpen;
   const canReadNotes = canManage || state.settings.shareNotes;
@@ -223,48 +220,10 @@ function CallShellContent({
   const backHref = leaveHref.includes('/meetings/')
     ? `${leaveHref.split('/meetings/')[0]}/meetings`
     : '/';
-  const runMediaAction = async (
-    action: () => Promise<void>,
-    device: Device
-  ) => {
-    if (pendingDevices.current.has(device) || leftRef.current) return;
-    pendingDevices.current.add(device);
-    setBusyDevices((current) => ({ ...current, [device]: true }));
-    const id = `meet-media-${device}`;
-    try {
-      await action();
-      toast.dismiss(id);
-    } catch (error) {
-      if (!leftRef.current) {
-        const key = getMediaErrorKey(error, device);
-        toast.error(t(key), {
-          id,
-          action:
-            device === 'screen' &&
-            ['screen_browser_unsupported', 'screen_permission_denied'].includes(
-              key
-            ) &&
-            MEETING_APP === 'meet'
-              ? {
-                  label: t('share_from_mobile_app'),
-                  onClick: () => {
-                    window.location.assign(
-                      `https://tuturuuu.com/personal/meet?room=${encodeRoomCode(meetingId)}`
-                    );
-                  },
-                }
-              : undefined,
-          description:
-            key === 'media_failed'
-              ? t('media_error_code', { code: getMediaErrorDiagnostic(error) })
-              : undefined,
-        });
-      }
-    } finally {
-      pendingDevices.current.delete(device);
-      setBusyDevices((current) => ({ ...current, [device]: false }));
-    }
-  };
+  const { busyDevices, runMediaAction } = useCallMediaActions(
+    meetingId,
+    leftRef
+  );
   const leaveNow = useCallback(() => {
     if (leftRef.current) return;
     leftRef.current = true;
@@ -312,6 +271,33 @@ function CallShellContent({
     classroomToolsEnabled,
     drawer,
     onDrawer: tools.route,
+  });
+  const openProgramming = (open: boolean) => {
+    setShowDocument(false);
+    setShowProgramming(open);
+    if (open && canManage)
+      void programming
+        .prepare()
+        .catch(() => toast.error(programmingT('accessError')));
+  };
+  const openDocument = (open: boolean) => {
+    setShowProgramming(false);
+    setShowDocument(open);
+  };
+  const nav = useRoomNavigation({
+    room,
+    surface: { programming: showProgramming, document: showDocument, drawer },
+    apply: (next) => {
+      if (next.programming) {
+        if (!showProgramming) openProgramming(true);
+      } else if (next.document) openDocument(true);
+      else {
+        setShowProgramming(false);
+        setShowDocument(false);
+      }
+      setDrawer(next.drawer as typeof drawer);
+    },
+    access: { collaboration: roomTools.canUse, tools: liveTools },
   });
   if (lifecycle === 'error')
     return (
@@ -372,112 +358,110 @@ function CallShellContent({
     );
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-2">
-        <MeetingTitle
-          meetingId={meetingId}
-          title={room.state.title ?? meetingName}
-          canManage={canManage}
-          onSaved={room.renameMeeting}
+      <CallHeader
+        meetingId={meetingId}
+        title={room.state.title ?? meetingName}
+        canManage={canManage}
+        onRenamed={room.renameMeeting}
+        presenceOnly={presenceOnly}
+        solo={participants.length === 1 && !state.liveAssistant}
+        recording={state.recording.state === 'recording'}
+        connection={room.connectionStatus}
+        onRetry={retryConnection}
+        actions={
+          <>
+            <RoomAssistantAudio
+              room={room}
+              audioSuppressed={sharedAudio.shared}
+              canManage={canManage}
+              meetingId={meetingId}
+              outputDeviceId={outputDeviceId}
+            />
+            {!presenceOnly && (
+              <>
+                <MeetLivePanel
+                  wsId={wsId}
+                  accountId={accountId}
+                  key="live-assistant"
+                  onOpenChat={askMira}
+                  onLeave={leaveNow}
+                  room={room}
+                  meetingId={meetingId}
+                  outputDeviceId={outputDeviceId}
+                  canManage={canManage}
+                  audioSuppressed={sharedAudio.microphonePaused}
+                />
+                <PlaybackVolumeControl
+                  participants={participants}
+                  selfUserId={state.selfUserId}
+                />
+                <SharedAudioControl
+                  audio={sharedAudio}
+                  busy={!!busyDevices.microphone}
+                  onShare={() =>
+                    void runMediaAction(sharedAudio.share, 'microphone')
+                  }
+                  onUseMicrophone={() =>
+                    void runMediaAction(
+                      sharedAudio.useOwnMicrophone,
+                      'microphone'
+                    )
+                  }
+                />
+              </>
+            )}
+            <CallSettings
+              meetingId={meetingId}
+              room={room}
+              telemetry={telemetry.data}
+              ai={ai}
+              canManage={canManage}
+              sound={notifications.sound}
+              onSound={notifications.toggleSound}
+              outputDeviceId={outputDeviceId}
+              onOutput={setOutputDeviceId}
+              activities={
+                roomTools.canConfigure
+                  ? {
+                      mode: toolMode,
+                      onMode: (advancedTools) =>
+                        room.updateSettings({ advancedTools }),
+                      participantNavigation:
+                        state.settings.participantNavigation !== false,
+                      onParticipantNavigation: (participantNavigation) =>
+                        room.updateSettings({ participantNavigation }),
+                    }
+                  : undefined
+              }
+            />
+            <CallClock meetingId={meetingId} state={state} />
+            <CallTopBarMore
+              mailContext={{
+                workspaceId: wsId,
+                actorId: accountId,
+                canReadWorkspace,
+                canManage,
+              }}
+              meetingId={meetingId}
+              meetingName={room.state.title ?? meetingName}
+              canReadNotes={canReadNotes}
+              transcriptOpen={drawer === 'notes'}
+              onToggleTranscript={() =>
+                setDrawer(drawer === 'notes' ? null : 'notes')
+              }
+            />
+          </>
+        }
+      />
+      {canManage && (
+        <CallWaitingBanner
+          waiting={state.waiting.length}
+          participants={participants.length}
+          onOpen={() => setDrawer('participants')}
         />
-        <MeetingStatus
-          solo={participants.length === 1 && !state.liveAssistant}
-          recording={state.recording.state === 'recording'}
-        />
-        <CallTopBarConnection
-          status={room.connectionStatus}
-          onRetry={retryConnection}
-        />
-        <div className="ml-auto flex items-center gap-2">
-          <RoomAssistantAudio
-            room={room}
-            audioSuppressed={sharedAudio.shared}
-            canManage={canManage}
-            meetingId={meetingId}
-            outputDeviceId={outputDeviceId}
-          />
-          {state.settings.transport !== 'presence' && (
-            <>
-              <MeetLivePanel
-                wsId={wsId}
-                accountId={accountId}
-                key="live-assistant"
-                onOpenChat={askMira}
-                onLeave={leaveNow}
-                room={room}
-                meetingId={meetingId}
-                outputDeviceId={outputDeviceId}
-                canManage={canManage}
-                audioSuppressed={sharedAudio.microphonePaused}
-              />
-              <PlaybackVolumeControl
-                participants={participants}
-                selfUserId={state.selfUserId}
-              />
-              <SharedAudioControl
-                audio={sharedAudio}
-                busy={!!busyDevices.microphone}
-                onShare={() =>
-                  void runMediaAction(sharedAudio.share, 'microphone')
-                }
-                onUseMicrophone={() =>
-                  void runMediaAction(
-                    sharedAudio.useOwnMicrophone,
-                    'microphone'
-                  )
-                }
-              />
-            </>
-          )}
-          <CallSettings
-            meetingId={meetingId}
-            room={room}
-            telemetry={telemetry.data}
-            ai={ai}
-            canManage={canManage}
-            sound={notifications.sound}
-            onSound={notifications.toggleSound}
-            outputDeviceId={outputDeviceId}
-            onOutput={setOutputDeviceId}
-          />
-          <CallClock meetingId={meetingId} state={state} />
-          <CallTopBarMore
-            mailContext={{
-              workspaceId: wsId,
-              actorId: accountId,
-              canReadWorkspace,
-              canManage,
-            }}
-            meetingId={meetingId}
-            meetingName={room.state.title ?? meetingName}
-            canReadNotes={canReadNotes}
-            transcriptOpen={drawer === 'notes'}
-            onToggleTranscript={() =>
-              setDrawer(drawer === 'notes' ? null : 'notes')
-            }
-          />
-        </div>
-      </header>
-      {canManage && state.waiting.length > 0 && (
-        <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
-          <span className="text-sm">
-            {t('waiting_room', { count: state.waiting.length })}
-          </span>
-          <MeetingActionHint
-            label={t('participants', { count: participants.length })}
-          >
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 rounded-full"
-              onClick={() => setDrawer('participants')}
-            >
-              <Users className="size-3.5" />
-              {t('participants', { count: participants.length })}
-            </Button>
-          </MeetingActionHint>
-        </output>
       )}
       <CallResourceNotice error={state.error} />
+      <FollowBanner nav={nav} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main
           className={`relative min-h-0 min-w-0 flex-1 ${showDocument ? '' : 'p-2 sm:p-3'}`}
@@ -510,17 +494,40 @@ function CallShellContent({
               }
             )}
             stage={
-              <CallStage
-                selfInGrid
-                onChat={askMira}
-                audioSuppressed={sharedAudio.shared}
-                outputDeviceId={outputDeviceId}
-                room={room}
-                layout={layout}
-                compact={showProgramming || showDocument}
-                focus={focus}
-                onFocus={focusFeed}
-              />
+              !presenceOnly ? (
+                <CallStage
+                  selfInGrid
+                  onChat={askMira}
+                  audioSuppressed={sharedAudio.shared}
+                  outputDeviceId={outputDeviceId}
+                  room={room}
+                  layout={layout}
+                  compact={showProgramming || showDocument}
+                  focus={focus}
+                  onFocus={focusFeed}
+                />
+              ) : showProgramming || showDocument ? null : (
+                <CallPresenceRoster
+                  participants={participants}
+                  selfUserId={state.selfUserId}
+                  raisedHandUserIds={state.stage.raisedHandUserIds}
+                  onProgramming={
+                    roomTools.canUse ? () => openProgramming(true) : undefined
+                  }
+                  onDocument={
+                    roomTools.canUse ? () => openDocument(true) : undefined
+                  }
+                  activities={
+                    tools.shown.length ? (
+                      <ActivitiesMenu
+                        tools={tools.shown}
+                        activeToolId={tools.activeId}
+                        onTool={tools.toggle}
+                      />
+                    ) : null
+                  }
+                />
+              )
             }
           />
           <ReactionOverlay state={state} />
@@ -573,101 +580,44 @@ function CallShellContent({
           />
         )}
       </div>
-      <ControlBar
-        presenceOnly={state.settings.transport === 'presence'}
-        onPresenceChange={
-          canManage
-            ? (enabled) =>
-                room.updateSettings({
-                  transport: enabled ? 'presence' : 'media',
-                })
-            : undefined
-        }
-        activePanel={panel}
-        tools={tools.hub}
-        toolsMenu={tools.menu}
-        liveActivity={activities.liveControl}
-        cameraOn={room.media.videoEnabled}
-        micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
-        screenOn={room.media.screenEnabled}
-        handRaised={selfHandRaised}
+      <CallControlDock
+        room={room}
+        canManage={canManage}
+        panel={panel}
+        personal={{
+          active: drawer === 'personal',
+          toggle: () => setDrawer(drawer === 'personal' ? null : 'personal'),
+        }}
+        onDrawer={setDrawer}
+        sharedAudio={sharedAudio}
         busyDevices={busyDevices}
+        runMediaAction={(action, device) => void runMediaAction(action, device)}
+        recording={recording}
+        handRaised={selfHandRaised}
         participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
-        recordingBusy={recording.isBusy}
-        recordingOn={state.recording.state === 'recording'}
         unreadChat={
           panel === 'chat'
             ? 0
             : countUnreadChatMessages(state.chat, lastReadChatId)
         }
-        waitingCount={state.waiting.length}
-        viewer={state.role === 'viewer'}
         onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
-        onToggleMic={() =>
-          sharedAudio.microphonePaused
-            ? void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
-            : void runMediaAction(room.toggleMicrophone, 'microphone')
-        }
-        onToggleCamera={() => void runMediaAction(room.toggleCamera, 'camera')}
-        onToggleScreen={() =>
-          void runMediaAction(room.toggleScreenShare, 'screen')
-        }
-        onToggleHand={() => room.raiseHand(!selfHandRaised)}
-        onTogglePanel={setDrawer}
-        onToggleRecording={
-          canManage || state.settings.allowParticipantRecording
-            ? () =>
-                void recording
-                  .toggle()
-                  .catch(() => toast.error(t('record_start_failed')))
-            : undefined
-        }
-        extraControls={
-          <>
-            <CallRoomTools
-              mode={toolMode}
-              policy={roomTools}
-              onMode={(advancedTools) => room.updateSettings({ advancedTools })}
-              activities={activities.controls}
-              actions={{
-                personal: {
-                  active: drawer === 'personal',
-                  toggle: () =>
-                    setDrawer(drawer === 'personal' ? null : 'personal'),
-                },
-                programming: {
-                  active: showProgramming,
-                  toggle: () => {
-                    setShowDocument(false);
-                    setShowProgramming(!showProgramming);
-                    if (!showProgramming && canManage)
-                      void programming
-                        .prepare()
-                        .catch(() => toast.error(programmingT('accessError')));
-                  },
-                },
-                document: {
-                  active: showDocument,
-                  toggle: () => {
-                    setShowProgramming(false);
-                    setShowDocument(!showDocument);
-                  },
-                },
-                feedback: () => setDrawer('feedback'),
-              }}
-            />
-            <CallExtras
-              layout={layout}
-              setLayout={(next) => {
-                setLayout(next);
-                setFocus(null);
-              }}
-              look={room.cameraLook}
-              setLook={room.setCameraLook}
-              react={room.react}
-            />
-          </>
-        }
+        roomTools={roomTools}
+        tools={tools}
+        activities={activities}
+        programming={{
+          active: showProgramming,
+          toggle: () => openProgramming(!showProgramming),
+        }}
+        document={{
+          active: showDocument,
+          toggle: () => openDocument(!showDocument),
+        }}
+        layout={layout}
+        setLayout={(next) => {
+          setLayout(next);
+          setFocus(null);
+        }}
+        nav={nav}
       />
       <LeaveDialog
         open={leaveDialog}

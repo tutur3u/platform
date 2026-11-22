@@ -14,6 +14,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { classNames as cn } from './class-names';
+import { WorkbenchFailureNotice } from './workbench-failure-notice';
 import type { SaveState } from './workbench-layout';
 import { WorkbenchOutput, type WorkbenchPreview } from './workbench-output';
 
@@ -66,7 +67,7 @@ export function WorkbenchMeetingOutput({
       <div
         role="tablist"
         aria-label={t('outputPanes')}
-        className="flex shrink-0 gap-0.5 overflow-x-auto border-b px-1 py-1"
+        className="flex shrink-0 gap-1 overflow-x-auto border-b p-1.5"
       >
         {tabs.map(({ value, label, icon: Icon }, index) => (
           <button
@@ -97,7 +98,7 @@ export function WorkbenchMeetingOutput({
                 .getElementById(`${id}-${target}`)
                 ?.focus();
             }}
-            className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-semibold text-muted-foreground text-xs transition-colors hover:bg-muted aria-selected:bg-accent aria-selected:text-accent-foreground motion-reduce:transition-none"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:bg-accent aria-selected:text-accent-foreground motion-reduce:transition-none"
           >
             <Icon className="size-3.5" aria-hidden="true" />
             {label}
@@ -125,7 +126,7 @@ export function WorkbenchMeetingOutput({
         className="flex min-h-0 flex-1 flex-col overflow-auto"
       >
         {tab === 'tests' ? (
-          <div className="space-y-1.5 p-2">
+          <div className="space-y-2 p-2.5">
             {testing ? (
               <p role="status" className="text-muted-foreground text-xs">
                 {t('running')}
@@ -192,16 +193,24 @@ export function WorkbenchMeetingOutput({
                 {test?.output || t(canTest ? 'testsEmpty' : 'testsUnavailable')}
               </p>
             )}
-            {output.failed && (
-              <p role="alert" className="text-destructive text-xs">
-                {t('failed')}
-              </p>
+            {output.failure && (
+              <WorkbenchFailureNotice
+                failure={output.failure}
+                onRetry={output.onRetry}
+                retrying={output.retrying}
+              />
             )}
           </div>
         ) : tab === 'preview' && !preview ? (
-          <p className="p-2 text-muted-foreground text-xs">
-            {t('webPreviewUnavailable')}
-          </p>
+          <div className="m-auto flex max-w-64 flex-col items-center gap-2 p-4 text-center">
+            <Globe
+              aria-hidden="true"
+              className="size-5 text-muted-foreground"
+            />
+            <p className="text-muted-foreground text-xs">
+              {t('webPreviewUnavailable')}
+            </p>
+          </div>
         ) : (
           <WorkbenchOutput
             {...output}

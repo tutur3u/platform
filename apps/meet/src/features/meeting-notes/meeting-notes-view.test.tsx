@@ -218,6 +218,18 @@ it('renders loading, error and empty states without transcript content', () => {
   expect(
     screen.getByText('No notes yet. Notes appear after transcription stops.')
   ).toBeTruthy();
-  openTab('Transcript');
-  expect(screen.getByText('No transcript yet.')).toBeTruthy();
+  expect(screen.queryByRole('tab')).toBeNull();
+});
+
+it('shows tabs only when both notes and a transcript exist', () => {
+  renderView({});
+  expect(screen.getAllByRole('tab')).toHaveLength(2);
+  cleanup();
+  renderView({ data: { ...state, chunks: [] } });
+  expect(screen.queryByRole('tab')).toBeNull();
+  expect(screen.getByText('The team agreed on the launch plan.')).toBeTruthy();
+  cleanup();
+  renderView({ data: { ...state, sessions: [] } });
+  expect(screen.queryByRole('tab')).toBeNull();
+  expect(screen.queryByText('No transcript yet.')).toBeNull();
 });

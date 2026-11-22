@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Settings2 } from '@tuturuuu/icons';
 import { getMeetAiState } from '@tuturuuu/internal-api';
+import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
 import { Button, type ButtonProps } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -16,14 +17,24 @@ import { AiCosts } from './ai-costs';
 import { CloudflareCosts } from './cloudflare-costs';
 import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingHistory } from './recording-history';
+
+/**
+ * Settings for a closed room. Hosts choose here who can read the notes, so
+ * the summary card keeps a single row of quiet actions.
+ */
 export function EndedMeetingSettings({
   wsId,
   meetingId,
   canManage,
+  shareNotesAfterMeeting,
+  onShareNotesChange,
   variant = 'outline',
   size,
 }: {
   canManage: boolean;
+  /** Present on the ended page: hosts get the after-meeting notes switch. */
+  shareNotesAfterMeeting?: boolean;
+  onShareNotesChange?: (enabled: boolean) => void;
   variant?: ButtonProps['variant'];
   size?: ButtonProps['size'];
   wsId: string;
@@ -49,6 +60,14 @@ export function EndedMeetingSettings({
         <DialogHeader>
           <DialogTitle>{t('settings_title')}</DialogTitle>
         </DialogHeader>
+        {canManage && onShareNotesChange && (
+          <NotesSharingControl
+            wsId={wsId}
+            meetingId={meetingId}
+            initialEnabled={shareNotesAfterMeeting}
+            onChange={onShareNotesChange}
+          />
+        )}
         <RecordingHistory meetingId={meetingId} />
         {canManage && <MeetingPublicSettings meetingId={meetingId} />}
         {canManage && <CloudflareCosts meetingId={meetingId} />}

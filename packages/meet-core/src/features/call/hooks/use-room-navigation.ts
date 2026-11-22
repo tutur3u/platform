@@ -1,0 +1,312 @@
+'use client';
+import type { MeetRoomView } from '@tuturuuu/realtime/meet';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type CallSurfaceState,
+  canOpenRoomView,
+  currentRoomView,
+  decideNavigation,
+  followUpdateDelay,
+  type NavigationTargets,
+  sameRoomView,
+  surfaceFromView,
+  targetCount,
+  unseenNavigation,
+} from '../components/room-navigation-policy';
+import type { MeetRoomController } from '../lib/room-controller';
+import { findMeetTool } from '../tools/registry';
+
+export type { NavigationTargets };
+
+export interface NavigationPerson {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+}
+
+const viewKey = (view: MeetRoomView) =>
+  view.surface === 'tool' ? `tool:${view.toolId}` : view.surface;
+// One toast per sender: a repeated invitation replaces the earlier one.
+const summonToast = (userId: string) => `meet-summon:${userId}`;
+const followToast = (userId: string) => `meet-follow:${userId}`;
+
+/** Display names for room surfaces, shared by the menus, banner and toasts. */
+export function useSurfaceLabel() {
+  const t = useTranslations('meet.call.surfaces');
+  const all = useTranslations();
+  return useCallback(
+    (view: MeetRoomView) => {
+      if (view.surface !== 'tool') return t(view.surface);
+      const label = findMeetTool(view.toolId)?.label ?? view.toolId;
+      return all.has(label) ? all(label) : label;
+    },
+    [t, all]
+  );
+}
+
+/**
+ * Follow and Summon for one person in the call. Outgoing requests go through
+ * the room; incoming ones are handled once each, by id. Hosts and co-hosts
+ * move people directly (the room marks those events forced); everyone else
+ * gets an invitation they can accept or dismiss.
+ */
+export function useRoomNavigation({
+  room,
+  surface,
+  apply,
+  access,
+}: {
+  room: MeetRoomController;
+  surface: CallSurfaceState;
+  apply: (next: CallSurfaceState) => void;
+  access: { collaboration: boolean; tools: boolean };
+}) {
+  const t = useTranslations('meet.call');
+  const label = useSurfaceLabel();
+  const { state } = room;
+  const view = currentRoomView(surface);
+  const key = viewKey(view);
+  const others = useMemo<NavigationPerson[]>(
+    () =>
+      Object.values(state.participants)
+        .filter((person) => person.userId !== state.selfUserId)
+        .map((person) => ({
+          userId: person.userId,
+          displayName: person.displayName,
+          avatarUrl: person.avatarUrl,
+        })),
+    [state.participants, state.selfUserId]
+  );
+  const otherIds = useMemo(() => others.map((p) => p.userId), [others]);
+  const nameOf = useCallback(
+    (userId: string) =>
+      state.participants[userId]?.displayName ?? t('navigation.someone'),
+    [state.participants, t]
+  );
+
+  const canManage = !!state.canManageParticipants || state.role === 'host';
+  const [leading, setLeading] = useState<NavigationTargets | null>(null);
+  // The room paces starts (hosts 1 s, everyone else 5 s); wait it out here.
+  const [paused, setPaused] = useState(false);
+  const pauseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
+  useEffect(() => () => clearTimeout(pauseTimer.current), []);
+  const pace = () => {
+    setPaused(true);
+    clearTimeout(pauseTimer.current);
+    pauseTimer.current = setTimeout(
+      () => setPaused(false),
+      canManage ? 1000 : 5000
+    );
+  };
+  const [following, setFollowing] = useState<string | null>(null);
+  const followingRef = useRef(following);
+  followingRef.current = following;
+  const appliedKey = useRef<string | null>(null);
+  const sentKey = useRef<string | null>(null);
+  const seen = useRef(new Set<string>());
+  const surfaceRef = useRef(surface);
+  surfaceRef.current = surface;
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  const { collaboration, tools } = access;
+  const canOpen = useCallback(
+    (next: MeetRoomView) => canOpenRoomView(next, { collaboration, tools }),
+    [collaboration, tools]
+  );
+
+  const go = useCallback((next: MeetRoomView) => {
+    appliedKey.current = viewKey(next);
+    applyRef.current(surfaceFromView(next, surfaceRef.current.drawer));
+  }, []);
+
+  const startFollowing = useCallback(
+    (leaderId: string, next?: MeetRoomView) => {
+      setFollowing(leaderId);
+      followingRef.current = leaderId;
+      if (next && canOpen(next)) go(next);
+      else appliedKey.current = viewKey(currentRoomView(surfaceRef.current));
+    },
+    [canOpen, go]
+  );
+
+  useEffect(() => {
+    for (const event of unseenNavigation(state.navigation, seen.current)) {
+      const decision = decideNavigation(event, {
+        selfUserId: state.selfUserId,
+        following: followingRef.current,
+        canOpen,
+      });
+      const name = nameOf(event.from);
+      switch (decision.kind) {
+        case 'navigate': {
+          const previous = surfaceRef.current;
+          setFollowing(null);
+          followingRef.current = null;
+          go(decision.view);
+          toast(t('summon.brought', { name, surface: label(decision.view) }), {
+            action: {
+              label: t('summon.go_back'),
+              onClick: () => applyRef.current(previous),
+            },
+          });
+          break;
+        }
+        case 'invite':
+          toast(t('summon.invite', { name, surface: label(decision.view) }), {
+            id: summonToast(event.from),
+            duration: 15_000,
+            action: {
+              label: t('summon.join'),
+              onClick: () => go(decision.view),
+            },
+            cancel: { label: t('navigation.not_now'), onClick: () => {} },
+          });
+          break;
+        case 'blocked':
+          toast(t('summon.blocked', { name, surface: label(decision.view) }));
+          break;
+        case 'follow-start':
+          startFollowing(decision.leaderId, decision.view);
+          toast(t('follow.started', { name }));
+          break;
+        case 'follow-invite':
+          toast(t('follow.ask', { name }), {
+            id: followToast(decision.leaderId),
+            duration: 15_000,
+            action: {
+              label: t('follow.accept'),
+              onClick: () => startFollowing(decision.leaderId, decision.view),
+            },
+            cancel: { label: t('navigation.not_now'), onClick: () => {} },
+          });
+          break;
+        case 'follow-apply':
+          go(decision.view);
+          break;
+        case 'follow-end':
+          setFollowing(null);
+          followingRef.current = null;
+          toast(t('follow.ended_by_leader', { name }));
+          break;
+        case 'follow-withdrawn':
+          toast.dismiss(followToast(decision.leaderId));
+          break;
+      }
+    }
+  }, [
+    state.navigation,
+    state.selfUserId,
+    canOpen,
+    go,
+    label,
+    nameOf,
+    startFollowing,
+    t,
+  ]);
+
+  // The room refuses bursts and empty target sets; say so quietly once.
+  const lastError = useRef<string | null>(null);
+  useEffect(() => {
+    const error = state.error;
+    if (error === lastError.current) return;
+    lastError.current = error;
+    if (error === 'navigation_rate_limited')
+      toast(t('navigation.rate_limited'));
+    else if (error === 'navigation_no_targets')
+      toast(t('navigation.no_targets'));
+  }, [state.error, t]);
+
+  // Moving on my own, or the leader leaving the call, ends following.
+  useEffect(() => {
+    if (!following) return;
+    if (!state.participants[following]) {
+      setFollowing(null);
+      return;
+    }
+    if (appliedKey.current !== null && appliedKey.current !== key) {
+      setFollowing(null);
+      toast(t('follow.ended_manual', { name: nameOf(following) }));
+    }
+  }, [following, key, nameOf, state.participants, t]);
+
+  // Losing permission mid-session ends leading; the room would refuse updates.
+  const allowed = canManage || state.settings.participantNavigation !== false;
+  useEffect(() => {
+    if (!allowed) setLeading(null);
+  }, [allowed]);
+
+  // A leader's moves reach the people following them. Updates are spaced, and
+  // the last surface always goes out, so nobody is left one switch behind.
+  const lastSentAt = useRef(0);
+  const updateTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
+  const latest = useRef({ key, view });
+  latest.current = { key, view };
+  const request = room.requestNavigation;
+  useEffect(() => () => clearTimeout(updateTimer.current), []);
+  useEffect(() => {
+    clearTimeout(updateTimer.current);
+    if (!leading) {
+      sentKey.current = null;
+      return;
+    }
+    if (sentKey.current === null) sentKey.current = key;
+    if (sentKey.current === key) return;
+    const send = () => {
+      const current = latest.current;
+      if (sentKey.current === current.key) return;
+      sentKey.current = current.key;
+      lastSentAt.current = Date.now();
+      request({ mode: 'follow.update', targets: leading, view: current.view });
+    };
+    const wait = followUpdateDelay(lastSentAt.current, Date.now());
+    if (wait) updateTimer.current = setTimeout(send, wait);
+    else send();
+  }, [key, leading, request]);
+
+  const reached = (targets: NavigationTargets) =>
+    targetCount(targets, otherIds);
+  return {
+    view,
+    surfaceName: label(view),
+    onStage: view.surface === 'stage',
+    others,
+    canManage,
+    /** Off when the room limits Follow and Summon to hosts and co-hosts. */
+    allowed,
+    paused,
+    leading: leading ? { targets: leading, count: reached(leading) } : null,
+    startLeading: (targets: NavigationTargets) => {
+      if (!reached(targets) || paused) return;
+      setLeading(targets);
+      sentKey.current = key;
+      lastSentAt.current = Date.now();
+      room.requestNavigation({ mode: 'follow', targets, view });
+      pace();
+    },
+    stopLeading: () => {
+      if (leading)
+        room.requestNavigation({ mode: 'follow.stop', targets: leading });
+      setLeading(null);
+    },
+    summon: (targets: NavigationTargets) => {
+      const count = reached(targets);
+      if (!count || paused) return;
+      room.requestNavigation({ mode: 'summon', targets, view });
+      pace();
+      toast.success(t(canManage ? 'summon.moved' : 'summon.sent', { count }));
+    },
+    following: following
+      ? { leaderId: following, name: nameOf(following) }
+      : null,
+    stopFollowing: () => setFollowing(null),
+    sameView: (other: MeetRoomView) => sameRoomView(view, other),
+  };
+}
+
+export type RoomNavigation = ReturnType<typeof useRoomNavigation>;

@@ -14,7 +14,7 @@ import {
 } from '@tuturuuu/realtime';
 import type { PlaygroundExecutionResult } from '@tuturuuu/types/primitives/playgrounds';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
 import {
@@ -22,8 +22,10 @@ import {
   MiraEditorBar,
   type WorkbenchMira,
 } from './mira-code-presence';
+import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
 import { WorkbenchEditorStage } from './workbench-editor-stage';
+import { WorkbenchStepError, workbenchFailure } from './workbench-errors';
 import { WorkbenchFiles, WorkbenchFileTree } from './workbench-files';
 import {
   isRunActive,
@@ -130,12 +132,28 @@ export function ProgrammingWorkbench({
       });
     }
   }, [activePath, collaborationClient, collaborationOpen]);
+  // Wall time for runs this browser started; the run record has no timestamps.
+  const timing = useRef<{
+    runId: string;
+    startedAt: number;
+    finishedAt?: number;
+  } | null>(null);
   const result = useQuery({
     queryKey: ['playground-run', roomKey, runId],
-    queryFn: () =>
-      execution
-        ? execution.read(runId!)
-        : getHostedPlaygroundRun(projectId, runId!),
+    queryFn: async () => {
+      const data = execution
+        ? await execution.read(runId!)
+        : await getHostedPlaygroundRun(projectId, runId!);
+      const started = timing.current;
+      if (
+        started &&
+        started.runId === data.runId &&
+        !started.finishedAt &&
+        !isRunActive(data.status)
+      )
+        started.finishedAt = Date.now();
+      return data;
+    },
     enabled: !!runId && !problem,
     refetchInterval: (query) =>
       isRunActive(query.state.data?.status ?? 'queued') ? 300 : false,
@@ -147,15 +165,23 @@ export function ProgrammingWorkbench({
   const save = useMutation({ mutationFn: checkpointRoom });
   const run = useMutation({
     mutationFn: async (operation: 'run' | 'stop') => {
-      if (operation === 'run' && owner) await checkpointRoom();
+      if (operation === 'run' && owner)
+        await checkpointRoom().catch((error: unknown) => {
+          throw new WorkbenchStepError('save', error);
+        });
       const payload = { operation, requestId: crypto.randomUUID(), stdin };
+      const startedAt = Date.now();
       const queued = execution
         ? await execution.run(payload)
         : await runHostedPlayground(projectId, payload);
+      if (operation === 'run')
+        timing.current = { runId: queued.runId, startedAt };
       setRunId(queued.runId);
       setOutputTab('console');
       setOutputOpen(true);
     },
+    // A run saves the room first, so an older save failure no longer applies.
+    onSuccess: () => save.reset(),
   });
   const test = useMutation({
     mutationFn: async (): Promise<WorkbenchTestRun | undefined> => {
@@ -210,10 +236,31 @@ export function ProgrammingWorkbench({
   const selectedSave = save.isError
     ? 'failed'
     : saveState(room.saveError, room.savedRevision);
+  const runFailure = workbenchFailure({
+    save: save.error,
+    run: run.error,
+    result: result.error,
+    test: test.error,
+  });
+  const retry = () => {
+    if (!runFailure) return;
+    if (runFailure.step === 'save' && !run.error) save.mutate();
+    else if (runFailure.step === 'test') test.mutate();
+    else if (runFailure.step === 'result') void result.refetch();
+    else run.mutate(run.variables ?? 'run');
+  };
+  const runTiming = timing.current;
   const output = {
     view: outputView(!!problem, testOutput, result.data),
     save: selectedSave,
-    failed: run.isError || save.isError || test.isError || result.isError,
+    failure: runFailure,
+    onRetry: retry,
+    retrying:
+      save.isPending || run.isPending || test.isPending || result.isFetching,
+    durationMs:
+      runTiming?.runId === runId && runTiming.finishedAt
+        ? runTiming.finishedAt - runTiming.startedAt
+        : null,
     run: problem
       ? undefined
       : {
@@ -271,14 +318,29 @@ export function ProgrammingWorkbench({
       : []),
     ...actions,
   ];
+  const runFromShortcut = () => {
+    if (!editable) return;
+    if (problem) {
+      if ((onTest || meeting?.runTests) && !test.isPending) test.mutate();
+    } else if (canExecute && !busy && !run.isPending && !save.isPending)
+      run.mutate('run');
+  };
+  const onShortcut = (event: KeyboardEvent<HTMLElement>) => {
+    // Monaco handles the shortcut itself and marks the event as handled.
+    if (event.defaultPrevented || !isRunShortcut(event.nativeEvent)) return;
+    event.preventDefault();
+    runFromShortcut();
+  };
   return (
     <section
+      onKeyDown={onShortcut}
       className={cn(
         '@container flex h-full min-h-0 min-w-0 flex-col overflow-hidden border bg-background',
         meeting ? 'rounded-[var(--radius-2xl)]' : 'rounded-xl'
       )}
     >
       <WorkbenchToolbar
+        problem={!!problem}
         title={problem?.title ?? project.name}
         language={project.language}
         status={room.status}
@@ -401,6 +463,7 @@ export function ProgrammingWorkbench({
             actorId={room.ticket.data?.actorId}
             mira={filePresence}
             jump={jump?.path === active?.path ? jump : undefined}
+            onRunShortcut={runFromShortcut}
             onSelection={
               meeting && active
                 ? (selection) => setCursor({ path: active.path, selection })

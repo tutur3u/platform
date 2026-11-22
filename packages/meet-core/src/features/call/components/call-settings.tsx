@@ -3,6 +3,7 @@ import {
   Activity,
   Bell,
   Globe,
+  LayoutGrid,
   Lock,
   MessageSquare,
   Mic,
@@ -36,6 +37,8 @@ import { useTranslations } from 'next-intl';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
 import { AiCosts } from './ai-costs';
+import { CallActivitySettings } from './call-activity-settings';
+import type { RoomToolsMode } from './call-room-tools';
 import { ChatSettings } from './chat-settings';
 import { ClassroomSettings } from './classroom-settings';
 import { CloudflareCosts } from './cloudflare-costs';
@@ -57,7 +60,15 @@ export function CallSettings({
   onSound,
   outputDeviceId,
   onOutput,
+  activities,
 }: {
+  /** Present for people who decide who may open room activities. */
+  activities?: {
+    mode?: RoomToolsMode;
+    onMode: (mode: RoomToolsMode) => void;
+    participantNavigation?: boolean;
+    onParticipantNavigation: (enabled: boolean) => void;
+  };
   room: MeetRoomController;
   meetingId: string;
   telemetry?: MediaDiagnostics;
@@ -117,6 +128,16 @@ export function CallSettings({
                   labels('lock_screens'),
                   labels('skip_lobby'),
                 ],
+              },
+            ]
+          : []),
+        ...(activities
+          ? [
+              {
+                name: 'activities',
+                label: t('activities.settings'),
+                icon: LayoutGrid,
+                keywords: [t('room_tools.visibility')],
               },
             ]
           : []),
@@ -213,6 +234,16 @@ export function CallSettings({
             </SettingsSection>
             <ClassroomSettings room={room} />
           </>
+        )}
+        {activeTab === 'activities' && activities && (
+          <SettingsSection>
+            <CallActivitySettings
+              mode={activities.mode}
+              onMode={activities.onMode}
+              participantNavigation={activities.participantNavigation}
+              onParticipantNavigation={activities.onParticipantNavigation}
+            />
+          </SettingsSection>
         )}
         {activeTab === 'connection' && (
           <SettingsSection surface="plain" className="space-y-4">

@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { showMeetingAiFailure } from './failure-toast';
-import { MeetingFollowups } from './meeting-followups';
+import { MeetingSessionNotes } from './meeting-session-notes';
 import { MeetingTranscript } from './meeting-transcript';
 import type { useMeetingAi } from './use-meeting-ai';
 
@@ -123,64 +117,11 @@ export function MeetingAiPanel({
                   {t('notes_empty')}
                 </p>
               )}
-              <Accordion
-                key={data.sessions
-                  .filter((session) => session.notes)
-                  .map((session) => session.id)
-                  .join(':')}
-                type="multiple"
-                defaultValue={data.sessions
-                  .filter((session) => session.notes)
-                  .slice(-1)
-                  .map((session) => session.id)}
-              >
-                {data.sessions.map((session) =>
-                  session.notes ? (
-                    <AccordionItem key={session.id} value={session.id}>
-                      <AccordionTrigger>
-                        {t('session_notes', {
-                          number: data.sessions.indexOf(session) + 1,
-                        })}
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-2 text-sm">
-                        {session.notes.incomplete ? (
-                          <p className="text-destructive">{t('partial')}</p>
-                        ) : null}
-                        <p className="whitespace-pre-wrap">
-                          {session.notes.summary}
-                        </p>
-                        <h4 className="font-medium">{t('decisions')}</h4>
-                        <ul className="list-inside list-disc">
-                          {session.notes.decisions.map((value, index) => (
-                            <li key={`${index}-${value}`}>{value}</li>
-                          ))}
-                        </ul>
-                        <h4 className="font-medium">{t('actions')}</h4>
-                        <ul className="list-inside list-disc">
-                          {session.notes.actionItems.map((item, index) => (
-                            <li key={`${index}-${item.task}`}>
-                              {item.task}
-                              {item.owner ? ` — ${item.owner}` : ''}
-                              {item.dueDate ? ` (${item.dueDate})` : ''}
-                            </li>
-                          ))}
-                        </ul>
-                        <MeetingFollowups
-                          session={session}
-                          meetingId={ai.meetingId}
-                          wsId={ai.wsId}
-                        />
-                        <h4 className="font-medium">{t('questions')}</h4>
-                        <ul className="list-inside list-disc">
-                          {session.notes.openQuestions.map((value, index) => (
-                            <li key={`${index}-${value}`}>{value}</li>
-                          ))}
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ) : null
-                )}
-              </Accordion>
+              <MeetingSessionNotes
+                sessions={data.sessions}
+                wsId={ai.wsId}
+                meetingId={ai.meetingId}
+              />
             </TabsContent>
           </Tabs>
         </>

@@ -4,6 +4,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { type CallLayout, useCompactStage } from './call-stage';
@@ -37,12 +38,11 @@ export function CollaborationStageLayout({
       {split && (
         <ResizableHandle
           aria-label={t('resize_collaboration')}
-          className={
-            mobile
-              ? 'h-2 w-full cursor-row-resize after:inset-auto after:h-3 after:w-full after:translate-x-0 [&>div]:rotate-90'
-              : 'w-2'
-          }
-          withHandle
+          className={cn(
+            'data-[separator=active]:bg-primary data-[separator=focus]:bg-primary/60',
+            mobile &&
+              'h-px w-full cursor-row-resize after:inset-x-0 after:inset-y-auto after:top-1/2 after:left-0 after:h-3 after:w-full after:translate-x-0 after:-translate-y-1/2'
+          )}
         />
       )}
       {stage && (

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
@@ -25,6 +25,7 @@ vi.mock('./programming-resource-picker', () => ({
 afterEach(() => {
   cleanup();
   workbench.calls.length = 0;
+  window.sessionStorage.clear();
 });
 const t = messages.programmingPlayground;
 const selection = {
@@ -32,12 +33,19 @@ const selection = {
   id: 'project',
   language: 'python',
 } as const;
-function api(active: boolean): typeof meetingProgrammingApi {
+function api(
+  active: boolean,
+  current: {
+    kind: 'playground' | 'problem';
+    id: string;
+    language: string;
+  } = selection
+): typeof meetingProgrammingApi {
   const read = vi.fn(async () =>
     active
       ? {
-          selection,
-          project: { id: 'project', name: 'Demo', language: 'python' },
+          selection: current,
+          project: { id: current.id, name: 'Demo', language: current.language },
           endpoint: 'wss://realtime.example.invalid',
           token: 'synthetic',
           role: 'owner',
@@ -47,8 +55,8 @@ function api(active: boolean): typeof meetingProgrammingApi {
   );
   return {
     read: read as never,
-    select: vi.fn() as never,
-    create: vi.fn() as never,
+    select: vi.fn(async () => ({ ok: true })) as never,
+    create: vi.fn(async () => ({ id: 'created' })) as never,
     run: vi.fn() as never,
     readRun: vi.fn() as never,
     test: vi.fn() as never,
@@ -56,7 +64,13 @@ function api(active: boolean): typeof meetingProgrammingApi {
     checkpoint: vi.fn() as never,
   };
 }
-function mount(props: { canManage: boolean; active: boolean }) {
+function mount(props: {
+  canManage: boolean;
+  active: boolean;
+  client?: typeof meetingProgrammingApi;
+  current?: { kind: 'playground' | 'problem'; id: string; language: string };
+}) {
+  const current = props.current ?? selection;
   render(
     <QueryClientProvider
       client={
@@ -69,24 +83,51 @@ function mount(props: { canManage: boolean; active: boolean }) {
           wsId="ws"
           accountId="host"
           canManage={props.canManage}
-          selection={props.active ? selection : null}
-          api={api(props.active)}
+          selection={props.active ? (current as typeof selection) : null}
+          api={props.client ?? api(props.active, current)}
         />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
 }
 
-it('offers hosts one compact setup row without field labels before a resource opens', async () => {
+it('opens the Co-Programming dialog for hosts before a resource opens', async () => {
   mount({ canManage: true, active: false });
-  expect(await screen.findByText(t.setupTitle)).toBeTruthy();
-  expect(screen.getByRole('combobox', { name: t.resource })).toBeTruthy();
+  const dialog = await screen.findByRole('dialog', { name: t.openTitle });
+  expect(dialog).toBeTruthy();
+  expect(
+    screen.getByRole('radio', { name: new RegExp(t.playgroundChoice) })
+  ).toBeTruthy();
+  expect(
+    screen.getByRole('radio', { name: new RegExp(t.problem) })
+  ).toBeTruthy();
   expect(screen.getByRole('combobox', { name: t.language })).toBeTruthy();
+  expect(screen.getByText(t.playgroundHelp)).toBeTruthy();
   expect(screen.getByRole('button', { name: t.open })).toBeTruthy();
-  expect(screen.getByRole('button', { name: t.create })).toBeTruthy();
+  expect(screen.getByRole('button', { name: t.cancel })).toBeTruthy();
   expect(screen.queryByRole('button', { name: t.close })).toBeNull();
-  expect(screen.queryByText(t.chooseResource)).toBeNull();
   expect(screen.queryByTestId('workbench')).toBeNull();
+});
+
+it('creates a new playground from the template when Open has no saved project', async () => {
+  const client = api(false);
+  mount({ canManage: true, active: false, client });
+  const open = await screen.findByRole('button', { name: t.open });
+  act(() => open.click());
+  await waitFor(() =>
+    expect(client.create).toHaveBeenCalledWith('meeting', {
+      name: 'Python playground',
+      empty: false,
+      language: 'python',
+    })
+  );
+  await waitFor(() =>
+    expect(client.select).toHaveBeenCalledWith('meeting', {
+      kind: 'playground',
+      id: 'created',
+      language: 'python',
+    })
+  );
 });
 
 it('tells participants to wait for the host instead of showing controls', async () => {
@@ -98,10 +139,10 @@ it('tells participants to wait for the host instead of showing controls', async 
   expect(screen.queryByRole('button')).toBeNull();
 });
 
-it('hides the setup row once a resource is open and moves host actions into the workbench menu', async () => {
+it('keeps the dialog closed once a resource is open and moves host actions into the workbench menu', async () => {
   mount({ canManage: true, active: true });
   await screen.findByTestId('workbench');
-  expect(screen.queryByText(t.setupTitle)).toBeNull();
+  expect(screen.queryByRole('dialog')).toBeNull();
   expect(screen.queryByRole('combobox')).toBeNull();
   await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
   const props = workbench.calls.at(-1)!;
@@ -119,11 +160,85 @@ it('hides the setup row once a resource is open and moves host actions into the 
   expect(actions[1]?.destructive).toBe(true);
 });
 
-it('gives participants no host actions', async () => {
+it('gives participants no host actions and no language switch', async () => {
   mount({ canManage: false, active: true });
   await screen.findByTestId('workbench');
   await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
   expect(workbench.calls.at(-1)!.actions).toEqual([]);
+  expect(
+    (workbench.calls.at(-1)!.meeting as { onRuntime?: unknown }).onRuntime
+  ).toBeUndefined();
+});
+
+it('switches a playground language by opening a new templated playground', async () => {
+  const client = api(true);
+  mount({ canManage: true, active: true, client });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  const meeting = workbench.calls.at(-1)!.meeting as {
+    onRuntime: (language: string) => void;
+  };
+  act(() => meeting.onRuntime('typescript'));
+  await waitFor(() =>
+    expect(client.create).toHaveBeenCalledWith('meeting', {
+      name: 'TypeScript playground',
+      empty: false,
+      language: 'typescript',
+    })
+  );
+  expect(client.select).toHaveBeenCalledWith('meeting', {
+    kind: 'playground',
+    id: 'created',
+    language: 'typescript',
+  });
+});
+
+it('reopens the playground this room already used for a language', async () => {
+  window.sessionStorage.setItem(
+    'meet.programming.playgrounds:meeting',
+    JSON.stringify({ typescript: 'earlier' })
+  );
+  const client = api(true);
+  mount({ canManage: true, active: true, client });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  const meeting = workbench.calls.at(-1)!.meeting as {
+    onRuntime: (language: string) => void;
+  };
+  act(() => meeting.onRuntime('typescript'));
+  await waitFor(() =>
+    expect(client.select).toHaveBeenCalledWith('meeting', {
+      kind: 'playground',
+      id: 'earlier',
+      language: 'typescript',
+    })
+  );
+  expect(client.create).not.toHaveBeenCalled();
+  expect(
+    JSON.parse(
+      window.sessionStorage.getItem('meet.programming.playgrounds:meeting')!
+    )
+  ).toEqual({ typescript: 'earlier', python: 'project' });
+});
+
+it('switches a problem language in place without creating a playground', async () => {
+  const problem = {
+    kind: 'problem',
+    id: 'problem',
+    language: 'python',
+  } as const;
+  const client = api(true, problem);
+  mount({ canManage: true, active: true, client, current: problem });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  const meeting = workbench.calls.at(-1)!.meeting as {
+    onRuntime: (language: string) => void;
+  };
+  act(() => meeting.onRuntime('javascript'));
+  await waitFor(() =>
+    expect(client.select).toHaveBeenCalledWith('meeting', {
+      ...problem,
+      language: 'javascript',
+    })
+  );
+  expect(client.create).not.toHaveBeenCalled();
 });
 
 it('wires matching room presence and host actions to the workbench', async () => {

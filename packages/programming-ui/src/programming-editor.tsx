@@ -4,7 +4,8 @@ import type { CollaborationPresence } from '@tuturuuu/realtime';
 import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
-
+import { useEditorTheme } from './editor-colors';
+import { EDITOR_THEME_NAME } from './editor-theme';
 import { useMiraCodeLabels } from './mira-code-presence';
 
 const miraEditorStyles = `
@@ -45,19 +46,18 @@ export function ProgrammingEditor({
   value,
   onChange,
   readOnly,
-  dark = false,
   presence,
   mira,
   jump,
   onCursor,
   onSelection,
+  onRunShortcut,
 }: {
   path: string;
   language: string;
   value: string;
   onChange: (value: string) => void;
   readOnly: boolean;
-  dark?: boolean;
   presence: CollaborationPresence[];
   mira?: ProgrammingMiraPresence;
   jump?: { line: number; request: number };
@@ -65,7 +65,13 @@ export function ProgrammingEditor({
   onSelection: (
     selection: NonNullable<CollaborationPresence['selection']>
   ) => void;
+  /** Cmd/Ctrl+Enter inside the editor; Monaco consumes the key before the page sees it. */
+  onRunShortcut?: () => void;
 }) {
+  const host = useRef<HTMLDivElement>(null);
+  const theme = useEditorTheme(host);
+  const runShortcut = useRef(onRunShortcut);
+  runShortcut.current = onRunShortcut;
   const [editor, setEditor] =
     useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const labels = useMiraCodeLabels(mira);
@@ -78,6 +84,9 @@ export function ProgrammingEditor({
   selectionCallback.current = onSelection;
   const onMount: OnMount = (instance) => {
     setEditor(instance);
+    instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
+      runShortcut.current?.()
+    );
     decorations.current = instance.createDecorationsCollection();
     instance.onDidChangeCursorSelection(({ selection }) =>
       selectionCallback.current({
@@ -186,6 +195,11 @@ export function ProgrammingEditor({
   }, [editor, path, value, mira, labels.attribution, labels.caret]);
 
   useEffect(() => {
+    monaco.editor.defineTheme(EDITOR_THEME_NAME, theme);
+    monaco.editor.setTheme(EDITOR_THEME_NAME);
+  }, [theme]);
+
+  useEffect(() => {
     if (!editor || !jump) return;
     const line = Math.min(jump.line, editor.getModel()?.getLineCount() ?? 1);
     editor.revealLineInCenter(line);
@@ -193,7 +207,7 @@ export function ProgrammingEditor({
     editor.focus();
   }, [editor, path, jump]);
   return (
-    <>
+    <div ref={host} className="h-full min-h-0">
       <style>{miraEditorStyles}</style>
       <Editor
         height="100%"
@@ -202,7 +216,10 @@ export function ProgrammingEditor({
         value={value}
         onChange={(next) => onChange(next ?? '')}
         onMount={onMount}
-        theme={dark ? 'vs-dark' : 'light'}
+        beforeMount={(instance) =>
+          instance.editor.defineTheme(EDITOR_THEME_NAME, theme)
+        }
+        theme={EDITOR_THEME_NAME}
         options={{
           readOnly,
           automaticLayout: true,
@@ -213,8 +230,10 @@ export function ProgrammingEditor({
           scrollBeyondLastLine: false,
           padding: { top: 12, bottom: 12 },
           wordWrap: 'on',
+          renderLineHighlight: 'line',
+          scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
         }}
       />
-    </>
+    </div>
   );
 }

@@ -38,12 +38,31 @@ export function MeetingNotesView({
   const [query, setQuery] = useState('');
   const [focus, setFocus] = useState<TranscriptFocus>(null);
   const lines = useMemo(() => toTranscriptLines(data?.chunks ?? []), [data]);
-
   const jump = (lineId: string) => {
     setQuery('');
     setFocus((current) => ({ lineId, nonce: (current?.nonce ?? 0) + 1 }));
     setTab('transcript');
   };
+  const hasNotes = !!data?.sessions.some((session) => session.notes);
+  const hasTranscript = lines.length > 0;
+  const notesTab = data && (
+    <MeetingNotesTab
+      wsId={wsId}
+      meetingId={meetingId}
+      sessions={data.sessions}
+      lines={lines}
+      onJump={jump}
+    />
+  );
+  const transcriptTab = (
+    <MeetingTranscriptTab
+      title={title}
+      lines={lines}
+      query={query}
+      onQueryChange={setQuery}
+      focus={focus}
+    />
+  );
 
   return (
     <section
@@ -68,6 +87,11 @@ export function MeetingNotesView({
         <p role="alert" className="text-destructive text-sm">
           {t('unavailable')}
         </p>
+      ) : data && hasTranscript && !hasNotes ? (
+        transcriptTab
+      ) : data && !hasTranscript ? (
+        // Tabs appear only when there are both notes and a transcript to switch between.
+        notesTab
       ) : data ? (
         <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
           <TabsList className="w-full sm:w-auto">
@@ -79,22 +103,10 @@ export function MeetingNotesView({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="notes" className="pt-4">
-            <MeetingNotesTab
-              wsId={wsId}
-              meetingId={meetingId}
-              sessions={data.sessions}
-              lines={lines}
-              onJump={jump}
-            />
+            {notesTab}
           </TabsContent>
           <TabsContent value="transcript" className="pt-4">
-            <MeetingTranscriptTab
-              title={title}
-              lines={lines}
-              query={query}
-              onQueryChange={setQuery}
-              focus={focus}
-            />
+            {transcriptTab}
           </TabsContent>
         </Tabs>
       ) : null}

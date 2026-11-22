@@ -2,7 +2,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { CallState } from '../lib/call-state';
-import { REACTION_GLYPHS } from './call-extras';
+import { ReactionIcon } from './call-reactions';
 export function ReactionOverlay({ state }: { state: CallState }) {
   const t = useTranslations('meet.call');
   const [now, setNow] = useState(0);
@@ -25,14 +25,13 @@ export function ReactionOverlay({ state }: { state: CallState }) {
       {active.map((entry) => (
         <div
           key={`${entry.userId}:${entry.createdAt}`}
-          className="motion-safe:fade-in motion-safe:slide-in-from-bottom-2 flex items-center gap-3 rounded-2xl border border-dynamic-pink/30 bg-background/95 px-4 py-3 shadow-dynamic-pink/15 shadow-xl motion-safe:animate-in"
+          className="motion-safe:fade-in motion-safe:slide-in-from-bottom-2 flex items-center gap-3 rounded-2xl border bg-background/95 px-4 py-3 shadow-xl motion-safe:animate-in"
         >
-          <span
-            className="text-5xl drop-shadow-sm"
-            role="img"
-            aria-label={t(`reaction_${entry.reaction}`)}
-          >
-            {REACTION_GLYPHS[entry.reaction]}
+          <span role="img" aria-label={t(`reaction_${entry.reaction}`)}>
+            <ReactionIcon
+              reaction={entry.reaction}
+              className="size-9 drop-shadow-sm"
+            />
           </span>
           <span className="max-w-28 truncate font-medium text-sm">
             {state.participants[entry.userId]?.displayName}

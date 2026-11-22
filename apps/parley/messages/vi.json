@@ -4585,7 +4585,8 @@
         "showcase": "Giới thiệu",
         "showcase_hint": "Hiển thị bản xem trước và mời góp ý trong cuộc trò chuyện.",
         "everyone": "Mọi người trong cuộc gọi",
-        "everyone_hint": "Hiển thị công cụ hoạt động cho người đã được cho vào."
+        "everyone_hint": "Hiển thị công cụ hoạt động cho người đã được cho vào.",
+        "visibility_hint": "Ai có thể mở Lập trình cùng nhau, tài liệu trực tiếp, bình chọn và câu đố"
       },
       "record_start_failed": "Không thể bắt đầu ghi âm",
       "recording": "Đang ghi",
@@ -4722,7 +4723,93 @@
       "new_meeting": "Cuộc họp mới",
       "rating_failed": "Không thể lưu đánh giá. Hãy thử lại.",
       "rating_option": "{value} trên 5",
-      "rating_title": "Cuộc gọi thế nào?"
+      "rating_title": "Cuộc gọi thế nào?",
+      "show_notes": "Xem ghi chú",
+      "hide_notes": "Ẩn ghi chú",
+      "show_transcript": "Xem bản chép lời",
+      "hide_transcript": "Ẩn bản chép lời",
+      "ended_reader_notes": "Ghi chú",
+      "ended_reader_transcript": "Bản chép lời",
+      "ended_reader_both": "Ghi chú và bản chép lời",
+      "rating_private": "Chỉ bạn thấy đánh giá của mình",
+      "ended_hint_host_settings": "Bạn có thể chọn người xem ghi chú trong Cài đặt cuộc họp.",
+      "surfaces": {
+        "stage": "sân khấu",
+        "programming": "Lập trình cùng nhau",
+        "document": "Tài liệu trực tiếp"
+      },
+      "navigation": {
+        "someone": "Một người",
+        "not_now": "Để sau",
+        "everyone": "Mọi người",
+        "people_count": "{count, plural, other {# người}}",
+        "alone": "Cần thêm người khác trong cuộc gọi để dùng Theo dõi và Triệu tập",
+        "context": "Bạn đang ở {surface}",
+        "rate_limited": "Đợi một chút rồi gửi yêu cầu tiếp",
+        "no_targets": "Những người đó không còn trong cuộc gọi"
+      },
+      "follow": {
+        "button": "Theo dõi",
+        "active": "Đang theo bạn · {count}",
+        "title": "Mời mọi người theo dõi bạn",
+        "hint": "Họ sẽ chuyển theo mỗi khi bạn đổi công cụ",
+        "start": "Bắt đầu",
+        "stop": "Dừng",
+        "leading": "{count, plural, other {# người đang theo dõi bạn}}",
+        "started": "Bạn đang theo dõi {name}",
+        "ask": "{name} mời bạn theo dõi họ",
+        "accept": "Theo dõi",
+        "banner": "Đang theo dõi {name} · {surface}",
+        "stop_following": "Ngừng theo dõi",
+        "ended_by_leader": "{name} đã ngừng dẫn dắt",
+        "ended_manual": "Bạn đã ngừng theo dõi {name}"
+      },
+      "summon": {
+        "button": "Triệu tập",
+        "title": "Đưa mọi người đến {surface}",
+        "hint": "Họ sẽ nhận lời mời và có thể chấp nhận",
+        "hint_host": "Chủ trì đưa mọi người đến ngay; người khác gửi lời mời",
+        "submit": "{count, plural, =0 {Triệu tập} other {Triệu tập #}}",
+        "brought": "{name} đã đưa bạn đến {surface}",
+        "go_back": "Quay lại",
+        "invite": "{name} mời bạn đến {surface}",
+        "join": "Tham gia",
+        "blocked": "{name} mời bạn đến {surface}, nhưng chủ trì chưa mở hoạt động cho mọi người",
+        "moved": "{count, plural, other {Đã đưa # người đến đây}}",
+        "sent": "{count, plural, other {Đã gửi lời mời đến # người}}"
+      },
+      "activities": {
+        "button": "Hoạt động",
+        "title": "Hoạt động",
+        "hint": "Mở cho bạn; Triệu tập để đưa người khác đến",
+        "settings": "Hoạt động",
+        "descriptions": {
+          "programming": "Cùng viết và chạy mã",
+          "document": "Cùng ghi chú",
+          "polls": "Đặt câu hỏi và xem bình chọn trực tiếp",
+          "timers": "Đếm ngược cho cả phòng",
+          "quiz": "Các vòng tính giờ và bảng xếp hạng",
+          "live-qa": "Câu hỏi có bình chọn",
+          "live-assessment": "Kiểm tra nhanh mức hiểu bài",
+          "live-flashcards": "Ôn tập cùng nhau",
+          "live-game": "Khởi động và trò chơi nhanh",
+          "live-icebreaker": "Giúp cả phòng bắt chuyện",
+          "whiteboard": "Vẽ và giải thích trên bảng chung",
+          "breakouts": "Chia mọi người thành nhóm nhỏ",
+          "forms": "Chạy khảo sát hoặc bài kiểm tra từ Forms"
+        }
+      },
+      "presence_roster": {
+        "title": "{count, plural, other {# người đang ở đây}}",
+        "self": "{name} (bạn)"
+      },
+      "layout_dialog_hint": "Cách các ô video lấp đầy sân khấu",
+      "camera_effects_preview_off": "Bật camera để xem trước hiệu ứng",
+      "effects_done": "Xong",
+      "activities_settings": {
+        "participant_navigation": "Cho phép người tham gia triệu tập nhau",
+        "participant_navigation_hint": "Người được mời luôn cần chấp nhận"
+      }
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
@@ -5924,7 +6011,49 @@
     "stdin": "Đầu vào chuẩn",
     "stop": "Dừng môi trường",
     "test": "Chạy kiểm thử công khai",
-    "title": "Playground được lưu trữ"
+    "title": "Playground được lưu trữ",
+    "catalogUnavailable": "Không tải được các mục đã lưu. Hãy thử lại sau giây lát.",
+    "chooseProblem": "Chọn một bài tập",
+    "cancel": "Hủy",
+    "editingCount": "{count, plural, =0 {Chưa có ai chỉnh sửa} other {# người đang chỉnh sửa}}",
+    "emptyHint": "Mở một playground hoặc bài tập Learn để mọi người trong phòng cùng lập trình.",
+    "failureReason": {
+      "access": "Bạn không còn quyền chạy mã ở đây.",
+      "busy": "Dịch vụ lập trình đang bận. Hãy thử lại sau giây lát.",
+      "changed": "Phòng đã thay đổi trong lúc bạn làm việc. Hãy thử lại.",
+      "offline": "Có vẻ bạn đang ngoại tuyến.",
+      "unknown": "Đã xảy ra lỗi từ phía chúng tôi."
+    },
+    "failureSafe": "Các chỉnh sửa của bạn vẫn an toàn trong phòng này.",
+    "failureStep": {
+      "result": "Không đọc được kết quả chạy",
+      "run": "Không bắt đầu chạy được",
+      "save": "Không lưu được phòng trước khi chạy",
+      "test": "Không chạy được các bài kiểm tra"
+    },
+    "kindPlaygroundHint": "Viết mã tự do và chạy",
+    "kindProblemHint": "Viết mã theo bài kiểm tra công khai",
+    "languageLocked": "Playground đã lưu giữ nguyên ngôn ngữ. Chọn Playground mới để dùng ngôn ngữ khác.",
+    "meetingPlaygroundName": "Playground {language}",
+    "moreLanguages": "Thêm ngôn ngữ",
+    "moreLanguagesShort": "Thêm",
+    "newPlayground": "Playground mới",
+    "openDescription": "Mọi người trong phòng cùng chỉnh sửa các tệp này.",
+    "openFailed": "Không mở được tài nguyên này. Hãy thử lại.",
+    "openTitle": "Mở Lập trình cùng nhau",
+    "playgroundChoice": "Playground",
+    "playgroundHelp": "Playground mới bắt đầu từ mẫu của ngôn ngữ. Playground đã lưu mở lại như cũ.",
+    "previewOpenTab": "Mở bản xem trước trong thẻ mới",
+    "problemHelp": "Bài tập lấy từ thư viện Learn của không gian làm việc này.",
+    "problemLabel": "Bài tập",
+    "projectLabel": "Dự án",
+    "retry": "Thử lại",
+    "runDuration": "{seconds} giây",
+    "runShortcut": "{action} ({shortcut})",
+    "stdinPlaceholder": "Văn bản chương trình đọc từ đầu vào chuẩn",
+    "stdinToggle": "Đầu vào chương trình (stdin)",
+    "switchFailed": "Không đổi được ngôn ngữ. Mã hiện tại của bạn vẫn giữ nguyên.",
+    "switchingLanguage": "Đang đổi ngôn ngữ"
   },
   "promotion-data-table": {
     "code": "Mã giảm giá",
