@@ -1,13 +1,20 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import { CallActivitySettings } from './call-activity-settings';
-import { CallRoomTools, useRoomTools } from './call-room-tools';
+import { RoomActivitiesPage, useRoomTools } from './call-room-tools';
 import { ControlBar } from './control-bar';
 
 afterEach(cleanup);
@@ -20,10 +27,22 @@ const poll: MeetToolDefinition = {
   Panel: () => null,
 };
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+});
+afterEach(() => vi.unstubAllGlobals());
+
 function Intl({ children }: { children: ReactNode }) {
   return (
     <NextIntlClientProvider locale="en" messages={messages}>
-      {children}
+      <NuqsTestingAdapter>{children}</NuqsTestingAdapter>
     </NextIntlClientProvider>
   );
 }
@@ -31,13 +50,13 @@ function Intl({ children }: { children: ReactNode }) {
 function Fixture({
   mode,
   manager = false,
-  feedback = noAction,
-  onTool = noAction,
+  personal = noAction,
+  onMode = noAction,
 }: {
   mode?: 'hosts' | 'showcase' | 'everyone';
   manager?: boolean;
-  feedback?: () => void;
-  onTool?: (id: string) => void;
+  personal?: () => void;
+  onMode?: (mode: 'hosts' | 'showcase' | 'everyone') => void;
 }) {
   const policy = useRoomTools(mode, manager);
   const action = { active: false, toggle: noAction };
@@ -62,20 +81,37 @@ function Fixture({
           <ActivitiesMenu
             tools={[poll]}
             activeToolId={null}
-            onTool={onTool}
+            onTool={noAction}
             collaboration={
               policy.canUse
                 ? { programming: action, document: action }
                 : undefined
             }
-            preview={policy.showPreview ? { onFeedback: feedback } : undefined}
-          />
-        }
-        extraControls={
-          <CallRoomTools
-            actions={{ personal: action }}
-            activities={<span>Live poll</span>}
-            policy={policy}
+            pages={
+              policy.canUse
+                ? [
+                    {
+                      id: 'room-activities',
+                      label: tools.title,
+                      icon: () => null,
+                      active: false,
+                      listed: false,
+                      page: (close) => (
+                        <RoomActivitiesPage
+                          activities={<span>Live poll</span>}
+                          personal={{ active: false, toggle: personal }}
+                          settings={
+                            policy.canConfigure
+                              ? { mode: mode ?? 'hosts', onMode }
+                              : undefined
+                          }
+                          onClose={close}
+                        />
+                      ),
+                    },
+                  ]
+                : []
+            }
           />
         }
       />
@@ -89,47 +125,60 @@ const openActivities = () =>
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.call.activities.button })
   );
+const openRoomActivities = () =>
+  fireEvent.click(
+    within(
+      screen.getByRole('navigation', {
+        name: messages.meet.call.activities.title,
+      })
+    ).getByRole('button', { name: tools.title })
+  );
 const tools = messages.meet.call.room_tools;
 const coding = messages.programmingPlayground.coding;
+const privateTools = messages.meet.call.private_tools.title;
 
-it('keeps launch actions out of More while leaving live activities reachable', () => {
-  render(<Fixture />);
-  expect(
-    screen.getByRole('button', { name: messages.meet.call.mute })
-  ).toBeTruthy();
-  expect(screen.queryByText('Live poll')).toBeNull();
+it('keeps launch actions and room activities out of More', () => {
+  render(<Fixture manager />);
   more();
-  expect(screen.getByText('Live poll')).toBeTruthy();
+  expect(screen.queryByText('Live poll')).toBeNull();
+  expect(screen.queryByRole('button', { name: privateTools })).toBeNull();
   expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
   expect(screen.queryByRole('radiogroup')).toBeNull();
 });
 
-it('lists tools in Activities for attendees but keeps collaboration for hosts', () => {
-  const onTool = vi.fn();
-  render(<Fixture onTool={onTool} />);
+it('moves live shortcuts, personal tools and visibility into Room activities', () => {
+  const personal = vi.fn();
+  const onMode = vi.fn();
+  render(<Fixture manager personal={personal} onMode={onMode} />);
   openActivities();
-  expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: /Polls/ }));
-  expect(onTool).toHaveBeenCalledWith('polls');
-  cleanup();
-  render(<Fixture manager />);
-  openActivities();
-  expect(screen.getByRole('button', { name: new RegExp(coding) })).toBeTruthy();
-  cleanup();
-  render(<Fixture mode="everyone" />);
-  openActivities();
-  expect(screen.getByRole('button', { name: new RegExp(coding) })).toBeTruthy();
+  openRoomActivities();
+  expect(screen.getByText('Live poll')).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('radio', { name: new RegExp(tools.everyone) })
+  );
+  expect(onMode).toHaveBeenCalledWith('everyone');
+  fireEvent.click(screen.getByRole('button', { name: privateTools }));
+  expect(personal).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
-it('previews activities with a feedback shortcut in Showcase', () => {
-  const feedback = vi.fn();
-  render(<Fixture mode="showcase" feedback={feedback} />);
+it('leaves visibility to hosts and Room activities to people who use the tools', () => {
+  render(<Fixture mode="everyone" />);
   openActivities();
-  expect(screen.getByText(tools.preview)).toBeTruthy();
-  expect(screen.getByText(coding)).toBeTruthy();
+  openRoomActivities();
+  expect(screen.getByRole('button', { name: privateTools })).toBeTruthy();
+  expect(screen.queryByRole('radiogroup')).toBeNull();
+  cleanup();
+  render(<Fixture />);
+  openActivities();
+  expect(
+    within(
+      screen.getByRole('navigation', {
+        name: messages.meet.call.activities.title,
+      })
+    ).queryByRole('button', { name: tools.title })
+  ).toBeNull();
   expect(screen.queryByRole('button', { name: new RegExp(coding) })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: tools.feedback }));
-  expect(feedback).toHaveBeenCalledOnce();
 });
 
 it('sets activity visibility from the settings section', () => {

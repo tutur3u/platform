@@ -33,10 +33,10 @@ import { CallHeader } from './call-header';
 import { CallPresenceRoster } from './call-presence-roster';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
+import { roomActivitySettings } from './call-activity-settings';
 import { CallSettings } from './call-settings';
 import { CallSettingsLinkProvider } from './call-settings-link';
 import { type CallLayout, CallStage } from './call-stage';
-import { CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
 import type { CallPanel } from './control-bar';
 import {
@@ -56,6 +56,7 @@ import { CallPanelOwnerContext } from './resizable-call-panel';
 import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
+import { ShareMeetingButton } from './share-meeting';
 import { SidePanel } from './side-panel';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { meetTools } from '../tools/registry';
@@ -432,22 +433,12 @@ function CallShellContent({
               outputDeviceId={outputDeviceId}
               onOutput={setOutputDeviceId}
               activities={
-                roomTools.canConfigure
-                  ? {
-                      mode: toolMode,
-                      onMode: (advancedTools) =>
-                        room.updateSettings({ advancedTools }),
-                      participantNavigation:
-                        state.settings.participantNavigation !== false,
-                      onParticipantNavigation: (participantNavigation) =>
-                        room.updateSettings({ participantNavigation }),
-                    }
-                  : undefined
+                roomTools.canConfigure ? roomActivitySettings(room) : undefined
               }
             />
             <CallClock meetingId={meetingId} state={state} />
-            <CallTopBarMore
-              mailContext={{
+            <ShareMeetingButton
+              mail={{
                 workspaceId: wsId,
                 actorId: accountId,
                 canReadWorkspace,
@@ -455,11 +446,6 @@ function CallShellContent({
               }}
               meetingId={meetingId}
               meetingName={room.state.title ?? meetingName}
-              canReadNotes={canReadNotes}
-              transcriptOpen={drawer === 'notes'}
-              onToggleTranscript={() =>
-                setDrawer(drawer === 'notes' ? null : 'notes')
-              }
             />
           </>
         }
@@ -589,6 +575,7 @@ function CallShellContent({
         )}
       </div>
       <CallControlDock
+        meetingId={meetingId}
         room={room}
         canManage={canManage}
         panel={panel}
@@ -626,6 +613,14 @@ function CallShellContent({
           setFocus(null);
         }}
         nav={nav}
+        transcript={
+          canReadNotes
+            ? {
+                active: drawer === 'notes',
+                toggle: () => setDrawer(drawer === 'notes' ? null : 'notes'),
+              }
+            : undefined
+        }
       />
       <LeaveDialog
         open={leaveDialog}

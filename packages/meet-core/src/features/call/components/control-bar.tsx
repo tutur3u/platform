@@ -1,151 +1,37 @@
 'use client';
 
 import {
-  CircleDot,
-  Ellipsis,
   Hand,
-  Loader2,
   MessageSquare,
   Mic,
   MicOff,
   MonitorUp,
   PhoneOff,
-  Square,
   Users,
-  UsersRound,
   Video,
   VideoOff,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import {
-  type ComponentType,
-  createContext,
-  type ReactNode,
-  useContext,
-  useId,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, useSyncExternalStore } from 'react';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { readRoomControls, subscribeRoomControls } from '../lib/room-actions';
+import { CallMoreMenu } from './call-more-menu';
+import { ControlButton, controlPillClass } from './control-button';
+
+export {
+  ControlButton,
+  ControlMenuLabel,
+  ControlMenuScope,
+  ControlSwitchRow,
+  controlButtonClass,
+  controlPillClass,
+  controlRowClass,
+} from './control-button';
 
 export type CallPanel = 'chat' | 'participants' | null;
-
-const CloseCallOverflow = createContext<(() => void) | null>(null);
-
-/** One shape for every round call control: top bar, bottom bar and tools hub. */
-export const controlButtonClass =
-  'relative size-11 shrink-0 rounded-full border border-border bg-background text-foreground hover:bg-accent data-[state=open]:bg-accent';
-/** A round control that carries a label from wide screens up. */
-export const controlPillClass =
-  'relative h-11 shrink-0 gap-2 rounded-full border border-border bg-background px-4 text-foreground hover:bg-accent data-[state=open]:bg-accent';
-
-/** Renders ControlButtons as labelled menu rows that close the menu on use. */
-export function ControlMenuScope({
-  onClose,
-  children,
-}: {
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <CloseCallOverflow.Provider value={onClose}>
-      {children}
-    </CloseCallOverflow.Provider>
-  );
-}
-
-export function ControlButton({
-  active,
-  danger,
-  attention,
-  icon: Icon,
-  label,
-  detail,
-  onClick,
-  badge,
-  busy,
-  locked,
-}: {
-  active?: boolean;
-  busy?: boolean;
-  locked?: boolean;
-  badge?: number;
-  danger?: boolean;
-  attention?: boolean;
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  /** Trailing value shown on menu rows, such as the current layout. */
-  detail?: string;
-  onClick: () => void;
-}) {
-  const closeOverflow = useContext(CloseCallOverflow);
-  const button = (
-    <Button
-      aria-label={label}
-      aria-busy={busy}
-      disabled={busy || locked}
-      aria-pressed={active}
-      className={cn(
-        closeOverflow
-          ? 'relative h-auto min-h-11 w-full justify-start gap-3 whitespace-normal rounded-lg px-3 py-2 text-left'
-          : controlButtonClass,
-        danger &&
-          !closeOverflow &&
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        // Google Meet's convention: a lit control means the device is OFF.
-        !danger &&
-          active &&
-          'border-transparent bg-foreground/15 hover:bg-foreground/20',
-        attention &&
-          'border-transparent bg-dynamic-orange/20 text-dynamic-orange ring-2 ring-dynamic-orange/60 hover:bg-dynamic-orange/30'
-      )}
-      onClick={() => {
-        onClick();
-        closeOverflow?.();
-      }}
-      size={closeOverflow ? 'default' : 'icon'}
-      type="button"
-      variant={danger ? 'destructive' : 'ghost'}
-    >
-      {busy ? (
-        <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />
-      ) : (
-        <Icon className="size-5" />
-      )}
-      {closeOverflow ? <span className="min-w-0 flex-1">{label}</span> : null}
-      {closeOverflow && detail ? (
-        <span className="shrink-0 text-muted-foreground text-xs">{detail}</span>
-      ) : null}
-      {badge ? (
-        <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-blue px-1 font-medium text-[0.6rem] text-white">
-          {badge > 9 ? '9+' : badge}
-        </span>
-      ) : null}
-    </Button>
-  );
-  if (closeOverflow) return button;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {locked ? (
-          <span tabIndex={0} aria-label={label}>
-            {button}
-          </span>
-        ) : (
-          button
-        )}
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 /** The bottom-right people count; it opens the participants panel. */
 function PeopleControl({
@@ -223,6 +109,7 @@ export function ControlBar({
   viewer = false,
   presenceOnly = false,
   onPresenceChange,
+  onOpenSettings,
 }: {
   activePanel: CallPanel;
   /** Legacy tools hub trigger, used when no `activities` control is given. */
@@ -233,8 +120,10 @@ export function ControlBar({
   activities?: ReactNode;
   /** Root-bar reactions; phones in media rooms reach them through More. */
   reactions?: ReactNode;
-  /** Follow and Summon on wider screens, plus their phone menu rows. */
-  navigation?: { follow: ReactNode; summon: ReactNode; menu?: ReactNode };
+  /** Follow and Summon rows for the More menu. */
+  navigation?: ReactNode;
+  /** Opens the meeting settings from the More menu. */
+  onOpenSettings?: () => void;
   /** Quiet label of the surface this person is on, left of the controls. */
   context?: ReactNode;
   mediaLocks?: { audio: boolean; video: boolean; screen: boolean };
@@ -263,7 +152,6 @@ export function ControlBar({
   onPresenceChange?: (enabled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
-  const presenceSwitchId = useId();
   const labels = useLargeRoomLabels();
   const controls = useSyncExternalStore(
     subscribeRoomControls,
@@ -271,7 +159,6 @@ export function ControlBar({
     noRoomControls
   );
   const locked = mediaLocks ?? controls?.locked;
-  const [moreOpen, setMoreOpen] = useState(false);
   const hub = activities ?? tools;
   const shareScreen = (
     <ControlButton
@@ -369,87 +256,32 @@ export function ControlBar({
             {hub}
           </div>
         )}
-        {navigation && (
-          <>
-            <div className="hidden md:block">{navigation.follow}</div>
-            <div className="hidden md:block">{navigation.summon}</div>
-          </>
-        )}
-        <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  aria-label={t(
-                    liveActivity ? 'more_actions_activity' : 'more_actions'
-                  )}
-                  className={controlButtonClass}
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Ellipsis className="size-5" />
-                  {liveActivity && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute top-1 right-1 size-2 rounded-full bg-primary sm:hidden"
-                    />
-                  )}
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent>{t('more_actions')}</TooltipContent>
-          </Tooltip>
-          <PopoverContent
-            aria-label={t('more_actions')}
-            className="flex max-h-[min(32rem,70dvh)] w-72 max-w-[calc(100vw-1rem)] flex-col gap-1 overflow-y-auto p-2"
-            side="top"
-            sideOffset={8}
-          >
-            <CloseCallOverflow.Provider value={() => setMoreOpen(false)}>
-              {!presenceOnly && <div className="sm:hidden">{shareScreen}</div>}
-              <div className="min-[360px]:hidden">{chat}</div>
-              <div className="md:hidden">{hand}</div>
-              {navigation?.menu && (
-                <div className="flex flex-col gap-1 md:hidden">
-                  {navigation.menu}
-                </div>
-              )}
-              {toolsMenu && !activities && (
-                <div className="flex flex-col gap-1 sm:hidden">{toolsMenu}</div>
-              )}
-              {onToggleRecording ? (
-                <ControlButton
-                  active={recordingOn}
-                  icon={recordingOn ? Square : CircleDot}
-                  busy={recordingBusy}
-                  attention={recordingOn}
-                  label={
-                    recordingOn ? t('stop_recording') : t('start_recording')
-                  }
-                  onClick={onToggleRecording}
-                />
-              ) : null}
-              {extraControls}
-              {onPresenceChange && (
-                <div className="mt-1 border-t pt-1">
-                  <Label
-                    htmlFor={presenceSwitchId}
-                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 leading-snug hover:bg-accent"
-                  >
-                    <UsersRound className="size-5 shrink-0" />
-                    <span className="min-w-0 flex-1">{t('presence_only')}</span>
-                    <Switch
-                      id={presenceSwitchId}
-                      checked={presenceOnly}
-                      onCheckedChange={onPresenceChange}
-                    />
-                  </Label>
-                </div>
-              )}
-            </CloseCallOverflow.Provider>
-          </PopoverContent>
-        </Popover>
+        <CallMoreMenu
+          phone={{
+            shareScreen: presenceOnly ? undefined : shareScreen,
+            chat,
+            hand,
+          }}
+          liveActivity={liveActivity}
+          toolsMenu={activities ? undefined : toolsMenu}
+          recording={
+            onToggleRecording
+              ? {
+                  on: recordingOn,
+                  busy: recordingBusy,
+                  toggle: onToggleRecording,
+                }
+              : undefined
+          }
+          extraControls={extraControls}
+          navigation={navigation}
+          onOpenSettings={onOpenSettings}
+          presence={
+            onPresenceChange
+              ? { on: presenceOnly, onChange: onPresenceChange }
+              : undefined
+          }
+        />
         <div
           aria-hidden="true"
           className="hidden h-6 w-px bg-border sm:block"

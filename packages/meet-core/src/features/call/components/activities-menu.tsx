@@ -1,28 +1,30 @@
 'use client';
-import { CodeXml, FileText, LayoutGrid, MessageSquare } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import { CodeXml, FileText, LayoutGrid } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ComponentType, useState } from 'react';
+import { useState } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
+import { ActivitiesDialog } from './activities-dialog';
+import type { ActivityTile } from './activities-pages';
 import type { ActivityEntry } from './call-activities';
-import { controlPillClass } from './control-bar';
+import { controlPillClass } from './control-button';
 
-type Tile = {
-  id: string;
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-  active: boolean;
-  open?: () => void;
+export type { ActivityTile } from './activities-pages';
+
+/** A dialog page listed with the activities, such as the room timer. */
+export type ActivityPage = Omit<ActivityTile, 'open' | 'page'> & {
+  page: NonNullable<ActivityTile['page']>;
 };
 
 /**
- * The labeled Activities entry in the root bar. Co-Programming and the live
- * document come first, then every registered tool. Showcase viewers see the
- * same grid as a preview with a feedback shortcut instead of launch actions.
+ * The labeled Activities entry in the root bar. It opens the Activities
+ * dialog: Co-Programming and the live document, every registered tool, the
+ * room's extra entries and dialog pages, grouped like Settings. Showcase
+ * viewers see the same list as a preview with a feedback shortcut instead of
+ * launch actions.
  */
 export function ActivitiesMenu({
   tools,
@@ -30,6 +32,7 @@ export function ActivitiesMenu({
   onTool,
   collaboration,
   extra = [],
+  pages = [],
   preview,
 }: {
   tools: readonly MeetToolDefinition[];
@@ -37,6 +40,8 @@ export function ActivitiesMenu({
   onTool: (id: string) => void;
   /** Classroom tools and in-call forms, when the room has them. */
   extra?: readonly ActivityEntry[];
+  /** Pages that render inside the dialog, such as Timer and Room activities. */
+  pages?: readonly ActivityPage[];
   collaboration?: {
     programming: { active: boolean; toggle: () => void };
     document: { active: boolean; toggle: () => void };
@@ -44,7 +49,6 @@ export function ActivitiesMenu({
   preview?: { onFeedback: () => void };
 }) {
   const t = useTranslations('meet.call.activities');
-  const roomT = useTranslations('meet.call.room_tools');
   const programmingT = useTranslations('programmingPlayground');
   const collaborationT = useTranslations('meet.collaboration');
   const all = useTranslations();
@@ -53,7 +57,7 @@ export function ActivitiesMenu({
     all.has(tool.label) ? all(tool.label) : tool.label;
   const describe = (id: string) =>
     t.has(`descriptions.${id}`) ? t(`descriptions.${id}`) : undefined;
-  const tiles: Tile[] = [
+  const entries: ActivityTile[] = [
     ...(collaboration || preview
       ? [
           {
@@ -88,20 +92,26 @@ export function ActivitiesMenu({
       // preview never locks them.
       open: entry.toggle,
     })),
+    ...pages,
   ];
+  const tiles = entries.map((tile) => ({
+    ...tile,
+    description: tile.description ?? describe(tile.id),
+  }));
   if (!tiles.length) return null;
-  const anyActive = tiles.some((tile) => tile.active);
+  const live = tiles.filter((tile) => tile.active).length;
+  const label = live ? t('button_live', { count: live }) : t('button');
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
+          <DialogTrigger asChild>
             <Button
-              aria-label={t('button')}
+              aria-label={label}
               className={cn(
                 controlPillClass,
                 'w-11 px-0 md:w-auto md:px-4',
-                anyActive
+                live
                   ? 'border-transparent bg-foreground/15'
                   : 'border-transparent bg-accent'
               )}
@@ -110,90 +120,34 @@ export function ActivitiesMenu({
             >
               <LayoutGrid className="size-5" />
               <span className="hidden md:inline">{t('button')}</span>
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{t('button')}</TooltipContent>
-      </Tooltip>
-      <PopoverContent
-        aria-label={t('title')}
-        className="max-h-[min(34rem,75dvh)] w-[min(34rem,calc(100vw-1rem))] overflow-y-auto rounded-2xl p-3"
-        side="top"
-        sideOffset={8}
-      >
-        <div className="flex items-center justify-between gap-3 px-1 pb-3">
-          <p className="font-semibold text-base">{t('title')}</p>
-          {preview ? (
-            <Badge variant="outline">{roomT('preview')}</Badge>
-          ) : (
-            <p className="text-muted-foreground text-xs">{t('hint')}</p>
-          )}
-        </div>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {tiles.map((tile) => {
-            const Icon = tile.icon;
-            const description = describe(tile.id);
-            const body = (
-              <>
-                <span className="grid size-9 place-items-center rounded-lg bg-muted">
-                  <Icon className="size-5" />
-                </span>
-                <span className="font-semibold text-sm">{tile.label}</span>
-                {description && (
-                  <span className="text-muted-foreground text-xs leading-snug">
-                    {description}
+              {live > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-green px-1 font-medium text-[0.6rem] text-white md:static md:min-w-0 md:bg-dynamic-green/15 md:px-2 md:py-0.5 md:text-dynamic-green md:text-xs"
+                >
+                  <span className="md:hidden">{live}</span>
+                  <span className="hidden md:inline">
+                    {t('live_count', { count: live })}
                   </span>
-                )}
-              </>
-            );
-            const tileClass =
-              'flex h-full min-h-24 w-full flex-col items-start gap-1.5 rounded-xl border bg-card p-3 text-left';
-            return (
-              <li key={tile.id}>
-                {tile.open ? (
-                  <button
-                    type="button"
-                    aria-pressed={tile.active}
-                    className={cn(
-                      tileClass,
-                      'transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
-                      tile.active && 'border-foreground bg-accent'
-                    )}
-                    onClick={() => {
-                      tile.open?.();
-                      setOpen(false);
-                    }}
-                  >
-                    {body}
-                  </button>
-                ) : (
-                  <div className={cn(tileClass, 'opacity-80')}>{body}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        {preview && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t px-1 pt-3">
-            <p className="min-w-0 flex-1 text-muted-foreground text-xs">
-              {roomT('preview_hint')}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => {
+                </span>
+              )}
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+      <ActivitiesDialog
+        tiles={tiles}
+        onClose={() => setOpen(false)}
+        onFeedback={
+          preview
+            ? () => {
                 preview.onFeedback();
                 setOpen(false);
-              }}
-            >
-              <MessageSquare className="size-4" />
-              {roomT('feedback')}
-            </Button>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+              }
+            : undefined
+        }
+      />
+    </Dialog>
   );
 }

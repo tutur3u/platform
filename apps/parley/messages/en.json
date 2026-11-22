@@ -4310,8 +4310,7 @@
       "chat_sources": "Sources ({count})",
       "chat_usage_hint": "Mira uses your AI quota. Files use the room creator’s Drive storage.",
       "citation_unavailable": "This older citation has no saved source mapping. See the available sources below.",
-      "class_timer": "Class timer",
-      "class_timer_custom": "Custom",
+      "class_timer": "Timer",
       "class_timer_ended": "Time's up",
       "class_timer_minutes": "Minutes",
       "class_timer_pause": "Pause",
@@ -4593,7 +4592,8 @@
         "showcase_hint": "Show the activity preview and invite feedback in chat.",
         "everyone": "Everyone in the call",
         "everyone_hint": "Show activity tools to admitted participants.",
-        "visibility_hint": "Who can open Co-Programming, live documents, polls and quizzes"
+        "visibility_hint": "Who can open Co-Programming, live documents, polls and quizzes",
+        "shortcuts": "Shortcuts"
       },
       "record_start_failed": "Could not start recording",
       "recording": "Recording",
@@ -4753,7 +4753,8 @@
         "alone": "Follow and Summon need someone else in the call",
         "context": "You are in {surface}",
         "rate_limited": "Wait a moment before sending another request",
-        "no_targets": "Those people are no longer in the call"
+        "no_targets": "Those people are no longer in the call",
+        "guide": "Guide the room"
       },
       "follow": {
         "button": "Follow",
@@ -4788,13 +4789,13 @@
       "activities": {
         "button": "Activities",
         "title": "Activities",
-        "hint": "Opens for you; Summon brings others",
+        "hint": "Follow opens it for you. Summon brings everyone else.",
         "settings": "Activities",
         "descriptions": {
           "programming": "Code and run together",
           "document": "Write notes together",
           "polls": "Ask and see votes live",
-          "timers": "Countdown for the room",
+          "timers": "Private countdown on this device",
           "quiz": "Timed rounds and a leaderboard",
           "live-qa": "Questions with upvotes",
           "live-assessment": "Quick checks for understanding",
@@ -4804,7 +4805,30 @@
           "whiteboard": "Draw and explain on a shared board",
           "breakouts": "Split people into small groups",
           "forms": "Run a survey or quiz from Forms",
-          "pen-whiteboard": "Sketch together with pen or touch"
+          "pen-whiteboard": "Sketch together with pen or touch",
+          "class-timer": "Countdown everyone in the room sees",
+          "room-activities": "Live shortcuts, personal tools and who can open activities"
+        },
+        "back": "Back to call",
+        "search": "Search activities",
+        "all": "All activities",
+        "all_description": "What's live and what you can start",
+        "live": "Live",
+        "live_now": "Live now",
+        "start_section": "Start an activity",
+        "start": "Start",
+        "open": "Open",
+        "start_named": "Start {name}",
+        "open_named": "Open {name}",
+        "button_live": "Activities, {count} live",
+        "live_count": "{count} live",
+        "groups": {
+          "overview": "Overview",
+          "engage": "Engage",
+          "learn": "Learn",
+          "create": "Create together",
+          "run": "Run the room",
+          "other": "More activities"
         }
       },
       "presence_roster": {
@@ -5012,6 +5036,20 @@
         "locked": "Saved to your profile. This call keeps the name the host admitted you with.",
         "unconfirmed": "Saved to your profile. Others see it once your connection recovers.",
         "rate_limited": "Saved to your profile. You renamed several times just now, so this call keeps the old name. Save again in a minute."
+      },
+      "share": {
+        "button": "Share",
+        "title": "Share meeting",
+        "link": "Meeting link",
+        "copy_link": "Copy link",
+        "link_copied": "Link copied",
+        "copy_code": "Copy code",
+        "code_copied": "Meeting code copied",
+        "copy_failed": "Could not copy. Copy it manually.",
+        "qr": "Scan to join",
+        "copy_invite": "Copy full invite",
+        "email": "Send by email",
+        "email_hint": "Pick people from your workspace"
       }
     },
     "collaboration": {

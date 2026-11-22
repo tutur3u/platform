@@ -225,10 +225,13 @@ API then sends one short-lived server credential to the room. That credential
 is signed with the realtime token secret, expires in 60 seconds, and is not a
 browser join token. Revoking a co-host takes effect on the next command.
 
-When the timer is enabled, it is a shared countdown. The host, or a workspace
-admin co-host, starts it for 1, 3, 5, or 10 minutes, or for a custom length
+When the timer is enabled, it is a shared countdown named **Timer** ("Hẹn giờ").
+Its controls are an activity: the host, or a workspace admin co-host, opens
+**Activities** > **Run the room** > **Timer** and starts it for 1, 3, 5, or 10 minutes, or for a custom length
 from 1 to 180 minutes. Everyone admitted to the room sees the same remaining
-time. The server clock is the source of truth, and each client corrects its
+time in a read-only chip (clock icon and mm:ss) in the call header while a
+timer is set, so participants see it without opening Activities. The server
+clock is the source of truth, and each client corrects its
 display from the server timestamp on the timer message. When the timer reaches
 zero, the room shows a quiet "Time's up" / "Hết giờ" cue. The cue does not
 play sound. The meeting deadline clock is separate and still counts the room’s
@@ -522,7 +525,14 @@ mints a new token for the retry, and stays closed when the close was intentional
 
 ## Meeting codes
 
-Every meeting has a shareable code and a `/r/<code>` link, surfaced by the **Copy invite** button in the call header.
+Every meeting has a shareable code and a `/r/<code>` link. The call header has
+one **Share** button (icon only below `md`, with an accessible name) instead of
+an overflow menu. It opens the Share dialog: the meeting link in a read-only
+field with **Copy link**, the meeting code with its own copy action, a QR code
+(dark modules on white in both themes), **Copy full invite** (meeting name,
+link and code), and **Send by email** for Meet hosts who can read the workspace
+directory. Parley and other participants never see the email action. Regression
+coverage: `share-meeting.test.tsx`.
 
 The code is a reversible Crockford base32 encoding of the meeting id rather
 than a stored random string, so there is no schema change, no collision risk
@@ -1142,20 +1152,38 @@ activity availability.
 
 The bottom bar has three groups. The center holds the call's root actions:
 microphone, camera and screen sharing (media rooms only), **Reactions**,
-**Raise hand**, **Activities**, **Follow**, **Summon**, More and Leave. Chat and
-the people count sit at the bottom right; the people count opens the participant
-list. The left edge names the surface the viewer has open, such as
-Co-Programming or a live document. On phones the bar keeps Reactions,
-Activities, More, Leave, Chat and the people count, and Follow and Summon move
-into More. The recording indicator stays visible in the call header.
+**Raise hand**, **Activities**, More and Leave. Chat and the people count sit at
+the bottom right; the people count opens the participant list. The left edge
+names the surface the viewer has open, such as Co-Programming or a live
+document. On phones the bar keeps Reactions, Activities, More, Leave, Chat and
+the people count. The recording indicator stays visible in the call header.
 
 **Activities** is one labeled entry for everything the room can do together:
 Co-Programming, the live document, and every tool in the tools registry (polls,
 timers, Quiz Arena, Q&A, assessment, flashcards, games and icebreakers). Rooms
 with classroom tools or in-call Forms list those there too, under their own
-access rules. Each tile carries a name and a one-line description. Live polls
-and Quiz Arena rounds stay reachable through their live shortcuts even when the
-viewer cannot browse Activities.
+access rules. The entry shows an "N live" badge while activities are open.
+
+It opens the Activities dialog, laid out like Settings (full height on phones).
+The sidebar groups entries as **Overview** (All activities), **Engage** (Q&A,
+polls, Quiz Arena, icebreakers, Forms), **Learn** (flashcards, prep game,
+assessment), **Create together** (whiteboards, Co-Programming, the live
+document) and **Run the room** (Timer, the private timer, breakouts, Room
+activities). An id without a group lands in **More activities**, so a newly
+registered tool is never hidden. All activities lists **Live now** first, then
+**Start an activity** as cards with an icon, name, one-line description and a
+Start or Open action. Starting closes the dialog and opens the activity; an
+activity that is already open stays open. Timer and Room activities render
+inside the dialog. The dialog keeps its tab in the `activitiesTab` URL
+parameter, apart from Settings' `settingsTab`, and has no onboarding entry.
+
+**Room activities**, for people who may use the room's tools, holds the live
+poll and Quiz Arena shortcuts, private tools, and for hosts the Activity
+visibility settings (also in Settings). Live polls and Quiz Arena rounds stay
+reachable through their live shortcuts in the bar, and in More on phones, even
+when the viewer cannot browse Activities. Showcase viewers see the same dialog
+as a preview with a room-chat feedback shortcut and no launch actions.
+Regression coverage: `activities-dialog.test.tsx`, `call-room-tools.test.tsx`.
 
 The host or an admitted co-host with participant management changes **Activity
 visibility** in Settings, under Activities. **Hosts and co-hosts** is the
@@ -1165,9 +1193,15 @@ launch actions to admitted participants. Visibility does not grant host
 privileges or change existing document, programming, quiz, poll, or recording
 access checks.
 
-More holds the remaining actions: Layout, Camera effects, recording, the
-presence-only switch for hosts, and private tools. Layout and Camera effects
-each open their own dialog.
+More holds the remaining actions as rows that share one grid (a 20px icon
+slot, the label, a trailing slot; 40px tall, 44px on touch screens): phone
+fallbacks, recording, **Transcript & notes** (a switch, only for people who may
+read notes), Layout, Camera effects, then **Guide the room** with **Follow** and
+**Summon**, then **Meeting settings** and the presence-only switch for hosts.
+Follow and Summon carry the tooltip "Follow opens it for you. Summon brings
+everyone else."; alone in the call they stay listed, disabled, with the reason
+as their tooltip. Layout, Camera effects, Follow and Summon each open their own
+dialog. Regression coverage: `call-more-menu.test.tsx`.
 
 People keeps join requests and the participant list ahead of optional room
 settings. Moderators use a per-person menu for mute, media permissions and

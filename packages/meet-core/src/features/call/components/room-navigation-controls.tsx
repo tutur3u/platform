@@ -1,5 +1,5 @@
 'use client';
-import { ChevronDown, Magnet, Navigation } from '@tuturuuu/icons';
+import { Magnet, Navigation } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -7,13 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ComponentType, type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
-import { ControlButton, controlPillClass } from './control-bar';
+import { ControlButton, ControlMenuLabel } from './control-button';
 import {
   RoomNavigationTargets,
   useTargetSelection,
@@ -91,83 +88,13 @@ function NavigationPanel({
   );
 }
 
-function NavigationMenu({
-  kind,
-  nav,
-  icon: Icon,
-  label,
-}: {
-  kind: Kind;
-  nav: RoomNavigation;
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  const t = useTranslations('meet.call');
-  const [open, setOpen] = useState(false);
-  const alone = !nav.others.length;
-  const active = kind === 'follow' && !!nav.leading;
-  const hint = alone ? t('navigation.alone') : label;
-  const button = (
-    <Button
-      aria-label={hint}
-      disabled={alone}
-      className={cn(
-        controlPillClass,
-        'w-11 px-0 xl:w-auto xl:px-4',
-        active && 'border-transparent bg-foreground/15'
-      )}
-      type="button"
-      variant="ghost"
-    >
-      <Icon className="size-5" />
-      <span className="hidden xl:inline">{label}</span>
-      <ChevronDown className="hidden size-4 text-muted-foreground xl:block" />
-    </Button>
-  );
-  if (alone)
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span tabIndex={0} aria-label={hint}>
-            {button}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{hint}</TooltipContent>
-      </Tooltip>
-    );
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>{button}</PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>
-      <PopoverContent
-        aria-label={label}
-        className="w-80 max-w-[calc(100vw-1rem)] rounded-2xl p-2"
-        side="top"
-        sideOffset={8}
-      >
-        {open && (
-          <NavigationPanel
-            kind={kind}
-            nav={nav}
-            onDone={() => setOpen(false)}
-          />
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 /**
- * Follow and Summon for the root bar, phone menu rows that open the same
- * panels as dialogs, and those dialogs (mounted outside the More menu).
+ * Follow and Summon rows for the More menu under one "Guide the room" label,
+ * and the dialogs they open (mounted outside the menu so closing it keeps them
+ * open). Alone in the call, both rows stay visible but disabled with the
+ * reason as their tooltip.
  */
 export function useRoomNavigationControls(nav: RoomNavigation): {
-  follow: ReactNode;
-  summon: ReactNode;
   menu: ReactNode;
   dialogs: ReactNode;
 } {
@@ -178,34 +105,24 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
     : t('follow.button');
   const summonLabel = t('summon.button');
   const alone = !nav.others.length;
+  const hint = alone ? t('navigation.alone') : t('activities.hint');
   return {
-    follow: (
-      <NavigationMenu
-        kind="follow"
-        nav={nav}
-        icon={Navigation}
-        label={followLabel}
-      />
-    ),
-    summon: (
-      <NavigationMenu
-        kind="summon"
-        nav={nav}
-        icon={Magnet}
-        label={summonLabel}
-      />
-    ),
-    menu: alone ? null : (
+    menu: (
       <>
+        <ControlMenuLabel>{t('navigation.guide')}</ControlMenuLabel>
         <ControlButton
           active={!!nav.leading}
           icon={Navigation}
           label={followLabel}
+          hint={hint}
+          locked={alone}
           onClick={() => setDialog('follow')}
         />
         <ControlButton
           icon={Magnet}
           label={summonLabel}
+          hint={hint}
+          locked={alone}
           onClick={() => setDialog('summon')}
         />
       </>

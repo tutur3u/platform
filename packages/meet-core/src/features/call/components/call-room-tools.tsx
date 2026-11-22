@@ -4,8 +4,14 @@ import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { CalendarDays } from '@tuturuuu/icons';
 import type { MeetRoomSettings } from '@tuturuuu/realtime/meet';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-import { ControlButton } from './control-bar';
+import type { ComponentProps, ReactNode } from 'react';
+import { CallActivitySettings } from './call-activity-settings';
+import { ControlButton, ControlMenuScope } from './control-button';
+import {
+  MeetSettingsCard,
+  MeetSettingsHeading,
+  MeetSettingsStack,
+} from './meet-settings-card';
 
 export type RoomToolsMode = NonNullable<MeetRoomSettings['advancedTools']>;
 
@@ -23,39 +29,42 @@ export function useRoomTools(
 }
 
 /**
- * More-menu rows that are not activities: live activity shortcuts that are
- * running now, and this person's private tools. Launching shared work lives
- * in the Activities menu; who may launch it lives in Settings.
+ * The Activities dialog's Room activities page: shortcuts to live polls and
+ * quizzes, this person's private tools, and for hosts who may open room
+ * activities. The visibility settings also stay in Settings.
  */
-export function CallRoomTools({
-  policy,
-  actions,
+export function RoomActivitiesPage({
   activities,
+  personal,
+  settings,
+  onClose,
 }: {
-  policy: ReturnType<typeof useRoomTools>;
-  actions: { personal: { active: boolean; toggle: () => void } };
+  /** Live activity shortcuts, rendered as rows. */
   activities: ReactNode;
+  personal: { active: boolean; toggle: () => void };
+  settings?: ComponentProps<typeof CallActivitySettings>;
+  /** Closes the dialog once a row opens its panel. */
+  onClose: () => void;
 }) {
   const t = useTranslations('meet.call.room_tools');
   const privateT = useTranslations('meet.call.private_tools');
-
-  if (MEETING_APP !== 'meet') return null;
   return (
-    <>
-      {policy.canUse && (
-        <p className="px-3 pt-2 pb-1 font-medium text-muted-foreground text-xs">
-          {t('title')}
-        </p>
-      )}
-      {activities}
-      {policy.canUse && (
-        <ControlButton
-          active={actions.personal.active}
-          icon={CalendarDays}
-          label={privateT('title')}
-          onClick={actions.personal.toggle}
-        />
-      )}
-    </>
+    <MeetSettingsStack>
+      <MeetSettingsCard>
+        <MeetSettingsHeading title={t('shortcuts')} />
+        <ControlMenuScope onClose={onClose}>
+          <div className="-mx-3 flex flex-col gap-1">
+            {activities}
+            <ControlButton
+              active={personal.active}
+              icon={CalendarDays}
+              label={privateT('title')}
+              onClick={personal.toggle}
+            />
+          </div>
+        </ControlMenuScope>
+      </MeetSettingsCard>
+      {settings && <CallActivitySettings {...settings} />}
+    </MeetSettingsStack>
   );
 }

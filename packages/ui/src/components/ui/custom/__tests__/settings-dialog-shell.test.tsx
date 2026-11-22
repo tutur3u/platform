@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import {
   type OnUrlUpdateFunction,
   withNuqsTestingAdapter,
@@ -68,6 +74,7 @@ function renderShell(
     navItems?: SettingsNavGroup[];
     onUrlUpdate?: OnUrlUpdateFunction;
     searchParams?: string;
+    showOnboardingGuide?: boolean;
   }
 ) {
   function Harness() {
@@ -81,6 +88,7 @@ function renderShell(
           keyboardNavigation
           navItems={options?.navItems ?? navItems}
           onActiveTabChange={setActiveTab}
+          showOnboardingGuide={options?.showOnboardingGuide}
         >
           {options?.content}
           <input aria-label="Editable field" />
@@ -220,6 +228,19 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(screen.getByText('Preferences')).toBeVisible();
     expect(screen.getByText('Appearance')).toBeVisible();
     expect(screen.getByText('Forms')).toBeVisible();
+  });
+
+  it('appends the onboarding guide unless a picker turns it off', () => {
+    renderShell();
+    expect(
+      screen.getByRole('button', { name: 'onboarding_guide.title' })
+    ).toBeVisible();
+    cleanup();
+    renderShell(undefined, { showOnboardingGuide: false });
+    expect(
+      screen.queryByRole('button', { name: 'onboarding_guide.title' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Appearance' })).toBeVisible();
   });
 
   it('hides a group label that only repeats its single item', () => {

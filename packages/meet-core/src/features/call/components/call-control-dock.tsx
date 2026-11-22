@@ -1,5 +1,5 @@
 'use client';
-import { CodeXml, FileText, LayoutGrid } from '@tuturuuu/icons';
+import { Captions, CodeXml, FileText, LayoutGrid } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -10,15 +10,20 @@ import type { MeetRoomController } from '../lib/room-controller';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import type { ActivityEntry } from './call-activities';
+import { useCallActivityPages } from './call-activity-pages';
 import {
   CallExtras,
   CallExtrasDialogs,
   useCallExtrasDialog,
 } from './call-extras';
 import { CallReactionsMenu } from './call-reactions';
-import { CallRoomTools, type useRoomTools } from './call-room-tools';
+import type { useRoomTools } from './call-room-tools';
+import {
+  useCallSettingsDialog,
+  useOpenCallSettings,
+} from './call-settings-link';
 import type { CallLayout } from './call-stage';
-import { type CallPanel, ControlBar } from './control-bar';
+import { type CallPanel, ControlBar, ControlSwitchRow } from './control-bar';
 import { useRoomNavigationControls } from './room-navigation-controls';
 
 type Device = 'microphone' | 'camera' | 'screen';
@@ -45,10 +50,12 @@ function SurfaceContext({ nav }: { nav: RoomNavigation }) {
 }
 
 /**
- * The call's root bar with everything it opens: reactions, Activities,
- * Follow and Summon, the More menu and the dialogs those rows launch.
+ * The call's root bar with everything it opens: reactions, Activities (with
+ * the room timer and Room activities pages), the More menu with Transcript,
+ * Follow, Summon and Settings, and the dialogs those rows launch.
  */
 export function CallControlDock({
+  meetingId,
   room,
   canManage,
   panel,
@@ -70,7 +77,9 @@ export function CallControlDock({
   layout,
   setLayout,
   nav,
+  transcript,
 }: {
+  meetingId: string;
   room: MeetRoomController;
   canManage: boolean;
   panel: CallPanel;
@@ -100,18 +109,32 @@ export function CallControlDock({
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   nav: RoomNavigation;
+  /** Present for people allowed to read the transcript and notes. */
+  transcript?: Toggle;
 }) {
   const t = useTranslations('meet.call');
+  const aiT = useTranslations('meet.ai');
   const { state } = room;
   const presenceOnly = state.settings.transport === 'presence';
   const [extrasDialog, setExtrasDialog] = useCallExtrasDialog();
   const navControls = useRoomNavigationControls(nav);
+  const settingsDialog = useCallSettingsDialog();
+  // Only a call that links its settings dialog can open it from More.
+  const settingsLinked = !!useOpenCallSettings();
+  const pages = useCallActivityPages({
+    meetingId,
+    room,
+    roomTools,
+    liveShortcuts: activities.controls,
+    personal,
+  });
   const activitiesMenu = (
     <ActivitiesMenu
       tools={roomTools.showPreview ? meetTools : tools.shown}
       activeToolId={tools.activeId}
       onTool={tools.toggle}
       extra={activities.entries}
+      pages={pages}
       collaboration={roomTools.canUse ? { programming, document } : undefined}
       preview={
         roomTools.showPreview
@@ -135,7 +158,10 @@ export function CallControlDock({
         activePanel={panel}
         activities={activitiesMenu}
         reactions={<CallReactionsMenu react={room.react} />}
-        navigation={nav.allowed ? navControls : undefined}
+        navigation={nav.allowed ? navControls.menu : undefined}
+        onOpenSettings={
+          settingsLinked ? () => settingsDialog.setOpen(true) : undefined
+        }
         context={<SurfaceContext nav={nav} />}
         liveActivity={activities.liveControl}
         cameraOn={room.media.videoEnabled}
@@ -169,11 +195,15 @@ export function CallControlDock({
         }
         extraControls={
           <>
-            <CallRoomTools
-              policy={roomTools}
-              activities={activities.controls}
-              actions={{ personal }}
-            />
+            {transcript && (
+              <ControlSwitchRow
+                icon={Captions}
+                label={aiT('title')}
+                checked={transcript.active}
+                onCheckedChange={transcript.toggle}
+                closeOnChange
+              />
+            )}
             <CallExtras
               layout={layout}
               look={room.cameraLook}

@@ -4310,8 +4310,7 @@
       "chat_sources": "Nguồn ({count})",
       "chat_usage_hint": "Mira dùng hạn mức AI của bạn. Tệp dùng dung lượng Drive của người tạo phòng.",
       "citation_unavailable": "Trích dẫn cũ này không có liên kết nguồn đã lưu. Xem các nguồn hiện có bên dưới.",
-      "class_timer": "Hẹn giờ lớp",
-      "class_timer_custom": "Tùy chọn",
+      "class_timer": "Hẹn giờ",
       "class_timer_ended": "Hết giờ",
       "class_timer_minutes": "Phút",
       "class_timer_pause": "Tạm dừng",
@@ -4593,7 +4592,8 @@
         "showcase_hint": "Hiển thị bản xem trước và mời góp ý trong cuộc trò chuyện.",
         "everyone": "Mọi người trong cuộc gọi",
         "everyone_hint": "Hiển thị công cụ hoạt động cho người đã được cho vào.",
-        "visibility_hint": "Ai có thể mở Lập trình cùng nhau, tài liệu trực tiếp, bình chọn và câu đố"
+        "visibility_hint": "Ai có thể mở Lập trình cùng nhau, tài liệu trực tiếp, bình chọn và câu đố",
+        "shortcuts": "Lối tắt"
       },
       "record_start_failed": "Không thể bắt đầu ghi âm",
       "recording": "Đang ghi",
@@ -4753,7 +4753,8 @@
         "alone": "Cần thêm người khác trong cuộc gọi để dùng Theo dõi và Triệu tập",
         "context": "Bạn đang ở {surface}",
         "rate_limited": "Đợi một chút rồi gửi yêu cầu tiếp",
-        "no_targets": "Những người đó không còn trong cuộc gọi"
+        "no_targets": "Những người đó không còn trong cuộc gọi",
+        "guide": "Dẫn dắt phòng"
       },
       "follow": {
         "button": "Theo dõi",
@@ -4788,13 +4789,13 @@
       "activities": {
         "button": "Hoạt động",
         "title": "Hoạt động",
-        "hint": "Mở cho bạn; Triệu tập để đưa người khác đến",
+        "hint": "Theo dõi mở hoạt động cho bạn. Triệu tập đưa mọi người khác đến.",
         "settings": "Hoạt động",
         "descriptions": {
           "programming": "Cùng viết và chạy mã",
           "document": "Cùng ghi chú",
           "polls": "Đặt câu hỏi và xem bình chọn trực tiếp",
-          "timers": "Đếm ngược cho cả phòng",
+          "timers": "Đếm ngược riêng trên thiết bị này",
           "quiz": "Các vòng tính giờ và bảng xếp hạng",
           "live-qa": "Câu hỏi có bình chọn",
           "live-assessment": "Kiểm tra nhanh mức hiểu bài",
@@ -4804,7 +4805,30 @@
           "whiteboard": "Vẽ và giải thích trên bảng chung",
           "breakouts": "Chia mọi người thành nhóm nhỏ",
           "forms": "Chạy khảo sát hoặc bài kiểm tra từ Forms",
-          "pen-whiteboard": "Cùng phác thảo bằng bút hoặc chạm"
+          "pen-whiteboard": "Cùng phác thảo bằng bút hoặc chạm",
+          "class-timer": "Đếm ngược cả phòng cùng thấy",
+          "room-activities": "Lối tắt trực tiếp, công cụ cá nhân và ai được mở hoạt động"
+        },
+        "back": "Quay lại cuộc gọi",
+        "search": "Tìm hoạt động",
+        "all": "Tất cả hoạt động",
+        "all_description": "Hoạt động đang diễn ra và hoạt động bạn có thể bắt đầu",
+        "live": "Trực tiếp",
+        "live_now": "Đang diễn ra",
+        "start_section": "Bắt đầu hoạt động",
+        "start": "Bắt đầu",
+        "open": "Mở",
+        "start_named": "Bắt đầu {name}",
+        "open_named": "Mở {name}",
+        "button_live": "Hoạt động, {count} đang diễn ra",
+        "live_count": "{count} đang diễn ra",
+        "groups": {
+          "overview": "Tổng quan",
+          "engage": "Tương tác",
+          "learn": "Học tập",
+          "create": "Cùng sáng tạo",
+          "run": "Điều phối phòng",
+          "other": "Hoạt động khác"
         }
       },
       "presence_roster": {
@@ -5012,6 +5036,20 @@
         "locked": "Đã lưu vào hồ sơ. Cuộc gọi này giữ tên mà chủ phòng đã duyệt cho bạn.",
         "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại.",
         "rate_limited": "Đã lưu vào hồ sơ. Bạn vừa đổi tên nhiều lần nên cuộc gọi này vẫn giữ tên cũ. Hãy lưu lại sau một phút."
+      },
+      "share": {
+        "button": "Chia sẻ",
+        "title": "Chia sẻ cuộc họp",
+        "link": "Liên kết cuộc họp",
+        "copy_link": "Sao chép liên kết",
+        "link_copied": "Đã sao chép liên kết",
+        "copy_code": "Sao chép mã",
+        "code_copied": "Đã sao chép mã cuộc họp",
+        "copy_failed": "Không thể sao chép. Hãy sao chép thủ công.",
+        "qr": "Quét để tham gia",
+        "copy_invite": "Sao chép toàn bộ lời mời",
+        "email": "Gửi qua email",
+        "email_hint": "Chọn người trong không gian làm việc"
       }
     },
     "collaboration": {

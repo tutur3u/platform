@@ -3,7 +3,8 @@
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { useTranslations } from 'next-intl';
-import { useId } from 'react';
+import { type ComponentProps, useId } from 'react';
+import type { MeetRoomController } from '../lib/room-controller';
 import type { RoomToolsMode } from './call-room-tools';
 import {
   MeetSettingsCard,
@@ -81,4 +82,19 @@ export function CallActivitySettings({
       )}
     </MeetSettingsStack>
   );
+}
+
+/** Activity visibility settings bound to the room, for Settings and Activities. */
+export function roomActivitySettings(room: MeetRoomController): ComponentProps<
+  typeof CallActivitySettings
+> & {
+  onParticipantNavigation: (enabled: boolean) => void;
+} {
+  return {
+    mode: room.state.settings.advancedTools,
+    onMode: (advancedTools) => room.updateSettings({ advancedTools }),
+    participantNavigation: room.state.settings.participantNavigation !== false,
+    onParticipantNavigation: (participantNavigation) =>
+      room.updateSettings({ participantNavigation }),
+  };
 }

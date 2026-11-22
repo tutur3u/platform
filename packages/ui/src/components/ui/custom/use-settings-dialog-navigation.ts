@@ -23,6 +23,7 @@ type NavigationOptions = Pick<
   | 'onActiveTabChange'
   | 'persistedTab'
   | 'setPersistedTab'
+  | 'showOnboardingGuide'
   | 't'
 >;
 
@@ -37,6 +38,7 @@ export function useSettingsDialogNavigation({
   onActiveTabChange,
   persistedTab,
   setPersistedTab,
+  showOnboardingGuide = true,
   t,
 }: NavigationOptions) {
   const searchEngineLoadRef = useRef<Promise<void> | null>(null);
@@ -45,25 +47,28 @@ export function useSettingsDialogNavigation({
     useState<SettingsSearchEngineFactory | null>(null);
 
   const extendedNavItems = useMemo<SettingsNavGroup[]>(
-    () => [
-      ...navItems,
-      {
-        label: t('onboarding_guide.title'),
-        items: [
-          {
-            name: SHARED_SETTINGS_TAB_IDS.onboardingGuide,
-            label: t('onboarding_guide.title'),
-            description: t('onboarding_guide.description'),
-            icon: Compass,
-            keywords: [
-              t('onboarding_guide.replay_app'),
-              t('onboarding_guide.restart_journey'),
-            ],
-          },
-        ],
-      },
-    ],
-    [navItems, t]
+    () =>
+      showOnboardingGuide
+        ? [
+            ...navItems,
+            {
+              label: t('onboarding_guide.title'),
+              items: [
+                {
+                  name: SHARED_SETTINGS_TAB_IDS.onboardingGuide,
+                  label: t('onboarding_guide.title'),
+                  description: t('onboarding_guide.description'),
+                  icon: Compass,
+                  keywords: [
+                    t('onboarding_guide.replay_app'),
+                    t('onboarding_guide.restart_journey'),
+                  ],
+                },
+              ],
+            },
+          ]
+        : navItems,
+    [navItems, showOnboardingGuide, t]
   );
 
   const searchEngine = useMemo<SettingsSearchEngine | null>(

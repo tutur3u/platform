@@ -3,22 +3,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { NextIntlClientProvider } from 'next-intl';
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import { INITIAL_CALL_STATE, type CallState } from '../lib/call-state';
 import { CallClock } from './call-clock';
 
-const command = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
 vi.mock('@tuturuuu/internal-api/meet-call', () => ({
   getMeetAttendance: vi.fn(async () => ({ rows: [] })),
-  commandMeetClassTimer: command,
 }));
 vi.mock('./meeting-local-time', () => ({
   useMeetingTimeZone: () => 'Asia/Ho_Chi_Minh',
@@ -26,7 +18,6 @@ vi.mock('./meeting-local-time', () => ({
 
 afterEach(() => {
   cleanup();
-  command.mockClear();
   vi.useRealTimers();
 });
 
@@ -70,43 +61,23 @@ function running(role: CallState['classRole']): CallState {
   };
 }
 
-it('shows a synced countdown, phone-width controls, and no autoplay media', async () => {
+it('shows everyone a read-only synced timer chip in the top bar', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
-  const { container } = renderClock(running('host'));
-  expect(screen.getByRole('status').textContent).toContain('05:00 left');
-  expect(container.querySelector('audio, video')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Class timer' }));
-  expect(document.body.innerHTML).toContain('w-[min(18rem,calc(100vw-2rem))]');
-  expect(document.body.innerHTML).toContain('grid-cols-2');
-  fireEvent.click(screen.getByRole('button', { name: '1 min' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
-  await act(async () => {
-    await Promise.resolve();
-  });
-  expect(command).toHaveBeenCalledWith('5e5217de-9bb3-4e20-8d99-526ad3e7e34f', {
-    action: 'start',
-    durationMs: 60_000,
-  });
-  expect(command).toHaveBeenCalledWith('5e5217de-9bb3-4e20-8d99-526ad3e7e34f', {
-    action: 'pause',
-    durationMs: undefined,
-  });
+  for (const role of ['host', 'participant'] as const) {
+    const { container } = renderClock(running(role));
+    const chip = screen.getByRole('status', { name: /^Timer: 05:00 left$/ });
+    expect(chip.textContent).toBe('05:00');
+    expect(screen.queryByRole('button', { name: /Timer/ })).toBeNull();
+    expect(container.querySelector('audio, video')).toBeNull();
+    cleanup();
+  }
 });
 
-it('hides pause, resume, and stop from a co-host and shows the end cue without sound', () => {
+it('shows the end cue without sound and no chip without a timer', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
-  const { container } = renderClock(running('cohost'));
-  fireEvent.click(screen.getByRole('button', { name: 'Class timer' }));
-  expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
-  expect(
-    (screen.getByRole('button', { name: '5 min' }) as HTMLButtonElement)
-      .disabled
-  ).toBe(false);
-  cleanup();
-  renderClock({
+  const { container } = renderClock({
     ...running('host'),
     classTimer: {
       ...running('host').classTimer!,
@@ -120,7 +91,9 @@ it('hides pause, resume, and stop from a co-host and shows the end cue without s
     'motion-safe:animate-pulse'
   );
   expect(container.querySelector('audio, video')).toBeNull();
-  expect(command).not.toHaveBeenCalled();
+  cleanup();
+  renderClock({ ...running('host'), classTimer: null });
+  expect(screen.queryByRole('status')).toBeNull();
 });
 
 it('offers attendance only to the host and a co-host', () => {
@@ -142,12 +115,12 @@ it('offers attendance only to the host and a co-host', () => {
   ).toBe(false);
 });
 
-it('hides the class timer and attendance while the server switches are off', () => {
+it('hides the timer and attendance while the server switches are off', () => {
   renderClock({
     ...running('host'),
     classAttendanceEnabled: false,
     classTimerEnabled: false,
   });
-  expect(screen.queryByRole('button', { name: 'Class timer' })).toBeNull();
+  expect(screen.queryByRole('status')).toBeNull();
   expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
 });

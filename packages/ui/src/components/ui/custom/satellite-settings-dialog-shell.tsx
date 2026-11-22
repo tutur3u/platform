@@ -70,6 +70,11 @@ export interface SettingsDialogShellProps {
   onActiveTabChange: (tab: string) => void;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
+  /**
+   * Append the onboarding guide group. Dialogs that reuse this layout for
+   * something other than settings, such as a picker, turn it off.
+   */
+  showOnboardingGuide?: boolean;
   /** Optional context control that replaces the active group breadcrumb */
   activeGroupBreadcrumb?: ReactNode;
   /** Content to render in the main area */
@@ -92,6 +97,7 @@ export function SatelliteSettingsDialogShell({
   activeTab,
   onActiveTabChange,
   keyboardNavigation = false,
+  showOnboardingGuide = true,
   activeGroupBreadcrumb,
   children,
 }: SettingsDialogShellProps) {
@@ -115,6 +121,7 @@ export function SatelliteSettingsDialogShell({
     onActiveTabChange,
     persistedTab,
     setPersistedTab,
+    showOnboardingGuide,
     t,
   });
   const showContentHeader = !activeItem?.hideContentHeader;
