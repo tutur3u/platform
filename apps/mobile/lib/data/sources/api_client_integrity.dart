@@ -31,6 +31,7 @@ extension _ApiClientIntegrity on ApiClient {
     var fallbackUsed = false;
     Future<http.Response> send({bool fallback = false}) async {
       final headers = await _getHeaders(
+        path: path,
         contentType: method == 'PATCH' ? 'application/json' : null,
         offlineRead: method == 'GET',
       );

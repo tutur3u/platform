@@ -10,6 +10,7 @@ import {
   mobileClientAuthFailureResponse,
   mintMobileClientCredential,
 } from '@/lib/auth/mobile-client-credential-mint';
+import { refreshMastermindMobileSession } from '@/lib/auth/mastermind-mobile-provenance';
 import { nativeIntegrityWebOrigin } from '@/lib/native-integrity/runtime';
 import { checkRateLimit, type RateLimitConfig } from '@/lib/rate-limit';
 import { resolveTimedSessionUser } from '@/lib/server-timing';
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
         ? { ok: true, user }
         : { ok: false, response: mobileClientAuthFailureResponse(authError) };
     },
+    refreshMastermindSession: refreshMastermindMobileSession,
     turnstileHostname: () => new URL(nativeIntegrityWebOrigin()).hostname,
   });
 }

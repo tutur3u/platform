@@ -8,9 +8,9 @@ extension ConditionalApiReads on ApiClient {
   }) async {
     final response = await _performRequest(() async {
       final userId = _auth.currentUser?.id;
-      final headers = await _getHeaders();
-      // A read: the server ignores the credential, so it stays off the wire.
-      headers.remove(mobileClientHeader);
+      final headers = await _getHeaders(path: path);
+      // Fleet reads carry the native credential; other reads omit it.
+      if (!_requiresFleetCredential(path)) headers.remove(mobileClientHeader);
       if (version != null) headers['If-None-Match'] = version;
       _checkRequestUser(userId);
       return await _client

@@ -68,6 +68,7 @@ extension _ApiClientMutations on ApiClient {
     final response = await _performRequest(() async {
       final headers = {
         ...await _getHeaders(
+          path: path,
           contentType: 'application/json',
           requiresAuth: requiresAuth,
         ),
@@ -90,7 +91,10 @@ extension _ApiClientMutations on ApiClient {
   ) async {
     Future<http.Response> send() async {
       admission.check();
-      final headers = await _getHeaders(contentType: 'application/json');
+      final headers = await _getHeaders(
+        path: path,
+        contentType: 'application/json',
+      );
       _checkRequestUser(admission.actorId);
       admission.check();
       final request = http.Request('PUT', _url(path))
@@ -134,6 +138,7 @@ extension _ApiClientMutations on ApiClient {
       Future<http.StreamedResponse> send() async {
         admitted();
         final headers = await _getHeaders(
+          path: path,
           accept: accept,
           contentType: 'application/json',
         );
@@ -180,6 +185,7 @@ extension _ApiClientMutations on ApiClient {
           .patch(
             url,
             headers: await _getHeaders(
+              path: path,
               contentType: 'application/json',
               requiresAuth: requiresAuth,
             ),
@@ -204,6 +210,7 @@ extension _ApiClientMutations on ApiClient {
           .delete(
             url,
             headers: await _getHeaders(
+              path: path,
               contentType: body == null ? null : 'application/json',
               requiresAuth: requiresAuth,
             ),
@@ -226,7 +233,10 @@ extension _ApiClientMutations on ApiClient {
     bool Function() isCurrent,
   ) async {
     Future<http.Response> send() async {
-      final headers = await _getHeaders(contentType: 'application/json');
+      final headers = await _getHeaders(
+        path: path,
+        contentType: 'application/json',
+      );
       _checkRequestUser(actorId);
       if (!isCurrent()) {
         throw const ApiException(

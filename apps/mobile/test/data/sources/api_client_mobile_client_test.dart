@@ -64,9 +64,8 @@ void main() {
       DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
           1000,
     );
-    when(
-      () => storage.read(key: any(named: 'key')),
-    ).thenAnswer((call) async => values[call.namedArguments[#key]]);
+    when(() => storage.read(key: any(named: 'key')))
+        .thenAnswer((call) async => values[call.namedArguments[#key]]);
     when(
       () => storage.write(
         key: any(named: 'key'),
@@ -138,6 +137,22 @@ void main() {
     addTearDown(client0.dispose);
     return client0;
   }
+
+  test('cold Fleet reads acquire and attach the session credential', () async {
+    final client0 = api((_) => http.Response('{}', 200));
+    const base = '/api/v1/mastermind/fleet';
+    await client0.getJsonWithHeaders('$base/state', const {});
+    await client0.getConditionalJson('$base/state');
+    await client0.getBytes('$base/review-assets/asset');
+    await client0.postJson('$base/decisions/decision/answer', const {});
+    expect(mints, 1);
+    expect(requests, hasLength(4));
+    for (final request in requests) {
+      expect(request.headers[mobileClientHeader], 'credential-1');
+      expect(request.headers['authorization'], 'Bearer $accessToken');
+      expect(request.followRedirects, isFalse);
+    }
+  });
 
   test('a mutation mints in the background; later requests send it', () async {
     final client0 = api((_) => http.Response('{}', 200));
@@ -274,18 +289,16 @@ void main() {
     setUp(() {
       // A cold Keychain/Keystore read that never returns.
       final storage = _Storage();
-      when(
-        () => storage.read(key: any(named: 'key')),
-      ).thenAnswer((_) => Completer<String?>().future);
+      when(() => storage.read(key: any(named: 'key')))
+          .thenAnswer((_) => Completer<String?>().future);
       when(
         () => storage.write(
           key: any(named: 'key'),
           value: any(named: 'value'),
         ),
       ).thenAnswer((_) => Completer<void>().future);
-      when(
-        () => storage.delete(key: any(named: 'key')),
-      ).thenAnswer((_) => Completer<void>().future);
+      when(() => storage.delete(key: any(named: 'key')))
+          .thenAnswer((_) => Completer<void>().future);
       MobileClientCredentials.instance = MobileClientCredentials(
         storage: storage,
         turnstile: (_, _) async => 'captcha',

@@ -91,7 +91,9 @@ class ApiClient {
     final response = await _performStreamedRequest(() async {
       final request = http.Request('GET', _url(path))
         ..followRedirects = false
-        ..headers.addAll(await _getHeaders(accept: '*/*', offlineRead: true));
+        ..headers.addAll(
+          await _getHeaders(path: path, accept: '*/*', offlineRead: true),
+        );
       return await OfflineApiRequest.paced(
         () => _client.send(request).timeout(_requestTimeout),
       );
@@ -193,6 +195,7 @@ class ApiClient {
             requestHeaders = {
               ...headers,
               ...await _getHeaders(
+                path: path,
                 requiresAuth: requiresAuth,
                 offlineRead: true,
               ),
@@ -227,6 +230,7 @@ class ApiClient {
           },
           prepare: () async {
             headers = await _getHeaders(
+              path: path,
               requiresAuth: requiresAuth,
               offlineRead: true,
             );
@@ -345,6 +349,7 @@ class ApiClient {
           .put(
             url,
             headers: await _getHeaders(
+              path: path,
               contentType: 'application/json',
               requiresAuth: requiresAuth,
             ),
@@ -371,6 +376,7 @@ class ApiClient {
           ..followRedirects = followRedirects
           ..headers.addAll(
             await _getHeaders(
+              path: path,
               accept: accept,
               requiresAuth: requiresAuth,
               offlineRead: true,
@@ -407,6 +413,7 @@ class ApiClient {
       final request = http.Request(method, url)
         ..headers.addAll(
           await _getHeaders(
+            path: path,
             accept: accept,
             contentType: 'application/json',
             requiresAuth: requiresAuth,

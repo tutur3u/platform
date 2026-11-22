@@ -41,7 +41,11 @@ final class _MobileClientRedirectGuard extends http.BaseClient {
 extension _ApiClientMobileClient on ApiClient {
   MobileClientCredentials get _mobileClient => MobileClientCredentials.instance;
 
+  bool _requiresFleetCredential(String? path) =>
+      path?.startsWith('/api/v1/mastermind/fleet/') ?? false;
+
   Future<Map<String, String>> _getHeaders({
+    String? path,
     String accept = 'application/json',
     String? contentType,
     bool requiresAuth = true,
@@ -80,6 +84,12 @@ extension _ApiClientMobileClient on ApiClient {
       }
     }
 
+    final mobileHeaders = await _mobileClientHeaders(
+      userId,
+      token,
+      mutation: !offlineRead,
+      requiredForFleet: requiresAuth && _requiresFleetCredential(path),
+    );
     if (requiresAuth) _checkRequestUser(userId);
     return {
       if (contentType != null) 'Content-Type': contentType,
@@ -87,45 +97,53 @@ extension _ApiClientMobileClient on ApiClient {
       if (requiresAuth && offlineRead && OfflineApiRequest.active)
         'x-tuturuuu-offline-download': '1',
       if (token != null) 'Authorization': 'Bearer $token',
-      // Reads pass offlineRead; every other authenticated request mutates.
-      ...await _mobileClientHeaders(userId, token, mutation: !offlineRead),
+      ...mobileHeaders,
       if (requiresAuth && ApiVerification.token != null)
         'x-tuturuuu-turnstile-token': ApiVerification.token!,
     };
   }
 
   /// Attaches the stored native client credential to an authenticated
-  /// mutation; the server ignores it on reads. Without a fresh one a mint
-  /// starts in the background, so a slow or unavailable Turnstile page never
-  /// delays the request itself; a step-up on this request still awaits that
-  /// mint before one replay.
+  /// mutation or Fleet request. Fleet requires the credential on reads and
+  /// mutations, so a cold Fleet request obtains it before dispatch. Other
+  /// mutations renew in the background and retain their normal step-up flow.
   Future<Map<String, String>> _mobileClientHeaders(
     String? userId,
     String? accessToken, {
     required bool mutation,
+    required bool requiredForFleet,
   }) async {
-    if (!mutation ||
+    if ((!mutation && !requiredForFleet) ||
         userId == null ||
         accessToken == null ||
         accessToken.isEmpty) {
       return const {};
     }
-    final credential = await _mobileClient.current(
+    var credential = await _mobileClient.current(
       userId: userId,
       accessToken: accessToken,
     );
-    (Zone.current[_sentMobileClientKey] as _SentMobileClient?)?.token =
-        credential;
     if (OfflineApiRequest.allowsChallenge) {
-      unawaited(
-        _mobileClient.ensure(
-          userId: userId,
-          accessToken: accessToken,
-          origin: _url(mobileClientCredentialEndpoint),
-          mint: (captcha) => _mintMobileClient(userId, accessToken, captcha),
-        ),
+      final renewal = _mobileClient.ensure(
+        userId: userId,
+        accessToken: accessToken,
+        origin: _url(mobileClientCredentialEndpoint),
+        mint: (captcha) => _mintMobileClient(userId, accessToken, captcha),
+      );
+      if (requiredForFleet && credential == null) {
+        credential = await renewal;
+      } else {
+        unawaited(renewal);
+      }
+    }
+    if (requiredForFleet && credential == null) {
+      throw const ApiException(
+        message: 'Native client verification is required',
+        statusCode: 403,
       );
     }
+    (Zone.current[_sentMobileClientKey] as _SentMobileClient?)?.token =
+        credential;
     return credential == null ? const {} : {mobileClientHeader: credential};
   }
 

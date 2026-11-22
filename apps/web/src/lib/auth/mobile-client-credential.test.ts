@@ -133,6 +133,12 @@ describe('mintMobileClientCredential', () => {
     expect(
       verifyMobileClientCredential(body.mobile_client.token, binding)
     ).toBe(true);
+    expect(
+      verifyMobileClientCredential(body.mobile_client.token, {
+        ...binding,
+        requireMastermindSession: true,
+      })
+    ).toBe(false);
     const payload = JSON.parse(
       Buffer.from(body.mobile_client.token.split('.')[1], 'base64url').toString(
         'utf8'
@@ -140,6 +146,25 @@ describe('mintMobileClientCredential', () => {
     );
     expect(payload.email).toBeNull();
     expect(JSON.stringify(payload)).not.toContain('user@example.com');
+  });
+
+  it('requires recorded session provenance to mint a Mastermind credential', async () => {
+    const refreshMastermindSession = vi.fn(async () => true);
+    const response = await mintMobileClientCredential(request(), {
+      ...deps(),
+      refreshMastermindSession,
+    });
+    expect(response.status).toBe(200);
+    expect(refreshMastermindSession).toHaveBeenCalledWith(binding);
+    expect(
+      verifyMobileClientCredential(
+        (await response.json()).mobile_client.token,
+        {
+          ...binding,
+          requireMastermindSession: true,
+        }
+      )
+    ).toBe(true);
   });
 
   it.each([

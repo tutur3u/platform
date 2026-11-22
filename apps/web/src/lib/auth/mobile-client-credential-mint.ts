@@ -42,6 +42,10 @@ export type MobileClientCredentialMintDeps = {
   /** Hostname the Turnstile widget must have been solved on. */
   turnstileHostname: () => string;
   turnstileFetch?: typeof fetch;
+  refreshMastermindSession?: (session: {
+    userId: string;
+    sessionId: string;
+  }) => Promise<boolean>;
 };
 
 function json(body: Record<string, unknown>, status: number) {
@@ -126,6 +130,11 @@ export async function mintMobileClientCredential(
   const { expiresAt, token } = createMobileClientCredential({
     sessionId,
     userId: auth.user.id,
+    mastermindSession:
+      (await deps.refreshMastermindSession?.({
+        userId: auth.user.id,
+        sessionId,
+      })) ?? false,
   });
 
   return json({ mobile_client: { expires_at: expiresAt, token } }, 200);

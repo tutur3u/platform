@@ -18,7 +18,11 @@ extension _ApiClientMultipart on ApiClient {
       final request = http.MultipartRequest(method, url)
         ..followRedirects = followRedirects
         ..headers.addAll(
-          await _getHeaders(accept: accept, requiresAuth: requiresAuth),
+          await _getHeaders(
+            path: path,
+            accept: accept,
+            requiresAuth: requiresAuth,
+          ),
         );
 
       if (fields != null) {

@@ -11,13 +11,15 @@ import {
  * and require a Turnstile-gated login, or by the Turnstile-gated mint endpoint.
  * It is NOT an auth token: it rides alongside the Supabase bearer in
  * `x-tuturuuu-mobile-client`, is bound to that bearer's user and Supabase
- * session, and only satisfies the browser-shape mutation heuristic. Server
+ * session, and satisfies the browser-shape mutation heuristic. Fleet separately requires
+ * a scope from a server-recorded native session. Server
  * restrictions and explicit server challenges still win.
  */
 export const MOBILE_CLIENT_HEADER = 'x-tuturuuu-mobile-client';
 export const MOBILE_CLIENT_ORIGIN_APP = 'mobile';
 export const MOBILE_CLIENT_TARGET_APP = 'platform';
 export const MOBILE_CLIENT_SCOPE = 'mobile:client';
+const MASTERMIND_MOBILE_SESSION_SCOPE = 'mobile:mastermind-session';
 /** One Turnstile pass (login or mint) buys at most one day of native trust. */
 export const MOBILE_CLIENT_TTL_SECONDS = 24 * 60 * 60;
 const MOBILE_CLIENT_SESSION_SCOPE_PREFIX = 'mobile:sid:';
@@ -79,7 +81,15 @@ export function getRequestBearerToken(headers: Pick<Headers, 'get'>) {
 }
 
 export function createMobileClientCredential(
-  { sessionId, userId }: { sessionId: string; userId: string },
+  {
+    sessionId,
+    userId,
+    mastermindSession = false,
+  }: {
+    sessionId: string;
+    userId: string;
+    mastermindSession?: boolean;
+  },
   options: TokenOptions = {}
 ) {
   // No email claim: the verifier never reads it and the payload is readable.
@@ -88,7 +98,11 @@ export function createMobileClientCredential(
       email: null,
       expiresInSeconds: MOBILE_CLIENT_TTL_SECONDS,
       originApp: MOBILE_CLIENT_ORIGIN_APP,
-      scopes: [MOBILE_CLIENT_SCOPE, sessionBindingScope(sessionId)],
+      scopes: [
+        MOBILE_CLIENT_SCOPE,
+        sessionBindingScope(sessionId),
+        ...(mastermindSession ? [MASTERMIND_MOBILE_SESSION_SCOPE] : []),
+      ],
       targetApp: MOBILE_CLIENT_TARGET_APP,
       userId,
     },
@@ -104,7 +118,8 @@ export function createMobileClientCredential(
  */
 export function issueMobileClientCredentialForSession(
   session: { access_token: string },
-  user: { id: string } | null | undefined
+  user: { id: string } | null | undefined,
+  mastermindSession = false
 ) {
   if (!user) return undefined;
   const sessionId = readSupabaseSessionId(session.access_token, user.id);
@@ -113,6 +128,7 @@ export function issueMobileClientCredentialForSession(
     const { expiresAt, token } = createMobileClientCredential({
       sessionId,
       userId: user.id,
+      mastermindSession,
     });
     return { expires_at: expiresAt, token };
   } catch {
@@ -128,19 +144,30 @@ export function issueMobileClientCredentialForSession(
  */
 export function verifyMobileClientCredential(
   token: string | null | undefined,
-  { sessionId, userId }: { sessionId: string | null; userId: string },
+  {
+    sessionId,
+    userId,
+    requireMastermindSession = false,
+  }: {
+    sessionId: string | null;
+    userId: string;
+    requireMastermindSession?: boolean;
+  },
   options: TokenOptions = {}
 ) {
   if (!token || token.length > MAX_HEADER_LENGTH || !sessionId) return false;
   const verification = verifyAppCoordinationToken(token, options);
   if (!verification.ok) return false;
   const { claims } = verification;
+  const hasMastermindSession =
+    claims.scopes[2] === MASTERMIND_MOBILE_SESSION_SCOPE;
   return (
     claims.sub === userId &&
     claims.origin_app === MOBILE_CLIENT_ORIGIN_APP &&
     claims.target_app === MOBILE_CLIENT_TARGET_APP &&
     claims.workspace_id === undefined &&
-    claims.scopes.length === 2 &&
+    claims.scopes.length === (hasMastermindSession ? 3 : 2) &&
+    (!requireMastermindSession || hasMastermindSession) &&
     claims.scopes[0] === MOBILE_CLIENT_SCOPE &&
     claims.scopes[1] === sessionBindingScope(sessionId)
   );
@@ -153,7 +180,8 @@ export function verifyMobileClientCredential(
  */
 export function hasVerifiedMobileClientCredential(
   request: { headers: Pick<Headers, 'get'> },
-  userId: string
+  userId: string,
+  requireMastermindSession = false
 ) {
   const credential = request.headers.get(MOBILE_CLIENT_HEADER);
   if (!credential) return false;
@@ -163,5 +191,6 @@ export function hasVerifiedMobileClientCredential(
       userId
     ),
     userId,
+    requireMastermindSession,
   });
 }
