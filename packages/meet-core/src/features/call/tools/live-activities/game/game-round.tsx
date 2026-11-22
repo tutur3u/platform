@@ -7,8 +7,8 @@ import {
   type Activity,
   ActivitySection,
   activityCardClass,
-  ChoiceButton,
 } from '../activity-kit';
+import { ChoiceGroup } from '../choice-group';
 
 /** Whole seconds until the round's deadline, ticking only while it runs. */
 function useSecondsLeft(endsAt: number | undefined) {
@@ -56,28 +56,23 @@ export function GameRound({ activity }: { activity: Activity }) {
         )}
       </div>
       <p className="wrap-break-word font-semibold text-base">{round.prompt}</p>
-      <div role="radiogroup" aria-label={round.prompt} className="space-y-1.5">
-        {round.options.map((option, position) => (
-          <ChoiceButton
-            // Options are identified by position: it is the answer key.
-            key={`${round.id}:${position}`}
-            selected={mine === position}
-            correct={round.correct === position}
-            onSelect={
-              canAnswer
-                ? () =>
-                    activity.send({
-                      kind: 'game.answer',
-                      roundId: round.id,
-                      choice: position,
-                    })
-                : undefined
-            }
-          >
-            {option}
-          </ChoiceButton>
-        ))}
-      </div>
+      <ChoiceGroup
+        id={round.id}
+        label={round.prompt}
+        options={round.options}
+        selected={mine}
+        correct={round.correct}
+        onSelect={
+          canAnswer
+            ? (choice) =>
+                activity.send({
+                  kind: 'game.answer',
+                  roundId: round.id,
+                  choice,
+                })
+            : undefined
+        }
+      />
       <p role="status" className="text-muted-foreground text-sm">
         {activity.canManage
           ? t('answered', { count: game.answered })

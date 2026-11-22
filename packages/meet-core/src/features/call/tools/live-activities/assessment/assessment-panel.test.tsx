@@ -241,6 +241,15 @@ it('lets a participant answer while open and shows only their own result on rele
   // Closed: the options are read-only and the right one is marked.
   for (const option of within(choices).getAllByRole('radio'))
     expect(option).toHaveProperty('disabled', true);
+  // The mark is said in words, so it does not depend on seeing a colour.
+  expect(
+    within(choices).getByRole('radio', {
+      name: new RegExp(`Merge sort\\s*${strings.options.correct_choice}`),
+    })
+  ).toBeTruthy();
+  expect(
+    within(choices).getByRole('radio', { name: 'Quick sort' })
+  ).toBeTruthy();
   expect(screen.queryByRole('button', { name: t.submit })).toBeNull();
 });
 
@@ -303,4 +312,44 @@ it('keeps a question the host is writing when the room repeats its state', () =>
   reconnectRoom();
   room({ manager: true, ...draft });
   expect(prompts()).toEqual(['Which sort is stable?', 'Half written']);
+});
+
+it('moves through the options with the arrow keys and answers only on a pick', () => {
+  renderPanel(AssessmentPanel, false);
+  room({ snapshot: { assessment: open } });
+  const [first, second] = screen.getAllByRole('radio') as HTMLButtonElement[];
+  // The group is one tab stop.
+  expect([first!.tabIndex, second!.tabIndex]).toEqual([0, -1]);
+  first!.focus();
+  fireEvent.keyDown(first!, { key: 'ArrowDown' });
+  expect(document.activeElement).toBe(second);
+  // The ends wrap around.
+  fireEvent.keyDown(second!, { key: 'ArrowRight' });
+  expect(document.activeElement).toBe(first);
+  fireEvent.keyDown(first!, { key: 'ArrowUp' });
+  expect(document.activeElement).toBe(second);
+  fireEvent.keyDown(second!, { key: 'Home' });
+  expect(document.activeElement).toBe(first);
+  fireEvent.keyDown(first!, { key: 'End' });
+  expect(document.activeElement).toBe(second);
+  // Moving focus sends nothing: an answer goes out only when it is picked.
+  expect(sent()).toEqual([]);
+  fireEvent.click(second!);
+  expect(sent()).toEqual([
+    { kind: 'assessment.submit', itemId: CHOICE, choice: 1 },
+  ]);
+});
+
+it('changes the kind of a question with the arrow keys', () => {
+  renderPanel(AssessmentPanel, true);
+  fireEvent.click(screen.getByRole('button', { name: t.add_question }));
+  const short = screen.getByRole('radio', { name: t.kind_short });
+  const long = screen.getByRole('radio', { name: t.kind_long });
+  expect([short.tabIndex, long.tabIndex]).toEqual([0, -1]);
+  short.focus();
+  fireEvent.keyDown(short, { key: 'ArrowRight' });
+  // A draft setting follows focus, as a native radio group does.
+  expect(document.activeElement).toBe(long);
+  expect(long.getAttribute('aria-checked')).toBe('true');
+  expect(short.getAttribute('aria-checked')).toBe('false');
 });

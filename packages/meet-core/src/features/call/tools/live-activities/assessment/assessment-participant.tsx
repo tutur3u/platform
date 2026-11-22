@@ -9,8 +9,8 @@ import {
   ActivityEmpty,
   type Activity,
   activityCardClass,
-  ChoiceButton,
 } from '../activity-kit';
+import { ChoiceGroup } from '../choice-group';
 import { useRoomDraft } from '../room-draft';
 
 type Item = Activity['snapshot']['assessment']['items'][number];
@@ -104,37 +104,30 @@ export function AssessmentParticipant({ activity }: { activity: Activity }) {
                 {index + 1}. {item.prompt}
               </p>
               {item.kind === 'choice' ? (
-                <div
-                  role="radiogroup"
-                  aria-label={item.prompt}
-                  className="space-y-1.5"
-                >
-                  {(item.options ?? []).map((option, position) => (
-                    <ChoiceButton
-                      // Options are identified by position: it is the answer key.
-                      key={`${item.id}:${position}`}
-                      selected={mine?.choice === position}
-                      correct={item.correct === position}
-                      onSelect={
-                        open
-                          ? () =>
-                              activity.send({
-                                kind: 'assessment.submit',
-                                itemId: item.id,
-                                choice: position,
-                              })
-                          : undefined
-                      }
-                    >
-                      {option}
-                    </ChoiceButton>
-                  ))}
+                <>
+                  <ChoiceGroup
+                    id={item.id}
+                    label={item.prompt}
+                    options={item.options ?? []}
+                    selected={mine?.choice}
+                    correct={item.correct}
+                    onSelect={
+                      open
+                        ? (choice) =>
+                            activity.send({
+                              kind: 'assessment.submit',
+                              itemId: item.id,
+                              choice,
+                            })
+                        : undefined
+                    }
+                  />
                   {open && mine?.choice !== undefined && (
                     <p role="status" className="text-muted-foreground text-xs">
                       {t('submitted')}
                     </p>
                   )}
-                </div>
+                </>
               ) : (
                 <WrittenAnswer
                   item={item}

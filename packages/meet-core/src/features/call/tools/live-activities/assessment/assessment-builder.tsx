@@ -11,6 +11,7 @@ import {
   activityCardClass,
   OptionsEditor,
 } from '../activity-kit';
+import { radioGroupKeyDown } from '../choice-group';
 import { useRoomDraft } from '../room-draft';
 import {
   ASSESSMENT_KINDS,
@@ -74,6 +75,7 @@ export function AssessmentBuilder({
               role="radiogroup"
               aria-label={t('kind')}
               className="inline-flex gap-0.5 rounded-full border bg-muted/50 p-0.5"
+              onKeyDown={(event) => radioGroupKeyDown(event, true)}
             >
               {ASSESSMENT_KINDS.map((kind) => (
                 <button
@@ -81,6 +83,7 @@ export function AssessmentBuilder({
                   type="button"
                   role="radio"
                   aria-checked={item.kind === kind}
+                  tabIndex={item.kind === kind ? 0 : -1}
                   onClick={() => update(item.key, { kind })}
                   className={cn(
                     'h-8 pointer-coarse:h-11 rounded-full px-3 font-semibold text-muted-foreground text-xs transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',

@@ -157,6 +157,14 @@ it('lets a player answer once and shows the key and scores on reveal', () => {
   });
   expect(screen.getByText(t.pick_one)).toBeTruthy();
   expect(screen.queryByRole('button', { name: t.reveal })).toBeNull();
+  // Arrow keys move between the options without locking an answer in.
+  const bubble = screen.getByRole('radio', { name: 'Bubble sort' });
+  bubble.focus();
+  fireEvent.keyDown(bubble, { key: 'ArrowDown' });
+  expect(document.activeElement).toBe(
+    screen.getByRole('radio', { name: 'Quick sort' })
+  );
+  expect(sent()).toEqual([]);
   fireEvent.click(screen.getByRole('radio', { name: 'Quick sort' }));
   expect(sent()).toEqual([{ kind: 'game.answer', roundId: ROUND, choice: 1 }]);
 
@@ -183,6 +191,13 @@ it('lets a player answer once and shows the key and scores on reveal', () => {
     mine: { game: { roundId: ROUND, choice: 1 } },
   });
   expect(screen.getByText(t.right)).toBeTruthy();
+  // The key is said in words, so it does not depend on seeing a colour.
+  expect(
+    screen.getByRole('radio', {
+      name: new RegExp(`Quick sort\\s*${strings.options.correct_choice}`),
+    })
+  ).toBeTruthy();
+  expect(screen.getByRole('radio', { name: 'Bubble sort' })).toBeTruthy();
   expect(screen.getByText(t.scoreboard)).toBeTruthy();
   expect(screen.getByText(strings.you)).toBeTruthy();
 });

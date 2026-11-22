@@ -2,7 +2,6 @@
 
 import { Plus, Trash2 } from '@tuturuuu/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useMeetTool } from '../context';
@@ -89,40 +88,6 @@ export function ActivitySection({
 }
 
 export const activityCardClass = 'space-y-3 rounded-2xl border bg-card p-3';
-
-/** An option the room can pick, shown as one full-width choice. */
-export function ChoiceButton({
-  selected,
-  correct,
-  disabled,
-  onSelect,
-  children,
-}: {
-  selected: boolean;
-  /** Set once the answer is known: marks the right option for everyone. */
-  correct?: boolean;
-  disabled?: boolean;
-  onSelect?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      disabled={disabled || !onSelect}
-      onClick={onSelect}
-      className={cn(
-        'flex min-h-11 w-full items-center gap-2 rounded-full border px-4 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
-        'enabled:hover:bg-accent disabled:cursor-default',
-        selected && 'border-foreground bg-accent font-semibold',
-        correct && 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
-      )}
-    >
-      <span className="min-w-0 flex-1 wrap-break-word">{children}</span>
-    </button>
-  );
-}
 
 /** Two to six options with one marked as the answer, for choices and rounds. */
 export function OptionsEditor({

@@ -4839,7 +4839,8 @@
           "mark_correct": "Mark option {number} as correct",
           "option": "Option {number}",
           "remove": "Remove option {number}",
-          "add": "Add option"
+          "add": "Add option",
+          "correct_choice": "Correct answer"
         },
         "qa": {
           "title": "Q&A"

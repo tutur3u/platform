@@ -67,6 +67,12 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
   });
   // The host reads both sides while the room still has only the front.
   expect(screen.getByText('Stable sort')).toBeTruthy();
+  // The card is text, read out when it changes; the action is its own button.
+  expect(
+    screen.getByText('Stable sort').closest('[aria-live="polite"]')
+  ).not.toBeNull();
+  expect(screen.queryByRole('button', { name: /Stable sort/ })).toBeNull();
+  expect(screen.getByRole('button', { name: t.reveal })).toBeTruthy();
   expect(screen.getByText('Keeps equal keys in order')).toBeTruthy();
   expect(screen.getByText(t.room_sees_front)).toBeTruthy();
   expect(screen.getByText('Ana')).toBeTruthy();
@@ -130,7 +136,11 @@ it('shows a participant the back only once the host reveals it', () => {
     },
     mine: { flashcards: { known: [FIRST] } },
   });
-  expect(screen.getByText('Keeps equal keys in order')).toBeTruthy();
+  const back = screen.getByText('Keeps equal keys in order');
+  // The revealed side is announced as text, under its own label.
+  expect(back.closest('[aria-live="polite"]')?.textContent).toBe(
+    `${t.back}Keeps equal keys in order`
+  );
   expect(screen.getByText('You know 1 of 2')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: t.still_learning }));
   expect(sent().at(-1)).toEqual({

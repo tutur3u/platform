@@ -4706,6 +4706,7 @@
         },
         "options": {
           "add": "Thêm lựa chọn",
+          "correct_choice": "Đáp án đúng",
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
           "mark_correct": "Đánh dấu lựa chọn {number} là đúng",
           "option": "Lựa chọn {number}",

@@ -63,7 +63,12 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
     >
       {card ? (
         <>
-          <div className="grid min-h-44 place-items-center gap-5 rounded-3xl border bg-card p-6 text-center">
+          {/* The card is plain text, read out again whenever it changes. */}
+          <div
+            aria-live="polite"
+            aria-atomic="true"
+            className="grid min-h-44 place-items-center gap-5 rounded-3xl border bg-card p-6 text-center"
+          >
             {activity.canManage ? (
               <>
                 <CardSide label={t('front')} text={card.front} />

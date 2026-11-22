@@ -4706,6 +4706,7 @@
         },
         "options": {
           "add": "Add option",
+          "correct_choice": "Correct answer",
           "legend": "Options, with the correct one selected",
           "mark_correct": "Mark option {number} as correct",
           "option": "Option {number}",

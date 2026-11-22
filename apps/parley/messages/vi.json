@@ -4839,7 +4839,8 @@
           "mark_correct": "Đánh dấu lựa chọn {number} là đúng",
           "option": "Lựa chọn {number}",
           "remove": "Xóa lựa chọn {number}",
-          "add": "Thêm lựa chọn"
+          "add": "Thêm lựa chọn",
+          "correct_choice": "Đáp án đúng"
         },
         "qa": {
           "title": "Hỏi đáp"
