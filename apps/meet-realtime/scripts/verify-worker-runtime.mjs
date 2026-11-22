@@ -13,6 +13,10 @@ if (process.env.MEET_REALTIME_TEST_CONFIG) {
   assert.equal(config.name, 'tuturuuu-meet-realtime');
   assert.equal(config.compatibility_date, '2026-06-20');
   assert.ok(config.compatibility_flags.includes('nodejs_compat'));
+  assert.ok(
+    config.compatibility_flags.includes('global_fetch_strictly_public'),
+    'Realtime checkpoints must reach the platform Worker route'
+  );
   assert.deepEqual(config.durable_objects.bindings, [
     { name: 'CHANNEL_ROOM', class_name: 'ChannelRoomDurableObject' },
     {

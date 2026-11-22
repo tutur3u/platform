@@ -1467,21 +1467,21 @@
     "apps/meet-realtime/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
-      "digest": "d32107cb8e613fb6dc67572abfd000cbe999de60320f6bdf3848ca2eb02eb18c",
+      "digest": "6bf063f22bf550805214cbe392ca0cce8b0a796bf211fb5b8aeea55382f3d72a",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
-        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged."
       }
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
-      "digest": "2b50011746cc7f4f665fe4e8886983dc5fcfc1ba4f25fa5ce49e429738f4b7bc",
+      "digest": "b5bd015e5aaac96f574872f5b07bd653a634378f5782c28cfa36c2dfbef4205a",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
-        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged."
       }
     },
     "apps/meet/.gitignore": {

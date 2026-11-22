@@ -101,6 +101,11 @@ in deploy, independently of the seal inside the archive. Publication uses the
 qualified realtime output with `--no-bundle`; Cloudflare credentials are scoped to
 provider steps, not dependency installation or compilation.
 
+The emitted realtime Worker must include `global_fetch_strictly_public`.
+Programming and document checkpoints use `PLATFORM_API_BASE_URL` or default to
+`https://tuturuuu.com`. This flag sends same-zone requests through the public
+platform Worker route so a room owner can save edits before enqueuing a run.
+
 Before the first publication, capture both currently serving Worker deployment
 and version IDs. Each must serve one version at 100 percent. Retain the resulting
 `meet-rollback-frontend-target.json` and `meet-rollback-realtime-target.json`
