@@ -12,6 +12,7 @@ import { afterEach, test } from 'node:test';
 import { childEnv, deliver } from './secret-deliver.mjs';
 import { EXIT, runPair, runRequest } from './secret-flow.mjs';
 import {
+  machineKey,
   ownerKeys,
   revokeOwnerKey,
   spoolFiles,
@@ -317,4 +318,33 @@ test('a cancel while a pairing proof waits for the lock enrolls nothing once the
   release();
   assert.equal(await run, EXIT.cancelled);
   assert.deepEqual(ownerKeys(world.paths), []);
+});
+
+test('creating the machine key never replaces what already sits at its path', () => {
+  world = makeWorld();
+  const file = world.paths.machineKeyFile;
+  const existing = fs.readFileSync(file, 'utf8');
+  // A key file open to other users is refused, and kept as it is.
+  fs.chmodSync(file, 0o644);
+  assert.throws(
+    () => machineKey(world.paths, { create: true }),
+    /secret_machine_key/
+  );
+  assert.equal(fs.readFileSync(file, 'utf8'), existing);
+  // A symlink is not followed and its target is not written.
+  const target = path.join(world.home, 'elsewhere.txt');
+  fs.writeFileSync(target, 'untouched');
+  fs.rmSync(file);
+  fs.symlinkSync(target, file);
+  assert.throws(
+    () => machineKey(world.paths, { create: true }),
+    /secret_machine_key/
+  );
+  assert.equal(fs.readFileSync(target, 'utf8'), 'untouched');
+  assert.equal(fs.lstatSync(file).isSymbolicLink(), true);
+  // With nothing there, one exclusive create makes a 0600 key that reads back.
+  fs.rmSync(file);
+  const made = machineKey(world.paths, { create: true });
+  assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+  assert.deepEqual(machineKey(world.paths).publicKey, made.publicKey);
 });

@@ -144,28 +144,33 @@ export function machineIdentity(paths) {
 
 /**
  * The machine key (Ed25519). Created once, with an exclusive 0600 file, when
- * `create` is set; any other mode or owner is refused.
+ * `create` is set; any other mode or owner is refused. The exclusive create
+ * is the only existence test: a path that already holds anything (a refused
+ * file, a symlink, a key another process just wrote) is left untouched.
  */
 export function machineKey(paths, { create = false } = {}) {
   let text = readPrivateFile(paths.machineKeyFile);
-  if (text === null && create && !fs.existsSync(paths.machineKeyFile)) {
+  if (text === null && create) {
     fs.mkdirSync(path.dirname(paths.machineKeyFile), {
       recursive: true,
       mode: 0o700,
     });
     const seed = randomBytes(32);
-    const fd = fs.openSync(
-      paths.machineKeyFile,
-      fs.constants.O_WRONLY |
-        fs.constants.O_CREAT |
-        fs.constants.O_EXCL |
-        fs.constants.O_NOFOLLOW,
-      0o600
-    );
+    let fd;
     try {
+      fd = fs.openSync(
+        paths.machineKeyFile,
+        fs.constants.O_WRONLY |
+          fs.constants.O_CREAT |
+          fs.constants.O_EXCL |
+          fs.constants.O_NOFOLLOW,
+        0o600
+      );
       fs.writeFileSync(fd, `${b64url(seed)}\n`);
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
     } finally {
-      fs.closeSync(fd);
+      if (fd !== undefined) fs.closeSync(fd);
       seed.fill(0);
     }
     text = readPrivateFile(paths.machineKeyFile);
