@@ -83,8 +83,7 @@ describe('game', () => {
       },
     ]);
     expect(
-      action(revealed.state, host, { kind: 'game.reveal', roundId }, 5001)
-        .state
+      action(revealed.state, host, { kind: 'game.reveal', roundId }, 5001).state
     ).toBe(revealed.state);
     expect(
       action(revealed.state, host, { kind: 'game.next', roundId }, 5001)
@@ -95,7 +94,12 @@ describe('game', () => {
   });
 
   it('refuses a Reveal or Next sent for a round that is no longer in play', () => {
-    const round = { prompt: 'Pick', options: ['A', 'B'], answer: 1, seconds: 5 };
+    const round = {
+      prompt: 'Pick',
+      options: ['A', 'B'],
+      answer: 1,
+      seconds: 5,
+    };
     const ready = action(room(), host, {
       kind: 'game.set',
       rounds: [round, { ...round, prompt: 'Pick again', answer: 0 }],

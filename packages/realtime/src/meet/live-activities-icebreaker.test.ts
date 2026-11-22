@@ -33,7 +33,10 @@ describe('icebreaker', () => {
       expect(read(stored, token).reply).toMatchObject([
         {
           snapshot: {
-            icebreaker: { prompt: 'Hi?', promptId: LEGACY_ICEBREAKER_PROMPT_ID },
+            icebreaker: {
+              prompt: 'Hi?',
+              promptId: LEGACY_ICEBREAKER_PROMPT_ID,
+            },
           },
         },
         {},

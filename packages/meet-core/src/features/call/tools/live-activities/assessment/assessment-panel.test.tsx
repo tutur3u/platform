@@ -192,7 +192,10 @@ it('shows the host each answer, grades written ones and releases results', () =>
   fireEvent.click(screen.getByRole('button', { name: t.reopen_confirm }));
   expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'open' });
   // Hiding the results again does not bring the plain Reopen back.
-  room({ manager: true, snapshot: { assessment: { ...closed, sealed: true } } });
+  room({
+    manager: true,
+    snapshot: { assessment: { ...closed, sealed: true } },
+  });
   expect(screen.getByRole('button', { name: t.new_attempt })).toBeTruthy();
   expect(screen.queryByRole('button', { name: t.reopen })).toBeNull();
 

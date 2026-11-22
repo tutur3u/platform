@@ -262,7 +262,9 @@ describe('assessment', () => {
       score: 10,
     };
     // Meanwhile the questions go back to draft and are answered again.
-    const second = answer(step(step(step(first.state, 'closed'), 'draft'), 'open'));
+    const second = answer(
+      step(step(step(first.state, 'closed'), 'draft'), 'open')
+    );
     expect(second.itemId).not.toBe(first.itemId);
     const closed = step(second.state, 'closed');
     expect(closed.liveActivities?.assessment.responses).toMatchObject([
