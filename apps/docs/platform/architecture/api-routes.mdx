@@ -140,6 +140,8 @@ export const POST = withSessionAuth(async (request, { user, supabase }) => {
     .insert({
       name: parsed.data.name,
       logo_url: parsed.data.logo_url,
+      creator_id: user.id,
+      personal: false,
     })
     .select()
     .single();
@@ -147,13 +149,6 @@ export const POST = withSessionAuth(async (request, { user, supabase }) => {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  // Add creator as owner
-  await supabase.from('workspace_members').insert({
-    ws_id: workspace.id,
-    user_id: user.id,
-    role: 'owner',
-  });
 
   return NextResponse.json({ data: workspace }, { status: 201 });
 });
@@ -164,6 +159,8 @@ export const POST = withSessionAuth(async (request, { user, supabase }) => {
 > `@tuturuuu/supabase/next/server`: `createClient()` and `createDynamicClient()`
 > are async and must be awaited; `createAdminClient()` is synchronous (do not
 > `await` it unless you pass it through another async helper).
+
+Workspace creation triggers add the creator as a full member and seed default permissions.
 
 ## Workspace-Scoped API
 

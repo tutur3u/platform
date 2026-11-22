@@ -24,19 +24,8 @@ select ok(
 );
 
 select ok(
-  exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'workspace_members'
-      and policyname = 'Allow workspace managers to update members'
-      and cmd = 'UPDATE'
-      and qual like '%has_workspace_permission%'
-      and with_check like '%has_workspace_permission%'
-      and qual not like '%auth.uid() = user_id%'
-      and with_check not like '%auth.uid() = user_id%'
-  ),
-  'workspace_members update policy requires manage_workspace_members without self-update fallback'
+  not has_table_privilege('authenticated', 'public.workspace_members', 'UPDATE'),
+  'authenticated has no direct workspace membership update privilege'
 );
 
 insert into public.users (id)
@@ -92,19 +81,16 @@ select set_config(
   true
 );
 
-select results_eq(
+select throws_ok(
   $$
     update public.workspace_members
     set type = 'GUEST'
     where ws_id = '00000000-0000-0000-0000-000000001010'
       and user_id = '00000000-0000-0000-0000-000000001002'
-    returning 1
   $$,
-  $$
-    select 1
-    where false
-  $$,
-  'ordinary members cannot self-update workspace member type through RLS'
+  '42501',
+  'permission denied for table workspace_members',
+  'ordinary members cannot update their own workspace member type'
 );
 
 reset role;
@@ -138,7 +124,7 @@ select throws_ok(
   $$,
   '42501',
   'Only workspace managers can change workspace member type',
-  'trigger rejects non-manager type changes even if a future policy permits the row update'
+  'trigger rejects non-manager type changes even if a server executes the update with the member as actor'
 );
 
 select set_config(
@@ -157,7 +143,7 @@ select lives_ok(
     where ws_id = '00000000-0000-0000-0000-000000001010'
       and user_id = '00000000-0000-0000-0000-000000001003'
   $$,
-  'workspace creator can change workspace member type'
+  'server can promote a guest when the workspace creator is the actor'
 );
 
 select is(

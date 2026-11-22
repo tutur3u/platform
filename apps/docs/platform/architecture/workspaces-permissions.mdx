@@ -270,6 +270,30 @@ Guest permission evaluation reads `workspace_default_permissions.member_type = '
 
 If you document or implement new authorization behavior against `workspace_members.role`, you will diverge from the real app behavior.
 
+## Workspace membership and permission writes
+
+Authorized server routes and service-role functions own writes to
+`workspace_members`, `workspace_roles`, `workspace_role_members`,
+`workspace_role_permissions`, and `workspace_default_permissions`. Direct Data
+API writes using a signed-in user's token return PostgreSQL `42501` (HTTP 403).
+This applies to Web, satellite apps, mobile, and external integrations.
+Existing row visibility and MFA requirements still apply to reads.
+
+A creator can insert their own first membership into an empty workspace.
+Workspace creation triggers add the creator membership and seed Drive and Chat
+defaults. Signed-in callers can also manage `workspace_invites` and
+`workspace_email_invites` within their existing row policies. Pending invitations
+do not confer active workspace access.
+
+To restore the client write policies and the signed-in write privileges, use
+[the rollback SQL](https://github.com/tutur3u/platform/blob/main/apps/database/rollbacks/20261122033000_revoke_client_workspace_membership_writes.rollback.sql)
+as a new forward migration through the gated database workflow. Anonymous row
+writes and both client roles’ TRUNCATE, TRIGGER, and REFERENCES privileges stay revoked.
+The [pgTAP suite](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/workspace-client-membership-writes.sql)
+covers client access and workspace creation. The
+[rollback check](https://github.com/tutur3u/platform/blob/main/apps/database/verification/workspace-client-membership-writes-rollback-roundtrip.sql)
+compares the policy and privilege catalogs on a disposable replay.
+
 ## Permission Catalog
 
 The permission catalog is defined in `packages/utils/src/permissions.tsx`.

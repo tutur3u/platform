@@ -150,6 +150,12 @@ through the local Auth admin API (`private.guard_qa_test_auth` is the example).
 
 ## Workspace-Scoped Writes
 
+Write `workspace_members`, `workspace_roles`, `workspace_role_members`,
+`workspace_role_permissions`, and `workspace_default_permissions` through
+authorized server routes and service-role functions. Keep the empty-workspace
+creator bootstrap INSERT and the existing signed-in pending invite policies.
+See [workspace membership and permission writes](../../../../../apps/docs/platform/architecture/workspaces-permissions.mdx#workspace-membership-and-permission-writes).
+
 ### Free-only app invitation acceptance
 
 The IEEAI app-token proposal uses positive subscription/product evidence rather

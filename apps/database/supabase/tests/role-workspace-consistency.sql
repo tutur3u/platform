@@ -74,6 +74,20 @@ insert into public.workspace_role_permissions (ws_id, role_id, permission, enabl
 insert into public.workspace_role_members (role_id, user_id)
 values ('1ac00000-0000-4000-8000-0000000000c1', pg_temp.uid('actor'));
 
+-- These triggers branch on current_user. Give the authenticated fixture session
+-- access to the trigger paths within this rolled-back transaction.
+grant update on table public.workspace_roles to authenticated;
+grant insert, delete on table public.workspace_role_members to authenticated;
+create policy rwc_update_roles on public.workspace_roles for update to authenticated
+  using (ws_id in (pg_temp.w('a'), pg_temp.w('b')))
+  with check (ws_id in (pg_temp.w('a'), pg_temp.w('b')));
+create policy rwc_insert_role_members on public.workspace_role_members for insert to authenticated
+  with check (role_id in (
+    '1ac00000-0000-4000-8000-0000000000c2', '1ac00000-0000-4000-8000-0000000000c6'
+  ));
+create policy rwc_delete_role_members on public.workspace_role_members for delete to authenticated
+  using (role_id = '1ac00000-0000-4000-8000-0000000000c2');
+
 -- Reproduce the name-independent role mutation as a non-creator admin of B.
 select is(pg_temp.as_err(pg_temp.uid('actor'), format($q$
   do $body$

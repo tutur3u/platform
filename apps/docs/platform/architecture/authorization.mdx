@@ -21,7 +21,10 @@ The important implementation detail is that modern permission checks do **not** 
 
 Guest defaults use the same `workspace_role_permission` catalog as member defaults, including management and `admin` bits, but guests are still denied on dashboard routes that have no mapped permission.
 
-For the full workspace model, including URL resolution and API-key auth, see `platform/architecture/workspaces-permissions`.
+See [Workspace Permissions](/platform/architecture/workspaces-permissions) for URL
+resolution and API-key auth, and
+[Workspace membership and permission writes](/platform/architecture/workspaces-permissions#workspace-membership-and-permission-writes)
+for the Data API write boundary.
 
 ## Core Helper
 

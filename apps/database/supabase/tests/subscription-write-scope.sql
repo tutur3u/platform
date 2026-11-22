@@ -259,6 +259,25 @@ select is(
   'subscription seat count is unchanged by API users'
 );
 
+-- The creator-grant triggers identify client writes by current_user. Give the
+-- authenticated fixture session scoped DML so the trigger checks can run.
+grant insert, update on table public.workspace_role_permissions, public.workspace_default_permissions
+  to authenticated;
+grant insert on table public.workspace_role_members to authenticated;
+create policy subscription_fixture_role_permissions
+  on public.workspace_role_permissions for all to authenticated
+  using (ws_id = '5ab00000-0000-4000-8000-0000000000a1')
+  with check (ws_id = '5ab00000-0000-4000-8000-0000000000a1');
+create policy subscription_fixture_default_permissions
+  on public.workspace_default_permissions for all to authenticated
+  using (ws_id = '5ab00000-0000-4000-8000-0000000000a1')
+  with check (ws_id = '5ab00000-0000-4000-8000-0000000000a1');
+create policy subscription_fixture_role_members
+  on public.workspace_role_members for insert to authenticated
+  with check (role_id in (
+    '5ab00000-0000-4000-8000-0000000000b2', '5ab00000-0000-4000-8000-0000000000b3'
+  ));
+
 -- Admin cannot grant manage_subscription through roles or defaults.
 select ok(
   not public.has_workspace_permission(
