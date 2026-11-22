@@ -22,6 +22,7 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { hasManagedMailMailbox } from './mailbox-notification-access';
+import { type MailReadBudget, MailReadTimeout } from './read-budget';
 import { isManagedMailReviewer } from './reviewer-access';
 import type { MailRouteContext } from './types';
 
@@ -39,10 +40,13 @@ type ResolvedMailAuth =
     };
 
 export async function resolveMailAuth(
-  request: NextRequest
+  request: NextRequest,
+  readBudget?: MailReadBudget
 ): Promise<ResolvedMailAuth> {
   const supabase = await createClient(request);
-  const { authError, user } = await resolveAuthenticatedSessionUser(supabase);
+  const { authError, user } = await (readBudget
+    ? resolveAuthenticatedSessionUser(supabase, { check: readBudget.check })
+    : resolveAuthenticatedSessionUser(supabase));
 
   if (user) {
     return { supabase, user };
@@ -70,10 +74,16 @@ export async function resolveMailAuth(
   };
 }
 
-export async function hasVerifiedMailStaffAccess(userId: string) {
+export async function hasVerifiedMailStaffAccess(
+  userId: string,
+  readBudget?: MailReadBudget
+) {
   return isVerifiedTuturuuuStaffSession(
     await getVerifiedAuthUser(
-      await createAdminClient({ noCookie: true }),
+      await createAdminClient({
+        noCookie: true,
+        ...(readBudget ? { fetch: readBudget.fetch } : {}),
+      }),
       userId
     )
   );
@@ -82,7 +92,8 @@ export async function hasVerifiedMailStaffAccess(userId: string) {
 export async function resolveMailRouteContext(
   request: NextRequest,
   wsId: string,
-  connectedAccount = false
+  connectedAccount = false,
+  readBudget?: MailReadBudget
 ): Promise<
   | {
       ok: true;
@@ -94,18 +105,25 @@ export async function resolveMailRouteContext(
       response: NextResponse;
     }
 > {
-  const auth = await resolveMailAuth(request);
+  const run = <T>(stage: string, work: () => Promise<T>) =>
+    readBudget ? readBudget.run(stage, work) : work();
+  const auth = await run('session', () => resolveMailAuth(request, readBudget));
 
   if ('response' in auth) {
     return { ok: false, response: auth.response };
   }
 
-  const isStaff = await hasVerifiedMailStaffAccess(auth.user.id);
+  const isStaff = await run('staff identity', () =>
+    hasVerifiedMailStaffAccess(auth.user.id, readBudget)
+  );
   let managedMailbox = false;
   if (!connectedAccount && !isStaff) {
     try {
-      managedMailbox = await hasManagedMailMailbox(auth.user);
-    } catch {
+      managedMailbox = await run('managed mailbox', () =>
+        hasManagedMailMailbox(auth.user)
+      );
+    } catch (error) {
+      if (error instanceof MailReadTimeout) throw error;
       return {
         ok: false,
         response: NextResponse.json(
@@ -119,7 +137,7 @@ export async function resolveMailRouteContext(
     !connectedAccount &&
     !isStaff &&
     !managedMailbox &&
-    !(await isManagedMailReviewer(auth.user))
+    !(await run('reviewer identity', () => isManagedMailReviewer(auth.user)))
   ) {
     return {
       ok: false,
@@ -133,17 +151,17 @@ export async function resolveMailRouteContext(
     };
   }
 
-  const normalizedWsId = await normalizeWorkspaceId(
-    wsId,
-    auth.supabase,
-    request
+  const normalizedWsId = await run('workspace resolution', () =>
+    normalizeWorkspaceId(wsId, auth.supabase, request)
   );
-  const membership = await verifyWorkspaceMembershipType({
-    requiredType: 'ANY',
-    supabase: auth.supabase,
-    userId: auth.user.id,
-    wsId: normalizedWsId,
-  });
+  const membership = await run('workspace membership', () =>
+    verifyWorkspaceMembershipType({
+      requiredType: 'ANY',
+      supabase: auth.supabase,
+      userId: auth.user.id,
+      wsId: normalizedWsId,
+    })
+  );
 
   if (membership.error === 'membership_lookup_failed') {
     return {
@@ -166,10 +184,9 @@ export async function resolveMailRouteContext(
   }
 
   if (connectedAccount || !isStaff) {
-    const workspace = await getWorkspace(normalizedWsId, {
-      useAdmin: true,
-      user: auth.user,
-    });
+    const workspace = await run('workspace eligibility', () =>
+      getWorkspace(normalizedWsId, { useAdmin: true, user: auth.user })
+    );
     if (!workspace?.joined || !workspace.personal) {
       return {
         ok: false,
@@ -186,6 +203,7 @@ export async function resolveMailRouteContext(
     isStaff,
     context: {
       normalizedWsId,
+      ...(readBudget ? { readBudget } : {}),
       supabase: auth.supabase,
       user: {
         email: auth.user.email,

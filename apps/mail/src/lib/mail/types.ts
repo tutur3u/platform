@@ -73,6 +73,7 @@ export type MailThreadDetail = {
 };
 
 export type MailRouteContext = {
+  readBudget?: import('./read-budget').MailReadBudget;
   normalizedWsId: string;
   supabase: TypedSupabaseClient;
   user: {

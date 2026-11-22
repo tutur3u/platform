@@ -682,6 +682,7 @@
     "loading": "Đang tải thư",
     "loading_message": "Đang tải thư",
     "mail_settings": "Cài đặt Mail",
+    "mailbox_access_switched": "Bạn không còn quyền truy cập hộp thư này. Đã chuyển sang hộp thư khác.",
     "mailbox_settings": "Cài đặt hộp thư",
     "mailboxes": "Hộp thư",
     "manage_accounts": "Quản lý tài khoản",
@@ -841,6 +842,7 @@
     "provider_microsoft": "Outlook",
     "quoted_message": "Trong thư trước, {sender} đã viết:",
     "quoted_text": "Nội dung trích dẫn",
+    "read_timeout_description": "Mail phản hồi quá chậm. Hãy đợi vài giây rồi thử lại.",
     "reading_settings": "Đọc thư",
     "reading_settings_description": "Tùy chỉnh cách đọc thư trên trình duyệt này. Thay đổi được lưu tự động.",
     "recipient_people": {

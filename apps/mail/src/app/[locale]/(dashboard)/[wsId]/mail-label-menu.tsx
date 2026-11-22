@@ -4,7 +4,6 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bot, Loader2, Plus, Tag, X } from '@tuturuuu/icons';
 import {
   bulkUpdateMailThreads,
-  getMailboxOrganization,
   suggestMailLabels,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { MailIconButton } from './mail-icon-button';
+import { mailOrganizationQuery } from './mail-read-query';
 import { MailThreadPreferenceMenu } from './mail-thread-preference-menu';
 
 export function MailLabelMenu({
@@ -28,8 +28,7 @@ export function MailLabelMenu({
   const t = useTranslations('mail');
   const organization = useQuery({
     enabled: Boolean(mailboxId),
-    queryFn: () => getMailboxOrganization(workspaceId, mailboxId),
-    queryKey: ['mail', workspaceId, mailboxId, 'organization'],
+    ...mailOrganizationQuery(workspaceId, mailboxId),
   });
   const update = useMutation({
     mutationFn: ({

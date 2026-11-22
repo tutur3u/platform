@@ -330,6 +330,29 @@ clients. Thread scans fetch previews rather than full bodies; missing legacy
 snippets are loaded only for the visible page. State scans exclude read-only rows
 unless the requested search needs read state.
 
+### Mailbox access and slow reads
+
+In managed web Mail, the URL selects the mailbox. A saved local hint can start
+loading the default mailbox while discovery is pending. If the selected
+mailbox's thread list or organization request returns 403, Mail stops retrying
+it, clears any matching hint, and switches to the first remaining active
+mailbox from discovery. Mail also clears mailbox-specific thread, folder, and
+label selections. A notice explains the
+switch. Mail skips any candidate that also returns 403 during the workspace
+view and shows the existing no-mailbox state if none remain. Every request
+still checks workspace and mailbox access, including group mailbox eligibility.
+
+Managed bootstrap, unread counts, thread list, and organization reads have a
+12-second request budget. Session and workspace checks and repository
+Supabase calls have a four-second limit per stage or call. Mail returns
+`503 MAIL_READ_TIMEOUT` with `Retry-After: 5` when a deadline expires. The web
+thread list and mailbox discovery show a localized retry message. Unread
+counts remain optional.
+
+Regression coverage lives in `mail-client-archive.test.ts` for selection,
+notices, empty state and manual retry, and in `read-budget.test.ts` for
+deadline timing, upstream cancellation and the membership boundary.
+
 ## Reading and attachment previews
 
 Settings → Reading stores the archive navigation and email appearance preferences

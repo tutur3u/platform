@@ -60,7 +60,7 @@ export async function getMailBootstrap(
   ctx: MailRouteContext,
   includeUnreadCounts = true
 ): Promise<MailBootstrapResponse> {
-  const admin = await getAdminClient();
+  const admin = await getAdminClient(ctx.readBudget);
   const { displayName, mailbox, memberRows, ownerAddress } =
     await resolvePersonalMailbox(admin, ctx);
   const mailboxIds = memberRows.map((row) => row.mailbox_id);
@@ -144,7 +144,7 @@ export async function requireMailboxAccess(
   mailboxId: string,
   roles?: readonly MailMailboxRole[]
 ): Promise<MailboxAccess | null> {
-  const admin = await getAdminClient();
+  const admin = await getAdminClient(ctx.readBudget);
   // Both reads are keyed by the requested ID; nothing is returned unless the
   // membership check below passes.
   const [
@@ -226,7 +226,7 @@ export async function requireMailboxAccess(
 // Counts are optional navigation metadata, fetched after mailbox discovery.
 // Resolve membership again on the server; never trust client-supplied mailbox IDs.
 export async function getMailUnreadCounts(ctx: MailRouteContext) {
-  const admin = await getAdminClient();
+  const admin = await getAdminClient(ctx.readBudget);
   const { data, error } = await privateTable(admin, 'mail_mailbox_members')
     .select(
       'mailbox_id, mailbox:mail_mailboxes!mail_mailbox_members_mailbox_id_fkey!inner(status)'

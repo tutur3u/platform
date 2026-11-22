@@ -5,6 +5,7 @@ import type { Database } from '@tuturuuu/types';
 import { readMailAutomation } from '../automation/policy';
 import { readGroupPolicy } from '../groups/policy';
 import { resolveInternalMailboxName } from '../identity';
+import type { MailReadBudget } from '../read-budget';
 import type {
   MailLabel,
   MailMailbox,
@@ -69,8 +70,12 @@ export async function linkPersonalMailboxWorkspace(
   }
 }
 
-export async function getAdminClient(): Promise<SupabaseClient<Database>> {
-  return createAdminClient({ noCookie: true });
+export async function getAdminClient(
+  readBudget?: MailReadBudget
+): Promise<SupabaseClient<Database>> {
+  return readBudget
+    ? createAdminClient({ noCookie: true, fetch: readBudget.fetch })
+    : createAdminClient({ noCookie: true });
 }
 
 export function normalizeAddress(value: string) {

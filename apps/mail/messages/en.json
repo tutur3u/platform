@@ -682,6 +682,7 @@
     "loading": "Loading mail",
     "loading_message": "Loading message",
     "mail_settings": "Mail settings",
+    "mailbox_access_switched": "This mailbox is no longer available to you. Switched to another mailbox.",
     "mailbox_settings": "Mailbox settings",
     "mailboxes": "Mailboxes",
     "manage_accounts": "Manage accounts",
@@ -841,6 +842,7 @@
     "provider_microsoft": "Outlook",
     "quoted_message": "On an earlier message, {sender} wrote:",
     "quoted_text": "Quoted text",
+    "read_timeout_description": "Mail took too long to respond. Wait a few seconds, then try again.",
     "reading_settings": "Reading",
     "reading_settings_description": "Customize reading preferences for this browser. Changes are saved automatically.",
     "recipient_people": {

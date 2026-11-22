@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { TTR_URL } from '@/constants/common';
 import { getMailFolderHref, isMailFolder } from './mail-folders';
 import { MailSidebarPanel } from './mail-sidebar-panel';
+import { MailboxSelectionProvider } from './mailbox-selection';
 
 interface StructureProps {
   actions: ReactNode;
@@ -78,33 +79,35 @@ export function Structure({
   }
 
   return (
-    <SidebarStructure
-      actions={actions}
-      appHref={mailHomeHref}
-      appId="mail"
-      notificationPopover={notificationPopover}
-      brandHref={TTR_URL}
-      defaultCollapsed={defaultCollapsed}
-      links={[]}
-      sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
-        <MailSidebarPanel
-          closeOnMobile={closeOnMobile}
-          folderLinks={enhancedLinks}
-          isCollapsed={isCollapsed}
-          onCompose={openCompose}
-          workspaceId={personalOrWsId}
-        />
-      )}
-      showSettingsButton={false}
-      sidebarExpandedWidth={sidebarExpandedWidth}
-      sidebarHeaderClassName="border-foreground/10 border-b"
-      upgradeExternal
-      upgradeHref={`${TTR_URL}/${wsId}/billing`}
-      userPopover={userPopover}
-      workspace={workspace}
-      wsId={wsId}
-    >
-      {children}
-    </SidebarStructure>
+    <MailboxSelectionProvider key={personalOrWsId} workspaceId={personalOrWsId}>
+      <SidebarStructure
+        actions={actions}
+        appHref={mailHomeHref}
+        appId="mail"
+        notificationPopover={notificationPopover}
+        brandHref={TTR_URL}
+        defaultCollapsed={defaultCollapsed}
+        links={[]}
+        sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
+          <MailSidebarPanel
+            closeOnMobile={closeOnMobile}
+            folderLinks={enhancedLinks}
+            isCollapsed={isCollapsed}
+            onCompose={openCompose}
+            workspaceId={personalOrWsId}
+          />
+        )}
+        showSettingsButton={false}
+        sidebarExpandedWidth={sidebarExpandedWidth}
+        sidebarHeaderClassName="border-foreground/10 border-b"
+        upgradeExternal
+        upgradeHref={`${TTR_URL}/${wsId}/billing`}
+        userPopover={userPopover}
+        workspace={workspace}
+        wsId={wsId}
+      >
+        {children}
+      </SidebarStructure>
+    </MailboxSelectionProvider>
   );
 }

@@ -19,6 +19,7 @@ import { MeetMailWorkspaceScope } from './meet-mail-workspace-scope';
 import { MailActorProvider } from '@/components/mail-actor-provider';
 import { ConnectedMailClient } from './connected-mail-client';
 import { MailAppClient } from './mail-client';
+import { MailboxSelectionProvider } from './mailbox-selection';
 const api = vi.hoisted(() => ({
   request: vi.fn(),
   create: vi.fn(),
@@ -44,6 +45,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
     labels: [],
     user: { id: actorId, email: 'me@example.invalid' },
   }),
+  getMailboxOrganization: async () => ({ folders: [], labels: [] }),
   getMailUnreadCounts: async () => ({ box: 0 }),
   listMailThreads: async () => ({
     threads: [],
@@ -143,7 +145,11 @@ afterEach(() => {
 function mount(connected: boolean, actor = actorId, compose = false) {
   const content = connected
     ? h(ConnectedMailClient, { workspaceId, folder: 'inbox' })
-    : h(MailAppClient, { workspaceId, folder: 'inbox' });
+    : h(
+        MailboxSelectionProvider,
+        { workspaceId },
+        h(MailAppClient, { workspaceId, folder: 'inbox' })
+      );
   return render(
     h(
       QueryClientProvider,

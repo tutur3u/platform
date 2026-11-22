@@ -5,7 +5,6 @@ import { Bot, Loader2, Plus, Trash2 } from '@tuturuuu/icons';
 import {
   createMailLabel,
   deleteMailLabel,
-  getMailboxOrganization,
   type MailLabel,
   type SuggestedMailLabel,
   suggestMailLabels,
@@ -33,6 +32,8 @@ import { useState } from 'react';
 const fieldClass =
   'outline-none focus-visible:ring-0 focus-visible:outline-none';
 
+import { mailOrganizationQuery } from './mail-read-query';
+
 export function MailLabelSettings({
   automaticSuggestions = [],
   canManage,
@@ -52,8 +53,7 @@ export function MailLabelSettings({
   const [suggestionPrompt, setSuggestionPrompt] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedMailLabel[]>([]);
   const organization = useQuery({
-    queryFn: () => getMailboxOrganization(workspaceId, mailboxId),
-    queryKey: ['mail', workspaceId, mailboxId, 'organization'],
+    ...mailOrganizationQuery(workspaceId, mailboxId),
   });
   const invalidate = () =>
     queryClient.invalidateQueries({

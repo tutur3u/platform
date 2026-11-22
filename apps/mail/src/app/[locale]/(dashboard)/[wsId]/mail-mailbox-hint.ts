@@ -14,9 +14,9 @@ export function rememberDefaultMailbox(
   workspaceId: string,
   mailboxId: string | undefined
 ) {
-  if (!mailboxId) return;
   try {
-    window.localStorage.setItem(keyFor(workspaceId), mailboxId);
+    if (mailboxId) window.localStorage.setItem(keyFor(workspaceId), mailboxId);
+    else window.localStorage.removeItem(keyFor(workspaceId));
   } catch {
     // Storage can be unavailable; the hint is only an optimization.
   }

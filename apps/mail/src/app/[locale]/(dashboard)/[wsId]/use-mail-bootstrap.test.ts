@@ -71,9 +71,6 @@ describe('progressive Mail bootstrap', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mocks.counts).not.toHaveBeenCalled();
-    expect(
-      window.localStorage.getItem('tuturuuu-mail-default-mailbox:ws')
-    ).toBe('box');
     await act(async () => resolveThreads({ pages: [] }));
     await waitFor(() => expect(mocks.counts).toHaveBeenCalledWith('ws'));
   });

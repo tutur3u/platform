@@ -15,12 +15,17 @@ export async function GET(
 ) {
   const { wsId } = await params;
 
-  return withMailContext(request, wsId, async (ctx) => {
-    const view = request.nextUrl.searchParams.get('view');
-    const payload =
-      view === 'counts'
-        ? await getMailUnreadCounts(ctx)
-        : await getMailBootstrap(ctx, view !== 'mailboxes');
-    return NextResponse.json(payload);
-  });
+  return withMailContext(
+    request,
+    wsId,
+    async (ctx) => {
+      const view = request.nextUrl.searchParams.get('view');
+      const payload =
+        view === 'counts'
+          ? await getMailUnreadCounts(ctx)
+          : await getMailBootstrap(ctx, view !== 'mailboxes');
+      return NextResponse.json(payload);
+    },
+    { boundedRead: true }
+  );
 }

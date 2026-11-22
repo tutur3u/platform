@@ -14,9 +14,11 @@ import { useTranslations } from 'next-intl';
 export function MailContentState({
   kind,
   onAction,
+  timedOut = false,
 }: {
   kind: 'loading' | 'error' | 'empty' | 'search' | 'reader' | 'no_mailbox';
   onAction?: () => void;
+  timedOut?: boolean;
 }) {
   const t = useTranslations('mail');
   if (kind === 'loading') {
@@ -59,7 +61,9 @@ export function MailContentState({
             : t('empty');
   const description =
     kind === 'error'
-      ? t('load_failed_description')
+      ? timedOut
+        ? t('read_timeout_description')
+        : t('load_failed_description')
       : kind === 'search'
         ? t('no_search_results_description')
         : kind === 'reader'

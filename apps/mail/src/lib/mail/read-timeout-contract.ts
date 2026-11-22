@@ -1,0 +1,1 @@
+export const MAIL_READ_TIMEOUT_CODE = 'MAIL_READ_TIMEOUT';

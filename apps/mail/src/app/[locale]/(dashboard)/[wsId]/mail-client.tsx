@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Info, Keyboard, Loader2, Search } from '@tuturuuu/icons';
 import {
   deleteMailDraft,
@@ -34,9 +29,10 @@ import type {
   ComposeInitialDraft,
   MailComposerHandle,
 } from './mail-composer-types';
-import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
-import { getSendableMailboxes } from './mail-composer-utils';
-import { toComposeInitialDraft } from './mail-composer-utils';
+import {
+  getSendableMailboxes,
+  toComposeInitialDraft,
+} from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
 import { MailDeliveryList } from './mail-delivery-list';
 import type { MailFolder } from './mail-folders';
@@ -45,25 +41,22 @@ import { MailIconButton } from './mail-icon-button';
 import { MailKeyboardHelp } from './mail-keyboard-help';
 import { MailLabelMenu } from './mail-label-menu';
 import { MailListHeader } from './mail-list-header';
-import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
 import {
   getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
   setCurrentMailPaneLayout,
 } from './mail-pane-layout';
 import { MailQuickFilters } from './mail-quick-filters';
+import { isMailReadTimeout } from './mail-read-query';
 import { createMailReplyActions } from './mail-reply-actions';
 import { mailThreadDetailQuery } from './mail-thread-detail-query';
-import { loadMailThreadPage } from './mail-thread-page-query';
-import {
-  getMailThreadsQueryKey,
-  getNextMailThreadPage,
-} from './mail-thread-query';
+import { useMailboxSelection } from './mailbox-selection';
+import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
 import { ThreadDetail } from './thread-detail';
-import { useMailBootstrap } from './use-mail-bootstrap';
 import { useMailKeyboard } from './use-mail-keyboard';
 import { useMailRefresh } from './use-mail-refresh';
 import { useMailThreadActions } from './use-mail-thread-actions';
+import { useMailThreads } from './use-mail-threads';
 import { useMailViewedThreadRead } from './use-mail-viewed-thread-read';
 
 interface MailAppClientProps {
@@ -75,7 +68,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const t = useTranslations('mail');
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [mailboxId] = useQueryState('mailbox');
   const [query, setQuery] = useQueryState('q', parseAsString.withDefault(''));
   const [label] = useQueryState('label');
   const [folderId] = useQueryState('folderId');
@@ -103,7 +95,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     setComposerVisible(composeParam === '1');
   }, [composeParam]);
 
-  // Once opened, the composer stays mounted so a closed draft keeps its editor.
   if (composerVisible && !composerMounted) setComposerMounted(true);
 
   useEffect(() => {
@@ -126,15 +117,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     layoutReadyRef.current = true;
   }, []);
 
-  const bootstrapQuery = useMailBootstrap(workspaceId);
-  const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
-  const activeMailboxId = resolveActiveMailboxId({
-    hint: useMailboxHint(workspaceId),
-    mailboxes: bootstrapQuery.data?.mailboxes,
-    requested: mailboxId,
-  });
-  const activeMailbox = mailboxes.find(({ id }) => id === activeMailboxId);
-  const threadQueryKey = getMailThreadsQueryKey({
+  const { activeMailboxId, activeMailbox, bootstrapQuery, mailboxes } =
+    useMailboxSelection();
+  const { threadsQuery, mailboxForbidden } = useMailThreads({
     folder,
     folderId,
     label,
@@ -143,28 +128,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     workspaceId,
   });
 
-  const threadsQuery = useInfiniteQuery({
-    enabled: Boolean(activeMailboxId),
-    getNextPageParam: getNextMailThreadPage,
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
-      loadMailThreadPage(
-        queryClient,
-        {
-          folder,
-          folderId,
-          label,
-          mailboxId: activeMailboxId ?? '',
-          query,
-          workspaceId,
-        },
-        pageParam
-      ),
-    queryKey: threadQueryKey,
-    staleTime: 30_000,
-    refetchInterval:
-      folder === 'inbox' || folder === 'snoozed' ? 60_000 : false,
-  });
   const selectionScope = JSON.stringify([
     activeMailboxId,
     folder,
@@ -180,7 +143,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   }, [selectionScope]);
 
   const detailQuery = useQuery({
-    enabled: Boolean(activeMailboxId && threadId),
+    enabled: Boolean(activeMailboxId && threadId && !mailboxForbidden),
     ...mailThreadDetailQuery(
       queryClient,
       workspaceId,
@@ -477,11 +440,16 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         ) : null}
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-        {bootstrapQuery.isLoading || threadsQuery.isLoading ? (
+        {bootstrapQuery.isLoading ||
+        threadsQuery.isLoading ||
+        mailboxForbidden ? (
           <MailContentState kind="loading" />
         ) : bootstrapQuery.isError || threadsQuery.isError ? (
           <MailContentState
             kind="error"
+            timedOut={isMailReadTimeout(
+              bootstrapQuery.error ?? threadsQuery.error
+            )}
             onAction={() =>
               void (bootstrapQuery.isError
                 ? bootstrapQuery.refetch()

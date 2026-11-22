@@ -181,8 +181,8 @@ export async function queryMailMessageRows({
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const parsed = parseMailSearch(params.query);
-  // Thread preferences and message state are independent reads.
-  const [threadPreferences, states] = await Promise.all([
+  const blockedFolder = params.folder === 'blocked';
+  const [threadPreferences, states, blockedIds] = await Promise.all([
     ['inbox', 'snoozed', 'muted'].includes(params.folder ?? 'inbox')
       ? loadThreadPreferences(admin, mailboxId, userId)
       : Promise.resolve(new Map<string, AnyRecord>()),
@@ -196,23 +196,19 @@ export async function queryMailMessageRows({
           .order('message_id'),
       'Failed to search mail state'
     ),
-  ]);
-  const readIds = idsWithTimestamp(states, 'read_at');
-  const starredIds = idsWithTimestamp(states, 'starred_at');
-  const archivedIds = idsWithTimestamp(states, 'archived_at');
-  const trashedIds = idsWithTimestamp(states, 'trashed_at');
-  // Mail from blocked senders carries the system `blocked` label: it is
-  // listed only in the Blocked folder and never in the inbox.
-  const blockedFolder = params.folder === 'blocked';
-  const blockedIds =
     blockedFolder || params.folder === 'inbox' || !params.folder
-      ? await labelMessageIds({
+      ? labelMessageIds({
           admin,
           mailboxId,
           value: 'blocked',
           systemOnly: true,
         })
-      : [];
+      : Promise.resolve([]),
+  ]);
+  const readIds = idsWithTimestamp(states, 'read_at');
+  const starredIds = idsWithTimestamp(states, 'starred_at');
+  const archivedIds = idsWithTimestamp(states, 'archived_at');
+  const trashedIds = idsWithTimestamp(states, 'trashed_at');
   let includedIds: Set<string> | null = blockedFolder
     ? new Set(blockedIds)
     : null;

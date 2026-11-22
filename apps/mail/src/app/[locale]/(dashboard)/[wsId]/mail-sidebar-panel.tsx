@@ -1,11 +1,8 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Mail, PenLine, Settings } from '@tuturuuu/icons';
-import {
-  getMailboxOrganization,
-  listMailThreads,
-} from '@tuturuuu/internal-api';
+import { listMailThreads } from '@tuturuuu/internal-api';
 import {
   Accordion,
   AccordionContent,
@@ -24,7 +21,7 @@ import type { ReactNode } from 'react';
 import { useConnectedMailAccounts } from './connected-mail-accounts';
 import { MailAccountPicker } from './mail-account-picker';
 import { isMailFolder } from './mail-folders';
-import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
+import { retryMailRead } from './mail-read-query';
 import { MailSettingsDialog } from './mail-settings-dialog';
 import { useConnectedByDefault, useMailSource } from './mail-source';
 import {
@@ -40,7 +37,7 @@ import {
   getNextMailThreadPage,
   MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
-import { useMailBootstrap } from './use-mail-bootstrap';
+import { useMailboxSelection } from './mailbox-selection';
 
 export function MailSidebarPanel({
   closeOnMobile,
@@ -59,8 +56,13 @@ export function MailSidebarPanel({
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const bootstrapQuery = useMailBootstrap(workspaceId);
-  const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
+  const {
+    activeMailbox,
+    activeMailboxId,
+    bootstrapQuery,
+    mailboxes,
+    organizationQuery,
+  } = useMailboxSelection();
   const { source, accountId: requestedAccountId } = useMailSource();
   const connectedByDefault = useConnectedByDefault();
   const { query: accountsQuery } = useConnectedMailAccounts(workspaceId);
@@ -70,17 +72,6 @@ export function MailSidebarPanel({
     requestedAccountId
   );
   const managed = source === 'managed';
-  const selectedMailboxId = searchParams.get('mailbox');
-  const activeMailboxId = resolveActiveMailboxId({
-    hint: useMailboxHint(workspaceId),
-    mailboxes: bootstrapQuery.data?.mailboxes,
-    requested: selectedMailboxId,
-  });
-  const organizationQuery = useQuery({
-    enabled: managed && Boolean(activeMailboxId),
-    queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),
-    queryKey: ['mail', workspaceId, activeMailboxId, 'organization'],
-  });
   const [mailSettings, setMailSettings] = useQueryState(
     'mailSettings',
     parseAsStringLiteral(['open']).withOptions({
@@ -101,8 +92,6 @@ export function MailSidebarPanel({
   const setSettingsOpen = (open: boolean) => {
     void setMailSettings(open ? 'open' : null);
   };
-  const activeMailbox =
-    mailboxes.find((mailbox) => mailbox.id === activeMailboxId) ?? null;
   const customFolders = (
     managed ? (organizationQuery.data?.folders ?? []) : []
   ).filter((folder) => folder.kind === 'custom');
@@ -160,6 +149,7 @@ export function MailSidebarPanel({
         mailboxId: activeMailboxId,
         workspaceId,
       }),
+      retry: retryMailRead,
       staleTime: 30_000,
     });
   };
@@ -212,7 +202,7 @@ export function MailSidebarPanel({
           </Button>
         </IconTooltip>
         <MailSettingsDialog
-          mailbox={activeMailbox}
+          mailbox={activeMailbox ?? null}
           onOpenChange={setSettingsOpen}
           onSelectMailbox={(mailboxId) =>
             selectSource({ kind: 'managed', mailboxId })
@@ -344,7 +334,7 @@ export function MailSidebarPanel({
         </Button>
       </div>
       <MailSettingsDialog
-        mailbox={activeMailbox}
+        mailbox={activeMailbox ?? null}
         onOpenChange={setSettingsOpen}
         onSelectMailbox={(mailboxId) =>
           selectSource({ kind: 'managed', mailboxId })

@@ -9,12 +9,15 @@ import {
   waitFor,
 } from '@testing-library/react';
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
+import { toast } from '@tuturuuu/ui/sonner';
 import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { createElement } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../messages/en.json';
 import { MailAppClient } from './mail-client';
 import { getMailThreadsQueryKey } from './mail-thread-query';
+import { MailboxSelectionProvider } from './mailbox-selection';
 
 type MailTextKey = {
   [
@@ -26,23 +29,15 @@ const api = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
   detail: vi.fn(),
+  bootstrap: vi.fn(),
+  organization: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   listMailThreads: api.list,
   updateMailThreadState: api.update,
   getMailThread: api.detail,
-  getMailBootstrap: vi.fn(async () => ({
-    mailboxes: [
-      {
-        id: 'box',
-        address: 'guest@example.test',
-        unreadCount: 0,
-        role: 'owner',
-      },
-    ],
-    labels: [],
-    user: { id: 'actor', email: 'guest@example.test' },
-  })),
+  getMailBootstrap: api.bootstrap,
+  getMailboxOrganization: api.organization,
   getMailUnreadCounts: vi.fn(async () => ({ box: 0 })),
   listWorkspaceMembers: vi.fn(async () => []),
   getMailInvitation: vi.fn(async () => ({ invitation: null })),
@@ -50,6 +45,17 @@ vi.mock('@tuturuuu/internal-api', () => ({
   deleteMailDraft: vi.fn(),
   sendMailMessage: vi.fn(),
 }));
+const bootstrap = (...ids: string[]) => ({
+  mailboxes: ids.map((id) => ({
+    id,
+    address: id === 'box' ? 'guest@example.test' : `${id}@example.test`,
+    unreadCount: 0,
+    role: 'owner',
+    status: 'active',
+  })),
+  labels: [],
+  user: { id: 'actor', email: 'guest@example.test' },
+});
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
@@ -63,7 +69,7 @@ vi.mock('next-intl', () => ({
     ),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 // jsdom does not apply the desktop/mobile CSS breakpoint. Keep the actual mobile
 // inbox/reader tree and omit only the duplicate desktop layout wrapper.
@@ -131,6 +137,8 @@ beforeEach(() => {
     dispatchEvent: () => false,
   });
   serverRows = [thread];
+  api.bootstrap.mockResolvedValue(bootstrap('box'));
+  api.organization.mockResolvedValue({ folders: [], labels: [] });
   api.list.mockImplementation(async () => page(serverRows));
   api.detail.mockResolvedValue({
     thread,
@@ -169,21 +177,32 @@ afterEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
 });
-async function mountAndArchive(pending: ReturnType<typeof deferred>) {
-  api.update.mockReturnValue(pending.promise);
+function renderMail(searchParams: Record<string, string>) {
+  const urlUpdate = vi.fn();
   render(
     createElement(
       QueryClientProvider,
       { client },
-      createElement(MailAppClient, { folder: 'inbox', workspaceId: 'ws' })
+      createElement(
+        MailboxSelectionProvider,
+        { workspaceId: 'ws' },
+        createElement(MailAppClient, { folder: 'inbox', workspaceId: 'ws' })
+      )
     ),
     {
       wrapper: withNuqsTestingAdapter({
-        searchParams: { mailbox: 'box' },
+        searchParams,
         hasMemory: true,
+        onUrlUpdate: urlUpdate,
       }),
     }
   );
+  return urlUpdate;
+}
+
+async function mountAndArchive(pending: ReturnType<typeof deferred>) {
+  api.update.mockReturnValue(pending.promise);
+  renderMail({ mailbox: 'box' });
   await waitFor(() =>
     expect(
       document.querySelector('[data-mail-thread-open="last"]')
@@ -348,3 +367,87 @@ for (const outcome of ['success', 'failure'] as const) {
     }
   });
 }
+
+it.each(['threads', 'organization'])(
+  'recovers from selected mailbox %s denial without retrying it',
+  async (source) => {
+    api.bootstrap.mockResolvedValue(bootstrap('first', 'denied', 'later'));
+    const forbidden = new InternalApiError('Forbidden', 403);
+    api.list.mockImplementation(async (_workspace, id) => {
+      if (source === 'threads' && id === 'denied') throw forbidden;
+      return page(id === 'first' ? [{ ...thread, mailboxId: id }] : []);
+    });
+    api.organization.mockImplementation(async (_workspace, id) => {
+      if (source === 'organization' && id === 'denied') throw forbidden;
+      return { folders: [], labels: [] };
+    });
+    const update = renderMail({
+      mailbox: 'denied',
+      label: 'old',
+      folderId: 'old',
+    });
+    await screen.findByText(thread.subject);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryString: '?mailbox=first',
+      })
+    );
+    expect(toast.warning).toHaveBeenCalledExactlyOnceWith(
+      messages.mail.mailbox_access_switched,
+      expect.anything()
+    );
+    const requests = source === 'threads' ? api.list : api.organization;
+    expect(
+      requests.mock.calls.filter(([, id]) => id === 'denied')
+    ).toHaveLength(1);
+    expect(api.list.mock.calls.some(([, id]) => id === 'later')).toBe(false);
+  }
+);
+
+it('clears the URL and shows the empty mailbox state when all choices are denied', async () => {
+  api.bootstrap.mockResolvedValue(bootstrap('first', 'denied'));
+  api.list.mockRejectedValue(new InternalApiError('Forbidden', 403));
+  const update = renderMail({ mailbox: 'denied' });
+  await screen.findByText(messages.mail.no_mailboxes);
+  expect(update).toHaveBeenLastCalledWith(
+    expect.objectContaining({ queryString: '' })
+  );
+  expect(api.list.mock.calls.map(([, id]) => id)).toEqual(['denied', 'first']);
+  expect(toast.warning).toHaveBeenCalledTimes(1);
+});
+
+it('shows the translated timeout message and offers a manual retry', async () => {
+  api.list.mockRejectedValueOnce(
+    new InternalApiError('Mail read timed out', 503, 'MAIL_READ_TIMEOUT')
+  );
+  renderMail({ mailbox: 'box' });
+  await screen.findByText(messages.mail.read_timeout_description);
+  expect(api.list).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: messages.mail.retry }));
+  await screen.findByText(thread.subject);
+  expect(api.list).toHaveBeenCalledTimes(2);
+});
+
+it('clears a denied hint before bootstrap and remembers the first discovered mailbox', async () => {
+  const hintKey = 'tuturuuu-mail-default-mailbox:ws';
+  window.localStorage.setItem(hintKey, 'denied');
+  const discovery = deferred();
+  api.bootstrap.mockReturnValue(discovery.promise);
+  api.list.mockImplementation(async (_workspace, id) => {
+    if (id === 'denied') throw new InternalApiError('Forbidden', 403);
+    return page([{ ...thread, mailboxId: id }]);
+  });
+  const update = renderMail({});
+  await waitFor(() => expect(window.localStorage.getItem(hintKey)).toBeNull());
+  expect(api.list.mock.calls.map(([, id]) => id)).toEqual(['denied']);
+  expect(toast.warning).not.toHaveBeenCalled();
+
+  await act(async () => discovery.resolve(bootstrap('denied', 'first')));
+  await screen.findByText(thread.subject);
+  expect(window.localStorage.getItem(hintKey)).toBe('first');
+  expect(update).toHaveBeenLastCalledWith(
+    expect.objectContaining({ queryString: '?mailbox=first' })
+  );
+  expect(api.list.mock.calls.map(([, id]) => id)).toEqual(['denied', 'first']);
+  expect(toast.warning).toHaveBeenCalledTimes(1);
+});
