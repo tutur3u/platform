@@ -145,6 +145,13 @@ export function createLiveActivitiesStore() {
         case 'activity.host':
           if (manager) publish({ ...view, host: message.host });
           break;
+        case 'activity.known':
+          // A mark made on another of this person's connections.
+          publish({
+            ...view,
+            mine: { ...view.mine, flashcards: message.flashcards },
+          });
+          break;
         case 'activity.progress': {
           // One person's flashcard progress, in place of a whole new view.
           if (!manager || !view.host) break;

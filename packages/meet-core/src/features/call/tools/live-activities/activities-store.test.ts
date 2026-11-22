@@ -331,3 +331,24 @@ it('folds a flashcard progress update into the manager view, for managers only',
   update(BEN, 4);
   expect(room.read().host).toBeNull();
 });
+
+it('takes the cards this person knows from a mark made on another connection', () => {
+  const CARD = '66666666-6666-4666-8666-666666666666';
+  handleLiveActivitiesMessage(meetingId, ready('admitted'), send);
+  const room = liveActivitiesRoom(meetingId);
+  answer(room);
+  room.receive({ type: 'activity.mine', mine });
+  handleLiveActivitiesMessage(
+    meetingId,
+    { type: 'activity.known', flashcards: { known: [CARD] } },
+    send
+  );
+  // Only the known cards change; the rest of their own view stays.
+  expect(room.read().mine).toEqual({ ...mine, flashcards: { known: [CARD] } });
+  handleLiveActivitiesMessage(
+    meetingId,
+    { type: 'activity.known', flashcards: { known: [] } },
+    send
+  );
+  expect(room.read().mine.flashcards.known).toEqual([]);
+});

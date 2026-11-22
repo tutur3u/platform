@@ -416,22 +416,27 @@ export function applyLiveActivities(
   ];
   if (next === current) return outcome(room, { reply });
   if (command.kind === 'flashcards.mark') {
-    // A mark changes one person's progress and nothing the room shares. They
-    // get their own view back and the managers a small update; no shared view
-    // is sent again, so the cost does not grow with the room or the deck.
+    // A mark changes one person's progress and nothing the room shares. The
+    // sender gets their own view back, every connection of theirs the cards
+    // they now know, and the managers a small update. No shared view is sent
+    // again, so the cost does not grow with the room or the deck.
+    const known = next.flashcards.progress[participantId] ?? [];
     if (serializedMeetBytes(next) > LIVE_ACTIVITY_LIMITS.stateBytes)
       return denied(room, 'activity_full', requestId);
     return outcome(
       { ...room, liveActivities: next, liveActivityLimits: limits },
       {
         reply,
+        direct: [
+          {
+            userId: participantId,
+            message: { type: 'activity.known', flashcards: { known } },
+          },
+        ],
         toManagers: [
           {
             type: 'activity.progress',
-            flashcards: {
-              participantId,
-              known: next.flashcards.progress[participantId]?.length ?? 0,
-            },
+            flashcards: { participantId, known: known.length },
           },
         ],
       }

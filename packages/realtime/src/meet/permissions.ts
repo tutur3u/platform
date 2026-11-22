@@ -202,6 +202,7 @@ export function receivesMeetManagerMessage(
 
 const PRIVATE_TOOL_FRAMES = new Set([
   'activity.mine',
+  'activity.known',
   'activity.host',
   'activity.progress',
   'penboard.snapshot',

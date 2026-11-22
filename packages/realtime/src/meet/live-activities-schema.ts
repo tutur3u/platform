@@ -300,4 +300,9 @@ export type LiveActivitiesServerMessage =
   | {
       type: 'activity.progress';
       flashcards: { participantId: string; known: number };
-    };
+    }
+  /**
+   * The cards one person knows, for every connection of theirs. A mark made on
+   * one of their devices reaches the others as this small update.
+   */
+  | { type: 'activity.known'; flashcards: { known: string[] } };

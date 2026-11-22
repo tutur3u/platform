@@ -47,6 +47,7 @@ export function handleLiveActivitiesMessage(
     case 'activity.snapshot':
     case 'activity.mine':
     case 'activity.host':
+    case 'activity.known':
     case 'activity.progress':
     // The store keeps only a refusal of this person's own last command.
     case 'error':

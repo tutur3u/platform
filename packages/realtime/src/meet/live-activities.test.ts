@@ -57,8 +57,15 @@ describe('flashcards', () => {
     expect(marked.reply).toMatchObject([
       { mine: { flashcards: { known: [card?.id] } } },
     ]);
-    // A mark shares nothing new with the room: managers get a small update.
+    // A mark shares nothing new with the room: managers get a small update,
+    // and every connection of the person who marked gets what they now know.
     expect(marked.broadcast).toEqual([]);
+    expect(marked.direct).toEqual([
+      {
+        userId: guest.userId,
+        message: { type: 'activity.known', flashcards: { known: [card?.id] } },
+      },
+    ]);
     expect(marked.toManagers).toEqual([
       {
         type: 'activity.progress',
@@ -500,8 +507,10 @@ it('keeps what one flashcard mark sends small, however large the room and the de
   expect(full).toBeGreaterThan(30_000);
   const cardId = set.state.liveActivities?.flashcards.cards[0]?.id;
 
-  // The marker, three other sockets of people in the room and two managers.
+  // The marker, a second connection of the same person, three other sockets
+  // of people in the room and two managers.
   const marker = socket(guest);
+  const secondDevice = socket(guest);
   const others = [socket(other), socket(other), socket(other)];
   const managers = [socket(host), socket(cohost)];
   const marked = action(set.state, guest, {
@@ -510,7 +519,7 @@ it('keeps what one flashcard mark sends small, however large the room and the de
     known: true,
   });
   const delivery = createMeetRoomSocketDelivery({
-    sockets: () => [marker, ...others, ...managers],
+    sockets: () => [marker, secondDevice, ...others, ...managers],
     read: () => marked.state,
     fullPresence: () => ({ type: 'room.ended' }),
     announcements: () => [],
@@ -528,14 +537,33 @@ it('keeps what one flashcard mark sends small, however large the room and the de
 
   // Nobody else in the room receives anything for someone's mark.
   expect(bytes(others)).toBe(0);
-  // The marker gets their own small view, each manager a small update.
-  expect(marker.send).toHaveBeenCalledTimes(1);
-  for (const manager of managers) expect(manager.send).toHaveBeenCalledTimes(1);
+  // The marker gets their own small view and the cards they now know, each
+  // manager a small update.
+  expect(marker.send).toHaveBeenCalledTimes(2);
+  for (const manager of managers)
+    expect(manager.send).toHaveBeenCalledTimes(1);
+  // The person's other connection learns the mark, so its next click toggles
+  // the card instead of sending the same mark again.
+  expect(secondDevice.send.mock.calls.map(([wire]) => JSON.parse(wire))).toEqual(
+    [{ type: 'activity.known', flashcards: { known: [cardId] } }]
+  );
+  // Someone waiting, or another person, never gets that frame.
+  expect(JSON.stringify(others.map(({ send }) => send.mock.calls))).not.toContain(
+    'activity.known'
+  );
   expect(bytes([marker])).toBeLessThan(600);
+  expect(bytes([secondDevice])).toBeLessThan(200);
   expect(bytes(managers)).toBeLessThan(2 * 200);
-  expect(bytes([marker, ...others, ...managers])).toBeLessThan(1_000);
+  expect(
+    bytes([marker, secondDevice, ...others, ...managers])
+  ).toBeLessThan(1_000);
   // No frame carries the deck again.
   expect(
-    JSON.stringify([marked.reply, marked.broadcast, marked.toManagers])
+    JSON.stringify([
+      marked.reply,
+      marked.broadcast,
+      marked.toManagers,
+      marked.direct,
+    ])
   ).not.toMatch(/ffffffff|bbbbbbbb/);
 });

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
@@ -166,4 +166,19 @@ it('shows a participant the back only once the host reveals it', () => {
   expect(screen.getByText('In place')).toBeTruthy();
   expect(screen.queryByText('Uses constant extra space')).toBeNull();
   expect(screen.queryByText('Keeps equal keys in order')).toBeNull();
+});
+
+it('toggles a card that another connection of this person marked', () => {
+  renderPanel(FlashcardsPanel, false);
+  const store = room({
+    snapshot: { flashcards: { cards: fronts, index: 0, flipped: false } },
+  });
+  // The mark arrives from their other device.
+  act(() =>
+    store.receive({ type: 'activity.known', flashcards: { known: [FIRST] } })
+  );
+  fireEvent.click(screen.getByRole('button', { name: t.still_learning }));
+  expect(sent()).toEqual([
+    { kind: 'flashcards.mark', cardId: FIRST, known: false },
+  ]);
 });
