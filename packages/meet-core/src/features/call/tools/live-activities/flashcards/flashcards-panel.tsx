@@ -163,12 +163,7 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
           }
         >
           {(editing || !cards.length) && (
-            <FlashcardsDeckEditor
-              // The room issues new ids on save; start again from what it stored.
-              key={deck.map(({ id }) => id).join(':')}
-              cards={deck}
-              send={activity.send}
-            />
+            <FlashcardsDeckEditor cards={deck} send={activity.send} />
           )}
         </ActivitySection>
       )}

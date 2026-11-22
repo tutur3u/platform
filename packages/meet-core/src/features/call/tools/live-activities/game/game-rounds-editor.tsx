@@ -3,7 +3,6 @@
 import { Play, Plus, Save, Trash2 } from '@tuturuuu/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { ToolAction, ToolIconAction } from '../../tool-ui';
 import {
   ActivityEmpty,
@@ -11,6 +10,7 @@ import {
   activityCardClass,
   OptionsEditor,
 } from '../activity-kit';
+import { useRoomDraft } from '../room-draft';
 
 export const MAX_GAME_ROUNDS = 30;
 const DEFAULT_SECONDS = 20;
@@ -31,6 +31,19 @@ const toDraft = (round: SavedRound): DraftRound => ({
   answer: round.answer,
   seconds: String(round.seconds),
 });
+
+/** Two drafts hold the same words, whatever ids the room gave the rounds. */
+const words = (rounds: readonly DraftRound[]) =>
+  JSON.stringify(
+    rounds.map(({ prompt, options, answer, seconds }) => [
+      prompt,
+      options,
+      answer,
+      seconds,
+    ])
+  );
+const sameRounds = (a: readonly DraftRound[], b: readonly DraftRound[]) =>
+  words(a) === words(b);
 
 /** What `game.set` accepts, or null while any round is incomplete. */
 export function gameRounds(drafts: readonly DraftRound[]) {
@@ -63,10 +76,12 @@ export function GameRoundsEditor({
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.game');
-  const initial = saved.map(toDraft);
-  const [drafts, setDrafts] = useState(initial);
+  const stored = saved.map(toDraft);
+  // The room issues new ids on save and repeats the rounds after a reconnect;
+  // neither may replace a round the host is still writing.
+  const [drafts, setDrafts] = useRoomDraft(stored, sameRounds);
   const rounds = gameRounds(drafts);
-  const dirty = JSON.stringify(rounds) !== JSON.stringify(gameRounds(initial));
+  const dirty = JSON.stringify(rounds) !== JSON.stringify(gameRounds(stored));
   const update = (key: string, patch: Partial<DraftRound>) =>
     setDrafts((current) =>
       current.map((round) =>

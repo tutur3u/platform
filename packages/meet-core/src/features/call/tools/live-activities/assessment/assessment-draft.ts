@@ -71,6 +71,23 @@ export function assessmentItems(
   return items;
 }
 
+/** Two drafts hold the same words, whatever ids the room gave the items. */
+export function sameDraftItems(
+  a: readonly DraftItem[],
+  b: readonly DraftItem[]
+) {
+  const words = (items: readonly DraftItem[]) =>
+    JSON.stringify(
+      items.map(({ prompt, kind, options, answer }) => [
+        prompt,
+        kind,
+        options,
+        answer,
+      ])
+    );
+  return words(a) === words(b);
+}
+
 export function sameAssessment(
   drafts: readonly DraftItem[],
   saved: readonly DraftItem[]

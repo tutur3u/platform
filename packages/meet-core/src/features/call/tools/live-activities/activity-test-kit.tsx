@@ -13,6 +13,7 @@ import type { ComponentType } from 'react';
 import { vi } from 'vitest';
 import messages from '../../../../../../../apps/meet/messages/en.json';
 import { MeetToolProvider } from '../context';
+import { handleLiveActivitiesTransport } from './activities-handler';
 import {
   closeLiveActivitiesRoom,
   liveActivitiesRoom,
@@ -72,6 +73,18 @@ export function room(state: {
         host: { ...EMPTY_HOST, ...state.host },
       });
   });
+  return store;
+}
+
+/**
+ * A brief reconnect: the socket drops, comes back and the room is read again.
+ * `whileOffline` runs in between, with the last state still on screen.
+ */
+export function reconnectRoom(whileOffline?: () => void) {
+  const store = liveActivitiesRoom(MEETING_ID);
+  act(() => handleLiveActivitiesTransport(MEETING_ID, 'reconnecting'));
+  whileOffline?.();
+  act(() => store.open(socket));
   return store;
 }
 

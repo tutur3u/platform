@@ -4,7 +4,6 @@ import { Play, Plus, Save, Trash2 } from '@tuturuuu/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { ToolAction, ToolIconAction } from '../../tool-ui';
 import {
   ActivityEmpty,
@@ -12,6 +11,7 @@ import {
   activityCardClass,
   OptionsEditor,
 } from '../activity-kit';
+import { useRoomDraft } from '../room-draft';
 import {
   ASSESSMENT_KINDS,
   assessmentItems,
@@ -19,6 +19,7 @@ import {
   MAX_ASSESSMENT_ITEMS,
   newDraftItem,
   sameAssessment,
+  sameDraftItems,
 } from './assessment-draft';
 
 /** The host's draft: questions are saved to the room, then opened for answers. */
@@ -30,7 +31,9 @@ export function AssessmentBuilder({
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.assessment');
-  const [drafts, setDrafts] = useState(saved);
+  // The room issues new ids on save, sends the answer keys after the questions
+  // and repeats both after a reconnect; none may replace a question in progress.
+  const [drafts, setDrafts] = useRoomDraft(saved, sameDraftItems);
   const items = assessmentItems(drafts);
   const dirty = !sameAssessment(drafts, saved);
   const update = (key: string, patch: Partial<DraftItem>) =>

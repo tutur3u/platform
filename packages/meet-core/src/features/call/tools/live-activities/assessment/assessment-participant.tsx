@@ -5,13 +5,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import {
   ActivityEmpty,
   type Activity,
   activityCardClass,
   ChoiceButton,
 } from '../activity-kit';
+import { useRoomDraft } from '../room-draft';
 
 type Item = Activity['snapshot']['assessment']['items'][number];
 type Mine = Activity['mine']['assessment'][string] | undefined;
@@ -29,7 +29,8 @@ function WrittenAnswer({
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.assessment');
-  const [draft, setDraft] = useState(mine?.answer ?? '');
+  // Their own answer can arrive after the questions; typed text always wins.
+  const [draft, setDraft] = useRoomDraft(mine?.answer ?? '');
   const text = draft.trim();
   if (!open)
     return (
@@ -136,7 +137,6 @@ export function AssessmentParticipant({ activity }: { activity: Activity }) {
                 </div>
               ) : (
                 <WrittenAnswer
-                  key={`${item.id}:${open}`}
                   item={item}
                   mine={mine}
                   open={open}

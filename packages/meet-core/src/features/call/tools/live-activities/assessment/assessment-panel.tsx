@@ -31,12 +31,7 @@ export function AssessmentPanel({ onClose }: MeetToolPanelProps) {
       {!activity.canManage ? (
         <AssessmentParticipant activity={activity} />
       ) : assessment.status === 'draft' ? (
-        <AssessmentBuilder
-          // The room issues new ids on save; start again from what it stored.
-          key={JSON.stringify(saved)}
-          saved={saved}
-          send={activity.send}
-        />
+        <AssessmentBuilder saved={saved} send={activity.send} />
       ) : (
         <AssessmentHost activity={activity} />
       )}

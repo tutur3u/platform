@@ -2,7 +2,10 @@ import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-ass
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
 import type { createRoomActions } from '../lib/room-actions';
 import type { MeetSignaling, MeetSignalingStatus } from '../lib/signaling';
-import { handleLiveActivitiesMessage } from './live-activities/activities-handler';
+import {
+  handleLiveActivitiesMessage,
+  handleLiveActivitiesTransport,
+} from './live-activities/activities-handler';
 import { closeLiveActivitiesRoom } from './live-activities/activities-store';
 import { handleLiveQaMessage } from './live-activities/qa/qa-handler';
 import { handlePenboardMessage } from './whiteboard/whiteboard-handler';
@@ -32,7 +35,12 @@ function roomToolTransportStatus(
   onStatus: (status: MeetSignalingStatus) => void
 ) {
   return (status: MeetSignalingStatus) => {
-    if (status !== 'open') clearRoomTools(meetingId);
+    if (status !== 'open') {
+      // Activities keep their last state while the socket recovers; the board
+      // has no drafts and is read again from the room.
+      handleLiveActivitiesTransport(meetingId, status);
+      closeWhiteboardRoom(meetingId);
+    }
     onStatus(status);
   };
 }

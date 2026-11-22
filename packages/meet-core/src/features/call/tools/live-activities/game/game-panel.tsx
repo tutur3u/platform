@@ -28,12 +28,7 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
     >
       {game.phase === 'idle' ? (
         activity.canManage ? (
-          <GameRoundsEditor
-            // The room issues new ids on save; start again from what it stored.
-            key={rounds.map(({ id }) => id).join(':')}
-            saved={rounds}
-            send={activity.send}
-          />
+          <GameRoundsEditor saved={rounds} send={activity.send} />
         ) : (
           <ActivityEmpty>{t('empty_participant')}</ActivityEmpty>
         )

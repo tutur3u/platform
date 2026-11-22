@@ -4831,7 +4831,8 @@
           "not_closed": "Close answers first.",
           "answer_changed": "That answer changed after you read it. Check it again before grading.",
           "game_running": "A game is running. End it before changing the rounds.",
-          "prompt_changed": "That question is no longer the current one, so your answer was not added."
+          "prompt_changed": "That question is no longer the current one, so your answer was not added.",
+          "reconnecting": "Reconnecting. Try again in a moment."
         },
         "options": {
           "legend": "Options, with the correct one selected",

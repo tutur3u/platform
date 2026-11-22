@@ -12,6 +12,7 @@ import {
   ANA,
   closeRoom,
   lastRequestId,
+  reconnectRoom,
   renderPanel,
   room,
   sent,
@@ -257,4 +258,49 @@ it("says quietly when the room refuses this person's last action", () => {
   expect(screen.getByRole('status').textContent).toBe(
     strings.errors.rate_limited
   );
+});
+
+it('fills in a written answer that arrives late and keeps typed text through a reconnect', () => {
+  renderPanel(AssessmentPanel, false);
+  const saved = { assessment: { [LONG]: { answer: 'Saved earlier' } } };
+  const field = () =>
+    screen.getByLabelText(t.your_answer) as HTMLTextAreaElement;
+  room({ snapshot: { assessment: open } });
+  expect(field().value).toBe('');
+  // Their own answer reaches the panel after the questions did.
+  room({ snapshot: { assessment: open }, mine: saved });
+  expect(field().value).toBe('Saved earlier');
+  fireEvent.change(field(), { target: { value: 'Typed since' } });
+  reconnectRoom();
+  // The questions never left the screen, and neither did the text.
+  expect(field().value).toBe('Typed since');
+  room({ snapshot: { assessment: open }, mine: saved });
+  expect(field().value).toBe('Typed since');
+});
+
+it('keeps a question the host is writing when the room repeats its state', () => {
+  renderPanel(AssessmentPanel, true);
+  const draft = {
+    snapshot: {
+      assessment: {
+        status: 'draft' as const,
+        released: false,
+        items: [items[0]!],
+        counts: { [CHOICE]: 0 },
+      },
+    },
+    host: { assessment: { responses: [], answers: { [CHOICE]: 0 } } },
+  };
+  room({ manager: true, ...draft });
+  fireEvent.click(screen.getByRole('button', { name: t.add_question }));
+  const prompts = () =>
+    (screen.getAllByLabelText(t.prompt) as HTMLInputElement[]).map(
+      ({ value }) => value
+    );
+  fireEvent.change(screen.getAllByLabelText(t.prompt)[1]!, {
+    target: { value: 'Half written' },
+  });
+  reconnectRoom();
+  room({ manager: true, ...draft });
+  expect(prompts()).toEqual(['Which sort is stable?', 'Half written']);
 });

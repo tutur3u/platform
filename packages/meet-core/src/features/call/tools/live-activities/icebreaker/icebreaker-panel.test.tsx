@@ -6,6 +6,7 @@ import {
   ANA,
   closeRoom,
   lastRequestId,
+  reconnectRoom,
   renderPanel,
   room,
   SELF,
@@ -159,4 +160,29 @@ it('ties each reply to the question on screen and says when it arrived too late'
     promptId: NEXT_PROMPT,
     text: 'Merge sort',
   });
+});
+
+it('fills in a reply that arrives late and keeps typed text through a reconnect', () => {
+  renderPanel(IcebreakerPanel, false);
+  const asked = { icebreaker: { prompt, promptId: PROMPT, responses: [] } };
+  const mine = { icebreaker: { text: 'Binary search' } };
+  const input = () => screen.getByLabelText(t.your_response) as HTMLInputElement;
+  room({ snapshot: asked });
+  expect(input().value).toBe('');
+  // Their own reply reaches the panel after the question did.
+  room({ snapshot: asked, mine });
+  expect(input().value).toBe('Binary search');
+  fireEvent.change(input(), { target: { value: 'Quick sort' } });
+  reconnectRoom(() => {
+    // The question stays on screen; sending has to wait, and says so.
+    expect(screen.getByText(prompt)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: t.update }));
+    expect(screen.getByRole('status').textContent).toBe(
+      strings.errors.reconnecting
+    );
+  });
+  expect(screen.queryByRole('status')).toBeNull();
+  room({ snapshot: asked, mine });
+  expect(input().value).toBe('Quick sort');
+  expect(sent()).toEqual([]);
 });

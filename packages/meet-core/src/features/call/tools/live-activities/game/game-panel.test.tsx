@@ -6,6 +6,7 @@ import {
   ANA,
   closeRoom,
   lastRequestId,
+  reconnectRoom,
   renderPanel,
   room,
   SELF,
@@ -203,4 +204,21 @@ it('does not take answers after the deadline', () => {
     'disabled',
     true
   );
+});
+
+it('keeps a round the host is writing through a reconnect', () => {
+  renderPanel(GamePanel, true);
+  room({ manager: true, snapshot: { game: idle }, host: prepared });
+  fireEvent.click(screen.getByRole('button', { name: t.add_round }));
+  fireEvent.change(screen.getAllByLabelText(t.prompt)[1]!, {
+    target: { value: 'Half written' },
+  });
+  reconnectRoom();
+  // The room repeats the saved rounds; the one in progress is still there.
+  room({ manager: true, snapshot: { game: idle }, host: prepared });
+  expect(
+    (screen.getAllByLabelText(t.prompt) as HTMLInputElement[]).map(
+      ({ value }) => value
+    )
+  ).toEqual([round.prompt, 'Half written']);
 });

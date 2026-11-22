@@ -2,9 +2,13 @@ import {
   EMPTY_LIVE_ACTIVITIES_MINE,
   EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
   type MeetRealtimeClientMessage,
+  type MeetRealtimeServerMessage,
 } from '@tuturuuu/realtime/meet';
 import { afterEach, expect, it, vi } from 'vitest';
-import { handleLiveActivitiesMessage } from './activities-handler';
+import {
+  handleLiveActivitiesMessage,
+  handleLiveActivitiesTransport,
+} from './activities-handler';
 import {
   closeLiveActivitiesRoom,
   createLiveActivitiesStore,
@@ -20,6 +24,16 @@ const host = {
   game: { rounds: [] },
   icebreaker: { hidden: [] },
 };
+
+// The room's greeting after every connect; only these fields matter here.
+const ready = (admission: 'admitted' | 'waiting') =>
+  ({
+    type: 'ready',
+    role: 'host',
+    userId: 'self',
+    roomId: 'room',
+    admission,
+  }) as unknown as MeetRealtimeServerMessage;
 
 afterEach(() => {
   closeLiveActivitiesRoom(meetingId);
@@ -105,4 +119,70 @@ it('drops manager data on downgrade and re-reads when the transport opens again'
     { type: 'activity.read' },
     { type: 'activity.read' },
   ]);
+});
+
+it('keeps the last state through a reconnect and replaces it with the fresh read', () => {
+  const room = liveActivitiesRoom(meetingId);
+  const snapshot = {
+    ...EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
+    icebreaker: { prompt: 'Hi', promptId: PROMPT, responses: [] },
+  };
+  const mine = {
+    ...EMPTY_LIVE_ACTIVITIES_MINE,
+    icebreaker: { text: 'My answer' },
+  };
+  handleLiveActivitiesMessage(meetingId, ready('admitted'), send);
+  room.receive({ type: 'activity.snapshot', snapshot });
+  room.receive({ type: 'activity.mine', mine });
+  room.receive({ type: 'activity.host', host });
+  const before = room.read();
+  expect(before).toEqual({ snapshot, mine, host, error: null });
+
+  handleLiveActivitiesTransport(meetingId, 'reconnecting');
+  expect(room.read()).toBe(before);
+  // Nothing can be sent meanwhile, and the person is told why.
+  send.mockClear();
+  expect(room.send({ kind: 'game.start' })).toBe(false);
+  expect(send).not.toHaveBeenCalled();
+  expect(room.read()).toEqual({ ...before, error: 'activity_offline' });
+
+  handleLiveActivitiesTransport(meetingId, 'open');
+  handleLiveActivitiesMessage(meetingId, ready('admitted'), send);
+  expect(send).toHaveBeenLastCalledWith({ type: 'activity.read' });
+  expect(room.read()).toEqual(before);
+  const next = {
+    ...snapshot,
+    icebreaker: { ...snapshot.icebreaker, prompt: 'Next' },
+  };
+  room.receive({ type: 'activity.snapshot', snapshot: next });
+  expect(room.read()).toEqual({ ...before, snapshot: next });
+});
+
+it('clears the state when the transport gives up or the reconnect lands in the waiting room', () => {
+  const snapshot = {
+    ...EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
+    icebreaker: { prompt: 'Hi', promptId: PROMPT, responses: [] },
+  };
+  for (const end of [
+    () => handleLiveActivitiesTransport(meetingId, 'error'),
+    () => handleLiveActivitiesTransport(meetingId, 'closed'),
+    () => handleLiveActivitiesMessage(meetingId, ready('waiting'), send),
+  ]) {
+    handleLiveActivitiesMessage(meetingId, ready('admitted'), send);
+    const room = liveActivitiesRoom(meetingId);
+    room.receive({ type: 'activity.snapshot', snapshot });
+    room.receive({ type: 'activity.host', host });
+    handleLiveActivitiesTransport(meetingId, 'reconnecting');
+    expect(room.read().snapshot).toBe(snapshot);
+    end();
+    expect(room.read()).toEqual({
+      snapshot: EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
+      mine: EMPTY_LIVE_ACTIVITIES_MINE,
+      host: null,
+      error: null,
+    });
+    // A room that was cleared says nothing about reconnecting.
+    expect(room.send({ kind: 'game.start' })).toBe(false);
+    expect(room.read().error).toBeNull();
+  }
 });

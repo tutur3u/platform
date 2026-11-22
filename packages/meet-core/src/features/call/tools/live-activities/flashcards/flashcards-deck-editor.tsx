@@ -3,9 +3,9 @@
 import { Plus, Save, Trash2 } from '@tuturuuu/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { ToolAction, ToolIconAction } from '../../tool-ui';
 import type { Activity } from '../activity-kit';
+import { useRoomDraft } from '../room-draft';
 
 export const MAX_FLASHCARDS = 60;
 
@@ -13,6 +13,11 @@ type DraftCard = { key: string; front: string; back: string };
 
 const cleaned = (cards: readonly DraftCard[]) =>
   cards.map(({ front, back }) => ({ front: front.trim(), back: back.trim() }));
+
+/** Two drafts hold the same words, whatever ids the room gave the cards. */
+const sameCards = (a: readonly DraftCard[], b: readonly DraftCard[]) =>
+  JSON.stringify(a.map(({ front, back }) => [front, back])) ===
+  JSON.stringify(b.map(({ front, back }) => [front, back]));
 
 /** The host's deck. Saving replaces the room's deck and starts progress again. */
 export function FlashcardsDeckEditor({
@@ -25,7 +30,9 @@ export function FlashcardsDeckEditor({
 }) {
   const t = useTranslations('meet.call.live_activities.flashcards');
   const saved = cards.map(({ id, front, back }) => ({ key: id, front, back }));
-  const [drafts, setDrafts] = useState<DraftCard[]>(saved);
+  // The room issues new ids on save and repeats the deck after a reconnect;
+  // neither may replace a card the host is still writing.
+  const [drafts, setDrafts] = useRoomDraft<DraftCard[]>(saved, sameCards);
   const next = cleaned(drafts);
   const complete = next.every(({ front, back }) => front && back);
   const dirty = JSON.stringify(next) !== JSON.stringify(cleaned(saved));

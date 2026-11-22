@@ -15,6 +15,7 @@ import {
 } from '../activity-kit';
 import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
+import { useRoomDraft } from '../room-draft';
 
 const SUGGESTIONS = ['weekend', 'learned', 'song', 'superpower'] as const;
 
@@ -77,7 +78,8 @@ function ResponseForm({
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.icebreaker');
-  const [draft, setDraft] = useState(mine ?? '');
+  // Their own reply can arrive after the question; typed text always wins.
+  const [draft, setDraft] = useRoomDraft(mine ?? '');
   const text = draft.trim();
   return (
     <form
