@@ -10,6 +10,7 @@ module.exports = [
   ...require('./sql-grant-guard-verified-findings-people'),
   ...require('./sql-grant-guard-verified-findings-fleet'),
   ...require('./sql-grant-guard-verified-findings-vault'),
+  ...require('./sql-grant-guard-verified-findings-memory'),
   {
     path: 'apps/database/supabase/migrations/20261121205000_cms_publish_event_payload_limit.sql',
     line: 1,
