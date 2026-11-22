@@ -356,7 +356,9 @@ export async function revokeWorkspaceMemberAccessRecords({
     : Promise.resolve({ error: null });
 
   const results = await Promise.all([inviteQuery, emailInviteQuery]);
-  const mutationError = results.find((result) => result.error)?.error;
+  const mutationError = results.find(
+    (result: { error: unknown }) => result.error
+  )?.error;
   if (mutationError) throw mutationError;
 }
 

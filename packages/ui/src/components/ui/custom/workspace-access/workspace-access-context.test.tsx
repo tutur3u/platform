@@ -84,14 +84,15 @@ describe('WorkspaceAccessPage permission context', () => {
     ['admin-id', 'ws-members.last_manager_leave_refused'],
     ['colleague-id', 'ws-members.last_manager_removal_refused'],
   ])('uses the refusal for the member targeted by %s', async (userId, key) => {
-    const member = {
+    const member: InternalApiEnhancedWorkspaceMember = {
+      default_permissions: [],
       id: userId,
       display_name: 'Manager',
       email: 'member@example.com',
       is_creator: false,
       roles: [],
       workspace_member_type: 'MEMBER',
-    } as InternalApiEnhancedWorkspaceMember;
+    };
     const error = Object.assign(new Error('Manager floor'), {
       code: 'WORKSPACE_LAST_MANAGER',
     });
