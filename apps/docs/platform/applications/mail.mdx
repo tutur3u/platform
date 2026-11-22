@@ -165,7 +165,11 @@ it. The row under the finger and an open conversation's previous and next
 neighbours render ahead (at most two at a time). An open that follows a
 finished render shows its body in the reader's first frame; an earlier open
 joins the render in flight and shows the body when it completes. Rows that are
-only visible are prefetched but not rendered. Bodies with inline images are never memoized, and the memo clears
+only visible are prefetched but not rendered. The first WebView of an app run
+blocks the platform thread while its engine loads and its first view is created,
+so Mail creates and disposes one off-screen view with an empty page once, after
+the first inbox result has painted, instead of paying that in front of the first
+reader's opening frame (coverage: `mail_webview_warmup_test.dart`). Bodies with inline images are never memoized, and the memo clears
 with the view and on access denial, fencing any in-flight render started before
 `clear()` or disposal so stale private HTML cannot repopulate the cache.
 Coverage: `mail_rendered_documents_test.dart` and `mail_compact_flow_test.dart`.

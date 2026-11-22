@@ -30,6 +30,7 @@ import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
+import 'package:mobile/features/mail/view/mail_webview_warmup.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -430,6 +431,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       });
       _saveView();
       if (!more) _prefetchVisible();
+      // The WebView engine loads once the populated inbox has painted, so
+      // its platform-thread stall does not hold that frame back.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(MailWebViewWarmup.start()),
+      );
     } on Object catch (error) {
       if (mounted && generation == _generation) {
         setState(() {
