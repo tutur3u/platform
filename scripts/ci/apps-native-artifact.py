@@ -10,10 +10,12 @@ import shutil
 import tarfile
 import tempfile
 
+APPS_WORKER_NAME = "tuturuuu-apps-vite-staging"
+APPS_COMPATIBILITY_FLAGS = ["nodejs_compat", "global_fetch_strictly_public"]
 IDENTITY = {
-    "name": "tuturuuu-apps-vite-staging",
+    "name": APPS_WORKER_NAME,
     "compatibility_date": "2026-10-12",
-    "compatibility_flags": ["nodejs_compat"],
+    "compatibility_flags": ["nodejs_compat"],  # Shared baseline inherited by Shortener.
     "workers_dev": True,
     "observability": {"enabled": True, "head_sampling_rate": 0.05},
     "vars": {"TUTURUUU_NOINDEX": "1"},
@@ -128,6 +130,8 @@ def validate_output(directory, source=None):
     config = read_json(config_path)
     require(isinstance(config, dict), "invalid config object")
     expected = {**IDENTITY, **NORMALIZED_DEFAULTS}
+    if IDENTITY["name"] == APPS_WORKER_NAME:
+        expected["compatibility_flags"] = APPS_COMPATIBILITY_FLAGS
     if "preview_urls" in config:
         expected["preview_urls"] = False
     require(set(expected) | {"configPath", "userConfigPath", "main", "assets"} <= set(config), "missing normalized output field")

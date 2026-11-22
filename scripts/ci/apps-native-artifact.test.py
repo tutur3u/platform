@@ -32,7 +32,8 @@ class ArtifactTest(unittest.TestCase):
         # spread; getOutputConfig overwrites main/no_bundle/rules/asset directory.
         config = {
             "name": "tuturuuu-apps-vite-staging", "topLevelName": "tuturuuu-apps-vite-staging",
-            "compatibility_date": "2026-10-12", "compatibility_flags": ["nodejs_compat"],
+            "compatibility_date": "2026-10-12",
+            "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
             "workers_dev": True, "observability": {"enabled": True, "head_sampling_rate": 0.05},
             "vars": {"TUTURUUU_NOINDEX": "1"}, "definedEnvironments": [],
             "configPath": str(app / ".void-wrangler.jsonc"), "userConfigPath": str(app / ".void-wrangler.jsonc"),
@@ -57,6 +58,16 @@ class ArtifactTest(unittest.TestCase):
     def save(self, app, config, pointer):
         (app / "dist/native/wrangler.json").write_text(json.dumps(config))
         (app / artifact.REDIRECT).write_text(json.dumps(pointer))
+
+    def test_apps_requires_the_exact_compatibility_flags(self):
+        app, config, pointer = self.fixture()
+        artifact.validate_output(app)
+        flags = config["compatibility_flags"]
+        for changed in (flags[:1], flags[::-1], [*flags, "enable_request_signal"]):
+            with self.subTest(flags=changed):
+                self.save(app, {**config, "compatibility_flags": changed}, pointer)
+                with self.assertRaisesRegex(ValueError, "contract drift: compatibility_flags"):
+                    artifact.validate_output(app)
 
     def test_explicit_preview_urls_must_be_disabled(self):
         app, config, pointer = self.fixture()

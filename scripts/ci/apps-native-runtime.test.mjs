@@ -76,6 +76,7 @@ for name in m.PUBLIC_FILES:
 (a/'dist/client/assets/entry.js').write_text('export const hydrated=true')
 (a/'dist/native/index.js').write_text('export default {}')
 c={**m.IDENTITY, **m.NORMALIZED_DEFAULTS, 'configPath': str(a/'.void-wrangler.jsonc'), 'userConfigPath': str(a/'.void-wrangler.jsonc'), 'main':'index.js', 'assets': {'binding':'ASSETS','directory':'../client','run_worker_first':True,'not_found_handling':'none'}}
+c['compatibility_flags'] = m.APPS_COMPATIBILITY_FLAGS
 (a/'dist/native/wrangler.json').write_text(json.dumps(c))
 (a/'.wrangler/deploy/config.json').write_text(json.dumps({'configPath':'../../dist/native/wrangler.json','auxiliaryWorkers':[]}))
 (a/'receipt.json').write_text(json.dumps(m.artifact(a, sys.argv[3])))

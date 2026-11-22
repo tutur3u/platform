@@ -280,6 +280,7 @@ for n in m.PUBLIC_FILES:
 (a/'dist/server/index.mjs').write_text('public fixture')
 (a/'dist/server/.vite/manifest.json').write_text('{"entry":{"file":"index.mjs","isEntry":true}}')
 c={**m.IDENTITY,**m.NORMALIZED_DEFAULTS,'main':'index.mjs' if sys.argv[4]=='server' else '../server/index.mjs','configPath':str(a/'.void-wrangler.jsonc'),'userConfigPath':str(a/'.void-wrangler.jsonc'),'assets':{'binding':'ASSETS','directory':'../client','run_worker_first':True,'not_found_handling':'none'}}
+c['compatibility_flags'] = m.APPS_COMPATIBILITY_FLAGS
 configdir=a/'dist'/sys.argv[4];configdir.mkdir(parents=True,exist_ok=True)
 (configdir/'wrangler.json').write_text(json.dumps(c))
 (a/'.void/preview-deploy-config.json').write_text(json.dumps({'configPath':'../../dist/'+sys.argv[4]+'/wrangler.json','auxiliaryWorkers':[]}))
