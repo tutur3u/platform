@@ -86,7 +86,7 @@ export default async function FinancePage({
 
       <BudgetAlerts wsId={wsId} className="mb-4" currency={currency} />
 
-      <div className="grid items-end gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<FinanceOverviewMetricsFallback />}>
           <FinanceOverviewMetrics
             wsId={wsId}

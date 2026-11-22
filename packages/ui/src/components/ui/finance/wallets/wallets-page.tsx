@@ -85,7 +85,7 @@ export default async function WalletsPage({
       />
       <Separator className="my-4" />
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <FinanceBalanceModeToggle />
           <FinanceNumbersVisibilityToggle />
         </div>

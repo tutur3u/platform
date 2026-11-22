@@ -23,6 +23,7 @@ interface YearPickerLabels {
 }
 
 interface Props {
+  id?: string;
   defaultValue?: Date;
   fromDate?: Date;
   toDate?: Date;
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function YearPicker({
+  id,
   defaultValue,
   fromDate,
   toDate,
@@ -82,10 +84,12 @@ export function YearPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
+          data-sorbet-shape="field"
           onClick={() => setOpen((prev) => !prev)}
           className={cn(
-            'w-70 justify-start text-left font-normal',
+            'w-full justify-start text-left font-normal md:w-70',
             !defaultValue && 'text-muted-foreground',
             className
           )}
@@ -151,7 +155,7 @@ export function YearPicker({
           {years.map((year) => (
             <div
               key={year.toString()}
-              className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md dark:[&:has([aria-selected])]:bg-slate-800"
+              className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
               role="presentation"
             >
               <Button

@@ -1,18 +1,24 @@
 import { cn } from '@tuturuuu/utils/format';
+import { Card } from '../../../card';
+import { Skeleton } from '../../../skeleton';
 
 interface Props {
   className?: string;
 }
 
+/** Mirrors StatisticCard (title, value, icon tile) so loading does not shift. */
 export default function LoadingStatisticCard({ className }: Props) {
   return (
-    <div className={cn('group animate-pulse rounded-lg border', className)}>
-      <div className="p-1 text-center font-semibold text-lg text-transparent">
-        ...
+    <Card className={cn('h-full', className)} aria-hidden="true">
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+          <Skeleton className="size-11 shrink-0 rounded-lg" />
+        </div>
       </div>
-      <div className="m-2 mt-0 flex items-center justify-center rounded border border-foreground/5 bg-foreground/5 p-4 font-bold text-2xl text-transparent">
-        ...
-      </div>
-    </div>
+    </Card>
   );
 }

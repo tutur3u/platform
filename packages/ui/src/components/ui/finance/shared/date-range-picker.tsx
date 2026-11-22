@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { Label } from '../../label';
 import { DatePicker } from './date-picker';
 
 interface Props {
@@ -19,19 +21,25 @@ export function DateRangePicker({
   endLabel,
   className,
 }: Props) {
+  const id = useId();
+  const startId = `${id}-start`;
+  const endId = `${id}-end`;
+
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">{startLabel}</h2>
+        <Label htmlFor={startId}>{startLabel}</Label>
         <DatePicker
+          id={startId}
           defaultValue={startDate}
           onValueChange={setStartDate}
           toDate={endDate}
         />
       </div>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">{endLabel}</h2>
+        <Label htmlFor={endId}>{endLabel}</Label>
         <DatePicker
+          id={endId}
           defaultValue={endDate}
           onValueChange={setEndDate}
           fromDate={startDate}

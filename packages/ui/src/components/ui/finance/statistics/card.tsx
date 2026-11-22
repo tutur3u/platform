@@ -99,7 +99,7 @@ const StatisticCard = ({
   const content = (
     <Card
       className={cn(
-        'group relative overflow-hidden transition-all duration-200',
+        'group relative h-full overflow-hidden transition-all duration-200',
         (onClick || href) &&
           'cursor-pointer hover:border-foreground/20 hover:shadow-md',
         className
@@ -144,9 +144,7 @@ const StatisticCard = ({
                 <span
                   className={cn(
                     'whitespace-nowrap font-medium text-xs',
-                    trend.isPositive
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
+                    trend.isPositive ? 'text-dynamic-green' : 'text-dynamic-red'
                   )}
                 >
                   {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
@@ -171,7 +169,7 @@ const StatisticCard = ({
 
   if (href) {
     return (
-      <Link href={href} onClick={onClick} className="block">
+      <Link href={href} onClick={onClick} className="block h-full">
         {content}
       </Link>
     );
@@ -182,7 +180,7 @@ const StatisticCard = ({
       <button
         type="button"
         onClick={onClick}
-        className="block w-full text-left"
+        className="block h-full w-full text-left"
       >
         {content}
       </button>

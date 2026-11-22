@@ -9,6 +9,7 @@ import { Calendar } from '../../../ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
 
 interface Props {
+  id?: string;
   defaultValue?: Date;
   onValueChange: (date?: Date) => void;
   fromDate?: Date;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function DatePicker({
+  id,
   defaultValue,
   onValueChange,
   className,
@@ -37,7 +39,9 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant={'outline'}
+          id={id}
+          variant="outline"
+          data-sorbet-shape="field"
           className={cn(
             'w-full justify-start text-left font-normal md:w-70',
             !defaultValue && 'text-muted-foreground',

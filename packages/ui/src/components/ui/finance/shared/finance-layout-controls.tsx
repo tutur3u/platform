@@ -35,7 +35,12 @@ export function FinanceLayoutControls({
   }
 
   return (
-    <div className={cn('mb-4 flex flex-wrap justify-end gap-2', className)}>
+    <div
+      className={cn(
+        'mb-4 flex flex-wrap items-center justify-end gap-2',
+        className
+      )}
+    >
       <FinanceBalanceModeToggle />
       <FinanceNumbersVisibilityToggle />
     </div>

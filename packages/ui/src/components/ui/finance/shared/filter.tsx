@@ -5,8 +5,9 @@ import { format, isValid, parse } from 'date-fns';
 import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Button } from '../../../ui/button';
+import { Label } from '../../label';
 import {
   Select,
   SelectContent,
@@ -101,6 +102,7 @@ const isSameDraft = (left: FilterDraft, right: FilterDraft): boolean =>
 
 export function Filter({ className }: { className: string }) {
   const t = useTranslations('finance-overview');
+  const viewFieldId = useId();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -170,9 +172,9 @@ export function Filter({ className }: { className: string }) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">{t('filter_by')}</h2>
+        <Label htmlFor={viewFieldId}>{t('filter_by')}</Label>
         <Select value={draft.view} onValueChange={handleViewChange}>
-          <SelectTrigger className="w-full lg:min-w-48">
+          <SelectTrigger id={viewFieldId} className="w-full lg:min-w-48">
             <SelectValue placeholder={t('filter_by')} />
           </SelectTrigger>
           <SelectContent className="w-full lg:min-w-48">
@@ -246,22 +248,25 @@ export function Filter({ className }: { className: string }) {
         />
       )}
 
-      <Button
-        variant="outline"
-        className="w-full md:w-auto lg:min-w-24"
-        onClick={resetFilter}
-        disabled={paramsKey === ''}
-      >
-        {t('reset_filter')}
-      </Button>
-      <Button
-        variant="default"
-        className="w-full md:w-auto lg:min-w-24"
-        onClick={applyFilter}
-        disabled={!isDirty()}
-      >
-        {t('apply_filter')}
-      </Button>
+      <div className="grid grid-cols-2 gap-2 md:flex">
+        <Button
+          type="button"
+          variant="outline"
+          className="lg:min-w-24"
+          onClick={resetFilter}
+          disabled={paramsKey === ''}
+        >
+          {t('reset_filter')}
+        </Button>
+        <Button
+          type="button"
+          className="lg:min-w-24"
+          onClick={applyFilter}
+          disabled={!isDirty()}
+        >
+          {t('apply_filter')}
+        </Button>
+      </div>
     </div>
   );
 }

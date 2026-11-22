@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Eye, EyeOff } from '@tuturuuu/icons';
 import { listFinanceIncomeExpenseSummary } from '@tuturuuu/internal-api/finance';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
@@ -16,7 +15,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
 import {
   type ChartConfig,
@@ -26,12 +24,14 @@ import {
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
 import {
+  IncomeExpenseChartControls,
+  type IncomeExpenseViewMode,
+} from './chart-header-controls';
+import {
   FINANCE_HIDDEN_AMOUNT,
   FINANCE_HIDDEN_COMPACT_AMOUNT,
   useFinanceConfidentialVisibility,
 } from './use-finance-confidential-visibility';
-
-type ViewMode = 'all' | 'income' | 'expense';
 
 interface DailyTotalChartClientProps {
   wsId: string;
@@ -49,7 +49,7 @@ export function DailyTotalChartClient({
   const appLocale = useLocale();
   const t = useTranslations('transaction-data-table');
   const analyticsT = useTranslations('finance-analytics');
-  const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [viewMode, setViewMode] = useState<IncomeExpenseViewMode>('all');
   const { isConfidential, toggleConfidential } =
     useFinanceConfidentialVisibility();
   const shouldHideAmounts = isConfidential || !includeConfidential;
@@ -137,12 +137,30 @@ export function DailyTotalChartClient({
     }).format(value);
   };
 
+  const chartTitle = t('daily_total_from_14_recent_days');
+  const header = (
+    <CardHeader>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="text-base sm:text-lg">{chartTitle}</CardTitle>
+        <IncomeExpenseChartControls
+          canGoNext={dateOffset > 0}
+          chartLabel={chartTitle}
+          isConfidential={isConfidential}
+          onNextPeriod={() => setDateOffset((d) => Math.max(0, d - 1))}
+          onPreviousPeriod={() => setDateOffset((d) => d + 1)}
+          onToggleConfidential={toggleConfidential}
+          onViewModeChange={setViewMode}
+          rangeLabel={`${dateRange.displayStart} - ${dateRange.displayEnd}`}
+          viewMode={viewMode}
+        />
+      </div>
+    </CardHeader>
+  );
+
   if (isLoading) {
     return (
       <Card className={cn('flex flex-col', className)}>
-        <CardHeader>
-          <CardTitle>{t('daily_total_from_14_recent_days')}</CardTitle>
-        </CardHeader>
+        {header}
         <CardContent className="flex h-80 items-center justify-center">
           <Skeleton className="h-full w-full" />
         </CardContent>
@@ -153,9 +171,7 @@ export function DailyTotalChartClient({
   if (!data || data.length === 0) {
     return (
       <Card className={cn('flex flex-col', className)}>
-        <CardHeader>
-          <CardTitle>{t('daily_total_from_14_recent_days')}</CardTitle>
-        </CardHeader>
+        {header}
         <CardContent className="flex h-75 items-center justify-center">
           <p className="text-muted-foreground text-sm">
             {analyticsT('no-data')}
@@ -190,95 +206,7 @@ export function DailyTotalChartClient({
 
   return (
     <Card className={cn('flex flex-col', className)}>
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base sm:text-lg">
-            {t('daily_total_from_14_recent_days')}
-          </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Time navigation */}
-            <div className="flex items-center gap-1 rounded-lg border bg-background p-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDateOffset((d) => d + 1)}
-                className="h-7 w-7"
-                title={analyticsT('previous-period')}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="min-w-35 px-2 text-center text-xs">
-                {dateRange.displayStart} - {dateRange.displayEnd}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setDateOffset((d) => Math.max(0, d - 1))}
-                disabled={dateOffset === 0}
-                className="h-7 w-7"
-                title={analyticsT('next-period')}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleConfidential}
-              className="h-8 w-8 shrink-0"
-              title={
-                isConfidential ? t('show_confidential') : t('hide_confidential')
-              }
-            >
-              {isConfidential ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-
-            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode('all')}
-                className={cn(
-                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
-                  viewMode === 'all'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {t('all')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('income')}
-                className={cn(
-                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
-                  viewMode === 'income'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {t('income')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('expense')}
-                className={cn(
-                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
-                  viewMode === 'expense'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {t('expense')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
+      {header}
       <CardContent className="px-2 pb-4">
         <ChartContainer config={chartConfig} className="h-80 w-full">
           <BarChart accessibilityLayer data={chartData}>

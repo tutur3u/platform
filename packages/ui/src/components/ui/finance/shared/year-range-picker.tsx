@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { Label } from '../../label';
 import { YearPicker } from './year-picker';
 
 interface Props {
@@ -25,11 +27,16 @@ export function YearRangePicker({
   className,
   pickerLabels,
 }: Props) {
+  const id = useId();
+  const startId = `${id}-start`;
+  const endId = `${id}-end`;
+
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">{startLabel}</h2>
+        <Label htmlFor={startId}>{startLabel}</Label>
         <YearPicker
+          id={startId}
           defaultValue={startYear}
           onValueChange={setStartYear}
           toDate={endYear}
@@ -37,8 +44,9 @@ export function YearRangePicker({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">{endLabel}</h2>
+        <Label htmlFor={endId}>{endLabel}</Label>
         <YearPicker
+          id={endId}
           defaultValue={endYear}
           onValueChange={setEndYear}
           fromDate={startYear}

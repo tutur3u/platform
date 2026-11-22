@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { Label } from '../../label';
 import { MonthPicker } from './month-picker';
 
 interface Props {
@@ -25,11 +27,16 @@ export function MonthRangePicker({
   className,
   pickerLabels,
 }: Props) {
+  const id = useId();
+  const startId = `${id}-start`;
+  const endId = `${id}-end`;
+
   return (
     <div className={className}>
       <div className="flex flex-col justify-end gap-2">
-        <h2 className="font-semibold text-lg">{startLabel}</h2>
+        <Label htmlFor={startId}>{startLabel}</Label>
         <MonthPicker
+          id={startId}
           defaultValue={startMonth}
           onValueChange={setStartMonth}
           toDate={endMonth}
@@ -37,8 +44,9 @@ export function MonthRangePicker({
         />
       </div>
       <div className="flex flex-col justify-end gap-2">
-        <h2 className="font-semibold text-lg">{endLabel}</h2>
+        <Label htmlFor={endId}>{endLabel}</Label>
         <MonthPicker
+          id={endId}
           defaultValue={endMonth}
           onValueChange={setEndMonth}
           fromDate={startMonth}
