@@ -4614,7 +4614,6 @@
       "reporting_devices": "Thiết bị báo cáo mức sử dụng",
       "request_sent": "Đã gửi yêu cầu",
       "requests": "Yêu cầu tham gia",
-      "resize_collaboration": "Đổi kích thước khung cộng tác và video",
       "resize_filmstrip": "Đổi kích thước khung chính và dải video",
       "resize_panel": "Đổi kích thước bảng {panel}",
       "resource_limits_hint": "Cuộc họp kéo dài tối đa 2 giờ với Free, 10 giờ với Plus và 24 giờ với Pro hoặc Enterprise, theo tài khoản chủ phòng. Giới hạn người tham gia, tín dụng AI và dung lượng lưu trữ vẫn được áp dụng.",
@@ -5119,7 +5118,28 @@
       },
       "class_timer_paused": "Đã tạm dừng hẹn giờ",
       "class_timer_started": "Đã bắt đầu hẹn giờ",
-      "class_timer_stopped": "Đã dừng hẹn giờ"
+      "class_timer_stopped": "Đã dừng hẹn giờ",
+      "stage_layout": {
+        "region": "Hoạt động đang mở",
+        "tabs": "Hoạt động trong khung này",
+        "move": "Di chuyển {title}",
+        "move_hint": "Kéo để di chuyển, hoặc chọn rồi dùng phím mũi tên",
+        "resize": "Đổi kích thước {first} và {second}",
+        "maximize": "Phóng to {title}",
+        "restore": "Thu nhỏ {title}",
+        "close": "Đóng {title}",
+        "needs_room_title": "Cần thêm không gian",
+        "needs_room_description": "Mở rộng khung này hoặc phóng to nó",
+        "needs_room_action": "Phóng to",
+        "loading": "Đang tải {title}",
+        "error": "Không tải được {title}",
+        "retry": "Thử lại",
+        "switcher_title": "Hoạt động đang mở",
+        "showing": "Đang xem",
+        "video_show": "Hiện video",
+        "video_hide": "Thu gọn video",
+        "video_count": "{count} người"
+      }
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

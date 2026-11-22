@@ -845,8 +845,8 @@ An active screen share stays in the primary stage while you page through cameras
 The camera filmstrip scrolls horizontally, or sits at the side in the desktop
 Sidebar layout. A presenter can keep their own camera in a floating preview.
 
-With a shared document or programming workbench open, drag the divider between
-the collaboration surface and the video feeds. The floating self-view snaps
+With activities open, the video feeds sit in a row above the panes or collapse
+to a pill (see [Activity layout](#activity-layout)). The floating self-view snaps
 to any corner and has three sizes.
 
 Use the arrow keys on a focused divider to resize it. Double-click a divider
@@ -854,7 +854,7 @@ to reset it. On the dock and spotlight dividers, Home and End select the size
 limits and Enter resets the size. Layout changes affect only your view.
 
 Regression coverage lives in `resizable-call-panel.test.tsx`,
-`call-stage.test.tsx`, `collaboration-stage-layout.test.tsx`,
+`call-stage.test.tsx`, `stage-layout-media.test.tsx`,
 `participants-panel.test.tsx` and `self-preview-pip.test.tsx`.
 
 The host's People panel contains persistent approved participants. Admission
@@ -1329,6 +1329,73 @@ people present in the room, delivers the request only to those targets, and
 rate-limits each sender. It stores no navigation history. Regression coverage:
 `room-navigation.test.ts` (permissions, targeting and limits) and
 `room-navigation-policy.test.ts` (recipient decisions and the follow lifecycle).
+
+### Activity layout
+
+Scope: the room stage of an admitted participant, on the web (Meet and Parley).
+Layout is a per-person view: it never changes what other people see, admission,
+media, or tool access.
+
+- **Several activities open at once.** Polls, quizzes, the timer, live
+  activities, the pen board, the classroom whiteboard and breakouts,
+  Co-Programming and the live document all open as panes of one layout. Opening
+  an activity that is already open focuses its pane and brings its tab forward.
+- **Panes and tabs.** Up to three panes are visible on a desktop (1024px and
+  wider), two on a tablet (768px to 1023px), and one on a phone. A new activity
+  splits the focused pane while there is room for another pane, and stacks as a
+  tab in the focused pane otherwise. Any number of activities can be tabs of a
+  pane. A saved layout with more panes than the viewport allows folds the extra
+  panes into tabs for display and returns them when the window widens.
+- **Resize.** Each boundary between panes is a separator with
+  `aria-orientation`, `aria-valuenow`, `aria-valuemin` and `aria-valuemax`
+  (percent of the split, 15 to 85). Drag it, or use the arrow keys (Shift for a
+  larger step), Home and End; Enter or a double click shares the two panes
+  equally.
+- **Maximize and restore.** Maximize makes one pane fill the stage. Other panes
+  stay mounted but hidden and report themselves inactive. Restore returns the
+  exact split. Opening a new activity restores the split; summoning an activity
+  that lives in another pane moves the maximized view to that pane.
+- **Reorder and close.** Drag a pane's grip onto another pane to swap them, or
+  focus the grip and use the arrow keys. In a tab list, Left and Right select a
+  tab and Alt with Left or Right reorders it. F6 and Shift+F6 move focus
+  between panes. Closing an activity removes its tab, and its pane when it was
+  the last one.
+- **Video.** On a desktop the people sit in a row above the panes; on a tablet
+  or phone they collapse to a pill with the head count. The pill and the row
+  toggle each other, and the choice is remembered. The people are never
+  unmounted, so audio and video continue while the strip changes.
+- **Adaptive content.** Each pane is a container for container queries, not
+  viewport breakpoints: compact under 360px, medium from 360px to 720px, wide
+  beyond. A pane smaller than 280 by 220 shows "Needs more room" with a
+  Maximize action instead of clipping; the activity stays mounted behind it.
+- **Phone.** One activity fills the width. The header's switcher opens an "Open
+  activities" sheet that lists every open activity.
+- **Persistence.** The layout is local, saved per person and room under the
+  browser's storage, and restored after a reconnect or reload. Activities that
+  are not available right now (the call is not live, no access) are hidden, not
+  forgotten, and return with their pane when available.
+- **No remounting.** Panes are placed from fractions of the stage, not nested,
+  and each activity is rendered once under a stable key. Splitting, resizing,
+  maximizing, switching tabs and reordering keep editors such as Co-Programming
+  and the whiteboard mounted with their collaboration state. Hidden tabs and
+  panes receive `active = false` through `useActivityActive()` so heavy work can
+  pause.
+- **Follow and Summon.** The view a person shares is the activity in their
+  focused pane. A summoned or followed view opens that activity or focuses the
+  pane that already has it, and never closes the activities the person has open.
+  Going to the stage leaves open activities as they are. Follow and Summon
+  carry the focused activity, not the arrangement of panes.
+- **Intentional exceptions.** In-call forms remain a dialog. Presence-only rooms
+  have no video strip; the roster shows only while nothing is open.
+
+Regression coverage: `layout-model.test.ts` (open, close, split, stack,
+maximize and restore, reorder, pane limits, fitting), `layout-storage.test.ts`
+and `use-stage-layout.test.tsx` (per-room persistence and reconnect restore),
+`stage-layout-view.test.tsx` (separator keyboard resize, hidden panes staying
+mounted, the minimum-size card, the phone switcher, size classes),
+`stage-layout-media.test.tsx` (participant media staying mounted),
+`pane-adapters.test.tsx` and `use-stage-navigation.test.tsx` (Follow and
+Summon focusing a pane).
 
 ### Presence-only layout
 
@@ -2620,20 +2687,17 @@ establish a customer-visible latency improvement.
 ## Collaboration layout and document presence
 
 Opening Meet's shared document or Programming keeps participant cameras and
-shared screens visible alongside the active content. The existing layout selector
-also controls collaboration: automatic/sidebar uses a compact desktop rail,
-spotlight emphasizes content with a narrower rail, and grid balances content and
-participants. Narrow screens keep a horizontally scrollable filmstrip beneath the
-content. These choices are local to the active call; they never alter admission,
-media publication, or another participant's layout. The divider between content
-and participants is a one-pixel line with a wider pointer target, and it stays
-resizable from the keyboard. Presence-only rooms have no participant rail: the
-content fills the main area.
+shared screens visible alongside the active content: a compact row above the
+panes on a desktop, or a pill on a tablet or phone (see
+[Activity layout](#activity-layout)). These choices are local to the active
+call; they never alter admission, media publication, or another participant's
+layout. Presence-only rooms have no participant row: the content fills the main
+area.
 
 The same media stage and keyed camera/screen tiles stay mounted when content,
 layout, or focus changes. Local playback mute state and media element identity
 remain intact, and no second stage duplicates audio. Regression evidence:
-`collaboration-stage-layout.test.tsx` exercises real participant tiles and
+`stage-layout-media.test.tsx` exercises real participant tiles and
 camera/screen audio elements through content and layout transitions.
 
 Shared-document avatars represent users in that document provider's actual

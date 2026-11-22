@@ -10,6 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { useActivityPane } from '../stage-layout/activity-pane-context';
 import { CallResizeHandle } from './call-resize-handle';
 
 const DEFAULT_WIDTH = 360;
@@ -43,7 +44,29 @@ function readPanelWidth(key: string) {
   return DEFAULT_WIDTH;
 }
 
-export function ResizableCallPanel({
+/**
+ * A side panel with a resizable width. Inside a stage pane the pane owns the
+ * size and the frame, so it renders as a plain column that fills it.
+ */
+export function ResizableCallPanel(props: {
+  children: ReactNode;
+  label: string;
+  ownerId?: string;
+}) {
+  const pane = useActivityPane();
+  return pane ? (
+    <section
+      aria-label={props.label}
+      className="flex size-full min-h-0 flex-col"
+    >
+      {props.children}
+    </section>
+  ) : (
+    <SideCallPanel {...props} />
+  );
+}
+
+function SideCallPanel({
   children,
   label,
   ownerId,

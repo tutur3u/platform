@@ -66,6 +66,13 @@ describe('room views', () => {
       { surface: 'tool', toolId: 'live-qa' },
       'chat'
     );
+    // The chat drawer survives and the tool rides beside it.
+    expect(tool).toEqual({
+      programming: false,
+      document: false,
+      drawer: 'chat',
+      tool: 'tool:live-qa',
+    });
     expect(currentRoomView(tool)).toEqual({
       surface: 'tool',
       toolId: 'live-qa',

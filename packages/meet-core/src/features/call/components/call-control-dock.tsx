@@ -96,7 +96,7 @@ export function CallControlDock({
   roomTools: ReturnType<typeof useRoomTools>;
   tools: {
     shown: readonly MeetToolDefinition[];
-    activeId: string | null;
+    openIds: readonly string[];
     toggle: (id: string) => void;
   };
   activities: {
@@ -131,7 +131,7 @@ export function CallControlDock({
   const activitiesMenu = (
     <ActivitiesMenu
       tools={roomTools.showPreview ? meetTools : tools.shown}
-      activeToolId={tools.activeId}
+      openToolIds={tools.openIds}
       onTool={tools.toggle}
       extra={activities.entries}
       pages={pages}

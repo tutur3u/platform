@@ -80,7 +80,7 @@ function Fixture({
         activities={
           <ActivitiesMenu
             tools={[poll]}
-            activeToolId={null}
+            openToolIds={[]}
             onTool={noAction}
             collaboration={
               policy.canUse

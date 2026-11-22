@@ -9,11 +9,11 @@ import type { ClassroomTool } from '../../classroom-tools/classroom-client';
 import { ClassroomPanel } from '../../classroom-tools/classroom-panel';
 import { useCallPolls } from '../lib/polls-client';
 import { useCallQuizArena } from '../lib/quiz-arena-client';
-import { AccountRequiredState } from './account-required-state';
 import { ControlButton } from './control-bar';
-import { PollsControl, PollsPanel } from './polls-panel';
-import { QuizArenaControl, QuizArenaPanel } from './quiz-arena-panel';
-import { ResizableCallPanel } from './resizable-call-panel';
+import { PollsControl } from './polls-panel';
+import { QuizArenaControl } from './quiz-arena-panel';
+import type { ActivityStage } from '../stage-layout/activity-ids';
+import { toolActivityId } from '../stage-layout/activity-ids';
 
 const MeetFormsActivity = dynamic(
   () =>
@@ -25,6 +25,14 @@ const MeetFormsActivity = dynamic(
 
 export type ActivityDrawer = 'polls' | 'quiz-arena' | 'forms' | ClassroomTool;
 
+/** Stage ids for the activities the shortcuts and the classroom tools open. */
+const stageIdOf = (activity: Exclude<ActivityDrawer, 'forms'>) =>
+  activity === 'polls'
+    ? toolActivityId('polls')
+    : activity === 'quiz-arena'
+      ? toolActivityId('quiz')
+      : activity;
+
 /** An activity the Activities menu lists beside the registered tools. */
 export type ActivityEntry = {
   id: ActivityDrawer;
@@ -35,7 +43,7 @@ export type ActivityEntry = {
 };
 
 /** Classroom activities share one drawer slot and one control group. */
-export function useCallActivities<D extends string | null>({
+export function useCallActivities({
   meetingId,
   accountId,
   enabled,
@@ -44,8 +52,7 @@ export function useCallActivities<D extends string | null>({
   formsEnabled,
   formsTurnstileSiteKey,
   formsAccess,
-  drawer,
-  onDrawer,
+  stage,
   requiresAccount = false,
 }: {
   meetingId: string;
@@ -56,29 +63,29 @@ export function useCallActivities<D extends string | null>({
   formsEnabled: boolean;
   formsTurnstileSiteKey?: string;
   formsAccess: { canManage: boolean; canReadWorkspace: boolean };
-  drawer: D;
-  onDrawer: (next: ActivityDrawer | null) => void;
+  stage: ActivityStage;
   /** Anonymous guests may vote in polls only; Quiz Arena needs an account. */
   requiresAccount?: boolean;
 }) {
-  const t = useTranslations('meet.call.quizArena');
   const formsT = useTranslations('meet.call');
   const classroomT = useTranslations('meet.classroom_tools');
-  const [hasOpenedForms, setHasOpenedForms] = useState(false);
+  // In-call forms are a dialog, not a pane.
+  const [formsOpen, setFormsOpen] = useState(false);
+  const isOpen = (activity: ActivityDrawer) =>
+    activity === 'forms' ? formsOpen : stage.isOpen(stageIdOf(activity));
   const canUseForms = enabled && formsEnabled && !requiresAccount;
   const classroomAvailable = enabled && classroomToolsEnabled;
-  const polls = useCallPolls(meetingId, accountId, enabled, drawer === 'polls');
+  const polls = useCallPolls(meetingId, accountId, enabled, isOpen('polls'));
   const arena = useCallQuizArena(
     meetingId,
     accountId,
     enabled,
-    drawer === 'quiz-arena'
+    isOpen('quiz-arena')
   );
   const toggle = (next: ActivityDrawer) => {
-    if (next === 'forms') setHasOpenedForms(true);
-    onDrawer(drawer === next ? null : next);
+    if (next === 'forms') setFormsOpen((open) => !open);
+    else stage.toggle(stageIdOf(next));
   };
-  const close = () => onDrawer(null);
   const activePoll = polls.data?.polls.some((poll) => poll.status === 'active');
   const activeArena =
     arena.data?.kind === 'full' &&
@@ -90,13 +97,13 @@ export function useCallActivities<D extends string | null>({
   const liveControl = activePoll ? (
     <PollsControl
       query={polls}
-      open={drawer === 'polls'}
+      open={isOpen('polls')}
       onClick={() => toggle('polls')}
     />
   ) : activeArena ? (
     <QuizArenaControl
       query={arena}
-      open={drawer === 'quiz-arena'}
+      open={isOpen('quiz-arena')}
       onClick={() => toggle('quiz-arena')}
     />
   ) : null;
@@ -109,14 +116,14 @@ export function useCallActivities<D extends string | null>({
             id: 'whiteboard' as const,
             label: classroomT('whiteboard.title'),
             icon: PenTool,
-            active: drawer === 'whiteboard',
+            active: isOpen('whiteboard'),
             toggle: () => toggle('whiteboard'),
           },
           {
             id: 'breakouts' as const,
             label: classroomT('breakouts.title'),
             icon: LayoutGrid,
-            active: drawer === 'breakouts',
+            active: isOpen('breakouts'),
             toggle: () => toggle('breakouts'),
           },
         ]
@@ -127,7 +134,7 @@ export function useCallActivities<D extends string | null>({
             id: 'forms' as const,
             label: formsT('forms.title'),
             icon: ClipboardList,
-            active: drawer === 'forms',
+            active: isOpen('forms'),
             toggle: () => toggle('forms'),
           },
         ]
@@ -141,23 +148,26 @@ export function useCallActivities<D extends string | null>({
         {showPolls && (
           <PollsControl
             query={polls}
-            open={drawer === 'polls'}
+            open={isOpen('polls')}
             onClick={() => toggle('polls')}
           />
         )}
         {showTools && classroomAvailable && (
-          <ClassroomControls active={drawer} toggle={toggle} />
+          <ClassroomControls
+            active={(['whiteboard', 'breakouts'] as const).find(isOpen) ?? null}
+            toggle={toggle}
+          />
         )}
         {showArena && (
           <QuizArenaControl
             query={arena}
-            open={drawer === 'quiz-arena'}
+            open={isOpen('quiz-arena')}
             onClick={() => toggle('quiz-arena')}
           />
         )}
         {showTools && canUseForms && (
           <ControlButton
-            active={drawer === 'forms'}
+            active={isOpen('forms')}
             icon={ClipboardList}
             label={formsT('forms.title')}
             onClick={() => toggle('forms')}
@@ -165,51 +175,35 @@ export function useCallActivities<D extends string | null>({
         )}
       </>
     ),
-    panel: (
-      <>
-        {canUseForms && hasOpenedForms && (
-          <MeetFormsActivity
-            key={JSON.stringify([meetingId, accountId])}
+    /** The in-call forms dialog; it renders over the room, not in a pane. */
+    dialog:
+      canUseForms && formsOpen ? (
+        <MeetFormsActivity
+          key={JSON.stringify([meetingId, accountId])}
+          accountId={accountId}
+          meetingId={meetingId}
+          {...formsAccess}
+          turnstileSiteKey={formsTurnstileSiteKey}
+          open
+          onClose={() => setFormsOpen(false)}
+        />
+      ) : null,
+    /** The pane content for a classroom activity or a live quiz arena. */
+    renderPanel: (activity: string) => {
+      if (
+        classroomAvailable &&
+        (activity === 'whiteboard' || activity === 'breakouts')
+      )
+        return (
+          <ClassroomPanel
+            key={activity}
+            tool={activity}
             accountId={accountId}
             meetingId={meetingId}
-            {...formsAccess}
-            turnstileSiteKey={formsTurnstileSiteKey}
-            open={drawer === 'forms'}
-            onClose={close}
+            close={() => stage.close(activity)}
           />
-        )}
-        {classroomAvailable &&
-          (drawer === 'whiteboard' || drawer === 'breakouts') && (
-            <ClassroomPanel
-              key={drawer}
-              tool={drawer}
-              accountId={accountId}
-              meetingId={meetingId}
-              close={close}
-            />
-          )}
-        {drawer === 'polls' && showPolls ? (
-          <PollsPanel
-            accountId={accountId}
-            meetingId={meetingId}
-            query={polls}
-            onClose={close}
-          />
-        ) : drawer === 'quiz-arena' && showArena ? (
-          requiresAccount ? (
-            <ResizableCallPanel label={t('title')}>
-              <AccountRequiredState />
-            </ResizableCallPanel>
-          ) : (
-            <QuizArenaPanel
-              accountId={accountId}
-              meetingId={meetingId}
-              query={arena}
-              onClose={close}
-            />
-          )
-        ) : null}
-      </>
-    ),
+        );
+      return null;
+    },
   };
 }

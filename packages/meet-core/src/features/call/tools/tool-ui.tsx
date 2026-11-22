@@ -4,6 +4,8 @@ import { Loader2, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentProps, ComponentType, ReactNode } from 'react';
+import { useActivityPane } from '../stage-layout/activity-pane-context';
+import { PaneHeaderExtras } from '../stage-layout/activity-shell';
 
 type Icon = ComponentType<{ className?: string }>;
 
@@ -85,6 +87,10 @@ export function CallPanelHeader({
   onClose: () => void;
   actions?: ReactNode;
 }) {
+  // A pane's own header carries the icon, title and close; the subtitle and
+  // actions join it as the activity's status and actions.
+  const pane = useActivityPane();
+  if (pane) return <PaneHeaderExtras status={subtitle} actions={actions} />;
   return (
     <header className="flex items-center gap-3 border-b px-4 py-2.5">
       <span

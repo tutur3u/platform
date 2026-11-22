@@ -4614,7 +4614,6 @@
       "reporting_devices": "Devices reporting usage",
       "request_sent": "Request sent",
       "requests": "Join requests",
-      "resize_collaboration": "Resize collaboration and video panes",
       "resize_filmstrip": "Resize spotlight and filmstrip",
       "resize_panel": "Resize {panel} panel",
       "resource_limits_hint": "Meetings last up to 2 hours on Free, 10 hours on Plus, and 24 hours on Pro and Enterprise, based on the host’s account. Participant, AI credit and storage limits still apply.",
@@ -5119,7 +5118,28 @@
       },
       "class_timer_paused": "Timer paused",
       "class_timer_started": "Timer started",
-      "class_timer_stopped": "Timer stopped"
+      "class_timer_stopped": "Timer stopped",
+      "stage_layout": {
+        "region": "Open activities",
+        "tabs": "Activities in this pane",
+        "move": "Move {title}",
+        "move_hint": "Drag to move, or focus and use the arrow keys",
+        "resize": "Resize {first} and {second}",
+        "maximize": "Maximize {title}",
+        "restore": "Restore {title}",
+        "close": "Close {title}",
+        "needs_room_title": "Needs more room",
+        "needs_room_description": "Widen this pane or maximize it",
+        "needs_room_action": "Maximize",
+        "loading": "Loading {title}",
+        "error": "Couldn't load {title}",
+        "retry": "Try again",
+        "switcher_title": "Open activities",
+        "showing": "Showing",
+        "video_show": "Show video",
+        "video_hide": "Collapse video",
+        "video_count": "{count, plural, one {# person} other {# people}}"
+      }
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

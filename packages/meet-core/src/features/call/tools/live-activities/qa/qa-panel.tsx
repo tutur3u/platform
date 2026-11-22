@@ -78,7 +78,7 @@ export function QaPanel({
         <QaBoard
           view={view}
           board={board}
-          composerClassName="-mx-4 -mb-4 px-4"
+          composerClassName="-mx-3 -mb-3 px-3 @min-[360px]:-mx-4 @min-[360px]:-mb-4 @min-[360px]:px-4"
         />
       )}
     </LiveActivityPanelFrame>

@@ -51,7 +51,7 @@ function renderMenu(props: Partial<ComponentProps<typeof ActivitiesMenu>>) {
       <NuqsTestingAdapter>
         <ActivitiesMenu
           tools={[polls, flashcards]}
-          activeToolId={null}
+          openToolIds={[]}
           onTool={vi.fn()}
           collaboration={{ programming: action, document: action }}
           {...props}
@@ -127,7 +127,7 @@ it('starts from an activity page in the sidebar', () => {
 
 it('counts open activities on the trigger and lists them under Open now', () => {
   const onTool = vi.fn();
-  renderMenu({ activeToolId: 'polls', onTool });
+  renderMenu({ openToolIds: ['polls'], onTool });
   open('Activities, 1 open');
   expect(screen.getByRole('heading', { name: a.open_now })).toBeTruthy();
   // An activity already open stays open; Open only returns to it.
@@ -190,7 +190,7 @@ it('clears its tab when it closes so the next open starts on the overview', asyn
       <NuqsTestingAdapter onUrlUpdate={(event) => urls.push(event.queryString)}>
         <ActivitiesMenu
           tools={[polls, flashcards]}
-          activeToolId={null}
+          openToolIds={[]}
           onTool={vi.fn()}
         />
       </NuqsTestingAdapter>
@@ -229,7 +229,7 @@ it('explains Start only to people who may Follow and Summon', async () => {
 });
 
 it('marks open activities with a neutral badge', () => {
-  renderMenu({ activeToolId: 'polls' });
+  renderMenu({ openToolIds: ['polls'] });
   open('Activities, 1 open');
   const badge = screen
     .getAllByText(a.open_state)

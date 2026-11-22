@@ -124,7 +124,7 @@ function renderDock(props: Partial<ComponentProps<typeof CallControlDock>>) {
                 canUse: false,
                 showPreview: false,
               }}
-              tools={{ shown: [], activeId: null, toggle: noop }}
+              tools={{ shown: [], openIds: [], toggle: noop }}
               activities={{ liveControl: null, controls: null, entries: [] }}
               programming={toggle}
               document={toggle}
@@ -229,7 +229,7 @@ it('gives every Activities sidebar entry a distinct name with the room timer on'
       state: { ...room.state, classRole: 'host', classTimerEnabled: true },
     } as unknown as MeetRoomController,
     roomTools: { canConfigure: true, canUse: true, showPreview: false },
-    tools: { shown: meetTools, activeId: null, toggle: noop },
+    tools: { shown: meetTools, openIds: [], toggle: noop },
   });
   fireEvent.click(screen.getByRole('button', { name: call.activities.button }));
   const names = within(

@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
+import { type CallLayout, CallStage } from '../components/call-stage';
 import type { MeetRoomController } from '../lib/room-controller';
-import { type CallLayout, CallStage } from './call-stage';
-import { CollaborationStageLayout } from './collaboration-stage-layout';
+import { StageLayoutView } from './stage-layout-view';
+import { useStageLayout } from './use-stage-layout';
 
-vi.mock('./media-receiving-status', () => ({
+vi.mock('../components/media-receiving-status', () => ({
   useStreamReadiness: () => ({}),
   MediaReceivingStatus: () => null,
 }));
@@ -18,6 +25,7 @@ vi.mock('../lib/media-playback', () => ({
 vi.mock('../lib/video-presentation', () => ({
   observeVideoPresentation: () => undefined,
 }));
+
 beforeEach(() => {
   vi.stubGlobal(
     'ResizeObserver',
@@ -30,8 +38,10 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   vi.unstubAllGlobals();
 });
+
 function room() {
   const track = { kind: 'audio', enabled: true };
   class Stream {
@@ -64,38 +74,80 @@ function room() {
     screenStream: null,
   } as unknown as MeetRoomController;
 }
+
+let controller: ReturnType<typeof useStageLayout>;
+function Harness({
+  media,
+  layout,
+  focus = null,
+}: {
+  media: MeetRoomController;
+  layout: CallLayout;
+  focus?: string | null;
+}) {
+  controller = useStageLayout({
+    accountId: 'u',
+    meetingId: 'm',
+    isAvailable: () => true,
+    tier: 'desktop',
+  });
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <StageLayoutView
+        controller={controller}
+        peopleCount={2}
+        activities={controller.openIds.map((id) => ({
+          id,
+          title: id,
+          icon: () => null,
+          content: <section aria-label={id}>Content</section>,
+        }))}
+        stage={
+          <CallStage
+            room={media}
+            layout={layout}
+            compact={controller.openIds.length > 0}
+            focus={focus}
+            onFocus={vi.fn()}
+            onChat={vi.fn()}
+          />
+        }
+      />
+    </div>
+  );
+}
+const view = (
+  media: MeetRoomController,
+  layout: CallLayout,
+  focus?: string | null
+) => (
+  <NextIntlClientProvider locale="en" messages={messages}>
+    <Harness media={media} layout={layout} focus={focus} />
+  </NextIntlClientProvider>
+);
+
 it.each(['auto', 'grid', 'spotlight', 'sidebar'] as CallLayout[])(
-  'keeps actual media mounted and controls usable alongside document and programming in %s',
+  'keeps actual media mounted with activities open, collapsed and closed in %s',
   (layout) => {
-    const controller = room();
-    const view = (content: 'document' | 'programming' | null) => (
-      <NextIntlClientProvider locale="en" messages={messages}>
-        <CollaborationStageLayout
-          layout={layout}
-          content={
-            content ? <section aria-label={content}>Content</section> : null
-          }
-          stage={
-            <CallStage
-              room={controller}
-              layout={layout}
-              compact={!!content}
-              focus={null}
-              onFocus={vi.fn()}
-              onChat={vi.fn()}
-            />
-          }
-        />
-      </NextIntlClientProvider>
-    );
-    const { rerender, container } = render(view(null));
+    const media = room();
+    const { container } = render(view(media, layout));
     const tile = screen.getByTestId('participant-peer-camera');
     const audio = tile.querySelector('audio');
     const video = tile.querySelector('video');
     fireEvent.click(screen.getByRole('button', { name: 'Mute Peer for me' }));
     expect(audio?.muted).toBe(true);
-    for (const content of ['document', 'programming', null] as const) {
-      rerender(view(content));
+    const steps: (() => void)[] = [
+      () => controller.open('document'),
+      () => controller.open('programming'),
+      () => controller.setStrip('pill'),
+      () => controller.setStrip('row'),
+      () => controller.maximize(controller.layout.focusedPaneId),
+      () => controller.maximize(null),
+      () => controller.close('programming'),
+      () => controller.close('document'),
+    ];
+    for (const step of steps) {
+      act(step);
       expect(screen.getByTestId('participant-peer-camera')).toBe(tile);
       expect(tile.querySelector('video')).toBe(video);
       expect(tile.querySelector('audio')).toBe(audio);
@@ -103,86 +155,38 @@ it.each(['auto', 'grid', 'spotlight', 'sidebar'] as CallLayout[])(
       expect(audio?.muted).toBe(true);
       for (let el: Element | null = tile; el; el = el.parentElement)
         expect(el.classList.contains('hidden')).toBe(false);
-      if (content)
-        expect(screen.getByRole('region', { name: content })).toBeDefined();
     }
+    expect(controller.openIds).toEqual([]);
     fireEvent.click(screen.getByRole('button', { name: 'Unmute Peer for me' }));
     expect(audio?.muted).toBe(false);
   }
 );
-it.each([false, true])(
-  'gives collaboration a focusable splitter when compact viewport is %s',
-  (mobile) => {
-    vi.stubGlobal('matchMedia', () => ({
-      matches: mobile,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-    }));
-    render(
-      <NextIntlClientProvider locale="en" messages={messages}>
-        <CollaborationStageLayout
-          content={<div>Doc</div>}
-          stage={<div>Peer</div>}
-          layout="grid"
-        />
-      </NextIntlClientProvider>
-    );
-    const splitter = screen.getByRole('separator', {
-      name: 'Resize collaboration and video panes',
-    });
-    expect(splitter.getAttribute('aria-orientation')).toBe(
-      mobile ? 'horizontal' : 'vertical'
-    );
-    expect(splitter.tabIndex).toBe(0);
-  }
-);
 
-it('preserves every camera/screen media node and local playback state while changing modes and focus', () => {
-  const controller = room();
-  const second = {
+it('preserves every camera and screen media node while layouts, focus and activities change', () => {
+  const media = room();
+  media.state.participants.second = {
     userId: 'second',
     displayName: 'Second',
     media: { audioEnabled: true, videoEnabled: true, screenEnabled: true },
   } as MeetRealtimePresence;
-  controller.state.participants.second = second;
-  controller.remoteMedia.second = {
+  media.remoteMedia.second = {
     audio: { kind: 'audio' } as MediaStreamTrack,
     video: { kind: 'video' } as MediaStreamTrack,
     screen: { kind: 'video' } as MediaStreamTrack,
     screen_audio: { kind: 'audio' } as MediaStreamTrack,
   };
-  const view = (layout: CallLayout, compact: boolean, focus: string | null) => (
-    <NextIntlClientProvider locale="en" messages={messages}>
-      <CollaborationStageLayout
-        layout={layout}
-        content={compact ? <section aria-label="document">Doc</section> : null}
-        stage={
-          <CallStage
-            room={controller}
-            layout={layout}
-            compact={compact}
-            focus={focus}
-            onFocus={vi.fn()}
-            onChat={vi.fn()}
-          />
-        }
-      />
-    </NextIntlClientProvider>
-  );
-  const { rerender, container } = render(view('grid', false, null));
+  const { rerender, container } = render(view(media, 'grid'));
   const ids = ['peer-camera', 'second-camera', 'second-screen'];
   const nodes = ids.map((id) => screen.getByTestId(`participant-${id}`));
   const videos = nodes.map((node) => node.querySelector('video'));
   const audio = nodes.map((node) => node.querySelector('audio'));
   fireEvent.click(screen.getByRole('button', { name: 'Mute Peer for me' }));
-  for (const compact of [true, false]) {
-    for (const layout of [
-      'auto',
-      'sidebar',
-      'spotlight',
-      'grid',
-    ] as CallLayout[]) {
-      rerender(view(layout, compact, 'second:screen'));
+  for (const open of [true, false]) {
+    act(() =>
+      open ? controller.open('document') : controller.close('document')
+    );
+    for (const layout of ['auto', 'sidebar', 'spotlight', 'grid'] as const) {
+      rerender(view(media, layout, 'second:screen'));
       ids.forEach((id, index) => {
         const node = screen.getByTestId(`participant-${id}`);
         expect(node).toBe(nodes[index]);
@@ -194,6 +198,6 @@ it('preserves every camera/screen media node and local playback state while chan
       expect(audio[1]?.muted).toBe(false);
     }
   }
-  rerender(view('spotlight', true, 'departed:camera'));
+  rerender(view(media, 'spotlight', 'departed:camera'));
   expect(screen.getByTestId('participant-second-screen')).toBe(nodes[2]);
 });

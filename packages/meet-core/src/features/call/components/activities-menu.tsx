@@ -32,7 +32,7 @@ export type ActivityPage = Omit<ActivityTile, 'open' | 'page'> & {
  */
 export function ActivitiesMenu({
   tools,
-  activeToolId,
+  openToolIds,
   onTool,
   collaboration,
   extra = [],
@@ -41,7 +41,8 @@ export function ActivitiesMenu({
   navigationAllowed = false,
 }: {
   tools: readonly MeetToolDefinition[];
-  activeToolId: string | null;
+  /** Ids of the tools open on the stage. */
+  openToolIds: readonly string[];
   onTool: (id: string) => void;
   /** Classroom tools and in-call forms, when the room has them. */
   extra?: readonly ActivityEntry[];
@@ -101,7 +102,7 @@ export function ActivitiesMenu({
       id: tool.id,
       label: toolLabel(tool),
       icon: tool.icon,
-      active: activeToolId === tool.id,
+      active: openToolIds.includes(tool.id),
       open: preview ? undefined : () => onTool(tool.id),
     })),
     ...extra.map((entry) => ({

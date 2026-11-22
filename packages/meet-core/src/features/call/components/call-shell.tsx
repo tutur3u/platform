@@ -25,19 +25,18 @@ import {
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
-import { type ActivityDrawer, useCallActivities } from './call-activities';
+import { useCallActivities } from './call-activities';
 import { CallEnded } from './call-ended';
 import { useRoomTools } from './call-room-tools';
 import { CallControlDock } from './call-control-dock';
 import { CallHeader } from './call-header';
-import { CallPresenceRoster } from './call-presence-roster';
+import { PresenceStage } from '../stage-layout/presence-stage';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { roomActivitySettings } from './call-activity-settings';
 import { CallSettings } from './call-settings';
 import { CallSettingsLinkProvider } from './call-settings-link';
 import { type CallLayout, CallStage } from './call-stage';
-import { CollaborationStageLayout } from './collaboration-stage-layout';
 import type { CallPanel } from './control-bar';
 import {
   AccountGatedNotesDrawer,
@@ -60,10 +59,18 @@ import { ShareMeetingButton } from './share-meeting';
 import { SidePanel } from './side-panel';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { meetTools } from '../tools/registry';
-import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
-import { useRoomNavigation } from '../hooks/use-room-navigation';
-import { ActivitiesMenu } from './activities-menu';
+import { useMeetTools } from '../tools/use-meet-tools';
+import {
+  DOCUMENT_ACTIVITY,
+  PROGRAMMING_ACTIVITY,
+} from '../stage-layout/activity-ids';
+import { isActivityAvailable } from '../stage-layout/availability';
+import { RoomStage } from '../stage-layout/room-stage';
+import { useStageLayout } from '../stage-layout/use-stage-layout';
+import { useStageNavigation } from '../stage-layout/use-stage-navigation';
 import { FollowBanner } from './room-navigation-controls';
+const meetToolIds = meetTools.map((tool) => tool.id);
+
 function CallShellContent({
   accountId,
   defaultDisplayName,
@@ -107,10 +114,8 @@ function CallShellContent({
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [ending, setEnding] = useState(false);
   const collaborationT = useTranslations('meet.collaboration');
-  const [programmingOpen, setShowProgramming] = useState(false);
-  const [documentOpen, setShowDocument] = useState(false);
   const [drawer, setDrawer] = useState<
-    CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer | ToolDrawer
+    CallPanel | 'notes' | 'personal' | 'feedback'
   >(null);
   const chatOpen = drawer === 'chat' || drawer === 'feedback';
   const panel = chatOpen ? 'chat' : drawer === 'participants' ? drawer : null;
@@ -154,8 +159,6 @@ function CallShellContent({
   // Set once a host or co-host has brought this person to a shared surface.
   const [broughtIn, setBroughtIn] = useState(false);
   const canCollaborate = roomTools.canUse || broughtIn;
-  const showProgramming = canCollaborate && programmingOpen;
-  const showDocument = canCollaborate && documentOpen;
   const canReadNotes = canManage || state.settings.shareNotes;
   const audioStreams = useMemo(
     () => [
@@ -249,9 +252,25 @@ function CallShellContent({
   }, [state.ended, state.admission, leaveNow]);
   const lifecycle = selectCallLifecycle(state, joined);
   const liveTools = MEETING_APP === 'meet' && lifecycle === 'live' && inCall;
-  const tools = useMeetTools<ActivityDrawer>({
-    drawer,
-    onDrawer: setDrawer,
+  const stageAvailable = useCallback(
+    (id: string) =>
+      isActivityAvailable(id, {
+        live: liveTools,
+        collaboration: canCollaborate,
+        classroom: !!classroomToolsEnabled,
+        toolIds: meetToolIds,
+      }),
+    [liveTools, canCollaborate, classroomToolsEnabled]
+  );
+  const stage = useStageLayout({
+    accountId,
+    meetingId,
+    isAvailable: stageAvailable,
+  });
+  const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
+  const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
+  const tools = useMeetTools({
+    stage,
     meetingId,
     accountId,
     requiresAccount,
@@ -275,39 +294,19 @@ function CallShellContent({
     formsTurnstileSiteKey,
     formsAccess: { canManage, canReadWorkspace },
     classroomToolsEnabled,
-    drawer,
-    onDrawer: tools.route,
+    stage,
   });
-  // Opening only shows the panel. The host picks the resource in its dialog;
-  // nothing is created or selected for the room before that choice.
-  const openProgramming = (open: boolean) => {
-    setShowDocument(false);
-    setShowProgramming(open);
-  };
-  const openDocument = (open: boolean) => {
-    setShowProgramming(false);
-    setShowDocument(open);
-  };
-  const nav = useRoomNavigation({
+  const nav = useStageNavigation({
     room,
-    surface: { programming: showProgramming, document: showDocument, drawer },
-    apply: (next, { forced }) => {
-      // A host or co-host who brings someone to a surface opens it for them.
-      if (forced && (next.programming || next.document)) setBroughtIn(true);
-      if (next.programming) {
-        if (!showProgramming) openProgramming(true);
-      } else if (next.document) openDocument(true);
-      else {
-        setShowProgramming(false);
-        setShowDocument(false);
-      }
-      setDrawer(next.drawer as typeof drawer);
-    },
+    stage,
+    drawer,
+    onDrawer: (next) => setDrawer(next as typeof drawer),
+    onBroughtIn: () => setBroughtIn(true),
     access: {
       browse: roomTools.canUse,
       account: !requiresAccount,
       tools: liveTools,
-      toolIds: meetTools.map((tool) => tool.id),
+      toolIds: meetToolIds,
     },
   });
   if (lifecycle === 'error')
@@ -460,35 +459,39 @@ function CallShellContent({
       <CallResourceNotice error={state.error} />
       <FollowBanner nav={nav} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <main
-          className={`relative min-h-0 min-w-0 flex-1 ${showDocument ? '' : 'p-2 sm:p-3'}`}
-        >
+        <main className="relative min-h-0 min-w-0 flex-1 p-2 sm:p-3">
           {room.screenStream && (
             <div className="absolute top-3 left-3 z-20">
               <ScreenAudioStatus stream={room.screenStream} />
             </div>
           )}
-          <CollaborationStageLayout
-            layout={layout}
-            content={accountGatedCollaboration(
-              requiresAccount,
-              showProgramming,
-              showDocument,
-              {
-                meetingId,
-                wsId,
-                accountId,
-                canManage,
-                selection: state.settings.programming ?? null,
-              },
-              {
-                meetingId,
-                accountId,
-                admitted: state.admission === 'admitted',
-                onRequestAccess: () =>
-                  room.sendChat(collaborationT('document_access_message')),
-              }
-            )}
+          <RoomStage
+            controller={stage}
+            peopleCount={participants.length}
+            tools={meetTools}
+            renderTool={tools.renderPanel}
+            renderClassroom={activities.renderPanel}
+            renderCollaboration={(id) =>
+              accountGatedCollaboration(
+                requiresAccount,
+                id === PROGRAMMING_ACTIVITY,
+                id === DOCUMENT_ACTIVITY,
+                {
+                  meetingId,
+                  wsId,
+                  accountId,
+                  canManage,
+                  selection: state.settings.programming ?? null,
+                },
+                {
+                  meetingId,
+                  accountId,
+                  admitted: state.admission === 'admitted',
+                  onRequestAccess: () =>
+                    room.sendChat(collaborationT('document_access_message')),
+                }
+              )
+            }
             stage={
               !presenceOnly ? (
                 <CallStage
@@ -498,39 +501,30 @@ function CallShellContent({
                   outputDeviceId={outputDeviceId}
                   room={room}
                   layout={layout}
-                  compact={showProgramming || showDocument}
+                  compact={stage.openIds.length > 0}
                   focus={focus}
                   onFocus={focusFeed}
                 />
-              ) : showProgramming || showDocument ? null : (
-                <CallPresenceRoster
+              ) : stage.openIds.length ? null : (
+                <PresenceStage
+                  stage={stage}
+                  canBrowse={roomTools.canUse}
                   participants={participants}
                   selfUserId={state.selfUserId}
                   raisedHandUserIds={state.stage.raisedHandUserIds}
-                  onProgramming={
-                    roomTools.canUse ? () => openProgramming(true) : undefined
-                  }
-                  onDocument={
-                    roomTools.canUse ? () => openDocument(true) : undefined
-                  }
-                  activities={
-                    tools.shown.length ? (
-                      <ActivitiesMenu
-                        tools={tools.shown}
-                        activeToolId={tools.activeId}
-                        onTool={tools.toggle}
-                        navigationAllowed={nav.allowed}
-                      />
-                    ) : null
-                  }
+                  tools={{
+                    tools: tools.shown,
+                    openToolIds: tools.openIds,
+                    onTool: tools.toggle,
+                  }}
+                  navigationAllowed={nav.allowed}
                 />
               )
             }
           />
           <ReactionOverlay state={state} />
         </main>
-        {activities.panel}
-        {tools.panel}
+        {activities.dialog}
         <AccountGatedPersonalDrawer
           open={roomTools.canUse && drawer === 'personal'}
           requiresAccount={requiresAccount}
@@ -602,11 +596,11 @@ function CallShellContent({
         activities={activities}
         programming={{
           active: showProgramming,
-          toggle: () => openProgramming(!showProgramming),
+          toggle: () => stage.toggle(PROGRAMMING_ACTIVITY),
         }}
         document={{
           active: showDocument,
-          toggle: () => openDocument(!showDocument),
+          toggle: () => stage.toggle(DOCUMENT_ACTIVITY),
         }}
         layout={layout}
         setLayout={(next) => {

@@ -1,0 +1,320 @@
+// @vitest-environment jsdom
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import messages from '../../../../../../apps/meet/messages/en.json';
+import { ActivityShell } from './activity-shell';
+import { useActivityActive } from './activity-pane-context';
+import type { ViewportTier } from './layout-model';
+import { StageLayoutView } from './stage-layout-view';
+import { useStageLayout } from './use-stage-layout';
+
+const mounts: Record<string, number> = {};
+const Probe = ({ id }: { id: string }) => {
+  const active = useActivityActive();
+  useEffect(() => {
+    mounts[id] = (mounts[id] ?? 0) + 1;
+  }, [id]);
+  return (
+    <ActivityShell title={id}>
+      <input aria-label={`${id} input`} placeholder={`Type in ${id}`} />
+      <output data-testid={`${id}-active`}>{String(active)}</output>
+    </ActivityShell>
+  );
+};
+
+let controller: ReturnType<typeof useStageLayout>;
+const icon = () => null;
+
+function Harness({ tier = 'desktop' as ViewportTier }) {
+  const stage = useStageLayout({
+    accountId: 'u',
+    meetingId: 'm',
+    isAvailable: () => true,
+    tier,
+  });
+  controller = stage;
+  const [people] = useState(() => <p data-testid="people">people</p>);
+  return (
+    <div style={{ width: 1000, height: 600 }}>
+      <StageLayoutView
+        controller={stage}
+        peopleCount={4}
+        stage={people}
+        activities={stage.openIds.map((id) => ({
+          id,
+          title: id,
+          icon,
+          content: <Probe id={id} />,
+        }))}
+      />
+    </div>
+  );
+}
+
+const view = (tier: ViewportTier = 'desktop') =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <Harness tier={tier} />
+    </NextIntlClientProvider>
+  );
+const open = (...ids: string[]) =>
+  act(() => {
+    for (const id of ids) controller.open(id);
+  });
+
+const sizes = new Map<string, { width: number; height: number }>();
+beforeEach(() => {
+  for (const key of Object.keys(mounts)) delete mounts[key];
+  sizes.clear();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(private callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        const size = sizes.get(
+          (target as HTMLElement).dataset.activityId ?? ''
+        );
+        if (size)
+          this.callback(
+            [{ target, contentRect: size } as ResizeObserverEntry],
+            this as unknown as ResizeObserver
+          );
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+  );
+});
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  vi.unstubAllGlobals();
+});
+
+it('renders open activities as panes with accessible separators that arrow keys resize', () => {
+  view();
+  open('a', 'b');
+  const separator = screen.getByRole('separator');
+  expect(separator.getAttribute('aria-orientation')).toBe('vertical');
+  expect(separator.getAttribute('aria-valuenow')).toBe('50');
+  expect(separator.getAttribute('aria-valuemin')).toBe('15');
+  expect(separator.getAttribute('aria-valuemax')).toBe('85');
+  expect(separator.getAttribute('aria-label')).toBe('Resize a and b');
+  fireEvent.keyDown(separator, { key: 'ArrowRight' });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '55'
+  );
+  fireEvent.keyDown(screen.getByRole('separator'), {
+    key: 'ArrowLeft',
+    shiftKey: true,
+  });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '40'
+  );
+  fireEvent.keyDown(screen.getByRole('separator'), { key: 'End' });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '85'
+  );
+  fireEvent.keyDown(screen.getByRole('separator'), { key: 'Home' });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '15'
+  );
+  fireEvent.keyDown(screen.getByRole('separator'), { key: 'Enter' });
+  expect(screen.getByRole('separator').getAttribute('aria-valuenow')).toBe(
+    '50'
+  );
+});
+
+it('uses a horizontal separator for a pane split top to bottom', () => {
+  view();
+  open('a', 'b', 'c');
+  const separators = screen.getAllByRole('separator');
+  expect(separators.map((s) => s.getAttribute('aria-orientation'))).toEqual([
+    'vertical',
+    'horizontal',
+  ]);
+  fireEvent.keyDown(separators[1] as HTMLElement, { key: 'ArrowDown' });
+  expect(
+    screen.getAllByRole('separator')[1]?.getAttribute('aria-valuenow')
+  ).toBe('55');
+});
+
+it('keeps hidden tabs and maximized-over panes mounted, never remounting them', () => {
+  view();
+  open('a', 'b', 'c', 'd');
+  expect(mounts).toEqual({ a: 1, b: 1, c: 1, d: 1 });
+  // c is a hidden tab behind d.
+  expect(screen.getByTestId('c-active').textContent).toBe('false');
+  expect(screen.getByTestId('d-active').textContent).toBe('true');
+  act(() => controller.open('c'));
+  expect(screen.getByTestId('c-active').textContent).toBe('true');
+  expect(screen.getByTestId('d-active').textContent).toBe('false');
+  // Maximize one pane: the others stay in the DOM, inactive.
+  const paneA = controller.layout.root && screen.getByTestId('a-active');
+  act(() => controller.maximize(controller.layout.focusedPaneId));
+  expect(paneA?.isConnected).toBe(true);
+  expect(screen.getByTestId('a-active').textContent).toBe('false');
+  expect(screen.getByTestId('c-active').textContent).toBe('true');
+  expect(screen.queryAllByRole('separator')).toHaveLength(0);
+  act(() => controller.maximize(null));
+  expect(screen.getAllByRole('separator')).toHaveLength(2);
+  expect(screen.getByTestId('a-active').textContent).toBe('true');
+  // Splitting and resizing along the way never remounted anything.
+  expect(mounts).toEqual({ a: 1, b: 1, c: 1, d: 1 });
+});
+
+it('keeps the people mounted while the video moves between full, row and pill', () => {
+  view();
+  const people = screen.getByTestId('people');
+  open('a');
+  expect(screen.getByTestId('people')).toBe(people);
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse video' }));
+  expect(screen.getByTestId('people')).toBe(people);
+  fireEvent.click(screen.getByRole('button', { name: 'Show video' }));
+  expect(screen.getByTestId('people')).toBe(people);
+  act(() => controller.close('a'));
+  expect(screen.getByTestId('people')).toBe(people);
+});
+
+it('shows a Needs more room card below 280 by 220 and maximizes from it', () => {
+  sizes.set('a', { width: 400, height: 400 });
+  sizes.set('b', { width: 240, height: 400 });
+  view();
+  open('a', 'b');
+  expect(screen.getAllByText('Needs more room')).toHaveLength(1);
+  const card = screen.getByText('Needs more room').closest('[role="status"]');
+  expect(card).toBeTruthy();
+  // The activity stays mounted behind the card.
+  expect(mounts.b).toBe(1);
+  fireEvent.click(
+    within(card as HTMLElement).getByRole('button', { name: 'Maximize' })
+  );
+  expect(controller.layout.maximizedPaneId).not.toBeNull();
+});
+
+it('offers no maximize from the card on a single pane', () => {
+  sizes.set('a', { width: 200, height: 150 });
+  view();
+  open('a');
+  expect(screen.getByText('Needs more room')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Maximize' })).toBeNull();
+});
+
+it('tags each pane with its container-query size class', () => {
+  sizes.set('a', { width: 300, height: 400 });
+  sizes.set('b', { width: 500, height: 400 });
+  sizes.set('c', { width: 900, height: 400 });
+  view();
+  open('a', 'b', 'c');
+  const size = (id: string) =>
+    document
+      .querySelector(`[data-activity-id="${id}"]`)
+      ?.getAttribute('data-size');
+  expect([size('a'), size('b'), size('c')]).toEqual([
+    'compact',
+    'medium',
+    'wide',
+  ]);
+});
+
+it('reorders panes from the keyboard and focuses the pane being worked in', () => {
+  view();
+  open('a', 'b');
+  const order = () =>
+    [...document.querySelectorAll('section[data-pane-id] h2')].map(
+      (heading) => heading.textContent
+    );
+  expect(order()).toEqual(['a', 'b']);
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Move a' }), {
+    key: 'ArrowRight',
+  });
+  expect(order()).toEqual(['b', 'a']);
+  const paneA = document.querySelector('[data-pane-id]') as HTMLElement;
+  fireEvent.pointerDown(paneA);
+  expect(paneA.getAttribute('data-focused')).toBe('true');
+});
+
+it('cycles focus between panes with F6', () => {
+  view();
+  open('a', 'b');
+  const group = screen.getByRole('group', { name: 'Open activities' });
+  const first = controller.layout.focusedPaneId;
+  fireEvent.keyDown(group, { key: 'F6' });
+  expect(controller.layout.focusedPaneId).not.toBe(first);
+  fireEvent.keyDown(group, { key: 'F6', shiftKey: true });
+  expect(controller.layout.focusedPaneId).toBe(first);
+});
+
+it('shows one activity at a time on a phone with a switcher sheet', () => {
+  view('phone');
+  open('a', 'b', 'c');
+  expect(screen.queryAllByRole('separator')).toHaveLength(0);
+  expect(screen.queryByRole('tablist')).toBeNull();
+  expect(screen.getByTestId('c-active').textContent).toBe('true');
+  expect(screen.getByTestId('a-active').textContent).toBe('false');
+  fireEvent.click(screen.getByRole('button', { name: 'c' }));
+  const sheet = screen.getByRole('dialog', { name: 'Open activities' });
+  const items = within(sheet).getAllByRole('listitem');
+  expect(items.map((item) => item.textContent)).toEqual(['a', 'b', 'cShowing']);
+  fireEvent.click(within(sheet).getByRole('button', { name: 'a' }));
+  expect(screen.getByTestId('a-active').textContent).toBe('true');
+  expect(screen.getByTestId('c-active').textContent).toBe('false');
+  expect(mounts).toEqual({ a: 1, b: 1, c: 1 });
+});
+
+it('stacks activities as tabs past the pane limit and switches by keyboard', () => {
+  view('tablet');
+  open('a', 'b', 'c');
+  const tabs = screen.getAllByRole('tab');
+  expect(tabs.map((tab) => tab.textContent)).toEqual(['b', 'c']);
+  expect(screen.getAllByRole('separator')).toHaveLength(1);
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'c' }), {
+    key: 'ArrowLeft',
+  });
+  expect(
+    screen.getByRole('tab', { name: 'b' }).getAttribute('aria-selected')
+  ).toBe('true');
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'b' }), {
+    key: 'ArrowRight',
+    altKey: true,
+  });
+  expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+    'c',
+    'b',
+  ]);
+});
+
+it('closes one activity from its pane header', () => {
+  view();
+  open('a', 'b');
+  fireEvent.click(screen.getByRole('button', { name: 'Close a' }));
+  expect(controller.openIds).toEqual(['b']);
+});
+
+it('renders the shared loading, empty and error states', () => {
+  const retry = vi.fn();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ActivityShell title="Poll" state={{ kind: 'loading' }} />
+      <ActivityShell
+        title="Quiz"
+        state={{ kind: 'empty', title: 'No quiz yet' }}
+      />
+      <ActivityShell title="Q&A" state={{ kind: 'error', onRetry: retry }} />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
+  expect(screen.getByText('No quiz yet')).toBeTruthy();
+  expect(screen.getByRole('alert').textContent).toContain("Couldn't load");
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  expect(retry).toHaveBeenCalledTimes(1);
+});

@@ -1,29 +1,18 @@
 'use client';
 
+import { toolActivityId, toolIdOf } from '../stage-layout/activity-ids';
+import type { ActivityStage } from '../stage-layout/activity-ids';
 import { MeetToolProvider } from './context';
 import { roomActivityTools } from './live-activities/activity-manager';
 import { findMeetTool, type MeetToolDefinition, meetTools } from './registry';
 import { MeetToolsHub, MeetToolsMenu } from './tools-hub';
 
-export type ToolDrawer = `tool:${string}`;
-
-/** Older activity drawers that now open inside the tools hub. */
-const activityTools: Record<string, string> = {
-  polls: 'polls',
-  'quiz-arena': 'quiz',
-};
-
-export function toolIdFromDrawer(drawer: string | null) {
-  return drawer?.startsWith('tool:') ? drawer.slice('tool:'.length) : null;
-}
-
 /**
- * Owns the tools hub's slot in the call's single drawer. `route` replaces the
- * activity drawer setter so live poll and quiz shortcuts open the hub panels.
+ * Opens the registered tools as stage activities. Several can be open at
+ * once; each renders in its own pane through `renderPanel`.
  */
-export function useMeetTools<A extends string>({
-  drawer,
-  onDrawer,
+export function useMeetTools({
+  stage,
   meetingId,
   accountId,
   requiresAccount,
@@ -36,8 +25,7 @@ export function useMeetTools<A extends string>({
   people,
   tools = meetTools,
 }: {
-  drawer: string | null;
-  onDrawer: (next: A | ToolDrawer | null) => void;
+  stage: ActivityStage;
   meetingId: string;
   accountId: string;
   requiresAccount: boolean;
@@ -57,54 +45,56 @@ export function useMeetTools<A extends string>({
   activitiesOnly?: boolean;
   tools?: readonly MeetToolDefinition[];
 }) {
-  const activeId = toolIdFromDrawer(drawer);
-  const active = findMeetTool(activeId, tools);
-  const toggle = (id: string) =>
-    onDrawer(activeId === id ? null : `tool:${id}`);
-  const route = (next: A | null) => {
-    const toolId = next ? activityTools[next] : undefined;
-    if (toolId) toggle(toolId);
-    else onDrawer(next);
-  };
-  const close = () => onDrawer(null);
-  const Panel = active?.Panel;
+  const toggle = (id: string) => stage.toggle(toolActivityId(id));
   const browsable = activitiesOnly ? roomActivityTools(tools) : tools;
   const shown = available && enabled ? browsable : [];
+  const openIds = tools
+    .map((tool) => tool.id)
+    .filter((id) => stage.isOpen(toolActivityId(id)));
+  // The hub highlights while any tool is open.
+  const activeId = openIds[0] ?? null;
 
   return {
-    activeId,
+    /** Ids of the registered tools open now. */
+    openIds,
     /** Tools this person may browse now, for the Activities menu. */
     shown,
     toggle,
-    route,
     hub: shown.length ? (
       <MeetToolsHub tools={shown} activeId={activeId} onSelect={toggle} />
     ) : null,
     menu: shown.length ? (
       <MeetToolsMenu tools={shown} activeId={activeId} onSelect={toggle} />
     ) : null,
-    panel: Panel ? (
-      <MeetToolProvider
-        value={{
-          meetingId,
-          accountId,
-          requiresAccount,
-          canManage,
-          canRunActivities,
-          enabled,
-          selfUserId,
-          people,
-          close,
-        }}
-      >
-        <Panel
-          key={activeId}
-          meetingId={meetingId}
-          roomRole={canManage ? 'host' : 'participant'}
-          participantId={accountId}
-          onClose={close}
-        />
-      </MeetToolProvider>
-    ) : null,
+    /** The panel for one open tool, or null when the registry has none. */
+    renderPanel: (activityId: string) => {
+      const toolId = toolIdOf(activityId);
+      const Panel = findMeetTool(toolId, tools)?.Panel;
+      if (!toolId || !Panel) return null;
+      const close = () => stage.close(activityId);
+      return (
+        <MeetToolProvider
+          key={activityId}
+          value={{
+            meetingId,
+            accountId,
+            requiresAccount,
+            canManage,
+            canRunActivities,
+            enabled,
+            selfUserId,
+            people,
+            close,
+          }}
+        >
+          <Panel
+            meetingId={meetingId}
+            roomRole={canManage ? 'host' : 'participant'}
+            participantId={accountId}
+            onClose={close}
+          />
+        </MeetToolProvider>
+      );
+    },
   };
 }

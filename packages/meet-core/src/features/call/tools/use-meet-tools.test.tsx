@@ -12,7 +12,7 @@ import {
   meetToolsFor,
 } from './registry';
 import { roomActivityTools } from './live-activities/activity-manager';
-import { toolIdFromDrawer, useMeetTools } from './use-meet-tools';
+import { useMeetTools } from './use-meet-tools';
 
 function SamplePanel({ roomRole, participantId }: MeetToolPanelProps) {
   const { meetingId, close } = useMeetTool();
@@ -37,21 +37,26 @@ const literal: MeetToolDefinition = {
 };
 
 function Harness({
-  drawer,
-  onDrawer,
+  open = [],
+  onToggle,
+  onClose = () => {},
   available = true,
   activitiesOnly,
   registry = [sample, literal],
 }: {
-  drawer: string | null;
-  onDrawer: (next: string | null) => void;
+  open?: readonly string[];
+  onToggle: (id: string) => void;
+  onClose?: (id: string) => void;
   available?: boolean;
   activitiesOnly?: boolean;
   registry?: readonly MeetToolDefinition[];
 }) {
-  const tools = useMeetTools<'polls' | 'quiz-arena' | 'forms'>({
-    drawer,
-    onDrawer,
+  const tools = useMeetTools({
+    stage: {
+      isOpen: (id) => open.includes(id),
+      toggle: onToggle,
+      close: onClose,
+    },
     meetingId: 'meeting',
     accountId: 'person',
     requiresAccount: false,
@@ -67,13 +72,10 @@ function Harness({
       <output data-testid="shown">
         {tools.shown.map(({ id }) => id).join(' ')}
       </output>
-      {tools.panel}
-      <button type="button" onClick={() => tools.route('polls')}>
-        live poll
-      </button>
-      <button type="button" onClick={() => tools.route('forms')}>
-        forms
-      </button>
+      <output data-testid="open">{tools.openIds.join(' ')}</output>
+      {open.map((id) => (
+        <div key={id}>{tools.renderPanel(id)}</div>
+      ))}
     </>
   );
 }
@@ -89,38 +91,37 @@ function renderHarness(props: Parameters<typeof Harness>[0]) {
 afterEach(cleanup);
 
 it('lists tools with translated or literal labels and opens one', () => {
-  const onDrawer = vi.fn();
-  renderHarness({ drawer: null, onDrawer });
+  const onToggle = vi.fn();
+  renderHarness({ onToggle });
   fireEvent.click(screen.getByRole('button', { name: 'Polls' }));
-  expect(onDrawer).toHaveBeenCalledWith('tool:polls');
+  expect(onToggle).toHaveBeenCalledWith('tool:polls');
   fireEvent.click(screen.getByRole('button', { name: 'Q&A' }));
-  expect(onDrawer).toHaveBeenCalledWith('tool:literal');
+  expect(onToggle).toHaveBeenCalledWith('tool:literal');
 });
 
-it('renders the open tool with call context and closes it', () => {
-  const onDrawer = vi.fn();
-  renderHarness({ drawer: 'tool:polls', onDrawer });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'panel for meeting as host person' })
-  );
-  expect(onDrawer).toHaveBeenCalledWith(null);
-});
-
-it('routes live poll shortcuts into the hub and passes other drawers through', () => {
-  const onDrawer = vi.fn();
-  const { unmount } = renderHarness({ drawer: null, onDrawer });
-  fireEvent.click(screen.getByRole('button', { name: 'live poll' }));
-  expect(onDrawer).toHaveBeenLastCalledWith('tool:polls');
-  fireEvent.click(screen.getByRole('button', { name: 'forms' }));
-  expect(onDrawer).toHaveBeenLastCalledWith('forms');
-  unmount();
-  renderHarness({ drawer: 'tool:polls', onDrawer });
-  fireEvent.click(screen.getByRole('button', { name: 'live poll' }));
-  expect(onDrawer).toHaveBeenLastCalledWith(null);
+it('renders every open tool with call context and closes only that one', () => {
+  const onClose = vi.fn();
+  renderHarness({
+    open: ['tool:polls', 'tool:literal'],
+    onToggle: vi.fn(),
+    onClose,
+  });
+  expect(screen.getByTestId('open').textContent).toBe('polls literal');
+  const panels = screen.getAllByRole('button', {
+    name: 'panel for meeting as host person',
+  });
+  expect(panels).toHaveLength(2);
+  fireEvent.click(panels[1] as HTMLElement);
+  expect(onClose).toHaveBeenCalledTimes(1);
+  expect(onClose).toHaveBeenCalledWith('tool:literal');
 });
 
 it('hides the hub list when tools are not available but keeps an open panel', () => {
-  renderHarness({ drawer: 'tool:polls', onDrawer: vi.fn(), available: false });
+  renderHarness({
+    open: ['tool:polls'],
+    onToggle: vi.fn(),
+    available: false,
+  });
   expect(screen.getByTestId('menu').childElementCount).toBe(0);
   expect(
     screen.getByRole('button', { name: 'panel for meeting as host person' })
@@ -133,8 +134,7 @@ it('lets someone who only runs activities browse those and the pen board, nothin
   const all = tools.map(({ id }) => id).join(' ');
   // A workspace co-host in a room whose tools are for hosts only.
   const cohost = renderHarness({
-    drawer: null,
-    onDrawer: vi.fn(),
+    onToggle: vi.fn(),
     activitiesOnly: true,
     registry: tools,
   });
@@ -146,16 +146,14 @@ it('lets someone who only runs activities browse those and the pen board, nothin
   cohost.unmount();
   // Someone who may use the room's tools browses all of them.
   const member = renderHarness({
-    drawer: null,
-    onDrawer: vi.fn(),
+    onToggle: vi.fn(),
     registry: tools,
   });
   expect(shown()).toBe(all);
   member.unmount();
   // Someone who may do neither browses none.
   renderHarness({
-    drawer: null,
-    onDrawer: vi.fn(),
+    onToggle: vi.fn(),
     available: false,
     activitiesOnly: true,
     registry: tools,
@@ -182,8 +180,6 @@ it('registers polls, timer, quiz, the live activities and the pen board in order
     'live-icebreaker',
     'pen-whiteboard',
   ]);
-  expect(toolIdFromDrawer('tool:quiz')).toBe('quiz');
-  expect(toolIdFromDrawer('chat')).toBeNull();
 });
 
 it('offers the assessment in the menu and to co-hosts only while it is switched on', () => {
@@ -204,7 +200,7 @@ it('offers the assessment in the menu and to co-hosts only while it is switched 
   expect(ids(off)).toEqual(ids(on).filter((id) => id !== 'live-assessment'));
   // What the call offers by default follows the configured switch.
   expect(ids(meetTools)).toEqual(ids(MEET_LIVE_ASSESSMENT_ENABLED ? on : off));
-  renderHarness({ drawer: null, onDrawer: vi.fn(), registry: off });
+  renderHarness({ onToggle: vi.fn(), registry: off });
   expect(screen.getByTestId('shown').textContent).not.toContain(
     'live-assessment'
   );

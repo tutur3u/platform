@@ -4,7 +4,10 @@ import type { MeetNavigationMode, MeetRoomView } from '@tuturuuu/realtime/meet';
 export interface CallSurfaceState {
   programming: boolean;
   document: boolean;
+  /** A side drawer such as chat or people; it is not a surface. */
   drawer: string | null;
+  /** The tool activity in focus, as `tool:<id>`. */
+  tool?: string | null;
 }
 
 export interface NavigationEvent {
@@ -21,8 +24,9 @@ export type NavigationTargets = 'everyone' | string[];
 export function currentRoomView(surface: CallSurfaceState): MeetRoomView {
   if (surface.programming) return { surface: 'programming' };
   if (surface.document) return { surface: 'document' };
-  const toolId = surface.drawer?.startsWith('tool:')
-    ? surface.drawer.slice('tool:'.length)
+  const focusedTool = surface.tool ?? surface.drawer;
+  const toolId = focusedTool?.startsWith('tool:')
+    ? focusedTool.slice('tool:'.length)
     : null;
   return toolId ? { surface: 'tool', toolId } : { surface: 'stage' };
 }
@@ -34,7 +38,10 @@ export function sameRoomView(a: MeetRoomView, b: MeetRoomView) {
   );
 }
 
-/** Drawers that are not surfaces (chat, people, notes) survive navigation. */
+/**
+ * Drawers that are not surfaces (chat, people, notes) survive navigation. A
+ * tool view carries its stage id in `tool` for the call to open or focus.
+ */
 export function surfaceFromView(
   view: MeetRoomView,
   drawer: string | null
@@ -49,7 +56,8 @@ export function surfaceFromView(
       return {
         programming: false,
         document: false,
-        drawer: `tool:${view.toolId}`,
+        drawer: keepDrawer,
+        tool: `tool:${view.toolId}`,
       };
     default:
       return { programming: false, document: false, drawer: keepDrawer };
