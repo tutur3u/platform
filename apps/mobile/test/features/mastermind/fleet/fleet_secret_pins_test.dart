@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'secret_test_support.dart';
 
 /// Counts the listings an erase makes.
@@ -33,6 +35,7 @@ void main() {
   const otherKey = 'another-feature.token';
 
   late FakeSecretPlatform platform;
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   tearDown(() => platform.uninstall());
 
   test('an erase removes every pin entry and nothing else', () async {

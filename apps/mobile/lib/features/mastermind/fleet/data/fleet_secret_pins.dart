@@ -5,9 +5,10 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret.dart';
-import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_keychain.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
+
+export 'package:mobile/features/mastermind/fleet/data/fleet_secret_erase.dart';
 
 /// A pin starts [pending] when the owner types a correct pairing code and
 /// turns [active] only once the machine's signed `paired` outcome names this
@@ -185,7 +186,7 @@ class FleetSecretPin {
 
 /// Paired machines, per signed-in user, in the Keychain: this device only,
 /// readable while unlocked. Signing out or switching accounts erases every
-/// user's pins together with the owner keys ([eraseFleetSecretKeys]).
+/// user's pins together with the owner keys (`eraseFleetSecretKeys`).
 class FleetSecretPins {
   FleetSecretPins({
     required String? Function() userId,
@@ -489,8 +490,18 @@ class FleetSecretPins {
         ? await storage.keys()
         : (await storage.readAll()).keys;
     final names = all.where((name) => name.startsWith(keyPrefix)).toList();
+    // Every name is tried even after a refusal; the first one is rethrown so
+    // the erase stays pending.
+    (Object, StackTrace)? refused;
     for (final name in names) {
-      await _storage.delete(key: name);
+      try {
+        await _storage.delete(key: name);
+      } on Object catch (error, stack) {
+        refused ??= (error, stack);
+      }
+    }
+    if (refused case (final error, final stack)) {
+      Error.throwWithStackTrace(error, stack);
     }
   });
 }
@@ -514,33 +525,6 @@ final fleetSecretPinChanges = ValueNotifier<int>(0);
 
 /// A machine's stored pin, if any, and its trust revision (-1 signed out).
 typedef FleetSecretTrust = ({FleetSecretPin? pin, int revision});
-
-/// Sign-out or account switch: erases every owner key and pin on this
-/// device and closes any open secret page. Failures are swallowed so the
-/// rest of the reset still runs; the next erase tries again.
-Future<void> eraseFleetSecretKeys({
-  FleetSecretCrypto? crypto,
-  FleetSecretPins? pins,
-}) async {
-  fleetSecretErasures.value++;
-  FleetPairingAttempts.shared.clear();
-  final secrets = crypto ?? FleetSecretCrypto.instance;
-  await Future.wait([
-    secrets.deleteOwnerKeys().catchError((Object _) {}),
-    _erasePins(secrets, pins).catchError((Object _) {}),
-  ]);
-}
-
-/// Pins can exist only on a platform with secret entry, so elsewhere the
-/// erase reads and lists nothing. The gate is the platform, never the
-/// plugin's capability answer: a failed check must not keep pins.
-Future<void> _erasePins(FleetSecretCrypto crypto, FleetSecretPins? pins) async {
-  if (!crypto.onSecretPlatform) return;
-  await Future.wait([
-    (pins ?? FleetSecretPins(userId: () => null)).eraseAll(),
-    FleetPairingAttempts.shared.eraseSaved(),
-  ]);
-}
 
 /// One user's Keychain entry: the pins, the pairings already used and each
 /// machine's trust revision.

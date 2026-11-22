@@ -150,6 +150,11 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     final account = _accountId();
     if (account == null || account.isEmpty) return FleetSecretBlock.signedOut;
     _account = account;
+    // An erase the Keychain refused at sign-out runs again first; until it
+    // completes, no old owner key or pin may verify or answer anything.
+    if (!await settleFleetSecretErase(crypto: _crypto, pins: _pins)) {
+      return FleetSecretBlock.failed;
+    }
     final signerKey = Uint8List.fromList(
       fleetSecretFromB64url(secret.signerKey, length: 32)!,
     );

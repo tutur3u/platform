@@ -12,8 +12,10 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_secret_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_secret_field.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_secret_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/pump_app.dart';
+
 import 'secret_test_support.dart';
 
 // Design: apps/docs/build/devops/mastermind-secret-entry.mdx#phone-hygiene
@@ -86,6 +88,7 @@ void main() {
 
     setUp(() {
       FlutterSecureStorage.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({});
       platform = FakeSecretPlatform()..install();
       pins = FleetSecretPins(
         userId: () => 'user-1',

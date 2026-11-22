@@ -5,8 +5,10 @@ import 'package:mobile/features/mastermind/fleet/data/fleet_reply_step_up.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pairing.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_secret_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/design_render_harness.dart';
+
 import 'secret_test_support.dart';
 
 // Kept in its own file: FleetSecretPins serialises storage through a static
@@ -21,6 +23,7 @@ void main() {
 
   testWidgets('renders the opened secret entry flow in dark', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
     final platform = FakeSecretPlatform()..install();
     addTearDown(platform.uninstall);
     final pins = FleetSecretPins(
