@@ -122,14 +122,14 @@ it('rejects a malformed transaction before reading identity', async () => {
   expect(mocks.consentIdentity).not.toHaveBeenCalled();
 });
 
-it('sends an MFA step-up to the reauthenticate card with the mfa=required login path', async () => {
+it('sends an MFA step-up to the reauthenticate card with the mfa=totp login path', async () => {
   mocks.consentIdentity.mockRejectedValue(
     new SsoError({ code: 'mfa_required' })
   );
   await renderPage({ transaction: 'tx-abc123' });
   expect(screen.getByTestId('reauthenticate')).toHaveAttribute(
     'href',
-    `/en/login?mfa=required&nextUrl=${encodeURIComponent('/en/sso/consent?transaction=tx-abc123')}`
+    `/en/login?mfa=totp&nextUrl=${encodeURIComponent('/en/sso/consent?transaction=tx-abc123')}`
   );
   expect(document.querySelector('form')).toBeNull();
 });
@@ -139,7 +139,7 @@ it('asks for sign-in when the session cannot authorise the consent', async () =>
   await renderPage({ transaction: 'tx-abc123' });
   expect(screen.getByRole('link', { name: 'sign_in' })).toHaveAttribute(
     'href',
-    expect.stringContaining('/en/login?mfa=required&nextUrl=')
+    expect.stringContaining('/en/login?mfa=totp&nextUrl=')
   );
 });
 

@@ -249,14 +249,21 @@ return path. For an already authenticated account needing fresh MFA it reuses th
 existing required-MFA enrollment surface and Supabase challenge/verify service;
 an explicit sign-in-again action supplies ForceAuthn/recovery primary login.
 
-The login link carries `mfa=required` (decision, 2026-11-23). `/login` reads only
-that exact value, and the hint can only add a requirement: an aal1 session with a
-verified factor is always challenged, and a mobile approval does not count as the
-authenticator code, so the challenge hides the approve-on-phone panel. With no
-session the visitor signs in first and is then challenged; an account without a
-verified factor keeps today's policy (required enrolment only when the account
-requires MFA). The return still goes through the existing `nextUrl` normalizer,
-and the consent page re-checks the proof on return. Regression coverage:
+The consent page's login link carries `mfa=totp` (decision, 2026-11-23). `/login`
+reads two exact hint values, and a hint can only add a requirement:
+
+- `mfa=totp` (SSO consent only): an aal1 session with a verified factor is always
+  challenged, and a mobile approval does not count as the authenticator code, so
+  the challenge hides the approve-on-phone panel.
+- `mfa=required` (the shared auth proxy, Finance and other satellites): an aal1
+  session with a verified factor is challenged, and approve-on-phone stays
+  available, because those surfaces accept a mobile approval.
+
+With no session the visitor signs in first and is then challenged; an account
+without a verified factor keeps today's policy (required enrolment only when the
+account requires MFA). Any other value is ignored. The return still goes through
+the existing `nextUrl` normalizer, and the consent page re-checks the proof on
+return. Regression coverage:
 `apps/web/src/app/[locale]/(auth)/login/mfa-step-up.test.ts` and
 `form-mfa-step-up-hint.test.tsx`; the consent form, CSRF field and decision target
 are covered by `apps/web/src/app/[locale]/(auth)/sso/consent/page.test.tsx`.

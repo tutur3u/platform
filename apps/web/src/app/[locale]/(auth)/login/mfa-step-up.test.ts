@@ -55,40 +55,63 @@ function fakeClient({
 }
 
 describe('readMfaStepUpHint', () => {
-  it('reads only the exact required hint', () => {
-    expect(readMfaStepUpHint(new URLSearchParams('mfa=required'))).toBe(true);
-    for (const query of ['', 'mfa=', 'mfa=REQUIRED', 'mfa=skip', 'mfa=0']) {
-      expect(readMfaStepUpHint(new URLSearchParams(query))).toBe(false);
+  it('reads only the exact hint values', () => {
+    expect(readMfaStepUpHint(new URLSearchParams('mfa=required'))).toBe(
+      'challenge'
+    );
+    expect(readMfaStepUpHint(new URLSearchParams('mfa=totp'))).toBe('code');
+    for (const query of [
+      '',
+      'mfa=',
+      'mfa=REQUIRED',
+      'mfa=TOTP',
+      'mfa=skip',
+      'mfa=0',
+    ]) {
+      expect(readMfaStepUpHint(new URLSearchParams(query))).toBe('none');
     }
   });
 });
 
 describe('requiresLoginMfa', () => {
   it('challenges an aal1 session with a verified factor, with or without the hint', async () => {
-    for (const stepUpRequested of [false, true]) {
+    for (const stepUp of ['none', 'challenge', 'code'] as const) {
       const { client } = fakeClient({ current: 'aal1', next: 'aal2' });
-      await expect(requiresLoginMfa(client, { stepUpRequested })).resolves.toBe(
-        true
-      );
+      await expect(requiresLoginMfa(client, { stepUp })).resolves.toBe(true);
     }
   });
 
   it('never lets the hint require enrolment beyond today’s policy', async () => {
     // No verified factor and no account policy: the hint adds no gate.
     const { client } = fakeClient({ current: 'aal1', next: 'aal1' });
-    await expect(
-      requiresLoginMfa(client, { stepUpRequested: true })
-    ).resolves.toBe(false);
+    await expect(requiresLoginMfa(client, { stepUp: 'code' })).resolves.toBe(
+      false
+    );
   });
 
   it('continues an aal2 session, which the relying page re-checks itself', async () => {
     const { client } = fakeClient({ current: 'aal2', next: 'aal2' });
-    await expect(
-      requiresLoginMfa(client, { stepUpRequested: true })
-    ).resolves.toBe(false);
+    await expect(requiresLoginMfa(client, { stepUp: 'code' })).resolves.toBe(
+      false
+    );
   });
 
-  it('no longer accepts a mobile approval as the code the step-up asks for', async () => {
+  it('keeps accepting a mobile approval for the proxy challenge hint', async () => {
+    const challenge = fakeClient({
+      current: 'aal1',
+      mobileApprovalSatisfied: true,
+      next: 'aal1',
+      policyRequired: true,
+    });
+    await expect(
+      requiresLoginMfa(challenge.client, { stepUp: 'challenge' })
+    ).resolves.toBe(false);
+    expect(challenge.rpc).toHaveBeenCalledWith(
+      'account_required_mfa_satisfied'
+    );
+  });
+
+  it('does not accept a mobile approval as the code the consent step-up asks for', async () => {
     const withoutHint = fakeClient({
       current: 'aal1',
       mobileApprovalSatisfied: true,
@@ -96,7 +119,7 @@ describe('requiresLoginMfa', () => {
       policyRequired: true,
     });
     await expect(
-      requiresLoginMfa(withoutHint.client, { stepUpRequested: false })
+      requiresLoginMfa(withoutHint.client, { stepUp: 'none' })
     ).resolves.toBe(false);
     expect(withoutHint.rpc).toHaveBeenCalledWith(
       'account_required_mfa_satisfied'
@@ -109,7 +132,7 @@ describe('requiresLoginMfa', () => {
       policyRequired: true,
     });
     await expect(
-      requiresLoginMfa(withHint.client, { stepUpRequested: true })
+      requiresLoginMfa(withHint.client, { stepUp: 'code' })
     ).resolves.toBe(true);
     expect(withHint.rpc).not.toHaveBeenCalled();
   });
@@ -120,9 +143,9 @@ describe('requiresLoginMfa', () => {
       next: 'aal1',
       policyRequired: true,
     });
-    await expect(
-      requiresLoginMfa(client, { stepUpRequested: false })
-    ).resolves.toBe(true);
+    await expect(requiresLoginMfa(client, { stepUp: 'none' })).resolves.toBe(
+      true
+    );
   });
 
   it('throws rather than skipping when the assurance read fails', async () => {
@@ -133,8 +156,8 @@ describe('requiresLoginMfa', () => {
       data: null,
       error: new Error('unavailable'),
     } as never);
-    await expect(
-      requiresLoginMfa(client, { stepUpRequested: true })
-    ).rejects.toThrow('unavailable');
+    await expect(requiresLoginMfa(client, { stepUp: 'code' })).rejects.toThrow(
+      'unavailable'
+    );
   });
 });

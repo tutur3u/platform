@@ -92,7 +92,8 @@ function MobileApprovalPanel({
  * The two-step challenge: the authenticator code, Verify, the mobile
  * approval panel and Sign out. Presentation only; the verify handler,
  * the pair code and its polling stay in the login form. `mobile` is null
- * when an approval cannot satisfy the request (an mfa=required step-up).
+ * when an approval cannot satisfy the request (the SSO consent's mfa=totp
+ * step-up).
  */
 export function MfaChallengeStep({
   form,

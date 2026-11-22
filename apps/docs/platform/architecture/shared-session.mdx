@@ -184,7 +184,8 @@ requests retain their app-session authentication and refresh behavior.
 The mount reads Web's access-token-only provider session behind the app logout
 fence. It does not own a refresh token. Missing or expired credentials go to
 Web's `/login`, returning through the request's mounted `/verify-token` with an
-app-relative `nextUrl`. MFA refusal adds `mfa=required`; unavailable assurance
+app-relative `nextUrl`. MFA refusal adds `mfa=required`, which `/login` treats as a challenge hint that
+still accepts approve-on-phone (see the SSO feature page); unavailable assurance
 returns a failure response instead of a login loop. Protected mounted APIs use
 the same resolver. Public Forms shares, CMS play pages, Git public pages, build
 metadata and independently authenticated machine endpoints retain their own

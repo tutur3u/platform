@@ -57,7 +57,7 @@ export default async function ConsentPage({
     if (error instanceof SsoError && error.code === 'session_changed')
       return <ConsentDenied title={t('denied')} />;
     const returnPath = `/${locale}/sso/consent?transaction=${handle.data}`;
-    const loginPath = `/${locale}/login?mfa=required&nextUrl=${encodeURIComponent(returnPath)}`;
+    const loginPath = `/${locale}/login?mfa=totp&nextUrl=${encodeURIComponent(returnPath)}`;
     return (
       <ConsentFrame>
         {error instanceof SsoError && error.code === 'mfa_required' ? (

@@ -522,7 +522,8 @@ export default function LoginForm({
     </div>
   );
 
-  const mfaStepUpRequested = readMfaStepUpHint(searchParams);
+  // Only the SSO consent's step-up (mfa=totp) needs an authenticator code.
+  const mfaNeedsCode = readMfaStepUpHint(searchParams) === 'code';
   const needsMFA = useLoginMfaCheck(supabase, searchParams);
 
   const prepareReturnAppConfirmation = useCallback(async () => {
@@ -1588,7 +1589,7 @@ export default function LoginForm({
           form={totpForm}
           loading={loading}
           mobile={
-            mfaStepUpRequested
+            mfaNeedsCode
               ? null
               : {
                   challenge: mobileMfaChallenge,
@@ -1597,7 +1598,7 @@ export default function LoginForm({
                 }
           }
           onSubmit={verifyTOtp}
-          stepUp={mfaStepUpRequested}
+          stepUp={mfaNeedsCode}
         />
       </RequiredMfaEnrollment>
     );

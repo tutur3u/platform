@@ -11,8 +11,8 @@ import {
 
 const consentPath = '/en/sso/consent?transaction=tx-1';
 
-function stepUpSearch(nextUrl: string) {
-  return `?mfa=required&nextUrl=${encodeURIComponent(nextUrl)}`;
+function stepUpSearch(nextUrl: string, hint = 'totp') {
+  return `?mfa=${hint}&nextUrl=${encodeURIComponent(nextUrl)}`;
 }
 
 async function verifyTotp() {
@@ -26,7 +26,7 @@ async function verifyTotp() {
   });
 }
 
-describe('LoginForm /login?mfa=required', () => {
+describe('LoginForm /login?mfa step-up hints', () => {
   beforeEach(() => {
     resetReturnUrlLoginMocks();
     mocks.mfaAssuranceLevel.mockResolvedValue({
@@ -95,7 +95,7 @@ describe('LoginForm /login?mfa=required', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('offers no mobile approval under the hint, since the step-up needs a code, and signs out through /logout', async () => {
+  it('offers no mobile approval under the consent mfa=totp hint, since it needs a code, and signs out through /logout', async () => {
     renderLoginFormSearch(stepUpSearch(consentPath));
 
     await screen.findByText('login.mfa_step_up_description');
@@ -105,6 +105,14 @@ describe('LoginForm /login?mfa=required', () => {
     expect(
       screen.getByRole('link', { name: 'login.required_mfa_sign_out' })
     ).toHaveAttribute('href', '/logout');
+  });
+
+  it('keeps mobile approval for the proxy mfa=required challenge', async () => {
+    renderLoginFormSearch(stepUpSearch(consentPath, 'required'));
+
+    expect(
+      await screen.findByRole('button', { name: 'login.mobile_mfa_button' })
+    ).toBeInTheDocument();
   });
 
   it('keeps mobile approval on an ordinary challenge', async () => {
