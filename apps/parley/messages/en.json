@@ -4518,7 +4518,7 @@
       "personal_share_confirm": "Share with everyone",
       "personal_share_hint": "Only the text below will be sent as your message to everyone in the room. Saved messages can be read by later participants.",
       "personal_workspace_settings": "Workspace settings",
-      "personal_workspace_unavailable": "Private Mira needs a workspace admin to confirm in workspace settings that meetings here are 18+.",
+      "personal_workspace_unavailable": "Private Mira needs the workspace owner to confirm in workspace settings that meetings here are 18+.",
       "playback_volume": "Playback volume",
       "playback_volume_hint": "Only changes what you hear. Master volume scales voices, shared audio, Mira, and notification sounds.",
       "preferences": "Preferences",
