@@ -4,6 +4,39 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 
 void main() {
+  test('Mastermind card taps round trip to the exact Inbox detail', () {
+    final request = requestFromPushData({
+      'openTarget': 'mastermind',
+      'route': '/mastermind/inbox',
+      'entityId': 'iris-push-test',
+      'userId': 'owner-id',
+      'mastermindCategory': 'fyi',
+    });
+    expect(request.mastermindLocation, '/mastermind/inbox/ask/iris-push-test');
+    final restored = requestFromLocalNotificationPayload(
+      payloadFromPushRequest(request)!,
+    );
+    expect(restored?.mastermindLocation, request.mastermindLocation);
+    expect(restored?.userId, 'owner-id');
+  });
+
+  test('Mastermind card taps reject missing recipients and forged paths', () {
+    final request = requestFromPushData({
+      'openTarget': 'mastermind',
+      'route': '/mastermind/inbox',
+      'entityId': '../ship',
+      'userId': 'owner-id',
+      'mastermindCategory': 'urgent',
+    });
+    expect(request.mastermindLocation, '/notifications');
+    final unscoped = requestFromPushData({
+      'openTarget': 'mastermind',
+      'entityId': 'iris-push-test',
+      'mastermindCategory': 'urgent',
+    });
+    expect(unscoped.mastermindLocation, '/notifications');
+  });
+
   group('push chat navigation payloads', () {
     test('parses chat open targets from direct chat metadata', () {
       final request = requestFromPushData({

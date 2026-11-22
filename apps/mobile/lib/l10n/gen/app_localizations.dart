@@ -30319,6 +30319,42 @@ abstract class AppLocalizations {
   /// **'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
   String get settingsShareTelemetryDescription;
 
+  /// No description provided for @settingsMastermindPushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind Inbox alerts'**
+  String get settingsMastermindPushTitle;
+
+  /// No description provided for @settingsMastermindPushUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind urgent alerts'**
+  String get settingsMastermindPushUrgent;
+
+  /// No description provided for @settingsMastermindPushDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind decisions'**
+  String get settingsMastermindPushDecision;
+
+  /// No description provided for @settingsMastermindPushFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastermind FYIs'**
+  String get settingsMastermindPushFyi;
+
+  /// No description provided for @settingsMastermindPushLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load Mastermind alert preferences.'**
+  String get settingsMastermindPushLoadError;
+
+  /// No description provided for @settingsMastermindPushSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the Mastermind alert preference.'**
+  String get settingsMastermindPushSaveError;
+
   /// No description provided for @settingsPushNotifications.
   ///
   /// In en, this message translates to:

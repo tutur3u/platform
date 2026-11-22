@@ -565,6 +565,7 @@ jobs:
           profile_plist="$RUNNER_TEMP/mobile-deployment/profile.plist"
           security cms -D -i "$APPLE_PROVISIONING_PROFILE_PATH" > "$profile_plist"
           APPLE_LIVE_SCREEN_GROUP_REQUIRED=true swift ../../scripts/mobile-deployment/verify-profile.swift "$profile_plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print Entitlements:com.apple.developer.usernotifications.time-sensitive' "$profile_plist")" = true
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$profile_plist")"
           profile_team="$(/usr/libexec/PlistBuddy -c 'Print TeamIdentifier:0' "$profile_plist")"
           app_identifier="$(/usr/libexec/PlistBuddy -c 'Print Entitlements:application-identifier' "$profile_plist")"
@@ -657,8 +658,10 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print application-identifier' "$verify_dir/entitlements.plist")" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
           test "$(/usr/libexec/PlistBuddy -c 'Print get-task-allow' "$verify_dir/entitlements.plist")" = false
           test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.application-groups:0' "$verify_dir/entitlements.plist")" = "group.$APPLE_BUNDLE_ID.live"
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.developer.usernotifications.time-sensitive' "$verify_dir/entitlements.plist")" = true
           security cms -D -i "$app_path/embedded.mobileprovision" > "$verify_dir/profile.plist"
           APPLE_LIVE_SCREEN_GROUP_REQUIRED=true swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/profile.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print Entitlements:com.apple.developer.usernotifications.time-sensitive' "$verify_dir/profile.plist")" = true
           test ! -e "$app_path/PlugIns/LiveScreenBroadcast.appex"
 
       - name: Verify and upload iOS Crashlytics symbols

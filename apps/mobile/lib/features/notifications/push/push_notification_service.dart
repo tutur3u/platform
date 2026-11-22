@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
+import 'package:mobile/features/notifications/push/mastermind_push_category.dart';
 import 'package:mobile/features/notifications/push/push_background_handler.dart';
 import 'package:mobile/features/notifications/push/push_navigation_request.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -108,6 +109,7 @@ class PushNotificationService {
   int _sessionEpoch = 0;
   PushNavigationRequest? _pendingApproval;
   PushNavigationRequest? _pendingMail;
+  PushNavigationRequest? _pendingMastermind;
   PushNavigationRequest? _pendingReminder;
   String? _cachedDeviceId;
   bool _initialized = false;
@@ -218,6 +220,10 @@ class PushNotificationService {
     _pendingMail = null;
     if (pendingMail != null) await _openRequest(pendingMail);
     if (!_currentSession(epoch, userId)) return;
+    final pendingMastermind = _pendingMastermind;
+    _pendingMastermind = null;
+    if (pendingMastermind != null) await _openRequest(pendingMastermind);
+    if (!_currentSession(epoch, userId)) return;
     final pendingReminder = _pendingReminder;
     _pendingReminder = null;
 
@@ -231,6 +237,7 @@ class PushNotificationService {
     _currentUserId = null;
     _pushAdmitted = false;
     _pendingMail = null;
+    _pendingMastermind = null;
     _pendingReminder = null;
     await _delivered.bindSession(null);
     if (!_currentSession(epoch, null)) return;
@@ -317,7 +324,11 @@ class PushNotificationService {
       _androidNotificationIcon,
     );
     final darwinSettings = DarwinInitializationSettings(
-      notificationCategories: loginNotificationCategories(),
+      notificationCategories: [
+        ...loginNotificationCategories(),
+        for (final category in MastermindPushCategory.values)
+          DarwinNotificationCategory(category.eventType),
+      ],
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
@@ -382,6 +393,9 @@ class PushNotificationService {
         importance: Importance.high,
       ),
     );
+    for (final category in MastermindPushCategory.values) {
+      await androidImplementation.createNotificationChannel(category.channel);
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -393,6 +407,10 @@ class PushNotificationService {
     final request = requestFromPushData(message.data);
     if (request.openTarget == 'mail' &&
         (request.mailDestination == null || request.userId != _currentUserId)) {
+      return;
+    }
+    if (request.isMastermindCard &&
+        (_currentUserId == null || request.userId != _currentUserId)) {
       return;
     }
     await _showForegroundNotification(message, request);
@@ -426,6 +444,15 @@ class PushNotificationService {
       }
       if (request.userId != _currentUserId) return;
       _pendingMail = null;
+    }
+    if (request.isMastermindCard) {
+      if (request.userId == null) return;
+      if (_currentUserId == null) {
+        _pendingMastermind = request;
+        return;
+      }
+      if (request.userId != _currentUserId) return;
+      _pendingMastermind = null;
     }
     if (request.opensMfaApproval) {
       if (request.expiresAt == null ||
@@ -483,17 +510,22 @@ class PushNotificationService {
         (message.data['description'] as String?) ??
         '';
 
+    final mastermindChannel = request.mastermindCategory?.channel;
     await _localNotifications.show(
       id: message.messageId.hashCode,
       title: title,
       body: body.isEmpty ? null : body,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          _pushNotificationChannelId,
-          _pushNotificationChannelName,
-          channelDescription: _pushNotificationChannelDescription,
-          importance: Importance.high,
-          priority: Priority.high,
+          mastermindChannel?.id ?? _pushNotificationChannelId,
+          mastermindChannel?.name ?? _pushNotificationChannelName,
+          channelDescription:
+              mastermindChannel?.description ??
+              _pushNotificationChannelDescription,
+          importance: mastermindChannel?.importance ?? Importance.high,
+          priority: request.mastermindCategory == MastermindPushCategory.fyi
+              ? Priority.defaultPriority
+              : Priority.high,
           actions: request.opensMfaApproval ? loginNotificationActions() : null,
           icon: _androidNotificationIcon,
           tag: InboxPushIdentity.parse(request.inboxIdentity)?.capsule,
@@ -501,7 +533,8 @@ class PushNotificationService {
         iOS: DarwinNotificationDetails(
           categoryIdentifier: request.opensMfaApproval
               ? loginApprovalCategory
-              : null,
+              : request.mastermindCategory?.eventType,
+          interruptionLevel: request.mastermindCategory?.interruptionLevel,
         ),
       ),
       payload: payloadFromPushRequest(request),

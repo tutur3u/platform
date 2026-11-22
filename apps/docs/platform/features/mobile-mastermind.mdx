@@ -138,11 +138,13 @@ records the product rules of the shell entry and every tab.
   or any `title` or `label` exceeds 280 graphemes, and a required field the
   route scrubs to nothing fails the whole snapshot with 422. Removing the
   file closes the decision on the next publish.
-- **Decision notifications:** a newly published open decision can alert fleet
-  owners with push enabled. The notification shows the scrubbed title and
-  opens the Inbox. A shared one-minute cap limits bursts, and repeated
-  snapshots, answers and withdrawals generate no new alert. The Inbox carries
-  every open decision. See the [delivery contract](/reference/api-reference/mastermind-push-events#fleet-decision-pushes).
+- **Decision notifications.** A newly published ask or review can alert the
+  owner's registered devices once. The preview shows the scrubbed question and
+  a short summary. Tapping opens that card in the Inbox. Urgent and decision
+  alerts use high priority on Android and Time Sensitive Notifications on
+  iOS. FYI alerts use normal priority. Dispatch follows account preferences
+  and a server rollout switch that defaults to off. See the
+  [delivery contract](/reference/api-reference/mastermind-push-events#fleet-inbox-cards).
 - **Decision context:** a decision may also carry `why` (why it is asked
   now), `defaultOutcome` (what happens at the deadline without an answer)
   and `requester` (the asking agent, lane or machine). All three are
@@ -222,7 +224,7 @@ records the product rules of the shell entry and every tab.
   requires notes and is accepted only on a review); Hold and a free reply
   stay available. Clients declare support with the `review` feature
   (`x-mastermind-fleet-features: login,alerts,review`); reads without it omit
-  open and resolved reviews, and reviews never trigger a decision push.
+  open and resolved reviews.
   Reviews share the 50-ask budget. A Web that predates reviews refuses the
   snapshot with 422, and the v1 fallback leaves reviews out. Regression
   coverage: `apps/web/src/lib/mastermind/fleet/review.test.ts`,
@@ -590,9 +592,9 @@ Mastermind web app has no dock Back; the browser owns it. Code lives in
   `apps/mobile/test/features/mastermind/fleet/fleet_alerts_test.dart`.
   Spend is not shown: the
   snapshot carries no cost data. The machines list follows.
-- **Settings:** there is no per-tier Mastermind notification setting to back
-  a preferences screen, so none is shown; push follows the account push
-  preference (see Push notifications).
+- **Settings.** Settings → Preferences → Mastermind Inbox alerts has separate
+  Urgent, Decision and FYI switches. All three default to on. Delivery also
+  follows the account push preference and the phone's notification permissions.
 
 ### Fleet Inbox
 

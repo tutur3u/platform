@@ -401,6 +401,26 @@ store calls through stop, restart, backoff, failure and rate-limit cases. The
 [runbook](../devops/mastermind-ship-collector.mdx) owns enablement and stop.
 Hosted execution and billed usage remain rollout evidence.
 
+### Mastermind Inbox push envelope
+
+With dispatch off, signed fleet publishes do no extra reads or sends. An
+enabled publish adds one previous-snapshot read. With eligible new cards,
+dispatch checks one owner's permission, push preferences and devices. It
+processes at most 50 cards in batches of eight within an eight-second
+dispatch deadline. Each batch can claim each card once, read the snapshot and
+answers at most twice each, and attempt the daily budget compare-and-set at
+most three times. A full budget, exhausted contention or a store failure
+stops dispatch. The durable budget admits at most 100 cards per UTC day
+across restarts. Each admitted card can reach at most 10 devices, for a
+ceiling of 1,000 FCM device submissions per day.
+
+Dispatch schedules no work and never retries an uncertain FCM submission.
+Restore the last serving version with dispatch off to stop new sends. The
+`decision-push.test.ts` and fleet route tests cover repeated publishes,
+provider failure, restart, owner scoping and disabled dispatch. Hosted
+operation counts and the live stop procedure remain rollout evidence.
+See the [delivery contract](/reference/api-reference/mastermind-push-events#fleet-inbox-cards).
+
 ### Fleet dry-run and retention envelope
 
 Fleet reuses one existing 15-minute Cron Control trigger. Disabled mode

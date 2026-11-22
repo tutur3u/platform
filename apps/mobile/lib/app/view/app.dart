@@ -118,6 +118,7 @@ import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
 import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 

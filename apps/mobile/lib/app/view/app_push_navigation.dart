@@ -119,6 +119,57 @@ extension _AppPushNavigation on _AppState {
     unawaited(ReminderService.instance.refreshIfStale());
   }
 
+  Future<void> _openMastermindCardPush(String location, String? ownerId) async {
+    bool isCurrentOwner() =>
+        mounted &&
+        ownerId != null &&
+        _authCubit.state.status == AuthStatus.authenticated &&
+        _authCubit.state.user?.id == ownerId;
+
+    bool admitsMastermind(Workspace workspace) =>
+        !workspace.deleted &&
+        (workspace.personal || isSystemWorkspaceId(workspace.id));
+
+    if (!isCurrentOwner()) return;
+    if (!_workspaceCubit.hasAuthenticatedActor ||
+        _workspaceCubit.state.status != WorkspaceStatus.loaded) {
+      await _loadWorkspacesWithReminders();
+    }
+    if (!isCurrentOwner() || !_workspaceCubit.hasAuthenticatedActor) return;
+
+    final state = _workspaceCubit.state;
+    final current = state.currentWorkspace;
+    final target = current != null && admitsMastermind(current)
+        ? current
+        : state.visibleWorkspaces.where(admitsMastermind).firstOrNull;
+    if (target == null) {
+      _router.go(Routes.notifications);
+      return;
+    }
+    if (target.id != current?.id) {
+      await _workspaceCubit.selectWorkspace(target);
+    }
+    if (!isCurrentOwner() ||
+        _workspaceCubit.state.currentWorkspace?.id != target.id) {
+      return;
+    }
+
+    final access = _mastermind.access;
+    if (access.state.wsId != target.id || !access.state.visible) {
+      await access.sync(target.id, quiet: true);
+    }
+    if (!isCurrentOwner() ||
+        _workspaceCubit.state.currentWorkspace?.id != target.id) {
+      return;
+    }
+    if (access.state.wsId != target.id || !access.state.visible) {
+      _router.go(Routes.notifications);
+      return;
+    }
+    _router.go(location);
+    _mastermind.refreshFleet();
+  }
+
   Future<void> _handlePushNavigation(PushNavigationRequest request) async {
     if (request.userId != null && request.userId != _authCubit.state.user?.id) {
       return;
@@ -140,7 +191,11 @@ extension _AppPushNavigation on _AppState {
     }
     final mastermindLocation = request.mastermindLocation;
     if (mastermindLocation != null) {
-      // The router's Mastermind access gate still holds the tab roots.
+      if (request.isMastermindCard &&
+          mastermindLocation != Routes.notifications) {
+        await _openMastermindCardPush(mastermindLocation, request.userId);
+        return;
+      }
       _router.go(mastermindLocation);
       _mastermind.refreshFleet();
       return;

@@ -3,12 +3,15 @@ import 'dart:convert';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
+import 'package:mobile/features/notifications/push/mastermind_push_category.dart';
 
-/// The only Mastermind locations a push may open: the tab roots.
+/// Legacy Mastermind pushes still use the tab roots.
 const Set<String> _mastermindPushRoutes = {
   Routes.mastermind,
   Routes.mastermindInbox,
 };
+
+final _fleetDecisionId = RegExp(r'^[a-z0-9][a-z0-9._-]{0,63}$');
 
 class PushNavigationRequest {
   const PushNavigationRequest({
@@ -25,6 +28,7 @@ class PushNavigationRequest {
     this.expiresAt,
     this.inboxIdentity,
     this.route,
+    this.mastermindCategory,
   });
 
   final String notificationId;
@@ -40,6 +44,10 @@ class PushNavigationRequest {
   final DateTime? expiresAt;
   final String? inboxIdentity;
   final String? route;
+  final MastermindPushCategory? mastermindCategory;
+
+  bool get isMastermindCard =>
+      openTarget == 'mastermind' && mastermindCategory != null;
 
   MailPushDestination? get mailDestination => openTarget == 'mail'
       ? MailPushDestination.parse({
@@ -50,11 +58,15 @@ class PushNavigationRequest {
         })
       : null;
 
-  /// Where a Mastermind push opens: an allowlisted tab root, otherwise the
-  /// notifications screen. Null for any other target. The payload route is
-  /// never followed unless it exactly matches the allowlist.
+  /// Build detail locations from validated card IDs and allowlist legacy tabs.
   String? get mastermindLocation {
     if (openTarget != 'mastermind') return null;
+    if (isMastermindCard) {
+      final id = entityId;
+      return userId != null && id != null && _fleetDecisionId.hasMatch(id)
+          ? Routes.mastermindFleetDecisionPath(id)
+          : Routes.notifications;
+    }
     final candidate = route;
     return candidate != null && _mastermindPushRoutes.contains(candidate)
         ? candidate
@@ -111,6 +123,9 @@ PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
     expiresAt: DateTime.tryParse(_stringFromPushData(data, 'expiresAt') ?? ''),
     inboxIdentity: InboxPushIdentity.parse(data['inboxIdentity'])?.capsule,
     route: _stringFromPushData(data, 'route'),
+    mastermindCategory: MastermindPushCategory.parse(
+      data['mastermindCategory'],
+    ),
   );
 }
 
@@ -149,6 +164,8 @@ String? payloadFromPushRequest(PushNavigationRequest request) {
     if (request.threadId != null) 'threadId': request.threadId,
     if (request.userId != null) 'userId': request.userId,
     if (request.route != null) 'route': request.route,
+    if (request.mastermindCategory case final category?)
+      'mastermindCategory': category.name,
     if (request.expiresAt != null)
       'expiresAt': request.expiresAt!.toIso8601String(),
   });

@@ -16172,6 +16172,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase Analytics và Crashlytics để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
 
   @override
+  String get settingsMastermindPushTitle => 'Thông báo hộp thư Mastermind';
+
+  @override
+  String get settingsMastermindPushUrgent => 'Thông báo khẩn của Mastermind';
+
+  @override
+  String get settingsMastermindPushDecision => 'Quyết định trong Mastermind';
+
+  @override
+  String get settingsMastermindPushFyi => 'Thông tin từ Mastermind';
+
+  @override
+  String get settingsMastermindPushLoadError => 'Không thể tải tùy chọn thông báo Mastermind.';
+
+  @override
+  String get settingsMastermindPushSaveError => 'Không thể lưu tùy chọn thông báo Mastermind.';
+
+  @override
   String get settingsPushNotifications => 'Thông báo đẩy';
 
   @override

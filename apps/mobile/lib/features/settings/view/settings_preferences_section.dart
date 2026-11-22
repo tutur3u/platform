@@ -34,6 +34,8 @@ class _PreferencesSection extends StatelessWidget {
 
     final auth = context.watch<AuthCubit?>();
     final userId = auth == null ? currentCacheUserId() : auth.state.user?.id;
+    final canOpenMastermind =
+        context.watch<MastermindAccessCubit?>()?.state.visible ?? false;
     final workspaceId = context.select<WorkspaceCubit, String?>(
       (cubit) => cubit.state.currentWorkspace?.id,
     );
@@ -98,6 +100,12 @@ class _PreferencesSection extends StatelessWidget {
           const LinkBrowserSettingsTile(),
         ],
       ),
+      if (canOpenMastermind && userId != null)
+        (
+          'mastermind-alerts',
+          l10n.settingsMastermindPushTitle,
+          [MastermindPushSettings(key: ValueKey(userId), userId: userId)],
+        ),
       ('privacy', l10n.settingsPrivacy, [const TelemetrySettingsTile()]),
     ];
     final sections = [

@@ -16354,6 +16354,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
 
   @override
+  String get settingsMastermindPushTitle => 'Mastermind Inbox alerts';
+
+  @override
+  String get settingsMastermindPushUrgent => 'Mastermind urgent alerts';
+
+  @override
+  String get settingsMastermindPushDecision => 'Mastermind decisions';
+
+  @override
+  String get settingsMastermindPushFyi => 'Mastermind FYIs';
+
+  @override
+  String get settingsMastermindPushLoadError => 'Could not load Mastermind alert preferences.';
+
+  @override
+  String get settingsMastermindPushSaveError => 'Could not save the Mastermind alert preference.';
+
+  @override
   String get settingsPushNotifications => 'Push notifications';
 
   @override
