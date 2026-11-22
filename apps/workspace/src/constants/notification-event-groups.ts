@@ -124,6 +124,15 @@ export const ACCOUNT_EVENT_GROUPS: EventGroup<AccountNotificationEventType>[] =
   ];
 
 /**
+ * Preferences that are shown but cannot be changed yet. Marketing email stays
+ * a read-only "coming soon" row until consent is recorded per person.
+ */
+export const isComingSoonPreference = (
+  eventType: string,
+  channel: string
+): boolean => eventType === 'marketing_communications' && channel === 'email';
+
+/**
  * Get all workspace event types as a flat array
  */
 export const getAllWorkspaceEvents = (): NotificationEventType[] =>

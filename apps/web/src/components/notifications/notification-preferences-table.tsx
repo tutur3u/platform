@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   ACCOUNT_EVENT_GROUPS,
+  isComingSoonPreference,
   WORKSPACE_EVENT_GROUPS,
 } from '@/constants/notification-event-groups';
 import {
@@ -502,24 +503,43 @@ export default function NotificationPreferencesTable({
                   key={eventType}
                   className={`${TABLE_ROW_GRID} py-3 transition-colors hover:bg-muted/50`}
                 >
-                  <p className="min-w-0 font-medium text-sm">
-                    {tEvents(eventType as any)}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">
+                      {tEvents(eventType as any)}
+                    </p>
+                    {!isWorkspace &&
+                      isComingSoonPreference(eventType, 'email') && (
+                        <p
+                          className="text-muted-foreground text-xs"
+                          id={`${eventType}-coming-soon`}
+                        >
+                          {t('marketing-coming-soon')}
+                        </p>
+                      )}
+                  </div>
                   {CHANNELS.map((channel) => {
                     const savingKey = `${eventType}-${channel}`;
                     const isSaving = savingStates.has(savingKey);
+                    const comingSoon =
+                      !isWorkspace && isComingSoonPreference(eventType, channel);
 
                     return (
                       <div key={channel} className="flex justify-center">
                         <div className="relative">
                           <Switch
                             checked={
-                              localPreferences[eventType]?.[channel] ?? true
+                              comingSoon
+                                ? false
+                                : (localPreferences[eventType]?.[channel] ??
+                                  true)
                             }
                             onCheckedChange={() =>
                               handleToggle(eventType, channel)
                             }
-                            disabled={isSaving}
+                            disabled={isSaving || comingSoon}
+                            aria-describedby={
+                              comingSoon ? `${eventType}-coming-soon` : undefined
+                            }
                             aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
                           />
                           {isSaving && (

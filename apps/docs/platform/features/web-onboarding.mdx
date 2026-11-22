@@ -17,6 +17,7 @@ Sorbet scope and the `/onboarding` URL) and never gates product access.
 | Finished means `completed_at` or `dismissed_at` is set on the account's `onboarding_progress` row. | Reaching the closing screen sets `completed_at`; Skip setup or dismissing the home banner sets `dismissed_at`. | `/onboarding`, workspace home. | None. |
 | Every step and the whole flow can be skipped. | "Skip for now" skips the current step and saves the position without marking the step done. "Skip setup and go to my workspace" records `dismissed_at`. | Top bar and card footer of every step. | A failed save never traps the person; skipping always continues. |
 | Product news by email ships disabled and off, with a "Coming soon" note, and stores nothing. | The switch cannot be turned on, and the flow makes no write to the notification preferences, on Continue, on skip or on Skip setup. | Step 1. | None until the audited consent record (per-user consent with who, when, source surface and policy version) is applied in production. The enabling code lands after that. |
+| The account notification settings show the marketing email toggle off and disabled with the same "Coming soon" note. | The event type, the web and push channels, the API and the stored rows are unchanged; only the email cell is read-only. | Account notification settings in `apps/web` and `apps/workspace`. | The group bulk actions and the first-load row creation still write this row; the consent record supersedes it. |
 | The three picks of step 3 are saved as journey `goals` on the progress row. | Calendar, Tasks and Mira map to `focus`; Chat to `collaborate`; Education to `learn`; Finance to `operate`. An empty pick changes nothing. | `PATCH /api/v1/user/onboarding-progress`. | The row has no per-tile column, so a replay starts the tiles empty. |
 | "Teach or learn" selects the education audience mode. | The web has no audience-mode concept; the choice writes the account config `MOBILE_AUDIENCE_MODE` the Flutter app reads, unless a mode is already stored. | Step 3, mobile home. | A stored `general` or `education` value is never overwritten. |
 | A language choice applies when the person continues. | The locale cookie is set and the flow resumes at the next step in the new language (`?step=space`). | Step 1. | Appearance applies immediately through the app theme provider. |
@@ -42,6 +43,9 @@ redirect.
   never written, workspace errors show inline, no second
   workspace on retry, invitations, interests saved as goals and the education
   mode.
+- `apps/web/src/components/notifications/notification-preferences-table.test.tsx`
+  (and the `apps/workspace` copy): the marketing email switch is off, disabled
+  and described by the note; other switches stay enabled; no save on click.
 - `apps/web/src/app/[locale]/(auth)/onboarding/actions.test.ts`: the limit
   error code reaches the UI.
 - `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/welcome-nudge.test.tsx`:

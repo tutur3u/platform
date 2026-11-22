@@ -12509,6 +12509,7 @@
         "workspace-events": "Workspace Events",
         "workspace-events-description": "Notifications for workspace invitations and updates"
       },
+      "marketing-coming-soon": "Coming soon. It stays off until you can choose it.",
       "no-events-found": "No events found matching your search",
       "save": "Save preferences",
       "save-failed": "Failed to save preference. Please try again.",
