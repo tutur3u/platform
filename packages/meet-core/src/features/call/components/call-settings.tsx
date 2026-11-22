@@ -286,7 +286,7 @@ export function CallSettings({
           </SettingsSection>
         )}
         {activeTab === 'permissions' && managesMedia && (
-          <>
+          <MeetSettingsStack>
             <SettingsSection>
               <RoomPermissionToggles
                 settings={room.state.settings}
@@ -295,7 +295,7 @@ export function CallSettings({
               />
             </SettingsSection>
             <ClassroomSettings room={room} />
-          </>
+          </MeetSettingsStack>
         )}
         {activeTab === 'activities' && activities && (
           <CallActivitySettings

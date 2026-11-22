@@ -4989,16 +4989,16 @@
         "cancel": "Hủy"
       },
       "settings_pages": {
-        "devices": "Chọn micrô, camera và loa của bạn.",
-        "media": "Cân bằng chất lượng video với băng thông.",
-        "connection": "Kiểm tra chất lượng cuộc gọi và khắc phục sự cố âm thanh, hình ảnh.",
-        "permissions": "Quyết định người tham gia được bật gì và ai được vào thẳng.",
         "activities": "Chọn ai được mở hoạt động và mời người khác cùng xem.",
         "chat": "Lưu trò chuyện cuộc họp và quản lý bản ghi hình.",
+        "connection": "Kiểm tra chất lượng cuộc gọi và khắc phục sự cố âm thanh, hình ảnh.",
+        "devices": "Chọn micrô, camera và loa của bạn.",
+        "media": "Cân bằng chất lượng video với băng thông.",
         "mira": "Xác nhận đối tượng trong không gian làm việc trước khi Mira tham gia.",
-        "public": "Quản lý liên kết công khai của cuộc họp và bộ nhớ AI riêng của bạn.",
         "notes_access": "Quyền xem ghi chú",
-        "notes_access_description": "Chọn ai được đọc bản chép lời và ghi chú của cuộc họp này."
+        "notes_access_description": "Chọn ai được đọc bản chép lời và ghi chú của cuộc họp này.",
+        "permissions": "Quyết định người tham gia được bật gì và ai được vào thẳng.",
+        "public": "Quản lý liên kết công khai của cuộc họp và bộ nhớ AI riêng của bạn."
       }
     },
     "collaboration": {

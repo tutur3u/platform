@@ -269,7 +269,7 @@ function ParticipantTileImpl({
       )}
       <div
         className={cn(
-          'absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t to-transparent px-3 py-3',
+          'absolute inset-x-0 bottom-0 flex items-end gap-2 bg-gradient-to-t to-transparent px-3 py-2',
           showVideo
             ? 'from-media-scrim text-media-scrim-foreground'
             : 'from-background/90 text-foreground'
@@ -284,7 +284,7 @@ function ParticipantTileImpl({
         {/* Names wrap to two lines before clipping; the self label stays whole. */}
         <span
           className={cn(
-            'min-w-0 font-medium',
+            'min-w-0 font-medium leading-tight',
             floating
               ? 'truncate text-xs'
               : 'line-clamp-2 break-words text-sm @max-[12rem]:line-clamp-1'
@@ -294,7 +294,9 @@ function ParticipantTileImpl({
           {floating ? t('you') : participant.displayName}
         </span>
         {isSelf && !floating && (
-          <span className="shrink-0 font-medium text-sm">· {t('you')}</span>
+          <span className="shrink-0 font-medium text-sm leading-tight">
+            · {t('you')}
+          </span>
         )}
         {!isSelf && !presenceOnly && (
           <MediaReceivingStatus

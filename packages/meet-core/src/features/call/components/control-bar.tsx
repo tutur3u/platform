@@ -28,6 +28,7 @@ import {
   createContext,
   type ReactNode,
   useContext,
+  useId,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -262,6 +263,7 @@ export function ControlBar({
   onPresenceChange?: (enabled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
+  const presenceSwitchId = useId();
   const labels = useLargeRoomLabels();
   const controls = useSyncExternalStore(
     subscribeRoomControls,
@@ -431,10 +433,14 @@ export function ControlBar({
               {extraControls}
               {onPresenceChange && (
                 <div className="mt-1 border-t pt-1">
-                  <Label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
+                  <Label
+                    htmlFor={presenceSwitchId}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 leading-snug hover:bg-accent"
+                  >
                     <UsersRound className="size-5 shrink-0" />
                     <span className="min-w-0 flex-1">{t('presence_only')}</span>
                     <Switch
+                      id={presenceSwitchId}
                       checked={presenceOnly}
                       onCheckedChange={onPresenceChange}
                     />

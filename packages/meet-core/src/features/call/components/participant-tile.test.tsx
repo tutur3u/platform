@@ -118,3 +118,16 @@ it('uses theme-aware name bar colors on avatar tiles', () => {
   expect(html).toContain('text-foreground');
   expect(html).not.toContain('from-media-scrim');
 });
+
+it('keeps the self marker with a long wrapped name', () => {
+  const longName = 'Alexandria Montgomery-Featherstonehaugh the Third';
+  const html = renderTile({
+    participant: { ...participant, displayName: longName },
+    isSelf: true,
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(html).toContain(longName);
+  expect(html).toContain('· You');
+  expect(html).toContain('line-clamp-2');
+  expect(html).not.toContain('truncate');
+});

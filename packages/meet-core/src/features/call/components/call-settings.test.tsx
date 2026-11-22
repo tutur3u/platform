@@ -104,7 +104,10 @@ it('finds permissions with shared settings search and dispatches all host lock t
   ]);
 });
 
-function renderSettings(role: 'host' | 'participant') {
+function renderSettings(
+  role: 'host' | 'participant',
+  manage: { canManage?: boolean; canManageParticipants?: boolean } = {}
+) {
   vi.stubGlobal(
     'matchMedia',
     vi.fn(() => ({
@@ -123,6 +126,7 @@ function renderSettings(role: 'host' | 'participant') {
       selfUserId: 'self',
       participants: {},
       settings: { shareNotes: false },
+      canManageParticipants: manage.canManageParticipants,
     },
   } as unknown as MeetRoomController;
   render(
@@ -131,7 +135,7 @@ function renderSettings(role: 'host' | 'participant') {
         <CallSettings
           room={room}
           meetingId="meeting"
-          canManage={role === 'host'}
+          canManage={manage.canManage ?? role === 'host'}
           ai={{} as Parameters<typeof CallSettings>[0]['ai']}
           sound={false}
           onSound={vi.fn()}
@@ -168,4 +172,12 @@ it('keeps Notes access out of a participant’s settings', () => {
   expect(
     screen.queryByRole('switch', { name: messages.meet.call.share_notes })
   ).toBeNull();
+});
+
+it('keeps Notes access hidden for a participant who can manage', () => {
+  renderSettings('participant', {
+    canManage: true,
+    canManageParticipants: true,
+  });
+  expect(screen.queryByRole('button', { name: pages.notes_access })).toBeNull();
 });

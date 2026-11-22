@@ -31,4 +31,6 @@ it('wraps a long name instead of truncating it to one line', () => {
   expect(label.getAttribute('title')).toBe(longName);
   // The item grows with the name up to a cap instead of a fixed narrow width.
   expect(label.closest('li')?.classList.contains('w-20')).toBe(false);
+  expect(label.closest('li')?.classList.contains('min-w-20')).toBe(true);
+  expect(label.closest('li')?.classList.contains('max-w-36')).toBe(true);
 });
