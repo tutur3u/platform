@@ -209,6 +209,7 @@
     "apps/cron-control/",
     "apps/cron-control/**",
     "apps/web/vercel.json",
+    "packages/realtime/**",
     "scripts/ci/cf-vite-worker.mjs",
     "scripts/ci/cf-worker-parity.mjs",
     "scripts/ci/cf-worker-settings.mjs",
