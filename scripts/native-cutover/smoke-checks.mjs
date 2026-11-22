@@ -2,19 +2,41 @@
 // subdomain (root mode). Pure: `runSmoke` takes an injected fetch, so the same
 // checks run against production, staging or a local workerd, and in tests.
 
+const asciiUpper = (value) =>
+  value.replace(/[a-z]/gu, (char) => char.toUpperCase());
+const asciiLower = (value) =>
+  value.replace(/[A-Z]/gu, (char) => char.toLowerCase());
+
+/**
+ * Canonical X-Frame-Options value: only HTTP whitespace (tab, space) is
+ * trimmed and only ASCII letters are case-folded, as browsers do, so values
+ * padded with other whitespace (\xa0, \x0b) or folded from non-ASCII letters
+ * never normalize to DENY or SAMEORIGIN. A comma-joined multi-value header
+ * stays distinct. Returns undefined for a missing header.
+ */
+export function normalizeFrameOptions(value) {
+  if (typeof value !== 'string') return undefined;
+  return asciiUpper(value.replace(/^[\t ]+|[\t ]+$/gu, ''));
+}
+
 /**
  * True when the response's CSP forbids all framing: in at least one
  * comma-separated policy (browsers enforce every policy), the first
  * `frame-ancestors` directive (CSP3 ignores later ones) has the single source
- * `'none'`. Lookalikes such as `frame-ancestors 'none' https://x` fail.
+ * `'none'`. Tokens split only on ASCII whitespace (\t\n\f\r and space), so
+ * lookalikes such as `frame-ancestors 'none' https://x` or a non-breaking
+ * space inside the directive fail closed. Non-string input fails closed.
  */
 export function cspDeniesFraming(csp) {
+  if (typeof csp !== 'string') return false;
   return csp.split(',').some((policy) => {
     const directive = policy
       .split(';')
-      .map((part) => part.trim().split(/\s+/u))
-      .find(([name]) => name?.toLowerCase() === 'frame-ancestors');
-    return directive?.length === 2 && directive[1].toLowerCase() === "'none'";
+      .map((part) => part.split(/[\t\n\f\r ]+/u).filter(Boolean))
+      .find(
+        ([name]) => name !== undefined && asciiLower(name) === 'frame-ancestors'
+      );
+    return directive?.length === 2 && asciiLower(directive[1]) === "'none'";
   });
 }
 
@@ -141,7 +163,7 @@ export async function runSmoke(options, fetchImpl = fetch) {
         failures.push(`x-tuturuuu-runtime ${runtime}, expected native`);
       if (!native && runtime === 'native')
         failures.push('served by the native Worker, expected legacy');
-      frameOptions = headers.get('x-frame-options');
+      frameOptions = normalizeFrameOptions(headers.get('x-frame-options'));
       const framingDenied = cspDeniesFraming(
         headers.get('content-security-policy') ?? ''
       );
@@ -151,10 +173,9 @@ export async function runSmoke(options, fetchImpl = fetch) {
       // Until that transform is disabled and replaced by a Transform Rule,
       // accept SAMEORIGIN only when the same response's CSP still enforces
       // frame-ancestors 'none'. Any other value, or a missing header, fails.
-      const normalizedFrameOptions = frameOptions?.trim().toUpperCase();
       const frameOptionsOk =
-        normalizedFrameOptions === 'DENY' ||
-        (normalizedFrameOptions === 'SAMEORIGIN' && framingDenied);
+        frameOptions === 'DENY' ||
+        (frameOptions === 'SAMEORIGIN' && framingDenied);
       if (!frameOptionsOk) failures.push('missing X-Frame-Options: DENY');
       if (!framingDenied) failures.push("missing CSP frame-ancestors 'none'");
       if (check.expect.loginReturn) {
@@ -206,21 +227,14 @@ export async function runSmoke(options, fetchImpl = fetch) {
 
 export function matchesTasksPublicationSmoke(report, baseline) {
   return report.results.every((result, index) => {
-    const before = baseline.results[index];
-    // Never loosen a baseline that served DENY, even though SAMEORIGIN with an
-    // enforced CSP now passes the smoke on its own.
-    if (result.ok)
-      return !(
-        before?.frameOptions === 'DENY' && result.frameOptions !== 'DENY'
-      );
-    // Cloudflare can replace this legacy header on every version. Allow
-    // the same edge value only when the enforced CSP check still passes.
+    // SAMEORIGIN with an enforced CSP passes the smoke on its own, so any
+    // failing result (including a missing or loosened header) is rejected.
+    if (!result.ok) return false;
+    // Never loosen a baseline that served DENY. Both sides use the same
+    // canonical form so case differences cannot hide or invent a downgrade.
+    const before = normalizeFrameOptions(baseline.results[index]?.frameOptions);
     return (
-      before?.name === result.name &&
-      before.frameOptions === 'SAMEORIGIN' &&
-      result.frameOptions === before.frameOptions &&
-      result.failures.length === 1 &&
-      result.failures[0] === 'missing X-Frame-Options: DENY'
+      before !== 'DENY' || normalizeFrameOptions(result.frameOptions) === 'DENY'
     );
   });
 }
