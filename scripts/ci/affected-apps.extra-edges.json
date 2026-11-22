@@ -13,6 +13,7 @@
   "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
     "packages/users-core"
   ],
+  "apps/cron-control/src/": ["apps/web"],
   "apps/cron-control/src/processors/chat-realtime-revocations.ts": [
     "apps/chat-realtime"
   ],
