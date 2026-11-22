@@ -468,7 +468,7 @@ function evaluateConcurrency(value, github) {
   return value.replace(/\$\{\{(.*?)\}\}/g, (_, body) => String(evaluate(body)));
 }
 
-test('feature branches supersede, main coalesces without cancelling, production and manual attempts stay independent', () => {
+test('feature branches supersede while main, production and manual attempts stay independent', () => {
   assert.ok(
     workflow.concurrency,
     'Type Check needs bounded branch supersession'
@@ -480,6 +480,7 @@ test('feature branches supersede, main coalesces without cancelling, production 
     sha: 'old',
     event_name: 'push',
     run_id: 1,
+    run_attempt: 1,
   };
   const group = (extra) =>
     evaluateConcurrency(workflow.concurrency.group, { ...context, ...extra });
@@ -491,10 +492,14 @@ test('feature branches supersede, main coalesces without cancelling, production 
   assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
   assert.equal(cancel({}), true);
   assert.equal(cancel({ ref: 'refs/heads/main' }), false);
-  // A newer main push replaces only the pending run; the active run finishes.
-  assert.equal(
+  // Distinct main push groups preserve pending and active runs.
+  assert.notEqual(
     group({ ref: 'refs/heads/main' }),
     group({ ref: 'refs/heads/main', sha: 'latest', run_id: 2 })
+  );
+  assert.notEqual(
+    group({ ref: 'refs/heads/main' }),
+    group({ ref: 'refs/heads/main', run_id: 2 })
   );
   assert.equal(cancel({ ref: 'refs/heads/main-spoof' }), true);
   assert.equal(
