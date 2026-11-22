@@ -11,6 +11,7 @@ import {
   runSmoke,
 } from '../native-cutover/smoke-checks.mjs';
 import {
+  assertExactCandidate,
   deleteTasksVersion,
   inheritanceSource,
   uploadTasksVersion,
@@ -30,6 +31,8 @@ assert.match(account ?? '', /^[0-9a-f]{32}$/u, 'Cloudflare account required');
 assert.ok(token && directory, 'Tasks publication directory and token required');
 const deploymentsPath = `/workers/scripts/${worker}/deployments`;
 const receiptPath = join(directory, 'receipt.json');
+// Versions this run uploaded; the only ones its cleanup may delete.
+const created = new Set();
 
 async function provider(path, data, signal) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${account}${path}`;
@@ -228,46 +231,59 @@ async function latestVersion() {
 }
 
 async function upload(receipt, previousVersion) {
-  const { id, number } = await inheritanceSource({
+  const source = await inheritanceSource({
     servingVersion: previousVersion,
     latestVersion,
     read: provider,
-    remove: deleteTasksVersion,
   });
+  const { id, number } = source;
   // The candidate must directly follow this version; see publish().
   receipt.inheritedFrom = { id, number };
+  if (source.superseded) receipt.supersededLeftover = id;
   save(receipt);
   const latest = await provider(`/workers/scripts/${worker}/versions/${id}`);
+  // A leftover candidate's vars were never verified; take them from the
+  // serving version instead. Secrets inherit from the latest version.
+  const varBindings = source.superseded
+    ? (await provider(`/workers/scripts/${worker}/versions/${previousVersion}`))
+        .resources?.bindings
+    : latest.resources?.bindings;
   try {
     return await uploadTasksVersion(
       {
         destination: join(directory, 'cf-output'),
         servingVersion: previousVersion,
         latestBindings: latest.resources?.bindings,
+        varBindings,
         sourceSha,
       },
       {
         onUploaded(version) {
+          created.add(version);
           receipt.uploadedVersion = version;
           save(receipt);
         },
       }
     );
   } catch (error) {
-    // An uploaded version that failed verification never received traffic;
-    // remove it so no later release inherits its bindings. A version whose id
-    // never reached the receipt is removed by the next inheritanceSource().
+    // An uploaded version that failed verification never received traffic.
+    // Removal is best effort and only for the version this run uploaded.
     if (receipt.uploadedVersion)
       discardCandidate(receipt, receipt.uploadedVersion);
     throw error;
   }
 }
 
-/** Best effort; the next release's inheritanceSource() removes leftovers. */
+/**
+ * Best effort, and only for a version this run uploaded. The just-uploaded
+ * version is the Worker's latest, which Cloudflare refuses to delete; the next
+ * upload supersedes it.
+ */
 function discardCandidate(receipt, version) {
   try {
-    deleteTasksVersion(version);
-    receipt.deletedCandidate = version;
+    const result = deleteTasksVersion(version, { created });
+    if (result.deleted) receipt.deletedCandidate = version;
+    else receipt.supersededCandidate = version;
   } catch (error) {
     console.error(
       `Could not delete Tasks candidate ${version}: ${error.message}`
@@ -314,28 +330,31 @@ async function publish() {
     return;
   }
 
-  const candidate =
-    process.env.TASKS_UPLOADED_VERSION ??
-    (await upload(receipt, previousVersion));
+  // The candidate is strictly the version this run uploaded for the pinned
+  // source; there is no override and "latest" is never a candidate.
+  const candidate = await upload(receipt, previousVersion);
   assert.match(candidate, uuid);
-  assert.notEqual(candidate, previousVersion);
+  assert.ok(created.has(candidate), 'Tasks candidate was not uploaded here');
   receipt.candidateVersion = candidate;
   save(receipt);
   const version = await provider(
     `/workers/scripts/${worker}/versions/${candidate}`
   );
-  assert.equal(version.id, candidate);
-  if (
-    receipt.inheritedFrom &&
-    version.number !== receipt.inheritedFrom.number + 1
-  ) {
-    // Another upload or secret change came in between, so this candidate's
-    // carried-forward vars and inherited secrets may not belong together.
-    // Remove it so no later release inherits from it.
-    discardCandidate(receipt, candidate);
-    throw new Error('Another Tasks version was created during this release');
+  try {
+    assertExactCandidate(version, {
+      uploadedId: candidate,
+      sourceSha,
+      servingVersion: previousVersion,
+      inheritedFrom: receipt.inheritedFrom,
+    });
+  } catch (error) {
+    // Another upload or secret change may have come in between, so this
+    // candidate's carried-forward vars and inherited secrets may not belong
+    // together. Try to remove it; it is never left as a candidate.
+    if (error.code === 'TASKS_INTERLEAVED_UPLOAD')
+      discardCandidate(receipt, candidate);
+    throw error;
   }
-  assert.equal(version.annotations?.['workers/message'], sourceSha);
   const bindings = new Set(version.resources.bindings.map(({ name }) => name));
   for (const name of [
     'ASSETS',

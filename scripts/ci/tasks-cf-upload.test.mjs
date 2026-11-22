@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  assertExactCandidate,
   deleteTasksVersion,
   inheritanceSource,
   keptVars,
@@ -343,10 +344,15 @@ test('a secret added on the latest undeployed version is accepted as inherited',
 
 test('the rejected candidate is deleted by id on the Tasks Worker', () => {
   const runs = [];
-  deleteTasksVersion(V2, {
-    env: { CF_BIN: 'cf-fixture' },
-    exec: (bin, args) => runs.push([bin, ...args]),
-  });
+  const created = new Set([V2]);
+  assert.deepEqual(
+    deleteTasksVersion(V2, {
+      created,
+      env: { CF_BIN: 'cf-fixture' },
+      exec: (bin, args) => runs.push([bin, ...args]),
+    }),
+    { deleted: true }
+  );
   assert.deepEqual(runs, [
     [
       'cf-fixture',
@@ -360,15 +366,55 @@ test('the rejected candidate is deleted by id on the Tasks Worker', () => {
     ],
   ]);
   assert.throws(
-    () => deleteTasksVersion('v2', { exec: () => {} }),
+    () => deleteTasksVersion('v2', { created, exec: () => {} }),
     /Tasks version id/
   );
 });
 
+test('cleanup skips a version this release did not create', () => {
+  const runs = [];
+  const exec = (...args) => runs.push(args);
+  assert.throws(
+    () => deleteTasksVersion(V1, { created: new Set([V2]), exec }),
+    /did not create it/
+  );
+  assert.throws(() => deleteTasksVersion(V1, { exec }), /did not create it/);
+  assert.deepEqual(runs, []);
+});
+
+test('a 409 / 10339 on the latest version is superseded, not a failure', () => {
+  const created = new Set([V2]);
+  for (const detail of [
+    '[10339] The latest version cannot be deleted.',
+    'HTTP 409 latest version cannot be deleted',
+  ]) {
+    const result = deleteTasksVersion(V2, {
+      created,
+      env: { CF_BIN: 'cf-fixture' },
+      exec: () => {
+        throw Object.assign(new Error('Command failed'), { stderr: detail });
+      },
+    });
+    assert.deepEqual(result, { deleted: false, reason: 'latest' });
+  }
+  // Any other delete failure is still an error.
+  assert.throws(
+    () =>
+      deleteTasksVersion(V2, {
+        created,
+        env: { CF_BIN: 'cf-fixture' },
+        exec: () => {
+          throw Object.assign(new Error('Command failed'), {
+            stderr: 'HTTP 500',
+          });
+        },
+      }),
+    /Command failed/
+  );
+});
+
 function versionsApi({ versions, deployed = [], messages = {} }) {
-  const removed = [];
   return {
-    removed,
     latestVersion: async () => versions.at(-1),
     read: async (path) => {
       if (path.endsWith('/deployments'))
@@ -379,10 +425,6 @@ function versionsApi({ versions, deployed = [], messages = {} }) {
         };
       const id = path.split('/').at(-1);
       return { id, annotations: { 'workers/message': messages[id] } };
-    },
-    remove: (id) => {
-      removed.push(id);
-      versions.pop();
     },
   };
 }
@@ -403,23 +445,164 @@ test('inheritance starts from the serving or a once-deployed version', async () 
       (await inheritanceSource({ servingVersion: V1, ...api })).id,
       versions.at(-1).id
     );
-    assert.deepEqual(api.removed, []);
   }
 });
 
-test('an unverified release candidate is deleted before inheriting', async () => {
+test('a stale undeployed latest version is superseded, never deleted or used as the candidate', async () => {
   const api = versionsApi({
     versions: [
       { id: V1, number: 1 },
       { id: V2, number: 2 },
     ],
-    messages: { [V2]: SHA },
+    messages: { [V2]: 'b'.repeat(40) },
   });
-  assert.equal(
-    (await inheritanceSource({ servingVersion: V1, ...api })).id,
-    V1
+  const source = await inheritanceSource({ servingVersion: V1, ...api });
+  assert.equal(source.id, V2);
+  assert.equal(source.superseded, true);
+});
+
+test('a stale latest is not the candidate: the upload-returned id is used and its vars are not carried', async () => {
+  const { root, configPath } = tasksArtifact();
+  try {
+    const deps = fakeCf();
+    const stale = [
+      ...latestBindings(),
+      { name: 'STALE_ONLY', type: 'plain_text', text: 'x' },
+    ];
+    const version = await uploadTasksVersion(
+      {
+        configPath,
+        destination: join(root, 'cf-output'),
+        servingVersion: V1,
+        latestBindings: stale,
+        varBindings: latestBindings(),
+        sourceSha: SHA,
+        env: { CF_BIN: 'cf-fixture' },
+      },
+      { exec: deps.exec, sleep: () => {} }
+    );
+    assert.equal(version, V2);
+    assert.ok(
+      !deps.uploaded().bindings.some(({ name }) => name === 'STALE_ONLY')
+    );
+    // Only the uploaded id is ever read back; no stale or latest id is read.
+    assert.ok(
+      deps.calls
+        .filter((call) => call.startsWith('workers versions get'))
+        .every((call) => /versions get (1{8}|2{8})-/u.test(call))
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('an upload that returns no version id fails closed', async () => {
+  const { root, configPath } = tasksArtifact();
+  try {
+    const deps = fakeCf();
+    const exec = (bin, args, options) =>
+      args.join(' ').startsWith('workers versions create')
+        ? (deps.exec(bin, args, options), 'uploaded')
+        : deps.exec(bin, args, options);
+    await assert.rejects(
+      uploadTasksVersion(
+        {
+          configPath,
+          destination: join(root, 'cf-output'),
+          servingVersion: V1,
+          latestBindings: latestBindings(),
+          sourceSha: SHA,
+          env: { CF_BIN: 'cf-fixture' },
+        },
+        { exec, sleep: () => {} }
+      ),
+      /cf returned no version id/
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+const uploadedVersion = (over = {}) => ({
+  id: V2,
+  number: 3,
+  annotations: { 'workers/message': SHA },
+  ...over,
+});
+const candidateArgs = {
+  uploadedId: V2,
+  sourceSha: SHA,
+  servingVersion: V1,
+  inheritedFrom: { id: '33333333-3333-4333-8333-333333333333', number: 2 },
+};
+
+test('the candidate is the upload-returned version carrying the pinned SHA', () => {
+  assertExactCandidate(uploadedVersion(), candidateArgs);
+});
+
+test('a missing or foreign candidate fails closed', () => {
+  assert.throws(
+    () =>
+      assertExactCandidate(uploadedVersion(), {
+        ...candidateArgs,
+        uploadedId: undefined,
+      }),
+    /No Tasks version was uploaded/
   );
-  assert.deepEqual(api.removed, [V2]);
+  // The stale latest (older SHA message) read back instead of the upload.
+  const stale = candidateArgs.inheritedFrom;
+  assert.throws(
+    () =>
+      assertExactCandidate(
+        uploadedVersion({
+          id: stale.id,
+          number: stale.number,
+          annotations: { 'workers/message': 'c'.repeat(40) },
+        }),
+        candidateArgs
+      ),
+    /not the version this release uploaded/
+  );
+  assert.throws(
+    () =>
+      assertExactCandidate(uploadedVersion(), {
+        ...candidateArgs,
+        uploadedId: stale.id,
+        inheritedFrom: { ...stale },
+      }),
+    /not the version this release uploaded/
+  );
+  assert.throws(
+    () =>
+      assertExactCandidate(
+        uploadedVersion({ annotations: { 'workers/message': 'c'.repeat(40) } }),
+        candidateArgs
+      ),
+    /does not carry the pinned source SHA/
+  );
+  assert.throws(
+    () =>
+      assertExactCandidate(uploadedVersion(), {
+        ...candidateArgs,
+        servingVersion: V2,
+      }),
+    /is serving/
+  );
+  assert.throws(
+    () =>
+      assertExactCandidate(uploadedVersion(), {
+        ...candidateArgs,
+        inheritedFrom: { id: V2, number: 2 },
+      }),
+    /pre-existing latest/
+  );
+});
+
+test('an interleaved upload is flagged for discard', () => {
+  assert.throws(
+    () => assertExactCandidate(uploadedVersion({ number: 4 }), candidateArgs),
+    (error) => error.code === 'TASKS_INTERLEAVED_UPLOAD'
+  );
 });
 
 test('an unknown never-deployed latest version stops the release', async () => {
@@ -434,5 +617,4 @@ test('an unknown never-deployed latest version stops the release', async () => {
     inheritanceSource({ servingVersion: V1, ...api }),
     /never deployed and is not a release candidate/
   );
-  assert.deepEqual(api.removed, []);
 });

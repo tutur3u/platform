@@ -493,13 +493,20 @@ captured output, including launcher errors without a Cloudflare API code.
 plain-text vars of the latest version that the sealed config does not set are
 carried forward from that version: the same source `--keep-vars` and secret
 inheritance use. Config values win; JSON vars stop the release. The candidate
-must be the next version number after that source; otherwise another upload or
-secret change raced it, and the release stops before the zero-percent preview
-and deletes the never-deployed candidate. Each release also starts by checking
-its source: a latest version that is neither serving nor in any deployment was
-never verified, so a leftover release candidate (its message is a source SHA)
-is deleted first, and any other never-deployed version stops the release until
-an operator deploys or deletes it.
+is strictly the version id the upload returned, carrying the pinned source SHA
+as its message and numbered directly after that source; there is no override
+and a "latest" version is never a candidate by position. Any other result (no
+returned id, another id, another message) stops the release before the
+zero-percent preview. Cleanup deletes only versions the same run uploaded.
+Cloudflare refuses to delete the Worker's latest version (409 / `10339`), which
+a just-uploaded candidate always is, so that refusal is logged and recorded in
+the receipt as superseded by the next upload, not treated as a failure. Each
+release also checks its source: a latest version that is neither serving nor in
+any deployment was never verified. A leftover release candidate (its message is
+a source SHA) is never deleted by a later release; it is superseded by the new
+upload, and its vars are not carried forward (the serving version's vars are
+used instead). Any other never-deployed version stops the release until an
+operator deploys or deletes it.
 Every emitted module must be ESM, and every `dist/server` file the no_bundle
 module rules would upload must be emitted. The artifact job dry-runs the same
 conversion without credentials.

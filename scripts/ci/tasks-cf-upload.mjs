@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cfChildEnv } from './cf-build-output-publisher.mjs';
+import { cfChildEnv, VERSION_ID } from './cf-build-output-publisher.mjs';
 import { emitVoidCfOutput } from './void-cf-output.mjs';
 import { cfCommand, publish } from './void-cf-publisher.mjs';
 
@@ -72,6 +72,7 @@ export async function uploadTasksVersion(
     destination,
     servingVersion,
     latestBindings,
+    varBindings = latestBindings,
     sourceSha,
     env = process.env,
   },
@@ -79,7 +80,7 @@ export async function uploadTasksVersion(
 ) {
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   assert.equal(config.name, TASKS_WORKER, 'sealed config names another Worker');
-  const vars = { ...keptVars(config.vars, latestBindings), ...config.vars };
+  const vars = { ...keptVars(config.vars, varBindings), ...config.vars };
   assertEsmOnly(
     await emitVoidCfOutput({ configPath, destination, vars, sourceSha }),
     configPath
@@ -104,81 +105,151 @@ export async function uploadTasksVersion(
     servingVersion,
     'Tasks serving version moved during the upload'
   );
+  // The candidate is the id this upload returned, never a pre-existing version.
+  assert.match(
+    result.versionId ?? '',
+    VERSION_ID,
+    'upload returned no version'
+  );
+  assert.notEqual(
+    result.versionId,
+    servingVersion,
+    'Tasks upload returned the serving version'
+  );
   return result.versionId;
+}
+
+/**
+ * Prove the candidate read back from Cloudflare is the version this run just
+ * uploaded for the pinned source: the upload-returned id, carrying the exact
+ * source SHA as its message, distinct from the serving version and from the
+ * stale version it inherited from, and numbered directly after that source
+ * (nothing else was uploaded in between). Anything else fails closed; a
+ * "latest" version is never a candidate by position alone.
+ */
+export function assertExactCandidate(
+  version,
+  { uploadedId, sourceSha, servingVersion, inheritedFrom }
+) {
+  assert.match(uploadedId ?? '', VERSION_ID, 'No Tasks version was uploaded');
+  assert.equal(
+    version?.id,
+    uploadedId,
+    'Tasks candidate is not the version this release uploaded'
+  );
+  assert.notEqual(uploadedId, servingVersion, 'Tasks candidate is serving');
+  assert.notEqual(
+    uploadedId,
+    inheritedFrom?.id,
+    'Tasks candidate is the pre-existing latest version'
+  );
+  assert.equal(
+    version.annotations?.['workers/message'],
+    sourceSha,
+    'Tasks candidate does not carry the pinned source SHA'
+  );
+  if (inheritedFrom && version.number !== inheritedFrom.number + 1)
+    throw Object.assign(
+      new Error('Another Tasks version was created during this release'),
+      { code: 'TASKS_INTERLEAVED_UPLOAD' }
+    );
 }
 
 const SOURCE_SHA = /^[0-9a-f]{40}$/u;
 
 /**
  * The version a new upload inherits secrets from, and the source of its
- * carried-forward vars. A latest version that never reached a deployment was
- * never verified, so its vars and secrets may not belong together. A leftover
- * release candidate (its message is a source SHA) is deleted; anything else
- * stops the release for an operator. Serving or once-deployed versions passed
- * the strict readback before any traffic and are safe sources.
+ * carried-forward vars. Serving or once-deployed versions passed the strict
+ * readback before any traffic and are safe sources. A latest version that
+ * never reached a deployment is only tolerated as a leftover release candidate
+ * (its message is a source SHA); anything else stops the release for an
+ * operator. A leftover is never deleted here: Cloudflare refuses to delete the
+ * latest version, and this run did not create it. It is returned as
+ * `superseded` (the new upload becomes the latest version), and its vars are
+ * not trusted; callers take them from the serving version. Secrets still
+ * inherit from the latest version (Cloudflare's rule); the strict readback
+ * proves their names, not their values.
  */
 export async function inheritanceSource({
   servingVersion,
   latestVersion,
   read,
-  remove,
-  attempts = 3,
 }) {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const latest = await latestVersion();
-    if (latest.id === servingVersion) return latest;
-    const { deployments } = await read(
-      `/workers/scripts/${TASKS_WORKER}/deployments`
-    );
-    if (
-      deployments?.some(({ versions }) =>
-        versions?.some(({ version_id }) => version_id === latest.id)
-      )
+  const latest = await latestVersion();
+  if (latest.id === servingVersion) return latest;
+  const { deployments } = await read(
+    `/workers/scripts/${TASKS_WORKER}/deployments`
+  );
+  if (
+    deployments?.some(({ versions }) =>
+      versions?.some(({ version_id }) => version_id === latest.id)
     )
-      return latest;
-    const version = await read(
-      `/workers/scripts/${TASKS_WORKER}/versions/${latest.id}`
-    );
-    assert.match(
-      version.annotations?.['workers/message'] ?? '',
-      SOURCE_SHA,
-      `Latest Tasks version ${latest.id} was never deployed and is not a release candidate; deploy or delete it before releasing`
-    );
-    console.warn(`Deleting unverified Tasks candidate ${latest.id}`);
-    remove(latest.id);
-  }
-  throw new Error('Unverified Tasks release candidates remain');
+  )
+    return latest;
+  const version = await read(
+    `/workers/scripts/${TASKS_WORKER}/versions/${latest.id}`
+  );
+  assert.match(
+    version.annotations?.['workers/message'] ?? '',
+    SOURCE_SHA,
+    `Latest Tasks version ${latest.id} was never deployed and is not a release candidate; deploy or delete it before releasing`
+  );
+  console.warn(
+    `Tasks version ${latest.id} is an undeployed leftover candidate; it is not this release's candidate and will be superseded by the next upload`
+  );
+  return { ...latest, superseded: true };
 }
 
+const LATEST_UNDELETABLE = /\b10339\b|latest version cannot be deleted/iu;
+
 /**
- * Delete an uploaded, never-deployed candidate whose carried-forward vars and
- * inherited secrets may come from different versions, so it can never become
- * the latest version a later release inherits from.
+ * Delete a candidate this run uploaded and rejected. `created` is the set of
+ * version ids this run uploaded; any other version is refused. A just-uploaded
+ * version is the Worker's latest version, which Cloudflare refuses to delete
+ * (409 / 10339); that is reported as `{ deleted: false }`, not an error: the
+ * next upload supersedes it and the release does not depend on removing it.
  */
 export function deleteTasksVersion(
   versionId,
-  { env = process.env, exec = execFileSync } = {}
+  { env = process.env, exec = execFileSync, created } = {}
 ) {
   assert.match(versionId ?? '', /^[0-9a-f-]{36}$/u, 'Tasks version id');
-  const [command, prefix] = cfCommand(env);
-  exec(
-    command,
-    [
-      ...prefix,
-      'workers',
-      'versions',
-      'delete',
-      versionId,
-      '--worker-id',
-      TASKS_WORKER,
-      '--force',
-    ],
-    {
-      env: { ...env, CF_SEND_TELEMETRY: 'false' },
-      stdio: ['ignore', 'inherit', 'inherit'],
-      timeout: 60000,
-    }
+  assert.ok(
+    created?.has(versionId),
+    `Refusing to delete Tasks version ${versionId}: this release did not create it`
   );
+  const [command, prefix] = cfCommand(env);
+  try {
+    const output = exec(
+      command,
+      [
+        ...prefix,
+        'workers',
+        'versions',
+        'delete',
+        versionId,
+        '--worker-id',
+        TASKS_WORKER,
+        '--force',
+      ],
+      {
+        env: { ...env, CF_SEND_TELEMETRY: 'false' },
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 60000,
+      }
+    );
+    if (output) console.log(String(output));
+    return { deleted: true };
+  } catch (error) {
+    // Not error.message: it echoes the command line, including the version id.
+    const text = `${error?.stderr ?? ''}${error?.stdout ?? ''}`;
+    if (!LATEST_UNDELETABLE.test(text)) throw error;
+    console.warn(
+      `Tasks version ${versionId} is the latest version and cannot be deleted; the next upload supersedes it`
+    );
+    return { deleted: false, reason: 'latest' };
+  }
 }
 
 /**
