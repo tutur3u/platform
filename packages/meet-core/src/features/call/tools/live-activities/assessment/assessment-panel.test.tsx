@@ -208,14 +208,29 @@ it('shows the host each answer, grades written ones and releases results', () =>
   });
   expect(screen.queryByRole('button', { name: t.reopen })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: t.new_attempt }));
+  // A dialog asks first: opening it and cancelling it send nothing.
+  const dialog = screen.getByRole('alertdialog');
+  expect(within(dialog).getByText(t.reopen_hint)).toBeTruthy();
   expect(sent()).toHaveLength(3);
-  expect(screen.getByText(t.reopen_hint)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: t.reopen_confirm }));
-  // A new attempt is its own command, never a plain reopen.
+  fireEvent.click(
+    within(dialog).getByRole('button', { name: strings.cancel })
+  );
+  expect(screen.queryByRole('alertdialog')).toBeNull();
+  expect(sent()).toHaveLength(3);
+  // Only the destructive confirm sends, and it is its own command, never a
+  // plain reopen.
+  fireEvent.click(screen.getByRole('button', { name: t.new_attempt }));
+  fireEvent.click(
+    within(screen.getByRole('alertdialog')).getByRole('button', {
+      name: t.reopen_confirm,
+    })
+  );
+  expect(sent()).toHaveLength(4);
   expect(sent().at(-1)).toEqual({
     kind: 'assessment.restart',
     attemptId: ATTEMPT,
   });
+  expect(screen.queryByRole('alertdialog')).toBeNull();
   // Hiding the results again does not bring the plain Reopen back.
   room({
     manager: true,

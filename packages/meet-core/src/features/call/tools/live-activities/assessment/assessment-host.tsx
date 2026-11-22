@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ToolAction } from '../../tool-ui';
 import { type Activity, activityCardClass } from '../activity-kit';
+import { NewAttemptAction } from './new-attempt-action';
 
 type Response = NonNullable<
   Activity['host']
@@ -106,7 +107,6 @@ function GradeRow({
 export function AssessmentHost({ activity }: { activity: Activity }) {
   const t = useTranslations('meet.call.live_activities.assessment');
   const [confirmEdit, setConfirmEdit] = useState(false);
-  const [confirmReopen, setConfirmReopen] = useState(false);
   const { assessment } = activity.snapshot;
   const responses = activity.host?.assessment.responses ?? [];
   const answers = activity.host?.assessment.answers ?? {};
@@ -114,38 +114,30 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
   // Every command names the attempt and status on screen, so the room can
   // refuse one that another host's action has overtaken.
   const { attemptId, sealed, status: from } = assessment;
-  const reopenNeedsConfirm = !open && sealed && !confirmReopen;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <ToolAction
-          icon={open ? Lock : Play}
-          label={t(
-            open
-              ? 'close_answers'
-              : confirmReopen
-                ? 'reopen_confirm'
-                : sealed
-                  ? 'new_attempt'
-                  : 'reopen'
-          )}
-          variant={confirmReopen ? 'destructive' : 'outline'}
-          onClick={() => {
-            if (reopenNeedsConfirm) return setConfirmReopen(true);
-            setConfirmReopen(false);
-            // A released attempt cannot reopen: the way on discards its answers.
-            activity.send(
-              sealed && !open
-                ? { kind: 'assessment.restart', attemptId }
-                : {
-                    kind: 'assessment.status',
-                    status: open ? 'closed' : 'open',
-                    attemptId,
-                    from,
-                  }
-            );
-          }}
-        />
+        {sealed && !open ? (
+          // A released attempt cannot reopen: the way on discards its answers.
+          <NewAttemptAction
+            onConfirm={() =>
+              activity.send({ kind: 'assessment.restart', attemptId })
+            }
+          />
+        ) : (
+          <ToolAction
+            icon={open ? Lock : Play}
+            label={t(open ? 'close_answers' : 'reopen')}
+            onClick={() =>
+              activity.send({
+                kind: 'assessment.status',
+                status: open ? 'closed' : 'open',
+                attemptId,
+                from,
+              })
+            }
+          />
+        )}
         <ToolAction
           icon={assessment.released ? EyeOff : Eye}
           label={t(assessment.released ? 'hide_results' : 'release')}
@@ -176,15 +168,9 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
           }}
         />
       </div>
-      {(confirmEdit || confirmReopen || open) && (
+      {(confirmEdit || open) && (
         <p role="status" className="text-muted-foreground text-xs">
-          {t(
-            confirmEdit
-              ? 'edit_hint'
-              : confirmReopen
-                ? 'reopen_hint'
-                : 'release_hint'
-          )}
+          {t(confirmEdit ? 'edit_hint' : 'release_hint')}
         </p>
       )}
       <ol className="space-y-3">
