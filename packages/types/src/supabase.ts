@@ -24692,6 +24692,112 @@ export type Database = {
           },
         ];
       };
+      user_product_email_consent: {
+        Row: {
+          granted: boolean;
+          granted_at: string | null;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          user_id: string;
+          withdrawn_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          granted?: boolean;
+          granted_at?: string | null;
+          policy_version: string;
+          source: string;
+          updated_at?: string;
+          user_id: string;
+          withdrawn_at?: string | null;
+        };
+        Update: {
+          granted?: boolean;
+          granted_at?: string | null;
+          policy_version?: string;
+          source?: string;
+          updated_at?: string;
+          user_id?: string;
+          withdrawn_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_product_email_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_email_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      user_product_email_consent_events: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          granted: boolean;
+          id: number;
+          policy_version: string;
+          source: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          granted: boolean;
+          id?: never;
+          policy_version: string;
+          source: string;
+          user_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          granted?: boolean;
+          id?: never;
+          policy_version?: string;
+          source?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_product_email_consent_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_email_consent_events_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_email_consent_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_email_consent_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       user_profile_change_events: {
         Row: {
           changed_at: string;
@@ -27279,6 +27385,43 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'user_group_posts';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      product_email_recipients: {
+        Row: {
+          granted_at: string | null;
+          policy_version: string | null;
+          source: string | null;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          granted_at?: string | null;
+          policy_version?: string | null;
+          source?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          granted_at?: string | null;
+          policy_version?: string | null;
+          source?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_product_email_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_email_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -61788,6 +61931,17 @@ export type Database = {
           username: string;
         }[];
       };
+      get_product_email_consent: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          granted: boolean;
+          granted_at: string;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          withdrawn_at: string;
+        }[];
+      };
       get_product_feedback_media_staff: {
         Args: { p_actor: string; p_id: string };
         Returns: Json;
@@ -63149,6 +63303,15 @@ export type Database = {
           notification_type: string;
         }[];
       };
+      list_product_email_consent_events: {
+        Args: { p_limit?: number };
+        Returns: {
+          created_at: string;
+          granted: boolean;
+          policy_version: string;
+          source: string;
+        }[];
+      };
       list_product_feedback_staff: {
         Args: {
           p_actor: string;
@@ -63965,6 +64128,21 @@ export type Database = {
           is_default: boolean;
           name: string;
           ws_id: string;
+        }[];
+      };
+      set_product_email_consent: {
+        Args: {
+          p_granted: boolean;
+          p_policy_version: string;
+          p_source: string;
+        };
+        Returns: {
+          granted: boolean;
+          granted_at: string;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          withdrawn_at: string;
         }[];
       };
       set_workspace_external_project_binding: {

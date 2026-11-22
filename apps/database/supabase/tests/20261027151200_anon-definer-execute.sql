@@ -631,6 +631,20 @@ SELECT is((SELECT count(*)::integer FROM definer_added_later l
     OR has_function_privilege('authenticated', to_regprocedure(l.signature), 'EXECUTE')
     OR NOT has_function_privilege('service_role', to_regprocedure(l.signature), 'EXECUTE')),
   0, 'public definers added by later migrations are service-only');
+-- Public definers added later that are deliberately callable by signed-in
+-- users only: caller-bound to auth.uid(), never anon, PUBLIC or service_role.
+CREATE TEMP TABLE definer_added_later_authenticated (signature text PRIMARY KEY);
+INSERT INTO definer_added_later_authenticated VALUES
+  -- apps/database/supabase/migrations/20261123031000_product_email_consent.sql
+  ('public.set_product_email_consent(boolean,text,text)'),
+  ('public.get_product_email_consent()'),
+  ('public.list_product_email_consent_events(integer)');
+SELECT is((SELECT count(*)::integer FROM definer_added_later_authenticated l
+  WHERE to_regprocedure(l.signature) IS NULL
+    OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
+    OR NOT has_function_privilege('authenticated', to_regprocedure(l.signature), 'EXECUTE')
+    OR has_function_privilege('service_role', to_regprocedure(l.signature), 'EXECUTE')),
+  0, 'public definers added later for signed-in users are authenticated-only');
 SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.prosecdef
     AND p.proname NOT IN ('sb19_default_probe')
@@ -639,6 +653,8 @@ SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid 
     AND NOT EXISTS (SELECT 1 FROM definer_b_owned b
       WHERE to_regprocedure(b.signature)::oid = p.oid)
     AND NOT EXISTS (SELECT 1 FROM definer_added_later l
+      WHERE to_regprocedure(l.signature)::oid = p.oid)
+    AND NOT EXISTS (SELECT 1 FROM definer_added_later_authenticated l
       WHERE to_regprocedure(l.signature)::oid = p.oid)), 0,
   'the snapshot, B-owned and later signatures cover every existing public definer');
 SELECT ok(has_schema_privilege('supabase_auth_admin', 'public', 'USAGE')

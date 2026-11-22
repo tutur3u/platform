@@ -45,6 +45,23 @@ Product email becomes a separate opt-in during onboarding, **off by default**. O
 - **Exceptions:** transactional and security email (sign-in codes, account recovery, MFA and billing receipts) is not product email and needs no opt-in.
 - **Regression coverage:** `apps/web/src/app/[locale]/(auth)/login/login-consent-copy.test.ts` checks both locales' footer copy names Terms and Privacy and never email, `page.test.tsx` checks the rendered footer, `sign-in-consent-bundles.test.ts` checks the shared notice in every app bundle (EN and VI), and the Workspace login `page.test.tsx` checks its rendered notice. The onboarding switch's default-off test ships with that switch.
 
+### Product email consent record
+
+Decision by the owner on 2026-11-23 ("Separate, off by default"): product-update email is a per-user consent that is false until the user turns it on. Migration `20261123031000_product_email_consent.sql` provides the database half; the onboarding switches and the settings control are separate code that lands only after production applies the migration.
+
+- **Scope:** every product-news or marketing email to a person with an account, on Web and mobile. The consent is per user, not per workspace.
+- **Default:** off. No row means no consent. Terms acceptance, sign-in, account creation, billing status and an existing subscription never set it.
+- **State and audit:** `private.user_product_email_consent` holds the current decision. `private.user_product_email_consent_events` is append-only and records the decision, the user, the source surface (`web_onboarding`, `mobile_onboarding`, `web_settings`, `mobile_settings`), the policy version, the time and an `actor_id` that stays empty when the user acts for themselves. A repeat of the identical decision under the same policy version adds no row.
+- **Writes and reads:** only through the caller-bound `set_product_email_consent(p_granted, p_source, p_policy_version)`, `get_product_email_consent()` and `list_product_email_consent_events(p_limit)` RPCs, executable by `authenticated` only. They act on `auth.uid()`, validate the source and the version, and write the state and audit atomically. Clients have no table privilege, and the tables are in `private`.
+- **Withdrawal:** the user can withdraw at any time from Web or mobile settings by calling the same RPC with `false`. Withdrawal stops future sends and keeps the grant evidence.
+- **Existing users:** decision by the owner on 2026-11-23: every existing user is treated as off. No row is backfilled or rewritten; a missing row means no consent, so nobody receives marketing email until they opt in through the audited record.
+- **Marketing email rule:** `should_send_notification(...)` answers `true` for `marketing_communications` on the `email` channel only when the user appears in `private.product_email_recipients`. A missing row, a withdrawal and any older `notification_preferences` row for that event answer `false`. Other event types and channels, including `marketing_communications` on web and push, are unchanged. This is a live send-behaviour change shipped with the migration.
+- **Send exclusion:** a sender reads `private.product_email_recipients`, which lists only users whose current decision is a grant. Do not build a recipient list from any other source, and do not send to a user with no row or a withdrawal.
+- **Exceptions:** transactional and security email is not product email and does not consult this record.
+- **Rollout:** the onboarding switches stay disabled until production applies this migration (Web deploys before the migration round).
+- **Erasure:** deleting the account removes the state and the evidence with it. Whether the evidence retention period in the table below needs a pseudonymised copy is a legal-owner decision.
+- **Regression coverage:** [`apps/database/supabase/tests/product-email-consent.sql`](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/product-email-consent.sql) covers the default, grant and withdraw audit rows, cross-user isolation, anon and direct-write denial, validation, append-only evidence and the `should_send_notification` marketing rule (missing, granted, withdrawn, and unchanged types and channels). `20261027151200_anon-definer-execute.sql` inventories the three definers.
+
 ## Retention defaults and precedence
 
 These are platform policy defaults derived from the approved retention principles, not statutory retention claims. A shorter purpose period or legal deadline wins. A documented lawful exception can retain only the necessary subset for its approved duration. Each implementation must name its clock and prove expiry.
