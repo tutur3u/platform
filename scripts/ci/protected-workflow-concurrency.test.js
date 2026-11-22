@@ -688,7 +688,7 @@ test('Oxc keeps each main push', () => {
   }
 });
 
-test('Cloudflare Source, docs, Test and Type Check coalesce main pushes without cancelling', () => {
+test('Cloudflare Source and docs coalesce main pushes without cancelling', () => {
   const files = Object.entries(workflows)
     .filter(([, workflow]) =>
       String(workflow.name || '').endsWith(' Cloudflare Source')
@@ -698,7 +698,7 @@ test('Cloudflare Source, docs, Test and Type Check coalesce main pushes without 
   assert.ok(files.includes('finance-cloudflare.yaml'));
   assert.ok(files.includes('nova-cloudflare.yaml'));
   assert.equal(files.length, 24);
-  files.push('docs-seo-check.yaml', 'turbo-unit-tests.yaml', 'type-check.yaml');
+  files.push('docs-seo-check.yaml');
   for (const file of files) {
     // The active main run always finishes; a newer push replaces only the
     // pending run, so the newest head gets its own complete run.
@@ -746,57 +746,50 @@ test('Cloudflare Source, docs, Test and Type Check coalesce main pushes without 
   }
 });
 
-test('Test reruns, dispatch and production stay immutable while feature branches still supersede', () => {
-  const workflow = workflows['turbo-unit-tests.yaml'];
-  assert.ok(events(workflow).push.branches.includes('main'));
-  const first = { ...context('refs/heads/main'), workflow: workflow.name };
-  const later = { ...first, sha: 'later', run_id: 2 };
-  assert.equal(
-    render(workflow.concurrency.group, first),
-    render(workflow.concurrency.group, later)
+test('main evidence survives rapid pushes and feature branches still supersede', () => {
+  assert.ok(
+    events(workflows['turbo-unit-tests.yaml']).push.branches.includes('main')
   );
-  assert.equal(
-    render(workflow.concurrency['cancel-in-progress'], first),
-    false
-  );
-  assert.equal(
-    render(workflow.concurrency['cancel-in-progress'], later),
-    false
-  );
-  for (const extra of [
-    { run_attempt: 2 },
-    { event_name: 'workflow_dispatch' },
-    { ref: 'refs/heads/production' },
-    { ref: 'refs/heads/production', sha: 'later', run_id: 2 },
+  for (const file of [
+    'turbo-unit-tests.yaml',
+    'type-check.yaml',
+    'ci-admitted.yaml',
+    'sdk-package-qualification.yaml',
   ]) {
-    const candidate = { ...first, ...extra };
+    const workflow = workflows[file];
+    const policy = workflow.concurrency;
+    const first = { ...context('refs/heads/main'), workflow: workflow.name };
+    const later = { ...first, sha: 'later', run_id: 2 };
+    const last = { ...first, sha: 'last', run_id: 3 };
+    const mainRuns = [first, later, last];
     assert.equal(
-      render(workflow.concurrency['cancel-in-progress'], candidate),
-      false,
-      JSON.stringify(extra)
+      new Set(mainRuns.map((run) => render(policy.group, run))).size,
+      3,
+      file
+    );
+    for (const run of mainRuns) {
+      assert.equal(render(policy['cancel-in-progress'], run), false, file);
+    }
+    assertQualification(policy, workflow.name, false);
+    const production = { ...first, ref: 'refs/heads/production' };
+    assert.equal(render(policy['cancel-in-progress'], production), false, file);
+    assert.notEqual(
+      render(policy.group, production),
+      render(policy.group, first),
+      file
     );
     assert.notEqual(
-      render(workflow.concurrency.group, candidate),
-      render(workflow.concurrency.group, first),
-      JSON.stringify(extra)
+      render(policy.group, production),
+      render(policy.group, { ...production, sha: 'later', run_id: 2 }),
+      file
     );
+    const branch = { ...first, ref: 'refs/heads/fix/example' };
+    assert.equal(
+      render(policy.group, branch),
+      render(policy.group, { ...branch, sha: 'later', run_id: 2 }),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], branch), true, file);
+    assertPrSupersedes(workflow, 'pull_request');
   }
-  const production = { ...first, ref: 'refs/heads/production' };
-  assert.notEqual(
-    render(workflow.concurrency.group, production),
-    render(workflow.concurrency.group, {
-      ...production,
-      sha: 'later',
-      run_id: 2,
-    })
-  );
-  const branch = { ...first, ref: 'refs/heads/fix/example' };
-  assert.equal(
-    render(workflow.concurrency.group, branch),
-    render(workflow.concurrency.group, { ...branch, sha: 'later', run_id: 2 })
-  );
-  assert.equal(
-    render(workflow.concurrency['cancel-in-progress'], branch),
-    true
-  );
 });

@@ -81,7 +81,11 @@ const mainExceptions = {
 // group. A shared "latest" group drops the previous pending run when
 // cancel-in-progress is false, so the proof tests require distinct groups.
 // Oxc keeps job-level mutation locks outside a shared group.
-const queuedMainBaselines = new Set(['oxc-check.yaml']);
+const queuedMainBaselines = new Set([
+  'oxc-check.yaml',
+  'turbo-unit-tests.yaml',
+  'type-check.yaml',
+]);
 const boundedMainProducers = new Set();
 // Main pushes may still supersede these: their newest run is the only signal.
 const mainSupersedeAllowed = {
