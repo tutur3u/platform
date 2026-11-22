@@ -13846,6 +13846,49 @@ export type Database = {
           },
         ];
       };
+      mail_mailbox_restorations: {
+        Row: {
+          mailbox_id: string;
+          previous_created_by: string | null;
+          previous_member_created_by: string | null;
+          previous_member_ids: string[];
+          previous_member_role: string | null;
+          previous_status: string;
+          previous_ws_id: string | null;
+          restored_at: string;
+          restored_member_id: string | null;
+          restored_ws_id: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          mailbox_id: string;
+          previous_created_by?: string | null;
+          previous_member_created_by?: string | null;
+          previous_member_ids: string[];
+          previous_member_role?: string | null;
+          previous_status: string;
+          previous_ws_id?: string | null;
+          restored_at?: string;
+          restored_member_id?: string | null;
+          restored_ws_id?: string | null;
+          user_id: string;
+        };
+        Update: {
+          mailbox_id?: string;
+          previous_created_by?: string | null;
+          previous_member_created_by?: string | null;
+          previous_member_ids?: string[];
+          previous_member_role?: string | null;
+          previous_status?: string;
+          previous_ws_id?: string | null;
+          restored_at?: string;
+          restored_member_id?: string | null;
+          restored_ws_id?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       mail_mailboxes: {
         Row: {
           address: string;
@@ -19388,6 +19431,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'people_conversations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_event_receipts: {
+        Row: {
+          channel: Database['private']['Enums']['people_channel'];
+          created_at: string;
+          event_hash: string;
+          input_sha256: string;
+          principal_id: string;
+          provider_account_id: string;
+          receipt: NonNullable<Json>;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel: Database['private']['Enums']['people_channel'];
+          created_at?: string;
+          event_hash: string;
+          input_sha256: string;
+          principal_id: string;
+          provider_account_id: string;
+          receipt: NonNullable<Json>;
+          ws_id: string;
+        };
+        Update: {
+          channel?: Database['private']['Enums']['people_channel'];
+          created_at?: string;
+          event_hash?: string;
+          input_sha256?: string;
+          principal_id?: string;
+          provider_account_id?: string;
+          receipt?: NonNullable<Json>;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_event_receipts_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'people_registry_control';
@@ -27426,6 +27511,13 @@ export type Database = {
         };
         Returns: boolean;
       };
+      account_deletion_blocking_workspaces: {
+        Args: { p_actor_id: string };
+        Returns: {
+          ws_id: string;
+          ws_name: string;
+        }[];
+      };
       account_personal_workspace: {
         Args: { p_actor_id: string };
         Returns: string;
@@ -31595,6 +31687,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      inspect_retained_personal_mailbox: {
+        Args: { p_user: string };
+        Returns: {
+          mailbox_id: string;
+          status: string;
+        }[];
+      };
       inspect_unmanaged_internal_profile_operation: {
         Args: {
           p_actor_id: string;
@@ -32123,6 +32222,16 @@ export type Database = {
           sessions: string[];
           starting_date: string;
           ws_id: string;
+        }[];
+      };
+      list_workspaces_without_member_manager: {
+        Args: { p_after_ws_id?: string; p_limit?: number };
+        Returns: {
+          created_at: string;
+          creator_id: string;
+          full_member_count: number;
+          ws_id: string;
+          ws_name: string;
         }[];
       };
       lock_employee_auth_pair: {
@@ -32880,6 +32989,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      people_machine_capture_keys: {
+        Args: { p_principal: string; p_ws: string };
+        Returns: Json;
+      };
       people_machine_lookup_keys: {
         Args: { p_principal: string; p_ws: string };
         Returns: Json;
@@ -32892,6 +33005,18 @@ export type Database = {
       people_profile_granted: {
         Args: { p_person: string; p_ws: string };
         Returns: boolean;
+      };
+      people_propose_sender: {
+        Args: {
+          p_account: string;
+          p_channel: Database['private']['Enums']['people_channel'];
+          p_conversation: string;
+          p_item: Json;
+          p_principal: string;
+          p_sender_lookups: Json;
+          p_ws: string;
+        };
+        Returns: string;
       };
       people_recall: {
         Args: {
@@ -33111,9 +33236,27 @@ export type Database = {
         Returns: Json;
       };
       people_user_exists: { Args: { p_user: string }; Returns: boolean };
+      people_valid_capture: {
+        Args: { p_item: Json; p_sender_lookups: Json };
+        Returns: boolean;
+      };
       people_valid_lookups: { Args: { p_lookups: Json }; Returns: boolean };
       people_workspace_creator: { Args: { p_ws: string }; Returns: string };
       people_wrap_kid_usage: { Args: { p_kid: string }; Returns: number };
+      people_write_event: {
+        Args: {
+          p_conversation_current: Json;
+          p_conversation_lookups: Json;
+          p_conversation_type: string;
+          p_event: Json;
+          p_input_sha256: string;
+          p_items: Json;
+          p_principal: string;
+          p_sender_lookups: Json;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       periodic_report_delivery_contract_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -33824,6 +33967,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      require_read_committed: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       reserve_cite_budget: {
         Args: {
           p_actor_hash: string;
@@ -33862,6 +34009,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
+      restore_retained_personal_mailbox: {
+        Args: { p_mailbox: string; p_user: string };
+        Returns: undefined;
+      };
       retire_owned_banner: {
         Args: { p_origin: string; p_url: string; p_user_id: string };
         Returns: undefined;
@@ -33877,6 +34028,10 @@ export type Database = {
       revoke_overlong_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: number;
+      };
+      rollback_retained_personal_mailbox_restoration: {
+        Args: { p_user: string };
+        Returns: undefined;
       };
       rollup_product_analytics_daily: {
         Args: { p_limit: number };
@@ -34833,6 +34988,27 @@ export type Database = {
           p_user_id: string;
         };
         Returns: Json;
+      };
+      update_workspace_default_permissions_guarded: {
+        Args: {
+          p_actor_id: string;
+          p_member_type: Database['public']['Enums']['workspace_member_type'];
+          p_mode: string;
+          p_permissions: Json;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      update_workspace_role_guarded: {
+        Args: {
+          p_actor_id: string;
+          p_mode: string;
+          p_name?: string;
+          p_permissions: Json;
+          p_role_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       upsert_ai_memory_settings: {
         Args: {
