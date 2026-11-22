@@ -71,15 +71,15 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
   },
   'apps/web/src/lib/external-apps/workspace-cron.ts': {
     calls: 1,
-    gates: ['hasScope(verification.claims.scopes'],
+    gates: ['hasGrantedScope(verification.claims.scopes'],
   },
   'apps/web/src/lib/external-apps/workspace-drive.ts': {
     calls: 1,
-    gates: ['hasScope(verification.claims.scopes'],
+    gates: ['hasGrantedScope(verification.claims.scopes'],
   },
   'apps/web/src/lib/external-apps/workspace-members.ts': {
     calls: 1,
-    gates: ['hasScope(verification.claims.scopes'],
+    gates: ['hasGrantedScope(verification.claims.scopes'],
   },
   'apps/web/src/lib/external-projects/access.ts': {
     calls: 2,
