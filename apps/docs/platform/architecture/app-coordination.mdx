@@ -500,6 +500,20 @@ is handed out), `cross-app-handoff-outcome.test.ts` and `form-mfa-step-up.test.t
 under `apps/web/src/app/[locale]/(auth)/login/` (the value forwarded before
 and after the step-up, malformed values dropped).
 
+### App-managed workspace members
+
+`GET /api/v1/workspaces/{wsId}/external-apps/members` needs
+`workspace:members:read` and `workspace:roles:read`. It returns each member's
+id, display name, avatar and role, and each pending invitation's creation
+time, with every `email` set to `null`. Emails are returned only when the
+token also carries `workspace.members.email:read` and the user holds both
+`manage_workspace_members` and `manage_workspace_roles`, the permissions the
+first-party members list (`/api/workspaces/{wsId}/members/enhanced`)
+requires. No wildcard grant covers `workspace.members.email:read`; the app
+must be granted and request it by name. The `HIDE_MEMBER_EMAIL` workspace
+setting still hides emails. Coverage:
+`apps/web/src/lib/external-apps/workspace-members-email.test.ts`.
+
 ### App-owned Drive attachments
 
 Registered external apps can request `workspace:drive:read` and

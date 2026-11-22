@@ -26,6 +26,8 @@ import { normalizeWorkspaceMembers } from './workspace-members-model';
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_MEMBERS_READ_SCOPE = 'workspace:members:read';
 const WORKSPACE_MEMBERS_WRITE_SCOPE = 'workspace:members:write';
+// Explicit-only: no wildcard grant covers it.
+const WORKSPACE_MEMBERS_EMAIL_READ_SCOPE = 'workspace.members.email:read';
 const WORKSPACE_ROLES_READ_SCOPE = 'workspace:roles:read';
 const WORKSPACE_ROLES_WRITE_SCOPE = 'workspace:roles:write';
 
@@ -45,6 +47,7 @@ export type ExternalAppWorkspaceMembersAccess = {
   admin: AdminDb;
   canManageMembers: boolean;
   canManageRoles: boolean;
+  canReadMemberEmails: boolean;
   normalizedWorkspaceId: string;
   permissions: PermissionsResult;
   targetApp: string;
@@ -160,10 +163,21 @@ export async function requireExternalAppWorkspaceMembersAccess({
     return accessError('Forbidden', 403);
   }
 
+  // Emails need the explicit scope plus the permissions the first-party
+  // members list requires (`/api/workspaces/{wsId}/members/enhanced`).
+  const canReadMemberEmails =
+    hasGrantedScope(
+      verification.claims.scopes,
+      WORKSPACE_MEMBERS_EMAIL_READ_SCOPE
+    ) &&
+    canManageMembers &&
+    canManageRoles;
+
   return {
     admin,
     canManageMembers,
     canManageRoles,
+    canReadMemberEmails,
     normalizedWorkspaceId,
     ok: true as const,
     permissions,
@@ -186,6 +200,7 @@ export async function loadExternalAppWorkspaceMembers(
   });
   const snapshot = normalizeWorkspaceMembers({
     currentUserId: access.user.id,
+    includeEmails: access.canReadMemberEmails,
     members,
   });
 
@@ -297,6 +312,7 @@ export {
 } from './workspace-members-mutations';
 
 export const externalAppWorkspaceMemberScopes = {
+  membersEmailRead: WORKSPACE_MEMBERS_EMAIL_READ_SCOPE,
   membersRead: WORKSPACE_MEMBERS_READ_SCOPE,
   membersWrite: WORKSPACE_MEMBERS_WRITE_SCOPE,
   rolesRead: WORKSPACE_ROLES_READ_SCOPE,

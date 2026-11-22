@@ -17,7 +17,7 @@ export type ExternalAppWorkspaceMember = {
 
 export type WorkspaceMembersSnapshot = {
   defaultAdminEnabled: boolean;
-  invitations: Array<{ createdAt: string | null; email: string }>;
+  invitations: Array<{ createdAt: string | null; email: string | null }>;
   members: ExternalAppWorkspaceMember[];
 };
 
@@ -47,11 +47,17 @@ function roleAdminEnabled(member: EnhancedWorkspaceMember) {
   );
 }
 
+/**
+ * The external-app view of workspace members. Member and invitation emails
+ * are returned only with `includeEmails`; without it every email is null.
+ */
 export function normalizeWorkspaceMembers({
   currentUserId,
+  includeEmails = false,
   members,
 }: {
   currentUserId: string;
+  includeEmails?: boolean;
   members: EnhancedWorkspaceMember[];
 }): WorkspaceMembersSnapshot {
   const defaultAdmin = members.some(
@@ -65,7 +71,7 @@ export function normalizeWorkspaceMembers({
       if (member.email) {
         invitations.push({
           createdAt: member.created_at ?? null,
-          email: member.email,
+          email: includeEmails ? member.email : null,
         });
       }
       continue;
@@ -83,7 +89,7 @@ export function normalizeWorkspaceMembers({
     normalizedMembers.push({
       avatarUrl: member.avatar_url ?? null,
       displayName: member.display_name ?? null,
-      email: member.email ?? null,
+      email: includeEmails ? (member.email ?? null) : null,
       id: member.id,
       isCreator: member.is_creator,
       isCurrentUser: member.id === currentUserId,
