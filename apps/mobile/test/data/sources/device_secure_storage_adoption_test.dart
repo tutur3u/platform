@@ -22,6 +22,10 @@ void main() {
       'data/sources/secure_storage.dart',
       'features/security/device_mfa/device_mfa_service.dart',
       'features/notes/note_device_lock.dart',
+      // Paired-machine pins for Mastermind secret entry: readable only while
+      // unlocked, in their own Keychain account, and erased for every user
+      // by listing that account, which device storage refuses.
+      'features/mastermind/fleet/data/fleet_secret_pins.dart',
     });
   });
 

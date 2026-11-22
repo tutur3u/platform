@@ -28,6 +28,14 @@ localization changes.
   Silicon, run it under `--platform linux/amd64` or on an Intel host.
   `test/helpers/golden_tolerance.dart` allows 0.5% of pixels to differ, and
   that budget is for rounding, not for host drift.
+- Source-audit tests read every file under `lib/` from outside a feature's
+  own test folder, so a focused run of that folder does not execute them:
+  `test/data/sources/device_secure_storage_adoption_test.dart` lists the only
+  files that may construct `FlutterSecureStorage` (use `deviceSecureStorage`,
+  or add the file there with its reason when it needs another Keychain
+  class), and `test/core/ui/input_placeholder_audit_test.dart` checks every
+  input. Run the whole suite before pushing a change that adds or moves
+  `lib/` files.
 - On a macOS host, run the suite as `flutter test --exclude-tags golden`.
   Every `matchesGoldenFile` test file carries `@Tags(['golden'])`. A full run
   there can fail image comparisons with raster mismatches although CI passes

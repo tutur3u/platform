@@ -46,15 +46,23 @@ class FleetSecretCrypto {
 
   final MethodChannel _channel;
   final bool Function() _isIOS;
-  Future<bool>? _supported;
+  bool? _supported;
 
-  /// iOS 17 or later with the plugin present; asked once per instance.
-  Future<bool> supported() => _supported ??= _askSupported();
+  /// Whether this platform can hold secret-entry keys and pins at all (iOS).
+  /// The plugin may still report secret entry unsupported, below iOS 17.
+  bool get onSecretPlatform => _isIOS();
 
-  Future<bool> _askSupported() async {
-    if (!_isIOS()) return false;
+  /// iOS 17 or later with the plugin present. The plugin's answer is kept
+  /// for the instance; an ask that fails reads as false for that call only
+  /// and is made again the next time.
+  Future<bool> supported() async {
+    final known = _supported;
+    if (known != null) return known;
+    if (!_isIOS()) return _supported = false;
     try {
-      return await _channel.invokeMethod<bool>('supported') ?? false;
+      final answer = await _channel.invokeMethod<bool>('supported');
+      if (answer != null) _supported = answer;
+      return answer ?? false;
     } on MissingPluginException {
       return false;
     } on PlatformException {
@@ -122,9 +130,11 @@ class FleetSecretCrypto {
       );
 
   /// Removes one account's owner key, or every one without [accountId].
-  /// Quietly does nothing where the plugin is not offered.
+  /// Asked on every iOS device whatever [supported] last said, so a failed
+  /// capability check cannot leave a key behind. Quietly does nothing off
+  /// iOS, without the plugin, or below iOS 17, where no key can exist.
   Future<void> deleteOwnerKeys({String? accountId}) async {
-    if (!await supported()) return;
+    if (!_isIOS()) return;
     try {
       await _channel.invokeMethod<void>('deleteOwnerKeys', {
         'accountId': ?accountId,
@@ -132,6 +142,7 @@ class FleetSecretCrypto {
     } on MissingPluginException {
       return;
     } on PlatformException catch (error) {
+      if (error.code == 'unsupported') return;
       throw FleetSecretCryptoException(_code(error.code));
     }
   }

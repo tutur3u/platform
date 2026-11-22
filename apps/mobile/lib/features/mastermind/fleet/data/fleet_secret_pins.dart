@@ -213,19 +213,26 @@ class FleetSecretPins {
   Future<void> forget(String machineId, {String? account}) =>
       _update((pins) => pins.remove(machineId), account: account);
 
-  /// Every user's pins on this device.
+  /// Every user's pins on this device. The names are copied first, so the
+  /// deletes never change a listing that is still being walked.
   Future<void> eraseAll() => _serial(() async {
-    final all = await _storage.readAll();
-    for (final name in all.keys) {
-      if (name.startsWith(keyPrefix)) await _storage.delete(key: name);
+    final names = (await _storage.readAll()).keys
+        .where((name) => name.startsWith(keyPrefix))
+        .toList();
+    for (final name in names) {
+      await _storage.delete(key: name);
     }
   });
 }
 
-/// This device only, readable only while unlocked, never backed up.
+/// The pins' Keychain items: this device only, readable only while unlocked,
+/// never backed up, in an account of their own. Raw storage on purpose:
+/// `deviceSecureStorage` keeps its items readable while the phone is locked
+/// and refuses the listing that erasing every user's pins needs.
 const fleetSecretStorage = FlutterSecureStorage(
   iOptions: IOSOptions(
     accessibility: KeychainAccessibility.unlocked_this_device,
+    accountName: 'tuturuuu.mastermind-secret',
   ),
 );
 
@@ -242,12 +249,17 @@ Future<void> eraseFleetSecretKeys({
 }) async {
   fleetSecretErasures.value++;
   FleetPairingAttempts.shared.clear();
+  final secrets = crypto ?? FleetSecretCrypto.instance;
   await Future.wait([
-    (crypto ?? FleetSecretCrypto.instance).deleteOwnerKeys().catchError(
-      (Object _) {},
-    ),
-    (pins ?? FleetSecretPins(userId: () => null)).eraseAll().catchError(
-      (Object _) {},
-    ),
+    secrets.deleteOwnerKeys().catchError((Object _) {}),
+    _erasePins(secrets, pins).catchError((Object _) {}),
   ]);
+}
+
+/// Pins can exist only on a platform with secret entry, so elsewhere the
+/// erase reads and lists nothing. The gate is the platform, never the
+/// plugin's capability answer: a failed check must not keep pins.
+Future<void> _erasePins(FleetSecretCrypto crypto, FleetSecretPins? pins) async {
+  if (!crypto.onSecretPlatform) return;
+  await (pins ?? FleetSecretPins(userId: () => null)).eraseAll();
 }
