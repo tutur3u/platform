@@ -231,7 +231,7 @@ export function QaBoard({
       >
         <QaComposer
           compact={pane && short}
-          foldedPlaceholder={t('composer_placeholder_short')}
+          compactPlaceholder={t('composer_placeholder_short')}
           meetingId={board.meetingId}
           label={t('composer_label')}
           placeholder={t('composer_placeholder')}

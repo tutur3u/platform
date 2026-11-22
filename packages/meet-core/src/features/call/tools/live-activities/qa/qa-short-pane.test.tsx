@@ -107,10 +107,12 @@ function Harness({
 }
 let controller: ReturnType<typeof useStageLayout>;
 
+const send = vi.fn();
 function mount() {
+  send.mockClear();
   let receive: (message: MeetRealtimeServerMessage) => void = () => {};
   const client = createLiveQaClient({
-    send: vi.fn(),
+    send,
     subscribe: (listener) => {
       receive = listener;
       return () => {};
@@ -152,37 +154,116 @@ it('scrolls the questions above a composer that is the last thing in the pane', 
   expect(footer.className).toContain('shrink-0');
 });
 
+const footer = () => composer().closest('form') as HTMLFormElement;
+const button = (name: string) => screen.getByRole('button', { name });
+
 it('keeps the full composer in a 480 pixel pane', () => {
-  body = { width: 600, height: 435 };
   mount();
   expect(composer().getAttribute('rows')).toBe('2');
-  expect(screen.getByRole('button', { name: t.attach_file })).toBeTruthy();
+  expect(composer().getAttribute('placeholder')).toBe(t.composer_placeholder);
+  expect(button(t.attach_file)).toBeTruthy();
+  expect(button(t.ask).textContent).toContain(t.ask);
+  expect(screen.getByText('0/400')).toBeTruthy();
   expect(screen.getByText('Second?')).toBeTruthy();
 });
 
-it('folds an idle composer to one line in a short pane and opens it on focus', () => {
-  body = { width: 600, height: 300 };
+it('is one row in a short pane with the field, Attach and Send always in view', () => {
+  body = SHORT;
   mount();
-  // Both questions stay in the list; the composer is a single line.
-  expect(screen.getByText('First question?')).toBeTruthy();
-  expect(screen.getByText('Second?')).toBeTruthy();
   expect(composer().getAttribute('rows')).toBe('1');
-  expect(composer().className).toContain('min-h-9');
-  // The one-line prompt is short, so it does not wrap in the folded field.
   expect(composer().getAttribute('placeholder')).toBe(
     t.composer_placeholder_short
   );
+  // No focus, no typing: every control is already there, as icons.
+  expect(button(t.attach_image)).toBeTruthy();
+  expect(button(t.attach_file)).toBeTruthy();
+  const send = button(t.ask);
+  expect(send.textContent).toBe('');
+  expect(send).toHaveProperty('disabled', true);
+  // The whole row is in one line.
+  const row = composer().closest('div.flex') as HTMLElement;
+  expect(row.contains(send)).toBe(true);
+  expect(row.contains(button(t.attach_file))).toBe(true);
+  // Both questions stay in the list.
+  expect(screen.getByText('First question?')).toBeTruthy();
+  expect(screen.getByText('Second?')).toBeTruthy();
+});
+
+it('never changes layout for focus, typing or Escape', () => {
+  body = SHORT;
+  mount();
+  const before = footer().outerHTML.replace(/disabled=""/g, '');
   fireEvent.focus(composer());
-  expect(composer().getAttribute('rows')).toBe('2');
-  expect(composer().getAttribute('placeholder')).toBe(t.composer_placeholder);
-  // A draft keeps it open when the person clicks elsewhere.
-  fireEvent.change(composer(), { target: { value: 'My question' } });
-  fireEvent.click(document.body);
-  expect(composer().getAttribute('rows')).toBe('2');
-  // With the draft gone, the next click outside folds it.
-  fireEvent.change(composer(), { target: { value: '' } });
-  fireEvent.click(document.body);
+  fireEvent.pointerDown(composer());
+  fireEvent.keyDown(composer(), { key: 'Escape' });
+  fireEvent.blur(composer());
   expect(composer().getAttribute('rows')).toBe('1');
+  expect(footer().outerHTML.replace(/disabled=""/g, '')).toBe(before);
+});
+
+it('keeps the row stable while a press lands on a card button', () => {
+  body = SHORT;
+  mount();
+  const node = composer();
+  const before = footer().outerHTML;
+  const answer = screen.getAllByRole('button', { name: t.answer })[0]!;
+  // What a mouse press does: pointerdown, focus moves, then the click.
+  fireEvent.pointerDown(answer);
+  fireEvent.focusIn(answer);
+  fireEvent.mouseDown(answer);
+  expect(composer()).toBe(node);
+  expect(footer().outerHTML).toBe(before);
+  fireEvent.click(answer);
+  // The card's own handler ran, and the composer is untouched.
+  expect(screen.getByPlaceholderText(t.answer_placeholder)).toBeTruthy();
+  expect(composer()).toBe(node);
+  expect(composer().getAttribute('rows')).toBe('1');
+  expect(footer().outerHTML).toBe(before);
+});
+
+it('fires the Attach and Send handlers from the compact row', async () => {
+  body = SHORT;
+  mount();
+  const click = vi
+    .spyOn(HTMLInputElement.prototype, 'click')
+    .mockImplementation(() => {});
+  fireEvent.click(button(t.attach_image));
+  fireEvent.click(button(t.attach_file));
+  expect(click).toHaveBeenCalledTimes(2);
+  click.mockRestore();
+  fireEvent.change(composer(), { target: { value: 'My question' } });
+  fireEvent.click(button(t.ask));
+  await waitFor(() =>
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'qa.ask', text: 'My question' })
+    )
+  );
+});
+
+it('lets the field grow to three lines and then scroll', () => {
+  body = SHORT;
+  mount();
+  expect(composer().className).toContain('min-h-9');
+  // 3 lines of 20px and 16px of padding, then it scrolls.
+  expect(composer().className).toContain('max-h-[4.75rem]');
+  expect(composer().className).toContain('overflow-y-auto');
+  fireEvent.change(composer(), { target: { value: 'a\nb\nc\nd\ne' } });
+  expect(composer().getAttribute('rows')).toBe('1');
+});
+
+it('announces the counter to assistive technology and badges it only near the limit', () => {
+  body = SHORT;
+  mount();
+  const described = composer().getAttribute('aria-describedby') ?? '';
+  expect(document.getElementById(described)?.className).toContain('sr-only');
+  const badge = () =>
+    [...footer().querySelectorAll('span.shrink-0')].find((node) =>
+      /\d+\/400/.test(node.textContent ?? '')
+    );
+  fireEvent.change(composer(), { target: { value: 'x'.repeat(10) } });
+  expect(badge()).toBeUndefined();
+  fireEvent.change(composer(), { target: { value: 'x'.repeat(330) } });
+  expect(badge()?.textContent).toBe('330/400');
 });
 
 it('keeps the controls mounted across the short-pane height', () => {
@@ -191,191 +272,44 @@ it('keeps the controls mounted across the short-pane height', () => {
   const wrapper = tabs.closest('div[class*="space-y-3"]') as HTMLElement;
   const list = screen.getByText('First question?').closest('ul')
     ?.parentElement as HTMLElement;
-  // In both sizes the controls live in the list's container.
   expect(list.contains(tabs)).toBe(true);
   expect(wrapper.className).toContain('sticky');
+  const field = composer();
   resize(SHORT);
   expect(screen.getByRole('tablist')).toBe(tabs);
   expect(list.contains(tabs)).toBe(true);
   expect(wrapper.className).not.toContain('sticky');
+  // The composer swaps its layout at the threshold and nowhere else.
+  expect(composer().getAttribute('rows')).toBe('1');
   resize(TALL);
   expect(screen.getByRole('tablist')).toBe(tabs);
   expect(wrapper.className).toContain('sticky');
+  expect(composer().getAttribute('rows')).toBe('2');
+  expect(field).toBeTruthy();
 });
 
 it('keeps the full composer in the full-screen dialog opened from a short pane', () => {
   body = SHORT;
   mount();
-  fireEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+  fireEvent.click(button('Full screen'));
   const dialog = screen.getByRole('dialog');
   const field = within(dialog).getByLabelText(t.composer_label);
   expect(field.getAttribute('rows')).toBe('2');
   expect(field.getAttribute('placeholder')).toBe(t.composer_placeholder);
-  const attach = within(dialog).getByRole('button', { name: t.attach_file });
-  expect(attach.parentElement?.className).not.toContain('hidden');
-});
-
-const attach = () => screen.getByRole('button', { name: t.attach_file });
-const rowHidden = () => attach().parentElement?.className.includes('hidden');
-
-it('opens on a press inside the form and lets an Attach click land', () => {
-  body = SHORT;
-  mount();
-  const click = vi
-    .spyOn(HTMLInputElement.prototype, 'click')
-    .mockImplementation(() => {});
-  expect(composer().getAttribute('rows')).toBe('1');
-  // Safari and iOS: the button takes a press, the field never gets a blur
-  // that could fold the row before the click.
-  fireEvent.pointerDown(attach());
-  expect(composer().getAttribute('rows')).toBe('2');
-  expect(rowHidden()).toBe(false);
-  fireEvent.click(attach());
-  expect(click).toHaveBeenCalledTimes(1);
-  expect(rowHidden()).toBe(false);
-  click.mockRestore();
-});
-
-it('never folds from anything inside the form', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  fireEvent.blur(composer(), { relatedTarget: null });
-  fireEvent.pointerUp(attach());
-  fireEvent.blur(attach(), { relatedTarget: null });
-  expect(composer().getAttribute('rows')).toBe('2');
-  // Moving between the field and its buttons keeps it open too.
-  fireEvent.blur(composer(), { relatedTarget: attach() });
-  fireEvent.focus(attach());
-  expect(composer().getAttribute('rows')).toBe('2');
-});
-
-it('folds on a click outside the form', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  expect(composer().getAttribute('rows')).toBe('2');
-  fireEvent.click(document.body);
-  expect(composer().getAttribute('rows')).toBe('1');
-});
-
-it('folds when focus moves to something outside the form', () => {
-  body = SHORT;
-  mount();
-  const outside = document.createElement('button');
-  document.body.append(outside);
-  fireEvent.focus(composer());
-  act(() => {
-    outside.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-  });
-  expect(composer().getAttribute('rows')).toBe('1');
-  outside.remove();
-});
-
-it('folds on Escape in the composer', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  fireEvent.keyDown(composer(), { key: 'Escape' });
-  expect(composer().getAttribute('rows')).toBe('1');
-});
-
-it('stays open while there is a draft, whatever happens outside', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  fireEvent.change(composer(), { target: { value: 'My question' } });
-  fireEvent.click(document.body);
-  fireEvent.keyDown(composer(), { key: 'Escape' });
-  expect(composer().getAttribute('rows')).toBe('2');
-});
-
-it('listens for clicks and focus outside only while open, and removes the same listeners', () => {
-  body = SHORT;
-  const add = vi.spyOn(document, 'addEventListener');
-  const remove = vi.spyOn(document, 'removeEventListener');
-  const watched = (spy: typeof add) =>
-    spy.mock.calls.filter(([type]) => type === 'click' || type === 'focusin');
-  mount();
-  const before = watched(add).length;
-  fireEvent.focus(composer());
-  const added = watched(add).slice(before);
-  // A click and a focusin, each in the capture phase.
-  expect(added.map(([type, , capture]) => [type, capture])).toEqual([
-    ['click', true],
-    ['focusin', true],
-  ]);
-  // The press itself is never watched: scrolling must not fold.
-  expect(add.mock.calls.some(([type]) => type === 'pointerdown')).toBe(false);
-  const removedBefore = watched(remove).length;
-  fireEvent.click(document.body);
-  const removed = watched(remove).slice(removedBefore);
   expect(
-    removed.map(([type, listener, capture]) => [type, listener, capture])
-  ).toEqual(
-    added.map(([type, listener, capture]) => [type, listener, capture])
-  );
-  // Unmounting while open removes them too.
-  fireEvent.focus(composer());
-  const beforeUnmount = watched(remove).length;
-  const reAdded = watched(add).slice(-2);
-  cleanup();
+    within(dialog).getByRole('button', { name: t.attach_file })
+  ).toBeTruthy();
   expect(
-    watched(remove)
-      .slice(beforeUnmount)
-      .map(([type, listener, capture]) => [type, listener, capture])
-  ).toEqual(
-    reAdded.map(([type, listener, capture]) => [type, listener, capture])
-  );
-  add.mockRestore();
-  remove.mockRestore();
+    within(dialog).getByRole('button', { name: t.ask }).textContent
+  ).toContain(t.ask);
 });
 
-it('adds no listeners and does not blur on Escape when the composer is not compact', () => {
-  body = TALL;
-  const add = vi.spyOn(document, 'addEventListener');
-  mount();
-  const before = add.mock.calls.length;
-  composer().focus();
-  fireEvent.focus(composer());
-  expect(
-    add.mock.calls
-      .slice(before)
-      .filter(([type]) => type === 'click' || type === 'focusin')
-  ).toEqual([]);
-  fireEvent.keyDown(composer(), { key: 'Escape' });
-  expect(document.activeElement).toBe(composer());
-  expect(composer().getAttribute('rows')).toBe('2');
-  add.mockRestore();
-});
-
-it('cancels an answer composer on Escape and keeps Escape for compact folding', () => {
-  body = TALL;
+it('keeps Escape for an answer composer', () => {
   mount();
   fireEvent.click(screen.getAllByRole('button', { name: t.answer })[0]!);
   const answer = screen.getByPlaceholderText(t.answer_placeholder);
   fireEvent.keyDown(answer, { key: 'Escape' });
   expect(screen.queryByPlaceholderText(t.answer_placeholder)).toBeNull();
-});
-
-it('does not fold on Escape while composing text', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  fireEvent.keyDown(composer(), { key: 'Escape', isComposing: true });
-  expect(composer().getAttribute('rows')).toBe('2');
-});
-
-it('lets a tap on a card button land: a press never folds, the click does', () => {
-  body = SHORT;
-  mount();
-  fireEvent.focus(composer());
-  const answerButton = screen.getAllByRole('button', { name: t.answer })[0]!;
-  fireEvent.pointerDown(answerButton);
-  // Nothing has moved yet, so the click reaches the card's own handler.
-  expect(composer().getAttribute('rows')).toBe('2');
-  fireEvent.click(answerButton);
-  expect(screen.getByPlaceholderText(t.answer_placeholder)).toBeTruthy();
 });
 
 it('scrolls a focused card below the sticky controls in a tall pane only', () => {

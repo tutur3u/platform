@@ -34,7 +34,7 @@ export function QaComposer({
   extra,
   autoFocus,
   compact = false,
-  foldedPlaceholder,
+  compactPlaceholder,
   onCancel,
   cancelLabel,
   onSubmit,
@@ -53,12 +53,13 @@ export function QaComposer({
   extra?: ReactNode;
   autoFocus?: boolean;
   /**
-   * A short pane folds an idle composer into one line so the questions keep
-   * the room; it opens on focus and stays open while there is a draft.
+   * A short pane gets one row: the field, Attach and Send always in view. The
+   * layout depends on the pane's height alone, never on focus or on what is
+   * typed, so nothing moves under a press.
    */
   compact?: boolean;
-  /** A one-line prompt for the folded state, where the full one would wrap. */
-  foldedPlaceholder?: string;
+  /** A one-line prompt for the compact row, where the full one would wrap. */
+  compactPlaceholder?: string;
   onCancel?: () => void;
   cancelLabel?: string;
   onSubmit: (text: string, attachmentIds: string[]) => void;
@@ -70,31 +71,6 @@ export function QaComposer({
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
-  // Focus or a press inside the form opens a folded composer. Nothing inside
-  // the form folds it, so a tap on Attach or Send always lands, on every
-  // platform. It folds only for what happens outside: a click, focus moving
-  // away, or Escape, and never while there is a draft or a file. A click, not
-  // a press: folding shrinks the footer and shifts the list, which must not
-  // happen under a touch scroll or before a tap on a card has landed.
-  const [open, setOpen] = useState(false);
-  const form = useRef<HTMLFormElement>(null);
-  const folded = compact && !open && !draft && files.length === 0;
-  // Becoming compact starts folded, unless the person is in the field.
-  useEffect(() => {
-    setOpen(compact && !!form.current?.contains(document.activeElement));
-  }, [compact]);
-  useEffect(() => {
-    if (!compact || !open) return;
-    const away = (event: Event) => {
-      if (!form.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener('click', away, true);
-    document.addEventListener('focusin', away, true);
-    return () => {
-      document.removeEventListener('click', away, true);
-      document.removeEventListener('focusin', away, true);
-    };
-  }, [compact, open]);
   const imageInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploaded = useRef(new Map<File, Upload>());
@@ -145,8 +121,6 @@ export function QaComposer({
       uploaded.current.clear();
       setDraft('');
       setFiles([]);
-      // Stay open while the field is still in use; fold once focus has left.
-      if (!form.current?.contains(document.activeElement)) setOpen(false);
     } catch {
       if (mounted.current) onUploadError('upload_failed');
     } finally {
@@ -154,84 +128,49 @@ export function QaComposer({
     }
   };
 
-  return (
-    <form
-      ref={form}
-      className="space-y-2"
-      onFocus={() => compact && setOpen(true)}
-      onPointerDownCapture={() => compact && setOpen(true)}
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
+  const counter = (
+    <span
+      id={counterId}
+      className={cn(
+        'text-muted-foreground text-xs tabular-nums',
+        compact ? 'sr-only' : 'ms-auto',
+        draft.length >= maxLength && 'text-dynamic-orange'
+      )}
     >
-      <div className="flex items-start gap-2.5">
-        {!folded && leading}
-        <div className="min-w-0 flex-1 space-y-2">
-          <label htmlFor={textId} className="sr-only">
-            {label}
-          </label>
-          <Textarea
-            id={textId}
-            value={draft}
-            maxLength={maxLength}
-            rows={folded ? 1 : 2}
-            autoFocus={autoFocus}
-            placeholder={
-              folded && foldedPlaceholder ? foldedPlaceholder : placeholder
+      <span aria-hidden="true" className={cn(compact && 'hidden')}>
+        {draft.length}/{maxLength}
+      </span>
+      <span className="sr-only">
+        {t('counter', { count: draft.length, max: maxLength })}
+      </span>
+    </span>
+  );
+  const chips = files.length ? (
+    <ul className="flex flex-wrap gap-1.5">
+      {files.map((file, index) => (
+        <li
+          key={`${file.name}-${index}`}
+          className="flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border bg-muted/40 ps-3 text-xs"
+        >
+          <FileText className="size-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{file.name}</span>
+          <ToolIconAction
+            icon={X}
+            label={t('remove_file', { name: file.name })}
+            className="size-8"
+            disabled={busy}
+            onClick={() =>
+              setFiles((current) =>
+                current.filter((_, position) => position !== index)
+              )
             }
-            aria-describedby={counterId}
-            className={cn(
-              'resize-none text-sm',
-              folded
-                ? 'h-9 min-h-9 overflow-hidden [field-sizing:fixed]'
-                : 'min-h-16'
-            )}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                void submit();
-              }
-              if (event.key === 'Escape' && onCancel) {
-                event.stopPropagation();
-                onCancel();
-              } else if (
-                event.key === 'Escape' &&
-                compact &&
-                !event.nativeEvent.isComposing
-              ) {
-                setOpen(false);
-                event.currentTarget.blur();
-              }
-            }}
           />
-          {files.length ? (
-            <ul className="flex flex-wrap gap-1.5">
-              {files.map((file, index) => (
-                <li
-                  key={`${file.name}-${index}`}
-                  className="flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full border bg-muted/40 ps-3 text-xs"
-                >
-                  <FileText className="size-3.5 shrink-0" />
-                  <span className="min-w-0 truncate">{file.name}</span>
-                  <ToolIconAction
-                    icon={X}
-                    label={t('remove_file', { name: file.name })}
-                    className="size-8"
-                    disabled={busy}
-                    onClick={() =>
-                      setFiles((current) =>
-                        current.filter((_, position) => position !== index)
-                      )
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      </div>
+        </li>
+      ))}
+    </ul>
+  ) : null;
+  const fileInputs = (
+    <>
       <input
         ref={imageInput}
         type="file"
@@ -253,40 +192,122 @@ export function QaComposer({
           event.target.value = '';
         }}
       />
-      <div
-        className={cn('flex flex-wrap items-center gap-1', folded && 'hidden')}
+    </>
+  );
+  const attach = canAttach ? (
+    <>
+      <ToolIconAction
+        icon={ImagePlus}
+        label={t('attach_image')}
+        disabled={busy || files.length >= MAX_FILES}
+        onClick={() => imageInput.current?.click()}
+      />
+      <ToolIconAction
+        icon={Paperclip}
+        label={t('attach_file')}
+        disabled={busy || files.length >= MAX_FILES}
+        onClick={() => fileInput.current?.click()}
+      />
+    </>
+  ) : null;
+  const field = (
+    <Textarea
+      id={textId}
+      value={draft}
+      maxLength={maxLength}
+      rows={compact ? 1 : 2}
+      autoFocus={autoFocus}
+      placeholder={
+        compact && compactPlaceholder ? compactPlaceholder : placeholder
+      }
+      aria-describedby={counterId}
+      className={cn(
+        'resize-none text-sm',
+        // One line that grows with the text to three, then scrolls.
+        compact ? 'max-h-[4.75rem] min-h-9 overflow-y-auto' : 'min-h-16'
+      )}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          void submit();
+        }
+        if (event.key === 'Escape' && onCancel) {
+          event.stopPropagation();
+          onCancel();
+        }
+      }}
+    />
+  );
+  const labelNode = (
+    <label htmlFor={textId} className="sr-only">
+      {label}
+    </label>
+  );
+  if (compact)
+    return (
+      <form
+        className="space-y-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
       >
-        {canAttach ? (
-          <>
-            <ToolIconAction
-              icon={ImagePlus}
-              label={t('attach_image')}
-              disabled={busy || files.length >= MAX_FILES}
-              onClick={() => imageInput.current?.click()}
-            />
-            <ToolIconAction
-              icon={Paperclip}
-              label={t('attach_file')}
-              disabled={busy || files.length >= MAX_FILES}
-              onClick={() => fileInput.current?.click()}
-            />
-          </>
-        ) : null}
+        {chips}
         {extra}
-        <span
-          id={counterId}
-          className={cn(
-            'ms-auto text-muted-foreground text-xs tabular-nums',
-            draft.length >= maxLength && 'text-dynamic-orange'
+        <div className="flex items-end gap-1">
+          <div className="min-w-0 flex-1">
+            {labelNode}
+            {field}
+          </div>
+          {draft.length > maxLength * 0.8 && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                'shrink-0 pb-2.5 text-muted-foreground text-xs tabular-nums',
+                draft.length >= maxLength && 'text-dynamic-orange'
+              )}
+            >
+              {draft.length}/{maxLength}
+            </span>
           )}
-        >
-          <span aria-hidden="true">
-            {draft.length}/{maxLength}
-          </span>
-          <span className="sr-only">
-            {t('counter', { count: draft.length, max: maxLength })}
-          </span>
-        </span>
+          {attach}
+          <Button
+            type="submit"
+            size="icon"
+            className="size-9 shrink-0 rounded-full pointer-coarse:size-11"
+            aria-label={submitLabel}
+            disabled={!ready}
+            aria-busy={busy || undefined}
+          >
+            <Send className="size-4" />
+          </Button>
+        </div>
+        {counter}
+        {fileInputs}
+      </form>
+    );
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
+      <div className="flex items-start gap-2.5">
+        {leading}
+        <div className="min-w-0 flex-1 space-y-2">
+          {labelNode}
+          {field}
+          {chips}
+        </div>
+      </div>
+      {fileInputs}
+      <div className="flex flex-wrap items-center gap-1">
+        {attach}
+        {extra}
+        {counter}
         {onCancel ? (
           <Button
             type="button"
