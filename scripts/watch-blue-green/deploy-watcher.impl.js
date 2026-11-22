@@ -490,7 +490,7 @@ async function handoffLegacyWatcherToTargetProject({
   const targetEnv = getMigrationTargetWatcherEnv({ env, rootDir });
 
   log.warn?.(
-    `Starting ${targetEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher to migrate the legacy ${LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME} Compose project.`
+    'Starting the target watcher to migrate the legacy Compose project.'
   );
 
   await startBlueGreenWatcherContainer(argv, {
@@ -2958,7 +2958,7 @@ function logActiveDeploymentDeferralOnce(
     return;
   }
 
-  log.info?.(`${message} (${describeActiveDeploymentConflict(conflict)}).`);
+  log.info?.(`${message}.`);
 }
 
 function hasSuccessfulDeploymentForCommit(deployments = [], commitHash) {
@@ -4151,7 +4151,7 @@ async function finalizeComposeProjectMigrationIfRequested({
 
   const handoffStartedAt = now();
   log.warn?.(
-    `Switching Docker proxy from ${migration.sourceProjectName} to ${migration.targetProjectName}; rollback threshold is ${deadlineMs}ms.`
+    `Switching the Compose project proxy; rollback threshold is ${deadlineMs}ms.`
   );
 
   try {
@@ -4221,7 +4221,7 @@ async function finalizeComposeProjectMigrationIfRequested({
     }
 
     log.error?.(
-      `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed; legacy proxy was restored: ${failureMessage}`
+      'Compose project proxy migration failed; the legacy proxy was restored.'
     );
 
     return {
@@ -4340,9 +4340,9 @@ async function cacheBlueGreenDeploymentImage({
       env: composeEnv,
       runCommand: run,
     });
-  } catch (error) {
+  } catch {
     log.warn?.(
-      `Unable to cache blue/green image ${imageTag} for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+      `Unable to cache blue/green image ${imageTag} for ${latestCommit.shortHash}.`
     );
     return null;
   }
@@ -5003,9 +5003,7 @@ async function runDeploymentRevertRequestIteration(
     );
 
     clearDeploymentRevertRequest({ fsImpl, paths });
-    log.error?.(
-      `Instant revert for ${latestCommit.shortHash} failed: ${error instanceof Error ? error.message : String(error)}`
-    );
+    log.error?.(`Instant revert for ${latestCommit.shortHash} failed.`);
 
     return attachRuntime(
       {
@@ -5254,9 +5252,7 @@ async function runPinnedDeploymentIteration(
       }
     );
 
-    log.error?.(
-      `Pinned rollback failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
-    );
+    log.error?.(`Pinned rollback failed for ${latestCommit.shortHash}.`);
 
     return attachRuntime(
       {
@@ -5762,7 +5758,7 @@ async function runDeployWatchIteration(
                 status: 'failed',
               });
               log.error?.(
-                `Queued parent-fallback platform deployment failed for ${parentDeploy.shortHash}: ${fbError instanceof Error ? fbError.message : String(fbError)}`
+                `Queued parent-fallback platform deployment failed for ${parentDeploy.shortHash}.`
               );
 
               return attachRuntime(
@@ -6019,7 +6015,7 @@ async function runDeployWatchIteration(
           });
 
           log.error?.(
-            `Queued platform deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+            `Queued platform deployment failed for ${latestCommit.shortHash}.`
           );
 
           return attachRuntime(
@@ -6229,7 +6225,7 @@ async function runDeployWatchIteration(
 
           if (!fb.success) {
             log.error?.(
-              `Blue/green parent-fallback reconciliation deployment failed for ${parentDeploy.shortHash}: ${fb.error instanceof Error ? fb.error.message : String(fb.error)}`
+              `Blue/green parent-fallback reconciliation deployment failed for ${parentDeploy.shortHash}.`
             );
 
             return attachRuntime(
@@ -6415,7 +6411,7 @@ async function runDeployWatchIteration(
           );
 
           log.error?.(
-            `Blue/green reconciliation deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+            `Blue/green reconciliation deployment failed for ${latestCommit.shortHash}.`
           );
 
           return attachRuntime(
@@ -6562,7 +6558,7 @@ async function runDeployWatchIteration(
 
         if (!sb.success) {
           log.error?.(
-            `Standby ${standbyRefreshCandidate.standbyColor} parent-fallback refresh failed for ${parentDeploy.shortHash}: ${sb.error instanceof Error ? sb.error.message : String(sb.error)}`
+            `Standby ${standbyRefreshCandidate.standbyColor} parent-fallback refresh failed for ${parentDeploy.shortHash}.`
           );
 
           if (instantRolloutRequest) {
@@ -6768,7 +6764,7 @@ async function runDeployWatchIteration(
         );
 
         log.error?.(
-          `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+          `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}.`
         );
 
         if (instantRolloutRequest) {
@@ -7032,7 +7028,7 @@ async function runDeployWatchIteration(
               });
             }
             log.error?.(
-              `Blue/green parent-fallback deployment failed for ${parentDeploy.shortHash}: ${fb.error instanceof Error ? fb.error.message : String(fb.error)}`
+              `Blue/green parent-fallback deployment failed for ${parentDeploy.shortHash}.`
             );
 
             return attachRuntime(
@@ -7389,7 +7385,7 @@ async function runDeployWatchIteration(
         );
 
         log.error?.(
-          `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
+          `Blue/green deployment failed for ${updatedHead.slice(0, 12)}.`
         );
         if (shouldUpdatePlatformProject) {
           await updatePlatformProjectStatus({
@@ -7484,9 +7480,7 @@ async function runDeployWatchIteration(
       });
     }
 
-    log.warn?.(
-      `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
-    );
+    log.warn?.(`Git polling failed on ${target.branch}.`);
 
     let latestCommit = null;
     try {

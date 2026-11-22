@@ -2741,8 +2741,8 @@ test('manual blue-green override cancels active build and records history', asyn
     writeDeploymentBuildLock(
       {
         command: 'bun serve:web:docker:bg',
-        commitHash: 'oldhash',
-        commitShortHash: 'old123',
+        commitHash: '0dd1230000000000000000000000000000000000',
+        commitShortHash: '0dd123',
         commitSubject: 'Old deployment',
         deploymentKind: 'promotion',
         lockToken: 'active-token',
@@ -2810,8 +2810,8 @@ test('manual blue-green override cancels active build and records history', asyn
 
     const history = JSON.parse(fs.readFileSync(paths.historyFile, 'utf8'));
     assert.equal(history[0].status, 'canceled');
-    assert.equal(history[0].commitShortHash, 'old123');
-    assert.match(history[0].cancellationReason, /old123/);
+    assert.equal(history[0].commitShortHash, '0dd123');
+    assert.match(history[0].cancellationReason, /0dd123/);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

@@ -1456,6 +1456,10 @@ the general paused commands and existing disabled jobs remain paused, including
 Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
+For E2E and deployment tooling, keep diagnostic output to the failing phase
+and validated metadata such as exit or HTTP status. Provider response bodies,
+subprocess messages, and lock command lines can carry credentials. Exercise CI
+logging with stubbed failures and verify the output without starting a runtime.
 
 ### SQL grant guard review exceptions
 

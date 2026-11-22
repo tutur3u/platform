@@ -119,6 +119,11 @@ The job runs on GitHub-hosted Ubuntu and installs Chromium with its Linux system
 
 Inspect the Smoke or Nightly step and its reports for browser acceptance. A successful report-only workflow can contain a failed job, and a provisioning failure does not prove that browser tests ran. The dependency image must copy every workspace manifest and file-backed dependency before its frozen install; the focused CI dependency-context test checks that inventory.
 
+The E2E launcher and image bundle log the failed phase and any available
+allowlisted OS code, exit status, or registry HTTP status. Registry response
+bodies and subprocess exception text can contain credentials and stay out of
+these diagnostics.
+
 The admitted job restores E2E-owned Bun and Chromium download caches using exact
 lockfile, platform and dependency inputs without fallback keys. Bun also includes
 its pinned version, workspace manifests and patches. Frozen dependency install

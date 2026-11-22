@@ -6,11 +6,28 @@ const { describe, it } = require('node:test');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   deploymentLockMatchesProcessCmdline,
+  describeActiveDeploymentConflict,
   isDeploymentBuildLockBlocking,
   readDeploymentBuildLock,
   tryInvalidateStaleDeploymentBuildLock,
   tryTerminateTimedOutDeploymentBuildLock,
 } = require('./build-lock.js');
+
+it('keeps lock identifiers in diagnostics and excludes private command and subject text', () => {
+  assert.equal(
+    describeActiveDeploymentConflict({
+      elapsedMs: 5000,
+      status: 'building',
+      lock: {
+        command: 'private command arguments',
+        commitShortHash: 'abc123',
+        commitSubject: 'private commit text',
+        ownerPid: 42,
+      },
+    }),
+    'status=building, pid=42, commit=abc123, elapsed=5s'
+  );
+});
 
 describe('deploymentLockMatchesProcessCmdline', () => {
   const lock = {

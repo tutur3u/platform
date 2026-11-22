@@ -967,10 +967,8 @@ async function processManagedInfrastructureProjects({
           postgresFactory,
           rootDir,
           runCommand,
-        }).catch((error) => {
-          log?.warn?.(
-            `Managed project proxy refresh failed: ${error instanceof Error ? error.message : String(error)}`
-          );
+        }).catch(() => {
+          log?.warn?.('Managed project proxy refresh failed.');
         });
 
         return results;

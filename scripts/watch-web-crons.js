@@ -1250,8 +1250,8 @@ async function main(argv = process.argv.slice(2)) {
   while (shouldContinue) {
     try {
       await runCronCycle({ intervalMs: args.intervalMs });
-    } catch (error) {
-      console.error(error instanceof Error ? error.message : error);
+    } catch {
+      console.error('Web cron polling cycle failed.');
     }
 
     if (args.once) {

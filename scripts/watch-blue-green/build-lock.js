@@ -658,16 +658,16 @@ function getActiveDeploymentConflict({
 }
 
 function describeActiveDeploymentConflict(conflict) {
-  const lock = conflict?.lock ?? {};
+  const { commitShortHash, ownerPid } = conflict?.lock ?? {};
   const details = [
-    `status=${conflict?.status ?? 'unknown'}`,
-    `source=${conflict?.source ?? 'unknown'}`,
-    lock.ownerPid ? `pid=${lock.ownerPid}` : null,
-    lock.command ? `command=${lock.command}` : null,
-    lock.deploymentKind ? `kind=${lock.deploymentKind}` : null,
-    lock.commitShortHash ? `commit=${lock.commitShortHash}` : null,
-    lock.commitSubject ? `subject=${lock.commitSubject}` : null,
-    conflict?.elapsedMs != null
+    conflict?.status === 'deploying' ? 'status=deploying' : null,
+    conflict?.status === 'building' ? 'status=building' : null,
+    Number.isSafeInteger(ownerPid) ? `pid=${ownerPid}` : null,
+    typeof commitShortHash === 'string' &&
+    /^[a-f0-9]{4,40}$/iu.test(commitShortHash)
+      ? `commit=${commitShortHash}`
+      : null,
+    Number.isFinite(conflict?.elapsedMs)
       ? `elapsed=${formatElapsedDuration(conflict.elapsedMs)}`
       : null,
   ].filter(Boolean);
