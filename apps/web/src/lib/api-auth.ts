@@ -598,9 +598,9 @@ export function withSessionAuth<T = unknown>(
       if (appSessionToken) {
         const appSessionVerification = await verifyConfiguredAppSessionRequest(
           request,
-          options.allowAppSessionAuth
+          options.allowAppSessionAuth,
+          routeContext?.params
         );
-
         if (!appSessionVerification.ok) return appSessionVerification.response;
         if (
           options.appSessionMfaMaxAgeSeconds !== undefined &&

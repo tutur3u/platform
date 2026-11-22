@@ -58,6 +58,7 @@ vi.mock('@/lib/app-coordination/external-app-bearer', () => ({
   rejectStaleExternalAppBearer: async () => null,
 }));
 
+const workspaceId = '22222222-2222-4222-8222-222222222222';
 const cmsAppSessionClaims: AppCoordinationTokenClaims = {
   aud: 'tuturuuu-api',
   email: 'editor@example.com',
@@ -77,9 +78,8 @@ const externalAppTokenClaims: AppCoordinationTokenClaims = {
   jti: 'external-app-token',
   scopes: ['external-projects:read'],
   target_app: 'yoola',
+  workspace_id: workspaceId,
 };
-
-const workspaceId = '22222222-2222-4222-8222-222222222222';
 
 function createPermissionsResult(permissions: string[], wsId: string) {
   const containsPermission = vi.fn(
@@ -290,7 +290,6 @@ describe('external project access auth dispatch', () => {
       claims: {
         ...externalAppTokenClaims,
         scopes: ['external-projects:manage'],
-        workspace_id: workspaceId,
       },
       ok: true,
     });
@@ -322,6 +321,7 @@ describe('external project access auth dispatch', () => {
       claims: {
         ...externalAppTokenClaims,
         scopes: ['external-projects:manage'],
+        workspace_id: undefined,
       },
       ok: true,
     });

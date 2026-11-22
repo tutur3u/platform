@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/auth/app-coordination', () => ({
       sub: 'user',
       target_app: 'yoola',
       scopes: ['external-projects:publish'],
+      workspace_id: wsId,
     },
   }),
 }));

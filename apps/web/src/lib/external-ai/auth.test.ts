@@ -77,6 +77,7 @@ describe('authenticateExternalAiRequest', () => {
         scopes: ['workspace:session', 'ai:use', 'tts:use'],
         sub: 'user-1',
         target_app: 'cybershield35',
+        workspace_id: workspaceId,
       },
       ok: true,
     });
@@ -102,6 +103,43 @@ describe('authenticateExternalAiRequest', () => {
         wsId: workspaceId,
       })
     );
+  });
+
+  it('rejects a token bound to another workspace before any lookup', async () => {
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: {
+        scopes: ['workspace:session', 'ai:use'],
+        sub: 'user-1',
+        target_app: 'cybershield35',
+        workspace_id: '77777777-7777-4777-8777-777777777777',
+      },
+      ok: true,
+    });
+
+    await expect(
+      authenticateExternalAiRequest(request())
+    ).rejects.toMatchObject({
+      code: 'invalid_api_key',
+      message: 'Token is not valid for this workspace',
+      status: 403,
+    });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects a workspace-session token without a bound workspace', async () => {
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: {
+        scopes: ['workspace:session', 'ai:use'],
+        sub: 'user-1',
+        target_app: 'cybershield35',
+      },
+      ok: true,
+    });
+
+    await expect(
+      authenticateExternalAiRequest(request())
+    ).rejects.toMatchObject({ code: 'invalid_api_key', status: 403 });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects requests without an external-app bearer token', async () => {
@@ -159,6 +197,7 @@ describe('authenticateExternalAiRequest', () => {
       scopes: ['workspace:session', 'ai:use', 'tts:use'],
       sub: 'user-1',
       target_app: 'cybershield35',
+      workspace_id: workspaceId,
     };
     mocks.verifyAppSessionRequest.mockReturnValue({ claims, ok: true });
 

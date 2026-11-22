@@ -8,6 +8,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR,
+  externalAppTokenAllowsWorkspace,
+} from '@/lib/app-coordination/external-app-workspace';
 
 const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';
@@ -94,6 +98,9 @@ export async function authenticateExternalAiRequest(
     throw invalidExternalCredential(
       'The external-app token is not authorized for a workspace session.'
     );
+  }
+  if (!externalAppTokenAllowsWorkspace(claims, workspaceId)) {
+    throw invalidExternalCredential(EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR);
   }
 
   const appId = claims.target_app;

@@ -23,6 +23,7 @@ import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
+import { rejectExternalAppTokenWorkspace } from '@/lib/app-coordination/external-app-workspace';
 
 const DRIVE_READ_SCOPE = 'workspace:drive:read';
 const DRIVE_WRITE_SCOPE = 'workspace:drive:write';
@@ -162,12 +163,12 @@ export async function requireExternalAppWorkspaceDriveAccess({
   }
 
   // A bearer bound to one workspace never opens another workspace's Drive.
-  const boundWorkspaceId = verification.claims.workspace_id;
-  if (
-    boundWorkspaceId !== undefined &&
-    boundWorkspaceId.toLowerCase() !== normalizedWorkspaceId.toLowerCase()
-  ) {
-    return accessError('Token is not valid for this workspace', 403);
+  const workspaceRejection = rejectExternalAppTokenWorkspace(
+    verification.claims,
+    normalizedWorkspaceId
+  );
+  if (workspaceRejection) {
+    return { ok: false as const, response: workspaceRejection };
   }
 
   if (!app.allowedWorkspaceIds.includes(normalizedWorkspaceId.toLowerCase())) {

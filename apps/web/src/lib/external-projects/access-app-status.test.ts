@@ -60,6 +60,7 @@ beforeEach(() => {
     scopes: ['external-projects:*'],
     sub: 'user-1',
     target_app: 'fysh',
+    workspace_id: wsId,
   });
   mocks.getExternalAppById.mockResolvedValue({
     allowedWorkspaceIds: [wsId],
@@ -121,6 +122,7 @@ describe('external-app bearer issuer re-check on CMS access', () => {
       scopes: ['external-projects:*'],
       sub: 'user-1',
       target_app: 'fysh',
+      workspace_id: wsId,
     });
 
     const access = await readAccess();
@@ -145,5 +147,57 @@ describe('external-app bearer issuer re-check on CMS access', () => {
     expect(access.ok).toBe(false);
     if (!access.ok) expect(access.response.status).toBe(403);
     expect(mocks.member).not.toHaveBeenCalled();
+  });
+});
+
+describe('external-app bearer workspace binding on CMS access', () => {
+  const otherWsId = '77777777-7777-4777-8777-777777777777';
+
+  it.each([
+    ['access', () => readAccess()],
+    [
+      'setup',
+      () => requireWorkspaceExternalProjectSetupAccess({ request, wsId }),
+    ],
+  ] as const)(
+    'denies a bearer bound to another workspace on %s',
+    async (_path, access) => {
+      mocks.claims.mockReturnValue({
+        email: 'editor@example.com',
+        iat: rotatedAtSeconds + 60,
+        scopes: ['external-projects:*'],
+        sub: 'user-1',
+        target_app: 'fysh',
+        workspace_id: otherWsId,
+      });
+
+      const result = await access();
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.response.status).toBe(403);
+        await expect(result.response.json()).resolves.toEqual({
+          error: 'Token is not valid for this workspace',
+        });
+      }
+      expect(mocks.member).not.toHaveBeenCalled();
+      expect(mocks.binding).not.toHaveBeenCalled();
+    }
+  );
+
+  it('denies an external-project bearer without a bound workspace', async () => {
+    mocks.claims.mockReturnValue({
+      email: 'editor@example.com',
+      iat: rotatedAtSeconds + 60,
+      scopes: ['external-projects:read'],
+      sub: 'user-1',
+      target_app: 'fysh',
+    });
+
+    const access = await readAccess();
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) expect(access.response.status).toBe(403);
+    expect(mocks.binding).not.toHaveBeenCalled();
   });
 });

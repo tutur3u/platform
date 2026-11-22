@@ -10,6 +10,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { rejectStaleExternalAppBearer } from './app-coordination/external-app-bearer';
+import { rejectExternalAppRouteWorkspace } from './app-coordination/external-app-workspace';
 import { isExternalAppClaims } from './app-coordination/reserved-app-names';
 import { getDefaultAppSessionVerificationOptions } from './api-auth-audiences';
 
@@ -54,14 +55,16 @@ export type ConfiguredAppSessionResult =
  * A bearer from an external app (no first-party session scope, no internal
  * target) is also checked against the app registry, so a disabled app or a
  * bearer issued before a secret rotation is refused here as on every other
- * external-app route.
+ * external-app route. When the route params carry `wsId`, such a bearer bound
+ * to another workspace is refused with 403.
  */
 export async function verifyConfiguredAppSessionRequest(
   request: Pick<NextRequest, 'headers' | 'url'>,
   allowAppSessionAuth:
     | true
     | StrictAppSessionAuthOptions
-    | readonly StrictAppSessionAuthOptions[]
+    | readonly StrictAppSessionAuthOptions[],
+  routeParams?: unknown
 ): Promise<ConfiguredAppSessionResult> {
   for (const verificationOptions of getAppSessionVerificationOptions(
     request,
@@ -75,10 +78,16 @@ export async function verifyConfiguredAppSessionRequest(
     if (verification.ok) {
       if (!isExternalAppClaims(verification.claims)) return verification;
 
-      const rejection = await rejectStaleExternalAppBearer(
-        (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
-        verification.claims
-      );
+      const admin = (await createAdminClient({
+        noCookie: true,
+      })) as TypedSupabaseClient;
+      const rejection =
+        (await rejectStaleExternalAppBearer(admin, verification.claims)) ??
+        (await rejectExternalAppRouteWorkspace({
+          admin,
+          claims: verification.claims,
+          params: routeParams,
+        }));
       return rejection ? { ok: false, response: rejection } : verification;
     }
   }

@@ -12,11 +12,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
-import {
-  PERSONAL_WORKSPACE_SLUG,
-  ROOT_WORKSPACE_ID,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -24,8 +20,11 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { validate as validateUUID } from 'uuid';
 import { rejectStaleExternalAppBearer } from '@/lib/app-coordination/external-app-bearer';
+import {
+  normalizeExternalAppWorkspaceId,
+  rejectExternalAppTokenWorkspace,
+} from '@/lib/app-coordination/external-app-workspace';
 import {
   getWorkspaceInviteStatus,
   type WorkspaceInvitationRecord,
@@ -89,60 +88,6 @@ type ExternalProjectAppTokenExchangeAuthorization =
       ok: false;
       status: 400 | 403 | 404 | 500;
     };
-
-function isWorkspaceHandleCandidate(value: string) {
-  return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
-}
-
-async function normalizeWorkspaceIdForUser({
-  admin,
-  userId,
-  wsId,
-}: {
-  admin: AdminDb;
-  userId: string;
-  wsId: string;
-}) {
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) {
-    return ROOT_WORKSPACE_ID;
-  }
-
-  if (resolvedWorkspaceId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const { data, error } = await admin
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id, type)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', userId)
-      .eq('workspace_members.type', 'MEMBER')
-      .maybeSingle();
-
-    if (error || !data?.id) {
-      throw new Error('Personal workspace not found');
-    }
-
-    return data.id;
-  }
-
-  if (validateUUID(resolvedWorkspaceId)) {
-    return resolvedWorkspaceId;
-  }
-
-  const handle = resolvedWorkspaceId.trim().toLowerCase();
-
-  if (!isWorkspaceHandleCandidate(handle)) {
-    return resolvedWorkspaceId;
-  }
-
-  const { data } = await admin
-    .from('workspaces')
-    .select('id')
-    .eq('handle', handle)
-    .maybeSingle();
-
-  return data?.id ?? resolvedWorkspaceId;
-}
 
 async function getPermissionsForUserId({
   userId,
@@ -277,7 +222,7 @@ export async function authorizeExternalProjectAppTokenExchange({
   let normalizedWorkspaceId: string;
 
   try {
-    normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+    normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
       admin,
       userId,
       wsId: workspaceId,
@@ -395,11 +340,17 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
     verification.claims
   );
   if (appRejection) return { ok: false as const, response: appRejection };
-  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+  const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
     wsId,
   });
+  const workspaceRejection = rejectExternalAppTokenWorkspace(
+    verification.claims,
+    normalizedWorkspaceId
+  );
+  if (workspaceRejection)
+    return { ok: false as const, response: workspaceRejection };
   const memberAuthorization = await authorizeLinkedWorkspaceMember({
     admin,
     userId: verification.claims.sub,
@@ -466,7 +417,7 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+  const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
     wsId,
@@ -558,13 +509,17 @@ export async function requireWorkspaceExternalProjectAccessWithAppToken({
     verification.claims
   );
   if (appRejection) return { ok: false as const, response: appRejection };
-  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+  const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
     wsId,
   });
-  if (tokenWorkspace && tokenWorkspace !== normalizedWorkspaceId)
-    return deny('Forbidden', 403);
+  const workspaceRejection = rejectExternalAppTokenWorkspace(
+    verification.claims,
+    normalizedWorkspaceId
+  );
+  if (workspaceRejection)
+    return { ok: false as const, response: workspaceRejection };
   const [workspacePermissions, rootPermissions] = await Promise.all([
     getPermissionsForUserId({
       admin,
@@ -671,7 +626,7 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+  const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
     wsId,
@@ -1017,7 +972,7 @@ export async function requireWorkspaceExternalProjectMemberBootstrapAccess({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+  const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
     wsId,

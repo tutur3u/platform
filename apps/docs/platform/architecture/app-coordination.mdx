@@ -256,8 +256,24 @@ not revoke, so that one family survives the rotation.
 
 A bearer counts as an
 external app's when it lacks `internal-app:session` and its `target_app` is not
-a reserved internal app name. Coverage:
+a reserved internal app name.
+
+An external-app bearer acts only on the workspace it was issued for. Each of
+these routes resolves the route workspace (UUID, handle or `personal`) and
+answers a bearer whose `workspace_id` names another workspace with `403`
+`Token is not valid for this workspace`. The exchange binds every
+`workspace:session` and external-project bearer to the workspace it
+authorized, so such a bearer without `workspace_id` is refused the same way.
+A bearer issued for other scopes without `workspace:session` carries no
+workspace; it reaches only the app's linked workspaces where the user is a
+direct `MEMBER`. Request `workspace:session` with a `workspaceId` to bind it.
+The check lives in `apps/web/src/lib/app-coordination/external-app-workspace.ts`.
+
+Coverage:
 `apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
+`apps/web/src/lib/app-coordination/external-app-workspace.test.ts`,
+`apps/web/src/lib/external-apps/workspace-binding.test.ts`,
+`apps/web/src/lib/api-auth-app-session-workspace.test.ts`,
 `apps/web/src/lib/external-projects/access-app-status.test.ts`,
 `apps/web/src/lib/external-apps/live-app-access.test.ts`,
 `apps/web/src/lib/external-apps/workspace-drive.test.ts`,

@@ -5,21 +5,19 @@ import {
 import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  MAX_EMAIL_LENGTH,
-  PERSONAL_WORKSPACE_SLUG,
-  ROOT_WORKSPACE_ID,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
+import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   type PermissionsResult,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
+import {
+  normalizeExternalAppWorkspaceId,
+  rejectExternalAppTokenWorkspace,
+} from '@/lib/app-coordination/external-app-workspace';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import { MEMBER_DEFAULT_TYPE } from './workspace-members-constants';
 import { normalizeWorkspaceMembers } from './workspace-members-model';
@@ -62,60 +60,6 @@ function hasScope(scopes: string[], requiredScope: RequiredScope) {
     (scope) =>
       scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1))
   );
-}
-
-function isWorkspaceHandleCandidate(value: string) {
-  return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
-}
-
-async function normalizeWorkspaceIdForUser({
-  admin,
-  userId,
-  wsId,
-}: {
-  admin: AdminDb;
-  userId: string;
-  wsId: string;
-}) {
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) {
-    return ROOT_WORKSPACE_ID;
-  }
-
-  if (resolvedWorkspaceId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const { data, error } = await admin
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id, type)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', userId)
-      .eq('workspace_members.type', 'MEMBER')
-      .maybeSingle();
-
-    if (error || !data?.id) {
-      throw new Error('Personal workspace not found');
-    }
-
-    return data.id;
-  }
-
-  if (validateUUID(resolvedWorkspaceId)) {
-    return resolvedWorkspaceId;
-  }
-
-  const handle = resolvedWorkspaceId.trim().toLowerCase();
-
-  if (!isWorkspaceHandleCandidate(handle)) {
-    return resolvedWorkspaceId;
-  }
-
-  const { data } = await admin
-    .from('workspaces')
-    .select('id')
-    .eq('handle', handle)
-    .maybeSingle();
-
-  return data?.id ?? resolvedWorkspaceId;
 }
 
 function accessError(message: string, status: 400 | 401 | 403 | 500) {
@@ -161,13 +105,21 @@ export async function requireExternalAppWorkspaceMembersAccess({
 
   let normalizedWorkspaceId: string;
   try {
-    normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+    normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
       admin,
       userId: verification.claims.sub,
       wsId,
     });
   } catch {
     return accessError('Forbidden', 403);
+  }
+
+  const workspaceRejection = rejectExternalAppTokenWorkspace(
+    verification.claims,
+    normalizedWorkspaceId
+  );
+  if (workspaceRejection) {
+    return { ok: false as const, response: workspaceRejection };
   }
 
   if (!app.allowedWorkspaceIds.includes(normalizedWorkspaceId.toLowerCase())) {
