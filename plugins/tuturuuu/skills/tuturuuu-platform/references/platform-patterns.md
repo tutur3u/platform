@@ -372,6 +372,10 @@ protocol and its explicitly in-memory regression boundary.
 
 ## Routes, Auth, And API Boundaries
 
+- Bind the Worker global fetch to `globalThis` when storing it as a
+  dependency or client method. Workerd rejects a call with the dependency
+  object as its receiver, even when Node-based mocks accept it. Use the
+  receiver-sensitive tests and the `fetch-receiver` gate to check the adapter.
 - Dashboard routes should stay thin server gates when the UI needs search,
   sorting, pagination, explorer state, or frequent mutation.
 - Protected workspace/user CRUD belongs behind `apps/web` API routes and

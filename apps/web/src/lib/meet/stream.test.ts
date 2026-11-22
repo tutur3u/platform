@@ -87,6 +87,7 @@ function createMeetStreamAdminMock({
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 describe('createCloudflareStreamLiveInputBody', () => {
@@ -119,6 +120,29 @@ describe('createCloudflareStreamLiveInputBody', () => {
 });
 
 describe('CloudflareStreamClient', () => {
+  it('updates a live input through the Worker fetch receiver', async () => {
+    const workerFetch = vi.fn(function (this: typeof globalThis) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(
+        Response.json({ success: true, result: { uid: 'live-input-1' } })
+      );
+    });
+    vi.stubGlobal('fetch', workerFetch);
+    const client = new CloudflareStreamClient({
+      accountId: 'account-1',
+      apiBaseUrl: 'https://api.example.test/client/v4',
+      apiToken: 'stream-token',
+    });
+
+    await expect(
+      client.updateLiveInput('live-input-1', { enabled: false })
+    ).resolves.toMatchObject({ uid: 'live-input-1' });
+    expect(workerFetch).toHaveBeenCalledExactlyOnceWith(
+      'https://api.example.test/client/v4/accounts/account-1/stream/live_inputs/live-input-1',
+      expect.objectContaining({ method: 'PUT' })
+    );
+  });
+
   it('creates a Stream live input with account-scoped bearer auth', async () => {
     const requests: Array<{
       body: unknown;

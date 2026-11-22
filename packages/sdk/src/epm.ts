@@ -5,6 +5,7 @@ import {
   NetworkError,
   ValidationError,
 } from './errors';
+import { bindGlobalFetch } from './fetch-receiver';
 import type {
   EpmAssetPayload,
   EpmAssetUpdatePayload,
@@ -40,7 +41,6 @@ import type {
   YoolaExternalProjectSectionLoadingItem,
 } from './types';
 import { externalProjectDeliveryOptionsSchema } from './types';
-
 function absolutizeUrl(baseUrl: string, value: string | null | undefined) {
   if (value === '' || value == null) {
     return value ?? null;
@@ -489,7 +489,7 @@ export class EpmClient {
   constructor(config: EpmClientConfig = {}) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || 'https://tuturuuu.com/api/v1';
-    this.fetchImpl = config.fetch || globalThis.fetch;
+    this.fetchImpl = bindGlobalFetch(config.fetch);
     this.timeout = config.timeout || 30000;
     this.sync = {
       apply: (workspaceId, manifest, options = {}) =>

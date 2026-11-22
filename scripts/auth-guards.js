@@ -1,5 +1,5 @@
 /**
- * Static auth and data-exposure guards. `bun check` always runs them;
+ * Static server runtime, auth and data-exposure guards. `bun check` runs them;
  * `check:changed` runs them when app or package source changes. The public
  * schema guard also runs for migration, allowlist and type changes.
  */
@@ -8,6 +8,11 @@ const AUTH_GUARDS = [
     name: 'server-console',
     script: 'scripts/check-server-console.js',
     summary: 'Server logs use native console methods',
+  },
+  {
+    name: 'fetch-receiver',
+    script: 'scripts/check-fetch-receiver.js',
+    summary: 'Worker route and SDK fetch dependencies keep their receiver',
   },
   {
     name: 'internal-app-auth',

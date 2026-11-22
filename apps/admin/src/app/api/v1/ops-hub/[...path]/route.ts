@@ -22,7 +22,7 @@ async function handle(request: Request) {
       gatewaySecret: process.env.OPS_HUB_GATEWAY_SECRET,
       allowedUserIds: process.env.OPS_HUB_ALLOWED_USER_IDS,
     }),
-    fetch,
+    fetch: globalThis.fetch.bind(globalThis),
   });
 }
 

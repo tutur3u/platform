@@ -145,6 +145,12 @@ envelope, decryption failure, or invalid credential. A separate
 HTTP status. A guard rejection such as `offline-download-inactive` is emitted
 before the gateway and applies to the marked bulk request.
 
+An `upstream-fetch` diagnostic follows successful session verification and
+credential loading. Check the fetch adapter under workerd before changing
+routing. Calling an unbound global `fetch` as `deps.fetch(...)` throws
+`Illegal invocation` before any network request. Bind the global to
+`globalThis` when injecting it and keep the receiver-sensitive route test.
+
 ## Smoke checks
 
 ```bash

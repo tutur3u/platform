@@ -93,6 +93,7 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'oxfmt',
     'oxlint',
     'server-console',
+    'fetch-receiver',
     'internal-app-auth',
     'satellite-cookie-auth',
     'browser-session-surface',

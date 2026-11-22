@@ -146,7 +146,10 @@ export class CloudflareStreamClient {
         process.env.CLOUDFLARE_API_TOKEN,
       'CLOUDFLARE_STREAM_API_TOKEN or CLOUDFLARE_API_TOKEN'
     );
-    this.fetchImpl = options.fetch ?? fetch;
+    this.fetchImpl =
+      options.fetch && options.fetch !== globalThis.fetch
+        ? options.fetch
+        : globalThis.fetch.bind(globalThis);
   }
 
   private async request(path: string, init: RequestInit) {

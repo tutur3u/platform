@@ -35,6 +35,7 @@ import {
   ValidationError,
 } from './errors';
 import { ExternalProjectsClient } from './external-projects';
+import { bindGlobalFetch } from './fetch-receiver';
 import type {
   AnalyticsResponse,
   BatchShareResponse,
@@ -819,12 +820,11 @@ export class TuturuuuClient {
    * ```
    */
   constructor(config?: string | TuturuuuClientConfig) {
-    // Support both string API key and config object
     if (typeof config === 'string') {
       this.apiKey = config;
       this.baseUrl = 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
-      this.fetch = globalThis.fetch;
+      this.fetch = globalThis.fetch.bind(globalThis);
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     } else if (config) {
       this.apiKey = config.apiKey || getEnvValue('TUTURUUU_API_KEY');
@@ -833,7 +833,7 @@ export class TuturuuuClient {
         getEnvValue('TUTURUUU_BASE_URL') ||
         'https://tuturuuu.com/api/v1';
       this.timeout = config.timeout || 30000;
-      this.fetch = config.fetch || globalThis.fetch;
+      this.fetch = bindGlobalFetch(config.fetch);
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry };
     } else {
       // Auto-load from environment variables
@@ -841,7 +841,7 @@ export class TuturuuuClient {
       this.baseUrl =
         getEnvValue('TUTURUUU_BASE_URL') || 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
-      this.fetch = globalThis.fetch;
+      this.fetch = globalThis.fetch.bind(globalThis);
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     }
 

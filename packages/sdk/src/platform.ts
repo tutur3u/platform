@@ -70,6 +70,7 @@ import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { taskDescriptionYjsStateToBase64 } from '@tuturuuu/utils/task-description-codec';
 import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
+import { bindGlobalFetch } from './fetch-receiver';
 import { CalendarClient } from './platform-calendar';
 import { DevboxesClient } from './platform-devbox';
 import { getInfrastructureOrigin } from './platform-devbox-fleet';
@@ -796,7 +797,7 @@ export class TuturuuuUserClient {
       config.financeBaseUrl ?? inferFinanceBaseUrl(config.baseUrl)
     );
     this.expiresAt = config.expiresAt;
-    this.fetchImpl = config.fetch || globalThis.fetch;
+    this.fetchImpl = bindGlobalFetch(config.fetch);
     this.onSessionRefresh = config.onSessionRefresh;
     this.refreshToken = config.refreshToken;
     this.calendar = new CalendarClient(this);
@@ -811,7 +812,6 @@ export class TuturuuuUserClient {
     this.users = new UsersClient(this);
     this.workspaces = new WorkspacesClient(this);
   }
-
   private shouldRefreshSession() {
     if (!this.refreshToken || !this.expiresAt) return false;
     return this.expiresAt * 1000 <= Date.now() + SESSION_REFRESH_SKEW_MS;
