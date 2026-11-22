@@ -70,8 +70,12 @@ At runtime, configure `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the same project as the build and
 supply `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` through the
 Worker secret store. Verify they match the intended tier and coordinate the
-app-session signing key with the issuer. Provide the existing proxy rate-limit
-store through `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+app-session signing key with the issuer. Those four bindings are required:
+without any of them the Worker answers 503 before loading routes.
+`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are optional. Without
+them the API proxy rate limit fails open, as in Chat, the edge abuse guard
+still applies, and the Worker logs one warning per isolate naming the missing
+bindings. Provision an Upstash store to restore the per-app proxy limit.
 The route table and central API
 origin come from the sealed production profile. The Worker has no scheduled
 triggers, queues, storage bindings or app-origin retry loop.
