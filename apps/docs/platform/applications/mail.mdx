@@ -678,6 +678,35 @@ warm-up and excluded. Autosave timers are frozen so saves are not part of the
 workload. The idle rows are a control: a ratio far from 1.00 means the runs are not
 comparable. Layout shift is not measured and must be checked in a real browser.
 
+## Mail frontend observability
+
+Wave 1 Mail uses `observability.enabled: true` and `head_sampling_rate: 1` in
+staging and production. After `cf deploy --prebuilt` activates the version,
+CI polls settings with GET every five seconds for up to 60 seconds, retrying
+failed reads inside that bound. Both values must match before CI accepts the
+release. If the emitted Build Output does not declare these values, CI refuses
+before deploying.
+
+For a manual production release, publish the qualified artifact with the
+[strict Void publisher](/build/development-tools/cf-cli-wrangler-parity#void-framework-app-publisher).
+Version uploads leave script settings as they are. Assign the uploaded version
+with the captured serving version and the expected settings.
+
+```sh
+node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-mail \
+  --version "$(jq -er .versionId publish.json)" \
+  --expect-current "$(jq -er .previousVersionId publish.json)" \
+  --expect-observability '{"enabled":true,"head_sampling_rate":1}'
+```
+
+If CI times out on settings readback, the new version is confirmed active at 100%. Keep
+it in place and treat the mismatch as a separate settings incident. After a CI
+timeout or failed manual readback, confirm the active version and current settings.
+Obtain the release authority's ACK for the account, Worker and settings change.
+Send `PATCH /accounts/{account_id}/workers/scripts/tuturuuu-mail/script-settings`
+with `observability.enabled: true` and `observability.head_sampling_rate: 1`,
+preserving other observability fields. Confirm both values with GET before acceptance.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.

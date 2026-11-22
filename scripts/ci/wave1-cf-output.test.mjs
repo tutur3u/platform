@@ -70,7 +70,7 @@ test('multi-chunk Wave-1 emit passes cf Build Output inspection', async (t) => {
       'utf8'
     )
   );
-  assert.equal(worker.observability?.headSamplingRate, 0.05);
+  assert.equal(worker.observability?.headSamplingRate, 1);
   assert.equal(worker.observability?.head_sampling_rate, undefined);
   for (const name of Object.keys(worker.manifest.modules)) {
     assert.ok(
@@ -190,6 +190,10 @@ test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) =>
       'utf8'
     )
   );
+  assert.deepEqual(worker.observability, {
+    enabled: true,
+    headSamplingRate: 0.05,
+  });
   assert.equal(worker.manifest.mainModule, 'assets/index-abc12345.js');
   assert.deepEqual(Object.keys(worker.manifest.modules).sort(), [
     'assets/chunk-xyz98765.js',

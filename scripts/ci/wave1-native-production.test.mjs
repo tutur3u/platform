@@ -11,6 +11,7 @@ import {
   setup,
   sha,
 } from './wave1-native-production-test-helper.mjs';
+import { productionFailureMessage } from './wave1-native-upload-error.mjs';
 
 const require = createRequire(import.meta.url);
 const { fixture } = require('./wave1-native-test-fixture.cjs');
@@ -27,11 +28,49 @@ test('admitted private upload keeps topology unchanged and captures rollback', a
   const p = setup(t);
   const result = await p.run();
   assert.equal(p.state.writes, 1);
+  assert.equal(p.state.settingsReads, 1);
   assert.equal(result.state, 'accepted-private');
   assert.equal(result.versionId, newId);
   assert.deepEqual(result.rollback.versions, [
     { version_id: oldId, percentage: 100 },
   ]);
+});
+
+test('Mail production acceptance reads full sampling with the named read credential', async (t) => {
+  const p = setup(t, { app: 'mail' });
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.settingsReads, 1);
+  assert.equal(p.state.settingsWaitMs, 0);
+});
+
+test('Mail production accepts matching settings after a null read', async (t) => {
+  const p = setup(t, { app: 'mail' });
+  p.state.settingsLagReads = 1;
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.settingsReads, 2);
+  assert.equal(p.state.settingsWaitMs, 5_000);
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.active, newId);
+});
+
+test('Mail production reports persistent settings drift after activation', async (t) => {
+  const p = setup(t, { app: 'mail' });
+  p.state.scriptSettings = {
+    observability: { enabled: false, head_sampling_rate: 1 },
+  };
+  await assert.rejects(p.run(), (error) => {
+    assert.match(
+      productionFailureMessage(error),
+      /tuturuuu-mail script-settings check timed out after 12 attempts \(expected enabled=true, head_sampling_rate=1; last observed enabled=false, head_sampling_rate=1\)\. The new version is confirmed active at 100%\. Treat any settings mismatch as a separate settings incident\. Resolve it with a release-authority-ACKed settings PATCH/
+    );
+    return true;
+  });
+  assert.equal(p.state.settingsReads, 12);
+  assert.equal(p.state.settingsWaitMs, 55_000);
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.active, newId);
 });
 
 for (const [name, mutate] of [
@@ -166,6 +205,7 @@ test('matching active version reconciles without another upload', async (t) => {
   p.state.active = newId;
   p.state.prior = true;
   const result = await p.run();
+  assert.equal(p.state.settingsReads, 1);
   assert.equal(result.state, 'accepted-private');
   assert.equal(result.reconciled, true);
   assert.ok(
@@ -462,6 +502,7 @@ test('scriptless ACME exclusion is not a Worker serving attachment', async (t) =
   const p = setup(t);
   p.state.scriptlessAcme = true;
   const result = await p.run();
+  assert.equal(p.state.settingsReads, 1);
   assert.equal(result.state, 'accepted-private');
   assert.equal(p.state.writes, 1);
 });

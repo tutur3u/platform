@@ -12,6 +12,46 @@ const {
   sha,
 } = require('./wave1-native-publication-harness.cjs');
 
+test('Mail staging acceptance reads full sampling with the staging credential', async (t) => {
+  const p = await publisher(t, 'mail');
+  await p.run();
+  assert.equal(p.state.settingsReads, 1);
+  assert.equal(p.state.settingsWaitMs, 0);
+  const record = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'mail-staging-publication.json'), 'utf8')
+  );
+  assert.equal(record.state, 'activated');
+});
+
+test('Mail staging accepts matching settings after a null read', async (t) => {
+  const p = await publisher(t, 'mail');
+  p.state.settingsLagReads = 1;
+  await p.run();
+  assert.equal(p.state.settingsReads, 2);
+  assert.equal(p.state.settingsWaitMs, 5_000);
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.active, newId);
+});
+
+test('Mail staging times out on persistent settings drift after activation', async (t) => {
+  const p = await publisher(t, 'mail');
+  p.state.scriptSettings = {
+    observability: { enabled: true, head_sampling_rate: 0.05 },
+  };
+  await assert.rejects(p.run(), {
+    message:
+      /tuturuuu-mail-wave1-staging script-settings check timed out after 12 attempts \(expected enabled=true, head_sampling_rate=1; last observed enabled=true, head_sampling_rate=0\.05\)\. The new version is confirmed active at 100%\. Treat any settings mismatch as a separate settings incident\. Resolve it with a release-authority-ACKed settings PATCH/,
+  });
+  assert.equal(p.state.settingsReads, 12);
+  assert.equal(p.state.settingsWaitMs, 55_000);
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.state.active, newId);
+  const record = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'mail-staging-publication.json'), 'utf8')
+  );
+  assert.equal(record.state, 'uploaded');
+});
+
 async function assertStopped(p, main) {
   await assert.rejects(() => (main ? main(p.options) : p.run()));
   assert.equal(
@@ -295,7 +335,7 @@ test('a new publication uses one upload and bounded ledger/control observations'
   const p = await publisher(t);
   await p.run();
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.reads, 6);
+  assert.equal(p.state.reads, 7);
   assert.equal(p.state.flagReads, 2);
   assert.equal(p.state.admissionReads, 2);
   assert.equal(p.getLedger().entries.length, 1);

@@ -224,6 +224,11 @@ async function inspect(
   verify(input.appRoot, app, environment, sourceSha);
 }
 
+/** The Worker config the Wave-1 emitter writes into its Build Output. */
+export function wave1WorkerConfig(appRoot, app, environment, sha) {
+  return buildInput(appRoot, app, environment, sha).workerConfig;
+}
+
 export async function emitWave1Output({
   appRoot,
   app,

@@ -104,6 +104,8 @@ function fixture(t, policy) {
     'scripts/ci/wave1-ingress-policies.mjs',
     'scripts/native-cutover/route-pattern.mjs',
     'scripts/wave1-staging/readback-probes.mjs',
+    'scripts/ci/wave1-native-emitted-observability.mjs',
+    'scripts/ci/wave1-native-script-settings.mjs',
     'scripts/ci/wave1-native-upload-error.mjs',
     'scripts/ci/wave1-native-upload-limits.mjs',
     'scripts/ci/wave1-native-admission.mjs',

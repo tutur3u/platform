@@ -432,6 +432,29 @@ add `--expect-before-absent`: the endpoint must answer 404 before the move
 (recorded as `absent`), and any served build or other error stops it. cf also
 refuses an upload whose required secrets are missing on the target Worker.
 
+`cf workers versions create --prebuilt` uploads a version without applying
+script settings. `assign` can verify existing observability after traffic
+settles with `--expect-observability <json>`. It sends one GET to
+`/accounts/{account}/workers/scripts/{worker}/script-settings` using
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` and fails on drift or missing
+values. Workflows omit this opt-in flag.
+
+Wave 1 staging and production take the expected settings from the Build Output
+the emitter writes for the artifact being published. When that output declares
+no observability (the dedicated Calendar emitter), the deploy does not manage
+script settings and CI logs that the check is skipped. When the app profile
+declares observability and the emitted output drops or alters it, CI refuses
+before any deploy with a build-config mismatch.
+
+After `cf deploy --prebuilt` activates a version, CI polls script settings with
+GET every five seconds for up to 60 seconds. A non-OK or failed read counts as
+an attempt and is retried inside the same bound. Both `enabled` and
+`head_sampling_rate` must match the emitted values. Mail uses `true` and `1`.
+Other Wave 1 apps emit `true` and `0.05`. On timeout the error names the Worker,
+attempt count and last HTTP status or observed values, and states that the new
+version is confirmed active at 100%. Keep it in place and resolve the separate
+settings incident with a release-authority-ACKed settings PATCH. See the [Mail frontend observability runbook](/platform/applications/mail#mail-frontend-observability).
+
 ### Durable Object lifecycle
 
 A Worker created with tag `migrations` keeps them. Self-hosted classes are

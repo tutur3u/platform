@@ -18,6 +18,35 @@ export const releaseRecipes = Object.fromEntries(
     return [app, recipe];
   })
 );
+export function observabilityFor(app) {
+  return {
+    ...(profiles.apps[app]?.observability ?? {
+      enabled: true,
+      head_sampling_rate: 0.05,
+    }),
+  };
+}
+
+export function assertScriptObservability(worker, expected, response) {
+  assert.equal(
+    response?.success,
+    true,
+    `${worker} script-settings readback failed`
+  );
+  const actual = response.result?.observability;
+  assert.ok(
+    actual,
+    `${worker} script-settings readback is missing observability`
+  );
+  for (const field of ['enabled', 'head_sampling_rate']) {
+    assert.equal(
+      actual[field],
+      expected[field],
+      `${worker} script-settings readback mismatch for observability.${field} (expected ${expected[field]}, got ${actual[field] ?? 'missing'})`
+    );
+  }
+}
+
 function webProfileFor(environment) {
   assert.equal(environment, 'staging', 'Web publishes to staging only');
   const web = profiles.webStaging;
@@ -84,7 +113,7 @@ function webPublicationConfig(base, profile, { main, assets, sourceSha }) {
     routes: [],
     secrets: { required: profile.secrets },
     vars: { ...web.vars, WEB_STAGING_SOURCE_SHA: sourceSha },
-    observability: { enabled: true, head_sampling_rate: 0.05 },
+    observability: observabilityFor(profile.app),
   };
   assertStagingIsolation(config);
   return config;
@@ -260,7 +289,7 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
     routes: [],
     secrets: { required: profile.secrets },
     vars: { ...vars },
-    observability: { enabled: true, head_sampling_rate: 0.05 },
+    observability: observabilityFor(profile.app),
   };
   // Admitted source services (only the shared abuse guard) publish as emitted.
   const services = recipe.cf.admittedSourceServices ?? [];

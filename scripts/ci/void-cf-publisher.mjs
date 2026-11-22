@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCfVersionId, VERSION_ID } from './cf-build-output-publisher.mjs';
 import { wave1CfPackagePath } from './wave1-cf-output.mjs';
+import { assertScriptObservability } from './wave1-native-profile.mjs';
 
 // Publishes cf Build Output from `void-cf-output.mjs` as a version with no
 // traffic, proves the uploaded bindings, then moves traffic only when the
@@ -361,11 +362,49 @@ export function publish(
   return { worker, versionId, previousVersionId: live.versionId, strict };
 }
 
+function prepareObservabilityCheck(
+  worker,
+  expectation,
+  { env = process.env, fetchImpl = fetch }
+) {
+  const expected = JSON.parse(expectation);
+  const rate = expected?.head_sampling_rate;
+  assert.ok(
+    typeof expected?.enabled === 'boolean' &&
+      Number.isFinite(rate) &&
+      rate >= 0 &&
+      rate <= 1,
+    '--expect-observability requires a boolean enabled and head_sampling_rate from 0 to 1'
+  );
+  const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_API_TOKEN: token } = env;
+  assert.match(
+    account ?? '',
+    /^[a-f0-9]{32}$/u,
+    'Cloudflare account required for observability readback'
+  );
+  assert.ok(token, 'Cloudflare API token required for observability readback');
+  return async () => {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/${encodeURIComponent(worker)}/script-settings`;
+    const response = await fetchImpl(url, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${token}` },
+      redirect: 'error',
+      signal: AbortSignal.timeout(15000),
+    });
+    assert.ok(
+      response.ok,
+      `${worker} script-settings readback failed (HTTP ${response.status})`
+    );
+    assertScriptObservability(worker, expected, await response.json());
+  };
+}
+
 export function assign(
   {
     worker,
     version,
     expectCurrent,
+    expectObservability,
     buildInfoUrl,
     expectBuild,
     expectBeforeAbsent = false,
@@ -374,6 +413,10 @@ export function assign(
 ) {
   assert.ok(VERSION_ID.test(version), 'invalid version id');
   assert.ok(!buildInfoUrl === !expectBuild, 'build-info URL needs a build');
+  const checkObservability =
+    expectObservability === undefined
+      ? undefined
+      : prepareObservabilityCheck(worker, expectObservability, deps);
   const before = settledServing(worker, deps);
   if (expectCurrent)
     assert.equal(before, expectCurrent, 'serving version moved since capture');
@@ -401,12 +444,15 @@ export function assign(
   const servedAfter = buildInfoUrl
     ? awaitServedBuild(buildInfoUrl, expectBuild, deps)
     : undefined;
-  return {
+  const receipt = {
     worker,
     previousVersionId: before,
     versionId: after,
     ...(buildInfoUrl ? { servedBefore, servedAfter } : {}),
   };
+  return checkObservability
+    ? checkObservability().then(() => receipt)
+    : receipt;
 }
 
 function parseFlags(argv) {
@@ -468,7 +514,7 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    console.log(JSON.stringify(main(process.argv.slice(2))));
+    console.log(JSON.stringify(await main(process.argv.slice(2))));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

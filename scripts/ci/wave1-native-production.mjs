@@ -10,6 +10,10 @@ import {
 } from './wave1-native-artifact.mjs';
 import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
 import { assertResolvedVersionsAbsent } from './wave1-native-production-resolution.mjs';
+import {
+  logSkippedSettingsCheck,
+  settingsExpectation,
+} from './wave1-native-emitted-observability.mjs';
 import { profiles } from './wave1-native-profile.mjs';
 import { ABUSE_GUARD_SERVICE_BINDING } from './wave1-source-admissions.mjs';
 import {
@@ -18,6 +22,7 @@ import {
   requireRollback,
   uploadArtifact,
 } from './wave1-native-publish.mjs';
+import { waitForScriptObservability } from './wave1-native-script-settings.mjs';
 import {
   NativeUploadError,
   productionFailureMessage,
@@ -77,6 +82,8 @@ export async function main({
   exec,
   appRoot,
   preflightTimeoutMs = 90_000,
+  settingsTiming,
+  readWorkerConfig,
 } = {}) {
   const [app, sha, mode] = argv;
   assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
@@ -136,6 +143,14 @@ export async function main({
   };
   const { receipt, config } = validate();
   const p = receipt.profile;
+  const expectedObservability = await settingsExpectation({
+    app,
+    appRoot,
+    environment: 'production',
+    sha,
+    worker: p.name,
+    readWorkerConfig,
+  });
   const digest = artifactDigest(receipt);
   const base = `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`;
   let deadline = AbortSignal.timeout(preflightTimeoutMs);
@@ -349,6 +364,25 @@ export async function main({
     assert.deepEqual(active.deployments?.[0]?.versions, [
       { version_id: id, percentage: 100 },
     ]);
+    if (expectedObservability === null) logSkippedSettingsCheck(p.name);
+    else {
+      // The settings poll carries its own 60 s bound; the topology readback
+      // after it gets a fresh 60 s bound so a slow poll cannot starve it.
+      await waitForScriptObservability({
+        worker: p.name,
+        expected: expectedObservability,
+        readSettings: (signal) =>
+          boundedJson(
+            `${script}/script-settings`,
+            topologyToken,
+            fetcher,
+            undefined,
+            signal
+          ),
+        timing: settingsTiming,
+      });
+      deadline = AbortSignal.timeout(60_000);
+    }
     assert.deepEqual(
       await topology(),
       before,

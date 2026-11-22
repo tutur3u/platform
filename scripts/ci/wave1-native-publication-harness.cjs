@@ -53,6 +53,16 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     flagReads: 0,
     admissionReads: 0,
     reads: 0,
+    settingsReads: 0,
+    settingsLagReads: 0,
+    settingsErrorReads: 0,
+    settingsWaitMs: 0,
+    scriptSettings: {
+      observability: {
+        enabled: true,
+        head_sampling_rate: app === 'mail' ? 1 : 0.05,
+      },
+    },
     ledgerQueries: 0,
     ledgerWrites: 0,
     versions: [],
@@ -151,6 +161,20 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
           ? ingress.topologyResponse(u, state.topology)
           : null;
       if (topology) return response(topology);
+      if (u.pathname.endsWith('/script-settings')) {
+        assert.equal(u.pathname.split('/').at(-2), receipt.profile.name);
+        assert.equal(state.active, newId, 'Settings read follows deployment');
+        state.settingsReads++;
+        if (state.settingsReads <= state.settingsErrorReads)
+          return new Response('{"success":false}', { status: 503 });
+        return response({
+          success: true,
+          result:
+            state.settingsReads <= state.settingsLagReads
+              ? { observability: null }
+              : state.scriptSettings,
+        });
+      }
       if (u.pathname.endsWith('/subdomain'))
         return response({
           success: true,
@@ -242,6 +266,13 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     appRoot: dir,
     fetcher,
     exec,
+    settingsTiming: {
+      now: () => state.settingsWaitMs,
+      sleep: (ms) => {
+        assert.equal(ms, 5_000);
+        state.settingsWaitMs += ms;
+      },
+    },
   };
   return {
     run: () => main(options),

@@ -1,4 +1,6 @@
 import { stripVTControlCharacters } from 'node:util';
+import { ObservabilityConfigError } from './wave1-native-emitted-observability.mjs';
+import { ScriptObservabilityError } from './wave1-native-script-settings.mjs';
 
 const signals = new Set(['SIGINT', 'SIGTERM', 'SIGKILL']);
 const launchErrors = new Set(['EACCES', 'ENOENT', 'ENOBUFS', 'ETIMEDOUT']);
@@ -218,6 +220,13 @@ function authoredRefusal(error) {
 }
 
 export function productionFailureMessage(error) {
+  // Settings errors carry only scalar settings and the Worker name, never a
+  // provider body or path. A post-activation incident is not an uncertain upload.
+  if (
+    error instanceof ScriptObservabilityError ||
+    error instanceof ObservabilityConfigError
+  )
+    return error.message;
   const message =
     'Production upload refused or uncertain; inspect the retained receipt and provider versions before another attempt';
   if (error instanceof NativeUploadError)

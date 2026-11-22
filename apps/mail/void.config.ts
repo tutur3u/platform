@@ -1,4 +1,5 @@
 import { defineConfig } from 'void/config';
+import profiles from '../../scripts/ci/wave1-native-profiles.json' with { type: 'json' };
 export default defineConfig({
   target: 'cloudflare',
   inference: {
@@ -18,6 +19,7 @@ export default defineConfig({
       not_found_handling: 'none',
     },
     workers_dev: false,
+    observability: profiles.apps.mail.observability,
     vars: {
       NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
       NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',

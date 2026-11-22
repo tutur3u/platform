@@ -17,6 +17,10 @@ test('the sealed Web config binds native-only staging vars', (t) => {
   const config = JSON.parse(
     readFileSync(join(dir, 'dist/wave1/wrangler.json'), 'utf8')
   );
+  assert.deepEqual(config.observability, {
+    enabled: true,
+    head_sampling_rate: 0.05,
+  });
   assert.equal(config.name, 'tuturuuu-web-wave1-staging');
   assert.equal(config.vars.NEXT_FALLBACK_ORIGIN, undefined);
   assert.equal(config.vars.WEB_START_CANDIDATE, 'staging');

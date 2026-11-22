@@ -111,6 +111,7 @@
       "stagingWorker": "tuturuuu-mail-wave1-staging",
       "productionWorker": "tuturuuu-mail",
       "canonicalHost": "mail.tuturuuu.com",
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "secrets": [
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -200,9 +201,7 @@
           ],
           "sourceIdentity": "tuturuuu-mail",
           "productionOnly": false,
-          "doctorExpectations": {
-            "expectRedirect": true
-          },
+          "doctorExpectations": { "expectRedirect": true },
           "sourceVars": {
             "NEXT_PUBLIC_APP_URL": "https://mail.tuturuuu.com",
             "NEXT_PUBLIC_MAIL_APP_URL": "https://mail.tuturuuu.com",

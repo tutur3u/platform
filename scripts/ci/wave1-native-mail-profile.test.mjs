@@ -3,7 +3,13 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { prepare, verify } from './wave1-native-artifact.mjs';
 import { ingressTarget } from './wave1-ingress-topology.mjs';
-import { assertStagingIsolation, profileFor } from './wave1-native-profile.mjs';
+import mailVoidConfig from '../../apps/mail/void.config.ts';
+import {
+  assertStagingIsolation,
+  profileFor,
+  publicationConfig,
+  releaseRecipes,
+} from './wave1-native-profile.mjs';
 import { fixture } from './wave1-native-test-fixture.cjs';
 
 const sha = 'a'.repeat(40);
@@ -51,6 +57,10 @@ test('Mail staging seal restores its explicit host without a provider subdomain'
   const config = JSON.parse(readFileSync(restored.config, 'utf8'));
   assertStagingIsolation(config);
   assert.equal(config.name, 'tuturuuu-mail-wave1-staging');
+  assert.deepEqual(
+    config.observability,
+    mailVoidConfig.cloudflare.observability
+  );
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);
@@ -66,6 +76,47 @@ test('Mail staging seal restores its explicit host without a provider subdomain'
   assert.equal(config.vars.NEXT_PUBLIC_WEB_APP_URL, 'https://web.tutur3u.com');
   assert.equal(config.vars.MAIL_R2_BUCKET_NAME, 'tuturuuu-mail-wave1-staging');
   assert.equal(config.vars.TUTURUUU_NOINDEX, '1');
+});
+
+test('Wave 1 profiles use full sampling only for Mail', () => {
+  for (const [app, recipe] of Object.entries(releaseRecipes)) {
+    const base = {
+      name: recipe.cf.sourceIdentity,
+      no_bundle: true,
+      compatibility_date: recipe.cf.compatibilityDate,
+      compatibility_flags: recipe.cf.compatibilityFlags,
+      vars: recipe.cf.sourceVars,
+      services: recipe.cf.admittedSourceServices,
+      assets: {
+        binding: 'ASSETS',
+        run_worker_first: true,
+        not_found_handling: 'none',
+      },
+    };
+    const environments = recipe.cf.productionOnly
+      ? ['production']
+      : ['staging', 'production'];
+    for (const environment of environments) {
+      const config = publicationConfig(
+        base,
+        profileFor(app, environment, 'owner-example'),
+        { main: 'index.js', assets: 'client', sourceSha: sha }
+      );
+      assert.deepEqual(
+        config.observability,
+        {
+          enabled: true,
+          head_sampling_rate: app === 'mail' ? 1 : 0.05,
+        },
+        `${app} ${environment}`
+      );
+      if (app === 'mail')
+        assert.deepEqual(
+          config.observability,
+          mailVoidConfig.cloudflare.observability
+        );
+    }
+  }
 });
 
 test('Mail production seal keeps its production identity and no Access names', (t) => {

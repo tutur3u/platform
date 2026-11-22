@@ -262,6 +262,67 @@ test('assign refuses to move traffic when the serving version changed', () => {
   );
 });
 
+const settings = { enabled: true, head_sampling_rate: 1 };
+
+function assignmentFixture(readback) {
+  const state = { serving: V1 };
+  const account = '1'.repeat(32);
+  const requests = [];
+  const deps = {
+    ...fakeCf(state),
+    env: { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_API_TOKEN: 'fixture' },
+    fetchImpl: async (url, { method, headers, body }) => {
+      assert.equal(state.serving, V2, 'settings are checked after assignment');
+      assert.equal(
+        url,
+        `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/app/script-settings`
+      );
+      assert.equal(headers.authorization, 'Bearer fixture');
+      assert.equal(
+        method,
+        'GET',
+        'assign must never PATCH or POST script-settings'
+      );
+      assert.equal(body, undefined);
+      requests.push(method);
+      return Response.json({ success: true, result: readback });
+    },
+  };
+  const run = (expectObservability) =>
+    assign(
+      { worker: 'app', version: V2, expectCurrent: V1, expectObservability },
+      deps
+    );
+  return { run, requests };
+}
+
+test('assign accepts matching observability with one read', async () => {
+  const { run, requests } = assignmentFixture({ observability: settings });
+  assert.equal((await run(JSON.stringify(settings))).versionId, V2);
+  assert.deepEqual(requests, ['GET']);
+});
+
+test('assign does not read script settings without an expectation', () => {
+  const { run, requests } = assignmentFixture({});
+  assert.equal(run().versionId, V2);
+  assert.deepEqual(requests, []);
+});
+
+for (const [name, readback, error] of [
+  [
+    'a mismatched rate',
+    { observability: { enabled: true, head_sampling_rate: 0.05 } },
+    /readback mismatch for observability.head_sampling_rate/,
+  ],
+  ['missing observability', {}, /readback is missing observability/],
+]) {
+  test(`assign rejects ${name} after only reading settings`, async () => {
+    const { run, requests } = assignmentFixture(readback);
+    await assert.rejects(() => run(JSON.stringify(settings)), error);
+    assert.deepEqual(requests, ['GET']);
+  });
+}
+
 function buildDir(migrationTag) {
   const build = mkdtempSync(join(tmpdir(), 'void-cf-publisher-'));
   const dir = join(build, '.cloudflare/output/v0/workers/default');

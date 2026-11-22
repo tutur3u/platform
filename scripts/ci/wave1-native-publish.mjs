@@ -17,7 +17,12 @@ import {
   verify,
 } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
+import {
+  logSkippedSettingsCheck,
+  settingsExpectation,
+} from './wave1-native-emitted-observability.mjs';
 import { profileFor, profiles } from './wave1-native-profile.mjs';
+import { waitForScriptObservability } from './wave1-native-script-settings.mjs';
 import {
   NativeUploadError,
   productionFailureMessage,
@@ -125,7 +130,8 @@ function observationTarget(method, url) {
     return `${method} (unparseable URL)`;
   }
 }
-export async function boundedJson(url, token, fetcher = fetch, body) {
+export async function boundedJson(url, token, fetcher = fetch, body, signal) {
+  const requestTimeout = AbortSignal.timeout(15_000);
   const method = body === undefined ? 'GET' : 'POST';
   const response = await fetcher(url, {
     method,
@@ -135,7 +141,7 @@ export async function boundedJson(url, token, fetcher = fetch, body) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    signal: AbortSignal.timeout(15000),
+    signal: signal ? AbortSignal.any([requestTimeout, signal]) : requestTimeout,
     redirect: 'error',
   });
   assert.ok(
@@ -190,6 +196,8 @@ export async function main({
   fetcher = fetch,
   exec = execFileSync,
   appRoot,
+  settingsTiming,
+  readWorkerConfig,
 } = {}) {
   const [mode, app, environment, sha] = argv;
   // The Web issuer candidate builds from its isolated cloudflare/ root.
@@ -254,6 +262,14 @@ export async function main({
     publicInputsDigest(env),
     'Public build inputs differ from admitted publisher inputs'
   );
+  const expectedObservability = await settingsExpectation({
+    app,
+    appRoot,
+    environment,
+    sha,
+    worker: p.name,
+    readWorkerConfig,
+  });
   assert.ok(
     env.NEXT_PUBLIC_SUPABASE_URL &&
       !env.NEXT_PUBLIC_SUPABASE_URL.includes('.invalid'),
@@ -399,6 +415,21 @@ export async function main({
       matchesVersion(version.result, sha, digest),
       'Hosted artifact identity differs'
     );
+    if (expectedObservability === null) logSkippedSettingsCheck(p.name);
+    else
+      await waitForScriptObservability({
+        worker: p.name,
+        expected: expectedObservability,
+        readSettings: (signal) =>
+          boundedJson(
+            `${cfBase}/script-settings`,
+            cfToken,
+            fetcher,
+            undefined,
+            signal
+          ),
+        timing: settingsTiming,
+      });
     const serving = await request(`${cfBase}/subdomain`, cfToken);
     assert.equal(serving.success, true);
     assert.equal(

@@ -28,25 +28,28 @@ const publicInputs = {
   ),
 };
 
-export function setup(t, { admitted = true, oversized = false } = {}) {
-  const previous = productionPublicationPolicy.calendar;
-  const previousExclusion = productionAppExclusions.calendar;
-  delete productionAppExclusions.calendar;
+export function setup(
+  t,
+  { app = 'calendar', admitted = true, oversized = false } = {}
+) {
+  const previous = productionPublicationPolicy[app];
+  const previousExclusion = productionAppExclusions[app];
+  delete productionAppExclusions[app];
   if (admitted)
-    productionPublicationPolicy.calendar = {
+    productionPublicationPolicy[app] = {
       state: 'admitted',
       reason: 'fixture',
       surfaces: ['frontend'],
     };
   else
-    productionPublicationPolicy.calendar = {
+    productionPublicationPolicy[app] = {
       state: 'held',
       reason: 'fixture hold',
     };
   t.after(() => {
-    productionPublicationPolicy.calendar = previous;
+    productionPublicationPolicy[app] = previous;
     if (previousExclusion !== undefined)
-      productionAppExclusions.calendar = previousExclusion;
+      productionAppExclusions[app] = previousExclusion;
   });
   for (const [key, value] of Object.entries(publicInputs)) {
     const prior = process.env[key];
@@ -56,12 +59,12 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
       else process.env[key] = prior;
     });
   }
-  const appRoot = fixture(t, 'calendar');
+  const appRoot = fixture(t, app);
   const runnerTemp = realpathSync(mkdtempSync(join(tmpdir(), 'wave1-runner-')));
   t.after(() => rmSync(runnerTemp, { recursive: true, force: true }));
   if (oversized)
     truncateSync(join(appRoot, 'dist/server/index.js'), 64 * 1024 ** 2 + 1);
-  const receipt = prepare(appRoot, 'calendar', 'production', 'fixture', sha);
+  const receipt = prepare(appRoot, app, 'production', 'fixture', sha);
   const digest = artifactDigest(receipt);
   const state = {
     writes: 0,
@@ -75,12 +78,22 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
     scriptlessAcme: false,
     publicServing: null,
     calls: [],
+    settingsReads: 0,
+    settingsLagReads: 0,
+    settingsErrorReads: 0,
+    settingsWaitMs: 0,
+    scriptSettings: {
+      observability: {
+        enabled: true,
+        head_sampling_rate: app === 'mail' ? 1 : 0.05,
+      },
+    },
   };
   const env = {
     ...publicInputs,
     GITHUB_REF: 'refs/heads/production',
     GITHUB_EVENT_NAME: 'workflow_dispatch',
-    PUBLICATION_ENVIRONMENT: 'wave1-calendar-production',
+    PUBLICATION_ENVIRONMENT: `wave1-${app}-production`,
     GITHUB_SHA: sha,
     GITHUB_RUN_ATTEMPT: '1',
     GITHUB_RUN_ID: '123',
@@ -113,7 +126,7 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
           started_at: '2026-10-27T00:00:00Z',
         };
         const priorJob = {
-          name: 'publish-calendar',
+          name: `publish-${app}`,
           run_id: url.includes('/runs/122/') ? 122 : 123,
           run_attempt: 1,
           status: 'completed',
@@ -126,7 +139,7 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
           ];
         if (state.priorMode === 'unknown') priorJob.steps = [];
         const currentJob = {
-          name: 'publish-calendar',
+          name: `publish-${app}`,
           run_id: 123,
           run_attempt: Number(env.GITHUB_RUN_ATTEMPT),
           status: 'in_progress',
@@ -191,8 +204,7 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
                 ? [
                     {
                       id: 'acme',
-                      pattern:
-                        'calendar.tuturuuu.com/.well-known/acme-challenge/*',
+                      pattern: `${receipt.profile.host}/.well-known/acme-challenge/*`,
                       script: null,
                     },
                   ]
@@ -203,7 +215,18 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
         enabled: state.publicServing === 'workers.dev',
         previews_enabled: state.publicServing === 'preview',
       };
-    else if (url.endsWith('/secrets'))
+    else if (url.endsWith('/script-settings')) {
+      assert.ok(url.endsWith(`/${receipt.profile.name}/script-settings`));
+      assert.equal(options.headers.Authorization, 'Bearer topology-fixture');
+      assert.equal(state.active, newId, 'Settings read follows deployment');
+      state.settingsReads++;
+      if (state.settingsReads <= state.settingsErrorReads)
+        return new Response('{"success":false}', { status: 503 });
+      result =
+        state.settingsReads <= state.settingsLagReads
+          ? { observability: null }
+          : state.scriptSettings;
+    } else if (url.endsWith('/secrets'))
       result = receipt.profile.secrets.map((name) => ({ name }));
     else if (url.endsWith('/deployments'))
       result = {
@@ -277,11 +300,18 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
     exec,
     run: (options = {}) =>
       main({
-        argv: ['calendar', sha, 'all'],
+        argv: [app, sha, 'all'],
         env,
         fetcher,
         exec,
         appRoot,
+        settingsTiming: {
+          now: () => state.settingsWaitMs,
+          sleep: (ms) => {
+            assert.equal(ms, 5_000);
+            state.settingsWaitMs += ms;
+          },
+        },
         ...options,
       }),
   };

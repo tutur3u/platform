@@ -296,6 +296,11 @@ async function inspect(destination, input, supplied, files, sourceSha) {
   );
 }
 
+/** The Worker config the Calendar emitter writes into its Build Output. */
+export function calendarWorkerConfig(appDirectory, sourceSha) {
+  return source(appDirectory, sourceSha).workerConfig;
+}
+
 export async function emitCalendarOutput({
   appDirectory,
   sourceSha,
