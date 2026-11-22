@@ -253,6 +253,48 @@ describe('assessment', () => {
     });
   });
 
+  it('refuses a delayed grade once the questions were reset and answered again', () => {
+    const step = (state: MeetRoomSnapshot, status: string) =>
+      action(state, host, { kind: 'assessment.status', status }).state;
+    const answer = (state: MeetRoomSnapshot) => {
+      const [, long] = state.liveActivities?.assessment.items ?? [];
+      const next = action(state, guest, {
+        kind: 'assessment.submit',
+        itemId: long?.id,
+        answer: 'An answer',
+      }).state;
+      return { itemId: long?.id, state: next };
+    };
+    const configured = action(room(), host, { kind: 'assessment.set', items });
+    const first = answer(step(configured.state, 'open'));
+    // The grade the host is about to send for the first answer, revision 0.
+    const grade = {
+      kind: 'assessment.grade',
+      itemId: first.itemId,
+      participantId: guest.userId,
+      revision: 0,
+      score: 10,
+    };
+    // Meanwhile the questions go back to draft and are answered again.
+    const second = answer(step(step(step(first.state, 'closed'), 'draft'), 'open'));
+    expect(second.itemId).not.toBe(first.itemId);
+    const closed = step(second.state, 'closed');
+    expect(closed.liveActivities?.assessment.responses).toMatchObject([
+      { itemId: second.itemId, revision: 0 },
+    ]);
+    const late = action(closed, cohost, grade);
+    expect(late.reply).toMatchObject(error('activity_response_not_found'));
+    expect(late.state).toBe(closed);
+    expect(
+      closed.liveActivities?.assessment.responses[0]?.score
+    ).toBeUndefined();
+    // The same grade for the answer that is there now is accepted.
+    expect(
+      action(closed, cohost, { ...grade, itemId: second.itemId }).state
+        .liveActivities?.assessment.responses
+    ).toMatchObject([{ score: 10 }]);
+  });
+
   it('treats an assessment stored as released while open as closed for good', () => {
     const configured = action(room(), host, { kind: 'assessment.set', items });
     const open = action(configured.state, host, {

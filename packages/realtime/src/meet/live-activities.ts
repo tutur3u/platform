@@ -69,20 +69,16 @@ function applyActivity(
       };
     case 'assessment.status':
       if (command.status === assessment.status) return state;
-      if (command.status === 'draft')
+      // Back to draft clears the answers, and a release ends its attempt for
+      // good: either way what comes next is a new attempt under new ids.
+      if (
+        command.status === 'draft' ||
+        (command.status === 'open' && assessment.sealed)
+      )
         return {
           ...state,
-          assessment: {
-            ...assessment,
-            status: 'draft',
-            responses: [],
-            released: false,
-            sealed: false,
-          },
+          assessment: newAttempt(assessment, command.status),
         };
-      // A release ends its attempt for good, so opening again starts a new one.
-      if (command.status === 'open' && assessment.sealed)
-        return { ...state, assessment: newAttempt(assessment, 'open') };
       return {
         ...state,
         assessment: { ...assessment, status: command.status },
