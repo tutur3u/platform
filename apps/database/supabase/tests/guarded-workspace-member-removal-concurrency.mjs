@@ -14,6 +14,7 @@ import {
   stageDisposableProject,
 } from '../../scripts/run-supabase-isolated.js';
 import { ensureSupabaseBinary } from '../../scripts/run-supabase.js';
+import { runManagerPostconditionRaces } from './workspace-manager-postcondition-concurrency.mjs';
 
 const require = createRequire(
   new URL('../../../../packages/inventory-core/package.json', import.meta.url)
@@ -567,6 +568,14 @@ async function runRace(metadata) {
     }
     await crossPathRaces();
     await permissionEditRaces();
+    await runManagerPostconditionRaces({
+      actors,
+      asServiceRole,
+      clients,
+      creator,
+      ordinaryMember,
+      waitForBlock,
+    });
     await enableRecurrence();
     await recurrenceRace('legacy CMS member removal', (sql, actor, owner) =>
       remove(sql, 'member', actor, owner)

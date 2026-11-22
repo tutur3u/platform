@@ -387,13 +387,13 @@ set local role service_role;
 
 select is(
   public.remove_workspace_role_member_guarded(:'ws', 'dc216900-0000-4000-8000-000000000023', :'manager_b', :'creator'),
-  'removed',
-  'role removal is allowed in a workspace without a manager'
+  'last_manager',
+  'role removal is refused while full members remain without a manager'
 );
 select is(
   public.remove_workspace_member_guarded(:'ws', :'manager_b', :'creator'),
   'removed',
-  'member removal is allowed in a workspace without a manager'
+  'legacy CMS permits removing the sole full member of an already-managerless workspace'
 );
 
 reset role;

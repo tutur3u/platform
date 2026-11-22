@@ -294,19 +294,48 @@ covers client access and workspace creation. The
 [rollback check](https://github.com/tutur3u/platform/blob/main/apps/database/verification/workspace-client-membership-writes-rollback-roundtrip.sql)
 compares the policy and privilege catalogs on a disposable replay.
 
+## Member manager postcondition
+
+On 22 Nov 2026, Iris adopted the guarded postcondition and its self-departure exception.
+
+**Postcondition.** No guarded operation may finish leaving a workspace with at least one full member and no member manager, whatever the state was before the operation. An operation is allowed when, after it, the workspace has a member manager, or has no full member.
+
+**One exception, self-departure.** A person removing their own membership from a workspace that ALREADY had no member manager before the operation is allowed. It cannot make the workspace worse, and nobody may be trapped in a workspace they cannot leave. Under the membership rule, the last member manager cannot leave while other full members remain. A departure leaving no full member is allowed.
+
+> A person may remove their own membership from a workspace that already had no member manager.
+>
+> — Iris, 22 Nov 2026
+
+In an already-managerless workspace, removing someone else, removing a role
+assignment, deleting a role, editing permissions, or reducing external-app
+access must leave a manager or leave no full members. The existing authorization
+and creator rules still apply. Legacy CMS removal also refuses the loss of an
+existing manager even when no full member would remain.
+
+Guarded functions require READ COMMITTED and refuse other isolation levels because
+they decide after waiting on a lock and only READ COMMITTED sees changes committed
+while they waited.
+
+Repair an already-managerless workspace by assigning member-management access
+through a role held by a full member or by enabling it in the MEMBER defaults.
+The Admin orphaned-workspace report lists shared workspaces that need a manager.
+The
+[postcondition tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/workspace-manager-postcondition.sql)
+cover refusal, repair, self-departure, and the legacy CMS rule.
+
 ## Account deletion and workspaces without a member manager
 
 On 22 Nov 2026, Iris decided that self-service account deletion checks for
 workspaces that depend on the account as their only member manager. The rule
 calls for a check before billing changes and a second check immediately before
-calling Auth. A
-personal workspace or a workspace with no other full member does not block
-deletion. Platform operators can still remove an account through the admin path.
+calling Auth. A personal workspace or a workspace with no other full member
+does not block deletion. Platform operators can still remove an account through the admin path.
 
-Each check reads a snapshot. The Auth service removes the account in a separate
-transaction. If two managers delete their accounts at the same time, both can
-pass the final check before either account is removed. A concurrent leave or
-permission edit can also change who manages the workspace before Auth completes.
+This is a best-effort preflight. Each check reads a snapshot, and the Auth
+service removes the account in a separate transaction. If two managers delete
+their accounts at the same time, both can pass the final check before either
+account is removed. A concurrent leave or permission edit can also change who
+manages the workspace before Auth completes.
 
 The detector supports a read-only orphaned-workspace report for Admin. The
 report checks current data when opened. It lists shared workspaces that have
