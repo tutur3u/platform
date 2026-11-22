@@ -56,6 +56,7 @@ import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
+import { meetTools } from '../tools/registry';
 import { type ToolDrawer, useMeetTools } from '../tools/use-meet-tools';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import { ActivitiesMenu } from './activities-menu';
@@ -147,8 +148,11 @@ function CallShellContent({
     state.canManageParticipants ?? canManage
   );
   const presenceOnly = state.settings.transport === 'presence';
-  const showProgramming = roomTools.canUse && programmingOpen;
-  const showDocument = roomTools.canUse && documentOpen;
+  // Set once a host or co-host has brought this person to a shared surface.
+  const [broughtIn, setBroughtIn] = useState(false);
+  const canCollaborate = roomTools.canUse || broughtIn;
+  const showProgramming = canCollaborate && programmingOpen;
+  const showDocument = canCollaborate && documentOpen;
   const canReadNotes = canManage || state.settings.shareNotes;
   const audioStreams = useMemo(
     () => [
@@ -278,7 +282,9 @@ function CallShellContent({
   const nav = useRoomNavigation({
     room,
     surface: { programming: showProgramming, document: showDocument, drawer },
-    apply: (next) => {
+    apply: (next, { forced }) => {
+      // A host or co-host who brings someone to a surface opens it for them.
+      if (forced && (next.programming || next.document)) setBroughtIn(true);
       if (next.programming) {
         if (!showProgramming) openProgramming(true);
       } else if (next.document) openDocument(true);
@@ -288,7 +294,12 @@ function CallShellContent({
       }
       setDrawer(next.drawer as typeof drawer);
     },
-    access: { collaboration: roomTools.canUse, tools: liveTools },
+    access: {
+      browse: roomTools.canUse,
+      account: !requiresAccount,
+      tools: liveTools,
+      toolIds: meetTools.map((tool) => tool.id),
+    },
   });
   if (lifecycle === 'error')
     return (

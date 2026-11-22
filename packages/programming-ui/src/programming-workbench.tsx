@@ -159,7 +159,11 @@ export function ProgrammingWorkbench({
       isRunActive(query.state.data?.status ?? 'queued') ? 300 : false,
     retry: false,
   });
-  const busy = isRunActive(result.data?.status);
+  // A started run is busy from the moment it has an id: until its first status
+  // arrives nothing else may start, from the button or the shortcut.
+  const busy =
+    isRunActive(result.data?.status) ||
+    (!!runId && !problem && !result.data && !result.isError);
   const checkpointRoom =
     checkpoint ?? (() => checkpointHostedPlayground(projectId));
   const save = useMutation({ mutationFn: checkpointRoom });

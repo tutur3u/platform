@@ -19,6 +19,15 @@ describe('endedNotesAvailability', () => {
     ).toBe('none');
   });
 
+  it('lets a failed read win over data cached before it', () => {
+    expect(
+      endedNotesAvailability({
+        data: { sessions: [{ notes: { summary: 'kept' } }], chunks: [] },
+        error: new Error('403'),
+      })
+    ).toBe('none');
+  });
+
   it('offers no reader when neither notes nor a readable transcript exist', () => {
     expect(
       endedNotesAvailability({

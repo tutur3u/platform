@@ -10,6 +10,7 @@ import {
   decideNavigation,
   followUpdateDelay,
   type NavigationTargets,
+  type RoomViewAccess,
   sameRoomView,
   surfaceFromView,
   targetCount,
@@ -31,6 +32,7 @@ const viewKey = (view: MeetRoomView) =>
 // One toast per sender: a repeated invitation replaces the earlier one.
 const summonToast = (userId: string) => `meet-summon:${userId}`;
 const followToast = (userId: string) => `meet-follow:${userId}`;
+const blockedToast = (userId: string) => `meet-navigation-blocked:${userId}`;
 
 /** Display names for room surfaces, shared by the menus, banner and toasts. */
 export function useSurfaceLabel() {
@@ -60,8 +62,9 @@ export function useRoomNavigation({
 }: {
   room: MeetRoomController;
   surface: CallSurfaceState;
-  apply: (next: CallSurfaceState) => void;
-  access: { collaboration: boolean; tools: boolean };
+  /** `forced` marks a move a host or co-host made, which opens the surface. */
+  apply: (next: CallSurfaceState, options: { forced: boolean }) => void;
+  access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
   const label = useSurfaceLabel();
@@ -112,22 +115,32 @@ export function useRoomNavigation({
   surfaceRef.current = surface;
   const applyRef = useRef(apply);
   applyRef.current = apply;
-  const { collaboration, tools } = access;
+  // Read through a ref so an invitation accepted later is checked against the
+  // access the person has at that moment, not when the toast appeared.
+  const accessRef = useRef(access);
+  accessRef.current = access;
   const canOpen = useCallback(
-    (next: MeetRoomView) => canOpenRoomView(next, { collaboration, tools }),
-    [collaboration, tools]
+    (next: MeetRoomView, forced: boolean) =>
+      canOpenRoomView(next, accessRef.current, forced),
+    []
+  );
+  // Follow invitations still on screen, with the leader's latest surface.
+  const invitations = useRef(
+    new Map<string, { view?: MeetRoomView; forced: boolean }>()
   );
 
-  const go = useCallback((next: MeetRoomView) => {
+  const go = useCallback((next: MeetRoomView, forced: boolean) => {
     appliedKey.current = viewKey(next);
-    applyRef.current(surfaceFromView(next, surfaceRef.current.drawer));
+    applyRef.current(surfaceFromView(next, surfaceRef.current.drawer), {
+      forced,
+    });
   }, []);
 
   const startFollowing = useCallback(
-    (leaderId: string, next?: MeetRoomView) => {
+    (leaderId: string, next: MeetRoomView | undefined, forced: boolean) => {
       setFollowing(leaderId);
       followingRef.current = leaderId;
-      if (next && canOpen(next)) go(next);
+      if (next && canOpen(next, forced)) go(next, forced);
       else appliedKey.current = viewKey(currentRoomView(surfaceRef.current));
     },
     [canOpen, go]
@@ -135,6 +148,9 @@ export function useRoomNavigation({
 
   useEffect(() => {
     for (const event of unseenNavigation(state.navigation, seen.current)) {
+      const invited = invitations.current.get(event.from);
+      if (invited && event.mode === 'follow.update')
+        invitations.current.set(event.from, { ...invited, view: event.view });
       const decision = decideNavigation(event, {
         selfUserId: state.selfUserId,
         following: followingRef.current,
@@ -146,46 +162,74 @@ export function useRoomNavigation({
           const previous = surfaceRef.current;
           setFollowing(null);
           followingRef.current = null;
-          go(decision.view);
+          go(decision.view, true);
           toast(t('summon.brought', { name, surface: label(decision.view) }), {
             action: {
               label: t('summon.go_back'),
-              onClick: () => applyRef.current(previous),
+              onClick: () => applyRef.current(previous, { forced: false }),
             },
           });
           break;
         }
-        case 'invite':
+        case 'invite': {
+          const blocked = t('summon.blocked', {
+            name,
+            surface: label(decision.view),
+          });
           toast(t('summon.invite', { name, surface: label(decision.view) }), {
             id: summonToast(event.from),
             duration: 15_000,
             action: {
               label: t('summon.join'),
-              onClick: () => go(decision.view),
+              onClick: () =>
+                canOpen(decision.view, false)
+                  ? go(decision.view, false)
+                  : void toast(blocked, { id: blockedToast(event.from) }),
             },
             cancel: { label: t('navigation.not_now'), onClick: () => {} },
           });
           break;
+        }
         case 'blocked':
-          toast(t('summon.blocked', { name, surface: label(decision.view) }));
+          toast(t('summon.blocked', { name, surface: label(decision.view) }), {
+            id: blockedToast(event.from),
+          });
           break;
         case 'follow-start':
-          startFollowing(decision.leaderId, decision.view);
+          startFollowing(decision.leaderId, decision.view, true);
           toast(t('follow.started', { name }));
           break;
-        case 'follow-invite':
+        case 'follow-invite': {
+          const leaderId = decision.leaderId;
+          invitations.current.set(leaderId, {
+            view: decision.view,
+            forced: event.forced,
+          });
+          const forget = () => invitations.current.delete(leaderId);
           toast(t('follow.ask', { name }), {
-            id: followToast(decision.leaderId),
+            id: followToast(leaderId),
             duration: 15_000,
+            onDismiss: forget,
+            onAutoClose: forget,
             action: {
               label: t('follow.accept'),
-              onClick: () => startFollowing(decision.leaderId, decision.view),
+              onClick: () => {
+                // The leader may have moved since asking; follow them there.
+                const latest = invitations.current.get(leaderId);
+                forget();
+                startFollowing(
+                  leaderId,
+                  latest?.view ?? decision.view,
+                  latest?.forced ?? false
+                );
+              },
             },
-            cancel: { label: t('navigation.not_now'), onClick: () => {} },
+            cancel: { label: t('navigation.not_now'), onClick: forget },
           });
           break;
+        }
         case 'follow-apply':
-          go(decision.view);
+          go(decision.view, event.forced);
           break;
         case 'follow-end':
           setFollowing(null);
@@ -193,6 +237,7 @@ export function useRoomNavigation({
           toast(t('follow.ended_by_leader', { name }));
           break;
         case 'follow-withdrawn':
+          invitations.current.delete(decision.leaderId);
           toast.dismiss(followToast(decision.leaderId));
           break;
       }
@@ -219,6 +264,15 @@ export function useRoomNavigation({
     else if (error === 'navigation_no_targets')
       toast(t('navigation.no_targets'));
   }, [state.error, t]);
+
+  // An invitation from someone who left the call is withdrawn with them.
+  useEffect(() => {
+    for (const leaderId of invitations.current.keys())
+      if (!state.participants[leaderId]) {
+        invitations.current.delete(leaderId);
+        toast.dismiss(followToast(leaderId));
+      }
+  }, [state.participants]);
 
   // Moving on my own, or the leader leaving the call, ends following.
   useEffect(() => {

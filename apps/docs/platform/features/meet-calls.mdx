@@ -1078,8 +1078,12 @@ Default and permissions:
   Follow, or dismisses it. Nothing moves without that consent.
 - A follower who navigates on their own stops following. A banner names the
   person being followed and offers Stop following for as long as it applies.
-- A recipient who is not allowed to open the surface under Activity visibility
-  is told so and stays where they are.
+- A host or co-host who brings someone to an activity also opens it for them,
+  which is how a room with Activity visibility set to Hosts and co-hosts shares
+  one. An invitation from anyone else opens only what the recipient could
+  already browse; otherwise the recipient is told and stays where they are.
+- Co-Programming and the live document need an account, so a guest is told and
+  not moved there.
 
 The room Durable Object validates the sender's presence, resolves targets to
 people present in the room, delivers the request only to those targets, and

@@ -337,6 +337,8 @@
     "./features/call/hooks/use-ended-room.ts": "./src/features/call/hooks/use-ended-room.ts",
     "./features/call/hooks/use-camera-controls": "./src/features/call/hooks/use-camera-controls.ts",
     "./features/call/hooks/use-camera-controls.ts": "./src/features/call/hooks/use-camera-controls.ts",
+    "./features/call/lib/ended-meeting-facts": "./src/features/call/lib/ended-meeting-facts.ts",
+    "./features/call/lib/ended-meeting-facts.ts": "./src/features/call/lib/ended-meeting-facts.ts",
     "./features/call/lib/ended-room-cache": "./src/features/call/lib/ended-room-cache.ts",
     "./features/call/lib/ended-room-cache.ts": "./src/features/call/lib/ended-room-cache.ts",
     "./features/call/lib/meeting-metadata": "./src/features/call/lib/meeting-metadata.ts",

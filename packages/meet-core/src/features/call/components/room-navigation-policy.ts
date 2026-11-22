@@ -56,18 +56,33 @@ export function surfaceFromView(
   }
 }
 
+/** What this person may open, as the call already decides it elsewhere. */
+export interface RoomViewAccess {
+  /** May browse Co-Programming, the live document and the tools themselves. */
+  browse: boolean;
+  /** Signed in: Co-Programming and the live document need an account. */
+  account: boolean;
+  /** Tool panels exist for this call right now. */
+  tools: boolean;
+  /** Tool ids the registry knows; an unknown id opens nothing. */
+  toolIds: readonly string[];
+}
+
 /**
- * Collaboration surfaces follow the room's activity policy; tool panels and
- * the stage are open to every admitted participant.
+ * A host or co-host who brings someone along (`forced`) also opens the surface
+ * for them, which is how "hosts only" rooms share an activity. An invitation
+ * from anyone else opens only what the recipient could already browse.
  */
 export function canOpenRoomView(
   view: MeetRoomView,
-  access: { collaboration: boolean; tools: boolean }
+  access: RoomViewAccess,
+  forced: boolean
 ) {
-  if (view.surface === 'programming' || view.surface === 'document')
-    return access.collaboration;
-  if (view.surface === 'tool') return access.tools;
-  return true;
+  if (view.surface === 'stage') return true;
+  if (!forced && !access.browse) return false;
+  if (view.surface === 'tool')
+    return access.tools && access.toolIds.includes(view.toolId);
+  return access.account;
 }
 
 export type NavigationDecision =
@@ -82,7 +97,7 @@ export type NavigationDecision =
   | { kind: 'follow-withdrawn'; leaderId: string };
 
 /** Gap between a leader's follow updates; just above the room's own pacing. */
-export const FOLLOW_UPDATE_GAP_MS = 300;
+export const FOLLOW_UPDATE_GAP_MS = 1100;
 
 /**
  * When the next follow update may go out. A leader who switches twice in a row
@@ -102,14 +117,14 @@ export function decideNavigation(
   context: {
     selfUserId: string | null;
     following: string | null;
-    canOpen: (view: MeetRoomView) => boolean;
+    canOpen: (view: MeetRoomView, forced: boolean) => boolean;
   }
 ): NavigationDecision {
   if (event.from === context.selfUserId) return { kind: 'ignore' };
   switch (event.mode) {
     case 'summon':
       if (!event.view) return { kind: 'ignore' };
-      if (!context.canOpen(event.view))
+      if (!context.canOpen(event.view, event.forced))
         return { kind: 'blocked', view: event.view };
       return event.forced
         ? { kind: 'navigate', view: event.view }
@@ -122,9 +137,9 @@ export function decideNavigation(
     case 'follow.update':
       if (context.following !== event.from || !event.view)
         return { kind: 'ignore' };
-      return context.canOpen(event.view)
+      return context.canOpen(event.view, event.forced)
         ? { kind: 'follow-apply', view: event.view }
-        : { kind: 'ignore' };
+        : { kind: 'blocked', view: event.view };
     case 'follow.stop':
       // Not following yet: the leader withdrew an invitation still on screen.
       return context.following === event.from

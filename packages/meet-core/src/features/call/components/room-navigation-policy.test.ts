@@ -79,17 +79,41 @@ describe('room views', () => {
     expect(sameRoomView({ surface: 'stage' }, { surface: 'stage' })).toBe(true);
   });
 
-  it('gates collaboration on the room activity policy', () => {
-    const attendee = { collaboration: false, tools: true };
-    expect(canOpenRoomView({ surface: 'programming' }, attendee)).toBe(false);
-    expect(canOpenRoomView({ surface: 'document' }, attendee)).toBe(false);
+  it('opens what the person may browse, and what a host brings them to', () => {
+    const attendee = {
+      browse: false,
+      account: true,
+      tools: true,
+      toolIds: ['polls'],
+    };
+    const polls = { surface: 'tool', toolId: 'polls' } as const;
+    // An invitation from another participant opens nothing they cannot browse.
+    expect(canOpenRoomView({ surface: 'programming' }, attendee, false)).toBe(
+      false
+    );
+    expect(canOpenRoomView(polls, attendee, false)).toBe(false);
+    // A host or co-host who brings them along opens the surface for them.
+    expect(canOpenRoomView({ surface: 'programming' }, attendee, true)).toBe(
+      true
+    );
+    expect(canOpenRoomView({ surface: 'document' }, attendee, true)).toBe(true);
+    expect(canOpenRoomView(polls, attendee, true)).toBe(true);
+    // Guests never land on an account-only surface, and unknown tools open nothing.
     expect(
-      canOpenRoomView({ surface: 'tool', toolId: 'polls' }, attendee)
-    ).toBe(true);
+      canOpenRoomView(
+        { surface: 'programming' },
+        { ...attendee, account: false },
+        true
+      )
+    ).toBe(false);
+    expect(
+      canOpenRoomView({ surface: 'tool', toolId: 'gone' }, attendee, true)
+    ).toBe(false);
     expect(
       canOpenRoomView(
         { surface: 'stage' },
-        { collaboration: false, tools: false }
+        { browse: false, account: false, tools: false, toolIds: [] },
+        false
       )
     ).toBe(true);
   });
@@ -169,14 +193,14 @@ describe('decideNavigation', () => {
     });
   });
 
-  it('skips updates the follower cannot open', () => {
+  it('tells a follower when an update leads somewhere they cannot open', () => {
     expect(
       decideNavigation(event({ mode: 'follow.update' }), {
         ...context,
         following: 'leader',
         canOpen: () => false,
       })
-    ).toEqual({ kind: 'ignore' });
+    ).toEqual({ kind: 'blocked', view: { surface: 'programming' } });
   });
 });
 

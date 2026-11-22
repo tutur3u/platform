@@ -9,8 +9,13 @@ import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomOutcome, MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
-/** Follow updates track a leader's own moves; other requests are deliberate. */
-export const MEET_NAVIGATION_UPDATE_INTERVAL_MS = 250;
+/**
+ * Every accepted request writes the pacing state and fans out to its targets,
+ * so one sender costs the room at most one write and one fan-out a second,
+ * the same bound reactions have. Clients send the leader's last surface after
+ * the interval, so a dropped update is never the final one.
+ */
+export const MEET_NAVIGATION_UPDATE_INTERVAL_MS = 1000;
 export const MEET_NAVIGATION_REQUEST_INTERVAL_MS = 1000;
 /** Invitations from people who cannot manage participants reach others as prompts. */
 export const MEET_NAVIGATION_INVITE_INTERVAL_MS = 5000;

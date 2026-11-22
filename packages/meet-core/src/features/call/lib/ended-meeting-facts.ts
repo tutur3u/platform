@@ -153,7 +153,10 @@ export function endedNotesAvailability({
   } | null;
   error?: unknown;
 }): EndedNotesAvailability {
-  if (!data) return error ? 'none' : 'loading';
+  // A refused or failed read wins over cached data: the viewer may have lost
+  // access since it was fetched.
+  if (error) return 'none';
+  if (!data) return 'loading';
   const notes = data.sessions.some((session) => session.notes != null);
   const transcript = data.chunks.some(readableChunk);
   if (notes) return transcript ? 'both' : 'notes';

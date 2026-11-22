@@ -244,7 +244,7 @@ describe('applyRoomNavigation', () => {
       first.state,
       request({ mode: 'follow.update', view: { surface: 'document' } }),
       host,
-      later(300)
+      later(1000)
     );
     expect(allowedUpdate?.direct).toHaveLength(1);
 
@@ -303,10 +303,11 @@ describe('applyRoomNavigation', () => {
       started.state,
       request({ mode: 'follow.update', view: { surface: 'document' } }),
       host,
-      later(400)
+      later(1000)
     )!;
+    expect(updated.direct).toHaveLength(1);
     expect(
-      applyRoomNavigation(updated.state, stopRequest, host, later(401))?.direct
+      applyRoomNavigation(updated.state, stopRequest, host, later(1001))?.direct
     ).toHaveLength(1);
 
     // A repeated stop adds nothing; a later one is relayed again.

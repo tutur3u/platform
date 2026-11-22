@@ -288,6 +288,15 @@ export function ControlBar({
       onClick={onToggleScreen}
     />
   );
+  const chat = (
+    <ControlButton
+      active={activePanel === 'chat'}
+      badge={unreadChat}
+      icon={MessageSquare}
+      label={t('chat')}
+      onClick={() => onTogglePanel(activePanel === 'chat' ? null : 'chat')}
+    />
+  );
   const hand = (
     <ControlButton
       active={handRaised}
@@ -350,7 +359,7 @@ export function ControlBar({
             {reactions}
           </div>
         )}
-        <div className="hidden sm:block">{hand}</div>
+        <div className="hidden md:block">{hand}</div>
         {liveActivity && <div className="hidden sm:block">{liveActivity}</div>}
         {hub && (
           <div className={activities ? undefined : 'hidden sm:block'}>
@@ -359,8 +368,8 @@ export function ControlBar({
         )}
         {navigation && (
           <>
-            <div className="hidden sm:block">{navigation.follow}</div>
-            <div className="hidden sm:block">{navigation.summon}</div>
+            <div className="hidden md:block">{navigation.follow}</div>
+            <div className="hidden md:block">{navigation.summon}</div>
           </>
         )}
         <Popover open={moreOpen} onOpenChange={setMoreOpen}>
@@ -396,9 +405,10 @@ export function ControlBar({
           >
             <CloseCallOverflow.Provider value={() => setMoreOpen(false)}>
               {!presenceOnly && <div className="sm:hidden">{shareScreen}</div>}
-              <div className="sm:hidden">{hand}</div>
+              <div className="min-[360px]:hidden">{chat}</div>
+              <div className="md:hidden">{hand}</div>
               {navigation?.menu && (
-                <div className="flex flex-col gap-1 sm:hidden">
+                <div className="flex flex-col gap-1 md:hidden">
                   {navigation.menu}
                 </div>
               )}
@@ -441,14 +451,9 @@ export function ControlBar({
           onClick={onLeave}
         />
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2.5">
-        <ControlButton
-          active={activePanel === 'chat'}
-          badge={unreadChat}
-          icon={MessageSquare}
-          label={t('chat')}
-          onClick={() => onTogglePanel(activePanel === 'chat' ? null : 'chat')}
-        />
+      <div className="flex shrink-0 flex-1 items-center justify-end gap-1 sm:gap-2.5">
+        {/* The narrowest phones reach chat through More, so nothing overlaps. */}
+        <div className="hidden min-[360px]:block">{chat}</div>
         <PeopleControl
           active={activePanel === 'participants'}
           count={participantCount}

@@ -133,8 +133,12 @@ export function ProgrammingPanel({
           id: known,
           language: next,
         });
-      } catch {
-        // The remembered playground was removed or changed; start a new one.
+      } catch (error) {
+        // Only a playground the service says is gone or no longer matches is
+        // replaced. A passing failure keeps the mapping so a retry reopens it.
+        const status =
+          error instanceof InternalApiError ? error.status : undefined;
+        if (status !== 400 && status !== 404 && status !== 409) throw error;
         forgetRoomPlayground(meetingId, next);
       }
     }

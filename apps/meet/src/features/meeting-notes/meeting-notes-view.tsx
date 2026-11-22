@@ -1,6 +1,7 @@
 'use client';
 
 import type { MeetAiState } from '@tuturuuu/internal-api';
+import { endedNotesAvailability } from '@tuturuuu/meet-core/features/call/lib/ended-meeting-facts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
@@ -43,8 +44,10 @@ export function MeetingNotesView({
     setFocus((current) => ({ lineId, nonce: (current?.nonce ?? 0) + 1 }));
     setTab('transcript');
   };
-  const hasNotes = !!data?.sessions.some((session) => session.notes);
-  const hasTranscript = lines.length > 0;
+  // The same rule the ended page uses, so the action and the tabs agree.
+  const available = endedNotesAvailability({ data });
+  const hasNotes = available === 'notes' || available === 'both';
+  const hasTranscript = available === 'transcript' || available === 'both';
   const notesTab = data && (
     <MeetingNotesTab
       wsId={wsId}

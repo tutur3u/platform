@@ -7,7 +7,7 @@ import type { useRoomRecording } from '../hooks/use-room-recording';
 import type { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
 import type { MeetRoomController } from '../lib/room-controller';
-import type { MeetToolDefinition } from '../tools/registry';
+import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import type { ActivityEntry } from './call-activities';
 import {
@@ -108,7 +108,7 @@ export function CallControlDock({
   const navControls = useRoomNavigationControls(nav);
   const activitiesMenu = (
     <ActivitiesMenu
-      tools={tools.shown}
+      tools={roomTools.showPreview ? meetTools : tools.shown}
       activeToolId={tools.activeId}
       onTool={tools.toggle}
       extra={activities.entries}
