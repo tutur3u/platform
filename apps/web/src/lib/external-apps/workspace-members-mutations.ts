@@ -32,6 +32,7 @@ async function getWorkspaceMemberSnapshot(
 
   return normalizeWorkspaceMembers({
     currentUserId: access.user.id,
+    includeEmails: access.canReadMemberEmails,
     members,
   });
 }

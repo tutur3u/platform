@@ -82,9 +82,13 @@ export async function POST(request: Request) {
             payload: parsed.data,
           });
     return Response.json(result, { headers });
-  } catch {
+  } catch (error) {
+    const code =
+      error instanceof Error && error.message === 'wildcard_scope_not_allowed'
+        ? { code: 'wildcard_scope_not_allowed' }
+        : {};
     return Response.json(
-      { error: 'External app configuration was not saved' },
+      { ...code, error: 'External app configuration was not saved' },
       { status: 400, headers }
     );
   }

@@ -122,6 +122,20 @@ describe('CLI external registry authorization', () => {
     }
     expect(mocks.save).not.toHaveBeenCalled();
   });
+  it('names the wildcard refusal and keeps other save errors generic', async () => {
+    mocks.save.mockRejectedValueOnce(new Error('wildcard_scope_not_allowed'));
+    const refused = await POST(request({ ...app, allowedScopes: ['*'] }));
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toEqual({
+      code: 'wildcard_scope_not_allowed',
+      error: 'External app configuration was not saved',
+    });
+
+    mocks.save.mockRejectedValueOnce(new Error('internal_scope_not_allowed'));
+    expect(await (await POST(request(app))).json()).toEqual({
+      error: 'External app configuration was not saved',
+    });
+  });
   it('only returns a new secret for an explicit rotation action', async () => {
     mocks.rotate.mockResolvedValue({ app, secret: 'test-only-secret' });
     const response = await POST(
