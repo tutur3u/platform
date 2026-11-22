@@ -91,8 +91,8 @@ function NavigationPanel({
 /**
  * Follow and Summon rows for the More menu under one "Guide the room" label,
  * and the dialogs they open (mounted outside the menu so closing it keeps them
- * open). Alone in the call, both rows stay visible but disabled with the
- * reason as their tooltip.
+ * open). Each row's tooltip says what it does for this sender; alone in the
+ * call, both rows stay visible but disabled with the reason instead.
  */
 export function useRoomNavigationControls(nav: RoomNavigation): {
   menu: ReactNode;
@@ -105,7 +105,17 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
     : t('follow.button');
   const summonLabel = t('summon.button');
   const alone = !nav.others.length;
-  const hint = alone ? t('navigation.alone') : t('activities.hint');
+  const aloneHint = t('navigation.alone');
+  const followHint = alone
+    ? aloneHint
+    : t(
+        nav.canManage ? 'navigation.follow_hint_host' : 'navigation.follow_hint'
+      );
+  const summonHint = alone
+    ? aloneHint
+    : t(
+        nav.canManage ? 'navigation.summon_hint_host' : 'navigation.summon_hint'
+      );
   return {
     menu: (
       <>
@@ -114,14 +124,14 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
           active={!!nav.leading}
           icon={Navigation}
           label={followLabel}
-          hint={hint}
+          hint={followHint}
           locked={alone}
           onClick={() => setDialog('follow')}
         />
         <ControlButton
           icon={Magnet}
           label={summonLabel}
-          hint={hint}
+          hint={summonHint}
           locked={alone}
           onClick={() => setDialog('summon')}
         />

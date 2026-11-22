@@ -164,6 +164,9 @@ export function CallControlDock({
         }
         context={<SurfaceContext nav={nav} />}
         liveActivity={activities.liveControl}
+        // Without tool access, More is the only place that lists every live
+        // poll and Quiz Arena shortcut; the bar shows just one of them.
+        liveMenu={roomTools.canUse ? undefined : activities.controls}
         cameraOn={room.media.videoEnabled}
         micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
         screenOn={room.media.screenEnabled}

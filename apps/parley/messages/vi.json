@@ -4348,7 +4348,6 @@
       "connection_stats_unavailable": "Không có số liệu truyền thông.",
       "connection_title": "Kết nối",
       "copied": "Đã sao chép",
-      "copy_invite": "Sao chép lời mời",
       "copy_invite_hint": "Sao chép liên kết tham gia và mã cuộc họp",
       "cost_breakdown": "Mức sử dụng và chi phí",
       "cost_reports_limited": "{count} báo cáo đo lường đã bị giới hạn hoặc đặt lại mốc. Ước tính này còn thiếu một phần mức sử dụng.",
@@ -4754,7 +4753,11 @@
         "context": "Bạn đang ở {surface}",
         "rate_limited": "Đợi một chút rồi gửi yêu cầu tiếp",
         "no_targets": "Những người đó không còn trong cuộc gọi",
-        "guide": "Dẫn dắt phòng"
+        "guide": "Dẫn dắt phòng",
+        "follow_hint": "Người bạn chọn được mời chuyển theo mỗi khi bạn đổi nội dung đang mở",
+        "follow_hint_host": "Người bạn chọn chuyển theo mỗi khi bạn đổi nội dung đang mở",
+        "summon_hint": "Mời người bạn chọn đến nội dung bạn đang mở",
+        "summon_hint_host": "Đưa người bạn chọn đến nội dung bạn đang mở, một lần"
       },
       "follow": {
         "button": "Theo dõi",
@@ -4789,7 +4792,7 @@
       "activities": {
         "button": "Hoạt động",
         "title": "Hoạt động",
-        "hint": "Theo dõi mở hoạt động cho bạn. Triệu tập đưa mọi người khác đến.",
+        "hint": "Mở cho bạn; Triệu tập để đưa người khác đến",
         "settings": "Hoạt động",
         "descriptions": {
           "programming": "Cùng viết và chạy mã",
@@ -4813,15 +4816,11 @@
         "search": "Tìm hoạt động",
         "all": "Tất cả hoạt động",
         "all_description": "Hoạt động đang diễn ra và hoạt động bạn có thể bắt đầu",
-        "live": "Trực tiếp",
-        "live_now": "Đang diễn ra",
         "start_section": "Bắt đầu hoạt động",
         "start": "Bắt đầu",
         "open": "Mở",
         "start_named": "Bắt đầu {name}",
         "open_named": "Mở {name}",
-        "button_live": "Hoạt động, {count} đang diễn ra",
-        "live_count": "{count} đang diễn ra",
         "groups": {
           "overview": "Tổng quan",
           "engage": "Tương tác",
@@ -4829,7 +4828,11 @@
           "create": "Cùng sáng tạo",
           "run": "Điều phối phòng",
           "other": "Hoạt động khác"
-        }
+        },
+        "button_open": "Hoạt động, {count} đang mở",
+        "open_count": "{count} đang mở",
+        "open_now": "Đang mở",
+        "open_state": "Đang mở"
       },
       "presence_roster": {
         "title": "{count, plural, other {# người đang ở đây}}",
@@ -5050,7 +5053,9 @@
         "copy_invite": "Sao chép toàn bộ lời mời",
         "email": "Gửi qua email",
         "email_hint": "Chọn người trong không gian làm việc"
-      }
+      },
+      "class_timer_paused": "Đã tạm dừng hẹn giờ",
+      "class_timer_started": "Đã bắt đầu hẹn giờ"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

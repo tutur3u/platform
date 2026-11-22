@@ -27,6 +27,7 @@ export function CallClock({
         <ClassTimerChip
           timer={state.classTimer}
           serverNow={state.classTimerServerNow}
+          announce
         />
       )}
       {canView && <AttendancePanel meetingId={meetingId} />}

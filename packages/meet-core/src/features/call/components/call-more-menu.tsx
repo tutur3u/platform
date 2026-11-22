@@ -27,6 +27,7 @@ import {
 export function CallMoreMenu({
   phone,
   liveActivity,
+  liveMenu,
   toolsMenu,
   recording,
   extraControls,
@@ -41,6 +42,11 @@ export function CallMoreMenu({
     hand: ReactNode;
   };
   liveActivity?: ReactNode;
+  /**
+   * Every live shortcut, at all widths, for people with no other way to reach
+   * them. Without it, phones get the bar's live shortcut here.
+   */
+  liveMenu?: ReactNode;
   /** Legacy tool rows for phones when the bar has no Activities entry. */
   toolsMenu?: ReactNode;
   recording?: { on?: boolean; busy?: boolean; toggle: () => void };
@@ -90,8 +96,14 @@ export function CallMoreMenu({
           )}
           <div className="min-[360px]:hidden">{phone.chat}</div>
           <div className="md:hidden">{phone.hand}</div>
-          {liveActivity && (
-            <div className="flex flex-col gap-1 sm:hidden">{liveActivity}</div>
+          {liveMenu ? (
+            <div className="flex flex-col gap-1">{liveMenu}</div>
+          ) : (
+            liveActivity && (
+              <div className="flex flex-col gap-1 sm:hidden">
+                {liveActivity}
+              </div>
+            )
           )}
           {toolsMenu && (
             <div className="flex flex-col gap-1 sm:hidden">{toolsMenu}</div>

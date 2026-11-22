@@ -66,8 +66,11 @@ it('shows everyone a read-only synced timer chip in the top bar', () => {
   vi.setSystemTime(new Date(NOW));
   for (const role of ['host', 'participant'] as const) {
     const { container } = renderClock(running(role));
-    const chip = screen.getByRole('status', { name: /^Timer: 05:00 left$/ });
-    expect(chip.textContent).toBe('05:00');
+    const chip = screen.getByTitle('05:00 left');
+    expect(chip.textContent).toBe('Timer: 05:00');
+    expect(chip.getAttribute('aria-live')).toBeNull();
+    // One polite region reports the state, not every tick.
+    expect(screen.getByRole('status').textContent).toBe('Timer started');
     expect(screen.queryByRole('button', { name: /Timer/ })).toBeNull();
     expect(container.querySelector('audio, video')).toBeNull();
     cleanup();
@@ -86,11 +89,17 @@ it('shows the end cue without sound and no chip without a timer', () => {
       endsAt: undefined,
     },
   });
-  expect(screen.getByRole('status').textContent).toContain("Time's up");
-  expect(screen.getByRole('status').className).toContain(
+  expect(screen.getByRole('status').textContent).toBe("Time's up");
+  expect(screen.getByTitle("Time's up").className).toContain(
     'motion-safe:animate-pulse'
   );
   expect(container.querySelector('audio, video')).toBeNull();
+  cleanup();
+  renderClock({
+    ...running('host'),
+    classTimer: { ...running('host').classTimer!, status: 'paused' },
+  });
+  expect(screen.getByRole('status').textContent).toBe('Timer paused');
   cleanup();
   renderClock({ ...running('host'), classTimer: null });
   expect(screen.queryByRole('status')).toBeNull();

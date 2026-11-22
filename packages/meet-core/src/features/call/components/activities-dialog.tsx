@@ -7,7 +7,6 @@ import {
   type SettingsNavGroup,
 } from '@tuturuuu/ui/custom/satellite-settings-dialog-shell';
 import { useTranslations } from 'next-intl';
-import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useState } from 'react';
 import { ALL_ACTIVITIES_TAB, groupActivities } from './activities-catalog';
 import {
@@ -21,29 +20,26 @@ type ShellT = SettingsDialogShellProps['t'];
 /**
  * The Activities picker, laid out like Settings: Overview first, then the
  * activities grouped by purpose. Its tab persists in `activitiesTab`, apart
- * from the `settingsTab` that Settings uses. Starting an activity closes the
+ * from the `settingsTab` that Settings uses, while it is open. Starting an activity closes the
  * dialog and opens it as its tile always has; pages such as Timer and Room
  * activities render inside the dialog instead.
  */
 export function ActivitiesDialog({
   tiles,
+  persistedTab,
+  setPersistedTab,
   onClose,
   onFeedback,
 }: {
   tiles: readonly ActivityTile[];
+  /** The `activitiesTab` URL value, owned by the trigger that clears it. */
+  persistedTab: string | null;
+  setPersistedTab: (tab: string | null) => unknown;
   onClose: () => void;
   onFeedback?: () => void;
 }) {
   const t = useTranslations('meet.call.activities');
   const root = useTranslations();
-  const [persistedTab, setPersistedTab] = useQueryState(
-    'activitiesTab',
-    parseAsString.withOptions({
-      history: 'replace',
-      shallow: true,
-      scroll: false,
-    })
-  );
   const [tab, setTab] = useState(() => persistedTab ?? ALL_ACTIVITIES_TAB);
   const select = useCallback(
     (next: string) => {

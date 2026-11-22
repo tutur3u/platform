@@ -67,7 +67,9 @@ it('lets the host start, pause and stop the room timer', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
   renderControls(running('host'));
-  expect(screen.getByRole('status').textContent).toContain('05:00');
+  expect(screen.getByTitle('05:00 left')).toBeTruthy();
+  // The page chip is not a live region; the header announces state.
+  expect(screen.queryByRole('status')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: '1 min' }));
   fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
   fireEvent.change(screen.getByLabelText('Minutes'), {

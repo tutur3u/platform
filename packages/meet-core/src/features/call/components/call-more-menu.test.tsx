@@ -14,6 +14,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
 import { INITIAL_CALL_STATE } from '../lib/call-state';
+import { meetTools } from '../tools/registry';
 import type { MeetRoomController } from '../lib/room-controller';
 import { CallControlDock } from './call-control-dock';
 import {
@@ -145,14 +146,20 @@ const openMore = () =>
 const menu = () =>
   within(screen.getByRole('dialog', { name: call.more_actions }));
 
-it('moves Follow and Summon into More under Guide the room with the hint', () => {
+const description = (element: HTMLElement) =>
+  document.getElementById(element.getAttribute('aria-describedby') ?? '')
+    ?.textContent;
+
+it('moves Follow and Summon into More under Guide the room with their hints', () => {
   renderDock({});
   expect(screen.queryByRole('button', { name: call.follow.button })).toBeNull();
   openMore();
   expect(menu().getByText(call.navigation.guide)).toBeTruthy();
   const follow = menu().getByRole('button', { name: call.follow.button });
-  menu().getByRole('button', { name: call.summon.button });
-  expect(menu().getAllByText(call.activities.hint)).toHaveLength(2);
+  const summon = menu().getByRole('button', { name: call.summon.button });
+  expect(description(follow)).toBe(call.navigation.follow_hint_host);
+  expect(description(summon)).toBe(call.navigation.summon_hint_host);
+  expect(menu().queryByText(call.activities.hint)).toBeNull();
   fireEvent.click(follow);
   expect(screen.getByRole('dialog', { name: call.follow.button })).toBeTruthy();
 });
@@ -162,9 +169,65 @@ it('keeps Follow and Summon visible but disabled with the reason when alone', ()
   openMore();
   const follow = menu().getByRole('button', {
     name: call.follow.button,
-  }) as HTMLButtonElement;
-  expect(follow.disabled).toBe(true);
-  expect(menu().getAllByText(call.navigation.alone)).toHaveLength(2);
+  });
+  const summon = menu().getByRole('button', { name: call.summon.button });
+  for (const row of [follow, summon]) {
+    expect(row.getAttribute('aria-disabled')).toBe('true');
+    expect(description(row)).toBe(call.navigation.alone);
+  }
+  fireEvent.click(follow);
+  expect(screen.queryByRole('dialog', { name: call.follow.button })).toBeNull();
+});
+
+it('words the hints as invitations for people who cannot move others', () => {
+  renderDock({ nav: { ...nav(2), canManage: false } as RoomNavigation });
+  openMore();
+  expect(
+    description(menu().getByRole('button', { name: call.follow.button }))
+  ).toBe(call.navigation.follow_hint);
+  expect(
+    description(menu().getByRole('button', { name: call.summon.button }))
+  ).toBe(call.navigation.summon_hint);
+});
+
+it('lists every live shortcut in More for people without tool access', () => {
+  renderDock({
+    activities: {
+      liveControl: <button type="button">Live poll</button>,
+      controls: (
+        <>
+          <button type="button">Live poll</button>
+          <button type="button">Live Quiz Arena</button>
+        </>
+      ),
+      entries: [],
+    },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: call.more_actions_activity })
+  );
+  expect(menu().getByRole('button', { name: 'Live poll' })).toBeTruthy();
+  expect(menu().getByRole('button', { name: 'Live Quiz Arena' })).toBeTruthy();
+});
+
+it('gives every Activities sidebar entry a distinct name with the room timer on', () => {
+  renderDock({
+    room: {
+      ...room,
+      state: { ...room.state, classRole: 'host', classTimerEnabled: true },
+    } as unknown as MeetRoomController,
+    roomTools: { canConfigure: true, canUse: true, showPreview: false },
+    tools: { shown: meetTools, activeId: null, toggle: noop },
+  });
+  fireEvent.click(screen.getByRole('button', { name: call.activities.button }));
+  const names = within(
+    screen.getByRole('navigation', { name: call.activities.title })
+  )
+    .getAllByRole('button')
+    .map((button) => button.textContent?.trim());
+  expect(names).toContain(call.class_timer);
+  expect(names).toContain(call.tools.timer.title);
+  expect(new Set(names).size).toBe(names.length);
 });
 
 it('lists Transcript and notes only for people who may read them', () => {

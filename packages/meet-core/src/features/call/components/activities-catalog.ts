@@ -29,7 +29,7 @@ const GROUP_OF: Readonly<Record<string, ActivityGroup>> = {
   programming: 'create',
   document: 'create',
   'class-timer': 'run',
-  timers: 'run',
+  timers: 'other',
   breakouts: 'run',
   'room-activities': 'run',
 };

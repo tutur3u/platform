@@ -89,6 +89,7 @@ export function ControlBar({
   mediaLocks,
   extraControls,
   liveActivity,
+  liveMenu,
   busyDevices,
   cameraOn,
   handRaised,
@@ -129,6 +130,8 @@ export function ControlBar({
   mediaLocks?: { audio: boolean; video: boolean; screen: boolean };
   extraControls?: ReactNode;
   liveActivity?: ReactNode;
+  /** Every live shortcut for the More menu; see `CallMoreMenu`. */
+  liveMenu?: ReactNode;
   busyDevices?: { microphone?: boolean; camera?: boolean; screen?: boolean };
   cameraOn: boolean;
   handRaised: boolean;
@@ -263,6 +266,7 @@ export function ControlBar({
             hand,
           }}
           liveActivity={liveActivity}
+          liveMenu={liveMenu}
           toolsMenu={activities ? undefined : toolsMenu}
           recording={
             onToggleRecording

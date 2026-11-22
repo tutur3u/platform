@@ -91,7 +91,7 @@ it('opens a Settings-like dialog with grouped sidebar and an overview', () => {
   expect(nav.getByRole('button', { name: 'Mystery tool' })).toBeTruthy();
   expect(screen.getByRole('heading', { name: a.all })).toBeTruthy();
   expect(screen.getByRole('heading', { name: a.start_section })).toBeTruthy();
-  expect(screen.queryByRole('heading', { name: a.live_now })).toBeNull();
+  expect(screen.queryByRole('heading', { name: a.open_now })).toBeNull();
   expect(screen.getByText(a.descriptions.polls)).toBeTruthy();
 });
 
@@ -125,11 +125,11 @@ it('starts from an activity page in the sidebar', () => {
   expect(onTool).toHaveBeenCalledWith('live-flashcards');
 });
 
-it('counts live activities on the trigger and lists them under Live now', () => {
+it('counts open activities on the trigger and lists them under Open now', () => {
   const onTool = vi.fn();
   renderMenu({ activeToolId: 'polls', onTool });
-  open('Activities, 1 live');
-  expect(screen.getByRole('heading', { name: a.live_now })).toBeTruthy();
+  open('Activities, 1 open');
+  expect(screen.getByRole('heading', { name: a.open_now })).toBeTruthy();
   // An activity already open stays open; Open only returns to it.
   fireEvent.click(screen.getByRole('button', { name: `Open ${pollsLabel}` }));
   expect(onTool).not.toHaveBeenCalled();
@@ -181,4 +181,42 @@ it('previews activities with a feedback shortcut in Showcase', () => {
   fireEvent.click(screen.getByRole('button', { name: room.feedback }));
   expect(feedback).toHaveBeenCalledOnce();
   expect(dialog()).toBeNull();
+});
+
+it('clears its tab when it closes so the next open starts on the overview', async () => {
+  const urls: string[] = [];
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter onUrlUpdate={(event) => urls.push(event.queryString)}>
+        <ActivitiesMenu
+          tools={[polls, flashcards]}
+          activeToolId={null}
+          onTool={vi.fn()}
+        />
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  open();
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: a.title })).getByRole(
+      'button',
+      { name: 'Flashcards' }
+    )
+  );
+  await vi.waitFor(() =>
+    expect(urls.at(-1)).toContain('activitiesTab=live-flashcards')
+  );
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  expect(dialog()).toBeNull();
+  await vi.waitFor(() => expect(urls.at(-1)).not.toContain('activitiesTab'));
+  open();
+  expect(screen.getByRole('heading', { name: a.all })).toBeTruthy();
+});
+
+it('explains on a Start action that it opens the activity for this person', async () => {
+  renderMenu({});
+  open();
+  fireEvent.focus(screen.getByRole('button', { name: `Start ${pollsLabel}` }));
+  expect((await screen.findByRole('tooltip')).textContent).toContain(a.hint);
+  expect(a.hint).toBe('Opens for you; Summon brings others');
 });

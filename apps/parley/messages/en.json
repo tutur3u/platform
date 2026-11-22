@@ -4348,7 +4348,6 @@
       "connection_stats_unavailable": "Media statistics are unavailable.",
       "connection_title": "Connection",
       "copied": "Copied",
-      "copy_invite": "Copy invite",
       "copy_invite_hint": "Copy the joining link and meeting code",
       "cost_breakdown": "Usage & costs",
       "cost_reports_limited": "{count} telemetry reports were limited or baselined. Some usage is missing from this estimate.",
@@ -4754,7 +4753,11 @@
         "context": "You are in {surface}",
         "rate_limited": "Wait a moment before sending another request",
         "no_targets": "Those people are no longer in the call",
-        "guide": "Guide the room"
+        "guide": "Guide the room",
+        "follow_hint": "People you pick are asked to move with you whenever you change what you have open",
+        "follow_hint_host": "People you pick move with you whenever you change what you have open",
+        "summon_hint": "Invites the people you pick to what you have open",
+        "summon_hint_host": "Brings the people you pick to what you have open, once"
       },
       "follow": {
         "button": "Follow",
@@ -4789,7 +4792,7 @@
       "activities": {
         "button": "Activities",
         "title": "Activities",
-        "hint": "Follow opens it for you. Summon brings everyone else.",
+        "hint": "Opens for you; Summon brings others",
         "settings": "Activities",
         "descriptions": {
           "programming": "Code and run together",
@@ -4813,15 +4816,11 @@
         "search": "Search activities",
         "all": "All activities",
         "all_description": "What's live and what you can start",
-        "live": "Live",
-        "live_now": "Live now",
         "start_section": "Start an activity",
         "start": "Start",
         "open": "Open",
         "start_named": "Start {name}",
         "open_named": "Open {name}",
-        "button_live": "Activities, {count} live",
-        "live_count": "{count} live",
         "groups": {
           "overview": "Overview",
           "engage": "Engage",
@@ -4829,7 +4828,11 @@
           "create": "Create together",
           "run": "Run the room",
           "other": "More activities"
-        }
+        },
+        "button_open": "Activities, {count} open",
+        "open_count": "{count} open",
+        "open_now": "Open now",
+        "open_state": "Open"
       },
       "presence_roster": {
         "title": "{count, plural, one {# person here} other {# people here}}",
@@ -5050,7 +5053,9 @@
         "copy_invite": "Copy full invite",
         "email": "Send by email",
         "email_hint": "Pick people from your workspace"
-      }
+      },
+      "class_timer_paused": "Timer paused",
+      "class_timer_started": "Timer started"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

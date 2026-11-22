@@ -3,6 +3,7 @@
 import { MessageSquare } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { type ComponentType, type ReactNode, useId } from 'react';
 
@@ -11,7 +12,7 @@ export type ActivityTile = {
   id: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  /** Open for this person now; listed under Live now. */
+  /** Open for this person now; listed under Open now. */
   active: boolean;
   description?: string;
   /** Launches the activity; absent where it may only be previewed. */
@@ -22,7 +23,7 @@ export type ActivityTile = {
   listed?: boolean;
 };
 
-function LiveBadge() {
+function OpenBadge() {
   const t = useTranslations('meet.call.activities');
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-dynamic-green/15 px-2 py-0.5 font-medium text-dynamic-green text-xs">
@@ -30,7 +31,7 @@ function LiveBadge() {
         aria-hidden="true"
         className="size-1.5 rounded-full bg-dynamic-green"
       />
-      {t('live')}
+      {t('open_state')}
     </span>
   );
 }
@@ -45,7 +46,7 @@ function LaunchButton({
   const t = useTranslations('meet.call.activities');
   if (!tile.open && !tile.page) return null;
   const opens = tile.active || !!tile.page;
-  return (
+  const button = (
     <Button
       type="button"
       size="sm"
@@ -58,6 +59,15 @@ function LaunchButton({
     >
       {t(opens ? 'open' : 'start')}
     </Button>
+  );
+  // Starting an activity opens it for this person only; Summon brings
+  // others to it.
+  if (tile.page) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent>{t('hint')}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -87,7 +97,7 @@ function ActivityCard({
             <p className="text-muted-foreground text-sm">{tile.description}</p>
           )}
         </div>
-        {tile.active && <LiveBadge />}
+        {tile.active && <OpenBadge />}
       </div>
       <div className="mt-auto flex justify-end">
         <LaunchButton tile={tile} onLaunch={onLaunch} />
@@ -121,7 +131,7 @@ function ActivitySection({
   );
 }
 
-/** The overview: what is live now, then everything that can be started. */
+/** The overview: what is open now, then everything that can be started. */
 export function AllActivitiesPage({
   tiles,
   onLaunch,
@@ -155,7 +165,7 @@ export function AllActivitiesPage({
         </div>
       )}
       <ActivitySection
-        title={t('live_now')}
+        title={t('open_now')}
         tiles={tiles.filter((tile) => tile.active)}
         onLaunch={onLaunch}
       />
@@ -181,7 +191,7 @@ export function ActivityDetailPage({
     <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-4">
       <ActivityIcon tile={tile} />
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        {tile.active && <LiveBadge />}
+        {tile.active && <OpenBadge />}
         {!tile.open && !tile.page && (
           <Badge variant="outline">{roomT('preview')}</Badge>
         )}

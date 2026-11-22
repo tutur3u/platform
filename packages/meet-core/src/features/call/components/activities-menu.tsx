@@ -5,6 +5,7 @@ import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useState } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesDialog } from './activities-dialog';
@@ -53,6 +54,20 @@ export function ActivitiesMenu({
   const collaborationT = useTranslations('meet.collaboration');
   const all = useTranslations();
   const [open, setOpen] = useState(false);
+  const [persistedTab, setPersistedTab] = useQueryState(
+    'activitiesTab',
+    parseAsString.withOptions({
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    })
+  );
+  // Closing clears the tab, so the dock and presence-roster entries each
+  // open on the overview instead of the other's last page.
+  const changeOpen = (next: boolean) => {
+    setOpen(next);
+    if (!next) void setPersistedTab(null);
+  };
   const toolLabel = (tool: MeetToolDefinition) =>
     all.has(tool.label) ? all(tool.label) : tool.label;
   const describe = (id: string) =>
@@ -99,10 +114,14 @@ export function ActivitiesMenu({
     description: tile.description ?? describe(tile.id),
   }));
   if (!tiles.length) return null;
-  const live = tiles.filter((tile) => tile.active).length;
-  const label = live ? t('button_live', { count: live }) : t('button');
+  // Counts activities open for this person; room-wide live state is not
+  // known for every tool.
+  const openCount = tiles.filter((tile) => tile.active).length;
+  const label = openCount
+    ? t('button_open', { count: openCount })
+    : t('button');
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
@@ -111,7 +130,7 @@ export function ActivitiesMenu({
               className={cn(
                 controlPillClass,
                 'w-11 px-0 md:w-auto md:px-4',
-                live
+                openCount
                   ? 'border-transparent bg-foreground/15'
                   : 'border-transparent bg-accent'
               )}
@@ -120,14 +139,14 @@ export function ActivitiesMenu({
             >
               <LayoutGrid className="size-5" />
               <span className="hidden md:inline">{t('button')}</span>
-              {live > 0 && (
+              {openCount > 0 && (
                 <span
                   aria-hidden="true"
-                  className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-green px-1 font-medium text-[0.6rem] text-white md:static md:min-w-0 md:bg-dynamic-green/15 md:px-2 md:py-0.5 md:text-dynamic-green md:text-xs"
+                  className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-foreground px-1 font-medium text-[0.6rem] text-background md:static md:min-w-0 md:px-2 md:py-0.5 md:text-xs"
                 >
-                  <span className="md:hidden">{live}</span>
+                  <span className="md:hidden">{openCount}</span>
                   <span className="hidden md:inline">
-                    {t('live_count', { count: live })}
+                    {t('open_count', { count: openCount })}
                   </span>
                 </span>
               )}
@@ -136,18 +155,22 @@ export function ActivitiesMenu({
         </TooltipTrigger>
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
-      <ActivitiesDialog
-        tiles={tiles}
-        onClose={() => setOpen(false)}
-        onFeedback={
-          preview
-            ? () => {
-                preview.onFeedback();
-                setOpen(false);
-              }
-            : undefined
-        }
-      />
+      {open && (
+        <ActivitiesDialog
+          tiles={tiles}
+          persistedTab={persistedTab}
+          setPersistedTab={setPersistedTab}
+          onClose={() => changeOpen(false)}
+          onFeedback={
+            preview
+              ? () => {
+                  preview.onFeedback();
+                  changeOpen(false);
+                }
+              : undefined
+          }
+        />
+      )}
     </Dialog>
   );
 }

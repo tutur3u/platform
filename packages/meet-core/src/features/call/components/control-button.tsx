@@ -81,14 +81,22 @@ export function ControlButton({
   onClick: () => void;
 }) {
   const closeOverflow = useContext(CloseCallOverflow);
+  const hintId = useId();
+  // A locked menu row stays focusable and hoverable so its reason, linked as
+  // its description, is reachable; it ignores activation instead.
+  const rowLocked = !!closeOverflow && !!locked;
+  const describedHint = closeOverflow && hint ? hint : undefined;
   const button = (
     <Button
       aria-label={label}
       aria-busy={busy}
-      disabled={busy || locked}
+      aria-describedby={describedHint ? hintId : undefined}
+      aria-disabled={rowLocked || undefined}
+      disabled={busy || (locked && !closeOverflow)}
       aria-pressed={active}
       className={cn(
         closeOverflow ? controlRowClass : controlButtonClass,
+        rowLocked && 'cursor-not-allowed opacity-50 hover:bg-transparent',
         danger &&
           !closeOverflow &&
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
@@ -100,6 +108,7 @@ export function ControlButton({
           'border-transparent bg-dynamic-orange/20 text-dynamic-orange ring-2 ring-dynamic-orange/60 hover:bg-dynamic-orange/30'
       )}
       onClick={() => {
+        if (rowLocked) return;
         onClick();
         closeOverflow?.();
       }}
@@ -125,17 +134,13 @@ export function ControlButton({
   );
   const tip = closeOverflow ? hint : label;
   if (!tip) return button;
-  return (
+  const tooltip = (
     <Tooltip>
       <TooltipTrigger asChild>
-        {locked ? (
+        {locked && !closeOverflow ? (
           // A disabled button fires no pointer events, so the wrapper keeps
           // the reason reachable by hover and keyboard.
-          <span
-            tabIndex={0}
-            aria-label={hint ?? label}
-            className={closeOverflow ? 'block' : undefined}
-          >
+          <span tabIndex={0} aria-label={label}>
             {button}
           </span>
         ) : (
@@ -146,6 +151,15 @@ export function ControlButton({
         {tip}
       </TooltipContent>
     </Tooltip>
+  );
+  if (!describedHint) return tooltip;
+  return (
+    <>
+      {tooltip}
+      <span id={hintId} hidden>
+        {describedHint}
+      </span>
+    </>
   );
 }
 

@@ -56,37 +56,52 @@ export function canStartClassTimer(state: CallState) {
 
 /**
  * The read-only timer chip everyone sees while the room has a timer. Hosts
- * set and change it from Activities.
+ * set and change it from Activities. The ticking time is not announced; with
+ * `announce`, one polite live region reports only state changes (started,
+ * paused, Time's up).
  */
 export function ClassTimerChip({
   timer,
   serverNow,
+  announce = false,
 }: {
   timer: NonNullable<Timer>;
   serverNow: string | null;
+  announce?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const { remaining, ended } = useRemaining(timer, serverNow);
   const label = ended
     ? t('class_timer_ended')
     : t('class_timer_remaining', { time: formatClassTimer(remaining ?? 0) });
+  const status = ended
+    ? t('class_timer_ended')
+    : timer.status === 'paused'
+      ? t('class_timer_paused')
+      : t('class_timer_started');
   return (
-    <span
-      aria-live="polite"
-      aria-label={`${t('class_timer')}: ${label}`}
-      className={cn(
-        'inline-flex h-8 max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 font-medium text-sm tabular-nums',
-        ended &&
-          'motion-safe:animate-pulse bg-dynamic-orange/15 text-dynamic-orange'
-      )}
-      role="status"
-      title={label}
-    >
-      <Clock3 className="size-4 shrink-0" aria-hidden="true" />
-      <span className="truncate">
-        {ended ? label : formatClassTimer(remaining ?? 0)}
+    <>
+      <span
+        className={cn(
+          'inline-flex h-8 max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 font-medium text-sm tabular-nums',
+          ended &&
+            'motion-safe:animate-pulse bg-dynamic-orange/15 text-dynamic-orange'
+        )}
+        data-slot="class-timer-chip"
+        title={label}
+      >
+        <Clock3 className="size-4 shrink-0" aria-hidden="true" />
+        <span className="sr-only">{t('class_timer')}: </span>
+        <span className="truncate">
+          {ended ? label : formatClassTimer(remaining ?? 0)}
+        </span>
       </span>
-    </span>
+      {announce && (
+        <span aria-live="polite" className="sr-only" role="status">
+          {status}
+        </span>
+      )}
+    </>
   );
 }
 

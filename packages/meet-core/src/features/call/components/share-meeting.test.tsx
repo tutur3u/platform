@@ -19,6 +19,11 @@ vi.mock('@tuturuuu/meet-core/runtime', () => ({
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { success: mocks.success, error: mocks.error },
 }));
+vi.mock('qrcode.react', () => ({
+  QRCodeSVG: ({ value }: { value: string }) => (
+    <svg data-testid="qr" data-value={value} />
+  ),
+}));
 vi.mock('./meet-mail-share', () => ({
   MeetMailShare: ({ open }: { open: boolean }) =>
     open ? <div role="dialog" aria-label="mail handoff" /> : null,
@@ -77,7 +82,7 @@ it('shows the link, code and QR with copy actions', async () => {
   expect(codeField.value).toBe(code);
   expect(codeField.placeholder).toBeTruthy();
   expect(screen.getAllByText(share.qr).length).toBeGreaterThan(0);
-  expect(document.querySelector('svg')).toBeTruthy();
+  expect(screen.getByTestId('qr').getAttribute('data-value')).toBe(url);
 
   fireEvent.click(screen.getByRole('button', { name: share.copy_link }));
   await vi.waitFor(() => expect(mocks.writeText).toHaveBeenCalledWith(url));
