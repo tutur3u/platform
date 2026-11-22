@@ -689,12 +689,20 @@ Regression coverage lives in `live-activities.test.ts`, `live-activities-assessm
 `*-panel.test.tsx` files under
 `tools/live-activities` and the Meet whiteboard store and panel tests.
 
-The live assessment is switched off: `MEET_LIVE_ASSESSMENT_ENABLED` in
-`packages/realtime` is `false`. The room refuses every assessment command,
-leaves assessment out of every view, and neither the Activities menu nor a
-co-host's list offers it. Flashcards, the prep game, the icebreaker and the pen
-whiteboard are available. The assessment rules in this section describe what the
-room does when the switch is on.
+The live assessment is switched on: `MEET_LIVE_ASSESSMENT_ENABLED` in
+`packages/realtime` is `true`, so rooms offer it beside flashcards, the prep
+game, the icebreaker and the pen whiteboard. Setting it to `false` makes the room
+refuse every assessment command and leave assessment out of every view, and
+removes it from the Activities menu and a co-host's list; the other tools do
+not depend on it.
+
+Known limit while two or more people manage one assessment: host actions are
+bound to the attempt and the status on screen, not to a per-action version. A
+Reset prepared while answers are closed still applies after another manager
+releases the results; a Release prepared at one close can apply after a reopen
+and a second close of the same attempt; a Save can replace another manager's
+newer draft; and an open confirmation can act on an attempt that replaced the
+one it was opened for. One person managing an assessment is not affected.
 
 ## Viewer admission for large classes
 
