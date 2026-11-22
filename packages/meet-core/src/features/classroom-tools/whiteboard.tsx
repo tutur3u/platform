@@ -214,7 +214,7 @@ export function Whiteboard({
       {(tool === 'sticky' || tool === 'text') && (
         <Input
           aria-label={t('label')}
-          placeholder={t('label')}
+          placeholder={t('label_placeholder')}
           value={label}
           onChange={(event) => setLabel(event.target.value)}
           maxLength={60}

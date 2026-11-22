@@ -1,9 +1,11 @@
 'use client';
 
-import { X } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { LayoutGrid, PenTool } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
-import { ResizableCallPanel } from '../call/components/resizable-call-panel';
+import {
+  ActivityPanel,
+  type ActivityState,
+} from '../call/tools/activity-panel';
 import { useActivityActive } from '../call/stage-layout/activity-pane-context';
 import { Breakouts } from './breakouts';
 import { type ClassroomTool, useClassroomTool } from './classroom-client';
@@ -28,55 +30,47 @@ export function ClassroomPanel({
     useActivityActive()
   );
   const label = t(`${tool}.title`);
+  const state: ActivityState = query.isError
+    ? {
+        kind: 'error',
+        title: t('unavailable'),
+        onRetry: () => void query.refetch(),
+      }
+    : query.data
+      ? { kind: 'ready' }
+      : { kind: 'loading' };
   return (
-    <ResizableCallPanel label={label}>
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <h2 className="font-semibold text-sm">{label}</h2>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          aria-label={t('close_panel')}
-          title={t('close_panel')}
-          onClick={close}
-        >
-          <X />
-        </Button>
-      </div>
-      <div className="min-h-0 overflow-y-auto p-3">
-        {query.isError ? (
-          <p role="alert" className="text-muted-foreground text-sm">
-            {t('unavailable')}
-          </p>
-        ) : query.data ? (
-          'revision' in query.data ? (
-            <Whiteboard
-              view={query.data}
-              busy={action.isPending}
-              onDraw={(item) =>
-                action.mutate({ action: 'whiteboard.draw', item })
-              }
-              onUndo={() => action.mutate({ action: 'whiteboard.undo' })}
-              onClear={() => action.mutate({ action: 'whiteboard.clear' })}
-            />
-          ) : (
-            <Breakouts
-              view={query.data}
-              busy={action.isPending}
-              onAction={action.mutate}
-            />
-          )
+    <ActivityPanel
+      title={label}
+      icon={tool === 'whiteboard' ? PenTool : LayoutGrid}
+      closeLabel={t('close_panel')}
+      onClose={close}
+      state={state}
+      busy={action.isPending}
+    >
+      {query.data &&
+        ('revision' in query.data ? (
+          <Whiteboard
+            view={query.data}
+            busy={action.isPending}
+            onDraw={(item) =>
+              action.mutate({ action: 'whiteboard.draw', item })
+            }
+            onUndo={() => action.mutate({ action: 'whiteboard.undo' })}
+            onClear={() => action.mutate({ action: 'whiteboard.clear' })}
+          />
         ) : (
-          <p role="status" className="text-muted-foreground text-sm">
-            {t('loading')}
-          </p>
-        )}
-        {action.isError && (
-          <p role="alert" className="mt-2 text-destructive text-sm">
-            {t('action_failed')}
-          </p>
-        )}
-      </div>
-    </ResizableCallPanel>
+          <Breakouts
+            view={query.data}
+            busy={action.isPending}
+            onAction={action.mutate}
+          />
+        ))}
+      {action.isError && (
+        <p role="alert" className="text-destructive text-sm">
+          {t('action_failed')}
+        </p>
+      )}
+    </ActivityPanel>
   );
 }

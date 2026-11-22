@@ -115,17 +115,18 @@ it('gives every text field a valued placeholder that its bundle defines', () => 
 
 it('does not repeat a field label as its placeholder', () => {
   const repeats: string[] = [];
-  const strings = (messages as { meet: { call: Record<string, unknown> } }).meet
-    .call;
-  for (const [group, value] of Object.entries(strings)) {
-    if (!value || typeof value !== 'object') continue;
-    const node = value as Record<string, unknown>;
-    for (const [key, text] of Object.entries(node)) {
-      if (!/placeholder/i.test(key) || typeof text !== 'string') continue;
-      const label = key.replace(/placeholder_?/i, '');
-      const labelText = node[label.replace(/^_|_$/g, '')];
-      if (typeof labelText === 'string' && labelText === text)
-        repeats.push(`${group}.${key}`);
+  for (const file of [...ROOTS.flatMap(sources), ...FILES]) {
+    const source = readFileSync(file, 'utf8');
+    for (const match of source.matchAll(
+      /<(Input|Textarea|input|textarea)\b/g
+    )) {
+      const tag = tagAt(source, match.index);
+      const label = /aria-label=\{([^}]*)\}/.exec(tag)?.[1]?.trim();
+      const placeholder = /placeholder=\{([^}]*)\}/.exec(tag)?.[1]?.trim();
+      if (label && placeholder && label === placeholder)
+        repeats.push(
+          `${file.split('/features/')[1]}:${source.slice(0, match.index).split('\n').length}`
+        );
     }
   }
   expect(repeats).toEqual([]);

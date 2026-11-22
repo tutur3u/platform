@@ -4,10 +4,10 @@ import { Circle, PenTool, Trash2, Undo2 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore } from 'react';
-import { ResizableCallPanel } from '../../components/resizable-call-panel';
 import { useActivityActive } from '../../stage-layout/activity-pane-context';
 import type { MeetToolPanelProps } from '../live-activities/meet-tool';
-import { CallPanelHeader, ToolIconAction } from '../tool-ui';
+import { ActivityPanel } from '../activity-panel';
+import { ToolIconAction } from '../tool-ui';
 import { type WhiteboardColor, whiteboardColors } from './stroke';
 import {
   clearWhiteboard,
@@ -58,58 +58,55 @@ export function WhiteboardPanel({
   );
 
   return (
-    <ResizableCallPanel label={panelTitle}>
-      <CallPanelHeader
-        icon={PenTool}
-        title={panelTitle}
-        closeLabel={t('close_panel')}
-        onClose={() => onClose?.()}
-      />
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-        <div
-          role="group"
-          aria-label={t('whiteboard.drawing_tools')}
-          className="flex shrink-0 flex-wrap items-center justify-between gap-2"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            {whiteboardColors.map((id) => (
-              <ToolIconAction
-                key={id}
-                icon={inkIcons[id]}
-                label={t(`whiteboard.color_${id}`)}
-                aria-pressed={color === id}
-                className="aria-pressed:bg-foreground/15"
-                onClick={() => setColor(id)}
-              />
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+    <ActivityPanel
+      title={panelTitle}
+      icon={PenTool}
+      closeLabel={t('close_panel')}
+      onClose={() => onClose?.()}
+    >
+      <div
+        role="group"
+        aria-label={t('whiteboard.drawing_tools')}
+        className="flex shrink-0 flex-wrap items-center justify-between gap-2"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {whiteboardColors.map((id) => (
             <ToolIconAction
-              icon={Undo2}
-              label={t('whiteboard.undo')}
-              disabled={!canUndo}
-              onClick={() => undoWhiteboardStroke(meetingId, participantId)}
+              key={id}
+              icon={inkIcons[id]}
+              label={t(`whiteboard.color_${id}`)}
+              aria-pressed={color === id}
+              className="aria-pressed:bg-foreground/15"
+              onClick={() => setColor(id)}
             />
-            {/* The room decides who clears: hosts, co-hosts, participant managers. */}
-            {roomRole === 'host' || canClear ? (
-              <ToolIconAction
-                icon={Trash2}
-                label={t('whiteboard.clear')}
-                disabled={strokes.length === 0}
-                onClick={() => clearWhiteboard(meetingId)}
-              />
-            ) : null}
-          </div>
+          ))}
         </div>
-        <WhiteboardSurface
-          key={`${meetingId}:${participantId}`}
-          meetingId={meetingId}
-          authorId={participantId}
-          color={color}
-          label={title}
-          strokes={strokes}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ToolIconAction
+            icon={Undo2}
+            label={t('whiteboard.undo')}
+            disabled={!canUndo}
+            onClick={() => undoWhiteboardStroke(meetingId, participantId)}
+          />
+          {/* The room decides who clears: hosts, co-hosts, participant managers. */}
+          {roomRole === 'host' || canClear ? (
+            <ToolIconAction
+              icon={Trash2}
+              label={t('whiteboard.clear')}
+              disabled={strokes.length === 0}
+              onClick={() => clearWhiteboard(meetingId)}
+            />
+          ) : null}
+        </div>
       </div>
-    </ResizableCallPanel>
+      <WhiteboardSurface
+        key={`${meetingId}:${participantId}`}
+        meetingId={meetingId}
+        authorId={participantId}
+        color={color}
+        label={title}
+        strokes={strokes}
+      />
+    </ActivityPanel>
   );
 }

@@ -8,7 +8,6 @@ import {
   Users,
   Volume2,
   VolumeX,
-  X,
   Zap,
 } from '@tuturuuu/icons';
 import type { QuizArenaFullView } from '@tuturuuu/realtime/meet/room-quiz-arena';
@@ -26,6 +25,7 @@ import type {
   QuizArenaAction,
   QuizArenaActionResult,
 } from '../server/quiz-arena';
+import { ActivityPanel, type ActivityState } from '../tools/activity-panel';
 import { ControlButton } from './control-bar';
 import { QuizArenaBoard } from './quiz-arena-board';
 import { QuizArenaBuilder } from './quiz-arena-builder';
@@ -34,7 +34,6 @@ import { MiraAttribution, MiraStatus, Pill } from './quiz-arena-kit';
 import { QuizArenaLeaderboard } from './quiz-arena-leaderboard';
 import { QuizArenaQuestion } from './quiz-arena-question';
 import { useQuizArenaSounds } from './quiz-arena-sounds';
-import { ResizableCallPanel } from './resizable-call-panel';
 
 type ArenaQuery = ReturnType<typeof useCallQuizArena>;
 const LIVE_PHASES = new Set(['question', 'final_wager', 'final_answer']);
@@ -133,11 +132,21 @@ export function QuizArenaPanel({
         : undefined) ??
       full.tiles.filter(({ status }) => status === 'revealed').at(-1))
     : undefined;
+  const state: ActivityState = query.isPending
+    ? { kind: 'loading' }
+    : query.isError && !query.data
+      ? {
+          kind: 'error',
+          title: t('load_error'),
+          onRetry: () => void query.refetch(),
+        }
+      : { kind: 'ready' };
   return (
-    <ResizableCallPanel label={t('title')}>
-      <header className="flex flex-wrap items-center gap-1.5 border-border border-b px-3 py-2">
-        <h2 className="font-extrabold text-foreground">{t('title')}</h2>
-        {meta && (
+    <ActivityPanel
+      title={t('title')}
+      icon={Gamepad2}
+      status={
+        meta && (
           <>
             <Pill>
               {meta.answerMode === 'buzz_in' ? (
@@ -167,11 +176,14 @@ export function QuizArenaPanel({
               </Pill>
             )}
           </>
-        )}
-        <span className="ml-auto flex items-center gap-0.5">
+        )
+      }
+      actions={
+        <>
           <Button
             size="icon"
             variant="ghost"
+            className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
             aria-pressed={sounds.enabled}
             aria-label={t('sound_effects')}
             onClick={() => sounds.setEnabled(!sounds.enabled)}
@@ -184,7 +196,12 @@ export function QuizArenaPanel({
           </Button>
           {canManage && full && (
             <>
-              <Button asChild size="icon" variant="ghost">
+              <Button
+                asChild
+                size="icon"
+                variant="ghost"
+                className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
+              >
                 <a
                   href={quizArenaExportUrl(meetingId, 'csv')}
                   aria-label={t('export_csv')}
@@ -193,115 +210,98 @@ export function QuizArenaPanel({
                   <Download className="size-4" />
                 </a>
               </Button>
-              <Button asChild size="sm" variant="ghost">
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="rounded-full"
+              >
                 <a href={quizArenaExportUrl(meetingId, 'json')} download>
                   {t('export_json')}
                 </a>
               </Button>
             </>
           )}
-          <Button
-            aria-label={t('close_panel')}
-            onClick={onClose}
-            size="icon"
-            variant="ghost"
-          >
-            <X className="size-4" />
-          </Button>
-        </span>
-      </header>
-      <div aria-busy={busy} className="min-h-0 space-y-3 overflow-y-auto p-3">
-        {query.isPending && <p role="status">{t('loading')}</p>}
-        {query.isError && (
-          <div
-            role="alert"
-            className="flex items-center justify-between gap-2 text-sm"
-          >
-            {t('load_error')}
-            <Button
-              disabled={query.isFetching}
-              onClick={() => void query.refetch()}
-              size="sm"
-              variant="outline"
-            >
-              {t('retry')}
-            </Button>
-          </div>
-        )}
-        {mutation.isError && (
-          <p role="alert" className="text-destructive text-sm">
-            {t(errorKey(mutation.error))}
-          </p>
-        )}
-        {meta?.pickedBy === 'mira' && meta.phase === 'question' && (
-          <MiraStatus>{t('mira_picked')}</MiraStatus>
-        )}
-        {showBuilder && (
-          <QuizArenaBuilder
-            busy={busy}
-            locale={locale}
-            miraUnavailable={miraUnavailable}
-            courses={courses}
-            onAction={act}
-            onCancel={full ? () => setBuilderOpen(false) : undefined}
-          />
-        )}
-        {view?.kind === 'empty' && !canManage && (
-          <p className="text-muted-foreground text-sm">
-            {t('empty_participant')}
-          </p>
-        )}
-        {full && meta && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="min-w-0 truncate font-extrabold text-base">
-                {meta.title}
-              </h3>
-              {meta.source === 'mira' && (
-                <MiraAttribution
-                  label={t('generated_by_mira')}
-                  className="ml-auto"
-                />
-              )}
-              {meta.source === 'upskii' && (
-                <Pill className="ml-auto">{t('imported_from_upskii')}</Pill>
-              )}
-              {meta.source === 'starter' && (
-                <Pill className="ml-auto">{t('starter_board')}</Pill>
-              )}
-            </div>
-            {meta.phase === 'ended' && (
-              <p className="font-extrabold text-lg">{t('game_over')}</p>
-            )}
-            {active &&
-              (meta.phase !== 'board' || active.status === 'revealed') && (
-                <QuizArenaQuestion
-                  view={full}
-                  selfId={accountId}
-                  tile={active}
-                  busy={busy}
-                  onAction={act}
-                />
-              )}
-            {!meta.phase.startsWith('final') && (
-              <QuizArenaBoard
-                view={full}
-                busy={busy}
-                onPick={(tileId) => act({ action: 'pickTile', tileId })}
+        </>
+      }
+      closeLabel={t('close_panel')}
+      onClose={onClose}
+      state={state}
+      busy={busy}
+    >
+      {mutation.isError && (
+        <p role="alert" className="text-destructive text-sm">
+          {t(errorKey(mutation.error))}
+        </p>
+      )}
+      {meta?.pickedBy === 'mira' && meta.phase === 'question' && (
+        <MiraStatus>{t('mira_picked')}</MiraStatus>
+      )}
+      {showBuilder && (
+        <QuizArenaBuilder
+          busy={busy}
+          locale={locale}
+          miraUnavailable={miraUnavailable}
+          courses={courses}
+          onAction={act}
+          onCancel={full ? () => setBuilderOpen(false) : undefined}
+        />
+      )}
+      {view?.kind === 'empty' && !canManage && (
+        <p className="text-muted-foreground text-sm">
+          {t('empty_participant')}
+        </p>
+      )}
+      {full && meta && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="min-w-0 truncate font-extrabold text-base">
+              {meta.title}
+            </h3>
+            {meta.source === 'mira' && (
+              <MiraAttribution
+                label={t('generated_by_mira')}
+                className="ml-auto"
               />
             )}
-            <QuizArenaLeaderboard view={full} selfId={accountId} />
-            {canManage && (
-              <QuizArenaHostControls
+            {meta.source === 'upskii' && (
+              <Pill className="ml-auto">{t('imported_from_upskii')}</Pill>
+            )}
+            {meta.source === 'starter' && (
+              <Pill className="ml-auto">{t('starter_board')}</Pill>
+            )}
+          </div>
+          {meta.phase === 'ended' && (
+            <p className="font-extrabold text-lg">{t('game_over')}</p>
+          )}
+          {active &&
+            (meta.phase !== 'board' || active.status === 'revealed') && (
+              <QuizArenaQuestion
                 view={full}
+                selfId={accountId}
+                tile={active}
                 busy={busy}
                 onAction={act}
-                onNewBoard={() => setBuilderOpen(true)}
               />
             )}
-          </>
-        )}
-      </div>
-    </ResizableCallPanel>
+          {!meta.phase.startsWith('final') && (
+            <QuizArenaBoard
+              view={full}
+              busy={busy}
+              onPick={(tileId) => act({ action: 'pickTile', tileId })}
+            />
+          )}
+          <QuizArenaLeaderboard view={full} selfId={accountId} />
+          {canManage && (
+            <QuizArenaHostControls
+              view={full}
+              busy={busy}
+              onAction={act}
+              onNewBoard={() => setBuilderOpen(true)}
+            />
+          )}
+        </>
+      )}
+    </ActivityPanel>
   );
 }

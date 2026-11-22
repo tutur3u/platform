@@ -11,9 +11,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { ResizableCallPanel } from '../../components/resizable-call-panel';
 import { useMeetTool } from '../context';
-import { CallPanelHeader, ToolAction } from '../tool-ui';
+import { ActivityStatus } from '../../stage-layout/activity-shell';
+import { ActivityPanel } from '../activity-panel';
+import { ToolAction } from '../tool-ui';
 import {
   formatTimer,
   remainingMs,
@@ -39,70 +40,67 @@ export function TimerToolPanel() {
   const minutes = state.durationMs / 60_000;
 
   return (
-    <ResizableCallPanel label={t('title')}>
-      <CallPanelHeader
-        icon={Timer}
-        title={t('title')}
-        subtitle={
-          <>
-            <LockKeyhole className="size-3" />
-            {t('private')}
-          </>
-        }
-        closeLabel={t('close')}
-        onClose={close}
-      />
-      <div className="flex flex-col gap-5 p-4">
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label={t('presets')}
-        >
-          {TIMER_PRESETS_MINUTES.map((preset) => (
-            <ToolAction
-              key={preset}
-              icon={Clock3}
-              label={t('preset', { count: preset })}
-              variant={minutes === preset ? 'secondary' : 'outline'}
-              aria-pressed={minutes === preset}
-              onClick={() => store.choose(preset)}
-            />
-          ))}
-        </div>
-        <output
-          aria-live={done ? 'assertive' : 'off'}
-          className={cn(
-            'rounded-xl border bg-card py-8 text-center font-mono text-5xl tabular-nums',
-            running ? 'text-foreground' : 'text-muted-foreground',
-            done && 'text-destructive'
-          )}
-        >
-          {done ? t('done') : formatTimer(left)}
-        </output>
-        <div className="flex flex-wrap gap-2">
-          {running && !done ? (
-            <ToolAction
-              variant="default"
-              icon={Pause}
-              label={t('pause')}
-              onClick={() => store.pause(Date.now())}
-            />
-          ) : (
-            <ToolAction
-              variant="default"
-              icon={Play}
-              label={t('start')}
-              disabled={done}
-              onClick={() => store.start(Date.now())}
-            />
-          )}
+    <ActivityPanel
+      title={t('title')}
+      icon={Timer}
+      status={
+        <ActivityStatus>
+          <LockKeyhole aria-hidden="true" className="size-3 shrink-0" />
+          <span className="truncate">{t('private')}</span>
+        </ActivityStatus>
+      }
+      closeLabel={t('close')}
+      onClose={close}
+    >
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label={t('presets')}
+      >
+        {TIMER_PRESETS_MINUTES.map((preset) => (
           <ToolAction
-            icon={RotateCcw}
-            label={t('reset')}
-            onClick={() => store.reset()}
+            key={preset}
+            icon={Clock3}
+            label={t('preset', { count: preset })}
+            variant={minutes === preset ? 'secondary' : 'outline'}
+            aria-pressed={minutes === preset}
+            onClick={() => store.choose(preset)}
           />
-        </div>
+        ))}
       </div>
-    </ResizableCallPanel>
+      <output
+        aria-live={done ? 'assertive' : 'off'}
+        className={cn(
+          'rounded-2xl border bg-card py-6 text-center font-mono text-4xl tabular-nums @min-[360px]:py-8 @min-[360px]:text-5xl',
+          running ? 'text-foreground' : 'text-muted-foreground',
+          done && 'text-destructive'
+        )}
+      >
+        {done ? t('done') : formatTimer(left)}
+      </output>
+      <div className="flex flex-wrap gap-2">
+        {running && !done ? (
+          <ToolAction
+            variant="default"
+            icon={Pause}
+            label={t('pause')}
+            onClick={() => store.pause(Date.now())}
+          />
+        ) : (
+          <ToolAction
+            variant="default"
+            icon={Play}
+            label={t('start')}
+            disabled={done}
+            onClick={() => store.start(Date.now())}
+          />
+        )}
+        <ToolAction
+          icon={RotateCcw}
+          label={t('reset')}
+          onClick={() => store.reset()}
+        />
+      </div>
+    </ActivityPanel>
   );
 }

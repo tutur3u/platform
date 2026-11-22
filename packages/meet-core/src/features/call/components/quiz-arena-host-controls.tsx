@@ -139,7 +139,7 @@ export function QuizArenaHostControls({
             >
               <Input
                 aria-label={t('custom_points')}
-                placeholder={t('custom_points')}
+                placeholder={t('custom_points_placeholder')}
                 inputMode="numeric"
                 pattern="-?[0-9]*"
                 className="h-8 min-w-0"

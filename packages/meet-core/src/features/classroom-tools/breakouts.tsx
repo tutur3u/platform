@@ -171,7 +171,7 @@ export function Breakouts({
         >
           <Input
             aria-label={t('message')}
-            placeholder={t('message')}
+            placeholder={t('message_placeholder')}
             maxLength={300}
             value={message}
             onChange={(event) => setMessage(event.target.value)}

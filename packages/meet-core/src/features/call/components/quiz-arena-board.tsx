@@ -89,7 +89,7 @@ export function QuizArenaBoard({
                 disabled={!choosing || tile.status !== 'available' || busy}
                 onClick={() => onPick(tile.id)}
                 className={cn(
-                  'relative grid h-12 min-w-0 place-items-center rounded-xl border border-border bg-background font-extrabold text-base text-foreground tabular-nums sm:h-14 sm:text-lg',
+                  'relative grid h-12 min-w-0 place-items-center rounded-xl border border-border bg-background font-extrabold text-base text-foreground tabular-nums @min-[360px]:h-14 @min-[360px]:text-lg',
                   'motion-safe:transition-colors motion-reduce:transition-none',
                   choosing &&
                     tile.status === 'available' &&
