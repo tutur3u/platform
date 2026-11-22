@@ -106,7 +106,17 @@ export async function inspectArtifact(options) {
     'adapter'
   );
   assert.match(options.sourceSHA, /^[a-f0-9]{40}$/);
-  assert.match(options.canonicalHost, /^(?:[a-z0-9-]+\.)+[a-z0-9-]+$/);
+  assert.ok(
+    options.profile === undefined || options.profile === 'calendar',
+    'Unsupported runtime profile'
+  );
+  if (options.profile === 'calendar')
+    assert.equal(
+      options.canonicalHost,
+      undefined,
+      'Calendar preserves request hosts'
+    );
+  else assert.match(options.canonicalHost, /^(?:[a-z0-9-]+\.)+[a-z0-9-]+$/);
   assert.ok(
     isAbsolute(options.ownerPackage),
     'Absolute SDK owner package required'
@@ -125,10 +135,6 @@ export async function inspectArtifact(options) {
     'Artifact hash mutation'
   );
   const config = JSON.parse(await readFile(options.config, 'utf8'));
-  assert.ok(
-    options.profile === undefined || options.profile === 'calendar',
-    'Unsupported runtime profile'
-  );
   if (options.profile === 'calendar') {
     await inspectCalendarProfile(options, config);
   } else {
@@ -566,7 +572,12 @@ export async function startNativeWrangler(options, plan) {
         enableContainers: false,
         registry: join(scratch, 'registry'),
         server: { hostname: '127.0.0.1', port: 0 },
-        origin: { hostname: options.canonicalHost, secure: true },
+        // Calendar probes both its subdomain and the apex mount. Preserve each
+        // request's host so the Worker sees the same routing inputs as the edge.
+        origin:
+          options.profile === 'calendar'
+            ? { secure: true }
+            : { hostname: options.canonicalHost, secure: true },
         inferOriginFromRoutes: false,
         routeRequestsByRoutes: false,
         auth: () => {

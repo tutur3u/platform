@@ -17,10 +17,7 @@ import {
   validateOutput,
   verify,
 } from './calendar-native-artifact.mjs';
-import {
-  abuseGuardUnavailableFixture,
-  denyCalendarOutbound,
-} from './calendar-native-runtime-profile.mjs';
+import { withCalendarRuntimeFixtures } from './calendar-native-runtime-profile.mjs';
 import { createCalendar500Diagnostics } from './calendar-response-diagnostics.mjs';
 import {
   createCalendarSsrCollector,
@@ -68,12 +65,8 @@ async function runParent() {
     // Shadow serves the tuturuuu.com/calendar mount. The subdomain stays
     // canonical until TTR_ONE_ORIGIN_CALENDAR is on; wave1 runtime acceptance
     // proves both hosts.
-    canonicalHost: CALENDAR_MOUNT_HOST,
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),
-    outbound: denyCalendarOutbound([]),
-    // No pepper is bound, so the proxy family stays `off` and never calls it.
-    fixtureServices: { ABUSE_GUARD: abuseGuardUnavailableFixture },
   };
   const programRoot = await realpath(
     await mkdtemp(join(tmpdir(), 'calendar-sdk-run-'))
@@ -88,7 +81,10 @@ async function runParent() {
   const foreignValue = 'unrelated-calendar-fixture';
   await writeFile(foreignPath, foreignValue);
   const plan = {
-    ...(await prepareNativePlan(options, tempRoot)),
+    ...(await prepareNativePlan(
+      withCalendarRuntimeFixtures(options, []),
+      tempRoot
+    )),
     foreignPath,
     foreignValue,
     caseRoot: cwd,
@@ -180,7 +176,7 @@ async function runChild() {
     try {
       await producer.observeReturnedStartup(async () => {
         runtime = await startNativeWrangler(
-          { ...options, outbound: denyCalendarOutbound(unexpected) },
+          withCalendarRuntimeFixtures(options, unexpected),
           plan
         );
         return runtime;
@@ -268,21 +264,29 @@ async function runChild() {
       assert.deepEqual(unexpected, []);
     }
   );
-  checkedTest('mounted Calendar never serves a verifier document', async () => {
-    for (const path of ['/verify-token', '/vi/%76erify-token/']) {
-      const response = await fetchWorker(path);
-      assert.equal(response.status, 307);
-      assert.equal(
-        new URL(
-          response.headers.get('location'),
-          `https://${CALENDAR_MOUNT_HOST}`
-        ).href,
-        `https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}/personal`
-      );
-      assert.equal(response.headers.get('set-cookie'), null);
+  checkedTest(
+    'signed-out mounted verifier hands off to Web login',
+    async () => {
+      const origin = `https://${CALENDAR_MOUNT_HOST}`;
+      for (const [path, next] of [
+        ['/verify-token', '/'],
+        ['/vi/%76erify-token/', '/vi/%76erify-token/'],
+      ]) {
+        const verifier = new URL(`${CALENDAR_BASE_PATH}/verify-token`, origin);
+        verifier.searchParams.set('nextUrl', next);
+        const login = new URL('/login', origin);
+        login.searchParams.set('returnUrl', verifier.href);
+        const response = await fetchWorker(path);
+        assert.equal(response.status, 307);
+        assert.equal(
+          new URL(response.headers.get('location'), origin).href,
+          login.href
+        );
+        assert.equal(response.headers.get('set-cookie'), null);
+      }
+      assert.deepEqual(unexpected, []);
     }
-    assert.deepEqual(unexpected, []);
-  });
+  );
   checkedTest(
     'native offline fallback and stylesheet keep their exact public URLs',
     async () => {

@@ -16,6 +16,7 @@ import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import {
   abuseGuardUnavailableFixture,
   denyCalendarOutbound,
+  withCalendarRuntimeFixtures,
 } from './calendar-native-runtime-profile.mjs';
 import { calendarProductionRuntimeTarget } from './wave1-native-runtime.mjs';
 import {
@@ -69,7 +70,6 @@ async function calendarFixture(run) {
     main: join(app, 'dist/server/worker.js'),
     ownerPackage: join(app, 'package.json'),
     sourceSHA,
-    canonicalHost: 'calendar-ci.invalid',
     outbound: denyCalendarOutbound([]),
     fixtureServices: { ABUSE_GUARD: abuseGuardUnavailableFixture },
   };
@@ -127,8 +127,16 @@ test('Calendar profile admits sealed owning config without changing any bytes', 
       options.seal
     );
     await assert.rejects(
-      inspectArtifact({ ...options, profile: undefined }),
+      inspectArtifact({
+        ...options,
+        profile: undefined,
+        canonicalHost: 'calendar-ci.invalid',
+      }),
       /Hidden artifact entry unsupported/
+    );
+    await assert.rejects(
+      inspectArtifact({ ...options, canonicalHost: 'calendar-ci.invalid' }),
+      /Calendar preserves request hosts/
     );
     await assert.rejects(
       inspectArtifact({ ...options, profile: 'other' }),
@@ -142,6 +150,21 @@ test('Calendar profile admits sealed owning config without changing any bytes', 
       inspectArtifact({ ...options, outbound: undefined }),
       /Explicit deny-by-default/
     );
+  });
+});
+test('Calendar child restores the same-process service after the plan crosses JSON', async () => {
+  await calendarFixture(async ({ options }) => {
+    const transferred = JSON.parse(JSON.stringify(options));
+    await assert.rejects(
+      inspectArtifact(transferred),
+      /Every service requires a same-process fixture/
+    );
+
+    const admitted = await inspectArtifact(
+      withCalendarRuntimeFixtures(transferred, [])
+    );
+    assert.deepEqual(Object.keys(admitted.bindings), ['ABUSE_GUARD']);
+    assert.equal(admitted.bindings.ABUSE_GUARD.fetcher().status, 503);
   });
 });
 test('Calendar profile rejects changed bytes, identity and unqualified config fields', async () => {

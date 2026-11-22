@@ -28,3 +28,11 @@ export function denyCalendarOutbound(unexpected) {
     return new Response('Fixture forbids network', { status: 599 });
   };
 }
+
+export function withCalendarRuntimeFixtures(options, unexpected) {
+  return {
+    ...options,
+    fixtureServices: { ABUSE_GUARD: abuseGuardUnavailableFixture },
+    outbound: denyCalendarOutbound(unexpected),
+  };
+}
