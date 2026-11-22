@@ -64,13 +64,11 @@ import {
   DOCUMENT_ACTIVITY,
   PROGRAMMING_ACTIVITY,
 } from '../stage-layout/activity-ids';
-import { isActivityAvailable } from '../stage-layout/availability';
+import { useStageAvailability } from '../stage-layout/use-stage-availability';
 import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
 import { useStageNavigation } from '../stage-layout/use-stage-navigation';
 import { FollowBanner } from './room-navigation-controls';
-const meetToolIds = meetTools.map((tool) => tool.id);
-
 function CallShellContent({
   accountId,
   defaultDisplayName,
@@ -252,20 +250,20 @@ function CallShellContent({
   }, [state.ended, state.admission, leaveNow]);
   const lifecycle = selectCallLifecycle(state, joined);
   const liveTools = MEETING_APP === 'meet' && lifecycle === 'live' && inCall;
-  const stageAvailable = useCallback(
-    (id: string) =>
-      isActivityAvailable(id, {
-        live: liveTools,
-        collaboration: canCollaborate,
-        classroom: !!classroomToolsEnabled,
-        toolIds: meetToolIds,
-      }),
-    [liveTools, canCollaborate, classroomToolsEnabled]
-  );
+  const toolAccess = {
+    available: roomTools.canUse || runsRoomActivities(state),
+    activitiesOnly: !roomTools.canUse,
+  };
+  const availability = useStageAvailability({
+    live: liveTools,
+    collaboration: canCollaborate,
+    classroom: !!classroomToolsEnabled,
+    tools: toolAccess,
+  });
   const stage = useStageLayout({
     accountId,
     meetingId,
-    isAvailable: stageAvailable,
+    isAvailable: availability.isAvailable,
   });
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
@@ -278,8 +276,7 @@ function CallShellContent({
     enabled: liveTools,
     // Whoever runs activities reaches those, and only those, when browsing
     // the tools is for hosts only.
-    available: roomTools.canUse || runsRoomActivities(state),
-    activitiesOnly: !roomTools.canUse,
+    ...toolAccess,
     canRunActivities: runsRoomActivities(state),
     selfUserId: state.selfUserId,
     people: state.participants,
@@ -302,11 +299,12 @@ function CallShellContent({
     drawer,
     onDrawer: (next) => setDrawer(next as typeof drawer),
     onBroughtIn: () => setBroughtIn(true),
+    onSummoned: availability.summon,
     access: {
       browse: roomTools.canUse,
       account: !requiresAccount,
       tools: liveTools,
-      toolIds: meetToolIds,
+      toolIds: meetTools.map((tool) => tool.id),
     },
   });
   if (lifecycle === 'error')

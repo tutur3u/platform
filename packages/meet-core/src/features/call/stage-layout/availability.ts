@@ -30,3 +30,25 @@ export function isActivityAvailable(
     (CLASSROOM_ACTIVITIES as readonly string[]).includes(activityId)
   );
 }
+
+/** Tools anyone in a live call may open: the polls and quiz shortcuts. */
+const SHORTCUT_TOOLS = ['polls', 'quiz'] as const;
+
+/**
+ * The tool ids that may be on the stage: the ones this person may browse,
+ * the live shortcuts, and tools a host or co-host opened for them this
+ * session. A tool a person could only reach through an earlier role is not
+ * among them, so a saved layout cannot bring it back.
+ */
+export function allowedToolIds(
+  browsable: readonly string[],
+  summoned: readonly string[]
+) {
+  return [
+    ...new Set([
+      ...browsable,
+      ...SHORTCUT_TOOLS,
+      ...summoned.flatMap((id) => toolIdOf(id) ?? []),
+    ]),
+  ];
+}

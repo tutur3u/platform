@@ -69,8 +69,10 @@ export function useCallActivities({
 }) {
   const formsT = useTranslations('meet.call');
   const classroomT = useTranslations('meet.classroom_tools');
-  // In-call forms are a dialog, not a pane.
+  // In-call forms are a dialog, not a pane. Once opened it stays mounted, so
+  // closing it keeps a draft, its receipt and the submission id.
   const [formsOpen, setFormsOpen] = useState(false);
+  const [hasOpenedForms, setHasOpenedForms] = useState(false);
   const isOpen = (activity: ActivityDrawer) =>
     activity === 'forms' ? formsOpen : stage.isOpen(stageIdOf(activity));
   const canUseForms = enabled && formsEnabled && !requiresAccount;
@@ -83,8 +85,10 @@ export function useCallActivities({
     isOpen('quiz-arena')
   );
   const toggle = (next: ActivityDrawer) => {
-    if (next === 'forms') setFormsOpen((open) => !open);
-    else stage.toggle(stageIdOf(next));
+    if (next === 'forms') {
+      setHasOpenedForms(true);
+      setFormsOpen((open) => !open);
+    } else stage.toggle(stageIdOf(next));
   };
   const activePoll = polls.data?.polls.some((poll) => poll.status === 'active');
   const activeArena =
@@ -177,14 +181,14 @@ export function useCallActivities({
     ),
     /** The in-call forms dialog; it renders over the room, not in a pane. */
     dialog:
-      canUseForms && formsOpen ? (
+      canUseForms && hasOpenedForms ? (
         <MeetFormsActivity
           key={JSON.stringify([meetingId, accountId])}
           accountId={accountId}
           meetingId={meetingId}
           {...formsAccess}
           turnstileSiteKey={formsTurnstileSiteKey}
-          open
+          open={formsOpen}
           onClose={() => setFormsOpen(false)}
         />
       ) : null,

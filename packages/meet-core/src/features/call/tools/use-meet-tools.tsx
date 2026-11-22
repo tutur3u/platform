@@ -2,10 +2,27 @@
 
 import { toolActivityId, toolIdOf } from '../stage-layout/activity-ids';
 import type { ActivityStage } from '../stage-layout/activity-ids';
-import { MeetToolProvider } from './context';
+import { useRef } from 'react';
+import { type MeetToolContextValue, MeetToolProvider } from './context';
 import { roomActivityTools } from './live-activities/activity-manager';
 import { findMeetTool, type MeetToolDefinition, meetTools } from './registry';
 import { MeetToolsHub, MeetToolsMenu } from './tools-hub';
+
+/** The tools a person may browse: all, only the activities, or none. */
+export function browsableTools({
+  available,
+  enabled,
+  activitiesOnly,
+  tools = meetTools,
+}: {
+  available: boolean;
+  enabled: boolean;
+  activitiesOnly?: boolean;
+  tools?: readonly MeetToolDefinition[];
+}) {
+  const browsable = activitiesOnly ? roomActivityTools(tools) : tools;
+  return available && enabled ? browsable : [];
+}
 
 /**
  * Opens the registered tools as stage activities. Several can be open at
@@ -45,9 +62,40 @@ export function useMeetTools({
   activitiesOnly?: boolean;
   tools?: readonly MeetToolDefinition[];
 }) {
+  // Each open tool keeps one context value and one close handler while
+  // nothing about the call changes, so a re-render of the call does not
+  // re-render every open panel through its context.
+  const latestStage = useRef(stage);
+  latestStage.current = stage;
+  const contexts = useRef(
+    new Map<string, { value: MeetToolContextValue; close: () => void }>()
+  );
+  const contextFor = (activityId: string): MeetToolContextValue => {
+    const cached = contexts.current.get(activityId);
+    const close =
+      cached?.close ?? (() => latestStage.current.close(activityId));
+    const next: MeetToolContextValue = {
+      meetingId,
+      accountId,
+      requiresAccount,
+      canManage,
+      canRunActivities,
+      enabled,
+      selfUserId,
+      people,
+      close,
+    };
+    const same =
+      cached &&
+      (Object.keys(next) as (keyof MeetToolContextValue)[]).every(
+        (key) => next[key] === cached.value[key]
+      );
+    if (cached && same) return cached.value;
+    contexts.current.set(activityId, { value: next, close });
+    return next;
+  };
   const toggle = (id: string) => stage.toggle(toolActivityId(id));
-  const browsable = activitiesOnly ? roomActivityTools(tools) : tools;
-  const shown = available && enabled ? browsable : [];
+  const shown = browsableTools({ available, enabled, activitiesOnly, tools });
   const openIds = tools
     .map((tool) => tool.id)
     .filter((id) => stage.isOpen(toolActivityId(id)));
@@ -71,27 +119,14 @@ export function useMeetTools({
       const toolId = toolIdOf(activityId);
       const Panel = findMeetTool(toolId, tools)?.Panel;
       if (!toolId || !Panel) return null;
-      const close = () => stage.close(activityId);
+      const value = contextFor(activityId);
       return (
-        <MeetToolProvider
-          key={activityId}
-          value={{
-            meetingId,
-            accountId,
-            requiresAccount,
-            canManage,
-            canRunActivities,
-            enabled,
-            selfUserId,
-            people,
-            close,
-          }}
-        >
+        <MeetToolProvider key={activityId} value={value}>
           <Panel
             meetingId={meetingId}
             roomRole={canManage ? 'host' : 'participant'}
             participantId={accountId}
-            onClose={close}
+            onClose={value.close}
           />
         </MeetToolProvider>
       );
