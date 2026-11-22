@@ -7,23 +7,19 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../apps/meet/messages/en.json';
 import vietnamese from '../../../../../apps/meet/messages/vi.json';
 
-type Listed = { id: string; created_by_me?: boolean };
 const f = vi.hoisted(() => ({
   read: vi.fn(),
+  workspace: vi.fn(),
   open: undefined as ((tab: string) => void) | undefined,
-  actor: null as { actorId: string } | null,
-  workspaces: { data: undefined as Listed[] | undefined, isLoading: false },
 }));
-vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
-  useWorkspaceActor: () => f.actor,
-}));
-vi.mock('@tuturuuu/ui/hooks/use-visible-workspaces', () => ({
-  useVisibleWorkspaces: () => f.workspaces,
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
+  getWorkspace: f.workspace,
 }));
 vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
   getMiraAudienceAttestation: f.read,
@@ -52,7 +48,9 @@ function show(locale: 'en' | 'vi' = 'en') {
         locale={locale}
         messages={locale === 'en' ? messages : vietnamese}
       >
-        <MiraWorkspaceOff wsId="synthetic-workspace" />
+        <WorkspaceVisibilityProvider actorId="synthetic-account">
+          <MiraWorkspaceOff wsId="synthetic-workspace" />
+        </WorkspaceVisibilityProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
@@ -61,30 +59,20 @@ function show(locale: 'en' | 'vi' = 'en') {
 beforeEach(() => {
   vi.resetAllMocks();
   f.open = vi.fn();
-  f.actor = null;
-  f.workspaces = { data: undefined, isLoading: false };
+  f.workspace.mockResolvedValue({ creator_id: 'synthetic-account' });
 });
 afterEach(cleanup);
 
-it('tells someone the workspace list names as not the owner to ask the owner, without asking for the setting', () => {
-  f.actor = { actorId: 'synthetic-account' };
-  f.workspaces = {
-    data: [{ id: 'synthetic-workspace', created_by_me: false }],
-    isLoading: false,
-  };
+it('tells a non-owner to ask the owner without asking for the setting', async () => {
+  f.workspace.mockResolvedValue({ creator_id: 'someone-else' });
   show();
   expect(screen.getByText(copy.workspace_off)).toBeTruthy();
-  expect(screen.getByText(copy.ask_owner)).toBeTruthy();
+  expect(await screen.findByText(copy.ask_owner)).toBeTruthy();
   expect(screen.queryByRole('button')).toBeNull();
   expect(f.read).not.toHaveBeenCalled();
 });
 
 it('gives the workspace owner a button to the Mira settings', async () => {
-  f.actor = { actorId: 'synthetic-account' };
-  f.workspaces = {
-    data: [{ id: 'synthetic-workspace', created_by_me: true }],
-    isLoading: false,
-  };
   f.read.mockResolvedValue(off);
   show();
   expect(screen.getByText(copy.workspace_off)).toBeTruthy();

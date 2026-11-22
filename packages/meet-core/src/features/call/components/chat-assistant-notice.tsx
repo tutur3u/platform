@@ -13,9 +13,8 @@ export type AssistantFailureNotice =
   | 'failed';
 
 /**
- * Why room @mira did not answer. The workspace code means its owner has not
- * declared an 18+ audience; the consent code means not everyone has chosen
- * Continue yet; any other 403 is room Mira being unavailable.
+ * A workspace policy or a missing declaration can block room @mira.
+ * The consent code means someone still needs to choose Continue.
  */
 export function assistantFailureNotice(error: unknown): AssistantFailureNotice {
   if (!error || typeof error !== 'object') return 'failed';

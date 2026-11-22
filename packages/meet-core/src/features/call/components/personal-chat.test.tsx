@@ -8,6 +8,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { InternalApiError } from '@tuturuuu/internal-api';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { afterEach, expect, it, vi } from 'vitest';
 
 const { ask, readPolicy, setChoice, readAudience, openSettings } = vi.hoisted(
@@ -22,6 +23,9 @@ const { ask, readPolicy, setChoice, readAudience, openSettings } = vi.hoisted(
 vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
   getMiraAudienceAttestation: readAudience,
   updateMiraAudienceAttestation: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
+  getWorkspace: async () => ({ creator_id: 'actor' }),
 }));
 vi.mock('./call-settings-link', () => ({
   useOpenCallSettings: () => openSettings,
@@ -147,12 +151,14 @@ function refuseForWorkspace() {
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <PersonalChat
-        meetingId="room"
-        accountId="actor"
-        wsId="workspace"
-        onShare={vi.fn()}
-      />
+      <WorkspaceVisibilityProvider actorId="actor">
+        <PersonalChat
+          meetingId="room"
+          accountId="actor"
+          wsId="workspace"
+          onShare={vi.fn()}
+        />
+      </WorkspaceVisibilityProvider>
     </QueryClientProvider>
   );
   fireEvent.change(screen.getByRole('textbox', { name: 'personal_chat' }), {
@@ -161,7 +167,7 @@ function refuseForWorkspace() {
   fireEvent.click(screen.getByRole('button', { name: 'send' }));
 }
 
-it('sends a workspace manager to the Mira settings when the workspace has not declared 18+', async () => {
+it('sends the workspace owner to the Mira settings when the workspace has not declared 18+', async () => {
   readAudience.mockResolvedValue({
     attested: false,
     attestedAt: null,

@@ -79,9 +79,10 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
           {pausing && <Loader2 className="size-3.5 animate-spin" />}
           {status}
         </p>
-        {!pausing && data.choice !== 'continue' && (
-          <MiraAdultNotice consent id={adultNoticeId} />
-        )}
+        <MiraAdultNotice
+          consent={!pausing && data.choice !== 'continue'}
+          id={adultNoticeId}
+        />
         {!pausing && (
           <div className="flex flex-wrap gap-2">
             {data.choice !== 'continue' && (

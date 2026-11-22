@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NextIntlClientProvider } from 'next-intl';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -18,7 +19,9 @@ vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
   getMiraAudienceAttestation: f.read,
   updateMiraAudienceAttestation: f.write,
 }));
-vi.mock('@tuturuuu/internal-api', () => ({ readPrivateMiraPolicy: vi.fn() }));
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
+  getWorkspace: async () => ({ creator_id: 'synthetic-account' }),
+}));
 vi.mock('./device-settings', () => ({
   DeviceSettings: () => <div>Device controls</div>,
 }));
@@ -69,22 +72,24 @@ function show(participants: Record<string, { accountId?: string }>) {
       }
     >
       <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
-        <NuqsTestingAdapter>
-          <CallSettingsLinkProvider>
-            <MiraWorkspaceOff wsId="synthetic-workspace" />
-            <CallSettings
-              room={room}
-              meetingId="synthetic-meeting"
-              wsId="synthetic-workspace"
-              canManage={false}
-              ai={{} as Parameters<typeof CallSettings>[0]['ai']}
-              sound={false}
-              onSound={vi.fn()}
-              outputDeviceId=""
-              onOutput={vi.fn()}
-            />
-          </CallSettingsLinkProvider>
-        </NuqsTestingAdapter>
+        <WorkspaceVisibilityProvider actorId="synthetic-account">
+          <NuqsTestingAdapter>
+            <CallSettingsLinkProvider>
+              <MiraWorkspaceOff wsId="synthetic-workspace" />
+              <CallSettings
+                room={room}
+                meetingId="synthetic-meeting"
+                wsId="synthetic-workspace"
+                canManage={false}
+                ai={{} as Parameters<typeof CallSettings>[0]['ai']}
+                sound={false}
+                onSound={vi.fn()}
+                outputDeviceId=""
+                onOutput={vi.fn()}
+              />
+            </CallSettingsLinkProvider>
+          </NuqsTestingAdapter>
+        </WorkspaceVisibilityProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>
   );

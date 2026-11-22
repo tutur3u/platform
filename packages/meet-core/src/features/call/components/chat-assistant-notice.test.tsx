@@ -141,17 +141,26 @@ it('does not call the room assistant for plain chat', async () => {
 it('states the 18+ rule where room chat offers @mira and while a message mentions it', () => {
   showChat();
   // The empty chat invites people to ask Mira, so it carries the rule.
-  expect(screen.getAllByText(adults.notice)).toHaveLength(1);
+  expect(
+    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+  ).toHaveLength(1);
+  expect(
+    screen.getByRole('button', { name: 'Mira', description: adults.notice })
+  ).toBeTruthy();
   const composer = screen.getByRole('textbox', { name: call.chat });
   expect(composer.getAttribute('aria-describedby')).toBeNull();
   fireEvent.change(composer, { target: { value: '@mira summarize' } });
-  expect(screen.getAllByText(adults.notice)).toHaveLength(2);
+  expect(
+    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+  ).toHaveLength(2);
   expect(
     document.getElementById(composer.getAttribute('aria-describedby') ?? '')
       ?.textContent
   ).toBe(adults.notice);
   fireEvent.change(composer, { target: { value: 'hello everyone' } });
-  expect(screen.getAllByText(adults.notice)).toHaveLength(1);
+  expect(
+    screen.getAllByText(adults.notice, { ignore: '[hidden]' })
+  ).toHaveLength(1);
 });
 
 it('names the workspace 18+ setting, not a generic refusal, when @mira is off for the workspace', async () => {
@@ -176,7 +185,7 @@ it('names the workspace 18+ setting, not a generic refusal, when @mira is off fo
   expect(alert.textContent).not.toContain(call.assistant_private_only);
   // Private Mira needs the same setting, so it is not offered as a way out.
   expect(screen.queryByRole('button', { name: call.personal_chat })).toBeNull();
-  expect(f.audience).toHaveBeenCalledWith('synthetic-workspace');
+  expect(f.audience).not.toHaveBeenCalled();
   expect(
     assistantFailureNotice({ status: 403, code: 'MIRA_WORKSPACE_UNAVAILABLE' })
   ).toBe('workspace_off');

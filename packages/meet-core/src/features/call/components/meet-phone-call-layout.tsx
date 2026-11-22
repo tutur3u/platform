@@ -18,6 +18,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { MiraMark } from './mira-mark';
 import { MiraAvatar } from './mira-profile';
 
@@ -126,6 +127,7 @@ export function MeetPhoneCallLayout({
   const t = useTranslations('meet.call.phone');
   const [lockedTooltipOpen, setLockedTooltipOpen] = useState(false);
   const lockedTooltipId = useId();
+  const adultNoticeId = useId();
   const miraIsSpeaking = miraStatus === 'speaking';
 
   useEffect(() => {
@@ -289,6 +291,7 @@ export function MeetPhoneCallLayout({
           type="button"
           onClick={onOpenMira}
           aria-label={t('mira_open_label')}
+          aria-describedby={adultNoticeId}
           data-testid="phone-mira-tile"
           style={{ backgroundColor: 'var(--mira-bg)' }}
           className={cn(
@@ -306,7 +309,9 @@ export function MeetPhoneCallLayout({
           <div className="mt-3 rounded-full bg-background/80 p-1.5">
             <MiraAvatar size={26} />
           </div>
-          <span className="font-semibold text-xs text-foreground">Mira</span>
+          <span className="flex items-center gap-1 font-semibold text-xs text-foreground">
+            Mira <MiraAdultNotice variant="compact" id={adultNoticeId} />
+          </span>
         </button>
 
         {/* Tile 2: Next participant with optional hand-raised badge */}
@@ -523,6 +528,7 @@ export function MeetPhoneCallLayout({
             size="icon"
             variant="ghost"
             aria-label={t('mira_open_label')}
+            aria-describedby={adultNoticeId}
             onClick={onOpenMira}
             style={{ backgroundColor: 'var(--bg-purple)' }}
             className="size-[46px] shrink-0 rounded-full border border-dynamic-purple/30"

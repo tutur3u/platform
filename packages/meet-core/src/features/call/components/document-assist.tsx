@@ -11,7 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { MiraMark } from './mira-mark';
 import {
   type DocumentNode,
@@ -111,6 +112,7 @@ export function DocumentAssist({
   onInserted: (insertion: MiraInsertion) => void;
 }) {
   const t = useTranslations('meet.collaboration');
+  const adultNoticeId = useId();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('refine');
   const [instruction, setInstruction] = useState('');
@@ -178,6 +180,7 @@ export function DocumentAssist({
         <Button
           variant="ghost"
           size="xs"
+          aria-describedby={adultNoticeId}
           className="rounded-full px-2.5 font-extrabold text-dynamic-purple hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
           onPointerDown={() => {
             const current = editor();
@@ -186,6 +189,7 @@ export function DocumentAssist({
         >
           <Sparkles className="size-4" />
           {t('ask_mira')}
+          <MiraAdultNotice variant="compact" id={adultNoticeId} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 rounded-[18px] p-3">
@@ -193,6 +197,7 @@ export function DocumentAssist({
           <MiraMark size={24} className="rounded-lg" />
           <p className="font-extrabold text-sm">{t('ask_mira')}</p>
         </div>
+        <MiraAdultNotice className="mb-3" />
         <div
           role="radiogroup"
           aria-label={t('mira_action')}

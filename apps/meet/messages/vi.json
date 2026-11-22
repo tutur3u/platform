@@ -5570,11 +5570,11 @@
       "yesterday": "Hôm qua"
     },
     "mira_adults": {
-      "ask_owner": "Hãy nhờ chủ sở hữu không gian làm việc bật Mira.",
+      "ask_owner": "Hãy nhờ chủ sở hữu không gian làm việc kiểm tra cài đặt Mira.",
       "badge": "18+",
       "confirmed_at": "Đã xác nhận ngày {date}",
       "consent": "Mira chỉ dành cho người từ 18 tuổi trở lên. Chỉ chọn Tiếp tục nếu bạn đã đủ 18 tuổi.",
-      "effect": "Bật cài đặt này để các thành viên của không gian làm việc có thể dùng Mira. Tắt cài đặt này sẽ tắt Mira cho cả không gian làm việc.",
+      "effect": "Chỉ xác nhận nếu tất cả mọi người trong không gian làm việc đều từ 18 tuổi trở lên. Bạn có thể rút lại xác nhận bất cứ lúc nào.",
       "load_failed": "Không thể tải cài đặt này.",
       "notice": "Mira chỉ dành cho người từ 18 tuổi trở lên.",
       "open_settings": "Mở cài đặt Mira",
@@ -5583,10 +5583,8 @@
       "retry": "Thử lại",
       "save_failed": "Không thể lưu cài đặt Mira",
       "settings_tab": "Mira",
-      "state_off": "Đang tắt",
-      "state_on": "Đang bật",
       "toggle": "Mọi người trong không gian làm việc này đều từ 18 tuổi trở lên",
-      "workspace_off": "Mira đang tắt trong không gian làm việc này cho đến khi chủ sở hữu xác nhận mọi người ở đây đều từ 18 tuổi trở lên."
+      "workspace_off": "Mira không khả dụng trong không gian làm việc này. Một số tính năng Mira yêu cầu chủ sở hữu xác nhận rằng tất cả mọi người đều từ 18 tuổi trở lên."
     },
     "notes_page": {
       "action_items": "Việc cần làm",

@@ -55,24 +55,16 @@ the attestation until a current manager confirms again.
 
 ### 18+ notice and the in-call switch
 
-Product decision (22 November 2026). Scope: every place Meet and Parley offer
-Private Mira or room chat **@mira**. Default: the notice always shows, and the
-workspace setting stays off until its owner turns it on.
+Meet and Parley show the 18+ notice at Mira entry points, including room chat
+**@mira**, Private Mira, and document assistance. Every **Continue** prompt
+says to proceed only if you are 18 or older and requires an explicit choice.
 
-- Notice: "Mira is only for people aged 18 or older." shows as an **18+** badge
-  on the Mira control, at the Private Mira composer, in Mira's profile card, in
-  an empty room chat and while a draft mentions Mira. Beside every **Continue**
-  it adds "Choose Continue only if you are 18 or older." Continue stays a click.
-- Switch: **Meeting settings → Mira → Everyone in this workspace is 18 or
-  older** declares or withdraws the setting above in one click. Only the
-  workspace owner gets it and is responsible for members' access and use. The
-  viewer's workspace list (`created_by_me`) names the owner; where it cannot, a
-  successful settings read shows the switch and a refused write turns the row
-  read-only. Everyone else reads "Only the workspace owner can change this."
-- Refusals: the `workspace` policy reason and `MIRA_WORKSPACE_UNAVAILABLE` name
-  the setting, with **Open Mira settings** for the owner and "ask your
-  workspace owner" for others. The Room Mira notice's `available: false`
-  carries no reason, so that notice stays hidden.
+In **Meeting settings → Mira**, the workspace owner can confirm or withdraw
+**Everyone in this workspace is 18 or older** with one switch. The owner is
+responsible for members' access and use. The setting starts off by default.
+When a workspace policy blocks Mira, the owner can open the setting directly
+if the workspace lacks a declaration. Other participants can ask the owner to
+check the setting. Each Mira feature still applies its own access policy.
 
 Regression coverage (`*.test.tsx`): `mira-audience-settings`,
 `mira-workspace-off`, `call-settings-mira`, `private-notice`, `personal-chat`,

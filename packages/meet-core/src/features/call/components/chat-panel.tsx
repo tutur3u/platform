@@ -625,6 +625,7 @@ export function ChatPanel({
             variant="ghost"
             size="sm"
             disabled={busy}
+            aria-describedby={`${paletteId}-mention-adults`}
             onClick={() =>
               setDraft(
                 (text) => `${text.slice(0, 1989)}${text ? ' ' : ''}@Tuturuuu `
@@ -633,6 +634,10 @@ export function ChatPanel({
           >
             <MiraAvatar size={20} />
             Mira
+            <MiraAdultNotice
+              variant="compact"
+              id={`${paletteId}-mention-adults`}
+            />
           </Button>
           <span className="flex-1" />
           <Button

@@ -1,9 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { RotateCcw, ShieldCheck } from '@tuturuuu/icons';
-import { readPrivateMiraPolicy } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   SettingsSection,
@@ -19,38 +16,11 @@ import { SettingItemTab } from '../../../../ui/src/components/ui/custom/settings
 import { MiraAdultNotice } from './mira-adult-notice';
 import { useMiraAudience, useSetMiraAudience } from './use-mira-audience';
 
-/**
- * Meeting settings section for the workspace 18+ declaration that turns Mira
- * on. People who may change it get one switch. Everyone else sees the current
- * state, as far as the meeting reveals it, and who can change it.
- */
-export function MiraAudienceSettings({
-  wsId,
-  meetingId,
-}: {
-  wsId: string;
-  meetingId: string;
-}) {
+export function MiraAudienceSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('meet.mira_adults');
   const format = useFormatter();
   const audience = useMiraAudience(wsId);
   const save = useSetMiraAudience(wsId, () => toast.error(t('save_failed')));
-  // The setting is hidden from people who cannot manage it. Their own Private
-  // Mira policy still says whether the workspace has declared 18+.
-  const policy = useQuery({
-    queryKey: ['mira-audience-effective', meetingId],
-    queryFn: () => readPrivateMiraPolicy(meetingId),
-    enabled: audience.readOnly && audience.attested === undefined,
-    retry: false,
-  });
-  const on =
-    audience.attested ??
-    (policy.data?.available
-      ? true
-      : policy.data?.unavailableReason === 'workspace'
-        ? false
-        : undefined);
-
   if (audience.failed)
     return (
       <SettingsSection>
@@ -77,10 +47,10 @@ export function MiraAudienceSettings({
   const description = (
     <>
       {t('effect')}
-      {audience.attested && audience.attestedAt && (
+      {audience.setting?.attested && audience.setting.attestedAt && (
         <span className="mt-1 block text-xs">
           {t('confirmed_at', {
-            date: format.dateTime(new Date(audience.attestedAt), {
+            date: format.dateTime(new Date(audience.setting.attestedAt), {
               dateStyle: 'medium',
             }),
           })}
@@ -93,7 +63,7 @@ export function MiraAudienceSettings({
       <SettingsSectionBlock>
         <MiraAdultNotice />
       </SettingsSectionBlock>
-      {audience.canManage ? (
+      {audience.setting ? (
         <SettingsField
           icon={icon}
           label={t('toggle')}
@@ -108,7 +78,9 @@ export function MiraAudienceSettings({
             >
               <Switch
                 {...field}
-                checked={on === true}
+                checked={
+                  save.isPending ? save.variables : audience.setting?.attested
+                }
                 disabled={save.isPending}
                 onCheckedChange={(next) => save.mutate(next)}
               />
@@ -121,27 +93,16 @@ export function MiraAudienceSettings({
           title={t('toggle')}
           description={description}
           layout="compact"
-        >
-          {on !== undefined && (
-            <Badge
-              variant={on ? 'success' : 'outline'}
-              className="rounded-full"
-            >
-              {t(on ? 'state_on' : 'state_off')}
-            </Badge>
-          )}
-        </SettingItemTab>
+        />
       )}
-      {audience.canManage && (
+      {audience.setting && (
         <SettingsSectionBlock className="text-muted-foreground text-sm">
           {t('responsibility')}
         </SettingsSectionBlock>
       )}
       {audience.readOnly && (
         <SettingsSectionBlock className="text-muted-foreground text-sm">
-          <p role={audience.ownerOnly ? 'alert' : undefined}>
-            {t('owner_only')}
-          </p>
+          {t('owner_only')}
         </SettingsSectionBlock>
       )}
     </SettingsSection>

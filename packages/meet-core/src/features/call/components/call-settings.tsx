@@ -302,7 +302,7 @@ export function CallSettings({
           </SettingsSection>
         )}
         {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
-          <MiraAudienceSettings wsId={miraWorkspaceId} meetingId={meetingId} />
+          <MiraAudienceSettings wsId={miraWorkspaceId} />
         )}
         {activeTab === 'public' && (
           <SettingsSection surface="plain">

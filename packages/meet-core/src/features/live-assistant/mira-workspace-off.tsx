@@ -26,7 +26,7 @@ export function MiraWorkspaceOff({
   return (
     <div className={cn('grid justify-items-start gap-2', className)}>
       <p>{t('workspace_off')}</p>
-      {openSettings && audience.canManage ? (
+      {openSettings && audience.setting?.attested === false ? (
         <Button
           type="button"
           variant="outline"
