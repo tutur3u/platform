@@ -299,30 +299,43 @@ void main() {
     h.port.holdHeaders();
     await h.pageSend(tester, 'Cancelled before dispatch');
     await tester.runAsync(() => h.port.credentialsEntered.future);
+    // The send took the draft; only the unsent cleanup can bring it back.
+    expect(h.draft(tester).text, isEmpty);
+    Iterable<Object> users() =>
+        h.chat.state.messages.where((m) => m.role == 'user');
+    expect(users(), hasLength(1));
     var stopped = false;
     var stoppedAgain = false;
+    final usersAtStop = <int>[];
     final stopping = h.chat.stopStreaming(discardQueued: true).then((_) {
       stopped = true;
+      usersAtStop.add(users().length);
     });
     final stoppingAgain = h.chat.stopStreaming(discardQueued: true).then((_) {
       stoppedAgain = true;
+      usersAtStop.add(users().length);
     });
     await tester.pump();
     expect(stopped, isFalse);
     expect(stoppedAgain, isFalse);
     expect(h.port.posts, isEmpty);
     h.port.release();
-    await tester.runAsync(() => Future.wait([stopping, stoppingAgain]));
+    // The held request resumes through steps that complete only when the
+    // test pumps, so both stops are awaited by settling, not in real time.
+    await h.settle(tester);
     expect(stopped, isTrue);
     expect(stoppedAgain, isTrue);
-    await h.settle(tester);
+    // Each stop resolved after the cleanup removed the cancelled turn.
+    expect(usersAtStop, [0, 0]);
+    await tester.runAsync(() => Future.wait([stopping, stoppingAgain]));
     expect(h.port.posts, isEmpty);
     expect(h.draft(tester).text, 'Cancelled before dispatch');
     await h.pageSend(tester, 'Changed after cancellation');
     expect(h.port.posts, hasLength(1));
     expect(h.port.posts.single['content'], 'Changed after cancellation');
     expect(h.chat.state.messages.where((m) => m.role == 'user'), hasLength(1));
-  });
+    // A stop that never completes fails here, not at the ten-minute default.
+  }, timeout: const Timeout(Duration(minutes: 1)));
   testWidgets('empty-state native send uses one request and the client ID', (
     tester,
   ) async {
