@@ -286,6 +286,43 @@ void main() {
     });
   });
 
+  group('the owner-key erase', () {
+    Matcher coded(String code) => throwsA(
+      isA<FleetSecretCryptoException>().having((e) => e.code, 'code', code),
+    );
+
+    test('returns once the plugin has deleted the keys', () async {
+      await platform.crypto().deleteOwnerKeys();
+      expect(platform.deletedAccounts, [null]);
+    });
+
+    test('returns off iOS and below iOS 17, where no key can exist', () async {
+      await FleetSecretCrypto(isIOS: () => false).deleteOwnerKeys();
+      expect(platform.calls, isEmpty);
+      platform.supported = false;
+      await platform.crypto().deleteOwnerKeys();
+      expect(platform.deletedAccounts, isEmpty);
+    });
+
+    test('throws on iOS when the plugin is missing', () async {
+      platform.uninstall();
+      await expectLater(
+        platform.crypto().deleteOwnerKeys(),
+        coded('unsupported'),
+      );
+    });
+
+    test('throws when the Keychain refuses the delete', () async {
+      platform.onCall = (method) async {
+        if (method == 'deleteOwnerKeys') {
+          throw PlatformException(code: 'keychain');
+        }
+      };
+      await expectLater(platform.crypto().deleteOwnerKeys(), coded('keychain'));
+      expect(platform.deletedAccounts, isEmpty);
+    });
+  });
+
   group('the native store', () {
     final swift = File(
       'ios/Runner/MastermindSecretStore.swift',

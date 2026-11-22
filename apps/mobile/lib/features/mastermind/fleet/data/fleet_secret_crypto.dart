@@ -131,8 +131,11 @@ class FleetSecretCrypto {
 
   /// Removes one account's owner key, or every one without [accountId].
   /// Asked on every iOS device whatever [supported] last said, so a failed
-  /// capability check cannot leave a key behind. Quietly does nothing off
-  /// iOS, without the plugin, or below iOS 17, where no key can exist.
+  /// capability check cannot leave a key behind. It returns only when no
+  /// owner key can remain: off iOS, below iOS 17 where none can exist, or
+  /// once the plugin has deleted them. Anything else throws, a missing
+  /// plugin on iOS included, so an erase is never taken as done when the
+  /// keys may still be in the Keychain.
   Future<void> deleteOwnerKeys({String? accountId}) async {
     if (!_isIOS()) return;
     try {
@@ -140,7 +143,7 @@ class FleetSecretCrypto {
         'accountId': ?accountId,
       });
     } on MissingPluginException {
-      return;
+      throw const FleetSecretCryptoException('unsupported');
     } on PlatformException catch (error) {
       if (error.code == 'unsupported') return;
       throw FleetSecretCryptoException(_code(error.code));
