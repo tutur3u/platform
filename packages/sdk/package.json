@@ -105,8 +105,8 @@
     "test:packaging": "node --test scripts/portable-build.test.cjs"
   },
   "dependencies": {
-    "@tiptap/core": "3.32.0",
-    "@tiptap/react": "3.32.0",
+    "@tiptap/core": "3.32.2",
+    "@tiptap/react": "3.32.2",
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "effect": "^3.22.3",
