@@ -254,7 +254,9 @@ void main() {
       expect(h.services.goals, [
         ['focus', 'learn'],
       ]);
-      expect(outcome(), OnboardingOutcome.completed);
+      // Regression: recording here let the router close the flow before
+      // All set showed; completion is recorded when the person leaves it.
+      expect(outcome(), isNull);
       expect(find.text("You're all set, Lan"), findsOneWidget);
     });
 

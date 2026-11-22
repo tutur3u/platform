@@ -1,17 +1,42 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/onboarding/data/onboarding_gate.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+
+/// Reads the ids of the accounts saved on this device from local storage,
+/// through the app's [AuthRepository]. Null where no repository is provided
+/// (some tests), in which case the baseline uses the auth state alone.
+Future<Iterable<String>> Function()? storedAccountIdsReader(
+  BuildContext context,
+) {
+  final AuthRepository repository;
+  try {
+    repository = context.read<AuthRepository>();
+  } on ProviderNotFoundException {
+    return null;
+  }
+  return () async => [
+    for (final account in await repository.getStoredAccounts()) account.id,
+  ];
+}
 
 /// Loads the onboarding gate once the session state is known.
 ///
 /// It must run while signed out too: the gate's first run records the
 /// accounts already on the device, so only later sign-ins owe the flow.
-void primeOnboardingGate(OnboardingGate? gate, AuthState auth) {
+void primeOnboardingGate(
+  OnboardingGate? gate,
+  AuthState auth, {
+  Future<Iterable<String>> Function()? loadStoredAccountIds,
+}) {
   if (gate == null || auth.status == AuthStatus.unknown) return;
   gate.prime(
     activeUserId: auth.user?.id,
     savedAccountIds: auth.accounts.map((account) => account.id),
+    loadStoredAccountIds: loadStoredAccountIds,
   );
 }
 

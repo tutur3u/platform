@@ -189,8 +189,9 @@ class _OnboardingPageState extends State<OnboardingPage>
         advance = await _createWorkspace();
       }
     } else if (_step == 2) {
+      // Completion is recorded when the person leaves the All set step:
+      // recording now would let the router close the flow before it shows.
       await _saveInterests();
-      await _record(OnboardingOutcome.completed);
     }
     if (!mounted) return;
     setState(() {

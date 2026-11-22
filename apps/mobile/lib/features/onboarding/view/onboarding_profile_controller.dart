@@ -27,7 +27,8 @@ mixin OnboardingProfileController<T extends StatefulWidget> on State<T> {
   var _photoBusy = false;
   ThemeMode? _themeMode;
 
-  /// The account the flow started for; null once it is signed out.
+  /// The currently signed-in account; null once it is signed out. Callers
+  /// capture it before any await, and the router closes the flow on a switch.
   String? get userId => context.read<AuthCubit>().state.user?.id;
 
   /// The name to greet with: the field, else the saved profile name.

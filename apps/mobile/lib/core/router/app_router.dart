@@ -246,7 +246,11 @@ GoRouter createAppRouter(
       if (authState.status == AuthStatus.unknown) {
         return isAuthRoute ? null : Routes.login;
       }
-      primeOnboardingGate(onboardingGate, authState);
+      primeOnboardingGate(
+        onboardingGate,
+        authState,
+        loadStoredAccountIds: storedAccountIdsReader(context),
+      );
 
       // Not authenticated → enforce auth entry points.
       if (authState.status == AuthStatus.unauthenticated) {

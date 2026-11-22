@@ -71,4 +71,38 @@ void main() {
     final nextLaunch = await primed();
     expect(nextLaunch.isPending('lan'), isTrue);
   });
+
+  test(
+    'the baseline includes stored accounts not yet in the auth state',
+    () async {
+      // The auth state's account list fills in asynchronously, so the first
+      // launch after an update reads saved accounts from storage as well.
+      final gate = OnboardingGate()
+        ..prime(
+          activeUserId: 'lan',
+          savedAccountIds: const [],
+          loadStoredAccountIds: () async => ['minh'],
+        );
+      await pumpEventQueue();
+      expect(gate.isPending('minh'), isFalse);
+      expect(gate.outcomeFor('minh'), OnboardingOutcome.existing);
+    },
+  );
+
+  test(
+    'a failed stored-account read leaves the flow off and unbaselined',
+    () async {
+      final gate = OnboardingGate()
+        ..prime(
+          activeUserId: 'lan',
+          savedAccountIds: const [],
+          loadStoredAccountIds: () async => throw StateError('storage'),
+        );
+      await pumpEventQueue();
+      expect(gate.ready, isFalse);
+      expect(gate.isPending('new'), isFalse);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey(OnboardingGate.baselineKey), isFalse);
+    },
+  );
 }

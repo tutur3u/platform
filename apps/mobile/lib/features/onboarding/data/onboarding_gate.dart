@@ -62,20 +62,32 @@ class OnboardingGate extends ChangeNotifier {
   /// Loads storage once. [activeUserId] and [savedAccountIds] describe the
   /// device at the moment the gate first runs; they seed the baseline only
   /// on that first run. Never throws: a storage failure keeps the flow off.
+  ///
+  /// [loadStoredAccountIds] reads the device's saved accounts from local
+  /// storage. The auth state's list is filled asynchronously, so on the first
+  /// launch after an update it can still be empty when the gate primes.
   void prime({
     required String? activeUserId,
     required Iterable<String> savedAccountIds,
+    Future<Iterable<String>> Function()? loadStoredAccountIds,
   }) {
     if (_prefs != null || _loading != null) return;
     final present = {?activeUserId, ...savedAccountIds};
-    _loading = _load(present);
+    _loading = _load(present, loadStoredAccountIds);
     unawaited(_loading);
   }
 
-  Future<void> _load(Set<String> present) async {
+  Future<void> _load(
+    Set<String> present,
+    Future<Iterable<String>> Function()? loadStoredAccountIds,
+  ) async {
     try {
       final prefs = await _preferences();
       if (!prefs.containsKey(baselineKey)) {
+        if (loadStoredAccountIds != null) {
+          // A failed read must not mark the baseline as written.
+          present.addAll(await loadStoredAccountIds());
+        }
         for (final id in present) {
           if (prefs.getString(outcomeKey(id)) != null) continue;
           await prefs.setString(
