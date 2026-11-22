@@ -9,6 +9,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart'
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
 import 'package:mobile/features/mastermind/usage/usage_accounting.dart';
+import 'package:mobile/features/mastermind/usage/usage_reasons.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class UsageContent extends StatefulWidget {
@@ -146,8 +147,11 @@ class _UsageContentState extends State<UsageContent> {
   }
 }
 
-bool _stale(DateTime? observedAt, DateTime now) =>
-    observedAt != null && now.difference(observedAt) > usageStaleAfter;
+bool _stale(
+  DateTime? observedAt,
+  DateTime now, [
+  Duration limit = usageStaleAfter,
+]) => observedAt != null && now.difference(observedAt) > limit;
 
 class _ReadinessRow extends StatelessWidget {
   const _ReadinessRow({
@@ -165,20 +169,29 @@ class _ReadinessRow extends StatelessWidget {
     final l10n = context.l10n;
     final observedAt = machine.quota.observedAt;
     final stale = _stale(observedAt, now);
+    final current = observedAt != null && !stale;
+    final listed = accounts.toList();
     final available = [
-      for (final account in accounts)
-        if (observedAt != null &&
-            !stale &&
+      for (final account in listed)
+        if (current &&
             account.checkedAt != null &&
-            !_stale(account.checkedAt, now) &&
+            !_stale(account.checkedAt, now, quotaCheckStaleAfter) &&
             account.status == 'available')
           account.instance,
     ];
+    final subtitle = available.isNotEmpty
+        ? available.join(', ')
+        : machine.quota.kind == 'unavailable'
+        ? usageUnreadReason(l10n, machine.quota.reason) ??
+              l10n.mastermindUsageNoConfirmedQuota
+        : current &&
+              listed.isNotEmpty &&
+              listed.every((account) => account.status != 'available')
+        ? l10n.mastermindUsageNoAccountAvailable
+        : l10n.mastermindUsageNoConfirmedQuota;
     return AppRichRow(
       title: machine.label,
-      subtitle: available.isNotEmpty
-          ? available.join(', ')
-          : l10n.mastermindUsageNoConfirmedQuota,
+      subtitle: subtitle,
       leading: const AppIconTile(icon: LucideIcons.server),
       trailingCaption: observedAt == null
           ? null
@@ -207,7 +220,7 @@ class _AccountPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final stale = _stale(account.checkedAt, now);
+    final stale = _stale(account.checkedAt, now, quotaCheckStaleAfter);
     final (status, tone) = stale
         ? (l10n.mastermindUsageStale, AppBadgeVariant.warning)
         : switch (account.status) {
@@ -221,16 +234,8 @@ class _AccountPanel extends StatelessWidget {
             ),
             _ => (l10n.mastermindUsageMissing, AppBadgeVariant.outline),
           };
-    final reason = switch (account.reason) {
-      'session' => l10n.mastermindUsageSessionLimited,
-      'weekly' => l10n.mastermindUsageWeeklyLimited,
-      'provider' => l10n.mastermindUsageSpendLimited,
-      'not_authenticated' => l10n.mastermindUsageSignInRequired,
-      'disabled' => l10n.mastermindUsageDisabled,
-      'unsupported' => l10n.mastermindUsageUnsupported,
-      'unavailable' => l10n.mastermindUsageMissing,
-      _ => null,
-    };
+    final reason = usageAccountReason(l10n, account.reason);
+    final monthly = account.windows.any((row) => row.kind == 'monthly');
     return AppPanel(
       title: account.instance,
       child: Column(
@@ -248,6 +253,7 @@ class _AccountPanel extends StatelessWidget {
           for (final (kind, label) in [
             ('session', l10n.mastermindUsageSession),
             ('weekly', l10n.mastermindUsageWeekly),
+            if (monthly) ('monthly', l10n.mastermindUsageMonthly),
           ]) ...[
             const SizedBox(height: AppSpacing.md),
             _UsageWindow(

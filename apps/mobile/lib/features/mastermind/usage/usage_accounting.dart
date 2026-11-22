@@ -71,14 +71,7 @@ class _UsageAccountingState extends State<UsageAccounting> {
       );
       byAccount[key] = MapEntry(label, (byAccount[key]?.value ?? 0) + cost);
     }
-    final incomplete =
-        machines.any((machine) {
-          final observedAt = machine.accounting.observedAt;
-          return machine.accounting.kind != 'complete' ||
-              observedAt == null ||
-              now.difference(observedAt) > usageStaleAfter;
-        }) ||
-        rows.any((row) => row.bucket.cost == null || row.bucket.unpriced > 0);
+    final gaps = _accountingGaps(l10n, machines, rows, now);
     final count = NumberFormat.decimalPattern(l10n.localeName);
     final lastPage = rows.isEmpty ? 0 : (rows.length - 1) ~/ _pageSize;
     final page = _page.clamp(0, lastPage);
@@ -86,8 +79,12 @@ class _UsageAccountingState extends State<UsageAccounting> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (incomplete) ...[
+        if (gaps.isNotEmpty) ...[
           Text(l10n.mastermindUsagePartial),
+          for (final gap in gaps) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(gap),
+          ],
           const SizedBox(height: AppSpacing.md),
         ],
         _CostPanel(
@@ -176,6 +173,38 @@ class _UsageAccountingState extends State<UsageAccounting> {
       ],
     );
   }
+}
+
+/// Names each machine and price gap behind partial totals, in display order.
+List<String> _accountingGaps(
+  AppLocalizations l10n,
+  List<UsageMachine> machines,
+  Iterable<({UsageMachine machine, UsageBucket bucket})> rows,
+  DateTime now,
+) {
+  String names(bool Function(UsageMachine) test) =>
+      machines.where(test).map((machine) => machine.label).join(', ');
+  final unread = names((m) => m.accounting.kind == 'unavailable');
+  final partial = names((m) => m.accounting.kind == 'partial');
+  final stale = names((m) {
+    final observedAt = m.accounting.observedAt;
+    return m.accounting.kind != 'unavailable' &&
+        (observedAt == null || now.difference(observedAt) > usageStaleAfter);
+  });
+  final unpriced = rows.fold<int>(
+    0,
+    (total, row) =>
+        total +
+        (row.bucket.unpriced > 0
+            ? row.bucket.unpriced
+            : (row.bucket.cost == null ? 1 : 0)),
+  );
+  return [
+    if (unread.isNotEmpty) l10n.mastermindUsagePartialUnread(unread),
+    if (partial.isNotEmpty) l10n.mastermindUsagePartialSources(partial),
+    if (stale.isNotEmpty) l10n.mastermindUsagePartialStale(stale),
+    if (unpriced > 0) l10n.mastermindUsageUnpricedRecords(unpriced),
+  ];
 }
 
 class _CostPanel extends StatelessWidget {

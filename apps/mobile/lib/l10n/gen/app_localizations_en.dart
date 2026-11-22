@@ -19099,6 +19099,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsagePrevious => 'Previous';
 
   @override
+  String get mastermindUsageMonthly => 'Monthly used';
+
+  @override
+  String get mastermindUsageMonthlyLimited => 'Monthly limit reached.';
+
+  @override
+  String get mastermindUsageNotReported => 'Signed in, but the provider has not reported a quota window.';
+
+  @override
+  String get mastermindUsageProviderUnavailable => 'The provider reported its quota as unavailable.';
+
+  @override
+  String get mastermindUsageNoAccountAvailable => 'No account can run now. Each one is limited, signed out or not reporting quota.';
+
+  @override
+  String get mastermindUsageReaderNotConfigured => 'No usage reader is set up for this machine, so its quota is not read.';
+
+  @override
+  String get mastermindUsageReaderMissing => 'This machine\'s usage reader credential is missing on the publisher.';
+
+  @override
+  String get mastermindUsageReaderRefused => 'This machine refused the usage reader credential. Issue a new reader token.';
+
+  @override
+  String get mastermindUsageEnvironmentMismatch => 'The machine answered as a different T3 environment, so usage was not read.';
+
+  @override
+  String get mastermindUsageConfigInvalid => 'The usage reader settings for this machine are invalid.';
+
+  @override
+  String get mastermindUsageUnreachable => 'The machine did not answer the usage read.';
+
+  @override
+  String get mastermindUsageQuotaNotReported => 'The machine answered without a quota reading.';
+
+  @override
+  String get mastermindUsageReadFailed => 'The usage read failed on this machine.';
+
+  @override
+  String mastermindUsagePartialUnread(String machines) {
+    return 'No usage records from $machines.';
+  }
+
+  @override
+  String mastermindUsagePartialSources(String machines) {
+    return 'Some usage sources are incomplete on $machines.';
+  }
+
+  @override
+  String mastermindUsagePartialStale(String machines) {
+    return 'Usage records from $machines are older than 2 minutes.';
+  }
+
+  @override
+  String mastermindUsageUnpricedRecords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count usage records have no price, so cost totals leave them out.',
+      one: '1 usage record has no price, so cost totals leave it out.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mastermindFleetStopped => 'Stopped lanes';
 
   @override
@@ -19106,6 +19171,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetOutcomesPartial => 'Partial coverage';
+
+  @override
+  String mastermindFleetOutcomesLanes(int failed, int recovered) {
+    return '$failed failed · $recovered recovered today. Counted from lanes: this linked machine does not share failure kinds.';
+  }
+
+  @override
+  String get mastermindFleetOutcomesOffline => 'Offline. Outcomes are not collected.';
 
   @override
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {

@@ -18876,6 +18876,70 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsagePrevious => 'Trước';
 
   @override
+  String get mastermindUsageMonthly => 'Đã dùng trong tháng';
+
+  @override
+  String get mastermindUsageMonthlyLimited => 'Đã chạm giới hạn tháng.';
+
+  @override
+  String get mastermindUsageNotReported => 'Đã đăng nhập, nhưng nhà cung cấp chưa báo khung hạn mức nào.';
+
+  @override
+  String get mastermindUsageProviderUnavailable => 'Nhà cung cấp báo hạn mức hiện không khả dụng.';
+
+  @override
+  String get mastermindUsageNoAccountAvailable => 'Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc không báo hạn mức.';
+
+  @override
+  String get mastermindUsageReaderNotConfigured => 'Máy này chưa được thiết lập trình đọc mức dùng, nên hạn mức của máy không được đọc.';
+
+  @override
+  String get mastermindUsageReaderMissing => 'Bộ phát hành thiếu thông tin xác thực của trình đọc mức dùng cho máy này.';
+
+  @override
+  String get mastermindUsageReaderRefused => 'Máy này đã từ chối thông tin xác thực của trình đọc mức dùng. Hãy cấp mã đọc mới.';
+
+  @override
+  String get mastermindUsageEnvironmentMismatch => 'Máy trả lời với một môi trường T3 khác, nên mức dùng không được đọc.';
+
+  @override
+  String get mastermindUsageConfigInvalid => 'Thiết lập trình đọc mức dùng của máy này không hợp lệ.';
+
+  @override
+  String get mastermindUsageUnreachable => 'Máy không phản hồi yêu cầu đọc mức dùng.';
+
+  @override
+  String get mastermindUsageQuotaNotReported => 'Máy đã phản hồi nhưng không kèm số liệu hạn mức.';
+
+  @override
+  String get mastermindUsageReadFailed => 'Không đọc được mức dùng trên máy này.';
+
+  @override
+  String mastermindUsagePartialUnread(String machines) {
+    return 'Không có bản ghi mức dùng từ $machines.';
+  }
+
+  @override
+  String mastermindUsagePartialSources(String machines) {
+    return 'Một số nguồn mức dùng trên $machines chưa đầy đủ.';
+  }
+
+  @override
+  String mastermindUsagePartialStale(String machines) {
+    return 'Bản ghi mức dùng từ $machines đã cũ hơn 2 phút.';
+  }
+
+  @override
+  String mastermindUsageUnpricedRecords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bản ghi mức dùng chưa có giá, nên tổng chi phí không tính các bản ghi này.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mastermindFleetStopped => 'Luồng đã dừng';
 
   @override
@@ -18883,6 +18947,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetOutcomesPartial => 'Dữ liệu một phần';
+
+  @override
+  String mastermindFleetOutcomesLanes(int failed, int recovered) {
+    return '$failed lỗi · $recovered đã khôi phục hôm nay. Đếm theo luồng: máy liên kết này không chia sẻ loại lỗi.';
+  }
+
+  @override
+  String get mastermindFleetOutcomesOffline => 'Ngoại tuyến. Chưa thu thập kết quả.';
 
   @override
   String mastermindFleetOutcomesSummary(int real, int quotaRecovered, int quotaUnrecovered, int unclassified) {

@@ -9434,9 +9434,66 @@
   "mastermindUsageWeeklyLimited": "Weekly limit reached.",
   "mastermindUsageNext": "Next",
   "mastermindUsagePrevious": "Previous",
+  "mastermindUsageMonthly": "Monthly used",
+  "mastermindUsageMonthlyLimited": "Monthly limit reached.",
+  "mastermindUsageNotReported": "Signed in, but the provider has not reported a quota window.",
+  "mastermindUsageProviderUnavailable": "The provider reported its quota as unavailable.",
+  "mastermindUsageNoAccountAvailable": "No account can run now. Each one is limited, signed out or not reporting quota.",
+  "mastermindUsageReaderNotConfigured": "No usage reader is set up for this machine, so its quota is not read.",
+  "mastermindUsageReaderMissing": "This machine's usage reader credential is missing on the publisher.",
+  "mastermindUsageReaderRefused": "This machine refused the usage reader credential. Issue a new reader token.",
+  "mastermindUsageEnvironmentMismatch": "The machine answered as a different T3 environment, so usage was not read.",
+  "mastermindUsageConfigInvalid": "The usage reader settings for this machine are invalid.",
+  "mastermindUsageUnreachable": "The machine did not answer the usage read.",
+  "mastermindUsageQuotaNotReported": "The machine answered without a quota reading.",
+  "mastermindUsageReadFailed": "The usage read failed on this machine.",
+  "mastermindUsagePartialUnread": "No usage records from {machines}.",
+  "@mastermindUsagePartialUnread": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsagePartialSources": "Some usage sources are incomplete on {machines}.",
+  "@mastermindUsagePartialSources": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsagePartialStale": "Usage records from {machines} are older than 2 minutes.",
+  "@mastermindUsagePartialStale": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsageUnpricedRecords": "{count, plural, =1{1 usage record has no price, so cost totals leave it out.} other{{count} usage records have no price, so cost totals leave them out.}}",
+  "@mastermindUsageUnpricedRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mastermindFleetStopped": "Stopped lanes",
   "mastermindFleetOutcomesTitle": "Today’s outcomes by machine",
   "mastermindFleetOutcomesPartial": "Partial coverage",
+  "mastermindFleetOutcomesLanes": "{failed} failed · {recovered} recovered today. Counted from lanes: this linked machine does not share failure kinds.",
+  "@mastermindFleetOutcomesLanes": {
+    "placeholders": {
+      "failed": {
+        "type": "int"
+      },
+      "recovered": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetOutcomesOffline": "Offline. Outcomes are not collected.",
   "mastermindFleetOutcomesSummary": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
   "@mastermindFleetOutcomesSummary": {
     "placeholders": {

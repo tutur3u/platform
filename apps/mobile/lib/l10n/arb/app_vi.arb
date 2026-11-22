@@ -7983,9 +7983,56 @@
   "mastermindUsageWeeklyLimited": "Đã hết hạn mức tuần.",
   "mastermindUsageNext": "Tiếp",
   "mastermindUsagePrevious": "Trước",
+  "mastermindUsageMonthly": "Đã dùng trong tháng",
+  "mastermindUsageMonthlyLimited": "Đã chạm giới hạn tháng.",
+  "mastermindUsageNotReported": "Đã đăng nhập, nhưng nhà cung cấp chưa báo khung hạn mức nào.",
+  "mastermindUsageProviderUnavailable": "Nhà cung cấp báo hạn mức hiện không khả dụng.",
+  "mastermindUsageNoAccountAvailable": "Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc không báo hạn mức.",
+  "mastermindUsageReaderNotConfigured": "Máy này chưa được thiết lập trình đọc mức dùng, nên hạn mức của máy không được đọc.",
+  "mastermindUsageReaderMissing": "Bộ phát hành thiếu thông tin xác thực của trình đọc mức dùng cho máy này.",
+  "mastermindUsageReaderRefused": "Máy này đã từ chối thông tin xác thực của trình đọc mức dùng. Hãy cấp mã đọc mới.",
+  "mastermindUsageEnvironmentMismatch": "Máy trả lời với một môi trường T3 khác, nên mức dùng không được đọc.",
+  "mastermindUsageConfigInvalid": "Thiết lập trình đọc mức dùng của máy này không hợp lệ.",
+  "mastermindUsageUnreachable": "Máy không phản hồi yêu cầu đọc mức dùng.",
+  "mastermindUsageQuotaNotReported": "Máy đã phản hồi nhưng không kèm số liệu hạn mức.",
+  "mastermindUsageReadFailed": "Không đọc được mức dùng trên máy này.",
+  "mastermindUsagePartialUnread": "Không có bản ghi mức dùng từ {machines}.",
+  "@mastermindUsagePartialUnread": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsagePartialSources": "Một số nguồn mức dùng trên {machines} chưa đầy đủ.",
+  "@mastermindUsagePartialSources": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsagePartialStale": "Bản ghi mức dùng từ {machines} đã cũ hơn 2 phút.",
+  "@mastermindUsagePartialStale": {
+    "placeholders": {
+      "machines": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUsageUnpricedRecords": "{count, plural, other{{count} bản ghi mức dùng chưa có giá, nên tổng chi phí không tính các bản ghi này.}}",
+  "@mastermindUsageUnpricedRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mastermindFleetStopped": "Luồng đã dừng",
   "mastermindFleetOutcomesTitle": "Kết quả hôm nay theo máy",
   "mastermindFleetOutcomesPartial": "Dữ liệu một phần",
+  "mastermindFleetOutcomesLanes": "{failed} lỗi · {recovered} đã khôi phục hôm nay. Đếm theo luồng: máy liên kết này không chia sẻ loại lỗi.",
+  "mastermindFleetOutcomesOffline": "Ngoại tuyến. Chưa thu thập kết quả.",
   "mastermindFleetOutcomesSummary": "{real} lần lỗi · {quotaRecovered} lần hết hạn mức đã tự phục hồi · {quotaUnrecovered} lần hết hạn mức chưa tự phục hồi · {unclassified} chưa phân loại",
   "mastermindTabProjects": "Dự án",
   "mastermindProjectsThisMachine": "Máy này",

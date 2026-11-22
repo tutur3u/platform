@@ -35083,6 +35083,108 @@ abstract class AppLocalizations {
   /// **'Previous'**
   String get mastermindUsagePrevious;
 
+  /// No description provided for @mastermindUsageMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly used'**
+  String get mastermindUsageMonthly;
+
+  /// No description provided for @mastermindUsageMonthlyLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly limit reached.'**
+  String get mastermindUsageMonthlyLimited;
+
+  /// No description provided for @mastermindUsageNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in, but the provider has not reported a quota window.'**
+  String get mastermindUsageNotReported;
+
+  /// No description provided for @mastermindUsageProviderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider reported its quota as unavailable.'**
+  String get mastermindUsageProviderUnavailable;
+
+  /// No description provided for @mastermindUsageNoAccountAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No account can run now. Each one is limited, signed out or not reporting quota.'**
+  String get mastermindUsageNoAccountAvailable;
+
+  /// No description provided for @mastermindUsageReaderNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'No usage reader is set up for this machine, so its quota is not read.'**
+  String get mastermindUsageReaderNotConfigured;
+
+  /// No description provided for @mastermindUsageReaderMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine\'s usage reader credential is missing on the publisher.'**
+  String get mastermindUsageReaderMissing;
+
+  /// No description provided for @mastermindUsageReaderRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine refused the usage reader credential. Issue a new reader token.'**
+  String get mastermindUsageReaderRefused;
+
+  /// No description provided for @mastermindUsageEnvironmentMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine answered as a different T3 environment, so usage was not read.'**
+  String get mastermindUsageEnvironmentMismatch;
+
+  /// No description provided for @mastermindUsageConfigInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The usage reader settings for this machine are invalid.'**
+  String get mastermindUsageConfigInvalid;
+
+  /// No description provided for @mastermindUsageUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine did not answer the usage read.'**
+  String get mastermindUsageUnreachable;
+
+  /// No description provided for @mastermindUsageQuotaNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine answered without a quota reading.'**
+  String get mastermindUsageQuotaNotReported;
+
+  /// No description provided for @mastermindUsageReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The usage read failed on this machine.'**
+  String get mastermindUsageReadFailed;
+
+  /// No description provided for @mastermindUsagePartialUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'No usage records from {machines}.'**
+  String mastermindUsagePartialUnread(String machines);
+
+  /// No description provided for @mastermindUsagePartialSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Some usage sources are incomplete on {machines}.'**
+  String mastermindUsagePartialSources(String machines);
+
+  /// No description provided for @mastermindUsagePartialStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage records from {machines} are older than 2 minutes.'**
+  String mastermindUsagePartialStale(String machines);
+
+  /// No description provided for @mastermindUsageUnpricedRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 usage record has no price, so cost totals leave it out.} other{{count} usage records have no price, so cost totals leave them out.}}'**
+  String mastermindUsageUnpricedRecords(int count);
+
   /// No description provided for @mastermindFleetStopped.
   ///
   /// In en, this message translates to:
@@ -35100,6 +35202,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Partial coverage'**
   String get mastermindFleetOutcomesPartial;
+
+  /// No description provided for @mastermindFleetOutcomesLanes.
+  ///
+  /// In en, this message translates to:
+  /// **'{failed} failed · {recovered} recovered today. Counted from lanes: this linked machine does not share failure kinds.'**
+  String mastermindFleetOutcomesLanes(int failed, int recovered);
+
+  /// No description provided for @mastermindFleetOutcomesOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Outcomes are not collected.'**
+  String get mastermindFleetOutcomesOffline;
 
   /// No description provided for @mastermindFleetOutcomesSummary.
   ///

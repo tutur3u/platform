@@ -15,6 +15,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_machines_panel.dart'
 import 'package:mobile/features/mastermind/fleet/view/fleet_recovered_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_release_strip.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_today_outcomes_panel.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -65,7 +66,7 @@ class FleetTodayPage extends StatelessWidget {
               now: now,
               builder: (context, current) => Column(
                 children: [
-                  _TodayOutcomesPanel(snapshot: snapshot, now: current),
+                  FleetTodayOutcomesPanel(snapshot: snapshot, now: current),
                   const SizedBox(height: AppSpacing.lg),
                   FleetMachinesPanel(snapshot: snapshot, now: () => current),
                 ],
@@ -206,55 +207,6 @@ class _Kpis extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _TodayOutcomesPanel extends StatelessWidget {
-  const _TodayOutcomesPanel({required this.snapshot, required this.now});
-
-  final FleetSnapshot snapshot;
-  final DateTime now;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return AppPanel(
-      title: l10n.mastermindFleetOutcomesTitle,
-      padded: false,
-      child: Column(
-        children: [
-          for (final machine in snapshot.machines)
-            AppRichRow(
-              title: machine.label,
-              subtitle: _summary(l10n, machine.todayOutcomes),
-              trailing: _isStale(machine.todayOutcomes)
-                  ? AppBadge(
-                      variant: AppBadgeVariant.warning,
-                      child: Text(l10n.mastermindUsageStale),
-                    )
-                  : null,
-            ),
-        ],
-      ),
-    );
-  }
-
-  bool _isStale(FleetTodayOutcomes? outcome) =>
-      outcome != null && now.difference(outcome.observedAt) > fleetStaleAfter;
-
-  String _summary(AppLocalizations l10n, FleetTodayOutcomes? outcome) {
-    if (outcome == null || !outcome.isToday(now)) {
-      return l10n.mastermindUsageMissing;
-    }
-    final summary = l10n.mastermindFleetOutcomesSummary(
-      outcome.real,
-      outcome.quotaRecovered,
-      outcome.quotaUnrecovered,
-      outcome.unclassified,
-    );
-    return outcome.partial
-        ? '$summary · ${l10n.mastermindFleetOutcomesPartial}'
-        : summary;
   }
 }
 

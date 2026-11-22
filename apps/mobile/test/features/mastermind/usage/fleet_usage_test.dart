@@ -91,8 +91,8 @@ void main() {
         (
           id: 'm4',
           label: 'M4',
-          quota: (kind: 'unavailable', observedAt: null),
-          accounting: (kind: 'complete', observedAt: time),
+          quota: (kind: 'unavailable', observedAt: null, reason: null),
+          accounting: (kind: 'complete', observedAt: time, reason: null),
           accounts: [],
           buckets: [
             (

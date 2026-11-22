@@ -2,6 +2,13 @@ import 'package:mobile/data/sources/api_client.dart';
 
 const usageStaleAfter = Duration(minutes: 2);
 
+/// T3 rechecks some providers' limits only every few minutes, so an account
+/// reading is judged against its own original check time on this longer clock.
+const quotaCheckStaleAfter = Duration(minutes: 15);
+
+/// Window rows the client reads per account; publishers send at most two.
+const _windowLimit = 3;
+
 typedef UsageWindow = ({String kind, double? usedPercent, DateTime? resetsAt});
 typedef UsageAccount = ({
   String id,
@@ -26,7 +33,11 @@ typedef UsageBucket = ({
   int unpriced,
   double? cost,
 });
-typedef UsageObservation = ({String kind, DateTime? observedAt});
+typedef UsageObservation = ({
+  String kind,
+  DateTime? observedAt,
+  String? reason,
+});
 typedef UsageMachine = ({
   String id,
   String label,
@@ -99,8 +110,11 @@ int _count(Object? raw) {
   throw const FormatException('Invalid usage count');
 }
 
-UsageObservation _observation(Map<String, dynamic> raw) =>
-    (kind: _text(raw['kind']), observedAt: _date(raw['observedAt']));
+UsageObservation _observation(Map<String, dynamic> raw) => (
+  kind: _text(raw['kind']),
+  observedAt: _date(raw['observedAt']),
+  reason: _optionalText(raw['reason']),
+);
 
 UsageWindow _window(Map<String, dynamic> raw) => (
   kind: _text(raw['kind']),
@@ -119,7 +133,7 @@ UsageAccount _account(Map<String, dynamic> raw) {
     checkedAt: _date(raw['checkedAt']),
     status: _text(status['kind']),
     reason: _optionalText(status['reason']),
-    windows: _list(raw['windows'], 2, _window),
+    windows: _list(raw['windows'], _windowLimit, _window),
   );
 }
 
