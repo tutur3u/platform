@@ -4342,7 +4342,7 @@ async function cacheBlueGreenDeploymentImage({
     });
   } catch {
     log.warn?.(
-      `Unable to cache blue/green image ${imageTag} for ${latestCommit.shortHash}.`
+      `Unable to cache blue/green image for ${latestCommit.shortHash}.`
     );
     return null;
   }

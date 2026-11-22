@@ -1,11 +1,30 @@
 // Errors from subprocesses and providers can contain credentials in their
-// message, arguments, or output. Only emit known codes and numeric statuses.
+// message, arguments, or output. Map error metadata to fixed diagnostic text.
 function safeFailureSuffix(error) {
   const { code, httpStatus, status = error?.exitCode } = error ?? {};
-  if (Number.isInteger(httpStatus) && httpStatus >= 400 && httpStatus <= 599)
-    return ` (HTTP ${httpStatus})`;
+  switch (httpStatus) {
+    case 401:
+      return ' (HTTP 401)';
+    case 403:
+      return ' (HTTP 403)';
+    case 429:
+      return ' (HTTP 429)';
+    default:
+      if (
+        Number.isInteger(httpStatus) &&
+        httpStatus >= 400 &&
+        httpStatus <= 499
+      )
+        return ' (HTTP 4xx)';
+      if (
+        Number.isInteger(httpStatus) &&
+        httpStatus >= 500 &&
+        httpStatus <= 599
+      )
+        return ' (HTTP 5xx)';
+  }
   if (Number.isInteger(status) && status > 0 && status <= 255)
-    return ` (exit ${status})`;
+    return ' (nonzero exit)';
   switch (code) {
     case 'EACCES':
       return ' (EACCES)';
@@ -52,11 +71,11 @@ class ToolingDiagnosticError extends Error {
 }
 
 function safeToolingFailure(error, operation) {
-  if (
-    error instanceof ToolingDiagnosticError &&
-    Object.hasOwn(toolingMessages, error.diagnostic)
-  ) {
-    return toolingMessages[error.diagnostic];
+  if (error instanceof ToolingDiagnosticError) {
+    const entry = Object.entries(toolingMessages).find(
+      ([diagnostic]) => diagnostic === error.diagnostic
+    );
+    if (entry) return entry[1];
   }
   return `${operation} failed${safeFailureSuffix(error)}.`;
 }

@@ -23,7 +23,7 @@ test('known tooling failures print the public instruction and omit the cause', (
   );
 });
 
-test('unknown tooling failures print only the operation and validated exit status', () => {
+test('unknown tooling failures print only the operation and a fixed exit category', () => {
   const error = Object.assign(new Error('private provider response'), {
     diagnostic: 'deployment-active',
     exitCode: 7,
@@ -31,7 +31,7 @@ test('unknown tooling failures print only the operation and validated exit statu
   });
   assert.equal(
     safeToolingFailure(error, 'Web Docker command'),
-    'Web Docker command failed (exit 7).'
+    'Web Docker command failed (nonzero exit).'
   );
   error.exitCode = 'private string';
   assert.equal(

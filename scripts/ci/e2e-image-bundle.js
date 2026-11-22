@@ -576,10 +576,19 @@ async function main() {
   let phase = 'argument validation';
   try {
     const options = parseArgs();
-    phase = options.command;
-    if (phase === 'publish') await publishBundle(options);
-    else if (phase === 'pull') await pullBundle(options);
-    else await cleanupBundle(options);
+    switch (options.command) {
+      case 'publish':
+        phase = 'publish';
+        await publishBundle(options);
+        break;
+      case 'pull':
+        phase = 'pull';
+        await pullBundle(options);
+        break;
+      default:
+        phase = 'cleanup';
+        await cleanupBundle(options);
+    }
   } catch (error) {
     console.error(
       `E2E image bundle ${phase} failed${safeFailureSuffix(error)}.`
