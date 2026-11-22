@@ -64,18 +64,89 @@ extension PushNotificationPreferences on PushNotificationService {
     _pushCleanupComplete = !_tokenDeletionPending;
   }
 
-  Future<void> _unregisterDevice() async {
-    if (_appFlavor == null) return;
-    try {
-      await _registration;
-    } on Exception {
-      // A failed registration can still leave an older server row.
+  Future<void> _registerDeviceToken(String token) async {
+    final epoch = _sessionEpoch;
+    final userId = _currentUserId;
+    final appFlavor = _appFlavor;
+    if (userId == null || appFlavor == null || _isDisposed) {
+      return;
     }
+
     final deviceId = await _getDeviceId();
-    if (deviceId == null || _appFlavor == null) return;
-    await _repository.unregisterDevice(
-      deviceId: deviceId,
-      appFlavor: _appFlavor!.value,
-    );
+    if (deviceId == null || !_currentSession(epoch, userId) || !_pushEnabled) {
+      return;
+    }
+
+    final previous = _registration;
+    final registration = () async {
+      try {
+        await previous;
+      } on Exception {
+        /* Retry the next write. */
+      }
+      if (!_currentSession(epoch, userId) || !_pushEnabled) return;
+      final last = _lastRegistration;
+      if (last != null &&
+          last.flavor == appFlavor &&
+          last.deviceId == deviceId &&
+          last.token == token &&
+          last.age.elapsed < const Duration(minutes: 5)) {
+        return;
+      }
+      try {
+        await _repository.registerDevice(
+          deviceId: deviceId,
+          token: token,
+          platform: Platform.isIOS ? 'ios' : 'android',
+          appFlavor: appFlavor.value,
+        );
+      } on Exception {
+        // A late POST could overwrite the next token after a timeout.
+        _lastRegistration = null;
+        _registrationOutcomeUncertain = true;
+        rethrow;
+      }
+      if (!_currentSession(epoch, userId) || !_pushEnabled) return;
+      _pushCleanupComplete = false;
+      if (_registrationOutcomeUncertain) return;
+      _lastRegistration = (
+        flavor: appFlavor,
+        deviceId: deviceId,
+        token: token,
+        age: Stopwatch()..start(),
+      );
+    }();
+    _registration = registration;
+    await registration;
+  }
+
+  Future<void> _unregisterDevice() async {
+    final appFlavor = _appFlavor;
+    if (appFlavor == null) return;
+    final previous = _registration;
+    final unregistration = () async {
+      try {
+        await previous;
+      } on Exception {
+        // A failed registration can still leave an older server row.
+      }
+      _lastRegistration = null;
+      final deviceId = await _getDeviceId();
+      if (deviceId == null) return;
+      try {
+        await _repository.unregisterDevice(
+          deviceId: deviceId,
+          appFlavor: appFlavor.value,
+        );
+      } on Exception {
+        // A timed-out DELETE can still finish after the next POST. Keep
+        // refreshing the registration for the rest of this process.
+        _registrationOutcomeUncertain = true;
+        rethrow;
+      }
+    }();
+    // Keep a registration triggered by restored permission behind the DELETE.
+    _registration = unregistration;
+    await unregistration;
   }
 }

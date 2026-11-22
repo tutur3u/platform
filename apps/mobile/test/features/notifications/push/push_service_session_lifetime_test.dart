@@ -146,6 +146,118 @@ void main() {
     await push.dispose();
   });
 
+  test('foreground refreshes coalesce unchanged push registration', () async {
+    var token = 'synthetic-current-token';
+    final push = service(initialize: () async {}, token: () async => token);
+    addTearDown(push.dispose);
+    await push.startSession(actor);
+
+    await Future.wait([
+      for (var resume = 0; resume < 8; resume++) push.refreshRegistration(),
+    ]);
+    expect(writes, ['synthetic-current-token']);
+
+    token = 'synthetic-rotated-token';
+    await push.refreshRegistration();
+    expect(writes, ['synthetic-current-token', 'synthetic-rotated-token']);
+  });
+
+  test('registration after cleanup waits for the device DELETE', () async {
+    final deleting = Completer<void>();
+    final deleted = Completer<void>();
+    when(
+      () => repository.unregisterDevice(
+        deviceId: any(named: 'deviceId'),
+        appFlavor: any(named: 'appFlavor'),
+      ),
+    ).thenAnswer((_) {
+      deleting.complete();
+      return deleted.future;
+    });
+    final push = service(
+      initialize: () async {},
+      token: () async => 'synthetic-current-token',
+    );
+    addTearDown(push.dispose);
+    await push.startSession(actor);
+
+    final cleanup = push.prepareInstallationDeletion();
+    await deleting.future;
+    final resumed = push.refreshRegistration();
+    await Future<void>.delayed(Duration.zero);
+    expect(writes, ['synthetic-current-token']);
+    deleted.complete();
+    await Future.wait([cleanup, resumed]);
+
+    expect(writes, ['synthetic-current-token', 'synthetic-current-token']);
+  });
+
+  test(
+    'an unconfirmed device DELETE keeps later registrations retryable',
+    () async {
+      when(
+        () => repository.unregisterDevice(
+          deviceId: any(named: 'deviceId'),
+          appFlavor: any(named: 'appFlavor'),
+        ),
+      ).thenAnswer(
+        (_) async => throw TimeoutException('DELETE outcome unknown'),
+      );
+      final push = service(
+        initialize: () async {},
+        token: () async => 'synthetic-current-token',
+      );
+      addTearDown(push.dispose);
+      await push.startSession(actor);
+
+      await expectLater(
+        push.prepareInstallationDeletion(),
+        throwsA(isA<TimeoutException>()),
+      );
+      await push.refreshRegistration();
+      await push.refreshRegistration();
+
+      expect(writes, List.filled(3, 'synthetic-current-token'));
+    },
+  );
+
+  test('an unconfirmed device POST keeps a rotated token retryable', () async {
+    var token = 'synthetic-current-token';
+    when(
+      () => repository.registerDevice(
+        deviceId: any(named: 'deviceId'),
+        token: any(named: 'token'),
+        platform: any(named: 'platform'),
+        appFlavor: any(named: 'appFlavor'),
+      ),
+    ).thenAnswer((invocation) async {
+      final attempted = invocation.namedArguments[#token]! as String;
+      writes.add(attempted);
+      if (attempted == 'synthetic-timed-out-token') {
+        throw TimeoutException('POST outcome unknown');
+      }
+    });
+    final push = service(initialize: () async {}, token: () async => token);
+    addTearDown(push.dispose);
+    await push.startSession(actor);
+
+    token = 'synthetic-timed-out-token';
+    await expectLater(
+      push.refreshRegistration(),
+      throwsA(isA<TimeoutException>()),
+    );
+    token = 'synthetic-rotated-token';
+    await push.refreshRegistration();
+    await push.refreshRegistration();
+
+    expect(writes, [
+      'synthetic-current-token',
+      'synthetic-timed-out-token',
+      'synthetic-rotated-token',
+      'synthetic-rotated-token',
+    ]);
+  });
+
   test('held initialization cannot request token after disposal', () async {
     final initialized = Completer<void>();
     final entered = Completer<void>();

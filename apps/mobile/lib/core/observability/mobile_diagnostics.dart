@@ -200,6 +200,9 @@ const _fixedRoutes = {
   '/api/v1/live/token',
   '/api/v1/mobile/version-check',
   '/api/v1/auth/mobile/client-credential',
+  '/api/v1/notifications/push-devices',
+  '/api/v1/realtime/channels',
+  '/api/v1/users/me/tasks',
 };
 final _conversationRoute = RegExp(
   r'^/api/v1/workspaces/[^/]+/chat/conversations(?:/[^/]+(?:/(messages|reactions|read|ai-settings))?)?$',

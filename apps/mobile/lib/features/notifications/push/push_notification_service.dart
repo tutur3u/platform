@@ -118,6 +118,9 @@ class PushNotificationService {
   bool _isDisposed = false;
   bool _tokenDeletionPending = false;
   Future<void>? _registration;
+  bool _registrationOutcomeUncertain = false;
+  ({AppFlavor flavor, String deviceId, String token, Stopwatch age})?
+  _lastRegistration;
   Future<void>? _tokenEnrollment;
 
   FirebaseMessaging get _messaging =>
@@ -198,6 +201,7 @@ class PushNotificationService {
   Future<void> startSession(String userId) async {
     if (_isDisposed) return;
     final epoch = ++_sessionEpoch;
+    _lastRegistration = null;
     _currentUserId = userId;
     _sessionClosing = false;
     _pushCleanupComplete = false;
@@ -235,6 +239,7 @@ class PushNotificationService {
     final epoch = ++_sessionEpoch;
     final userId = _currentUserId;
     _currentUserId = null;
+    _lastRegistration = null;
     _pushAdmitted = false;
     _pendingMail = null;
     _pendingMastermind = null;
@@ -289,6 +294,7 @@ class PushNotificationService {
     _isDisposed = true;
     _sessionEpoch++;
     _currentUserId = null;
+    _lastRegistration = null;
     unawaited(_delivered.bindSession(null));
     await _messageSubscription?.cancel();
     await _messageOpenedSubscription?.cancel();
@@ -607,38 +613,6 @@ class PushNotificationService {
       if (strict) rethrow;
       // Token cleanup is best-effort; auto-init stays disabled.
     }
-  }
-
-  Future<void> _registerDeviceToken(String token) async {
-    final epoch = _sessionEpoch;
-    final userId = _currentUserId;
-    final appFlavor = _appFlavor;
-    if (userId == null || appFlavor == null || _isDisposed) {
-      return;
-    }
-
-    final deviceId = await _getDeviceId();
-    if (deviceId == null || !_currentSession(epoch, userId) || !_pushEnabled) {
-      return;
-    }
-
-    final previous = _registration;
-    final registration = () async {
-      try {
-        await previous;
-      } on Exception {
-        /* Retry the next write. */
-      }
-      if (!_currentSession(epoch, userId) || !_pushEnabled) return;
-      await _repository.registerDevice(
-        deviceId: deviceId,
-        token: token,
-        platform: Platform.isIOS ? 'ios' : 'android',
-        appFlavor: appFlavor.value,
-      );
-    }();
-    _registration = registration;
-    await registration;
   }
 
   Future<String?> _getDeviceId() async {

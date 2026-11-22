@@ -37,6 +37,17 @@ void main() {
     }
   });
 
+  test('refresh diagnostics distinguish push registration and task reads', () {
+    for (final path in [
+      '/api/v1/notifications/push-devices',
+      '/api/v1/realtime/channels',
+      '/api/v1/users/me/tasks',
+    ]) {
+      expect(mobileDiagnosticRoute(path), path);
+      expect(mobileDiagnosticRoute('$path/private-id'), '/other');
+    }
+  });
+
   test('an unrecognized route, host, and method never appear', () async {
     final diagnostics = MobileDiagnostics();
     addTearDown(diagnostics.dispose);
