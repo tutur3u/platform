@@ -36,6 +36,7 @@ import {
 } from '@/lib/auth/external-app-exchange-profile';
 import { createExchangeTokenResponse } from '@/lib/auth/external-app-exchange-response';
 import { verifyExternalAppRefreshToken } from '@/lib/auth/external-app-refresh';
+import { limitExternalAppTokenExchange } from '@/lib/external-apps/rate-limit';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
@@ -348,6 +349,17 @@ async function exchangeAppToken(request: NextRequest) {
       { error: 'Provide exactly one token or refresh token' },
       { status: 400 }
     );
+  }
+
+  // Refresh keeps its own per-family pre-limit. A token exchange is counted
+  // before the app secret is checked, so guessing secrets is paced too.
+  const exchangeAppId = appId ?? targetApp;
+  if (token && exchangeAppId) {
+    const refusal = await limitExternalAppTokenExchange({
+      appId: exchangeAppId,
+      ip: extractIPFromRequest(request.headers),
+    });
+    if (refusal) return refusal;
   }
 
   let resolvedTarget: Awaited<ReturnType<typeof resolveExchangeTarget>>;

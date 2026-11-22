@@ -158,7 +158,8 @@ function expectedWrappers({
     wrappers,
     targetDir,
     GENERATED_MARKER,
-    legacyImportPath
+    legacyImportPath,
+    (relativeFile) => fsImpl.existsSync(path.join(sourceDir, relativeFile))
   );
 }
 

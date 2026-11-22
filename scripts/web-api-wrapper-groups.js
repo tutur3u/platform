@@ -30,7 +30,19 @@ const workspaceGroups = [
   'whiteboards',
 ];
 
-function groupWorkspaceWrappers(wrappers, targetDir, marker, importPath) {
+/**
+ * A group may export `guard` from `<group>/route-guard.ts` in the legacy
+ * tree; its wrapper then runs that guard before every matched handler.
+ */
+const GROUP_GUARD_FILE = 'route-guard.ts';
+
+function groupWorkspaceWrappers(
+  wrappers,
+  targetDir,
+  marker,
+  importPath,
+  hasGroupFile = () => false
+) {
   const groups = new Map();
   const individual = [];
   for (const wrapper of wrappers) {
@@ -70,6 +82,13 @@ function groupWorkspaceWrappers(wrappers, targetDir, marker, importPath) {
       return `  [${JSON.stringify(segments)}, { ${handlers.join(', ')} }],`;
     });
 
+    const guarded = hasGroupFile(`${base}/${GROUP_GUARD_FILE}`);
+    if (guarded) {
+      imports.push(
+        `import { guard } from '@/legacy-api-routes/${base}/route-guard';`
+      );
+    }
+
     individual.push({
       relativeRouteFile,
       targetPath: path.join(targetDir, relativeRouteFile),
@@ -81,9 +100,10 @@ function groupWorkspaceWrappers(wrappers, targetDir, marker, importPath) {
           "import { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';",
           '',
           'export const { GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS } =',
-          '  createWorkspaceRouteHandlers([',
+          '  createWorkspaceRouteHandlers(',
+          '  [',
           ...definitions.map((line) => `  ${line}`),
-          '  ]);',
+          guarded ? '  ], guard);' : '  ]);',
           '',
         ].join('\n')
       ),

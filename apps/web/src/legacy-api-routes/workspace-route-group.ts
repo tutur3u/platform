@@ -23,7 +23,19 @@ type Context = {
   params: Promise<{ wsId: string; segments?: string[] }>;
 };
 
-export function createWorkspaceRouteHandlers(routes: readonly Route[]) {
+/**
+ * Runs once per matched request, before its handler. Returning a response
+ * answers the request without calling the handler.
+ */
+export type WorkspaceRouteGuard = (
+  request: NextRequest,
+  route: { method: Method; pattern: readonly string[]; wsId: string }
+) => Response | undefined | Promise<Response | undefined>;
+
+export function createWorkspaceRouteHandlers(
+  routes: readonly Route[],
+  guard?: WorkspaceRouteGuard
+) {
   // At a given depth, Next tries literal segments ahead of parameter segments.
   const ordered = [...routes]
     .sort(([left], [right]) => {
@@ -72,6 +84,8 @@ export function createWorkspaceRouteHandlers(routes: readonly Route[]) {
         }
         const run = handlers[method];
         if (run) {
+          const refusal = await guard?.(request, { method, pattern, wsId });
+          if (refusal) return refusal;
           const params = Object.fromEntries([
             ['wsId', wsId],
             ...pattern.flatMap((part, index) =>

@@ -511,6 +511,35 @@ Regression coverage lives in the
 and
 [external role and default tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/external-apps/workspace-members.test.ts).
 
+### Rate limits
+
+Every external-app workspace route under
+`/api/v1/workspaces/{wsId}/external-apps/` is counted once, at the route
+group's entry, after the app bearer's signature is verified. A request without
+a valid bearer is left to the handler, which refuses it. The app-token exchange
+counts `token` exchanges before the app secret is checked; `refreshToken`
+exchanges keep their own per-family pre-limit. Limits live in
+`apps/web/src/lib/external-apps/rate-limit-policy.ts`:
+
+| Counter | Key | Limit |
+| --- | --- | --- |
+| Reads (`GET`, `drive/read-url`) | app and workspace | 600 per minute |
+| Writes (every other method) | app and workspace | 60 per minute |
+| `drive/upload-url`, besides the write | app and user | 10 per minute |
+| `members/invitations`, besides the write | app and workspace | 5 per hour |
+| Token exchange | app and client IP (`cf-connecting-ip`) | 30 per minute |
+
+The `personal` workspace alias is counted per user. Counts use the web
+`ratelimit` abuse-guard family (the `ABUSE_GUARD` service binding) through
+`checkRateLimitRedis`. An over-limit request gets HTTP 429 with `Retry-After`
+and code `RATE_LIMIT_EXCEEDED`. When the counter store is unavailable, writes,
+upload URLs, invitations and exchanges get HTTP 503 with `Retry-After: 30` and
+code `RATE_LIMIT_UNAVAILABLE`, while reads continue. A non-production runtime
+with no counter store configured lets those requests through; production
+always refuses. Regression coverage lives in
+`apps/web/src/lib/external-apps/rate-limit.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-rate-limit.test.ts`.
+
 ## Operational notes
 
 Server-side internal API calls identify themselves with

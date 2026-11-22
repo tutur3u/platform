@@ -133,6 +133,42 @@ test('planWrapperChanges skips empty legacy route files with no HTTP methods', (
   ]);
 });
 
+test('planWrapperChanges passes a workspace group guard to its router', () => {
+  const { appApiDir, legacyApiDir } = makeFixture();
+  const groupDir = path.join(legacyApiDir, 'v1', 'workspaces', '[wsId]');
+  writeFile(
+    path.join(groupDir, 'roles', 'route.ts'),
+    'export async function GET() {}\n'
+  );
+  writeFile(
+    path.join(groupDir, 'external-apps', 'members', 'route.ts'),
+    'export async function GET() {}\n'
+  );
+  writeFile(
+    path.join(groupDir, 'external-apps', 'route-guard.ts'),
+    'export const guard = () => undefined;\n'
+  );
+
+  const contents = Object.fromEntries(
+    planWrapperChanges({ appApiDir, legacyApiDir }).map((change) => [
+      path.relative(appApiDir, change.path).split(path.sep).join('/'),
+      change.content,
+    ])
+  );
+
+  const guarded =
+    contents['v1/workspaces/[wsId]/external-apps/[...segments]/route.ts'];
+  assert.match(
+    guarded,
+    /import \{ guard \} from '@\/legacy-api-routes\/v1\/workspaces\/\[wsId\]\/external-apps\/route-guard';/u
+  );
+  assert.match(guarded, /\],\s*guard\s*\);/u);
+  assert.doesNotMatch(
+    contents['v1/workspaces/[wsId]/roles/[[...segments]]/route.ts'],
+    /guard/u
+  );
+});
+
 test('repo import graph keeps legacy API routes concrete without catch-all bridges', () => {
   const apiDir = path.join(REPO_ROOT, 'apps', 'web', 'src', 'app', 'api');
   const bridgeFiles = [];

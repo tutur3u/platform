@@ -15,23 +15,27 @@ import * as route11 from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps
 import * as route12 from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/default-admin/route';
 import * as route13 from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/invitations/route';
 import * as route14 from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/members/route';
+import { guard } from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/route-guard';
 import { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';
 
 export const { GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS } =
-  createWorkspaceRouteHandlers([
-    [['cron', 'executions'], { GET: route0.GET }],
-    [['cron', 'jobs', '[jobKey]', 'executions'], { GET: route1.GET }],
-    [['cron', 'jobs', '[jobKey]'], { PATCH: route2.PATCH }],
-    [['cron', 'jobs', '[jobKey]', 'run-now'], { POST: route3.POST }],
-    [['cron'], { GET: route4.GET }],
-    [['cron', 'setup'], { POST: route5.POST }],
-    [['drive', 'finalize'], { POST: route6.POST }],
-    [['drive', 'read-url'], { POST: route7.POST }],
-    [['drive'], { DELETE: route8.DELETE }],
-    [['drive', 'upload-url'], { POST: route9.POST }],
-    [['members', '[userId]', 'role'], { PATCH: route10.PATCH }],
-    [['members', 'access'], { DELETE: route11.DELETE }],
-    [['members', 'default-admin'], { PATCH: route12.PATCH }],
-    [['members', 'invitations'], { POST: route13.POST }],
-    [['members'], { GET: route14.GET }],
-  ]);
+  createWorkspaceRouteHandlers(
+    [
+      [['cron', 'executions'], { GET: route0.GET }],
+      [['cron', 'jobs', '[jobKey]', 'executions'], { GET: route1.GET }],
+      [['cron', 'jobs', '[jobKey]'], { PATCH: route2.PATCH }],
+      [['cron', 'jobs', '[jobKey]', 'run-now'], { POST: route3.POST }],
+      [['cron'], { GET: route4.GET }],
+      [['cron', 'setup'], { POST: route5.POST }],
+      [['drive', 'finalize'], { POST: route6.POST }],
+      [['drive', 'read-url'], { POST: route7.POST }],
+      [['drive'], { DELETE: route8.DELETE }],
+      [['drive', 'upload-url'], { POST: route9.POST }],
+      [['members', '[userId]', 'role'], { PATCH: route10.PATCH }],
+      [['members', 'access'], { DELETE: route11.DELETE }],
+      [['members', 'default-admin'], { PATCH: route12.PATCH }],
+      [['members', 'invitations'], { POST: route13.POST }],
+      [['members'], { GET: route14.GET }],
+    ],
+    guard
+  );
