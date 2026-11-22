@@ -30,6 +30,7 @@ import { AssessmentPanel } from './assessment-panel';
 const t = strings.assessment;
 const CHOICE = '33333333-3333-4333-8333-333333333333';
 const LONG = '44444444-4444-4444-8444-444444444444';
+const ATTEMPT = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const items = [
   {
     id: CHOICE,
@@ -41,6 +42,7 @@ const items = [
 ];
 const open = {
   status: 'open' as const,
+  attemptId: ATTEMPT,
   released: false,
   sealed: false,
   items,
@@ -94,6 +96,7 @@ it('lets the host write a choice question, save it and open it once the room has
     snapshot: {
       assessment: {
         status: 'draft',
+        attemptId: ATTEMPT,
         released: false,
         sealed: false,
         items: [items[0]!],
@@ -108,7 +111,13 @@ it('lets the host write a choice question, save it and open it once the room has
       .checked
   ).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: t.open }));
-  expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'open' });
+  // Opening names the saved draft and the status it leaves.
+  expect(sent().at(-1)).toEqual({
+    kind: 'assessment.status',
+    status: 'open',
+    attemptId: ATTEMPT,
+    from: 'draft',
+  });
 });
 
 it('shows the host each answer, grades written ones and releases results', () => {
@@ -143,7 +152,14 @@ it('shows the host each answer, grades written ones and releases results', () =>
   );
   expect(screen.getByText(t.release_hint)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: t.close_answers }));
-  expect(sent()).toEqual([{ kind: 'assessment.status', status: 'closed' }]);
+  expect(sent()).toEqual([
+    {
+      kind: 'assessment.status',
+      status: 'closed',
+      attemptId: ATTEMPT,
+      from: 'open',
+    },
+  ]);
 
   const closed = { ...open, status: 'closed' as const };
   const store = room({ manager: true, snapshot: { assessment: closed } });
@@ -157,6 +173,7 @@ it('shows the host each answer, grades written ones and releases results', () =>
   // The grade names the answer revision the host read.
   expect(sent().at(-1)).toEqual({
     kind: 'assessment.grade',
+    attemptId: ATTEMPT,
     itemId: LONG,
     participantId: ANA,
     revision: 2,
@@ -175,7 +192,11 @@ it('shows the host each answer, grades written ones and releases results', () =>
     strings.errors.answer_changed
   );
   fireEvent.click(screen.getByRole('button', { name: t.release }));
-  expect(sent().at(-1)).toEqual({ kind: 'assessment.release', released: true });
+  expect(sent().at(-1)).toEqual({
+    kind: 'assessment.release',
+    released: true,
+    attemptId: ATTEMPT,
+  });
 
   // Closed without a release: answers can simply open again.
   expect(screen.getByRole('button', { name: t.reopen })).toBeTruthy();
@@ -190,7 +211,11 @@ it('shows the host each answer, grades written ones and releases results', () =>
   expect(sent()).toHaveLength(3);
   expect(screen.getByText(t.reopen_hint)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: t.reopen_confirm }));
-  expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'open' });
+  // A new attempt is its own command, never a plain reopen.
+  expect(sent().at(-1)).toEqual({
+    kind: 'assessment.restart',
+    attemptId: ATTEMPT,
+  });
   // Hiding the results again does not bring the plain Reopen back.
   room({
     manager: true,
@@ -203,7 +228,12 @@ it('shows the host each answer, grades written ones and releases results', () =>
   fireEvent.click(screen.getByRole('button', { name: t.edit }));
   expect(sent()).toHaveLength(4);
   fireEvent.click(screen.getByRole('button', { name: t.edit_confirm }));
-  expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'draft' });
+  expect(sent().at(-1)).toEqual({
+    kind: 'assessment.status',
+    status: 'draft',
+    attemptId: ATTEMPT,
+    from: 'closed',
+  });
 });
 
 it('lets a participant answer while open and shows only their own result on release', () => {
@@ -306,6 +336,7 @@ it('keeps a question the host is writing when the room repeats its state', () =>
     snapshot: {
       assessment: {
         status: 'draft' as const,
+        attemptId: ATTEMPT,
         released: false,
         sealed: false,
         items: [items[0]!],

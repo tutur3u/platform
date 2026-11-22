@@ -17,6 +17,8 @@ const ERRORS: Record<string, string> = {
   activity_assessment_closed: 'closed',
   activity_game_closed: 'closed',
   activity_assessment_not_closed: 'not_closed',
+  activity_assessment_changed: 'assessment_changed',
+  activity_assessment_sealed: 'assessment_changed',
   activity_answer_changed: 'answer_changed',
   activity_response_not_found: 'answer_changed',
   activity_game_running: 'game_running',

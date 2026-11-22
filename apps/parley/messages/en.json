@@ -4834,7 +4834,9 @@
           "prompt_changed": "That question is no longer the current one, so your answer was not added.",
           "reconnecting": "Reconnecting. Try again in a moment.",
           "card_changed": "The deck changed. Check the card on show and try again.",
-          "round_changed": "The game moved on. Check the round on screen and try again."
+          "round_changed": "The game moved on. Check the round on screen and try again.",
+          "assessment_changed": "The assessment changed. Check what is on screen and try again.",
+          "outdated": "This page is out of date. Reload to keep using activities."
         },
         "options": {
           "legend": "Options, with the correct one selected",
@@ -4983,7 +4985,8 @@
           "show_response": "Show the answer from {name}",
           "no_responses": "No answers yet. Be the first.",
           "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}"
-        }
+        },
+        "cancel": "Cancel"
       }
     },
     "collaboration": {

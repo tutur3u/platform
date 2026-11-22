@@ -4834,7 +4834,9 @@
           "prompt_changed": "Câu hỏi đó không còn là câu hỏi hiện tại nên câu trả lời của bạn chưa được thêm.",
           "reconnecting": "Đang kết nối lại. Hãy thử lại sau giây lát.",
           "card_changed": "Bộ thẻ đã thay đổi. Hãy xem lại thẻ đang hiển thị rồi thử lại.",
-          "round_changed": "Trò chơi đã chuyển tiếp. Hãy xem vòng đang hiển thị rồi thử lại."
+          "round_changed": "Trò chơi đã chuyển tiếp. Hãy xem vòng đang hiển thị rồi thử lại.",
+          "assessment_changed": "Bài đánh giá đã thay đổi. Hãy xem lại màn hình rồi thử lại.",
+          "outdated": "Trang này đã cũ. Hãy tải lại để tiếp tục dùng các hoạt động."
         },
         "options": {
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
@@ -4983,7 +4985,8 @@
           "show_response": "Hiện câu trả lời của {name}",
           "no_responses": "Chưa có câu trả lời. Hãy là người đầu tiên.",
           "hidden": "{count, plural, other {# câu trả lời đã ẩn}}"
-        }
+        },
+        "cancel": "Hủy"
       }
     },
     "collaboration": {

@@ -52,10 +52,16 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
       .array(assessmentItemSchema)
       .max(LIVE_ACTIVITY_LIMITS.assessmentItems),
   }),
+  // Manager commands name the attempt on the sender's screen, and a status
+  // change the status it leaves, so one written for another state is refused.
   z.object({
     kind: z.literal('assessment.status'),
     status: assessmentStatusSchema,
+    attemptId: id.nullable(),
+    from: assessmentStatusSchema,
   }),
+  /** Discards a closed attempt's answers and opens the questions again. */
+  z.object({ kind: z.literal('assessment.restart'), attemptId: id.nullable() }),
   z
     .object({
       kind: z.literal('assessment.submit'),
@@ -68,6 +74,7 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
     ),
   z.object({
     kind: z.literal('assessment.grade'),
+    attemptId: id.nullable(),
     itemId: id,
     participantId: id,
     /** The answer the grader read; a grade for a replaced answer is refused. */
@@ -75,7 +82,11 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
     score: z.number().min(0).max(100),
     feedback: z.string().trim().max(400).optional(),
   }),
-  z.object({ kind: z.literal('assessment.release'), released: z.boolean() }),
+  z.object({
+    kind: z.literal('assessment.release'),
+    released: z.boolean(),
+    attemptId: id.nullable(),
+  }),
   z.object({
     kind: z.literal('flashcards.set'),
     cards: z.array(flashcardSchema).max(LIVE_ACTIVITY_LIMITS.flashcards),
@@ -149,6 +160,8 @@ const icebreakerResponse = z.object({ id, participantId: id, text: text(200) });
 export const liveActivitiesSnapshotSchema = z.object({
   assessment: z.object({
     status: assessmentStatusSchema,
+    /** Issued by the room per attempt; null before any questions are saved. */
+    attemptId: id.nullable(),
     released: z.boolean(),
     /**
      * True once results went out in this attempt. It takes no more answers,

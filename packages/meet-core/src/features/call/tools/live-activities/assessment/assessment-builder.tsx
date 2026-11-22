@@ -26,9 +26,12 @@ import {
 /** The host's draft: questions are saved to the room, then opened for answers. */
 export function AssessmentBuilder({
   saved,
+  attemptId,
   send,
 }: {
   saved: DraftItem[];
+  /** The saved draft this builder shows; opening names it. */
+  attemptId: string | null;
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.assessment');
@@ -126,7 +129,14 @@ export function AssessmentBuilder({
           label={t('open')}
           variant="default"
           disabled={dirty || !saved.length}
-          onClick={() => send({ kind: 'assessment.status', status: 'open' })}
+          onClick={() =>
+            send({
+              kind: 'assessment.status',
+              status: 'open',
+              attemptId,
+              from: 'draft',
+            })
+          }
         />
       </div>
       {dirty && (

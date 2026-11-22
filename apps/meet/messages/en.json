@@ -4607,15 +4607,18 @@
           "your_answer": "Your answer",
           "your_score": "Your score: {score}"
         },
+        "cancel": "Cancel",
         "close": "Close panel",
         "errors": {
           "answer_changed": "That answer changed after you read it. Check it again before grading.",
+          "assessment_changed": "The assessment changed. Check what is on screen and try again.",
           "card_changed": "The deck changed. Check the card on show and try again.",
           "closed": "That is closed now.",
           "full": "This activity is full. Remove something before adding more.",
           "game_running": "A game is running. End it before changing the rounds.",
           "generic": "That did not go through. Try again.",
           "not_closed": "Close answers first.",
+          "outdated": "This page is out of date. Reload to keep using activities.",
           "permission": "Only hosts and co-hosts can do that.",
           "prompt_changed": "That question is no longer the current one, so your answer was not added.",
           "rate_limited": "That was a lot at once. Wait a moment and try again.",

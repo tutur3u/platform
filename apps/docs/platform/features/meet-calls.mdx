@@ -603,10 +603,14 @@ managers see everyone's submissions. Releasing results shows the correct
 choices to the room and delivers each participant's own grade and feedback.
 Results can be released only after answers are closed. A release ends that
 attempt for good: it takes no more answers, even when the results are hidden
-again. Opening the assessment after a release starts a new attempt with the same
-questions under new ids, no answers, no grades and the key hidden, and the host
-confirms it first. Answers closed without a release can open again and keep what
-was submitted. Keys and grades are never visible while an answer can change. Written answers are
+again. Reopen never discards answers: after a release the room refuses it, and the
+only way on is the separate **New attempt** action, which the host confirms in a
+dialog. A new attempt keeps the questions under new ids, with no answers, no
+grades and the key hidden. Answers closed without a release can open again and
+keep what was submitted. Each attempt has its own id. Every host action names
+the attempt, and a status change also the status it leaves; the room refuses an
+action written for another attempt or status, so a click that another host's
+action overtook changes nothing. Keys and grades are never visible while an answer can change. Written answers are
 graded only after answers are closed, and each grade names the revision of the
 answer it read: the room refuses a grade for an answer that was rewritten since.
 Returning to draft clears submissions and released results and gives the

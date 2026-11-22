@@ -20,11 +20,13 @@ type Response = NonNullable<
  */
 function GradeRow({
   response,
+  attemptId,
   name,
   canGrade,
   send,
 }: {
   response: Response;
+  attemptId: string | null;
   name: string;
   canGrade: boolean;
   send: Activity['send'];
@@ -58,6 +60,7 @@ function GradeRow({
           if (!valid) return;
           send({
             kind: 'assessment.grade',
+            attemptId,
             itemId: response.itemId,
             participantId: response.participantId,
             revision: response.revision,
@@ -108,8 +111,9 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
   const responses = activity.host?.assessment.responses ?? [];
   const answers = activity.host?.assessment.answers ?? {};
   const open = assessment.status === 'open';
-  // A release ends the attempt, so opening again clears it and asks twice.
-  const { sealed } = assessment;
+  // Every command names the attempt and status on screen, so the room can
+  // refuse one that another host's action has overtaken.
+  const { attemptId, sealed, status: from } = assessment;
   const reopenNeedsConfirm = !open && sealed && !confirmReopen;
   return (
     <div className="space-y-3">
@@ -129,10 +133,17 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
           onClick={() => {
             if (reopenNeedsConfirm) return setConfirmReopen(true);
             setConfirmReopen(false);
-            activity.send({
-              kind: 'assessment.status',
-              status: open ? 'closed' : 'open',
-            });
+            // A released attempt cannot reopen: the way on discards its answers.
+            activity.send(
+              sealed && !open
+                ? { kind: 'assessment.restart', attemptId }
+                : {
+                    kind: 'assessment.status',
+                    status: open ? 'closed' : 'open',
+                    attemptId,
+                    from,
+                  }
+            );
           }}
         />
         <ToolAction
@@ -145,6 +156,7 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
             activity.send({
               kind: 'assessment.release',
               released: !assessment.released,
+              attemptId,
             })
           }
         />
@@ -155,7 +167,12 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
           onClick={() => {
             if (!confirmEdit) return setConfirmEdit(true);
             setConfirmEdit(false);
-            activity.send({ kind: 'assessment.status', status: 'draft' });
+            activity.send({
+              kind: 'assessment.status',
+              status: 'draft',
+              attemptId,
+              from,
+            });
           }}
         />
       </div>
@@ -227,6 +244,7 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
                       // A replaced answer or a saved grade starts the form over.
                       key={`${response.participantId}:${response.revision}:${response.score}:${response.feedback}`}
                       response={response}
+                      attemptId={attemptId}
                       name={activity.nameOf(response.participantId)}
                       canGrade={!open}
                       send={activity.send}

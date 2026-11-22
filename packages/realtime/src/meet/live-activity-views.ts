@@ -32,6 +32,8 @@ export type Activities = {
   > & {
     /** Absent in state stored before a release ended its attempt. */
     sealed?: boolean;
+    /** Absent in state stored before attempts had ids. */
+    attempt?: string;
     items: AssessmentItem[];
     responses: AssessmentResponse[];
   };
@@ -115,6 +117,7 @@ export function publicView({
   return {
     assessment: {
       status: assessment.status,
+      attemptId: assessment.attempt ?? null,
       released,
       sealed: assessment.sealed === true || assessment.released,
       items: assessment.items.map(({ id, prompt, kind, options, answer }) => ({

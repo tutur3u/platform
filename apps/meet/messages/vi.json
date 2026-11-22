@@ -4607,15 +4607,18 @@
           "your_answer": "Câu trả lời của bạn",
           "your_score": "Điểm của bạn: {score}"
         },
+        "cancel": "Hủy",
         "close": "Đóng bảng",
         "errors": {
           "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
+          "assessment_changed": "Bài đánh giá đã thay đổi. Hãy xem lại màn hình rồi thử lại.",
           "card_changed": "Bộ thẻ đã thay đổi. Hãy xem lại thẻ đang hiển thị rồi thử lại.",
           "closed": "Phần này đã đóng.",
           "full": "Hoạt động này đã đầy. Hãy xóa bớt trước khi thêm.",
           "game_running": "Trò chơi đang diễn ra. Hãy dừng trò chơi trước khi sửa các vòng.",
           "generic": "Thao tác chưa thành công. Hãy thử lại.",
           "not_closed": "Hãy đóng nhận câu trả lời trước.",
+          "outdated": "Trang này đã cũ. Hãy tải lại để tiếp tục dùng các hoạt động.",
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",
           "prompt_changed": "Câu hỏi đó không còn là câu hỏi hiện tại nên câu trả lời của bạn chưa được thêm.",
           "rate_limited": "Bạn thao tác hơi nhanh. Hãy chờ một chút rồi thử lại.",

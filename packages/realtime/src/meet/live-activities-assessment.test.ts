@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LIVE_ACTIVITY_LIMITS } from './live-activities';
 import {
-  action,
+  action as dispatch,
   cohost,
   error,
   guest,
@@ -14,6 +14,22 @@ import { serializedMeetBytes } from './live-activity-rate';
 import { mineView, publicView } from './live-activity-views';
 import { MEET_MAX_MESSAGE_BYTES } from './message-size';
 import type { MeetRoomSnapshot } from './room';
+
+// Manager commands name the attempt and the status on the sender's screen.
+// Unless a test sets them, they are the ones in the state the command meets.
+const action: typeof dispatch = (state, token, command, offset) => {
+  const assessment = state.liveActivities?.assessment;
+  return dispatch(
+    state,
+    token,
+    {
+      attemptId: assessment?.attempt ?? null,
+      from: assessment?.status ?? 'draft',
+      ...(command as object),
+    },
+    offset
+  );
+};
 
 describe('assessment', () => {
   const items = [
@@ -179,10 +195,16 @@ describe('assessment', () => {
     expect(kept?.responses).toHaveLength(1);
     expect(kept?.items.map(({ id }) => id)).toEqual([question.id, long.id]);
 
-    // The key went out, so that attempt is over: opening again is a new one.
-    const reopened = action(released.state, cohost, {
+    // The key went out, so that attempt is over. Plain Reopen is refused, and
+    // only the new-attempt command opens the questions again.
+    const refused = action(released.state, cohost, {
       kind: 'assessment.status',
       status: 'open',
+    });
+    expect(refused.reply).toMatchObject(error('activity_assessment_sealed'));
+    expect(refused.state).toBe(released.state);
+    const reopened = action(released.state, cohost, {
+      kind: 'assessment.restart',
     });
     const fresh = reopened.state.liveActivities?.assessment;
     expect(fresh).toMatchObject({
@@ -223,7 +245,11 @@ describe('assessment', () => {
       action(hiddenAgain.state, host, {
         kind: 'assessment.status',
         status: 'open',
-      }).state.liveActivities?.assessment
+      }).reply
+    ).toMatchObject(error('activity_assessment_sealed'));
+    expect(
+      action(hiddenAgain.state, host, { kind: 'assessment.restart' }).state
+        .liveActivities?.assessment
     ).toMatchObject({ status: 'open', sealed: false, responses: [] });
 
     const draft = action(released.state, host, {
@@ -237,6 +263,94 @@ describe('assessment', () => {
       released: false,
       responses: [],
     });
+  });
+
+  it('refuses a manager command written for another attempt or another status', () => {
+    const configured = action(room(), host, { kind: 'assessment.set', items });
+    const open = action(configured.state, host, {
+      kind: 'assessment.status',
+      status: 'open',
+    }).state;
+    const [, long] = open.liveActivities?.assessment.items ?? [];
+    const answered = action(open, guest, {
+      kind: 'assessment.submit',
+      itemId: long?.id,
+      answer: 'An answer',
+    }).state;
+    const closed = action(answered, host, {
+      kind: 'assessment.status',
+      status: 'closed',
+    }).state;
+    const attemptId = closed.liveActivities?.assessment.attempt;
+    expect(attemptId).toEqual(expect.any(String));
+    expect(read(closed, guest).reply).toMatchObject([
+      { snapshot: { assessment: { attemptId, status: 'closed' } } },
+      {},
+    ]);
+    // What two managers have on screen for the closed attempt.
+    const reopen = {
+      kind: 'assessment.status',
+      status: 'open',
+      attemptId,
+      from: 'closed',
+    };
+    const release = { kind: 'assessment.release', released: true, attemptId };
+
+    // The release wins the race: the queued Reopen must not clear the answers.
+    const released = action(closed, cohost, release).state;
+    const lateReopen = action(released, host, reopen);
+    expect(lateReopen.reply).toMatchObject(
+      error('activity_assessment_sealed')
+    );
+    expect(lateReopen.state).toBe(released);
+    expect(released.liveActivities?.assessment.responses).toHaveLength(1);
+
+    // A new attempt replaces the released one: commands for the old attempt
+    // do not land on it, whatever its status.
+    const next = action(released, host, { kind: 'assessment.restart' }).state;
+    const nextId = next.liveActivities?.assessment.attempt;
+    expect(nextId).not.toBe(attemptId);
+    const nextClosed = action(next, host, {
+      kind: 'assessment.status',
+      status: 'closed',
+    }).state;
+    for (const stale of [
+      release,
+      reopen,
+      { kind: 'assessment.restart', attemptId },
+      { kind: 'assessment.status', status: 'draft', attemptId, from: 'closed' },
+      {
+        kind: 'assessment.grade',
+        attemptId,
+        itemId: long?.id,
+        participantId: guest.userId,
+        revision: 0,
+        score: 1,
+      },
+    ]) {
+      const late = action(nextClosed, cohost, stale);
+      expect(late.reply).toMatchObject(error('activity_assessment_changed'));
+      expect(late.state).toBe(nextClosed);
+      expect(late.broadcast).toEqual([]);
+    }
+    expect(nextClosed.liveActivities?.assessment).toMatchObject({
+      attempt: nextId,
+      released: false,
+    });
+
+    // The right attempt with a status the sender did not see is refused too.
+    expect(
+      action(next, host, {
+        kind: 'assessment.status',
+        status: 'draft',
+        attemptId: nextId,
+        from: 'closed',
+      }).reply
+    ).toMatchObject(error('activity_assessment_changed'));
+    // A new attempt is only for closed answers.
+    expect(
+      action(next, host, { kind: 'assessment.restart' }).reply
+    ).toMatchObject(error('activity_assessment_not_closed'));
   });
 
   it('refuses a delayed grade once the questions were reset and answered again', () => {
@@ -333,8 +447,8 @@ describe('assessment', () => {
       }).reply
     ).toMatchObject(error('activity_assessment_closed'));
     expect(
-      action(stored, host, { kind: 'assessment.status', status: 'open' }).state
-        .liveActivities?.assessment
+      action(stored, host, { kind: 'assessment.restart' }).state.liveActivities
+        ?.assessment
     ).toMatchObject({ status: 'open', released: false, responses: [] });
   });
 

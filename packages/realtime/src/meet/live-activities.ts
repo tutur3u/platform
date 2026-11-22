@@ -37,6 +37,7 @@ function newAttempt(
 ): Activities['assessment'] {
   return {
     status,
+    attempt: crypto.randomUUID(),
     released: false,
     sealed: false,
     items: assessment.items.map((item) => ({
@@ -54,6 +55,10 @@ function applyActivity(
   now: number
 ): Activities | string {
   const { assessment, flashcards, game, icebreaker } = state;
+  // A manager command for another attempt than the one stored is stale.
+  const otherAttempt =
+    'attemptId' in command &&
+    command.attemptId !== (assessment.attempt ?? null);
   switch (command.kind) {
     case 'assessment.set':
       if (assessment.status !== 'draft') return 'activity_assessment_not_draft';
@@ -61,6 +66,7 @@ function applyActivity(
         ...state,
         assessment: {
           ...EMPTY_ACTIVITIES.assessment,
+          attempt: crypto.randomUUID(),
           items: command.items.map((item) => ({
             ...item,
             id: crypto.randomUUID(),
@@ -68,22 +74,28 @@ function applyActivity(
         },
       };
     case 'assessment.status':
+      if (otherAttempt) return 'activity_assessment_changed';
       if (command.status === assessment.status) return state;
-      // Back to draft clears the answers, and a release ends its attempt for
-      // good: either way what comes next is a new attempt under new ids.
-      if (
-        command.status === 'draft' ||
-        (command.status === 'open' && assessment.sealed)
-      )
-        return {
-          ...state,
-          assessment: newAttempt(assessment, command.status),
-        };
+      if (command.from !== assessment.status)
+        return 'activity_assessment_changed';
+      // Back to draft clears the answers: what comes next is a new attempt.
+      if (command.status === 'draft')
+        return { ...state, assessment: newAttempt(assessment, 'draft') };
+      // A release ends its attempt for good. Opening it again would discard
+      // its answers, which only the separate new-attempt command may do.
+      if (command.status === 'open' && assessment.sealed)
+        return 'activity_assessment_sealed';
       return {
         ...state,
         assessment: { ...assessment, status: command.status },
       };
+    case 'assessment.restart':
+      if (otherAttempt) return 'activity_assessment_changed';
+      if (assessment.status !== 'closed')
+        return 'activity_assessment_not_closed';
+      return { ...state, assessment: newAttempt(assessment, 'open') };
     case 'assessment.release':
+      if (otherAttempt) return 'activity_assessment_changed';
       if (command.released === assessment.released) return state;
       // Keys and grades leave the managers only once answers are final.
       if (command.released && assessment.status !== 'closed')
@@ -144,6 +156,7 @@ function applyActivity(
       return { ...state, assessment: { ...assessment, responses } };
     }
     case 'assessment.grade': {
+      if (otherAttempt) return 'activity_assessment_changed';
       // Grades attach to final answers: closed, and the revision the grader read.
       if (assessment.status !== 'closed')
         return 'activity_assessment_not_closed';
@@ -280,6 +293,7 @@ function refreshActors(
 ) {
   switch (command.kind) {
     case 'assessment.release':
+    case 'assessment.restart':
     case 'assessment.status':
       // A release changes what respondents see of their own result, and a
       // reset or a new attempt takes their answers away.

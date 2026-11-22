@@ -31,7 +31,11 @@ export function AssessmentPanel({ onClose }: MeetToolPanelProps) {
       {!activity.canManage ? (
         <AssessmentParticipant activity={activity} />
       ) : assessment.status === 'draft' ? (
-        <AssessmentBuilder saved={saved} send={activity.send} />
+        <AssessmentBuilder
+          saved={saved}
+          attemptId={assessment.attemptId}
+          send={activity.send}
+        />
       ) : (
         <AssessmentHost activity={activity} />
       )}
