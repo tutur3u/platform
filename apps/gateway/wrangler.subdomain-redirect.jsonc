@@ -25,5 +25,6 @@
     { "binding": "APP_CALENDAR", "service": "tuturuuu-calendar" },
     { "binding": "APP_MAIL", "service": "tuturuuu-mail" },
     { "binding": "APP_MEET", "service": "tuturuuu-meet" },
+    { "binding": "APP_DRIVE", "service": "tuturuuu-drive" },
   ],
 }

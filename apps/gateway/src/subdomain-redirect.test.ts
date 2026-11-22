@@ -48,6 +48,35 @@ describe('handleSubdomainRedirect', () => {
     expect(fetch.mock.calls[0]?.[0].url).toBe(callback);
   });
 
+  it('301s a Drive folder link and keeps its storage API and callback on the subdomain', async () => {
+    const { fetch } = setup();
+    const env = { SUBDOMAIN_REDIRECT_APPS: 'apps,drive', APP_DRIVE: { fetch } };
+    const response = await handleSubdomainRedirect(
+      new Request(
+        'https://drive.tuturuuu.com/en/personal?path=Marketing%2FBrand&path=x',
+        { headers: navigation }
+      ),
+      env
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/drive/personal?path=Marketing%2FBrand&path=x'
+    );
+    expect(fetch).not.toHaveBeenCalled();
+
+    for (const passthrough of [
+      'https://drive.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      'https://drive.tuturuuu.com/api/v1/workspaces/personal/storage/list',
+    ]) {
+      await handleSubdomainRedirect(
+        new Request(passthrough, { headers: navigation }),
+        env
+      );
+      expect(fetch.mock.calls.at(-1)?.[0].url).toBe(passthrough);
+    }
+  });
+
   it('301s a listed app navigation to its mount with path and query', async () => {
     const { env, fetch } = setup();
     const response = await handleSubdomainRedirect(

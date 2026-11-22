@@ -1010,9 +1010,9 @@
       "gap": "pending-migration",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/commit/6eaebe139ccf51fa3e1579edf87ff6aa53e80818",
-        "reason": "The legacy redirect includes Apps and the Calendar, Finance, Mail, Meet and Tasks bindings, with same-zone global fetch routing and per-app rollout gates. The filename remains the only Wrangler use."
+        "reason": "The legacy redirect includes Apps and the Calendar, Drive, Finance, Mail, Meet and Tasks bindings, with same-zone global fetch routing and per-app rollout gates. The filename remains the only Wrangler use."
       },
-      "digest": "0bcdddd48ca5d80dfa38c8ce66c33c2823a995924275862bc04db05015dd8739"
+      "digest": "3e7f0cdad5535079bc7280961017526a1b7adfd6cde3130486559717fcb73bce"
     },
     "apps/git/.gitignore": {
       "lines": 1,

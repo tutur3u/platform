@@ -375,7 +375,7 @@ custom domain to the redirect Worker. Capture the prior attachment first.
 
 - Bind the app Worker as `APP_<APP>` (`APP_TASKS`). A hostname without a
   binding answers `404`. The shared Worker includes bindings for Apps,
-  Calendar, Finance, Mail, Meet and Tasks. Mastermind keeps its own hostname.
+  Calendar, Drive, Finance, Mail, Meet and Tasks. Mastermind keeps its own hostname.
 - `SUBDOMAIN_REDIRECT_APPS` lists the apps whose navigations (`GET`/`HEAD`
   with `Sec-Fetch-Mode: navigate`, or `Accept: text/html` without Fetch
   Metadata) answer `301` to `https://tuturuuu.com/<app><path><query>`. The
