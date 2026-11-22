@@ -119,6 +119,8 @@ export interface OnboardingProgress {
   profile_completed: boolean;
   tour_completed: boolean;
   completed_at?: string | null;
+  /** Set when the person skips the whole welcome flow. */
+  dismissed_at?: string | null;
   created_at: string;
   updated_at: string;
   // New fields for adaptive flow
@@ -159,14 +161,3 @@ export interface PreferencesData {
   language: string;
   notificationsEnabled: boolean;
 }
-
-// Step labels for progress indicator
-export const STEP_LABELS: Record<OnboardingStep, string> = {
-  [ONBOARDING_STEPS.WELCOME]: 'Welcome',
-  [ONBOARDING_STEPS.USE_CASE]: 'Use Case',
-  [ONBOARDING_STEPS.PROFILE]: 'Profile',
-  [ONBOARDING_STEPS.TEAM_WORKSPACE]: 'Workspace',
-  [ONBOARDING_STEPS.TEAM_INVITE]: 'Invite',
-  [ONBOARDING_STEPS.PREFERENCES]: 'Preferences',
-  [ONBOARDING_STEPS.CELEBRATION]: 'Done',
-};

@@ -48,7 +48,8 @@ export function OnboardingSettingsPanel() {
       guidance_mode: 'standard',
       journey_revision: 2,
       persona: null,
-      replay_app: 'platform',
+      // The welcome flow replaces the platform app guide for a full restart.
+      replay_app: null,
     }).catch(() => null);
 
     const platform = getLaunchableApp('platform');
@@ -60,8 +61,8 @@ export function OnboardingSettingsPanel() {
       resolveLaunchableAppUrl({
         app: platform,
         currentOrigin: window.location.origin,
-        path: '/personal',
-        searchParams: { guide: 'platform' },
+        path: '/onboarding',
+        searchParams: { replay: '1' },
       })
     );
   };

@@ -89,9 +89,9 @@ export function ColabSettings({
               guidance_mode: 'standard',
               journey_revision: 2,
               persona: null,
-              replay_app: 'platform',
+              replay_app: null,
             }).catch(() => null);
-            location.assign('https://tuturuuu.com/personal?guide=platform');
+            location.assign('https://tuturuuu.com/onboarding?replay=1');
           }}
           shareFeedback={() => {
             onClose();

@@ -1,0 +1,53 @@
+---
+title: Web onboarding
+description: The three-step welcome a new web user sees, how it is skipped and replayed, and what it saves.
+audience: developers
+---
+
+A new signed-in web user gets a short welcome at `/onboarding`: three steps and
+a closing screen, in the Sorbet design, in English and Vietnamese. It lives in
+`apps/web/src/app/[locale]/(auth)/onboarding` (the `(auth)` group keeps the
+Sorbet scope and the `/onboarding` URL) and never gates product access.
+
+## Decisions
+
+| Rule | Default | Surfaces | Exceptions |
+| --- | --- | --- | --- |
+| `/onboarding` renders the welcome for a signed-in user who has neither completed nor skipped it. | Signed-out visitors go to `/login`; finished users go to their workspace. | `/onboarding`. | `?replay=1` (Settings) shows it again to a finished user. |
+| Finished means `completed_at` or `dismissed_at` is set on the account's `onboarding_progress` row. | Reaching the closing screen sets `completed_at`; Skip setup or dismissing the home banner sets `dismissed_at`. | `/onboarding`, workspace home. | None. |
+| Every step and the whole flow can be skipped. | "Skip for now" skips the current step and saves the position without marking the step done. "Skip setup and go to my workspace" records `dismissed_at`. | Top bar and card footer of every step. | A failed save never traps the person; skipping always continues. |
+| Product news by email is a separate opt-in, off by default. | The switch starts off and is never pre-checked. Leaving the profile step, or skipping it, stores an explicit `false` when the account has no preference yet. | Step 1. | An existing explicit preference is shown as saved and not overwritten unless the switch changes. |
+| Product news maps onto the existing account notification preference `marketing_communications` on the `email` channel. | No schema or route is added. With no stored row `should_send_notification` returns enabled, which is why the off state is written explicitly. | `PUT /api/v1/notifications/account-preferences`. | None. |
+| The three picks of step 3 are saved as journey `goals` on the progress row. | Calendar, Tasks and Mira map to `focus`; Chat to `collaborate`; Education to `learn`; Finance to `operate`. An empty pick changes nothing. | `PATCH /api/v1/user/onboarding-progress`. | The row has no per-tile column, so a replay starts the tiles empty. |
+| "Teach or learn" selects the education audience mode. | The web has no audience-mode concept; the choice writes the account config `MOBILE_AUDIENCE_MODE` the Flutter app reads, unless a mode is already stored. | Step 3, mobile home. | A stored `general` or `education` value is never overwritten. |
+| A language choice applies when the person continues. | The locale cookie is set and the flow resumes at the next step in the new language (`?step=space`). | Step 1. | Appearance applies immediately through the app theme provider. |
+| A pending workspace invitation is shown as a card with Join. | Join calls the existing accept-invite API. | Step 2. | Personal workspaces are never listed. |
+| "With my team" creates a workspace through the existing server action, then invites by email. | The action's workspace limit failure (`WORKSPACE_LIMIT_REACHED`) shows inline, localized. A retry never creates a second workspace. | Step 2. | If invites fail after the workspace exists, the person sees a note and Continue moves on. |
+| New accounts that have not finished see a dismissible "Finish setting up" banner. | Personal workspace home only, for accounts created within 30 days. | Workspace home. | Older accounts never see it. |
+| Replay from Settings › Onboarding › Restart full journey opens `/onboarding?replay=1`. | It clears `dismissed_at` and `replay_app`. | Settings dialog (every app that ships it), Colab settings. | "Replay this app guide" is unchanged and still dispatches `tuturuuu:onboarding-replay`. |
+
+The post-sign-in landing has no onboarding-aware hook (the callback, hand-off
+and return-URL code is frozen), so the web reaches the welcome through the
+workspace-home banner and the `/onboarding` link, not through a sign-in
+redirect.
+
+## Regression coverage
+
+- `apps/web/src/lib/onboarding/welcome-gate.test.ts`: signed out, not
+  completed, completed, skipped and replay decisions; the banner's account-age
+  window.
+- `apps/web/src/app/[locale]/(auth)/onboarding/welcome-runtime.test.tsx`: the
+  `/onboarding` gate end to end, the resumable `?step=`, and the switch
+  starting off unless an explicit opt-in exists.
+- `apps/web/src/app/[locale]/(auth)/onboarding/welcome-flow.test.tsx`: skip at
+  every step persists the skip, the switch is never pre-checked and an off
+  switch is stored explicitly, workspace errors show inline, no second
+  workspace on retry, invitations, interests saved as goals and the education
+  mode.
+- `apps/web/src/app/[locale]/(auth)/onboarding/actions.test.ts`: the limit
+  error code reaches the UI.
+- `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/welcome-nudge.test.tsx`:
+  the banner links to the flow and dismissing records a skip.
+- `packages/ui/src/components/ui/custom/__tests__/onboarding-settings-panel.test.tsx`:
+  restart opens the welcome flow in replay mode and replaying an app guide is
+  unchanged.

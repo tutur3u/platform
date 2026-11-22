@@ -233,6 +233,25 @@ describe('createWorkspaceFromOnboarding', () => {
     });
   });
 
+  it('returns the limit error code so the UI can show its own copy', async () => {
+    const { user } = setup(() => ({ data: null, error: null }));
+    mocks.checkWorkspaceCreationLimit.mockResolvedValue({
+      canCreate: false,
+      errorCode: 'WORKSPACE_LIMIT_REACHED',
+      errorMessage: 'You have reached the maximum limit of workspaces.',
+    });
+    const { createWorkspaceFromOnboarding } = await import('./actions');
+
+    const result = await createWorkspaceFromOnboarding('Acme');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'You have reached the maximum limit of workspaces.',
+      errorCode: 'WORKSPACE_LIMIT_REACHED',
+    });
+    expect(user.calls.some((call) => call.table === 'workspaces')).toBe(false);
+  });
+
   it('uses the session user even when an update includes a different user id', async () => {
     const { user } = setup(() => ({ data: null, error: null }));
     const { updateOnboardingProgress } = await import('./actions');

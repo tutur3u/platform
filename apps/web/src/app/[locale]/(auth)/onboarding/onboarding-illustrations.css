@@ -1,0 +1,89 @@
+/*
+  Welcome-flow illustrations: colours are token roles (SVG presentation
+  attributes cannot read var(), so they are classes) and the one motion is
+  opt-in and stops under reduced motion.
+*/
+.ob-il-line {
+  stroke: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+.ob-il-detail {
+  stroke: color-mix(in oklab, var(--muted-foreground) 28%, transparent);
+}
+.ob-il-ink {
+  stroke: var(--foreground);
+}
+.ob-il-surface {
+  fill: var(--card);
+}
+.ob-il-fg {
+  fill: var(--foreground);
+}
+.ob-il-none {
+  fill: none;
+}
+.ob-il-round {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ob-il-blue-c {
+  fill: var(--calendar-bg-blue);
+}
+.ob-il-blue {
+  fill: color-mix(in oklab, var(--blue) 18%, var(--calendar-bg-blue));
+}
+.ob-il-blue-i {
+  fill: var(--blue);
+}
+.ob-il-green-c {
+  fill: var(--calendar-bg-green);
+}
+.ob-il-green {
+  fill: color-mix(in oklab, var(--green) 18%, var(--calendar-bg-green));
+}
+.ob-st-green {
+  stroke: var(--green);
+}
+.ob-il-orange {
+  fill: color-mix(in oklab, var(--orange) 18%, var(--calendar-bg-orange));
+}
+.ob-st-orange {
+  stroke: var(--orange);
+}
+.ob-il-pink-c {
+  fill: var(--calendar-bg-pink);
+}
+.ob-il-pink {
+  fill: color-mix(in oklab, var(--pink) 18%, var(--calendar-bg-pink));
+}
+.ob-il-pink-i {
+  fill: var(--pink);
+}
+.ob-il-purple {
+  fill: color-mix(in oklab, var(--purple) 18%, var(--calendar-bg-purple));
+}
+.ob-il-yellow-c {
+  fill: var(--calendar-bg-yellow);
+}
+.ob-il-yellow {
+  fill: color-mix(in oklab, var(--yellow) 18%, var(--calendar-bg-yellow));
+}
+.ob-il-red {
+  fill: color-mix(in oklab, var(--red) 18%, var(--calendar-bg-red));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ob-twinkle {
+    animation: ob-twinkle 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes ob-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}

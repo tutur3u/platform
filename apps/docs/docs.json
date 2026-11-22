@@ -167,6 +167,7 @@
               "platform/features/hidden-workspaces",
               "platform/features/user-bootstrap",
               "platform/features/settings-dialog",
+              "platform/features/web-onboarding",
               "platform/features/notification-access",
               "platform/features/notifications-popover",
               "platform/features/sso",

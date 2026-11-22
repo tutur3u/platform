@@ -30,6 +30,18 @@ async function PermissionSetupBannerSlot({
   return <PermissionSetupBanner wsId={wsId} isCreator />;
 }
 
+async function WelcomeNudgeSlot({
+  createdAt,
+  userId,
+}: {
+  createdAt: string | null | undefined;
+  userId: string;
+}) {
+  const { default: WelcomeNudge } = await import('./welcome-nudge-slot');
+
+  return <WelcomeNudge createdAt={createdAt} userId={userId} />;
+}
+
 async function ensureDashboardAccess({
   user,
   wsId,
@@ -109,6 +121,15 @@ export default async function WorkspaceHomePage({ params }: Props) {
       {!workspace.personal && (
         <Suspense fallback={null}>
           <UserGroupQuickActionsSlot wsId={wsId} />
+        </Suspense>
+      )}
+
+      {workspace.personal && (
+        <Suspense fallback={null}>
+          <WelcomeNudgeSlot
+            createdAt={currentUser.created_at}
+            userId={currentUser.id}
+          />
         </Suspense>
       )}
 

@@ -54,6 +54,30 @@ describe('OnboardingSettingsPanel', () => {
     window.removeEventListener('tuturuuu:onboarding-replay', replay);
   });
 
+  it('restarts the full journey in the welcome flow without opening an app guide', async () => {
+    const assign = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        assign,
+        host: 'localhost:7809',
+        origin: 'http://localhost:7809',
+        pathname: '/en/ws_1/tasks',
+      },
+    });
+
+    render(<OnboardingSettingsPanel />);
+    fireEvent.click(screen.getByRole('button', { name: 'restart_journey' }));
+
+    await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+    expect(updateProgress).toHaveBeenCalledWith(
+      expect.objectContaining({ dismissed_at: null, replay_app: null })
+    );
+    const target = String(assign.mock.calls[0]?.[0]);
+    expect(target).toContain('/onboarding?replay=1');
+    expect(target).not.toContain('guide=platform');
+  });
+
   it('tags guidance feedback with the current app', () => {
     setLocation('http://localhost:7809/en/ws_1/tasks');
     const report = vi.fn();

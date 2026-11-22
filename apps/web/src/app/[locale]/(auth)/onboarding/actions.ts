@@ -205,7 +205,13 @@ export async function setOnboardingUseCase(
 export async function createWorkspaceFromOnboarding(
   workspaceName: string,
   avatarUrl?: string
-): Promise<{ success: boolean; workspaceId?: string; error?: string }> {
+): Promise<{
+  success: boolean;
+  workspaceId?: string;
+  error?: string;
+  /** Machine-readable cause, so the UI can show its own localized copy. */
+  errorCode?: string;
+}> {
   try {
     const supabase = await createClient();
 
@@ -230,6 +236,7 @@ export async function createWorkspaceFromOnboarding(
       return {
         success: false,
         error: limitCheck.errorMessage,
+        errorCode: limitCheck.errorCode,
       };
     }
 

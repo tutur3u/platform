@@ -847,7 +847,7 @@
     "onboarding_guide.replay_app": "Replay this app guide",
     "onboarding_guide.replay_app_description": "Start a short, skippable mission for the app you are using.",
     "onboarding_guide.restart_journey": "Restart full journey",
-    "onboarding_guide.restart_journey_description": "Return to Home and choose a new role and goal pathway. Your data is not changed.",
+    "onboarding_guide.restart_journey_description": "Go through the welcome steps again: profile, workspace and interests. Nothing changes unless you save.",
     "onboarding_guide.title": "Guidance and learning",
     "search.search": "Search",
     "settings.back_to_app": "Back to app",
