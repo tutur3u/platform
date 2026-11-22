@@ -22,6 +22,12 @@ and tree-equal direct-parent checks. These checks do not grant migration approva
 or widen the existing manual recovery policy. A denied proof emits a fixed guard
 code and phase in its result receipt; unavailable or changed evidence blocks apply.
 
+Production planner callees with workflow-level concurrency use distinct literal
+group prefixes. GitHub supplies the planner's workflow name to every callee, so
+a shared name can cause pending deployments to replace each other. The planner
+workflow contract checks direct group collisions and caller-name dependencies
+through the nested call graph.
+
 Public build and merged-main test dispatches qualify the immutable dispatch
 revision. The requested `source_sha` must equal that revision; a new dispatch
 cannot select an older merged commit under newer workflow controls. Requalify a
