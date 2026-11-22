@@ -107,3 +107,47 @@ export function readCommits({
   }
   return { commits, production };
 }
+
+/**
+ * The commits curated deliverables cite (live/evidence.ts), whatever their
+ * age: each one on `head`'s history and, where this checkout has it, on the
+ * main branch (a pull-request build's synthetic merge also contains the
+ * request's own commits), with its committer time. `head` is the commit the
+ * history was read from. Cited commits not found are left out (no evidence).
+ */
+export function readCitedCommits({
+  cwd,
+  cited,
+  head = 'HEAD',
+  mainRef = 'origin/main',
+}) {
+  if (git(['rev-parse', '--is-shallow-repository'], cwd).trim() === 'true')
+    throw new Error('shallow checkout: commit history is not available');
+  const targets = [head, ...(exists(mainRef, cwd) ? [mainRef] : [])];
+  const onMain = [...new Set(cited)].filter(
+    (sha) =>
+      SHA.test(sha) &&
+      exists(sha, cwd) &&
+      targets.every(
+        (target) =>
+          spawnSync('git', ['merge-base', '--is-ancestor', sha, target], {
+            cwd,
+          }).status === 0
+      )
+  );
+  const source = git(['rev-parse', `${head}^{commit}`], cwd).trim();
+  if (!onMain.length) return { head: source, commits: [] };
+  const times = new Map(
+    git(['show', '-s', `--format=%H${FIELD}%cI`, ...onMain], cwd)
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.split(FIELD))
+  );
+  return {
+    head: source,
+    commits: onMain.flatMap((sha) => {
+      const at = times.get(sha);
+      return at ? [{ sha, at }] : [];
+    }),
+  };
+}

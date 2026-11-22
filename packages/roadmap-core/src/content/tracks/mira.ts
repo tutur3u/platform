@@ -7,6 +7,85 @@ export const miraTrack: Track = {
     'Tuturuuu’s AI assistant: voice calls, memory, workspace tools, and more places to talk to it.',
   milestones: [
     {
+      id: 'mira-live-memory',
+      title: 'Mira Live, faster messages and memory on Cloudflare',
+      titleVi: 'Mira Live, tin nhắn nhanh hơn và bộ nhớ trên Cloudflare',
+      deliverables: [
+        {
+          id: 'mira-faster-messages',
+          title:
+            'Messages to Mira send instantly and replies start streaming sooner',
+          titleVi: 'Tin nhắn gửi Mira đi ngay và câu trả lời hiện ra sớm hơn',
+          prs: [8291, 8304],
+          commits: [
+            '240133125b1a5f4d7359b63f80ff8a2d62be7866',
+            '07f42e4404418f542b3c7c8783e71da61abe166b',
+            'c7812c477132d95326dcbb6216d64b6a6582a845',
+          ],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'mira-live-plans',
+          title:
+            "Mira Live on paid plans, with a clear reason when a call can't start",
+          titleVi:
+            'Mira Live cho gói trả phí, nêu rõ lý do khi cuộc gọi không thể bắt đầu',
+          prs: [],
+          commits: ['fa2f018a1360bb9a63852f06f77296714e17c45f'],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'mira-live-orb',
+          title: 'Mira Live explains call problems and shows an animated orb',
+          titleVi:
+            'Mira Live giải thích sự cố cuộc gọi và hiển thị quả cầu chuyển động',
+          prs: [],
+          commits: ['3b18afe0c65b682e844463f9c5aaefcde5446127'],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'mira-mobile-chat',
+          title:
+            'Redesigned Mira chat on mobile with a new avatar and composer',
+          titleVi:
+            'Trò chuyện với Mira trên di động được thiết kế lại, có ảnh đại diện và khung soạn mới',
+          prs: [],
+          commits: [
+            '4d47af28ff8ac1af38691dd4590e74dc8d60585e',
+            '98a019b1b69b7ab2d352b036c3dd0a2b3f8740bc',
+            'a417f3874010330e72526e1f2d2ba5b5ebeb8570',
+          ],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'mira-meet-consent',
+          title:
+            'Mira answers in Meet room chat only after every participant agrees',
+          titleVi:
+            'Mira chỉ trả lời trong khung chat phòng Meet khi mọi người tham gia đồng ý',
+          prs: [],
+          commits: [
+            '56d2ca544fb18a5c7ae34f5f41fe1d1920a95ff3',
+            'dcfff0605e69279b82adfd90033c615fc677e7a2',
+          ],
+          app: 'meet-realtime',
+          fallback: 'planned',
+        },
+        {
+          id: 'mira-memory-cloudflare',
+          title: 'Mira memory moving to a dedicated Cloudflare service',
+          titleVi: 'Bộ nhớ của Mira đang chuyển sang dịch vụ Cloudflare riêng',
+          prs: [],
+          app: null,
+          fallback: 'in_progress',
+        },
+      ],
+    },
+    {
       id: 'mira-mobile',
       title: 'Mira on mobile',
       deliverables: [

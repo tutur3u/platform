@@ -13,6 +13,7 @@ import {
   type WorkshopStatus,
 } from '../../content/workshops/edufest-2026';
 import type { LiveData } from '../../live/model';
+import { BUILD_EVIDENCE } from '../../live/build-evidence';
 import { deriveTracks, indexLiveData } from '../../live/status';
 
 export type EduMessages = typeof en;
@@ -81,7 +82,10 @@ export function UpskiiText({ text }: { text: string }) {
 export function useWorkshopStatuses(data: LiveData) {
   return useMemo(() => {
     const statuses = new Map<string, WorkshopStatus>();
-    for (const track of deriveTracks(tracks, indexLiveData(data)))
+    for (const track of deriveTracks(
+      tracks,
+      indexLiveData(data, BUILD_EVIDENCE)
+    ))
       for (const milestone of track.milestones)
         for (const deliverable of milestone.deliverables)
           statuses.set(

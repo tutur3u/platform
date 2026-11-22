@@ -7,6 +7,39 @@ export const upskiiTrack: Track = {
     'Education tools across Upskii and Tuturuuu Learn, Teach and Rewise.',
   milestones: [
     {
+      id: 'learn-teach-together',
+      title: 'Learn and Teach, together at tuturuuu.com',
+      titleVi: 'Learn và Teach hợp nhất tại tuturuuu.com',
+      deliverables: [
+        {
+          id: 'lms-switcher',
+          title: 'Switch between Learn and Teach in one app',
+          titleVi: 'Chuyển đổi giữa Learn và Teach ngay trong một ứng dụng',
+          prs: [],
+          commits: [
+            'eca81f1b0553a144ba196fcdd09491ff84d29a1c',
+            '0c69346605bd7877bcaf7cb0dce58e4b36818752',
+          ],
+          app: 'lms',
+          fallback: 'planned',
+        },
+        {
+          id: 'learn-home-rebuild',
+          title: 'Rebuilt Learn home with course outlines, progress and resume',
+          titleVi:
+            'Trang Learn mới với dàn ý khóa học, tiến độ và nút học tiếp',
+          prs: [],
+          commits: [
+            'dd0f55e501948b2eb801377689a7832db19ca4f4',
+            '512d96625e8fa41908b4dc43619fb9001dae724d',
+            '5397ca1df07cbca2a6371060e935f722733c2de7',
+          ],
+          app: 'learn',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'upskii-docs',
       title: 'Upskii in Tuturuuu',
       deliverables: [

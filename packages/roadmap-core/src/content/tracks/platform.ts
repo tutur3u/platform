@@ -7,6 +7,116 @@ export const platformTrack: Track = {
     'Moving every Tuturuuu web app from Vercel to Cloudflare Workers on TanStack Start, Vite+ and Void.',
   milestones: [
     {
+      id: 'all-on-cloudflare',
+      title: 'Every app served from Cloudflare',
+      titleVi: 'Mọi ứng dụng chạy trên Cloudflare',
+      deliverables: [
+        {
+          id: 'vercel-retired',
+          title:
+            'Vercel production and preview pipelines retired for apps on Cloudflare',
+          titleVi:
+            'Ngừng quy trình triển khai và xem trước trên Vercel cho ứng dụng đã lên Cloudflare',
+          prs: [],
+          commits: [
+            'd06a9631a172683dbd7ad559056bac726b3d49e1',
+            '22f46bbf34ca6bbb59c272f78e4cb4f8d895c024',
+            'ca0ed08e15dd53463d083114e74d1c21e1d1aa60',
+          ],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'cron-control-jobs',
+          title: 'Scheduled jobs moved from Vercel to Cloudflare Cron Control',
+          titleVi:
+            'Tác vụ định kỳ chuyển từ Vercel sang Cloudflare Cron Control',
+          prs: [],
+          commits: [
+            '13aebfb91f5b400f575dcf679422bd3e54205a39',
+            '6f4414e24f0d3a3fd268feaf7d745bc1f87c6a75',
+            'af7fb8bf0f46d2f71055c1b5a49f89b621398663',
+          ],
+          app: 'cron-control',
+          fallback: 'planned',
+        },
+        {
+          id: 'mail-apex',
+          title: 'Mail at tuturuuu.com/mail',
+          titleVi: 'Mail tại tuturuuu.com/mail',
+          prs: [],
+          commits: [
+            '8f78599705f50d69e15c7bd4717e5c457055a3b4',
+            'db6b2f16d7ec5dfefb612b9027f995624f5dfaa7',
+          ],
+          app: 'mail',
+          fallback: 'planned',
+        },
+        {
+          id: 'calendar-apex',
+          title: 'Calendar at tuturuuu.com/calendar',
+          titleVi: 'Calendar tại tuturuuu.com/calendar',
+          prs: [],
+          commits: [
+            '13022b7e76e13f12a8f8f81ed0cea50338b3f054',
+            '55a8c613aa1af36c805dcbfb171a0cb8a8dcdfa9',
+          ],
+          app: 'calendar',
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-apex',
+          title: 'Meet at tuturuuu.com/meet',
+          titleVi: 'Meet tại tuturuuu.com/meet',
+          prs: [],
+          commits: [
+            '756a1e6cd3d59e6b84979c54aef912a3322ecf1f',
+            '17b7bcfdffc3602ffff14095ac222e6460f82f61',
+          ],
+          app: 'meet',
+          fallback: 'planned',
+        },
+        {
+          id: 'contacts-apex',
+          title: 'Contacts at tuturuuu.com/contacts',
+          titleVi: 'Contacts tại tuturuuu.com/contacts',
+          prs: [],
+          commits: [
+            '6eb64789820b4bd67045ba65acc518c7cd290150',
+            '39d137d1fc23ecc58a8ea8acacf6538852274bd6',
+          ],
+          app: 'contacts',
+          fallback: 'planned',
+        },
+        {
+          id: 'learn-apex',
+          title: 'Learn at tuturuuu.com/learn',
+          titleVi: 'Learn tại tuturuuu.com/learn',
+          prs: [],
+          commits: ['4412c622a02694082e87e58339905814c627c900'],
+          app: 'learn',
+          fallback: 'planned',
+        },
+        {
+          id: 'nova-apex',
+          title: 'Nova at tuturuuu.com/nova',
+          titleVi: 'Nova tại tuturuuu.com/nova',
+          prs: [],
+          commits: ['4412c622a02694082e87e58339905814c627c900'],
+          app: 'nova',
+          fallback: 'planned',
+        },
+        {
+          id: 'finance-apex',
+          title: 'Finance moving to tuturuuu.com/finance',
+          titleVi: 'Finance đang chuyển về tuturuuu.com/finance',
+          prs: [],
+          app: 'finance',
+          fallback: 'in_progress',
+        },
+      ],
+    },
+    {
       id: 'shared-foundations',
       title: 'Shared foundations for every app',
       summary:

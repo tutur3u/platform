@@ -27,6 +27,7 @@ import '@tuturuuu/roadmap-core/tabs.test.ts';
 import '@tuturuuu/roadmap-core/sorbet-tokens.test.ts';
 import '@tuturuuu/roadmap-core/glance.test.ts';
 import '@tuturuuu/roadmap-core/content/store-releases.test.ts';
+import '@tuturuuu/roadmap-core/live/evidence.test.ts';
 import {
   comingSoon,
   visibleComingSoon,

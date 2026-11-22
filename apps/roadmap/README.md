@@ -168,13 +168,16 @@ what is missing and why, in English and Vietnamese, with no placeholder data.
 
 `packages/roadmap-core/src/content/tracks.ts` is the curated roadmap: tracks → milestones →
 deliverables. Each deliverable lists the public PRs in tutur3u/platform that
-deliver it and the app whose production deploy must contain them. Status is
-never written by hand; `packages/roadmap-core/src/live/status.ts` derives it from evidence:
+deliver it, or the full SHAs of the commits on main that deliver it for work
+that landed without a pull request (`commits`), and the app whose production
+deploy must contain them. Status is never written by hand;
+`packages/roadmap-core/src/live/status.ts` derives it from evidence:
 
 | Status | Rule |
 | --- | --- |
 | Live | Every PR merged and the app's deployed commit is at or after the last merge on main. Hosting moves (`requires: 'workers'`) need the app's probe to answer from Workers. Mobile needs the latest `mobile-v*` release tag to contain the merge. Items with no deploy target are live once merged. |
 | Waiting for prod sync | Merged; production does not contain it yet, or the deploy cannot be verified publicly. |
+| Commit evidence | A deliverable that cites commits reads as Waiting for prod sync with the note that its deploy can't be verified publicly, once the build (`scripts/commit-log.mjs` `readCitedCommits`, written to `.generated/evidence.json` and embedded only when it was read from the build's own source commit) found every cited commit on main. A commit proves the merge, never a deploy: no public probe ties a commit to what each service serves, so a commit-cited deliverable is never Live and its note never promises an app release or names a host. A cited commit the build did not find keeps the curated fallback. |
 | Waiting for merge | Every unmerged PR is open, not draft and approved. |
 | In progress | Any other open PR, or curated `fallback: 'in_progress'` with no PR. |
 | Planned | No public evidence. No claims. |

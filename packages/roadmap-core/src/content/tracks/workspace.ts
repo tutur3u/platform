@@ -6,6 +6,71 @@ export const workspaceTrack: Track = {
   summary: 'Accounts, workspaces, settings and the tuturuuu.com website.',
   milestones: [
     {
+      id: 'sorbet-rollout',
+      title: 'Sorbet design rollout',
+      titleVi: 'Triển khai thiết kế Sorbet',
+      deliverables: [
+        {
+          id: 'sorbet-opt-in',
+          title:
+            'Sorbet design available as an opt-in that follows your account',
+          titleVi:
+            'Thiết kế Sorbet có thể bật thử và tự đồng bộ theo tài khoản của bạn',
+          prs: [8436],
+          commits: [
+            '3f3a1cc7a2f82e9a72b93800a86f3fe60566a562',
+            '63f18c4ac6a4d0ece11518682ba2a9dd80129e9b',
+            'c565dcdebb0681150821679fb1e4ad4433de3b22',
+          ],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'sorbet-web-dock',
+          title: 'Floating dock for phones on the web, matching the mobile app',
+          titleVi:
+            'Thanh dock nổi cho điện thoại trên web, đồng bộ với ứng dụng di động',
+          prs: [],
+          commits: ['b28cb11cfd023bacd5a0a0eb55465a9766366283'],
+          app: 'web',
+          fallback: 'planned',
+        },
+        {
+          id: 'sorbet-mobile',
+          title: 'Sorbet design and floating dock in the mobile app',
+          titleVi: 'Thiết kế Sorbet và thanh dock nổi trong ứng dụng di động',
+          prs: [],
+          commits: [
+            '882a7d93e9a4204f498496b4c55f76f84e3a33c2',
+            'c31a92a527354e083667f04d8c6e4d39136fa508',
+          ],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'marketing-navbar',
+          title: 'Website navbar rebuilt on the floating-bar design',
+          titleVi:
+            'Thanh điều hướng website được làm lại theo thiết kế thanh nổi',
+          prs: [],
+          commits: [
+            '3670c6afaa5b591f4cf47d2a38e1d5ad55b6e25e',
+            'dcfed381c211fd25d97e92d6259750d2e89cb766',
+          ],
+          app: 'marketing',
+          fallback: 'planned',
+        },
+        {
+          id: 'sorbet-default',
+          title: 'Sorbet becomes the default design for everyone',
+          titleVi: 'Sorbet trở thành thiết kế mặc định cho mọi người',
+          prs: [],
+          app: 'web',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'workspace-up-next',
       title: 'Up next',
       deliverables: [

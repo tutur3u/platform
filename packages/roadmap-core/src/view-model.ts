@@ -1,4 +1,6 @@
 import { tracks as contentTracks } from './content/tracks.ts';
+import { BUILD_EVIDENCE } from './live/build-evidence.ts';
+import type { CommitEvidence } from './live/evidence.ts';
 import { localDay, shippedFeed } from './live/feed.ts';
 import { APP_NAMES } from './live/host-probe.ts';
 import { type HostingSnapshot, providerFor } from './live/hosting.ts';
@@ -33,9 +35,11 @@ export function buildView(
    * it (unobserved: unknown), never from the data file or a browser cache,
    * whose provider fields may be from an older build.
    */
-  hosting: HostingSnapshot | null = null
+  hosting: HostingSnapshot | null = null,
+  /** Cited commits this build found on main (live/evidence.ts). */
+  evidence: readonly CommitEvidence[] = BUILD_EVIDENCE
 ) {
-  const index = indexLiveData(data);
+  const index = indexLiveData(data, evidence);
   const derived = deriveTracks(tracks, index);
   const items = derived.flatMap((track) =>
     track.milestones.flatMap((milestone) =>

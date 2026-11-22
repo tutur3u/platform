@@ -2,11 +2,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { collectTechStack } from './collect-tech-stack.ts';
 import { activityForBuild } from './insights/activity.ts';
+import { parseEvidence } from './live/evidence.ts';
 import { snapshotForBuild } from './live/hosting.ts';
 
 // Written by apps/roadmap/scripts/generate-roadmap-data.mjs; never committed.
 const HOSTING_FILE = new URL('../.generated/hosting.json', import.meta.url);
 const ACTIVITY_FILE = new URL('../.generated/activity.json', import.meta.url);
+const EVIDENCE_FILE = new URL('../.generated/evidence.json', import.meta.url);
 
 /** A generated JSON file, or null when it is absent or unreadable. */
 function generated(file: URL): unknown {
@@ -56,6 +58,14 @@ export function roadmapBuildDefines(
     __ROADMAP_ACTIVITY__: JSON.stringify(
       command === 'build'
         ? activityForBuild(generated(ACTIVITY_FILE), Date.now())
+        : null
+    ),
+    // Commits to main that curated deliverables cite, read from this
+    // build's source commit (src/live/evidence.ts); null leaves every such
+    // item on its fallback.
+    __ROADMAP_EVIDENCE__: JSON.stringify(
+      command === 'build'
+        ? parseEvidence(generated(EVIDENCE_FILE), { time: Date.now(), source })
         : null
     ),
   };

@@ -39,6 +39,7 @@ import type { RoadmapView } from '../view-model';
 import {
   type Lang,
   type Messages,
+  localTitle,
   PrLinks,
   SectionHead,
   StatusBadge,
@@ -272,7 +273,7 @@ export function TimelineSection({
         {period.groups.length ? (
           <div className="period-groups masonry">
             {period.groups.map((group) => (
-              <PeriodGroup key={group.track} t={t} group={group} />
+              <PeriodGroup key={group.track} t={t} lang={lang} group={group} />
             ))}
           </div>
         ) : (
@@ -281,7 +282,7 @@ export function TimelineSection({
           </EmptyState>
         )}
         {period.isCurrent ? (
-          <PlannedNext t={t} items={plannedNext(deliverables)} />
+          <PlannedNext t={t} lang={lang} items={plannedNext(deliverables)} />
         ) : null}
       </div>
     </section>
@@ -403,7 +404,15 @@ function Scrubber({
   );
 }
 
-function PeriodGroup({ t, group }: { t: Messages; group: TimelineGroup }) {
+function PeriodGroup({
+  t,
+  lang,
+  group,
+}: {
+  t: Messages;
+  lang: Lang;
+  group: TimelineGroup;
+}) {
   const [open, setOpen] = useState(false);
   const rows = [
     ...group.deliverables.map((d) => ({ kind: 'deliverable' as const, d })),
@@ -433,7 +442,7 @@ function PeriodGroup({ t, group }: { t: Messages; group: TimelineGroup }) {
           {shown.map((row) =>
             row.kind === 'deliverable' ? (
               <li key={`d-${row.d.id}`} className="is-deliverable">
-                <span className="d-title">{row.d.title}</span>
+                <span className="d-title">{localTitle(row.d, lang)}</span>
                 <span className="meta">
                   <StatusBadge
                     status={row.d.state.status}
@@ -487,9 +496,11 @@ function PeriodGroup({ t, group }: { t: Messages; group: TimelineGroup }) {
 
 function PlannedNext({
   t,
+  lang,
   items,
 }: {
   t: Messages;
+  lang: Lang;
   items: TimelineDeliverable[];
 }) {
   if (!items.length) return null;
@@ -500,7 +511,7 @@ function PlannedNext({
       <ul>
         {items.map((item) => (
           <li key={item.id}>
-            <span className="d-title">{item.title}</span>
+            <span className="d-title">{localTitle(item, lang)}</span>
             <StatusBadge
               status={item.state.status}
               t={t}

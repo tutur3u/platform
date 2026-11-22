@@ -18,6 +18,7 @@ import {
 export type TimelineDeliverable = {
   id: string;
   title: string;
+  titleVi?: string;
   trackId: string;
   prs: number[];
   state: { status: Status; shippedAt: string | null };

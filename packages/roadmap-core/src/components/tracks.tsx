@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { APP_NAMES } from '../live/host-probe';
 import { EmptyState } from './empty-state';
-import { shippedShare, statuses } from '../live/status';
+import { noteKind, shippedShare, statuses } from '../live/status';
 import {
   matchesFilter,
   type RoadmapView,
@@ -22,6 +22,7 @@ import {
   formatDate,
   type Lang,
   type Messages,
+  localTitle,
   PrLinks,
   SectionHead,
 } from './shared';
@@ -32,13 +33,13 @@ export function itemNote(
   lang: Lang
 ): ReactNode {
   const { state } = item;
-  if (!state.shippedAt) return null;
+  const kind = noteKind(item, state);
+  if (!kind || !state.shippedAt) return null;
   const date = formatDate(state.shippedAt, lang);
-  if (state.status === 'live') return `${t.status.live} · ${date}`;
-  if (item.app === 'mobile') return `${t.item.nextRelease} · ${date}`;
-  if (item.requires === 'workers') return `${t.item.notOnWorkers} · ${date}`;
-  if (state.unverifiedDeploy) return `${t.item.unverified} · ${date}`;
-  return `${t.item.awaitingDeploy} ${APP_NAMES[item.app ?? ''] ?? item.app} · ${date}`;
+  if (kind === 'live') return `${t.status.live} · ${date}`;
+  if (kind === 'awaitingDeploy')
+    return `${t.item.awaitingDeploy} ${APP_NAMES[item.app ?? ''] ?? item.app} · ${date}`;
+  return `${t.item[kind]} · ${date}`;
 }
 
 type ViewTrack = RoadmapView['tracks'][number];
@@ -246,7 +247,7 @@ const TrackCard = memo(function TrackCard({
           return (
             <details key={milestone.id} open={index === 0 || expanded}>
               <summary>
-                <span className="ms-title">{milestone.title}</span>
+                <span className="ms-title">{localTitle(milestone, lang)}</span>
                 <span className="ms-count">
                   {done}/{milestone.deliverables.length}
                 </span>
@@ -285,7 +286,7 @@ function DeliverableRow({
   const note = itemNote(item, t, lang);
   return (
     <li className={status}>
-      <p className="d-title">{item.title}</p>
+      <p className="d-title">{localTitle(item, lang)}</p>
       <p className="meta">
         {note ? (
           <>
@@ -295,7 +296,7 @@ function DeliverableRow({
         ) : (
           t.status[status]
         )}
-        <PrLinks prs={item.state.prs} />
+        <PrLinks prs={item.state.prs} commits={item.commits} />
       </p>
     </li>
   );

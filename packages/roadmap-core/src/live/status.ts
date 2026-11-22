@@ -1,3 +1,4 @@
+import type { CommitEvidence } from './evidence.ts';
 import type { HostFact, LiveData, PrFact } from './model.ts';
 
 export const statuses = [
@@ -12,8 +13,16 @@ export type Status = (typeof statuses)[number];
 export type Deliverable = {
   id: string;
   title: string;
+  /** The Vietnamese title, where one is curated; English otherwise. */
+  titleVi?: string;
   /** Public PRs in tutur3u/platform that deliver this item. */
   prs: number[];
+  /**
+   * Full SHAs of commits on main that deliver it, for work that landed
+   * without a pull request. They prove the merge once the build found every
+   * one on main, never a deploy.
+   */
+  commits?: string[];
   /** Deployed surface whose production build must contain the merge. */
   app: string | null;
   /** Shown only while no PR evidence exists. Never `live`: that needs proof. */
@@ -25,6 +34,7 @@ export type Deliverable = {
 export type Milestone = {
   id: string;
   title: string;
+  titleVi?: string;
   summary?: string;
   deliverables: Deliverable[];
 };
@@ -45,10 +55,14 @@ export type DeliverableState = {
   prs: PrFact[];
 };
 
-export function indexLiveData(data: LiveData) {
+export function indexLiveData(
+  data: LiveData,
+  evidence: readonly CommitEvidence[] = []
+) {
   return {
     prs: new Map(data.prs.map((pr) => [pr.number, pr])),
     hosts: new Map(data.hosts.map((host) => [host.app, host])),
+    commits: new Map(evidence.map((commit) => [commit.sha, commit])),
   };
 }
 export type LiveIndex = ReturnType<typeof indexLiveData>;
@@ -66,6 +80,11 @@ export function deployIncludes(host: HostFact | undefined, mergedAt: string) {
  * - waiting_for_merge: every unmerged PR is open, ready and approved;
  * - in_progress: any other open PR;
  * - otherwise the curated fallback (planned or in progress), never live.
+ *
+ * Cited commits count as merged work once the build found every one on
+ * main; a cited commit it did not find is missing evidence and the item
+ * keeps its fallback. A commit proves the merge, never a deploy, so a
+ * commit-cited item waits with an unverified deploy and is never live.
  */
 export function deriveDeliverable(
   deliverable: Deliverable,
@@ -75,13 +94,16 @@ export function deriveDeliverable(
     .map((number) => index.prs.get(number))
     .filter((pr): pr is PrFact => Boolean(pr));
   const relevant = prs.filter((pr) => pr.state !== 'closed');
-  if (!relevant.length)
-    return {
-      status: deliverable.fallback,
-      shippedAt: null,
-      unverifiedDeploy: false,
-      prs,
-    };
+  const cited = deliverable.commits ?? [];
+  const commits = cited
+    .map((sha) => index.commits.get(sha))
+    .filter((commit): commit is CommitEvidence => Boolean(commit));
+  const fallback = {
+    status: deliverable.fallback,
+    shippedAt: null,
+    unverifiedDeploy: false,
+    prs,
+  };
   const open = relevant.filter((pr) => pr.state === 'open');
   if (open.length) {
     const ready = open.every((pr) => !pr.draft && pr.approved);
@@ -92,10 +114,23 @@ export function deriveDeliverable(
       prs,
     };
   }
-  const shippedAt = relevant
-    .map((pr) => pr.mergedAt as string)
+  // A cited commit the build did not find on main is missing evidence.
+  if (commits.length < cited.length) return fallback;
+  if (!relevant.length && !commits.length) return fallback;
+  const shippedAt = [
+    ...relevant.map((pr) => pr.mergedAt as string),
+    ...commits.map((commit) => commit.at),
+  ]
     .sort()
     .at(-1) as string;
+  // No public probe ties a commit to what a service serves.
+  if (commits.length)
+    return {
+      status: 'waiting_for_prod_sync',
+      shippedAt,
+      unverifiedDeploy: true,
+      prs,
+    };
   if (!deliverable.app)
     return { status: 'live', shippedAt, unverifiedDeploy: false, prs };
   const host = index.hosts.get(deliverable.app);
@@ -115,6 +150,31 @@ export function deriveDeliverable(
     unverifiedDeploy: included === null,
     prs,
   };
+}
+
+export type NoteKind =
+  | 'live'
+  | 'unverified'
+  | 'nextRelease'
+  | 'notOnWorkers'
+  | 'awaitingDeploy';
+
+/**
+ * Which note a merged deliverable shows under its title; null before any
+ * merge. A commit-cited row proves the merge only, so it never promises an
+ * app release or names a host: it reads as not verifiable.
+ */
+export function noteKind(
+  deliverable: Pick<Deliverable, 'app' | 'requires' | 'commits'>,
+  state: Pick<DeliverableState, 'status' | 'shippedAt' | 'unverifiedDeploy'>
+): NoteKind | null {
+  if (!state.shippedAt) return null;
+  if (state.status === 'live') return 'live';
+  if (deliverable.commits?.length) return 'unverified';
+  if (deliverable.app === 'mobile') return 'nextRelease';
+  if (deliverable.requires === 'workers') return 'notOnWorkers';
+  if (state.unverifiedDeploy) return 'unverified';
+  return 'awaitingDeploy';
 }
 
 export function deriveTracks(tracks: readonly Track[], index: LiveIndex) {

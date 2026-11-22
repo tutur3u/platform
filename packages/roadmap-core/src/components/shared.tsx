@@ -25,6 +25,14 @@ export const STATUS_ICON: Record<Status, typeof CircleCheck> = {
   planned: CircleDashed,
 };
 
+/** A curated title in the page's language, English when none is curated. */
+export function localTitle(
+  item: { title: string; titleVi?: string },
+  lang: Lang
+) {
+  return lang === 'vi' && item.titleVi ? item.titleVi : item.title;
+}
+
 export function formatDate(iso: string, lang: Lang, withTime = false) {
   return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'vi-VN', {
     day: 'numeric',
@@ -130,13 +138,25 @@ export function StatusBadge({
   );
 }
 
-export function PrLinks({ prs }: { prs: { number: number }[] }) {
-  if (!prs.length) return null;
+export function PrLinks({
+  prs,
+  commits = [],
+}: {
+  prs: { number: number }[];
+  /** Cited commits on main, linked by their short SHA. */
+  commits?: readonly string[];
+}) {
+  if (!prs.length && !commits.length) return null;
   return (
     <span className="prs">
       {prs.map((pr) => (
         <a key={pr.number} href={`${REPO_URL}/pull/${pr.number}`}>
           #{pr.number}
+        </a>
+      ))}
+      {commits.map((sha) => (
+        <a key={sha} href={`${REPO_URL}/commit/${sha}`}>
+          {sha.slice(0, 7)}
         </a>
       ))}
     </span>

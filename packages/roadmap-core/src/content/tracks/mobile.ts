@@ -7,6 +7,72 @@ export const mobileTrack: Track = {
     'The Tuturuuu app gets a refreshed design, faster task handling and offline reading.',
   milestones: [
     {
+      id: 'mobile-releases',
+      title: 'Unified mobile releases',
+      titleVi: 'Phát hành di động thống nhất',
+      deliverables: [
+        {
+          id: 'unified-versioning',
+          title: 'One version and build number across iOS, Android and desktop',
+          titleVi:
+            'Một số phiên bản và số bản dựng chung cho iOS, Android và máy tính',
+          prs: [],
+          commits: ['06cb34185af2adfc869698763a1e2323b6367494'],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'build-0-27-34',
+          title:
+            'Version 0.27.34 (build 1000007) in TestFlight and Google Play internal testing',
+          titleVi:
+            'Phiên bản 0.27.34 (bản dựng 1000007) trên TestFlight và thử nghiệm nội bộ Google Play',
+          prs: [],
+          app: 'mobile',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'mobile-tasks-rebuild',
+          title: 'Rebuilt My Tasks, Kanban and task details on mobile',
+          titleVi:
+            'Làm lại My Tasks, Kanban và chi tiết công việc trên di động',
+          prs: [],
+          commits: [
+            '2a3d9d6690bc36da4f21a76a16a418d4c473b29b',
+            '5ac0f7ea47b81454303d3efa52fecaf95bb87156',
+            'd80690db49c0eb77548d5a2ff8dd98b35e409699',
+          ],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'mobile-finance-rebuild',
+          title:
+            'Finance on mobile: invoices, reports, debts and recurring payments',
+          titleVi:
+            'Tài chính trên di động: hóa đơn, báo cáo, khoản nợ và giao dịch định kỳ',
+          prs: [],
+          commits: [
+            'cd3e16f699142b54875b11013dc25d0230d2667d',
+            '1ff9e916b9c5f3447edb3815bd5c620dcde497ab',
+            'b9ab197676825b1f50a851ddaab97dd200fe034d',
+          ],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'store-1-0',
+          title:
+            'Tuturuuu 1.0 on the App Store, Mac App Store, Google Play and Microsoft Store',
+          titleVi:
+            'Tuturuuu 1.0 trên App Store, Mac App Store, Google Play và Microsoft Store',
+          prs: [],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'mobile-offline',
       title: 'Offline reading',
       deliverables: [

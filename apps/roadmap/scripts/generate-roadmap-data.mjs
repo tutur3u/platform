@@ -47,7 +47,8 @@ import {
 } from '@tuturuuu/roadmap-core/history/classify.ts';
 import { localDay } from '@tuturuuu/roadmap-core/live/feed.ts';
 import { commitWindow } from '@tuturuuu/roadmap-core/insights/commits.ts';
-import { readCommits } from './commit-log.mjs';
+import { citedCommits } from '@tuturuuu/roadmap-core/live/evidence.ts';
+import { readCitedCommits, readCommits } from './commit-log.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const target = join(
@@ -177,6 +178,41 @@ function writeActivity() {
   );
 }
 
+const evidenceTarget = join(
+  root,
+  '../../packages/roadmap-core/.generated/evidence.json'
+);
+
+/**
+ * The commits curated deliverables cite, as this checkout's history shows
+ * them on main (src/live/evidence.ts). Null offline or without full history:
+ * those items keep their fallback status.
+ */
+function writeEvidence() {
+  let snapshot = null;
+  if (process.env.ROADMAP_OFFLINE !== '1') {
+    try {
+      snapshot = {
+        schema: 1,
+        checkedAt: new Date(now).toISOString(),
+        ...readCitedCommits({
+          cwd: join(root, '../..'),
+          cited: citedCommits(tracks),
+        }),
+      };
+    } catch (error) {
+      log(`commit evidence not available (${error.message})`);
+    }
+  }
+  mkdirSync(dirname(evidenceTarget), { recursive: true });
+  writeFileSync(evidenceTarget, `${JSON.stringify(snapshot)}\n`);
+  log(
+    snapshot
+      ? `evidence: ${snapshot.commits.length} cited commits on main`
+      : 'evidence not available'
+  );
+}
+
 async function writeHosting() {
   const snapshot =
     process.env.ROADMAP_OFFLINE === '1'
@@ -213,6 +249,7 @@ async function writeHosting() {
 
 async function main() {
   await writeHosting();
+  writeEvidence();
   if (process.env.ROADMAP_OFFLINE === '1') {
     writeActivity();
     log('ROADMAP_OFFLINE=1: keeping committed data');
