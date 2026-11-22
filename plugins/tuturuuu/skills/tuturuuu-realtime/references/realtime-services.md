@@ -398,6 +398,12 @@ admitted participants. Manager delivery rechecks room presence and the signed
 manager capability when sending a private frame. End-of-room handling clears
 activity state, drawing state and mutation budgets together.
 
+Anything a participant must not read early stays out of the public view, not
+only out of the panel: assessment answer keys, prepared game rounds and flashcard
+backs travel in the manager view. The public view carries a flashcard back only
+for the card on show while it is flipped. A test for such a rule serializes what
+a non-manager receives, broadcast and read reply, and asserts the text is absent.
+
 Measure candidate state and outbound views as UTF-8 JSON before accepting a
 mutation. Meet's signaling frame budget is 256 KiB. The pen board sends one
 revisioned stroke per draw and a full snapshot on read, undo or clear. Store

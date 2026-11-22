@@ -154,8 +154,10 @@ export const liveActivitiesSnapshotSchema = z.object({
     counts: z.record(id, z.number().int().nonnegative()),
   }),
   flashcards: z.object({
+    // The room gets fronts only. A back is present for the one card the host
+    // is showing, and only while that card is flipped.
     cards: z
-      .array(flashcardSchema.extend({ id }))
+      .array(z.object({ id, front: text(200), back: text(400).optional() }))
       .max(LIVE_ACTIVITY_LIMITS.flashcards),
     index: z.number().int().nonnegative(),
     flipped: z.boolean(),
@@ -200,6 +202,10 @@ export const liveActivitiesHostSchema = z.object({
     answers: z.record(id, optionIndex),
   }),
   flashcards: z.object({
+    /** The whole deck with both sides; the room never gets a hidden back. */
+    cards: z
+      .array(flashcardSchema.extend({ id }))
+      .max(LIVE_ACTIVITY_LIMITS.flashcards),
     progress: z
       .array(
         z.object({ participantId: id, known: z.number().int().nonnegative() })

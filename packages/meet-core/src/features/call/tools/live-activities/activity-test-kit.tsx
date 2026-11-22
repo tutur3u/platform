@@ -27,7 +27,7 @@ export const strings = messages.meet.call.live_activities;
 
 export const EMPTY_HOST: LiveActivitiesHost = {
   assessment: { responses: [], answers: {} },
-  flashcards: { progress: [] },
+  flashcards: { cards: [], progress: [] },
   game: { rounds: [] },
   icebreaker: { hidden: [] },
 };

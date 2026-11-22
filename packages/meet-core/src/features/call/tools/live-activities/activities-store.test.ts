@@ -15,7 +15,7 @@ const meetingId = 'live-activities';
 const send = vi.fn<(message: MeetRealtimeClientMessage) => boolean>(() => true);
 const host = {
   assessment: { responses: [], answers: {} },
-  flashcards: { progress: [] },
+  flashcards: { cards: [], progress: [] },
   game: { rounds: [] },
   icebreaker: { hidden: [] },
 };

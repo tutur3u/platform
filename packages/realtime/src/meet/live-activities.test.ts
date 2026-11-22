@@ -288,6 +288,111 @@ describe('flashcards', () => {
       },
     ]);
   });
+
+  it('keeps every back with managers until the host flips that card for the room', () => {
+    const cards = [
+      { front: 'First front', back: 'First back' },
+      { front: 'Second front', back: 'Second back' },
+    ];
+    const set = action(room(), host, { kind: 'flashcards.set', cards });
+    const deck = set.state.liveActivities!.flashcards.cards;
+    const full = deck.map(({ id, front, back }) => ({ id, front, back }));
+    const fronts = deck.map(({ id, front }) => ({ id, front }));
+    const publicCards = (state: MeetRoomSnapshot, token: typeof host) => {
+      const [first] = read(state, token).reply;
+      if (first?.type !== 'activity.snapshot') throw new Error('No snapshot');
+      return first.snapshot.flashcards.cards;
+    };
+    const seenByRoom = (outcome: ReturnType<typeof action>) =>
+      JSON.stringify([outcome.broadcast, read(outcome.state, guest).reply]);
+
+    // Saved but not flipped: the room has fronts only, on the wire and on read.
+    expect(set.broadcast).toEqual([
+      {
+        type: 'activity.snapshot',
+        snapshot: expect.objectContaining({
+          flashcards: { cards: fronts, index: 0, flipped: false },
+        }),
+      },
+    ]);
+    expect(seenByRoom(set)).not.toMatch(/First back|Second back|"back"/);
+    expect(set.toManagers).toMatchObject([
+      { host: { flashcards: { cards: full } } },
+    ]);
+
+    // Flipped: exactly the card on show carries its back.
+    const flipped = action(set.state, host, {
+      kind: 'flashcards.show',
+      index: 0,
+      flipped: true,
+    });
+    expect(publicCards(flipped.state, guest)).toEqual([full[0], fronts[1]]);
+    expect(seenByRoom(flipped)).toContain('First back');
+    expect(seenByRoom(flipped)).not.toContain('Second back');
+
+    // Moving on hides the first back again and does not reveal the next one.
+    const moved = action(flipped.state, cohost, {
+      kind: 'flashcards.show',
+      index: 1,
+      flipped: false,
+    });
+    expect(publicCards(moved.state, guest)).toEqual(fronts);
+    expect(seenByRoom(moved)).not.toMatch(/First back|Second back|"back"/);
+
+    // Un-flipping the card on show takes its back away as well.
+    const shown = action(moved.state, host, {
+      kind: 'flashcards.show',
+      index: 1,
+      flipped: true,
+    });
+    expect(publicCards(shown.state, other)).toEqual([fronts[0], full[1]]);
+    const hidden = action(shown.state, host, {
+      kind: 'flashcards.show',
+      index: 1,
+      flipped: false,
+    });
+    expect(seenByRoom(hidden)).not.toMatch(/First back|Second back|"back"/);
+
+    // Managers have the whole deck at every step; nobody else gets that view.
+    for (const step of [set, flipped, moved, shown, hidden]) {
+      expect(read(step.state, cohost).reply).toMatchObject([
+        {},
+        {},
+        { type: 'activity.host', host: { flashcards: { cards: full } } },
+      ]);
+      expect(
+        read(step.state, guest).reply.map(({ type }) => type)
+      ).not.toContain('activity.host');
+    }
+  });
+
+  it('projects a deck stored before backs were withheld without exposing it', () => {
+    const stored: MeetRoomSnapshot = {
+      ...room(),
+      liveActivities: {
+        assessment: {
+          status: 'draft',
+          released: false,
+          items: [],
+          responses: [],
+        },
+        flashcards: {
+          cards: [
+            { id: crypto.randomUUID(), front: 'Old front', back: 'Old back' },
+          ],
+          index: 0,
+          flipped: false,
+          progress: {},
+        },
+        game: { phase: 'idle', rounds: [], scores: {} },
+        icebreaker: { prompt: null, responses: [] },
+      },
+    };
+    const guestRead = JSON.stringify(read(stored, guest).reply);
+    expect(guestRead).toContain('Old front');
+    expect(guestRead).not.toContain('Old back');
+    expect(JSON.stringify(read(stored, host).reply)).toContain('Old back');
+  });
 });
 
 describe('game', () => {

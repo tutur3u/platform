@@ -4890,13 +4890,10 @@
         "flashcards": {
           "title": "Thẻ ghi nhớ",
           "position": "Thẻ {current} trên {total}",
-          "show_front": "Xem mặt trước cho riêng bạn",
-          "show_back": "Xem mặt sau cho riêng bạn",
           "front": "Mặt trước",
           "back": "Mặt sau",
           "previous": "Thẻ trước",
           "next": "Thẻ sau",
-          "flip_for_room": "Lật cho cả phòng",
           "know_it": "Tôi đã thuộc",
           "still_learning": "Vẫn đang học",
           "my_progress": "Bạn đã thuộc {known} trên {total}",
@@ -4913,7 +4910,11 @@
           "add_card": "Thêm thẻ",
           "save_deck": "Lưu bộ thẻ",
           "save_hint": "Lưu sẽ thay bộ thẻ của phòng và bắt đầu lại tiến độ của mọi người.",
-          "incomplete": "Hãy điền cả hai mặt của mọi thẻ để lưu."
+          "incomplete": "Hãy điền cả hai mặt của mọi thẻ để lưu.",
+          "reveal": "Hiện cho cả phòng",
+          "hide": "Ẩn",
+          "room_sees_front": "Cả phòng đang thấy mặt trước.",
+          "room_sees_back": "Cả phòng đang thấy mặt sau."
         },
         "game": {
           "title": "Trò chơi khởi động",

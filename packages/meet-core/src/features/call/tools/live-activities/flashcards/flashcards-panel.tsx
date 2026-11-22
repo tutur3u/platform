@@ -4,9 +4,10 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   Layers,
   PencilLine,
-  RotateCw,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -21,22 +22,31 @@ import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 import { FlashcardsDeckEditor } from './flashcards-deck-editor';
 
+function CardSide({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="space-y-2">
+      <p className="font-semibold text-muted-foreground text-xs">{label}</p>
+      <p className="wrap-break-word text-balance font-semibold text-lg">
+        {text}
+      </p>
+    </div>
+  );
+}
+
 /**
- * A deck the room reviews together. The host picks and flips the card for
- * everyone; each person may peek for themselves and keeps their own progress.
+ * A deck the room reviews together. Backs stay with hosts and co-hosts until
+ * one of them reveals the card on show; everyone keeps their own progress.
  */
 export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
   const activity = useActivity();
   const t = useTranslations('meet.call.live_activities.flashcards');
   const { cards, index, flipped } = activity.snapshot.flashcards;
   const card = cards[index];
+  // Managers hold the whole deck; the room's copy has fronts only.
+  const deck = activity.host?.flashcards.cards ?? [];
+  const full = card ? deck.find(({ id }) => id === card.id) : undefined;
   const known = activity.mine.flashcards.known;
   const [editing, setEditing] = useState(false);
-  // A private peek at the other side; a new card or a room flip resets it.
-  const [peek, setPeek] = useState<string | null>(null);
-  const showBack = card
-    ? flipped !== (peek === `${card.id}:${flipped}`)
-    : false;
   const progress = activity.host?.flashcards.progress ?? [];
   const show = (next: number, side: boolean) =>
     activity.send({ kind: 'flashcards.show', index: next, flipped: side });
@@ -53,48 +63,48 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
     >
       {card ? (
         <>
-          <button
-            type="button"
-            aria-label={t(showBack ? 'show_front' : 'show_back')}
-            onClick={() =>
-              setPeek(
-                peek === `${card.id}:${flipped}`
-                  ? null
-                  : `${card.id}:${flipped}`
-              )
-            }
-            className="grid min-h-44 w-full place-items-center rounded-3xl border bg-card p-6 text-center transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-          >
-            <span className="space-y-2">
-              <span className="block font-semibold text-muted-foreground text-xs">
-                {t(showBack ? 'back' : 'front')}
-              </span>
-              <span className="block wrap-break-word text-balance font-semibold text-lg">
-                {showBack ? card.back : card.front}
-              </span>
-            </span>
-          </button>
+          <div className="grid min-h-44 place-items-center gap-5 rounded-3xl border bg-card p-6 text-center">
+            {activity.canManage ? (
+              <>
+                <CardSide label={t('front')} text={card.front} />
+                {full && <CardSide label={t('back')} text={full.back} />}
+              </>
+            ) : flipped && card.back ? (
+              <CardSide label={t('back')} text={card.back} />
+            ) : (
+              <CardSide label={t('front')} text={card.front} />
+            )}
+          </div>
           {activity.canManage && (
-            <div className="flex items-center justify-center gap-2">
-              <ToolIconAction
-                icon={ChevronLeft}
-                label={t('previous')}
-                disabled={index === 0}
-                onClick={() => show(index - 1, false)}
-              />
-              <ToolAction
-                icon={RotateCw}
-                label={t('flip_for_room')}
-                variant="default"
-                onClick={() => show(index, !flipped)}
-              />
-              <ToolIconAction
-                icon={ChevronRight}
-                label={t('next')}
-                disabled={index >= cards.length - 1}
-                onClick={() => show(index + 1, false)}
-              />
-            </div>
+            <>
+              <div className="flex items-center justify-center gap-2">
+                <ToolIconAction
+                  icon={ChevronLeft}
+                  label={t('previous')}
+                  disabled={index === 0}
+                  onClick={() => show(index - 1, false)}
+                />
+                <ToolAction
+                  icon={flipped ? EyeOff : Eye}
+                  label={t(flipped ? 'hide' : 'reveal')}
+                  variant={flipped ? 'outline' : 'default'}
+                  aria-pressed={flipped}
+                  onClick={() => show(index, !flipped)}
+                />
+                <ToolIconAction
+                  icon={ChevronRight}
+                  label={t('next')}
+                  disabled={index >= cards.length - 1}
+                  onClick={() => show(index + 1, false)}
+                />
+              </div>
+              <p
+                role="status"
+                className="text-center text-muted-foreground text-xs"
+              >
+                {t(flipped ? 'room_sees_back' : 'room_sees_front')}
+              </p>
+            </>
           )}
           <div className="flex flex-wrap items-center gap-2">
             <ToolAction
@@ -155,8 +165,8 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
           {(editing || !cards.length) && (
             <FlashcardsDeckEditor
               // The room issues new ids on save; start again from what it stored.
-              key={cards.map(({ id }) => id).join(':')}
-              cards={cards}
+              key={deck.map(({ id }) => id).join(':')}
+              cards={deck}
               send={activity.send}
             />
           )}

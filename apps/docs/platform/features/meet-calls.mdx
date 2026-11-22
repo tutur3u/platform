@@ -611,6 +611,11 @@ game rounds in the panel and save them to the room before opening or starting.
 A refusal from the room, such as a rate limit or a full activity, shows as a
 quiet line in the panel of the person whose action it refused.
 
+Flashcard backs stay with hosts and co-hosts until one of them reveals the card
+on show. The room's copy of the deck holds fronts only, plus the back of that
+one card while it is revealed; moving to another card or hiding it removes the
+back again. There is no private peek. Hosts read both sides in their panel.
+
 Participants track their own known flashcards. Each game round accepts the
 first answer received before the server deadline. Revealing the round awards
 100 points for each correct answer. The game shows scores to the room and
@@ -621,8 +626,10 @@ Anyone admitted can draw and undo their latest stroke. Managers can undo
 the latest stroke from any author or clear the board. Room limits can reject a
 new submission or stroke. Existing room content stays available when a limit
 is reached. The pen board is listed as **Pen whiteboard** in the Activities menu,
-apart from the classroom whiteboard. Its replay ledger forgets strokes that are
-no longer on the board once it fills, so a long session keeps drawing.
+apart from the classroom whiteboard. It holds about 128 strokes (40 per person,
+224 KiB in total) and refuses more rather than dropping old ones. Its replay
+ledger forgets strokes that are no longer on the board once it fills, so a long
+session keeps drawing.
 
 Regression coverage lives in `live-activities.test.ts`, `penboard.test.ts`,
 `activities-store.test.ts`, the four `*-panel.test.tsx` files under

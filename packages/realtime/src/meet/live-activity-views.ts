@@ -29,7 +29,11 @@ export type Activities = {
     items: AssessmentItem[];
     responses: AssessmentResponse[];
   };
-  flashcards: LiveActivitiesSnapshot['flashcards'] & {
+  // The stored deck always has both sides; each view decides what leaves it.
+  flashcards: {
+    cards: LiveActivitiesHost['flashcards']['cards'];
+    index: number;
+    flipped: boolean;
     progress: Record<string, string[]>;
   };
   game: LiveActivityGame;
@@ -78,7 +82,15 @@ export function publicView({
       counts,
     },
     flashcards: {
-      cards: flashcards.cards,
+      // Backs stay with managers. The room gets one back: the card on show,
+      // while the host keeps it flipped.
+      cards: flashcards.cards.map(({ id, front, back }, position) => ({
+        id,
+        front,
+        ...(flashcards.flipped && position === flashcards.index
+          ? { back }
+          : {}),
+      })),
       index: flashcards.index,
       flipped: flashcards.flipped,
     },
@@ -151,6 +163,11 @@ export function hostView({
       })),
     },
     flashcards: {
+      cards: flashcards.cards.map(({ id, front, back }) => ({
+        id,
+        front,
+        back,
+      })),
       progress: Object.entries(flashcards.progress).map(
         ([participantId, known]) => ({
           participantId,

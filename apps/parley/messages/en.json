@@ -4890,13 +4890,10 @@
         "flashcards": {
           "title": "Flashcards",
           "position": "Card {current} of {total}",
-          "show_front": "Show the front for yourself",
-          "show_back": "Show the back for yourself",
           "front": "Front",
           "back": "Back",
           "previous": "Previous card",
           "next": "Next card",
-          "flip_for_room": "Flip for the room",
           "know_it": "I know this",
           "still_learning": "Still learning",
           "my_progress": "You know {known} of {total}",
@@ -4913,7 +4910,11 @@
           "add_card": "Add card",
           "save_deck": "Save deck",
           "save_hint": "Saving replaces the room's deck and starts everyone's progress again.",
-          "incomplete": "Fill in both sides of every card to save."
+          "incomplete": "Fill in both sides of every card to save.",
+          "reveal": "Reveal to room",
+          "hide": "Hide",
+          "room_sees_front": "The room sees the front.",
+          "room_sees_back": "The room sees the back."
         },
         "game": {
           "title": "Prep game",

@@ -19,7 +19,8 @@ export function FlashcardsDeckEditor({
   cards,
   send,
 }: {
-  cards: Activity['snapshot']['flashcards']['cards'];
+  /** The full deck, which only managers hold. */
+  cards: NonNullable<Activity['host']>['flashcards']['cards'];
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.flashcards');
