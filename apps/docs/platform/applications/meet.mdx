@@ -513,6 +513,50 @@ Regression coverage lives in
 `packages/realtime/src/meet/room-classroom-tools.test.ts` and
 `apps/meet/src/app/api/meet-call/[meetingId]/classroom-tools/route.test.ts`.
 
+### Persistent whiteboard links
+
+`private.meet_whiteboards` links a meeting to a workspace whiteboard so the board
+outlives the call. Board content stays in `workspace_whiteboards.snapshot`; the
+link stores no drawing data. Concurrent room flushes can compare and set against
+`workspace_whiteboards.updated_at`, so no revision column exists.
+
+| Column | Rule |
+| --- | --- |
+| `meeting_id`, `whiteboard_id` | Primary key. A meeting can link several boards, and a board can serve several meetings. |
+| `ws_id` | Must equal the workspace of both the meeting and the whiteboard. A trigger rejects mismatches for every writer, and neither parent can change workspace while linked. |
+| `created_by` | The linking user. Set to null if the account is deleted, so the link survives. |
+| `guest_access` | `none`, `view` or `draw`, default `view`. The room caps admitted guests at this level. |
+
+Deleting a whiteboard removes only its link. Deleting a meeting removes its links
+and leaves the boards in the workspace.
+
+The table is service-only, like the other private Meet tables: browsers, mobile
+clients and meeting guests hold no privilege on it. The Meet API and room resolve
+the real actor and call these service-role functions, which keep the rules in the
+database:
+
+| Function | Allowed actor |
+| --- | --- |
+| `private.link_meet_whiteboard(actor, meeting, whiteboard, guest_access)` | Workspace `MEMBER` who is the meeting host or holds `admin`. Linking an existing pair returns the existing link unchanged. |
+| `private.set_meet_whiteboard_guest_access(actor, meeting, whiteboard, guest_access)` | The link creator (while still a member), the host or a workspace admin. |
+| `private.unlink_meet_whiteboard(actor, meeting, whiteboard)` | Same as changing guest access. |
+
+Creation is limited to the host or an admin because the default guest access
+shows the board to every admitted guest. A whiteboard in another workspace is
+reported exactly like a missing one, and a missing meeting or link is reported
+as forbidden to anyone who cannot manage the meeting, so ids reveal nothing
+across workspaces.
+
+Guest-type workspace members, members of other workspaces and ordinary members
+are refused. Listing links for a meeting is a service-role read after the route
+proves workspace membership and room admission.
+
+Archived boards: linking one is refused (`55000`). Archiving a linked board
+keeps its link, but its guest access can then only stay or be lowered; raising
+it is refused. Unlinking stays allowed.
+
+Regression coverage lives in `apps/database/supabase/tests/meet-whiteboards.sql`.
+
 ## Meet AI kill switch
 
 The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is

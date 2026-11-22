@@ -15597,6 +15597,52 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_whiteboards: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          guest_access: string;
+          meeting_id: string;
+          updated_at: string;
+          whiteboard_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          guest_access?: string;
+          meeting_id: string;
+          updated_at?: string;
+          whiteboard_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          guest_access?: string;
+          meeting_id?: string;
+          updated_at?: string;
+          whiteboard_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_whiteboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_whiteboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       meeting_documents: {
         Row: {
           checkpoint_content: NonNullable<Json>;
@@ -31664,6 +31710,29 @@ export type Database = {
         Args: { p_allow_xwf?: boolean; p_user_id?: string };
         Returns: boolean;
       };
+      link_meet_whiteboard: {
+        Args: {
+          p_actor_id: string;
+          p_guest_access?: string;
+          p_meeting_id: string;
+          p_whiteboard_id: string;
+        };
+        Returns: {
+          created_at: string;
+          created_by: string | null;
+          guest_access: string;
+          meeting_id: string;
+          updated_at: string;
+          whiteboard_id: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_whiteboards';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       link_personal_mailbox_workspaces: {
         Args: { p_mailbox_id?: string };
         Returns: number;
@@ -32275,6 +32344,10 @@ export type Database = {
       };
       meet_attendance_erasure_ready: {
         Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      meet_whiteboard_can_manage: {
+        Args: { p_actor_id: string; p_meeting_id: string };
         Returns: boolean;
       };
       meeting_programming_elevated: {
@@ -33996,6 +34069,29 @@ export type Database = {
         };
         Returns: number;
       };
+      set_meet_whiteboard_guest_access: {
+        Args: {
+          p_actor_id: string;
+          p_guest_access: string;
+          p_meeting_id: string;
+          p_whiteboard_id: string;
+        };
+        Returns: {
+          created_at: string;
+          created_by: string | null;
+          guest_access: string;
+          meeting_id: string;
+          updated_at: string;
+          whiteboard_id: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_whiteboards';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_playground_collaborator: {
         Args: {
           p_actor_id: string;
@@ -34581,6 +34677,14 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: string;
+      };
+      unlink_meet_whiteboard: {
+        Args: {
+          p_actor_id: string;
+          p_meeting_id: string;
+          p_whiteboard_id: string;
+        };
+        Returns: boolean;
       };
       unmanaged_internal_profile_receipt: {
         Args: {
