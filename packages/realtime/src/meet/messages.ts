@@ -209,6 +209,15 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('participant.promote'),
     userId: participantId,
   }),
+  // Renames the sender only; it carries no target, so nobody renames another.
+  z.object({
+    displayName: z
+      .string()
+      .transform(normalizeDisplayNameText)
+      .pipe(z.string().min(1).max(120)),
+    requestId,
+    type: z.literal('participant.rename'),
+  }),
   z.object({
     recordingSessionId: z.string().trim().min(1).max(180).optional(),
     requestId,
@@ -436,6 +445,12 @@ export type MeetRealtimeServerMessage =
       by: string;
       requestId?: string;
       type: 'participant.removed';
+      userId: string;
+    }
+  | {
+      displayName: string;
+      requestId?: string;
+      type: 'participant.renamed';
       userId: string;
     }
   | {

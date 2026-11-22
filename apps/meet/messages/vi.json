@@ -5066,6 +5066,14 @@
         "title": "Ngày của tôi",
         "unavailable": "Các công cụ cá nhân hiện chưa khả dụng."
       },
+      "profile_settings": {
+        "locked": "Đã lưu vào hồ sơ. Cuộc gọi này giữ tên mà chủ phòng đã duyệt cho bạn.",
+        "name_hint": "Mọi người trong cuộc gọi thấy tên mới ngay. Không cần tham gia lại.",
+        "name_placeholder": "Tên mà mọi người nhìn thấy",
+        "preview": "Xem trước",
+        "renamed": "Mọi người trong cuộc gọi đã thấy tên mới của bạn.",
+        "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại."
+      },
       "promote_to_speaker": "Chuyển thành người phát biểu",
       "publisher_limit_reached": "Phòng đã đạt giới hạn người phát. Chủ phòng có thể chuyển người nói sang vai trò người xem để tạo chỗ.",
       "quizArena": {
@@ -5328,9 +5336,11 @@
       "self_preview_size_s": "nhỏ",
       "send": "Gửi",
       "sending": "Đang gửi",
+      "settings_appearance": "Giao diện & chủ đề",
       "settings_hint": "Điều chỉnh thiết bị, kiểm tra kết nối và quản lý tùy chọn phòng.",
       "settings_pages": {
         "activities": "Chọn ai được mở hoạt động và mời người khác cùng xem.",
+        "appearance": "Chọn chế độ sáng hoặc tối và bảng màu của bạn.",
         "chat": "Lưu trò chuyện cuộc họp và quản lý bản ghi hình.",
         "connection": "Kiểm tra chất lượng cuộc gọi và khắc phục sự cố âm thanh, hình ảnh.",
         "devices": "Chọn micrô, camera và loa của bạn.",
@@ -5339,8 +5349,10 @@
         "notes_access": "Quyền xem ghi chú",
         "notes_access_description": "Chọn ai được đọc bản chép lời và ghi chú của cuộc họp này.",
         "permissions": "Quyết định người tham gia được bật gì và ai được vào thẳng.",
+        "profile": "Đổi tên và ảnh mà người khác nhìn thấy.",
         "public": "Quản lý liên kết công khai của cuộc họp và bộ nhớ AI riêng của bạn."
       },
+      "settings_profile": "Hồ sơ",
       "settings_title": "Cài đặt cuộc họp",
       "sfu_egress": "Ước tính phân phối phương tiện",
       "share_ended_notes": "Chia sẻ ghi chú sau cuộc họp",

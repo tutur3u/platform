@@ -286,6 +286,7 @@ export class MeetSignaling {
     if (
       (message.type === 'room.ended' ||
         message.type === 'room.title.changed' ||
+        message.type === 'participant.renamed' ||
         message.type === 'recording.state') &&
       message.requestId
     ) {
@@ -361,6 +362,14 @@ export class MeetSignaling {
 
   get isOpen() {
     return this.socket?.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Folds a message into room state as if the server sent it, for an
+   * optimistic change the server confirms or the caller rolls back.
+   */
+  applyLocal(message: MeetRealtimeServerMessage) {
+    if (!this.closedByUs) this.options.onMessage(message);
   }
 
   /** Fire-and-forget for messages the server does not acknowledge. */

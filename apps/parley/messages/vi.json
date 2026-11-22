@@ -4990,6 +4990,7 @@
       },
       "settings_pages": {
         "activities": "Chọn ai được mở hoạt động và mời người khác cùng xem.",
+        "appearance": "Chọn chế độ sáng hoặc tối và bảng màu của bạn.",
         "chat": "Lưu trò chuyện cuộc họp và quản lý bản ghi hình.",
         "connection": "Kiểm tra chất lượng cuộc gọi và khắc phục sự cố âm thanh, hình ảnh.",
         "devices": "Chọn micrô, camera và loa của bạn.",
@@ -4998,7 +4999,18 @@
         "notes_access": "Quyền xem ghi chú",
         "notes_access_description": "Chọn ai được đọc bản chép lời và ghi chú của cuộc họp này.",
         "permissions": "Quyết định người tham gia được bật gì và ai được vào thẳng.",
+        "profile": "Đổi tên và ảnh mà người khác nhìn thấy.",
         "public": "Quản lý liên kết công khai của cuộc họp và bộ nhớ AI riêng của bạn."
+      },
+      "settings_profile": "Hồ sơ",
+      "settings_appearance": "Giao diện & chủ đề",
+      "profile_settings": {
+        "name_placeholder": "Tên mà mọi người nhìn thấy",
+        "name_hint": "Mọi người trong cuộc gọi thấy tên mới ngay. Không cần tham gia lại.",
+        "preview": "Xem trước",
+        "renamed": "Mọi người trong cuộc gọi đã thấy tên mới của bạn.",
+        "locked": "Đã lưu vào hồ sơ. Cuộc gọi này giữ tên mà chủ phòng đã duyệt cho bạn.",
+        "unconfirmed": "Đã lưu vào hồ sơ. Mọi người sẽ thấy tên mới khi kết nối ổn định lại."
       }
     },
     "collaboration": {

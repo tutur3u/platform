@@ -84,6 +84,29 @@ export function createRoomActions(
         ...(media ? { media } : {}),
       });
     },
+    /** Shows a name on this device's own tile before the room confirms it. */
+    previewDisplayName: (userId: string, displayName: string) =>
+      signaling.current?.applyLocal({
+        type: 'participant.renamed',
+        displayName,
+        userId,
+      }),
+    /**
+     * Renames this participant for everyone in the room. Rejects with the
+     * room's error (for example `display_name_locked`) so the caller can roll
+     * back its preview.
+     */
+    renameSelf: async (displayName: string) => {
+      const name = prepareParticipantName(displayName);
+      if (!name) throw new Error('display_name_empty');
+      const connection = signaling.current;
+      if (!connection?.isOpen) throw new Error('signaling_closed');
+      await connection.request({
+        type: 'participant.rename',
+        displayName: name,
+      });
+      customDisplayName = name;
+    },
     replayPresenceJoin: (media: MeetMediaState) =>
       signaling.current?.send({
         type: 'presence.join',

@@ -7,9 +7,11 @@ import {
   Lock,
   MessageSquare,
   Mic,
+  Palette,
   ScrollText,
   Settings2,
   Sparkles,
+  UserRound,
   Video,
 } from '@tuturuuu/icons';
 import { MeetMemorySettings } from '@tuturuuu/meet-core/features/live-assistant/memory-settings';
@@ -41,6 +43,7 @@ import { useTranslations } from 'next-intl';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
 import { AiCosts } from './ai-costs';
+import { CallAppearanceSettings } from './call-appearance-settings';
 import { CallActivitySettings } from './call-activity-settings';
 import { useCallSettingsDialog } from './call-settings-link';
 import type { RoomToolsMode } from './call-room-tools';
@@ -52,6 +55,7 @@ import { DeviceSettings } from './device-settings';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetSettingsStack } from './meet-settings-card';
 import { MeetingPublicSettings } from './meeting-public-settings';
+import { CallProfileSettings } from './call-profile-settings';
 import { NotesAccessSettings } from './notes-access-settings';
 import { RecordingSettings } from './recording-settings';
 import { RoomMediaHealth } from './room-media-health';
@@ -98,6 +102,7 @@ export function CallSettings({
     setOpen,
     tab: activeTab,
     setTab: setActiveTab,
+    siteKey,
   } = useCallSettingsDialog();
   // A call shell shares this state, so it outlives the dialog: close it with
   // the call, or settings left open would reopen on the next join.
@@ -112,6 +117,29 @@ export function CallSettings({
   // Signed-in participants see who decides whether Mira is on; guests do not.
   const miraWorkspaceId = accountId ? wsId : undefined;
   const navItems: SettingsNavGroup[] = [
+    {
+      label: t('you'),
+      items: [
+        // A guest's name is the one the host admitted, so only accounts edit it.
+        ...(accountId
+          ? [
+              {
+                name: 'profile',
+                label: t('settings_profile'),
+                description: pageT('profile'),
+                icon: UserRound,
+                keywords: [t('your_name')],
+              },
+            ]
+          : []),
+        {
+          name: 'appearance',
+          label: t('settings_appearance'),
+          description: pageT('appearance'),
+          icon: Palette,
+        },
+      ],
+    },
     {
       label: t('devices'),
       items: [
@@ -234,6 +262,12 @@ export function CallSettings({
         navItems={navItems}
         keyboardNavigation
       >
+        {activeTab === 'profile' && accountId && (
+          <CallProfileSettings room={room} siteKey={siteKey} />
+        )}
+        {activeTab === 'appearance' && (
+          <CallAppearanceSettings signedIn={!!accountId} />
+        )}
         {activeTab === 'devices' && (
           <SettingsSection>
             <SettingItemTab title={t('devices')} layout="stacked">

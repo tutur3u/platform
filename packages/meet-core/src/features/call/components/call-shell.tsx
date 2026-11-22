@@ -650,7 +650,7 @@ export function ConnectedCallShell(
   return (
     <PlaybackVolumeProvider>
       <CallPanelOwnerContext.Provider value={props.accountId}>
-        <CallSettingsLinkProvider>
+        <CallSettingsLinkProvider siteKey={props.formsTurnstileSiteKey}>
           <CallShellContent {...props} />
         </CallSettingsLinkProvider>
       </CallPanelOwnerContext.Provider>

@@ -20,6 +20,8 @@ type CallSettingsDialog = {
 type CallSettingsLink = CallSettingsDialog & {
   /** Opens the meeting settings on one tab. */
   show: (tab: string) => void;
+  /** Turnstile site key for the check a refused profile save asks for. */
+  siteKey?: string;
 };
 
 const Context = createContext<CallSettingsLink | null>(null);
@@ -30,8 +32,10 @@ const Context = createContext<CallSettingsLink | null>(null);
  */
 export function CallSettingsLinkProvider({
   children,
+  siteKey,
 }: {
   children: ReactNode;
+  siteKey?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('devices');
@@ -54,14 +58,16 @@ export function CallSettingsLinkProvider({
     [setPersistedTab]
   );
   const value = useMemo(
-    () => ({ open, setOpen, tab, setTab, show }),
-    [open, tab, show]
+    () => ({ open, setOpen, tab, setTab, show, siteKey }),
+    [open, tab, show, siteKey]
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
 /** Open and tab state of the settings dialog; local when nothing links to it. */
-export function useCallSettingsDialog(): CallSettingsDialog {
+export function useCallSettingsDialog(): CallSettingsDialog & {
+  siteKey?: string;
+} {
   const shared = useContext(Context);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('devices');

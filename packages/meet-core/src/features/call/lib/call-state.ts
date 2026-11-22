@@ -261,6 +261,18 @@ export function reduceCallState(
       };
     }
 
+    case 'participant.renamed': {
+      const entry = state.participants[message.userId];
+      if (!entry || entry.displayName === message.displayName) return state;
+      return {
+        ...state,
+        participants: {
+          ...state.participants,
+          [message.userId]: { ...entry, displayName: message.displayName },
+        },
+      };
+    }
+
     case 'admission.bulkResult':
       return {
         ...state,

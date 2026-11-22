@@ -41,6 +41,7 @@ import {
 import { retireIdlePublication } from './room-idle';
 import { denied, outcome } from './room-outcome';
 import { applyRecording } from './room-recording';
+import { applyParticipantRename } from './room-rename';
 import { applySfuCommand } from './room-sfu';
 import { recordRemovedGuest } from './room-removed-guests';
 import { applyUsageReport, createRoomUsage } from './room-usage';
@@ -134,6 +135,8 @@ function dispatchMeetRoomCommand(
   switch (message.type) {
     case 'participant.promote':
       return promoteMeetViewer(state, token, message.userId, message.requestId);
+    case 'participant.rename':
+      return applyParticipantRename(state, message, token, classFeatures);
     case 'assistant.preferences': {
       if (
         message.audio.microphoneEnabled &&

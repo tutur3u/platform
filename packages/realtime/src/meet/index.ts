@@ -309,3 +309,9 @@ export {
   isMeetStatelessSfuOutcome,
   recordMeetSubscriptionOperation,
 } from './room-sfu';
+
+export {
+  DISPLAY_NAME_LOCKED,
+  MEET_RENAMES_PER_MINUTE,
+  RENAME_RATE_LIMITED,
+} from './room-rename';

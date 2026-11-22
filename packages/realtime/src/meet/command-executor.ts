@@ -15,6 +15,7 @@ import { outcome } from './room-outcome';
 import { takeActorRateLimit } from './actor-rate-limit';
 import { MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE } from './room-media-quality';
 import { LAYER_UPDATE_RATE_LIMITED } from './room-sfu';
+import { MEET_RENAMES_PER_MINUTE, RENAME_RATE_LIMITED } from './room-rename';
 
 /** Layer update batches a receiver may send per minute. */
 export const MEET_LAYER_UPDATES_PER_MINUTE = 40;
@@ -33,7 +34,9 @@ function admissionRefusal(
         ? MEET_MEDIA_QUALITY_REPORTS_PER_MINUTE
         : message.type === 'media.quality.read'
           ? MEET_MEDIA_QUALITY_READS_PER_MINUTE
-          : null;
+          : message.type === 'participant.rename'
+            ? MEET_RENAMES_PER_MINUTE
+            : null;
   if (
     limit === null ||
     takeActorRateLimit(
@@ -46,7 +49,8 @@ function admissionRefusal(
   // A dropped health report needs no answer; requests get a correlated one.
   if (
     message.type !== 'sfu.tracks.update' &&
-    message.type !== 'media.quality.read'
+    message.type !== 'media.quality.read' &&
+    message.type !== 'participant.rename'
   )
     return [];
   return [
@@ -56,7 +60,9 @@ function admissionRefusal(
       error:
         message.type === 'sfu.tracks.update'
           ? LAYER_UPDATE_RATE_LIMITED
-          : 'media_quality_rate_limited',
+          : message.type === 'participant.rename'
+            ? RENAME_RATE_LIMITED
+            : 'media_quality_rate_limited',
     },
   ];
 }

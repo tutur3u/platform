@@ -4990,6 +4990,7 @@
       },
       "settings_pages": {
         "activities": "Choose who can open activities and summon others.",
+        "appearance": "Choose light or dark mode and your palette.",
         "chat": "Keep the meeting chat and manage recordings.",
         "connection": "Check call quality and fix media problems.",
         "devices": "Choose your microphone, camera and speaker.",
@@ -4998,7 +4999,18 @@
         "notes_access": "Notes access",
         "notes_access_description": "Choose who can read this meeting’s transcript and notes.",
         "permissions": "Decide what participants can turn on and who joins directly.",
+        "profile": "Change the name and photo others see.",
         "public": "Manage the public meeting link and your private AI memory."
+      },
+      "settings_profile": "Profile",
+      "settings_appearance": "Appearance & theme",
+      "profile_settings": {
+        "name_placeholder": "Your name as others see it",
+        "name_hint": "Everyone in this call sees the new name right away. No need to rejoin.",
+        "preview": "Preview",
+        "renamed": "Everyone in this call now sees your new name.",
+        "locked": "Saved to your profile. This call keeps the name the host admitted you with.",
+        "unconfirmed": "Saved to your profile. Others see it once your connection recovers."
       }
     },
     "collaboration": {

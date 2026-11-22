@@ -1728,6 +1728,33 @@ Changing an input replaces its track on the existing call. Output selection uses
 `HTMLMediaElement.setSinkId` where supported; unsupported browsers explain the
 limitation instead of presenting a non-working selector.
 
+### Profile and appearance in call settings
+
+The settings dialog opens with a **You** group in Meet and Parley. **Profile**
+appears only for signed-in participants. It shows the shared satellite photo
+editor and a display-name card with a live preview, Reset and Save.
+**Appearance & theme** is available to everyone. It shows the shared Light,
+Dark and System cards (stored on the device, so guests have them too) and, for
+accounts, the Sorbet design switch with its palette and corners pickers.
+
+Saving a name updates the account profile through Web first. It uses the same
+`ABUSE_CHALLENGE_REQUIRED` Turnstile flow as the first-use name form (one-use
+token, one retry). Only the participant's own tile shows the new name while the
+save is pending, and that preview rolls back if the save or the check fails or
+the dialog closes mid-check. After the save succeeds, the client sends
+`participant.rename` and the room broadcasts the updated presence, so everyone
+sees the name without a rejoin. The command carries no target: the room always
+renames the sender. The name is normalised and capped at 120 characters like
+`presence.join` (the profile API caps it at 100). Each participant may rename
+six times a minute per room, and later attempts get `rename_rate_limited`. The
+open attendance row takes the new name. Guests, and anyone admitted from the
+lobby, keep the name the host approved: the room answers
+`display_name_locked`, the profile change still stands, and the dialog says the
+call keeps the admitted name. A new photo reaches others when this device
+next connects, not live. Regression coverage: `room-rename.test.ts`,
+`live-rename.test.ts`, `call-display-name-card.test.tsx` and
+`call-settings-you.test.tsx`.
+
 Each browser call generates a device ID. The server derives a signed device
 identity from the account and device IDs; media and SFU sessions use that identity,
 while admission approvals use the account ID. Joining another device offers a
