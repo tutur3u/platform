@@ -102,6 +102,8 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
                 <ToolAction
                   icon={flipped ? EyeOff : Eye}
                   label={t(flipped ? 'hide' : 'reveal')}
+                  // The name starts with the visible label and says which card.
+                  aria-label={`${t(flipped ? 'hide' : 'reveal')}: ${card.front}`}
                   variant={flipped ? 'outline' : 'default'}
                   aria-pressed={flipped}
                   onClick={() => show(index, !flipped)}

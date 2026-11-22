@@ -67,12 +67,16 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
   });
   // The host reads both sides while the room still has only the front.
   expect(screen.getByText('Stable sort')).toBeTruthy();
-  // The card is text, read out when it changes; the action is its own button.
+  // The card is text, read out when it changes. The action is its own
+  // button, named by its visible label and the card it reveals.
   expect(
     screen.getByText('Stable sort').closest('[aria-live="polite"]')
   ).not.toBeNull();
-  expect(screen.queryByRole('button', { name: /Stable sort/ })).toBeNull();
-  expect(screen.getByRole('button', { name: t.reveal })).toBeTruthy();
+  const reveal = screen.getByRole('button', {
+    name: `${t.reveal}: Stable sort`,
+  });
+  expect(reveal.textContent).toBe(t.reveal);
+  expect(reveal.getAttribute('aria-pressed')).toBe('false');
   expect(screen.getByText('Keeps equal keys in order')).toBeTruthy();
   expect(screen.getByText(t.room_sees_front)).toBeTruthy();
   expect(screen.getByText('Ana')).toBeTruthy();
@@ -81,7 +85,7 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
     'disabled',
     true
   );
-  fireEvent.click(screen.getByRole('button', { name: t.reveal }));
+  fireEvent.click(reveal);
   expect(sent().at(-1)).toEqual({
     kind: 'flashcards.show',
     cardId: FIRST,
@@ -97,7 +101,9 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
     host: { flashcards: { cards: deck, progress: [] } },
   });
   expect(screen.getByText(t.room_sees_back)).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: t.hide }));
+  fireEvent.click(
+    screen.getByRole('button', { name: `${t.hide}: Stable sort` })
+  );
   fireEvent.click(screen.getByRole('button', { name: t.next }));
   expect(sent().slice(-2)).toEqual([
     { kind: 'flashcards.show', cardId: FIRST, index: 0, flipped: false },
@@ -119,7 +125,9 @@ it('shows a participant the back only once the host reveals it', () => {
   expect(screen.getByText('Stable sort')).toBeTruthy();
   // No private peek: nothing on the card flips it, and nothing reveals it.
   expect(screen.queryByText('Keeps equal keys in order')).toBeNull();
-  expect(screen.queryByRole('button', { name: t.reveal })).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: new RegExp(t.reveal) })
+  ).toBeNull();
   expect(screen.queryByText(t.room_sees_front)).toBeNull();
   expect(screen.queryByText(t.deck)).toBeNull();
   fireEvent.click(screen.getByText('Stable sort'));
